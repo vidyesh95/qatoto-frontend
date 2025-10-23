@@ -15,7 +15,7 @@ export default function Navbar() {
     return (
         <nav className="sticky top-0 z-50 bg-white">
             <div
-                className="relative mx-auto flex items-center justify-center p-4 md:py-3.5 md:px-8 md:justify-between">
+                className="relative mx-auto flex items-center justify-center p-4 md:py-2.5 md:px-8 md:justify-between">
                 {/* Mobile ▸ menu button (hidden on md+) */}
                 {/*<Sheet>*/}
                 {/*    <SheetTrigger className="absolute left-4 md:hidden">*/}
@@ -56,7 +56,7 @@ export default function Navbar() {
                 {/*</Sheet>*/}
 
                 {/* Brand */}
-                <Link href="/" className="text-2xl font-bold text-black">
+                <Link href="/" className="text-3xl font-serif font-medium text-black">
                     Qatoto
                 </Link>
 
