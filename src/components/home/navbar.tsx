@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import {Menu} from "lucide-react";
 // import {Button} from '@/components/ui/button'
 // import {
 //     Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
@@ -15,7 +16,7 @@ export default function Navbar() {
     return (
         <nav className="sticky top-0 z-50 bg-white">
             <div
-                className="relative mx-auto flex items-center justify-center p-4 md:py-2.5 md:px-8 md:justify-between">
+                className="relative mx-auto flex items-center justify-center px-4 py-2.5 md:justify-between">
                 {/* Mobile ▸ menu button (hidden on md+) */}
                 {/*<Sheet>*/}
                 {/*    <SheetTrigger className="absolute left-4 md:hidden">*/}
@@ -56,9 +57,14 @@ export default function Navbar() {
                 {/*</Sheet>*/}
 
                 {/* Brand */}
-                <Link href="/" className="text-3xl font-serif font-medium text-black">
-                    Qatoto
-                </Link>
+                <div className={ "flex items-center gap-2.5"}>
+                    <div className={"p-2 text-black"}>
+                        <Menu/>
+                    </div>
+                    <Link href="/" className="text-3xl font-serif font-medium text-black">
+                        Qatoto
+                    </Link>
+                </div>
 
                 {/* Desktop ▸ link group */}
                 <nav className="hidden items-center space-x-8 md:flex text-black">
