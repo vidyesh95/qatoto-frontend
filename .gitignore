@@ -46,4 +46,4 @@ next-env.d.ts
 *.code-workspace
 
 # mcp
-.mcp.json
+#.mcp.json
