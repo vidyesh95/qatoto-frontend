@@ -3,19 +3,19 @@ import { Geist, Geist_Mono, Roboto_Serif } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
+  variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+  variable: "--font-mono",
   subsets: ["latin"],
   display: "swap",
 });
 
 const robotoSerif = Roboto_Serif({
-  variable: "--font-roboto-serif",
+  variable: "--font-serif",
   subsets: ["latin"],
   display: "swap",
 });
