@@ -58,10 +58,10 @@ export default function Navbar() {
 
                 {/* Brand */}
                 <div className={ "flex items-center gap-2.5"}>
-                    <div className={"p-2 text-black"}>
+                    <div className={"p-2 text-primary-foreground"}>
                         <Menu/>
                     </div>
-                    <Link href="/" className="text-3xl font-serif font-medium text-black">
+                    <Link href="/" className="text-3xl font-serif font-medium text-[#00696E]">
                         Qatoto
                     </Link>
                 </div>
