@@ -1,16 +1,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import {Menu} from "lucide-react";
+import {CircleUserRound, Menu} from "lucide-react";
 // import {Button} from '@/components/ui/button'
 // import {
 //     Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
 // } from '@/components/ui/sheet'
 
-const links = [
-    {id: 'about', label: 'About'},
-    {id: 'pricing', label: 'Pricing'},
-    {id: 'contact', label: 'Contact'},
-]
 
 export default function Navbar() {
     return (
@@ -66,18 +61,18 @@ export default function Navbar() {
                     </Link>
                 </div>
 
+                <div className={"hidden md:flex"}></div>
+
                 {/* Desktop ▸ link group */}
-                <nav className="hidden items-center space-x-8 md:flex text-black">
-                    {links.map(({id, label}) => (
-                        <Link key={id} href={{pathname: '/', hash: id}} scroll>
-                            {label}
-                        </Link>
-                    ))}
+                <div className="hidden items-center space-x-8 md:flex text-black">
 
                     <Link href="/signin">
-                        <button className="btn-primary">Sign in</button>
+                        <button className="flex gap-2 text-primary border border-primary rounded-full px-2 py-1.75">
+                            <CircleUserRound/>
+                            Sign in
+                        </button>
                     </Link>
-                </nav>
+                </div>
             </div>
         </nav>
     )
