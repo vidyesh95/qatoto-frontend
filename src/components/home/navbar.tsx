@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import {CircleUserRound, Menu} from "lucide-react";
+import {Bell, CircleUserRound, Menu} from "lucide-react";
 // import {Button} from '@/components/ui/button'
 // import {
 //     Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
@@ -64,11 +64,13 @@ export default function Navbar() {
                 <div className={"hidden md:flex"}></div>
 
                 {/* Desktop ▸ link group */}
-                <div className="hidden items-center space-x-8 md:flex text-black">
-
+                <div className="hidden items-center space-x-2 md:flex text-black">
+                    <div className={"border border-primary rounded-full p-1.75"}>
+                        <Bell/>
+                    </div>
                     <Link href="/signin">
-                        <button className="flex gap-2 text-primary border border-primary rounded-full px-2 py-1.75">
-                            <CircleUserRound/>
+                        <button className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75">
+                            <CircleUserRound className={"text-foreground"}/>
                             Sign in
                         </button>
                     </Link>
