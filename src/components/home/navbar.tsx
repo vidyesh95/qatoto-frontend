@@ -65,10 +65,10 @@ export default function Navbar() {
                     </Link>
                 </div>
 
-                <div className={"hidden md:flex w-sm items-center gap-2 justify-end"}>
+                <div className={"hidden md:flex w-xl items-center gap-2 justify-end bg-red-50"}>
                     <form action="/search" method="get"
                           className={"group relative flex items-center border border-primary rounded-full"}>
-                        <input type="search" id="search-query" name="query" placeholder="Search" className={"py-2 rounded-l-full pl-4 focus:pl-10"}/>
+                        <input type="search" id="search-query" name="query" placeholder="Search" className={"w-[404px] focus:w-[428px] py-2 rounded-l-full pl-4 focus:pl-10"}/>
                         <Image
                             src={"/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                             alt={"translate"}
