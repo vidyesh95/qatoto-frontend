@@ -68,13 +68,13 @@ export default function Navbar() {
                 <div className={"hidden md:flex w-sm items-center gap-2 justify-end"}>
                     <form action="/search" method="get"
                           className={"relative flex items-center border border-primary rounded-full"}>
-                        <input type="search" id="search-query" name="query" placeholder="Search" className={"py-2 rounded-l-full pl-4 hover:pl-10"}/>
+                        <input type="search" id="search-query" name="query" placeholder="Search" className={"py-2 rounded-l-full pl-4 focus:pl-10"}/>
                         <Image
                             src={"/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                             alt={"translate"}
                             width={24}
                             height={24}
-                            className={"hidden hover:visible absolute left-2 top-2 "}
+                            className={"hidden focus:visible absolute left-2 top-2"}
                         />
                         <button type="submit" className={"bg-primary rounded-r-full py-2 pl-2 pr-4 cursor-pointer"}>
                             <Image
