@@ -74,7 +74,7 @@ export default function Navbar() {
                             alt={"translate"}
                             width={24}
                             height={24}
-                            className={"hidden focus:visible absolute left-2 top-2"}
+                            className={"hidden focus:block focus:visible absolute left-2 top-2"}
                         />
                         <button type="submit" className={"bg-primary rounded-r-full py-2 pl-2 pr-4 cursor-pointer"}>
                             <Image
