@@ -72,8 +72,12 @@ export default function Navbar() {
                         <Bell/>
                     </div>
                     <div className={"border border-primary rounded-full p-1.75"}>
-                        <Image src={"/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"} alt={"translate"} width={24}
-                               height={24}/>
+                        <Image
+                            src={"/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                            alt={"translate"}
+                            width={24}
+                            height={24}
+                        />
                     </div>
                     <Link href="/signin">
                         <button className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75">
