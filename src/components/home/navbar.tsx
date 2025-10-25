@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import {Bell, CircleUserRound, Menu, Search} from "lucide-react";
+import {CircleUserRound,} from "lucide-react";
 // import {Button} from '@/components/ui/button'
 // import {
 //     Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
@@ -53,16 +53,21 @@ export default function Navbar() {
 
                 {/* Brand */}
                 <div className={"flex items-center gap-2.5"}>
-                    <div className={"p-2 text-primary-foreground"}>
-                        <Menu/>
-                    </div>
+                    <button type={"button"} className={"p-2 text-primary-foreground"}>
+                        <Image
+                            src={"/icons/menu_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                            alt={"translate"}
+                            width={24}
+                            height={24}
+                        />
+                    </button>
                     <Link href="/" className="text-3xl font-serif font-medium text-[#00696E]">
                         Qatoto
                     </Link>
                 </div>
 
-                <form action="/search" method="get" className={"hidden md:flex"}>
-                    <input type="search" id="search-query" name="q" placeholder="Search..."/>
+                <form action="/search" method="get" className={"hidden md:block"}>
+                    <input type="search" id="search-query" name="query" placeholder="Search..."/>
                     <button type="submit">
                         <Image
                             src={"/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
@@ -73,7 +78,7 @@ export default function Navbar() {
                     </button>
                 </form>
 
-                <button type={"submit"} className={"hidden md:flex bg-primary p-2 rounded-full cursor-pointer"}>
+                <button type={"button"} className={"hidden md:block bg-primary p-2 rounded-full cursor-pointer"}>
                     <Image
                         src={"/icons/mic_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                         alt={"translate"}
@@ -84,20 +89,30 @@ export default function Navbar() {
 
                 {/* Desktop ▸ link group */}
                 <div className="hidden items-center space-x-2 md:flex text-black">
-                    <div className={"border border-primary rounded-full p-1.75 cursor-pointer"}>
-                        <Bell/>
-                    </div>
-                    <div className={"border border-primary rounded-full p-1.75 cursor-pointer"}>
+                    <button type={"button"} className={"border border-primary rounded-full p-1.75 cursor-pointer"}>
+                        <Image
+                            src={"/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                            alt={"translate"}
+                            width={24}
+                            height={24}
+                        />
+                    </button>
+                    <button type={"button"} className={"border border-primary rounded-full p-1.75 cursor-pointer"}>
                         <Image
                             src={"/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                             alt={"translate"}
                             width={24}
                             height={24}
                         />
-                    </div>
+                    </button>
                     <Link href="/signin">
-                        <button className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75 cursor-pointer">
-                            <CircleUserRound className={"text-foreground"}/>
+                        <button type={"button"} className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75 cursor-pointer">
+                            <Image
+                                src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                                alt={"translate"}
+                                width={24}
+                                height={24}
+                            />
                             Sign in
                         </button>
                     </Link>
