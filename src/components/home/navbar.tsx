@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import {Bell, CircleUserRound, Menu} from "lucide-react";
+import {Bell, CircleUserRound, Menu, Search} from "lucide-react";
 // import {Button} from '@/components/ui/button'
 // import {
 //     Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
@@ -63,7 +63,7 @@ export default function Navbar() {
 
                 <form action="/search" method="get" className={"hidden md:flex"}>
                     <input type="search" id="search-query" name="q" placeholder="Search..."/>
-                    <button type="submit">Search</button>
+                    <button type="submit"></button>
                 </form>
 
                 {/* Desktop ▸ link group */}
@@ -72,7 +72,7 @@ export default function Navbar() {
                         <Bell/>
                     </div>
                     <div className={"border border-primary rounded-full p-1.75"}>
-                        <Image src={"translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"} alt={"translate"} width={24}
+                        <Image src={"/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"} alt={"translate"} width={24}
                                height={24}/>
                     </div>
                     <Link href="/signin">
