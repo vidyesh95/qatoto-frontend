@@ -66,26 +66,28 @@ export default function Navbar() {
                     </Link>
                 </div>
 
-                <form action="/search" method="get" className={"hidden md:block"}>
-                    <input type="search" id="search-query" name="query" placeholder="Search..."/>
-                    <button type="submit">
+                <div className={"flex items-center gap-2"}>
+                    <form action="/search" method="get"
+                          className={"hidden md:block border border-primary rounded-full"}>
+                        <input type="search" id="search-query" name="query" placeholder="Search..."/>
+                        <button type="submit" className={"bg-primary"}>
+                            <Image
+                                src={"/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                                alt={"translate"}
+                                width={24}
+                                height={24}
+                            />
+                        </button>
+                    </form>
+                    <button type={"button"} className={"hidden md:block bg-primary p-2 rounded-full cursor-pointer"}>
                         <Image
-                            src={"/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                            src={"/icons/mic_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                             alt={"translate"}
                             width={24}
                             height={24}
                         />
                     </button>
-                </form>
-
-                <button type={"button"} className={"hidden md:block bg-primary p-2 rounded-full cursor-pointer"}>
-                    <Image
-                        src={"/icons/mic_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-                        alt={"translate"}
-                        width={24}
-                        height={24}
-                    />
-                </button>
+                </div>
 
                 {/* Desktop ▸ link group */}
                 <div className="hidden items-center space-x-2 md:flex text-black">
@@ -106,7 +108,8 @@ export default function Navbar() {
                         />
                     </button>
                     <Link href="/signin">
-                        <button type={"button"} className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75 cursor-pointer">
+                        <button type={"button"}
+                                className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75 cursor-pointer">
                             <Image
                                 src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                                 alt={"translate"}
