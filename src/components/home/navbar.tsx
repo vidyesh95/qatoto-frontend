@@ -52,7 +52,7 @@ export default function Navbar() {
                 {/*</Sheet>*/}
 
                 {/* Brand */}
-                <div className={ "flex items-center gap-2.5"}>
+                <div className={"flex items-center gap-2.5"}>
                     <div className={"p-2 text-primary-foreground"}>
                         <Menu/>
                     </div>
@@ -61,7 +61,10 @@ export default function Navbar() {
                     </Link>
                 </div>
 
-                <div className={"hidden md:flex"}></div>
+                <form action="/search" method="get" className={"hidden md:flex"}>
+                    <input type="search" id="search-query" name="q" placeholder="Search..."/>
+                    <button type="submit">Search</button>
+                </form>
 
                 {/* Desktop ▸ link group */}
                 <div className="hidden items-center space-x-2 md:flex text-black">
@@ -69,10 +72,11 @@ export default function Navbar() {
                         <Bell/>
                     </div>
                     <div className={"border border-primary rounded-full p-1.75"}>
-                        <Image src={"translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"} alt={"translate"} width={24} height={24}/>
+                        <Image src={"translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"} alt={"translate"} width={24}
+                               height={24}/>
                     </div>
                     <Link href="/signin">
-                    <button className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75">
+                        <button className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75">
                             <CircleUserRound className={"text-foreground"}/>
                             Sign in
                         </button>
