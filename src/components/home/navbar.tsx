@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import {CircleUserRound,} from "lucide-react";
 // import {Button} from '@/components/ui/button'
 // import {
 //     Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
@@ -89,7 +88,6 @@ export default function Navbar() {
                     </button>
                 </div>
 
-                {/* Desktop ▸ link group */}
                 <div className="hidden items-center space-x-2 md:flex text-black">
                     <button type={"button"} className={"border border-primary rounded-full p-1.75 cursor-pointer"}>
                         <Image
