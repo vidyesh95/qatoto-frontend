@@ -10,7 +10,7 @@ export default function Navbar() {
     return (
         <nav className="sticky top-0 z-50 bg-white">
             <div
-                className="relative mx-auto flex items-center justify-center px-4 py-2.5 md:justify-between">
+                className="relative mx-auto flex items-center justify-between px-4 py-2.5 md:justify-between">
                 {/* Mobile ▸ menu button (hidden on md+) */}
                 {/*<Sheet>*/}
                 {/*    <SheetTrigger className="absolute left-4 md:hidden">*/}
@@ -52,7 +52,7 @@ export default function Navbar() {
 
                 {/* Brand */}
                 <div className={"flex items-center gap-2.5"}>
-                    <button type={"button"} className={"p-2 text-primary-foreground cursor-pointer"}>
+                    <button type={"button"} className={"hidden md:block p-2 text-primary-foreground cursor-pointer"}>
                         <Image
                             src={"/icons/menu_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                             alt={"translate"}
@@ -95,7 +95,7 @@ export default function Navbar() {
                     </button>
                 </div>
 
-                <div className="hidden items-center space-x-2 md:flex text-black">
+                <div className="flex items-center space-x-2 text-black">
                     <button type={"button"} className={"border border-primary rounded-full p-1.75 cursor-pointer"}>
                         <Image
                             src={"/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
