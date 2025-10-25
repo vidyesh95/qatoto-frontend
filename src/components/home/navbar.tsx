@@ -53,7 +53,7 @@ export default function Navbar() {
 
                 {/* Brand */}
                 <div className={"flex items-center gap-2.5"}>
-                    <button type={"button"} className={"p-2 text-primary-foreground"}>
+                    <button type={"button"} className={"p-2 text-primary-foreground cursor-pointer"}>
                         <Image
                             src={"/icons/menu_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                             alt={"translate"}
@@ -107,18 +107,16 @@ export default function Navbar() {
                             height={24}
                         />
                     </button>
-                    <Link href="/signin">
-                        <button type={"button"}
-                                className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75 cursor-pointer">
-                            <Image
-                                src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-                                alt={"translate"}
-                                width={24}
-                                height={24}
-                            />
-                            Sign in
-                        </button>
-                    </Link>
+                    <button type={"button"}
+                            className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75 cursor-pointer">
+                        <Image
+                            src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                            alt={"translate"}
+                            width={24}
+                            height={24}
+                        />
+                        Sign in
+                    </button>
                 </div>
             </div>
         </nav>
