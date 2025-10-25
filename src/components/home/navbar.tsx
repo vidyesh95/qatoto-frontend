@@ -63,15 +63,31 @@ export default function Navbar() {
 
                 <form action="/search" method="get" className={"hidden md:flex"}>
                     <input type="search" id="search-query" name="q" placeholder="Search..."/>
-                    <button type="submit"></button>
+                    <button type="submit">
+                        <Image
+                            src={"/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                            alt={"translate"}
+                            width={24}
+                            height={24}
+                        />
+                    </button>
                 </form>
+
+                <button type={"submit"} className={"hidden md:flex bg-primary p-2 rounded-full cursor-pointer"}>
+                    <Image
+                        src={"/icons/mic_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                        alt={"translate"}
+                        width={24}
+                        height={24}
+                    />
+                </button>
 
                 {/* Desktop ▸ link group */}
                 <div className="hidden items-center space-x-2 md:flex text-black">
-                    <div className={"border border-primary rounded-full p-1.75"}>
+                    <div className={"border border-primary rounded-full p-1.75 cursor-pointer"}>
                         <Bell/>
                     </div>
-                    <div className={"border border-primary rounded-full p-1.75"}>
+                    <div className={"border border-primary rounded-full p-1.75 cursor-pointer"}>
                         <Image
                             src={"/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                             alt={"translate"}
@@ -80,7 +96,7 @@ export default function Navbar() {
                         />
                     </div>
                     <Link href="/signin">
-                        <button className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75">
+                        <button className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75 cursor-pointer">
                             <CircleUserRound className={"text-foreground"}/>
                             Sign in
                         </button>
