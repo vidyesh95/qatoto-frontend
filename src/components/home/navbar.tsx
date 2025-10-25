@@ -66,11 +66,11 @@ export default function Navbar() {
                     </Link>
                 </div>
 
-                <div className={"flex items-center gap-2"}>
+                <div className={"hidden md:flex items-center gap-2"}>
                     <form action="/search" method="get"
-                          className={"hidden md:block border border-primary rounded-full"}>
-                        <input type="search" id="search-query" name="query" placeholder="Search..."/>
-                        <button type="submit" className={"bg-primary"}>
+                          className={"flex items-center border border-primary rounded-full"}>
+                        <input type="search" id="search-query" name="query" placeholder="Search" className={"py-2 rounded-l-full pl-4"}/>
+                        <button type="submit" className={"bg-primary rounded-r-full py-2 pl-2 pr-4 cursor-pointer"}>
                             <Image
                                 src={"/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                                 alt={"translate"}
@@ -79,7 +79,7 @@ export default function Navbar() {
                             />
                         </button>
                     </form>
-                    <button type={"button"} className={"hidden md:block bg-primary p-2 rounded-full cursor-pointer"}>
+                    <button type={"button"} className={"bg-primary p-2 rounded-full cursor-pointer"}>
                         <Image
                             src={"/icons/mic_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                             alt={"translate"}
