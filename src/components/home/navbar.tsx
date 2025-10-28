@@ -8,7 +8,7 @@ import Image from 'next/image'
 
 export default function Navbar() {
     return (
-        <nav className="sticky top-0 z-50 bg-[#F7FAF9]">
+        <nav className="sticky top-0 z-50 bg-background">
             <div
                 className="relative mx-auto flex items-center justify-between px-4 py-2.5 md:justify-between">
                 {/* Brand */}
@@ -29,7 +29,7 @@ export default function Navbar() {
                 <div className={"hidden md:flex w-xl items-center gap-2 justify-end"}>
                     <form action="/search" method="get"
                           className={"group relative flex items-center border border-primary rounded-full"}>
-                        <input type="search" id="search-query" name="query" placeholder="Search" className={"w-[404px] focus:w-[428px] py-2 rounded-l-full pl-4 focus:pl-10"}/>
+                        <input type="search" id="search-query" name="query" placeholder="Search" className={"w-[404px] focus:w-[428px] py-2 rounded-l-full pl-4 focus:pl-10 bg-white"}/>
                         <Image
                             src={"/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                             alt={"translate"}
@@ -57,7 +57,7 @@ export default function Navbar() {
                 </div>
 
                 <div className="flex items-center space-x-2 text-black">
-                    <button type={"button"} className={"border border-primary rounded-full p-1.75 cursor-pointer"}>
+                    <button type={"button"} className={"border border-primary bg-white rounded-full p-1.75 cursor-pointer"}>
                         <Image
                             src={"/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                             alt={"translate"}
@@ -65,7 +65,7 @@ export default function Navbar() {
                             height={24}
                         />
                     </button>
-                    <button type={"button"} className={"border border-primary rounded-full p-1.75 cursor-pointer"}>
+                    <button type={"button"} className={"border border-primary bg-white rounded-full p-1.75 cursor-pointer"}>
                         <Image
                             src={"/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                             alt={"translate"}
@@ -74,7 +74,7 @@ export default function Navbar() {
                         />
                     </button>
                     <button type={"button"}
-                            className="flex gap-2 text-[#1DBDC5] border border-primary rounded-full px-2 py-1.75 cursor-pointer">
+                            className="flex gap-2 text-[#1DBDC5] bg-white border border-primary rounded-full px-2 py-1.75 cursor-pointer">
                         <Image
                             src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
                             alt={"translate"}
