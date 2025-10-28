@@ -11,45 +11,6 @@ export default function Navbar() {
         <nav className="sticky top-0 z-50 bg-white">
             <div
                 className="relative mx-auto flex items-center justify-between px-4 py-2.5 md:justify-between">
-                {/* Mobile ▸ menu button (hidden on md+) */}
-                {/*<Sheet>*/}
-                {/*    <SheetTrigger className="absolute left-4 md:hidden">*/}
-                {/*        <Image*/}
-                {/*            src="/menu_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg"*/}
-                {/*            alt="menu"*/}
-                {/*            width={24}*/}
-                {/*            height={24}*/}
-                {/*        />*/}
-                {/*    </SheetTrigger>*/}
-
-                {/*    <SheetContent side="left">*/}
-                {/*        <SheetHeader className="space-y-4">*/}
-                {/*            {links.map(({id, label}) => (*/}
-                {/*                <SheetTitle key={id}>*/}
-                {/*                    <SheetClose asChild>*/}
-                {/*                        <Link*/}
-                {/*                            href={{pathname: '/', hash: id}}*/}
-                {/*                            scroll*/}
-                {/*                            className="block"*/}
-                {/*                        >*/}
-                {/*                            {label}*/}
-                {/*                        </Link>*/}
-                {/*                    </SheetClose>*/}
-                {/*                </SheetTitle>*/}
-                {/*            ))}*/}
-                {/*            <SheetDescription>*/}
-                {/*                <SheetClose asChild>*/}
-                {/*                    <Link href="/signin">*/}
-                {/*                        <Button className="btn-primary w-full">*/}
-                {/*                            Sign in*/}
-                {/*                        </Button>*/}
-                {/*                    </Link>*/}
-                {/*                </SheetClose>*/}
-                {/*            </SheetDescription>*/}
-                {/*        </SheetHeader>*/}
-                {/*    </SheetContent>*/}
-                {/*</Sheet>*/}
-
                 {/* Brand */}
                 <div className={"flex items-center gap-2.5"}>
                     <button type={"button"} className={"hidden md:block p-2 text-primary-foreground cursor-pointer"}>
