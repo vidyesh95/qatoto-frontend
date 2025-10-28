@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Sidebar() {
     return (
-        <div>
+        <div className={"w-90 h-screen bg-background"}>
             <Link href={"#"}>Create</Link>
             <Link href={"#"}>Home</Link>
             <Link href={"#"}>Anime</Link>
