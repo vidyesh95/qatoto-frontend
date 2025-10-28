@@ -8,7 +8,7 @@ import Image from 'next/image'
 
 export default function Navbar() {
     return (
-        <nav className="sticky top-0 z-50 bg-white">
+        <nav className="sticky top-0 z-50 bg-[#F7FAF9]">
             <div
                 className="relative mx-auto flex items-center justify-between px-4 py-2.5 md:justify-between">
                 {/* Brand */}
