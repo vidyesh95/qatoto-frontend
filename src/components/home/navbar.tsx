@@ -1,9 +1,5 @@
 import Link from 'next/link'
 import Image from 'next/image'
-// import {Button} from '@/components/ui/button'
-// import {
-//     Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
-// } from '@/components/ui/sheet'
 
 
 export default function Navbar() {
