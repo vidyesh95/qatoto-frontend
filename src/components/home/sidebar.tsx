@@ -148,13 +148,13 @@ function SidebarNavigationItem({
                                    isActive,
                                }: SidebarNavigationItemProps) {
     const baseItemStyle =
-        'flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-colors';
+        'flex items-center gap-3 rounded-full px-4 py-3 text-sm transition-colors';
     const defaultItemStyle =
         'text-gray-800 hover:bg-gray-100';
     const activeItemStyle =
-        'bg-teal-100 text-gray-900';
+        'bg-primary text-gray-900';
     const emphasizedItemStyle =
-        'bg-indigo-100 text-gray-900 font-medium';
+        'rounded-xl bg-secondary text-gray-900 font-medium';
 
     return (
         <Link
@@ -202,8 +202,8 @@ export default function Sidebar() {
     const routePathProjectImmortal = '/project-immortal';
 
     return (
-        <aside className="w-80 shrink-0 border-r border-gray-200 bg-white">
-            <div className="h-screen overflow-y-auto px-5 py-6">
+        <aside className="w-80 shrink-0 border-r border-border bg-card">
+            <div className="h-[calc(100dvh-64px)] overflow-y-auto px-4 py-6">
                 {/* Create + Primary navigation */}
                 <SidebarSection>
                     <SidebarNavigationItem
@@ -213,6 +213,9 @@ export default function Sidebar() {
                         isEmphasized
                         isActive={currentPathname === routePathCreate}
                     />
+                </SidebarSection>
+
+                <SidebarSection>
                     <SidebarNavigationItem
                         destinationPath={routePathHome}
                         linkText="Home"
