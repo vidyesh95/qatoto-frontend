@@ -147,14 +147,10 @@ function SidebarNavigationItem({
                                    isEmphasized,
                                    isActive,
                                }: SidebarNavigationItemProps) {
-    const baseItemStyle =
-        'flex items-center gap-3 rounded-full px-4 py-3 text-sm transition-colors';
-    const defaultItemStyle =
-        'text-gray-800 hover:bg-gray-100';
-    const activeItemStyle =
-        'bg-primary text-gray-900';
-    const emphasizedItemStyle =
-        'rounded-xl bg-secondary text-gray-900 font-medium';
+    const baseItemStyle = 'flex items-center gap-3 rounded-full px-4 py-3 text-sm transition-colors';
+    const defaultItemStyle = 'text-gray-800 hover:bg-gray-100';
+    const activeItemStyle = 'bg-primary text-gray-900';
+    const emphasizedItemStyle = 'rounded-xl bg-secondary text-gray-900 font-medium';
 
     return (
         <Link
