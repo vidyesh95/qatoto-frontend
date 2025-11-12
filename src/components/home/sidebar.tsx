@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ComponentProps, ReactNode } from 'react';
+import Image from "next/image";
 
 /* ---------- tiny utilities ---------- */
 function joinClassNames(...classNameParts: Array<string | false | null | undefined>) {
@@ -13,6 +14,17 @@ function joinClassNames(...classNameParts: Array<string | false | null | undefin
 /* ---------- minimalist icon set (no external deps) ---------- */
 type IconSvgProps = ComponentProps<'svg'>;
 
+function IconVideoCall() {
+    return (
+        <Image
+            width={24}
+            height={24}
+            src={"icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+            alt={"Create"}
+        />
+    );
+}
+
 function IconAddSquare(props: IconSvgProps) {
     return (
         <svg viewBox="0 0 24 24" fill="none" {...props}>
@@ -21,13 +33,14 @@ function IconAddSquare(props: IconSvgProps) {
         </svg>
     );
 }
-function IconHome(props: IconSvgProps) {
+function IconHome() {
     return (
-        <svg viewBox="0 0 24 24" fill="none" {...props}>
-            <path d="M3 11l9-7 9 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="M5 10v9a2 2 0 002 2h10a2 2 0 002-2v-9" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M10 21v-6h4v6" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
+        <Image
+            width={24}
+            height={24}
+            src={"icons/home_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+            alt={"Create"}
+        />
     );
 }
 function IconMonitorPlay(props: IconSvgProps) {
@@ -205,7 +218,7 @@ export default function Sidebar() {
                     <SidebarNavigationItem
                         destinationPath={routePathCreate}
                         linkText="Create"
-                        iconElement={<IconAddSquare className="h-5 w-5" />}
+                        iconElement={<IconVideoCall />}
                         isEmphasized
                         isActive={currentPathname === routePathCreate}
                     />
@@ -215,8 +228,8 @@ export default function Sidebar() {
                     <SidebarNavigationItem
                         destinationPath={routePathHome}
                         linkText="Home"
-                        iconElement={<IconHome className="h-5 w-5" />}
                         isActive={currentPathname === routePathHome}
+                        iconElement={<IconHome />}
                     />
                     <SidebarNavigationItem
                         destinationPath={routePathAnime}
