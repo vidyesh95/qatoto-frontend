@@ -12,6 +12,11 @@ const liveTvInactiveIcon = "/icons/live_tv_24dp_000000_FILL0_wght400_GRAD0_opsz2
 const liveTvActiveIcon = "/icons/live_tv_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
 const localMallInactiveIcon = "/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 const localMallActiveIcon = "/icons/local_mall_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
+const screenShareInactiveIcon = "/icons/screen_share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const screenShareActiveIcon = "/icons/screen_share_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
+const selfImprovementIcon = "/icons/self_improvement_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const videoLibraryInactiveIcon = "/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const videoLibraryActiveIcon = "/icons/video_library_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
 
 /* ---------- tiny utilities ---------- */
 function joinClassNames(...classNameParts: Array<string | false | null | undefined>) {
