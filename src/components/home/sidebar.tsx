@@ -8,6 +8,10 @@ const videoCallInactiveIcon = "/icons/video_call_24dp_000000_FILL0_wght400_GRAD0
 const videoCallActiveIcon = "/icons/video_call_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
 const homeInactiveIcon = "/icons/home_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 const homeActiveIcon = "/icons/home_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
+const liveTvInactiveIcon = "/icons/live_tv_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const liveTvActiveIcon = "/icons/live_tv_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
+const localMallInactiveIcon = "/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const localMallActiveIcon = "/icons/local_mall_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
 
 /* ---------- tiny utilities ---------- */
 function joinClassNames(...classNameParts: Array<string | false | null | undefined>) {
@@ -30,16 +34,10 @@ function IconAddSquare(props: IconSvgProps) {
   );
 }
 function IconHome() {
-  return <Image width={24} height={24} src={homeInactiveIcon} alt={"Create"} />;
+  return <Image width={24} height={24} src={homeInactiveIcon} alt={"Home"} />;
 }
-function IconMonitorPlay(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <rect x="3" y="4" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M10 9l5 3-5 3V9z" fill="currentColor" />
-      <path d="M8 20h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
+function IconMonitorPlay() {
+  return <Image width={24} height={24} src={liveTvInactiveIcon} alt={"Anime"} />;
 }
 function IconBag(props: IconSvgProps) {
   return (
