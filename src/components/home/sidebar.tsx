@@ -17,6 +17,17 @@ const screenShareActiveIcon = "/icons/screen_share_24dp_000000_FILL1_wght400_GRA
 const selfImprovementIcon = "/icons/self_improvement_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 const videoLibraryInactiveIcon = "/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 const videoLibraryActiveIcon = "/icons/video_library_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
+const historyIcon = "/icons/history_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const slideshowInactiveIcon = "/icons/slideshow_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const slideshowActiveIcon = "/icons/slideshow_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
+const shoppingCartInactiveIcon = "/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const shoppingCartActiveIcon = "/icons/shopping_cart_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
+const localShippingInactiveIcon = "/icons/local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const localShippingActiveIcon = "/icons/local_shipping_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
+const chartDataInactiveIcon = "/icons/chart_data_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const chartDataActiveIcon = "/icons/chart_data_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
+const featuredVideoInactiveIcon = "/icons/featured_video_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const featuredVideoActiveIcon = "/icons/featured_video_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
 
 /* ---------- tiny utilities ---------- */
 function joinClassNames(...classNameParts: Array<string | false | null | undefined>) {
