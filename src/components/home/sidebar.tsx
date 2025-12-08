@@ -28,6 +28,10 @@ const chartDataInactiveIcon = "/icons/chart_data_24dp_000000_FILL0_wght400_GRAD0
 const chartDataActiveIcon = "/icons/chart_data_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
 const featuredVideoInactiveIcon = "/icons/featured_video_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 const featuredVideoActiveIcon = "/icons/featured_video_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
+const accountCircleInactiveIcon = "/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const accountCircleActiveIcon = "/icons/account_circle_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
+const supportAgentIcon = "/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const logoutIcon = "/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 
 /* ---------- tiny utilities ---------- */
 function joinClassNames(...classNameParts: Array<string | false | null | undefined>) {
