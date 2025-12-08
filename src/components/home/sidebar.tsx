@@ -271,7 +271,7 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath={routePathAnime}
             linkText="Anime"
-            iconElement={<IconMonitorPlay className="h-5 w-5" />}
+            iconElement={<IconMonitorPlay />}
             isActive={currentPathname === routePathAnime}
           />
           <SidebarNavigationItem
@@ -305,19 +305,19 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath="/library"
             linkText="Library"
-            iconElement={<IconMonitorPlay className="h-5 w-5" />}
+            iconElement={<IconMonitorPlay />}
             isActive={currentPathname === "/library"}
           />
           <SidebarNavigationItem
             destinationPath="/history"
             linkText="History"
-            iconElement={<IconClockRotate className="h-5 w-5" />}
+            iconElement={<IconClockRotate />}
             isActive={currentPathname === "/history"}
           />
           <SidebarNavigationItem
             destinationPath="/your-videos"
             linkText="Your videos"
-            iconElement={<IconMonitorPlay className="h-5 w-5" />}
+            iconElement={<IconMonitorPlay />}
             isActive={currentPathname === "/your-videos"}
           />
           <SidebarNavigationItem
