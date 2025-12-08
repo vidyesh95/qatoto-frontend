@@ -45,18 +45,10 @@ function IconVideoCall() {
   return <Image width={24} height={24} src={videoCallInactiveIcon} alt={"Create"} />;
 }
 
-function IconAddSquare(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
 function IconHome() {
   return <Image width={24} height={24} src={homeInactiveIcon} alt={"Home"} />;
 }
-function IconMonitorPlay() {
+function IconLiveTv() {
   return <Image width={24} height={24} src={liveTvInactiveIcon} alt={"Anime"} />;
 }
 function IconBag(props: IconSvgProps) {
@@ -275,7 +267,7 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath={routePathAnime}
             linkText="Anime"
-            iconElement={<IconMonitorPlay />}
+            iconElement={<IconLiveTv />}
             isActive={currentPathname === routePathAnime}
           />
           <SidebarNavigationItem
@@ -309,7 +301,7 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath="/library"
             linkText="Library"
-            iconElement={<IconMonitorPlay />}
+            iconElement={<IconLiveTv />}
             isActive={currentPathname === "/library"}
           />
           <SidebarNavigationItem
@@ -321,7 +313,7 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath="/your-videos"
             linkText="Your videos"
-            iconElement={<IconMonitorPlay />}
+            iconElement={<IconLiveTv />}
             isActive={currentPathname === "/your-videos"}
           />
           <SidebarNavigationItem
