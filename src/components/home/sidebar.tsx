@@ -48,9 +48,11 @@ function IconVideoCall() {
 function IconHome() {
   return <Image width={24} height={24} src={homeInactiveIcon} alt={"Home"} />;
 }
+
 function IconLiveTv() {
   return <Image width={24} height={24} src={liveTvInactiveIcon} alt={"Anime"} />;
 }
+
 function IconBag(props: IconSvgProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" {...props}>
