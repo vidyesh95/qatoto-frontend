@@ -357,7 +357,7 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath={routePathHome}
             linkText="Home"
-            iconElement={<IconHome isActive={currentPathname === routePathCreate} />}
+            iconElement={<IconHome isActive={currentPathname === routePathHome} />}
             isActive={currentPathname === routePathHome}
           />
           <SidebarNavigationItem
@@ -369,13 +369,13 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath={routePathStore}
             linkText="Store"
-            iconElement={<IconLocalMall isActive={currentPathname === routePathCreate} />}
+            iconElement={<IconLocalMall isActive={currentPathname === routePathStore} />}
             isActive={currentPathname === routePathStore}
           />
           <SidebarNavigationItem
             destinationPath={routePathAi}
             linkText="AI"
-            iconElement={<IconScreenShare isActive={currentPathname === routePathCreate} />}
+            iconElement={<IconScreenShare isActive={currentPathname === routePathAi} />}
             isActive={currentPathname === routePathAi}
           />
           <div className="my-5 border-t border-gray-200" />
