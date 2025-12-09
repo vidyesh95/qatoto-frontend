@@ -287,13 +287,13 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath={routePathStore}
             linkText="Store"
-            iconElement={<IconBag className="h-5 w-5" />}
+            iconElement={<IconLocalMall />}
             isActive={currentPathname === routePathStore}
           />
           <SidebarNavigationItem
             destinationPath={routePathAi}
             linkText="AI"
-            iconElement={<IconCpu className="h-5 w-5" />}
+            iconElement={<IconScreenShare />}
             isActive={currentPathname === routePathAi}
           />
           <div className="my-5 border-t border-gray-200" />
