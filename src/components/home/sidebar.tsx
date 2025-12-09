@@ -41,9 +41,6 @@ function joinClassNames(...classNameParts: Array<string | false | null | undefin
   return classNameParts.filter(Boolean).join(" ");
 }
 
-/* ---------- minimalist icon set (no external deps) ---------- */
-type IconSvgProps = ComponentProps<"svg">;
-
 function IconVideoCall({ isActive }: { isActive: boolean }) {
   if (isActive) {
     return <Image width={24} height={24} src={videoCallActiveIcon} alt={"Create"} />;
@@ -154,123 +151,6 @@ function IconSupportAgent() {
 
 function IconLogout() {
   return <Image width={24} height={24} src={logoutIcon} alt={"Sign out"} />;
-}
-
-function IconBag(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <path
-        d="M6 8h12l-1 11a2 2 0 01-2 2H9a2 2 0 01-2-2L6 8z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path d="M9 8a3 3 0 016 0" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-function IconCpu(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <rect x="7" y="7" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M3 10h2M3 14h2M19 10h2M19 14h2M10 3v2M14 3v2M10 19v2M14 19v2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-function IconFlask(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <path
-        d="M9 3h6M10 3v6L5.5 18A2.5 2.5 0 008 22h8a2.5 2.5 0 002.5-4L14 9V3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-function IconClockRotate(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <path
-        d="M21 12a9 9 0 10-3.2 6.9"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-function IconCart(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <path
-        d="M4 6h2l2 12h10l2-8H7"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <circle cx="9" cy="20" r="1.5" fill="currentColor" />
-      <circle cx="17" cy="20" r="1.5" fill="currentColor" />
-    </svg>
-  );
-}
-function IconTruckReturn(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <path d="M3 6h10v8H7l-4-4V6z" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M16 10h3l2 2v4h-5v-6z" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="7" cy="18" r="1.5" fill="currentColor" />
-      <circle cx="18" cy="18" r="1.5" fill="currentColor" />
-    </svg>
-  );
-}
-function IconBadgeDollar(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M9 10c0-1.1 1.2-2 3-2s3 .9 3 2-1 1.7-3 2-3 .9-3 2 1.2 2 3 2 3-.9 3-2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path d="M12 6v12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-function IconMegaphone(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <path d="M3 11l12-6v14L3 13v-2z" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M8 14v4a2 2 0 002 2h2" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-function IconUser(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M4 20a8 8 0 0116 0" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-function IconHeadset(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <path
-        d="M4 13a8 8 0 0116 0v6a2 2 0 01-2 2h-2v-6h4M4 19h2a2 2 0 002-2v-4H4v6z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
 }
 
 /* ---------- small building blocks ---------- */
