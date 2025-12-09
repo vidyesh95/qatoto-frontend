@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ComponentProps, ReactNode } from "react";
+import { ReactNode } from "react";
 import Image from "next/image";
 const videoCallInactiveIcon = "/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 const videoCallActiveIcon = "/icons/video_call_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
