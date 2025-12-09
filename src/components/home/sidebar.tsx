@@ -376,7 +376,7 @@ export default function Sidebar() {
               Copyright
             </Link>
             <Link className="hover:underline" href={routePathContactUs}>
-              Contact us
+              Contact Us
             </Link>
             <Link className="hover:underline" href={routePathCreator}>
               Creator
@@ -399,7 +399,7 @@ export default function Sidebar() {
               Vulnerability Disclosure Program
             </Link>
             <Link className="hover:underline" href={routePathHowQatotoWorks}>
-              How Qatoto works
+              How Qatoto Works
             </Link>
           </div>
           <p className="pt-2 text-gray-500">© 2026 Qatoto</p>
