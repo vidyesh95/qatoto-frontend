@@ -338,6 +338,11 @@ export default function Sidebar() {
   const routePathStore = "/store";
   const routePathAi = "/ai";
   const routePathProjectImmortal = "/project-immortal";
+  const routePathLibrary = "/library";
+  const routePathHistory = "/history";
+  const routePathYourVideos = "/your-videos";
+  const routePathCart = "/cart";
+  const routePathOrdersAndReturns = "/orders-and-returns";
 
   return (
     <aside className="w-80 shrink-0 border-r border-border bg-card">
@@ -395,34 +400,34 @@ export default function Sidebar() {
         {/* Personalisation */}
         <SidebarSection sectionTitle="Personalisation">
           <SidebarNavigationItem
-            destinationPath="/library"
+            destinationPath={routePathLibrary}
             linkText="Library"
-            iconElement={<IconVideoLibrary isActive={currentPathname === "/library"} />}
-            isActive={currentPathname === "/library"}
+            iconElement={<IconVideoLibrary isActive={currentPathname === routePathLibrary} />}
+            isActive={currentPathname === routePathLibrary}
           />
           <SidebarNavigationItem
-            destinationPath="/history"
+            destinationPath={routePathHistory}
             linkText="History"
             iconElement={<IconHistory />}
-            isActive={currentPathname === "/history"}
+            isActive={currentPathname === routePathHistory}
           />
           <SidebarNavigationItem
-            destinationPath="/your-videos"
+            destinationPath={routePathYourVideos}
             linkText="Your videos"
-            iconElement={<IconSlideshow isActive={currentPathname === "/your-videos"} />}
-            isActive={currentPathname === "/your-videos"}
+            iconElement={<IconSlideshow isActive={currentPathname === routePathYourVideos} />}
+            isActive={currentPathname === routePathYourVideos}
           />
           <SidebarNavigationItem
-            destinationPath="/cart"
+            destinationPath={routePathCart}
             linkText="Cart"
-            iconElement={<IconShoppingCart isActive={currentPathname === "/cart"} />}
-            isActive={currentPathname === "/cart"}
+            iconElement={<IconShoppingCart isActive={currentPathname === routePathCart} />}
+            isActive={currentPathname === routePathCart}
           />
           <SidebarNavigationItem
-            destinationPath="/orders-and-returns"
+            destinationPath={routePathOrdersAndReturns}
             linkText="Orders and returns"
-            iconElement={<IconLocalShipping isActive={currentPathname === "/orders-and-returns"} />}
-            isActive={currentPathname === "/orders-and-returns"}
+            iconElement={<IconLocalShipping isActive={currentPathname === routePathOrdersAndReturns} />}
+            isActive={currentPathname === routePathOrdersAndReturns}
           />
           <SidebarNavigationItem
             destinationPath="/your-sales"
