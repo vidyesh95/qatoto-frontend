@@ -358,6 +358,7 @@ export default function Sidebar() {
   const routePathTermsAndConditions = "/terms-and-conditions";
   const routePathPrivacyPolicy = "/privacy-policy";
   const routePathVulnerabilityDisclosureProgram = "/vulnerability-disclosure-program";
+  const routePathHowQatotoWorks = "/how-qatoto-works";
 
   return (
     <aside className="w-80 shrink-0 border-r border-border bg-card">
@@ -485,39 +486,39 @@ export default function Sidebar() {
         {/* Footer links */}
         <footer className="space-y-2 text-xs text-gray-600">
           <div className="flex flex-wrap gap-x-4 gap-y-2">
-            <Link className="hover:underline" href="/about">
+            <Link className="hover:underline" href={routePathAbout}>
               About
             </Link>
-            <Link className="hover:underline" href="/press">
+            <Link className="hover:underline" href={routePathPress}>
               Press
             </Link>
-            <Link className="hover:underline" href="/copyright">
+            <Link className="hover:underline" href={routePathCopyright}>
               Copyright
             </Link>
-            <Link className="hover:underline" href="/contact-us">
+            <Link className="hover:underline" href={routePathContactUs}>
               Contact us
             </Link>
-            <Link className="hover:underline" href="/creator">
+            <Link className="hover:underline" href={routePathCreator}>
               Creator
             </Link>
-            <Link className="hover:underline" href="/careers">
+            <Link className="hover:underline" href={routePathCareers}>
               Careers
             </Link>
-            <Link className="hover:underline" href="/developers">
+            <Link className="hover:underline" href={routePathDevelopers}>
               Developers
             </Link>
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
-            <Link className="hover:underline" href="/terms">
-              Terms
+            <Link className="hover:underline" href={routePathTermsAndConditions}>
+              Terms and Conditions
             </Link>
-            <Link className="hover:underline" href="/privacy-policy">
+            <Link className="hover:underline" href={routePathPrivacyPolicy}>
               Privacy Policy
             </Link>
-            <Link className="hover:underline" href="/policies-and-safety">
-              Policies and Safety
+            <Link className="hover:underline" href={routePathVulnerabilityDisclosureProgram}>
+              Vulnerability Disclosure Program
             </Link>
-            <Link className="hover:underline" href="/how-qatoto-works">
+            <Link className="hover:underline" href={routePathHowQatotoWorks}>
               How Qatoto works
             </Link>
           </div>
