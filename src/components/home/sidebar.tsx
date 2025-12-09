@@ -53,6 +53,18 @@ function IconLiveTv() {
   return <Image width={24} height={24} src={liveTvInactiveIcon} alt={"Anime"} />;
 }
 
+function IconLocalMall() {
+    return <Image width={24} height={24} src={localMallInactiveIcon} alt={"Store"} />;
+}
+
+function IconScreenShare() {
+    return <Image width={24} height={24} src={screenShareInactiveIcon} alt={"AI"} />;
+}
+
+function IconSelfImprovement() {
+    return <Image width={24} height={24} src={selfImprovementIcon} alt={"Project Immortal"} />;
+}
+
 function IconBag(props: IconSvgProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" {...props}>
