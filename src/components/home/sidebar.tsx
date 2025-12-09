@@ -69,7 +69,11 @@ function IconLiveTv({ isActive }: { isActive: boolean }) {
 }
 
 function IconLocalMall({ isActive }: { isActive: boolean }) {
-  return <Image width={24} height={24} src={localMallInactiveIcon} alt={"Store"} />;
+  if (isActive) {
+    return <Image width={24} height={24} src={localMallActiveIcon} alt={"Store"} />;
+  } else {
+    return <Image width={24} height={24} src={localMallInactiveIcon} alt={"Store"} />;
+  }
 }
 
 function IconScreenShare({ isActive }: { isActive: boolean }) {
@@ -82,6 +86,74 @@ function IconScreenShare({ isActive }: { isActive: boolean }) {
 
 function IconSelfImprovement() {
   return <Image width={24} height={24} src={selfImprovementIcon} alt={"Project Immortal"} />;
+}
+
+function IconVideoLibrary({ isActive }: { isActive: boolean }) {
+  if (isActive) {
+    return <Image width={24} height={24} src={videoLibraryActiveIcon} alt={"Library"} />;
+  } else {
+    return <Image width={24} height={24} src={videoLibraryInactiveIcon} alt={"Library"} />;
+  }
+}
+
+function IconHistory() {
+  return <Image width={24} height={24} src={historyIcon} alt={"History"} />;
+}
+
+function IconSlideshow({ isActive }: { isActive: boolean }) {
+  if (isActive) {
+    return <Image width={24} height={24} src={slideshowActiveIcon} alt={"Your videos"} />;
+  } else {
+    return <Image width={24} height={24} src={slideshowInactiveIcon} alt={"Your videos"} />;
+  }
+}
+
+function IconShoppingCart({ isActive }: { isActive: boolean }) {
+  if (isActive) {
+    return <Image width={24} height={24} src={shoppingCartActiveIcon} alt={"Cart"} />;
+  } else {
+    return <Image width={24} height={24} src={shoppingCartInactiveIcon} alt={"Cart"} />;
+  }
+}
+
+function IconLocalShipping({ isActive }: { isActive: boolean }) {
+  if (isActive) {
+    return <Image width={24} height={24} src={localShippingActiveIcon} alt={"Orders and returns"} />;
+  } else {
+    return <Image width={24} height={24} src={localShippingInactiveIcon} alt={"Orders and returns"} />;
+  }
+}
+
+function IconChartData({ isActive }: { isActive: boolean }) {
+  if (isActive) {
+    return <Image width={24} height={24} src={chartDataActiveIcon} alt={"Your sales"} />;
+  } else {
+    return <Image width={24} height={24} src={chartDataInactiveIcon} alt={"Your sales"} />;
+  }
+}
+
+function IconFeaturedVideo({ isActive }: { isActive: boolean }) {
+  if (isActive) {
+    return <Image width={24} height={24} src={featuredVideoActiveIcon} alt={"Advertise with us"} />;
+  } else {
+    return <Image width={24} height={24} src={featuredVideoInactiveIcon} alt={"Advertise with us"} />;
+  }
+}
+
+function IconAccountCircle({ isActive }: { isActive: boolean }) {
+  if (isActive) {
+    return <Image width={24} height={24} src={accountCircleActiveIcon} alt={"Your account"} />;
+  } else {
+    return <Image width={24} height={24} src={accountCircleInactiveIcon} alt={"Your account"} />;
+  }
+}
+
+function IconSupportAgent() {
+  return <Image width={24} height={24} src={supportAgentIcon} alt={"Customer service"} />;
+}
+
+function IconLogout() {
+  return <Image width={24} height={24} src={logoutIcon} alt={"Sign out"} />;
 }
 
 function IconBag(props: IconSvgProps) {
@@ -197,15 +269,6 @@ function IconHeadset(props: IconSvgProps) {
         strokeWidth="1.5"
         strokeLinecap="round"
       />
-    </svg>
-  );
-}
-function IconLogout(props: IconSvgProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <path d="M16 17l5-5-5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M21 12H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M12 21H6a2 2 0 01-2-2V5a2 2 0 012-2h6" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
 }
@@ -334,43 +397,43 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath="/library"
             linkText="Library"
-            iconElement={<IconLiveTv />}
+            iconElement={<IconVideoLibrary isActive={currentPathname === "/library"} />}
             isActive={currentPathname === "/library"}
           />
           <SidebarNavigationItem
             destinationPath="/history"
             linkText="History"
-            iconElement={<IconClockRotate />}
+            iconElement={<IconHistory />}
             isActive={currentPathname === "/history"}
           />
           <SidebarNavigationItem
             destinationPath="/your-videos"
             linkText="Your videos"
-            iconElement={<IconLiveTv />}
+            iconElement={<IconSlideshow isActive={currentPathname === "/your-videos"} />}
             isActive={currentPathname === "/your-videos"}
           />
           <SidebarNavigationItem
             destinationPath="/cart"
             linkText="Cart"
-            iconElement={<IconCart className="h-5 w-5" />}
+            iconElement={<IconShoppingCart isActive={currentPathname === "/cart"} />}
             isActive={currentPathname === "/cart"}
           />
           <SidebarNavigationItem
             destinationPath="/orders-and-returns"
             linkText="Orders and returns"
-            iconElement={<IconTruckReturn className="h-5 w-5" />}
+            iconElement={<IconLocalShipping isActive={currentPathname === "/orders-and-returns"} />}
             isActive={currentPathname === "/orders-and-returns"}
           />
           <SidebarNavigationItem
             destinationPath="/your-sales"
             linkText="Your sales"
-            iconElement={<IconBadgeDollar className="h-5 w-5" />}
+            iconElement={<IconChartData isActive={currentPathname === "/your-sales"} />}
             isActive={currentPathname === "/your-sales"}
           />
           <SidebarNavigationItem
             destinationPath="/advertise-with-us"
             linkText="Advertise with us"
-            iconElement={<IconMegaphone className="h-5 w-5" />}
+            iconElement={<IconFeaturedVideo isActive={currentPathname === "/advertise-with-us"} />}
             isActive={currentPathname === "/advertise-with-us"}
           />
           <div className="my-6 border-t border-gray-200" />
@@ -381,19 +444,19 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath="/your-account"
             linkText="Your account"
-            iconElement={<IconUser className="h-5 w-5" />}
+            iconElement={<IconAccountCircle isActive={currentPathname === "/your-account"} />}
             isActive={currentPathname === "/your-account"}
           />
           <SidebarNavigationItem
             destinationPath="/customer-service"
             linkText="Customer service"
-            iconElement={<IconHeadset className="h-5 w-5" />}
+            iconElement={<IconSupportAgent />}
             isActive={currentPathname === "/customer-service"}
           />
           <SidebarNavigationItem
             destinationPath="/sign-out"
             linkText="Sign out"
-            iconElement={<IconLogout className="h-5 w-5" />}
+            iconElement={<IconLogout />}
             isActive={currentPathname === "/sign-out"}
           />
           <div className="my-6 border-t border-gray-200" />
