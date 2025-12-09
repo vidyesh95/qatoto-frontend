@@ -22,13 +22,16 @@ const slideshowInactiveIcon = "/icons/slideshow_24dp_000000_FILL0_wght400_GRAD0_
 const slideshowActiveIcon = "/icons/slideshow_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
 const shoppingCartInactiveIcon = "/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 const shoppingCartActiveIcon = "/icons/shopping_cart_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const localShippingInactiveIcon = "/icons/local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const localShippingInactiveIcon =
+  "/icons/local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 const localShippingActiveIcon = "/icons/local_shipping_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
 const chartDataInactiveIcon = "/icons/chart_data_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 const chartDataActiveIcon = "/icons/chart_data_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const featuredVideoInactiveIcon = "/icons/featured_video_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const featuredVideoInactiveIcon =
+  "/icons/featured_video_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 const featuredVideoActiveIcon = "/icons/featured_video_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const accountCircleInactiveIcon = "/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
+const accountCircleInactiveIcon =
+  "/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 const accountCircleActiveIcon = "/icons/account_circle_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
 const supportAgentIcon = "/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 const logoutIcon = "/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
@@ -41,28 +44,44 @@ function joinClassNames(...classNameParts: Array<string | false | null | undefin
 /* ---------- minimalist icon set (no external deps) ---------- */
 type IconSvgProps = ComponentProps<"svg">;
 
-function IconVideoCall() {
-  return <Image width={24} height={24} src={videoCallInactiveIcon} alt={"Create"} />;
+function IconVideoCall({ isActive }: { isActive: boolean }) {
+  if (isActive) {
+    return <Image width={24} height={24} src={videoCallActiveIcon} alt={"Create"} />;
+  } else {
+    return <Image width={24} height={24} src={videoCallInactiveIcon} alt={"Create"} />;
+  }
 }
 
-function IconHome() {
-  return <Image width={24} height={24} src={homeInactiveIcon} alt={"Home"} />;
+function IconHome({ isActive }: { isActive: boolean }) {
+  if (isActive) {
+    return <Image width={24} height={24} src={homeActiveIcon} alt={"Home"} />;
+  } else {
+    return <Image width={24} height={24} src={homeInactiveIcon} alt={"Home"} />;
+  }
 }
 
-function IconLiveTv() {
-  return <Image width={24} height={24} src={liveTvInactiveIcon} alt={"Anime"} />;
+function IconLiveTv({ isActive }: { isActive: boolean }) {
+  if (isActive) {
+    return <Image width={24} height={24} src={liveTvActiveIcon} alt={"Anime"} />;
+  } else {
+    return <Image width={24} height={24} src={liveTvInactiveIcon} alt={"Anime"} />;
+  }
 }
 
-function IconLocalMall() {
-    return <Image width={24} height={24} src={localMallInactiveIcon} alt={"Store"} />;
+function IconLocalMall({ isActive }: { isActive: boolean }) {
+  return <Image width={24} height={24} src={localMallInactiveIcon} alt={"Store"} />;
 }
 
-function IconScreenShare() {
+function IconScreenShare({ isActive }: { isActive: boolean }) {
+  if (isActive) {
+    return <Image width={24} height={24} src={screenShareActiveIcon} alt={"AI"} />;
+  } else {
     return <Image width={24} height={24} src={screenShareInactiveIcon} alt={"AI"} />;
+  }
 }
 
 function IconSelfImprovement() {
-    return <Image width={24} height={24} src={selfImprovementIcon} alt={"Project Immortal"} />;
+  return <Image width={24} height={24} src={selfImprovementIcon} alt={"Project Immortal"} />;
 }
 
 function IconBag(props: IconSvgProps) {
@@ -265,7 +284,7 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath={routePathCreate}
             linkText="Create"
-            iconElement={<IconVideoCall />}
+            iconElement={<IconVideoCall isActive={currentPathname === routePathCreate} />}
             isEmphasized
             isActive={currentPathname === routePathCreate}
           />
@@ -275,25 +294,25 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath={routePathHome}
             linkText="Home"
+            iconElement={<IconHome isActive={currentPathname === routePathCreate} />}
             isActive={currentPathname === routePathHome}
-            iconElement={<IconHome />}
           />
           <SidebarNavigationItem
             destinationPath={routePathAnime}
             linkText="Anime"
-            iconElement={<IconLiveTv />}
+            iconElement={<IconLiveTv isActive={currentPathname === routePathCreate} />}
             isActive={currentPathname === routePathAnime}
           />
           <SidebarNavigationItem
             destinationPath={routePathStore}
             linkText="Store"
-            iconElement={<IconLocalMall />}
+            iconElement={<IconLocalMall isActive={currentPathname === routePathCreate} />}
             isActive={currentPathname === routePathStore}
           />
           <SidebarNavigationItem
             destinationPath={routePathAi}
             linkText="AI"
-            iconElement={<IconScreenShare />}
+            iconElement={<IconScreenShare isActive={currentPathname === routePathCreate} />}
             isActive={currentPathname === routePathAi}
           />
           <div className="my-5 border-t border-gray-200" />
@@ -304,7 +323,7 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath={routePathProjectImmortal}
             linkText="PROJECT IMMORTAL"
-            iconElement={<IconFlask className="h-5 w-5" />}
+            iconElement={<IconSelfImprovement />}
             isActive={currentPathname === routePathProjectImmortal}
           />
           <div className="my-5 border-t border-gray-200" />
