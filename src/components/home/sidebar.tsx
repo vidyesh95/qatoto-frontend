@@ -331,7 +331,7 @@ function SidebarSection({ sectionTitle, children }: SidebarSectionProps) {
 export default function Sidebar() {
   const currentPathname = usePathname();
 
-  // NOTE: Give your real routes here so active highlighting works automatically.
+  // Real routes
   const routePathCreate = "/create";
   const routePathHome = "/";
   const routePathAnime = "/anime";
@@ -347,9 +347,17 @@ export default function Sidebar() {
   const routePathAdvertiseWithUs = "/advertise-with-us";
   const routePathYourAccount = "/your-account";
   const routePathCustomerService = "/customer-service";
-  const routePathLogout = "/logout";
-  const routePathPrivacyPolicy = "/privacy-policy";
+  const routePathSignOut = "/sign-out";
+  const routePathAbout = "/about";
+  const routePathPress = "/press";
+  const routePathCopyright = "/copyright";
+  const routePathContactUs = "/contact-us";
+  const routePathCreator = "/creator";
+  const routePathCareers = "/careers";
+  const routePathDevelopers = "/developers";
   const routePathTermsAndConditions = "/terms-and-conditions";
+  const routePathPrivacyPolicy = "/privacy-policy";
+  const routePathVulnerabilityDisclosureProgram = "/vulnerability-disclosure-program";
 
   return (
     <aside className="w-80 shrink-0 border-r border-border bg-card">
@@ -466,10 +474,10 @@ export default function Sidebar() {
             isActive={currentPathname === routePathCustomerService}
           />
           <SidebarNavigationItem
-            destinationPath={routePathLogout}
+            destinationPath={routePathSignOut}
             linkText="Sign out"
             iconElement={<IconLogout />}
-            isActive={currentPathname === routePathLogout}
+            isActive={currentPathname === routePathSignOut}
           />
           <div className="my-6 border-t border-gray-200" />
         </SidebarSection>
