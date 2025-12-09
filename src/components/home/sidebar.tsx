@@ -343,6 +343,13 @@ export default function Sidebar() {
   const routePathYourVideos = "/your-videos";
   const routePathCart = "/cart";
   const routePathOrdersAndReturns = "/orders-and-returns";
+  const routePathYourSales = "/your-sales";
+  const routePathAdvertiseWithUs = "/advertise-with-us";
+  const routePathYourAccount = "/your-account";
+  const routePathCustomerService = "/customer-service";
+  const routePathLogout = "/logout";
+  const routePathPrivacyPolicy = "/privacy-policy";
+  const routePathTermsAndConditions = "/terms-and-conditions";
 
   return (
     <aside className="w-80 shrink-0 border-r border-border bg-card">
@@ -368,7 +375,7 @@ export default function Sidebar() {
           <SidebarNavigationItem
             destinationPath={routePathAnime}
             linkText="Anime"
-            iconElement={<IconLiveTv isActive={currentPathname === routePathCreate} />}
+            iconElement={<IconLiveTv isActive={currentPathname === routePathAnime} />}
             isActive={currentPathname === routePathAnime}
           />
           <SidebarNavigationItem
@@ -430,16 +437,16 @@ export default function Sidebar() {
             isActive={currentPathname === routePathOrdersAndReturns}
           />
           <SidebarNavigationItem
-            destinationPath="/your-sales"
+            destinationPath={routePathYourSales}
             linkText="Your sales"
-            iconElement={<IconChartData isActive={currentPathname === "/your-sales"} />}
-            isActive={currentPathname === "/your-sales"}
+            iconElement={<IconChartData isActive={currentPathname === routePathYourSales} />}
+            isActive={currentPathname === routePathYourSales}
           />
           <SidebarNavigationItem
-            destinationPath="/advertise-with-us"
+            destinationPath={routePathAdvertiseWithUs}
             linkText="Advertise with us"
-            iconElement={<IconFeaturedVideo isActive={currentPathname === "/advertise-with-us"} />}
-            isActive={currentPathname === "/advertise-with-us"}
+            iconElement={<IconFeaturedVideo isActive={currentPathname === routePathAdvertiseWithUs} />}
+            isActive={currentPathname === routePathAdvertiseWithUs}
           />
           <div className="my-6 border-t border-gray-200" />
         </SidebarSection>
@@ -447,22 +454,22 @@ export default function Sidebar() {
         {/* Help and settings */}
         <SidebarSection sectionTitle="Help and settings">
           <SidebarNavigationItem
-            destinationPath="/your-account"
+            destinationPath={routePathYourAccount}
             linkText="Your account"
-            iconElement={<IconAccountCircle isActive={currentPathname === "/your-account"} />}
-            isActive={currentPathname === "/your-account"}
+            iconElement={<IconAccountCircle isActive={currentPathname === routePathYourAccount} />}
+            isActive={currentPathname === routePathYourAccount}
           />
           <SidebarNavigationItem
-            destinationPath="/customer-service"
+            destinationPath={routePathCustomerService}
             linkText="Customer service"
             iconElement={<IconSupportAgent />}
-            isActive={currentPathname === "/customer-service"}
+            isActive={currentPathname === routePathCustomerService}
           />
           <SidebarNavigationItem
-            destinationPath="/sign-out"
+            destinationPath={routePathLogout}
             linkText="Sign out"
             iconElement={<IconLogout />}
-            isActive={currentPathname === "/sign-out"}
+            isActive={currentPathname === routePathLogout}
           />
           <div className="my-6 border-t border-gray-200" />
         </SidebarSection>
