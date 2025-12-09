@@ -2,199 +2,170 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ReactNode } from "react";
+import { ReactNode, memo, useMemo } from "react";
 import Image from "next/image";
-const videoCallInactiveIcon = "/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const videoCallActiveIcon = "/icons/video_call_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const homeInactiveIcon = "/icons/home_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const homeActiveIcon = "/icons/home_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const liveTvInactiveIcon = "/icons/live_tv_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const liveTvActiveIcon = "/icons/live_tv_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const localMallInactiveIcon = "/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const localMallActiveIcon = "/icons/local_mall_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const screenShareInactiveIcon = "/icons/screen_share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const screenShareActiveIcon = "/icons/screen_share_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const selfImprovementIcon = "/icons/self_improvement_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const videoLibraryInactiveIcon = "/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const videoLibraryActiveIcon = "/icons/video_library_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const historyIcon = "/icons/history_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const slideshowInactiveIcon = "/icons/slideshow_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const slideshowActiveIcon = "/icons/slideshow_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const shoppingCartInactiveIcon = "/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const shoppingCartActiveIcon = "/icons/shopping_cart_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const localShippingInactiveIcon =
-  "/icons/local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const localShippingActiveIcon = "/icons/local_shipping_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const chartDataInactiveIcon = "/icons/chart_data_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const chartDataActiveIcon = "/icons/chart_data_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const featuredVideoInactiveIcon =
-  "/icons/featured_video_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const featuredVideoActiveIcon = "/icons/featured_video_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const accountCircleInactiveIcon =
-  "/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const accountCircleActiveIcon = "/icons/account_circle_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
-const supportAgentIcon = "/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
-const logoutIcon = "/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
 
-/* ---------- tiny utilities ---------- */
-function joinClassNames(...classNameParts: Array<string | false | null | undefined>) {
-  return classNameParts.filter(Boolean).join(" ");
+/* ---------- Icon paths (outside component to prevent re-allocation) ---------- */
+const ICON_PATHS = {
+  videoCall: {
+    active: "/icons/video_call_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  home: {
+    active: "/icons/home_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/home_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  liveTv: {
+    active: "/icons/live_tv_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/live_tv_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  localMall: {
+    active: "/icons/local_mall_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  screenShare: {
+    active: "/icons/screen_share_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/screen_share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  selfImprovement: {
+    static: "/icons/self_improvement_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  videoLibrary: {
+    active: "/icons/video_library_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  history: {
+    static: "/icons/history_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  slideshow: {
+    active: "/icons/slideshow_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/slideshow_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  shoppingCart: {
+    active: "/icons/shopping_cart_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  localShipping: {
+    active: "/icons/local_shipping_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  chartData: {
+    active: "/icons/chart_data_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/chart_data_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  featuredVideo: {
+    active: "/icons/featured_video_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/featured_video_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  accountCircle: {
+    active: "/icons/account_circle_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  supportAgent: {
+    static: "/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  logout: {
+    static: "/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+} as const;
+
+/* ---------- Route paths (outside component) ---------- */
+const ROUTES = {
+  create: "/create",
+  home: "/",
+  anime: "/anime",
+  store: "/store",
+  ai: "/ai",
+  projectImmortal: "/project-immortal",
+  library: "/library",
+  history: "/history",
+  yourVideos: "/your-videos",
+  cart: "/cart",
+  ordersAndReturns: "/orders-and-returns",
+  yourSales: "/your-sales",
+  advertiseWithUs: "/advertise-with-us",
+  yourAccount: "/your-account",
+  customerService: "/customer-service",
+  signOut: "/sign-out",
+  about: "/about",
+  press: "/press",
+  copyright: "/copyright",
+  contactUs: "/contact-us",
+  creator: "/creator",
+  careers: "/careers",
+  developers: "/developers",
+  termsAndConditions: "/terms-and-conditions",
+  privacyPolicy: "/privacy-policy",
+  vulnerabilityDisclosureProgram: "/vulnerability-disclosure-program",
+  howQatotoWorks: "/how-qatoto-works",
+} as const;
+
+/* ---------- Utilities ---------- */
+function joinClassNames(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(" ");
 }
 
-function IconVideoCall({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return <Image width={24} height={24} src={videoCallActiveIcon} alt={"Create"} />;
-  } else {
-    return <Image width={24} height={24} src={videoCallInactiveIcon} alt={"Create"} />;
-  }
-}
+/* ---------- Memoized Icon Component ---------- */
+type IconProps = {
+  isActive: boolean;
+  iconKey: keyof typeof ICON_PATHS;
+  alt: string;
+};
 
-function IconHome({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return <Image width={24} height={24} src={homeActiveIcon} alt={"Home"} />;
-  } else {
-    return <Image width={24} height={24} src={homeInactiveIcon} alt={"Home"} />;
-  }
-}
+const SidebarIcon = memo(function SidebarIcon({ isActive, iconKey, alt }: IconProps) {
+  const iconConfig = ICON_PATHS[iconKey];
+  const src =
+    "static" in iconConfig ? iconConfig.static : isActive ? iconConfig.active : iconConfig.inactive;
 
-function IconLiveTv({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return <Image width={24} height={24} src={liveTvActiveIcon} alt={"Anime"} />;
-  } else {
-    return <Image width={24} height={24} src={liveTvInactiveIcon} alt={"Anime"} />;
-  }
-}
+  return <Image width={24} height={24} src={src} alt={alt} />;
+});
 
-function IconLocalMall({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return <Image width={24} height={24} src={localMallActiveIcon} alt={"Store"} />;
-  } else {
-    return <Image width={24} height={24} src={localMallInactiveIcon} alt={"Store"} />;
-  }
-}
-
-function IconScreenShare({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return <Image width={24} height={24} src={screenShareActiveIcon} alt={"AI"} />;
-  } else {
-    return <Image width={24} height={24} src={screenShareInactiveIcon} alt={"AI"} />;
-  }
-}
-
-function IconSelfImprovement() {
-  return <Image width={24} height={24} src={selfImprovementIcon} alt={"Project Immortal"} />;
-}
-
-function IconVideoLibrary({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return <Image width={24} height={24} src={videoLibraryActiveIcon} alt={"Library"} />;
-  } else {
-    return <Image width={24} height={24} src={videoLibraryInactiveIcon} alt={"Library"} />;
-  }
-}
-
-function IconHistory() {
-  return <Image width={24} height={24} src={historyIcon} alt={"History"} />;
-}
-
-function IconSlideshow({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return <Image width={24} height={24} src={slideshowActiveIcon} alt={"Your videos"} />;
-  } else {
-    return <Image width={24} height={24} src={slideshowInactiveIcon} alt={"Your videos"} />;
-  }
-}
-
-function IconShoppingCart({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return <Image width={24} height={24} src={shoppingCartActiveIcon} alt={"Cart"} />;
-  } else {
-    return <Image width={24} height={24} src={shoppingCartInactiveIcon} alt={"Cart"} />;
-  }
-}
-
-function IconLocalShipping({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return <Image width={24} height={24} src={localShippingActiveIcon} alt={"Orders and returns"} />;
-  } else {
-    return <Image width={24} height={24} src={localShippingInactiveIcon} alt={"Orders and returns"} />;
-  }
-}
-
-function IconChartData({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return <Image width={24} height={24} src={chartDataActiveIcon} alt={"Your sales"} />;
-  } else {
-    return <Image width={24} height={24} src={chartDataInactiveIcon} alt={"Your sales"} />;
-  }
-}
-
-function IconFeaturedVideo({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return <Image width={24} height={24} src={featuredVideoActiveIcon} alt={"Advertise with us"} />;
-  } else {
-    return <Image width={24} height={24} src={featuredVideoInactiveIcon} alt={"Advertise with us"} />;
-  }
-}
-
-function IconAccountCircle({ isActive }: { isActive: boolean }) {
-  if (isActive) {
-    return <Image width={24} height={24} src={accountCircleActiveIcon} alt={"Your account"} />;
-  } else {
-    return <Image width={24} height={24} src={accountCircleInactiveIcon} alt={"Your account"} />;
-  }
-}
-
-function IconSupportAgent() {
-  return <Image width={24} height={24} src={supportAgentIcon} alt={"Customer service"} />;
-}
-
-function IconLogout() {
-  return <Image width={24} height={24} src={logoutIcon} alt={"Sign out"} />;
-}
-
-/* ---------- small building blocks ---------- */
+/* ---------- Navigation Item Component ---------- */
 type SidebarNavigationItemProps = {
   destinationPath: string;
   iconElement: ReactNode;
   linkText: string;
-  isEmphasized?: boolean; // for the big blue "Create" button
+  isEmphasized?: boolean;
   isActive?: boolean;
 };
 
-function SidebarNavigationItem({
+const BASE_ITEM_STYLE = "flex items-center gap-3 rounded-full px-4 py-3 text-sm transition-colors";
+const DEFAULT_ITEM_STYLE = "text-gray-800 hover:bg-gray-100";
+const ACTIVE_ITEM_STYLE = "bg-primary text-gray-900";
+const EMPHASIZED_ITEM_STYLE = "rounded-xl bg-secondary text-gray-900 font-medium";
+
+const SidebarNavigationItem = memo(function SidebarNavigationItem({
   destinationPath,
   iconElement,
   linkText,
   isEmphasized,
   isActive,
 }: SidebarNavigationItemProps) {
-  const baseItemStyle = "flex items-center gap-3 rounded-full px-4 py-3 text-sm transition-colors";
-  const defaultItemStyle = "text-gray-800 hover:bg-gray-100";
-  const activeItemStyle = "bg-primary text-gray-900";
-  const emphasizedItemStyle = "rounded-xl bg-secondary text-gray-900 font-medium";
-
   return (
     <Link
       href={destinationPath}
       aria-current={isActive ? "page" : undefined}
       className={joinClassNames(
-        baseItemStyle,
-        isEmphasized ? emphasizedItemStyle : isActive ? activeItemStyle : defaultItemStyle,
+        BASE_ITEM_STYLE,
+        isEmphasized ? EMPHASIZED_ITEM_STYLE : isActive ? ACTIVE_ITEM_STYLE : DEFAULT_ITEM_STYLE,
       )}
     >
       <span className="shrink-0 text-gray-800">{iconElement}</span>
       <span className="truncate">{linkText}</span>
     </Link>
   );
-}
+});
 
+/* ---------- Section Component ---------- */
 type SidebarSectionProps = {
   sectionTitle?: string;
   children: ReactNode;
 };
 
-function SidebarSection({ sectionTitle, children }: SidebarSectionProps) {
+const SidebarSection = memo(function SidebarSection({
+  sectionTitle,
+  children,
+}: SidebarSectionProps) {
   return (
     <section className="mt-6">
       {sectionTitle && (
@@ -205,202 +176,131 @@ function SidebarSection({ sectionTitle, children }: SidebarSectionProps) {
       <div className="flex flex-col gap-2">{children}</div>
     </section>
   );
-}
+});
 
-/* ---------- main component ---------- */
+/* ---------- Navigation Configuration ---------- */
+type NavItem = {
+  path: string;
+  label: string;
+  iconKey: keyof typeof ICON_PATHS;
+  isEmphasized?: boolean;
+};
+
+type NavSection = {
+  title?: string;
+  items: NavItem[];
+  hasDivider?: boolean;
+};
+
+const NAVIGATION_CONFIG: NavSection[] = [
+  {
+    items: [{ path: ROUTES.create, label: "Create", iconKey: "videoCall", isEmphasized: true }],
+  },
+  {
+    items: [
+      { path: ROUTES.home, label: "Home", iconKey: "home" },
+      { path: ROUTES.anime, label: "Anime", iconKey: "liveTv" },
+      { path: ROUTES.store, label: "Store", iconKey: "localMall" },
+      { path: ROUTES.ai, label: "AI", iconKey: "screenShare" },
+    ],
+    hasDivider: true,
+  },
+  {
+    title: "Research and  Development",
+    items: [
+      { path: ROUTES.projectImmortal, label: "PROJECT IMMORTAL", iconKey: "selfImprovement" },
+    ],
+    hasDivider: true,
+  },
+  {
+    title: "Personalisation",
+    items: [
+      { path: ROUTES.library, label: "Library", iconKey: "videoLibrary" },
+      { path: ROUTES.history, label: "History", iconKey: "history" },
+      { path: ROUTES.yourVideos, label: "Your videos", iconKey: "slideshow" },
+      { path: ROUTES.cart, label: "Cart", iconKey: "shoppingCart" },
+      { path: ROUTES.ordersAndReturns, label: "Orders and returns", iconKey: "localShipping" },
+      { path: ROUTES.yourSales, label: "Your sales", iconKey: "chartData" },
+      { path: ROUTES.advertiseWithUs, label: "Advertise with us", iconKey: "featuredVideo" },
+    ],
+    hasDivider: true,
+  },
+  {
+    title: "Help and settings",
+    items: [
+      { path: ROUTES.yourAccount, label: "Your account", iconKey: "accountCircle" },
+      { path: ROUTES.customerService, label: "Customer service", iconKey: "supportAgent" },
+      { path: ROUTES.signOut, label: "Sign out", iconKey: "logout" },
+    ],
+    hasDivider: true,
+  },
+];
+
+const FOOTER_LINKS_ROW1 = [
+  { path: ROUTES.about, label: "About" },
+  { path: ROUTES.press, label: "Press" },
+  { path: ROUTES.copyright, label: "Copyright" },
+  { path: ROUTES.contactUs, label: "Contact Us" },
+  { path: ROUTES.creator, label: "Creator" },
+  { path: ROUTES.careers, label: "Careers" },
+  { path: ROUTES.developers, label: "Developers" },
+] as const;
+
+const FOOTER_LINKS_ROW2 = [
+  { path: ROUTES.termsAndConditions, label: "Terms and Conditions" },
+  { path: ROUTES.privacyPolicy, label: "Privacy Policy" },
+  { path: ROUTES.vulnerabilityDisclosureProgram, label: "Vulnerability Disclosure Program" },
+  { path: ROUTES.howQatotoWorks, label: "How Qatoto Works" },
+] as const;
+
+/* ---------- Main Component ---------- */
 export default function Sidebar() {
   const currentPathname = usePathname();
 
-  // Real routes
-  const routePathCreate = "/create";
-  const routePathHome = "/";
-  const routePathAnime = "/anime";
-  const routePathStore = "/store";
-  const routePathAi = "/ai";
-  const routePathProjectImmortal = "/project-immortal";
-  const routePathLibrary = "/library";
-  const routePathHistory = "/history";
-  const routePathYourVideos = "/your-videos";
-  const routePathCart = "/cart";
-  const routePathOrdersAndReturns = "/orders-and-returns";
-  const routePathYourSales = "/your-sales";
-  const routePathAdvertiseWithUs = "/advertise-with-us";
-  const routePathYourAccount = "/your-account";
-  const routePathCustomerService = "/customer-service";
-  const routePathSignOut = "/sign-out";
-  const routePathAbout = "/about";
-  const routePathPress = "/press";
-  const routePathCopyright = "/copyright";
-  const routePathContactUs = "/contact-us";
-  const routePathCreator = "/creator";
-  const routePathCareers = "/careers";
-  const routePathDevelopers = "/developers";
-  const routePathTermsAndConditions = "/terms-and-conditions";
-  const routePathPrivacyPolicy = "/privacy-policy";
-  const routePathVulnerabilityDisclosureProgram = "/vulnerability-disclosure-program";
-  const routePathHowQatotoWorks = "/how-qatoto-works";
+  // Memoize rendered sections to prevent unnecessary re-renders
+  const renderedSections = useMemo(() => {
+    return NAVIGATION_CONFIG.map((section, sectionIndex) => (
+      <SidebarSection key={sectionIndex} sectionTitle={section.title}>
+        {section.items.map((item) => {
+          const isActive = currentPathname === item.path;
+          return (
+            <SidebarNavigationItem
+              key={item.path}
+              destinationPath={item.path}
+              linkText={item.label}
+              iconElement={
+                <SidebarIcon isActive={isActive} iconKey={item.iconKey} alt={item.label} />
+              }
+              isEmphasized={item.isEmphasized}
+              isActive={isActive}
+            />
+          );
+        })}
+        {section.hasDivider && <div className="my-5 border-t border-gray-200" />}
+      </SidebarSection>
+    ));
+  }, [currentPathname]);
 
   return (
     <aside className="w-80 shrink-0 border-r border-border bg-card">
       <div className="h-[calc(100dvh-64px)] overflow-y-auto px-4 py-6">
-        {/* Create + Primary navigation */}
-        <SidebarSection>
-          <SidebarNavigationItem
-            destinationPath={routePathCreate}
-            linkText="Create"
-            iconElement={<IconVideoCall isActive={currentPathname === routePathCreate} />}
-            isEmphasized
-            isActive={currentPathname === routePathCreate}
-          />
-        </SidebarSection>
-
-        <SidebarSection>
-          <SidebarNavigationItem
-            destinationPath={routePathHome}
-            linkText="Home"
-            iconElement={<IconHome isActive={currentPathname === routePathHome} />}
-            isActive={currentPathname === routePathHome}
-          />
-          <SidebarNavigationItem
-            destinationPath={routePathAnime}
-            linkText="Anime"
-            iconElement={<IconLiveTv isActive={currentPathname === routePathAnime} />}
-            isActive={currentPathname === routePathAnime}
-          />
-          <SidebarNavigationItem
-            destinationPath={routePathStore}
-            linkText="Store"
-            iconElement={<IconLocalMall isActive={currentPathname === routePathStore} />}
-            isActive={currentPathname === routePathStore}
-          />
-          <SidebarNavigationItem
-            destinationPath={routePathAi}
-            linkText="AI"
-            iconElement={<IconScreenShare isActive={currentPathname === routePathAi} />}
-            isActive={currentPathname === routePathAi}
-          />
-          <div className="my-5 border-t border-gray-200" />
-        </SidebarSection>
-
-        {/* Research and Development */}
-        <SidebarSection sectionTitle="Research and  Development">
-          <SidebarNavigationItem
-            destinationPath={routePathProjectImmortal}
-            linkText="PROJECT IMMORTAL"
-            iconElement={<IconSelfImprovement />}
-            isActive={currentPathname === routePathProjectImmortal}
-          />
-          <div className="my-5 border-t border-gray-200" />
-        </SidebarSection>
-
-        {/* Personalisation */}
-        <SidebarSection sectionTitle="Personalisation">
-          <SidebarNavigationItem
-            destinationPath={routePathLibrary}
-            linkText="Library"
-            iconElement={<IconVideoLibrary isActive={currentPathname === routePathLibrary} />}
-            isActive={currentPathname === routePathLibrary}
-          />
-          <SidebarNavigationItem
-            destinationPath={routePathHistory}
-            linkText="History"
-            iconElement={<IconHistory />}
-            isActive={currentPathname === routePathHistory}
-          />
-          <SidebarNavigationItem
-            destinationPath={routePathYourVideos}
-            linkText="Your videos"
-            iconElement={<IconSlideshow isActive={currentPathname === routePathYourVideos} />}
-            isActive={currentPathname === routePathYourVideos}
-          />
-          <SidebarNavigationItem
-            destinationPath={routePathCart}
-            linkText="Cart"
-            iconElement={<IconShoppingCart isActive={currentPathname === routePathCart} />}
-            isActive={currentPathname === routePathCart}
-          />
-          <SidebarNavigationItem
-            destinationPath={routePathOrdersAndReturns}
-            linkText="Orders and returns"
-            iconElement={<IconLocalShipping isActive={currentPathname === routePathOrdersAndReturns} />}
-            isActive={currentPathname === routePathOrdersAndReturns}
-          />
-          <SidebarNavigationItem
-            destinationPath={routePathYourSales}
-            linkText="Your sales"
-            iconElement={<IconChartData isActive={currentPathname === routePathYourSales} />}
-            isActive={currentPathname === routePathYourSales}
-          />
-          <SidebarNavigationItem
-            destinationPath={routePathAdvertiseWithUs}
-            linkText="Advertise with us"
-            iconElement={<IconFeaturedVideo isActive={currentPathname === routePathAdvertiseWithUs} />}
-            isActive={currentPathname === routePathAdvertiseWithUs}
-          />
-          <div className="my-6 border-t border-gray-200" />
-        </SidebarSection>
-
-        {/* Help and settings */}
-        <SidebarSection sectionTitle="Help and settings">
-          <SidebarNavigationItem
-            destinationPath={routePathYourAccount}
-            linkText="Your account"
-            iconElement={<IconAccountCircle isActive={currentPathname === routePathYourAccount} />}
-            isActive={currentPathname === routePathYourAccount}
-          />
-          <SidebarNavigationItem
-            destinationPath={routePathCustomerService}
-            linkText="Customer service"
-            iconElement={<IconSupportAgent />}
-            isActive={currentPathname === routePathCustomerService}
-          />
-          <SidebarNavigationItem
-            destinationPath={routePathSignOut}
-            linkText="Sign out"
-            iconElement={<IconLogout />}
-            isActive={currentPathname === routePathSignOut}
-          />
-          <div className="my-6 border-t border-gray-200" />
-        </SidebarSection>
+        {renderedSections}
 
         {/* Footer links */}
         <footer className="space-y-2 text-xs text-gray-600">
           <div className="flex flex-wrap gap-x-4 gap-y-2">
-            <Link className="hover:underline" href={routePathAbout}>
-              About
-            </Link>
-            <Link className="hover:underline" href={routePathPress}>
-              Press
-            </Link>
-            <Link className="hover:underline" href={routePathCopyright}>
-              Copyright
-            </Link>
-            <Link className="hover:underline" href={routePathContactUs}>
-              Contact Us
-            </Link>
-            <Link className="hover:underline" href={routePathCreator}>
-              Creator
-            </Link>
-            <Link className="hover:underline" href={routePathCareers}>
-              Careers
-            </Link>
-            <Link className="hover:underline" href={routePathDevelopers}>
-              Developers
-            </Link>
+            {FOOTER_LINKS_ROW1.map((link) => (
+              <Link key={link.path} className="hover:underline" href={link.path}>
+                {link.label}
+              </Link>
+            ))}
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
-            <Link className="hover:underline" href={routePathTermsAndConditions}>
-              Terms and Conditions
-            </Link>
-            <Link className="hover:underline" href={routePathPrivacyPolicy}>
-              Privacy Policy
-            </Link>
-            <Link className="hover:underline" href={routePathVulnerabilityDisclosureProgram}>
-              Vulnerability Disclosure Program
-            </Link>
-            <Link className="hover:underline" href={routePathHowQatotoWorks}>
-              How Qatoto Works
-            </Link>
+            {FOOTER_LINKS_ROW2.map((link) => (
+              <Link key={link.path} className="hover:underline" href={link.path}>
+                {link.label}
+              </Link>
+            ))}
           </div>
           <p className="pt-2 text-gray-500">© 2026 Qatoto</p>
         </footer>
