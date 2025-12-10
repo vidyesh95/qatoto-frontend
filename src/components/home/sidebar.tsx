@@ -133,6 +133,7 @@ const BASE_ITEM_STYLE = "flex items-center gap-3 rounded-full px-4 py-3 text-sm 
 const DEFAULT_ITEM_STYLE = "text-gray-800 hover:bg-gray-100";
 const ACTIVE_ITEM_STYLE = "bg-primary text-gray-900";
 const EMPHASIZED_ITEM_STYLE = "rounded-xl bg-secondary text-gray-900 font-medium";
+const EMPHASIZED_ACTIVE_ITEM_STYLE = "rounded-full bg-primary text-gray-900 font-medium";
 
 const SidebarNavigationItem = memo(function SidebarNavigationItem({
   destinationPath,
@@ -147,7 +148,13 @@ const SidebarNavigationItem = memo(function SidebarNavigationItem({
       aria-current={isActive ? "page" : undefined}
       className={joinClassNames(
         BASE_ITEM_STYLE,
-        isEmphasized ? EMPHASIZED_ITEM_STYLE : isActive ? ACTIVE_ITEM_STYLE : DEFAULT_ITEM_STYLE,
+        isEmphasized
+          ? isActive
+            ? EMPHASIZED_ACTIVE_ITEM_STYLE
+            : EMPHASIZED_ITEM_STYLE
+          : isActive
+            ? ACTIVE_ITEM_STYLE
+            : DEFAULT_ITEM_STYLE,
       )}
     >
       <span className="shrink-0 text-gray-800">{iconElement}</span>
