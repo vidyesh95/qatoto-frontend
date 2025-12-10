@@ -187,8 +187,8 @@ const CollapsedNavItem = memo(function CollapsedNavItem({
         href={destinationPath}
         aria-current={isActive ? "page" : undefined}
         className={joinClassNames(
-          "flex items-center justify-center w-12 h-12 mx-auto rounded-xl transition-colors",
-          isActive ? "bg-primary text-primary-foreground" : "bg-[#DBEAFE] hover:bg-[#BFDBFE]",
+          "flex items-center justify-center w-14 h-14 mx-auto rounded-xl transition-colors",
+          isActive ? "bg-primary text-primary-foreground" : "bg-secondary",
         )}
       >
         <span className="shrink-0">{iconElement}</span>
