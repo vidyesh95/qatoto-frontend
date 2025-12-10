@@ -157,7 +157,7 @@ const SidebarNavigationItem = memo(function SidebarNavigationItem({
             : DEFAULT_ITEM_STYLE,
       )}
     >
-      <span className="shrink-0 text-gray-800">{iconElement}</span>
+      <span className="shrink-0 text-foreground">{iconElement}</span>
       <span className="truncate">{linkText}</span>
     </Link>
   );
