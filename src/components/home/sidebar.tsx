@@ -196,18 +196,29 @@ const CollapsedNavItem = memo(function CollapsedNavItem({
     );
   }
 
-  // Regular nav items - icon with label below
+  // Regular nav items - icon with label below (Material 3 style)
   return (
     <Link
       href={destinationPath}
       aria-current={isActive ? "page" : undefined}
-      className={joinClassNames(
-        "flex flex-col items-center justify-center py-3 text-xs transition-colors rounded-lg",
-        isActive ? "text-foreground font-medium" : "text-foreground hover:bg-muted/50",
-      )}
+      className="flex flex-col items-center justify-center py-2 text-xs transition-colors group"
     >
-      <span className="shrink-0">{iconElement}</span>
-      <span className="mt-1.5 text-xs">{linkText}</span>
+      <span
+        className={joinClassNames(
+          "flex items-center justify-center w-14 h-8 rounded-full transition-colors",
+          isActive ? "bg-primary" : "group-hover:bg-muted/50",
+        )}
+      >
+        <span className="shrink-0">{iconElement}</span>
+      </span>
+      <span
+        className={joinClassNames(
+          "mt-1 text-xs",
+          isActive ? "font-medium text-foreground" : "text-foreground",
+        )}
+      >
+        {linkText}
+      </span>
     </Link>
   );
 });
