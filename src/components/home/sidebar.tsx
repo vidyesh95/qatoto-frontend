@@ -130,7 +130,7 @@ type SidebarNavigationItemProps = {
 };
 
 const BASE_ITEM_STYLE = "flex items-center gap-3 rounded-full px-4 py-3 text-sm transition-colors";
-const DEFAULT_ITEM_STYLE = "text-foreground hover:bg-gray-100";
+const DEFAULT_ITEM_STYLE = "text-foreground hover:bg-muted/50 hover:text-foreground";
 const ACTIVE_ITEM_STYLE = "bg-primary text-primary-foreground";
 const EMPHASIZED_ITEM_STYLE = "rounded-xl bg-secondary text-secondary-foreground font-medium";
 const EMPHASIZED_ACTIVE_ITEM_STYLE = "rounded-full bg-primary text-primary-foreground font-medium";
