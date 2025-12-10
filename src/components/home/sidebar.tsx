@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode, memo, useMemo } from "react";
 import Image from "next/image";
+import { useSidebar } from "@/state/sidebar-context";
 
 /* ---------- Icon paths (outside component to prevent re-allocation) ---------- */
 const ICON_PATHS = {
@@ -163,6 +164,54 @@ const SidebarNavigationItem = memo(function SidebarNavigationItem({
   );
 });
 
+/* ---------- Collapsed Navigation Item Component ---------- */
+type CollapsedNavItemProps = {
+  destinationPath: string;
+  iconElement: ReactNode;
+  linkText: string;
+  isEmphasized?: boolean;
+  isActive?: boolean;
+};
+
+const CollapsedNavItem = memo(function CollapsedNavItem({
+  destinationPath,
+  iconElement,
+  linkText,
+  isEmphasized,
+  isActive,
+}: CollapsedNavItemProps) {
+  // Create button - emphasized style with light blue rounded square
+  if (isEmphasized) {
+    return (
+      <Link
+        href={destinationPath}
+        aria-current={isActive ? "page" : undefined}
+        className={joinClassNames(
+          "flex items-center justify-center w-12 h-12 mx-auto rounded-xl transition-colors",
+          isActive ? "bg-primary text-primary-foreground" : "bg-[#DBEAFE] hover:bg-[#BFDBFE]",
+        )}
+      >
+        <span className="shrink-0">{iconElement}</span>
+      </Link>
+    );
+  }
+
+  // Regular nav items - icon with label below
+  return (
+    <Link
+      href={destinationPath}
+      aria-current={isActive ? "page" : undefined}
+      className={joinClassNames(
+        "flex flex-col items-center justify-center py-3 text-xs transition-colors rounded-lg",
+        isActive ? "text-foreground font-medium" : "text-foreground hover:bg-muted/50",
+      )}
+    >
+      <span className="shrink-0">{iconElement}</span>
+      <span className="mt-1.5 text-xs">{linkText}</span>
+    </Link>
+  );
+});
+
 /* ---------- Section Component ---------- */
 type SidebarSectionProps = {
   sectionTitle?: string;
@@ -260,9 +309,19 @@ const FOOTER_LINKS_ROW2 = [
   { path: ROUTES.howQatotoWorks, label: "How Qatoto Works" },
 ] as const;
 
+/* ---------- Collapsed Navigation Config ---------- */
+const COLLAPSED_NAV_CONFIG: NavItem[] = [
+  { path: ROUTES.create, label: "Create", iconKey: "videoCall", isEmphasized: true },
+  { path: ROUTES.home, label: "Home", iconKey: "home" },
+  { path: ROUTES.anime, label: "Anime", iconKey: "liveTv" },
+  { path: ROUTES.store, label: "Store", iconKey: "localMall" },
+  { path: ROUTES.ai, label: "AI", iconKey: "screenShare" },
+];
+
 /* ---------- Main Component ---------- */
 export default function Sidebar() {
   const currentPathname = usePathname();
+  const { isCollapsed } = useSidebar();
 
   // Memoize rendered sections to prevent unnecessary re-renders
   const renderedSections = useMemo(() => {
@@ -288,8 +347,53 @@ export default function Sidebar() {
     ));
   }, [currentPathname]);
 
+  // Collapsed view
+  if (isCollapsed) {
+    return (
+      <aside className="w-20 h-[calc(100vh-64px)] shrink-0 border-r border-border bg-card transition-all duration-300">
+        <div className="px-3 pt-11 pb-14 space-y-5">
+          {/* Create button */}
+          {COLLAPSED_NAV_CONFIG.filter((item) => item.isEmphasized).map((item) => {
+            const isActive = currentPathname === item.path;
+            return (
+              <CollapsedNavItem
+                key={item.path}
+                destinationPath={item.path}
+                linkText={item.label}
+                iconElement={
+                  <SidebarIcon isActive={isActive} iconKey={item.iconKey} alt={item.label} />
+                }
+                isEmphasized={item.isEmphasized}
+                isActive={isActive}
+              />
+            );
+          })}
+
+          {/* Nav items */}
+          <div className="flex flex-col gap-1">
+            {COLLAPSED_NAV_CONFIG.filter((item) => !item.isEmphasized).map((item) => {
+              const isActive = currentPathname === item.path;
+              return (
+                <CollapsedNavItem
+                  key={item.path}
+                  destinationPath={item.path}
+                  linkText={item.label}
+                  iconElement={
+                    <SidebarIcon isActive={isActive} iconKey={item.iconKey} alt={item.label} />
+                  }
+                  isEmphasized={item.isEmphasized}
+                  isActive={isActive}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
   return (
-    <aside className="w-80 shrink-0 border-r border-border bg-card">
+    <aside className="w-80 shrink-0 border-r border-border bg-card transition-all duration-300">
       <div className="h-[calc(100dvh-64px)] overflow-y-auto px-4 py-6">
         {renderedSections}
 
