@@ -176,7 +176,7 @@ const SidebarSection = memo(function SidebarSection({
   return (
     <section className="mt-6">
       {sectionTitle && (
-        <p className="mb-3 px-1 text-xs font-medium uppercase tracking-wide text-gray-500">
+        <p className="mb-3 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {sectionTitle}
         </p>
       )}
@@ -283,7 +283,7 @@ export default function Sidebar() {
             />
           );
         })}
-        {section.hasDivider && <div className="my-5 border-t border-gray-200" />}
+        {section.hasDivider && <div className="my-5 border-t border-border" />}
       </SidebarSection>
     ));
   }, [currentPathname]);
@@ -294,7 +294,7 @@ export default function Sidebar() {
         {renderedSections}
 
         {/* Footer links */}
-        <footer className="space-y-2 text-xs text-gray-600">
+        <footer className="space-y-2 text-xs text-foreground">
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             {FOOTER_LINKS_ROW1.map((link) => (
               <Link key={link.path} className="hover:underline" href={link.path}>
@@ -309,7 +309,7 @@ export default function Sidebar() {
               </Link>
             ))}
           </div>
-          <p className="pt-2 text-gray-500">© 2026 Qatoto</p>
+          <p className="pt-2 text-muted-foreground">© 2026 Qatoto</p>
         </footer>
       </div>
     </aside>
