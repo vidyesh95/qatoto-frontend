@@ -196,7 +196,7 @@ const CollapsedNavItem = memo(function CollapsedNavItem({
     );
   }
 
-  // Regular nav items - icon with label below (Material 3 style)
+  // Regular nav items - icon with the label below (Material 3 style)
   return (
     <Link
       href={destinationPath}
