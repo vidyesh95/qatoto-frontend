@@ -1,5 +1,3 @@
 export default function Developers() {
-    return (
-        <div>Developers</div>
-    )
+  return <div>Developers</div>;
 }

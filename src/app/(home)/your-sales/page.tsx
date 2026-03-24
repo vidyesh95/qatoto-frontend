@@ -1,5 +1,3 @@
-export default function YourSales(){
-    return(
-        <h1>Your Sales</h1>
-    )
+export default function YourSales() {
+  return <h1>Your Sales</h1>;
 }

@@ -1,5 +1,3 @@
 export default function Careers() {
-    return (
-        <h1>Careers</h1>
-    )
+  return <h1>Careers</h1>;
 }

@@ -1,5 +1,3 @@
 export default function Press() {
-    return (
-        <h1>Press</h1>
-    )
+  return <h1>Press</h1>;
 }

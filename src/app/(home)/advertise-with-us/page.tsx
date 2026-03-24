@@ -1,5 +1,3 @@
 export default function AdvertiseWithUs() {
-    return (
-        <h1>Advertise with us</h1>
-    )
+  return <h1>Advertise with us</h1>;
 }

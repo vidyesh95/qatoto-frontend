@@ -1,5 +1,3 @@
 export default function AI() {
-    return (
-        <h1>AI</h1>
-    )
+  return <h1>AI</h1>;
 }
