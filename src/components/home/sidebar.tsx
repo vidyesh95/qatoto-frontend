@@ -124,7 +124,7 @@ const SidebarIcon = memo(function SidebarIcon({ isActive, iconKey, alt }: IconPr
 /* ---------- Navigation Item Component ---------- */
 type SidebarNavigationItemProps = {
   destinationPath: string;
-  iconElement: ReactNode;
+  iconKey: keyof typeof ICON_PATHS;
   linkText: string;
   isEmphasized?: boolean;
   isActive?: boolean;
@@ -138,7 +138,7 @@ const EMPHASIZED_ACTIVE_ITEM_STYLE = "rounded-full bg-primary text-primary-foreg
 
 const SidebarNavigationItem = memo(function SidebarNavigationItem({
   destinationPath,
-  iconElement,
+  iconKey,
   linkText,
   isEmphasized,
   isActive,
@@ -158,7 +158,9 @@ const SidebarNavigationItem = memo(function SidebarNavigationItem({
             : DEFAULT_ITEM_STYLE,
       )}
     >
-      <span className="shrink-0 text-foreground">{iconElement}</span>
+      <span className="shrink-0 text-foreground">
+        <SidebarIcon isActive={!!isActive} iconKey={iconKey} alt={linkText} />
+      </span>
       <span className="truncate">{linkText}</span>
     </Link>
   );
@@ -167,7 +169,7 @@ const SidebarNavigationItem = memo(function SidebarNavigationItem({
 /* ---------- Collapsed Navigation Item Component ---------- */
 type CollapsedNavItemProps = {
   destinationPath: string;
-  iconElement: ReactNode;
+  iconKey: keyof typeof ICON_PATHS;
   linkText: string;
   isEmphasized?: boolean;
   isActive?: boolean;
@@ -175,7 +177,7 @@ type CollapsedNavItemProps = {
 
 const CollapsedNavItem = memo(function CollapsedNavItem({
   destinationPath,
-  iconElement,
+  iconKey,
   linkText,
   isEmphasized,
   isActive,
@@ -191,7 +193,9 @@ const CollapsedNavItem = memo(function CollapsedNavItem({
           isActive ? "bg-primary text-primary-foreground" : "bg-secondary",
         )}
       >
-        <span className="shrink-0">{iconElement}</span>
+        <span className="shrink-0">
+          <SidebarIcon isActive={!!isActive} iconKey={iconKey} alt={linkText} />
+        </span>
       </Link>
     );
   }
@@ -209,7 +213,9 @@ const CollapsedNavItem = memo(function CollapsedNavItem({
           isActive ? "bg-primary" : "group-hover:bg-muted/50",
         )}
       >
-        <span className="shrink-0">{iconElement}</span>
+        <span className="shrink-0">
+          <SidebarIcon isActive={!!isActive} iconKey={iconKey} alt={linkText} />
+        </span>
       </span>
       <span
         className={joinClassNames(
@@ -345,9 +351,7 @@ export default function Sidebar() {
               key={item.path}
               destinationPath={item.path}
               linkText={item.label}
-              iconElement={
-                <SidebarIcon isActive={isActive} iconKey={item.iconKey} alt={item.label} />
-              }
+              iconKey={item.iconKey}
               isEmphasized={item.isEmphasized}
               isActive={isActive}
             />
@@ -371,9 +375,7 @@ export default function Sidebar() {
                 key={item.path}
                 destinationPath={item.path}
                 linkText={item.label}
-                iconElement={
-                  <SidebarIcon isActive={isActive} iconKey={item.iconKey} alt={item.label} />
-                }
+                iconKey={item.iconKey}
                 isEmphasized={item.isEmphasized}
                 isActive={isActive}
               />
@@ -389,9 +391,7 @@ export default function Sidebar() {
                   key={item.path}
                   destinationPath={item.path}
                   linkText={item.label}
-                  iconElement={
-                    <SidebarIcon isActive={isActive} iconKey={item.iconKey} alt={item.label} />
-                  }
+                  iconKey={item.iconKey}
                   isEmphasized={item.isEmphasized}
                   isActive={isActive}
                 />
