@@ -94,9 +94,8 @@ export default function Navbar() {
               height={24}
             />
           </button>
-          <button
-            type={"button"}
-            className="flex gap-2 text-[#1DBDC5] bg-white border border-primary rounded-full px-2 py-1.75 cursor-pointer"
+          <Link
+            href={"/sign-in"} className="flex gap-2 text-[#1DBDC5] bg-white border border-primary rounded-full px-2 py-1.75"
           >
             <Image
               src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
@@ -105,7 +104,7 @@ export default function Navbar() {
               height={24}
             />
             Sign in
-          </button>
+          </Link>
         </div>
       </div>
     </nav>
