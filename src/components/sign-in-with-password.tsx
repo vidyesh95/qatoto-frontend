@@ -16,6 +16,10 @@ export default function SignIn() {
         <p className="mx-5 text-3xl">Sign in with Password</p>
       </header>
       <section className="p-4 space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <label htmlFor="remember-me" className="font-medium text-sm ">Remember me</label>
+          <input type="checkbox" id="remember-me" aria-label="Remember me toggle switch" />
+        </div>
         <button type={"button"} className={"w-full justify-center items-center text-sm font-medium bg-[#00696E] text-background flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"}>
           <Image
             src={"/icons/mail_18dp_FFFFFF_FILL1_wght400_GRAD0_opsz20.svg"}
