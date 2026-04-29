@@ -25,7 +25,7 @@ export default function SignIn() {
           />
           <span>Continue with Google</span>
         </button>
-        <button type={"button"} className={"w-full justify-center items-center text-sm font-medium text-[#00696E] flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"}>
+        <button type={"button"} className={"w-full flex gap-2 justify-center items-center text-sm font-medium text-[#00696E] border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"}>
           <Image
             src={"/icons/apple_logo_18x18px.svg"}
             alt={"Continue with Apple"}
@@ -39,7 +39,7 @@ export default function SignIn() {
           <span className="text-xs">or</span>
           <hr className="flex-1"/>
         </div>
-        <button type={"button"} className={"w-full justify-center items-center text-sm font-medium bg-[#00696E] text-background flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"}>
+        <Link href={"/sign-in-with-password"} className={"w-full flex gap-2 justify-center items-center text-sm font-medium bg-[#00696E] text-background border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"}>
           <Image
             src={"/icons/mail_18dp_FFFFFF_FILL1_wght400_GRAD0_opsz20.svg"}
             alt={"Sign in with Password"}
@@ -47,7 +47,7 @@ export default function SignIn() {
             height={18}
           />
           <span>Sign in with Password</span>
-        </button>
+        </Link>
         <p className="text-sm font-medium text-center space-x-1">
           <span className="text-[#BEC8C9]">Don't have an account?</span>
           <span className="text-[#00696E] cursor-pointer">Sign up</span>
