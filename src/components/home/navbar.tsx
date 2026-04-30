@@ -95,7 +95,8 @@ export default function Navbar() {
             />
           </button>
           <Link
-            href={"/sign-in"} className="flex gap-2 text-[#1DBDC5] bg-white border border-primary rounded-full px-2 py-1.75"
+            href={"/sign-in"}
+            className="flex gap-2 text-[#1DBDC5] bg-white border border-primary rounded-full px-2 py-1.75"
           >
             <Image
               src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}

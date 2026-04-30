@@ -16,7 +16,12 @@ export default function SignIn() {
         <p className="mx-5 text-3xl">Sign in</p>
       </header>
       <section className="p-4 space-y-4">
-        <button type={"button"} className={"w-full justify-center items-center text-sm font-medium text-[#00696E] flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"}>
+        <button
+          type={"button"}
+          className={
+            "w-full justify-center items-center text-sm font-medium text-[#00696E] flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"
+          }
+        >
           <Image
             src={"/icons/google_logo_18x18px.svg"}
             alt={"Continue with Google"}
@@ -25,7 +30,12 @@ export default function SignIn() {
           />
           <span>Continue with Google</span>
         </button>
-        <button type={"button"} className={"w-full flex gap-2 justify-center items-center text-sm font-medium text-[#00696E] border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"}>
+        <button
+          type={"button"}
+          className={
+            "w-full flex gap-2 justify-center items-center text-sm font-medium text-[#00696E] border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"
+          }
+        >
           <Image
             src={"/icons/apple_logo_18x18px.svg"}
             alt={"Continue with Apple"}
@@ -35,11 +45,16 @@ export default function SignIn() {
           <span>Continue with Apple</span>
         </button>
         <div className="px-4 flex items-center gap-4 text-[#BEC8C9]">
-          <hr className="flex-1"/>
+          <hr className="flex-1" />
           <span className="text-xs">or</span>
-          <hr className="flex-1"/>
+          <hr className="flex-1" />
         </div>
-        <Link href={"/sign-in-with-password"} className={"w-full flex gap-2 justify-center items-center text-sm font-medium bg-[#00696E] text-background border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"}>
+        <Link
+          href={"/sign-in-with-password"}
+          className={
+            "w-full flex gap-2 justify-center items-center text-sm font-medium bg-[#00696E] text-background border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"
+          }
+        >
           <Image
             src={"/icons/mail_18dp_FFFFFF_FILL1_wght400_GRAD0_opsz20.svg"}
             alt={"Sign in with Password"}
@@ -54,5 +69,5 @@ export default function SignIn() {
         </p>
       </section>
     </main>
-  )
+  );
 }
