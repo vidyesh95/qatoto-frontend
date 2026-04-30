@@ -18,52 +18,66 @@ export default function SignIn() {
       <section className="p-4 space-y-4">
         <form action="" className="space-y-4">
           <div className="relative">
-            <label htmlFor="email" className="w-full text-xs">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              placeholder="host@domain.com"
-              className="w-full h-14 text-base border border-outline rounded-sm"
-            />
-            <div className="p-3">
-              <Image
-                src={"/icons/mail_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"}
-                alt={"Email"}
-                width={24}
-                height={24}
+            <div className="relative flex items-center border border-[#6F7979] rounded h-14 px-3">
+              <label
+                htmlFor="email"
+                className="absolute -top-2 left-3 bg-white px-1 text-xs text-black"
+              >
+                Email
+              </label>
+              <div className="mr-3 flex items-center justify-center">
+                <Image
+                  src={"/icons/mail_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"}
+                  alt={"Email"}
+                  width={24}
+                  height={24}
+                />
+              </div>
+              <input
+                type="email"
+                id="email"
+                placeholder="host@domain.com"
+                className="flex-1 h-full bg-transparent outline-none text-base placeholder:text-foreground"
               />
             </div>
-            <p className="w-full text-xs">Enter email you have access to</p>
+            <p className="w-full text-xs text-[#3F4949] mt-1 pl-4">
+              Enter email you have access to
+            </p>
           </div>
-          <div className={"relative"}>
-            <label htmlFor="password" className="w-full text-xs">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              placeholder="secretPassword123$"
-              className="w-full h-14 text-base border border-outline rounded-sm"
-            />
-            <div className="p-3">
-              <Image
-                src={"/icons/lock_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"}
-                alt={"Password"}
-                width={24}
-                height={24}
+          <div className="relative">
+            <div className="relative flex items-center border border-[#6F7979] rounded h-14 px-3">
+              <label
+                htmlFor="password"
+                className="absolute -top-2 left-3 bg-white px-1 text-xs text-black"
+              >
+                Password
+              </label>
+              <div className="mr-3 flex items-center justify-center">
+                <Image
+                  src={"/icons/lock_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"}
+                  alt={"Password"}
+                  width={24}
+                  height={24}
+                />
+              </div>
+              <input
+                type="password"
+                id="password"
+                placeholder="secretPassword123$"
+                className="flex-1 h-full bg-transparent outline-none text-base placeholder:text-foreground"
               />
+              <div className="ml-3 flex items-center justify-center cursor-pointer">
+                <Image
+                  src={"/icons/visibility_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"}
+                  alt={"Show Password"}
+                  width={24}
+                  height={24}
+                />
+              </div>
             </div>
-            <div className="p-3">
-              <Image
-                src={"/icons/visibility_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"}
-                alt={"Show Password"}
-                width={24}
-                height={24}
-              />
-            </div>
-            <p className="w-full text-xs">Click Forgot Password? if forgotten</p>
+            <p className="w-full text-xs text-[#3F4949] mt-1 pl-4">
+              Click Forgot Password? if forgotten
+            </p>
           </div>
           <div className="flex items-center justify-between gap-4">
             <label htmlFor="remember-me" className="w-full font-medium text-sm">
