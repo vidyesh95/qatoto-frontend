@@ -17,8 +17,41 @@ export default function SignIn() {
       </header>
       <section className="p-4 space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <label htmlFor="remember-me" className="font-medium text-sm ">Remember me</label>
-          <input type="checkbox" id="remember-me" aria-label="Remember me toggle switch" />
+          <label htmlFor="remember-me" className="font-medium text-sm">
+            Remember me
+          </label>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input 
+              type="checkbox" 
+              id="remember-me" 
+              className="sr-only peer" 
+              aria-label="Remember me toggle switch"
+            />
+            {/* Track */}
+            <div className="w-[52px] h-8 rounded-full border-2 border-[#768282] bg-[#E3EAE9] peer-checked:border-[#00696E] peer-checked:bg-[#00696E] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-offset-1 peer-focus:ring-[#00696E] transition-colors duration-200 ease-in-out"></div>
+            
+            {/* Thumb */}
+            <div className="absolute top-[3px] left-[3px] h-[26px] w-[26px] rounded-full bg-[#768282] peer-checked:bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-[20px] flex items-center justify-center pointer-events-none shadow-sm peer-checked:[&>svg.x-icon]:opacity-0 peer-checked:[&>svg.check-icon]:opacity-100">
+              {/* X Icon - shown when unchecked */}
+              <svg 
+                className="w-4 h-4 text-white absolute transition-opacity duration-200 opacity-100 x-icon"
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              {/* Checkmark Icon - shown when checked */}
+              <svg 
+                className="w-4 h-4 text-[#00696E] absolute transition-opacity duration-200 opacity-0 check-icon"
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          </label>
         </div>
         <button type={"button"} className={"w-full justify-center items-center text-sm font-medium bg-[#00696E] text-background flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"}>
           <Image
