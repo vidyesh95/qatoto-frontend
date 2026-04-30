@@ -38,6 +38,7 @@ export default function SignIn() {
                 id="email"
                 placeholder="host@domain.com"
                 className="flex-1 h-full bg-transparent outline-none text-base placeholder:text-foreground"
+                required
               />
             </div>
             <p className="w-full text-xs text-[#3F4949] mt-1 pl-4">
@@ -65,6 +66,7 @@ export default function SignIn() {
                 id="password"
                 placeholder="secretPassword123$"
                 className="flex-1 h-full bg-transparent outline-none text-base placeholder:text-foreground"
+                required
               />
               <div className="ml-3 flex items-center justify-center cursor-pointer">
                 <Image
