@@ -28,10 +28,10 @@ export default function SignIn() {
               aria-label="Remember me toggle switch"
             />
             {/* Track */}
-            <div className="w-[52px] h-8 rounded-full border-2 border-[#6F7979] bg-[#DAE4E5] peer-checked:border-[#00696E] peer-checked:bg-[#00696E] transition-colors duration-200 ease-in-out"></div>
+            <div className="w-13 h-8 rounded-full border-2 border-[#6F7979] bg-[#DAE4E5] peer-checked:border-[#00696E] peer-checked:bg-[#00696E] transition-colors duration-200 ease-in-out"></div>
             
             {/* Thumb */}
-            <div className="absolute top-[3px] left-[3px] h-[26px] w-[26px] rounded-full bg-[#6F7979] peer-checked:bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-[20px] flex items-center justify-center pointer-events-none shadow-sm peer-checked:[&>svg.x-icon]:opacity-0 peer-checked:[&>svg.check-icon]:opacity-100">
+            <div className="absolute top-0.75 left-0.75 h-6.5 w-6.5 rounded-full bg-[#6F7979] peer-checked:bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-5 flex items-center justify-center pointer-events-none shadow-sm peer-checked:[&>svg.x-icon]:opacity-0 peer-checked:[&>svg.check-icon]:opacity-100">
               {/* X Icon - shown when unchecked */}
               <svg 
                 className="w-4 h-4 text-white absolute transition-opacity duration-200 opacity-100 x-icon"
