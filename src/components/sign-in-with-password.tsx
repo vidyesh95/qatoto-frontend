@@ -35,9 +35,7 @@ export default function SignIn() {
                 height={24}
               />
             </div>
-            <p className="w-full text-xs">
-              Enter email you have access to
-            </p>
+            <p className="w-full text-xs">Enter email you have access to</p>
           </div>
           <div className={"relative"}>
             <label htmlFor="password" className="w-full text-xs">
@@ -65,9 +63,7 @@ export default function SignIn() {
                 height={24}
               />
             </div>
-            <p className="w-full text-xs">
-              Click Forgot Password? if forgotten
-            </p>
+            <p className="w-full text-xs">Click Forgot Password? if forgotten</p>
           </div>
           <div className="flex items-center justify-between gap-4">
             <label htmlFor="remember-me" className="w-full font-medium text-sm">
