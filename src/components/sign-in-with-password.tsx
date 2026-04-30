@@ -129,7 +129,7 @@ export default function SignIn() {
             </label>
           </div>
           <button
-            type={"button"}
+            type="submit"
             className={
               "w-full justify-center items-center text-sm font-medium bg-[#00696E] text-background flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"
             }
