@@ -65,7 +65,9 @@ export default function SignIn() {
         </Link>
         <p className="text-sm font-medium text-center space-x-1">
           <span className="text-[#BEC8C9]">Don't have an account?</span>
-          <Link href={"/sign-up"} className="text-[#00696E] cursor-pointer">Sign up</Link>
+          <Link href={"/sign-up"} className="text-[#00696E] cursor-pointer">
+            Sign up
+          </Link>
         </p>
       </section>
     </main>
