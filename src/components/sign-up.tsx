@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function SignIn() {
+export default function SignUp() {
   return (
     <main className="min-h-screen w-screen flex flex-col">
       <header className="bg-background space-y-10 pt-2 pb-4">
@@ -13,7 +13,7 @@ export default function SignIn() {
             height={24}
           />
         </Link>
-        <p className="mx-5 text-3xl">Sign in with Password</p>
+        <p className="mx-5 text-3xl">Sign up</p>
       </header>
       <section className="p-4 space-y-4">
         <form action="" className="space-y-4">
@@ -140,7 +140,7 @@ export default function SignIn() {
               width={18}
               height={18}
             />
-            <span>Sign in with Password</span>
+            <span>Sign up with Password</span>
           </button>
         </form>
         <p className="font-medium text-sm text-center text-[#00696E] cursor-pointer">
@@ -180,8 +180,8 @@ export default function SignIn() {
           </button>
         </div>
         <p className="text-sm font-medium text-center space-x-1">
-          <span className="text-[#BEC8C9]">Don't have an account?</span>
-          <Link href={"/sign-up"} className="text-[#00696E] cursor-pointer">Sign up</Link>
+          <span className="text-[#BEC8C9]">Already have an account?</span>
+          <Link href={"sign-in"} className="text-[#00696E] cursor-pointer">Sign in</Link>
         </p>
       </section>
     </main>
