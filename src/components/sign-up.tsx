@@ -13,8 +13,8 @@ export default function SignUp() {
   const [rememberMe, setRememberMe] = useState(false);
 
   const stepTitles: Record<1 | 2 | 3, string> = {
-    1: "Sign up",
-    2: "Verify your email",
+    1: "We will send OTP to your email",
+    2: "Verify your email address with OTP",
     3: "Create password",
   };
 
@@ -115,10 +115,11 @@ export default function SignUp() {
             />
           </button>
         )}
-        <p className="mx-5 text-3xl">{stepTitles[step]}</p>
+        <p className="mx-4 text-3xl">Sign up</p>
       </header>
 
       {/* Step indicator */}
+      <p className="mx-6 mt-4 text-xl">{stepTitles[step]}</p>
       <div className="px-4 pt-4 flex gap-2">
         {[1, 2, 3].map((s) => (
           <div
