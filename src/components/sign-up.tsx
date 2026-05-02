@@ -12,10 +12,19 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const stepTitles: Record<1 | 2 | 3, string> = {
-    1: "We will send OTP to your email",
-    2: "Verify your email address with OTP",
-    3: "Create password",
+  const stepContent: Record<1 | 2 | 3, { title: string; description: string }> = {
+    1: {
+      title: "Enter your email",
+      description: "We'll send a 6-digit code to verify your account.",
+    },
+    2: {
+      title: "Check your inbox",
+      description: `We sent a 6-digit verification code to ${email}`,
+    },
+    3: {
+      title: "Set your password",
+      description: "Choose a strong password to secure your account.",
+    },
   };
 
   const handleBack = () => {
@@ -115,11 +124,9 @@ export default function SignUp() {
             />
           </button>
         )}
-        <p className="mx-4 text-3xl">Sign up</p>
+        <h1 className="mx-4 text-3xl text-foreground">Sign up</h1>
       </header>
 
-      {/* Step indicator */}
-      <p className="mx-6 mt-4 text-xl">{stepTitles[step]}</p>
       <div className="px-4 pt-4 flex gap-2">
         {[1, 2, 3].map((s) => (
           <div
@@ -130,7 +137,16 @@ export default function SignUp() {
           />
         ))}
       </div>
-
+      {/* Step Titles & Descriptions */}
+      <div className="px-4 mt-6 space-y-1">
+        <h2 className="text-xl text-foreground">
+          {stepContent[step].title}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {stepContent[step].description}
+        </p>
+      </div>
+      
       <section className="p-4 space-y-4">
         {/* Step 1: Email Entry */}
         {step === 1 && (
@@ -162,9 +178,6 @@ export default function SignUp() {
                     required
                   />
                 </div>
-                <p className="w-full text-xs text-[#3F4949] mt-1 pl-4">
-                  Enter email you have access to
-                </p>
               </div>
               <button
                 type="submit"
@@ -187,9 +200,6 @@ export default function SignUp() {
         {/* Step 2: OTP Verification */}
         {step === 2 && (
           <>
-            <p className="text-sm text-[#3F4949]">
-              We sent a 6-digit code to <span className="font-medium text-black">{email}</span>
-            </p>
             <form onSubmit={handleOtpSubmit} className="space-y-4">
               <div className="flex gap-3 justify-center">
                 {otp.map((digit, index) => (
