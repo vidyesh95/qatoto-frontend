@@ -242,7 +242,7 @@ const SidebarSection = memo(function SidebarSection({
   return (
     <section className="mt-6">
       {sectionTitle && (
-        <h3 className="mb-3 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <h3 className="mb-3 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground truncate">
           {sectionTitle}
         </h3>
       )}
