@@ -143,8 +143,10 @@ export default function SignIn() {
             <span>Sign in with Password</span>
           </button>
         </form>
-        <p className="font-medium text-sm text-center text-[#00696E] cursor-pointer">
-          Forgot Password?
+        <p className="font-medium text-sm text-center">
+          <Link href={"/forgot-password"} className="text-[#00696E] cursor-pointer">
+            Forgot Password?
+          </Link>
         </p>
         <div className="px-4 flex items-center gap-4 text-[#BEC8C9]">
           <hr className="flex-1" />
