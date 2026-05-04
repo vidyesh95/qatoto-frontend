@@ -1,3 +1,3 @@
 export default function CustomerService() {
-  return <div>Customer Service</div>;
+  return <h1>Customer Service</h1>;
 }

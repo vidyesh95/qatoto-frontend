@@ -242,9 +242,9 @@ const SidebarSection = memo(function SidebarSection({
   return (
     <section className="mt-6">
       {sectionTitle && (
-        <p className="mb-3 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <h3 className="mb-3 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {sectionTitle}
-        </p>
+        </h3>
       )}
       <div className="flex flex-col gap-2">{children}</div>
     </section>
@@ -357,7 +357,7 @@ export default function Sidebar() {
             />
           );
         })}
-        {section.hasDivider && <div className="my-5 border-t border-border" />}
+        {section.hasDivider && <hr className="my-5 border-border" />}
       </SidebarSection>
     ));
   }, [currentPathname]);
@@ -366,7 +366,7 @@ export default function Sidebar() {
   if (isCollapsed) {
     return (
       <aside className="w-20 h-[calc(100vh-64px)] shrink-0 border-r border-border bg-card transition-all duration-300">
-        <div className="px-3 pt-11 pb-14 space-y-5">
+        <nav className="px-3 pt-11 pb-14 space-y-5">
           {/* Create button */}
           {COLLAPSED_NAV_CONFIG.filter((item) => item.isEmphasized).map((item) => {
             const isActive = currentPathname === item.path;
@@ -383,7 +383,7 @@ export default function Sidebar() {
           })}
 
           {/* Nav items */}
-          <div className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-1">
             {COLLAPSED_NAV_CONFIG.filter((item) => !item.isEmphasized).map((item) => {
               const isActive = currentPathname === item.path;
               return (
@@ -397,8 +397,8 @@ export default function Sidebar() {
                 />
               );
             })}
-          </div>
-        </div>
+          </ul>
+        </nav>
       </aside>
     );
   }

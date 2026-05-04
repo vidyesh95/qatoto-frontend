@@ -1,3 +1,3 @@
 export default function Creator() {
-  return <div>Creator</div>;
+  return <h1>Creator</h1>;
 }

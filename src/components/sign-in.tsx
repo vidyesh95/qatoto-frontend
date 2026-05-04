@@ -13,7 +13,7 @@ export default function SignIn() {
             height={24}
           />
         </Link>
-        <p className="mx-5 text-3xl">Sign in</p>
+        <h1 className="mx-5 text-3xl">Sign in</h1>
       </header>
       <section className="p-4 space-y-4">
         <button

@@ -12,13 +12,13 @@ interface Props {
 const Layout = ({ children }: Props) => {
   return (
     <SidebarProvider>
-      <div>
+      <>
         <Navbar />
         <div className="flex">
           <Sidebar />
-          {children}
+          <main className="flex-1">{children}</main>
         </div>
-      </div>
+      </>
     </SidebarProvider>
   );
 };

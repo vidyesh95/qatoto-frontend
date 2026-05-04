@@ -138,14 +138,14 @@ export default function SignUp() {
         ))}
       </div>
       {/* Step Titles & Descriptions */}
-      <div className="px-4 mt-6 space-y-1">
+      <hgroup className="px-4 mt-6 space-y-1">
         <h2 className="text-xl text-foreground">
           {stepContent[step].title}
         </h2>
         <p className="text-sm text-muted-foreground">
           {stepContent[step].description}
         </p>
-      </div>
+      </hgroup>
       
       <section className="p-4 space-y-4">
         {/* Step 1: Email Entry */}
@@ -269,7 +269,8 @@ export default function SignUp() {
                   className="flex-1 h-full bg-transparent outline-none text-base placeholder:text-foreground"
                   required
                 />
-                <div
+                <button
+                  type="button"
                   className="ml-3 flex items-center justify-center cursor-pointer"
                   onClick={() => setShowPassword(!showPassword)}
                 >
@@ -283,7 +284,7 @@ export default function SignUp() {
                     width={24}
                     height={24}
                   />
-                </div>
+                </button>
               </div>
               <p className="w-full text-xs text-[#3F4949] mt-1 pl-4">
                 Must be at least 8 characters
