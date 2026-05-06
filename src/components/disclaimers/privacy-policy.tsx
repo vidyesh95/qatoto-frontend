@@ -1,8 +1,8 @@
 export default function PrivacyPolicy() {
     return (
         <main>
-            <h1>Privacy Policy</h1>
-            <dl>
+            <h1 className="px-6 md:px-25 py-6 text-xl">Privacy Policy</h1>
+            <dl className="px-6 md:px-25 text-justify text-sm space-y-4">
                 <div>
                     <dt>Introduction</dt>
                     <dd>Qatoto is a video sharing platform that is committed to protecting the privacy of its users. We understand the importance of privacy and have created this policy to explain what information we collect, how we use it, and what measures we take to protect it.</dd>

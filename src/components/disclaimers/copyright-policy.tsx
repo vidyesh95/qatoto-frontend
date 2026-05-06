@@ -1,8 +1,8 @@
 export default function CopyrightPolicy() {
     return (
         <main>
-            <h1>Copyright Policy</h1>
-            <dl>
+            <h1 className="px-6 md:px-25 py-6 text-xl">Copyright Policy</h1>
+            <dl className="px-6 md:px-25 text-justify text-sm space-y-4">
                 <div>
                     <dt>Introduction</dt>
                     <dd>Qatoto is a video sharing platform that allows users to upload and share videos with others. This policy sets out the rules and guidelines for copyright protection on Qatoto. Our aim is to ensure that the content on Qatoto is used in a way that is respectful to the rights of content owners.</dd>
