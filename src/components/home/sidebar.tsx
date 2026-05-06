@@ -91,6 +91,7 @@ const ROUTES = {
   about: "/about",
   press: "/press",
   copyrightPolicy: "/copyright-policy",
+  communityGuidelines: "/community-guidelines",
   contactUs: "/contact-us",
   creator: "/creator",
   careers: "/careers",
@@ -310,20 +311,21 @@ const NAVIGATION_CONFIG: NavSection[] = [
 ];
 
 const FOOTER_LINKS_ROW1 = [
+  { path: ROUTES.howQatotoWorks, label: "How Qatoto Works" },
   { path: ROUTES.about, label: "About" },
   { path: ROUTES.press, label: "Press" },
-  { path: ROUTES.copyrightPolicy, label: "Copyright Policy" },
   { path: ROUTES.contactUs, label: "Contact Us" },
   { path: ROUTES.creator, label: "Creator" },
   { path: ROUTES.careers, label: "Careers" },
   { path: ROUTES.developers, label: "Developers" },
+  { path: ROUTES.vulnerabilityDisclosureProgram, label: "Vulnerability Disclosure Program" },
 ] as const;
 
 const FOOTER_LINKS_ROW2 = [
   { path: ROUTES.termsAndConditions, label: "Terms and Conditions" },
   { path: ROUTES.privacyPolicy, label: "Privacy Policy" },
-  { path: ROUTES.vulnerabilityDisclosureProgram, label: "Vulnerability Disclosure Program" },
-  { path: ROUTES.howQatotoWorks, label: "How Qatoto Works" },
+  { path: ROUTES.copyrightPolicy, label: "Copyright Policy" },
+  { path: ROUTES.communityGuidelines, label: "Community Guidelines" },
 ] as const;
 
 /* ---------- Collapsed Navigation Config ---------- */
