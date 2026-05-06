@@ -90,7 +90,7 @@ const ROUTES = {
   signOut: "/sign-out",
   about: "/about",
   press: "/press",
-  copyright: "/copyright",
+  copyrightPolicy: "/copyright-policy",
   contactUs: "/contact-us",
   creator: "/creator",
   careers: "/careers",
@@ -312,7 +312,7 @@ const NAVIGATION_CONFIG: NavSection[] = [
 const FOOTER_LINKS_ROW1 = [
   { path: ROUTES.about, label: "About" },
   { path: ROUTES.press, label: "Press" },
-  { path: ROUTES.copyright, label: "Copyright" },
+  { path: ROUTES.copyrightPolicy, label: "Copyright Policy" },
   { path: ROUTES.contactUs, label: "Contact Us" },
   { path: ROUTES.creator, label: "Creator" },
   { path: ROUTES.careers, label: "Careers" },
