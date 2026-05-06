@@ -20,7 +20,9 @@ test('navigation and sign in flow', async ({ page }) => {
   await page.getByRole('link', { name: 'Forgot Password?' }).click();
   await page.waitForURL('**/forgot-password');
   await page.getByRole('link', { name: 'Navigate back' }).click();
+  await page.waitForURL('**/sign-in');
   await page.getByRole('link', { name: 'Sign up' }).click();
+  await page.waitForURL('**/sign-up');
   await page.getByRole('link', { name: 'Sign in' }).click();
   await page.waitForURL('**/sign-in');
   await page.getByRole('link', { name: 'Navigate back' }).click();
