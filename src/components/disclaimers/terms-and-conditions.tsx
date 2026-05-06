@@ -1,7 +1,7 @@
-export default function TermsOfService() {
+export default function TermsAndConditions() {
     return (
         <main>
-            <h1 className="px-6 md:px-25 py-6 text-xl">Terms of Service Agreement</h1>
+            <h1 className="px-6 md:px-25 py-6 text-xl">Terms and Conditions</h1>
             <ol className="px-6 md:px-25 list-decimal list-inside text-justify text-sm space-y-2">
                 <li>Introduction: This agreement governs your use of the Qatoto Video Sharing Site (hereinafter referred to as "Qatoto" or the "Site"). By using Qatoto, you agree to be bound by the terms and conditions set forth in this agreement. If you do not agree to these terms, you may not use Qatoto.</li>
                 <li>Content: You are solely responsible for the content that you upload, post, or otherwise transmit through Qatoto. This content may include, but is not limited to, text, photographs, videos, and audio. You agree not to upload, post, or otherwise transmit any content that is illegal, infringing, defamatory, obscene, or otherwise objectionable. Qatoto reserves the right to remove any content that it deems to be in violation of these terms.</li>
