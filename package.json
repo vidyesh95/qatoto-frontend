@@ -31,5 +31,11 @@
     "oxlint": "^1.62.0",
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }
