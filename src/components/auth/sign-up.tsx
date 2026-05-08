@@ -139,14 +139,10 @@ export default function SignUp() {
       </div>
       {/* Step Titles & Descriptions */}
       <hgroup className="px-4 mt-6 space-y-1">
-        <h2 className="text-xl text-foreground">
-          {stepContent[step].title}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {stepContent[step].description}
-        </p>
+        <h2 className="text-xl text-foreground">{stepContent[step].title}</h2>
+        <p className="text-sm text-muted-foreground">{stepContent[step].description}</p>
       </hgroup>
-      
+
       <section className="p-4 space-y-4">
         {/* Step 1: Email Entry */}
         {step === 1 && (
