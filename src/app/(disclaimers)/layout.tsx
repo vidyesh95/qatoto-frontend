@@ -9,7 +9,7 @@ const Layout = ({ children }: Props) => {
   return (
     <>
       <nav className="sticky top-0 z-50 bg-background">
-        <div className="px-4 md:px-20 py-2.5">
+        <div className="px-4 md:px-16.5 py-2.5">
           <Link href="/" className="text-3xl font-serif font-medium text-[#00696E]">
             Qatoto
           </Link>
