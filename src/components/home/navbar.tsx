@@ -33,14 +33,14 @@ export default function Navbar() {
           <form
             action="/search"
             method="get"
-            className={"group relative flex items-center border border-primary rounded-full"}
+            className={"group relative flex items-center rounded-full"}
           >
             <input
               type="search"
               id="search-query"
               name="query"
               placeholder="Search"
-              className={"w-[404px] focus:w-[428px] py-2 rounded-l-full pl-4 focus:pl-10 bg-white"}
+              className={"w-[404px] focus:w-[428px] py-1.75 rounded-l-full pl-4 focus:pl-10 bg-white border border-primary"}
             />
             <Image
               src={"/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
