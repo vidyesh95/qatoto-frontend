@@ -2,7 +2,7 @@ export default function PrivacyPolicy() {
   return (
     <main>
       <h1 className="px-6 md:px-25 py-6 text-xl">Privacy Policy</h1>
-      <dl className="px-6 md:px-25 text-justify text-sm space-y-4">
+      <dl className="px-6 md:px-25 pb-25 text-justify text-sm space-y-4">
         <div>
           <dt>Introduction</dt>
           <dd>

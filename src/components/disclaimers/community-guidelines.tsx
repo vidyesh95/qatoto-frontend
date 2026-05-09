@@ -2,7 +2,7 @@ export default function CommunityGuidelines() {
   return (
     <main>
       <h1 className="px-6 md:px-25 py-6 text-xl">Community Guidelines</h1>
-      <ol className="px-6 md:px-25 list-decimal list-inside text-justify text-sm space-y-2">
+      <ol className="px-6 md:px-25 pb-25 list-decimal list-inside text-justify text-sm space-y-2">
         <li>
           Respect for others: Treat all users with respect and refrain from engaging in any form of
           harassment, bullying, or hate speech.

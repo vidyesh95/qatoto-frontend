@@ -2,7 +2,7 @@ export default function TermsAndConditions() {
   return (
     <main>
       <h1 className="px-6 md:px-25 py-6 text-xl">Terms and Conditions</h1>
-      <ol className="px-6 md:px-25 list-decimal list-inside text-justify text-sm space-y-2">
+      <ol className="px-6 md:px-25 pb-25 list-decimal list-inside text-justify text-sm space-y-2">
         <li>
           Introduction: This agreement governs your use of the Qatoto Video Sharing Site
           (hereinafter referred to as "Qatoto" or the "Site"). By using Qatoto, you agree to be
