@@ -165,7 +165,7 @@ export default function HowQatotoWorks() {
           {STAGES.map((s) => (
             <li
               key={s.n}
-              className={`relative overflow-hidden rounded-[2rem] border border-border bg-linear-to-br ${s.accent} p-10 shadow-sm`}
+              className={`relative overflow-hidden rounded-4xl border border-border bg-linear-to-br ${s.accent} p-10 shadow-sm`}
             >
               <span className="font-serif text-7xl font-semibold tracking-tight text-foreground/30">
                 {s.n}
@@ -181,7 +181,7 @@ export default function HowQatotoWorks() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="rounded-[2rem] border border-border bg-card p-10 shadow-sm sm:p-14">
+        <div className="rounded-4xl border border-border bg-card p-10 shadow-sm sm:p-14">
           <div className="grid gap-10 md:grid-cols-[1fr_1.3fr] md:items-center">
             <div>
               <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
@@ -216,7 +216,7 @@ export default function HowQatotoWorks() {
                 <li key={line} className="relative">
                   <span
                     aria-hidden
-                    className="absolute -left-[31px] top-2 h-2.5 w-2.5 rounded-full bg-primary"
+                    className="absolute left-[-31px] top-2 h-2.5 w-2.5 rounded-full bg-primary"
                   />
                   <p className="text-sm leading-relaxed text-foreground">{line}</p>
                 </li>
@@ -317,7 +317,7 @@ export default function HowQatotoWorks() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-32">
-        <div className="overflow-hidden rounded-[2rem] border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
+        <div className="overflow-hidden rounded-4xl border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
           <div className="grid gap-12 md:grid-cols-[1.4fr_1fr] md:items-end">
             <div>
               <span className="text-xs font-medium uppercase tracking-[0.2em] text-background/60">

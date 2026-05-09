@@ -104,7 +104,7 @@ export default function Creator() {
           </div>
 
           <div className="relative">
-            <div className="aspect-[4/5] overflow-hidden rounded-[2rem] border border-border bg-card shadow-2xl">
+            <div className="aspect-4/5 overflow-hidden rounded-4xl border border-border bg-card shadow-2xl">
               <div className="grid h-full grid-rows-3">
                 <div className="flex flex-col justify-between bg-linear-to-br from-primary/60 to-primary/20 p-6">
                   <span className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/70">
@@ -163,7 +163,7 @@ export default function Creator() {
           {PILLARS.map((p) => (
             <article
               key={p.title}
-              className="group relative overflow-hidden rounded-[2rem] border border-border bg-card p-10 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+              className="group relative overflow-hidden rounded-4xl border border-border bg-card p-10 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
             >
               <div
                 aria-hidden
@@ -259,7 +259,7 @@ export default function Creator() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-32">
-        <div className="overflow-hidden rounded-[2rem] border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
+        <div className="overflow-hidden rounded-4xl border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
           <div className="mx-auto max-w-2xl text-center">
             <span className="text-xs font-medium uppercase tracking-[0.2em] text-background/60">
               Idea + grit
