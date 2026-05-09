@@ -98,7 +98,7 @@ const ROUTES = {
   developers: "/developers",
   termsAndConditions: "/terms-and-conditions",
   privacyPolicy: "/privacy-policy",
-  vulnerabilityDisclosureProgram: "/vulnerability-disclosure-program",
+  vulnerabilityDisclosurePolicy: "/vulnerability-disclosure-policy",
   howQatotoWorks: "/how-qatoto-works",
 } as const;
 
@@ -318,7 +318,6 @@ const FOOTER_LINKS_ROW1 = [
   { path: ROUTES.creator, label: "Creator" },
   { path: ROUTES.careers, label: "Careers" },
   { path: ROUTES.developers, label: "Developers" },
-  { path: ROUTES.vulnerabilityDisclosureProgram, label: "Vulnerability Disclosure Program" },
 ] as const;
 
 const FOOTER_LINKS_ROW2 = [
@@ -326,6 +325,7 @@ const FOOTER_LINKS_ROW2 = [
   { path: ROUTES.privacyPolicy, label: "Privacy Policy" },
   { path: ROUTES.copyrightPolicy, label: "Copyright Policy" },
   { path: ROUTES.communityGuidelines, label: "Community Guidelines" },
+  { path: ROUTES.vulnerabilityDisclosurePolicy, label: "Vulnerability Disclosure Policy" },
 ] as const;
 
 /* ---------- Collapsed Navigation Config ---------- */
