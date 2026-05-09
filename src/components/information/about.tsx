@@ -4,48 +4,48 @@ import Link from "next/link";
 const PRINCIPLES = [
   {
     icon: "/icons/self_improvement_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    title: "Creators first",
-    body: "Every product decision starts with one question: does this make a creator's life better, or worse? If it isn't the former, we don't ship it.",
-  },
-  {
-    icon: "/icons/lock_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    title: "Privacy as default",
-    body: "Your data is yours. We minimize what we collect, encrypt what we store, and never sell what we hold. No dark patterns. No quiet opt-ins.",
-  },
-  {
-    icon: "/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    title: "Open by design",
-    body: "Open APIs, open standards, open conversations. The web wins when platforms collaborate instead of capturing.",
+    title: "Idea is enough.",
+    body: "Capital, contacts, and credentials should not gate invention. If you have a problem worth solving and the grit to chase it, the rest of the stack should come to you — not the other way around.",
   },
   {
     icon: "/icons/swords_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    title: "Resilience over hype",
-    body: "We optimize for the next decade, not the next quarter. Slow products that last beat fast products that fade.",
+    title: "Teams beat lone founders.",
+    body: "A CEO without a CTO is a deck. A CTO without a CFO is a prototype. Qatoto matches founders with the engineers, operators, specialists, and hobbyists who turn ideas into shipped products.",
+  },
+  {
+    icon: "/icons/chart_data_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    title: "Daily updates kill rot.",
+    body: "Every team member posts an end-of-day update. Investors see real progress. AI watches the workflow and suggests cuts, fixes, and reorderings. Funds don't wander. Corruption doesn't compound.",
+  },
+  {
+    icon: "/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    title: "Compensation tracks contribution.",
+    body: "Pay reflects effort, research, and promotion delivered — measured by the work logged on the platform, not by who shouts loudest in the meeting.",
   },
 ];
 
 const NUMBERS = [
-  { value: "200+", label: "Countries reached" },
-  { value: "12M", label: "Hours of video monthly" },
-  { value: "$0", label: "Cost to start creating" },
-  { value: "100%", label: "Creator ownership" },
+  { value: "1 idea", label: "All it takes to start" },
+  { value: "0 capex", label: "Required from the founder" },
+  { value: "EOD", label: "Update cadence, every member" },
+  { value: "1 stack", label: "Team, funding, build, ship, market" },
 ];
 
 const TIMELINE = [
   {
-    year: "2024",
-    title: "The first sketch",
-    body: "A small group of engineers, anime fans, and shopkeepers asked: what if video, commerce, and community lived under one roof — without the surveillance tax?",
+    year: "Pitch",
+    title: "Idea goes public.",
+    body: "Founder posts the concept. Specialists, engineers, and operators apply. The platform helps shape the team — CEO, CTO, developers, domain experts — and locks the cap table on day one.",
   },
   {
-    year: "2025",
-    title: "Private alpha",
-    body: "Hundreds of creators stress-tested the player, the storefront, and the moderation pipeline. Their feedback rewrote half the product.",
+    year: "Build",
+    title: "MVP and money.",
+    body: "Team ships a concept or MVP. Funding follows: crowdfunding, equity rounds, or direct investors. Each backer sees the same daily update wall the team posts to.",
   },
   {
-    year: "2026",
-    title: "Public launch",
-    body: "Qatoto opened the doors. Anime, store, AI, and Project Immortal — all wired together, all owned by the people who use them.",
+    year: "Ship",
+    title: "From prototype to product.",
+    body: "Qatoto Store handles shipping, compliance, and support. Marketing videos get produced on platform. Insights from demand maps and anime-inspired R&D feed back into the next iteration.",
   },
 ];
 
@@ -63,28 +63,29 @@ export default function About() {
             About Qatoto
           </span>
           <h1 className="mt-8 font-serif text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl md:text-8xl">
-            A new home for
+            From an idea
             <br />
             <span className="bg-gradient-to-br from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
-              video, commerce, and craft.
+              to a shipped product.
             </span>
           </h1>
           <p className="mx-auto mt-8 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-            Qatoto is one platform for the whole creative life — watching, selling, learning, and
-            building — designed so the people who make it run own what they build.
+            Qatoto is a B2B platform for bringing novel, profitable products to market. Bring the
+            idea and the grit — we handle team formation, funding, build oversight, compliance,
+            shipping, and the market that wants what you make.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/how-qatoto-works"
               className="inline-flex h-12 items-center rounded-full bg-foreground px-6 text-sm font-medium text-background transition hover:opacity-90"
             >
-              How it works
+              See the pipeline
             </Link>
             <Link
               href="/creator"
               className="inline-flex h-12 items-center rounded-full border border-border bg-card px-6 text-sm font-medium text-foreground transition hover:bg-muted"
             >
-              For creators →
+              For founders →
             </Link>
           </div>
         </div>
@@ -94,7 +95,7 @@ export default function About() {
         <div className="grid gap-6 rounded-3xl border border-border bg-card p-10 shadow-xl sm:grid-cols-4 sm:p-14">
           {NUMBERS.map((item) => (
             <div key={item.label} className="text-center sm:text-left">
-              <div className="font-serif text-5xl font-semibold tracking-tight text-foreground sm:text-6xl">
+              <div className="font-serif text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
                 {item.value}
               </div>
               <div className="mt-2 text-sm text-muted-foreground">{item.label}</div>
@@ -105,16 +106,17 @@ export default function About() {
 
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary-foreground/80">
-            <span className="rounded-full bg-primary/40 px-3 py-1 text-foreground">Our mission</span>
-          </p>
+          <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+            Our mission
+          </span>
           <h2 className="mt-6 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Build the platform creators would build for themselves.
+            Make invention a question of will, not capital.
           </h2>
           <p className="mt-6 text-lg text-muted-foreground">
-            Big tech inherited the open web and turned it into a mall with surveillance cameras. We
-            think the next era looks different — owned by creators, friendly to merchants, honest
-            with the people who watch. Qatoto is our attempt at that platform.
+            Most great ideas die in the gap between "I should build this" and "I have the team, the
+            money, and the supply chain to build this." Qatoto closes that gap. Pitch the concept,
+            assemble the team, raise the round, ship to market — on one platform, with one ledger,
+            and one source of truth.
           </p>
         </div>
 
@@ -143,15 +145,15 @@ export default function About() {
           <div className="mb-14 flex flex-wrap items-end justify-between gap-6">
             <div>
               <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-foreground">
-                The story so far
+                The arc
               </span>
               <h2 className="mt-5 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
-                Three years, one idea.
+                Three phases. One platform.
               </h2>
             </div>
             <p className="max-w-md text-base text-muted-foreground">
-              We didn't start with a launch date — we started with a question. The product showed up
-              when the answer did.
+              Pitch, build, ship. Each phase has its own tools, but the data — team, funding, daily
+              updates, demand signals — flows through all of them.
             </p>
           </div>
 
@@ -177,19 +179,60 @@ export default function About() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <div className="rounded-[2rem] border border-border bg-card p-12 shadow-sm sm:p-16">
+          <div className="grid gap-10 md:grid-cols-2 md:items-center">
+            <div>
+              <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+                Beyond the studio
+              </span>
+              <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight">
+                Knowledge that compounds across teams.
+              </h2>
+              <p className="mt-5 text-base leading-relaxed text-muted-foreground">
+                Demand maps show where the need is. Civic reports flag missing roads, water,
+                infrastructure — by location. Anime-inspired R&D feeds devices and designs.
+                Long-horizon research like Project Immortal lives next to commercial work. Every
+                project benefits from what every other project learned.
+              </p>
+            </div>
+            <ul className="grid gap-3 text-sm">
+              <li className="rounded-2xl border border-border bg-background px-5 py-4">
+                <strong className="font-semibold">Demand insights</strong>
+                <span className="ml-2 text-muted-foreground">— what's wanted, where</span>
+              </li>
+              <li className="rounded-2xl border border-border bg-background px-5 py-4">
+                <strong className="font-semibold">Civic problem map</strong>
+                <span className="ml-2 text-muted-foreground">— roads, water, gaps to solve</span>
+              </li>
+              <li className="rounded-2xl border border-border bg-background px-5 py-4">
+                <strong className="font-semibold">Project Immortal</strong>
+                <span className="ml-2 text-muted-foreground">
+                  — immortality, energy, teleportation
+                </span>
+              </li>
+              <li className="rounded-2xl border border-border bg-background px-5 py-4">
+                <strong className="font-semibold">Anime inspiration feed</strong>
+                <span className="ml-2 text-muted-foreground">— devices and designs, made real</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-6xl px-6 pb-32">
         <div className="overflow-hidden rounded-[2rem] border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
           <div className="grid gap-12 md:grid-cols-[2fr_1fr] md:items-end">
             <div>
               <span className="text-xs font-medium uppercase tracking-[0.2em] text-background/60">
-                Join us
+                Bring the idea
               </span>
               <h2 className="mt-6 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-                Build the next chapter with us.
+                The team, the money, and the market are already here.
               </h2>
               <p className="mt-6 max-w-xl text-base text-background/70 sm:text-lg">
-                Whether you make videos, code services, run a shop, or watch quietly from the side
-                — there's a seat at the table.
+                AI robots for defense, novel hardware, climate tech, civic tools — if it's buildable
+                and the demand exists, Qatoto stitches together the people and capital to ship it.
               </p>
             </div>
             <div className="flex flex-col gap-3 md:items-end">
@@ -197,13 +240,13 @@ export default function About() {
                 href="/creator"
                 className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-7 text-sm font-medium text-primary-foreground transition hover:opacity-90"
               >
-                Start creating
+                Pitch your idea
               </Link>
               <Link
                 href="/careers"
                 className="inline-flex h-12 items-center justify-center rounded-full border border-background/30 px-7 text-sm font-medium text-background transition hover:bg-background/10"
               >
-                See open roles
+                Join a team
               </Link>
             </div>
           </div>

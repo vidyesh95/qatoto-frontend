@@ -3,58 +3,61 @@ import Link from "next/link";
 
 const PILLARS = [
   {
-    icon: "/icons/chart_data_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    eyebrow: "Earnings",
-    title: "Three revenue lines.",
-    body: "Ads, store, and direct support stack on the same channel. One audience funds three businesses — yours.",
+    icon: "/icons/account_circle_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    eyebrow: "Team formation",
+    title: "Find your CTO before you find your office.",
+    body: "Post the idea. Engineers, operators, domain specialists, hobbyists — apply. Qatoto helps shape the cap table, define roles (CEO, CTO, CFO, leads), and seal commitments before a line of code ships.",
   },
   {
-    icon: "/icons/local_mall_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    eyebrow: "Storefront",
-    title: "Your shop, in the stream.",
-    body: "Spin up a Qatoto Store next to your video in minutes. Fulfilment, returns, and tax handled — you stay in the studio.",
+    icon: "/icons/chart_data_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    eyebrow: "Funding",
+    title: "Crowdfund, equity, or VC — same dashboard.",
+    body: "Run a community crowdfund, sell equity for capital, or close a strategic investor. All three flows live in the same fundraise console with disclosures, term sheets, and signing baked in.",
   },
   {
     icon: "/icons/screen_share_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    eyebrow: "AI tools",
-    title: "Production that doesn't sleep.",
-    body: "Captions, dubs, thumbnails, chapter splits. Models trained on what makes Qatoto videos work — not on yours.",
+    eyebrow: "Daily updates + AI",
+    title: "Every team member posts EOD.",
+    body: "Investors see real progress, not curated decks. AI ingests video and transcripts, flags blockers, suggests workflow improvements, and quietly compounds team velocity update by update.",
   },
   {
-    icon: "/icons/featured_video_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    eyebrow: "Reach",
-    title: "A discovery layer that pays attention.",
-    body: "Recommendations weight craft, completion, and community — not just clicks. Slow-burn videos finally get a chance.",
+    icon: "/icons/local_shipping_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    eyebrow: "Ship + sell",
+    title: "Compliance, fulfilment, and marketing — handled.",
+    body: "Qatoto Store ships your product, files compliance paperwork, and handles support tickets. Marketing videos get produced on the same platform you used to build it.",
   },
 ];
 
 const TOOLS = [
-  { label: "Studio", desc: "Edit, schedule, version" },
-  { label: "Live", desc: "Multistream + co-host" },
-  { label: "Store", desc: "Drops, subs, fulfilment" },
-  { label: "Insights", desc: "Cohorts and retention" },
-  { label: "Moderation", desc: "Queue + appeal flow" },
-  { label: "API", desc: "Push from your stack" },
+  { label: "Team builder", desc: "Roles, cap table, NDAs" },
+  { label: "Fundraise console", desc: "Crowdfund, equity, VC" },
+  { label: "Daily standup wall", desc: "EOD posts, AI summary" },
+  { label: "Workflow AI", desc: "Suggests fixes from updates" },
+  { label: "Compensation ledger", desc: "Pay = effort + research + promo" },
+  { label: "Audit trail", desc: "Every fund movement, traceable" },
+  { label: "Compliance + ship", desc: "Store handles end-to-end" },
+  { label: "Marketing studio", desc: "Spin up product videos in-platform" },
+  { label: "Demand map", desc: "Where the buyers actually are" },
 ];
 
 const VOICES = [
   {
     quote:
-      "I moved my entire shop onto Qatoto in a weekend. The day my next video dropped, the storefront got the same traffic as the player.",
-    name: "Anya Park",
-    role: "Animator + merch creator",
+      "I had the AI architecture in my head for two years. Posted it on Qatoto, had a hardware lead and a regulatory specialist on the team within a week. We crowdfunded the first prototype.",
+    name: "Defense robotics founder",
+    role: "Pre-seed, AI ground systems",
   },
   {
     quote:
-      "First platform that didn't punish me for posting twice a month. The audience that wanted me, found me.",
-    name: "Ren Oduya",
-    role: "Long-form essayist",
+      "The daily-update wall changed our investors' relationship with us. They stopped asking for monthly reports — they could see the work, every day.",
+    name: "Climate hardware CEO",
+    role: "Series A, atmospheric capture",
   },
   {
     quote:
-      "The dub tool handles four languages in the time it used to take me to write captions. My channel finally feels global.",
-    name: "Mira Salas",
-    role: "Cooking + travel",
+      "Fair pay was always the hardest part of a small team. The compensation ledger settled it. Effort, research, and promotion contributions are visible — nobody has to argue.",
+    name: "Medtech CTO",
+    role: "Bootstrapped, diagnostic devices",
   },
 ];
 
@@ -70,31 +73,32 @@ export default function Creator() {
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-              For creators
+              For founders
             </span>
             <h1 className="mt-8 font-serif text-5xl font-semibold leading-[1.04] tracking-tight sm:text-7xl">
-              Make once.
+              Bring the idea.
               <br />
               <span className="bg-gradient-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
-                Earn three ways.
+                We bring the rest.
               </span>
             </h1>
             <p className="mt-7 max-w-xl text-lg text-muted-foreground sm:text-xl">
-              Qatoto puts your video, your store, and your audience on the same surface. The work
-              you already do, paid for in three currencies — attention, sales, and support.
+              No capex. No connections. No supply chain. Just a concept and the will to build it.
+              Qatoto stitches the team, the funding, the build process, and the go-to-market into a
+              single workspace — so first-time founders ship like tenth-time founders.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link
                 href="/sign-up"
                 className="inline-flex h-12 items-center rounded-full bg-foreground px-7 text-sm font-medium text-background transition hover:opacity-90"
               >
-                Start your channel
+                Pitch your idea
               </Link>
               <Link
                 href="/how-qatoto-works"
                 className="inline-flex h-12 items-center rounded-full border border-border bg-card px-7 text-sm font-medium text-foreground transition hover:bg-muted"
               >
-                See how it works →
+                See the pipeline →
               </Link>
             </div>
           </div>
@@ -104,36 +108,48 @@ export default function Creator() {
               <div className="grid h-full grid-rows-3">
                 <div className="flex flex-col justify-between bg-gradient-to-br from-primary/60 to-primary/20 p-6">
                   <span className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/70">
-                    This week
+                    Round raised
                   </span>
                   <div>
-                    <div className="font-serif text-5xl font-semibold tracking-tight">$4,820</div>
-                    <div className="mt-1 text-sm text-muted-foreground">across video + store</div>
+                    <div className="font-serif text-5xl font-semibold tracking-tight">$1.2M</div>
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      crowdfund · 38% · 412 backers
+                    </div>
                   </div>
                 </div>
                 <div className="border-y border-border bg-card p-6">
                   <div className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                    Watching now
+                    EOD updates · today
                   </div>
-                  <div className="mt-3 flex items-end gap-1">
-                    {[40, 70, 55, 85, 60, 95, 75, 100, 80].map((h, i) => (
-                      <span
-                        key={i}
-                        className="w-3 rounded-full bg-foreground/80"
-                        style={{ height: `${h * 0.6}px` }}
-                      />
-                    ))}
-                  </div>
+                  <ul className="mt-3 space-y-2 text-sm">
+                    <li className="flex items-center justify-between">
+                      <span>CTO · firmware v0.4</span>
+                      <span className="rounded-full bg-primary/40 px-2 py-0.5 text-xs">
+                        shipped
+                      </span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>ME · enclosure rev3</span>
+                      <span className="rounded-full bg-primary/40 px-2 py-0.5 text-xs">
+                        shipped
+                      </span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Reg · FCC pre-scan</span>
+                      <span className="rounded-full bg-secondary/60 px-2 py-0.5 text-xs">
+                        in progress
+                      </span>
+                    </li>
+                  </ul>
                 </div>
                 <div className="flex flex-col justify-between bg-gradient-to-br from-secondary/70 to-secondary/20 p-6">
                   <span className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/70">
-                    Top SKU
+                    AI workflow note
                   </span>
                   <div>
-                    <div className="font-serif text-3xl font-semibold tracking-tight">
-                      Limited print 02
+                    <div className="font-serif text-2xl font-semibold tracking-tight leading-snug">
+                      Move enclosure review before firmware freeze — saves 4 days.
                     </div>
-                    <div className="mt-1 text-sm text-muted-foreground">142 sold · 38 left</div>
                   </div>
                 </div>
               </div>
@@ -173,13 +189,14 @@ export default function Creator() {
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-3xl text-center">
           <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
-            The studio
+            The workspace
           </span>
           <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
-            One workspace. Six surfaces. No tab-jockeying.
+            One platform. The full operating stack.
           </h2>
           <p className="mt-5 text-lg text-muted-foreground">
-            Everything you need to run a channel, a shop, and a community lives in the same window.
+            Team, funding, daily updates, AI oversight, fair pay, audit trail, compliance, ship, and
+            market — without leaving the tab.
           </p>
         </div>
 
@@ -212,10 +229,10 @@ export default function Creator() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="mx-auto max-w-2xl text-center">
             <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
-              Voices
+              Founders on record
             </span>
             <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
-              From the people in the studio.
+              Built without the usual gatekeepers.
             </h2>
           </div>
 
@@ -245,27 +262,27 @@ export default function Creator() {
         <div className="overflow-hidden rounded-[2rem] border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
           <div className="mx-auto max-w-2xl text-center">
             <span className="text-xs font-medium uppercase tracking-[0.2em] text-background/60">
-              No fee. No gatekeepers.
+              Idea + grit
             </span>
             <h2 className="mt-6 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-              Your audience is waiting.
+              That's the only entry fee.
             </h2>
             <p className="mt-6 text-base text-background/70 sm:text-lg">
-              Set up your channel in under five minutes. Open a store the same day. Keep what you
-              earn.
+              Pitch your concept, draw a team, raise the round, and ship the product. The platform
+              keeps the receipts honest and the workflow moving.
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/sign-up"
                 className="inline-flex h-12 items-center rounded-full bg-primary px-7 text-sm font-medium text-primary-foreground transition hover:opacity-90"
               >
-                Become a creator
+                Start a project
               </Link>
               <Link
                 href="/developers"
                 className="inline-flex h-12 items-center rounded-full border border-background/30 px-7 text-sm font-medium text-background transition hover:bg-background/10"
               >
-                Bring your tools
+                Join as a specialist
               </Link>
             </div>
           </div>
