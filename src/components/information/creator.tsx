@@ -78,7 +78,7 @@ export default function Creator() {
             <h1 className="mt-8 font-serif text-5xl font-semibold leading-[1.04] tracking-tight sm:text-7xl">
               Bring the idea.
               <br />
-              <span className="bg-gradient-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
+              <span className="bg-linear-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
                 We bring the rest.
               </span>
             </h1>
@@ -106,7 +106,7 @@ export default function Creator() {
           <div className="relative">
             <div className="aspect-[4/5] overflow-hidden rounded-[2rem] border border-border bg-card shadow-2xl">
               <div className="grid h-full grid-rows-3">
-                <div className="flex flex-col justify-between bg-gradient-to-br from-primary/60 to-primary/20 p-6">
+                <div className="flex flex-col justify-between bg-linear-to-br from-primary/60 to-primary/20 p-6">
                   <span className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/70">
                     Round raised
                   </span>
@@ -142,7 +142,7 @@ export default function Creator() {
                     </li>
                   </ul>
                 </div>
-                <div className="flex flex-col justify-between bg-gradient-to-br from-secondary/70 to-secondary/20 p-6">
+                <div className="flex flex-col justify-between bg-linear-to-br from-secondary/70 to-secondary/20 p-6">
                   <span className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/70">
                     AI workflow note
                   </span>

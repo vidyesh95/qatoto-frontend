@@ -149,7 +149,7 @@ export default function HowQatotoWorks() {
           <h1 className="mx-auto mt-8 max-w-4xl font-serif text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl md:text-8xl">
             Idea on Monday.
             <br />
-            <span className="bg-gradient-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
+            <span className="bg-linear-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
               Team by Friday.
             </span>
           </h1>
@@ -165,7 +165,7 @@ export default function HowQatotoWorks() {
           {STAGES.map((s) => (
             <li
               key={s.n}
-              className={`relative overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br ${s.accent} p-10 shadow-sm`}
+              className={`relative overflow-hidden rounded-[2rem] border border-border bg-linear-to-br ${s.accent} p-10 shadow-sm`}
             >
               <span className="font-serif text-7xl font-semibold tracking-tight text-foreground/30">
                 {s.n}

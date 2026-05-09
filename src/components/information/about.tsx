@@ -65,7 +65,7 @@ export default function About() {
           <h1 className="mt-8 font-serif text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl md:text-8xl">
             From an idea
             <br />
-            <span className="bg-gradient-to-br from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
+            <span className="bg-linear-to-br from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
               to a shipped product.
             </span>
           </h1>
