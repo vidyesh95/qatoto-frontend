@@ -52,7 +52,7 @@ export default function Blogs({ posts }: { posts: BlogPost[] }) {
                 href={`/blogs/${featured.slug}`}
                 className="group grid gap-8 rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:grid-cols-2 md:p-8"
               >
-                <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-muted">
+                <div className="relative aspect-16/10 overflow-hidden rounded-2xl bg-muted">
                   {featured.coverImage ? (
                     <Image
                       src={featured.coverImage}
@@ -106,7 +106,7 @@ export default function Blogs({ posts }: { posts: BlogPost[] }) {
                     className="group flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                   >
                     <Link href={`/blogs/${post.slug}`} className="flex h-full flex-col">
-                      <div className="relative aspect-[16/10] bg-muted">
+                      <div className="relative aspect-16/10 bg-muted">
                         {post.coverImage ? (
                           <Image
                             src={post.coverImage}
