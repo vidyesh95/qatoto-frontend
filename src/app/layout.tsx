@@ -35,6 +35,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${robotoSerif.variable} antialiased`}
       >
+        {process.env.NODE_ENV === "development" && (
+          <script src="https://unpkg.com/react-scan/dist/auto.global.js" crossOrigin="anonymous" />
+        )}
         {children}
       </body>
     </html>
