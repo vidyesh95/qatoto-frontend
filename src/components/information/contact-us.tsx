@@ -10,9 +10,10 @@ const ADDRESS_LINES = [
   "Borivali, Mumbai",
   "Maharashtra 400066, India",
 ];
-const ADDRESS_QUERY = encodeURIComponent(
-  "602 A Wing, 66 Avenue, Carter Road No. 1, Asara Colony, Borivali, Mumbai, Maharashtra 400066",
-);
+const MAP_SHORTLINK = "https://maps.app.goo.gl/cwJEWvvYBd4GuTiN7";
+const MAP_LAT = 19.2258515;
+const MAP_LNG = 72.8570855;
+const MAP_EMBED_SRC = `https://www.google.com/maps?q=${MAP_LAT},${MAP_LNG}&z=17&output=embed`;
 
 const CARDS = [
   {
@@ -36,7 +37,7 @@ const CARDS = [
     body: "Head office in Borivali, Mumbai. Drop by appointment — email or call ahead so the right person is on site to meet you.",
     cta: {
       label: "Open in Maps →",
-      href: `https://www.google.com/maps/search/?api=1&query=${ADDRESS_QUERY}`,
+      href: MAP_SHORTLINK,
     },
   },
 ];
@@ -193,7 +194,7 @@ export default function ContactUs() {
             <div className="overflow-hidden rounded-3xl border border-border bg-background shadow-sm">
               <iframe
                 title="Qatoto head office on Google Maps"
-                src={`https://www.google.com/maps?q=${ADDRESS_QUERY}&output=embed`}
+                src={MAP_EMBED_SRC}
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 className="h-full min-h-[320px] w-full border-0"
