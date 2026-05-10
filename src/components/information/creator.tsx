@@ -72,7 +72,7 @@ export default function Creator() {
         <div className="mx-auto grid max-w-6xl gap-12 px-6 pt-24 pb-28 md:grid-cols-[1.1fr_1fr] md:items-center">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <span className="size-1.5 rounded-full bg-primary" />
               For founders
             </span>
             <h1 className="mt-8 font-serif text-5xl font-semibold leading-[1.04] tracking-tight sm:text-7xl">
@@ -167,10 +167,10 @@ export default function Creator() {
             >
               <div
                 aria-hidden
-                className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/30 blur-3xl transition group-hover:bg-primary/50"
+                className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-primary/30 blur-3xl transition group-hover:bg-primary/50"
               />
               <div className="relative">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary/60">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-secondary/60">
                   <Image src={p.icon} alt="" width={28} height={28} />
                 </div>
                 <span className="mt-7 block text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
@@ -212,7 +212,7 @@ export default function Creator() {
               </div>
               <span
                 aria-hidden
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-foreground"
+                className="flex size-8 items-center justify-center rounded-full bg-muted text-foreground"
               >
                 →
               </span>

@@ -143,7 +143,7 @@ export default function HowQatotoWorks() {
         />
         <div className="mx-auto max-w-6xl px-6 pt-24 pb-32 text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            <span className="size-1.5 rounded-full bg-primary" />
             How it works
           </span>
           <h1 className="mx-auto mt-8 max-w-4xl font-serif text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl md:text-8xl">
@@ -216,7 +216,7 @@ export default function HowQatotoWorks() {
                 <li key={line} className="relative">
                   <span
                     aria-hidden
-                    className="absolute left-[-31px] top-2 h-2.5 w-2.5 rounded-full bg-primary"
+                    className="absolute left-[-31px] top-2 size-2.5 rounded-full bg-primary"
                   />
                   <p className="text-sm leading-relaxed text-foreground">{line}</p>
                 </li>
@@ -246,7 +246,7 @@ export default function HowQatotoWorks() {
               key={s.title}
               className="group relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/40">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/40">
                 <Image src={s.icon} alt="" width={24} height={24} />
               </div>
               <h3 className="mt-6 text-xl font-semibold tracking-tight">{s.title}</h3>

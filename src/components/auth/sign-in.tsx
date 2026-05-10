@@ -5,7 +5,7 @@ export default function SignIn() {
   return (
     <main className="min-h-screen w-screen flex flex-col">
       <header className="bg-background space-y-10 pt-2 pb-4">
-        <Link href={"/"} className="mx-1 w-12 h-12 flex items-center justify-center">
+        <Link href={"/"} className="mx-1 size-12 flex items-center justify-center">
           <Image
             src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             alt="Navigate back"

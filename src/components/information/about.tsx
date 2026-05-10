@@ -59,7 +59,7 @@ export default function About() {
         />
         <div className="mx-auto max-w-6xl px-6 pt-24 pb-32 text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            <span className="size-1.5 rounded-full bg-primary" />
             About Qatoto
           </span>
           <h1 className="mt-8 font-serif text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl md:text-8xl">
@@ -126,7 +126,7 @@ export default function About() {
               key={p.title}
               className="group rounded-3xl border border-border bg-card p-8 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/40">
+              <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/40">
                 <Image src={p.icon} alt="" width={28} height={28} />
               </div>
               <h3 className="mt-6 text-xl font-semibold tracking-tight">{p.title}</h3>
@@ -164,7 +164,7 @@ export default function About() {
                 className="rounded-3xl border border-border bg-card p-8 shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background">
+                  <span className="flex size-9 items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background">
                     {i + 1}
                   </span>
                   <span className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
@@ -191,7 +191,7 @@ export default function About() {
               </h2>
               <p className="mt-5 text-base leading-relaxed text-muted-foreground">
                 Demand maps show where the need is. Civic reports flag missing roads, water,
-                infrastructure — by location. Anime-inspired R&D feeds devices and designs.
+                infrastructure , by location. Anime-inspired R&D feeds devices and designs.
                 Long-horizon research like Project Immortal lives next to commercial work. Every
                 project benefits from what every other project learned.
               </p>
@@ -231,7 +231,7 @@ export default function About() {
                 The team, the money, and the market are already here.
               </h2>
               <p className="mt-6 max-w-xl text-base text-background/70 sm:text-lg">
-                AI robots for defense, novel hardware, climate tech, civic tools — if it's buildable
+                AI robots for defense, novel hardware, climate tech, civic tools , if it's buildable
                 and the demand exists, Qatoto stitches together the people and capital to ship it.
               </p>
             </div>

@@ -73,7 +73,7 @@ export default function Navbar() {
           </button>
         </div>
 
-        <div className="flex items-center space-x-2 text-black">
+        <div className="flex items-center gap-x-2 text-black">
           <button
             type={"button"}
             className={"border border-primary bg-white rounded-full p-1.75 cursor-pointer"}

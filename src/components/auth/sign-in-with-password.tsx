@@ -5,7 +5,7 @@ export default function SignIn() {
   return (
     <main className="min-h-screen w-screen flex flex-col">
       <header className="bg-background space-y-10 pt-2 pb-4">
-        <Link href={"/sign-in"} className="mx-1 w-12 h-12 flex items-center justify-center">
+        <Link href={"/sign-in"} className="mx-1 size-12 flex items-center justify-center">
           <Image
             src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             alt="Navigate back"
@@ -96,10 +96,10 @@ export default function SignIn() {
               <div className="w-13 h-8 rounded-full border-2 border-[#6F7979] bg-[#DAE4E5] peer-checked:border-[#00696E] peer-checked:bg-[#00696E] transition-colors duration-200 ease-in-out"></div>
 
               {/* Thumb */}
-              <div className="absolute top-0.75 left-0.75 h-6.5 w-6.5 rounded-full bg-[#6F7979] peer-checked:bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-5 flex items-center justify-center pointer-events-none shadow-sm peer-checked:[&>svg.x-icon]:opacity-0 peer-checked:[&>svg.check-icon]:opacity-100">
+              <div className="absolute top-0.75 left-0.75 size-6.5 rounded-full bg-[#6F7979] peer-checked:bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-5 flex items-center justify-center pointer-events-none shadow-sm peer-checked:[&>svg.x-icon]:opacity-0 peer-checked:[&>svg.check-icon]:opacity-100">
                 {/* X Icon - shown when unchecked */}
                 <svg
-                  className="w-4 h-4 text-white absolute transition-opacity duration-200 opacity-100 x-icon"
+                  className="size-4 text-white absolute transition-opacity duration-200 opacity-100 x-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -113,7 +113,7 @@ export default function SignIn() {
                 </svg>
                 {/* Checkmark Icon - shown when checked */}
                 <svg
-                  className="w-4 h-4 text-[#00696E] absolute transition-opacity duration-200 opacity-0 check-icon"
+                  className="size-4 text-[#00696E] absolute transition-opacity duration-200 opacity-0 check-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
