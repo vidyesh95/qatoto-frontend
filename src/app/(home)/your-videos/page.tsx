@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Your Videos | Qatoto',
-  description: 'Your Videos page for Qatoto',
+  title: "Your Videos | Qatoto",
+  description: "Your Videos page for Qatoto",
 };
 
 export default function YourVideos() {

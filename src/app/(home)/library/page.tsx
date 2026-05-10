@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Library | Qatoto',
-  description: 'Library page for Qatoto',
+  title: "Library | Qatoto",
+  description: "Library page for Qatoto",
 };
 
 export default function Library() {

@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Your Sales | Qatoto',
-  description: 'Your Sales page for Qatoto',
+  title: "Your Sales | Qatoto",
+  description: "Your Sales page for Qatoto",
 };
 
 export default function YourSales() {

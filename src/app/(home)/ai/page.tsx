@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Ai | Qatoto',
-  description: 'Ai page for Qatoto',
+  title: "Ai | Qatoto",
+  description: "Ai page for Qatoto",
 };
 
 export default function AI() {

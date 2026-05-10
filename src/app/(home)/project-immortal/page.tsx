@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Project Immortal | Qatoto',
-  description: 'Project Immortal page for Qatoto',
+  title: "Project Immortal | Qatoto",
+  description: "Project Immortal page for Qatoto",
 };
 
 export default function ProjectImmortal() {

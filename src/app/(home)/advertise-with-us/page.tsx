@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Advertise With Us | Qatoto',
-  description: 'Advertise With Us page for Qatoto',
+  title: "Advertise With Us | Qatoto",
+  description: "Advertise With Us page for Qatoto",
 };
 
 export default function AdvertiseWithUs() {

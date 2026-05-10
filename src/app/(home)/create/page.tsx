@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Create | Qatoto',
-  description: 'Create page for Qatoto',
+  title: "Create | Qatoto",
+  description: "Create page for Qatoto",
 };
 
 export default function Create() {
