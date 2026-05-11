@@ -1,5 +1,10 @@
 import { test, expect } from "../fixtures/test-base";
 
+// Same shape as information-pages.spec.ts, but for the (disclaimers) group:
+// legal / policy pages. Same minimal contract per route — non-error status
+// and at least one rendered heading. These pages rarely change, so a smoke
+// check is enough; we only want to catch the case where a route silently
+// disappears or starts 500-ing.
 const DISCLAIMER_ROUTES = [
   "/community-guidelines",
   "/copyright-policy",
