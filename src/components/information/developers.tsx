@@ -171,15 +171,24 @@ export default function Developers() {
           </div>
 
           <div className="relative">
-            <div className="overflow-hidden rounded-4xl border border-border bg-foreground text-background shadow-2xl">
-              <div className="flex items-center justify-between border-b border-background/15 px-5 py-3 text-xs">
+            <div className="overflow-hidden rounded-xl border border-border bg-foreground text-background shadow-2xl">
+              <div className="relative flex items-center px-4 py-3 text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="size-2 rounded-full bg-primary/80" />
-                  <span className="size-2 rounded-full bg-secondary/80" />
-                  <span className="size-2 rounded-full bg-background/30" />
+                  <span
+                    aria-label="close"
+                    className="size-3 rounded-full bg-[#ff5f57] ring-1 ring-inset ring-black/10"
+                  />
+                  <span
+                    aria-label="minimize"
+                    className="size-3 rounded-full bg-[#febc2e] ring-1 ring-inset ring-black/10"
+                  />
+                  <span
+                    aria-label="expand"
+                    className="size-3 rounded-full bg-[#28c840] ring-1 ring-inset ring-black/10"
+                  />
                 </div>
-                <span className="font-mono uppercase tracking-[0.18em] text-background/60">
-                  qatoto.dev
+                <span className="absolute left-1/2 -translate-x-1/2 font-mono text-background/60">
+                  qatoto.dev — zsh
                 </span>
               </div>
               <div className="p-5">
