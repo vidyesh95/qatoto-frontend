@@ -10,7 +10,7 @@ export default function Home() {
           height={260}
           alt="Advertise dummy image 1"
         />
-        <button className="absolute top-0 right-0 p-2">
+        <button className="absolute top-0 right-0 p-2 cursor-pointer">
           <Image
             src={"/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
             width={24}
