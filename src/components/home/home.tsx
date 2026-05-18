@@ -74,19 +74,12 @@ export default function Home() {
           }
           aria-label="Previous image"
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          <Image
+            src={"/icons/arrow_back_ios_new_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+            width={24}
+            height={24}
+            alt="close promo"
+          />
         </button>
 
         {/* Next button */}
@@ -97,19 +90,12 @@ export default function Home() {
           }
           aria-label="Next image"
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
+          <Image
+            src={"/icons/arrow_forward_ios_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+            width={24}
+            height={24}
+            alt="close promo"
+          />
         </button>
 
         {/* Indicator dots */}
@@ -117,9 +103,8 @@ export default function Home() {
           {CAROUSEL_IMAGES.map((_, index) => (
             <button
               key={index}
-              className={`w-2 h-2 rounded-full transition ${
-                index === currentIndex ? "bg-black" : "bg-gray-400"
-              }`}
+              className={`w-2 h-2 rounded-full transition ${index === currentIndex ? "bg-black" : "bg-gray-400"
+                }`}
               onClick={() => setCurrentIndex(index)}
               aria-label={`Go to image ${index + 1}`}
             />
