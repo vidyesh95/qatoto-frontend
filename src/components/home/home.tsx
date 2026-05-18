@@ -48,8 +48,10 @@ export default function Home() {
           loading="eager"
           alt={currentImage.alt}
         />
+
+        {/* Close button */}
         <button
-          className="absolute top-0 right-0 p-2 cursor-pointer"
+          className="absolute top-0 right-0 p-2 cursor-pointer hover:bg-black/10 rounded transition"
           onClick={() => setIsVisible(false)}
           aria-label="Close carousel"
         >
@@ -60,6 +62,69 @@ export default function Home() {
             alt="close promo"
           />
         </button>
+
+        {/* Previous button */}
+        <button
+          className="absolute left-0 top-1/2 -translate-y-1/2 p-2 cursor-pointer hover:bg-black/20 rounded transition z-10"
+          onClick={() =>
+            setCurrentIndex(
+              (prev) =>
+                (prev - 1 + CAROUSEL_IMAGES.length) % CAROUSEL_IMAGES.length
+            )
+          }
+          aria-label="Previous image"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+
+        {/* Next button */}
+        <button
+          className="absolute right-0 top-1/2 -translate-y-1/2 p-2 cursor-pointer hover:bg-black/20 rounded transition z-10"
+          onClick={() =>
+            setCurrentIndex((prev) => (prev + 1) % CAROUSEL_IMAGES.length)
+          }
+          aria-label="Next image"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        </button>
+
+        {/* Indicator dots */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+          {CAROUSEL_IMAGES.map((_, index) => (
+            <button
+              key={index}
+              className={`w-2 h-2 rounded-full transition ${
+                index === currentIndex ? "bg-black" : "bg-gray-400"
+              }`}
+              onClick={() => setCurrentIndex(index)}
+              aria-label={`Go to image ${index + 1}`}
+            />
+          ))}
+        </div>
       </div>
     </main>
   );
