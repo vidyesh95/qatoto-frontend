@@ -66,10 +66,7 @@ export default function PromoCarousel() {
       <button
         className="absolute left-0 top-1/2 -translate-y-1/2 p-2 cursor-pointer hover:bg-black/20 rounded transition z-10"
         onClick={() =>
-          setCurrentIndex(
-            (prev) =>
-              (prev - 1 + CAROUSEL_IMAGES.length) % CAROUSEL_IMAGES.length
-          )
+          setCurrentIndex((prev) => (prev - 1 + CAROUSEL_IMAGES.length) % CAROUSEL_IMAGES.length)
         }
         aria-label="Previous image"
       >
@@ -84,9 +81,7 @@ export default function PromoCarousel() {
       {/* Next button */}
       <button
         className="absolute right-0 top-1/2 -translate-y-1/2 p-2 cursor-pointer hover:bg-black/20 rounded transition z-10"
-        onClick={() =>
-          setCurrentIndex((prev) => (prev + 1) % CAROUSEL_IMAGES.length)
-        }
+        onClick={() => setCurrentIndex((prev) => (prev + 1) % CAROUSEL_IMAGES.length)}
         aria-label="Next image"
       >
         <Image
@@ -102,8 +97,9 @@ export default function PromoCarousel() {
         {CAROUSEL_IMAGES.map((_, index) => (
           <button
             key={index}
-            className={`w-2 h-2 rounded-full transition ${index === currentIndex ? "bg-black" : "bg-gray-400"
-              }`}
+            className={`w-2 h-2 rounded-full transition ${
+              index === currentIndex ? "bg-black" : "bg-gray-400"
+            }`}
             onClick={() => setCurrentIndex(index)}
             aria-label={`Go to image ${index + 1}`}
           />
