@@ -19,7 +19,7 @@ export default function Home() {
             alt="Navigate filter back"
           />
         </button>
-        <div className="h-14 flex flex-row items-center gap-2">
+        <div className="h-14 flex flex-row items-center gap-2 px-4">
           <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">Live</div>
           <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">Trending</div>
           <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">New to you</div>
@@ -31,13 +31,6 @@ export default function Home() {
           <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">Cosplay</div>
           <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">Music</div>
           <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">News</div>
-          <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">Calming</div>
-          <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">Cooking</div>
-          <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">Travel</div>
-          <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">Sports</div>
-          <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">Cars</div>
-          <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">Education</div>
-          <div className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md">Science and technology</div>
         </div>
         <button
           type="button"
