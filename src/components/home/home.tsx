@@ -5,8 +5,6 @@ export default function Home() {
   return (
     <main>
       {/* <PromoCarousel /> */}
-
-      {/* Filter */}
       <Filter />
     </main>
   );
