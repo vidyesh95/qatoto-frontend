@@ -147,9 +147,7 @@ export default function Filter() {
               type="button"
               onClick={() => setSelectedIndex(i)}
               className={`px-4 py-1.5 text-sm text-nowrap rounded-md cursor-pointer border ${
-                isSelected
-                  ? "bg-black text-white border-black"
-                  : "border-outline hover:bg-black/5"
+                isSelected ? "bg-black text-white border-black" : "border-outline hover:bg-black/5"
               }`}
             >
               {label}
