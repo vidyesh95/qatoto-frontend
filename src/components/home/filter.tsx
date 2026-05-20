@@ -60,6 +60,57 @@ export default function Filter() {
     el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
   };
 
+  const dragState = useRef<{
+    pointerId: number;
+    startX: number;
+    startScrollLeft: number;
+    moved: boolean;
+  } | null>(null);
+
+  const DRAG_THRESHOLD = 5;
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    dragState.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startScrollLeft: el.scrollLeft,
+      moved: false,
+    };
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const state = dragState.current;
+    const el = scrollRef.current;
+    if (!state || !el || state.pointerId !== e.pointerId) return;
+    const dx = e.clientX - state.startX;
+    if (!state.moved && Math.abs(dx) > DRAG_THRESHOLD) {
+      state.moved = true;
+      el.setPointerCapture(e.pointerId);
+    }
+    if (state.moved) {
+      el.scrollLeft = state.startScrollLeft - dx;
+      e.preventDefault();
+    }
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    const state = dragState.current;
+    if (!state || state.pointerId !== e.pointerId) return;
+    const el = scrollRef.current;
+    if (el?.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+    dragState.current = null;
+  };
+
+  const onClickCapture = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (dragState.current?.moved) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
   return (
     <div className="relative">
       {canScrollLeft && (
@@ -78,7 +129,12 @@ export default function Filter() {
       )}
       <div
         ref={scrollRef}
-        className="h-14 flex flex-row items-center gap-2 px-4 overflow-x-auto [&::-webkit-scrollbar]:hidden"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onClickCapture={onClickCapture}
+        className="h-14 flex flex-row items-center gap-2 px-4 overflow-x-auto cursor-grab active:cursor-grabbing select-none [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: "none" }}
       >
         {CHIPS.map((label, i) => (
