@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const CHIPS = [
+  "All",
   "Live",
   "Trending",
   "New to you",
@@ -15,23 +16,24 @@ const CHIPS = [
   "Cosplay",
   "Music",
   "News",
-  "Live",
-  "Trending",
-  "New to you",
-  "News",
-  "Recently uploaded",
-  "Watched",
-  "Gaming",
-  "Shopping",
-  "Cosplay",
-  "Music",
-  "News",
+  "Robotics",
+  "AI",
+  "Research",
+  "Hardware",
+  "Upcoming",
+  "Minimalist",
+  "Retro",
+  "Electronics",
+  "Sports",
+  "Precision",
+  "Animated",
 ];
 
 export default function Filter() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   const updateScrollState = useCallback(() => {
     const el = scrollRef.current;
@@ -137,14 +139,23 @@ export default function Filter() {
         className="h-14 flex flex-row items-center gap-2 px-4 overflow-x-auto cursor-grab active:cursor-grabbing select-none [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: "none" }}
       >
-        {CHIPS.map((label, i) => (
-          <div
-            key={`${label}-${i}`}
-            className="px-4 py-1.5 text-sm text-nowrap border border-outline rounded-md"
-          >
-            {label}
-          </div>
-        ))}
+        {CHIPS.map((label, i) => {
+          const isSelected = selectedIndex === i;
+          return (
+            <button
+              key={`${label}-${i}`}
+              type="button"
+              onClick={() => setSelectedIndex(i)}
+              className={`px-4 py-1.5 text-sm text-nowrap rounded-md cursor-pointer border ${
+                isSelected
+                  ? "bg-black text-white border-black"
+                  : "border-outline hover:bg-black/5"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
       {canScrollRight && (
         <button
