@@ -1,0 +1,175 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - button "toggle sidebar" [ref=e5] [cursor=pointer]:
+          - img "toggle sidebar" [ref=e6]
+        - link "Qatoto" [ref=e7] [cursor=pointer]:
+          - /url: /
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - searchbox "Search" [ref=e10]
+          - button "translate" [ref=e11] [cursor=pointer]:
+            - img "translate" [ref=e12]
+        - button "translate" [ref=e13] [cursor=pointer]:
+          - img "translate" [ref=e14]
+      - generic [ref=e15]:
+        - button "translate" [ref=e16] [cursor=pointer]:
+          - img "translate" [ref=e17]
+        - button "translate" [ref=e18] [cursor=pointer]:
+          - img "translate" [ref=e19]
+        - link "translate Sign in" [ref=e20] [cursor=pointer]:
+          - /url: /sign-in
+          - img "translate" [ref=e21]
+          - text: Sign in
+  - generic [ref=e22]:
+    - complementary [ref=e23]:
+      - generic [ref=e24]:
+        - link "Create Create" [ref=e27] [cursor=pointer]:
+          - /url: /create
+          - img "Create" [ref=e29]
+          - generic [ref=e30]: Create
+        - generic [ref=e32]:
+          - link "Home Home" [ref=e33] [cursor=pointer]:
+            - /url: /
+            - img "Home" [ref=e35]
+            - generic [ref=e36]: Home
+          - link "Anime Anime" [ref=e37] [cursor=pointer]:
+            - /url: /anime
+            - img "Anime" [ref=e39]
+            - generic [ref=e40]: Anime
+          - link "Store Store" [ref=e41] [cursor=pointer]:
+            - /url: /store
+            - img "Store" [ref=e43]
+            - generic [ref=e44]: Store
+          - link "AI AI" [ref=e45] [cursor=pointer]:
+            - /url: /ai
+            - img "AI" [ref=e47]
+            - generic [ref=e48]: AI
+          - separator [ref=e49]
+        - generic [ref=e50]:
+          - heading "Research and Development" [level=3] [ref=e51]
+          - generic [ref=e52]:
+            - link "PROJECT IMMORTAL PROJECT IMMORTAL" [ref=e53] [cursor=pointer]:
+              - /url: /project-immortal
+              - img "PROJECT IMMORTAL" [ref=e55]
+              - generic [ref=e56]: PROJECT IMMORTAL
+            - separator [ref=e57]
+        - generic [ref=e58]:
+          - heading "Personalisation" [level=3] [ref=e59]
+          - generic [ref=e60]:
+            - link "Library Library" [ref=e61] [cursor=pointer]:
+              - /url: /library
+              - img "Library" [ref=e63]
+              - generic [ref=e64]: Library
+            - link "History History" [ref=e65] [cursor=pointer]:
+              - /url: /history
+              - img "History" [ref=e67]
+              - generic [ref=e68]: History
+            - link "Your videos Your videos" [ref=e69] [cursor=pointer]:
+              - /url: /your-videos
+              - img "Your videos" [ref=e71]
+              - generic [ref=e72]: Your videos
+            - link "Cart Cart" [ref=e73] [cursor=pointer]:
+              - /url: /cart
+              - img "Cart" [ref=e75]
+              - generic [ref=e76]: Cart
+            - link "Orders and returns Orders and returns" [ref=e77] [cursor=pointer]:
+              - /url: /orders-and-returns
+              - img "Orders and returns" [ref=e79]
+              - generic [ref=e80]: Orders and returns
+            - link "Your sales Your sales" [ref=e81] [cursor=pointer]:
+              - /url: /your-sales
+              - img "Your sales" [ref=e83]
+              - generic [ref=e84]: Your sales
+            - link "Advertise with us Advertise with us" [ref=e85] [cursor=pointer]:
+              - /url: /advertise-with-us
+              - img "Advertise with us" [ref=e87]
+              - generic [ref=e88]: Advertise with us
+            - separator [ref=e89]
+        - generic [ref=e90]:
+          - heading "Help and settings" [level=3] [ref=e91]
+          - generic [ref=e92]:
+            - link "Your account Your account" [ref=e93] [cursor=pointer]:
+              - /url: /your-account
+              - img "Your account" [ref=e95]
+              - generic [ref=e96]: Your account
+            - link "Customer service Customer service" [ref=e97] [cursor=pointer]:
+              - /url: /customer-service
+              - img "Customer service" [ref=e99]
+              - generic [ref=e100]: Customer service
+            - link "Sign out Sign out" [ref=e101] [cursor=pointer]:
+              - /url: /sign-out
+              - img "Sign out" [ref=e103]
+              - generic [ref=e104]: Sign out
+            - separator [ref=e105]
+        - generic [ref=e106]:
+          - generic [ref=e107]:
+            - link "How Qatoto Works" [ref=e108] [cursor=pointer]:
+              - /url: /how-qatoto-works
+            - link "About" [ref=e109] [cursor=pointer]:
+              - /url: /about
+            - link "Press" [ref=e110] [cursor=pointer]:
+              - /url: /press
+            - link "Blogs" [ref=e111] [cursor=pointer]:
+              - /url: /blogs
+            - link "Contact Us" [ref=e112] [cursor=pointer]:
+              - /url: /contact-us
+            - link "Creator" [ref=e113] [cursor=pointer]:
+              - /url: /creator
+            - link "Careers" [ref=e114] [cursor=pointer]:
+              - /url: /careers
+            - link "Developers" [ref=e115] [cursor=pointer]:
+              - /url: /developers
+          - generic [ref=e116]:
+            - link "Terms and Conditions" [ref=e117] [cursor=pointer]:
+              - /url: /terms-and-conditions
+            - link "Privacy Policy" [ref=e118] [cursor=pointer]:
+              - /url: /privacy-policy
+            - link "Copyright Policy" [ref=e119] [cursor=pointer]:
+              - /url: /copyright-policy
+            - link "Community Guidelines" [ref=e120] [cursor=pointer]:
+              - /url: /community-guidelines
+            - link "Vulnerability Disclosure Policy" [ref=e121] [cursor=pointer]:
+              - /url: /vulnerability-disclosure-policy
+          - paragraph [ref=e122]: © 2026 Qatoto
+    - main [ref=e123]:
+      - main [ref=e124]:
+        - generic [ref=e126]:
+          - generic [ref=e127]: Live
+          - generic [ref=e128]: Trending
+          - generic [ref=e129]: New to you
+          - generic [ref=e130]: News
+          - generic [ref=e131]: Recently uploaded
+          - generic [ref=e132]: Watched
+          - generic [ref=e133]: Gaming
+          - generic [ref=e134]: Shopping
+          - generic [ref=e135]: Cosplay
+          - generic [ref=e136]: Music
+          - generic [ref=e137]: News
+          - generic [ref=e138]: Live
+          - generic [ref=e139]: Trending
+          - generic [ref=e140]: New to you
+          - generic [ref=e141]: News
+          - generic [ref=e142]: Recently uploaded
+          - generic [ref=e143]: Watched
+          - generic [ref=e144]: Gaming
+          - generic [ref=e145]: Shopping
+          - generic [ref=e146]: Cosplay
+          - generic [ref=e147]: Music
+          - generic [ref=e148]: News
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - button "Select element":
+                  - generic:
+                    - img
+          - button "Collapse toolbar":
+            - img
+  - button "Open Next.js Dev Tools" [ref=e154] [cursor=pointer]:
+    - img [ref=e155]
+  - alert [ref=e158]
