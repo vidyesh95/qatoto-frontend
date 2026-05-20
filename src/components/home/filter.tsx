@@ -126,7 +126,13 @@ export default function Filter() {
     const horizontalDelta = event.clientX - drag.startClientX;
     if (!drag.hasMovedPastThreshold && Math.abs(horizontalDelta) > DRAG_THRESHOLD_PIXELS) {
       drag.hasMovedPastThreshold = true;
-      container.setPointerCapture(event.pointerId);
+      try {
+        container.setPointerCapture(event.pointerId);
+      } catch {
+        // Pointer may already be released (e.g. synthetic events in tests).
+        // Drag still works without explicit capture — capture only matters
+        // when the cursor leaves the container mid-drag.
+      }
     }
     if (drag.hasMovedPastThreshold) {
       container.scrollLeft = drag.startScrollLeft - horizontalDelta;
