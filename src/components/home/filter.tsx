@@ -36,7 +36,7 @@ const FILTER_CHIPS = [
 const DRAG_THRESHOLD_PIXELS = 5;
 
 // Fraction of the visible chip-row width to advance per chevron click.
-const PAGE_SCROLL_FRACTION = 0.8;
+const PAGE_SCROLL_FRACTION = 0.1;
 
 export default function Filter() {
   // Reference to the horizontally-scrollable container that holds the chips.
