@@ -168,6 +168,7 @@ export default function Filter() {
         <button
           type="button"
           onClick={() => scrollChipsByOnePage(-1)}
+          title="Scroll filter chips left"
           className="absolute left-0 top-0 bottom-0 z-10 bg-linear-to-r from-white via-white to-transparent py-4 pl-4 pr-18 cursor-pointer"
         >
           <Image
@@ -208,6 +209,7 @@ export default function Filter() {
         <button
           type="button"
           onClick={() => scrollChipsByOnePage(1)}
+          title="Scroll filter chips right"
           className="absolute right-0 top-0 bottom-0 z-10 bg-linear-to-l from-white via-white to-transparent py-4 pl-18 pr-4 cursor-pointer"
         >
           <Image
