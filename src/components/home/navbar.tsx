@@ -14,6 +14,7 @@ export default function Navbar() {
         <div className={"flex items-center gap-2.5"}>
           <button
             type={"button"}
+            aria-label="Toggle sidebar"
             className={"hidden md:block p-2 text-primary-foreground cursor-pointer"}
             onClick={toggleSidebar}
           >
@@ -53,20 +54,21 @@ export default function Navbar() {
             />
             <button
               type="submit"
+              aria-label="Search"
               className={"bg-primary rounded-r-full py-2 pl-2 pr-4 cursor-pointer"}
             >
               <Image
                 src={"/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-                alt={"translate"}
+                alt={"Search"}
                 width={24}
                 height={24}
               />
             </button>
           </form>
-          <button type={"button"} className={"bg-primary p-2 rounded-full cursor-pointer"}>
+          <button type={"button"} aria-label="Search by voice" className={"bg-primary p-2 rounded-full cursor-pointer"}>
             <Image
               src={"/icons/mic_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-              alt={"translate"}
+              alt={"Voice input"}
               width={24}
               height={24}
             />
@@ -76,22 +78,24 @@ export default function Navbar() {
         <div className="flex items-center gap-x-2 text-black">
           <button
             type={"button"}
+            aria-label="Notifications"
             className={"border border-primary bg-white rounded-full p-1.75 cursor-pointer"}
           >
             <Image
               src={"/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-              alt={"translate"}
+              alt={"Notifications"}
               width={24}
               height={24}
             />
           </button>
           <button
             type={"button"}
+            aria-label="Change language"
             className={"border border-primary bg-white rounded-full p-1.75 cursor-pointer"}
           >
             <Image
               src={"/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-              alt={"translate"}
+              alt={"Change language"}
               width={24}
               height={24}
             />
@@ -102,7 +106,7 @@ export default function Navbar() {
           >
             <Image
               src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-              alt={"translate"}
+              alt={"Signin"}
               width={24}
               height={24}
             />
