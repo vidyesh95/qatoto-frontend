@@ -195,8 +195,9 @@ export default function Filter() {
               key={`${chipLabel}-${chipIndex}`}
               type="button"
               onClick={() => setSelectedChipIndex(chipIndex)}
-              className={`px-4 py-1.5 text-sm text-nowrap rounded-lg cursor-pointer border ${isSelected ? "bg-primary border-primary" : "border-outline hover:bg-black/5"
-                }`}
+              className={`px-4 py-1.5 text-sm text-nowrap rounded-lg cursor-pointer border ${
+                isSelected ? "bg-primary border-primary" : "border-outline hover:bg-black/5"
+              }`}
             >
               {chipLabel}
             </button>
