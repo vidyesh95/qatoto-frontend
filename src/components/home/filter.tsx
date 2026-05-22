@@ -186,7 +186,7 @@ export default function Filter() {
         onPointerUp={handleDragEnd}
         onPointerCancel={handleDragEnd}
         onClickCapture={suppressClickAfterDrag}
-        className="h-14 flex flex-row items-center gap-2 px-4 overflow-x-auto cursor-grab active:cursor-grabbing select-none scrollbar-none"
+        className="h-14 flex flex-row items-center gap-2 px-6 overflow-x-auto cursor-grab active:cursor-grabbing select-none scrollbar-none"
       >
         {FILTER_CHIPS.map((chipLabel, chipIndex) => {
           const isSelected = selectedChipIndex === chipIndex;
@@ -195,9 +195,8 @@ export default function Filter() {
               key={`${chipLabel}-${chipIndex}`}
               type="button"
               onClick={() => setSelectedChipIndex(chipIndex)}
-              className={`px-4 py-1.5 text-sm text-nowrap rounded-lg cursor-pointer border ${
-                isSelected ? "bg-primary border-primary" : "border-outline hover:bg-black/5"
-              }`}
+              className={`px-4 py-1.5 text-sm text-nowrap rounded-lg cursor-pointer border ${isSelected ? "bg-primary border-primary" : "border-outline hover:bg-black/5"
+                }`}
             >
               {chipLabel}
             </button>
