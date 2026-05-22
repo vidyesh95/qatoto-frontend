@@ -4,7 +4,7 @@ import Filter from "@/components/home/filter";
 export default function Home() {
   return (
     <main>
-      {/* <PromoCarousel /> */}
+      <PromoCarousel />
       <Filter />
     </main>
   );
