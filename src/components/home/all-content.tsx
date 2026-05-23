@@ -20,6 +20,7 @@ export default function AllContent() {
           alt="profile image"
           className="rounded-full border border-foreground"
         />
+        <p>Pomporo singing 🌼Fengzhi Senai🌼 at Disney Land</p>
       </div>
     </section>
   );
