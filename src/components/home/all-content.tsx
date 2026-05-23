@@ -34,10 +34,7 @@ export default function AllContent() {
         </div>
         <div className="flex flex-row items-center gap-1">
           <span className="text-xs text-[#6F7979]">
-            2.5M
-          </span>
-          <span className="text-xs text-[#6F7979]">
-            views
+            2.5M views
           </span>
           <Image
             src={"/icons/circle_24dp_6F7979_FILL1_wght400_GRAD0_opsz24.svg"}
@@ -46,10 +43,7 @@ export default function AllContent() {
             alt="verified"
           />
           <span className="text-xs text-[#6F7979]">
-            12 hours
-          </span>
-          <span className="text-xs text-[#6F7979]">
-            ago
+            12 hours ago
           </span>
         </div>
       </div>
