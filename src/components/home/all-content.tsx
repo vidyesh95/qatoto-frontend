@@ -21,6 +21,17 @@ export default function AllContent() {
           className="rounded-full border border-foreground"
         />
         <p>Pomporo singing 🌼Fengzhi Senai🌼 at Disney Land</p>
+        <div className="flex flex-row">
+          <span className="text-xs text-[#6F7979]">
+            Arin Light
+          </span>
+          <Image
+            src={"/icons/check_circle_24dp_6F7979_FILL1_wght400_GRAD0_opsz24.svg"}
+            width={16}
+            height={16}
+            alt="verified"
+          />
+        </div>
       </div>
     </section>
   );
