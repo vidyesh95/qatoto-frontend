@@ -100,8 +100,9 @@ export default function PromoCarousel() {
         {CAROUSEL_IMAGES.map((_, index) => (
           <button
             key={index}
-            className={`w-2 h-2 rounded-full transition ${index === currentIndex ? "bg-black" : "bg-gray-400"
-              }`}
+            className={`w-2 h-2 rounded-full transition ${
+              index === currentIndex ? "bg-black" : "bg-gray-400"
+            }`}
             onClick={() => setCurrentIndex(index)}
             aria-label={`Go to image ${index + 1}`}
           />

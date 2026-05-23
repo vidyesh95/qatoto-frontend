@@ -65,7 +65,11 @@ export default function Navbar() {
               />
             </button>
           </form>
-          <button type={"button"} aria-label="Search by voice" className={"bg-primary p-2 rounded-full cursor-pointer"}>
+          <button
+            type={"button"}
+            aria-label="Search by voice"
+            className={"bg-primary p-2 rounded-full cursor-pointer"}
+          >
             <Image
               src={"/icons/mic_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
               alt={"Voice input"}
