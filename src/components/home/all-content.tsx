@@ -22,9 +22,7 @@ export default function AllContent() {
         />
         <p className="line-clamp-2">Pomporo singing 🌼Fengzhi Senai🌼 at Disney Land</p>
         <div className="flex flex-row items-center gap-1">
-          <span className="text-xs text-[#6F7979]">
-            Arin Light
-          </span>
+          <span className="text-xs text-[#6F7979]">Arin Light</span>
           <Image
             src={"/icons/check_circle_24dp_6F7979_FILL1_wght400_GRAD0_opsz24.svg"}
             width={16}
@@ -33,18 +31,14 @@ export default function AllContent() {
           />
         </div>
         <div className="flex flex-row items-center gap-1">
-          <span className="text-xs text-[#6F7979]">
-            2.5M views
-          </span>
+          <span className="text-xs text-[#6F7979]">2.5M views</span>
           <Image
             src={"/icons/circle_24dp_6F7979_FILL1_wght400_GRAD0_opsz24.svg"}
             width={4}
             height={4}
             alt="verified"
           />
-          <span className="text-xs text-[#6F7979]">
-            12 hours ago
-          </span>
+          <span className="text-xs text-[#6F7979]">12 hours ago</span>
         </div>
       </div>
     </section>
