@@ -13,6 +13,13 @@ export default function AllContent() {
           alt="thumbnail"
           className="rounded-xl"
         />
+        <Image
+          src={"/dummy/profile_image_01.avif"}
+          width={36}
+          height={36}
+          alt="thumbnail"
+          className="rounded-full border border-foreground"
+        />
       </div>
     </section>
   );
