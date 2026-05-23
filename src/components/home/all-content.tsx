@@ -17,7 +17,7 @@ export default function AllContent() {
           src={"/dummy/profile_image_01.avif"}
           width={36}
           height={36}
-          alt="thumbnail"
+          alt="profile image"
           className="rounded-full border border-foreground"
         />
       </div>
