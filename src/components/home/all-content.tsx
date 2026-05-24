@@ -109,13 +109,16 @@ export default function AllContent() {
       <div>
         <SectionDivider title="WHAT'S ON YOUR MIND?" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 px-6 py-2">
-          <Image
-            src={"/dummy/category_2.avif"}
-            width={159}
-            height={159}
-            alt="manufacturing"
-            className="w-full aspect-square rounded-xl"
-          />
+          <div className="flex flex-col items-center">
+            <Image
+              src={"/dummy/category_2.avif"}
+              width={159}
+              height={159}
+              alt="manufacturing"
+              className="w-full aspect-square rounded-xl"
+            />
+            <p>Manufacturing</p>
+          </div>
           {/* {VIDEO_CATEGORIES.map(({ id, ...category }) => (
             <CategoryCard key={id} {...video} />
           ))} */}
