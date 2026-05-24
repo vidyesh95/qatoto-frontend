@@ -22,8 +22,8 @@ export default function VideoCard({
   hoverBg = "hover:bg-gray-100",
 }: VideoCardProps) {
   return (
-    <div className={`p-2 w-61.5 rounded-2xl ${hoverBg}`}>
-      <Image src={thumbnailSrc} width={246} height={138} alt="thumbnail" className="rounded-xl" />
+    <div className={`w-full rounded-2xl bg-red-500 ${hoverBg}`}>
+      <Image src={thumbnailSrc} width={246} height={138} alt="thumbnail" className="w-full aspect-video rounded-xl" />
       <div className="flex flex-row items-start pt-2 gap-2">
         <Image
           src={profileSrc}
