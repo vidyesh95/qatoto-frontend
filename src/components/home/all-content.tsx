@@ -74,7 +74,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     id: "7",
     thumbnailSrc: "/dummy/thumbnail_image07.avif",
     profileSrc: "/dummy/profile_image_07.avif",
-    title: "Studio Ghibli anime My Neighbour Totoro",
+    title: "Studio Ghibli anime \"My Neighbour Totoro\"",
     channelName: "Little Red Riding Hood",
     views: "1.3K views",
     postedAt: "3 hours ago",
