@@ -23,7 +23,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     channelName: "BTS fan boi🤩",
     views: "973 views",
     postedAt: "37 minutes ago",
-    verified: true,
+    verified: false,
     hoverBg: "hover:bg-amber-100",
   },
   {
@@ -78,7 +78,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     channelName: "Little Red Riding Hood",
     views: "1.3K views",
     postedAt: "3 hours ago",
-    verified: true,
+    verified: false,
     hoverBg: "hover:bg-amber-100",
   },
   {
