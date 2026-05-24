@@ -19,7 +19,7 @@ export default function VideoCard({
   views,
   postedAt,
   verified = false,
-  hoverBg = "hover:bg-amber-200",
+  hoverBg = "hover:bg-gray-100",
 }: VideoCardProps) {
   return (
     <div className={`p-2 w-61.5 rounded-2xl ${hoverBg}`}>
