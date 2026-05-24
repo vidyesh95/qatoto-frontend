@@ -14,7 +14,7 @@ export default function AllContent() {
             alt="thumbnail"
             className="rounded-xl"
           />
-          <div className="flex flex-row items-start pt-2 gap-3">
+          <div className="flex flex-row items-start pt-2 gap-2">
             <Image
               src={"/dummy/profile_image_01.avif"}
               width={36}
