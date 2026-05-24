@@ -22,7 +22,7 @@ export default function VideoCard({
   hoverBg = "group-hover:bg-gray-100",
 }: VideoCardProps) {
   return (
-    <div className="group relative w-full">
+    <div className="group relative w-full cursor-pointer">
       <div
         className={`absolute inset-0 -m-2 rounded-2xl pointer-events-none -z-10 transition-colors ${hoverBg}`}
       />
@@ -67,10 +67,10 @@ export default function VideoCard({
         </div>
         <Image
           src={"/icons/more_vert_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-          width={14}
-          height={14}
+          width={24}
+          height={24}
           alt="More video options"
-          className="shrink-0"
+          className="p-1 shrink-0 hover:bg-black/20 rounded-full"
         />
       </div>
     </div>
