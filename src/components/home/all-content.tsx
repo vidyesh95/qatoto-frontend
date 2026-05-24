@@ -1,5 +1,6 @@
 import SectionDivider from "@/components/home/section-divider";
 import VideoCard, { type VideoCardProps } from "@/components/home/video-card";
+import Image from "next/image";
 
 type Video = VideoCardProps & { id: string };
 
@@ -108,9 +109,16 @@ export default function AllContent() {
       <div>
         <SectionDivider title="WHAT'S ON YOUR MIND?" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 px-6 py-2">
-          {RECOMMENDED_VIDEOS.map(({ id, ...video }) => (
-            <VideoCard key={id} {...video} />
-          ))}
+          <Image
+            src={"/dummy/category_2.avif"}
+            width={159}
+            height={159}
+            alt="manufacturing"
+            className="w-full aspect-square rounded-xl"
+          />
+          {/* {VIDEO_CATEGORIES.map(({ id, ...category }) => (
+            <CategoryCard key={id} {...video} />
+          ))} */}
         </div>
       </div>
     </section>
