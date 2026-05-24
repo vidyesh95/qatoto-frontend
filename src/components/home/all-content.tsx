@@ -46,6 +46,13 @@ export default function AllContent() {
                 <span className="text-xs text-[#6F7979]">12 hours ago</span>
               </div>
             </div>
+            <Image
+              src={"/icons/more_vert_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+              width={14}
+              height={14}
+              alt="More video options"
+              className="shrink-0"
+            />
           </div>
         </div>
       </div>
