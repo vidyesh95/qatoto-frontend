@@ -46,7 +46,7 @@ export default function VideoCard({
             )}
           </div>
           <div className="flex flex-row items-center gap-1">
-            <span className="text-xs text-[#6F7979]">{views} views</span>
+            <span className="text-xs text-[#6F7979]">{views}</span>
             <Image
               src={"/icons/circle_24dp_6F7979_FILL1_wght400_GRAD0_opsz24.svg"}
               width={4}
