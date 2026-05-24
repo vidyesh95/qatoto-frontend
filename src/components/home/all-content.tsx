@@ -96,9 +96,17 @@ const RECOMMENDED_VIDEOS: Video[] = [
 
 export default function AllContent() {
   return (
-    <section className="py-8 space-y-14">
+    <section className="py-8 space-y-8">
       <div>
         <SectionDivider title="RECOMMENDED FOR YOU" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 px-6 py-2">
+          {RECOMMENDED_VIDEOS.map(({ id, ...video }) => (
+            <VideoCard key={id} {...video} />
+          ))}
+        </div>
+      </div>
+      <div>
+        <SectionDivider title="WHAT'S ON YOUR MIND?" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 px-6 py-2">
           {RECOMMENDED_VIDEOS.map(({ id, ...video }) => (
             <VideoCard key={id} {...video} />
