@@ -6,7 +6,7 @@ export default function AllContent() {
     <section className="py-14 space-y-14">
       <div>
         <SectionDivider title="RECOMMENDED FOR YOU" />
-        <div className="p-6 w-61.5">
+        <div className="p-2 w-61.5 rounded-2xl bg-amber-200">
           <Image
             src={"/dummy/thumbnail_image01.avif"}
             width={246}
@@ -14,7 +14,7 @@ export default function AllContent() {
             alt="thumbnail"
             className="rounded-xl"
           />
-          <div className="flex flex-row items-start pt-3 pb-10 gap-3">
+          <div className="flex flex-row items-start pt-2 gap-3">
             <Image
               src={"/dummy/profile_image_01.avif"}
               width={36}
