@@ -13,7 +13,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     views: "2.5M views",
     postedAt: "12 hours ago",
     verified: true,
-    hoverBg: "hover:bg-yellow-100",
+    hoverBg: "group-hover:bg-yellow-100",
   },
   {
     id: "2",
@@ -24,7 +24,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     views: "973 views",
     postedAt: "37 minutes ago",
     verified: false,
-    hoverBg: "hover:bg-amber-100",
+    hoverBg: "group-hover:bg-amber-100",
   },
   {
     id: "3",
@@ -35,7 +35,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     views: "9k watching",
     postedAt: "Live",
     verified: true,
-    hoverBg: "hover:bg-green-100",
+    hoverBg: "group-hover:bg-green-100",
   },
   {
     id: "4",
@@ -46,7 +46,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     views: "275K watching",
     postedAt: "Live",
     verified: true,
-    hoverBg: "hover:bg-green-100",
+    hoverBg: "group-hover:bg-green-100",
   },
   {
     id: "5",
@@ -57,7 +57,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     views: "189K views",
     postedAt: "17 hours ago",
     verified: true,
-    hoverBg: "hover:bg-yellow-100",
+    hoverBg: "group-hover:bg-yellow-100",
   },
   {
     id: "6",
@@ -68,7 +68,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     views: "7.9M views",
     postedAt: "3 weeks ago",
     verified: true,
-    hoverBg: "hover:bg-red-100",
+    hoverBg: "group-hover:bg-red-100",
   },
   {
     id: "7",
@@ -79,7 +79,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     views: "1.3K views",
     postedAt: "3 hours ago",
     verified: false,
-    hoverBg: "hover:bg-amber-100",
+    hoverBg: "group-hover:bg-amber-100",
   },
   {
     id: "8",
@@ -90,7 +90,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     views: "57M views",
     postedAt: "2 years ago",
     verified: true,
-    hoverBg: "hover:bg-blue-100",
+    hoverBg: "group-hover:bg-blue-100",
   },
 ];
 
@@ -99,7 +99,7 @@ export default function AllContent() {
     <section className="py-14 space-y-14">
       <div>
         <SectionDivider title="RECOMMENDED FOR YOU" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 px-6 py-2">
           {RECOMMENDED_VIDEOS.map(({ id, ...video }) => (
             <VideoCard key={id} {...video} />
           ))}

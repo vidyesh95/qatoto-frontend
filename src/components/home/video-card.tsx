@@ -19,10 +19,13 @@ export default function VideoCard({
   views,
   postedAt,
   verified = false,
-  hoverBg = "hover:bg-gray-100",
+  hoverBg = "group-hover:bg-gray-100",
 }: VideoCardProps) {
   return (
-    <div className={`w-full rounded-2xl ${hoverBg} p-2`}>
+    <div className="group relative w-full">
+      <div
+        className={`absolute inset-0 -m-2 rounded-2xl pointer-events-none -z-10 transition-colors ${hoverBg}`}
+      />
       <Image src={thumbnailSrc} width={246} height={138} alt="thumbnail" className="w-full aspect-video rounded-xl" />
       <div className="flex flex-row items-start pt-2 gap-2">
         <Image
