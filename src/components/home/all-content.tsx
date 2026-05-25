@@ -169,6 +169,66 @@ export default function AllContent() {
             />
             <p>Teleportation</p>
           </div>
+          <div className="flex flex-col items-center">
+            <Image
+              src={"/dummy/category_3.avif"}
+              width={159}
+              height={159}
+              alt="manufacturing"
+              className="w-full aspect-square rounded-xl"
+            />
+            <p>Toys</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <Image
+              src={"/dummy/category_2.avif"}
+              width={159}
+              height={159}
+              alt="manufacturing"
+              className="w-full aspect-square rounded-xl"
+            />
+            <p>Manufacturing</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <Image
+              src={"/dummy/category_4.avif"}
+              width={159}
+              height={159}
+              alt="manufacturing"
+              className="w-full aspect-square rounded-xl"
+            />
+            <p>Robotics</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <Image
+              src={"/dummy/category_5.avif"}
+              width={159}
+              height={159}
+              alt="manufacturing"
+              className="w-full aspect-square rounded-xl"
+            />
+            <p>Teleportation</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <Image
+              src={"/dummy/category_6.avif"}
+              width={159}
+              height={159}
+              alt="Immortality"
+              className="w-full aspect-square rounded-xl"
+            />
+            <p>Immortality</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <Image
+              src={"/dummy/category_1.avif"}
+              width={159}
+              height={159}
+              alt="manufacturing"
+              className="w-full aspect-square rounded-xl"
+            />
+            <p>Magic</p>
+          </div>
           {/* {VIDEO_CATEGORIES.map(({ id, ...category }) => (
             <CategoryCard key={id} {...video} />
           ))} */}
