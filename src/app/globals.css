@@ -145,4 +145,26 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
+  --animate-live-ring: live-ring 0.8s ease-in-out infinite;
+  --animate-live-image: live-image 0.8s ease-in-out infinite;
+}
+
+@keyframes live-ring {
+  0%,
+  100% {
+    transform: scale(0.8696);
+  }
+  50% {
+    transform: scale(1);
+  }
+}
+
+@keyframes live-image {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.8824);
+  }
 }

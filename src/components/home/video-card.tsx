@@ -21,6 +21,7 @@ export default function VideoCard({
   verified = false,
   hoverBg = "group-hover:bg-gray-100",
 }: VideoCardProps) {
+  const isLive = postedAt === "Live";
   return (
     <div className="group relative w-full cursor-pointer">
       <div
@@ -34,13 +35,27 @@ export default function VideoCard({
         className="w-full aspect-video rounded-xl"
       />
       <div className="flex flex-row items-start pt-2 gap-2">
-        <Image
-          src={profileSrc}
-          width={36}
-          height={36}
-          alt="profile image"
-          className="rounded-full border border-foreground shrink-0"
-        />
+        {isLive ? (
+          <div className="relative size-11.5 shrink-0 flex items-center justify-center">
+            <div className="absolute size-11.5 rounded-full border border-[#1DBDC5] animate-live-ring" />
+            <div className="absolute size-9 rounded-full border border-[#1DBDC5]" />
+            <Image
+              src={profileSrc}
+              width={36}
+              height={36}
+              alt="profile image"
+              className="absolute size-8.5 rounded-full animate-live-image"
+            />
+          </div>
+        ) : (
+          <Image
+            src={profileSrc}
+            width={36}
+            height={36}
+            alt="profile image"
+            className="rounded-full border border-foreground shrink-0"
+          />
+        )}
         <div className="min-w-0 flex-1">
           <p className="text-sm line-clamp-2">{title}</p>
           <div className="flex flex-row items-center gap-1">
