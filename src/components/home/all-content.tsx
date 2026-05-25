@@ -99,18 +99,78 @@ const RECOMMENDED_VIDEOS: Video[] = [
 ];
 
 const VIDEO_CATEGORIES: VideoCategory[] = [
-  { id: "1", imageSrc: "/dummy/category_2.avif", name: "Manufacturing" },
-  { id: "2", imageSrc: "/dummy/category_4.avif", name: "Robotics" },
-  { id: "3", imageSrc: "/dummy/category_6.avif", name: "Immortality" },
-  { id: "4", imageSrc: "/dummy/category_1.avif", name: "Magic" },
-  { id: "5", imageSrc: "/dummy/category_3.avif", name: "Toys" },
-  { id: "6", imageSrc: "/dummy/category_5.avif", name: "Teleportation" },
-  { id: "7", imageSrc: "/dummy/category_3.avif", name: "Toys" },
-  { id: "8", imageSrc: "/dummy/category_2.avif", name: "Manufacturing" },
-  { id: "9", imageSrc: "/dummy/category_4.avif", name: "Robotics" },
-  { id: "10", imageSrc: "/dummy/category_5.avif", name: "Teleportation" },
-  { id: "11", imageSrc: "/dummy/category_6.avif", name: "Immortality" },
-  { id: "12", imageSrc: "/dummy/category_1.avif", name: "Magic" },
+  {
+    id: "1",
+    imageSrc: "/dummy/category_2.avif",
+    name: "Manufacturing",
+    hoverBg: "group-hover:bg-yellow-100",
+  },
+  {
+    id: "2",
+    imageSrc: "/dummy/category_4.avif",
+    name: "Robotics",
+    hoverBg: "group-hover:bg-blue-100",
+  },
+  {
+    id: "3",
+    imageSrc: "/dummy/category_6.avif",
+    name: "Immortality",
+    hoverBg: "group-hover:bg-red-100",
+  },
+  {
+    id: "4",
+    imageSrc: "/dummy/category_1.avif",
+    name: "Magic",
+    hoverBg: "group-hover:bg-amber-100",
+  },
+  {
+    id: "5",
+    imageSrc: "/dummy/category_3.avif",
+    name: "Toys",
+    hoverBg: "group-hover:bg-green-100",
+  },
+  {
+    id: "6",
+    imageSrc: "/dummy/category_5.avif",
+    name: "Teleportation",
+    hoverBg: "group-hover:bg-blue-100",
+  },
+  {
+    id: "7",
+    imageSrc: "/dummy/category_3.avif",
+    name: "Toys",
+    hoverBg: "group-hover:bg-green-100",
+  },
+  {
+    id: "8",
+    imageSrc: "/dummy/category_2.avif",
+    name: "Manufacturing",
+    hoverBg: "group-hover:bg-yellow-100",
+  },
+  {
+    id: "9",
+    imageSrc: "/dummy/category_4.avif",
+    name: "Robotics",
+    hoverBg: "group-hover:bg-blue-100",
+  },
+  {
+    id: "10",
+    imageSrc: "/dummy/category_5.avif",
+    name: "Teleportation",
+    hoverBg: "group-hover:bg-blue-100",
+  },
+  {
+    id: "11",
+    imageSrc: "/dummy/category_6.avif",
+    name: "Immortality",
+    hoverBg: "group-hover:bg-red-100",
+  },
+  {
+    id: "12",
+    imageSrc: "/dummy/category_1.avif",
+    name: "Magic",
+    hoverBg: "group-hover:bg-amber-100",
+  },
 ];
 
 export default function AllContent() {
