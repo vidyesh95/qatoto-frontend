@@ -369,7 +369,7 @@ export default function Sidebar() {
   // Collapsed view
   if (isCollapsed) {
     return (
-      <aside className="w-20 h-[calc(100vh-64px)] shrink-0 border-r border-border bg-card transition-all duration-300">
+      <aside className="sticky top-14 self-start w-20 h-[calc(100dvh-56px)] shrink-0 overflow-y-auto border-r border-border bg-card transition-all duration-300">
         <nav className="px-3 pt-11 pb-14 space-y-5">
           {/* Create button */}
           {COLLAPSED_NAV_CONFIG.filter((item) => item.isEmphasized).map((item) => {
@@ -408,8 +408,8 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-80 shrink-0 border-r border-border bg-card transition-all duration-300">
-      <div className="h-[calc(100dvh-64px)] overflow-y-auto px-4 py-6">
+    <aside className="sticky top-14 self-start w-80 h-[calc(100dvh-56px)] shrink-0 overflow-y-auto border-r border-border bg-card transition-all duration-300">
+      <div className="px-4 py-6">
         {renderedSections}
 
         {/* Footer links */}
