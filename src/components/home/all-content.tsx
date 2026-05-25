@@ -138,37 +138,37 @@ const VIDEO_CATEGORIES: VideoCategory[] = [
   {
     id: "7",
     imageSrc: "/dummy/category_3.avif",
-    name: "Toys",
+    name: "Fusion Energy",
     hoverBg: "group-hover:bg-green-100",
   },
   {
     id: "8",
     imageSrc: "/dummy/category_2.avif",
-    name: "Manufacturing",
+    name: "Quantum Computing",
     hoverBg: "group-hover:bg-yellow-100",
   },
   {
     id: "9",
     imageSrc: "/dummy/category_4.avif",
-    name: "Robotics",
+    name: "Neural Interfaces",
     hoverBg: "group-hover:bg-blue-100",
   },
   {
     id: "10",
     imageSrc: "/dummy/category_5.avif",
-    name: "Teleportation",
+    name: "Space Mining",
     hoverBg: "group-hover:bg-blue-100",
   },
   {
     id: "11",
     imageSrc: "/dummy/category_6.avif",
-    name: "Immortality",
+    name: "Nanotech",
     hoverBg: "group-hover:bg-red-100",
   },
   {
     id: "12",
     imageSrc: "/dummy/category_1.avif",
-    name: "Magic",
+    name: "Space Jump Gate",
     hoverBg: "group-hover:bg-amber-100",
   },
 ];
