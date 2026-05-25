@@ -41,20 +41,22 @@ export default function VideoCard({
             <div className="absolute size-9 rounded-full border border-[#1DBDC5]" />
             <Image
               src={profileSrc}
-              width={36}
-              height={36}
+              width={34}
+              height={34}
               alt="profile image"
               className="absolute size-8.5 rounded-full animate-live-image"
             />
           </div>
         ) : (
-          <Image
-            src={profileSrc}
-            width={36}
-            height={36}
-            alt="profile image"
-            className="rounded-full border border-foreground shrink-0"
-          />
+          <div className="size-9 rounded-full border border-foreground shrink-0 flex items-center justify-center">
+            <Image
+              src={profileSrc}
+              width={34}
+              height={34}
+              alt="profile image"
+              className="size-8.5 rounded-full"
+            />
+          </div>
         )}
         <div className="min-w-0 flex-1">
           <p className="text-sm line-clamp-2">{title}</p>
