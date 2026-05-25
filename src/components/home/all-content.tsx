@@ -1,8 +1,11 @@
 import SectionDivider from "@/components/home/section-divider";
 import VideoCard, { type VideoCardProps } from "@/components/home/video-card";
-import Image from "next/image";
+import VideoCategoryCard, {
+  type VideoCategoryCardProps,
+} from "@/components/home/video-category-card";
 
 type Video = VideoCardProps & { id: string };
+type VideoCategory = VideoCategoryCardProps & { id: string };
 
 const RECOMMENDED_VIDEOS: Video[] = [
   {
@@ -95,6 +98,21 @@ const RECOMMENDED_VIDEOS: Video[] = [
   },
 ];
 
+const VIDEO_CATEGORIES: VideoCategory[] = [
+  { id: "1", imageSrc: "/dummy/category_2.avif", name: "Manufacturing" },
+  { id: "2", imageSrc: "/dummy/category_4.avif", name: "Robotics" },
+  { id: "3", imageSrc: "/dummy/category_6.avif", name: "Immortality" },
+  { id: "4", imageSrc: "/dummy/category_1.avif", name: "Magic" },
+  { id: "5", imageSrc: "/dummy/category_3.avif", name: "Toys" },
+  { id: "6", imageSrc: "/dummy/category_5.avif", name: "Teleportation" },
+  { id: "7", imageSrc: "/dummy/category_3.avif", name: "Toys" },
+  { id: "8", imageSrc: "/dummy/category_2.avif", name: "Manufacturing" },
+  { id: "9", imageSrc: "/dummy/category_4.avif", name: "Robotics" },
+  { id: "10", imageSrc: "/dummy/category_5.avif", name: "Teleportation" },
+  { id: "11", imageSrc: "/dummy/category_6.avif", name: "Immortality" },
+  { id: "12", imageSrc: "/dummy/category_1.avif", name: "Magic" },
+];
+
 export default function AllContent() {
   return (
     <section className="py-8 space-y-8">
@@ -109,129 +127,9 @@ export default function AllContent() {
       <div>
         <SectionDivider title="WHAT'S ON YOUR MIND?" />
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3 gap-y-6 px-6 py-2">
-          <div className="flex flex-col items-center">
-            <Image
-              src={"/dummy/category_2.avif"}
-              width={159}
-              height={159}
-              alt="manufacturing"
-              className="w-full aspect-square rounded-xl"
-            />
-            <p>Manufacturing</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Image
-              src={"/dummy/category_4.avif"}
-              width={159}
-              height={159}
-              alt="manufacturing"
-              className="w-full aspect-square rounded-xl"
-            />
-            <p>Robotics</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Image
-              src={"/dummy/category_6.avif"}
-              width={159}
-              height={159}
-              alt="Immortality"
-              className="w-full aspect-square rounded-xl"
-            />
-            <p>Immortality</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Image
-              src={"/dummy/category_1.avif"}
-              width={159}
-              height={159}
-              alt="manufacturing"
-              className="w-full aspect-square rounded-xl"
-            />
-            <p>Magic</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Image
-              src={"/dummy/category_3.avif"}
-              width={159}
-              height={159}
-              alt="manufacturing"
-              className="w-full aspect-square rounded-xl"
-            />
-            <p>Toys</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Image
-              src={"/dummy/category_5.avif"}
-              width={159}
-              height={159}
-              alt="manufacturing"
-              className="w-full aspect-square rounded-xl"
-            />
-            <p>Teleportation</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Image
-              src={"/dummy/category_3.avif"}
-              width={159}
-              height={159}
-              alt="manufacturing"
-              className="w-full aspect-square rounded-xl"
-            />
-            <p>Toys</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Image
-              src={"/dummy/category_2.avif"}
-              width={159}
-              height={159}
-              alt="manufacturing"
-              className="w-full aspect-square rounded-xl"
-            />
-            <p>Manufacturing</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Image
-              src={"/dummy/category_4.avif"}
-              width={159}
-              height={159}
-              alt="manufacturing"
-              className="w-full aspect-square rounded-xl"
-            />
-            <p>Robotics</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Image
-              src={"/dummy/category_5.avif"}
-              width={159}
-              height={159}
-              alt="manufacturing"
-              className="w-full aspect-square rounded-xl"
-            />
-            <p>Teleportation</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Image
-              src={"/dummy/category_6.avif"}
-              width={159}
-              height={159}
-              alt="Immortality"
-              className="w-full aspect-square rounded-xl"
-            />
-            <p>Immortality</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Image
-              src={"/dummy/category_1.avif"}
-              width={159}
-              height={159}
-              alt="manufacturing"
-              className="w-full aspect-square rounded-xl"
-            />
-            <p>Magic</p>
-          </div>
-          {/* {VIDEO_CATEGORIES.map(({ id, ...category }) => (
-            <CategoryCard key={id} {...video} />
-          ))} */}
+          {VIDEO_CATEGORIES.map(({ id, ...category }) => (
+            <VideoCategoryCard key={id} {...category} />
+          ))}
         </div>
       </div>
     </section>
