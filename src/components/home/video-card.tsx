@@ -37,13 +37,13 @@ export default function VideoCard({
       <div className="flex flex-row items-start pt-2 gap-2">
         {isLive ? (
           <div className="relative size-9 shrink-0 rounded-full border border-[#1DBDC5] flex items-center justify-center">
-            <div className="absolute -inset-1.25 rounded-full border border-[#1DBDC5] animate-live-ring pointer-events-none" />
+            <div className="absolute -inset-1.25 rounded-full border border-[#1DBDC5] animate-live-ring pointer-events-none will-change-transform" />
             <Image
               src={profileSrc}
               width={34}
               height={34}
               alt="profile image"
-              className="size-8.5 rounded-full animate-live-image"
+              className="size-8.5 rounded-full animate-live-image will-change-transform"
             />
           </div>
         ) : (
