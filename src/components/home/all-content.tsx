@@ -108,7 +108,7 @@ export default function AllContent() {
       </div>
       <div>
         <SectionDivider title="WHAT'S ON YOUR MIND?" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 px-6 py-2">
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3 gap-y-6 px-6 py-2">
           <div className="flex flex-col items-center">
             <Image
               src={"/dummy/category_2.avif"}
@@ -118,6 +118,56 @@ export default function AllContent() {
               className="w-full aspect-square rounded-xl"
             />
             <p>Manufacturing</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <Image
+              src={"/dummy/category_4.avif"}
+              width={159}
+              height={159}
+              alt="manufacturing"
+              className="w-full aspect-square rounded-xl"
+            />
+            <p>Robotics</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <Image
+              src={"/dummy/category_6.avif"}
+              width={159}
+              height={159}
+              alt="Immortality"
+              className="w-full aspect-square rounded-xl"
+            />
+            <p>Immortality</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <Image
+              src={"/dummy/category_1.avif"}
+              width={159}
+              height={159}
+              alt="manufacturing"
+              className="w-full aspect-square rounded-xl"
+            />
+            <p>Magic</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <Image
+              src={"/dummy/category_3.avif"}
+              width={159}
+              height={159}
+              alt="manufacturing"
+              className="w-full aspect-square rounded-xl"
+            />
+            <p>Toys</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <Image
+              src={"/dummy/category_5.avif"}
+              width={159}
+              height={159}
+              alt="manufacturing"
+              className="w-full aspect-square rounded-xl"
+            />
+            <p>Teleportation</p>
           </div>
           {/* {VIDEO_CATEGORIES.map(({ id, ...category }) => (
             <CategoryCard key={id} {...video} />
