@@ -204,7 +204,7 @@ export default function AllContent() {
       </div>
       <div>
         <SectionDivider title="SPOTLIGHT" />
-        <div className="group/spot flex flex-row gap-4 px-6 py-2 items-center">
+        <div className="h-48 md:h-48 lg:h-[256px] xl:h-[372px] group/spot flex flex-row gap-4 px-6 py-2 items-center">
           {SPOTLIGHT_VIDEOS.map(({ id, ...spotlight }, i) => (
             <SpotlightVideoCards key={id} {...spotlight} position={POSITIONS[i]} />
           ))}
