@@ -222,7 +222,7 @@ const EXPLORE_VIDEOS: Video[] = [
     views: "17K views",
     postedAt: "14 minutes ago",
     verified: false,
-    hoverBg: "group-hover:bg-green-100",
+    hoverBg: "group-hover:bg-blue-100",
     isChannelLive: true,
   },
   {
@@ -234,7 +234,7 @@ const EXPLORE_VIDEOS: Video[] = [
     views: "1M views",
     postedAt: "1 week ago",
     verified: true,
-    hoverBg: "group-hover:bg-blue-100",
+    hoverBg: "group-hover:bg-red-100",
     isChannelLive: true,
   },
   {
@@ -246,7 +246,7 @@ const EXPLORE_VIDEOS: Video[] = [
     views: "6.5M views",
     postedAt: "5 months ago",
     verified: true,
-    hoverBg: "group-hover:bg-red-100",
+    hoverBg: "group-hover:bg-green-100",
     isChannelLive: false,
   },
   {
