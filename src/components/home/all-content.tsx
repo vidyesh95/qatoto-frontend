@@ -28,6 +28,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     postedAt: "12 hours ago",
     verified: true,
     hoverBg: "group-hover:bg-yellow-100",
+    isChannelLive: false,
   },
   {
     id: "2",
@@ -39,6 +40,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     postedAt: "37 minutes ago",
     verified: false,
     hoverBg: "group-hover:bg-amber-100",
+    isChannelLive: false,
   },
   {
     id: "3",
@@ -50,6 +52,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     postedAt: "Live",
     verified: true,
     hoverBg: "group-hover:bg-green-100",
+    isChannelLive: true,
   },
   {
     id: "4",
@@ -61,6 +64,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     postedAt: "Live",
     verified: true,
     hoverBg: "group-hover:bg-green-100",
+    isChannelLive: true,
   },
   {
     id: "5",
@@ -72,6 +76,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     postedAt: "17 hours ago",
     verified: true,
     hoverBg: "group-hover:bg-yellow-100",
+    isChannelLive: false,
   },
   {
     id: "6",
@@ -83,6 +88,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     postedAt: "3 weeks ago",
     verified: true,
     hoverBg: "group-hover:bg-red-100",
+    isChannelLive: true,
   },
   {
     id: "7",
@@ -94,6 +100,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     postedAt: "3 hours ago",
     verified: false,
     hoverBg: "group-hover:bg-amber-100",
+    isChannelLive: false,
   },
   {
     id: "8",
@@ -105,6 +112,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     postedAt: "2 years ago",
     verified: true,
     hoverBg: "group-hover:bg-blue-100",
+    isChannelLive: false,
   },
 ];
 
@@ -119,6 +127,7 @@ const EXPLORE_VIDEOS: Video[] = [
     postedAt: "12 hours ago",
     verified: true,
     hoverBg: "group-hover:bg-yellow-100",
+    isChannelLive: false,
   },
   {
     id: "2",
@@ -130,6 +139,7 @@ const EXPLORE_VIDEOS: Video[] = [
     postedAt: "37 minutes ago",
     verified: false,
     hoverBg: "group-hover:bg-amber-100",
+    isChannelLive: false,
   },
   {
     id: "3",
@@ -141,6 +151,7 @@ const EXPLORE_VIDEOS: Video[] = [
     postedAt: "Live",
     verified: true,
     hoverBg: "group-hover:bg-green-100",
+    isChannelLive: true,
   },
   {
     id: "4",
@@ -152,6 +163,7 @@ const EXPLORE_VIDEOS: Video[] = [
     postedAt: "Live",
     verified: true,
     hoverBg: "group-hover:bg-green-100",
+    isChannelLive: true,
   },
   {
     id: "5",
@@ -163,6 +175,7 @@ const EXPLORE_VIDEOS: Video[] = [
     postedAt: "17 hours ago",
     verified: true,
     hoverBg: "group-hover:bg-yellow-100",
+    isChannelLive: false,
   },
   {
     id: "6",
@@ -174,6 +187,7 @@ const EXPLORE_VIDEOS: Video[] = [
     postedAt: "3 weeks ago",
     verified: true,
     hoverBg: "group-hover:bg-red-100",
+    isChannelLive: false,
   },
   {
     id: "7",
@@ -185,6 +199,7 @@ const EXPLORE_VIDEOS: Video[] = [
     postedAt: "3 hours ago",
     verified: false,
     hoverBg: "group-hover:bg-amber-100",
+    isChannelLive: false,
   },
   {
     id: "8",
@@ -196,6 +211,7 @@ const EXPLORE_VIDEOS: Video[] = [
     postedAt: "2 years ago",
     verified: true,
     hoverBg: "group-hover:bg-blue-100",
+    isChannelLive: false,
   },
   {
     id: "9",
@@ -207,6 +223,7 @@ const EXPLORE_VIDEOS: Video[] = [
     postedAt: "14 minutes ago",
     verified: false,
     hoverBg: "group-hover:bg-green-100",
+    isChannelLive: true,
   },
   {
     id: "10",
@@ -218,6 +235,7 @@ const EXPLORE_VIDEOS: Video[] = [
     postedAt: "1 week ago",
     verified: true,
     hoverBg: "group-hover:bg-blue-100",
+    isChannelLive: true,
   },
   {
     id: "11",
@@ -229,6 +247,7 @@ const EXPLORE_VIDEOS: Video[] = [
     postedAt: "5 months ago",
     verified: true,
     hoverBg: "group-hover:bg-red-100",
+    isChannelLive: false,
   },
   {
     id: "12",
@@ -240,6 +259,7 @@ const EXPLORE_VIDEOS: Video[] = [
     postedAt: "1 day ago",
     verified: false,
     hoverBg: "group-hover:bg-amber-100",
+    isChannelLive: false,
   },
 ];
 

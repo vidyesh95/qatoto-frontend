@@ -9,6 +9,7 @@ export type VideoCardProps = {
   postedAt: string;
   verified?: boolean;
   hoverBg?: string;
+  isChannelLive?: boolean;
 };
 
 export default function VideoCard({
@@ -20,8 +21,9 @@ export default function VideoCard({
   postedAt,
   verified = false,
   hoverBg = "group-hover:bg-gray-100",
+  isChannelLive = false,
 }: VideoCardProps) {
-  const isLive = postedAt === "Live";
+  const isLive = isChannelLive;
   return (
     <div className="group relative w-full cursor-pointer">
       <div
