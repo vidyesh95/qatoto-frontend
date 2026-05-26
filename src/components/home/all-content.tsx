@@ -3,6 +3,7 @@ import VideoCard, { type VideoCardProps } from "@/components/home/video-card";
 import VideoCategoryCard, {
   type VideoCategoryCardProps,
 } from "@/components/home/video-category-card";
+import Image from "next/image";
 
 type Video = VideoCardProps & { id: string };
 type VideoCategory = VideoCategoryCardProps & { id: string };
@@ -190,6 +191,35 @@ export default function AllContent() {
           {VIDEO_CATEGORIES.map(({ id, ...category }) => (
             <VideoCategoryCard key={id} {...category} />
           ))}
+        </div>
+      </div>
+      <div>
+        <SectionDivider title="SPOTLIGHT" />
+        <div className="gap-4 px-6 py-2">
+          <Image
+            src={"/dummy/spotlight_image01.avif"}
+            width={244}
+            height={137}
+            alt={"Spotlight"}
+            className="w-full aspect-video rounded-md"
+          />
+          <Image
+            src={"/dummy/spotlight_image02.avif"}
+            width={512}
+            height={288}
+            alt={"Spotlight"}
+            className="w-full aspect-video rounded-xl"
+          />
+          <Image
+            src={"/dummy/spotlight_image03.avif"}
+            width={244}
+            height={137}
+            alt={"Spotlight"}
+            className="w-full aspect-video rounded-md"
+          />
+          {/* {SPOTLIGHT_VIDEOS.map(({ id, ...spotlight }) => (
+            <SpotlightVideoCards key={id} {...spotlight} />
+          ))} */}
         </div>
       </div>
     </section>
