@@ -1,12 +1,21 @@
 import SectionDivider from "@/components/home/section-divider";
+import SpotlightVideoCards from "@/components/home/spotlight-video-cards";
 import VideoCard, { type VideoCardProps } from "@/components/home/video-card";
 import VideoCategoryCard, {
   type VideoCategoryCardProps,
 } from "@/components/home/video-category-card";
-import Image from "next/image";
 
 type Video = VideoCardProps & { id: string };
 type VideoCategory = VideoCategoryCardProps & { id: string };
+type Spotlight = { id: string; imageSrc: string; alt: string };
+
+const SPOTLIGHT_VIDEOS: Spotlight[] = [
+  { id: "1", imageSrc: "/dummy/spotlight_image01.avif", alt: "Spotlight" },
+  { id: "2", imageSrc: "/dummy/spotlight_image02.avif", alt: "Spotlight" },
+  { id: "3", imageSrc: "/dummy/spotlight_image03.avif", alt: "Spotlight" },
+];
+
+const POSITIONS = ["left", "center", "right"] as const;
 
 const RECOMMENDED_VIDEOS: Video[] = [
   {
@@ -195,31 +204,10 @@ export default function AllContent() {
       </div>
       <div>
         <SectionDivider title="SPOTLIGHT" />
-        <div className="flex flex-row gap-4 px-6 py-2 items-center">
-          <Image
-            src={"/dummy/spotlight_image01.avif"}
-            width={244}
-            height={137}
-            alt={"Spotlight"}
-            className="w-full aspect-video rounded-md"
-          />
-          <Image
-            src={"/dummy/spotlight_image02.avif"}
-            width={512}
-            height={288}
-            alt={"Spotlight"}
-            className="w-full aspect-video rounded-xl"
-          />
-          <Image
-            src={"/dummy/spotlight_image03.avif"}
-            width={244}
-            height={137}
-            alt={"Spotlight"}
-            className="w-full aspect-video rounded-md"
-          />
-          {/* {SPOTLIGHT_VIDEOS.map(({ id, ...spotlight }) => (
-            <SpotlightVideoCards key={id} {...spotlight} />
-          ))} */}
+        <div className="group/spot flex flex-row gap-4 px-6 py-2 items-center">
+          {SPOTLIGHT_VIDEOS.map(({ id, ...spotlight }, i) => (
+            <SpotlightVideoCards key={id} {...spotlight} position={POSITIONS[i]} />
+          ))}
         </div>
       </div>
     </section>
