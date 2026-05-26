@@ -268,7 +268,7 @@ export default function Developers() {
                 >
                   {ep.method}
                 </span>
-                <code className="font-mono text-sm font-medium text-foreground sm:min-w-[260px]">
+                <code className="font-mono text-sm font-medium text-foreground sm:min-w-65">
                   {ep.path}
                 </code>
                 <span className="text-sm text-muted-foreground">{ep.desc}</span>

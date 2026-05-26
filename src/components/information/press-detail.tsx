@@ -51,7 +51,7 @@ export default function PressDetail({ item, related }: { item: PressItem; relate
         </header>
 
         {item.coverImage && (
-          <div className="relative mt-10 aspect-[16/9] overflow-hidden rounded-3xl bg-muted">
+          <div className="relative mt-10 aspect-video overflow-hidden rounded-3xl bg-muted">
             <Image
               src={item.coverImage}
               alt=""
