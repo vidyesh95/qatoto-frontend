@@ -195,7 +195,7 @@ export default function AllContent() {
       </div>
       <div>
         <SectionDivider title="SPOTLIGHT" />
-        <div className="gap-4 px-6 py-2">
+        <div className="flex flex-row gap-4 px-6 py-2 items-center">
           <Image
             src={"/dummy/spotlight_image01.avif"}
             width={244}
