@@ -216,7 +216,7 @@ export default function HowQatotoWorks() {
                 <li key={line} className="relative">
                   <span
                     aria-hidden
-                    className="absolute left-[-31px] top-2 size-2.5 rounded-full bg-primary"
+                    className="absolute -left-7.75 top-2 size-2.5 rounded-full bg-primary"
                   />
                   <p className="text-sm leading-relaxed text-foreground">{line}</p>
                 </li>

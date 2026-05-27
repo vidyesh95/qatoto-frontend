@@ -197,7 +197,7 @@ export default function ContactUs() {
                 src={MAP_EMBED_SRC}
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                className="h-full min-h-[320px] w-full border-0"
+                className="h-full min-h-80 w-full border-0"
                 allowFullScreen
               />
             </div>

@@ -54,7 +54,7 @@ export default function Press({ items }: { items: PressItem[] }) {
                   href={`/press/${item.slug}`}
                   className="group grid gap-6 rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:grid-cols-[260px_1fr] md:p-8"
                 >
-                  <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-muted md:aspect-auto">
+                  <div className="relative aspect-16/10 overflow-hidden rounded-2xl bg-muted md:aspect-auto">
                     {item.coverImage ? (
                       <Image
                         src={item.coverImage}
