@@ -29,11 +29,11 @@ export default function AccountMenu({ onClose }: Props) {
       ref={ref}
       className="absolute right-2 top-12 z-50 w-95 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background border border-outline rounded-xl shadow-lg"
     >
-      <div className="px-5 pt-4 pb-2">
+      <div className="px-4 pt-4 pb-2">
         <div className="flex items-start justify-between">
-          <div>
-            <p className="text-base font-medium">Vidyesh Churi</p>
-            <p className="text-sm text-[#6F7979]">@vidyesh</p>
+          <div className="p-4">
+            <p className="text-base text-[#041F21]">Vidyesh Churi</p>
+            <p className="text-xs text-[#041F21]">@vidyesh</p>
           </div>
           <Image
             src="/dummy/authenticated_user01.avif"
@@ -44,10 +44,13 @@ export default function AccountMenu({ onClose }: Props) {
           />
         </div>
         <div className="flex items-center justify-between pt-2">
-          <h2 className="text-3xl font-medium text-[#1DBDC5]">Level 1</h2>
+          <h2 className="text-4xl text-[#1DBDC5] space-x-1">
+            <span>Level</span>
+            <span>1</span>
+          </h2>
           <button
             type="button"
-            className="text-xs bg-[#D7EEF1] text-black rounded-full px-3 py-1.5 cursor-pointer"
+            className="text-xs bg-[#D6E3FF] text-black rounded-full px-3 py-1.5 cursor-pointer"
           >
             Check-in
           </button>
