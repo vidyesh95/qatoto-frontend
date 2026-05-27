@@ -29,12 +29,18 @@ export default function AccountMenu({ onClose }: Props) {
       ref={ref}
       className="absolute right-2 top-12 z-50 w-95 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background border border-outline rounded-xl shadow-lg"
     >
-      <div className="px-4 pt-4 pb-2">
-        <div className="flex items-start justify-between">
-          <div className="p-4">
-            <p className="text-base text-[#041F21]">Vidyesh Churi</p>
-            <p className="text-xs text-[#041F21]">@vidyesh</p>
+      <div className="w-full flex flex-row">
+        <div className="flex-1 min-w-0">
+          <div className="w-full pl-4 py-4">
+            <p className="w-full text-base text-[#041F21] truncate">Vidyesh Churi</p>
+            <p className="w-full text-xs text-[#041F21] truncate">@vidyesh</p>
           </div>
+          <p className="w-full ml-4 text-4xl text-[#1DBDC5] flex gap-1">
+            <span>Level</span>
+            <span className="flex-1 min-w-0 truncate">1</span>
+          </p>
+        </div>
+        <div className="shrink-0 p-4 flex flex-col items-end gap-4">
           <Image
             src="/dummy/authenticated_user01.avif"
             alt="Account"
@@ -42,15 +48,9 @@ export default function AccountMenu({ onClose }: Props) {
             height={40}
             className="rounded-full border border-primary"
           />
-        </div>
-        <div className="flex items-center justify-between pt-2">
-          <h2 className="text-4xl text-[#1DBDC5] space-x-1">
-            <span>Level</span>
-            <span>1</span>
-          </h2>
           <button
             type="button"
-            className="text-xs bg-[#D6E3FF] text-black rounded-full px-3 py-1.5 cursor-pointer"
+            className="w-fit text-xs bg-[#D6E3FF] text-black rounded-full px-2 py-1 cursor-pointer"
           >
             Check-in
           </button>
