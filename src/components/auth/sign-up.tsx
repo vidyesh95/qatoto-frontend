@@ -114,6 +114,7 @@ export default function SignUp() {
           <button
             type="button"
             onClick={handleBack}
+            aria-label="Go back"
             className="mx-1 w-12 h-12 flex items-center justify-center cursor-pointer"
           >
             <Image
@@ -204,6 +205,7 @@ export default function SignUp() {
                     type="text"
                     inputMode="numeric"
                     id={`otp-${index}`}
+                    aria-label={`Verification code digit ${index + 1}`}
                     maxLength={1}
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
@@ -267,6 +269,7 @@ export default function SignUp() {
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   className="ml-3 flex items-center justify-center cursor-pointer"
                   onClick={() => setShowPassword(!showPassword)}
                 >
@@ -359,6 +362,7 @@ export default function SignUp() {
         <div className="flex gap-4 justify-center items-center">
           <button
             type={"button"}
+            aria-label="Continue with Google"
             className={
               "w-fit flex gap-2 justify-center items-center text-sm font-medium text-[#00696E] border border-outline rounded-full pl-4 pr-4 py-2.5 cursor-pointer"
             }
@@ -372,6 +376,7 @@ export default function SignUp() {
           </button>
           <button
             type={"button"}
+            aria-label="Continue with Apple"
             className={
               "w-fit flex gap-2 justify-center items-center text-sm font-medium text-[#00696E] border border-outline rounded-full pl-4 pr-4 py-2.5 cursor-pointer"
             }
