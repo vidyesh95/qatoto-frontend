@@ -29,8 +29,8 @@ export default function AccountMenu({ onClose }: Props) {
       ref={ref}
       className="absolute right-2 top-12 z-50 w-95 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background border border-outline rounded-lg shadow-lg"
     >
-      <header className="rounded-lg bg-secondary">
-        <div className="rounded-lg bg-background">
+      <div className="rounded-lg bg-secondary">
+        <header className="rounded-lg bg-background">
           <div className="w-full flex flex-row">
             <div className="flex-1 min-w-0">
               <div className="w-full pl-4 py-4">
@@ -84,16 +84,17 @@ export default function AccountMenu({ onClose }: Props) {
               <p className="text-sm">Tickets</p>
             </div>
           </div>
-        </div>
-      </header>
-
-      <button
-        type="button"
-        className="w-full flex items-center gap-4 px-5 py-3 bg-[#E5E9FF] text-sm font-medium cursor-pointer"
-      >
-        <PremiumIcon />
-        <span>Premium membership</span>
-      </button>
+        </header>
+        <button type="button" className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer">
+          <Image
+            src="/icons/workspace_premium_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt="Coins"
+            width={24}
+            height={24}
+          />
+          <span className="text-sm text-secondary-foreground font-medium">Premium membership</span>
+        </button>
+      </div>
 
       <div className="py-2">
         <MenuItem
