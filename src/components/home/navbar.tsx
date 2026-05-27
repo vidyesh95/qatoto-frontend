@@ -2,10 +2,16 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { useSidebar } from "@/state/sidebar-context";
 
 export default function Navbar() {
   const { toggleSidebar } = useSidebar();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    setIsAuthenticated(localStorage.getItem("qatoto_authenticated") === "1");
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 bg-background">
@@ -104,18 +110,34 @@ export default function Navbar() {
               height={24}
             />
           </button>
-          <Link
-            href={"/sign-in"}
-            className="flex gap-2 text-[#1DBDC5] bg-white border border-primary rounded-full px-2 py-1.75"
-          >
-            <Image
-              src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-              alt={"Signin"}
-              width={24}
-              height={24}
-            />
-            Sign in
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              href={"/your-account"}
+              aria-label="Account"
+              className="size-10 flex items-center justify-center border border-primary rounded-full overflow-hidden"
+            >
+              <Image
+                src={"/dummy/authenticated_user01.avif"}
+                alt={"Account"}
+                width={39}
+                height={39}
+                className="rounded-full"
+              />
+            </Link>
+          ) : (
+            <Link
+              href={"/sign-in"}
+              className="flex gap-2 text-[#1DBDC5] bg-white border border-primary rounded-full px-2 py-1.75"
+            >
+              <Image
+                src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                alt={"Signin"}
+                width={24}
+                height={24}
+              />
+              Sign in
+            </Link>
+          )}
         </div>
       </div>
     </nav>

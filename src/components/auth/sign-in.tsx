@@ -1,7 +1,17 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function SignIn() {
+  const router = useRouter();
+
+  const handleGoogleSignIn = () => {
+    localStorage.setItem("qatoto_authenticated", "1");
+    router.push("/");
+  };
+
   return (
     <main className="min-h-screen w-screen flex flex-col">
       <header className="bg-background space-y-10 pt-2 pb-4">
@@ -18,6 +28,7 @@ export default function SignIn() {
       <section className="p-4 space-y-4">
         <button
           type={"button"}
+          onClick={handleGoogleSignIn}
           className={
             "w-full justify-center items-center text-sm font-medium text-[#00696E] flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"
           }
