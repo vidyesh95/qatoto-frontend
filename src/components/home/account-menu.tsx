@@ -27,7 +27,7 @@ export default function AccountMenu({ onClose }: Props) {
   return (
     <div
       ref={ref}
-      className="absolute right-2 top-12 z-50 w-95 bg-background border border-outline rounded-xl shadow-lg overflow-hidden"
+      className="absolute right-2 top-12 z-50 w-95 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background border border-outline rounded-xl shadow-lg"
     >
       <div className="px-5 pt-4 pb-2">
         <div className="flex items-start justify-between">
