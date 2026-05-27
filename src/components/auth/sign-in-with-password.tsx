@@ -156,6 +156,7 @@ export default function SignIn() {
         <div className="flex gap-4 justify-center items-center">
           <button
             type={"button"}
+            aria-label="Continue with Google"
             className={
               "w-fit flex gap-2 justify-center items-center text-sm font-medium text-[#00696E] border border-outline rounded-full pl-4 pr-4 py-2.5 cursor-pointer"
             }
@@ -169,6 +170,7 @@ export default function SignIn() {
           </button>
           <button
             type={"button"}
+            aria-label="Continue with Apple"
             className={
               "w-fit flex gap-2 justify-center items-center text-sm font-medium text-[#00696E] border border-outline rounded-full pl-4 pr-4 py-2.5 cursor-pointer"
             }
