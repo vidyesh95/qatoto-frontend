@@ -111,6 +111,7 @@ export default function ForgotPassword() {
           <button
             type="button"
             onClick={handleBack}
+            aria-label="Go back"
             className="mx-1 w-12 h-12 flex items-center justify-center cursor-pointer"
           >
             <Image
@@ -197,6 +198,7 @@ export default function ForgotPassword() {
                     type="text"
                     inputMode="numeric"
                     id={`otp-${index}`}
+                    aria-label={`Verification code digit ${index + 1}`}
                     maxLength={1}
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
@@ -258,6 +260,7 @@ export default function ForgotPassword() {
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   className="ml-3 flex items-center justify-center cursor-pointer"
                   onClick={() => setShowPassword(!showPassword)}
                 >
