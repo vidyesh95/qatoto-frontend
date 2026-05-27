@@ -4,10 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useSidebar } from "@/state/sidebar-context";
+import AccountMenu from "@/components/home/account-menu";
 
 export default function Navbar() {
   const { toggleSidebar } = useSidebar();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsAuthenticated(localStorage.getItem("qatoto_authenticated") === "1");
@@ -111,19 +113,24 @@ export default function Navbar() {
             />
           </button>
           {isAuthenticated ? (
-            <Link
-              href={"/your-account"}
-              aria-label="Account"
-              className="size-10 flex items-center justify-center border border-primary rounded-full overflow-hidden"
-            >
-              <Image
-                src={"/dummy/authenticated_user01.avif"}
-                alt={"Account"}
-                width={39}
-                height={39}
-                className="rounded-full"
-              />
-            </Link>
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Account"
+                aria-haspopup="menu"
+                onClick={() => setIsAccountMenuOpen((v) => !v)}
+                className="size-10 flex items-center justify-center border border-primary rounded-full overflow-hidden cursor-pointer"
+              >
+                <Image
+                  src={"/dummy/authenticated_user01.avif"}
+                  alt={"Account"}
+                  width={39}
+                  height={39}
+                  className="rounded-full"
+                />
+              </button>
+              {isAccountMenuOpen && <AccountMenu onClose={() => setIsAccountMenuOpen(false)} />}
+            </div>
           ) : (
             <Link
               href={"/sign-in"}
