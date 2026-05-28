@@ -23,7 +23,7 @@ type RestrictedPanelProps = {
 export function RestrictedPanel({ selected, onSelect, onBack }: RestrictedPanelProps) {
   return (
     <div>
-      <header className="flex flex-row gap-4 items-center p-4 border-b border-black/10">
+      <header className="sticky top-0 z-10 bg-background flex flex-row gap-4 items-center p-4 border-b border-black/10">
         <button
           type="button"
           onClick={onBack}
