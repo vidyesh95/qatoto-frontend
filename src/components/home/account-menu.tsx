@@ -76,7 +76,7 @@ export default function AccountMenu({ onClose }: Props) {
                 <span className="w-full text-sm text-right truncate">0</span>
                 <Image
                   src="/icons/local_activity_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  alt="Coins"
+                  alt="Tickets"
                   width={24}
                   height={24}
                 />
@@ -91,7 +91,7 @@ export default function AccountMenu({ onClose }: Props) {
         >
           <Image
             src="/icons/workspace_premium_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt="Coins"
+            alt="Premium membership"
             width={24}
             height={24}
           />
@@ -106,7 +106,7 @@ export default function AccountMenu({ onClose }: Props) {
         >
           <Image
             src="/icons/account_box_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt="Coins"
+            alt="Your channel"
             width={24}
             height={24}
           />
@@ -118,7 +118,7 @@ export default function AccountMenu({ onClose }: Props) {
         >
           <Image
             src="/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt="Coins"
+            alt="Creator studio"
             width={24}
             height={24}
           />
@@ -130,7 +130,7 @@ export default function AccountMenu({ onClose }: Props) {
         >
           <Image
             src="/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt="Coins"
+            alt="Switch account"
             width={24}
             height={24}
           />
@@ -142,7 +142,7 @@ export default function AccountMenu({ onClose }: Props) {
         >
           <Image
             src="/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt="Coins"
+            alt="Sign out"
             width={24}
             height={24}
           />
@@ -155,7 +155,7 @@ export default function AccountMenu({ onClose }: Props) {
         >
           <Image
             src="/icons/dark_mode_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt="Coins"
+            alt="Appearance"
             width={24}
             height={24}
           />
@@ -176,7 +176,7 @@ export default function AccountMenu({ onClose }: Props) {
         >
           <Image
             src="/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt="Coins"
+            alt="Language"
             width={24}
             height={24}
           />
@@ -197,7 +197,7 @@ export default function AccountMenu({ onClose }: Props) {
         >
           <Image
             src="/icons/admin_panel_settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt="Coins"
+            alt="Restricted Mode"
             width={24}
             height={24}
           />
@@ -205,7 +205,7 @@ export default function AccountMenu({ onClose }: Props) {
           <span className="w-full text-sm text-secondary-foreground font-medium truncate">Off</span>
           <Image
             src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-            alt="Change Location"
+            alt="Change Restricted Mode"
             width={24}
             height={24}
           />
@@ -216,7 +216,7 @@ export default function AccountMenu({ onClose }: Props) {
         >
           <Image
             src="/icons/location_on_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt="Coins"
+            alt="Location"
             width={24}
             height={24}
           />
@@ -238,7 +238,7 @@ export default function AccountMenu({ onClose }: Props) {
         >
           <Image
             src="/icons/settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt="Coins"
+            alt="Settings"
             width={24}
             height={24}
           />
@@ -250,7 +250,7 @@ export default function AccountMenu({ onClose }: Props) {
         >
           <Image
             src="/icons/help_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt="Coins"
+            alt="Help"
             width={24}
             height={24}
           />
@@ -262,7 +262,7 @@ export default function AccountMenu({ onClose }: Props) {
         >
           <Image
             src="/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt="Coins"
+            alt="Send feedback"
             width={24}
             height={24}
           />
