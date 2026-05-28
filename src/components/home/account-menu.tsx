@@ -9,7 +9,7 @@ type AccountMenuProps = {
 };
 
 /** Which panel of the account menu is currently visible. */
-type MenuView = "main" | "appearance" | "restricted";
+type MenuView = "main" | "appearance" | "restricted" | "language";
 
 /** Browser-local appearance preference. */
 type Theme = "device" | "dark" | "light";
@@ -32,6 +32,54 @@ const RESTRICTED_OPTIONS: { value: boolean; label: string }[] = [
   { value: true, label: "On" },
 ];
 
+/** Display-language options shown in the language panel. */
+const LANGUAGE_OPTIONS: string[] = [
+  "Afrikaans",
+  "Azərbaycan",
+  "Bahasa Indonesia",
+  "Bahasa Malaysia",
+  "Bosanski",
+  "Català",
+  "Čeština",
+  "Dansk",
+  "Deutsch",
+  "Eesti",
+  "English (India)",
+  "English (UK)",
+  "English (US)",
+  "Español (España)",
+  "Español (Latinoamérica)",
+  "Español (US)",
+  "Euskara",
+  "Filipino",
+  "Français (Canada)",
+  "Français (France)",
+  "Galego",
+  "Hrvatski",
+  "IsiZulu",
+  "Íslenska",
+  "Italiano",
+  "Kiswahili",
+  "Latviešu",
+  "Lietuvių",
+  "Magyar",
+  "Nederlands",
+  "Norsk",
+  "O'zbek",
+  "Polski",
+  "Português (Brasil)",
+  "Português (Portugal)",
+  "Română",
+  "Shqip",
+  "Slovenčina",
+  "Slovenščina",
+  "Srpski",
+  "Suomi",
+  "Svenska",
+  "Tiếng Việt",
+  "Türkçe",
+];
+
 /**
  * Dropdown panel showing the signed-in user's profile, rewards, and account
  * actions (channel, creator studio, settings, sign-out, etc.).
@@ -47,6 +95,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   const [view, setView] = useState<MenuView>("main");
   const [theme, setTheme] = useState<Theme>("device");
   const [restricted, setRestricted] = useState(false);
+  const [language, setLanguage] = useState("English (US)");
 
   // Close the menu whenever the user presses down anywhere outside the panel.
   useEffect(() => {
@@ -170,6 +219,57 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                     </span>
                     <span className="text-sm text-secondary-foreground font-medium">
                       {option.label}
+                      {isSelected && <span className="sr-only"> (selected)</span>}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : view === "language" ? (
+        <div>
+          <header className="flex flex-row gap-4 items-center p-4 border-b border-black/10">
+            <button
+              type="button"
+              onClick={() => setView("main")}
+              aria-label="Back"
+              className="cursor-pointer rounded-full p-1 hover:bg-muted transition-colors"
+            >
+              <Image
+                src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt=""
+                width={24}
+                height={24}
+              />
+            </button>
+            <h2 className="text-xl text-secondary-foreground font-medium">Display language</h2>
+          </header>
+          <p className="px-4 py-4 text-sm text-muted-foreground">
+            Buttons and display text on this browser
+          </p>
+          <ul>
+            {LANGUAGE_OPTIONS.map((option) => {
+              const isSelected = language === option;
+              return (
+                <li key={option}>
+                  <button
+                    type="button"
+                    onClick={() => setLanguage(option)}
+                    className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+                  >
+                    <span className="shrink-0 size-6">
+                      {isSelected && (
+                        <Image
+                          src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                          alt="Selected language"
+                          width={24}
+                          height={24}
+                        />
+                      )}
+                    </span>
+                    <span className="text-sm text-secondary-foreground font-medium">
+                      {option}
                       {isSelected && <span className="sr-only"> (selected)</span>}
                     </span>
                   </button>
@@ -327,6 +427,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <button
               type="button"
+              onClick={() => setView("language")}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
@@ -337,7 +438,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               />
               <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
                 <span className="shrink-0">Language:</span>
-                <span className="truncate">English(US)</span>
+                <span className="truncate">{language}</span>
               </span>
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
