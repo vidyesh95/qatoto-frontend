@@ -100,7 +100,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                     onClick={() => setTheme(option.value)}
                     className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
                   >
-                    <span className="shrink-0 w-6">
+                    <span className="shrink-0 size-6">
                       {isSelected && (
                         <Image
                           src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
