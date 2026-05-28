@@ -27,7 +27,7 @@ export default function AccountMenu({ onClose }: Props) {
   return (
     <div
       ref={ref}
-      className="absolute right-2 top-12 z-50 w-95 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background border border-outline rounded-lg shadow-lg space-y-8"
+      className="absolute right-2 top-12 z-50 w-95 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background border border-black/10 rounded-lg shadow-lg space-y-8"
     >
       <div className="rounded-lg bg-secondary">
         <header className="rounded-lg bg-background">
@@ -138,6 +138,7 @@ export default function AccountMenu({ onClose }: Props) {
         </button>
         <button
           type="button"
+          onClick={handleSignOut}
           className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
         >
           <Image
