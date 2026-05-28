@@ -1,23 +1,40 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef } from "react";
 
-type Props = {
+type AccountMenuProps = {
+  /** Called when the menu should close — e.g. an outside click or after sign-out. */
   onClose: () => void;
 };
 
-export default function AccountMenu({ onClose }: Props) {
-  const ref = useRef<HTMLDivElement>(null);
+/**
+ * Dropdown panel showing the signed-in user's profile, rewards, and account
+ * actions (channel, creator studio, settings, sign-out, etc.).
+ *
+ * Closes itself when the user clicks anywhere outside the panel, and exposes a
+ * sign-out action that clears the local auth flag and returns to the home page.
+ */
+export default function AccountMenu({ onClose }: AccountMenuProps) {
+  // Reference to the root panel element, used to detect clicks landing outside it.
+  const menuPanelRef = useRef<HTMLDivElement>(null);
 
+  // Close the menu whenever the user presses down anywhere outside the panel.
   useEffect(() => {
-    const handle = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    const handleClickOutside = (mouseEvent: MouseEvent) => {
+      const clickTarget = mouseEvent.target as Node;
+      const clickedOutsidePanel =
+        menuPanelRef.current && !menuPanelRef.current.contains(clickTarget);
+
+      if (clickedOutsidePanel) onClose();
     };
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
+  // Sign the user out: drop the persisted auth flag, close the menu, and
+  // navigate to the home page (full reload resets any in-memory auth state).
   const handleSignOut = () => {
     localStorage.removeItem("qatoto_authenticated");
     onClose();
@@ -26,7 +43,7 @@ export default function AccountMenu({ onClose }: Props) {
 
   return (
     <div
-      ref={ref}
+      ref={menuPanelRef}
       className="absolute right-2 top-12 z-50 w-95 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background border border-black/10 rounded-lg shadow-lg space-y-8"
     >
       <div className="rounded-lg bg-secondary">
