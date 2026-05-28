@@ -159,9 +159,9 @@ export default function AccountMenu({ onClose }: Props) {
             width={24}
             height={24}
           />
-          <span className="text-sm text-secondary-foreground font-medium">Appearance:</span>
-          <span className="w-full text-sm text-left text-secondary-foreground font-medium truncate">
-            Device theme
+          <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
+            <span className="shrink-0">Appearance:</span>
+            <span className="truncate">Device theme</span>
           </span>
           <Image
             src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -180,9 +180,9 @@ export default function AccountMenu({ onClose }: Props) {
             width={24}
             height={24}
           />
-          <span className="text-sm text-secondary-foreground font-medium">Language:</span>
-          <span className="w-full text-sm text-left text-secondary-foreground font-medium truncate">
-            English(US)
+          <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
+            <span className="shrink-0">Language:</span>
+            <span className="truncate">English(US)</span>
           </span>
           <Image
             src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -201,8 +201,10 @@ export default function AccountMenu({ onClose }: Props) {
             width={24}
             height={24}
           />
-          <span className="text-sm text-secondary-foreground font-medium shrink-0">Restricted Mode:</span>
-          <span className="w-full text-sm text-left text-secondary-foreground font-medium truncate">Off</span>
+          <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
+            <span className="shrink-0">Restricted Mode:</span>
+            <span className="truncate">Off</span>
+          </span>
           <Image
             src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
             alt="Change Restricted Mode"
@@ -220,9 +222,9 @@ export default function AccountMenu({ onClose }: Props) {
             width={24}
             height={24}
           />
-          <span className="text-sm text-secondary-foreground font-medium">Location:</span>
-          <span className="w-full text-sm text-left text-secondary-foreground font-medium truncate">
-            United States
+          <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
+            <span className="shrink-0">Location:</span>
+            <span className="truncate">United States</span>
           </span>
           <Image
             src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
