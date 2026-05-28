@@ -5,11 +5,13 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useSidebar } from "@/state/sidebar-context";
 import AccountMenu from "@/components/home/account-menu";
+import LanguageMenu from "@/components/home/language-menu";
 
 export default function Navbar() {
   const { toggleSidebar } = useSidebar();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsAuthenticated(localStorage.getItem("qatoto_authenticated") === "1");
@@ -100,18 +102,23 @@ export default function Navbar() {
               height={24}
             />
           </button>
-          <button
-            type={"button"}
-            aria-label="Change language"
-            className={"border border-primary bg-white rounded-full p-1.75 cursor-pointer"}
-          >
-            <Image
-              src={"/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-              alt={"Change language"}
-              width={24}
-              height={24}
-            />
-          </button>
+          <div className="relative">
+            <button
+              type={"button"}
+              aria-label="Change language"
+              aria-haspopup="menu"
+              onClick={() => setIsLanguageMenuOpen((v) => !v)}
+              className={"border border-primary bg-white rounded-full p-1.75 cursor-pointer"}
+            >
+              <Image
+                src={"/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                alt={"Change language"}
+                width={24}
+                height={24}
+              />
+            </button>
+            {isLanguageMenuOpen && <LanguageMenu onClose={() => setIsLanguageMenuOpen(false)} />}
+          </div>
           {isAuthenticated ? (
             <div className="relative">
               <button

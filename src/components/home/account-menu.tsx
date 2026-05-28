@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { LanguagePanel } from "@/components/home/language-menu";
 
 type AccountMenuProps = {
   /** Called when the menu should close — e.g. an outside click or after sign-out. */
@@ -30,54 +31,6 @@ const THEME_SUMMARY: Record<Theme, string> = {
 const RESTRICTED_OPTIONS: { value: boolean; label: string }[] = [
   { value: false, label: "Off" },
   { value: true, label: "On" },
-];
-
-/** Display-language options shown in the language panel. */
-const LANGUAGE_OPTIONS: string[] = [
-  "Afrikaans",
-  "Azərbaycan",
-  "Bahasa Indonesia",
-  "Bahasa Malaysia",
-  "Bosanski",
-  "Català",
-  "Čeština",
-  "Dansk",
-  "Deutsch",
-  "Eesti",
-  "English (India)",
-  "English (UK)",
-  "English (US)",
-  "Español (España)",
-  "Español (Latinoamérica)",
-  "Español (US)",
-  "Euskara",
-  "Filipino",
-  "Français (Canada)",
-  "Français (France)",
-  "Galego",
-  "Hrvatski",
-  "IsiZulu",
-  "Íslenska",
-  "Italiano",
-  "Kiswahili",
-  "Latviešu",
-  "Lietuvių",
-  "Magyar",
-  "Nederlands",
-  "Norsk",
-  "O'zbek",
-  "Polski",
-  "Português (Brasil)",
-  "Português (Portugal)",
-  "Română",
-  "Shqip",
-  "Slovenčina",
-  "Slovenščina",
-  "Srpski",
-  "Suomi",
-  "Svenska",
-  "Tiếng Việt",
-  "Türkçe",
 ];
 
 /**
@@ -228,56 +181,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
           </ul>
         </div>
       ) : view === "language" ? (
-        <div>
-          <header className="flex flex-row gap-4 items-center p-4 border-b border-black/10">
-            <button
-              type="button"
-              onClick={() => setView("main")}
-              aria-label="Back"
-              className="cursor-pointer rounded-full p-1 hover:bg-muted transition-colors"
-            >
-              <Image
-                src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={24}
-                height={24}
-              />
-            </button>
-            <h2 className="text-xl text-secondary-foreground font-medium">Display language</h2>
-          </header>
-          <p className="px-4 py-4 text-sm text-muted-foreground">
-            Buttons and display text on this browser
-          </p>
-          <ul>
-            {LANGUAGE_OPTIONS.map((option) => {
-              const isSelected = language === option;
-              return (
-                <li key={option}>
-                  <button
-                    type="button"
-                    onClick={() => setLanguage(option)}
-                    className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
-                  >
-                    <span className="shrink-0 size-6">
-                      {isSelected && (
-                        <Image
-                          src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                          alt="Selected language"
-                          width={24}
-                          height={24}
-                        />
-                      )}
-                    </span>
-                    <span className="text-sm text-secondary-foreground font-medium">
-                      {option}
-                      {isSelected && <span className="sr-only"> (selected)</span>}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <LanguagePanel selected={language} onSelect={setLanguage} onBack={() => setView("main")} />
       ) : (
         <div className="space-y-8">
           <div className="rounded-lg bg-secondary">
