@@ -9,7 +9,7 @@ type AccountMenuProps = {
 };
 
 /** Which panel of the account menu is currently visible. */
-type MenuView = "main" | "appearance";
+type MenuView = "main" | "appearance" | "restricted";
 
 /** Browser-local appearance preference. */
 type Theme = "device" | "dark" | "light";
@@ -27,6 +27,11 @@ const THEME_SUMMARY: Record<Theme, string> = {
   light: "Light theme",
 };
 
+const RESTRICTED_OPTIONS: { value: boolean; label: string }[] = [
+  { value: false, label: "Off" },
+  { value: true, label: "On" },
+];
+
 /**
  * Dropdown panel showing the signed-in user's profile, rewards, and account
  * actions (channel, creator studio, settings, sign-out, etc.).
@@ -41,6 +46,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   // Which panel is showing, and the browser-local appearance preference.
   const [view, setView] = useState<MenuView>("main");
   const [theme, setTheme] = useState<Theme>("device");
+  const [restricted, setRestricted] = useState(false);
 
   // Close the menu whenever the user presses down anywhere outside the panel.
   useEffect(() => {
@@ -105,6 +111,58 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                         <Image
                           src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                           alt="Selected theme"
+                          width={24}
+                          height={24}
+                        />
+                      )}
+                    </span>
+                    <span className="text-sm text-secondary-foreground font-medium">
+                      {option.label}
+                      {isSelected && <span className="sr-only"> (selected)</span>}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : view === "restricted" ? (
+        <div>
+          <header className="flex flex-row gap-4 items-center p-4 border-b border-black/10">
+            <button
+              type="button"
+              onClick={() => setView("main")}
+              aria-label="Back"
+              className="cursor-pointer rounded-full p-1 hover:bg-muted transition-colors"
+            >
+              <Image
+                src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt=""
+                width={24}
+                height={24}
+              />
+            </button>
+            <h2 className="text-xl text-secondary-foreground font-medium">Restricted Mode</h2>
+          </header>
+          <p className="px-4 py-4 text-sm text-muted-foreground">
+            Restricted Mode hides potentially mature content. No filter is 100% accurate. This
+            setting applies to this browser only.
+          </p>
+          <ul>
+            {RESTRICTED_OPTIONS.map((option) => {
+              const isSelected = restricted === option.value;
+              return (
+                <li key={String(option.value)}>
+                  <button
+                    type="button"
+                    onClick={() => setRestricted(option.value)}
+                    className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+                  >
+                    <span className="shrink-0 size-6">
+                      {isSelected && (
+                        <Image
+                          src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                          alt="Selected Restricted Mode option"
                           width={24}
                           height={24}
                         />
@@ -290,6 +348,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <button
               type="button"
+              onClick={() => setView("restricted")}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
@@ -300,7 +359,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               />
               <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
                 <span className="shrink-0">Restricted Mode:</span>
-                <span className="truncate">Off</span>
+                <span className="truncate">{restricted ? "On" : "Off"}</span>
               </span>
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
