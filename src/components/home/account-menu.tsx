@@ -102,7 +102,7 @@ export default function AccountMenu({ onClose }: Props) {
       <div>
         <button
           type="button"
-          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
         >
           <Image
             src="/icons/account_box_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -114,7 +114,7 @@ export default function AccountMenu({ onClose }: Props) {
         </button>
         <button
           type="button"
-          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
         >
           <Image
             src="/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -126,7 +126,7 @@ export default function AccountMenu({ onClose }: Props) {
         </button>
         <button
           type="button"
-          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
         >
           <Image
             src="/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -138,7 +138,7 @@ export default function AccountMenu({ onClose }: Props) {
         </button>
         <button
           type="button"
-          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
         >
           <Image
             src="/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -151,7 +151,7 @@ export default function AccountMenu({ onClose }: Props) {
         <hr className="mx-4" />
         <button
           type="button"
-          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
         >
           <Image
             src="/icons/dark_mode_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -172,7 +172,7 @@ export default function AccountMenu({ onClose }: Props) {
         </button>
         <button
           type="button"
-          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
         >
           <Image
             src="/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -193,7 +193,7 @@ export default function AccountMenu({ onClose }: Props) {
         </button>
         <button
           type="button"
-          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
         >
           <Image
             src="/icons/admin_panel_settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -212,7 +212,7 @@ export default function AccountMenu({ onClose }: Props) {
         </button>
         <button
           type="button"
-          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
         >
           <Image
             src="/icons/location_on_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -234,7 +234,7 @@ export default function AccountMenu({ onClose }: Props) {
         <hr className="mx-4" />
         <button
           type="button"
-          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
         >
           <Image
             src="/icons/settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -246,7 +246,7 @@ export default function AccountMenu({ onClose }: Props) {
         </button>
         <button
           type="button"
-          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
         >
           <Image
             src="/icons/help_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -258,7 +258,7 @@ export default function AccountMenu({ onClose }: Props) {
         </button>
         <button
           type="button"
-          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
         >
           <Image
             src="/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
