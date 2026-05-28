@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { AppearancePanel, THEME_SUMMARY, type Theme } from "@/components/home/appearance-menu";
 import { LanguagePanel } from "@/components/home/language-menu";
+import { RestrictedPanel } from "@/components/home/restricted-menu";
 
 type AccountMenuProps = {
   /** Called when the menu should close — e.g. an outside click or after sign-out. */
@@ -11,27 +13,6 @@ type AccountMenuProps = {
 
 /** Which panel of the account menu is currently visible. */
 type MenuView = "main" | "appearance" | "restricted" | "language";
-
-/** Browser-local appearance preference. */
-type Theme = "device" | "dark" | "light";
-
-const THEME_OPTIONS: { value: Theme; label: string }[] = [
-  { value: "device", label: "Use device theme" },
-  { value: "dark", label: "Dark theme" },
-  { value: "light", label: "Light theme" },
-];
-
-/** Short label shown next to "Appearance:" on the main menu row. */
-const THEME_SUMMARY: Record<Theme, string> = {
-  device: "Device theme",
-  dark: "Dark theme",
-  light: "Light theme",
-};
-
-const RESTRICTED_OPTIONS: { value: boolean; label: string }[] = [
-  { value: false, label: "Off" },
-  { value: true, label: "On" },
-];
 
 /**
  * Dropdown panel showing the signed-in user's profile, rewards, and account
@@ -78,108 +59,13 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
       className="absolute right-2 top-12 z-50 w-95 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background border border-black/10 rounded-lg shadow-lg"
     >
       {view === "appearance" ? (
-        <div>
-          <header className="flex flex-row gap-4 items-center p-4 border-b border-black/10">
-            <button
-              type="button"
-              onClick={() => setView("main")}
-              aria-label="Back"
-              className="cursor-pointer rounded-full p-1 hover:bg-muted transition-colors"
-            >
-              <Image
-                src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={24}
-                height={24}
-              />
-            </button>
-            <h2 className="text-xl text-secondary-foreground font-medium">Appearance</h2>
-          </header>
-          <p className="px-4 py-4 text-sm text-muted-foreground">
-            Setting applies to this browser only
-          </p>
-          <ul>
-            {THEME_OPTIONS.map((option) => {
-              const isSelected = theme === option.value;
-              return (
-                <li key={option.value}>
-                  <button
-                    type="button"
-                    onClick={() => setTheme(option.value)}
-                    className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
-                  >
-                    <span className="shrink-0 size-6">
-                      {isSelected && (
-                        <Image
-                          src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                          alt="Selected theme"
-                          width={24}
-                          height={24}
-                        />
-                      )}
-                    </span>
-                    <span className="text-sm text-secondary-foreground font-medium">
-                      {option.label}
-                      {isSelected && <span className="sr-only"> (selected)</span>}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <AppearancePanel selected={theme} onSelect={setTheme} onBack={() => setView("main")} />
       ) : view === "restricted" ? (
-        <div>
-          <header className="flex flex-row gap-4 items-center p-4 border-b border-black/10">
-            <button
-              type="button"
-              onClick={() => setView("main")}
-              aria-label="Back"
-              className="cursor-pointer rounded-full p-1 hover:bg-muted transition-colors"
-            >
-              <Image
-                src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={24}
-                height={24}
-              />
-            </button>
-            <h2 className="text-xl text-secondary-foreground font-medium">Restricted Mode</h2>
-          </header>
-          <p className="px-4 py-4 text-sm text-muted-foreground">
-            Restricted Mode hides potentially mature content. No filter is 100% accurate. This
-            setting applies to this browser only.
-          </p>
-          <ul>
-            {RESTRICTED_OPTIONS.map((option) => {
-              const isSelected = restricted === option.value;
-              return (
-                <li key={String(option.value)}>
-                  <button
-                    type="button"
-                    onClick={() => setRestricted(option.value)}
-                    className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
-                  >
-                    <span className="shrink-0 size-6">
-                      {isSelected && (
-                        <Image
-                          src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                          alt="Selected Restricted Mode option"
-                          width={24}
-                          height={24}
-                        />
-                      )}
-                    </span>
-                    <span className="text-sm text-secondary-foreground font-medium">
-                      {option.label}
-                      {isSelected && <span className="sr-only"> (selected)</span>}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <RestrictedPanel
+          selected={restricted}
+          onSelect={setRestricted}
+          onBack={() => setView("main")}
+        />
       ) : view === "language" ? (
         <LanguagePanel selected={language} onSelect={setLanguage} onBack={() => setView("main")} />
       ) : (
