@@ -27,7 +27,7 @@ export default function AccountMenu({ onClose }: Props) {
   return (
     <div
       ref={ref}
-      className="absolute right-2 top-12 z-50 w-95 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background border border-outline rounded-lg shadow-lg"
+      className="absolute right-2 top-12 z-50 w-95 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background border border-outline rounded-lg shadow-lg space-y-8"
     >
       <div className="rounded-lg bg-secondary">
         <header className="rounded-lg bg-background">
@@ -85,7 +85,10 @@ export default function AccountMenu({ onClose }: Props) {
             </div>
           </div>
         </header>
-        <button type="button" className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer">
+        <button
+          type="button"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+        >
           <Image
             src="/icons/workspace_premium_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             alt="Coins"
@@ -96,60 +99,175 @@ export default function AccountMenu({ onClose }: Props) {
         </button>
       </div>
 
-      <div className="py-2">
-        <MenuItem
-          label="Your channel"
-          icon={
-            <MaterialIcon src="/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" />
-          }
-        />
-        <MenuItem
-          label="Creator studio"
-          icon={<MaterialIcon src="/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" />}
-        />
-        <MenuItem
-          label="Appearance:Device theme"
-          icon={
-            <MaterialIcon src="/icons/featured_video_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" />
-          }
-          chevron
-        />
-        <MenuItem
-          label="Switch account"
-          icon={
-            <MaterialIcon src="/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" />
-          }
-        />
-        <MenuItem
-          label="Sign out"
-          icon={<MaterialIcon src="/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" />}
-          onClick={handleSignOut}
-        />
-      </div>
-
-      <div className="mx-5 border-t border-outline" />
-
-      <div className="py-2">
-        <MenuItem label="Appearance:Device theme" icon={<MoonIcon />} chevron />
-        <MenuItem
-          label="Language:English(US)"
-          icon={<MaterialIcon src="/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" />}
-          chevron
-        />
-        <MenuItem
-          label="Restricted Mode:Off"
-          icon={<MaterialIcon src="/icons/lock_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg" />}
-          chevron
-        />
-        <MenuItem label="Location:United States" icon={<LocationIcon />} chevron />
-      </div>
-
-      <div className="mx-5 border-t border-outline" />
-
-      <div className="py-2 pb-3">
-        <MenuItem label="Settings" icon={<SettingsIcon />} />
-        <MenuItem label="Help" icon={<HelpIcon />} />
-        <MenuItem label="Send feedback" icon={<FeedbackIcon />} />
+      <div>
+        <button
+          type="button"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+        >
+          <Image
+            src="/icons/account_box_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt="Coins"
+            width={24}
+            height={24}
+          />
+          <span className="text-sm text-secondary-foreground font-medium">Your channel</span>
+        </button>
+        <button
+          type="button"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+        >
+          <Image
+            src="/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt="Coins"
+            width={24}
+            height={24}
+          />
+          <span className="text-sm text-secondary-foreground font-medium">Creator studio</span>
+        </button>
+        <button
+          type="button"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+        >
+          <Image
+            src="/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt="Coins"
+            width={24}
+            height={24}
+          />
+          <span className="text-sm text-secondary-foreground font-medium">Switch account</span>
+        </button>
+        <button
+          type="button"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+        >
+          <Image
+            src="/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt="Coins"
+            width={24}
+            height={24}
+          />
+          <span className="text-sm text-secondary-foreground font-medium">Sign out</span>
+        </button>
+        <hr className="mx-4" />
+        <button
+          type="button"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+        >
+          <Image
+            src="/icons/dark_mode_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt="Coins"
+            width={24}
+            height={24}
+          />
+          <span className="text-sm text-secondary-foreground font-medium">Appearance:</span>
+          <span className="w-full text-sm text-secondary-foreground font-medium truncate">
+            Device theme
+          </span>
+          <Image
+            src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+            alt="Change device theme"
+            width={24}
+            height={24}
+          />
+        </button>
+        <button
+          type="button"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+        >
+          <Image
+            src="/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt="Coins"
+            width={24}
+            height={24}
+          />
+          <span className="text-sm text-secondary-foreground font-medium">Language:</span>
+          <span className="w-full text-sm text-secondary-foreground font-medium truncate">
+            English(US)
+          </span>
+          <Image
+            src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+            alt="Change language"
+            width={24}
+            height={24}
+          />
+        </button>
+        <button
+          type="button"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+        >
+          <Image
+            src="/icons/admin_panel_settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt="Coins"
+            width={24}
+            height={24}
+          />
+          <span className="text-sm text-secondary-foreground font-medium">Restricted Mode:</span>
+          <span className="w-full text-sm text-secondary-foreground font-medium truncate">Off</span>
+          <Image
+            src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+            alt="Change Location"
+            width={24}
+            height={24}
+          />
+        </button>
+        <button
+          type="button"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+        >
+          <Image
+            src="/icons/location_on_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt="Coins"
+            width={24}
+            height={24}
+          />
+          <span className="text-sm text-secondary-foreground font-medium">Location:</span>
+          <span className="w-full text-sm text-secondary-foreground font-medium truncate">
+            United States
+          </span>
+          <Image
+            src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+            alt="Change Location"
+            width={24}
+            height={24}
+          />
+        </button>
+        <hr className="mx-4" />
+        <button
+          type="button"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+        >
+          <Image
+            src="/icons/settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt="Coins"
+            width={24}
+            height={24}
+          />
+          <span className="text-sm text-secondary-foreground font-medium">Settings</span>
+        </button>
+        <button
+          type="button"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+        >
+          <Image
+            src="/icons/help_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt="Coins"
+            width={24}
+            height={24}
+          />
+          <span className="text-sm text-secondary-foreground font-medium">Help</span>
+        </button>
+        <button
+          type="button"
+          className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer"
+        >
+          <Image
+            src="/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt="Coins"
+            width={24}
+            height={24}
+          />
+          <span className="text-sm text-secondary-foreground font-medium">Send feedback</span>
+        </button>
       </div>
     </div>
   );
