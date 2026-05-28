@@ -201,7 +201,7 @@ export default function AccountMenu({ onClose }: Props) {
             width={24}
             height={24}
           />
-          <span className="text-sm text-secondary-foreground font-medium">Restricted Mode:</span>
+          <span className="text-sm text-secondary-foreground font-medium shrink-0">Restricted Mode:</span>
           <span className="w-full text-sm text-left text-secondary-foreground font-medium truncate">Off</span>
           <Image
             src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
