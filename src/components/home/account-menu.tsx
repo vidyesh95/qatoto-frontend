@@ -160,7 +160,7 @@ export default function AccountMenu({ onClose }: Props) {
             height={24}
           />
           <span className="text-sm text-secondary-foreground font-medium">Appearance:</span>
-          <span className="w-full text-sm text-secondary-foreground font-medium truncate">
+          <span className="w-full text-sm text-left text-secondary-foreground font-medium truncate">
             Device theme
           </span>
           <Image
@@ -181,7 +181,7 @@ export default function AccountMenu({ onClose }: Props) {
             height={24}
           />
           <span className="text-sm text-secondary-foreground font-medium">Language:</span>
-          <span className="w-full text-sm text-secondary-foreground font-medium truncate">
+          <span className="w-full text-sm text-left text-secondary-foreground font-medium truncate">
             English(US)
           </span>
           <Image
@@ -202,7 +202,7 @@ export default function AccountMenu({ onClose }: Props) {
             height={24}
           />
           <span className="text-sm text-secondary-foreground font-medium">Restricted Mode:</span>
-          <span className="w-full text-sm text-secondary-foreground font-medium truncate">Off</span>
+          <span className="w-full text-sm text-left text-secondary-foreground font-medium truncate">Off</span>
           <Image
             src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
             alt="Change Restricted Mode"
@@ -221,7 +221,7 @@ export default function AccountMenu({ onClose }: Props) {
             height={24}
           />
           <span className="text-sm text-secondary-foreground font-medium">Location:</span>
-          <span className="w-full text-sm text-secondary-foreground font-medium truncate">
+          <span className="w-full text-sm text-left text-secondary-foreground font-medium truncate">
             United States
           </span>
           <Image
