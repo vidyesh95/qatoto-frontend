@@ -100,17 +100,14 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                     onClick={() => setTheme(option.value)}
                     className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
                   >
-                    <span className="shrink-0 w-6 text-secondary-foreground">
+                    <span className="shrink-0 w-6">
                       {isSelected && (
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          aria-hidden="true"
-                        >
-                          <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                        </svg>
+                        <Image
+                          src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                          alt="Selected theme"
+                          width={24}
+                          height={24}
+                        />
                       )}
                     </span>
                     <span className="text-sm text-secondary-foreground font-medium">
