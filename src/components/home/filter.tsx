@@ -244,7 +244,7 @@ export default function Filter() {
           const isSelected = selectedChipIndex === chipIndex;
           return (
             <button
-              key={`${chipLabel}-${chipIndex}`}
+              key={chipIndex}
               ref={(node) => {
                 chipButtonRefs.current[chipIndex] = node;
               }}
