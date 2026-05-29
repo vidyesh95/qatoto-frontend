@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { AppearancePanel, THEME_SUMMARY, type Theme } from "@/components/home/appearance-menu";
 import { LanguagePanel } from "@/components/home/language-menu";
+import { countryName, DEFAULT_COUNTRY_CODE, LocationPanel } from "@/components/home/location-menu";
 import { RestrictedPanel } from "@/components/home/restricted-menu";
 
 type AccountMenuProps = {
@@ -12,7 +13,7 @@ type AccountMenuProps = {
 };
 
 /** Which panel of the account menu is currently visible. */
-type MenuView = "main" | "appearance" | "restricted" | "language";
+type MenuView = "main" | "appearance" | "restricted" | "language" | "location";
 
 /**
  * Dropdown panel showing the signed-in user's profile, rewards, and account
@@ -30,6 +31,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   const [theme, setTheme] = useState<Theme>("device");
   const [restricted, setRestricted] = useState(false);
   const [language, setLanguage] = useState("English (US)");
+  const [location, setLocation] = useState(DEFAULT_COUNTRY_CODE);
 
   // Close the menu whenever the user presses down anywhere outside the panel.
   useEffect(() => {
@@ -68,6 +70,8 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
         />
       ) : view === "language" ? (
         <LanguagePanel selected={language} onSelect={setLanguage} onBack={() => setView("main")} />
+      ) : view === "location" ? (
+        <LocationPanel selected={location} onSelect={setLocation} onBack={() => setView("main")} />
       ) : (
         <div className="space-y-8">
           <div className="rounded-lg bg-secondary">
@@ -261,6 +265,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <button
               type="button"
+              onClick={() => setView("location")}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
@@ -271,7 +276,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               />
               <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
                 <span className="shrink-0">Location:</span>
-                <span className="truncate">United States</span>
+                <span className="truncate">{countryName(location)}</span>
               </span>
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
