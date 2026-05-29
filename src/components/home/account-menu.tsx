@@ -92,7 +92,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 </div>
                 <div className="shrink-0 p-4 flex flex-col items-end gap-4">
                   <Image
-                    src="/dummy/authenticated_user01.avif"
+                    src="/dummy/profile_photo_girl.avif"
                     alt="Account"
                     width={40}
                     height={40}

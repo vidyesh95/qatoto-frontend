@@ -129,7 +129,7 @@ export default function Navbar() {
                 className="size-10 flex items-center justify-center border border-primary rounded-full overflow-hidden cursor-pointer"
               >
                 <Image
-                  src={"/dummy/authenticated_user01.avif"}
+                  src={"/dummy/profile_photo_girl.avif"}
                   alt={"Account"}
                   width={39}
                   height={39}
