@@ -16,7 +16,6 @@ const FILTER_CHIPS = [
   "Shopping",
   "Cosplay",
   "Music",
-  "News",
   "Robotics",
   "AI",
   "Research",
