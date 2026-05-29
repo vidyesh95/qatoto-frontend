@@ -9,8 +9,9 @@ export const metadata: Metadata = {
 
 export default async function PressPage() {
   const items = await getPressList();
-  const sorted = [...items].sort(
-    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-  );
+  const sorted = [...items]
+    .map((item) => ({ item, t: new Date(item.publishedAt).getTime() }))
+    .sort((a, b) => b.t - a.t)
+    .map(({ item }) => item);
   return <Press items={sorted} />;
 }
