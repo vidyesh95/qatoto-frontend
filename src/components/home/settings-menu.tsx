@@ -74,7 +74,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
           alt=""
           width={320}
           height={400}
-          className="mt-3 aspect-[4/5] w-full rounded-xl object-cover"
+          className="mt-3 aspect-4/5 w-full rounded-xl object-cover"
         />
         <div className="mt-3 rounded-xl bg-muted px-4 py-3 text-center text-base text-secondary-foreground">
           @drDong2w
