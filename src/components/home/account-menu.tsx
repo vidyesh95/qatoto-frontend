@@ -48,6 +48,13 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
+  // Reset scroll to the top whenever the visible panel changes, so opening a
+  // sub-panel (or returning to main) always starts at the top rather than
+  // inheriting the previous panel's scroll position.
+  useEffect(() => {
+    menuPanelRef.current?.scrollTo({ top: 0 });
+  }, [view]);
+
   // Sign the user out: drop the persisted auth flag, close the menu, and
   // navigate to the home page (full reload resets any in-memory auth state).
   const handleSignOut = () => {
