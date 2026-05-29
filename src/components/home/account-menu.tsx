@@ -6,6 +6,7 @@ import { AppearancePanel, THEME_SUMMARY, type Theme } from "@/components/home/ap
 import { LanguagePanel } from "@/components/home/language-menu";
 import { countryName, DEFAULT_COUNTRY_CODE, LocationPanel } from "@/components/home/location-menu";
 import { RestrictedPanel } from "@/components/home/restricted-menu";
+import { SettingsPanel } from "@/components/home/settings-menu";
 
 type AccountMenuProps = {
   /** Called when the menu should close — e.g. an outside click or after sign-out. */
@@ -13,7 +14,7 @@ type AccountMenuProps = {
 };
 
 /** Which panel of the account menu is currently visible. */
-type MenuView = "main" | "appearance" | "restricted" | "language" | "location";
+type MenuView = "main" | "appearance" | "restricted" | "language" | "location" | "settings";
 
 /**
  * Dropdown panel showing the signed-in user's profile, rewards, and account
@@ -72,6 +73,8 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
         <LanguagePanel selected={language} onSelect={setLanguage} onBack={() => setView("main")} />
       ) : view === "location" ? (
         <LocationPanel selected={location} onSelect={setLocation} onBack={() => setView("main")} />
+      ) : view === "settings" ? (
+        <SettingsPanel onBack={() => setView("main")} onSignOut={handleSignOut} />
       ) : (
         <div className="space-y-8">
           <div className="rounded-lg bg-secondary">
@@ -288,6 +291,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <hr className="mx-4" />
             <button
               type="button"
+              onClick={() => setView("settings")}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
