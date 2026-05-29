@@ -29,7 +29,7 @@ pnpm exec playwright test --ui        # interactive
 
 Two test runners, kept strictly apart:
 
-- **Vitest** — fast unit tests for pure/logic modules (e.g. `src/lib/cms.ts`). Config in `vitest.config.ts`. Test files use the **`.test.ts`** suffix and live **next to the code** under `src/**` (or under `tests/unit/`). Vitest's `include` is scoped to those globs and `exclude`s `tests/specs/**`. Add new unit tests here when the logic is testable without a browser.
+- **Vitest** — unit + component tests. Config in `vitest.config.mts` (the Next.js-recommended setup: `@vitejs/plugin-react`, `vite-tsconfig-paths` for the `@/*` alias, `jsdom` environment, React Testing Library). Test files use the **`.test.ts` / `.test.tsx`** suffix and live **next to the code** under `src/**` (or under `tests/unit/`). Vitest's `include` is scoped to those globs and `exclude`s `tests/specs/**`. Add new unit/component tests here when the logic is testable without a real browser.
 - **Playwright** — E2E in `tests/specs/**/*.spec.ts` (the **`.spec.ts`** suffix; Playwright's `testDir` only scans `tests/specs`, never `src/`). It does **not** auto-start a dev server (`webServer` is commented out in `playwright.config.ts`); run `pnpm dev` separately before `playwright test`.
 
 The two suffixes (`.test.ts` for Vitest, `.spec.ts` for Playwright) are load-bearing — they keep each runner from picking up the other's files. Don't name a Vitest file `*.spec.ts` or put it under `tests/specs/`.
