@@ -250,7 +250,7 @@ export default function Filter() {
                 chipButtonRefs.current[chipIndex] = node;
               }}
               type="button"
-              aria-pressed={isSelected ? "true" : "false"}
+              aria-pressed={isSelected}
               tabIndex={chipIndex === focusedChipIndex ? 0 : -1}
               onClick={() => {
                 setSelectedChipIndex(chipIndex);
