@@ -25,10 +25,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function BlogPostPage({ params }: { params: Params }) {
   const { slug } = await params;
-  const post = await getBlog(slug);
+  const [post, all] = await Promise.all([getBlog(slug), getBlogs()]);
   if (!post) notFound();
 
-  const all = await getBlogs();
   const related = all.filter((p) => p.slug !== post.slug).slice(0, 3);
 
   return <BlogDetail post={post} related={related} />;
