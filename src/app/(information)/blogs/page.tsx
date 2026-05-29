@@ -10,8 +10,9 @@ export const metadata: Metadata = {
 
 export default async function BlogsPage() {
   const posts = await getBlogs();
-  const sorted = [...posts].sort(
-    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-  );
+  const sorted = [...posts]
+    .map((post) => ({ post, t: new Date(post.publishedAt).getTime() }))
+    .sort((a, b) => b.t - a.t)
+    .map(({ post }) => post);
   return <Blogs posts={sorted} />;
 }
