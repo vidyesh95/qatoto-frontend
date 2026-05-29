@@ -24,10 +24,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function PressDetailPage({ params }: { params: Params }) {
   const { slug } = await params;
-  const item = await getPressItem(slug);
+  const [item, all] = await Promise.all([getPressItem(slug), getPressList()]);
   if (!item) notFound();
 
-  const all = await getPressList();
   const related = all.filter((p) => p.slug !== item.slug).slice(0, 4);
 
   return <PressDetail item={item} related={related} />;
