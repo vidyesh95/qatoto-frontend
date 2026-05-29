@@ -18,13 +18,21 @@ pnpm lint                             # eslint (next/core-web-vitals + next/type
 pnpm lint:fix                         # oxlint --fix (type-aware oxlint, see oxlint.config.ts)
 pnpm fmt                              # oxfmt write
 pnpm fmt:check                        # oxfmt check (CI)
+pnpm test                             # vitest run (unit tests, run once)
+pnpm test:watch                       # vitest (watch mode)
+pnpm exec vitest run src/lib/cms.test.ts   # single unit-test file
 pnpm exec playwright test             # all E2E (chromium + firefox + webkit)
 pnpm exec playwright test --project=chromium
 pnpm exec playwright test tests/navigation-and-signin.spec.ts   # single file
 pnpm exec playwright test --ui        # interactive
 ```
 
-There is no Jest/Vitest suite — only Playwright E2E in `tests/`. Playwright does **not** auto-start a dev server (`webServer` is commented out in `playwright.config.ts`); run `pnpm dev` separately before `playwright test`.
+Two test runners, kept strictly apart:
+
+- **Vitest** — fast unit tests for pure/logic modules (e.g. `src/lib/cms.ts`). Config in `vitest.config.ts`. Test files use the **`.test.ts`** suffix and live **next to the code** under `src/**` (or under `tests/unit/`). Vitest's `include` is scoped to those globs and `exclude`s `tests/specs/**`. Add new unit tests here when the logic is testable without a browser.
+- **Playwright** — E2E in `tests/specs/**/*.spec.ts` (the **`.spec.ts`** suffix; Playwright's `testDir` only scans `tests/specs`, never `src/`). It does **not** auto-start a dev server (`webServer` is commented out in `playwright.config.ts`); run `pnpm dev` separately before `playwright test`.
+
+The two suffixes (`.test.ts` for Vitest, `.spec.ts` for Playwright) are load-bearing — they keep each runner from picking up the other's files. Don't name a Vitest file `*.spec.ts` or put it under `tests/specs/`.
 
 Note `package.json` script is `fmt`, but `CONTRIBUTING.md` references `pnpm run format` — the working command is `pnpm fmt`.
 

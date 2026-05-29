@@ -42,9 +42,9 @@ test.describe("getPressList — press listing page", () => {
   test("/press orders items newest-first", async ({ page }) => {
     await page.goto("/press");
 
-    const hrefs = await page.locator('ol li a[href^="/press/"]').evaluateAll((els) =>
-      els.map((el) => el.getAttribute("href")),
-    );
+    const hrefs = await page
+      .locator('ol li a[href^="/press/"]')
+      .evaluateAll((els) => els.map((el) => el.getAttribute("href")));
     expect(hrefs).toEqual(EXPECTED_ORDER.map(({ slug }) => `/press/${slug}`));
   });
 });
