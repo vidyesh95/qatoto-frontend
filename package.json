@@ -32,7 +32,8 @@
     "react-grab": "^0.1.37",
     "react-scan": "^0.5.6",
     "tailwindcss": "^4.3.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
