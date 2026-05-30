@@ -89,8 +89,8 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               <div className="w-full flex flex-row">
                 <div className="flex-1 min-w-0">
                   <div className="w-full pl-4 py-4">
-                    <p className="w-full text-base text-[#041F21] truncate">Vidyesh Churi</p>
-                    <p className="w-full text-xs text-[#041F21] truncate">@vidyesh</p>
+                    <p className="w-full text-base text-[#041F21] truncate">董雪博士</p>
+                    <p className="w-full text-xs text-[#041F21] truncate">@drDong2w</p>
                   </div>
                   <p className="w-full ml-4 text-4xl text-[#1DBDC5] flex gap-1">
                     <span>Level</span>
