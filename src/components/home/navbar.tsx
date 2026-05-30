@@ -119,6 +119,18 @@ export default function Navbar() {
             </button>
             {isLanguageMenuOpen && <LanguageMenu onClose={() => setIsLanguageMenuOpen(false)} />}
           </div>
+          <button
+            type={"button"}
+            aria-label="Cart"
+            className={"border border-primary bg-white rounded-full p-1.75 cursor-pointer"}
+          >
+            <Image
+              src={"/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+              alt={"Cart"}
+              width={24}
+              height={24}
+            />
+          </button>
           {isAuthenticated ? (
             <div className="relative">
               <button
