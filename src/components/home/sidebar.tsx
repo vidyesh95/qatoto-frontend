@@ -25,8 +25,8 @@ const ICON_PATHS = {
     inactive: "/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   screenShare: {
-    active: "/icons/screen_share_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    inactive: "/icons/screen_share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    active: "/icons/video_template_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/video_template_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   selfImprovement: {
     static: "/icons/self_improvement_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
