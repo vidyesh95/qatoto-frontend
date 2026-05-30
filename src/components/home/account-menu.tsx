@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { AppearancePanel, THEME_SUMMARY, type Theme } from "@/components/home/appearance-menu";
 import { LanguagePanel } from "@/components/home/language-menu";
 import { countryName, DEFAULT_COUNTRY_CODE, LocationPanel } from "@/components/home/location-menu";
-import { RestrictedPanel } from "@/components/home/restricted-menu";
+import { ChildPanel } from "@/components/home/child-menu";
+import { IncognitoPanel } from "@/components/home/incognito-menu";
 import { SettingsPanel } from "@/components/home/settings-menu";
 
 type AccountMenuProps = {
@@ -14,7 +15,14 @@ type AccountMenuProps = {
 };
 
 /** Which panel of the account menu is currently visible. */
-type MenuView = "main" | "appearance" | "restricted" | "language" | "location" | "settings";
+type MenuView =
+  | "main"
+  | "appearance"
+  | "child"
+  | "incognito"
+  | "language"
+  | "location"
+  | "settings";
 
 /**
  * Dropdown panel showing the signed-in user's profile, rewards, and account
@@ -71,10 +79,12 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
     >
       {view === "appearance" ? (
         <AppearancePanel selected={theme} onSelect={setTheme} onBack={() => setView("main")} />
-      ) : view === "restricted" ? (
-        <RestrictedPanel
-          selected={childMode}
-          onSelect={setChildMode}
+      ) : view === "child" ? (
+        <ChildPanel selected={childMode} onSelect={setChildMode} onBack={() => setView("main")} />
+      ) : view === "incognito" ? (
+        <IncognitoPanel
+          selected={incognitoMode}
+          onSelect={setIncognitoMode}
           onBack={() => setView("main")}
         />
       ) : view === "language" ? (
@@ -194,12 +204,12 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
-                src="/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Switch account"
+                src="/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="Your cart"
                 width={24}
                 height={24}
               />
-              <span className="text-sm text-secondary-foreground font-medium">Your Cart</span>
+              <span className="text-sm text-secondary-foreground font-medium">Your cart</span>
             </button>
             <button
               type="button"
@@ -207,7 +217,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             >
               <Image
                 src="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Switch account"
+                alt="Your wishlist"
                 width={24}
                 height={24}
               />
@@ -219,7 +229,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             >
               <Image
                 src="/icons/orders_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Switch account"
+                alt="Your orders"
                 width={24}
                 height={24}
               />
@@ -297,7 +307,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <button
               type="button"
-              onClick={() => setView("restricted")}
+              onClick={() => setView("child")}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
@@ -319,7 +329,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <button
               type="button"
-              onClick={() => setView("restricted")}
+              onClick={() => setView("incognito")}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
@@ -334,7 +344,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               </span>
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                alt="Change Restricted Mode"
+                alt="Change Incognito Mode"
                 width={24}
                 height={24}
               />

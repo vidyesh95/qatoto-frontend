@@ -2,25 +2,28 @@
 
 import Image from "next/image";
 
-export const RESTRICTED_OPTIONS: { value: boolean; label: string }[] = [
+export const CHILD_OPTIONS: { value: boolean; label: string }[] = [
   { value: false, label: "Off" },
   { value: true, label: "On" },
 ];
 
-type RestrictedPanelProps = {
-  /** Whether Restricted Mode is currently on. */
+type ChildPanelProps = {
+  /** Whether Child Mode is currently on. */
   selected: boolean;
-  /** Called with the chosen Restricted Mode state. */
-  onSelect: (restricted: boolean) => void;
+  /** Called with the chosen Child Mode state. */
+  onSelect: (child: boolean) => void;
   /** Invoked by the header back button. */
   onBack: () => void;
 };
 
 /**
- * Presentational "Restricted Mode" panel: header, subtitle, and the selectable
+ * Presentational "Child Mode" panel: header, subtitle, and the selectable
  * on/off options.
+ *
+ * Nothing here is a trust boundary — Child Mode content filtering must be
+ * enforced by the Express backend, not this browser-local flag.
  */
-export function RestrictedPanel({ selected, onSelect, onBack }: RestrictedPanelProps) {
+export function ChildPanel({ selected, onSelect, onBack }: ChildPanelProps) {
   return (
     <div>
       <header className="sticky top-0 z-10 bg-background flex flex-row gap-4 items-center p-4 border-b border-black/10">
@@ -37,14 +40,14 @@ export function RestrictedPanel({ selected, onSelect, onBack }: RestrictedPanelP
             height={24}
           />
         </button>
-        <h2 className="text-xl text-secondary-foreground font-medium">Restricted Mode</h2>
+        <h2 className="text-xl text-secondary-foreground font-medium">Child Mode</h2>
       </header>
       <p className="px-4 py-4 text-sm text-muted-foreground">
-        Restricted Mode hides potentially mature content. No filter is 100% accurate. This setting
-        applies to this browser only.
+        Child Mode shows only age-appropriate content and hides mature features. No filter is 100%
+        accurate. This setting applies to this browser only.
       </p>
       <ul>
-        {RESTRICTED_OPTIONS.map((option) => {
+        {CHILD_OPTIONS.map((option) => {
           const isSelected = selected === option.value;
           return (
             <li key={String(option.value)}>
@@ -57,7 +60,7 @@ export function RestrictedPanel({ selected, onSelect, onBack }: RestrictedPanelP
                   {isSelected && (
                     <Image
                       src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                      alt="Selected Restricted Mode option"
+                      alt="Selected Child Mode option"
                       width={24}
                       height={24}
                     />
