@@ -35,6 +35,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     { label: "Set password", icon: "/icons/lock_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
     { label: "Set handle", icon: "/icons/alternate_email_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
     { label: "Set phone number", icon: "/icons/add_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+    { label: "Set full name", icon: "/icons/id_card_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
     { label: "Set profile photo", icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
     { label: "Link Google account", icon: "/icons/google_logo_tint.svg" },
     { label: "Link Apple account", icon: "/icons/apple_logo_tint.svg" },
