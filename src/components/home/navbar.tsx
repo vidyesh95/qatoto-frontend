@@ -90,6 +90,20 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-x-2 text-black">
+          <Link
+           href={"/search"}
+           aria-label="Search"
+           className={
+             "md:hidden border border-primary bg-white rounded-full p-1.75 cursor-pointer"
+           }
+         >
+           <Image
+             src={"/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+             alt={"Search"}
+             width={24}
+             height={24}
+           />
+         </Link>
           <button
             type={"button"}
             aria-label="Notifications"
