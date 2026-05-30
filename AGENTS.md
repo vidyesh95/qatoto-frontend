@@ -22,3 +22,9 @@ This is a frontend repository. It is a **thin, untrusted presentation layer**. T
 - This repo is a pure frontend (Next.js) that talks to a **separate Express REST API** — do not introduce Server Actions or Next.js API routes for business logic. All data mutations go through the Express backend via `fetch()`.
 - Keep `"use client"` components small and focused on interaction. Ship the minimal client JS needed.
 - When adding a feature, ask: _does this logic need to be trusted, or is it heavy?_ If yes to either, it belongs in the Express backend. The frontend gets only render + light interaction.
+
+## Conventions
+
+### Tests — do not write unless explicitly asked
+
+**Do not write, add, or modify tests unless the user explicitly asks for them.** This applies to unit tests (Vitest), E2E tests (Playwright), and any other test files. Do not create test files as part of a feature implementation, bug fix, or refactor. Do not suggest writing tests unless the user requests it.

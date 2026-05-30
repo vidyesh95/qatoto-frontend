@@ -96,6 +96,10 @@ From `CONTRIBUTING.md`:
 - **Naming**: PascalCase classes/components, camelCase vars/functions/file names, kebab-case directories.
 - Run `pnpm fmt` (oxfmt) before opening a PR.
 
+### Tests — do not write unless explicitly asked
+
+**Do not write, add, or modify tests unless the user explicitly asks for them.** This applies to unit tests (Vitest), E2E tests (Playwright), and any other test files. Do not create test files as part of a feature implementation, bug fix, or refactor. Do not suggest writing tests unless the user requests it.
+
 ## Things to know
 
 - TLS dev certs (`localhost.pem`, `localhost-key.pem`) are committed and used by `next dev`. Don't delete or regenerate without reason.
