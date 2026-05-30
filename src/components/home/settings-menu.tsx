@@ -41,6 +41,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     { label: "Link Apple account", icon: "/icons/apple_logo_tint.svg" },
     { label: "Set email address", icon: "/icons/mail_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
     { label: "Set recovery email address", icon: "/icons/forward_to_inbox_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+    { label: "Time watched", icon: "/icons/bar_chart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
   ];
 
   return (

@@ -30,7 +30,8 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   // Which panel is showing, and the browser-local appearance preference.
   const [view, setView] = useState<MenuView>("main");
   const [theme, setTheme] = useState<Theme>("device");
-  const [restricted, setRestricted] = useState(false);
+  const [childMode, setChildMode] = useState(false);
+  const [incognitoMode, setIncognitoMode] = useState(false);
   const [language, setLanguage] = useState("English (US)");
   const [location, setLocation] = useState(DEFAULT_COUNTRY_CODE);
 
@@ -72,8 +73,8 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
         <AppearancePanel selected={theme} onSelect={setTheme} onBack={() => setView("main")} />
       ) : view === "restricted" ? (
         <RestrictedPanel
-          selected={restricted}
-          onSelect={setRestricted}
+          selected={childMode}
+          onSelect={setChildMode}
           onBack={() => setView("main")}
         />
       ) : view === "language" ? (
@@ -138,12 +139,12 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                     <span className="w-full text-sm text-right truncate">0</span>
                     <Image
                       src="/icons/local_activity_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                      alt="Tickets"
+                      alt="Social Reputation"
                       width={24}
                       height={24}
                     />
                   </div>
-                  <p className="text-sm">Tickets</p>
+                  <p className="text-sm">Social Reputation</p>
                 </div>
               </div>
             </header>
@@ -187,6 +188,42 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 height={24}
               />
               <span className="text-sm text-secondary-foreground font-medium">Creator studio</span>
+            </button>
+            <button
+              type="button"
+              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+            >
+              <Image
+                src="/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="Switch account"
+                width={24}
+                height={24}
+              />
+              <span className="text-sm text-secondary-foreground font-medium">Your Cart</span>
+            </button>
+            <button
+              type="button"
+              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+            >
+              <Image
+                src="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="Switch account"
+                width={24}
+                height={24}
+              />
+              <span className="text-sm text-secondary-foreground font-medium">Your wishlist</span>
+            </button>
+            <button
+              type="button"
+              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+            >
+              <Image
+                src="/icons/orders_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="Switch account"
+                width={24}
+                height={24}
+              />
+              <span className="text-sm text-secondary-foreground font-medium">Your orders</span>
             </button>
             <button
               type="button"
@@ -264,14 +301,36 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
-                src="/icons/admin_panel_settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Restricted Mode"
+                src="/icons/child_care_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="Child Mode"
                 width={24}
                 height={24}
               />
               <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
-                <span className="shrink-0">Restricted Mode:</span>
-                <span className="truncate">{restricted ? "On" : "Off"}</span>
+                <span className="shrink-0">Child Mode:</span>
+                <span className="truncate">{childMode ? "On" : "Off"}</span>
+              </span>
+              <Image
+                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+                alt="Change Child Mode"
+                width={24}
+                height={24}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("restricted")}
+              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+            >
+              <Image
+                src="/icons/account_circle_off_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="Incognito Mode"
+                width={24}
+                height={24}
+              />
+              <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
+                <span className="shrink-0">Incognito Mode:</span>
+                <span className="truncate">{incognitoMode ? "On" : "Off"}</span>
               </span>
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -321,12 +380,24 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
+                src="/icons/forum_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="Forum"
+                width={24}
+                height={24}
+              />
+              <span className="text-sm text-secondary-foreground font-medium">Forum</span>
+            </button>
+            <button
+              type="button"
+              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+            >
+              <Image
                 src="/icons/help_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 alt="Help"
                 width={24}
                 height={24}
               />
-              <span className="text-sm text-secondary-foreground font-medium">Help</span>
+              <span className="text-sm text-secondary-foreground font-medium">Help center</span>
             </button>
             <button
               type="button"
