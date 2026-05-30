@@ -103,7 +103,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                     alt="Account"
                     width={40}
                     height={40}
-                    className="rounded-full border border-primary"
+                    className="rounded-full ring-1 ring-primary"
                   />
                   <button
                     type="button"
