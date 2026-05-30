@@ -98,13 +98,20 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                   </p>
                 </div>
                 <div className="shrink-0 p-4 flex flex-col items-end gap-4">
-                  <Image
-                    src="/dummy/profile_photo_girl.avif"
-                    alt="Account"
-                    width={40}
-                    height={40}
-                    className="rounded-full ring-1 ring-primary"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setView("settings")}
+                    aria-label="Open settings"
+                    className="rounded-full cursor-pointer"
+                  >
+                    <Image
+                      src="/dummy/profile_photo_girl.avif"
+                      alt="Account"
+                      width={40}
+                      height={40}
+                      className="rounded-full ring-1 ring-primary"
+                    />
+                  </button>
                   <button
                     type="button"
                     className="w-fit text-xs bg-secondary text-secondary-foreground rounded-full px-2 py-1 cursor-pointer"
