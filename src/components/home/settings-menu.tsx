@@ -29,18 +29,40 @@ type SettingsPanelProps = {
  */
 export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
   const items: SettingsItem[] = [
-    { label: "Switch account", icon: "/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-    { label: "Sign out", icon: "/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg", onClick: onSignOut },
-    { label: "Your data in app account", icon: "/icons/storage_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+    {
+      label: "Switch account",
+      icon: "/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    },
+    {
+      label: "Sign out",
+      icon: "/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      onClick: onSignOut,
+    },
+    {
+      label: "Your data in app account",
+      icon: "/icons/storage_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    },
     { label: "Set password", icon: "/icons/lock_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-    { label: "Set handle", icon: "/icons/alternate_email_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-    { label: "Set phone number", icon: "/icons/add_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+    {
+      label: "Set handle",
+      icon: "/icons/alternate_email_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    },
+    {
+      label: "Set phone number",
+      icon: "/icons/add_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    },
     { label: "Set full name", icon: "/icons/id_card_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-    { label: "Set profile photo", icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+    {
+      label: "Set profile photo",
+      icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    },
     { label: "Link Google account", icon: "/icons/google_logo_tint.svg" },
     { label: "Link Apple account", icon: "/icons/apple_logo_tint.svg" },
     { label: "Set email address", icon: "/icons/mail_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-    { label: "Set recovery email address", icon: "/icons/forward_to_inbox_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+    {
+      label: "Set recovery email address",
+      icon: "/icons/forward_to_inbox_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    },
     { label: "Time watched", icon: "/icons/bar_chart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
   ];
 
@@ -91,13 +113,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
               onClick={item.onClick}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
-              <Image
-                src={item.icon}
-                alt=""
-                width={24}
-                height={24}
-                className="size-6 shrink-0"
-              />
+              <Image src={item.icon} alt="" width={24} height={24} className="size-6 shrink-0" />
               <span className="text-sm text-secondary-foreground font-medium">{item.label}</span>
             </button>
           </li>
