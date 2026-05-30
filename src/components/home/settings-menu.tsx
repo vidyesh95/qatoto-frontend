@@ -61,24 +61,24 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
         <h2 className="text-xl text-secondary-foreground font-medium">Settings</h2>
       </header>
 
-      <section className="m-4 rounded-2xl bg-card p-3 shadow-sm">
-        <Image
-          src="/dummy/profile_photo_girl.avif"
-          alt="Current avatar"
-          width={48}
-          height={48}
-          className="size-12 rounded-xl object-cover"
-        />
+      <section className="relative m-4 flex flex-col gap-4 rounded-2xl bg-card p-4 pt-16 mt-8 shadow-sm">
         <Image
           src="/dummy/profile_photo_girl.avif"
           alt=""
           width={320}
-          height={400}
-          className="mt-3 aspect-4/5 w-full rounded-xl object-cover"
+          height={320}
+          className="aspect-square w-full rounded-xl object-cover"
         />
-        <div className="mt-3 rounded-xl bg-muted px-4 py-3 text-center text-base text-secondary-foreground">
+        <div className="rounded-xl bg-muted px-4 py-3 text-center text-base leading-6 tracking-[0.5px] text-secondary-foreground">
           @drDong2w
         </div>
+        <Image
+          src="/dummy/profile_photo_girl.avif"
+          alt="Current avatar"
+          width={64}
+          height={64}
+          className="absolute -top-4 left-4 size-16 aspect-square rounded-lg object-cover"
+        />
       </section>
 
       <ul>
