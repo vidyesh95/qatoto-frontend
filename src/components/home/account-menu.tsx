@@ -180,12 +180,12 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
-                src="/icons/account_box_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                src="/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 alt="Your channel"
                 width={24}
                 height={24}
               />
-              <span className="text-sm text-secondary-foreground font-medium">Your channel</span>
+              <span className="text-sm text-secondary-foreground font-medium">Your account</span>
             </button>
             <button
               type="button"
