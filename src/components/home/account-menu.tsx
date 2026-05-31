@@ -206,8 +206,9 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
           </div>
 
           <div>
-            <button
-              type="button"
+            <Link
+              href="/library"
+              onClick={onClose}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
@@ -217,9 +218,10 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 height={24}
               />
               <span className="text-sm text-secondary-foreground font-medium">Library</span>
-            </button>
-            <button
-              type="button"
+            </Link>
+            <Link
+              href="/history"
+              onClick={onClose}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
@@ -229,9 +231,10 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 height={24}
               />
               <span className="text-sm text-secondary-foreground font-medium">History</span>
-            </button>
-            <button
-              type="button"
+            </Link>
+            <Link
+              href="/wishlist"
+              onClick={onClose}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
@@ -241,9 +244,10 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 height={24}
               />
               <span className="text-sm text-secondary-foreground font-medium">Wishlist</span>
-            </button>
-            <button
-              type="button"
+            </Link>
+            <Link
+              href="/cart"
+              onClick={onClose}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
@@ -253,9 +257,10 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 height={24}
               />
               <span className="text-sm text-secondary-foreground font-medium">Cart</span>
-            </button>
-            <button
-              type="button"
+            </Link>
+            <Link
+              href="/orders-and-returns"
+              onClick={onClose}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
@@ -267,7 +272,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               <span className="text-sm text-secondary-foreground font-medium">
                 Orders and returns
               </span>
-            </button>
+            </Link>
             <button
               type="button"
               onClick={() => setView("settings")}
@@ -472,8 +477,9 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               />
               <span className="text-sm text-secondary-foreground font-medium">Help</span>
             </button>
-            <button
-              type="button"
+            <Link
+              href="/customer-service"
+              onClick={onClose}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
@@ -485,7 +491,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               <span className="text-sm text-secondary-foreground font-medium">
                 Customer service
               </span>
-            </button>
+            </Link>
             <button
               type="button"
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
