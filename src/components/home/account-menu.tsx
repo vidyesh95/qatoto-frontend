@@ -243,7 +243,13 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="text-sm text-secondary-foreground font-medium">Settings</span>
+              <span className="w-full text-left text-sm text-secondary-foreground font-medium">Settings</span>
+              <Image
+                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+                alt="Change device theme"
+                width={24}
+                height={24}
+              />
             </button>
             <button
               type="button"
