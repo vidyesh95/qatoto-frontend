@@ -38,10 +38,6 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       icon: "/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       onClick: onSignOut,
     },
-    {
-      label: "Your data in app account",
-      icon: "/icons/storage_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    },
     { label: "Set password", icon: "/icons/lock_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
     {
       label: "Set handle",
@@ -64,6 +60,10 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       icon: "/icons/forward_to_inbox_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
     },
     { label: "Time watched", icon: "/icons/bar_chart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+    {
+      label: "Your data in app account",
+      icon: "/icons/storage_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    },
   ];
 
   return (

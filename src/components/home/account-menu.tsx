@@ -225,7 +225,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
-                src="/icons/orders_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                src="/icons/local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 alt="Your orders"
                 width={24}
                 height={24}
