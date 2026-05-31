@@ -327,7 +327,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 height={24}
               />
               <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
-                <span className="shrink-0">Child Mode:</span>
+                <span className="shrink-0">Child mode:</span>
                 <span className="truncate">{childMode ? "On" : "Off"}</span>
               </span>
               <Image
@@ -349,7 +349,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 height={24}
               />
               <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
-                <span className="shrink-0">Incognito Mode:</span>
+                <span className="shrink-0">Incognito mode:</span>
                 <span className="truncate">{incognitoMode ? "On" : "Off"}</span>
               </span>
               <Image
@@ -371,7 +371,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 height={24}
               />
               <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
-                <span className="shrink-0">AI Assist Mode:</span>
+                <span className="shrink-0">AI assist mode:</span>
                 <span className="truncate">{aiAssistMode ? "On" : "Off"}</span>
               </span>
               <Image
