@@ -83,6 +83,8 @@ minimumReleaseAgeExclude:
   - "@oxlint/binding-win32-x64-msvc@1.67.0"
   - oxfmt@0.52.0
   - oxlint@1.67.0
+  - '@react-grab/cli@0.1.41'
+  - react-grab@0.1.41
 overrides:
   "@types/react": 19.2.14
   "@types/react-dom": 19.2.3

@@ -71,8 +71,8 @@ importers:
         specifier: ^1.67.0
         version: 1.67.0
       react-grab:
-        specifier: ^0.1.37
-        version: 0.1.37(react@19.2.6)
+        specifier: ^0.1.41
+        version: 0.1.41(react@19.2.6)
       react-scan:
         specifier: ^0.5.7
         version: 0.5.7(eslint@9.39.4(jiti@2.7.0))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -1077,6 +1077,10 @@ packages:
 
   '@react-grab/cli@0.1.37':
     resolution: {integrity: sha512-1ln28VkVHUbd5qy+ccXG68voWc0mgZMhBnwG0umxfD+wbkXUcvRzVrLjSqao7N8hCrDqp+Pt5j9Tsqef+9yQQQ==}
+    hasBin: true
+
+  '@react-grab/cli@0.1.41':
+    resolution: {integrity: sha512-hQyo+Ook79V09uCiLoIN9hkXtffi6aEftgY891RfIw/ePlMjDtRo5ur8L1drJd6aL05HLevpFTpEU3rC11ueKw==}
     hasBin: true
 
   '@rolldown/binding-android-arm64@1.0.2':
@@ -2731,8 +2735,8 @@ packages:
       vite-plus:
         optional: true
 
-  oxlint-plugin-react-doctor@0.2.9:
-    resolution: {integrity: sha512-wnmC4OBbog9IQuZY2evNNe1P5IacUDLnYqOOpOSq8Adb+kjFmNxPPG8SMH+/OWkKld3NVC5KMM2pSw+oxnEIUw==}
+  oxlint-plugin-react-doctor@0.2.13:
+    resolution: {integrity: sha512-HFTrRf4ufFQE3fOWvpdV19SghoB5ATIZRiaofTC/qSMyMpskqyKtnRJsARXBpalU760VYmolACZOnGvkVAIGVQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
 
   oxlint@1.67.0:
@@ -2841,8 +2845,8 @@ packages:
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
 
-  react-doctor@0.2.9:
-    resolution: {integrity: sha512-lfTA5OOQmy95nreKad+UueFAsVLxtjRTwZQpo50VAfsFytpDjiAb+caB2DV+Tdga8pk9th18DUZjTuSDWFFvZQ==}
+  react-doctor@0.2.13:
+    resolution: {integrity: sha512-6g9F/DANlF3Qvqrc4W3a3tp6it31XOXhKYeLNcjoDAeYizYiK/Ak0dICv0pAxHOS9I1r086OXbDJLseDcIJsRA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -2853,6 +2857,15 @@ packages:
 
   react-grab@0.1.37:
     resolution: {integrity: sha512-XVAc/qPyxsDT8Putu9UnP7iVHmAORMzvaN/3GDTOfbuLIRXWdOt7vebPOzM9RVTVUjucXv0135JI++kSVPSfYg==}
+    hasBin: true
+    peerDependencies:
+      react: '>=17.0.0'
+    peerDependenciesMeta:
+      react:
+        optional: true
+
+  react-grab@0.1.41:
+    resolution: {integrity: sha512-Snht68ypkK9QjktjLdWvqB7edF+yFGsrY8aGsriVqOPqezzKuemloPjnYqd4Xddp20qhotldGGVE6Q8ov7eq3g==}
     hasBin: true
     peerDependencies:
       react: '>=17.0.0'
@@ -4108,6 +4121,19 @@ snapshots:
 
   '@react-grab/cli@0.1.37':
     dependencies:
+      commander: 14.0.3
+      ignore: 7.0.5
+      jsonc-parser: 3.3.1
+      ora: 9.4.0
+      package-manager-detector: 1.6.0
+      picocolors: 1.1.1
+      prompts: 2.4.2
+      smol-toml: 1.6.1
+      tinyexec: 1.2.2
+
+  '@react-grab/cli@0.1.41':
+    dependencies:
+      agent-install: 0.0.5
       commander: 14.0.3
       ignore: 7.0.5
       jsonc-parser: 3.3.1
@@ -5920,7 +5946,7 @@ snapshots:
       '@oxfmt/binding-win32-ia32-msvc': 0.52.0
       '@oxfmt/binding-win32-x64-msvc': 0.52.0
 
-  oxlint-plugin-react-doctor@0.2.9:
+  oxlint-plugin-react-doctor@0.2.13:
     dependencies:
       '@typescript-eslint/types': 8.59.4
       eslint-scope: 9.1.2
@@ -6029,7 +6055,7 @@ snapshots:
 
   queue-microtask@1.2.3: {}
 
-  react-doctor@0.2.9(eslint@9.39.4(jiti@2.7.0)):
+  react-doctor@0.2.13(eslint@9.39.4(jiti@2.7.0)):
     dependencies:
       '@effect/platform-node-shared': 4.0.0-beta.70(effect@4.0.0-beta.70)
       agent-install: 0.0.5
@@ -6038,7 +6064,7 @@ snapshots:
       effect: 4.0.0-beta.70
       eslint-plugin-react-hooks: 7.1.1(eslint@9.39.4(jiti@2.7.0))
       oxlint: 1.67.0
-      oxlint-plugin-react-doctor: 0.2.9
+      oxlint-plugin-react-doctor: 0.2.13
       prompts: 2.4.2
       typescript: 6.0.3
     transitivePeerDependencies:
@@ -6061,6 +6087,13 @@ snapshots:
     optionalDependencies:
       react: 19.2.6
 
+  react-grab@0.1.41(react@19.2.6):
+    dependencies:
+      '@react-grab/cli': 0.1.41
+      bippy: 0.5.41(react@19.2.6)
+    optionalDependencies:
+      react: 19.2.6
+
   react-is@16.13.1: {}
 
   react-is@17.0.2: {}
@@ -6077,7 +6110,7 @@ snapshots:
       preact: 10.29.2
       prompts: 2.4.2
       react: 19.2.6
-      react-doctor: 0.2.9(eslint@9.39.4(jiti@2.7.0))
+      react-doctor: 0.2.13(eslint@9.39.4(jiti@2.7.0))
       react-dom: 19.2.6(react@19.2.6)
       react-grab: 0.1.37(react@19.2.6)
     optionalDependencies:
