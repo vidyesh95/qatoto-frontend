@@ -295,6 +295,7 @@ const NAVIGATION_CONFIG: NavSection[] = [
       { path: ROUTES.yourListings, label: "Your listings", iconKey: "slideshow" },
       { path: ROUTES.cart, label: "Cart", iconKey: "shoppingCart" },
       { path: ROUTES.ordersAndReturns, label: "Orders and returns", iconKey: "localShipping" },
+      { path: ROUTES.yourListings, label: "Your listings", iconKey: "slideshow" },
       { path: ROUTES.yourSales, label: "Your sales", iconKey: "chartData" },
       { path: ROUTES.advertiseWithUs, label: "Advertise with us", iconKey: "featuredVideo" },
     ],
