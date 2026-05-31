@@ -34,9 +34,9 @@ const NAV_ITEMS = [
   },
   {
     href: "/ai",
-    label: "AI",
-    activeIcon: "/icons/video_template_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    inactiveIcon: "/icons/video_template_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    label: "R&D",
+    activeIcon: "/icons/science_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/science_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
 ] as const;
 

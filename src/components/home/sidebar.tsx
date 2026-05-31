@@ -24,9 +24,9 @@ const ICON_PATHS = {
     active: "/icons/local_mall_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
-  screenShare: {
-    active: "/icons/video_template_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    inactive: "/icons/video_template_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  science: {
+    active: "/icons/science_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/science_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   selfImprovement: {
     static: "/icons/self_improvement_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
@@ -276,7 +276,7 @@ const NAVIGATION_CONFIG: NavSection[] = [
       { path: ROUTES.home, label: "Home", iconKey: "home" },
       { path: ROUTES.anime, label: "Anime", iconKey: "liveTv" },
       { path: ROUTES.store, label: "Store", iconKey: "localMall" },
-      { path: ROUTES.ai, label: "AI", iconKey: "screenShare" },
+      { path: ROUTES.ai, label: "R&D", iconKey: "science" },
     ],
     hasDivider: true,
   },
@@ -336,7 +336,7 @@ const COLLAPSED_NAV_CONFIG: NavItem[] = [
   { path: ROUTES.home, label: "Home", iconKey: "home" },
   { path: ROUTES.anime, label: "Anime", iconKey: "liveTv" },
   { path: ROUTES.store, label: "Store", iconKey: "localMall" },
-  { path: ROUTES.ai, label: "AI", iconKey: "screenShare" },
+  { path: ROUTES.ai, label: "R&D", iconKey: "science" },
 ];
 
 /* ---------- Main Component ---------- */
