@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AppearancePanel, THEME_SUMMARY, type Theme } from "@/components/home/appearance-menu";
 import { LanguagePanel } from "@/components/home/language-menu";
@@ -14,6 +15,27 @@ type AccountMenuProps = {
   /** Called when the menu should close — e.g. an outside click or after sign-out. */
   onClose: () => void;
 };
+
+/** Marketing/information pages, shown as a divider section near the foot of the menu. */
+const INFORMATION_LINKS = [
+  { label: "How Qatoto Works", href: "/how-qatoto-works" },
+  { label: "About", href: "/about" },
+  { label: "Press", href: "/press" },
+  { label: "Blogs", href: "/blogs" },
+  { label: "Contact Us", href: "/contact-us" },
+  { label: "Creator", href: "/creator" },
+  { label: "Careers", href: "/careers" },
+  { label: "Developers", href: "/developers" },
+] as const;
+
+/** Legal/policy pages, shown as the final divider section of the menu. */
+const LEGAL_LINKS = [
+  { label: "Terms and Conditions", href: "/terms-and-conditions" },
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Copyright Policy", href: "/copyright-policy" },
+  { label: "Community Guidelines", href: "/community-guidelines" },
+  { label: "Vulnerability Disclosure Policy", href: "/vulnerability-disclosure-policy" },
+] as const;
 
 /** Which panel of the account menu is currently visible. */
 type MenuView =
@@ -242,7 +264,9 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="text-sm text-secondary-foreground font-medium">Orders and returns</span>
+              <span className="text-sm text-secondary-foreground font-medium">
+                Orders and returns
+              </span>
             </button>
             <button
               type="button"
@@ -255,7 +279,9 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="w-full text-left text-sm text-secondary-foreground font-medium">Settings</span>
+              <span className="w-full text-left text-sm text-secondary-foreground font-medium">
+                Settings
+              </span>
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
                 alt="Change device theme"
@@ -472,6 +498,28 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               />
               <span className="text-sm text-secondary-foreground font-medium">Send feedback</span>
             </button>
+            <hr className="mx-4" />
+            {INFORMATION_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={onClose}
+                className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+              >
+                <span className="text-sm text-secondary-foreground font-medium">{link.label}</span>
+              </Link>
+            ))}
+            <hr className="mx-4" />
+            {LEGAL_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={onClose}
+                className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+              >
+                <span className="text-sm text-secondary-foreground font-medium">{link.label}</span>
+              </Link>
+            ))}
           </div>
         </div>
       )}
