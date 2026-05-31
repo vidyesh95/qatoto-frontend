@@ -30,6 +30,10 @@ type SettingsPanelProps = {
 export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
   const items: SettingsItem[] = [
     {
+      label: "Your account",
+      icon: "/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    },
+    {
       label: "Switch account",
       icon: "/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
     },

@@ -213,24 +213,24 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
-                src="/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Your cart"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm text-secondary-foreground font-medium">Cart</span>
-            </button>
-            <button
-              type="button"
-              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
-            >
-              <Image
                 src="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 alt="Your wishlist"
                 width={24}
                 height={24}
               />
               <span className="text-sm text-secondary-foreground font-medium">Wishlist</span>
+            </button>
+            <button
+              type="button"
+              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+            >
+              <Image
+                src="/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="Your cart"
+                width={24}
+                height={24}
+              />
+              <span className="text-sm text-secondary-foreground font-medium">Cart</span>
             </button>
             <button
               type="button"
