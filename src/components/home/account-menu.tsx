@@ -206,7 +206,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="text-sm text-secondary-foreground font-medium">Your cart</span>
+              <span className="text-sm text-secondary-foreground font-medium">Cart</span>
             </button>
             <button
               type="button"
@@ -218,7 +218,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="text-sm text-secondary-foreground font-medium">Your wishlist</span>
+              <span className="text-sm text-secondary-foreground font-medium">Wishlist</span>
             </button>
             <button
               type="button"
@@ -230,7 +230,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="text-sm text-secondary-foreground font-medium">Your orders</span>
+              <span className="text-sm text-secondary-foreground font-medium">Orders and returns</span>
             </button>
             <button
               type="button"
