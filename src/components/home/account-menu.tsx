@@ -7,6 +7,7 @@ import { LanguagePanel } from "@/components/home/language-menu";
 import { countryName, DEFAULT_COUNTRY_CODE, LocationPanel } from "@/components/home/location-menu";
 import { ChildPanel } from "@/components/home/child-menu";
 import { IncognitoPanel } from "@/components/home/incognito-menu";
+import { AiAssistPanel } from "@/components/home/ai-assist-menu";
 import { SettingsPanel } from "@/components/home/settings-menu";
 
 type AccountMenuProps = {
@@ -20,6 +21,7 @@ type MenuView =
   | "appearance"
   | "child"
   | "incognito"
+  | "ai-assist"
   | "language"
   | "location"
   | "settings";
@@ -40,6 +42,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   const [theme, setTheme] = useState<Theme>("device");
   const [childMode, setChildMode] = useState(false);
   const [incognitoMode, setIncognitoMode] = useState(false);
+  const [aiAssistMode, setAiAssistMode] = useState(false);
   const [language, setLanguage] = useState("English (US)");
   const [location, setLocation] = useState(DEFAULT_COUNTRY_CODE);
 
@@ -85,6 +88,12 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
         <IncognitoPanel
           selected={incognitoMode}
           onSelect={setIncognitoMode}
+          onBack={() => setView("main")}
+        />
+      ) : view === "ai-assist" ? (
+        <AiAssistPanel
+          selected={aiAssistMode}
+          onSelect={setAiAssistMode}
           onBack={() => setView("main")}
         />
       ) : view === "language" ? (
@@ -352,6 +361,28 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <button
               type="button"
+              onClick={() => setView("ai-assist")}
+              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+            >
+              <Image
+                src="/icons/assistant_navigation_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="AI Assist Mode"
+                width={24}
+                height={24}
+              />
+              <span className="flex-1 min-w-0 flex gap-1 text-sm text-secondary-foreground font-medium">
+                <span className="shrink-0">AI Assist Mode:</span>
+                <span className="truncate">{aiAssistMode ? "On" : "Off"}</span>
+              </span>
+              <Image
+                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+                alt="Change AI Assist Mode"
+                width={24}
+                height={24}
+              />
+            </button>
+            <button
+              type="button"
               onClick={() => setView("location")}
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
@@ -407,7 +438,9 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="text-sm text-secondary-foreground font-medium">Customer service</span>
+              <span className="text-sm text-secondary-foreground font-medium">
+                Customer service
+              </span>
             </button>
             <button
               type="button"
