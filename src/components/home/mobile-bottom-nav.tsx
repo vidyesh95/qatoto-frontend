@@ -33,7 +33,7 @@ const NAV_ITEMS = [
     inactiveIcon: "/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
-    href: "/ai",
+    href: "/research-and-development",
     label: "R&D",
     activeIcon: "/icons/science_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactiveIcon: "/icons/science_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",

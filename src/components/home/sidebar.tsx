@@ -76,7 +76,7 @@ const ROUTES = {
   home: "/",
   anime: "/anime",
   store: "/store",
-  ai: "/ai",
+  researchAndDevelopment: "/research-and-development",
   projectImmortal: "/project-immortal",
   library: "/library",
   history: "/history",
@@ -276,7 +276,7 @@ const NAVIGATION_CONFIG: NavSection[] = [
       { path: ROUTES.home, label: "Home", iconKey: "home" },
       { path: ROUTES.anime, label: "Anime", iconKey: "liveTv" },
       { path: ROUTES.store, label: "Store", iconKey: "localMall" },
-      { path: ROUTES.ai, label: "R&D", iconKey: "science" },
+      { path: ROUTES.researchAndDevelopment, label: "R&D", iconKey: "science" },
     ],
     hasDivider: true,
   },
@@ -336,7 +336,7 @@ const COLLAPSED_NAV_CONFIG: NavItem[] = [
   { path: ROUTES.home, label: "Home", iconKey: "home" },
   { path: ROUTES.anime, label: "Anime", iconKey: "liveTv" },
   { path: ROUTES.store, label: "Store", iconKey: "localMall" },
-  { path: ROUTES.ai, label: "R&D", iconKey: "science" },
+  { path: ROUTES.researchAndDevelopment, label: "R&D", iconKey: "science" },
 ];
 
 /* ---------- Main Component ---------- */
