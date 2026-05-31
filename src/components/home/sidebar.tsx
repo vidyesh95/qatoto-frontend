@@ -80,7 +80,7 @@ const ROUTES = {
   projectImmortal: "/project-immortal",
   library: "/library",
   history: "/history",
-  yourVideos: "/your-videos",
+  yourListings: "/your-listings",
   cart: "/cart",
   ordersAndReturns: "/orders-and-returns",
   yourSales: "/your-sales",
@@ -292,7 +292,7 @@ const NAVIGATION_CONFIG: NavSection[] = [
     items: [
       { path: ROUTES.library, label: "Library", iconKey: "videoLibrary" },
       { path: ROUTES.history, label: "History", iconKey: "history" },
-      { path: ROUTES.yourVideos, label: "Your videos", iconKey: "slideshow" },
+      { path: ROUTES.yourListings, label: "Your listings", iconKey: "slideshow" },
       { path: ROUTES.cart, label: "Cart", iconKey: "shoppingCart" },
       { path: ROUTES.ordersAndReturns, label: "Orders and returns", iconKey: "localShipping" },
       { path: ROUTES.yourSales, label: "Your sales", iconKey: "chartData" },
