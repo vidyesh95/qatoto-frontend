@@ -192,18 +192,6 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
-                src="/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Creator studio"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm text-secondary-foreground font-medium">Creator studio</span>
-            </button>
-            <button
-              type="button"
-              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
-            >
-              <Image
                 src="/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 alt="Your cart"
                 width={24}
@@ -234,6 +222,19 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 height={24}
               />
               <span className="text-sm text-secondary-foreground font-medium">Your orders</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("settings")}
+              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+            >
+              <Image
+                src="/icons/settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="Settings"
+                width={24}
+                height={24}
+              />
+              <span className="text-sm text-secondary-foreground font-medium">Settings</span>
             </button>
             <button
               type="button"
@@ -374,19 +375,6 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <hr className="mx-4" />
             <button
               type="button"
-              onClick={() => setView("settings")}
-              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
-            >
-              <Image
-                src="/icons/settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Settings"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm text-secondary-foreground font-medium">Settings</span>
-            </button>
-            <button
-              type="button"
               className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
             >
               <Image
@@ -407,7 +395,19 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="text-sm text-secondary-foreground font-medium">Help center</span>
+              <span className="text-sm text-secondary-foreground font-medium">Help</span>
+            </button>
+            <button
+              type="button"
+              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+            >
+              <Image
+                src="/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="Send feedback"
+                width={24}
+                height={24}
+              />
+              <span className="text-sm text-secondary-foreground font-medium">Customer service</span>
             </button>
             <button
               type="button"
