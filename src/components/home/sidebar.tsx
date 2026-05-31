@@ -42,6 +42,10 @@ const ICON_PATHS = {
     active: "/icons/slideshow_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/slideshow_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  favorite: {
+    active: "/icons/favorite_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   shoppingCart: {
     active: "/icons/shopping_cart_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
@@ -80,9 +84,10 @@ const ROUTES = {
   projectImmortal: "/project-immortal",
   library: "/library",
   history: "/history",
-  yourListings: "/your-listings",
+  wishlist: "/wishlist",
   cart: "/cart",
   ordersAndReturns: "/orders-and-returns",
+  yourListings: "/your-listings",
   yourSales: "/your-sales",
   advertiseWithUs: "/advertise-with-us",
   yourAccount: "/your-account",
@@ -292,7 +297,7 @@ const NAVIGATION_CONFIG: NavSection[] = [
     items: [
       { path: ROUTES.library, label: "Library", iconKey: "videoLibrary" },
       { path: ROUTES.history, label: "History", iconKey: "history" },
-      { path: ROUTES.yourListings, label: "Your listings", iconKey: "slideshow" },
+      { path: ROUTES.wishlist, label: "Wishlist", iconKey: "favorite" },
       { path: ROUTES.cart, label: "Cart", iconKey: "shoppingCart" },
       { path: ROUTES.ordersAndReturns, label: "Orders and returns", iconKey: "localShipping" },
       { path: ROUTES.yourListings, label: "Your listings", iconKey: "slideshow" },
