@@ -85,7 +85,7 @@ minimumReleaseAgeExclude:
   - oxlint@1.67.0
   - "@react-grab/cli@0.1.41"
   - react-grab@0.1.41
-  - '@react-grab/cli@0.1.44'
+  - "@react-grab/cli@0.1.44"
   - react-grab@0.1.44
 overrides:
   "@types/react": 19.2.14
