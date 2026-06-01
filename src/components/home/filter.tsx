@@ -217,7 +217,7 @@ export default function Filter() {
           aria-hidden="true"
           onClick={() => scrollChipsByOnePage(-1)}
           title="Scroll filter chips left"
-          className="absolute left-0 top-0 bottom-0 z-10 bg-linear-to-r from-white via-white to-transparent py-4 pl-4 pr-18 cursor-pointer"
+          className="absolute left-0 top-0 bottom-0 z-10 bg-linear-to-r from-white via-white to-transparent py-4 pl-2.5 lg:pl-4 pr-18 cursor-pointer"
         >
           <Image
             src="/icons/chevron_backward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -238,7 +238,7 @@ export default function Filter() {
         onPointerUp={handleDragEnd}
         onPointerCancel={handleDragEnd}
         onClickCapture={suppressClickAfterDrag}
-        className="h-14 flex flex-row items-center gap-2 px-6 overflow-x-auto cursor-grab active:cursor-grabbing select-none scrollbar-none"
+        className="h-14 flex flex-row items-center gap-2 px-4 lg:px-6 overflow-x-auto cursor-grab active:cursor-grabbing select-none scrollbar-none"
       >
         {FILTER_CHIPS.map((chipLabel, chipIndex) => {
           const isSelected = selectedChipIndex === chipIndex;
@@ -271,7 +271,7 @@ export default function Filter() {
           aria-hidden="true"
           onClick={() => scrollChipsByOnePage(1)}
           title="Scroll filter chips right"
-          className="absolute right-0 top-0 bottom-0 z-10 bg-linear-to-l from-white via-white to-transparent py-4 pl-18 pr-4 cursor-pointer"
+          className="absolute right-0 top-0 bottom-0 z-10 bg-linear-to-l from-white via-white to-transparent py-4 pl-18 pr-2.5 lg:pr-4 cursor-pointer"
         >
           <Image
             src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
