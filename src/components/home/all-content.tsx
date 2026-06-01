@@ -343,7 +343,7 @@ export default function AllContent() {
     <section className="py-8 space-y-8">
       <div>
         <SectionDivider title="RECOMMENDED FOR YOU" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 px-6 py-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 px-4 lg:px-6 py-2">
           {RECOMMENDED_VIDEOS.map(({ id, ...video }) => (
             <VideoCard key={id} {...video} />
           ))}
@@ -351,7 +351,7 @@ export default function AllContent() {
       </div>
       <div>
         <SectionDivider title="WHAT'S ON YOUR MIND?" />
-        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3 gap-y-6 px-6 py-2">
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3 gap-y-6 px-4 lg:px-6 py-2">
           {VIDEO_CATEGORIES.map(({ id, ...category }) => (
             <VideoCategoryCard key={id} {...category} />
           ))}
@@ -359,7 +359,7 @@ export default function AllContent() {
       </div>
       <div>
         <SectionDivider title="SPOTLIGHT" />
-        <div className="md:h-48 lg:h-64 xl:h-93 group/spot flex flex-col md:flex-row gap-4 px-6 py-2 items-center">
+        <div className="md:h-48 lg:h-64 xl:h-93 group/spot flex flex-col md:flex-row gap-4 px-4 lg:px-6 py-2 items-center">
           {SPOTLIGHT_VIDEOS.map(({ id, ...spotlight }, i) => (
             <SpotlightVideoCards key={id} {...spotlight} position={POSITIONS[i]} />
           ))}
@@ -367,7 +367,7 @@ export default function AllContent() {
       </div>
       <div>
         <SectionDivider title="EXPLORE" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 px-6 py-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 px-4 lg:px-6 py-2">
           {EXPLORE_VIDEOS.map(({ id, ...video }) => (
             <VideoCard key={id} {...video} />
           ))}
