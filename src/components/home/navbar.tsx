@@ -17,9 +17,9 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-background">
-      <div className="relative mx-auto flex items-center justify-between px-4 py-2 md:justify-between">
+      <div className="relative mx-auto flex items-center justify-between px-4 py-2 lg:px-6 md:justify-between">
         {/* Brand */}
-        <div className={"flex items-center gap-2.5"}>
+        <div className={"flex items-center gap-2.5 lg:gap-4.5"}>
           <button
             type={"button"}
             aria-label="Toggle sidebar"
