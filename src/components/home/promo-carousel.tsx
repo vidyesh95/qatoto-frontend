@@ -51,7 +51,7 @@ export default function PromoCarousel() {
       {/* Close button */}
       <button
         type="button"
-        className="absolute top-2 right-2 p-2 cursor-pointer hover:bg-black/10 rounded-lg transition"
+        className="absolute top-1.5 lg:top-3 right-1.5 lg:right-3 p-2 cursor-pointer hover:bg-black/10 rounded-lg transition"
         onClick={() => setIsVisible(false)}
         aria-label="Close carousel"
       >
@@ -66,7 +66,7 @@ export default function PromoCarousel() {
       {/* Previous button */}
       <button
         type="button"
-        className="absolute left-2 top-1/2 -translate-y-1/2 p-2 cursor-pointer hover:bg-black/20 rounded-full transition z-10"
+        className="absolute left-1 lg:left-2.5 top-1/2 -translate-y-1/2 p-2 cursor-pointer hover:bg-black/20 rounded-full transition z-10"
         onClick={() =>
           setCurrentIndex((prev) => (prev - 1 + CAROUSEL_IMAGES.length) % CAROUSEL_IMAGES.length)
         }
@@ -83,7 +83,7 @@ export default function PromoCarousel() {
       {/* Next button */}
       <button
         type="button"
-        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 cursor-pointer hover:bg-black/20 rounded-full transition z-10"
+        className="absolute right-1 lg:right-2.5 top-1/2 -translate-y-1/2 p-2 cursor-pointer hover:bg-black/20 rounded-full transition z-10"
         onClick={() => setCurrentIndex((prev) => (prev + 1) % CAROUSEL_IMAGES.length)}
         aria-label="Next image"
       >
