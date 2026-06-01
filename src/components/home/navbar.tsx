@@ -38,7 +38,7 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <div className={"hidden md:flex w-xl items-center gap-2 justify-end"}>
+        <div className={"hidden md:flex lg:w-xl items-center gap-2 justify-end"}>
           <form
             action="/search"
             method="get"
@@ -50,7 +50,7 @@ export default function Navbar() {
               name="query"
               placeholder="Search"
               className={
-                "w-101 focus:w-107 py-1.75 rounded-l-full pl-4 focus:pl-10 bg-white border border-primary"
+                "w-64 focus:w-72 lg:w-101 lg:focus:w-107 py-1.75 rounded-l-full pl-4 focus:pl-10 bg-white border border-primary"
               }
             />
             <Image
