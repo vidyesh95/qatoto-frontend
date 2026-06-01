@@ -100,7 +100,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   return (
     <div
       ref={menuPanelRef}
-      className="absolute right-2 top-12 z-50 w-95 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background border border-black/10 rounded-lg shadow-lg"
+      className="fixed left-1 right-14 top-15 z-50 w-auto max-h-[calc(100dvh-9rem)] overflow-y-auto bg-background border border-black/10 rounded-lg shadow-lg sm:absolute sm:left-auto sm:right-2 sm:top-12 sm:w-95 sm:max-h-[calc(100dvh-4rem)]"
     >
       {view === "appearance" ? (
         <AppearancePanel selected={theme} onSelect={setTheme} onBack={() => setView("main")} />
