@@ -102,49 +102,51 @@ export default function Navbar() {
               height={24}
             />
           </Link>
-          <button
-            type={"button"}
-            aria-label="Notifications"
-            className={"border border-primary bg-white rounded-full p-1.75 cursor-pointer"}
-          >
-            <Image
-              src={"/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-              alt={"Notifications"}
-              width={24}
-              height={24}
-            />
-          </button>
-          <button
-            type={"button"}
-            aria-label="Cart"
-            className={"border border-primary bg-white rounded-full p-1.75 cursor-pointer"}
-          >
-            <Image
-              src={"/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-              alt={"Cart"}
-              width={24}
-              height={24}
-            />
-          </button>
           {isAuthenticated ? (
-            <div className="relative">
+            <>
               <button
-                type="button"
-                aria-label="Account"
-                aria-haspopup="menu"
-                onClick={() => setIsAccountMenuOpen((v) => !v)}
-                className="size-10 flex items-center justify-center border border-primary rounded-full overflow-hidden cursor-pointer"
+                type={"button"}
+                aria-label="Notifications"
+                className={"border border-primary bg-white rounded-full p-1.75 cursor-pointer"}
               >
                 <Image
-                  src={"/dummy/profile_photo_girl.avif"}
-                  alt={"Account"}
-                  width={39}
-                  height={39}
-                  className="rounded-full"
+                  src={"/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                  alt={"Notifications"}
+                  width={24}
+                  height={24}
                 />
               </button>
-              {isAccountMenuOpen && <AccountMenu onClose={() => setIsAccountMenuOpen(false)} />}
-            </div>
+              <button
+                type={"button"}
+                aria-label="Cart"
+                className={"border border-primary bg-white rounded-full p-1.75 cursor-pointer"}
+              >
+                <Image
+                  src={"/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                  alt={"Cart"}
+                  width={24}
+                  height={24}
+                />
+              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  aria-label="Account"
+                  aria-haspopup="menu"
+                  onClick={() => setIsAccountMenuOpen((v) => !v)}
+                  className="size-10 flex items-center justify-center border border-primary rounded-full overflow-hidden cursor-pointer"
+                >
+                  <Image
+                    src={"/dummy/profile_photo_girl.avif"}
+                    alt={"Account"}
+                    width={39}
+                    height={39}
+                    className="rounded-full"
+                  />
+                </button>
+                {isAccountMenuOpen && <AccountMenu onClose={() => setIsAccountMenuOpen(false)} />}
+              </div>
+            </>
           ) : (
             <Link
               href={"/sign-in"}
