@@ -29,7 +29,7 @@ export default function ForgotPassword() {
 
   const handleBack = () => {
     if (step > 1) {
-      setStep((prev) => (prev - 1) as 1 | 2 | 3);
+      setStep((prev) => (prev === 3 ? 2 : 1));
     }
   };
 
@@ -164,6 +164,7 @@ export default function ForgotPassword() {
                 <input
                   type="email"
                   id="email"
+                  aria-label="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="host@domain.com"
@@ -252,6 +253,7 @@ export default function ForgotPassword() {
                 <input
                   type={showPassword ? "text" : "password"}
                   id="password"
+                  aria-label="New password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="secretPassword123$"

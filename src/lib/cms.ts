@@ -38,7 +38,8 @@ async function cmsFetch<T>(path: string): Promise<T | null> {
       headers: { Accept: "application/json" },
     });
     if (!res.ok) return null;
-    return (await res.json()) as T;
+    const data: T = await res.json();
+    return data;
   } catch {
     return null;
   }

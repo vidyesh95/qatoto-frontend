@@ -48,6 +48,7 @@ export default function Navbar() {
               type="search"
               id="search-query"
               name="query"
+              aria-label="Search"
               placeholder="Search"
               className={
                 "w-64 focus:w-72 lg:w-101 lg:focus:w-107 py-1.75 rounded-l-full pl-4 focus:pl-10 bg-white border border-primary"

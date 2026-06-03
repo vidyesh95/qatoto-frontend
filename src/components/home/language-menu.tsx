@@ -134,9 +134,11 @@ export default function LanguageMenu({ onClose }: LanguageMenuProps) {
 
   useEffect(() => {
     const handleClickOutside = (mouseEvent: MouseEvent) => {
-      const clickTarget = mouseEvent.target as Node;
+      const clickTarget = mouseEvent.target;
       const clickedOutsidePanel =
-        menuPanelRef.current && !menuPanelRef.current.contains(clickTarget);
+        clickTarget instanceof Node &&
+        menuPanelRef.current &&
+        !menuPanelRef.current.contains(clickTarget);
 
       if (clickedOutsidePanel) onClose();
     };

@@ -77,7 +77,7 @@ export default function Filter() {
   // them down on unmount.
   useEffect(() => {
     const container = chipsScrollContainerRef.current;
-    if (!container) return;
+    if (!container) return undefined;
     recalculateScrollAvailability();
     container.addEventListener("scroll", recalculateScrollAvailability, { passive: true });
     const resizeObserver = new ResizeObserver(recalculateScrollAvailability);
@@ -230,6 +230,7 @@ export default function Filter() {
       <div
         ref={chipsScrollContainerRef}
         role="toolbar"
+        tabIndex={-1}
         aria-label="Filter videos"
         aria-orientation="horizontal"
         onKeyDown={handleChipRowKeyDown}
@@ -249,7 +250,7 @@ export default function Filter() {
                 chipButtonRefs.current[chipIndex] = node;
               }}
               type="button"
-              aria-checked={isSelected ? "true" : "false"}
+              aria-pressed={isSelected ? "true" : "false"}
               tabIndex={chipIndex === focusedChipIndex ? 0 : -1}
               onClick={() => {
                 setSelectedChipIndex(chipIndex);

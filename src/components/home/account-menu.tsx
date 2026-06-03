@@ -71,9 +71,11 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   // Close the menu whenever the user presses down anywhere outside the panel.
   useEffect(() => {
     const handleClickOutside = (mouseEvent: MouseEvent) => {
-      const clickTarget = mouseEvent.target as Node;
+      const clickTarget = mouseEvent.target;
       const clickedOutsidePanel =
-        menuPanelRef.current && !menuPanelRef.current.contains(clickTarget);
+        clickTarget instanceof Node &&
+        menuPanelRef.current &&
+        !menuPanelRef.current.contains(clickTarget);
 
       if (clickedOutsidePanel) onClose();
     };

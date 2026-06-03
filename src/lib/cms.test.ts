@@ -27,7 +27,7 @@ function jsonResponse(body: unknown, ok = true): Response {
 }
 
 function installFetch(impl: (...args: Parameters<typeof fetch>) => Promise<Response>) {
-  const fetchMock = vi.fn(impl);
+  const fetchMock = vi.fn<(...args: Parameters<typeof fetch>) => Promise<Response>>(impl);
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }

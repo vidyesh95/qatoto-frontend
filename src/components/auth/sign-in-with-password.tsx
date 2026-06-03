@@ -36,6 +36,7 @@ export default function SignIn() {
               <input
                 type="email"
                 id="email"
+                aria-label="Email"
                 placeholder="host@domain.com"
                 className="flex-1 h-full bg-transparent outline-none text-base placeholder:text-foreground"
                 required
@@ -64,6 +65,7 @@ export default function SignIn() {
               <input
                 type="password"
                 id="password"
+                aria-label="Password"
                 placeholder="secretPassword123$"
                 className="flex-1 h-full bg-transparent outline-none text-base placeholder:text-foreground"
                 required

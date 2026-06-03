@@ -93,19 +93,21 @@ export default function BlogDetail({ post, related }: { post: BlogPost; related:
         <section className="mx-auto max-w-6xl px-6 pb-32">
           <h2 className="mb-8 font-serif text-3xl font-semibold tracking-tight">Keep reading</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {related.map((post) => (
+            {related.map((relatedPost) => (
               <Link
-                key={post.slug}
-                href={`/blogs/${post.slug}`}
+                key={relatedPost.slug}
+                href={`/blogs/${relatedPost.slug}`}
                 className="group flex flex-col rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  {CATEGORY_LABEL[post.category]} · {post.readingMinutes} min
+                  {CATEGORY_LABEL[relatedPost.category]} · {relatedPost.readingMinutes} min
                 </div>
                 <h3 className="mt-4 font-serif text-xl font-semibold leading-snug tracking-tight">
-                  {post.title}
+                  {relatedPost.title}
                 </h3>
-                <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{post.excerpt}</p>
+                <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
+                  {relatedPost.excerpt}
+                </p>
               </Link>
             ))}
           </div>
