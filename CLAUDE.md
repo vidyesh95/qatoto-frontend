@@ -15,7 +15,7 @@ pnpm dev                              # next dev --turbopack (https via localhos
 pnpm build                            # next build --turbopack
 pnpm start                            # production server
 pnpm lint                             # eslint (next/core-web-vitals + next/typescript)
-pnpm lint:fix                         # oxlint --fix (type-aware oxlint, see oxlint.config.ts)
+pnpm lint:fix                         # oxlint --fix (type-aware oxlint, see .oxlintrc.json)
 pnpm fmt                              # oxfmt write
 pnpm fmt:check                        # oxfmt check (CI)
 pnpm test                             # vitest run (unit tests, run once)
