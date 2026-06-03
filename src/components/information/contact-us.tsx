@@ -197,7 +197,7 @@ export default function ContactUs() {
                 src={MAP_EMBED_SRC}
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                sandbox="allow-scripts allow-same-origin allow-popups"
+                sandbox="allow-scripts allow-popups"
                 className="h-full min-h-80 w-full border-0"
                 allowFullScreen
               />
