@@ -21,9 +21,12 @@ async function loadCms(envUrl?: string): Promise<Cms> {
   return import("./cms");
 }
 
-/** Minimal `Response`-shaped stub good enough for the two fields `cmsFetch` touches. */
+/** Real `Response` carrying a JSON body — `cmsFetch` only touches `.ok` and `.json()`. */
 function jsonResponse(body: unknown, ok = true): Response {
-  return { ok, json: async () => body } as unknown as Response;
+  return new Response(JSON.stringify(body), {
+    status: ok ? 200 : 500,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 function installFetch(impl: (...args: Parameters<typeof fetch>) => Promise<Response>) {
