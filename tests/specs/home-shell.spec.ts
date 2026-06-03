@@ -22,14 +22,10 @@ test.describe("home shell", () => {
     const expandedBox = await sidebar.root.boundingBox();
 
     await navbar.toggleSidebar.click();
-    await expect
-      .poll(async () => (await sidebar.root.boundingBox())?.width)
-      .not.toBe(expandedBox?.width);
+    await expect.poll(async () => (await sidebar.root.boundingBox())?.width).not.toBe(expandedBox?.width);
 
     await navbar.toggleSidebar.click();
-    await expect
-      .poll(async () => (await sidebar.root.boundingBox())?.width)
-      .toBe(expandedBox?.width);
+    await expect.poll(async () => (await sidebar.root.boundingBox())?.width).toBe(expandedBox?.width);
   });
 
   // The "Sign in" pill in the top-right of the navbar must route to /sign-in

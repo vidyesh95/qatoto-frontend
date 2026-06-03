@@ -46,9 +46,7 @@ test.describe("filter chips", () => {
   test("forward chevron scrolls right and reveals back chevron", async ({ filter }) => {
     const before = await filter.scrollMetrics();
     await filter.forwardButton.click();
-    await expect
-      .poll(async () => (await filter.scrollMetrics()).scrollLeft)
-      .toBeGreaterThan(before.scrollLeft);
+    await expect.poll(async () => (await filter.scrollMetrics()).scrollLeft).toBeGreaterThan(before.scrollLeft);
     await expect(filter.backButton).toBeVisible();
   });
 
@@ -69,9 +67,7 @@ test.describe("filter chips", () => {
     });
     const before = await filter.scrollMetrics();
     await filter.backButton.click();
-    await expect
-      .poll(async () => (await filter.scrollMetrics()).scrollLeft)
-      .toBeLessThan(before.scrollLeft);
+    await expect.poll(async () => (await filter.scrollMetrics()).scrollLeft).toBeLessThan(before.scrollLeft);
   });
 
   // Mouse drag on the chip row scrolls the container the same way YouTube
@@ -112,9 +108,7 @@ test.describe("filter chips", () => {
   test("every chip stays inside the row vertically", async ({ filter }) => {
     const containerBox = await filter.scrollContainer.boundingBox();
     if (!containerBox) throw new Error("scroll container has no bounding box");
-    const chipBoxes = await filter
-      .chips()
-      .evaluateAll((nodes) => nodes.map((n) => n.getBoundingClientRect()));
+    const chipBoxes = await filter.chips().evaluateAll((nodes) => nodes.map((n) => n.getBoundingClientRect()));
     for (const box of chipBoxes) {
       expect(box.top).toBeGreaterThanOrEqual(containerBox.y - 1);
       expect(box.bottom).toBeLessThanOrEqual(containerBox.y + containerBox.height + 1);

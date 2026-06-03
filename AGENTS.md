@@ -35,10 +35,10 @@ Never model page/component state with a bag of optional fields + loose booleans 
 
 ```typescript
 interface DashboardProps {
-  isLoading: boolean;
-  isError: boolean;
-  data?: ProjectData[];
-  errorMessage?: string;
+    isLoading: boolean;
+    isError: boolean;
+    data?: ProjectData[];
+    errorMessage?: string;
 }
 ```
 
@@ -77,22 +77,22 @@ The Express backend owns data truth, but the network is untrusted. **Never** use
 import { z } from "zod";
 
 const UserProfileSchema = z
-  .object({
-    id: z.string(),
-    email: z.string().email(),
-  })
-  .strip(); // ignore unknown fields — forward-compatible with backend additions
+    .object({
+        id: z.string(),
+        email: z.string().email(),
+    })
+    .strip(); // ignore unknown fields — forward-compatible with backend additions
 
 async function fetchUserProfile(userId: string) {
-  const response = await fetch(`/api/users/${userId}`);
-  const rawData = await response.json();
+    const response = await fetch(`/api/users/${userId}`);
+    const rawData = await response.json();
 
-  const parsed = UserProfileSchema.safeParse(rawData);
-  if (!parsed.success) {
-    return { success: false, error: "Client-side contract validation failed" };
-  }
+    const parsed = UserProfileSchema.safeParse(rawData);
+    if (!parsed.success) {
+        return { success: false, error: "Client-side contract validation failed" };
+    }
 
-  return { success: true, data: parsed.data };
+    return { success: true, data: parsed.data };
 }
 ```
 
@@ -102,8 +102,8 @@ Do not rely on implicit success or component-level `try/catch` to model failure 
 
 ```typescript
 type ActionResponse<T> =
-  | { success: true; data: T }
-  | { success: false; error: { code: string; message: string } };
+    | { success: true; data: T }
+    | { success: false; error: { code: string; message: string } };
 ```
 
 Combine with Pattern 1: lift `ActionResponse<T>` into the component's `DashboardState`-style union so the UI for each error code is explicit and exhaustive.

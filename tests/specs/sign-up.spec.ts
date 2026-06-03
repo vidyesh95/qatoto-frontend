@@ -10,10 +10,7 @@ import { test, expect } from "../fixtures/test-base";
 // input. `auth.waitForHydration()` (a `waitForLoadState("networkidle")`
 // wrapper) blocks until hydration is done so the React onSubmit handler
 // actually catches the event and runs setStep(2).
-async function advanceToStep2(
-  page: import("@playwright/test").Page,
-  auth: import("../pages/auth.po").AuthPage,
-) {
+async function advanceToStep2(page: import("@playwright/test").Page, auth: import("../pages/auth.po").AuthPage) {
   await page.goto("/sign-up");
   await expect(auth.heading("Sign up")).toBeVisible();
   await auth.waitForHydration();

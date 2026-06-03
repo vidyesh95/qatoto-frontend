@@ -1,10 +1,5 @@
 import { test, expect } from "../fixtures/test-base";
-import {
-  SIDEBAR_ROUTES,
-  FOOTER_ROUTES,
-  type SidebarLabel,
-  type FooterLabel,
-} from "../pages/sidebar.po";
+import { SIDEBAR_ROUTES, FOOTER_ROUTES, type SidebarLabel, type FooterLabel } from "../pages/sidebar.po";
 
 // Data-driven coverage of every clickable destination in the sidebar.
 // One generated test per label = granular failure reporting (Playwright will
@@ -20,10 +15,7 @@ test.describe("sidebar navigation", () => {
     // For each label: visit "/", click the matching <Link> in the sidebar,
     // and assert the URL matches the route in SIDEBAR_ROUTES. This proves
     // the label → href mapping in NAVIGATION_CONFIG is correct.
-    test(`sidebar link "${label}" navigates to ${SIDEBAR_ROUTES[label]}`, async ({
-      page,
-      sidebar,
-    }) => {
+    test(`sidebar link "${label}" navigates to ${SIDEBAR_ROUTES[label]}`, async ({ page, sidebar }) => {
       await page.goto("/");
       await sidebar.navLink(label).click();
       await expect(page).toHaveURL(new RegExp(`${SIDEBAR_ROUTES[label]}$`));
@@ -35,10 +27,7 @@ test.describe("sidebar navigation", () => {
   const footerLabels: FooterLabel[] = ["About", "Careers", "Contact Us", "Blogs", "Press"];
 
   for (const label of footerLabels) {
-    test(`footer link "${label}" navigates to ${FOOTER_ROUTES[label]}`, async ({
-      page,
-      sidebar,
-    }) => {
+    test(`footer link "${label}" navigates to ${FOOTER_ROUTES[label]}`, async ({ page, sidebar }) => {
       await page.goto("/");
       await sidebar.footerLink(label).first().click();
       await expect(page).toHaveURL(new RegExp(`${FOOTER_ROUTES[label]}$`));

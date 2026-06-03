@@ -8,20 +8,20 @@ description: Create new agent skills with proper structure, progressive disclosu
 ## Process
 
 1. **Gather requirements** - ask user about:
-   - What task/domain does the skill cover?
-   - What specific use cases should it handle?
-   - Does it need executable scripts or just instructions?
-   - Any reference materials to include?
+    - What task/domain does the skill cover?
+    - What specific use cases should it handle?
+    - Does it need executable scripts or just instructions?
+    - Any reference materials to include?
 
 2. **Draft the skill** - create:
-   - SKILL.md with concise instructions
-   - Additional reference files if content exceeds 500 lines
-   - Utility scripts if deterministic operations needed
+    - SKILL.md with concise instructions
+    - Additional reference files if content exceeds 500 lines
+    - Utility scripts if deterministic operations needed
 
 3. **Review with user** - present draft and ask:
-   - Does this cover your use cases?
-   - Anything missing or unclear?
-   - Should any section be more/less detailed?
+    - Does this cover your use cases?
+    - Anything missing or unclear?
+    - Should any section be more/less detailed?
 
 ## Skill Structure
 

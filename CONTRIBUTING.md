@@ -26,7 +26,7 @@ By participating in this project, you agree to abide by our [Code of Conduct](ht
 - Use present tense.
 - Use lowercase.
 
-  Example:
+    Example:
 
 - feat: Add user authentication
 - fix: Resolve login bug
