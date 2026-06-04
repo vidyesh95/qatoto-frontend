@@ -29,7 +29,7 @@ const RECOMMENDED_VIDEOS: Video[] = [
     verified: true,
     hoverBg: "group-hover:bg-yellow-100",
     isChannelLive: false,
-    href: "/watch/1",
+    href: "/watch?v=1",
   },
   {
     id: "2",
