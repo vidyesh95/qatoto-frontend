@@ -60,13 +60,7 @@ export default function VideoCard({
       />
       {/* Stretched overlay link — covers the whole card, navigates to the video.
           Interactive children (channel, more options) sit above it via z-10. */}
-      {href && (
-        <Link
-          href={href}
-          aria-label={title}
-          className="absolute inset-0 z-0 rounded-xl"
-        />
-      )}
+      {href && <Link href={href} aria-label={title} className="absolute inset-0 z-0 rounded-xl" />}
       <Image
         src={thumbnailSrc}
         width={246}

@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+import VideoPlayer from "@/components/home/video-player";
+
 type WatchVideo = {
   id: string;
   videoSrc: string;
@@ -37,10 +39,7 @@ export default function WatchContent({ id }: { id: string }) {
 
   return (
     <section className="px-4 lg:px-6 py-6 max-w-5xl mx-auto space-y-4">
-      <div className="w-full aspect-video rounded-xl overflow-hidden bg-black">
-        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-        <video src={video.videoSrc} controls autoPlay muted playsInline className="w-full h-full" />
-      </div>
+      <VideoPlayer src={video.videoSrc} label={video.title} autoPlay muted />
       <h1 className="text-lg font-medium">{video.title}</h1>
       <div className="flex flex-row items-center gap-3">
         <div className="size-10 rounded-full border border-foreground shrink-0 flex items-center justify-center">
