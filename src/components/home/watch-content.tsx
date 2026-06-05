@@ -1,6 +1,8 @@
 import Image from "next/image";
 
 import Comments, { type Comment, type Review, type SaleItem } from "@/components/home/comments";
+import FocusButton from "@/components/home/focus-button";
+import StatPill from "@/components/home/stat-pill";
 import VideoCard, { type VideoCardProps } from "@/components/home/video-card";
 import VideoDescription from "@/components/home/video-description";
 import VideoPlayer from "@/components/home/video-player";
@@ -266,38 +268,14 @@ export default function WatchContent({ id }: { id: string }) {
                 <span className="ml-1 text-xs text-[#6F7979]">{video.subscribers}</span>
               </div>
             </div>
-            <button
-              type="button"
-              className="flex flex-row items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shrink-0 cursor-pointer hover:opacity-90"
-            >
-              <Image
-                src="/icons/loupe_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                width={18}
-                height={18}
-                alt=""
-              />
-              Focus on
-            </button>
+            <FocusButton />
           </div>
 
           {/* Stats */}
           <div className="flex flex-row flex-wrap items-center gap-2">
-            <StatPill
-              icon="/icons/favorite_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-              label={stats.likes}
-            />
-            <StatPill
-              icon="/icons/comment_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-              label={stats.comments}
-            />
-            <StatPill
-              icon="/icons/bookmark_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-              label={stats.bookmarks}
-            />
-            <StatPill
-              icon="/icons/share_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-              label={stats.shares}
-            />
+            <StatPill icon="favorite" label={stats.likes} />
+            <StatPill icon="bookmark" label={stats.bookmarks} />
+            <StatPill icon="share" label={stats.shares} />
           </div>
 
           {/* Comments + reviews (reviews tab shows only when an item is attached) */}
@@ -331,17 +309,5 @@ export default function WatchContent({ id }: { id: string }) {
         </div>
       </div>
     </section>
-  );
-}
-
-function StatPill({ icon, label }: { icon: string; label: string }) {
-  return (
-    <button
-      type="button"
-      className="flex flex-row items-center gap-2 rounded-full bg-[#F1F3F3] px-4 py-2 text-sm font-medium cursor-pointer hover:bg-[#E5E7E7]"
-    >
-      <Image src={icon} width={18} height={18} alt="" />
-      {label}
-    </button>
   );
 }
