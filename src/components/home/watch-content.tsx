@@ -188,9 +188,9 @@ const VIDEOS: Record<string, WatchVideo> = {
         rating: 3,
         text: "Cement flower pot 🤣 too heavy, No one wants",
         images: [
-          "/dummy/thumbnail_image01.avif",
-          "/dummy/thumbnail_image02.avif",
-          "/dummy/thumbnail_image03.avif",
+          "/dummy/review_image01.avif",
+          "/dummy/review_image02.avif",
+          "/dummy/review_image03.avif",
         ],
         postedAt: "12 months ago",
         location: "Central African Republic",
