@@ -68,23 +68,23 @@ export default function Comments({
         <>
           {/* Attached item */}
           <div className="flex flex-row items-center gap-3 px-4 py-3">
-            <div className="size-9 rounded-lg bg-[#F1F3F3] shrink-0 flex items-center justify-center">
+            <div className="size-7 rounded-[2px] bg-[#00696E] shrink-0 flex items-center justify-center">
               <Image
-                src="/icons/shopping_cart_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                width={20}
-                height={20}
+                src="/icons/shopping_cart_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
+                width={16}
+                height={16}
                 alt=""
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate">{saleItem.name}</p>
-              <p className="text-xs text-[#1DBDC5]">
+              <p className="text-[11px] font-medium truncate">{saleItem.name}</p>
+              <p className="text-[11px] text-[#1DBDC5]">
                 Price: {saleItem.price} | Sold: {saleItem.sold}
               </p>
             </div>
           </div>
           {/* Tabs */}
-          <div className="flex flex-row border-b border-[#E5E7E7]">
+          <div className="flex flex-row border-b border-[#DAE4E5]">
             <TabButton active={tab === "comments"} onClick={() => setTab("comments")}>
               {count} Comments
             </TabButton>
@@ -149,7 +149,7 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={`flex-1 px-4 py-3 text-sm font-medium cursor-pointer border-b-2 -mb-px transition-colors ${
-        active ? "border-[#1DBDC5] text-foreground" : "border-transparent text-[#6F7979]"
+        active ? "border-[#00696E] text-[#191C1C]" : "border-transparent text-[#3F4949]"
       }`}
     >
       {children}
@@ -173,18 +173,13 @@ function SortPill({
       type="button"
       onClick={onClick}
       className={`flex flex-row items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-medium cursor-pointer border transition-colors ${
-        active
-          ? "bg-primary border-primary text-primary-foreground"
-          : "border-[#E5E7E7] text-foreground"
+        active ? "bg-[#CCE8E9] border-[#CCE8E9] text-[#041F21]" : "border-[#6F7979] text-[#3F4949]"
       }`}
     >
       {active && showCheck && (
-        <Image
-          src="/icons/check_circle_24dp_6F7979_FILL1_wght400_GRAD0_opsz24.svg"
-          width={16}
-          height={16}
-          alt=""
-        />
+        <svg viewBox="0 -960 960 960" width={18} height={18} className="fill-[#041F21]">
+          <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z" />
+        </svg>
       )}
       {children}
     </button>
@@ -193,13 +188,13 @@ function SortPill({
 
 function Avatar({ src }: { src: string }) {
   return (
-    <div className="size-9 rounded-full border border-foreground shrink-0 flex items-center justify-center">
+    <div className="size-8 shrink-0">
       <Image
         src={src}
-        width={34}
-        height={34}
+        width={32}
+        height={32}
         alt="profile image"
-        className="size-8.5 rounded-full"
+        className="size-8 rounded-full object-cover"
       />
     </div>
   );
@@ -212,9 +207,9 @@ function Stars({ rating }: { rating: number }) {
         <svg
           key={i}
           viewBox="0 -960 960 960"
-          width={16}
-          height={16}
-          className={i < rating ? "fill-[#1DBDC5]" : "fill-[#D5DBDB]"}
+          width={20}
+          height={20}
+          className={i < rating ? "fill-[#00696E]" : "fill-[#E0E3E3]"}
         >
           <path d="M480-269 314-169q-11 7-23 6t-21-8q-9-7-14-17.5t-2-23.5l44-189-147-127q-10-9-12.5-20.5T140-571q4-11 12-18t22-9l194-17 75-178q5-12 15.5-18t21.5-6q11 0 21.5 6t15.5 18l75 178 194 17q14 2 22 9t12 18q4 11 1.5 22.5T809-528L662-401l44 189q3 13-2 23.5T690-171q-9 7-21 8t-23-6L480-269Z" />
         </svg>
@@ -236,9 +231,9 @@ function ActionButton({
     <button
       type="button"
       aria-label={ariaLabel}
-      className="flex flex-row items-center gap-1.5 text-xs text-[#6F7979] hover:text-foreground cursor-pointer"
+      className="flex flex-row items-center gap-1.5 text-[11px] text-foreground hover:text-[#6F7979] cursor-pointer"
     >
-      <Image src={icon} width={18} height={18} alt="" />
+      <Image src={icon} width={14} height={14} alt="" />
       {label}
     </button>
   );
@@ -249,9 +244,9 @@ function CommentItem({ comment }: { comment: Comment }) {
     <li className="flex flex-row gap-3 py-3">
       <Avatar src={comment.profileSrc} />
       <div className="min-w-0 flex-1">
-        <span className="text-xs text-[#6F7979]">{comment.author}</span>
-        <p className="mt-0.5 text-sm font-medium leading-snug">{comment.text}</p>
-        <p className="mt-1 text-xs text-[#6F7979]">
+        <span className="text-[11px] font-medium text-foreground">{comment.author}</span>
+        <p className="mt-1 text-xs font-medium leading-snug">{comment.text}</p>
+        <p className="mt-1 text-[11px] font-medium text-foreground">
           {comment.postedAt} • {comment.location}
         </p>
         <div className="mt-2 flex flex-row items-center gap-5">
@@ -300,43 +295,49 @@ function ReviewItem({ review }: { review: Review }) {
       <Avatar src={review.profileSrc} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-row items-start justify-between gap-2">
-          <span className="text-xs text-[#6F7979]">{review.author}</span>
+          <span className="text-[11px] font-medium text-foreground">{review.author}</span>
           <Image
             src="/icons/more_vert_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            width={20}
-            height={20}
+            width={14}
+            height={14}
             alt="more options"
             className="shrink-0 cursor-pointer"
           />
         </div>
-        <p className="mt-0.5 text-xs text-[#6F7979]">{review.variant}</p>
+        <p className="mt-1 text-xs font-medium text-[#A9ACAC]">{review.variant}</p>
         <div className="mt-1.5">
           <Stars rating={review.rating} />
         </div>
-        <p className="mt-1.5 text-sm font-medium leading-snug">
-          {review.text}{" "}
-          <button type="button" className="align-baseline text-xs text-[#1DBDC5] cursor-pointer">
-            more
-          </button>
-        </p>
+        <p className="mt-1.5 text-xs font-medium leading-snug">{review.text}</p>
+        <button
+          type="button"
+          className="mt-0.5 block w-full text-right text-xs font-medium text-[#2A76FD] cursor-pointer"
+        >
+          more
+        </button>
         {review.images.length > 0 && (
-          <div className="mt-2 flex flex-row items-center gap-2">
-            {review.images.slice(0, 3).map((src, i) => (
-              <Image
-                key={i}
-                src={src}
-                width={88}
-                height={88}
-                alt="review photo"
-                className="size-22 rounded-lg object-cover"
-              />
-            ))}
-            <button type="button" className="text-xs text-[#1DBDC5] cursor-pointer">
+          <>
+            <div className="mt-2 grid w-max grid-cols-3 gap-1">
+              {review.images.map((src, i) => (
+                <Image
+                  key={i}
+                  src={src}
+                  width={72}
+                  height={72}
+                  alt="review photo"
+                  className="size-18 rounded-[3px] object-cover"
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              className="mt-0.5 block w-full text-right text-xs font-medium text-[#2A76FD] cursor-pointer"
+            >
               more
             </button>
-          </div>
+          </>
         )}
-        <p className="mt-2 text-xs text-[#6F7979]">
+        <p className="mt-2 text-[11px] font-medium text-foreground">
           {review.postedAt} • {review.location}
         </p>
         <div className="mt-2 flex flex-row items-center gap-5">
@@ -355,8 +356,8 @@ function ReviewItem({ review }: { review: Review }) {
           />
         </div>
         {review.verified && (
-          <div className="mt-2 flex flex-row items-center gap-2 text-xs text-[#6F7979]">
-            <span className="h-px w-6 bg-[#D5DBDB]" />
+          <div className="mt-2 flex flex-row items-center gap-2 text-[11px] font-medium text-[#6F7979]">
+            <span className="h-px w-6 bg-[#CAC4D0]" />
             Verified Purchase
             <Image
               src="/icons/check_circle_24dp_6F7979_FILL1_wght400_GRAD0_opsz24.svg"
