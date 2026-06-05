@@ -132,7 +132,7 @@ export default function WatchInfoPanel({
                     {chapter.time}
                   </span>
                 </div>
-                <div className="flex flex-row items-center gap-3 shrink-0 pr-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                <div className="flex flex-row items-center gap-3 shrink-0 pr-1 opacity-0 transition-opacity group-hover:opacity-100 has-focus-visible:opacity-100">
                   <button
                     type="button"
                     aria-label={`share chapter "${chapter.title}"`}
