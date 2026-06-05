@@ -60,6 +60,30 @@ const VIDEOS: Record<string, WatchVideo> = {
         time: "0:28",
         text: "programming languages and big companies like Netflix, Walmart, and PayPal build",
       },
+      {
+        time: "0:35",
+        text: "their products using JavaScript. So what can you do with JavaScript? You can",
+      },
+      {
+        time: "0:42",
+        text: "build interactive web applications, mobile apps, server-side applications, and even",
+      },
+      {
+        time: "0:49",
+        text: "desktop applications. JavaScript runs in the browser, Node.js runtime, and many other",
+      },
+      {
+        time: "0:56",
+        text: "environments. ECMAScript is the standardized specification of JavaScript while",
+      },
+      {
+        time: "1:03",
+        text: "JavaScript is the implementation of that standard. Now that you understand the basics,",
+      },
+      {
+        time: "1:10",
+        text: "you're ready to start learning JavaScript. Visit our website to get started today.",
+      },
     ],
   },
 };
