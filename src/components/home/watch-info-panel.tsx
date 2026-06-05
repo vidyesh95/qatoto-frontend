@@ -43,7 +43,11 @@ export default function WatchInfoPanel({
         <h2 className="text-lg">In this video</h2>
         <div className="flex flex-row items-center gap-2">
           {tab === "transcript" && (
-            <button type="button" aria-label="more options" className="p-2 hover:bg-black/10 rounded-full cursor-pointer">
+            <button
+              type="button"
+              aria-label="more options"
+              className="p-2 hover:bg-black/10 rounded-full cursor-pointer"
+            >
               <Image
                 src="/icons/more_vert_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 width={24}
@@ -52,7 +56,12 @@ export default function WatchInfoPanel({
               />
             </button>
           )}
-          <button type="button" aria-label="close" className="p-2 hover:bg-black/10 rounded-full cursor-pointer" onClick={onClose}>
+          <button
+            type="button"
+            aria-label="close"
+            className="p-2 hover:bg-black/10 rounded-full cursor-pointer"
+            onClick={onClose}
+          >
             <Image
               src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
               width={24}

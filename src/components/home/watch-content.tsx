@@ -40,12 +40,18 @@ const VIDEOS: Record<string, WatchVideo> = {
     ],
     transcriptTitle: "What is JavaScript",
     transcript: [
-      { time: "0:01", text: "In this 3-minute introduction, I'm going to answer four frequently asked questions" },
+      {
+        time: "0:01",
+        text: "In this 3-minute introduction, I'm going to answer four frequently asked questions",
+      },
       {
         time: "0:06",
         text: "about JavaScript. What is JavaScript, what can you do with it, where does JavaScript code run and what is the difference between",
       },
-      { time: "0:14", text: "JavaScript and ECMAScript. So let's start with the first question. What is" },
+      {
+        time: "0:14",
+        text: "JavaScript and ECMAScript. So let's start with the first question. What is",
+      },
       {
         time: "0:19",
         text: "JavaScript? JavaScript is one of the most popular and widely used programming languages in the world right now. It's growing faster than any other",
