@@ -136,13 +136,13 @@ export default function WatchInfoPanel({
                   <button
                     type="button"
                     aria-label={`share chapter "${chapter.title}"`}
-                    className="cursor-pointer"
+                    className="p-2 hover:bg-black/10 rounded-full cursor-pointer"
                     onClick={() => shareChapter(chapter.time)}
                   >
                     <Image
                       src="/icons/share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                      width={20}
-                      height={20}
+                      width={24}
+                      height={24}
                       alt=""
                     />
                   </button>
