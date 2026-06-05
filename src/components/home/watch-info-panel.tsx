@@ -43,6 +43,7 @@ export default function WatchInfoPanel({
   className = "",
 }: WatchInfoPanelProps) {
   const [tab, setTab] = useState<Tab>("chapters");
+  const [selectedChapter, setSelectedChapter] = useState<string>(chapters[0]?.title ?? "");
 
   function shareChapter(time: string) {
     const seconds = timeToSeconds(time);
@@ -117,22 +118,34 @@ export default function WatchInfoPanel({
             {chapters.map((chapter) => (
               <li
                 key={chapter.title}
-                className="group flex flex-row items-center gap-3 px-4 py-2.5 hover:bg-[#F1F3F3] cursor-pointer"
+                className={`group flex flex-row items-center gap-3 px-4 py-2.5 hover:bg-[#F1F3F3] ${
+                  selectedChapter === chapter.title ? "bg-primary/30" : ""
+                }`}
               >
-                <Image
-                  src={chapter.thumbSrc}
-                  width={96}
-                  height={54}
-                  alt=""
-                  className="w-24 aspect-video rounded-lg object-cover shrink-0"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{chapter.title}</p>
-                  <span className="inline-block mt-1 rounded-md bg-[#EAF1FB] px-1.5 py-0.5 text-xs font-medium text-[#1B66C9]">
-                    {chapter.time}
-                  </span>
-                </div>
-                <div className="flex flex-row items-center gap-3 shrink-0 pr-1 opacity-0 transition-opacity group-hover:opacity-100 has-focus-visible:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => setSelectedChapter(chapter.title)}
+                  className="flex flex-1 min-w-0 flex-row items-center gap-3 text-left cursor-pointer"
+                >
+                  <Image
+                    src={chapter.thumbSrc}
+                    width={96}
+                    height={54}
+                    alt=""
+                    className="w-24 aspect-video rounded-lg object-cover shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{chapter.title}</p>
+                    <span className="inline-block mt-1 rounded-md bg-[#EAF1FB] px-1.5 py-0.5 text-xs font-medium text-[#1B66C9]">
+                      {chapter.time}
+                    </span>
+                  </div>
+                </button>
+                <div
+                  className={`flex flex-row items-center gap-3 shrink-0 pr-1 transition-opacity group-hover:opacity-100 has-focus-visible:opacity-100 ${
+                    selectedChapter === chapter.title ? "opacity-100" : "opacity-0"
+                  }`}
+                >
                   <button
                     type="button"
                     aria-label={`share chapter "${chapter.title}"`}
