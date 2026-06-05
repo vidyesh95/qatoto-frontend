@@ -16,6 +16,7 @@ type TranscriptLine = {
 };
 
 export type WatchInfoPanelProps = {
+  videoId: string;
   chapters: Chapter[];
   transcriptTitle: string;
   transcript: TranscriptLine[];
@@ -25,7 +26,16 @@ export type WatchInfoPanelProps = {
 
 type Tab = "chapters" | "transcript";
 
+/** Parse a "mm:ss" or "hh:mm:ss" timestamp into whole seconds. */
+function timeToSeconds(time: string): number {
+  return time
+    .split(":")
+    .map(Number)
+    .reduce((acc, part) => acc * 60 + part, 0);
+}
+
 export default function WatchInfoPanel({
+  videoId,
   chapters,
   transcriptTitle,
   transcript,
@@ -33,6 +43,12 @@ export default function WatchInfoPanel({
   className = "",
 }: WatchInfoPanelProps) {
   const [tab, setTab] = useState<Tab>("chapters");
+
+  function shareChapter(time: string) {
+    const seconds = timeToSeconds(time);
+    const url = `${window.location.origin}/watch?v=${encodeURIComponent(videoId)}&t=${seconds}`;
+    void navigator.clipboard?.writeText(url);
+  }
 
   return (
     <aside
@@ -98,12 +114,10 @@ export default function WatchInfoPanel({
       <div className="flex-1 min-h-0 overflow-y-auto">
         {tab === "chapters" ? (
           <ul>
-            {chapters.map((chapter, index) => (
+            {chapters.map((chapter) => (
               <li
                 key={chapter.title}
-                className={`group flex flex-row items-center gap-3 px-4 py-2.5 ${
-                  index === 0 ? "bg-[#F1F3F3]" : ""
-                }`}
+                className="group flex flex-row items-center gap-3 px-4 py-2.5 hover:bg-[#F1F3F3] cursor-pointer"
               >
                 <Image
                   src={chapter.thumbSrc}
@@ -118,18 +132,21 @@ export default function WatchInfoPanel({
                     {chapter.time}
                   </span>
                 </div>
-                {index === 0 && (
-                  <div className="flex flex-row items-center gap-3 shrink-0 pr-1">
-                    <button type="button" aria-label="share chapter">
-                      <Image
-                        src="/icons/share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                        width={20}
-                        height={20}
-                        alt=""
-                      />
-                    </button>
-                  </div>
-                )}
+                <div className="flex flex-row items-center gap-3 shrink-0 pr-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                  <button
+                    type="button"
+                    aria-label={`share chapter "${chapter.title}"`}
+                    className="cursor-pointer"
+                    onClick={() => shareChapter(chapter.time)}
+                  >
+                    <Image
+                      src="/icons/share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                      width={20}
+                      height={20}
+                      alt=""
+                    />
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

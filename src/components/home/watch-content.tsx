@@ -106,6 +106,7 @@ export default function WatchContent({ id }: { id: string }) {
           <VideoPlayer src={video.videoSrc} label={video.title} autoPlay muted />
         </div>
         <WatchInfoPanel
+          videoId={video.id}
           chapters={video.chapters}
           transcriptTitle={video.transcriptTitle}
           transcript={video.transcript}
