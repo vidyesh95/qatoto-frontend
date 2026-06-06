@@ -236,6 +236,15 @@ export default function WatchContent({ id }: { id: string }) {
         <div className="min-w-0 space-y-4 lg:flex-1">
           <VideoPlayer src={video.videoSrc} label={video.title} autoPlay muted />
 
+          {/* In-video panel — mobile only, sits below video and above title */}
+          <WatchInfoPanel
+            videoId={video.id}
+            chapters={video.chapters}
+            transcriptTitle={video.transcriptTitle}
+            transcript={video.transcript}
+            className="w-full h-100 lg:hidden"
+          />
+
           <VideoDescription
             title={video.title}
             views={video.views}
@@ -295,7 +304,7 @@ export default function WatchContent({ id }: { id: string }) {
             chapters={video.chapters}
             transcriptTitle={video.transcriptTitle}
             transcript={video.transcript}
-            className="w-full h-100 lg:h-125"
+            className="hidden lg:block w-full lg:h-125"
           />
 
           <div className="space-y-4">
