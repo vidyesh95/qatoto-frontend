@@ -41,6 +41,8 @@ export type Review = {
   location: string;
   likes: string;
   verified: boolean;
+  /** Buyer Q&A under the review — viewers ask, reviewer replies. */
+  replyList?: Reply[];
 };
 
 export type SaleItem = {
@@ -371,6 +373,10 @@ function ReplyItem({ reply }: { reply: Reply }) {
 }
 
 function ReviewItem({ review }: { review: Review }) {
+  const [expanded, setExpanded] = useState(false);
+  const replyList = review.replyList ?? [];
+  const hasReplies = replyList.length > 0;
+
   return (
     <li className="flex flex-row gap-3 py-3">
       <Avatar src={review.profileSrc} />
@@ -447,6 +453,33 @@ function ReviewItem({ review }: { review: Review }) {
               alt=""
             />
           </div>
+        )}
+
+        {expanded && hasReplies && (
+          <ul className="mt-2 space-y-1">
+            {replyList.map((reply) => (
+              <ReplyItem key={reply.id} reply={reply} />
+            ))}
+          </ul>
+        )}
+
+        {hasReplies && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            className="mt-2 flex flex-row items-center gap-2 text-xs text-[#6F7979] cursor-pointer hover:text-foreground"
+          >
+            <span className="h-px w-6 bg-[#D5DBDB]" />
+            {expanded ? "Collapse" : `Expand ${replyList.length} replies`}
+            <Image
+              src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+              width={16}
+              height={16}
+              alt=""
+              className={expanded ? "-rotate-90" : "rotate-90"}
+            />
+          </button>
         )}
       </div>
     </li>
