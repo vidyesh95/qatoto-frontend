@@ -4,6 +4,18 @@ import { useState } from "react";
 
 import Image from "next/image";
 
+export type Reply = {
+  id: string;
+  profileSrc: string;
+  author: string;
+  /** Author this reply is directed at — shows the "▶ name" badge. */
+  replyingTo?: string;
+  postedAt: string;
+  location: string;
+  text: string;
+  likes: string;
+};
+
 export type Comment = {
   id: string;
   profileSrc: string;
@@ -12,7 +24,9 @@ export type Comment = {
   location: string;
   text: string;
   likes: string;
+  /** Count badge fallback; prefer replyList.length when replies are attached. */
   replies: string;
+  replyList?: Reply[];
 };
 
 export type Review = {
@@ -240,6 +254,11 @@ function ActionButton({
 }
 
 function CommentItem({ comment }: { comment: Comment }) {
+  const [expanded, setExpanded] = useState(false);
+  const replyList = comment.replyList ?? [];
+  const replyCount = replyList.length > 0 ? String(replyList.length) : comment.replies;
+  const hasReplies = replyCount !== "0";
+
   return (
     <li className="flex flex-row gap-3 py-3">
       <Avatar src={comment.profileSrc} />
@@ -247,7 +266,7 @@ function CommentItem({ comment }: { comment: Comment }) {
         <span className="text-[11px] font-medium text-foreground">{comment.author}</span>
         <p className="mt-1 text-xs font-medium leading-snug">{comment.text}</p>
         <p className="mt-1 text-[11px] font-medium text-foreground">
-          {comment.postedAt} • {comment.location}
+          {comment.postedAt} · {comment.location}
         </p>
         <div className="mt-2 flex flex-row items-center gap-5">
           <ActionButton
@@ -268,22 +287,84 @@ function CommentItem({ comment }: { comment: Comment }) {
             ariaLabel="share comment"
           />
         </div>
-        {comment.replies !== "0" && (
+
+        {expanded && replyList.length > 0 && (
+          <ul className="mt-2 space-y-1">
+            {replyList.map((reply) => (
+              <ReplyItem key={reply.id} reply={reply} />
+            ))}
+          </ul>
+        )}
+
+        {hasReplies && (
           <button
             type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
             className="mt-2 flex flex-row items-center gap-2 text-xs text-[#6F7979] cursor-pointer hover:text-foreground"
           >
             <span className="h-px w-6 bg-[#D5DBDB]" />
-            Expand {comment.replies} replies
+            {expanded ? "Collapse" : `Expand ${replyCount} replies`}
             <Image
               src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
               width={16}
               height={16}
               alt=""
-              className="rotate-90"
+              className={expanded ? "-rotate-90" : "rotate-90"}
             />
           </button>
         )}
+      </div>
+    </li>
+  );
+}
+
+function ReplyItem({ reply }: { reply: Reply }) {
+  return (
+    <li className="flex flex-row gap-2 py-2">
+      <div className="size-7 shrink-0">
+        <Image
+          src={reply.profileSrc}
+          width={28}
+          height={28}
+          alt="profile image"
+          className="size-7 rounded-full object-cover"
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <span className="flex flex-row flex-wrap items-center gap-1 text-[11px] font-medium text-foreground">
+          {reply.author}
+          {reply.replyingTo && (
+            <span className="flex flex-row items-center gap-1 text-[#6F7979]">
+              <Image
+                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+                width={12}
+                height={12}
+                alt=""
+              />
+              {reply.replyingTo}
+            </span>
+          )}
+        </span>
+        <p className="mt-1 text-xs font-medium leading-snug">{reply.text}</p>
+        <p className="mt-1 text-[11px] font-medium text-foreground">
+          {reply.postedAt} · {reply.location}
+        </p>
+        <div className="mt-2 flex flex-row items-center gap-5">
+          <ActionButton
+            icon="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            label={reply.likes}
+            ariaLabel="like reply"
+          />
+          <ActionButton
+            icon="/icons/heart_broken_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            ariaLabel="dislike reply"
+          />
+          <ActionButton
+            icon="/icons/reply_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            ariaLabel="reply"
+          />
+        </div>
       </div>
     </li>
   );
