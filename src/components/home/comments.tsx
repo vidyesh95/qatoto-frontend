@@ -441,19 +441,18 @@ function ReviewItem({ review }: { review: Review }) {
             icon="/icons/share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             ariaLabel="share review"
           />
+          {review.verified && (
+            <div className="flex flex-row items-center gap-1.5 text-[11px] font-medium text-[#6F7979]">
+              Verified Purchase
+              <Image
+                src="/icons/check_circle_24dp_6F7979_FILL1_wght400_GRAD0_opsz24.svg"
+                width={16}
+                height={16}
+                alt=""
+              />
+            </div>
+          )}
         </div>
-        {review.verified && (
-          <div className="mt-2 flex flex-row items-center gap-2 text-[11px] font-medium text-[#6F7979]">
-            <span className="h-px w-6 bg-[#CAC4D0]" />
-            Verified Purchase
-            <Image
-              src="/icons/check_circle_24dp_6F7979_FILL1_wght400_GRAD0_opsz24.svg"
-              width={16}
-              height={16}
-              alt=""
-            />
-          </div>
-        )}
 
         {expanded && hasReplies && (
           <ul className="mt-2 space-y-1">
