@@ -308,11 +308,14 @@ function CommentItem({ comment }: { comment: Comment }) {
             <span className="h-px w-6 bg-[#D5DBDB]" />
             {expanded ? "Collapse" : `Expand ${replyCount} replies`}
             <Image
-              src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+              src={
+                expanded
+                  ? "/icons/keyboard_control_key_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                  : "/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+              }
               width={16}
               height={16}
               alt=""
-              className={expanded ? "-rotate-90" : "rotate-90"}
             />
           </button>
         )}
@@ -472,11 +475,14 @@ function ReviewItem({ review }: { review: Review }) {
             <span className="h-px w-6 bg-[#D5DBDB]" />
             {expanded ? "Collapse" : `Expand ${replyList.length} replies`}
             <Image
-              src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+              src={
+                expanded
+                  ? "/icons/keyboard_control_key_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                  : "/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+              }
               width={16}
               height={16}
               alt=""
-              className={expanded ? "-rotate-90" : "rotate-90"}
             />
           </button>
         )}
