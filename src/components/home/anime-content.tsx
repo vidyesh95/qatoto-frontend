@@ -159,7 +159,7 @@ function CategoryLinks() {
           <li key={category.label} className="flex-1">
             <Link
               href={category.href}
-              className="group flex flex-col items-center gap-1 rounded-2xl p-1 transition-colors hover:bg-black/5"
+              className="group flex flex-col items-center gap-1 rounded-xl p-1 md:p-4 transition-colors hover:bg-black/5"
             >
               <Image
                 src={category.icon}
