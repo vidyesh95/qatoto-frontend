@@ -123,7 +123,7 @@ function AnimeHero() {
         <div className="absolute inset-x-0 top-0 flex justify-end p-2 bg-linear-to-b from-black/25 to-transparent">
           <button
             type="button"
-            onClick={() => setMuted((m) => !m)}
+            onClick={() => setMuted((prev) => !prev)}
             aria-label={muted ? "Unmute preview" : "Mute preview"}
             className="grid place-items-center transition hover:opacity-80"
           >
@@ -153,22 +153,24 @@ function AnimeHero() {
 
 function CategoryLinks() {
   return (
-    <nav className="px-4 lg:px-6 pt-6">
-      <ul className="flex justify-evenly gap-4 sm:gap-10 lg:gap-16">
-        {CATEGORIES.map((c) => (
-          <li key={c.label}>
+    <nav className="px-4 lg:px-6 py-2">
+      <ul className="flex items-start">
+        {CATEGORIES.map((category) => (
+          <li key={category.label} className="flex-1">
             <Link
-              href={c.href}
-              className="group flex flex-col items-center gap-2 rounded-2xl p-2 sm:p-3 transition-colors hover:bg-black/5"
+              href={category.href}
+              className="group flex flex-col items-center gap-1 rounded-2xl p-1 transition-colors hover:bg-black/5"
             >
               <Image
-                src={c.icon}
-                width={56}
-                height={56}
+                src={category.icon}
+                width={40}
+                height={40}
                 alt=""
-                className="size-11 sm:size-12 lg:size-14 transition-transform group-hover:scale-105"
+                className="size-10 transition-transform group-hover:scale-105"
               />
-              <span className="text-xs lg:text-sm font-medium text-foreground">{c.label}</span>
+              <span className="text-[11px] font-medium leading-4 tracking-[0.5px] text-foreground">
+                {category.label}
+              </span>
             </Link>
           </li>
         ))}
@@ -250,22 +252,22 @@ function MediaRow({
           ref={scroller}
           className="flex gap-3 lg:gap-4 overflow-x-auto px-4 lg:px-6 pb-2 snap-x scrollbar-none"
         >
-          {items.map((m) => (
+          {items.map((media) => (
             <Link
-              key={m.id}
+              key={media.id}
               href="/watch"
               className={`group/card shrink-0 snap-start ${cardWidth}`}
             >
               <div className={`relative overflow-hidden rounded-lg bg-muted ${aspect}`}>
                 <Image
-                  src={m.imageSrc}
-                  alt={m.title}
+                  src={media.imageSrc}
+                  alt={media.title}
                   fill
                   sizes={imageSizes}
                   className="object-cover transition-transform duration-300 group-hover/card:scale-105"
                 />
               </div>
-              <p className="mt-2 text-sm font-medium text-foreground line-clamp-2">{m.title}</p>
+              <p className="mt-2 text-sm font-medium text-foreground line-clamp-2">{media.title}</p>
             </Link>
           ))}
         </div>
