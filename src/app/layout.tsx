@@ -23,8 +23,12 @@ const robotoSerif = Roboto_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Qatoto",
-  description: "Qatoto",
+  title: {
+    default: "Qatoto — Product Research, Development & Funding",
+    template: "%s · Qatoto",
+  },
+  description:
+    "Qatoto is a B2B platform for product research, development, and support — from idea to funded, market-ready product.",
   appleWebApp: {
     title: "Qatoto",
   },
