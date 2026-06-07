@@ -258,7 +258,7 @@ function MediaRow({
         <ScrollButton side="left" onClick={() => scroll(-1)} />
         <div
           ref={scroller}
-          className="flex gap-3 lg:gap-4 overflow-x-auto px-4 lg:px-6 pb-2 snap-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          className="flex gap-3 lg:gap-4 overflow-x-auto px-4 lg:px-6 pb-2 snap-x scrollbar-none"
         >
           {items.map((m) => (
             <Link
