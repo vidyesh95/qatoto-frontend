@@ -388,7 +388,7 @@ export default function WatchContent({ id }: { id: string }) {
             chapters={video.chapters}
             transcriptTitle={video.transcriptTitle}
             transcript={video.transcript}
-            className="hidden lg:block w-full lg:h-125"
+            className="hidden lg:block w-full lg:h-68 xl:h-130 2xl:h-130"
           />
 
           <div className="space-y-4">
