@@ -3,7 +3,7 @@ import { getPressList } from "@/lib/cms";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Press | Qatoto",
+  title: "Press",
   description: "Latest announcements, releases, and milestones from Qatoto.",
 };
 

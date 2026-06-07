@@ -2,7 +2,7 @@ import Careers from "@/components/information/careers";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Careers | Qatoto",
+  title: "Careers",
   description: "Careers page for Qatoto",
 };
 

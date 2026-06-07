@@ -2,7 +2,7 @@ import HowQatotoWorks from "@/components/information/how-qatoto-works";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "How Qatoto Works | Qatoto",
+  title: "How Qatoto Works",
   description: "How Qatoto Works page for Qatoto",
 };
 

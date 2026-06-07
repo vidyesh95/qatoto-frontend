@@ -2,7 +2,7 @@ import About from "@/components/information/about";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About | Qatoto",
+  title: "About",
   description: "About page for Qatoto",
 };
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Wishlist | Qatoto",
+  title: "Wishlist",
   description: "Wishlist page for Qatoto",
 };
 

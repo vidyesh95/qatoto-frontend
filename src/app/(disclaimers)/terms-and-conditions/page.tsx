@@ -2,7 +2,7 @@ import TermsAndConditions from "@/components/disclaimers/terms-and-conditions";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms And Conditions | Qatoto",
+  title: "Terms And Conditions",
   description: "Terms And Conditions page for Qatoto",
 };
 

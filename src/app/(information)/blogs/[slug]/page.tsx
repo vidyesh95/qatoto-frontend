@@ -8,9 +8,9 @@ type Params = Promise<{ slug: string }>;
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getBlog(slug);
-  if (!post) return { title: "Post not found | Qatoto" };
+  if (!post) return { title: "Post not found" };
   return {
-    title: `${post.title} | Qatoto Blog`,
+    title: post.title,
     description: post.excerpt,
     openGraph: {
       title: post.title,

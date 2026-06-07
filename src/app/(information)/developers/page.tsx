@@ -2,7 +2,7 @@ import Developers from "@/components/information/developers";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Developers | Qatoto",
+  title: "Developers",
   description: "Developers page for Qatoto",
 };
 

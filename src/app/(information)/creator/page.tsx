@@ -2,7 +2,7 @@ import Creator from "@/components/information/creator";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Creator | Qatoto",
+  title: "Creator",
   description: "Creator page for Qatoto",
 };
 

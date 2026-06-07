@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Policies And Safety | Qatoto",
+  title: "Policies And Safety",
   description: "Policies And Safety page for Qatoto",
 };
 

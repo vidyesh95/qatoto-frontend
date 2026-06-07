@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Project Immortal | Qatoto",
+  title: "Project Immortal",
   description: "Project Immortal page for Qatoto",
 };
 

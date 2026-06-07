@@ -3,7 +3,7 @@ import { getBlogs } from "@/lib/cms";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Blog | Qatoto",
+  title: "Blog",
   description:
     "Tips, how-tos, and field notes for founders, operators, and backers shipping with Qatoto.",
 };
