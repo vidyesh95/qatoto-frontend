@@ -164,7 +164,7 @@ function AnimeHero() {
 function CategoryLinks() {
   return (
     <nav className="px-4 lg:px-6 pt-6">
-      <ul className="flex justify-center gap-4 sm:gap-10 lg:gap-16">
+      <ul className="flex justify-evenly gap-4 sm:gap-10 lg:gap-16">
         {CATEGORIES.map((c) => (
           <li key={c.label}>
             <Link
