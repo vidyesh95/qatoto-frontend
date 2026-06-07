@@ -109,8 +109,8 @@ function AnimeHero() {
   const [muted, setMuted] = useState(true);
 
   return (
-    <section className="px-4 lg:px-6 pt-4 flex justify-center">
-      <div className="relative w-full md:w-82 overflow-hidden rounded-2xl aspect-video">
+    <section className="px-4 lg:px-6 pt-1 pb-2 flex justify-center">
+      <div className="relative w-full md:w-82 overflow-hidden rounded-xl aspect-video">
         <Image
           src={HERO.imageSrc}
           alt={HERO.title}
@@ -119,42 +119,32 @@ function AnimeHero() {
           sizes="100vw"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/10 to-black/30" />
 
-        <button
-          type="button"
-          onClick={() => setMuted((m) => !m)}
-          aria-label={muted ? "Unmute preview" : "Mute preview"}
-          className="absolute top-3 right-3 lg:top-5 lg:right-5 grid place-items-center size-9 lg:size-10 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition"
-        >
-          <Image
-            src={
-              muted
-                ? "/icons/volume_off_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
-                : "/icons/volume_up_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
-            }
-            width={22}
-            height={22}
-            alt=""
-          />
-        </button>
-
-        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6 lg:p-10">
-          <span className="inline-block rounded-full bg-[#1DBDC5] px-3 py-0.5 text-xs font-semibold text-black">
-            {HERO.tag}
-          </span>
-          <h1 className="mt-3 max-w-3xl text-white text-lg sm:text-2xl lg:text-4xl font-semibold leading-tight line-clamp-2 [text-shadow:0_1px_4px_rgb(0_0_0/0.6)]">
-            {HERO.title}
-          </h1>
-          <Link
-            href="/watch"
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black hover:bg-white/90 transition"
+        <div className="absolute inset-x-0 top-0 flex justify-end p-2 bg-linear-to-b from-black/25 to-transparent">
+          <button
+            type="button"
+            onClick={() => setMuted((m) => !m)}
+            aria-label={muted ? "Unmute preview" : "Mute preview"}
+            className="grid place-items-center transition hover:opacity-80"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-            Watch now
-          </Link>
+            <Image
+              src={
+                muted
+                  ? "/icons/volume_off_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
+                  : "/icons/volume_up_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
+              }
+              width={14}
+              height={14}
+              alt=""
+              className="filter-[drop-shadow(0_1px_2px_rgb(0_0_0/0.5))]"
+            />
+          </button>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 p-2 bg-linear-to-t from-black/50 to-transparent">
+          <p className="text-white text-xs font-normal leading-tight line-clamp-2 [text-shadow:0_1px_2px_rgb(0_0_0/0.5)]">
+            {HERO.title}
+          </p>
         </div>
       </div>
     </section>
