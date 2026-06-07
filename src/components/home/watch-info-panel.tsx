@@ -44,6 +44,14 @@ export default function WatchInfoPanel({
 }: WatchInfoPanelProps) {
   const [tab, setTab] = useState<Tab>("chapters");
   const [selectedChapter, setSelectedChapter] = useState<string>(chapters[0]?.title ?? "");
+  const [open, setOpen] = useState(true);
+
+  function handleClose() {
+    setOpen(false);
+    onClose?.();
+  }
+
+  if (!open) return null;
 
   function shareChapter(time: string) {
     const seconds = timeToSeconds(time);
@@ -77,7 +85,7 @@ export default function WatchInfoPanel({
             type="button"
             aria-label="close"
             className="p-2 hover:bg-black/10 rounded-full cursor-pointer"
-            onClick={onClose}
+            onClick={handleClose}
           >
             <Image
               src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
