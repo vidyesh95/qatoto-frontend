@@ -68,24 +68,24 @@ const COMPLETED: Media[] = [
 ];
 
 const TRENDING: Media[] = [
-  { id: "1", imageSrc: "/dummy/new_arriavals01.avif", title: "The Dining Room of Link Lee" },
+  { id: "1", imageSrc: "/dummy/trending01.avif", title: "The Dining Room of Link Lee" },
   {
     id: "2",
-    imageSrc: "/dummy/new_arriavals02.avif",
+    imageSrc: "/dummy/trending02.avif",
     title: "TONIKAWA: Over the Moon For You -Uniform-",
   },
-  { id: "3", imageSrc: "/dummy/new_arriavals03.avif", title: "Carp Reborn 3rd Season" },
+  { id: "3", imageSrc: "/dummy/trending03.avif", title: "Carp Reborn 3rd Season" },
   {
     id: "4",
-    imageSrc: "/dummy/completed_series05.avif",
+    imageSrc: "/dummy/trending04.avif",
     title: "War God System! I'm Counting On You",
   },
   {
     id: "5",
-    imageSrc: "/dummy/completed_series06.avif",
+    imageSrc: "/dummy/trending05.avif",
     title: "Look, I Can See Your Ears!",
   },
-  { id: "6", imageSrc: "/dummy/completed_series01.avif", title: "Foreordination" },
+  { id: "6", imageSrc: "/dummy/trending06.avif", title: "Foreordination" },
 ];
 
 const NEW_ARRIVALS: Media[] = [
