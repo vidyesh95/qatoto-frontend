@@ -22,15 +22,41 @@ const robotoSerif = Roboto_Serif({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://qatoto.com";
+const SITE_TITLE = "Qatoto — Product Research, Development & Funding";
+const SITE_DESCRIPTION =
+  "Qatoto is a B2B platform for product research, development, and support — from idea to funded, market-ready product.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Qatoto — Product Research, Development & Funding",
+    default: SITE_TITLE,
     template: "%s · Qatoto",
   },
-  description:
-    "Qatoto is a B2B platform for product research, development, and support — from idea to funded, market-ready product.",
+  description: SITE_DESCRIPTION,
   appleWebApp: {
     title: "Qatoto",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Qatoto",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Qatoto",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/og-image.png"],
   },
 };
 
