@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import AnimeContent from "@/components/home/anime-content";
 
 export const metadata: Metadata = {
   title: "Anime",
@@ -6,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Anime() {
-  return <h1>Anime</h1>;
+  return <AnimeContent />;
 }
