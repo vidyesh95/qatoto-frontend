@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import StatPill from "@/components/home/stat-pill";
 
@@ -31,6 +31,9 @@ type ShareSheetProps = {
  */
 function ShareSheet({ onClose }: ShareSheetProps) {
   const [copied, setCopied] = useState(false);
+  // Reference to the panel, used to detect outside clicks on desktop where
+  // there is no full-screen backdrop to catch them.
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Close on Escape and lock background scroll while the sheet is open.
   useEffect(() => {
@@ -39,11 +42,21 @@ function ShareSheet({ onClose }: ShareSheetProps) {
     };
     document.addEventListener("keydown", handleKeyDown);
 
+    // Desktop has no backdrop; dismiss when the user presses outside the panel.
+    const handleClickOutside = (mouseEvent: MouseEvent) => {
+      const target = mouseEvent.target;
+      if (target instanceof Node && panelRef.current && !panelRef.current.contains(target)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
       document.body.style.overflow = previousOverflow;
     };
   }, [onClose]);
@@ -60,21 +73,22 @@ function ShareSheet({ onClose }: ShareSheetProps) {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Share"
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
-    >
-      {/* Backdrop — clicking outside the sheet dismisses it. */}
+    <>
+      {/* Backdrop — mobile only; dims the screen and dismisses on tap. On
+          desktop the sheet is an anchored popover with no backdrop, dismissed
+          via the outside-click handler above. */}
       <button
         type="button"
         aria-label="Close share"
         onClick={onClose}
-        className="absolute inset-0 bg-black/40"
+        className="fixed inset-0 z-40 bg-black/40 sm:hidden"
       />
 
-      <div className="relative w-full max-h-[90dvh] overflow-y-auto rounded-t-2xl bg-background pb-8 shadow-lg sm:w-full sm:max-w-md sm:rounded-2xl sm:pb-6">
+      <div
+        ref={panelRef}
+        aria-label="Share"
+        className="fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-2xl bg-background pb-8 shadow-lg sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 sm:max-w-[calc(100vw-1rem)] sm:rounded-2xl sm:border sm:border-black/10 sm:pb-6"
+      >
         {/* Drag handle — mobile affordance only. */}
         <div className="flex justify-center pt-3 sm:hidden">
           <span className="h-1.5 w-10 rounded-full bg-black/15" />
@@ -148,14 +162,12 @@ function ShareSheet({ onClose }: ShareSheetProps) {
                   height={24}
                 />
               </span>
-              <span className="text-center text-xs text-secondary-foreground">
-                {action.label}
-              </span>
+              <span className="text-center text-xs text-secondary-foreground">{action.label}</span>
             </button>
           ))}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -167,9 +179,9 @@ export default function ShareButton({ shares }: { shares: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <>
+    <span className="relative inline-flex">
       <StatPill icon="share" label={shares} onClick={() => setOpen(true)} />
       {open && <ShareSheet onClose={() => setOpen(false)} />}
-    </>
+    </span>
   );
 }
