@@ -19,7 +19,7 @@ export default function StatPill({ icon, label }: StatPillProps) {
     <button
       type="button"
       aria-pressed={active}
-      onClick={() => setActive((v) => !v)}
+      onClick={() => setActive((prevActive) => !prevActive)}
       className="flex flex-row items-center gap-2 rounded-full bg-[#CCE8E9] px-4 py-2 text-sm font-medium text-[#041F21] cursor-pointer hover:bg-[#bfe0e1]"
     >
       <Image src={src} width={18} height={18} alt="" />
