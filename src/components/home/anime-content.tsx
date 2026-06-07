@@ -218,9 +218,9 @@ function MediaRow({
   const scroller = useRef<HTMLDivElement>(null);
 
   const scroll = (dir: 1 | -1) => {
-    const el = scroller.current;
-    if (!el) return;
-    el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: "smooth" });
+    const scrollerNode = scroller.current;
+    if (!scrollerNode) return;
+    scrollerNode.scrollBy({ left: dir * scrollerNode.clientWidth * 0.85, behavior: "smooth" });
   };
 
   const cardWidth = variant === "landscape" ? "w-40 sm:w-44 lg:w-48" : "w-32 sm:w-40 lg:w-44";
