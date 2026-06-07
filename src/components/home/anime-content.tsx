@@ -223,9 +223,15 @@ function MediaRow({
     el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: "smooth" });
   };
 
-  const cardWidth = variant === "landscape" ? "w-60 sm:w-72 lg:w-80" : "w-32 sm:w-40 lg:w-44";
+  const cardWidth = variant === "landscape" ? "w-40 sm:w-44 lg:w-48" : "w-32 sm:w-40 lg:w-44";
   const aspect = variant === "landscape" ? "aspect-video" : "aspect-[3/4]";
-  const imageSizes = variant === "landscape" ? "320px" : "180px";
+  const imageSizes = variant === "landscape" ? "200px" : "180px";
+  const radius = variant === "landscape" ? "rounded" : "rounded-lg";
+  const gap = variant === "landscape" ? "gap-2" : "gap-3 lg:gap-4";
+  const titleClass =
+    variant === "landscape"
+      ? "mt-1 h-8 text-[11px] font-medium leading-4 tracking-[0.5px] text-foreground line-clamp-2"
+      : "mt-2 text-sm font-medium text-foreground line-clamp-2";
 
   return (
     <section>
@@ -250,7 +256,7 @@ function MediaRow({
         <ScrollButton side="left" onClick={() => scroll(-1)} />
         <div
           ref={scroller}
-          className="flex gap-3 lg:gap-4 overflow-x-auto px-4 lg:px-6 pb-2 snap-x scrollbar-none"
+          className={`flex ${gap} overflow-x-auto px-4 lg:px-6 scroll-px-4 lg:scroll-px-6 pb-2 snap-x scrollbar-none`}
         >
           {items.map((media) => (
             <Link
@@ -258,7 +264,7 @@ function MediaRow({
               href="/watch"
               className={`group/card shrink-0 snap-start ${cardWidth}`}
             >
-              <div className={`relative overflow-hidden rounded-lg bg-muted ${aspect}`}>
+              <div className={`relative overflow-hidden ${radius} bg-muted ${aspect}`}>
                 <Image
                   src={media.imageSrc}
                   alt={media.title}
@@ -267,7 +273,7 @@ function MediaRow({
                   className="object-cover transition-transform duration-300 group-hover/card:scale-105"
                 />
               </div>
-              <p className="mt-2 text-sm font-medium text-foreground line-clamp-2">{media.title}</p>
+              <p className={titleClass}>{media.title}</p>
             </Link>
           ))}
         </div>
