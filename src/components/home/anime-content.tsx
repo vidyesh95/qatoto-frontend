@@ -109,8 +109,8 @@ function AnimeHero() {
   const [muted, setMuted] = useState(true);
 
   return (
-    <section className="px-4 lg:px-6 pt-4">
-      <div className="relative w-full overflow-hidden rounded-2xl aspect-16/10 sm:aspect-16/8 lg:aspect-21/8 xl:aspect-24/8">
+    <section className="px-4 lg:px-6 pt-4 flex justify-center">
+      <div className="relative w-full md:w-82 overflow-hidden rounded-2xl aspect-video">
         <Image
           src={HERO.imageSrc}
           alt={HERO.title}
