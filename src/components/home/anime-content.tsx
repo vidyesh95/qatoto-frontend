@@ -159,7 +159,7 @@ function CategoryLinks() {
           <li key={category.label} className="flex-1">
             <Link
               href={category.href}
-              className="group flex flex-col items-center gap-1 rounded-xl p-1 md:p-4 transition-colors hover:bg-black/5"
+              className="group flex flex-col items-center gap-1 rounded-xl p-1 md:p-2 transition-colors hover:bg-black/5"
             >
               <Image
                 src={category.icon}
@@ -290,7 +290,7 @@ export default function AnimeContent() {
     <div className="pb-10">
       <AnimeHero />
       <CategoryLinks />
-      <div className="mt-8 space-y-10">
+      <div className="mt-4 space-y-4">
         <MediaRow
           title="Recent Episode 💡"
           href="/anime?view=recent"
