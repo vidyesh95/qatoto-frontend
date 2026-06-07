@@ -37,7 +37,7 @@ export default function StatPill({ icon, label, onClick, active: controlledActiv
       type="button"
       aria-pressed={onClick && !isControlled ? undefined : active}
       onClick={onClick ?? (() => setInternalActive((prevActive) => !prevActive))}
-      className="flex flex-row items-center gap-2 rounded-full bg-[#CCE8E9] px-2.5 py-1.5 text-sm font-medium text-[#041F21] cursor-pointer hover:bg-[#bfe0e1]"
+      className="flex w-full lg:w-24 flex-row items-center justify-center gap-2 rounded-full bg-[#CCE8E9] px-2.5 py-1.5 text-sm font-medium text-[#041F21] cursor-pointer hover:bg-[#bfe0e1]"
     >
       <Image src={src} width={18} height={18} alt="" />
       {label}

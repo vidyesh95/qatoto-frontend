@@ -179,7 +179,7 @@ export default function ShareButton({ shares }: { shares: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <span className="relative inline-flex">
+    <span className="relative inline-flex w-full lg:w-24">
       <StatPill icon="share" label={shares} onClick={() => setOpen(true)} />
       {open && <ShareSheet onClose={() => setOpen(false)} />}
     </span>

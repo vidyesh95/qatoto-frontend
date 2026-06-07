@@ -357,7 +357,7 @@ export default function WatchContent({ id }: { id: string }) {
           </div>
 
           {/* Stats */}
-          <div className="flex flex-row flex-wrap items-center gap-2">
+          <div className="grid grid-cols-4 items-center gap-2 lg:flex lg:flex-row">
             <StatPill
               icon="comment"
               label={stats.comments}
