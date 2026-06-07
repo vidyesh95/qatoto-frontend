@@ -23,7 +23,7 @@ const robotoSerif = Roboto_Serif({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://qatoto.com";
-const SITE_TITLE = "Qatoto - Product Research, Development & Support";
+const SITE_TITLE = "Qatoto : Product Research, Development & Support";
 const SITE_DESCRIPTION =
   "Qatoto is a B2B platform for product research, development, and support — from idea to funded, market-ready product.";
 
