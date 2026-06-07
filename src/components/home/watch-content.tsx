@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import Comments, { type Comment, type Review, type SaleItem } from "@/components/home/comments";
 import FocusButton from "@/components/home/focus-button";
+import ShareButton from "@/components/home/share-sheet";
 import StatPill from "@/components/home/stat-pill";
 import VideoCard, { type VideoCardProps } from "@/components/home/video-card";
 import VideoDescription from "@/components/home/video-description";
@@ -354,7 +355,7 @@ export default function WatchContent({ id }: { id: string }) {
           <div className="flex flex-row flex-wrap items-center gap-2">
             <StatPill icon="favorite" label={stats.likes} />
             <StatPill icon="bookmark" label={stats.bookmarks} />
-            <StatPill icon="share" label={stats.shares} />
+            <ShareButton shares={stats.shares} />
           </div>
 
           {/* Comments + reviews (reviews tab shows only when an item is attached) */}
