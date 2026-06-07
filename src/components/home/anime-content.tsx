@@ -213,7 +213,7 @@ function MediaRow({
   title: string;
   href: string;
   items: Media[];
-  variant: "landscape" | "poster";
+  variant: "landscape" | "poster" | "poster-lg";
 }) {
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -223,15 +223,15 @@ function MediaRow({
     scrollerNode.scrollBy({ left: dir * scrollerNode.clientWidth * 0.85, behavior: "smooth" });
   };
 
-  const cardWidth = variant === "landscape" ? "w-40 sm:w-44 lg:w-48" : "w-32 sm:w-40 lg:w-44";
-  const aspect = variant === "landscape" ? "aspect-video" : "aspect-[3/4]";
-  const imageSizes = variant === "landscape" ? "200px" : "180px";
-  const radius = variant === "landscape" ? "rounded" : "rounded-lg";
-  const gap = variant === "landscape" ? "gap-2" : "gap-3 lg:gap-4";
-  const titleClass =
+  const cardWidth =
     variant === "landscape"
-      ? "mt-1 h-8 text-[11px] font-medium leading-4 tracking-[0.5px] text-foreground line-clamp-2"
-      : "mt-2 text-sm font-medium text-foreground line-clamp-2";
+      ? "w-40 sm:w-44 lg:w-48"
+      : variant === "poster-lg"
+        ? "w-28 sm:w-32 lg:w-36"
+        : "w-20 sm:w-24 lg:w-28";
+  const aspect = variant === "landscape" ? "aspect-video" : "aspect-[3/4]";
+  const imageSizes =
+    variant === "landscape" ? "200px" : variant === "poster-lg" ? "150px" : "120px";
 
   return (
     <section>
@@ -256,7 +256,7 @@ function MediaRow({
         <ScrollButton side="left" onClick={() => scroll(-1)} />
         <div
           ref={scroller}
-          className={`flex ${gap} overflow-x-auto px-4 lg:px-6 scroll-px-4 lg:scroll-px-6 pb-2 snap-x scrollbar-none`}
+          className="flex gap-2 overflow-x-auto px-4 lg:px-6 scroll-px-4 lg:scroll-px-6 pb-2 snap-x scrollbar-none"
         >
           {items.map((media) => (
             <Link
@@ -264,7 +264,7 @@ function MediaRow({
               href="/watch"
               className={`group/card shrink-0 snap-start ${cardWidth}`}
             >
-              <div className={`relative overflow-hidden ${radius} bg-muted ${aspect}`}>
+              <div className={`relative overflow-hidden rounded bg-muted ${aspect}`}>
                 <Image
                   src={media.imageSrc}
                   alt={media.title}
@@ -273,7 +273,9 @@ function MediaRow({
                   className="object-cover transition-transform duration-300 group-hover/card:scale-105"
                 />
               </div>
-              <p className={titleClass}>{media.title}</p>
+              <p className="mt-1 h-8 text-[11px] font-medium leading-4 tracking-[0.5px] text-foreground line-clamp-2">
+                {media.title}
+              </p>
             </Link>
           ))}
         </div>
@@ -311,13 +313,13 @@ export default function AnimeContent() {
           title="Trending 📈"
           href="/anime?view=trending"
           items={TRENDING}
-          variant="poster"
+          variant="poster-lg"
         />
         <MediaRow
           title="New Arrivals 🛬"
           href="/anime?view=new"
           items={NEW_ARRIVALS}
-          variant="poster"
+          variant="poster-lg"
         />
       </div>
     </div>
