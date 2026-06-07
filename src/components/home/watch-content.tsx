@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import Image from "next/image";
 
 import Comments, { type Comment, type Review, type SaleItem } from "@/components/home/comments";
@@ -289,6 +293,7 @@ const VIDEOS: Record<string, WatchVideo> = {
 
 export default function WatchContent({ id }: { id: string }) {
   const video = VIDEOS[id];
+  const [commentsOpen, setCommentsOpen] = useState(true);
 
   if (!video) {
     return (
@@ -353,19 +358,27 @@ export default function WatchContent({ id }: { id: string }) {
 
           {/* Stats */}
           <div className="flex flex-row flex-wrap items-center gap-2">
+            <StatPill
+              icon="comment"
+              label={stats.comments}
+              active={commentsOpen}
+              onClick={() => setCommentsOpen((open) => !open)}
+            />
             <StatPill icon="favorite" label={stats.likes} />
             <StatPill icon="bookmark" label={stats.bookmarks} />
             <ShareButton shares={stats.shares} />
           </div>
 
           {/* Comments + reviews (reviews tab shows only when an item is attached) */}
-          <Comments
-            count={stats.comments}
-            comments={video.comments}
-            trending={video.trending}
-            saleItem={video.saleItem}
-            reviews={video.reviews}
-          />
+          {commentsOpen && (
+            <Comments
+              count={stats.comments}
+              comments={video.comments}
+              trending={video.trending}
+              saleItem={video.saleItem}
+              reviews={video.reviews}
+            />
+          )}
         </div>
 
         {/* Right column — in-video panel + recommended, same width */}
