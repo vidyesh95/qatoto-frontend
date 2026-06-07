@@ -45,6 +45,8 @@ export default function WatchInfoPanel({
   const [tab, setTab] = useState<Tab>("chapters");
   const [selectedChapter, setSelectedChapter] = useState<string>(chapters[0]?.title ?? "");
   const [open, setOpen] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showTimestamps, setShowTimestamps] = useState(true);
 
   function handleClose() {
     setOpen(false);
@@ -68,18 +70,61 @@ export default function WatchInfoPanel({
         <h2 className="text-lg">In this video</h2>
         <div className="flex flex-row items-center gap-2">
           {tab === "transcript" && (
-            <button
-              type="button"
-              aria-label="more options"
-              className="p-2 hover:bg-black/10 rounded-full cursor-pointer"
-            >
-              <Image
-                src="/icons/more_vert_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                width={24}
-                height={24}
-                alt=""
-              />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="more options"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                className="p-2 hover:bg-black/10 rounded-full cursor-pointer"
+                onClick={() => setMenuOpen((v) => !v)}
+              >
+                <Image
+                  src="/icons/more_vert_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                  width={24}
+                  height={24}
+                  alt=""
+                />
+              </button>
+              {menuOpen && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="close menu"
+                    tabIndex={-1}
+                    className="fixed inset-0 z-10 cursor-default"
+                    onClick={() => setMenuOpen(false)}
+                  />
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full z-20 mt-1 min-w-56 rounded-lg border border-[#E5E7E7] bg-background py-1 shadow-lg"
+                  >
+                    <button
+                      type="button"
+                      role="menuitemcheckbox"
+                      aria-checked={showTimestamps}
+                      className="flex w-full flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-[#F1F3F3] cursor-pointer"
+                      onClick={() => {
+                        setShowTimestamps((v) => !v);
+                        setMenuOpen(false);
+                      }}
+                    >
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                        {showTimestamps && (
+                          <Image
+                            src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                            width={18}
+                            height={18}
+                            alt=""
+                          />
+                        )}
+                      </span>
+                      Toggle timestamps
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
           <button
             type="button"
@@ -194,9 +239,11 @@ export default function WatchInfoPanel({
             <ul className="px-5 pb-4">
               {transcript.map((line) => (
                 <li key={line.time} className="flex flex-row gap-4 py-2.5">
-                  <span className="shrink-0 self-start rounded-md bg-[#EAF1FB] px-1.5 py-0.5 text-xs font-medium text-[#1B66C9]">
-                    {line.time}
-                  </span>
+                  {showTimestamps && (
+                    <span className="shrink-0 self-start rounded-md bg-[#EAF1FB] px-1.5 py-0.5 text-xs font-medium text-[#1B66C9]">
+                      {line.time}
+                    </span>
+                  )}
                   <p className="text-[15px] leading-relaxed">{line.text}</p>
                 </li>
               ))}

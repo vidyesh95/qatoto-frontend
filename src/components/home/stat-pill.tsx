@@ -22,7 +22,12 @@ export type StatPillProps = {
   active?: boolean;
 };
 
-export default function StatPill({ icon, label, onClick, active: controlledActive }: StatPillProps) {
+export default function StatPill({
+  icon,
+  label,
+  onClick,
+  active: controlledActive,
+}: StatPillProps) {
   const [internalActive, setInternalActive] = useState(false);
 
   const isControlled = controlledActive !== undefined;
