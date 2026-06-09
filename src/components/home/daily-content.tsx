@@ -175,11 +175,11 @@ function EpisodeRow({ episode }: { episode: DailyEpisode }) {
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <p className="text-sm font-medium leading-4 tracking-[0.5px] text-foreground line-clamp-2">
+        <p className="text-sm font-medium leading-4 tracking-wide text-foreground line-clamp-2">
           {episode.title}
         </p>
         <div className="mt-2 flex items-center gap-1">
-          <span className="text-xs font-medium leading-4 tracking-[0.5px] text-[#6F7979]">
+          <span className="text-xs font-medium leading-4 tracking-wide text-[#6F7979]">
             {episode.channelName}
           </span>
           {episode.verified && (
@@ -192,10 +192,10 @@ function EpisodeRow({ episode }: { episode: DailyEpisode }) {
           )}
         </div>
         <div className="mt-auto flex items-center pt-2">
-          <span className="flex-1 text-xs font-medium tracking-[0.5px] text-foreground">
+          <span className="flex-1 text-xs font-medium tracking-wide text-foreground">
             {episode.views}
           </span>
-          <span className="flex flex-1 items-center gap-0.5 text-xs font-medium tracking-[0.5px] text-foreground">
+          <span className="flex flex-1 items-center gap-0.5 text-xs font-medium tracking-wide text-foreground">
             <Image
               src="/icons/favorite_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
               width={14}
