@@ -163,9 +163,9 @@ function EpisodeRow({ episode }: { episode: DailyEpisode }) {
   return (
     <Link
       href="/watch"
-      className="group flex gap-4 px-4 py-3 lg:px-6 transition-colors hover:bg-black/5"
+      className="group flex gap-4 px-4 py-2 lg:px-6 transition-colors hover:bg-black/5"
     >
-      <div className="relative w-25 shrink-0 overflow-hidden rounded-md bg-muted aspect-3/4">
+      <div className="relative w-25 shrink-0 overflow-hidden rounded bg-muted aspect-3/4">
         <Image
           src={episode.imageSrc}
           alt={episode.title}
@@ -178,7 +178,7 @@ function EpisodeRow({ episode }: { episode: DailyEpisode }) {
         <p className="text-base font-semibold leading-snug text-foreground line-clamp-2">
           {episode.title}
         </p>
-        <div className="mt-1 flex items-center gap-1">
+        <div className="mt-2 flex items-center gap-1">
           <span className="text-sm text-[#6F7979]">{episode.channelName}</span>
           {episode.verified && (
             <Image
@@ -189,9 +189,9 @@ function EpisodeRow({ episode }: { episode: DailyEpisode }) {
             />
           )}
         </div>
-        <div className="mt-auto flex items-center gap-6 pt-2">
-          <span className="text-sm text-[#6F7979]">{episode.views}</span>
-          <span className="flex items-center gap-1.5 text-sm text-[#6F7979]">
+        <div className="mt-auto flex items-center pt-2">
+          <span className="flex-1 text-sm text-foreground">{episode.views}</span>
+          <span className="flex flex-1 items-center gap-1.5 text-sm text-foreground">
             <Image
               src="/icons/favorite_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
               width={16}
