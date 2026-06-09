@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import VideoCard, { type VideoCardProps } from "@/components/home/video-card";
 
@@ -86,29 +85,6 @@ const VIDEOS: VideoCardProps[] = [
   },
 ];
 
-function GenreHeader() {
-  const router = useRouter();
-
-  return (
-    <header className="sticky top-0 z-20 flex items-center gap-3 bg-background/95 px-4 py-3 backdrop-blur lg:px-6">
-      <button
-        type="button"
-        onClick={() => router.back()}
-        aria-label="Go back"
-        className="grid size-9 place-items-center rounded-full transition hover:bg-black/5"
-      >
-        <Image
-          src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-          width={24}
-          height={24}
-          alt=""
-        />
-      </button>
-      <h1 className="flex-1 text-xl font-medium text-foreground">Genre</h1>
-    </header>
-  );
-}
-
 function GenreChips({ selected, onSelect }: { selected: Genre; onSelect: (genre: Genre) => void }) {
   return (
     <div className="flex flex-wrap gap-2 px-4 py-3 lg:px-6">
@@ -181,7 +157,6 @@ export default function GenreContent() {
 
   return (
     <div className="pb-10">
-      <GenreHeader />
       <GenreChips selected={genre} onSelect={setGenre} />
       <SortTabs selected={sort} onSelect={setSort} />
 

@@ -2,12 +2,16 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSidebar } from "@/state/sidebar-context";
 import AccountMenu from "@/components/home/account-menu";
 
 export default function Navbar() {
   const { toggleSidebar } = useSidebar();
+  const router = useRouter();
+  const pathname = usePathname();
+  const isGenre = pathname === "/anime/genre";
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
@@ -20,6 +24,21 @@ export default function Navbar() {
       <div className="relative mx-auto flex items-center justify-between px-4 py-2 lg:px-6 md:justify-between">
         {/* Brand */}
         <div className={"flex items-center gap-2.5 lg:gap-4.5"}>
+          {isGenre && (
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="md:hidden grid size-9 place-items-center rounded-full transition hover:bg-black/5"
+            >
+              <Image
+                src={"/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                width={24}
+                height={24}
+                alt=""
+              />
+            </button>
+          )}
           <button
             type={"button"}
             aria-label="Toggle sidebar"
@@ -33,9 +52,28 @@ export default function Navbar() {
               height={24}
             />
           </button>
-          <Link href="/" className="text-3xl font-serif font-medium text-[#00696E]">
-            Qatoto
-          </Link>
+          {isGenre ? (
+            <>
+              {/* mobile: page title */}
+              <h1 className="md:hidden text-xl font-medium text-foreground">Genre</h1>
+              {/* desktop: breadcrumb */}
+              <div className="hidden md:flex items-baseline gap-2">
+                <Link href="/" className="text-3xl font-serif font-medium text-[#00696E]">
+                  Qatoto
+                </Link>
+                <span className="text-2xl font-serif text-[#00696E]/40">|</span>
+                <Link href="/anime" className="text-xl font-medium text-foreground hover:underline">
+                  Anime
+                </Link>
+                <span className="text-muted-foreground">›</span>
+                <span className="text-xl font-medium text-foreground">Genre</span>
+              </div>
+            </>
+          ) : (
+            <Link href="/" className="text-3xl font-serif font-medium text-[#00696E]">
+              Qatoto
+            </Link>
+          )}
         </div>
 
         <div className={"hidden md:flex lg:w-xl items-center gap-2 justify-end"}>
