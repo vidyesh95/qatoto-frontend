@@ -105,18 +105,6 @@ function GenreHeader() {
         />
       </button>
       <h1 className="flex-1 text-xl font-medium text-foreground">Genre</h1>
-      <button
-        type="button"
-        aria-label="Search"
-        className="grid size-9 place-items-center rounded-full transition hover:bg-black/5"
-      >
-        <Image
-          src="/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-          width={24}
-          height={24}
-          alt=""
-        />
-      </button>
     </header>
   );
 }
