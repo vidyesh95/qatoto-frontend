@@ -11,7 +11,12 @@ export default function Navbar() {
   const { toggleSidebar } = useSidebar();
   const router = useRouter();
   const pathname = usePathname();
-  const isGenre = pathname === "/anime/genre";
+  const ANIME_SUBPAGES: Record<string, string> = {
+    "/anime/genre": "Genre",
+    "/anime/daily": "Daily",
+  };
+  const animeSubPage = ANIME_SUBPAGES[pathname];
+  const isGenre = Boolean(animeSubPage);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
@@ -55,7 +60,7 @@ export default function Navbar() {
           {isGenre ? (
             <>
               {/* mobile: page title */}
-              <h1 className="md:hidden text-xl font-medium text-foreground">Genre</h1>
+              <h1 className="md:hidden text-xl font-medium text-foreground">{animeSubPage}</h1>
               {/* desktop: breadcrumb */}
               <div className="hidden md:flex items-baseline gap-2">
                 <Link href="/" className="text-3xl font-serif font-medium text-[#00696E]">
@@ -66,7 +71,7 @@ export default function Navbar() {
                   Anime
                 </Link>
                 <span className="text-muted-foreground">›</span>
-                <span className="text-xl font-medium text-foreground">Genre</span>
+                <span className="text-xl font-medium text-foreground">{animeSubPage}</span>
               </div>
             </>
           ) : (
