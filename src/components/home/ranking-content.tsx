@@ -333,11 +333,11 @@ function RankedRow({ episode }: { episode: RankedEpisode }) {
       </div>
       <div className="flex min-w-0 flex-1 flex-col self-stretch">
         <div className="flex flex-col gap-2">
-          <p className="text-[11px] font-medium leading-4 tracking-[0.5px] text-foreground line-clamp-2">
+          <p className="text-sm font-medium leading-4 tracking-[0.5px] text-foreground line-clamp-2">
             {episode.title}
           </p>
           <div className="flex items-center gap-1">
-            <span className="text-[12px] font-medium leading-4 tracking-[0.5px] text-[#6F7979]">
+            <span className="text-xs font-medium leading-4 tracking-[0.5px] text-[#6F7979]">
               {episode.channelName}
             </span>
             {episode.verified && (
@@ -351,10 +351,10 @@ function RankedRow({ episode }: { episode: RankedEpisode }) {
           </div>
         </div>
         <div className="mt-auto flex items-center pt-2">
-          <span className="flex-1 text-[11px] font-medium leading-4 tracking-[0.5px] text-foreground">
+          <span className="flex-1 text-xs font-medium leading-4 tracking-[0.5px] text-foreground">
             {episode.views}
           </span>
-          <span className="flex flex-1 items-center gap-0.5 text-[11px] font-medium leading-4 tracking-[0.5px] text-foreground">
+          <span className="flex flex-1 items-center gap-0.5 text-xs font-medium leading-4 tracking-[0.5px] text-foreground">
             <Image
               src="/icons/favorite_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
               width={14}
@@ -365,7 +365,7 @@ function RankedRow({ episode }: { episode: RankedEpisode }) {
           </span>
         </div>
       </div>
-      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#E0E3E3] text-[11px] font-medium text-[#747878]">
+      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#E0E3E3] text-xs font-medium text-[#747878]">
         {episode.rank}
       </span>
     </Link>

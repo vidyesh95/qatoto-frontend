@@ -163,7 +163,7 @@ function EpisodeRow({ episode }: { episode: DailyEpisode }) {
   return (
     <Link
       href="/watch"
-      className="group flex gap-4 px-4 py-2 lg:px-6 transition-colors hover:bg-black/5"
+      className="group flex gap-4 px-4 py-2 transition-colors hover:bg-black/5"
     >
       <div className="relative w-25 shrink-0 overflow-hidden rounded bg-muted aspect-3/4">
         <Image
@@ -175,29 +175,32 @@ function EpisodeRow({ episode }: { episode: DailyEpisode }) {
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <p className="text-base font-semibold leading-snug text-foreground line-clamp-2">
+        <p className="text-sm font-medium leading-4 tracking-[0.5px] text-foreground line-clamp-2">
           {episode.title}
         </p>
         <div className="mt-2 flex items-center gap-1">
-          <span className="text-sm text-[#6F7979]">{episode.channelName}</span>
+          <span className="text-xs font-medium leading-4 tracking-[0.5px] text-[#6F7979]">
+            {episode.channelName}
+          </span>
           {episode.verified && (
             <Image
               src="/icons/check_circle_24dp_6F7979_FILL1_wght400_GRAD0_opsz24.svg"
-              width={16}
-              height={16}
+              width={12}
+              height={12}
               alt="verified"
             />
           )}
         </div>
         <div className="mt-auto flex items-center pt-2">
-          <span className="flex-1 text-sm text-foreground">{episode.views}</span>
-          <span className="flex flex-1 items-center gap-1.5 text-sm text-foreground">
+          <span className="flex-1 text-xs font-medium tracking-[0.5px] text-foreground">
+            {episode.views}
+          </span>
+          <span className="flex flex-1 items-center gap-0.5 text-xs font-medium tracking-[0.5px] text-foreground">
             <Image
               src="/icons/favorite_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-              width={16}
-              height={16}
+              width={14}
+              height={14}
               alt="likes"
-              className="opacity-60"
             />
             {episode.likes}
           </span>
