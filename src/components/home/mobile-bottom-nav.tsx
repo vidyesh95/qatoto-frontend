@@ -40,6 +40,13 @@ const NAV_ITEMS = [
   },
 ] as const;
 
+// Home matches exactly; every other route stays active for itself and any
+// sub-path (e.g. /anime/genre keeps /anime active).
+function isRouteActive(pathname: string, href: string) {
+  if (href === "/") return pathname === href;
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export default function MobileBottomNav() {
   const pathname = usePathname();
 
@@ -49,7 +56,7 @@ export default function MobileBottomNav() {
       className="fixed inset-x-0 bottom-0 z-50 flex items-stretch justify-around gap-2 bg-background px-2 pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       {NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.href;
+        const isActive = isRouteActive(pathname, item.href);
         return (
           <Link
             key={item.href}

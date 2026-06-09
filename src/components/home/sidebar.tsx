@@ -113,6 +113,13 @@ function joinClassNames(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
+// Home matches exactly; every other route is active for itself and any sub-path
+// (e.g. /anime/genre keeps /anime active).
+function isRouteActive(pathname: string, routePath: string) {
+  if (routePath === ROUTES.home) return pathname === routePath;
+  return pathname === routePath || pathname.startsWith(`${routePath}/`);
+}
+
 /* ---------- Memoized Icon Component ---------- */
 type IconProps = {
   isActive: boolean;
@@ -355,7 +362,7 @@ export default function Sidebar() {
     return NAVIGATION_CONFIG.map((section, sectionIndex) => (
       <SidebarSection key={sectionIndex} sectionTitle={section.title}>
         {section.items.map((item) => {
-          const isActive = currentPathname === item.path;
+          const isActive = isRouteActive(currentPathname, item.path);
           return (
             <SidebarNavigationItem
               key={item.path}
@@ -379,7 +386,7 @@ export default function Sidebar() {
         <nav className="px-3 pt-11 pb-14 space-y-5">
           {/* Create button */}
           {COLLAPSED_NAV_CONFIG.filter((item) => item.isEmphasized).map((item) => {
-            const isActive = currentPathname === item.path;
+            const isActive = isRouteActive(currentPathname, item.path);
             return (
               <CollapsedNavItem
                 key={item.path}
@@ -395,7 +402,7 @@ export default function Sidebar() {
           {/* Nav items */}
           <ul className="flex flex-col gap-1">
             {COLLAPSED_NAV_CONFIG.filter((item) => !item.isEmphasized).map((item) => {
-              const isActive = currentPathname === item.path;
+              const isActive = isRouteActive(currentPathname, item.path);
               return (
                 <CollapsedNavItem
                   key={item.path}
