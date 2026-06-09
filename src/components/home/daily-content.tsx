@@ -165,7 +165,7 @@ function EpisodeRow({ episode }: { episode: DailyEpisode }) {
       href="/watch"
       className="group flex gap-4 px-4 py-3 lg:px-6 transition-colors hover:bg-black/5"
     >
-      <div className="relative w-25 shrink-0 overflow-hidden rounded-md bg-muted aspect-[3/4]">
+      <div className="relative w-25 shrink-0 overflow-hidden rounded-md bg-muted aspect-3/4">
         <Image
           src={episode.imageSrc}
           alt={episode.title}

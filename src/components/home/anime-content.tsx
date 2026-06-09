@@ -17,7 +17,7 @@ const CATEGORIES = [
   { icon: "/icons/genre_40dp.svg", label: "Genre", href: "/anime/genre" },
   { icon: "/icons/daily_40dp.svg", label: "Daily", href: "/anime/daily" },
   { icon: "/icons/fovorite_40dp.svg", label: "Favorite", href: "/anime?view=favorite" },
-  { icon: "/icons/ranking_40dp.svg", label: "Ranking", href: "/anime?view=ranking" },
+  { icon: "/icons/ranking_40dp.svg", label: "Ranking", href: "/anime/ranking" },
 ];
 
 const RECENT_EPISODES: Media[] = [

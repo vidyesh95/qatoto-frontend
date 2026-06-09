@@ -14,6 +14,7 @@ export default function Navbar() {
   const ANIME_SUBPAGES: Record<string, string> = {
     "/anime/genre": "Genre",
     "/anime/daily": "Daily",
+    "/anime/ranking": "Ranking",
   };
   const animeSubPage = ANIME_SUBPAGES[pathname];
   const isGenre = Boolean(animeSubPage);
