@@ -96,17 +96,17 @@ function GenreChips({ selected, onSelect }: { selected: Genre; onSelect: (genre:
             type="button"
             onClick={() => onSelect(genre)}
             aria-pressed={isActive}
-            className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+            className={`cursor-pointer inline-flex h-8 items-center gap-2 rounded-lg border text-sm font-medium leading-5 tracking-[0.1px] transition-colors ${
               isActive
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-card text-foreground hover:bg-muted"
+                ? "border-transparent bg-primary pl-2 pr-4 text-primary-foreground"
+                : "border-border px-4 text-foreground hover:bg-muted"
             }`}
           >
             {isActive && (
               <Image
                 src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                width={16}
-                height={16}
+                width={18}
+                height={18}
                 alt=""
               />
             )}
@@ -121,24 +121,28 @@ function GenreChips({ selected, onSelect }: { selected: Genre; onSelect: (genre:
 function SortTabs({ selected, onSelect }: { selected: Sort; onSelect: (sort: Sort) => void }) {
   return (
     <div className="px-4 py-2 lg:px-6">
-      <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
-        {SORTS.map((sort) => {
+      <div className="inline-flex">
+        {SORTS.map((sort, i) => {
           const isActive = sort === selected;
+          const isFirst = i === 0;
+          const isLast = i === SORTS.length - 1;
           return (
             <button
               key={sort}
               type="button"
               onClick={() => onSelect(sort)}
               aria-pressed={isActive}
-              className={`flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                isActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+              className={`cursor-pointer inline-flex h-10 items-center justify-center gap-2 border border-border px-3 py-2.5 text-sm font-medium leading-5 tracking-[0.1px] transition-colors ${
+                isFirst ? "rounded-l-full" : "-ml-px"
+              } ${isLast ? "rounded-r-full" : ""} ${
+                isActive ? "z-10 bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
               }`}
             >
               {isActive && (
                 <Image
                   src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  width={16}
-                  height={16}
+                  width={18}
+                  height={18}
                   alt=""
                 />
               )}
