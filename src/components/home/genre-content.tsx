@@ -121,7 +121,7 @@ function GenreChips({ selected, onSelect }: { selected: Genre; onSelect: (genre:
 function SortTabs({ selected, onSelect }: { selected: Sort; onSelect: (sort: Sort) => void }) {
   return (
     <div className="px-4 py-2 lg:px-6">
-      <div className="inline-flex">
+      <div className="flex w-full lg:inline-flex lg:w-auto">
         {SORTS.map((sort, i) => {
           const isActive = sort === selected;
           const isFirst = i === 0;
@@ -132,7 +132,7 @@ function SortTabs({ selected, onSelect }: { selected: Sort; onSelect: (sort: Sor
               type="button"
               onClick={() => onSelect(sort)}
               aria-pressed={isActive}
-              className={`cursor-pointer inline-flex h-10 items-center justify-center gap-2 border border-border px-3 py-2.5 text-sm font-medium leading-5 tracking-[0.1px] transition-colors ${
+              className={`cursor-pointer inline-flex h-10 flex-1 items-center justify-center gap-2 border border-border px-3 py-2.5 text-sm font-medium leading-5 tracking-[0.1px] transition-colors lg:flex-none ${
                 isFirst ? "rounded-l-full" : "-ml-px"
               } ${isLast ? "rounded-r-full" : ""} ${
                 isActive ? "z-10 bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
