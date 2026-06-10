@@ -13,6 +13,9 @@ import VideoDescription from "@/components/home/video-description";
 import VideoPlayer from "@/components/home/video-player";
 import WatchInfoPanel from "@/components/home/watch-info-panel";
 
+type Episode = { id: string; label: string; isPremium: boolean };
+type Season = { id: string; label: string; episodes: Episode[] };
+
 type WatchVideo = {
   id: string;
   videoSrc: string;
@@ -32,9 +35,53 @@ type WatchVideo = {
   comments: Comment[];
   saleItem?: SaleItem;
   reviews?: Review[];
+  isPremium?: boolean;
+  seasons?: Season[];
 };
 
 const TS_THUMB = "/dummy/thumbnail_image01.avif";
+
+const ANIME_SEASONS: Season[] = [
+  {
+    id: "s1",
+    label: "S1",
+    episodes: [
+      { id: "e1", label: "E1", isPremium: false },
+      { id: "e2", label: "E2", isPremium: false },
+      { id: "e3", label: "E3", isPremium: true },
+      { id: "e4", label: "E4", isPremium: true },
+      { id: "e5", label: "E5", isPremium: true },
+      { id: "e6", label: "E6", isPremium: true },
+      { id: "e7", label: "E7", isPremium: true },
+      { id: "e8", label: "E8", isPremium: true },
+      { id: "e9", label: "E9", isPremium: true },
+      { id: "e10", label: "E10", isPremium: true },
+      { id: "e11", label: "E11", isPremium: true },
+      { id: "e12", label: "E12", isPremium: true },
+      { id: "e13", label: "E13", isPremium: true },
+      { id: "e14", label: "E14", isPremium: true },
+      { id: "e15", label: "E15", isPremium: true },
+    ],
+  },
+  {
+    id: "s2",
+    label: "S2",
+    episodes: [
+      { id: "s2e1", label: "E1", isPremium: true },
+      { id: "s2e2", label: "E2", isPremium: true },
+      { id: "s2e3", label: "E3", isPremium: true },
+      { id: "s2e4", label: "E4", isPremium: true },
+      { id: "s2e5", label: "E5", isPremium: true },
+      { id: "s2e6", label: "E6", isPremium: true },
+      { id: "s2e7", label: "E7", isPremium: true },
+      { id: "s2e8", label: "E8", isPremium: true },
+      { id: "s2e9", label: "E9", isPremium: true },
+      { id: "s2e10", label: "E10", isPremium: true },
+      { id: "s2e11", label: "E11", isPremium: true },
+      { id: "s2e12", label: "E12", isPremium: true },
+    ],
+  },
+];
 
 const RECOMMENDED: VideoCardProps[] = [
   {
@@ -289,7 +336,208 @@ const VIDEOS: Record<string, WatchVideo> = {
       },
     ],
   },
+  "anime-free": {
+    id: "anime-free",
+    videoSrc: "/dummy/video/Sintel_1080_10s_1MB.mp4",
+    title: "Pomporo singing 🌼Fengzhi Senai🌼 at Disney Land",
+    profileSrc: "/dummy/profile_image_01.avif",
+    channelName: "Arin Light",
+    subscribers: "14 million",
+    views: "2.5M views",
+    postedAt: "12 hours ago",
+    description:
+      "Pomporo takes the stage at Disney Land with a breathtaking live performance of Fengzhi Senai 🌼\n\nShot across the park over two magical evenings. Huge thanks to the crew, the dancers, and everyone who came out to sing along.\n\nFollow for more live sessions, behind-the-scenes clips, and tour dates.\n#Pomporo #FengzhiSenai #DisneyLand #LivePerformance",
+    verified: true,
+    stats: { likes: "3.7k", comments: "414", bookmarks: "1.1k", shares: "3696" },
+    chapters: [
+      { title: "Opening", time: "0:00", thumbSrc: TS_THUMB },
+      { title: "Act 1", time: "2:15", thumbSrc: TS_THUMB },
+      { title: "Act 2", time: "5:30", thumbSrc: TS_THUMB },
+      { title: "Finale", time: "8:45", thumbSrc: TS_THUMB },
+    ],
+    transcriptTitle: "Fengzhi Senai Performance",
+    transcript: [
+      { time: "0:01", text: "Welcome to the magical world of Fengzhi Senai at Disney Land." },
+      { time: "0:10", text: "Pomporo takes the stage as the crowd erupts in applause." },
+      { time: "0:20", text: "The performance begins with the iconic opening melody." },
+      { time: "0:35", text: "Dancers fill the stage with vibrant costumes and choreography." },
+      { time: "0:50", text: "The chorus echoes through the park as fireworks light the sky." },
+    ],
+    trending: "Fengzhi Senai Disney Land",
+    comments: [
+      {
+        id: "c1",
+        profileSrc: "/dummy/profile_image_02.avif",
+        author: "@anime_fan",
+        postedAt: "3 hours ago",
+        location: "Japan",
+        text: "This performance was absolutely stunning! Pomporo never disappoints 🌼",
+        likes: "2.1k",
+        replies: "47",
+        replyList: [
+          {
+            id: "c1r1",
+            profileSrc: "/dummy/profile_image_05.avif",
+            author: "@fengzhi_lover",
+            postedAt: "2 hours ago",
+            location: "South Korea",
+            text: "Agreed! The choreography in Act 2 was incredible.",
+            likes: "312",
+          },
+        ],
+      },
+      {
+        id: "c2",
+        profileSrc: "/dummy/profile_image_03.avif",
+        author: "@disneymagic",
+        postedAt: "5 hours ago",
+        location: "United States",
+        text: "Disney Land is the perfect backdrop for this. The vibes were immaculate.",
+        likes: "890",
+        replies: "12",
+      },
+    ],
+    seasons: ANIME_SEASONS,
+  },
+  "anime-premium": {
+    id: "anime-premium",
+    videoSrc: "/dummy/video/Sintel_1080_10s_1MB.mp4",
+    title: "Pomporo singing 🌼Fengzhi Senai🌼 at Disney Land",
+    profileSrc: "/dummy/profile_image_01.avif",
+    channelName: "Arin Light",
+    subscribers: "14 million",
+    views: "2.5M views",
+    postedAt: "12 hours ago",
+    description:
+      "Pomporo takes the stage at Disney Land with a breathtaking live performance of Fengzhi Senai 🌼\n\nShot across the park over two magical evenings. Huge thanks to the crew, the dancers, and everyone who came out to sing along.\n\nFollow for more live sessions, behind-the-scenes clips, and tour dates.\n#Pomporo #FengzhiSenai #DisneyLand #LivePerformance",
+    verified: true,
+    stats: { likes: "3.7k", comments: "414", bookmarks: "1.1k", shares: "3696" },
+    chapters: [],
+    transcriptTitle: "",
+    transcript: [],
+    trending: "Fengzhi Senai Disney Land",
+    comments: [
+      {
+        id: "c1",
+        profileSrc: "/dummy/profile_image_02.avif",
+        author: "@anime_fan",
+        postedAt: "3 hours ago",
+        location: "Japan",
+        text: "This performance was absolutely stunning! Pomporo never disappoints 🌼",
+        likes: "2.1k",
+        replies: "47",
+        replyList: [
+          {
+            id: "c1r1",
+            profileSrc: "/dummy/profile_image_05.avif",
+            author: "@fengzhi_lover",
+            postedAt: "2 hours ago",
+            location: "South Korea",
+            text: "Agreed! The choreography in Act 2 was incredible.",
+            likes: "312",
+          },
+        ],
+      },
+      {
+        id: "c2",
+        profileSrc: "/dummy/profile_image_03.avif",
+        author: "@disneymagic",
+        postedAt: "5 hours ago",
+        location: "United States",
+        text: "Disney Land is the perfect backdrop for this. The vibes were immaculate.",
+        likes: "890",
+        replies: "12",
+      },
+    ],
+    isPremium: true,
+    seasons: ANIME_SEASONS,
+  },
 };
+
+function PremiumBanner() {
+  return (
+    <div className="flex aspect-video w-full flex-col items-center justify-center gap-4 overflow-hidden rounded-xl bg-black p-6">
+      <p className="text-center text-sm leading-5 font-medium tracking-[0.1px] text-[#C4C7C7]">
+        Get Premium and enjoy the Premium exclusive video!
+      </p>
+      <button
+        type="button"
+        className="flex items-center gap-2 rounded-full bg-[#00696E] px-6 py-2.5 text-sm font-medium text-white hover:opacity-90"
+      >
+        <Image
+          src="/icons/diamond_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
+          width={18}
+          height={18}
+          alt=""
+        />
+        Join the Premium
+      </button>
+    </div>
+  );
+}
+
+function AnimeSeasonPanel({ seasons }: { seasons: Season[] }) {
+  const [activeSeason, setActiveSeason] = useState(0);
+  const [selectedEpisode, setSelectedEpisode] = useState(seasons[0]?.episodes[0]?.id ?? "");
+
+  const episodes = seasons[activeSeason]?.episodes ?? [];
+
+  return (
+    <section>
+      <h2 className="pb-2 text-base font-medium">Season</h2>
+      <div className="border-b border-[#DAE4E5] bg-[#F7FAF9]">
+        <div className="flex scrollbar-none overflow-x-auto">
+          {seasons.map((season, i) => (
+            <button
+              key={season.id}
+              type="button"
+              onClick={() => {
+                setActiveSeason(i);
+                setSelectedEpisode(seasons[i]?.episodes[0]?.id ?? "");
+              }}
+              className={`relative shrink-0 px-8 py-3 text-sm font-medium transition-colors ${
+                activeSeason === i ? "text-[#191C1C]" : "text-[#3F4949] hover:text-[#191C1C]"
+              }`}
+            >
+              {season.label}
+              {activeSeason === i && (
+                <span className="absolute right-0 bottom-0 left-0 h-0.5 bg-[#00696E]" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+      <h2 className="pt-4 pb-3 text-base font-medium">Episode</h2>
+      <div className="grid grid-cols-3 gap-3">
+        {episodes.map((ep) => {
+          const isSelected = ep.id === selectedEpisode;
+          return (
+            <button
+              key={ep.id}
+              type="button"
+              onClick={() => setSelectedEpisode(ep.id)}
+              className={`flex h-8 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors ${
+                isSelected
+                  ? "bg-[#CCE8E9] text-[#041F21]"
+                  : "text-[#3F4949] ring-1 ring-[#6F7979] hover:bg-[#F1F3F3]"
+              }`}
+            >
+              {ep.label}
+              {ep.isPremium && (
+                <Image
+                  src={`/icons/diamond_24dp_000000_FILL${isSelected ? 1 : 0}_wght400_GRAD0_opsz24.svg`}
+                  width={14}
+                  height={14}
+                  alt="premium"
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 export default function WatchContent({ id }: { id: string }) {
   const video = VIDEOS[id];
@@ -308,18 +556,24 @@ export default function WatchContent({ id }: { id: string }) {
   return (
     <section className="mx-auto px-4 py-6 lg:px-6">
       <div className="lg:flex lg:items-start lg:gap-4">
-        {/* Left column — player, meta, comments */}
+        {/* Left column — player, meta, seasons, comments */}
         <div className="min-w-0 space-y-4 lg:flex-1">
-          <VideoPlayer src={video.videoSrc} label={video.title} autoPlay muted />
+          {video.isPremium ? (
+            <PremiumBanner />
+          ) : (
+            <VideoPlayer src={video.videoSrc} label={video.title} autoPlay muted />
+          )}
 
-          {/* In-video panel — mobile only, sits below video and above title */}
-          <WatchInfoPanel
-            videoId={video.id}
-            chapters={video.chapters}
-            transcriptTitle={video.transcriptTitle}
-            transcript={video.transcript}
-            className="h-100 w-full lg:hidden"
-          />
+          {/* In-video panel — mobile only, hidden for premium */}
+          {!video.isPremium && (
+            <WatchInfoPanel
+              videoId={video.id}
+              chapters={video.chapters}
+              transcriptTitle={video.transcriptTitle}
+              transcript={video.transcript}
+              className="h-100 w-full lg:hidden"
+            />
+          )}
 
           <VideoDescription
             title={video.title}
@@ -369,7 +623,15 @@ export default function WatchContent({ id }: { id: string }) {
             <ShareButton shares={stats.shares} />
           </div>
 
-          {/* Comments + reviews (reviews tab shows only when an item is attached) */}
+          {/* Season + Episode grid — anime only */}
+          {video.seasons && (
+            <>
+              <hr className="border-[#CAC4D0]" />
+              <AnimeSeasonPanel seasons={video.seasons} />
+            </>
+          )}
+
+          {/* Comments + reviews */}
           {commentsOpen && (
             <Comments
               count={stats.comments}
@@ -381,15 +643,17 @@ export default function WatchContent({ id }: { id: string }) {
           )}
         </div>
 
-        {/* Right column — in-video panel + recommended, same width */}
+        {/* Right column — in-video panel + recommended */}
         <div className="mt-4 space-y-4 lg:mt-0 lg:w-100 lg:shrink-0">
-          <WatchInfoPanel
-            videoId={video.id}
-            chapters={video.chapters}
-            transcriptTitle={video.transcriptTitle}
-            transcript={video.transcript}
-            className="hidden w-full lg:block lg:h-68 xl:h-130 2xl:h-130"
-          />
+          {!video.isPremium && (
+            <WatchInfoPanel
+              videoId={video.id}
+              chapters={video.chapters}
+              transcriptTitle={video.transcriptTitle}
+              transcript={video.transcript}
+              className="hidden w-full lg:block lg:h-68 xl:h-130 2xl:h-130"
+            />
+          )}
 
           <div className="space-y-4">
             <h2 className="text-lg font-medium">Recommended for You</h2>

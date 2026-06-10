@@ -261,7 +261,7 @@ function MediaRow({
           {items.map((media) => (
             <Link
               key={media.id}
-              href="/watch"
+              href="/anime/watch?v=anime-free"
               className={`group/card shrink-0 snap-start ${cardWidth}`}
             >
               <div className={`relative overflow-hidden rounded bg-muted ${aspect}`}>
