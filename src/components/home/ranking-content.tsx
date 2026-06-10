@@ -222,7 +222,7 @@ function PeriodTabs({
               type="button"
               onClick={() => onSelect(period)}
               aria-pressed={isActive}
-              className={`relative flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              className={`relative flex-1 cursor-pointer px-4 py-3 text-sm font-medium transition-colors ${
                 isActive ? "text-[#00696E]" : "text-[#6F7979] hover:text-foreground"
               }`}
             >

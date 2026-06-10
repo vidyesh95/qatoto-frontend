@@ -143,7 +143,7 @@ function DayTabs({ selected, onSelect }: { selected: Day; onSelect: (day: Day) =
               type="button"
               onClick={() => onSelect(day)}
               aria-pressed={isActive}
-              className={`relative flex-1 min-w-16 px-4 py-3 text-sm font-medium tracking-wide transition-colors ${
+              className={`relative flex-1 min-w-16 cursor-pointer px-4 py-3 text-sm font-medium tracking-wide transition-colors ${
                 isActive ? "text-[#00696E]" : "text-[#6F7979] hover:text-foreground"
               }`}
             >
