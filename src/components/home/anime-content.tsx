@@ -116,7 +116,7 @@ function AnimeHero() {
           alt={HERO.title}
           fill
           priority
-          sizes="100vw"
+          sizes="(min-width: 768px) 328px, 100vw"
           className="object-cover"
         />
 
