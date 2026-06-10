@@ -135,7 +135,9 @@ function SortTabs({ selected, onSelect }: { selected: Sort; onSelect: (sort: Sor
               className={`cursor-pointer inline-flex h-10 flex-1 items-center justify-center gap-2 border border-border px-3 py-2.5 text-sm font-medium leading-5 tracking-[0.1px] transition-colors ${
                 isFirst ? "rounded-l-full" : "-ml-px"
               } ${isLast ? "rounded-r-full" : ""} ${
-                isActive ? "z-10 bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+                isActive
+                  ? "z-10 bg-primary text-primary-foreground"
+                  : "text-foreground hover:bg-muted"
               }`}
             >
               {isActive && (

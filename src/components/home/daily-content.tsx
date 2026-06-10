@@ -161,10 +161,7 @@ function DayTabs({ selected, onSelect }: { selected: Day; onSelect: (day: Day) =
 
 function EpisodeRow({ episode }: { episode: DailyEpisode }) {
   return (
-    <Link
-      href="/watch"
-      className="group flex gap-4 px-4 py-2 transition-colors hover:bg-black/5"
-    >
+    <Link href="/watch" className="group flex gap-4 px-4 py-2 transition-colors hover:bg-black/5">
       <div className="relative w-25 shrink-0 overflow-hidden rounded bg-muted aspect-3/4">
         <Image
           src={episode.imageSrc}

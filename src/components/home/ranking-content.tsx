@@ -204,7 +204,13 @@ const RANKINGS: Record<Period, RankedEpisode[]> = {
   ],
 };
 
-function PeriodTabs({ selected, onSelect }: { selected: Period; onSelect: (period: Period) => void }) {
+function PeriodTabs({
+  selected,
+  onSelect,
+}: {
+  selected: Period;
+  onSelect: (period: Period) => void;
+}) {
   return (
     <div className="sticky top-13 z-10 border-b border-border bg-background">
       <div className="flex px-2">
