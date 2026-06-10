@@ -147,10 +147,12 @@ function DayTabs({ selected, onSelect }: { selected: Day; onSelect: (day: Day) =
                 isActive ? "text-[#00696E]" : "text-[#6F7979] hover:text-foreground"
               }`}
             >
-              {day}
-              {isActive && (
-                <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-[#00696E]" />
-              )}
+              <span className="relative inline-block">
+                {day}
+                {isActive && (
+                  <span className="absolute inset-x-0 -bottom-3 h-0.75 rounded-t-full bg-[#00696E]" />
+                )}
+              </span>
             </button>
           );
         })}
