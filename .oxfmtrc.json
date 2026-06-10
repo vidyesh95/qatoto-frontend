@@ -5,7 +5,7 @@
   "sortTailwindcss": {
     "stylesheet": "./src/app/globals.css",
     "functions": ["clsx", "cn", "cva", "tw"],
-    "preserveWhitespace": true
+    "preserveWhitespace": false
   },
   "overrides": [
     {
