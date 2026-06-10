@@ -28,7 +28,7 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-background">
-      <div className="relative mx-auto flex items-center justify-between px-4 py-2 lg:px-6 md:justify-between">
+      <div className="relative flex items-center justify-between px-4 py-2 mx-auto lg:px-6 md:justify-between">
         {/* Brand */}
         <div className={"flex items-center gap-2.5 lg:gap-4.5"}>
           {isGenre && (
@@ -36,7 +36,7 @@ export default function Navbar() {
               type="button"
               onClick={() => router.back()}
               aria-label="Go back"
-              className="md:hidden grid size-9 place-items-center rounded-full transition hover:bg-black/5"
+              className="grid transition rounded-full md:hidden size-9 place-items-center hover:bg-black/5"
             >
               <Image
                 src={"/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
@@ -62,9 +62,9 @@ export default function Navbar() {
           {isGenre ? (
             <>
               {/* mobile: page title */}
-              <h1 className="md:hidden text-xl font-medium text-foreground">{animeSubPage}</h1>
+              <h1 className="text-xl font-medium md:hidden text-foreground">{animeSubPage}</h1>
               {/* desktop: breadcrumb */}
-              <div className="hidden md:flex items-baseline gap-2">
+              <div className="items-baseline hidden gap-2 md:flex">
                 <Link href="/" className="text-3xl font-serif font-medium text-[#00696E]">
                   Qatoto
                 </Link>
@@ -133,7 +133,7 @@ export default function Navbar() {
           </button>
         </div>
 
-        <div className="flex items-center gap-x-2 text-black">
+        <div className="flex items-center text-black gap-x-2">
           <Link
             href={"/search"}
             aria-label="Search"
@@ -180,7 +180,7 @@ export default function Navbar() {
                   aria-label="Account"
                   aria-haspopup="menu"
                   onClick={() => setIsAccountMenuOpen((v) => !v)}
-                  className="size-10 flex items-center justify-center border border-primary rounded-full overflow-hidden cursor-pointer"
+                  className="flex items-center justify-center overflow-hidden border rounded-full cursor-pointer size-10 border-primary"
                 >
                   <Image
                     src={"/dummy/profile_photo_girl.avif"}

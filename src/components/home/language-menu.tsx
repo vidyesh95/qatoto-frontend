@@ -67,12 +67,12 @@ type LanguagePanelProps = {
 export function LanguagePanel({ selected, onSelect, onBack }: LanguagePanelProps) {
   return (
     <div>
-      <header className="sticky top-0 z-10 bg-background flex flex-row gap-4 items-center p-4 border-b border-black/10">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 p-4 border-b bg-background border-black/10">
         <button
           type="button"
           onClick={onBack}
           aria-label="Back"
-          className="cursor-pointer rounded-full p-1 hover:bg-muted transition-colors"
+          className="p-1 transition-colors rounded-full cursor-pointer hover:bg-muted"
         >
           <Image
             src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -81,7 +81,7 @@ export function LanguagePanel({ selected, onSelect, onBack }: LanguagePanelProps
             height={24}
           />
         </button>
-        <h2 className="text-xl text-secondary-foreground font-medium">Display language</h2>
+        <h2 className="text-xl font-medium text-secondary-foreground">Display language</h2>
       </header>
       <p className="px-4 py-4 text-sm text-muted-foreground">
         Buttons and display text on this browser
@@ -94,7 +94,7 @@ export function LanguagePanel({ selected, onSelect, onBack }: LanguagePanelProps
               <button
                 type="button"
                 onClick={() => onSelect(option)}
-                className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+                className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
               >
                 <span className="shrink-0 size-6">
                   {isSelected && (
@@ -106,7 +106,7 @@ export function LanguagePanel({ selected, onSelect, onBack }: LanguagePanelProps
                     />
                   )}
                 </span>
-                <span className="text-sm text-secondary-foreground font-medium">
+                <span className="text-sm font-medium text-secondary-foreground">
                   {option}
                   {isSelected && <span className="sr-only"> (selected)</span>}
                 </span>

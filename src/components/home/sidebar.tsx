@@ -256,7 +256,7 @@ const SidebarSection = memo(function SidebarSection({
   return (
     <section className="mt-6">
       {sectionTitle && (
-        <h3 className="mb-3 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground truncate">
+        <h3 className="px-1 mb-3 text-xs font-medium tracking-wide uppercase truncate text-muted-foreground">
           {sectionTitle}
         </h3>
       )}
@@ -383,7 +383,7 @@ export default function Sidebar() {
   if (isCollapsed) {
     return (
       <aside className="hidden md:block sticky top-14 self-start w-20 h-[calc(100dvh-56px)] shrink-0 overflow-y-auto border-r border-border bg-background transition-all duration-300">
-        <nav className="px-3 pt-11 pb-14 space-y-5">
+        <nav className="px-3 space-y-5 pt-11 pb-14">
           {/* Create button */}
           {COLLAPSED_NAV_CONFIG.filter((item) => item.isEmphasized).map((item) => {
             const isActive = isRouteActive(currentPathname, item.path);

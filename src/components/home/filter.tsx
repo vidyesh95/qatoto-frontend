@@ -239,7 +239,7 @@ export default function Filter() {
         onPointerUp={handleDragEnd}
         onPointerCancel={handleDragEnd}
         onClickCapture={suppressClickAfterDrag}
-        className="h-14 flex flex-row items-center gap-2 px-4 lg:px-6 overflow-x-auto cursor-grab active:cursor-grabbing select-none scrollbar-none"
+        className="flex flex-row items-center gap-2 px-4 overflow-x-auto select-none h-14 lg:px-6 cursor-grab active:cursor-grabbing scrollbar-none"
       >
         {FILTER_CHIPS.map((chipLabel, chipIndex) => {
           const isSelected = selectedChipIndex === chipIndex;

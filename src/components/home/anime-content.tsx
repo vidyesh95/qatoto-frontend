@@ -109,8 +109,8 @@ function AnimeHero() {
   const [muted, setMuted] = useState(true);
 
   return (
-    <section className="px-4 lg:px-6 pt-1 pb-2 flex justify-center">
-      <div className="relative w-full md:w-82 overflow-hidden rounded-xl aspect-video">
+    <section className="flex justify-center px-4 pt-1 pb-2 lg:px-6">
+      <div className="relative w-full overflow-hidden md:w-82 rounded-xl aspect-video">
         <Image
           src={HERO.imageSrc}
           alt={HERO.title}
@@ -125,7 +125,7 @@ function AnimeHero() {
             type="button"
             onClick={() => setMuted((prev) => !prev)}
             aria-label={muted ? "Unmute preview" : "Mute preview"}
-            className="grid place-items-center transition hover:opacity-80"
+            className="grid transition place-items-center hover:opacity-80"
           >
             <Image
               src={
@@ -153,20 +153,20 @@ function AnimeHero() {
 
 function CategoryLinks() {
   return (
-    <nav className="px-4 lg:px-6 py-2">
+    <nav className="px-4 py-2 lg:px-6">
       <ul className="flex items-start">
         {CATEGORIES.map((category) => (
           <li key={category.label} className="flex-1">
             <Link
               href={category.href}
-              className="group flex flex-col items-center gap-1 rounded-xl p-1 md:p-2 transition-colors hover:bg-black/5"
+              className="flex flex-col items-center gap-1 p-1 transition-colors group rounded-xl md:p-2 hover:bg-black/5"
             >
               <Image
                 src={category.icon}
                 width={40}
                 height={40}
                 alt=""
-                className="size-10 transition-transform group-hover:scale-105"
+                className="transition-transform size-10 group-hover:scale-105"
               />
               <span className="text-[11px] font-medium leading-4 tracking-[0.5px] text-foreground">
                 {category.label}
@@ -235,8 +235,8 @@ function MediaRow({
 
   return (
     <section>
-      <header className="flex items-center justify-between px-4 lg:px-6 mb-3">
-        <h2 className="text-base sm:text-lg lg:text-xl font-medium text-foreground">{title}</h2>
+      <header className="flex items-center justify-between px-4 mb-3 lg:px-6">
+        <h2 className="text-base font-medium sm:text-lg lg:text-xl text-foreground">{title}</h2>
         <Link
           href={href}
           className="flex items-center gap-0.5 text-sm text-[#6F7979] hover:text-foreground transition-colors"
@@ -252,11 +252,11 @@ function MediaRow({
         </Link>
       </header>
 
-      <div className="group/row relative">
+      <div className="relative group/row">
         <ScrollButton side="left" onClick={() => scroll(-1)} />
         <div
           ref={scroller}
-          className="flex gap-2 overflow-x-auto px-4 lg:px-6 scroll-px-4 lg:scroll-px-6 pb-2 snap-x scrollbar-none"
+          className="flex gap-2 px-4 pb-2 overflow-x-auto lg:px-6 scroll-px-4 lg:scroll-px-6 snap-x scrollbar-none"
         >
           {items.map((media) => (
             <Link

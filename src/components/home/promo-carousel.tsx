@@ -39,7 +39,7 @@ export default function PromoCarousel() {
   const currentImage = CAROUSEL_IMAGES[currentIndex];
 
   return (
-    <div className="relative w-full h-65 flex justify-center bg-gray-200" id="promo-carousel">
+    <div className="relative flex justify-center w-full bg-gray-200 h-65" id="promo-carousel">
       <Image
         src={currentImage.src}
         fill
@@ -96,7 +96,7 @@ export default function PromoCarousel() {
       </button>
 
       {/* Indicator dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+      <div className="absolute z-10 flex gap-2 -translate-x-1/2 bottom-4 left-1/2">
         {CAROUSEL_IMAGES.map((_, index) => (
           <button
             key={index}

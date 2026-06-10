@@ -166,7 +166,7 @@ export default function GenreContent() {
       <GenreChips selected={genre} onSelect={setGenre} />
       <SortTabs selected={sort} onSelect={setSort} />
 
-      <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-6 px-4 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
+      <div className="grid grid-cols-1 px-4 mt-3 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
         {VIDEOS.map((video) => (
           <VideoCard key={video.title} {...video} />
         ))}

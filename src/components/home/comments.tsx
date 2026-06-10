@@ -92,7 +92,7 @@ export default function Comments({
                 alt=""
               />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="flex-1 min-w-0">
               <p className="text-[11px] font-medium truncate">{saleItem.name}</p>
               <p className="text-[11px] text-[#1DBDC5]">
                 Price: {saleItem.price} | Sold: {saleItem.sold}
@@ -210,7 +210,7 @@ function Avatar({ src }: { src: string }) {
         width={32}
         height={32}
         alt="profile image"
-        className="size-8 rounded-full object-cover"
+        className="object-cover rounded-full size-8"
       />
     </div>
   );
@@ -264,13 +264,13 @@ function CommentItem({ comment }: { comment: Comment }) {
   return (
     <li className="flex flex-row gap-3 py-3">
       <Avatar src={comment.profileSrc} />
-      <div className="min-w-0 flex-1">
+      <div className="flex-1 min-w-0">
         <span className="text-[11px] font-medium text-foreground">{comment.author}</span>
         <p className="mt-1 text-xs font-medium leading-snug">{comment.text}</p>
         <p className="mt-1 text-[11px] font-medium text-foreground">
           {comment.postedAt} · {comment.location}
         </p>
-        <div className="mt-2 flex flex-row items-center gap-5">
+        <div className="flex flex-row items-center gap-5 mt-2">
           <ActionButton
             icon="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             label={comment.likes}
@@ -333,10 +333,10 @@ function ReplyItem({ reply }: { reply: Reply }) {
           width={28}
           height={28}
           alt="profile image"
-          className="size-7 rounded-full object-cover"
+          className="object-cover rounded-full size-7"
         />
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="flex-1 min-w-0">
         <span className="flex flex-row flex-wrap items-center gap-1 text-[11px] font-medium text-foreground">
           {reply.author}
           {reply.replyingTo && (
@@ -355,7 +355,7 @@ function ReplyItem({ reply }: { reply: Reply }) {
         <p className="mt-1 text-[11px] font-medium text-foreground">
           {reply.postedAt} · {reply.location}
         </p>
-        <div className="mt-2 flex flex-row items-center gap-5">
+        <div className="flex flex-row items-center gap-5 mt-2">
           <ActionButton
             icon="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             label={reply.likes}
@@ -383,7 +383,7 @@ function ReviewItem({ review }: { review: Review }) {
   return (
     <li className="flex flex-row gap-3 py-3">
       <Avatar src={review.profileSrc} />
-      <div className="min-w-0 flex-1">
+      <div className="flex-1 min-w-0">
         <div className="flex flex-row items-start justify-between gap-2">
           <span className="text-[11px] font-medium text-foreground">{review.author}</span>
           <Image
@@ -391,7 +391,7 @@ function ReviewItem({ review }: { review: Review }) {
             width={14}
             height={14}
             alt="more options"
-            className="shrink-0 cursor-pointer"
+            className="cursor-pointer shrink-0"
           />
         </div>
         <p className="mt-1 text-xs font-medium text-[#A9ACAC]">{review.variant}</p>
@@ -407,7 +407,7 @@ function ReviewItem({ review }: { review: Review }) {
         </button>
         {review.images.length > 0 && (
           <>
-            <div className="mt-2 grid w-max grid-cols-3 gap-1">
+            <div className="grid grid-cols-3 gap-1 mt-2 w-max">
               {review.images.map((src, i) => (
                 <Image
                   key={i}
@@ -430,7 +430,7 @@ function ReviewItem({ review }: { review: Review }) {
         <p className="mt-2 text-[11px] font-medium text-foreground">
           {review.postedAt} • {review.location}
         </p>
-        <div className="mt-2 flex flex-row items-center gap-5">
+        <div className="flex flex-row items-center gap-5 mt-2">
           <ActionButton
             icon="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             label={review.likes}

@@ -72,12 +72,12 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
 
   return (
     <div>
-      <header className="sticky top-0 z-10 bg-background flex flex-row gap-4 items-center p-4 border-b border-black/10">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 p-4 border-b bg-background border-black/10">
         <button
           type="button"
           onClick={onBack}
           aria-label="Back"
-          className="cursor-pointer rounded-full p-1 hover:bg-muted transition-colors"
+          className="p-1 transition-colors rounded-full cursor-pointer hover:bg-muted"
         >
           <Image
             src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -86,16 +86,16 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
             height={24}
           />
         </button>
-        <h2 className="text-xl text-secondary-foreground font-medium">Settings</h2>
+        <h2 className="text-xl font-medium text-secondary-foreground">Settings</h2>
       </header>
 
-      <section className="relative m-4 flex flex-col gap-4 rounded-2xl bg-card p-4 pt-16 mt-8 shadow-sm">
+      <section className="relative flex flex-col gap-4 p-4 pt-16 m-4 mt-8 shadow-sm rounded-2xl bg-card">
         <Image
           src="/dummy/profile_photo_girl.avif"
           alt=""
           width={320}
           height={320}
-          className="aspect-square w-full rounded-xl object-cover"
+          className="object-cover w-full aspect-square rounded-xl"
         />
         <div className="rounded-xl bg-muted px-4 py-3 text-center text-base leading-6 tracking-[0.5px] text-secondary-foreground">
           @drDong2w
@@ -105,7 +105,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
           alt="Current avatar"
           width={64}
           height={64}
-          className="absolute -top-4 left-4 size-16 aspect-square rounded-lg object-cover"
+          className="absolute object-cover rounded-lg -top-4 left-4 size-16 aspect-square"
         />
       </section>
 
@@ -115,10 +115,10 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
             <button
               type="button"
               onClick={item.onClick}
-              className="w-full p-4 flex flex-row gap-4 items-center cursor-pointer hover:bg-muted transition-colors"
+              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
             >
               <Image src={item.icon} alt="" width={24} height={24} className="size-6 shrink-0" />
-              <span className="text-sm text-secondary-foreground font-medium">{item.label}</span>
+              <span className="text-sm font-medium text-secondary-foreground">{item.label}</span>
             </button>
           </li>
         ))}
