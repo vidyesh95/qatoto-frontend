@@ -228,7 +228,7 @@ function PeriodTabs({
             >
               {period}
               {isActive && (
-                <span className="absolute inset-x-6 -bottom-px h-0.5 rounded-full bg-[#00696E]" />
+                <span className="absolute -bottom-px left-1/2 h-0.75 w-10.5 -translate-x-1/2 rounded-t-full bg-[#00696E]" />
               )}
             </button>
           );
