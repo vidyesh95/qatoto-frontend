@@ -212,7 +212,7 @@ function PeriodTabs({
   onSelect: (period: Period) => void;
 }) {
   return (
-    <div className="sticky z-10 border-b top-13 border-border bg-background">
+    <div className="sticky top-13 z-10 border-b border-border bg-background">
       <div className="flex px-2">
         {PERIODS.map((period) => {
           const isActive = period === selected;
@@ -264,7 +264,7 @@ function SortMenu({ selected, onSelect }: { selected: Sort; onSelect: (sort: Sor
           onClick={() => setOpen((v) => !v)}
           aria-haspopup="menu"
           aria-expanded={open}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors border rounded-lg border-border bg-card text-foreground hover:bg-muted"
+          className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
         >
           <svg
             width="18"
@@ -288,7 +288,7 @@ function SortMenu({ selected, onSelect }: { selected: Sort; onSelect: (sort: Sor
         {open && (
           <div
             role="menu"
-            className="absolute right-0 z-20 py-1 mt-1 overflow-hidden border rounded-lg shadow-lg w-44 border-border bg-card"
+            className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-lg border border-border bg-card py-1 shadow-lg"
           >
             {SORTS.map((sort) => {
               const isActive = sort === selected;
@@ -364,9 +364,9 @@ function RankedRow({ episode }: { episode: RankedEpisode }) {
   return (
     <Link
       href="/watch"
-      className="flex items-start gap-4 px-4 py-2 transition-colors group lg:px-6 hover:bg-black/5"
+      className="group flex items-start gap-4 px-4 py-2 transition-colors hover:bg-black/5 lg:px-6"
     >
-      <div className="relative overflow-hidden rounded aspect-3/4 w-15 shrink-0 bg-muted">
+      <div className="relative aspect-3/4 w-15 shrink-0 overflow-hidden rounded bg-muted">
         <Image
           src={episode.imageSrc}
           alt={episode.title}
@@ -375,13 +375,13 @@ function RankedRow({ episode }: { episode: RankedEpisode }) {
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
       </div>
-      <div className="flex flex-col self-stretch flex-1 min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col self-stretch">
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium leading-4 tracking-wide text-foreground line-clamp-2">
+          <p className="line-clamp-2 text-sm leading-4 font-medium tracking-wide text-foreground">
             {episode.title}
           </p>
           <div className="flex items-center gap-1">
-            <span className="text-xs font-medium leading-4 tracking-wide text-[#6F7979]">
+            <span className="text-xs leading-4 font-medium tracking-wide text-[#6F7979]">
               {episode.channelName}
             </span>
             {episode.verified && (
@@ -394,11 +394,11 @@ function RankedRow({ episode }: { episode: RankedEpisode }) {
             )}
           </div>
         </div>
-        <div className="flex items-center pt-2 mt-auto">
-          <span className="flex-1 text-xs font-medium leading-4 tracking-wide text-foreground">
+        <div className="mt-auto flex items-center pt-2">
+          <span className="flex-1 text-xs leading-4 font-medium tracking-wide text-foreground">
             {episode.views}
           </span>
-          <span className="flex flex-1 items-center gap-0.5 text-xs font-medium leading-4 tracking-wide text-foreground">
+          <span className="flex flex-1 items-center gap-0.5 text-xs leading-4 font-medium tracking-wide text-foreground">
             <Image
               src="/icons/favorite_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
               width={14}

@@ -22,7 +22,7 @@ export default function BlogDetail({ post, related }: { post: BlogPost; related:
         </Link>
 
         <header className="mt-8">
-          <div className="flex flex-wrap items-center gap-3 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
             <span className="rounded-full bg-primary/40 px-3 py-1 text-foreground">
               {CATEGORY_LABEL[post.category]}
             </span>
@@ -30,7 +30,7 @@ export default function BlogDetail({ post, related }: { post: BlogPost; related:
             <span>·</span>
             <span>{post.readingMinutes} min read</span>
           </div>
-          <h1 className="mt-6 font-serif text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl">
+          <h1 className="mt-6 font-serif text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
             {post.title}
           </h1>
           <p className="mt-5 text-lg text-muted-foreground">{post.excerpt}</p>
@@ -99,10 +99,10 @@ export default function BlogDetail({ post, related }: { post: BlogPost; related:
                 href={`/blogs/${relatedPost.slug}`}
                 className="group flex flex-col rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
-                <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                <div className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
                   {CATEGORY_LABEL[relatedPost.category]} · {relatedPost.readingMinutes} min
                 </div>
-                <h3 className="mt-4 font-serif text-xl font-semibold leading-snug tracking-tight">
+                <h3 className="mt-4 font-serif text-xl leading-snug font-semibold tracking-tight">
                   {relatedPost.title}
                 </h3>
                 <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">

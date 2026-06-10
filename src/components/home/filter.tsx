@@ -217,7 +217,7 @@ export default function Filter() {
           aria-hidden="true"
           onClick={() => scrollChipsByOnePage(-1)}
           title="Scroll filter chips left"
-          className="absolute left-0 top-0 bottom-0 z-10 bg-linear-to-r from-white via-white to-transparent py-4 pl-2.5 lg:pl-4 pr-18 cursor-pointer"
+          className="absolute top-0 bottom-0 left-0 z-10 cursor-pointer bg-linear-to-r from-white via-white to-transparent py-4 pr-18 pl-2.5 lg:pl-4"
         >
           <Image
             src="/icons/chevron_backward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -239,7 +239,7 @@ export default function Filter() {
         onPointerUp={handleDragEnd}
         onPointerCancel={handleDragEnd}
         onClickCapture={suppressClickAfterDrag}
-        className="flex flex-row items-center gap-2 px-4 overflow-x-auto select-none h-14 lg:px-6 cursor-grab active:cursor-grabbing scrollbar-none"
+        className="flex h-14 cursor-grab scrollbar-none flex-row items-center gap-2 overflow-x-auto px-4 select-none active:cursor-grabbing lg:px-6"
       >
         {FILTER_CHIPS.map((chipLabel, chipIndex) => {
           const isSelected = selectedChipIndex === chipIndex;
@@ -256,8 +256,8 @@ export default function Filter() {
                 setSelectedChipIndex(chipIndex);
                 setFocusedChipIndex(chipIndex);
               }}
-              className={`px-4 py-1.5 text-sm text-nowrap rounded-lg cursor-pointer border ${
-                isSelected ? "bg-primary border-primary" : "border-outline hover:bg-black/5"
+              className={`cursor-pointer rounded-lg border px-4 py-1.5 text-sm text-nowrap ${
+                isSelected ? "border-primary bg-primary" : "border-outline hover:bg-black/5"
               }`}
             >
               {chipLabel}
@@ -272,7 +272,7 @@ export default function Filter() {
           aria-hidden="true"
           onClick={() => scrollChipsByOnePage(1)}
           title="Scroll filter chips right"
-          className="absolute right-0 top-0 bottom-0 z-10 bg-linear-to-l from-white via-white to-transparent py-4 pl-18 pr-2.5 lg:pr-4 cursor-pointer"
+          className="absolute top-0 right-0 bottom-0 z-10 cursor-pointer bg-linear-to-l from-white via-white to-transparent py-4 pr-2.5 pl-18 lg:pr-4"
         >
           <Image
             src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"

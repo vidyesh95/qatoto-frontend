@@ -63,10 +63,10 @@ export default function WatchInfoPanel({
 
   return (
     <aside
-      className={`flex flex-col rounded-xl border border-[#E5E7E7] bg-background overflow-hidden ${className}`}
+      className={`flex flex-col overflow-hidden rounded-xl border border-[#E5E7E7] bg-background ${className}`}
     >
       {/* Header */}
-      <div className="flex flex-row items-center justify-between pl-4 pr-2 py-2 border-b border-[#E5E7E7] shrink-0">
+      <div className="flex shrink-0 flex-row items-center justify-between border-b border-[#E5E7E7] py-2 pr-2 pl-4">
         <h2 className="text-lg">In this video</h2>
         <div className="flex flex-row items-center gap-2">
           {tab === "transcript" && (
@@ -76,7 +76,7 @@ export default function WatchInfoPanel({
                 aria-label="more options"
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
-                className="p-2 hover:bg-black/10 rounded-full cursor-pointer"
+                className="cursor-pointer rounded-full p-2 hover:bg-black/10"
                 onClick={() => setMenuOpen((v) => !v)}
               >
                 <Image
@@ -97,13 +97,13 @@ export default function WatchInfoPanel({
                   />
                   <div
                     role="menu"
-                    className="absolute right-0 top-full z-20 mt-1 min-w-56 rounded-lg border border-[#E5E7E7] bg-background py-1 shadow-lg"
+                    className="absolute top-full right-0 z-20 mt-1 min-w-56 rounded-lg border border-[#E5E7E7] bg-background py-1 shadow-lg"
                   >
                     <button
                       type="button"
                       role="menuitemcheckbox"
                       aria-checked={showTimestamps}
-                      className="flex w-full flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-[#F1F3F3] cursor-pointer"
+                      className="flex w-full cursor-pointer flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-[#F1F3F3]"
                       onClick={() => {
                         setShowTimestamps((v) => !v);
                         setMenuOpen(false);
@@ -129,7 +129,7 @@ export default function WatchInfoPanel({
           <button
             type="button"
             aria-label="close"
-            className="p-2 hover:bg-black/10 rounded-full cursor-pointer"
+            className="cursor-pointer rounded-full p-2 hover:bg-black/10"
             onClick={handleClose}
           >
             <Image
@@ -143,7 +143,7 @@ export default function WatchInfoPanel({
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-row items-center gap-2 px-4 py-3 shrink-0">
+      <div className="flex shrink-0 flex-row items-center gap-2 px-4 py-3">
         <button
           type="button"
           onClick={() => setTab("chapters")}
@@ -165,7 +165,7 @@ export default function WatchInfoPanel({
       </div>
 
       {/* Body */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {tab === "chapters" ? (
           <ul>
             {chapters.map((chapter) => (
@@ -178,31 +178,31 @@ export default function WatchInfoPanel({
                 <button
                   type="button"
                   onClick={() => setSelectedChapter(chapter.title)}
-                  className="flex flex-1 min-w-0 flex-row items-center gap-3 text-left cursor-pointer"
+                  className="flex min-w-0 flex-1 cursor-pointer flex-row items-center gap-3 text-left"
                 >
                   <Image
                     src={chapter.thumbSrc}
                     width={96}
                     height={54}
                     alt=""
-                    className="w-24 aspect-video rounded-lg object-cover shrink-0"
+                    className="aspect-video w-24 shrink-0 rounded-lg object-cover"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{chapter.title}</p>
-                    <span className="inline-block mt-1 rounded-md bg-[#EAF1FB] px-1.5 py-0.5 text-xs font-medium text-[#1B66C9]">
+                    <p className="truncate text-sm font-medium">{chapter.title}</p>
+                    <span className="mt-1 inline-block rounded-md bg-[#EAF1FB] px-1.5 py-0.5 text-xs font-medium text-[#1B66C9]">
                       {chapter.time}
                     </span>
                   </div>
                 </button>
                 <div
-                  className={`flex flex-row items-center gap-3 shrink-0 pr-1 transition-opacity group-hover:opacity-100 has-focus-visible:opacity-100 ${
+                  className={`flex shrink-0 flex-row items-center gap-3 pr-1 transition-opacity group-hover:opacity-100 has-focus-visible:opacity-100 ${
                     selectedChapter === chapter.title ? "opacity-100" : "opacity-0"
                   }`}
                 >
                   <button
                     type="button"
                     aria-label={`share chapter "${chapter.title}"`}
-                    className="p-2 hover:bg-black/10 rounded-full cursor-pointer"
+                    className="cursor-pointer rounded-full p-2 hover:bg-black/10"
                     onClick={() => shareChapter(chapter.time)}
                   >
                     <Image
@@ -230,7 +230,7 @@ export default function WatchInfoPanel({
                 type="text"
                 aria-label="Search in video"
                 placeholder="Search in video"
-                className="flex-1 bg-transparent text-base placeholder:text-[#6F7979] outline-none"
+                className="flex-1 bg-transparent text-base outline-none placeholder:text-[#6F7979]"
               />
             </div>
 
@@ -254,7 +254,7 @@ export default function WatchInfoPanel({
 
       {/* Footer (transcript only) */}
       {tab === "transcript" && (
-        <div className="border-t border-[#E5E7E7] px-5 py-3 shrink-0">
+        <div className="shrink-0 border-t border-[#E5E7E7] px-5 py-3">
           <button type="button" className="flex flex-row items-center gap-1 text-sm font-medium">
             English
             <Image

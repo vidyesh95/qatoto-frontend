@@ -51,11 +51,11 @@ export default function ContactUs() {
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,var(--color-primary)_0%,transparent_60%),radial-gradient(50%_50%_at_85%_30%,var(--color-secondary)_0%,transparent_55%)] opacity-70"
         />
         <div className="mx-auto max-w-6xl px-6 pt-24 pb-32 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur">
             <span className="size-1.5 rounded-full bg-primary" />
             Contact Qatoto
           </span>
-          <h1 className="mt-8 font-serif text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl md:text-8xl">
+          <h1 className="mt-8 font-serif text-5xl leading-[1.05] font-semibold tracking-tight sm:text-7xl md:text-8xl">
             Talk to a human.
             <br />
             <span className="bg-linear-to-br from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
@@ -95,13 +95,13 @@ export default function ContactUs() {
               >
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-primary/30 blur-3xl transition group-hover:bg-primary/50"
+                  className="pointer-events-none absolute -top-16 -right-16 size-48 rounded-full bg-primary/30 blur-3xl transition group-hover:bg-primary/50"
                 />
                 <div className="relative">
                   <div className="flex size-14 items-center justify-center rounded-2xl bg-secondary/60">
                     <Image src={c.icon} alt="" width={28} height={28} />
                   </div>
-                  <span className="mt-7 block text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                  <span className="mt-7 block text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
                     {c.eyebrow}
                   </span>
                   <h3 className="mt-3 font-serif text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -140,13 +140,13 @@ export default function ContactUs() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid gap-10 rounded-4xl border border-border bg-card p-10 shadow-xl md:grid-cols-[1.1fr_1fr] md:p-14">
             <div>
-              <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+              <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
                 Head office
               </span>
               <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
                 Borivali, Mumbai.
               </h2>
-              <address className="mt-6 not-italic text-lg leading-relaxed text-muted-foreground">
+              <address className="mt-6 text-lg leading-relaxed text-muted-foreground not-italic">
                 {ADDRESS_LINES.map((line) => (
                   <span key={line} className="block">
                     {line}
@@ -155,7 +155,7 @@ export default function ContactUs() {
               </address>
               <dl className="mt-8 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl border border-border bg-background px-5 py-4">
-                  <dt className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                  <dt className="text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
                     Email
                   </dt>
                   <dd className="mt-1 text-base font-semibold tracking-tight">
@@ -168,7 +168,7 @@ export default function ContactUs() {
                   </dd>
                 </div>
                 <div className="rounded-2xl border border-border bg-background px-5 py-4">
-                  <dt className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                  <dt className="text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
                     Phone
                   </dt>
                   <dd className="mt-1 text-base font-semibold tracking-tight">
@@ -181,7 +181,7 @@ export default function ContactUs() {
                   </dd>
                 </div>
                 <div className="rounded-2xl border border-border bg-background px-5 py-4 sm:col-span-2">
-                  <dt className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                  <dt className="text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
                     Hours
                   </dt>
                   <dd className="mt-1 text-base font-semibold tracking-tight">
@@ -210,10 +210,10 @@ export default function ContactUs() {
         <div className="overflow-hidden rounded-4xl border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
           <div className="grid gap-12 md:grid-cols-[2fr_1fr] md:items-end">
             <div>
-              <span className="text-xs font-medium uppercase tracking-[0.2em] text-background/60">
+              <span className="text-xs font-medium tracking-[0.2em] text-background/60 uppercase">
                 Founders + investors
               </span>
-              <h2 className="mt-6 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
+              <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-6xl">
                 One inbox. One phone line. Real people on both.
               </h2>
               <p className="mt-6 max-w-xl text-base text-background/70 sm:text-lg">

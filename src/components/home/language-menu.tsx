@@ -67,12 +67,12 @@ type LanguagePanelProps = {
 export function LanguagePanel({ selected, onSelect, onBack }: LanguagePanelProps) {
   return (
     <div>
-      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 p-4 border-b bg-background border-black/10">
+      <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
         <button
           type="button"
           onClick={onBack}
           aria-label="Back"
-          className="p-1 transition-colors rounded-full cursor-pointer hover:bg-muted"
+          className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
         >
           <Image
             src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -94,9 +94,9 @@ export function LanguagePanel({ selected, onSelect, onBack }: LanguagePanelProps
               <button
                 type="button"
                 onClick={() => onSelect(option)}
-                className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+                className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
               >
-                <span className="shrink-0 size-6">
+                <span className="size-6 shrink-0">
                   {isSelected && (
                     <Image
                       src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -150,7 +150,7 @@ export default function LanguageMenu({ onClose }: LanguageMenuProps) {
   return (
     <div
       ref={menuPanelRef}
-      className="absolute right-0 top-12 z-50 w-95 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background border border-black/10 rounded-lg shadow-lg"
+      className="absolute top-12 right-0 z-50 max-h-[calc(100dvh-4rem)] w-95 overflow-y-auto rounded-lg border border-black/10 bg-background shadow-lg"
     >
       <LanguagePanel selected={language} onSelect={setLanguage} onBack={onClose} />
     </div>

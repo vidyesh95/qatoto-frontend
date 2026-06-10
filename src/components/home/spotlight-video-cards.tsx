@@ -24,7 +24,7 @@ export default function SpotlightVideoCards({ imageSrc, alt, position }: Spotlig
         width={512}
         height={288}
         alt={alt}
-        className="w-full aspect-video object-cover"
+        className="aspect-video w-full object-cover"
       />
     </div>
   );

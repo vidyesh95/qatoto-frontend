@@ -13,9 +13,9 @@ export default function SignIn() {
   };
 
   return (
-    <main className="min-h-screen w-screen flex flex-col">
-      <header className="bg-background space-y-10 pt-2 pb-4">
-        <Link href={"/"} className="mx-1 size-12 flex items-center justify-center">
+    <main className="flex min-h-screen w-screen flex-col">
+      <header className="space-y-10 bg-background pt-2 pb-4">
+        <Link href={"/"} className="mx-1 flex size-12 items-center justify-center">
           <Image
             src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             alt="Navigate back"
@@ -25,12 +25,12 @@ export default function SignIn() {
         </Link>
         <h1 className="mx-5 text-3xl">Sign in</h1>
       </header>
-      <section className="p-4 space-y-4">
+      <section className="space-y-4 p-4">
         <button
           type={"button"}
           onClick={handleGoogleSignIn}
           className={
-            "w-full justify-center items-center text-sm font-medium text-[#00696E] flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"
+            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-[#00696E]"
           }
         >
           <Image
@@ -44,7 +44,7 @@ export default function SignIn() {
         <button
           type={"button"}
           className={
-            "w-full flex gap-2 justify-center items-center text-sm font-medium text-[#00696E] border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"
+            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-[#00696E]"
           }
         >
           <Image
@@ -55,7 +55,7 @@ export default function SignIn() {
           />
           <span>Continue with Apple</span>
         </button>
-        <div className="px-4 flex items-center gap-4 text-[#BEC8C9]">
+        <div className="flex items-center gap-4 px-4 text-[#BEC8C9]">
           <hr className="flex-1" />
           <span className="text-xs">or</span>
           <hr className="flex-1" />
@@ -63,7 +63,7 @@ export default function SignIn() {
         <Link
           href={"/sign-in-with-password"}
           className={
-            "w-full flex gap-2 justify-center items-center text-sm font-medium bg-[#00696E] text-background border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"
+            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium text-background"
           }
         >
           <Image
@@ -74,9 +74,9 @@ export default function SignIn() {
           />
           <span>Sign in with Password</span>
         </Link>
-        <p className="text-sm font-medium text-center space-x-1">
+        <p className="space-x-1 text-center text-sm font-medium">
           <span className="text-[#BEC8C9]">Don't have an account?</span>
-          <Link href={"/sign-up"} className="text-[#00696E] cursor-pointer">
+          <Link href={"/sign-up"} className="cursor-pointer text-[#00696E]">
             Sign up
           </Link>
         </p>

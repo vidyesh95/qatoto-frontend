@@ -39,7 +39,7 @@ export default function PromoCarousel() {
   const currentImage = CAROUSEL_IMAGES[currentIndex];
 
   return (
-    <div className="relative flex justify-center w-full bg-gray-200 h-65" id="promo-carousel">
+    <div className="relative flex h-65 w-full justify-center bg-gray-200" id="promo-carousel">
       <Image
         src={currentImage.src}
         fill
@@ -51,7 +51,7 @@ export default function PromoCarousel() {
       {/* Close button */}
       <button
         type="button"
-        className="absolute top-1.5 lg:top-3 right-1.5 lg:right-3 p-2 cursor-pointer hover:bg-black/10 rounded-lg transition"
+        className="absolute top-1.5 right-1.5 cursor-pointer rounded-lg p-2 transition hover:bg-black/10 lg:top-3 lg:right-3"
         onClick={() => setIsVisible(false)}
         aria-label="Close carousel"
       >
@@ -66,7 +66,7 @@ export default function PromoCarousel() {
       {/* Previous button */}
       <button
         type="button"
-        className="absolute left-1 lg:left-2.5 top-1/2 -translate-y-1/2 p-2 cursor-pointer hover:bg-black/20 rounded-full transition z-10"
+        className="absolute top-1/2 left-1 z-10 -translate-y-1/2 cursor-pointer rounded-full p-2 transition hover:bg-black/20 lg:left-2.5"
         onClick={() =>
           setCurrentIndex((prev) => (prev - 1 + CAROUSEL_IMAGES.length) % CAROUSEL_IMAGES.length)
         }
@@ -83,7 +83,7 @@ export default function PromoCarousel() {
       {/* Next button */}
       <button
         type="button"
-        className="absolute right-1 lg:right-2.5 top-1/2 -translate-y-1/2 p-2 cursor-pointer hover:bg-black/20 rounded-full transition z-10"
+        className="absolute top-1/2 right-1 z-10 -translate-y-1/2 cursor-pointer rounded-full p-2 transition hover:bg-black/20 lg:right-2.5"
         onClick={() => setCurrentIndex((prev) => (prev + 1) % CAROUSEL_IMAGES.length)}
         aria-label="Next image"
       >
@@ -96,11 +96,11 @@ export default function PromoCarousel() {
       </button>
 
       {/* Indicator dots */}
-      <div className="absolute z-10 flex gap-2 -translate-x-1/2 bottom-4 left-1/2">
+      <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2">
         {CAROUSEL_IMAGES.map((_, index) => (
           <button
             key={index}
-            className={`w-2 h-2 rounded-full transition ${
+            className={`h-2 w-2 rounded-full transition ${
               index === currentIndex ? "bg-black" : "bg-gray-400"
             }`}
             onClick={() => setCurrentIndex(index)}

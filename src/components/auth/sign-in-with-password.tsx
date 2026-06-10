@@ -3,9 +3,9 @@ import Link from "next/link";
 
 export default function SignIn() {
   return (
-    <main className="min-h-screen w-screen flex flex-col">
-      <header className="bg-background space-y-10 pt-2 pb-4">
-        <Link href={"/sign-in"} className="mx-1 size-12 flex items-center justify-center">
+    <main className="flex min-h-screen w-screen flex-col">
+      <header className="space-y-10 bg-background pt-2 pb-4">
+        <Link href={"/sign-in"} className="mx-1 flex size-12 items-center justify-center">
           <Image
             src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             alt="Navigate back"
@@ -15,10 +15,10 @@ export default function SignIn() {
         </Link>
         <h1 className="mx-5 text-3xl">Sign in with Password</h1>
       </header>
-      <section className="p-4 space-y-4">
+      <section className="space-y-4 p-4">
         <form action="" className="space-y-4">
           <div className="relative">
-            <div className="relative flex items-center border border-[#6F7979] rounded h-14 px-3">
+            <div className="relative flex h-14 items-center rounded border border-[#6F7979] px-3">
               <label
                 htmlFor="email"
                 className="absolute -top-2 left-3 bg-white px-1 text-xs text-black"
@@ -38,16 +38,16 @@ export default function SignIn() {
                 id="email"
                 aria-label="Email"
                 placeholder="host@domain.com"
-                className="flex-1 h-full bg-transparent outline-none text-base placeholder:text-foreground"
+                className="h-full flex-1 bg-transparent text-base outline-none placeholder:text-foreground"
                 required
               />
             </div>
-            <p className="w-full text-xs text-[#3F4949] mt-1 pl-4">
+            <p className="mt-1 w-full pl-4 text-xs text-[#3F4949]">
               Enter email you have access to
             </p>
           </div>
           <div className="relative">
-            <div className="relative flex items-center border border-[#6F7979] rounded h-14 px-3">
+            <div className="relative flex h-14 items-center rounded border border-[#6F7979] px-3">
               <label
                 htmlFor="password"
                 className="absolute -top-2 left-3 bg-white px-1 text-xs text-black"
@@ -67,10 +67,10 @@ export default function SignIn() {
                 id="password"
                 aria-label="Password"
                 placeholder="secretPassword123$"
-                className="flex-1 h-full bg-transparent outline-none text-base placeholder:text-foreground"
+                className="h-full flex-1 bg-transparent text-base outline-none placeholder:text-foreground"
                 required
               />
-              <div className="ml-3 flex items-center justify-center cursor-pointer">
+              <div className="ml-3 flex cursor-pointer items-center justify-center">
                 <Image
                   src={"/icons/visibility_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"}
                   alt={"Show Password"}
@@ -79,29 +79,29 @@ export default function SignIn() {
                 />
               </div>
             </div>
-            <p className="w-full text-xs text-[#3F4949] mt-1 pl-4">
+            <p className="mt-1 w-full pl-4 text-xs text-[#3F4949]">
               Click Forgot Password? if forgotten
             </p>
           </div>
           <div className="flex items-center justify-between gap-4">
-            <label htmlFor="remember-me" className="w-full font-medium text-sm">
+            <label htmlFor="remember-me" className="w-full text-sm font-medium">
               Remember me
             </label>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className="relative inline-flex cursor-pointer items-center">
               <input
                 type="checkbox"
                 id="remember-me"
-                className="sr-only peer"
+                className="peer sr-only"
                 aria-label="Remember me toggle switch"
               />
               {/* Track */}
-              <div className="w-13 h-8 rounded-full border-2 border-[#6F7979] bg-[#DAE4E5] peer-checked:border-[#00696E] peer-checked:bg-[#00696E] transition-colors duration-200 ease-in-out"></div>
+              <div className="h-8 w-13 rounded-full border-2 border-[#6F7979] bg-[#DAE4E5] transition-colors duration-200 ease-in-out peer-checked:border-[#00696E] peer-checked:bg-[#00696E]"></div>
 
               {/* Thumb */}
-              <div className="absolute top-0.75 left-0.75 size-6.5 rounded-full bg-[#6F7979] peer-checked:bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-5 flex items-center justify-center pointer-events-none shadow-sm peer-checked:[&>svg.x-icon]:opacity-0 peer-checked:[&>svg.check-icon]:opacity-100">
+              <div className="pointer-events-none absolute top-0.75 left-0.75 flex size-6.5 items-center justify-center rounded-full bg-[#6F7979] shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-5 peer-checked:bg-white peer-checked:[&>svg.check-icon]:opacity-100 peer-checked:[&>svg.x-icon]:opacity-0">
                 {/* X Icon - shown when unchecked */}
                 <svg
-                  className="size-4 text-white absolute transition-opacity duration-200 opacity-100 x-icon"
+                  className="x-icon absolute size-4 text-white opacity-100 transition-opacity duration-200"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -115,7 +115,7 @@ export default function SignIn() {
                 </svg>
                 {/* Checkmark Icon - shown when checked */}
                 <svg
-                  className="size-4 text-[#00696E] absolute transition-opacity duration-200 opacity-0 check-icon"
+                  className="check-icon absolute size-4 text-[#00696E] opacity-0 transition-opacity duration-200"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -133,7 +133,7 @@ export default function SignIn() {
           <button
             type="submit"
             className={
-              "w-full justify-center items-center text-sm font-medium bg-[#00696E] text-background flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"
+              "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium text-background"
             }
           >
             <Image
@@ -145,22 +145,22 @@ export default function SignIn() {
             <span>Sign in with Password</span>
           </button>
         </form>
-        <p className="font-medium text-sm text-center">
-          <Link href={"/forgot-password"} className="text-[#00696E] cursor-pointer">
+        <p className="text-center text-sm font-medium">
+          <Link href={"/forgot-password"} className="cursor-pointer text-[#00696E]">
             Forgot Password?
           </Link>
         </p>
-        <div className="px-4 flex items-center gap-4 text-[#BEC8C9]">
+        <div className="flex items-center gap-4 px-4 text-[#BEC8C9]">
           <hr className="flex-1" />
           <span className="text-xs">or continue with</span>
           <hr className="flex-1" />
         </div>
-        <div className="flex gap-4 justify-center items-center">
+        <div className="flex items-center justify-center gap-4">
           <button
             type={"button"}
             aria-label="Continue with Google"
             className={
-              "w-fit flex gap-2 justify-center items-center text-sm font-medium text-[#00696E] border border-outline rounded-full pl-4 pr-4 py-2.5 cursor-pointer"
+              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-[#00696E]"
             }
           >
             <Image
@@ -174,7 +174,7 @@ export default function SignIn() {
             type={"button"}
             aria-label="Continue with Apple"
             className={
-              "w-fit flex gap-2 justify-center items-center text-sm font-medium text-[#00696E] border border-outline rounded-full pl-4 pr-4 py-2.5 cursor-pointer"
+              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-[#00696E]"
             }
           >
             <Image
@@ -185,9 +185,9 @@ export default function SignIn() {
             />
           </button>
         </div>
-        <p className="text-sm font-medium text-center space-x-1">
+        <p className="space-x-1 text-center text-sm font-medium">
           <span className="text-[#BEC8C9]">Don't have an account?</span>
-          <Link href={"/sign-up"} className="text-[#00696E] cursor-pointer">
+          <Link href={"/sign-up"} className="cursor-pointer text-[#00696E]">
             Sign up
           </Link>
         </p>

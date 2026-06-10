@@ -341,10 +341,10 @@ const VIDEO_CATEGORIES: VideoCategory[] = [
 
 export default function AllContent() {
   return (
-    <section className="py-8 space-y-8">
+    <section className="space-y-8 py-8">
       <div>
         <SectionDivider title="RECOMMENDED FOR YOU" />
-        <div className="grid grid-cols-1 px-4 py-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 lg:px-6">
+        <div className="grid grid-cols-1 gap-x-3 gap-y-6 px-4 py-2 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
           {RECOMMENDED_VIDEOS.map(({ id, ...video }) => (
             <VideoCard key={id} {...video} />
           ))}
@@ -352,7 +352,7 @@ export default function AllContent() {
       </div>
       <div>
         <SectionDivider title="WHAT'S ON YOUR MIND?" />
-        <div className="grid grid-cols-3 px-4 py-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-3 gap-y-6 lg:px-6">
+        <div className="grid grid-cols-3 gap-x-3 gap-y-6 px-4 py-2 sm:grid-cols-4 lg:grid-cols-5 lg:px-6 xl:grid-cols-6">
           {VIDEO_CATEGORIES.map(({ id, ...category }) => (
             <VideoCategoryCard key={id} {...category} />
           ))}
@@ -360,7 +360,7 @@ export default function AllContent() {
       </div>
       <div>
         <SectionDivider title="SPOTLIGHT" />
-        <div className="flex flex-col items-center gap-4 px-4 py-2 md:h-48 lg:h-64 xl:h-93 group/spot md:flex-row lg:px-6">
+        <div className="group/spot flex flex-col items-center gap-4 px-4 py-2 md:h-48 md:flex-row lg:h-64 lg:px-6 xl:h-93">
           {SPOTLIGHT_VIDEOS.map(({ id, ...spotlight }, i) => (
             <SpotlightVideoCards key={id} {...spotlight} position={POSITIONS[i]} />
           ))}
@@ -368,7 +368,7 @@ export default function AllContent() {
       </div>
       <div>
         <SectionDivider title="EXPLORE" />
-        <div className="grid grid-cols-1 px-4 py-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 lg:px-6">
+        <div className="grid grid-cols-1 gap-x-3 gap-y-6 px-4 py-2 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
           {EXPLORE_VIDEOS.map(({ id, ...video }) => (
             <VideoCard key={id} {...video} />
           ))}

@@ -2,6 +2,11 @@
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "ignorePatterns": [],
   "printWidth": 100,
+  "sortTailwindcss": {
+    "stylesheet": "./src/app/globals.css",
+    "functions": ["clsx", "cn", "cva", "tw"],
+    "preserveWhitespace": true
+  },
   "overrides": [
     {
       "files": ["*.test.js", "*.spec.ts"],

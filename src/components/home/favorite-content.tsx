@@ -118,7 +118,7 @@ const VIDEOS_BY_TAB: Record<Tab, VideoCardProps[]> = {
 
 function FavoriteTabs({ selected, onSelect }: { selected: Tab; onSelect: (tab: Tab) => void }) {
   return (
-    <div className="sticky z-10 border-b top-13 border-border bg-background">
+    <div className="sticky top-13 z-10 border-b border-border bg-background">
       <div className="flex px-2">
         {TABS.map((tab) => {
           const isActive = tab === selected;
@@ -171,7 +171,7 @@ export default function FavoriteContent() {
       {videos.length === 0 ? (
         <EmptyState tab={tab} />
       ) : (
-        <div className="grid grid-cols-1 px-4 mt-3 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
+        <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-6 px-4 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
           {videos.map((video) => (
             <VideoCard key={video.title} {...video} />
           ))}

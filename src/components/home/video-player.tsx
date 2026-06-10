@@ -39,7 +39,7 @@ export default function VideoPlayer({
         muted={muted}
         loop={loop}
         playsInline={playsInline}
-        className="w-full h-full"
+        className="h-full w-full"
       />
     </div>
   );

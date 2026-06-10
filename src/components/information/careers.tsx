@@ -100,11 +100,11 @@ export default function Careers() {
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,var(--color-primary)_0%,transparent_60%),radial-gradient(50%_50%_at_85%_30%,var(--color-secondary)_0%,transparent_55%)] opacity-70"
         />
         <div className="mx-auto max-w-6xl px-6 pt-24 pb-32 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur">
             <span className="size-1.5 rounded-full bg-primary" />
             Careers at Qatoto
           </span>
-          <h1 className="mt-8 font-serif text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl md:text-8xl">
+          <h1 className="mt-8 font-serif text-5xl leading-[1.05] font-semibold tracking-tight sm:text-7xl md:text-8xl">
             Help builders
             <br />
             <span className="bg-linear-to-br from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
@@ -148,10 +148,10 @@ export default function Careers() {
 
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+          <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
             How we work
           </span>
-          <h2 className="mt-6 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+          <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
             The same rules we ask of every team on the platform.
           </h2>
           <p className="mt-6 text-lg text-muted-foreground">
@@ -185,7 +185,7 @@ export default function Careers() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-14 flex flex-wrap items-end justify-between gap-6">
             <div>
-              <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-foreground">
+              <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium tracking-[0.18em] text-foreground uppercase">
                 Open roles
               </span>
               <h2 className="mt-5 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -211,8 +211,8 @@ export default function Careers() {
                 className="group rounded-3xl border border-border bg-card p-7 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="flex flex-wrap items-start justify-between gap-6">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
                       <span className="rounded-full bg-muted px-2.5 py-1 text-foreground">
                         {role.team}
                       </span>
@@ -246,7 +246,7 @@ export default function Careers() {
         <div className="rounded-4xl border border-border bg-card p-12 shadow-sm sm:p-16">
           <div className="grid gap-10 md:grid-cols-2 md:items-center">
             <div>
-              <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+              <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
                 Perks
               </span>
               <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight">
@@ -277,10 +277,10 @@ export default function Careers() {
         <div className="overflow-hidden rounded-4xl border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
           <div className="grid gap-12 md:grid-cols-[2fr_1fr] md:items-end">
             <div>
-              <span className="text-xs font-medium uppercase tracking-[0.2em] text-background/60">
+              <span className="text-xs font-medium tracking-[0.2em] text-background/60 uppercase">
                 Build with us
               </span>
-              <h2 className="mt-6 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
+              <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-6xl">
                 The platform is the resume. So is the work.
               </h2>
               <p className="mt-6 max-w-xl text-base text-background/70 sm:text-lg">

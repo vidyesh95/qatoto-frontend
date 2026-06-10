@@ -12,16 +12,16 @@ export default function VideoCategoryCard({
   hoverBg = "group-hover:bg-gray-100",
 }: VideoCategoryCardProps) {
   return (
-    <div className="group relative flex flex-col items-center cursor-pointer">
+    <div className="group relative flex cursor-pointer flex-col items-center">
       <div
-        className={`absolute inset-0 -m-2 rounded-2xl pointer-events-none -z-10 transition-colors ${hoverBg}`}
+        className={`pointer-events-none absolute inset-0 -z-10 -m-2 rounded-2xl transition-colors ${hoverBg}`}
       />
       <Image
         src={imageSrc}
         width={159}
         height={159}
         alt={name}
-        className="w-full aspect-square rounded-xl"
+        className="aspect-square w-full rounded-xl"
       />
       <p>{name}</p>
     </div>

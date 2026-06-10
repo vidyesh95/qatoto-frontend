@@ -297,7 +297,7 @@ export default function WatchContent({ id }: { id: string }) {
 
   if (!video) {
     return (
-      <section className="px-4 lg:px-6 py-8">
+      <section className="px-4 py-8 lg:px-6">
         <p className="text-sm text-[#6F7979]">Video not found.</p>
       </section>
     );
@@ -306,7 +306,7 @@ export default function WatchContent({ id }: { id: string }) {
   const { stats } = video;
 
   return (
-    <section className="px-4 lg:px-6 py-6 mx-auto">
+    <section className="mx-auto px-4 py-6 lg:px-6">
       <div className="lg:flex lg:items-start lg:gap-4">
         {/* Left column — player, meta, comments */}
         <div className="min-w-0 space-y-4 lg:flex-1">
@@ -318,7 +318,7 @@ export default function WatchContent({ id }: { id: string }) {
             chapters={video.chapters}
             transcriptTitle={video.transcriptTitle}
             transcript={video.transcript}
-            className="w-full h-100 lg:hidden"
+            className="h-100 w-full lg:hidden"
           />
 
           <VideoDescription
@@ -330,7 +330,7 @@ export default function WatchContent({ id }: { id: string }) {
 
           {/* Channel + Focus */}
           <div className="flex flex-row items-center gap-3">
-            <div className="size-10 rounded-full border border-foreground shrink-0 flex items-center justify-center">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-foreground">
               <Image
                 src={video.profileSrc}
                 width={38}
@@ -388,7 +388,7 @@ export default function WatchContent({ id }: { id: string }) {
             chapters={video.chapters}
             transcriptTitle={video.transcriptTitle}
             transcript={video.transcript}
-            className="hidden lg:block w-full lg:h-68 xl:h-130 2xl:h-130"
+            className="hidden w-full lg:block lg:h-68 xl:h-130 2xl:h-130"
           />
 
           <div className="space-y-4">

@@ -133,8 +133,8 @@ const SCHEDULE: Record<Day, DailyEpisode[]> = {
 
 function DayTabs({ selected, onSelect }: { selected: Day; onSelect: (day: Day) => void }) {
   return (
-    <div className="sticky z-10 border-b top-13 border-border bg-background">
-      <div className="flex px-2 overflow-x-auto scrollbar-none">
+    <div className="sticky top-13 z-10 border-b border-border bg-background">
+      <div className="flex scrollbar-none overflow-x-auto px-2">
         {DAYS.map((day) => {
           const isActive = day === selected;
           return (
@@ -143,7 +143,7 @@ function DayTabs({ selected, onSelect }: { selected: Day; onSelect: (day: Day) =
               type="button"
               onClick={() => onSelect(day)}
               aria-pressed={isActive}
-              className={`relative flex-1 min-w-16 cursor-pointer px-4 py-3 text-sm font-medium tracking-wide transition-colors ${
+              className={`relative min-w-16 flex-1 cursor-pointer px-4 py-3 text-sm font-medium tracking-wide transition-colors ${
                 isActive ? "text-[#00696E]" : "text-[#6F7979] hover:text-foreground"
               }`}
             >
@@ -163,8 +163,8 @@ function DayTabs({ selected, onSelect }: { selected: Day; onSelect: (day: Day) =
 
 function EpisodeRow({ episode }: { episode: DailyEpisode }) {
   return (
-    <Link href="/watch" className="flex gap-4 px-4 py-2 transition-colors group hover:bg-black/5">
-      <div className="relative overflow-hidden rounded w-25 shrink-0 bg-muted aspect-3/4">
+    <Link href="/watch" className="group flex gap-4 px-4 py-2 transition-colors hover:bg-black/5">
+      <div className="relative aspect-3/4 w-25 shrink-0 overflow-hidden rounded bg-muted">
         <Image
           src={episode.imageSrc}
           alt={episode.title}
@@ -173,12 +173,12 @@ function EpisodeRow({ episode }: { episode: DailyEpisode }) {
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
       </div>
-      <div className="flex flex-col flex-1 min-w-0">
-        <p className="text-sm font-medium leading-4 tracking-wide text-foreground line-clamp-2">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <p className="line-clamp-2 text-sm leading-4 font-medium tracking-wide text-foreground">
           {episode.title}
         </p>
-        <div className="flex items-center gap-1 mt-2">
-          <span className="text-xs font-medium leading-4 tracking-wide text-[#6F7979]">
+        <div className="mt-2 flex items-center gap-1">
+          <span className="text-xs leading-4 font-medium tracking-wide text-[#6F7979]">
             {episode.channelName}
           </span>
           {episode.verified && (
@@ -190,7 +190,7 @@ function EpisodeRow({ episode }: { episode: DailyEpisode }) {
             />
           )}
         </div>
-        <div className="flex items-center pt-2 mt-auto">
+        <div className="mt-auto flex items-center pt-2">
           <span className="flex-1 text-xs font-medium tracking-wide text-foreground">
             {episode.views}
           </span>

@@ -102,7 +102,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   return (
     <div
       ref={menuPanelRef}
-      className="fixed left-1 right-14 top-15 z-50 w-auto max-h-[calc(100dvh-9rem)] overflow-y-auto bg-background border border-black/10 rounded-lg shadow-lg sm:absolute sm:left-auto sm:right-2 sm:top-12 sm:w-95 sm:max-h-[calc(100dvh-4rem)]"
+      className="fixed top-15 right-14 left-1 z-50 max-h-[calc(100dvh-9rem)] w-auto overflow-y-auto rounded-lg border border-black/10 bg-background shadow-lg sm:absolute sm:top-12 sm:right-2 sm:left-auto sm:max-h-[calc(100dvh-4rem)] sm:w-95"
     >
       {view === "appearance" ? (
         <AppearancePanel selected={theme} onSelect={setTheme} onBack={() => setView("main")} />
@@ -130,23 +130,23 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
         <div className="space-y-8">
           <div className="rounded-lg bg-secondary">
             <header className="rounded-lg bg-background">
-              <div className="flex flex-row w-full">
-                <div className="flex-1 min-w-0">
+              <div className="flex w-full flex-row">
+                <div className="min-w-0 flex-1">
                   <div className="w-full py-4 pl-4">
-                    <p className="w-full text-base text-[#041F21] truncate">董雪博士</p>
-                    <p className="w-full text-xs text-[#041F21] truncate">@drDong2w</p>
+                    <p className="w-full truncate text-base text-[#041F21]">董雪博士</p>
+                    <p className="w-full truncate text-xs text-[#041F21]">@drDong2w</p>
                   </div>
-                  <p className="w-full ml-4 text-4xl text-[#1DBDC5] flex gap-1">
+                  <p className="ml-4 flex w-full gap-1 text-4xl text-[#1DBDC5]">
                     <span>Level</span>
-                    <span className="flex-1 min-w-0 truncate">1</span>
+                    <span className="min-w-0 flex-1 truncate">1</span>
                   </p>
                 </div>
-                <div className="flex flex-col items-end gap-4 p-4 shrink-0">
+                <div className="flex shrink-0 flex-col items-end gap-4 p-4">
                   <button
                     type="button"
                     onClick={() => setView("settings")}
                     aria-label="Open settings"
-                    className="rounded-full cursor-pointer"
+                    className="cursor-pointer rounded-full"
                   >
                     <Image
                       src="/dummy/profile_photo_girl.avif"
@@ -158,16 +158,16 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                   </button>
                   <button
                     type="button"
-                    className="px-2 py-1 text-xs rounded-full cursor-pointer w-fit bg-secondary text-secondary-foreground"
+                    className="w-fit cursor-pointer rounded-full bg-secondary px-2 py-1 text-xs text-secondary-foreground"
                   >
                     Check-in
                   </button>
                 </div>
               </div>
-              <div className="flex flex-row w-full gap-4 p-4">
-                <div className="flex flex-col items-center w-full p-2 rounded-sm bg-primary">
+              <div className="flex w-full flex-row gap-4 p-4">
+                <div className="flex w-full flex-col items-center rounded-sm bg-primary p-2">
                   <div className="flex flex-row items-center">
-                    <span className="w-full text-sm text-right truncate">0</span>
+                    <span className="w-full truncate text-right text-sm">0</span>
                     <Image
                       src="/icons/paid_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                       alt="Coins"
@@ -177,9 +177,9 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                   </div>
                   <p className="text-sm">Coins</p>
                 </div>
-                <div className="flex flex-col items-center w-full p-2 rounded-sm bg-primary">
+                <div className="flex w-full flex-col items-center rounded-sm bg-primary p-2">
                   <div className="flex flex-row items-center">
-                    <span className="w-full text-sm text-right truncate">0</span>
+                    <span className="w-full truncate text-right text-sm">0</span>
                     <Image
                       src="/icons/local_activity_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                       alt="Social Reputation"
@@ -193,7 +193,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </header>
             <button
               type="button"
-              className="flex flex-row items-center w-full gap-4 p-4 cursor-pointer"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4"
             >
               <Image
                 src="/icons/workspace_premium_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -211,7 +211,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <Link
               href="/library"
               onClick={onClose}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -224,7 +224,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <Link
               href="/history"
               onClick={onClose}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/history_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -237,7 +237,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <Link
               href="/wishlist"
               onClick={onClose}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -250,7 +250,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <Link
               href="/cart"
               onClick={onClose}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -263,7 +263,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <Link
               href="/orders-and-returns"
               onClick={onClose}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -278,7 +278,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <button
               type="button"
               onClick={() => setView("settings")}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -286,7 +286,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="w-full text-sm font-medium text-left text-secondary-foreground">
+              <span className="w-full text-left text-sm font-medium text-secondary-foreground">
                 Settings
               </span>
               <Image
@@ -298,7 +298,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <button
               type="button"
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -311,7 +311,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <button
               type="button"
               onClick={handleSignOut}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -325,7 +325,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <button
               type="button"
               onClick={() => setView("appearance")}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/dark_mode_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -333,7 +333,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="flex flex-1 min-w-0 gap-1 text-sm font-medium text-secondary-foreground">
+              <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
                 <span className="shrink-0">Appearance:</span>
                 <span className="truncate">{THEME_SUMMARY[theme]}</span>
               </span>
@@ -347,7 +347,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <button
               type="button"
               onClick={() => setView("language")}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -355,7 +355,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="flex flex-1 min-w-0 gap-1 text-sm font-medium text-secondary-foreground">
+              <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
                 <span className="shrink-0">Language:</span>
                 <span className="truncate">{language}</span>
               </span>
@@ -369,7 +369,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <button
               type="button"
               onClick={() => setView("child")}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/child_care_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -377,7 +377,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="flex flex-1 min-w-0 gap-1 text-sm font-medium text-secondary-foreground">
+              <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
                 <span className="shrink-0">Child mode:</span>
                 <span className="truncate">{childMode ? "On" : "Off"}</span>
               </span>
@@ -391,7 +391,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <button
               type="button"
               onClick={() => setView("incognito")}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/account_circle_off_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -399,7 +399,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="flex flex-1 min-w-0 gap-1 text-sm font-medium text-secondary-foreground">
+              <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
                 <span className="shrink-0">Incognito mode:</span>
                 <span className="truncate">{incognitoMode ? "On" : "Off"}</span>
               </span>
@@ -413,7 +413,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <button
               type="button"
               onClick={() => setView("ai-assist")}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/assistant_navigation_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -421,7 +421,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="flex flex-1 min-w-0 gap-1 text-sm font-medium text-secondary-foreground">
+              <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
                 <span className="shrink-0">AI assist mode:</span>
                 <span className="truncate">{aiAssistMode ? "On" : "Off"}</span>
               </span>
@@ -435,7 +435,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <button
               type="button"
               onClick={() => setView("location")}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/location_on_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -443,7 +443,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 width={24}
                 height={24}
               />
-              <span className="flex flex-1 min-w-0 gap-1 text-sm font-medium text-secondary-foreground">
+              <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
                 <span className="shrink-0">Location:</span>
                 <span className="truncate">{countryName(location)}</span>
               </span>
@@ -457,7 +457,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <hr className="mx-4" />
             <button
               type="button"
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/forum_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -469,7 +469,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <button
               type="button"
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/help_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -482,7 +482,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <Link
               href="/customer-service"
               onClick={onClose}
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -496,7 +496,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </Link>
             <button
               type="button"
-              className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -512,7 +512,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 key={link.href}
                 href={link.href}
                 onClick={onClose}
-                className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+                className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
               >
                 <span className="text-sm font-medium text-secondary-foreground">{link.label}</span>
               </Link>
@@ -523,7 +523,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 key={link.href}
                 href={link.href}
                 onClick={onClose}
-                className="flex flex-row items-center w-full gap-4 p-4 transition-colors cursor-pointer hover:bg-muted"
+                className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
               >
                 <span className="text-sm font-medium text-secondary-foreground">{link.label}</span>
               </Link>

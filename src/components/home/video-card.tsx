@@ -31,18 +31,18 @@ export default function VideoCard({
   const isLive = isChannelLive;
 
   const avatar = isLive ? (
-    <div className="relative size-9 shrink-0 rounded-full border border-[#1DBDC5] flex items-center justify-center">
-      <div className="absolute -inset-1.25 rounded-full border border-[#1DBDC5] animate-live-ring pointer-events-none will-change-transform" />
+    <div className="relative flex size-9 shrink-0 items-center justify-center rounded-full border border-[#1DBDC5]">
+      <div className="pointer-events-none absolute -inset-1.25 animate-live-ring rounded-full border border-[#1DBDC5] will-change-transform" />
       <Image
         src={profileSrc}
         width={34}
         height={34}
         alt="profile image"
-        className="size-8.5 rounded-full animate-live-image will-change-transform"
+        className="size-8.5 animate-live-image rounded-full will-change-transform"
       />
     </div>
   ) : (
-    <div className="size-9 rounded-full border border-foreground shrink-0 flex items-center justify-center">
+    <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-foreground">
       <Image
         src={profileSrc}
         width={34}
@@ -56,7 +56,7 @@ export default function VideoCard({
   return (
     <div className="group relative w-full cursor-pointer">
       <div
-        className={`absolute inset-0 -m-2 rounded-2xl pointer-events-none -z-10 transition-colors ${hoverBg}`}
+        className={`pointer-events-none absolute inset-0 -z-10 -m-2 rounded-2xl transition-colors ${hoverBg}`}
       />
       {/* Stretched overlay link — covers the whole card, navigates to the video.
           Interactive children (channel, more options) sit above it via z-10. */}
@@ -66,9 +66,9 @@ export default function VideoCard({
         width={246}
         height={138}
         alt="thumbnail"
-        className="w-full aspect-video rounded-xl"
+        className="aspect-video w-full rounded-xl"
       />
-      <div className="flex flex-row items-start pt-2 gap-2">
+      <div className="flex flex-row items-start gap-2 pt-2">
         {channelHref ? (
           <Link href={channelHref} className="relative z-10 shrink-0">
             {avatar}
@@ -77,7 +77,7 @@ export default function VideoCard({
           avatar
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-sm line-clamp-2">{title}</p>
+          <p className="line-clamp-2 text-sm">{title}</p>
           <div className="flex flex-row items-center gap-1">
             {channelHref ? (
               <Link
@@ -114,7 +114,7 @@ export default function VideoCard({
           width={24}
           height={24}
           alt="More video options"
-          className="relative z-10 p-1 shrink-0 hover:bg-black/20 rounded-full"
+          className="relative z-10 shrink-0 rounded-full p-1 hover:bg-black/20"
         />
       </div>
     </div>

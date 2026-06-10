@@ -99,10 +99,10 @@ export default function SignUp() {
   };
 
   return (
-    <main className="min-h-screen w-screen flex flex-col">
-      <header className="bg-background space-y-10 pt-2 pb-4">
+    <main className="flex min-h-screen w-screen flex-col">
+      <header className="space-y-10 bg-background pt-2 pb-4">
         {step === 1 ? (
-          <Link href={"/sign-in"} className="mx-1 w-12 h-12 flex items-center justify-center">
+          <Link href={"/sign-in"} className="mx-1 flex h-12 w-12 items-center justify-center">
             <Image
               src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
               alt="Navigate back"
@@ -115,7 +115,7 @@ export default function SignUp() {
             type="button"
             onClick={handleBack}
             aria-label="Go back"
-            className="mx-1 w-12 h-12 flex items-center justify-center cursor-pointer"
+            className="mx-1 flex h-12 w-12 cursor-pointer items-center justify-center"
           >
             <Image
               src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -128,29 +128,29 @@ export default function SignUp() {
         <h1 className="mx-4 text-3xl text-foreground">Sign up</h1>
       </header>
 
-      <div className="px-4 pt-4 flex gap-2">
+      <div className="flex gap-2 px-4 pt-4">
         {[1, 2, 3].map((s) => (
           <div
             key={s}
-            className={`flex-1 h-1 rounded-full transition-colors duration-300 ${
+            className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
               s <= step ? "bg-[#00696E]" : "bg-[#DAE4E5]"
             }`}
           />
         ))}
       </div>
       {/* Step Titles & Descriptions */}
-      <hgroup className="px-4 mt-6 space-y-1">
+      <hgroup className="mt-6 space-y-1 px-4">
         <h2 className="text-xl text-foreground">{stepContent[step].title}</h2>
         <p className="text-sm text-muted-foreground">{stepContent[step].description}</p>
       </hgroup>
 
-      <section className="p-4 space-y-4">
+      <section className="space-y-4 p-4">
         {/* Step 1: Email Entry */}
         {step === 1 && (
           <>
             <form onSubmit={handleEmailSubmit} className="space-y-4">
               <div className="relative">
-                <div className="relative flex items-center border border-[#6F7979] rounded h-14 px-3">
+                <div className="relative flex h-14 items-center rounded border border-[#6F7979] px-3">
                   <label
                     htmlFor="email"
                     className="absolute -top-2 left-3 bg-white px-1 text-xs text-black"
@@ -172,7 +172,7 @@ export default function SignUp() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="host@domain.com"
-                    className="flex-1 h-full bg-transparent outline-none text-base placeholder:text-foreground"
+                    className="h-full flex-1 bg-transparent text-base outline-none placeholder:text-foreground"
                     required
                   />
                 </div>
@@ -180,7 +180,7 @@ export default function SignUp() {
               <button
                 type="submit"
                 className={
-                  "w-full justify-center items-center text-sm font-medium bg-[#00696E] text-background flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"
+                  "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium text-background"
                 }
               >
                 <Image
@@ -199,7 +199,7 @@ export default function SignUp() {
         {step === 2 && (
           <>
             <form onSubmit={handleOtpSubmit} className="space-y-4">
-              <div className="flex gap-3 justify-center">
+              <div className="flex justify-center gap-3">
                 {otp.map((digit, index) => (
                   <input
                     key={index}
@@ -211,7 +211,7 @@ export default function SignUp() {
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    className="w-12 h-14 text-center text-xl font-semibold border border-[#6F7979] rounded bg-transparent outline-none focus:border-[#00696E] focus:border-2 transition-colors"
+                    className="h-14 w-12 rounded border border-[#6F7979] bg-transparent text-center text-xl font-semibold transition-colors outline-none focus:border-2 focus:border-[#00696E]"
                     required
                   />
                 ))}
@@ -219,7 +219,7 @@ export default function SignUp() {
               <button
                 type="submit"
                 className={
-                  "w-full justify-center items-center text-sm font-medium bg-[#00696E] text-background flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"
+                  "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium text-background"
                 }
               >
                 <Image
@@ -231,9 +231,9 @@ export default function SignUp() {
                 <span>Verify</span>
               </button>
             </form>
-            <p className="font-medium text-sm text-center text-[#3F4949]">
+            <p className="text-center text-sm font-medium text-[#3F4949]">
               Didn&apos;t receive the code?{" "}
-              <button type="button" className="text-[#00696E] cursor-pointer font-medium">
+              <button type="button" className="cursor-pointer font-medium text-[#00696E]">
                 Resend
               </button>
             </p>
@@ -244,7 +244,7 @@ export default function SignUp() {
         {step === 3 && (
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div className="relative">
-              <div className="relative flex items-center border border-[#6F7979] rounded h-14 px-3">
+              <div className="relative flex h-14 items-center rounded border border-[#6F7979] px-3">
                 <label
                   htmlFor="password"
                   className="absolute -top-2 left-3 bg-white px-1 text-xs text-black"
@@ -266,13 +266,13 @@ export default function SignUp() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="secretPassword123$"
-                  className="flex-1 h-full bg-transparent outline-none text-base placeholder:text-foreground"
+                  className="h-full flex-1 bg-transparent text-base outline-none placeholder:text-foreground"
                   required
                 />
                 <button
                   type="button"
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="ml-3 flex items-center justify-center cursor-pointer"
+                  className="ml-3 flex cursor-pointer items-center justify-center"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   <Image
@@ -287,31 +287,31 @@ export default function SignUp() {
                   />
                 </button>
               </div>
-              <p className="w-full text-xs text-[#3F4949] mt-1 pl-4">
+              <p className="mt-1 w-full pl-4 text-xs text-[#3F4949]">
                 Must be at least 8 characters
               </p>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <label htmlFor="remember-me" className="w-full font-medium text-sm">
+              <label htmlFor="remember-me" className="w-full text-sm font-medium">
                 Remember me
               </label>
-              <label className="relative inline-flex items-center cursor-pointer">
+              <label className="relative inline-flex cursor-pointer items-center">
                 <input
                   type="checkbox"
                   id="remember-me"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="sr-only peer"
+                  className="peer sr-only"
                   aria-label="Remember me toggle switch"
                 />
                 {/* Track */}
-                <div className="w-13 h-8 rounded-full border-2 border-[#6F7979] bg-[#DAE4E5] peer-checked:border-[#00696E] peer-checked:bg-[#00696E] transition-colors duration-200 ease-in-out"></div>
+                <div className="h-8 w-13 rounded-full border-2 border-[#6F7979] bg-[#DAE4E5] transition-colors duration-200 ease-in-out peer-checked:border-[#00696E] peer-checked:bg-[#00696E]"></div>
 
                 {/* Thumb */}
-                <div className="absolute top-0.75 left-0.75 h-6.5 w-6.5 rounded-full bg-[#6F7979] peer-checked:bg-white transition-transform duration-200 ease-in-out peer-checked:translate-x-5 flex items-center justify-center pointer-events-none shadow-sm peer-checked:[&>svg.x-icon]:opacity-0 peer-checked:[&>svg.check-icon]:opacity-100">
+                <div className="pointer-events-none absolute top-0.75 left-0.75 flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[#6F7979] shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-5 peer-checked:bg-white peer-checked:[&>svg.check-icon]:opacity-100 peer-checked:[&>svg.x-icon]:opacity-0">
                   {/* X Icon - shown when unchecked */}
                   <svg
-                    className="w-4 h-4 text-white absolute transition-opacity duration-200 opacity-100 x-icon"
+                    className="x-icon absolute h-4 w-4 text-white opacity-100 transition-opacity duration-200"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -325,7 +325,7 @@ export default function SignUp() {
                   </svg>
                   {/* Checkmark Icon - shown when checked */}
                   <svg
-                    className="w-4 h-4 text-[#00696E] absolute transition-opacity duration-200 opacity-0 check-icon"
+                    className="check-icon absolute h-4 w-4 text-[#00696E] opacity-0 transition-opacity duration-200"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -343,7 +343,7 @@ export default function SignUp() {
             <button
               type="submit"
               className={
-                "w-full justify-center items-center text-sm font-medium bg-[#00696E] text-background flex gap-2 border border-outline rounded-full pl-4 pr-6 py-2.5 cursor-pointer"
+                "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium text-background"
               }
             >
               <Image
@@ -356,17 +356,17 @@ export default function SignUp() {
             </button>
           </form>
         )}
-        <div className="px-4 flex items-center gap-4 text-[#BEC8C9]">
+        <div className="flex items-center gap-4 px-4 text-[#BEC8C9]">
           <hr className="flex-1" />
           <span className="text-xs">or continue with</span>
           <hr className="flex-1" />
         </div>
-        <div className="flex gap-4 justify-center items-center">
+        <div className="flex items-center justify-center gap-4">
           <button
             type={"button"}
             aria-label="Continue with Google"
             className={
-              "w-fit flex gap-2 justify-center items-center text-sm font-medium text-[#00696E] border border-outline rounded-full pl-4 pr-4 py-2.5 cursor-pointer"
+              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-[#00696E]"
             }
           >
             <Image
@@ -380,7 +380,7 @@ export default function SignUp() {
             type={"button"}
             aria-label="Continue with Apple"
             className={
-              "w-fit flex gap-2 justify-center items-center text-sm font-medium text-[#00696E] border border-outline rounded-full pl-4 pr-4 py-2.5 cursor-pointer"
+              "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-[#00696E]"
             }
           >
             <Image
@@ -391,9 +391,9 @@ export default function SignUp() {
             />
           </button>
         </div>
-        <p className="text-sm font-medium text-center space-x-1">
+        <p className="space-x-1 text-center text-sm font-medium">
           <span className="text-[#BEC8C9]">Already have an account?</span>
-          <Link href={"sign-in"} className="text-[#00696E] cursor-pointer">
+          <Link href={"sign-in"} className="cursor-pointer text-[#00696E]">
             Sign in
           </Link>
         </p>

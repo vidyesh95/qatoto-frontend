@@ -84,7 +84,7 @@ export default function Comments({
         <>
           {/* Attached item */}
           <div className="flex flex-row items-center gap-3 px-4 py-3">
-            <div className="size-7 rounded-[2px] bg-[#00696E] shrink-0 flex items-center justify-center">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-[2px] bg-[#00696E]">
               <Image
                 src="/icons/shopping_cart_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
                 width={16}
@@ -92,8 +92,8 @@ export default function Comments({
                 alt=""
               />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-medium truncate">{saleItem.name}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[11px] font-medium">{saleItem.name}</p>
               <p className="text-[11px] text-[#1DBDC5]">
                 Price: {saleItem.price} | Sold: {saleItem.sold}
               </p>
@@ -117,7 +117,7 @@ export default function Comments({
               <p className="text-sm text-[#1DBDC5]">{trending}</p>
             </div>
           )}
-          <div className="border-b-2 border-[#1DBDC5] px-4 pb-3 pt-1 text-center">
+          <div className="border-b-2 border-[#1DBDC5] px-4 pt-1 pb-3 text-center">
             <h2 className="text-base font-medium">{count} Comments</h2>
           </div>
         </>
@@ -164,7 +164,7 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 px-4 py-3 text-sm font-medium cursor-pointer border-b-2 -mb-px transition-colors ${
+      className={`-mb-px flex-1 cursor-pointer border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
         active ? "border-[#00696E] text-[#191C1C]" : "border-transparent text-[#3F4949]"
       }`}
     >
@@ -188,8 +188,8 @@ function SortPill({
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-row items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-medium cursor-pointer border transition-colors ${
-        active ? "bg-[#CCE8E9] border-[#CCE8E9] text-[#041F21]" : "border-[#6F7979] text-[#3F4949]"
+      className={`flex cursor-pointer flex-row items-center gap-1.5 rounded-lg border px-4 py-1.5 text-sm font-medium transition-colors ${
+        active ? "border-[#CCE8E9] bg-[#CCE8E9] text-[#041F21]" : "border-[#6F7979] text-[#3F4949]"
       }`}
     >
       {active && showCheck && (
@@ -210,7 +210,7 @@ function Avatar({ src }: { src: string }) {
         width={32}
         height={32}
         alt="profile image"
-        className="object-cover rounded-full size-8"
+        className="size-8 rounded-full object-cover"
       />
     </div>
   );
@@ -247,7 +247,7 @@ function ActionButton({
     <button
       type="button"
       aria-label={ariaLabel}
-      className="flex flex-row items-center gap-1.5 text-[11px] text-foreground hover:text-[#6F7979] cursor-pointer"
+      className="flex cursor-pointer flex-row items-center gap-1.5 text-[11px] text-foreground hover:text-[#6F7979]"
     >
       <Image src={icon} width={14} height={14} alt="" />
       {label}
@@ -264,13 +264,13 @@ function CommentItem({ comment }: { comment: Comment }) {
   return (
     <li className="flex flex-row gap-3 py-3">
       <Avatar src={comment.profileSrc} />
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <span className="text-[11px] font-medium text-foreground">{comment.author}</span>
-        <p className="mt-1 text-xs font-medium leading-snug">{comment.text}</p>
+        <p className="mt-1 text-xs leading-snug font-medium">{comment.text}</p>
         <p className="mt-1 text-[11px] font-medium text-foreground">
           {comment.postedAt} · {comment.location}
         </p>
-        <div className="flex flex-row items-center gap-5 mt-2">
+        <div className="mt-2 flex flex-row items-center gap-5">
           <ActionButton
             icon="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             label={comment.likes}
@@ -303,7 +303,7 @@ function CommentItem({ comment }: { comment: Comment }) {
             type="button"
             onClick={() => setExpanded((v) => !v)}
             aria-expanded={expanded}
-            className="mt-2 flex flex-row items-center gap-2 text-xs text-[#6F7979] cursor-pointer hover:text-foreground"
+            className="mt-2 flex cursor-pointer flex-row items-center gap-2 text-xs text-[#6F7979] hover:text-foreground"
           >
             <span className="h-px w-6 bg-[#D5DBDB]" />
             {expanded ? "Collapse" : `Expand ${replyCount} replies`}
@@ -333,10 +333,10 @@ function ReplyItem({ reply }: { reply: Reply }) {
           width={28}
           height={28}
           alt="profile image"
-          className="object-cover rounded-full size-7"
+          className="size-7 rounded-full object-cover"
         />
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <span className="flex flex-row flex-wrap items-center gap-1 text-[11px] font-medium text-foreground">
           {reply.author}
           {reply.replyingTo && (
@@ -351,11 +351,11 @@ function ReplyItem({ reply }: { reply: Reply }) {
             </span>
           )}
         </span>
-        <p className="mt-1 text-xs font-medium leading-snug">{reply.text}</p>
+        <p className="mt-1 text-xs leading-snug font-medium">{reply.text}</p>
         <p className="mt-1 text-[11px] font-medium text-foreground">
           {reply.postedAt} · {reply.location}
         </p>
-        <div className="flex flex-row items-center gap-5 mt-2">
+        <div className="mt-2 flex flex-row items-center gap-5">
           <ActionButton
             icon="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             label={reply.likes}
@@ -383,7 +383,7 @@ function ReviewItem({ review }: { review: Review }) {
   return (
     <li className="flex flex-row gap-3 py-3">
       <Avatar src={review.profileSrc} />
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="flex flex-row items-start justify-between gap-2">
           <span className="text-[11px] font-medium text-foreground">{review.author}</span>
           <Image
@@ -391,23 +391,23 @@ function ReviewItem({ review }: { review: Review }) {
             width={14}
             height={14}
             alt="more options"
-            className="cursor-pointer shrink-0"
+            className="shrink-0 cursor-pointer"
           />
         </div>
         <p className="mt-1 text-xs font-medium text-[#A9ACAC]">{review.variant}</p>
         <div className="mt-1.5">
           <Stars rating={review.rating} />
         </div>
-        <p className="mt-1.5 text-xs font-medium leading-snug">{review.text}</p>
+        <p className="mt-1.5 text-xs leading-snug font-medium">{review.text}</p>
         <button
           type="button"
-          className="mt-0.5 block w-full text-right text-xs font-medium text-[#2A76FD] cursor-pointer"
+          className="mt-0.5 block w-full cursor-pointer text-right text-xs font-medium text-[#2A76FD]"
         >
           more
         </button>
         {review.images.length > 0 && (
           <>
-            <div className="grid grid-cols-3 gap-1 mt-2 w-max">
+            <div className="mt-2 grid w-max grid-cols-3 gap-1">
               {review.images.map((src, i) => (
                 <Image
                   key={i}
@@ -421,7 +421,7 @@ function ReviewItem({ review }: { review: Review }) {
             </div>
             <button
               type="button"
-              className="mt-0.5 block w-full text-right text-xs font-medium text-[#2A76FD] cursor-pointer"
+              className="mt-0.5 block w-full cursor-pointer text-right text-xs font-medium text-[#2A76FD]"
             >
               more
             </button>
@@ -430,7 +430,7 @@ function ReviewItem({ review }: { review: Review }) {
         <p className="mt-2 text-[11px] font-medium text-foreground">
           {review.postedAt} • {review.location}
         </p>
-        <div className="flex flex-row items-center gap-5 mt-2">
+        <div className="mt-2 flex flex-row items-center gap-5">
           <ActionButton
             icon="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             label={review.likes}
@@ -470,7 +470,7 @@ function ReviewItem({ review }: { review: Review }) {
             type="button"
             onClick={() => setExpanded((v) => !v)}
             aria-expanded={expanded}
-            className="mt-2 flex flex-row items-center gap-2 text-xs text-[#6F7979] cursor-pointer hover:text-foreground"
+            className="mt-2 flex cursor-pointer flex-row items-center gap-2 text-xs text-[#6F7979] hover:text-foreground"
           >
             <span className="h-px w-6 bg-[#D5DBDB]" />
             {expanded ? "Collapse" : `Expand ${replyList.length} replies`}

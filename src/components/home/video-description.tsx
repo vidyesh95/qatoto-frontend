@@ -21,7 +21,7 @@ export default function VideoDescription({
     <button
       type="button"
       onClick={() => setExpanded((v) => !v)}
-      className="w-full text-left cursor-pointer"
+      className="w-full cursor-pointer text-left"
     >
       <h1 className="text-lg font-medium">{title}</h1>
       <p className="mt-1 text-sm text-[#6F7979]">
@@ -29,7 +29,7 @@ export default function VideoDescription({
         {!expanded && <span className="ml-1 font-medium text-foreground">…more</span>}
       </p>
       {expanded && (
-        <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">
+        <p className="mt-2 text-sm leading-relaxed whitespace-pre-line">
           {description}
           <span className="mt-2 block font-medium text-foreground">Show less</span>
         </p>

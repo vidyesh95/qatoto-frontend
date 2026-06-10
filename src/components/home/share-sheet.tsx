@@ -87,7 +87,7 @@ function ShareSheet({ onClose }: ShareSheetProps) {
       <div
         ref={panelRef}
         aria-label="Share"
-        className="fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-2xl bg-background pb-8 shadow-lg sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 sm:max-w-[calc(100vw-1rem)] sm:rounded-2xl sm:border sm:border-black/10 sm:pb-6"
+        className="fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-2xl bg-background pb-8 shadow-lg sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:bottom-auto sm:mt-2 sm:w-96 sm:max-w-[calc(100vw-1rem)] sm:rounded-2xl sm:border sm:border-black/10 sm:pb-6"
       >
         {/* Drag handle — mobile affordance only. */}
         <div className="flex justify-center pt-3 sm:hidden">
@@ -99,7 +99,7 @@ function ShareSheet({ onClose }: ShareSheetProps) {
             type="button"
             onClick={onClose}
             aria-label="Back"
-            className="p-1 transition-colors rounded-full cursor-pointer hover:bg-muted sm:hidden"
+            className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted sm:hidden"
           >
             <Image
               src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -108,14 +108,14 @@ function ShareSheet({ onClose }: ShareSheetProps) {
               height={24}
             />
           </button>
-          <h2 className="flex-1 text-base font-medium text-center text-secondary-foreground sm:text-left">
+          <h2 className="flex-1 text-center text-base font-medium text-secondary-foreground sm:text-left">
             Share
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="p-1 transition-colors rounded-full cursor-pointer hover:bg-muted"
+            className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
           >
             <Image
               src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -133,9 +133,9 @@ function ShareSheet({ onClose }: ShareSheetProps) {
           <button
             type="button"
             onClick={handleCopyLink}
-            className="flex flex-col items-center gap-2 cursor-pointer"
+            className="flex cursor-pointer flex-col items-center gap-2"
           >
-            <span className="flex items-center justify-center rounded-full size-12 bg-muted">
+            <span className="flex size-12 items-center justify-center rounded-full bg-muted">
               <Image
                 src="/icons/link_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 alt=""
@@ -143,7 +143,7 @@ function ShareSheet({ onClose }: ShareSheetProps) {
                 height={24}
               />
             </span>
-            <span className="text-xs text-center text-secondary-foreground">
+            <span className="text-center text-xs text-secondary-foreground">
               {copied ? "Copied" : "Copy Link"}
             </span>
           </button>
@@ -152,9 +152,9 @@ function ShareSheet({ onClose }: ShareSheetProps) {
             <button
               key={action.label}
               type="button"
-              className="flex flex-col items-center gap-2 cursor-pointer"
+              className="flex cursor-pointer flex-col items-center gap-2"
             >
-              <span className="flex items-center justify-center rounded-full size-12 bg-muted">
+              <span className="flex size-12 items-center justify-center rounded-full bg-muted">
                 <Image
                   src={`/icons/${action.icon}_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg`}
                   alt=""
@@ -162,7 +162,7 @@ function ShareSheet({ onClose }: ShareSheetProps) {
                   height={24}
                 />
               </span>
-              <span className="text-xs text-center text-secondary-foreground">{action.label}</span>
+              <span className="text-center text-xs text-secondary-foreground">{action.label}</span>
             </button>
           ))}
         </div>

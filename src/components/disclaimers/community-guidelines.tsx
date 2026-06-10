@@ -1,8 +1,8 @@
 export default function CommunityGuidelines() {
   return (
     <main>
-      <h1 className="px-6 md:px-25 py-6 text-xl">Community Guidelines</h1>
-      <ol className="px-6 md:px-25 pb-25 list-decimal list-inside text-justify text-sm space-y-2">
+      <h1 className="px-6 py-6 text-xl md:px-25">Community Guidelines</h1>
+      <ol className="list-inside list-decimal space-y-2 px-6 pb-25 text-justify text-sm md:px-25">
         <li>
           Respect for others: Treat all users with respect and refrain from engaging in any form of
           harassment, bullying, or hate speech.
@@ -29,7 +29,7 @@ export default function CommunityGuidelines() {
           accounts that violate these guidelines.
         </li>
       </ol>
-      <p className="px-6 md:px-25 py-4 text-sm">
+      <p className="px-6 py-4 text-sm md:px-25">
         By using Qatoto, you agree to adhere to these community guidelines and acknowledge that
         failure to do so may result in the suspension or termination of your account.
       </p>

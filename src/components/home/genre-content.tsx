@@ -96,9 +96,9 @@ function GenreChips({ selected, onSelect }: { selected: Genre; onSelect: (genre:
             type="button"
             onClick={() => onSelect(genre)}
             aria-pressed={isActive}
-            className={`cursor-pointer inline-flex h-8 items-center gap-2 rounded-lg border text-sm font-medium leading-5 tracking-[0.1px] transition-colors ${
+            className={`inline-flex h-8 cursor-pointer items-center gap-2 rounded-lg border text-sm leading-5 font-medium tracking-[0.1px] transition-colors ${
               isActive
-                ? "border-transparent bg-primary pl-2 pr-4 text-primary-foreground"
+                ? "border-transparent bg-primary pr-4 pl-2 text-primary-foreground"
                 : "border-border px-4 text-foreground hover:bg-muted"
             }`}
           >
@@ -132,7 +132,7 @@ function SortTabs({ selected, onSelect }: { selected: Sort; onSelect: (sort: Sor
               type="button"
               onClick={() => onSelect(sort)}
               aria-pressed={isActive}
-              className={`cursor-pointer inline-flex h-10 flex-1 items-center justify-center gap-2 border border-border px-3 py-2.5 text-sm font-medium leading-5 tracking-[0.1px] transition-colors ${
+              className={`inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 border border-border px-3 py-2.5 text-sm leading-5 font-medium tracking-[0.1px] transition-colors ${
                 isFirst ? "rounded-l-full" : "-ml-px"
               } ${isLast ? "rounded-r-full" : ""} ${
                 isActive
@@ -166,7 +166,7 @@ export default function GenreContent() {
       <GenreChips selected={genre} onSelect={setGenre} />
       <SortTabs selected={sort} onSelect={setSort} />
 
-      <div className="grid grid-cols-1 px-4 mt-3 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
+      <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-6 px-4 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
         {VIDEOS.map((video) => (
           <VideoCard key={video.title} {...video} />
         ))}

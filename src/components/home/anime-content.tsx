@@ -110,7 +110,7 @@ function AnimeHero() {
 
   return (
     <section className="flex justify-center px-4 pt-1 pb-2 lg:px-6">
-      <div className="relative w-full overflow-hidden md:w-82 rounded-xl aspect-video">
+      <div className="relative aspect-video w-full overflow-hidden rounded-xl md:w-82">
         <Image
           src={HERO.imageSrc}
           alt={HERO.title}
@@ -120,12 +120,12 @@ function AnimeHero() {
           className="object-cover"
         />
 
-        <div className="absolute inset-x-0 top-0 flex justify-end p-2 bg-linear-to-b from-black/25 to-transparent">
+        <div className="absolute inset-x-0 top-0 flex justify-end bg-linear-to-b from-black/25 to-transparent p-2">
           <button
             type="button"
             onClick={() => setMuted((prev) => !prev)}
             aria-label={muted ? "Unmute preview" : "Mute preview"}
-            className="grid transition place-items-center hover:opacity-80"
+            className="grid place-items-center transition hover:opacity-80"
           >
             <Image
               src={
@@ -141,8 +141,8 @@ function AnimeHero() {
           </button>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 p-2 bg-linear-to-t from-black/50 to-transparent">
-          <p className="text-white text-xs font-normal leading-tight line-clamp-2 [text-shadow:0_1px_2px_rgb(0_0_0/0.5)]">
+        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/50 to-transparent p-2">
+          <p className="line-clamp-2 text-xs leading-tight font-normal text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.5)]">
             {HERO.title}
           </p>
         </div>
@@ -159,16 +159,16 @@ function CategoryLinks() {
           <li key={category.label} className="flex-1">
             <Link
               href={category.href}
-              className="flex flex-col items-center gap-1 p-1 transition-colors group rounded-xl md:p-2 hover:bg-black/5"
+              className="group flex flex-col items-center gap-1 rounded-xl p-1 transition-colors hover:bg-black/5 md:p-2"
             >
               <Image
                 src={category.icon}
                 width={40}
                 height={40}
                 alt=""
-                className="transition-transform size-10 group-hover:scale-105"
+                className="size-10 transition-transform group-hover:scale-105"
               />
-              <span className="text-[11px] font-medium leading-4 tracking-[0.5px] text-foreground">
+              <span className="text-[11px] leading-4 font-medium tracking-[0.5px] text-foreground">
                 {category.label}
               </span>
             </Link>
@@ -186,7 +186,7 @@ function ScrollButton({ side, onClick }: { side: "left" | "right"; onClick: () =
       type="button"
       onClick={onClick}
       aria-label={isLeft ? "Scroll left" : "Scroll right"}
-      className={`hidden md:grid place-items-center absolute top-[38%] -translate-y-1/2 z-10 size-10 rounded-full bg-card shadow-lg ring-1 ring-black/5 opacity-0 transition group-hover/row:opacity-100 hover:bg-muted ${
+      className={`absolute top-[38%] z-10 hidden size-10 -translate-y-1/2 place-items-center rounded-full bg-card opacity-0 shadow-lg ring-1 ring-black/5 transition group-hover/row:opacity-100 hover:bg-muted md:grid ${
         isLeft ? "left-2 lg:left-3" : "right-2 lg:right-3"
       }`}
     >
@@ -235,11 +235,11 @@ function MediaRow({
 
   return (
     <section>
-      <header className="flex items-center justify-between px-4 mb-3 lg:px-6">
-        <h2 className="text-base font-medium sm:text-lg lg:text-xl text-foreground">{title}</h2>
+      <header className="mb-3 flex items-center justify-between px-4 lg:px-6">
+        <h2 className="text-base font-medium text-foreground sm:text-lg lg:text-xl">{title}</h2>
         <Link
           href={href}
-          className="flex items-center gap-0.5 text-sm text-[#6F7979] hover:text-foreground transition-colors"
+          className="flex items-center gap-0.5 text-sm text-[#6F7979] transition-colors hover:text-foreground"
         >
           See all
           <Image
@@ -252,11 +252,11 @@ function MediaRow({
         </Link>
       </header>
 
-      <div className="relative group/row">
+      <div className="group/row relative">
         <ScrollButton side="left" onClick={() => scroll(-1)} />
         <div
           ref={scroller}
-          className="flex gap-2 px-4 pb-2 overflow-x-auto lg:px-6 scroll-px-4 lg:scroll-px-6 snap-x scrollbar-none"
+          className="flex snap-x scroll-px-4 scrollbar-none gap-2 overflow-x-auto px-4 pb-2 lg:scroll-px-6 lg:px-6"
         >
           {items.map((media) => (
             <Link
@@ -273,7 +273,7 @@ function MediaRow({
                   className="object-cover transition-transform duration-300 group-hover/card:scale-105"
                 />
               </div>
-              <p className="mt-1 h-8 text-[11px] font-medium leading-4 tracking-[0.5px] text-foreground line-clamp-2">
+              <p className="mt-1 line-clamp-2 h-8 text-[11px] leading-4 font-medium tracking-[0.5px] text-foreground">
                 {media.title}
               </p>
             </Link>

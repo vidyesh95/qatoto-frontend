@@ -219,7 +219,7 @@ const CollapsedNavItem = memo(function CollapsedNavItem({
     <Link
       href={destinationPath}
       aria-current={isActive ? "page" : undefined}
-      className="flex flex-col items-center justify-center py-2 text-xs transition-colors group"
+      className="group flex flex-col items-center justify-center py-2 text-xs transition-colors"
     >
       <span
         className={joinClassNames(
@@ -256,7 +256,7 @@ const SidebarSection = memo(function SidebarSection({
   return (
     <section className="mt-6">
       {sectionTitle && (
-        <h3 className="px-1 mb-3 text-xs font-medium tracking-wide uppercase truncate text-muted-foreground">
+        <h3 className="mb-3 truncate px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
           {sectionTitle}
         </h3>
       )}
@@ -382,8 +382,8 @@ export default function Sidebar() {
   // Collapsed view
   if (isCollapsed) {
     return (
-      <aside className="hidden md:block sticky top-14 self-start w-20 h-[calc(100dvh-56px)] shrink-0 overflow-y-auto border-r border-border bg-background transition-all duration-300">
-        <nav className="px-3 space-y-5 pt-11 pb-14">
+      <aside className="sticky top-14 hidden h-[calc(100dvh-56px)] w-20 shrink-0 self-start overflow-y-auto border-r border-border bg-background transition-all duration-300 md:block">
+        <nav className="space-y-5 px-3 pt-11 pb-14">
           {/* Create button */}
           {COLLAPSED_NAV_CONFIG.filter((item) => item.isEmphasized).map((item) => {
             const isActive = isRouteActive(currentPathname, item.path);
@@ -421,7 +421,7 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="hidden md:block sticky top-14 self-start w-80 h-[calc(100dvh-56px)] shrink-0 overflow-y-auto border-r border-border bg-background transition-all duration-300">
+    <aside className="sticky top-14 hidden h-[calc(100dvh-56px)] w-80 shrink-0 self-start overflow-y-auto border-r border-border bg-background transition-all duration-300 md:block">
       <div className="px-4 py-6">
         {renderedSections}
 

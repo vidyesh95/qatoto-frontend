@@ -21,7 +21,7 @@ export default function PressDetail({ item, related }: { item: PressItem; relate
         </Link>
 
         <header className="mt-8">
-          <div className="flex flex-wrap items-center gap-3 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
             <span className="rounded-full bg-secondary/60 px-3 py-1 text-foreground">
               {KIND_LABEL[item.kind]}
             </span>
@@ -44,7 +44,7 @@ export default function PressDetail({ item, related }: { item: PressItem; relate
               </>
             )}
           </div>
-          <h1 className="mt-6 font-serif text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl">
+          <h1 className="mt-6 font-serif text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
             {item.title}
           </h1>
           <p className="mt-5 text-lg text-muted-foreground">{item.summary}</p>
@@ -99,10 +99,10 @@ export default function PressDetail({ item, related }: { item: PressItem; relate
                 href={`/press/${rel.slug}`}
                 className="group flex flex-col rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
-                <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                <div className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
                   {KIND_LABEL[rel.kind]} · {formatDate(rel.publishedAt)}
                 </div>
-                <h3 className="mt-4 font-serif text-xl font-semibold leading-snug tracking-tight">
+                <h3 className="mt-4 font-serif text-xl leading-snug font-semibold tracking-tight">
                   {rel.title}
                 </h3>
                 <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{rel.summary}</p>

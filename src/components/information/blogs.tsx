@@ -21,11 +21,11 @@ export default function Blogs({ posts }: { posts: BlogPost[] }) {
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,var(--color-primary)_0%,transparent_60%)] opacity-70"
         />
         <div className="mx-auto max-w-6xl px-6 pt-20 pb-12">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur">
             <span className="size-1.5 rounded-full bg-primary" />
             Qatoto Blog
           </span>
-          <h1 className="mt-6 font-serif text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
+          <h1 className="mt-6 font-serif text-5xl leading-[1.05] font-semibold tracking-tight sm:text-6xl">
             Tips, how-tos, and field notes from the build floor.
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-muted-foreground">
@@ -66,7 +66,7 @@ export default function Blogs({ posts }: { posts: BlogPost[] }) {
                   )}
                 </div>
                 <div className="flex flex-col justify-center">
-                  <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  <div className="flex items-center gap-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
                     <span className="rounded-full bg-primary/40 px-3 py-1 text-foreground">
                       {CATEGORY_LABEL[featured.category]}
                     </span>
@@ -74,7 +74,7 @@ export default function Blogs({ posts }: { posts: BlogPost[] }) {
                     <span>·</span>
                     <span>{featured.readingMinutes} min read</span>
                   </div>
-                  <h2 className="mt-5 font-serif text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+                  <h2 className="mt-5 font-serif text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
                     {featured.title}
                   </h2>
                   <p className="mt-4 text-base leading-relaxed text-muted-foreground">
@@ -120,13 +120,13 @@ export default function Blogs({ posts }: { posts: BlogPost[] }) {
                         )}
                       </div>
                       <div className="flex flex-1 flex-col p-6">
-                        <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                        <div className="flex items-center gap-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
                           <span className="rounded-full bg-primary/40 px-2.5 py-0.5 text-foreground">
                             {CATEGORY_LABEL[post.category]}
                           </span>
                           <span>{post.readingMinutes} min</span>
                         </div>
-                        <h3 className="mt-4 font-serif text-xl font-semibold leading-snug tracking-tight">
+                        <h3 className="mt-4 font-serif text-xl leading-snug font-semibold tracking-tight">
                           {post.title}
                         </h3>
                         <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">

@@ -142,11 +142,11 @@ export default function HowQatotoWorks() {
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_70%_at_50%_0%,var(--color-primary)_0%,transparent_55%),radial-gradient(40%_50%_at_15%_30%,var(--color-secondary)_0%,transparent_55%)] opacity-80"
         />
         <div className="mx-auto max-w-6xl px-6 pt-24 pb-32 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur">
             <span className="size-1.5 rounded-full bg-primary" />
             How it works
           </span>
-          <h1 className="mx-auto mt-8 max-w-4xl font-serif text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl md:text-8xl">
+          <h1 className="mx-auto mt-8 max-w-4xl font-serif text-5xl leading-[1.05] font-semibold tracking-tight sm:text-7xl md:text-8xl">
             Idea on Monday.
             <br />
             <span className="bg-linear-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
@@ -170,7 +170,7 @@ export default function HowQatotoWorks() {
               <span className="font-serif text-7xl font-semibold tracking-tight text-foreground/30">
                 {s.n}
               </span>
-              <span className="mt-2 block text-xs font-medium uppercase tracking-[0.2em] text-foreground/70">
+              <span className="mt-2 block text-xs font-medium tracking-[0.2em] text-foreground/70 uppercase">
                 {s.eyebrow}
               </span>
               <h3 className="mt-3 font-serif text-3xl font-semibold tracking-tight">{s.title}</h3>
@@ -184,7 +184,7 @@ export default function HowQatotoWorks() {
         <div className="rounded-4xl border border-border bg-card p-10 shadow-sm sm:p-14">
           <div className="grid gap-10 md:grid-cols-[1fr_1.3fr] md:items-center">
             <div>
-              <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+              <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
                 Worked example
               </span>
               <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -216,7 +216,7 @@ export default function HowQatotoWorks() {
                 <li key={line} className="relative">
                   <span
                     aria-hidden
-                    className="absolute -left-7.75 top-2 size-2.5 rounded-full bg-primary"
+                    className="absolute top-2 -left-7.75 size-2.5 rounded-full bg-primary"
                   />
                   <p className="text-sm leading-relaxed text-foreground">{line}</p>
                 </li>
@@ -228,7 +228,7 @@ export default function HowQatotoWorks() {
 
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+          <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
             The surfaces
           </span>
           <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -264,10 +264,10 @@ export default function HowQatotoWorks() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid gap-14 md:grid-cols-[1fr_1.2fr] md:items-start">
             <div>
-              <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+              <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
                 Operating principles
               </span>
-              <h2 className="mt-6 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+              <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
                 The fairness is structural, not aspirational.
               </h2>
               <p className="mt-6 text-base text-muted-foreground sm:text-lg">
@@ -298,7 +298,7 @@ export default function HowQatotoWorks() {
 
       <section className="mx-auto max-w-4xl px-6 py-24">
         <div className="text-center">
-          <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+          <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
             Common questions
           </span>
           <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -320,10 +320,10 @@ export default function HowQatotoWorks() {
         <div className="overflow-hidden rounded-4xl border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
           <div className="grid gap-12 md:grid-cols-[1.4fr_1fr] md:items-end">
             <div>
-              <span className="text-xs font-medium uppercase tracking-[0.2em] text-background/60">
+              <span className="text-xs font-medium tracking-[0.2em] text-background/60 uppercase">
                 Ready to build?
               </span>
-              <h2 className="mt-6 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
+              <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-6xl">
                 The pipeline is open. Bring your idea.
               </h2>
               <p className="mt-6 max-w-xl text-base text-background/70 sm:text-lg">

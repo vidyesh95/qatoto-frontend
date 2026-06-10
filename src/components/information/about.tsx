@@ -58,11 +58,11 @@ export default function About() {
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,var(--color-primary)_0%,transparent_60%),radial-gradient(50%_50%_at_85%_30%,var(--color-secondary)_0%,transparent_55%)] opacity-70"
         />
         <div className="mx-auto max-w-6xl px-6 pt-24 pb-32 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur">
             <span className="size-1.5 rounded-full bg-primary" />
             About Qatoto
           </span>
-          <h1 className="mt-8 font-serif text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl md:text-8xl">
+          <h1 className="mt-8 font-serif text-5xl leading-[1.05] font-semibold tracking-tight sm:text-7xl md:text-8xl">
             From an idea
             <br />
             <span className="bg-linear-to-br from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
@@ -106,10 +106,10 @@ export default function About() {
 
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+          <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
             Our mission
           </span>
-          <h2 className="mt-6 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+          <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
             Make invention a question of will, not capital.
           </h2>
           <p className="mt-6 text-lg text-muted-foreground">
@@ -144,7 +144,7 @@ export default function About() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-14 flex flex-wrap items-end justify-between gap-6">
             <div>
-              <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-foreground">
+              <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium tracking-[0.18em] text-foreground uppercase">
                 The arc
               </span>
               <h2 className="mt-5 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -167,7 +167,7 @@ export default function About() {
                   <span className="flex size-9 items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background">
                     {i + 1}
                   </span>
-                  <span className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                  <span className="text-sm font-medium tracking-[0.2em] text-muted-foreground uppercase">
                     {step.year}
                   </span>
                 </div>
@@ -183,7 +183,7 @@ export default function About() {
         <div className="rounded-4xl border border-border bg-card p-12 shadow-sm sm:p-16">
           <div className="grid gap-10 md:grid-cols-2 md:items-center">
             <div>
-              <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+              <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
                 Beyond the studio
               </span>
               <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight">
@@ -224,10 +224,10 @@ export default function About() {
         <div className="overflow-hidden rounded-4xl border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
           <div className="grid gap-12 md:grid-cols-[2fr_1fr] md:items-end">
             <div>
-              <span className="text-xs font-medium uppercase tracking-[0.2em] text-background/60">
+              <span className="text-xs font-medium tracking-[0.2em] text-background/60 uppercase">
                 Bring the idea
               </span>
-              <h2 className="mt-6 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
+              <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-6xl">
                 The team, the money, and the market are already here.
               </h2>
               <p className="mt-6 max-w-xl text-base text-background/70 sm:text-lg">

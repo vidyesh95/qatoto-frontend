@@ -71,11 +71,11 @@ export default function Creator() {
         />
         <div className="mx-auto grid max-w-6xl gap-12 px-6 pt-24 pb-28 md:grid-cols-[1.1fr_1fr] md:items-center">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground backdrop-blur">
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-4 py-1.5 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur">
               <span className="size-1.5 rounded-full bg-primary" />
               For founders
             </span>
-            <h1 className="mt-8 font-serif text-5xl font-semibold leading-[1.04] tracking-tight sm:text-7xl">
+            <h1 className="mt-8 font-serif text-5xl leading-[1.04] font-semibold tracking-tight sm:text-7xl">
               Bring the idea.
               <br />
               <span className="bg-linear-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
@@ -107,7 +107,7 @@ export default function Creator() {
             <div className="aspect-4/5 overflow-hidden rounded-4xl border border-border bg-card shadow-2xl">
               <div className="grid h-full grid-rows-3">
                 <div className="flex flex-col justify-between bg-linear-to-br from-primary/60 to-primary/20 p-6">
-                  <span className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/70">
+                  <span className="text-xs font-medium tracking-[0.2em] text-foreground/70 uppercase">
                     Round raised
                   </span>
                   <div>
@@ -118,7 +118,7 @@ export default function Creator() {
                   </div>
                 </div>
                 <div className="border-y border-border bg-card p-6">
-                  <div className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                  <div className="text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
                     EOD updates · today
                   </div>
                   <ul className="mt-3 space-y-2 text-sm">
@@ -143,11 +143,11 @@ export default function Creator() {
                   </ul>
                 </div>
                 <div className="flex flex-col justify-between bg-linear-to-br from-secondary/70 to-secondary/20 p-6">
-                  <span className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/70">
+                  <span className="text-xs font-medium tracking-[0.2em] text-foreground/70 uppercase">
                     AI workflow note
                   </span>
                   <div>
-                    <div className="font-serif text-2xl font-semibold tracking-tight leading-snug">
+                    <div className="font-serif text-2xl leading-snug font-semibold tracking-tight">
                       Move enclosure review before firmware freeze — saves 4 days.
                     </div>
                   </div>
@@ -167,13 +167,13 @@ export default function Creator() {
             >
               <div
                 aria-hidden
-                className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-primary/30 blur-3xl transition group-hover:bg-primary/50"
+                className="pointer-events-none absolute -top-16 -right-16 size-48 rounded-full bg-primary/30 blur-3xl transition group-hover:bg-primary/50"
               />
               <div className="relative">
                 <div className="flex size-14 items-center justify-center rounded-2xl bg-secondary/60">
                   <Image src={p.icon} alt="" width={28} height={28} />
                 </div>
-                <span className="mt-7 block text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                <span className="mt-7 block text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
                   {p.eyebrow}
                 </span>
                 <h3 className="mt-3 font-serif text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -188,7 +188,7 @@ export default function Creator() {
 
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+          <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
             The workspace
           </span>
           <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -228,7 +228,7 @@ export default function Creator() {
         />
         <div className="mx-auto max-w-6xl px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-foreground">
+            <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
               Founders on record
             </span>
             <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -261,10 +261,10 @@ export default function Creator() {
       <section className="mx-auto max-w-6xl px-6 pb-32">
         <div className="overflow-hidden rounded-4xl border border-border bg-foreground p-12 text-background shadow-2xl sm:p-20">
           <div className="mx-auto max-w-2xl text-center">
-            <span className="text-xs font-medium uppercase tracking-[0.2em] text-background/60">
+            <span className="text-xs font-medium tracking-[0.2em] text-background/60 uppercase">
               Idea + grit
             </span>
-            <h2 className="mt-6 font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
+            <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-6xl">
               That's the only entry fee.
             </h2>
             <p className="mt-6 text-base text-background/70 sm:text-lg">
