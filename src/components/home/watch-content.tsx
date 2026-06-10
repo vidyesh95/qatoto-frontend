@@ -454,6 +454,14 @@ const VIDEOS: Record<string, WatchVideo> = {
   },
 };
 
+function findEpisode(seasons: Season[], id: string): Episode | undefined {
+  for (const season of seasons) {
+    const ep = season.episodes.find((e) => e.id === id);
+    if (ep) return ep;
+  }
+  return undefined;
+}
+
 function PremiumBanner() {
   return (
     <div className="flex aspect-video w-full flex-col items-center justify-center gap-4 overflow-hidden rounded-xl bg-black p-6">
@@ -476,10 +484,19 @@ function PremiumBanner() {
   );
 }
 
-function AnimeSeasonPanel({ seasons }: { seasons: Season[] }) {
-  const [activeSeason, setActiveSeason] = useState(0);
-  const [selectedEpisode, setSelectedEpisode] = useState(seasons[0]?.episodes[0]?.id ?? "");
-
+function AnimeSeasonPanel({
+  seasons,
+  activeSeason,
+  selectedEpisodeId,
+  onSeasonChange,
+  onEpisodeSelect,
+}: {
+  seasons: Season[];
+  activeSeason: number;
+  selectedEpisodeId: string;
+  onSeasonChange: (index: number) => void;
+  onEpisodeSelect: (id: string) => void;
+}) {
   const episodes = seasons[activeSeason]?.episodes ?? [];
 
   return (
@@ -491,10 +508,7 @@ function AnimeSeasonPanel({ seasons }: { seasons: Season[] }) {
             <button
               key={season.id}
               type="button"
-              onClick={() => {
-                setActiveSeason(i);
-                setSelectedEpisode(seasons[i]?.episodes[0]?.id ?? "");
-              }}
+              onClick={() => onSeasonChange(i)}
               className={`relative shrink-0 px-8 py-3 text-sm font-medium transition-colors ${
                 activeSeason === i ? "text-[#191C1C]" : "text-[#3F4949] hover:text-[#191C1C]"
               }`}
@@ -510,12 +524,12 @@ function AnimeSeasonPanel({ seasons }: { seasons: Season[] }) {
       <h2 className="pt-4 pb-3 text-base font-medium">Episode</h2>
       <div className="grid grid-cols-3 gap-3">
         {episodes.map((ep) => {
-          const isSelected = ep.id === selectedEpisode;
+          const isSelected = ep.id === selectedEpisodeId;
           return (
             <button
               key={ep.id}
               type="button"
-              onClick={() => setSelectedEpisode(ep.id)}
+              onClick={() => onEpisodeSelect(ep.id)}
               className={`flex h-8 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors ${
                 isSelected
                   ? "bg-[#CCE8E9] text-[#041F21]"
@@ -542,6 +556,10 @@ function AnimeSeasonPanel({ seasons }: { seasons: Season[] }) {
 export default function WatchContent({ id }: { id: string }) {
   const video = VIDEOS[id];
   const [commentsOpen, setCommentsOpen] = useState(true);
+  const [selectedEpisodeId, setSelectedEpisodeId] = useState<string>(
+    () => video?.seasons?.[0]?.episodes[0]?.id ?? "",
+  );
+  const [activeSeason, setActiveSeason] = useState(0);
 
   if (!video) {
     return (
@@ -552,20 +570,22 @@ export default function WatchContent({ id }: { id: string }) {
   }
 
   const { stats } = video;
+  const selectedEpisode = video.seasons ? findEpisode(video.seasons, selectedEpisodeId) : undefined;
+  const showPremium = !!(video.isPremium || selectedEpisode?.isPremium);
 
   return (
     <section className="mx-auto px-4 py-6 lg:px-6">
       <div className="lg:flex lg:items-start lg:gap-4">
         {/* Left column — player, meta, seasons, comments */}
         <div className="min-w-0 space-y-4 lg:flex-1">
-          {video.isPremium ? (
+          {showPremium ? (
             <PremiumBanner />
           ) : (
             <VideoPlayer src={video.videoSrc} label={video.title} autoPlay muted />
           )}
 
           {/* In-video panel — mobile only, hidden for premium */}
-          {!video.isPremium && (
+          {!showPremium && (
             <WatchInfoPanel
               videoId={video.id}
               chapters={video.chapters}
@@ -627,7 +647,16 @@ export default function WatchContent({ id }: { id: string }) {
           {video.seasons && (
             <>
               <hr className="border-[#CAC4D0]" />
-              <AnimeSeasonPanel seasons={video.seasons} />
+              <AnimeSeasonPanel
+                seasons={video.seasons}
+                activeSeason={activeSeason}
+                selectedEpisodeId={selectedEpisodeId}
+                onSeasonChange={(i) => {
+                  setActiveSeason(i);
+                  setSelectedEpisodeId(video.seasons![i]?.episodes[0]?.id ?? "");
+                }}
+                onEpisodeSelect={setSelectedEpisodeId}
+              />
             </>
           )}
 
@@ -645,7 +674,7 @@ export default function WatchContent({ id }: { id: string }) {
 
         {/* Right column — in-video panel + recommended */}
         <div className="mt-4 space-y-4 lg:mt-0 lg:w-100 lg:shrink-0">
-          {!video.isPremium && (
+          {!showPremium && (
             <WatchInfoPanel
               videoId={video.id}
               chapters={video.chapters}
