@@ -111,7 +111,7 @@ function AnimeSeasonPanel({
               key={season.id}
               type="button"
               onClick={() => onSeasonChange(i)}
-              className={`relative shrink-0 px-8 py-3 text-sm font-medium transition-colors ${
+              className={`relative shrink-0 cursor-pointer px-8 py-3 text-sm font-medium transition-colors ${
                 activeSeason === i ? "text-[#191C1C]" : "text-[#3F4949] hover:text-[#191C1C]"
               }`}
             >
@@ -132,7 +132,7 @@ function AnimeSeasonPanel({
               key={ep.id}
               type="button"
               onClick={() => onEpisodeSelect(ep.id)}
-              className={`flex h-8 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors ${
+              className={`flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors ${
                 isSelected
                   ? "bg-[#CCE8E9] text-[#041F21]"
                   : "text-[#3F4949] ring-1 ring-[#6F7979] hover:bg-[#F1F3F3]"
