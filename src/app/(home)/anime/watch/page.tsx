@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import WatchContent from "@/components/home/watch-content";
+import { getVideo } from "@/lib/videos";
 
 type SearchParams = Promise<{ v?: string }>;
 
@@ -14,5 +15,6 @@ export default function AnimeWatchPage({ searchParams }: { searchParams: SearchP
 
 async function AnimeWatchResolver({ searchParams }: { searchParams: SearchParams }) {
   const { v } = await searchParams;
-  return <WatchContent id={v ?? ""} />;
+  const video = await getVideo(v ?? "");
+  return <WatchContent video={video} />;
 }

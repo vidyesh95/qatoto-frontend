@@ -116,7 +116,9 @@ function joinClassNames(...parts: Array<string | false | null | undefined>) {
 // Home matches exactly; every other route is active for itself and any sub-path
 // (e.g. /anime/genre keeps /anime active).
 function isRouteActive(pathname: string, routePath: string) {
-  if (routePath === ROUTES.home) return pathname === routePath;
+  // Home owns "/" and the top-level watch player ("/watch"). Anime's own
+  // player lives at "/anime/watch", which stays under the Anime route below.
+  if (routePath === ROUTES.home) return pathname === routePath || pathname === "/watch";
   return pathname === routePath || pathname.startsWith(`${routePath}/`);
 }
 
