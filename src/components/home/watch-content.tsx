@@ -104,23 +104,29 @@ function AnimeSeasonPanel({
   return (
     <section>
       <h2 className="pb-2 text-base font-medium">Season</h2>
-      <div className="border-b border-[#DAE4E5] bg-[#F7FAF9]">
-        <div className="flex scrollbar-none overflow-x-auto">
-          {seasons.map((season, i) => (
-            <button
-              key={season.id}
-              type="button"
-              onClick={() => onSeasonChange(i)}
-              className={`relative shrink-0 cursor-pointer px-8 py-3 text-sm font-medium transition-colors ${
-                activeSeason === i ? "text-[#191C1C]" : "text-[#3F4949] hover:text-[#191C1C]"
-              }`}
-            >
-              {season.label}
-              {activeSeason === i && (
-                <span className="absolute right-0 bottom-0 left-0 h-0.5 bg-[#00696E]" />
-              )}
-            </button>
-          ))}
+      <div className="border-b border-border">
+        <div className="flex scrollbar-none overflow-x-auto px-2">
+          {seasons.map((season, i) => {
+            const isActive = activeSeason === i;
+            return (
+              <button
+                key={season.id}
+                type="button"
+                onClick={() => onSeasonChange(i)}
+                aria-pressed={isActive}
+                className={`relative min-w-16 flex-1 cursor-pointer px-4 py-3 text-sm font-medium transition-colors ${
+                  isActive ? "text-[#00696E]" : "text-[#6F7979] hover:text-foreground"
+                }`}
+              >
+                <span className="relative inline-block">
+                  {season.label}
+                  {isActive && (
+                    <span className="absolute inset-x-0 -bottom-3 h-0.75 rounded-t-full bg-[#00696E]" />
+                  )}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
       <h2 className="pt-4 pb-3 text-base font-medium">Episode</h2>
