@@ -132,10 +132,12 @@ function FavoriteTabs({ selected, onSelect }: { selected: Tab; onSelect: (tab: T
                 isActive ? "text-[#00696E]" : "text-[#6F7979] hover:text-foreground"
               }`}
             >
-              {tab}
-              {isActive && (
-                <span className="absolute inset-x-6 -bottom-px h-0.5 rounded-full bg-[#00696E]" />
-              )}
+              <span className="relative inline-block">
+                {tab}
+                {isActive && (
+                  <span className="absolute inset-x-0 -bottom-3 h-0.75 rounded-t-full bg-[#00696E]" />
+                )}
+              </span>
             </button>
           );
         })}
