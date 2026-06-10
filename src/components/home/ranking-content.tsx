@@ -226,10 +226,12 @@ function PeriodTabs({
                 isActive ? "text-[#00696E]" : "text-[#6F7979] hover:text-foreground"
               }`}
             >
-              {period}
-              {isActive && (
-                <span className="absolute -bottom-px left-1/2 h-0.75 w-10.5 -translate-x-1/2 rounded-t-full bg-[#00696E]" />
-              )}
+              <span className="relative inline-block">
+                {period}
+                {isActive && (
+                  <span className="absolute inset-x-0 -bottom-3 h-0.75 rounded-t-full bg-[#00696E]" />
+                )}
+              </span>
             </button>
           );
         })}
