@@ -322,6 +322,42 @@ function SortMenu({ selected, onSelect }: { selected: Sort; onSelect: (sort: Sor
   );
 }
 
+const MEDALS: Record<number, { bg: string; ring: string; text: string }> = {
+  1: {
+    bg: "bg-gradient-to-b from-[#FFE082] to-[#F6B600]",
+    ring: "ring-[#E5A100]",
+    text: "text-[#7A5200]",
+  },
+  2: {
+    bg: "bg-gradient-to-b from-[#F0F1F3] to-[#C2C7CC]",
+    ring: "ring-[#AEB4BA]",
+    text: "text-[#5B6166]",
+  },
+  3: {
+    bg: "bg-gradient-to-b from-[#E8B07A] to-[#C77B3B]",
+    ring: "ring-[#B26A2E]",
+    text: "text-[#5E3411]",
+  },
+};
+
+function RankBadge({ rank }: { rank: number }) {
+  const medal = MEDALS[rank];
+  if (medal) {
+    return (
+      <span
+        className={`grid size-6 shrink-0 place-items-center rounded-full text-xs font-bold shadow-sm ring-1 ${medal.bg} ${medal.ring} ${medal.text}`}
+      >
+        {rank}
+      </span>
+    );
+  }
+  return (
+    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#E0E3E3] text-xs font-medium text-[#747878]">
+      {rank}
+    </span>
+  );
+}
+
 function RankedRow({ episode }: { episode: RankedEpisode }) {
   return (
     <Link
@@ -371,9 +407,7 @@ function RankedRow({ episode }: { episode: RankedEpisode }) {
           </span>
         </div>
       </div>
-      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#E0E3E3] text-xs font-medium text-[#747878]">
-        {episode.rank}
-      </span>
+      <RankBadge rank={episode.rank} />
     </Link>
   );
 }
