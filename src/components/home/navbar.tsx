@@ -7,18 +7,42 @@ import { useEffect, useState } from "react";
 import { useSidebar } from "@/state/sidebar-context";
 import AccountMenu from "@/components/home/account-menu";
 
+const ANIME_SUBPAGES: Record<string, string> = {
+  "/anime/genre": "Genre",
+  "/anime/daily": "Daily",
+  "/anime/favorite": "Favorite",
+  "/anime/ranking": "Ranking",
+};
+
+function prettifySlug(slug: string): string {
+  const s = slug.replace(/-/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+type SubHeader = { title: string; parentHref: string; parentLabel: string };
+
+// Sub-page header shown on mobile (back arrow + title) and desktop (breadcrumb).
+// Anime uses a fixed title map; store category/pathway routes derive their
+// title from the last URL segment.
+function getSubHeader(pathname: string): SubHeader | null {
+  const anime = ANIME_SUBPAGES[pathname];
+  if (anime) return { title: anime, parentHref: "/anime", parentLabel: "Anime" };
+  if (pathname.startsWith("/store/")) {
+    const last = pathname.split("/").filter(Boolean).pop() ?? "";
+    return {
+      title: prettifySlug(last),
+      parentHref: "/store",
+      parentLabel: "Store",
+    };
+  }
+  return null;
+}
+
 export default function Navbar() {
   const { toggleSidebar } = useSidebar();
   const router = useRouter();
   const pathname = usePathname();
-  const ANIME_SUBPAGES: Record<string, string> = {
-    "/anime/genre": "Genre",
-    "/anime/daily": "Daily",
-    "/anime/favorite": "Favorite",
-    "/anime/ranking": "Ranking",
-  };
-  const animeSubPage = ANIME_SUBPAGES[pathname];
-  const isGenre = Boolean(animeSubPage);
+  const sub = getSubHeader(pathname);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
@@ -31,7 +55,7 @@ export default function Navbar() {
       <div className="relative mx-auto flex items-center justify-between px-4 py-2 md:justify-between lg:px-6">
         {/* Brand */}
         <div className={"flex items-center gap-2.5 lg:gap-4.5"}>
-          {isGenre && (
+          {sub && (
             <button
               type="button"
               onClick={() => router.back()}
@@ -59,21 +83,24 @@ export default function Navbar() {
               height={24}
             />
           </button>
-          {isGenre ? (
+          {sub ? (
             <>
               {/* mobile: page title */}
-              <h1 className="text-xl font-medium text-foreground md:hidden">{animeSubPage}</h1>
+              <h1 className="text-xl font-medium text-foreground md:hidden">{sub.title}</h1>
               {/* desktop: breadcrumb */}
               <div className="hidden items-baseline gap-2 md:flex">
                 <Link href="/" className="font-serif text-3xl font-medium text-[#00696E]">
                   Qatoto
                 </Link>
                 <span className="font-serif text-2xl text-[#00696E]/40">|</span>
-                <Link href="/anime" className="text-xl font-medium text-foreground hover:underline">
-                  Anime
+                <Link
+                  href={sub.parentHref}
+                  className="text-xl font-medium text-foreground hover:underline"
+                >
+                  {sub.parentLabel}
                 </Link>
                 <span className="text-muted-foreground">›</span>
-                <span className="text-xl font-medium text-foreground">{animeSubPage}</span>
+                <span className="text-xl font-medium text-foreground">{sub.title}</span>
               </div>
             </>
           ) : (
