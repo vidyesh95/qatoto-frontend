@@ -5,6 +5,11 @@ import { getBlog, getBlogs } from "@/lib/cms";
 
 type Params = Promise<{ slug: string }>;
 
+export async function generateStaticParams() {
+  const posts = await getBlogs();
+  return posts.map((post) => ({ slug: post.slug }));
+}
+
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getBlog(slug);

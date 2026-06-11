@@ -125,11 +125,26 @@ export async function getCategory(slug: string): Promise<CategoryView | null> {
   };
 }
 
+// Flat list of every category slug, for prerendering the catch-all route.
+// Slugs are globally unique, so single-segment paths cover the whole tree.
+export async function getCategorySlugs(): Promise<string[]> {
+  "use cache";
+  const remote = await storeFetch<string[]>("/store/category-slugs");
+  return remote ?? Object.keys(MOCK_CATEGORIES);
+}
+
 export async function getPathway(slug: string): Promise<Pathway | null> {
   "use cache";
   const remote = await storeFetch<Pathway>(`/store/pathways/${encodeURIComponent(slug)}`);
   if (remote) return remote;
   return MOCK_PATHWAYS.find((p) => p.slug === slug) ?? null;
+}
+
+// Every pathway slug, for prerendering the pathway detail route.
+export async function getPathwaySlugs(): Promise<string[]> {
+  "use cache";
+  const remote = await storeFetch<string[]>("/store/pathway-slugs");
+  return remote ?? MOCK_PATHWAYS.map((p) => p.slug);
 }
 
 const HERO_SLIDES: HeroSlide[] = [

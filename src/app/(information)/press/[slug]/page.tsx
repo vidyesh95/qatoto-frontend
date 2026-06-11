@@ -5,6 +5,11 @@ import { getPressItem, getPressList } from "@/lib/cms";
 
 type Params = Promise<{ slug: string }>;
 
+export async function generateStaticParams() {
+  const items = await getPressList();
+  return items.map((item) => ({ slug: item.slug }));
+}
+
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const item = await getPressItem(slug);

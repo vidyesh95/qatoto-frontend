@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import PathwayDetail from "@/components/home/store/pathway-detail";
+import { getPathwaySlugs } from "@/lib/store";
+
+export async function generateStaticParams() {
+  const slugs = await getPathwaySlugs();
+  return slugs.map((id) => ({ id }));
+}
 
 function prettify(slug: string): string {
   const s = slug.replace(/-/g, " ");

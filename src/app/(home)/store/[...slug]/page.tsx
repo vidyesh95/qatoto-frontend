@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import CategoryPage from "@/components/home/store/category-page";
+import { getCategorySlugs } from "@/lib/store";
+
+export async function generateStaticParams() {
+  const slugs = await getCategorySlugs();
+  return slugs.map((slug) => ({ slug: [slug] }));
+}
 
 // Catch-all category route. Slugs are globally unique, so the last segment is
 // the node to render — the URL still nests for breadcrumbs/shareability
