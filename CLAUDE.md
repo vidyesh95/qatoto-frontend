@@ -185,6 +185,16 @@ From `CONTRIBUTING.md`:
 
 **Do not write, add, or modify tests unless the user explicitly asks for them.** This applies to unit tests (Vitest), E2E tests (Playwright), and any other test files. Do not create test files as part of a feature implementation, bug fix, or refactor. Do not suggest writing tests unless the user requests it.
 
+## Current phase: UI + mock data only
+
+**We are in a UI-building phase. Do not do anything complex.**
+
+- Use inline mock/static data — no real API calls, no fetch, no backend integration
+- No Zod parsing, no error state handling, no loading states beyond simple placeholders
+- No new abstractions, no utility layers, no data fetching hooks
+- Build the UI shape: layout, components, styles, interactions — that's it
+- When the backend integration phase starts, this section will be removed
+
 ## Things to know
 
 - TLS dev certs (`localhost.pem`, `localhost-key.pem`) are committed and used by `next dev`. Don't delete or regenerate without reason.

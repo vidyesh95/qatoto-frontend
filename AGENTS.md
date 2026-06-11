@@ -108,6 +108,16 @@ type ActionResponse<T> =
 
 Combine with Pattern 1: lift `ActionResponse<T>` into the component's `DashboardState`-style union so the UI for each error code is explicit and exhaustive.
 
+## Current phase: UI + mock data only
+
+**We are in a UI-building phase. Do not do anything complex.**
+
+- Use inline mock/static data — no real API calls, no fetch, no backend integration
+- No Zod parsing, no error state handling, no loading states beyond simple placeholders
+- No new abstractions, no utility layers, no data fetching hooks
+- Build the UI shape: layout, components, styles, interactions — that's it
+- When the backend integration phase starts, this section will be removed
+
 ## Conventions
 
 ### Tests — do not write unless explicitly asked
