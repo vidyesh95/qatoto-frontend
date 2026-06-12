@@ -3,9 +3,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { AppearancePanel, THEME_SUMMARY, type Theme } from "@/components/home/account/appearance-menu";
+import {
+  AppearancePanel,
+  THEME_SUMMARY,
+  type Theme,
+} from "@/components/home/account/appearance-menu";
 import { LanguagePanel } from "@/components/home/account/language-menu";
-import { countryName, DEFAULT_COUNTRY_CODE, LocationPanel } from "@/components/home/account/location-menu";
+import {
+  countryName,
+  DEFAULT_COUNTRY_CODE,
+  LocationPanel,
+} from "@/components/home/account/location-menu";
 import { ChildPanel } from "@/components/home/account/child-menu";
 import { IncognitoPanel } from "@/components/home/account/incognito-menu";
 import { AiAssistPanel } from "@/components/home/account/ai-assist-menu";
