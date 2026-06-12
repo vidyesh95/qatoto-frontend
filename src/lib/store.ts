@@ -424,9 +424,169 @@ const MOCK_CATEGORIES: Record<string, StoreCategory> = {
   },
 };
 
-// The five hero products that repeat across pathways and product feeds, matching
-// the design mocks. Keyed reuse keeps the mock compact.
-const FEATURED_PRODUCTS: StoreProduct[] = [
+// Each product feed has its OWN mock array below — no shared source, no
+// client-side reshuffle. The backend serves each feed as an independent list
+// (the `rails` array in `/store/home`); these mocks mirror that 1:1 so swapping
+// in the real API means dropping one array per feed, nothing else.
+function railOf(id: string, title: string, products: StoreProduct[]): ProductRail {
+  return {
+    id,
+    title,
+    href: `/store/feed/${id}`,
+    products: products.map((p, i) => ({ ...p, hoverBg: hoverAt(i) })),
+  };
+}
+
+// --- What's New: freshly listed products ---
+const WHATS_NEW_PRODUCTS: StoreProduct[] = [
+  {
+    id: "smart-thermostat",
+    name: "Smart Thermostat",
+    subtitle: "Wi-Fi climate controller",
+    imageSrc: "/dummy/pathways_1.avif",
+    price: "$149",
+    href: "/store/pathway/smart-thermostat",
+  },
+  {
+    id: "ev-charger",
+    name: "Home EV Charger",
+    subtitle: "11kW wall-mounted unit",
+    imageSrc: "/dummy/pathways_2.avif",
+    price: "$640",
+    href: "/store/pathway/ev-charger",
+  },
+  {
+    id: "solar-panel-kit",
+    name: "Solar Panel Kit",
+    subtitle: "400W monocrystalline",
+    imageSrc: "/dummy/pathways_3.avif",
+    price: "$320",
+    href: "/store/pathway/solar-panel-kit",
+  },
+  {
+    id: "robot-vacuum",
+    name: "Robot Vacuum",
+    subtitle: "LiDAR mapping, self-empty",
+    imageSrc: "/dummy/pathways_4.avif",
+    price: "$499",
+    href: "/store/pathway/robot-vacuum",
+  },
+  {
+    id: "air-purifier",
+    name: "HEPA Air Purifier",
+    subtitle: "Covers 800 sq ft",
+    imageSrc: "/dummy/pathways_5.avif",
+    price: "$210",
+    href: "/store/pathway/air-purifier",
+  },
+];
+
+// --- Popular: best-moving catalogue staples ---
+const POPULAR_PRODUCTS: StoreProduct[] = [
+  {
+    id: "steel-roll",
+    name: "Steel Roll",
+    subtitle: "Tata Cold Steel Roll",
+    imageSrc: "/dummy/thumbnail_image01.avif",
+    price: "$890 / ton",
+    href: "/store/pathway/steel-roll",
+  },
+  {
+    id: "industrial-bearing",
+    name: "Industrial Bearing Set",
+    subtitle: "Sealed ball bearings, pack of 50",
+    imageSrc: "/dummy/thumbnail_image02.avif",
+    price: "$75",
+    href: "/store/pathway/industrial-bearing",
+  },
+  {
+    id: "copper-wire-spool",
+    name: "Copper Wire Spool",
+    subtitle: "99.9% pure, 100m",
+    imageSrc: "/dummy/thumbnail_image03.avif",
+    price: "$140 / spool",
+    href: "/store/pathway/copper-wire-spool",
+  },
+  {
+    id: "hydraulic-pump",
+    name: "Hydraulic Pump",
+    subtitle: "3000 PSI gear pump",
+    imageSrc: "/dummy/thumbnail_image04.avif",
+    price: "$430",
+    href: "/store/pathway/hydraulic-pump",
+  },
+  {
+    id: "pvc-pipe-bundle",
+    name: "PVC Pipe Bundle",
+    subtitle: "Schedule 40, 20-pack",
+    imageSrc: "/dummy/thumbnail_image05.avif",
+    price: "$60 / bundle",
+    href: "/store/pathway/pvc-pipe-bundle",
+  },
+];
+
+// --- For You: personalised recommendations ---
+const FOR_YOU_PRODUCTS: StoreProduct[] = [
+  {
+    id: "louis-vuitton-collection",
+    name: "Louis Vuitton Collection",
+    subtitle: "Full seasonal look",
+    imageSrc: "/dummy/thumbnail_image06.avif",
+    price: "$4,250",
+    href: "/store/pathway/louis-vuitton-collection",
+  },
+  {
+    id: "p-designs",
+    name: "P Designs",
+    subtitle: "UI/UX design studio kit",
+    imageSrc: "/dummy/thumbnail_image07.avif",
+    price: "$1,200",
+    href: "/store/pathway/p-designs",
+  },
+  {
+    id: "leather-briefcase",
+    name: "Leather Briefcase",
+    subtitle: "Full-grain, handmade",
+    imageSrc: "/dummy/thumbnail_image08.avif",
+    price: "$680",
+    href: "/store/pathway/leather-briefcase",
+  },
+  {
+    id: "mechanical-keyboard",
+    name: "Mechanical Keyboard",
+    subtitle: "Hot-swap, 75% layout",
+    imageSrc: "/dummy/thumbnail_image09.avif",
+    price: "$160",
+    href: "/store/pathway/mechanical-keyboard",
+  },
+  {
+    id: "ergonomic-chair",
+    name: "Ergonomic Office Chair",
+    subtitle: "Mesh back, lumbar support",
+    imageSrc: "/dummy/thumbnail_image10.avif",
+    price: "$540",
+    href: "/store/pathway/ergonomic-chair",
+  },
+];
+
+// --- Trending: spiking demand right now ---
+const TRENDING_PRODUCTS: StoreProduct[] = [
+  {
+    id: "bomber-drone-classic",
+    name: "Bomber Drone Classic",
+    subtitle: "Affordable drone for war",
+    imageSrc: "/dummy/thumbnail_image11.avif",
+    price: "$12,400",
+    href: "/store/pathway/bomber-drone-classic",
+  },
+  {
+    id: "thermal-scope",
+    name: "Thermal Scope",
+    subtitle: "640x480 sensor, 1000m range",
+    imageSrc: "/dummy/thumbnail_image12.avif",
+    price: "$3,900",
+    href: "/store/pathway/thermal-scope",
+  },
   {
     id: "steel-nail",
     name: "Steel Nail",
@@ -436,56 +596,140 @@ const FEATURED_PRODUCTS: StoreProduct[] = [
     href: "/store/pathway/steel-nail",
   },
   {
-    id: "bomber-drone-classic",
-    name: "Bomber Drone Classic",
-    subtitle: "Affordable drone for war",
+    id: "tactical-backpack",
+    name: "Tactical Backpack",
+    subtitle: "45L MOLLE, water-resistant",
     imageSrc: "/dummy/pathways_4.avif",
-    price: "$12,400",
-    href: "/store/pathway/bomber-drone-classic",
+    price: "$120",
+    href: "/store/pathway/tactical-backpack",
   },
   {
-    id: "steel-roll",
-    name: "Steel Roll",
-    subtitle: "Tata Cold Steel Roll",
+    id: "field-generator",
+    name: "Field Generator",
+    subtitle: "2000W portable inverter",
     imageSrc: "/dummy/pathways_5.avif",
-    price: "$890 / ton",
-    href: "/store/pathway/steel-roll",
-  },
-  {
-    id: "p-designs",
-    name: "P Designs",
-    subtitle: "UI/UX design studio kit",
-    imageSrc: "/dummy/pathways_2.avif",
-    price: "$1,200",
-    href: "/store/pathway/p-designs",
-  },
-  {
-    id: "louis-vuitton-collection",
-    name: "Louis Vuitton Collection",
-    subtitle: "Full seasonal look",
-    imageSrc: "/dummy/pathways_1.avif",
-    price: "$4,250",
-    href: "/store/pathway/louis-vuitton-collection",
+    price: "$1,150",
+    href: "/store/pathway/field-generator",
   },
 ];
-
-function railOf(id: string, title: string): ProductRail {
-  const products = FEATURED_PRODUCTS.map((p, i) => ({ ...p, hoverBg: hoverAt(i) }));
-  return { id, title, href: `/store/feed/${id}`, products };
-}
 
 const MOCK_RAILS: ProductRail[] = [
-  railOf("whats-new", "What's New"),
-  railOf("popular", "Popular"),
-  railOf("for-you", "For You"),
-  railOf("trending", "Trending"),
+  railOf("whats-new", "What's New", WHATS_NEW_PRODUCTS),
+  railOf("popular", "Popular", POPULAR_PRODUCTS),
+  railOf("for-you", "For You", FOR_YOU_PRODUCTS),
+  railOf("trending", "Trending", TRENDING_PRODUCTS),
 ];
 
-// Leaf categories reuse the same feed shape, retitled for the listing context.
+// --- Leaf-category feeds: each its own array too ---
+const BEST_SELLERS_PRODUCTS: StoreProduct[] = [
+  {
+    id: "cordless-drill",
+    name: "Cordless Drill",
+    subtitle: "20V brushless, 2 batteries",
+    imageSrc: "/dummy/thumbnail_image01.avif",
+    price: "$130",
+    href: "/store/pathway/cordless-drill",
+  },
+  {
+    id: "tool-chest",
+    name: "Rolling Tool Chest",
+    subtitle: "7-drawer steel cabinet",
+    imageSrc: "/dummy/thumbnail_image02.avif",
+    price: "$380",
+    href: "/store/pathway/tool-chest",
+  },
+  {
+    id: "work-gloves",
+    name: "Cut-resistant Work Gloves",
+    subtitle: "Level 5, 12-pack",
+    imageSrc: "/dummy/thumbnail_image03.avif",
+    price: "$45 / pack",
+    href: "/store/pathway/work-gloves",
+  },
+  {
+    id: "led-floodlight",
+    name: "LED Floodlight",
+    subtitle: "150W, IP66 outdoor",
+    imageSrc: "/dummy/thumbnail_image04.avif",
+    price: "$70",
+    href: "/store/pathway/led-floodlight",
+  },
+];
+
+const NEW_ARRIVALS_PRODUCTS: StoreProduct[] = [
+  {
+    id: "smart-lock",
+    name: "Smart Door Lock",
+    subtitle: "Fingerprint + app unlock",
+    imageSrc: "/dummy/thumbnail_image05.avif",
+    price: "$190",
+    href: "/store/pathway/smart-lock",
+  },
+  {
+    id: "standing-desk",
+    name: "Standing Desk",
+    subtitle: "Electric, dual motor",
+    imageSrc: "/dummy/thumbnail_image06.avif",
+    price: "$420",
+    href: "/store/pathway/standing-desk",
+  },
+  {
+    id: "wireless-earbuds",
+    name: "Wireless Earbuds",
+    subtitle: "ANC, 30h battery",
+    imageSrc: "/dummy/thumbnail_image07.avif",
+    price: "$95",
+    href: "/store/pathway/wireless-earbuds",
+  },
+  {
+    id: "desk-lamp",
+    name: "LED Desk Lamp",
+    subtitle: "Dimmable, USB-C charging",
+    imageSrc: "/dummy/thumbnail_image08.avif",
+    price: "$48",
+    href: "/store/pathway/desk-lamp",
+  },
+];
+
+const TOP_RATED_PRODUCTS: StoreProduct[] = [
+  {
+    id: "espresso-machine",
+    name: "Espresso Machine",
+    subtitle: "15-bar, dual boiler",
+    imageSrc: "/dummy/thumbnail_image09.avif",
+    price: "$560",
+    href: "/store/pathway/espresso-machine",
+  },
+  {
+    id: "chef-knife-set",
+    name: "Chef Knife Set",
+    subtitle: "Damascus steel, 8-piece",
+    imageSrc: "/dummy/thumbnail_image10.avif",
+    price: "$220",
+    href: "/store/pathway/chef-knife-set",
+  },
+  {
+    id: "cast-iron-skillet",
+    name: "Cast Iron Skillet",
+    subtitle: "Pre-seasoned, 12 inch",
+    imageSrc: "/dummy/thumbnail_image11.avif",
+    price: "$40",
+    href: "/store/pathway/cast-iron-skillet",
+  },
+  {
+    id: "stand-mixer",
+    name: "Stand Mixer",
+    subtitle: "5.5L, 10-speed",
+    imageSrc: "/dummy/thumbnail_image12.avif",
+    price: "$310",
+    href: "/store/pathway/stand-mixer",
+  },
+];
+
 const MOCK_LEAF_RAILS: ProductRail[] = [
-  railOf("best-sellers", "Best Sellers"),
-  railOf("new-arrivals", "New Arrivals"),
-  railOf("top-rated", "Top Rated"),
+  railOf("best-sellers", "Best Sellers", BEST_SELLERS_PRODUCTS),
+  railOf("new-arrivals", "New Arrivals", NEW_ARRIVALS_PRODUCTS),
+  railOf("top-rated", "Top Rated", TOP_RATED_PRODUCTS),
 ];
 
 const MOCK_PATHWAYS: Pathway[] = [
