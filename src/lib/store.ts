@@ -411,10 +411,18 @@ const MOCK_CATEGORIES: Record<string, StoreCategory> = {
 // the design mocks. Keyed reuse keeps the mock compact.
 const FEATURED_PRODUCTS: StoreProduct[] = [
   {
+    id: "steel-nail",
+    name: "Steel Nail",
+    subtitle: "Carbon steel concrete masonry nail",
+    imageSrc: "/dummy/pathways_3.avif",
+    price: "$3 / box",
+    href: "/store/pathway/steel-nail",
+  },
+  {
     id: "bomber-drone-classic",
     name: "Bomber Drone Classic",
     subtitle: "Affordable drone for war",
-    imageSrc: "/dummy/pathways_3.avif",
+    imageSrc: "/dummy/pathways_4.avif",
     price: "$12,400",
     href: "/store/pathway/bomber-drone-classic",
   },
@@ -422,33 +430,25 @@ const FEATURED_PRODUCTS: StoreProduct[] = [
     id: "steel-roll",
     name: "Steel Roll",
     subtitle: "Tata Cold Steel Roll",
-    imageSrc: "/dummy/pathways_4.avif",
+    imageSrc: "/dummy/pathways_5.avif",
     price: "$890 / ton",
     href: "/store/pathway/steel-roll",
-  },
-  {
-    id: "louis-vuitton-collection",
-    name: "Louis Vuitton Collection",
-    subtitle: "Full seasonal look",
-    imageSrc: "/dummy/pathways_5.avif",
-    price: "$4,250",
-    href: "/store/pathway/louis-vuitton-collection",
-  },
-  {
-    id: "steel-nail",
-    name: "Steel Nail",
-    subtitle: "Carbon steel concrete masonry nail",
-    imageSrc: "/dummy/pathways_2.avif",
-    price: "$3 / box",
-    href: "/store/pathway/steel-nail",
   },
   {
     id: "p-designs",
     name: "P Designs",
     subtitle: "UI/UX design studio kit",
-    imageSrc: "/dummy/pathways_1.avif",
+    imageSrc: "/dummy/pathways_2.avif",
     price: "$1,200",
     href: "/store/pathway/p-designs",
+  },
+  {
+    id: "louis-vuitton-collection",
+    name: "Louis Vuitton Collection",
+    subtitle: "Full seasonal look",
+    imageSrc: "/dummy/pathways_1.avif",
+    price: "$4,250",
+    href: "/store/pathway/louis-vuitton-collection",
   },
 ];
 
