@@ -171,7 +171,16 @@ const HERO_SLIDES: HeroSlide[] = [
   },
 ];
 
-const ROOT_CATEGORY_SLUGS = ["clothes", "furniture", "accessories", "beauty"];
+const ROOT_CATEGORY_SLUGS = [
+  "clothes",
+  "furniture",
+  "accessories",
+  "beauty",
+  "shoes",
+  "bags",
+  "machinery",
+  "jewelry",
+];
 
 // Flat slug -> node map. Catch-all route looks up the last segment here, so
 // every slug is globally unique. Empty `childrenSlugs` marks a leaf.
@@ -208,6 +217,30 @@ const MOCK_CATEGORIES: Record<string, StoreCategory> = {
       "furniture-accessories",
       "other-furniture",
     ],
+  },
+  shoes: {
+    slug: "shoes",
+    name: "Shoes",
+    imageSrc: "/dummy/shoes.avif",
+    childrenSlugs: [],
+  },
+  bags: {
+    slug: "bags",
+    name: "Bags",
+    imageSrc: "/dummy/bags.avif",
+    childrenSlugs: [],
+  },
+  machinery: {
+    slug: "machinery",
+    name: "Machinery",
+    imageSrc: "/dummy/machinery.avif",
+    childrenSlugs: [],
+  },
+  jewelry: {
+    slug: "jewelry",
+    name: "Jewelry",
+    imageSrc: "/dummy/jewelry.avif",
+    childrenSlugs: [],
   },
   "outdoor-furniture": {
     slug: "outdoor-furniture",
