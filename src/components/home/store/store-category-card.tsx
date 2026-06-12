@@ -11,7 +11,9 @@ export default function StoreCategoryCard({ category }: { category: StoreCategor
       href={`/store/${category.slug}`}
       className="group relative flex flex-col items-center gap-1"
     >
-      <div className="pointer-events-none absolute inset-0 -z-10 -m-2 rounded-2xl transition-colors group-hover:bg-gray-100" />
+      <div
+        className={`pointer-events-none absolute inset-0 -z-10 -m-2 rounded-2xl transition-colors ${category.hoverBg ?? "group-hover:bg-gray-100"}`}
+      />
       <Image
         src={category.imageSrc}
         width={159}

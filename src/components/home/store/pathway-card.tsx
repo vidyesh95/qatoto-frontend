@@ -8,8 +8,11 @@ export default function PathwayCard({ pathway }: { pathway: Pathway }) {
   return (
     <Link
       href={`/store/pathway/${pathway.slug}`}
-      className="group flex w-44 shrink-0 flex-col sm:w-52"
+      className="group relative flex w-44 shrink-0 flex-col sm:w-52"
     >
+      <div
+        className={`pointer-events-none absolute inset-0 -z-10 -m-2 rounded-2xl transition-colors ${pathway.hoverBg ?? "group-hover:bg-gray-100"}`}
+      />
       <div className="relative aspect-3/4 w-full overflow-hidden rounded-xl">
         <Image
           src={pathway.imageSrc}

@@ -16,11 +16,14 @@ export type HeroSlide = {
 };
 
 // A node in the category tree. `childrenSlugs` empty => leaf (renders products).
+// `hoverBg` is a display-only Tailwind hover class the backend supplies per node;
+// dummy values are cycled from HOVER_PALETTE until the API is wired up.
 export type StoreCategory = {
   slug: string;
   name: string;
   imageSrc: string;
   childrenSlugs: string[];
+  hoverBg?: string;
 };
 
 export type StoreProduct = {
@@ -30,6 +33,7 @@ export type StoreProduct = {
   imageSrc: string;
   price: string;
   href: string;
+  hoverBg?: string;
 };
 
 // One item inside a pathway "look" — a single buyable piece of the set.
@@ -49,6 +53,7 @@ export type Pathway = {
   imageSrc: string;
   // Vertical label baked into the hero art (e.g. "Louis Vuitton Collection").
   overlayLabel?: string;
+  hoverBg?: string;
   items: PathwayItem[];
 };
 
@@ -82,6 +87,17 @@ export type CategoryView = {
   rails: ProductRail[];
 };
 
+// Dummy hover tints, cycled by index. The backend will eventually send a real
+// `hoverBg` per card; until then we fan these out so cards light up like Home.
+const HOVER_PALETTE = [
+  "group-hover:bg-yellow-100",
+  "group-hover:bg-amber-100",
+  "group-hover:bg-green-100",
+  "group-hover:bg-blue-100",
+  "group-hover:bg-red-100",
+];
+const hoverAt = (i: number) => HOVER_PALETTE[i % HOVER_PALETTE.length];
+
 const STORE_API_URL = process.env.QATOTO_STORE_API_URL;
 
 async function storeFetch<T>(path: string): Promise<T | null> {
@@ -114,12 +130,13 @@ export async function getCategory(slug: string): Promise<CategoryView | null> {
 
   const children = category.childrenSlugs
     .map((child) => MOCK_CATEGORIES[child])
-    .filter((c): c is StoreCategory => Boolean(c));
+    .filter((c): c is StoreCategory => Boolean(c))
+    .map((c, i) => ({ ...c, hoverBg: hoverAt(i) }));
 
   return {
     category,
     children,
-    pathways: MOCK_PATHWAYS,
+    pathways: MOCK_PATHWAYS.map((p, i) => ({ ...p, hoverBg: hoverAt(i) })),
     // Both leaf and branch categories surface the product feeds (What's New,
     // Popular, For You, Trending) below the sub-category grid / pathways.
     rails: MOCK_LEAF_RAILS,
@@ -453,7 +470,8 @@ const FEATURED_PRODUCTS: StoreProduct[] = [
 ];
 
 function railOf(id: string, title: string): ProductRail {
-  return { id, title, href: `/store/feed/${id}`, products: FEATURED_PRODUCTS };
+  const products = FEATURED_PRODUCTS.map((p, i) => ({ ...p, hoverBg: hoverAt(i) }));
+  return { id, title, href: `/store/feed/${id}`, products };
 }
 
 const MOCK_RAILS: ProductRail[] = [
@@ -707,8 +725,11 @@ const MOCK_B2B_LINKS: B2BLink[] = [
 
 const MOCK_STORE_HOME: StoreHome = {
   hero: HERO_SLIDES,
-  rootCategories: ROOT_CATEGORY_SLUGS.map((slug) => MOCK_CATEGORIES[slug]),
-  pathways: MOCK_PATHWAYS,
+  rootCategories: ROOT_CATEGORY_SLUGS.map((slug, i) => ({
+    ...MOCK_CATEGORIES[slug],
+    hoverBg: hoverAt(i),
+  })),
+  pathways: MOCK_PATHWAYS.map((p, i) => ({ ...p, hoverBg: hoverAt(i) })),
   b2bLinks: MOCK_B2B_LINKS,
   rails: MOCK_RAILS,
 };

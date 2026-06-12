@@ -6,9 +6,9 @@ import type { ProductRail as ProductRailData } from "@/lib/store";
 // (What's New, Popular, For You, Trending, Best Sellers, …).
 export default function ProductRail({ rail }: { rail: ProductRailData }) {
   return (
-    <section className="space-y-3">
+    <section className="space-y-1">
       <SectionHeader title={rail.title} href={rail.href} />
-      <div className="flex gap-3 overflow-x-auto px-4 pb-1 lg:px-6">
+      <div className="flex gap-3 overflow-x-auto px-4 pt-2 pb-2 lg:px-6">
         {rail.products.map((product) => (
           <ProductCard key={`${rail.id}-${product.id}`} product={product} />
         ))}
