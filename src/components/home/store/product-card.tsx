@@ -16,9 +16,9 @@ export default function ProductCard({ product }: { product: StoreProduct }) {
         />
       </div>
       <div className="mt-1.5 px-0.5">
-        <p className="text-sm font-semibold">{product.name}</p>
+        <p className="truncate text-sm font-semibold">{product.name}</p>
         {product.subtitle && (
-          <p className="line-clamp-1 text-xs text-foreground/60">{product.subtitle}</p>
+          <p className="truncate text-xs text-foreground/60">{product.subtitle}</p>
         )}
         <p className="mt-0.5 text-sm font-medium">{product.price}</p>
       </div>

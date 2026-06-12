@@ -19,9 +19,9 @@ export default function PathwayCard({ pathway }: { pathway: Pathway }) {
         />
       </div>
       <div className="mt-1.5 px-0.5">
-        <p className="text-sm font-semibold">{pathway.title}</p>
+        <p className="truncate text-sm font-semibold">{pathway.title}</p>
         {pathway.subtitle && (
-          <p className="line-clamp-2 text-xs text-foreground/60">{pathway.subtitle}</p>
+          <p className="truncate text-xs text-foreground/60">{pathway.subtitle}</p>
         )}
       </div>
     </Link>
