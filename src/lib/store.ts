@@ -120,8 +120,9 @@ export async function getCategory(slug: string): Promise<CategoryView | null> {
     category,
     children,
     pathways: MOCK_PATHWAYS,
-    // Leaf categories surface product feeds; branch categories drill down.
-    rails: children.length === 0 ? MOCK_LEAF_RAILS : [],
+    // Both leaf and branch categories surface the product feeds (What's New,
+    // Popular, For You, Trending) below the sub-category grid / pathways.
+    rails: MOCK_LEAF_RAILS,
   };
 }
 
