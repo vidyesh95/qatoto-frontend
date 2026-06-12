@@ -17,11 +17,11 @@ export default async function PathwayDetail({ slug }: { slug: string }) {
   return (
     <div className="space-y-8 pb-8">
       {/* Hero of the complete look */}
-      <div className="relative h-72 w-full overflow-hidden bg-gray-100">
+      <div className="relative mx-auto aspect-video w-full overflow-hidden bg-gray-100 lg:aspect-auto lg:h-100 lg:w-177.75">
         <Image
           src={pathway.imageSrc}
           fill
-          className="object-cover"
+          className="object-cover object-center"
           loading="eager"
           alt={pathway.title}
         />
