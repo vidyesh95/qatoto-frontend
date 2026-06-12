@@ -25,7 +25,10 @@ export default function StoreHeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const slide = slides[currentIndex];
 
   return (
-    <Link href={slide.href} className="relative block h-65 w-full overflow-hidden bg-black">
+    <Link
+      href={slide.href}
+      className="relative block aspect-video max-h-100 w-full overflow-hidden bg-black"
+    >
       <Image src={slide.imageSrc} fill className="object-cover" loading="eager" alt={slide.title} />
       <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent" />
       <div className="absolute bottom-7 left-4 lg:left-6">
