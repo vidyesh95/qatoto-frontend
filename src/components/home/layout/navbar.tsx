@@ -112,7 +112,7 @@ export default function Navbar() {
           )}
         </div>
 
-        <div className={"hidden items-center justify-end gap-2 md:flex lg:w-xl"}>
+        <div className={"hidden items-center justify-end gap-2 lg:flex lg:w-xl"}>
           <form
             action="/search"
             method="get"
@@ -167,7 +167,7 @@ export default function Navbar() {
             href={"/search"}
             aria-label="Search"
             className={
-              "cursor-pointer rounded-full border border-primary bg-white p-1.75 md:hidden"
+              "cursor-pointer rounded-full border border-primary bg-white p-1.75 lg:hidden"
             }
           >
             <Image
