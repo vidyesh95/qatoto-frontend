@@ -19,7 +19,7 @@ export default function StoreCategoryCard({ category }: { category: StoreCategor
         alt={category.name}
         className="aspect-square w-full rounded-xl object-cover"
       />
-      <p className="text-center text-sm">{category.name}</p>
+      <p className="text-center text-xs xl:text-sm font-medium">{category.name}</p>
     </Link>
   );
 }

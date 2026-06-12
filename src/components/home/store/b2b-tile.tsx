@@ -6,11 +6,10 @@ import type { B2BLink } from "@/lib/store";
 // Each links to a dedicated B2B essentials surface (RFQ, logistics, …).
 export default function B2BTile({ link }: { link: B2BLink }) {
   return (
-    <Link
-      href={link.href}
-      className="flex w-36 shrink-0 flex-col items-center justify-center gap-3 rounded-xl bg-blue-100 p-5 transition hover:bg-blue-200 sm:w-44"
-    >
-      <Image src={link.iconSrc} width={28} height={28} alt="" />
+    <Link href={link.href} className="group flex w-40 shrink-0 flex-col items-center gap-1">
+      <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-blue-100 transition group-hover:bg-blue-200">
+        <Image src={link.iconSrc} width={28} height={28} alt="" />
+      </div>
       <span className="text-center text-xs font-medium">{link.label}</span>
     </Link>
   );

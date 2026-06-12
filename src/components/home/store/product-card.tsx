@@ -7,7 +7,7 @@ import type { StoreProduct } from "@/lib/store";
 export default function ProductCard({ product }: { product: StoreProduct }) {
   return (
     <Link href={product.href} className="group flex w-40 shrink-0 flex-col sm:w-48">
-      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-100">
+      <div className="relative aspect-3/4 w-full overflow-hidden rounded-xl bg-gray-100">
         <Image
           src={product.imageSrc}
           fill
