@@ -54,13 +54,13 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 bg-background">
       <div className="relative mx-auto flex items-center justify-between px-4 py-2 md:justify-between lg:px-6">
         {/* Brand */}
-        <div className={"flex items-center gap-2.5 lg:gap-4.5"}>
+        <div className={"flex min-w-0 items-center gap-2.5 lg:gap-4.5"}>
           {sub && (
             <button
               type="button"
               onClick={() => router.back()}
               aria-label="Go back"
-              className="grid size-9 place-items-center rounded-full transition hover:bg-black/5 md:hidden"
+              className="grid size-9 shrink-0 place-items-center rounded-full transition hover:bg-black/5 md:hidden"
             >
               <Image
                 src={"/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
@@ -86,7 +86,9 @@ export default function Navbar() {
           {sub ? (
             <>
               {/* mobile: page title */}
-              <h1 className="text-xl font-medium text-foreground md:hidden">{sub.title}</h1>
+              <h1 className="truncate text-xl font-medium text-foreground md:hidden">
+                {sub.title}
+              </h1>
               {/* desktop: breadcrumb */}
               <div className="hidden items-baseline gap-2 md:flex">
                 <Link href="/" className="font-serif text-3xl font-medium text-[#00696E]">
