@@ -108,6 +108,28 @@ Combine with Pattern 1: lift `ActionResponse<T>` into the component's `Dashboard
 
 ## Conventions
 
+From `CONTRIBUTING.md`:
+
+- **Commits**: Conventional Commits, imperative mood, **lowercase**. e.g. `feat: add user authentication`, `fix: resolve login bug`.
+- **Naming**: PascalCase classes/components, camelCase vars/functions/file names, kebab-case directories.
+- Run `pnpm fmt` (oxfmt) before opening a PR.
+
 ### Tests — do not write unless explicitly asked
 
 **Do not write, add, or modify tests unless the user explicitly asks for them.** This applies to unit tests (Vitest), E2E tests (Playwright), and any other test files. Do not create test files as part of a feature implementation, bug fix, or refactor. Do not suggest writing tests unless the user requests it.
+
+## Current phase: UI + mock data only
+
+**We are in a UI-building phase. Do not do anything complex.**
+
+- Use inline mock/static data — no real API calls, no fetch, no backend integration
+- No Zod parsing, no error state handling, no loading states beyond simple placeholders
+- No new abstractions, no utility layers, no data fetching hooks
+- Build the UI shape: layout, components, styles, interactions — that's it
+- When the backend integration phase starts, this section will be removed
+
+## Things to know
+
+- TLS dev certs (`localhost.pem`, `localhost-key.pem`) are committed and used by `next dev`. Don't delete or regenerate without reason.
+- `pnpm-workspace.yaml` pins `@types/react`/`@types/react-dom` overrides and allows `sharp` + `unrs-resolver` builds. Don't remove these — they prevent React 19 type drift.
+- ESLint flat config (`eslint.config.mjs`) ignores `.next/`, `node_modules/`, `out/`, `build/`, `next-env.d.ts`. `lint:fix` uses **oxlint**, not eslint — they are not interchangeable.
