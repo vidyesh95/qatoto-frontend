@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSidebar } from "@/state/sidebar-context";
-import AccountMenu from "@/components/home/account-menu";
+import AccountMenu from "@/components/home/account/account-menu";
 
 const ANIME_SUBPAGES: Record<string, string> = {
   "/anime/genre": "Genre",

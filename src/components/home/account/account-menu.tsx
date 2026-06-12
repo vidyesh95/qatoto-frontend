@@ -3,13 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { AppearancePanel, THEME_SUMMARY, type Theme } from "@/components/home/appearance-menu";
-import { LanguagePanel } from "@/components/home/language-menu";
-import { countryName, DEFAULT_COUNTRY_CODE, LocationPanel } from "@/components/home/location-menu";
-import { ChildPanel } from "@/components/home/child-menu";
-import { IncognitoPanel } from "@/components/home/incognito-menu";
-import { AiAssistPanel } from "@/components/home/ai-assist-menu";
-import { SettingsPanel } from "@/components/home/settings-menu";
+import { AppearancePanel, THEME_SUMMARY, type Theme } from "@/components/home/account/appearance-menu";
+import { LanguagePanel } from "@/components/home/account/language-menu";
+import { countryName, DEFAULT_COUNTRY_CODE, LocationPanel } from "@/components/home/account/location-menu";
+import { ChildPanel } from "@/components/home/account/child-menu";
+import { IncognitoPanel } from "@/components/home/account/incognito-menu";
+import { AiAssistPanel } from "@/components/home/account/ai-assist-menu";
+import { SettingsPanel } from "@/components/home/account/settings-menu";
 
 type AccountMenuProps = {
   /** Called when the menu should close — e.g. an outside click or after sign-out. */

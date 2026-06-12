@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import VideoCard, { type VideoCardProps } from "@/components/home/video-card";
+import VideoCard, { type VideoCardProps } from "@/components/home/shared/video-card";
 
 const TABS = ["Liked", "Bookmarked"] as const;
 

@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import Navbar from "@/components/home/navbar";
-import Sidebar from "@/components/home/sidebar";
-import MobileBottomNav from "@/components/home/mobile-bottom-nav";
+import Navbar from "@/components/home/layout/navbar";
+import Sidebar from "@/components/home/layout/sidebar";
+import MobileBottomNav from "@/components/home/layout/mobile-bottom-nav";
 import { SidebarProvider } from "@/state/sidebar-context";
 
 interface Props {

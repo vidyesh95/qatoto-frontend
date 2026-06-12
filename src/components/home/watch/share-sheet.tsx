@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-import StatPill from "@/components/home/stat-pill";
+import StatPill from "@/components/home/watch/stat-pill";
 
 /** A secondary action shown as a circular icon + label in the sheet body. */
 type ShareAction = {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import FavoriteContent from "@/components/home/favorite-content";
+import FavoriteContent from "@/components/home/anime/favorite-content";
 
 export const metadata: Metadata = {
   title: "Favorite",

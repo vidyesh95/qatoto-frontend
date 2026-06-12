@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import GenreContent from "@/components/home/genre-content";
+import GenreContent from "@/components/home/anime/genre-content";
 
 export const metadata: Metadata = {
   title: "Genre",

@@ -1,9 +1,9 @@
-import SectionDivider from "@/components/home/section-divider";
-import SpotlightVideoCards from "@/components/home/spotlight-video-cards";
-import VideoCard, { type VideoCardProps } from "@/components/home/video-card";
+import SectionDivider from "@/components/home/feed/section-divider";
+import SpotlightVideoCards from "@/components/home/feed/spotlight-video-cards";
+import VideoCard, { type VideoCardProps } from "@/components/home/shared/video-card";
 import VideoCategoryCard, {
   type VideoCategoryCardProps,
-} from "@/components/home/video-category-card";
+} from "@/components/home/feed/video-category-card";
 
 type Video = VideoCardProps & { id: string };
 type VideoCategory = VideoCategoryCardProps & { id: string };

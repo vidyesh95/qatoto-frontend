@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import WatchContent from "@/components/home/watch-content";
+import WatchContent from "@/components/home/watch/watch-content";
 import { getVideo } from "@/lib/videos";
 
 type SearchParams = Promise<{ v?: string }>;

@@ -1,6 +1,6 @@
-import PromoCarousel from "@/components/home/promo-carousel";
-import Filter from "@/components/home/filter";
-import AllContent from "@/components/home/all-content";
+import PromoCarousel from "@/components/home/feed/promo-carousel";
+import Filter from "@/components/home/feed/filter";
+import AllContent from "@/components/home/feed/all-content";
 
 export default function Home() {
   return (

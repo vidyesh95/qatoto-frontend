@@ -1,4 +1,4 @@
-import type { Comment, Review, SaleItem } from "@/components/home/comments";
+import type { Comment, Review, SaleItem } from "@/components/home/watch/comments";
 
 export type Episode = { id: string; label: string; isPremium: boolean };
 export type Season = { id: string; label: string; episodes: Episode[] };

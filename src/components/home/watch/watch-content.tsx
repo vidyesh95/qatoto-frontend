@@ -4,14 +4,14 @@ import { useState } from "react";
 
 import Image from "next/image";
 
-import Comments from "@/components/home/comments";
-import FocusButton from "@/components/home/focus-button";
-import ShareButton from "@/components/home/share-sheet";
-import StatPill from "@/components/home/stat-pill";
-import VideoCard, { type VideoCardProps } from "@/components/home/video-card";
-import VideoDescription from "@/components/home/video-description";
-import VideoPlayer from "@/components/home/video-player";
-import WatchInfoPanel from "@/components/home/watch-info-panel";
+import Comments from "@/components/home/watch/comments";
+import FocusButton from "@/components/home/watch/focus-button";
+import ShareButton from "@/components/home/watch/share-sheet";
+import StatPill from "@/components/home/watch/stat-pill";
+import VideoCard, { type VideoCardProps } from "@/components/home/shared/video-card";
+import VideoDescription from "@/components/home/watch/video-description";
+import VideoPlayer from "@/components/home/watch/video-player";
+import WatchInfoPanel from "@/components/home/watch/watch-info-panel";
 import type { Episode, Season, WatchVideo } from "@/lib/videos";
 
 const RECOMMENDED: VideoCardProps[] = [
