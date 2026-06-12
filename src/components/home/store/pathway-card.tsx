@@ -8,18 +8,20 @@ export default function PathwayCard({ pathway }: { pathway: Pathway }) {
   return (
     <Link
       href={`/store/pathway/${pathway.slug}`}
-      className="group relative flex aspect-[3/4] w-44 shrink-0 flex-col justify-start overflow-hidden rounded-xl bg-gray-100 sm:w-52"
+      className="group flex w-44 shrink-0 flex-col sm:w-52"
     >
-      <Image
-        src={pathway.imageSrc}
-        fill
-        alt={pathway.title}
-        className="object-cover transition duration-300 group-hover:scale-105"
-      />
-      <div className="relative bg-linear-to-b from-black/50 to-transparent p-3">
-        <p className="text-sm font-semibold text-white">{pathway.title}</p>
+      <div className="relative aspect-3/4 w-full overflow-hidden rounded-xl">
+        <Image
+          src={pathway.imageSrc}
+          fill
+          alt={pathway.title}
+          className="object-cover transition duration-300 group-hover:scale-105"
+        />
+      </div>
+      <div className="mt-1.5 px-0.5">
+        <p className="text-sm font-semibold">{pathway.title}</p>
         {pathway.subtitle && (
-          <p className="line-clamp-2 text-xs text-white/85">{pathway.subtitle}</p>
+          <p className="line-clamp-2 text-xs text-foreground/60">{pathway.subtitle}</p>
         )}
       </div>
     </Link>
