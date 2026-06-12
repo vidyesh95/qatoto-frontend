@@ -90,19 +90,19 @@ export default function Navbar() {
                 {sub.title}
               </h1>
               {/* desktop: breadcrumb */}
-              <div className="hidden items-baseline gap-2 md:flex">
-                <Link href="/" className="font-serif text-3xl font-medium text-[#00696E]">
+              <div className="hidden min-w-0 items-baseline gap-2 md:flex">
+                <Link href="/" className="shrink-0 font-serif text-3xl font-medium text-[#00696E]">
                   Qatoto
                 </Link>
-                <span className="font-serif text-2xl text-[#00696E]/40">|</span>
+                <span className="shrink-0 font-serif text-2xl text-[#00696E]/40">|</span>
                 <Link
                   href={sub.parentHref}
-                  className="text-xl font-medium text-foreground hover:underline"
+                  className="shrink-0 text-xl font-medium text-foreground hover:underline"
                 >
                   {sub.parentLabel}
                 </Link>
-                <span className="text-muted-foreground">›</span>
-                <span className="text-xl font-medium text-foreground">{sub.title}</span>
+                <span className="shrink-0 text-muted-foreground">›</span>
+                <span className="truncate text-xl font-medium text-foreground">{sub.title}</span>
               </div>
             </>
           ) : (
