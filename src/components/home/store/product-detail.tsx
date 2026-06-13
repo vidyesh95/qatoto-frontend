@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import DeliverTo from "./deliver-to";
 import EngagementBar from "./engagement-bar";
 import ProductCarousel from "./product-carousel";
 
@@ -298,24 +299,8 @@ export default function ProductDetail({ slug }: { slug: string }) {
         </div>
       </Section>
 
-      {/* Deliver to */}
-      <div className="flex items-center gap-2 border-t border-[#CAC4D0]/60 px-4 py-3 lg:px-6">
-        <div className="flex-1 text-xs">
-          <p>
-            <span className="text-[#6F7979]">Deliver to:</span> Vidyesh Bipin Churi, 401301{" "}
-            <span className="ml-1 rounded bg-[#D6E3FF] px-1 py-0.5">HOME</span>
-          </p>
-          <p className="mt-0.5 text-[#6F7979]">
-            1457, Vinay house, Agashi-Crossnaka, Virar west, Tal: Vasai, Dist: Palghar
-          </p>
-        </div>
-        <button
-          type="button"
-          className="rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E]"
-        >
-          Change
-        </button>
-      </div>
+      {/* Deliver to — selectable address with a Change sheet (add/edit/select) */}
+      <DeliverTo />
 
       {/* Delivery cost */}
       <div className="flex items-center gap-2 border-t border-[#CAC4D0]/60 px-4 py-3 text-xs lg:px-6">
