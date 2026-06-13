@@ -14,7 +14,7 @@ import VideoPlayer from "@/components/home/watch/video-player";
 import WatchInfoPanel from "@/components/home/watch/watch-info-panel";
 import type { Episode, Season, WatchVideo } from "@/lib/videos";
 
-const RECOMMENDED: VideoCardProps[] = [
+const RECOMMENDED_VIDEOS: VideoCardProps[] = [
   {
     thumbnailSrc: "/dummy/thumbnail_image02.avif",
     profileSrc: "/dummy/profile_image_02.avif",
@@ -56,10 +56,10 @@ const RECOMMENDED: VideoCardProps[] = [
   },
 ];
 
-function findEpisode(seasons: Season[], id: string): Episode | undefined {
+function findEpisode(seasons: Season[], episodeId: string): Episode | undefined {
   for (const season of seasons) {
-    const ep = season.episodes.find((e) => e.id === id);
-    if (ep) return ep;
+    const matchingEpisode = season.episodes.find((episode) => episode.id === episodeId);
+    if (matchingEpisode) return matchingEpisode;
   }
   return undefined;
 }
@@ -96,8 +96,8 @@ function AnimeSeasonPanel({
   seasons: Season[];
   activeSeason: number;
   selectedEpisodeId: string;
-  onSeasonChange: (index: number) => void;
-  onEpisodeSelect: (id: string) => void;
+  onSeasonChange: (seasonIndex: number) => void;
+  onEpisodeSelect: (episodeId: string) => void;
 }) {
   const episodes = seasons[activeSeason]?.episodes ?? [];
 
@@ -106,13 +106,13 @@ function AnimeSeasonPanel({
       <h2 className="pb-2 text-base font-medium">Season</h2>
       <div className="border-b border-border">
         <div className="flex scrollbar-none overflow-x-auto px-2">
-          {seasons.map((season, i) => {
-            const isActive = activeSeason === i;
+          {seasons.map((season, seasonIndex) => {
+            const isActive = activeSeason === seasonIndex;
             return (
               <button
                 key={season.id}
                 type="button"
-                onClick={() => onSeasonChange(i)}
+                onClick={() => onSeasonChange(seasonIndex)}
                 aria-pressed={isActive}
                 className={`relative min-w-16 flex-1 cursor-pointer px-4 py-3 text-sm font-medium transition-colors ${
                   isActive ? "text-[#00696E]" : "text-[#6F7979] hover:text-foreground"
@@ -131,21 +131,21 @@ function AnimeSeasonPanel({
       </div>
       <h2 className="pt-4 pb-3 text-base font-medium">Episode</h2>
       <div className="grid grid-cols-3 gap-3">
-        {episodes.map((ep) => {
-          const isSelected = ep.id === selectedEpisodeId;
+        {episodes.map((episode) => {
+          const isSelected = episode.id === selectedEpisodeId;
           return (
             <button
-              key={ep.id}
+              key={episode.id}
               type="button"
-              onClick={() => onEpisodeSelect(ep.id)}
+              onClick={() => onEpisodeSelect(episode.id)}
               className={`flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors ${
                 isSelected
                   ? "bg-[#CCE8E9] text-[#041F21]"
                   : "text-[#3F4949] ring-1 ring-[#6F7979] hover:bg-[#F1F3F3]"
               }`}
             >
-              {ep.label}
-              {ep.isPremium && (
+              {episode.label}
+              {episode.isPremium && (
                 <Image
                   src={`/icons/diamond_24dp_000000_FILL${isSelected ? 1 : 0}_wght400_GRAD0_opsz24.svg`}
                   width={14}
@@ -258,9 +258,9 @@ export default function WatchContent({ video }: { video: WatchVideo | null }) {
                 seasons={video.seasons}
                 activeSeason={activeSeason}
                 selectedEpisodeId={selectedEpisodeId}
-                onSeasonChange={(i) => {
-                  setActiveSeason(i);
-                  setSelectedEpisodeId(video.seasons![i]?.episodes[0]?.id ?? "");
+                onSeasonChange={(seasonIndex) => {
+                  setActiveSeason(seasonIndex);
+                  setSelectedEpisodeId(video.seasons![seasonIndex]?.episodes[0]?.id ?? "");
                 }}
                 onEpisodeSelect={setSelectedEpisodeId}
               />
@@ -294,8 +294,8 @@ export default function WatchContent({ video }: { video: WatchVideo | null }) {
           <div className="space-y-4">
             <h2 className="text-lg font-medium">Recommended for You</h2>
             <div className="space-y-5">
-              {RECOMMENDED.map((item) => (
-                <VideoCard key={item.title} {...item} />
+              {RECOMMENDED_VIDEOS.map((recommendedVideo) => (
+                <VideoCard key={recommendedVideo.title} {...recommendedVideo} />
               ))}
             </div>
           </div>
