@@ -210,7 +210,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
                   c.selected ? "outline outline-[#2A76FD]" : "outline outline-[#E0E3E3]"
                 } -outline-offset-1`}
               >
-                <Image src={c.src} fill alt={c.name} className="object-cover" />
+                <Image src={c.src} fill sizes="56px" alt={c.name} className="object-cover" />
               </div>
               <p
                 className={`mt-1 text-center text-xs font-medium tracking-wide ${
@@ -414,7 +414,13 @@ export default function ProductDetail({ slug }: { slug: string }) {
           {HIGHLIGHTS.map((h) => (
             <div key={h.title}>
               <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-[#F5F5F5]">
-                <Image src={h.image} fill alt={h.title} className="object-cover" />
+                <Image
+                  src={h.image}
+                  fill
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  alt={h.title}
+                  className="object-cover"
+                />
               </div>
               <h3 className="mt-2 text-sm font-medium">{h.title}</h3>
               <p className="text-xs text-[#6F7979]">{h.body}</p>
@@ -439,7 +445,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
           {REVIEWS.map((r, i) => (
             <div key={i} className="flex gap-3">
               <div className="relative size-14 shrink-0 overflow-hidden rounded bg-[#F5F5F5]">
-                <Image src={r.image} fill alt="" className="object-cover" />
+                <Image src={r.image} fill sizes="56px" alt="" className="object-cover" />
               </div>
               <div className="flex-1">
                 <Stars rating={r.rating} />
@@ -463,7 +469,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
               key={c.name}
               className="relative aspect-square overflow-hidden rounded bg-[#F5F5F5]"
             >
-              <Image src={c.src} fill alt="" className="object-cover" />
+              <Image src={c.src} fill sizes="(min-width: 1024px) 12vw, 25vw" alt="" className="object-cover" />
             </div>
           ))}
         </div>

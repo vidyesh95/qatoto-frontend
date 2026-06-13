@@ -51,7 +51,14 @@ export default function ProductCarousel({ images, alt }: { images: string[]; alt
       >
         {slides.map((src, i) => (
           <div key={i} className="relative aspect-square w-full shrink-0 snap-center">
-            <Image src={src} fill alt={alt} className="object-contain" />
+            <Image
+              src={src}
+              fill
+              priority={i === 0}
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              alt={alt}
+              className="object-contain"
+            />
           </div>
         ))}
       </div>

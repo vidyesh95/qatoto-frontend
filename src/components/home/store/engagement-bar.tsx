@@ -24,6 +24,7 @@ function PillIcon({ icon, filled }: { icon: string; filled: boolean }) {
       <Image
         src={`/icons/${icon}_24dp_000000_FILL${filled ? 1 : 0}_wght400_GRAD0_opsz24.svg`}
         fill
+        sizes="16px"
         alt=""
         className="object-contain"
       />
