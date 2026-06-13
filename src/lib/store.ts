@@ -1862,6 +1862,14 @@ const CATEGORY_PRODUCT_POOLS: Record<string, StoreProduct[]> = {
       "/dummy/thumbnail_image02.avif",
       "$180",
     ),
+    // Leads the "Popular in Stacking Chair" rail (window starts at pool index 2).
+    prod(
+      "lv-folding-chair",
+      "Louis Vuitton Folding Metal Living Room Chair(Finish Color - Red, Pre-assembled)",
+      "Pre-assembled, Red",
+      "/dummy/chair_raspberry_red.avif",
+      "$753.80",
+    ),
     prod(
       "padded-stacking-chairs",
       "Padded Stacking Chairs",
