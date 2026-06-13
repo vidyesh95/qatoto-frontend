@@ -82,7 +82,7 @@ const KEY_FEATURES = [
   "Pre-assembled — no tools required",
 ];
 
-const VERIFIED = [
+const VERIFIED_CAPABILITIES = [
   "OEM factory",
   "Full customization",
   "Product inspection",
@@ -203,21 +203,27 @@ export default function ProductDetail({ slug }: { slug: string }) {
       <div className="px-4 pt-2 lg:px-6">
         <p className="py-2 text-xs font-medium tracking-wide text-foreground">Select Color</p>
         <div className="flex gap-4 overflow-x-auto pb-2">
-          {COLORS.map((c) => (
-            <div key={c.name} className="w-14 shrink-0">
+          {COLORS.map((color) => (
+            <div key={color.name} className="w-14 shrink-0">
               <div
                 className={`relative aspect-square overflow-hidden rounded ${
-                  c.selected ? "outline outline-[#2A76FD]" : "outline outline-[#E0E3E3]"
+                  color.selected ? "outline outline-[#2A76FD]" : "outline outline-[#E0E3E3]"
                 } -outline-offset-1`}
               >
-                <Image src={c.src} fill sizes="56px" alt={c.name} className="object-cover" />
+                <Image
+                  src={color.src}
+                  fill
+                  sizes="56px"
+                  alt={color.name}
+                  className="object-cover"
+                />
               </div>
               <p
                 className={`mt-1 text-center text-xs font-medium tracking-wide ${
-                  c.selected ? "text-[#2A76FD]" : "text-foreground"
+                  color.selected ? "text-[#2A76FD]" : "text-foreground"
                 }`}
               >
-                {c.name}
+                {color.name}
               </p>
             </div>
           ))}
@@ -327,10 +333,10 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* Trade protection */}
       <Section title="Trade protection" open>
         <div className="grid grid-cols-2 gap-2">
-          {TRADE_PROTECTION.map((t) => (
-            <div key={t.label} className="flex items-center gap-2 text-xs">
-              <Icon src={t.icon} size={16} />
-              {t.label}
+          {TRADE_PROTECTION.map((protection) => (
+            <div key={protection.label} className="flex items-center gap-2 text-xs">
+              <Icon src={protection.icon} size={16} />
+              {protection.label}
             </div>
           ))}
         </div>
@@ -348,8 +354,8 @@ export default function ProductDetail({ slug }: { slug: string }) {
           <div>
             <p className="text-sm font-medium">Key Features</p>
             <ul className="mt-1 space-y-0.5 text-xs text-[#191C1C]">
-              {KEY_FEATURES.map((f) => (
-                <li key={f}>{f}</li>
+              {KEY_FEATURES.map((feature) => (
+                <li key={feature}>{feature}</li>
               ))}
             </ul>
           </div>
@@ -396,10 +402,10 @@ export default function ProductDetail({ slug }: { slug: string }) {
           <div className="border-t border-[#CAC4D0]/60 pt-3">
             <p className="mb-2 text-sm">Verified capabilities</p>
             <ul className="space-y-2">
-              {VERIFIED.map((v) => (
-                <li key={v} className="flex items-center gap-2 text-xs">
+              {VERIFIED_CAPABILITIES.map((capability) => (
+                <li key={capability} className="flex items-center gap-2 text-xs">
                   <Icon src="verified_24dp_00696E_FILL1_wght400_GRAD0_opsz24.svg" size={16} />
-                  {v}
+                  {capability}
                 </li>
               ))}
             </ul>
@@ -411,19 +417,19 @@ export default function ProductDetail({ slug }: { slug: string }) {
       <div className="border-t border-[#CAC4D0]/60 px-4 py-4 lg:px-6">
         <h2 className="mb-3 text-base font-medium">Product highlights</h2>
         <div className="space-y-6">
-          {HIGHLIGHTS.map((h) => (
-            <div key={h.title}>
+          {HIGHLIGHTS.map((highlight) => (
+            <div key={highlight.title}>
               <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-[#F5F5F5]">
                 <Image
-                  src={h.image}
+                  src={highlight.image}
                   fill
                   sizes="(min-width: 1024px) 50vw, 100vw"
-                  alt={h.title}
+                  alt={highlight.title}
                   className="object-cover"
                 />
               </div>
-              <h3 className="mt-2 text-sm font-medium">{h.title}</h3>
-              <p className="text-xs text-[#6F7979]">{h.body}</p>
+              <h3 className="mt-2 text-sm font-medium">{highlight.title}</h3>
+              <p className="text-xs text-[#6F7979]">{highlight.body}</p>
             </div>
           ))}
         </div>
@@ -442,15 +448,15 @@ export default function ProductDetail({ slug }: { slug: string }) {
           </button>
         </div>
         <div className="space-y-4">
-          {REVIEWS.map((r, i) => (
-            <div key={i} className="flex gap-3">
+          {REVIEWS.map((review, reviewIndex) => (
+            <div key={reviewIndex} className="flex gap-3">
               <div className="relative size-14 shrink-0 overflow-hidden rounded bg-[#F5F5F5]">
-                <Image src={r.image} fill sizes="56px" alt="" className="object-cover" />
+                <Image src={review.image} fill sizes="56px" alt="" className="object-cover" />
               </div>
               <div className="flex-1">
-                <Stars rating={r.rating} />
-                <p className="text-[11px] text-[#6F7979]">12 months ago · {r.name}</p>
-                <p className="mt-0.5 text-xs">{r.body}</p>
+                <Stars rating={review.rating} />
+                <p className="text-[11px] text-[#6F7979]">12 months ago · {review.name}</p>
+                <p className="mt-0.5 text-xs">{review.body}</p>
               </div>
             </div>
           ))}
@@ -464,13 +470,13 @@ export default function ProductDetail({ slug }: { slug: string }) {
       <div className="border-t border-[#CAC4D0]/60 px-4 py-4 lg:px-6">
         <h2 className="mb-3 text-base font-medium">Photos</h2>
         <div className="grid grid-cols-4 gap-2">
-          {COLORS.map((c) => (
+          {COLORS.map((color) => (
             <div
-              key={c.name}
+              key={color.name}
               className="relative aspect-square overflow-hidden rounded bg-[#F5F5F5]"
             >
               <Image
-                src={c.src}
+                src={color.src}
                 fill
                 sizes="(min-width: 1024px) 12vw, 25vw"
                 alt=""
@@ -489,9 +495,9 @@ export default function ProductDetail({ slug }: { slug: string }) {
           <span className="text-sm text-[#6F7979]">Search or ask question</span>
         </div>
         <ul className="space-y-3">
-          {QUESTIONS.map((q) => (
-            <li key={q} className="flex items-center justify-between text-sm">
-              {q}
+          {QUESTIONS.map((question) => (
+            <li key={question} className="flex items-center justify-between text-sm">
+              {question}
               <Icon src="arrow_forward_ios_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" size={16} />
             </li>
           ))}
