@@ -141,7 +141,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
   void slug; // single mock product for now
 
   return (
-    <div className="mx-auto w-full max-w-md pb-24">
+    <div className="mx-auto w-full max-w-md pb-40 md:pb-24">
       {/* Hero image + carousel dots */}
       <div className="relative aspect-square w-full overflow-hidden bg-[#F5F5F5]">
         <Image
@@ -451,17 +451,24 @@ export default function ProductDetail({ slug }: { slug: string }) {
         </Link>
       </div>
 
-      {/* Sticky buy bar */}
-      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md gap-2 border-t border-[#CAC4D0]/60 bg-background px-4 py-3">
+      {/* Sticky action bar — sits above the mobile bottom nav (md:hidden adds
+          its ~80px height); on md+ there's no bottom nav so it drops to 0. */}
+      <div className="fixed inset-x-0 bottom-[calc(80px+env(safe-area-inset-bottom))] z-20 mx-auto flex max-w-md gap-2 bg-white px-4 py-2 md:bottom-0">
         <button
           type="button"
-          className="flex-1 rounded-full border border-[#00696E] py-2.5 text-sm font-medium text-[#00696E]"
+          className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
+        >
+          Send inquiry
+        </button>
+        <button
+          type="button"
+          className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
         >
           Add to cart
         </button>
         <button
           type="button"
-          className="flex-1 rounded-full bg-[#00696E] py-2.5 text-sm font-medium text-white"
+          className="flex-1 rounded-full bg-[#00696E] px-4 py-1.5 text-xs font-medium text-white"
         >
           Buy now
         </button>
