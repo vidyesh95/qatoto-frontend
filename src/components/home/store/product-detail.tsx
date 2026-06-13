@@ -155,10 +155,10 @@ export default function ProductDetail({ slug }: { slug: string }) {
 
       {/* View in 360 banner */}
       <div className="px-4 py-2 lg:px-6">
-        <div className="flex items-center gap-3 rounded border border-[#2A76FD] p-2">
-          <div className="flex-1">
-            <p className="text-sm font-medium">View in 360º</p>
-            <p className="text-[11px] font-medium text-[#6F7979]">
+        <div className="flex items-center gap-3 rounded p-2 outline -outline-offset-1 outline-[#2A76FD]">
+          <div className="flex flex-1 flex-col gap-1">
+            <p className="text-sm font-medium text-[#191C1C]">View in 360º</p>
+            <p className="text-[11px] font-medium tracking-[0.5px] text-[#6F7979]">
               Check how this looks from all angles
             </p>
           </div>
