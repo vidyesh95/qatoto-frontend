@@ -51,7 +51,7 @@ export default function DeliverTo() {
 
   return (
     <>
-      <div className="flex items-center gap-2 border-t border-[#CAC4D0]/60 px-4 py-2 lg:px-6">
+      <div className="flex items-center gap-2 px-4 py-2 lg:px-6">
         <div className="flex-1 text-xs">
           <p className="flex items-center gap-0.75">
             <span className="text-[#191C1C]">Deliver to:</span>
