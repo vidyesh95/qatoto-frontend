@@ -17,6 +17,7 @@ export default function PathwayCard({ pathway }: { pathway: Pathway }) {
         <Image
           src={pathway.imageSrc}
           fill
+          sizes="(min-width: 640px) 208px, 176px"
           alt={pathway.title}
           className="object-cover transition duration-300 group-hover:scale-105"
         />

@@ -21,6 +21,7 @@ export default async function PathwayDetail({ slug }: { slug: string }) {
         <Image
           src={pathway.imageSrc}
           fill
+          sizes="(min-width: 1024px) 710px, 100vw"
           className="object-cover object-center"
           loading="eager"
           alt={pathway.title}

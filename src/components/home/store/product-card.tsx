@@ -14,6 +14,7 @@ export default function ProductCard({ product }: { product: StoreProduct }) {
         <Image
           src={product.imageSrc}
           fill
+          sizes="(min-width: 640px) 192px, 160px"
           alt={product.name}
           className="object-cover transition duration-300 group-hover:scale-105"
         />

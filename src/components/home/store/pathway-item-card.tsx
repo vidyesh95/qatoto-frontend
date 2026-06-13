@@ -12,6 +12,7 @@ export default function PathwayItemCard({ item }: { item: PathwayItem }) {
         <Image
           src={item.imageSrc}
           fill
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
           alt={item.name}
           className="object-cover transition duration-300 group-hover:scale-105"
         />

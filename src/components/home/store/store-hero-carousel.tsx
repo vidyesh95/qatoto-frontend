@@ -32,6 +32,7 @@ export default function StoreHeroCarousel({ slides }: { slides: HeroSlide[] }) {
       <Image
         src={slide.imageSrc}
         fill
+        sizes="(min-width: 1024px) 710px, 100vw"
         className="object-cover object-center"
         loading="eager"
         alt={slide.title}
