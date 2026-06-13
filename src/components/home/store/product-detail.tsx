@@ -1,6 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import ProductCarousel from "./product-carousel";
+
+const HERO_IMAGES = [
+  "/dummy/chair_raspberry_red.avif",
+  "/dummy/chair_raspberry_red02.avif",
+  "/dummy/chair_raspberry_red03.avif",
+];
+
 // Product detail (chair) view. UI-only mock — static data baked in, no fetch.
 // Mirrors the Figma spec: image + 360 banner, color picker, price tiers,
 // customization, delivery, trade protection, product + company details,
@@ -142,25 +150,8 @@ export default function ProductDetail({ slug }: { slug: string }) {
 
   return (
     <div className="mx-auto w-full max-w-md pb-40 md:pb-24">
-      {/* Hero image + carousel dots */}
-      <div className="relative aspect-square w-full overflow-hidden bg-[#F5F5F5]">
-        <Image
-          src="/dummy/chair_raspberry_red.avif"
-          fill
-          alt="Louis Vuitton Folding Metal Living Room Chair"
-          className="object-contain"
-        />
-      </div>
-      <div className="flex justify-center gap-1 py-2">
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-          <span
-            key={i}
-            className={
-              i === 8 ? "h-1 w-2 rounded-full bg-[#4A6364]" : "size-1 rounded-full bg-[#CCE8E9]"
-            }
-          />
-        ))}
-      </div>
+      {/* Hero carousel + dots */}
+      <ProductCarousel images={HERO_IMAGES} alt="Louis Vuitton Folding Metal Living Room Chair" />
 
       {/* View in 360 banner */}
       <div className="px-4 py-2 lg:px-6">
