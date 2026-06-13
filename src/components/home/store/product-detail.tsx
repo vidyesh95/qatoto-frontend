@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import EngagementBar from "./engagement-bar";
 import ProductCarousel from "./product-carousel";
 
 const HERO_IMAGES = [
@@ -37,13 +38,6 @@ const TRADE_PROTECTION = [
     label: "Refund for no delivery",
     icon: "local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
-];
-
-const ENGAGEMENT = [
-  { count: "3.7k", icon: "favorite_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg" },
-  { count: "414", icon: "share_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg" },
-  { count: "1.1k", icon: "comment_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg" },
-  { count: "3696", icon: "bar_chart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
 ];
 
 const KEY_FEATURES = [
@@ -212,18 +206,8 @@ export default function ProductDetail({ slug }: { slug: string }) {
         </div>
       </div>
 
-      {/* Engagement pills */}
-      <div className="flex gap-4 px-4 py-6 lg:px-6">
-        {ENGAGEMENT.map((e) => (
-          <span
-            key={e.count}
-            className="flex flex-1 items-center justify-center gap-1 rounded-full bg-[#CCE8E9] px-2 py-1 text-[11px] font-medium text-[#041F21] shadow-sm"
-          >
-            <Icon src={e.icon} size={16} />
-            {e.count}
-          </span>
-        ))}
-      </div>
+      {/* Engagement pills — toggle-fill on select; share opens a sheet */}
+      <EngagementBar />
 
       {/* Price chart */}
       <Section title="Price chart" open>

@@ -29,7 +29,7 @@ type ShareSheetProps = {
  * desktop. The actions here are presentational stubs — the only one wired up
  * is "Copy Link", which copies the current page URL to the clipboard.
  */
-function ShareSheet({ onClose }: ShareSheetProps) {
+export function ShareSheet({ onClose }: ShareSheetProps) {
   const [copied, setCopied] = useState(false);
   // Reference to the panel, used to detect outside clicks on desktop where
   // there is no full-screen backdrop to catch them.
