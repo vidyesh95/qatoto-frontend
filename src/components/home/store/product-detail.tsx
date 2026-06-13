@@ -28,7 +28,12 @@ const PRICE_TIERS = [
   { price: "$753.80", order: ">=500 sets" },
 ];
 
-const CUSTOMIZATION = ["Custom logo", "Custom graphics", "Custom packaging", "Custom cards"];
+const CUSTOMIZATION = [
+  { label: "Custom logo", icon: "android_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+  { label: "Custom graphics", icon: "comic_bubble_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+  { label: "Custom packaging", icon: "package_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+  { label: "Custom cards", icon: "description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+];
 
 const TRADE_PROTECTION = [
   { label: "Buyer protection", icon: "shield_person_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
@@ -224,12 +229,12 @@ export default function ProductDetail({ slug }: { slug: string }) {
           <div className="flex">
             {PRICE_TIERS.map((t) => (
               <div key={t.order} className="flex flex-1 flex-col gap-1 rounded p-1">
-                <p className="text-sm font-medium tracking-[0.1px] text-[#191C1C]">{t.price}</p>
+                <p className="text-sm font-medium tracking-wide text-[#191C1C]">{t.price}</p>
                 <div className="flex flex-col gap-0.5">
-                  <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-[#191C1C]">
+                  <p className="text-xs leading-4 font-medium tracking-wide text-[#191C1C]">
                     Min. order:
                   </p>
-                  <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-[#191C1C]">
+                  <p className="text-xs leading-4 font-medium tracking-wide text-[#191C1C]">
                     {t.order}
                   </p>
                 </div>
@@ -242,12 +247,12 @@ export default function ProductDetail({ slug }: { slug: string }) {
 
       {/* Customization options */}
       <Section title="Customization options" open>
-        <div className="grid grid-cols-2 gap-2">
-          {CUSTOMIZATION.map((label) => (
-            <label key={label} className="flex items-center gap-2 text-xs">
-              <Icon src="check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" size={16} />
-              {label}
-            </label>
+        <div className="grid grid-flow-col grid-cols-2 grid-rows-2 gap-y-2">
+          {CUSTOMIZATION.map((c) => (
+            <div key={c.label} className="flex items-center gap-1">
+              <Icon src={c.icon} size={16} />
+              <span className="text-xs leading-4 tracking-wide text-[#191C1C]">{c.label}</span>
+            </div>
           ))}
         </div>
       </Section>
