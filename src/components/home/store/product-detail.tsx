@@ -7,9 +7,9 @@ import Link from "next/link";
 // highlights, reviews, photos and a Q&A block, with a sticky buy bar.
 
 const COLORS = [
+  { name: "Raspberry red", src: "/dummy/chair_raspberry_red.avif", selected: true },
   { name: "Royal purple", src: "/dummy/chair_royal_purple.avif" },
   { name: "Sea blue", src: "/dummy/chair_sea_blue.avif" },
-  { name: "Raspberry red", src: "/dummy/chair_raspberry_red.avif", selected: true },
   { name: "Charcoal black", src: "/dummy/chair_charcoal_black.avif" },
 ];
 
