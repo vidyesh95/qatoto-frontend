@@ -47,7 +47,7 @@ export default function ProductCarousel({ images, alt }: { images: string[]; alt
       <div
         ref={trackRef}
         onScroll={handleScroll}
-        className="flex w-full snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto bg-[#F5F5F5] [&::-webkit-scrollbar]:hidden"
+        className="flex w-full snap-x snap-mandatory scrollbar-none overflow-x-auto bg-[#F5F5F5] [&::-webkit-scrollbar]:hidden"
       >
         {slides.map((src, i) => (
           <div key={i} className="relative aspect-square w-full shrink-0 snap-center">

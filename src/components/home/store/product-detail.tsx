@@ -469,7 +469,13 @@ export default function ProductDetail({ slug }: { slug: string }) {
               key={c.name}
               className="relative aspect-square overflow-hidden rounded bg-[#F5F5F5]"
             >
-              <Image src={c.src} fill sizes="(min-width: 1024px) 12vw, 25vw" alt="" className="object-cover" />
+              <Image
+                src={c.src}
+                fill
+                sizes="(min-width: 1024px) 12vw, 25vw"
+                alt=""
+                className="object-cover"
+              />
             </div>
           ))}
         </div>
