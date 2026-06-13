@@ -5,6 +5,7 @@ import CustomizationOptions from "./customization-options";
 import DeliverTo from "./deliver-to";
 import DeliveryCost from "./delivery-cost";
 import EngagementBar from "./engagement-bar";
+import PriceChart, { type ProductPricingTier } from "./price-chart";
 import ProductCarousel from "./product-carousel";
 
 const HERO_IMAGES = [
@@ -28,11 +29,6 @@ const COLORS = [
 // Price + customization will come from the backend API. For the UI phase these
 // dummy getters stand in for that fetch — swap the body for a real call later,
 // keep the shape and the call sites unchanged.
-
-type ProductPricingTier = {
-  unitPrice: string;
-  minimumOrderQuantity: string;
-};
 
 function getProductPricingTiers(productSlug: string): ProductPricingTier[] {
   void productSlug; // single mock product for now
@@ -230,39 +226,8 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* Engagement pills — toggle-fill on select; share opens a sheet */}
       <EngagementBar />
 
-      {/* Price chart — dividers inset (px-4), wrapping just the table */}
-      <details open className="group [&_summary]:list-none">
-        <summary className="flex cursor-pointer items-center justify-between px-4 py-3 lg:px-6">
-          <span className="text-sm">Price chart</span>
-          <Icon
-            src="keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            size={22}
-            className="transition-transform group-open:rotate-180"
-          />
-        </summary>
-        <div className="px-4 lg:px-6">
-          <div className="border-t border-[#CAC4D0]" />
-          <div className="flex">
-            {pricingTiers.map((tier) => (
-              <div
-                key={tier.minimumOrderQuantity}
-                className="flex flex-1 flex-col gap-1 rounded p-1"
-              >
-                <p className="text-sm font-medium tracking-wide text-[#191C1C]">{tier.unitPrice}</p>
-                <div className="flex flex-col gap-0.5">
-                  <p className="text-xs leading-4 font-medium tracking-wide text-[#191C1C]">
-                    Min. order:
-                  </p>
-                  <p className="text-xs leading-4 font-medium tracking-wide text-[#191C1C]">
-                    {tier.minimumOrderQuantity}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="border-t border-[#CAC4D0]" />
-        </div>
-      </details>
+      {/* Price chart — tap "more" opens the detailed price-chart sheet */}
+      <PriceChart pricingTiers={pricingTiers} />
 
       {/* Customization options — tap opens the seller's allowed-customizations sheet */}
       <CustomizationOptions />
