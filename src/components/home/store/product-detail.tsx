@@ -170,7 +170,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
 
       {/* Color picker */}
       <div className="px-4 pt-2 lg:px-6">
-        <p className="py-2 text-xs font-medium">Select Color</p>
+        <p className="py-2 text-xs font-medium tracking-wide text-foreground">Select Color</p>
         <div className="flex gap-4 overflow-x-auto pb-2">
           {COLORS.map((c) => (
             <div key={c.name} className="w-14 shrink-0">
@@ -182,8 +182,8 @@ export default function ProductDetail({ slug }: { slug: string }) {
                 <Image src={c.src} fill alt={c.name} className="object-cover" />
               </div>
               <p
-                className={`mt-1 text-center text-[11px] font-medium ${
-                  c.selected ? "text-[#2A76FD]" : "text-[#191C1C]"
+                className={`mt-1 text-center text-xs font-medium tracking-wide ${
+                  c.selected ? "text-[#2A76FD]" : "text-foreground"
                 }`}
               >
                 {c.name}
