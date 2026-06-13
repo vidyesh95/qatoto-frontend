@@ -5,11 +5,12 @@ import { useState } from "react";
 
 import { ShareSheet } from "@/components/home/watch/share-sheet";
 
-// Engagement row for the product page. comment / favorite / bookmark are
-// self-toggling pills (icon swaps FILL0 → FILL1 while selected); share opens
-// the same bottom-sheet / popover used on the watch screen.
+import CommentSheet from "./comment-sheet";
+
+// Engagement row for the product page. favorite / bookmark are self-toggling
+// pills (icon swaps FILL0 → FILL1 while selected); comment opens a comment
+// sheet and share opens a share sheet — both reuse the watch-screen shells.
 const TOGGLE_PILLS = [
-  { icon: "comment", count: "1.1k" },
   { icon: "favorite", count: "3.7k" },
   { icon: "bookmark", count: "414" },
 ] as const;
@@ -33,9 +34,19 @@ function PillIcon({ icon, filled }: { icon: string; filled: boolean }) {
 export default function EngagementBar() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [shareOpen, setShareOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
 
   return (
     <div className="flex gap-4 p-4 lg:px-6">
+      {/* Comment — opens the comment sheet; icon stays unfilled. */}
+      <span className="relative flex flex-1">
+        <button type="button" onClick={() => setCommentsOpen(true)} className={PILL_CLASS}>
+          <PillIcon icon="comment" filled={false} />
+          <span className="[text-shadow:0_1px_2px_rgb(0_0_0/0.25)]">1.1k</span>
+        </button>
+        {commentsOpen && <CommentSheet onClose={() => setCommentsOpen(false)} />}
+      </span>
+
       {TOGGLE_PILLS.map((pill) => {
         const isSelected = selected[pill.icon] ?? false;
         return (
