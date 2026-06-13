@@ -624,9 +624,9 @@ const MOCK_RAILS: ProductRail[] = [
 const BEST_SELLERS_PRODUCTS: StoreProduct[] = [
   {
     id: "lv-folding-chair",
-    name: "LV Folding Metal Chair",
-    subtitle: "Pre-assembled, Red",
-    imageSrc: "/dummy/living_room_chair.avif",
+    name: "Louis Vuitton Folding Metal Living Room Chair(Finish Color - Purple, Pre-assembled)",
+    subtitle: "Pre-assembled, Purple",
+    imageSrc: "/dummy/chair_royal_purple.avif",
     price: "$753.80",
     href: "/store/product/lv-folding-chair",
   },

@@ -145,7 +145,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* Hero image + carousel dots */}
       <div className="relative aspect-square w-full overflow-hidden bg-[#F5F5F5]">
         <Image
-          src="/dummy/living_room_chair.avif"
+          src="/dummy/chair_raspberry_red.avif"
           fill
           alt="Louis Vuitton Folding Metal Living Room Chair"
           className="object-contain"
