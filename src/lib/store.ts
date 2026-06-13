@@ -625,7 +625,7 @@ const BEST_SELLERS_PRODUCTS: StoreProduct[] = [
   {
     id: "lv-folding-chair",
     name: "Louis Vuitton Folding Metal Living Room Chair(Finish Color - Red, Pre-assembled)",
-    subtitle: "Pre-assembled, Purple",
+    subtitle: "Pre-assembled, Red",
     imageSrc: "/dummy/chair_raspberry_red.avif",
     price: "$753.80",
     href: "/store/product/lv-folding-chair",
