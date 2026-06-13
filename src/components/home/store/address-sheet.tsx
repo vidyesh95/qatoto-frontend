@@ -244,13 +244,13 @@ export default function AddressSheet({
         type="button"
         aria-label="Close addresses"
         onClick={onClose}
-        className="fixed inset-0 z-40 bg-black/40"
+        className="fixed inset-0 z-55 bg-black/40"
       />
 
       <div
         ref={panelRef}
         aria-label="Delivery addresses"
-        className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:h-max sm:max-h-[80dvh] sm:w-md sm:rounded-2xl sm:border sm:border-black/10"
+        className="fixed inset-x-0 bottom-0 z-60 flex max-h-[85dvh] flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:h-max sm:max-h-[80dvh] sm:w-md sm:rounded-2xl sm:border sm:border-black/10"
       >
         {/* Drag handle — mobile affordance only. */}
         <div className="flex justify-center pt-3 sm:hidden">
@@ -295,7 +295,7 @@ export default function AddressSheet({
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-0">
+        <div className="min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
           {mode.view === "list" ? (
             <div className="flex flex-col gap-3 px-4 pb-6">
               {addresses.map((address) => (
