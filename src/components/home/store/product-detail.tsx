@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import DeliverTo from "./deliver-to";
+import DeliveryCost from "./delivery-cost";
 import EngagementBar from "./engagement-bar";
 import ProductCarousel from "./product-carousel";
 
@@ -302,18 +303,8 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* Deliver to — selectable address with a Change sheet (add/edit/select) */}
       <DeliverTo />
 
-      {/* Delivery cost */}
-      <div className="flex items-center gap-2 border-t border-[#CAC4D0]/60 px-4 py-3 text-xs lg:px-6">
-        <div className="flex-1 space-y-0.5">
-          <p>
-            <span className="text-[#6F7979]">Delivery cost:</span> Free Delivery to your location
-          </p>
-          <p>
-            <span className="text-[#6F7979]">Estimate delivery time:</span> Sept 23 to Sept 27
-          </p>
-        </div>
-        <Icon src="keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" size={22} />
-      </div>
+      {/* Delivery cost — tap opens the delivery options sheet (map + modes) */}
+      <DeliveryCost />
 
       {/* Trade protection */}
       <Section title="Trade protection" open>
