@@ -102,7 +102,7 @@ function Icon({ src, size = 24, className }: { src: string; size?: number; class
 // Compact dark rating pill (e.g. "4.8 ★").
 function RatingBadge({ value }: { value: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded bg-[#4A6364] px-1.5 py-1 text-[11px] font-medium text-white">
+    <span className="inline-flex items-center gap-1 rounded-sm bg-[#4A6364] p-1 text-xs font-medium tracking-wide text-white">
       {value}
       <span aria-hidden className="text-white">
         ★
@@ -195,15 +195,20 @@ export default function ProductDetail({ slug }: { slug: string }) {
 
       {/* Brand + title + rating */}
       <div className="space-y-1 px-4 pt-2 lg:px-6">
-        <Link href="/store/stacking-chair" className="text-[11px] font-medium text-[#2A76FD]">
+        <Link
+          href="/store/stacking-chair"
+          className="text-xs font-medium tracking-wide text-[#2A76FD]"
+        >
           Louis Vuitton Living Room Chairs
         </Link>
-        <h1 className="text-sm font-medium">
+        <h1 className="text-sm font-medium tracking-tight">
           Louis Vuitton Folding Metal Living Room Chair (Finish Color - Red, Pre-assembled)
         </h1>
         <div className="flex items-center gap-2 pt-1">
           <RatingBadge value="4.8" />
-          <p className="text-sm text-[#6F7979]">26,692 Ratings &amp; 2,432 Reviews</p>
+          <p className="text-sm font-medium tracking-tight text-[#6F7979]">
+            26,692 Ratings &amp; 2,432 Reviews
+          </p>
         </div>
       </div>
 
