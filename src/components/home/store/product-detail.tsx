@@ -22,18 +22,47 @@ const COLORS = [
   { name: "Charcoal black", src: "/dummy/chair_charcoal_black.avif" },
 ];
 
-const PRICE_TIERS = [
-  { price: "$1230.79", order: "1 to 49 sets" },
-  { price: "$1000.23", order: "50 to 499 sets" },
-  { price: "$753.80", order: ">=500 sets" },
-];
+// Price + customization will come from the backend API. For the UI phase these
+// dummy getters stand in for that fetch — swap the body for a real call later,
+// keep the shape and the call sites unchanged.
 
-const CUSTOMIZATION = [
-  { label: "Custom logo", icon: "android_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-  { label: "Custom graphics", icon: "comic_bubble_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-  { label: "Custom packaging", icon: "package_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-  { label: "Custom cards", icon: "description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-];
+type ProductPricingTier = {
+  unitPrice: string;
+  minimumOrderQuantity: string;
+};
+
+type ProductCustomizationOption = {
+  label: string;
+  iconFileName: string;
+};
+
+function getProductPricingTiers(productSlug: string): ProductPricingTier[] {
+  void productSlug; // single mock product for now
+  return [
+    { unitPrice: "$1230.79", minimumOrderQuantity: "1 to 49 sets" },
+    { unitPrice: "$1000.23", minimumOrderQuantity: "50 to 499 sets" },
+    { unitPrice: "$753.80", minimumOrderQuantity: ">=500 sets" },
+  ];
+}
+
+function getProductCustomizationOptions(productSlug: string): ProductCustomizationOption[] {
+  void productSlug; // single mock product for now
+  return [
+    { label: "Custom logo", iconFileName: "android_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+    {
+      label: "Custom graphics",
+      iconFileName: "comic_bubble_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    },
+    {
+      label: "Custom packaging",
+      iconFileName: "package_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    },
+    {
+      label: "Custom cards",
+      iconFileName: "description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    },
+  ];
+}
 
 const TRADE_PROTECTION = [
   { label: "Buyer protection", icon: "shield_person_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
@@ -147,6 +176,9 @@ function Stars({ rating }: { rating: number }) {
 export default function ProductDetail({ slug }: { slug: string }) {
   void slug; // single mock product for now
 
+  const pricingTiers = getProductPricingTiers(slug);
+  const customizationOptions = getProductCustomizationOptions(slug);
+
   return (
     <div className="mx-auto w-full max-w-md pb-40 md:pb-24">
       {/* Hero carousel + dots */}
@@ -227,15 +259,18 @@ export default function ProductDetail({ slug }: { slug: string }) {
         <div className="px-4 lg:px-6">
           <div className="border-t border-[#CAC4D0]" />
           <div className="flex">
-            {PRICE_TIERS.map((t) => (
-              <div key={t.order} className="flex flex-1 flex-col gap-1 rounded p-1">
-                <p className="text-sm font-medium tracking-wide text-[#191C1C]">{t.price}</p>
+            {pricingTiers.map((tier) => (
+              <div
+                key={tier.minimumOrderQuantity}
+                className="flex flex-1 flex-col gap-1 rounded p-1"
+              >
+                <p className="text-sm font-medium tracking-wide text-[#191C1C]">{tier.unitPrice}</p>
                 <div className="flex flex-col gap-0.5">
                   <p className="text-xs leading-4 font-medium tracking-wide text-[#191C1C]">
                     Min. order:
                   </p>
                   <p className="text-xs leading-4 font-medium tracking-wide text-[#191C1C]">
-                    {t.order}
+                    {tier.minimumOrderQuantity}
                   </p>
                 </div>
               </div>
@@ -248,10 +283,10 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* Customization options */}
       <Section title="Customization options" open>
         <div className="grid grid-flow-col grid-cols-2 grid-rows-2 gap-y-2">
-          {CUSTOMIZATION.map((c) => (
-            <div key={c.label} className="flex items-center gap-1">
-              <Icon src={c.icon} size={16} />
-              <span className="text-xs leading-4 tracking-wide text-[#191C1C]">{c.label}</span>
+          {customizationOptions.map((option) => (
+            <div key={option.label} className="flex items-center gap-1">
+              <Icon src={option.iconFileName} size={16} />
+              <span className="text-xs leading-4 tracking-wide text-[#191C1C]">{option.label}</span>
             </div>
           ))}
         </div>
