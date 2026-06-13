@@ -116,7 +116,7 @@ function Section({
   open?: boolean;
 }) {
   return (
-    <details open={open} className="group border-t border-[#CAC4D0]/60 [&_summary]:list-none">
+    <details open={open} className="group [&_summary]:list-none">
       <summary className="flex cursor-pointer items-center justify-between px-4 py-3 lg:px-6">
         <span className="text-sm">{title}</span>
         <Icon
@@ -209,18 +209,36 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* Engagement pills — toggle-fill on select; share opens a sheet */}
       <EngagementBar />
 
-      {/* Price chart */}
-      <Section title="Price chart" open>
-        <div className="grid grid-cols-3 gap-2">
-          {PRICE_TIERS.map((t) => (
-            <div key={t.order}>
-              <p className="text-sm font-medium">{t.price}</p>
-              <p className="mt-1 text-[11px] font-medium text-[#6F7979]">Min. order:</p>
-              <p className="text-[11px] font-medium text-[#6F7979]">{t.order}</p>
-            </div>
-          ))}
+      {/* Price chart — dividers inset (px-4), wrapping just the table */}
+      <details open className="group [&_summary]:list-none">
+        <summary className="flex cursor-pointer items-center justify-between px-4 py-3 lg:px-6">
+          <span className="text-sm">Price chart</span>
+          <Icon
+            src="keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            size={22}
+            className="transition-transform group-open:rotate-180"
+          />
+        </summary>
+        <div className="px-4 lg:px-6">
+          <div className="border-t border-[#CAC4D0]" />
+          <div className="flex">
+            {PRICE_TIERS.map((t) => (
+              <div key={t.order} className="flex flex-1 flex-col gap-1 rounded p-1">
+                <p className="text-sm font-medium tracking-[0.1px] text-[#191C1C]">{t.price}</p>
+                <div className="flex flex-col gap-0.5">
+                  <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-[#191C1C]">
+                    Min. order:
+                  </p>
+                  <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-[#191C1C]">
+                    {t.order}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-[#CAC4D0]" />
         </div>
-      </Section>
+      </details>
 
       {/* Customization options */}
       <Section title="Customization options" open>
