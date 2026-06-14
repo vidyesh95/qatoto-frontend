@@ -7,6 +7,7 @@ import DeliveryCost from "./delivery-cost";
 import EngagementBar from "./engagement-bar";
 import PriceChart, { type ProductPricingTier } from "./price-chart";
 import ProductCarousel from "./product-carousel";
+import TradeProtection from "./trade-protection";
 
 const HERO_IMAGES = [
   "/dummy/chair_raspberry_red.avif",
@@ -38,16 +39,6 @@ function getProductPricingTiers(productSlug: string): ProductPricingTier[] {
     { unitPrice: "$753.80", minimumOrderQuantity: ">=500 sets" },
   ];
 }
-
-const TRADE_PROTECTION = [
-  { label: "Buyer protection", icon: "shield_person_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-  { label: "Secure payment", icon: "lock_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-  { label: "Return policy", icon: "compare_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-  {
-    label: "Refund for no delivery",
-    icon: "local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-  },
-];
 
 const KEY_FEATURES = [
   "Powder-coated steel frame, anti-rust finish",
@@ -238,17 +229,8 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* Delivery cost — tap opens the delivery options sheet (map + modes) */}
       <DeliveryCost />
 
-      {/* Trade protection */}
-      <Section title="Trade protection" open>
-        <div className="grid grid-cols-2 gap-2">
-          {TRADE_PROTECTION.map((protection) => (
-            <div key={protection.label} className="flex items-center gap-2 text-xs">
-              <Icon src={protection.icon} size={16} />
-              {protection.label}
-            </div>
-          ))}
-        </div>
-      </Section>
+      {/* Trade protection — tap opens the sheet explaining each guarantee */}
+      <TradeProtection />
 
       {/* Product details */}
       <Section title="Product details" open>
