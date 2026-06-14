@@ -29,7 +29,7 @@ export default function CustomizationOptions() {
       <button
         type="button"
         onClick={() => setIsSheetOpen(true)}
-        className="flex w-full flex-col py-2 text-left"
+        className="flex w-full flex-col py-2 text-left cursor-pointer"
       >
         <span className="flex w-full items-center px-4 py-2 lg:px-6">
           <span className="flex-1 text-sm leading-5 tracking-wide text-[#191C1C]">
