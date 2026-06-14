@@ -66,7 +66,7 @@ export default function DeliverTo() {
         <button
           type="button"
           onClick={() => setIsSheetOpen(true)}
-          className="rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E] cursor-pointer"
+          className="cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E]"
         >
           Change
         </button>
