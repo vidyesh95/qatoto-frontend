@@ -78,6 +78,49 @@ export default function ProductDetailsSheet({ onClose }: { onClose: () => void }
   const [canScrollBackward, setCanScrollBackward] = useState(false);
   const [canScrollForward, setCanScrollForward] = useState(false);
 
+  // Index of the tab that is currently keyboard-focusable. WAI-ARIA roving
+  // tabindex: exactly one tab has tabIndex 0 (the row is a single Tab stop) and
+  // arrow keys move focus between tabs; Enter/Space activates via the native
+  // button onClick. Initialised to the active tab so Tab lands on it.
+  const [focusedTabIndex, setFocusedTabIndex] = useState(0);
+
+  // Per-tab button refs so keyboard navigation can move DOM focus and scroll
+  // the newly-focused tab into view.
+  const tabButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Moves the roving focus to the tab at `index` (clamped to the valid range),
+  // makes it the single Tab stop, and scrolls it into view.
+  const moveFocusToTab = useCallback((index: number) => {
+    const clampedIndex = Math.max(0, Math.min(index, SPEC_TABS.length - 1));
+    setFocusedTabIndex(clampedIndex);
+    const tab = tabButtonRefs.current[clampedIndex];
+    tab?.focus();
+    tab?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, []);
+
+  // Left/Right move focus between tabs, Home/End jump to the ends. Activation
+  // (selecting a tab) stays on the native button's Enter/Space → onClick.
+  const handleTabsKeyDown = (keyEvent: React.KeyboardEvent<HTMLDivElement>) => {
+    switch (keyEvent.key) {
+      case "ArrowRight":
+        keyEvent.preventDefault();
+        moveFocusToTab(focusedTabIndex + 1);
+        break;
+      case "ArrowLeft":
+        keyEvent.preventDefault();
+        moveFocusToTab(focusedTabIndex - 1);
+        break;
+      case "Home":
+        keyEvent.preventDefault();
+        moveFocusToTab(0);
+        break;
+      case "End":
+        keyEvent.preventDefault();
+        moveFocusToTab(SPEC_TABS.length - 1);
+        break;
+    }
+  };
+
   const recalculateScrollAvailability = useCallback(() => {
     const container = tabsScrollContainerRef.current;
     if (!container) return;
@@ -107,6 +150,15 @@ export default function ProductDetailsSheet({ onClose }: { onClose: () => void }
       behavior: "smooth",
     });
   };
+
+  // Move focus onto the active tab when the sheet opens so arrow keys work
+  // immediately — without this the toolbar's onKeyDown never fires (nothing
+  // inside it is focused). `preventScroll` keeps the sheet from jumping.
+  useEffect(() => {
+    tabButtonRefs.current[focusedTabIndex]?.focus({ preventScroll: true });
+    // Run once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (keyEvent: KeyboardEvent) => {
@@ -183,16 +235,28 @@ export default function ProductDetailsSheet({ onClose }: { onClose: () => void }
 
           <div
             ref={tabsScrollContainerRef}
+            role="toolbar"
+            tabIndex={-1}
+            aria-label="Product detail sections"
+            aria-orientation="horizontal"
+            onKeyDown={handleTabsKeyDown}
             className="flex scrollbar-none gap-2 overflow-x-auto px-4 pb-3"
           >
-            {SPEC_TABS.map((tab) => {
+            {SPEC_TABS.map((tab, tabIndex) => {
               const isActive = tab.id === activeTabId;
               return (
                 <button
                   key={tab.id}
+                  ref={(node) => {
+                    tabButtonRefs.current[tabIndex] = node;
+                  }}
                   type="button"
-                  onClick={() => setActiveTabId(tab.id)}
                   aria-pressed={isActive}
+                  tabIndex={tabIndex === focusedTabIndex ? 0 : -1}
+                  onClick={() => {
+                    setActiveTabId(tab.id);
+                    setFocusedTabIndex(tabIndex);
+                  }}
                   className={`shrink-0 cursor-pointer rounded-lg border px-4 py-2 text-sm whitespace-nowrap transition-colors ${
                     isActive
                       ? "border-[#2A76FD] bg-[#D6E3FF]/40 font-medium text-[#191C1C]"
