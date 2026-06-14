@@ -8,6 +8,7 @@ import EngagementBar from "./engagement-bar";
 import PriceChart, { type ProductPricingTier } from "./price-chart";
 import ProductCarousel from "./product-carousel";
 import ProductDetailsSection from "./product-details-section";
+import SimilarAndCompare from "./similar-and-compare";
 import TradeProtection from "./trade-protection";
 
 const HERO_IMAGES = [
@@ -228,23 +229,8 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* Product details — "All product details" opens the tabbed spec sheet */}
       <ProductDetailsSection />
 
-      {/* View similar / Add to Compare */}
-      <div className="flex gap-2 px-4 py-3 lg:px-6">
-        <button
-          type="button"
-          className="flex flex-1 items-center justify-center gap-2 border border-[#6F7979] px-4 py-2 text-sm"
-        >
-          <Icon src="search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" size={20} />
-          View similar
-        </button>
-        <button
-          type="button"
-          className="flex flex-1 items-center justify-center gap-2 border border-[#6F7979] px-4 py-2 text-sm"
-        >
-          <Icon src="compare_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" size={20} />
-          Add to Compare
-        </button>
-      </div>
+      {/* View similar / Add to Compare — each opens its own bottom sheet */}
+      <SimilarAndCompare />
 
       {/* Company details */}
       <Section title="Company details" open>
