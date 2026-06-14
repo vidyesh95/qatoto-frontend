@@ -222,7 +222,7 @@ export default function ProductDetailsSheet({ onClose }: { onClose: () => void }
               aria-hidden="true"
               onClick={() => scrollTabsByOnePage(-1)}
               title="Scroll tabs left"
-              className="absolute top-0 bottom-0 left-0 z-10 flex cursor-pointer items-center bg-linear-to-r from-background via-background to-transparent pr-10 pl-4"
+              className="absolute top-0 bottom-3 left-0 z-10 flex cursor-pointer items-center bg-linear-to-r from-background via-background to-transparent pr-10 pl-4"
             >
               <Image
                 src="/icons/chevron_backward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -276,7 +276,7 @@ export default function ProductDetailsSheet({ onClose }: { onClose: () => void }
               aria-hidden="true"
               onClick={() => scrollTabsByOnePage(1)}
               title="Scroll tabs right"
-              className="absolute top-0 right-0 bottom-0 z-10 flex cursor-pointer items-center bg-linear-to-l from-background via-background to-transparent pr-4 pl-10"
+              className="absolute top-0 right-0 bottom-3 z-10 flex cursor-pointer items-center bg-linear-to-l from-background via-background to-transparent pr-4 pl-10"
             >
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
