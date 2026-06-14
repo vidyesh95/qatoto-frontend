@@ -7,6 +7,7 @@ import DeliveryCost from "./delivery-cost";
 import EngagementBar from "./engagement-bar";
 import PriceChart, { type ProductPricingTier } from "./price-chart";
 import ProductCarousel from "./product-carousel";
+import ProductDetailsSection from "./product-details-section";
 import TradeProtection from "./trade-protection";
 
 const HERO_IMAGES = [
@@ -39,14 +40,6 @@ function getProductPricingTiers(productSlug: string): ProductPricingTier[] {
     { unitPrice: "$753.80", minimumOrderQuantity: ">=500 sets" },
   ];
 }
-
-const KEY_FEATURES = [
-  "Powder-coated steel frame, anti-rust finish",
-  "Folds flat to 5 cm — stacks up to 12 high",
-  "Weight capacity 150 kg, tested to EN 16139",
-  "Non-marking floor glides, indoor/outdoor",
-  "Pre-assembled — no tools required",
-];
 
 const VERIFIED_CAPABILITIES = [
   "OEM factory",
@@ -232,28 +225,8 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* Trade protection — tap opens the sheet explaining each guarantee */}
       <TradeProtection />
 
-      {/* Product details */}
-      <Section title="Product details" open>
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm font-medium">In the box</p>
-            <p className="mt-1 text-xs text-[#191C1C]">
-              1 × Folding chair (pre-assembled), 4 × floor glides, cleaning cloth, warranty card.
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium">Key Features</p>
-            <ul className="mt-1 space-y-0.5 text-xs text-[#191C1C]">
-              {KEY_FEATURES.map((feature) => (
-                <li key={feature}>{feature}</li>
-              ))}
-            </ul>
-          </div>
-          <Link href="#" className="block border-t border-[#CAC4D0]/60 pt-3 text-sm text-[#00696E]">
-            All product details
-          </Link>
-        </div>
-      </Section>
+      {/* Product details — "All product details" opens the tabbed spec sheet */}
+      <ProductDetailsSection />
 
       {/* View similar / Add to Compare */}
       <div className="flex gap-2 px-4 py-3 lg:px-6">
