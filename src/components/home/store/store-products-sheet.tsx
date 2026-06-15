@@ -151,7 +151,7 @@ export default function StoreProductsSheet({ onClose }: { onClose: () => void })
 
         {/* Masonry — `columns` lets tiles flow at mixed heights for a varied grid. */}
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
-          <div className="columns-2 gap-3 [&>*]:mb-3">
+          <div className="columns-2 gap-3 *:mb-3">
             {STOREFRONT_PRODUCTS.map((product, productIndex) => (
               <Link
                 key={`${product.id}-${productIndex}`}
