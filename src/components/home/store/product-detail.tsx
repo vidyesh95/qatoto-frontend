@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import CompanyDetailsSection from "./company-details-section";
 import CustomizationOptions from "./customization-options";
 import DeliverTo from "./deliver-to";
 import DeliveryCost from "./delivery-cost";
@@ -41,13 +42,6 @@ function getProductPricingTiers(productSlug: string): ProductPricingTier[] {
     { unitPrice: "$753.80", minimumOrderQuantity: ">=500 sets" },
   ];
 }
-
-const VERIFIED_CAPABILITIES = [
-  "OEM factory",
-  "Full customization",
-  "Product inspection",
-  "Design-based customization",
-];
 
 const HIGHLIGHTS = [
   {
@@ -96,31 +90,6 @@ function RatingBadge({ value }: { value: string }) {
         ★
       </span>
     </span>
-  );
-}
-
-// Collapsible section row with a chevron — native <details>, no client JS.
-function Section({
-  title,
-  children,
-  open,
-}: {
-  title: string;
-  children: React.ReactNode;
-  open?: boolean;
-}) {
-  return (
-    <details open={open} className="group [&_summary]:list-none">
-      <summary className="flex cursor-pointer items-center justify-between px-4 py-3 lg:px-6">
-        <span className="text-sm">{title}</span>
-        <Icon
-          src="keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-          size={22}
-          className="transition-transform group-open:rotate-180"
-        />
-      </summary>
-      <div className="px-4 pb-4 lg:px-6">{children}</div>
-    </details>
   );
 }
 
@@ -232,35 +201,9 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* View similar / Add to Compare — each opens its own bottom sheet */}
       <SimilarAndCompare />
 
-      {/* Company details */}
-      <Section title="Company details" open>
-        <div className="space-y-3">
-          <p className="text-base font-medium">Guangdong Puda Electrical Appliance Co., Ltd</p>
-          <p className="flex items-center gap-2 text-sm">
-            <Icon src="location_on_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" size={20} />
-            Guangdong, China
-          </p>
-          <div className="flex items-center gap-2">
-            <RatingBadge value="4.8" />
-            <span className="text-sm text-[#6F7979]">26,692 Ratings &amp; 2,432 Reviews</span>
-          </div>
-          <div>
-            <p className="text-base font-medium">Main categories:</p>
-            <p className="text-sm">Jacket, shirt, t-shirt, pants, hoodies</p>
-          </div>
-          <div className="border-t border-[#CAC4D0]/60 pt-3">
-            <p className="mb-2 text-sm">Verified capabilities</p>
-            <ul className="space-y-2">
-              {VERIFIED_CAPABILITIES.map((capability) => (
-                <li key={capability} className="flex items-center gap-2 text-xs">
-                  <Icon src="verified_24dp_00696E_FILL1_wght400_GRAD0_opsz24.svg" size={16} />
-                  {capability}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </Section>
+      {/* Company details — "Verified capabilities" and "All company details"
+          each open their own bottom sheet */}
+      <CompanyDetailsSection />
 
       {/* Product highlights */}
       <div className="border-t border-[#CAC4D0]/60 px-4 py-4 lg:px-6">
