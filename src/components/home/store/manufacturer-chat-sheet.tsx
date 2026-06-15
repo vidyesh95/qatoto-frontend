@@ -213,8 +213,14 @@ const ATTACHMENTS = [
     icon: "/icons/image_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   { label: "Video", icon: "/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-  { label: "Take photo", icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-  { label: "Take video", icon: "/icons/video_camera_back_add_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+  {
+    label: "Take photo",
+    icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
+    label: "Take video",
+    icon: "/icons/video_camera_back_add_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   { label: "Upload PDF", icon: "/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
 ];
 
@@ -307,24 +313,25 @@ export default function ManufacturerChatSheet({ onClose }: { onClose: () => void
           ))}
         </div>
 
-        {/* Attachment shortcuts — revealed by the composer's plus button. */}
-        {isAttachMenuOpen && (
-          <div className="flex shrink-0 flex-col items-start gap-1 px-4 py-2">
-            {ATTACHMENTS.map((attachment) => (
-              <button
-                key={attachment.label}
-                type="button"
-                className="flex cursor-pointer items-center gap-2 rounded-full px-2 py-1.5 text-sm text-[#191C1C] transition-colors hover:bg-muted"
-              >
-                <Image src={attachment.icon} width={20} height={20} alt="" />
-                {attachment.label}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Composer — relative anchor so the attachment menu floats above it
+            with a transparent surround, keeping the chat visible behind. */}
+        <div className="relative flex shrink-0 items-center gap-2 px-4 pt-1 pb-[calc(12px+env(safe-area-inset-bottom))]">
+          {/* Attachment shortcuts — revealed by the composer's plus button. */}
+          {isAttachMenuOpen && (
+            <div className="absolute bottom-full left-4 mb-1 flex flex-col items-start gap-1">
+              {ATTACHMENTS.map((attachment) => (
+                <button
+                  key={attachment.label}
+                  type="button"
+                  className="flex cursor-pointer items-center gap-2 rounded-full bg-background px-3 py-1.5 text-sm text-[#191C1C] outline -outline-offset-1 outline-[#6F7979]"
+                >
+                  <Image src={attachment.icon} width={20} height={20} alt="" />
+                  {attachment.label}
+                </button>
+              ))}
+            </div>
+          )}
 
-        {/* Composer */}
-        <div className="flex shrink-0 items-center gap-2 px-4 pt-1 pb-[calc(12px+env(safe-area-inset-bottom))]">
           <button
             type="button"
             onClick={() => setIsAttachMenuOpen((isOpen) => !isOpen)}
