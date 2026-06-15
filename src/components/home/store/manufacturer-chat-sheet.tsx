@@ -223,15 +223,14 @@ function renderContent(message: ChatMessage, isOwn: boolean) {
 }
 
 // Attachment sources the composer can open. Each maps to a native file input:
-// `accept` filters the picker, `capture` opens the device camera directly, and
-// `kind` decides which bubble the picked file becomes. No backend upload — the
-// file is previewed locally via an object URL (UI phase).
+// `accept` filters the picker and `kind` decides which bubble the picked file
+// becomes. No backend upload — the file is previewed locally via an object URL
+// (UI phase).
 type AttachmentSource = {
   label: string;
   icon: string;
   kind: "image" | "video" | "document";
   accept: string;
-  capture?: "environment";
   multiple?: boolean;
 };
 
@@ -249,20 +248,6 @@ const ATTACHMENTS: AttachmentSource[] = [
     kind: "video",
     accept: "video/*",
     multiple: true,
-  },
-  {
-    label: "Take photo",
-    icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    kind: "image",
-    accept: "image/*",
-    capture: "environment",
-  },
-  {
-    label: "Take video",
-    icon: "/icons/video_camera_back_add_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    kind: "video",
-    accept: "video/*",
-    capture: "environment",
   },
   {
     label: "Upload PDF",
@@ -430,7 +415,6 @@ export default function ManufacturerChatSheet({ onClose }: { onClose: () => void
                     type="file"
                     aria-label={attachment.label}
                     accept={attachment.accept}
-                    capture={attachment.capture}
                     multiple={attachment.multiple}
                     className="hidden"
                     onChange={(changeEvent) => {
