@@ -52,6 +52,7 @@ const COMPARE_PRODUCTS: CompareProduct[] = [
 ];
 
 export default function CompareProductsSheet({ onClose }: { onClose: () => void }) {
+  const [products, setProducts] = useState<CompareProduct[]>(COMPARE_PRODUCTS);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>(["raspberry-red"]);
 
   useEffect(() => {
@@ -76,13 +77,17 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
         : [...previous, productId],
     );
 
-  const removeProduct = (productId: string) =>
+  // Close button deletes the product from the list entirely (and drops its
+  // selection). Clear all only unselects — it leaves every product in the list.
+  const removeProduct = (productId: string) => {
+    setProducts((previous) => previous.filter((product) => product.id !== productId));
     setSelectedProductIds((previous) => previous.filter((id) => id !== productId));
+  };
 
   const clearAll = () => setSelectedProductIds([]);
 
   const isCompareDisabled = selectedProductIds.length < 2;
-  const hasRemovableSelection = selectedProductIds.length > 0;
+  const hasSelection = selectedProductIds.length > 0;
 
   return (
     <>
@@ -123,7 +128,7 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
           <p className="flex-1 text-xs text-[#6F7979]">
             Pick at least two products to compare them side by side.
           </p>
-          {hasRemovableSelection && (
+          {hasSelection && (
             <button
               type="button"
               onClick={clearAll}
@@ -136,7 +141,7 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(80px+env(safe-area-inset-bottom))]">
           <ul className="flex flex-col gap-2">
-            {COMPARE_PRODUCTS.map((product) => {
+            {products.map((product) => {
               const isSelected = selectedProductIds.includes(product.id);
               const isCurrent = product.isCurrent ?? false;
               return (
@@ -184,22 +189,20 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
                     </span>
                   </button>
 
-                  {/* Per-item delete — any selected product, including the current one. */}
-                  {isSelected && (
-                    <button
-                      type="button"
-                      onClick={() => removeProduct(product.id)}
-                      aria-label={`Remove ${product.name} from compare`}
-                      className="shrink-0 cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
-                    >
-                      <Image
-                        src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                        width={18}
-                        height={18}
-                        alt=""
-                      />
-                    </button>
-                  )}
+                  {/* Per-item delete — always visible, removes the product from the list. */}
+                  <button
+                    type="button"
+                    onClick={() => removeProduct(product.id)}
+                    aria-label={`Remove ${product.name} from compare`}
+                    className="shrink-0 cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
+                  >
+                    <Image
+                      src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                      width={18}
+                      height={18}
+                      alt=""
+                    />
+                  </button>
                 </li>
               );
             })}
