@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ProductDetail from "@/components/home/store/product-detail";
+import ProductDetail from "@/components/home/store/pages/product-detail";
 
 // Single mock product for the UI-building phase. Prerender the one id so the
 // dynamic route is valid under cacheComponents.

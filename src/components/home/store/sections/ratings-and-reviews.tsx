@@ -130,7 +130,9 @@ export default function RatingsAndReviews() {
           4.8
           <span className="text-xs leading-none">★</span>
         </span>
-        <span className="text-sm font-medium text-[#6F7979]">26,692 Ratings &amp; 2,432 Reviews</span>
+        <span className="text-sm font-medium text-[#6F7979]">
+          26,692 Ratings &amp; 2,432 Reviews
+        </span>
       </div>
 
       {/* Videos */}

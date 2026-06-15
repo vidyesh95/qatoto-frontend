@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 import Image from "next/image";
 
-import type { ProductPricingTier } from "./price-chart";
+import type { ProductPricingTier } from "@/components/home/store/sections/price-chart";
 
 // Detailed price-chart bottom sheet for the product page (UI-only phase, no
 // fetch). The inline price chart shows a compact preview; tapping "more" opens

@@ -4,8 +4,8 @@ import { useState } from "react";
 
 import Image from "next/image";
 
-import ManufacturerChatSheet from "./manufacturer-chat-sheet";
-import StoreProductsSheet from "./store-products-sheet";
+import ManufacturerChatSheet from "@/components/home/store/sheets/manufacturer-chat-sheet";
+import StoreProductsSheet from "@/components/home/store/sheets/store-products-sheet";
 
 // "Store" / "Chat now" button pair on the product page. "Store" opens the
 // manufacturer's storefront sheet (a grid of their other products); "Chat now"

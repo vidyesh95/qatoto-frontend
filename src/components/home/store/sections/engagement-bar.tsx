@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { ShareSheet } from "@/components/home/watch/share-sheet";
 
-import CommentSheet from "./comment-sheet";
+import CommentSheet from "@/components/home/store/sheets/comment-sheet";
 
 // Engagement row for the product page. favorite / bookmark are self-toggling
 // pills (icon swaps FILL0 → FILL1 while selected); comment opens a comment

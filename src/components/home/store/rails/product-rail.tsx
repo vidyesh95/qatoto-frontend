@@ -1,5 +1,5 @@
-import SectionHeader from "@/components/home/store/section-header";
-import ProductCard from "@/components/home/store/product-card";
+import SectionHeader from "@/components/home/store/sections/section-header";
+import ProductCard from "@/components/home/store/cards/product-card";
 import type { ProductRail as ProductRailData } from "@/lib/store";
 
 // Reusable horizontally scrolling product feed. One instance per feed

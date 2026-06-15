@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import Image from "next/image";
 
-import CustomizationSheet from "./customization-sheet";
+import CustomizationSheet from "@/components/home/store/sheets/customization-sheet";
 
 // "Customization options" block on the product page. Shows the seller-allowed
 // customizations as a two-column grid; tapping anywhere opens the sheet where

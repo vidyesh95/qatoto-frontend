@@ -1,20 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import CompanyDetailsSection from "./company-details-section";
-import CustomizationOptions from "./customization-options";
-import DeliverTo from "./deliver-to";
-import DeliveryCost from "./delivery-cost";
-import EngagementBar from "./engagement-bar";
-import PriceChart, { type ProductPricingTier } from "./price-chart";
-import ProductCarousel from "./product-carousel";
-import ProductDetailsSection from "./product-details-section";
-import ProductHighlights from "./product-highlights";
-import QuestionsAndAnswers from "./questions-and-answers";
-import RatingsAndReviews from "./ratings-and-reviews";
-import SimilarAndCompare from "./similar-and-compare";
-import StoreAndChatActions from "./store-and-chat-actions";
-import TradeProtection from "./trade-protection";
+import CompanyDetailsSection from "@/components/home/store/sections/company-details-section";
+import CustomizationOptions from "@/components/home/store/sections/customization-options";
+import DeliverTo from "@/components/home/store/sections/deliver-to";
+import DeliveryCost from "@/components/home/store/sections/delivery-cost";
+import EngagementBar from "@/components/home/store/sections/engagement-bar";
+import PriceChart, { type ProductPricingTier } from "@/components/home/store/sections/price-chart";
+import ProductCarousel from "@/components/home/store/rails/product-carousel";
+import ProductDetailsSection from "@/components/home/store/sections/product-details-section";
+import ProductHighlights from "@/components/home/store/sections/product-highlights";
+import QuestionsAndAnswers from "@/components/home/store/sections/questions-and-answers";
+import RatingsAndReviews from "@/components/home/store/sections/ratings-and-reviews";
+import SimilarAndCompare from "@/components/home/store/sections/similar-and-compare";
+import StoreAndChatActions from "@/components/home/store/sections/store-and-chat-actions";
+import TradeProtection from "@/components/home/store/sections/trade-protection";
 
 const HERO_IMAGES = [
   "/dummy/chair_raspberry_red.avif",

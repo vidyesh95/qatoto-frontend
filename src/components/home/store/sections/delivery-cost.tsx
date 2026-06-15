@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import Image from "next/image";
 
-import DeliverySheet from "./delivery-sheet";
+import DeliverySheet from "@/components/home/store/sheets/delivery-sheet";
 
 // Delivery cost + estimate row on the product page. Tapping it opens the
 // delivery options sheet (route map + per-leg transport modes). UI-only mock —

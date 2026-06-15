@@ -2,8 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPathway, getStoreHome } from "@/lib/store";
-import PathwayItemCard from "@/components/home/store/pathway-item-card";
-import PathwaysRail from "@/components/home/store/pathways-rail";
+import PathwayItemCard from "@/components/home/store/cards/pathway-item-card";
+import PathwaysRail from "@/components/home/store/rails/pathways-rail";
 
 // Pathway "buy the look" page: a hero of the full set, the individual items the
 // person/scene is composed of (each selectable), and a CTA to take the whole

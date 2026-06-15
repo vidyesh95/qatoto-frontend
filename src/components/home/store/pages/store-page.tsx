@@ -1,9 +1,9 @@
 import { getStoreHome } from "@/lib/store";
-import StoreHeroCarousel from "@/components/home/store/store-hero-carousel";
-import CategoryRail from "@/components/home/store/category-rail";
-import PathwaysRail from "@/components/home/store/pathways-rail";
-import B2BRail from "@/components/home/store/b2b-rail";
-import ProductRail from "@/components/home/store/product-rail";
+import StoreHeroCarousel from "@/components/home/store/rails/store-hero-carousel";
+import CategoryRail from "@/components/home/store/rails/category-rail";
+import PathwaysRail from "@/components/home/store/rails/pathways-rail";
+import B2BRail from "@/components/home/store/rails/b2b-rail";
+import ProductRail from "@/components/home/store/rails/product-rail";
 
 // Store landing page body. Server component — data comes from the cached
 // `getStoreHome` getter (mock fallback when no backend is configured).

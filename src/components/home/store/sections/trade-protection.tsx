@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import Image from "next/image";
 
-import TradeProtectionSheet from "./trade-protection-sheet";
+import TradeProtectionSheet from "@/components/home/store/sheets/trade-protection-sheet";
 
 // "Trade protection" block on the product page. Shows the platform-backed order
 // guarantees as a two-column grid; tapping anywhere opens the sheet that explains

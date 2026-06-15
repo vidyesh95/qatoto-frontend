@@ -4,8 +4,8 @@ import { useState } from "react";
 
 import Image from "next/image";
 
-import CompanyDetailsSheet from "./company-details-sheet";
-import VerifiedCapabilitiesSheet from "./verified-capabilities-sheet";
+import CompanyDetailsSheet from "@/components/home/store/sheets/company-details-sheet";
+import VerifiedCapabilitiesSheet from "@/components/home/store/sheets/verified-capabilities-sheet";
 
 // "Company details" block on the product page. Collapsible header, a summary of
 // the supplier (name, location, rating, main categories), a "Verified

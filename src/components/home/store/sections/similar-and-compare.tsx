@@ -4,8 +4,8 @@ import { useState } from "react";
 
 import Image from "next/image";
 
-import CompareProductsSheet from "./compare-products-sheet";
-import SimilarProductsSheet from "./similar-products-sheet";
+import CompareProductsSheet from "@/components/home/store/sheets/compare-products-sheet";
+import SimilarProductsSheet from "@/components/home/store/sheets/similar-products-sheet";
 
 // "View similar" / "Add to Compare" button pair on the product page. Each opens
 // its own bottom sheet. UI-only mock — the sheets hold static data; ranking and

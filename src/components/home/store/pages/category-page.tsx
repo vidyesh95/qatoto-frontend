@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { getCategory, getStoreHome } from "@/lib/store";
-import StoreHeroCarousel from "@/components/home/store/store-hero-carousel";
-import CategoryRail from "@/components/home/store/category-rail";
-import PathwaysRail from "@/components/home/store/pathways-rail";
-import ProductRail from "@/components/home/store/product-rail";
+import StoreHeroCarousel from "@/components/home/store/rails/store-hero-carousel";
+import CategoryRail from "@/components/home/store/rails/category-rail";
+import PathwaysRail from "@/components/home/store/rails/pathways-rail";
+import ProductRail from "@/components/home/store/rails/product-rail";
 
 // Category drill-down body, driven by the catch-all route's last slug segment.
 // Branch nodes render a sub-category grid; leaf nodes render product feeds.

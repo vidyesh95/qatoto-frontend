@@ -1,5 +1,5 @@
-import SectionHeader from "@/components/home/store/section-header";
-import PathwayCard from "@/components/home/store/pathway-card";
+import SectionHeader from "@/components/home/store/sections/section-header";
+import PathwayCard from "@/components/home/store/cards/pathway-card";
 import type { Pathway } from "@/lib/store";
 
 // "Pathways for you" — horizontally scrolling rail of guided looks/sets.

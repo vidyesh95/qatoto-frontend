@@ -1,5 +1,5 @@
-import SectionHeader from "@/components/home/store/section-header";
-import B2BTile from "@/components/home/store/b2b-tile";
+import SectionHeader from "@/components/home/store/sections/section-header";
+import B2BTile from "@/components/home/store/cards/b2b-tile";
 import type { B2BLink } from "@/lib/store";
 
 // "For your Business" — shortcuts into the B2B essentials surfaces (RFQ,

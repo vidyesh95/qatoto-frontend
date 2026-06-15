@@ -1,5 +1,5 @@
-import SectionHeader from "@/components/home/store/section-header";
-import StoreCategoryCard from "@/components/home/store/store-category-card";
+import SectionHeader from "@/components/home/store/sections/section-header";
+import StoreCategoryCard from "@/components/home/store/cards/store-category-card";
 import type { StoreCategory } from "@/lib/store";
 
 // Root "Categories" strip: a fixed 4-column row of top-level category tiles.

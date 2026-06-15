@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import PathwayDetail from "@/components/home/store/pathway-detail";
+import PathwayDetail from "@/components/home/store/pages/pathway-detail";
 import { getPathwaySlugs } from "@/lib/store";
 
 export async function generateStaticParams() {

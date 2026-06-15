@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 
-import AddressSheet, { type Address, MAX_SAVED_ADDRESSES } from "./address-sheet";
+import AddressSheet, {
+  type Address,
+  MAX_SAVED_ADDRESSES,
+} from "@/components/home/store/sheets/address-sheet";
 
 // "Deliver to" row on the product page. UI-only mock — these addresses will come
 // from the backend API later (the client never owns address truth). For now the

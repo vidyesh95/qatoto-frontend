@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import Image from "next/image";
 
-import ProductDetailsSheet from "./product-details-sheet";
+import ProductDetailsSheet from "@/components/home/store/sheets/product-details-sheet";
 
 // "Product details" block on the product page. Collapsible header, an "In the
 // box" + "Key Features" summary, then an "All product details" row that opens
