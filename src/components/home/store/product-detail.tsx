@@ -10,6 +10,7 @@ import PriceChart, { type ProductPricingTier } from "./price-chart";
 import ProductCarousel from "./product-carousel";
 import ProductDetailsSection from "./product-details-section";
 import ProductHighlights from "./product-highlights";
+import QuestionsAndAnswers from "./questions-and-answers";
 import SimilarAndCompare from "./similar-and-compare";
 import StoreAndChatActions from "./store-and-chat-actions";
 import TradeProtection from "./trade-protection";
@@ -58,12 +59,6 @@ const REVIEWS = [
     body: "Folds flat exactly as shown. Frame feels solid, no wobble on tile floors.",
     image: "/dummy/chair_sea_blue.avif",
   },
-];
-
-const QUESTIONS = [
-  "Is this comfortable for office work?",
-  "Does it stack with older models?",
-  "What is the seat height?",
 ];
 
 function Icon({ src, size = 24, className }: { src: string; size?: number; className?: string }) {
@@ -254,24 +249,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
       </div>
 
       {/* Questions and answers */}
-      <div className="border-t border-[#CAC4D0]/60 px-4 py-4 lg:px-6">
-        <h2 className="mb-3 text-base font-medium">Questions and answers</h2>
-        <div className="mb-3 flex items-center gap-2 rounded-full border border-[#6F7979] px-3 py-2">
-          <Icon src="search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" size={18} />
-          <span className="text-sm text-[#6F7979]">Search or ask question</span>
-        </div>
-        <ul className="space-y-3">
-          {QUESTIONS.map((question) => (
-            <li key={question} className="flex items-center justify-between text-sm">
-              {question}
-              <Icon src="arrow_forward_ios_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" size={16} />
-            </li>
-          ))}
-        </ul>
-        <Link href="#" className="mt-3 block text-sm text-[#00696E]">
-          All questions and answers
-        </Link>
-      </div>
+      <QuestionsAndAnswers />
 
       {/* Sticky action bar — sits above the mobile bottom nav (md:hidden adds
           its ~80px height); on md+ there's no bottom nav so it drops to 0. */}
