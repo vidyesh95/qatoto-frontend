@@ -15,7 +15,9 @@ import Image from "next/image";
 type ChatMessage = { id: string; sender: "buyer" | "manufacturer" | "qatoto"; time: string } & (
   | { kind: "text"; text: string }
   | { kind: "image"; imageSrc: string; caption?: string }
-  | { kind: "video"; imageSrc: string; caption?: string }
+  // Mock videos carry a poster image (imageSrc); user-picked videos carry a
+  // playable object-URL (videoSrc) instead. Exactly one is set in practice.
+  | { kind: "video"; imageSrc?: string; videoSrc?: string; caption?: string }
   | { kind: "document"; fileName: string; fileMeta: string }
 );
 
@@ -133,6 +135,7 @@ function renderContent(message: ChatMessage, isOwn: boolean) {
               sizes="176px"
               alt={message.caption ?? "Shared image"}
               className="object-cover"
+              unoptimized={message.imageSrc.startsWith("blob:")}
             />
           </div>
           {message.caption && (
@@ -147,24 +150,37 @@ function renderContent(message: ChatMessage, isOwn: boolean) {
       return (
         <>
           <div className="relative aspect-video w-52 overflow-hidden rounded-xl bg-black/10">
-            <Image
-              src={message.imageSrc}
-              fill
-              sizes="208px"
-              alt={message.caption ?? "Shared video"}
-              className="object-cover"
-            />
-            <span className="absolute inset-0 grid place-items-center">
-              <span className="grid size-10 place-items-center rounded-full bg-black/55">
+            {message.videoSrc ? (
+              <video
+                src={message.videoSrc}
+                controls
+                aria-label={message.caption ?? "Shared video"}
+                className="absolute inset-0 size-full object-cover"
+              >
+                <track kind="captions" />
+              </video>
+            ) : (
+              <>
                 <Image
-                  src="/icons/featured_video_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                  width={20}
-                  height={20}
-                  alt=""
-                  className="invert"
+                  src={message.imageSrc ?? ""}
+                  fill
+                  sizes="208px"
+                  alt={message.caption ?? "Shared video"}
+                  className="object-cover"
                 />
-              </span>
-            </span>
+                <span className="absolute inset-0 grid place-items-center">
+                  <span className="grid size-10 place-items-center rounded-full bg-black/55">
+                    <Image
+                      src="/icons/featured_video_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+                      width={20}
+                      height={20}
+                      alt=""
+                      className="invert"
+                    />
+                  </span>
+                </span>
+              </>
+            )}
           </div>
           {message.caption && (
             <p className={`px-1.5 text-xs ${isOwn ? "text-white/90" : "text-[#6F7979]"}`}>
@@ -206,27 +222,111 @@ function renderContent(message: ChatMessage, isOwn: boolean) {
   }
 }
 
-// Attachment kinds the composer can share. Visual only — no upload is wired up.
-const ATTACHMENTS = [
+// Attachment sources the composer can open. Each maps to a native file input:
+// `accept` filters the picker, `capture` opens the device camera directly, and
+// `kind` decides which bubble the picked file becomes. No backend upload — the
+// file is previewed locally via an object URL (UI phase).
+type AttachmentSource = {
+  label: string;
+  icon: string;
+  kind: "image" | "video" | "document";
+  accept: string;
+  capture?: "environment";
+  multiple?: boolean;
+};
+
+const ATTACHMENTS: AttachmentSource[] = [
   {
     label: "Photos",
     icon: "/icons/image_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    kind: "image",
+    accept: "image/*",
+    multiple: true,
   },
-  { label: "Video", icon: "/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+  {
+    label: "Video",
+    icon: "/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    kind: "video",
+    accept: "video/*",
+    multiple: true,
+  },
   {
     label: "Take photo",
     icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    kind: "image",
+    accept: "image/*",
+    capture: "environment",
   },
   {
     label: "Take video",
     icon: "/icons/video_camera_back_add_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    kind: "video",
+    accept: "video/*",
+    capture: "environment",
   },
-  { label: "Upload PDF", icon: "/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+  {
+    label: "Upload PDF",
+    icon: "/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    kind: "document",
+    accept: "application/pdf",
+    multiple: true,
+  },
 ];
 
+// Human-readable file size for document bubbles, e.g. "4.2 MB".
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB"];
+  let size = bytes / 1024;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+  return `${size.toFixed(1)} ${units[unitIndex]}`;
+}
+
+// Turn a freshly-picked File into a chat bubble. Images/videos get a local
+// object URL for preview; PDFs show name + size only.
+function buildMessageFromFile(kind: AttachmentSource["kind"], file: File): ChatMessage {
+  const time = new Date().toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const base = { id: crypto.randomUUID(), sender: "buyer" as const, time };
+
+  switch (kind) {
+    case "image":
+      return { ...base, kind: "image", imageSrc: URL.createObjectURL(file), caption: file.name };
+    case "video":
+      return { ...base, kind: "video", videoSrc: URL.createObjectURL(file), caption: file.name };
+    case "document":
+      return {
+        ...base,
+        kind: "document",
+        fileName: file.name,
+        fileMeta: `PDF · ${formatFileSize(file.size)}`,
+      };
+    default: {
+      const exhaustiveCheck: never = kind;
+      return exhaustiveCheck;
+    }
+  }
+}
+
 export default function ManufacturerChatSheet({ onClose }: { onClose: () => void }) {
-  // ponytail: visual toggle only — no upload wired up (UI phase).
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>(MESSAGES);
+
+  function handleFilesPicked(kind: AttachmentSource["kind"], fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return;
+    const picked = Array.from(fileList).map((file) => buildMessageFromFile(kind, file));
+    setMessages((previous) => [...previous, ...picked]);
+    setIsAttachMenuOpen(false);
+  }
 
   useEffect(() => {
     const handleKeyDown = (keyEvent: KeyboardEvent) => {
@@ -308,7 +408,7 @@ export default function ManufacturerChatSheet({ onClose }: { onClose: () => void
               10 June 2026
             </span>
           </div>
-          {MESSAGES.map((message) => (
+          {messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
         </div>
@@ -320,14 +420,25 @@ export default function ManufacturerChatSheet({ onClose }: { onClose: () => void
           {isAttachMenuOpen && (
             <div className="absolute bottom-full left-4 mb-1 flex flex-col items-start gap-1">
               {ATTACHMENTS.map((attachment) => (
-                <button
+                <label
                   key={attachment.label}
-                  type="button"
                   className="flex cursor-pointer items-center gap-2 rounded-full bg-background px-3 py-1.5 text-sm text-[#191C1C] outline -outline-offset-1 outline-[#6F7979]"
                 >
                   <Image src={attachment.icon} width={20} height={20} alt="" />
                   {attachment.label}
-                </button>
+                  <input
+                    type="file"
+                    aria-label={attachment.label}
+                    accept={attachment.accept}
+                    capture={attachment.capture}
+                    multiple={attachment.multiple}
+                    className="hidden"
+                    onChange={(changeEvent) => {
+                      handleFilesPicked(attachment.kind, changeEvent.target.files);
+                      changeEvent.target.value = "";
+                    }}
+                  />
+                </label>
               ))}
             </div>
           )}
