@@ -33,16 +33,17 @@ const ANSWERED_QUESTIONS = [
 
 export default function QuestionsAndAnswers() {
   return (
-    <div className="flex flex-col py-2">
-      <div className="flex items-center justify-between px-4 py-2">
-        <h2 className="text-sm tracking-[0.25px] text-[#191C1C]">Questions and answers</h2>
-        <Image
-          src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-          width={24}
-          height={24}
-          alt=""
-        />
-      </div>
+    <details className="group flex flex-col py-2" open>
+        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2 [&::-webkit-details-marker]:hidden">
+          <h2 className="text-sm tracking-[0.25px] text-[#191C1C]">Questions and answers</h2>
+          <Image
+            src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+            width={24}
+            height={24}
+            alt=""
+            className="transition-transform group-open:rotate-90"
+          />
+        </summary>
 
       <div className="px-4 py-2">
         <button
@@ -81,7 +82,7 @@ export default function QuestionsAndAnswers() {
                 </div>
               </div>
               <Image
-                src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                src="/icons/more_vert_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 width={14}
                 height={14}
                 alt=""
@@ -103,7 +104,7 @@ export default function QuestionsAndAnswers() {
                 </div>
               </div>
               <Image
-                src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                src="/icons/flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 width={14}
                 height={14}
                 alt=""
@@ -191,6 +192,7 @@ export default function QuestionsAndAnswers() {
       <div className="px-4">
         <div className="h-px w-full bg-[#CAC4D0]" />
       </div>
-    </div>
+
+    </details>
   );
 }
