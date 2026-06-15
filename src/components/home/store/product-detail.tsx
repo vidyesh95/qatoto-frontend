@@ -266,12 +266,13 @@ export default function ProductDetail({ slug }: { slug: string }) {
       <div className="border-t border-[#CAC4D0]/60 px-4 py-4 lg:px-6">
         <h2 className="mb-3 text-base font-medium">Product highlights</h2>
         <div className="space-y-6">
-          {HIGHLIGHTS.map((highlight) => (
+          {HIGHLIGHTS.map((highlight, highlightIndex) => (
             <div key={highlight.title}>
               <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-[#F5F5F5]">
                 <Image
                   src={highlight.image}
                   fill
+                  priority={highlightIndex === 0}
                   sizes="(min-width: 1024px) 50vw, 100vw"
                   alt={highlight.title}
                   className="object-cover"
