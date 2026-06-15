@@ -54,7 +54,7 @@ export default function ProductCarousel({ images, alt }: { images: string[]; alt
             <Image
               src={imageSrc}
               fill
-              priority={domSlideIndex === 0}
+              priority={domSlideIndex === 1}
               sizes="(min-width: 1024px) 50vw, 100vw"
               alt={alt}
               className="object-contain"
