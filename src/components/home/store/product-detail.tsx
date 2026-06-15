@@ -10,6 +10,7 @@ import PriceChart, { type ProductPricingTier } from "./price-chart";
 import ProductCarousel from "./product-carousel";
 import ProductDetailsSection from "./product-details-section";
 import SimilarAndCompare from "./similar-and-compare";
+import StoreAndChatActions from "./store-and-chat-actions";
 import TradeProtection from "./trade-protection";
 
 const HERO_IMAGES = [
@@ -204,6 +205,10 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* Company details — "Verified capabilities" and "All company details"
           each open their own bottom sheet */}
       <CompanyDetailsSection />
+
+      {/* Store / Chat now — Store opens the manufacturer storefront sheet; Chat
+          now opens the manufacturer chat sheet (dispute mediation + file share) */}
+      <StoreAndChatActions />
 
       {/* Product highlights */}
       <div className="border-t border-[#CAC4D0]/60 px-4 py-4 lg:px-6">
