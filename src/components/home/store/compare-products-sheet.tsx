@@ -69,16 +69,20 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
     };
   }, [onClose]);
 
-  const toggleProduct = (productId: string, isCurrent: boolean) => {
-    if (isCurrent) return; // current product stays locked in
+  const toggleProduct = (productId: string) =>
     setSelectedProductIds((previous) =>
       previous.includes(productId)
         ? previous.filter((id) => id !== productId)
         : [...previous, productId],
     );
-  };
+
+  const removeProduct = (productId: string) =>
+    setSelectedProductIds((previous) => previous.filter((id) => id !== productId));
+
+  const clearAll = () => setSelectedProductIds([]);
 
   const isCompareDisabled = selectedProductIds.length < 2;
+  const hasRemovableSelection = selectedProductIds.length > 0;
 
   return (
     <>
@@ -115,9 +119,20 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
           </button>
         </header>
 
-        <p className="shrink-0 px-4 pb-2 text-xs text-[#6F7979]">
-          Pick at least two products to compare them side by side.
-        </p>
+        <div className="flex shrink-0 items-center gap-2 px-4 pb-2">
+          <p className="flex-1 text-xs text-[#6F7979]">
+            Pick at least two products to compare them side by side.
+          </p>
+          {hasRemovableSelection && (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="shrink-0 cursor-pointer text-xs font-medium text-[#00696E]"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(80px+env(safe-area-inset-bottom))]">
           <ul className="flex flex-col gap-2">
@@ -125,14 +140,17 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
               const isSelected = selectedProductIds.includes(product.id);
               const isCurrent = product.isCurrent ?? false;
               return (
-                <li key={product.id}>
+                <li
+                  key={product.id}
+                  className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${
+                    isSelected ? "border-[#00696E] bg-[#00696E]/5" : "border-[#E0E3E3]"
+                  }`}
+                >
                   <button
                     type="button"
-                    onClick={() => toggleProduct(product.id, isCurrent)}
+                    onClick={() => toggleProduct(product.id)}
                     aria-pressed={isSelected}
-                    className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left ${
-                      isSelected ? "border-[#00696E] bg-[#00696E]/5" : "border-[#E0E3E3]"
-                    } ${isCurrent ? "cursor-default" : ""}`}
+                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
                   >
                     <div className="relative size-14 shrink-0 overflow-hidden rounded bg-[#F5F5F5]">
                       <Image
@@ -165,6 +183,23 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
                       )}
                     </span>
                   </button>
+
+                  {/* Per-item delete — any selected product, including the current one. */}
+                  {isSelected && (
+                    <button
+                      type="button"
+                      onClick={() => removeProduct(product.id)}
+                      aria-label={`Remove ${product.name} from compare`}
+                      className="shrink-0 cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
+                    >
+                      <Image
+                        src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                        width={18}
+                        height={18}
+                        alt=""
+                      />
+                    </button>
+                  )}
                 </li>
               );
             })}
