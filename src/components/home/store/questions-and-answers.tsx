@@ -34,16 +34,16 @@ const ANSWERED_QUESTIONS = [
 export default function QuestionsAndAnswers() {
   return (
     <details className="group flex flex-col py-2" open>
-        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2 [&::-webkit-details-marker]:hidden">
-          <h2 className="text-sm tracking-[0.25px] text-[#191C1C]">Questions and answers</h2>
-          <Image
-            src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-            width={24}
-            height={24}
-            alt=""
-            className="transition-transform group-open:rotate-90"
-          />
-        </summary>
+      <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2 [&::-webkit-details-marker]:hidden">
+        <h2 className="text-sm tracking-[0.25px] text-[#191C1C]">Questions and answers</h2>
+        <Image
+          src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+          width={24}
+          height={24}
+          alt=""
+          className="transition-transform group-open:rotate-90"
+        />
+      </summary>
 
       <div className="px-4 py-2">
         <button
@@ -69,17 +69,19 @@ export default function QuestionsAndAnswers() {
             <div className="flex items-start gap-2">
               <div className="flex flex-1 items-start">
                 <span className="text-xs font-medium tracking-[0.5px] text-[#191C1C]">Q:</span>
-                <div className="flex flex-1 flex-col">
-                  <span className="text-xs font-medium tracking-[0.5px] text-[#191C1C]">
-                    {entry.question}
+                <details className="group/q flex flex-1 flex-col">
+                  <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                    <span className="line-clamp-1 text-xs font-medium tracking-[0.5px] text-[#191C1C] group-open/q:line-clamp-none">
+                      {entry.question}
+                    </span>
+                    <span className="block text-right text-xs font-medium tracking-[0.5px] text-[#2A76FD] group-open/q:hidden">
+                      more
+                    </span>
+                  </summary>
+                  <span className="block text-right text-xs font-medium tracking-[0.5px] text-[#2A76FD]">
+                    less
                   </span>
-                  <button
-                    type="button"
-                    className="text-right text-xs font-medium tracking-[0.5px] text-[#2A76FD]"
-                  >
-                    more
-                  </button>
-                </div>
+                </details>
               </div>
               <Image
                 src="/icons/more_vert_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -93,15 +95,19 @@ export default function QuestionsAndAnswers() {
             <div className="flex items-start gap-2">
               <div className="flex flex-1 items-start">
                 <span className="text-xs tracking-[0.4px] text-[#191C1C]">A:</span>
-                <div className="flex flex-1 flex-col">
-                  <span className="text-xs tracking-[0.4px] text-[#191C1C]">{entry.answer}</span>
-                  <button
-                    type="button"
-                    className="text-right text-xs font-medium tracking-[0.5px] text-[#2A76FD]"
-                  >
-                    more
-                  </button>
-                </div>
+                <details className="group/a flex flex-1 flex-col">
+                  <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                    <span className="line-clamp-1 text-xs tracking-[0.4px] text-[#191C1C] group-open/a:line-clamp-none">
+                      {entry.answer}
+                    </span>
+                    <span className="block text-right text-xs font-medium tracking-[0.5px] text-[#2A76FD] group-open/a:hidden">
+                      more
+                    </span>
+                  </summary>
+                  <span className="block text-right text-xs font-medium tracking-[0.5px] text-[#2A76FD]">
+                    less
+                  </span>
+                </details>
               </div>
               <Image
                 src="/icons/flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -192,7 +198,6 @@ export default function QuestionsAndAnswers() {
       <div className="px-4">
         <div className="h-px w-full bg-[#CAC4D0]" />
       </div>
-
     </details>
   );
 }
