@@ -35,16 +35,17 @@ const HIGHLIGHTS = [
 
 export default function ProductHighlights() {
   return (
-    <div className="border-t border-[#CAC4D0]/60 px-4 py-2 lg:px-6">
-      <div className="flex items-center gap-2 py-2">
+    <details open className="group/section border-t border-[#CAC4D0]/60 px-4 py-2 lg:px-6">
+      <summary className="flex cursor-pointer list-none items-center gap-2 py-2 [&::-webkit-details-marker]:hidden">
         <h2 className="flex-1 text-sm tracking-[0.25px] text-[#191C1C]">Product highlights</h2>
         <Image
           src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
           width={24}
           height={24}
           alt=""
+          className="transition-transform group-open/section:rotate-180"
         />
-      </div>
+      </summary>
       <div className="space-y-2 py-2">
         {HIGHLIGHTS.map((highlight, highlightIndex) => (
           <details key={highlight.title} className="group">
@@ -73,6 +74,6 @@ export default function ProductHighlights() {
           </details>
         ))}
       </div>
-    </div>
+    </details>
   );
 }
