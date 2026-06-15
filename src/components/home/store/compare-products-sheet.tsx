@@ -128,15 +128,17 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
           <p className="flex-1 text-xs text-[#6F7979]">
             Pick at least two products to compare them side by side.
           </p>
-          {hasSelection && (
-            <button
-              type="button"
-              onClick={clearAll}
-              className="shrink-0 cursor-pointer text-xs font-medium text-[#00696E]"
-            >
-              Clear all
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={clearAll}
+            aria-hidden={!hasSelection}
+            tabIndex={hasSelection ? 0 : -1}
+            className={`shrink-0 cursor-pointer text-xs font-medium text-[#00696E] ${
+              hasSelection ? "" : "invisible"
+            }`}
+          >
+            Clear all
+          </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(80px+env(safe-area-inset-bottom))]">
@@ -197,7 +199,7 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
                     className="shrink-0 cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
                   >
                     <Image
-                      src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                      src="/icons/delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                       width={18}
                       height={18}
                       alt=""
