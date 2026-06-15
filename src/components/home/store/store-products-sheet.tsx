@@ -129,9 +129,7 @@ export default function StoreProductsSheet({ onClose }: { onClose: () => void })
             height={22}
             alt=""
           />
-          <h2 className="flex-1 text-base font-medium">
-            Guangdong Puda Electrical Appliance Co.
-          </h2>
+          <h2 className="flex-1 text-base font-medium">Guangdong Puda Electrical Appliance Co.</h2>
           <button
             type="button"
             onClick={onClose}
@@ -174,9 +172,7 @@ export default function StoreProductsSheet({ onClose }: { onClose: () => void })
                     className="object-cover"
                   />
                 </div>
-                <p className="mt-1.5 truncate text-sm font-medium text-[#191C1C]">
-                  {product.name}
-                </p>
+                <p className="mt-1.5 truncate text-sm font-medium text-[#191C1C]">{product.name}</p>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-[#191C1C]">{product.price}</span>
                   <span className="inline-flex items-center gap-0.5 text-xs text-[#4A6364]">

@@ -208,7 +208,10 @@ function renderContent(message: ChatMessage, isOwn: boolean) {
 
 // Attachment kinds the composer can share. Visual only — no upload is wired up.
 const ATTACHMENTS = [
-  { label: "Photos", icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+  {
+    label: "Photos",
+    icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   { label: "Video", icon: "/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
   { label: "Catalog / PDF", icon: "/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
 ];
