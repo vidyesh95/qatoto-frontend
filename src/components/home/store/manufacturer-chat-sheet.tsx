@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import Image from "next/image";
 
@@ -210,13 +210,18 @@ function renderContent(message: ChatMessage, isOwn: boolean) {
 const ATTACHMENTS = [
   {
     label: "Photos",
-    icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    icon: "/icons/image_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   { label: "Video", icon: "/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
-  { label: "Catalog / PDF", icon: "/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+  { label: "Take photo", icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+  { label: "Take video", icon: "/icons/video_camera_back_add_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+  { label: "Upload PDF", icon: "/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
 ];
 
 export default function ManufacturerChatSheet({ onClose }: { onClose: () => void }) {
+  // ponytail: visual toggle only — no upload wired up (UI phase).
+  const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
+
   useEffect(() => {
     const handleKeyDown = (keyEvent: KeyboardEvent) => {
       if (keyEvent.key === "Escape") onClose();
@@ -302,22 +307,38 @@ export default function ManufacturerChatSheet({ onClose }: { onClose: () => void
           ))}
         </div>
 
-        {/* Attachment shortcuts */}
-        <div className="flex shrink-0 gap-2 overflow-x-auto border-t border-[#CAC4D0]/60 px-4 py-2">
-          {ATTACHMENTS.map((attachment) => (
-            <button
-              key={attachment.label}
-              type="button"
-              className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-[#191C1C] outline -outline-offset-1 outline-[#6F7979]"
-            >
-              <Image src={attachment.icon} width={18} height={18} alt="" />
-              {attachment.label}
-            </button>
-          ))}
-        </div>
+        {/* Attachment shortcuts — revealed by the composer's plus button. */}
+        {isAttachMenuOpen && (
+          <div className="flex shrink-0 flex-col items-start gap-1 px-4 py-2">
+            {ATTACHMENTS.map((attachment) => (
+              <button
+                key={attachment.label}
+                type="button"
+                className="flex cursor-pointer items-center gap-2 rounded-full px-2 py-1.5 text-sm text-[#191C1C] transition-colors hover:bg-muted"
+              >
+                <Image src={attachment.icon} width={20} height={20} alt="" />
+                {attachment.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Composer */}
         <div className="flex shrink-0 items-center gap-2 px-4 pt-1 pb-[calc(12px+env(safe-area-inset-bottom))]">
+          <button
+            type="button"
+            onClick={() => setIsAttachMenuOpen((isOpen) => !isOpen)}
+            aria-label="Add attachment"
+            aria-expanded={isAttachMenuOpen}
+            className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-full transition-colors hover:bg-muted"
+          >
+            <Image
+              src={`/icons/add_circle_24dp_000000_FILL${isAttachMenuOpen ? 1 : 0}_wght400_GRAD0_opsz24.svg`}
+              width={26}
+              height={26}
+              alt=""
+            />
+          </button>
           <div className="flex flex-1 items-center gap-2 rounded-full bg-[#EDEFEF] px-4 py-2.5">
             <span className="flex-1 text-sm text-[#6F7979]">Type a message</span>
             <Image
@@ -332,9 +353,12 @@ export default function ManufacturerChatSheet({ onClose }: { onClose: () => void
             aria-label="Send message"
             className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-full bg-[#00696E]"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M3.4 20.4 21 12 3.4 3.6 3 10l12 2-12 2z" fill="#FAFDFC" />
-            </svg>
+            <Image
+              src="/icons/send_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
+              width={20}
+              height={20}
+              alt=""
+            />
           </button>
         </div>
       </div>
