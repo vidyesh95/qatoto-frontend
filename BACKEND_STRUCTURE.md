@@ -56,16 +56,16 @@ Build email + password + OTP first; add OAuth later (§9).
 
 ## 2. The stack (kept deliberately small)
 
-| Concern             | Pick                                                   | Why this one (for now)                                                                                              |
-| ------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| Server framework    | **Express 5**                                          | The thing you're learning. Minimal, huge community.                                                                 |
-| Language            | **TypeScript**                                         | Same language as the frontend — shared types, fewer bugs. Run it with `tsx` (executes `.ts` directly, no build step in dev). |
-| Database            | **SQLite** via `better-sqlite3`                        | A file on disk. No DB server to install or run. Swap to Postgres when you deploy.                                   |
-| Password hashing    | **bcrypt** (`bcrypt`)                                  | The well-trodden default. Never store raw passwords.                                                                |
-| Cookie reading      | **cookie-parser**                                      | Tiny helper to read the session cookie.                                                                             |
-| CORS                | **cors**                                               | Lets the browser on `:3000` call the API on `:4000`.                                                                |
-| Sessions            | **hand-rolled** (a `sessions` table + a random cookie) | ~20 lines, no magic. You'll understand exactly what a session is.                                                   |
-| Email / OTP sending | **`console.log` in dev**                               | Don't sign up for an email provider yet. Print the code to your terminal. Wire real email later.                    |
+| Concern             | Pick                                                   | Why this one (for now)                                                                           |
+| ------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Server framework    | **Express 5**                                          | The thing you're learning. Minimal, huge community.                                              |
+| Language            | **TypeScript**                                         | Same language as the frontend — shared types, fewer bugs. Run with `tsx` (no build step in dev). |
+| Database            | **SQLite** via `better-sqlite3`                        | A file on disk. No DB server to install or run. Swap to Postgres when you deploy.                |
+| Password hashing    | **bcrypt** (`bcrypt`)                                  | The well-trodden default. Never store raw passwords.                                             |
+| Cookie reading      | **cookie-parser**                                      | Tiny helper to read the session cookie.                                                          |
+| CORS                | **cors**                                               | Lets the browser on `:3000` call the API on `:4000`.                                             |
+| Sessions            | **hand-rolled** (a `sessions` table + a random cookie) | ~20 lines, no magic. You'll understand exactly what a session is.                                |
+| Email / OTP sending | **`console.log` in dev**                               | Don't sign up for an email provider yet. Print the code to your terminal. Wire real email later. |
 
 Install (once you've run `npm init`):
 
@@ -83,12 +83,12 @@ scripts to `package.json`:
 
 ```jsonc
 {
-  "type": "module",
-  "scripts": {
-    "dev": "tsx watch src/index.ts", // auto-restarts on save, runs TS directly — no build step
-    "build": "tsc", // compile to plain JS when you deploy
-    "start": "node dist/index.js"
-  }
+    "type": "module",
+    "scripts": {
+        "dev": "tsx watch src/index.ts", // auto-restarts on save, runs TS directly — no build step
+        "build": "tsc", // compile to plain JS when you deploy
+        "start": "node dist/index.js",
+    },
 }
 ```
 
@@ -108,7 +108,7 @@ loop as fast as plain JS — you run `.ts` files directly, no separate build ste
 
 Keep it flat. You can split later if a file gets big.
 
-```
+```text
 qatoto-backend/
 ├── src/
 │   ├── index.ts            # creates the Express app, mounts routes, starts the server
@@ -215,7 +215,7 @@ A `user` object is always: `{ "id", "email", "displayName", "createdAt" }`.
 
 ## 6. How a request flows (signup, end to end)
 
-```
+```text
 1. UI step 1: POST /auth/otp/send { email, purpose: "signup" }
    → server makes a 6-digit code, stores bcrypt(code) + expiry + purpose,
      console.log("OTP for a@b.com: 482913"), returns { data: { sent: true } }
