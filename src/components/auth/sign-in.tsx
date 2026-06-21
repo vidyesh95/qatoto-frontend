@@ -34,7 +34,7 @@ export default function SignIn() {
           }
         >
           <Image
-            src={"/icons/google_logo_18x18px.svg"}
+            src={"/icons/google_logo_light.svg"}
             alt={"Continue with Google"}
             width={18}
             height={18}
@@ -48,12 +48,12 @@ export default function SignIn() {
           }
         >
           <Image
-            src={"/icons/apple_logo_18x18px.svg"}
-            alt={"Continue with Apple"}
+            src={"/icons/github_logo_light.svg"}
+            alt={"Continue with GitHub"}
             width={18}
             height={18}
           />
-          <span>Continue with Apple</span>
+          <span>Continue with GitHub</span>
         </button>
         <div className="flex items-center gap-4 px-4 text-[#BEC8C9]">
           <hr className="flex-1" />

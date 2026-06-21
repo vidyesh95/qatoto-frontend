@@ -370,7 +370,7 @@ export default function SignUp() {
             }
           >
             <Image
-              src={"/icons/google_logo_18x18px.svg"}
+              src={"/icons/google_logo_light.svg"}
               alt={"Continue with Google"}
               width={18}
               height={18}
@@ -378,14 +378,14 @@ export default function SignUp() {
           </button>
           <button
             type={"button"}
-            aria-label="Continue with Apple"
+            aria-label="Continue with GitHub"
             className={
               "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-[#00696E]"
             }
           >
             <Image
-              src={"/icons/apple_logo_18x18px.svg"}
-              alt={"Continue with Apple"}
+              src={"/icons/github_logo_light.svg"}
+              alt={"Continue with GitHub"}
               width={18}
               height={18}
             />
