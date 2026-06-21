@@ -72,7 +72,7 @@ answer to "is this user logged in?" comes from Better Auth's session (the
 | Database ORM     | **Drizzle ORM**                 | Type-safe queries + migrations. Better Auth generates its tables as a Drizzle schema for you.          |
 | Database         | **SQLite** via `better-sqlite3` | A file on disk. No DB server to install. Drizzle lets you swap to Postgres later by changing one line. |
 | OTP delivery     | **`console.log` in dev**        | Don't sign up for an email provider yet. Better Auth hands you the code in a callback — print it.      |
-| CORS             | **cors**                        | Lets the browser on `:3000` call the API on `:4000`.                                                   |
+| CORS             | **cors**                        | Lets the browser on `:3000` call the API on `:8000`.                                                   |
 
 **What you are NOT installing (Better Auth does it):** no `bcrypt` (Better Auth hashes
 passwords with **scrypt** by default), no `cookie-parser` (Better Auth reads/writes its
@@ -226,7 +226,7 @@ import { auth } from "./auth";
 const app = express();
 
 // 1. CORS first — name the exact frontend origin, allow credentials (cookies).
-app.use(cors({ origin: "https://localhost:3000", credentials: true }));
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 
 // 2. Better Auth catch-all. Note the Express 5 splat syntax: "*splat".
 app.all("/api/auth/*splat", toNodeHandler(auth));
@@ -236,10 +236,10 @@ app.use(express.json());
 
 // 4. Your own routes go here (see routes.ts).
 
-app.listen(4000, () => console.log("API on http://localhost:4000"));
+app.listen(8000, () => console.log("API on http://localhost:8000"));
 ```
 
-Sanity check after this step: `GET http://localhost:4000/api/auth/ok` should respond.
+Sanity check after this step: `GET http://localhost:8000/api/auth/ok` should respond.
 
 ### 5d. The endpoints Better Auth gives you (free, under `/api/auth`)
 
@@ -426,13 +426,13 @@ cosmetic hint, if at all.
 
 ## 8. Connecting to the frontend (CORS + the Better Auth client)
 
-The browser runs the frontend on `https://localhost:3000` (Next dev uses https) and your
-API on `http://localhost:4000`. Different port = **different origin**, so the browser
+The browser runs the frontend on `http://localhost:3000` and your
+API on `http://localhost:8000`. Different port = **different origin**, so the browser
 blocks the call unless the server opts in.
 
 - **CORS** (server) decides whether the browser is _allowed_ to call. Name the exact
   origin (not `*`) and allow credentials — already set in §5c:
-  `cors({ origin: "https://localhost:3000", credentials: true })`.
+  `cors({ origin: "http://localhost:3000", credentials: true })`.
 - **`sameSite: "lax"`** (Better Auth's cookie default) lets the cookie ride along on
   `localhost → localhost` in dev. In production, put the API on a subdomain like
   `api.qatoto.com` so it stays same-site with `qatoto.com`.
@@ -448,7 +448,7 @@ import { createAuthClient } from "better-auth/react";
 import { emailOTPClient } from "better-auth/client/plugins";
 
 export const authClient = createAuthClient({
-    baseURL: "http://localhost:4000", // the API origin; cookies are sent automatically
+    baseURL: "http://localhost:8000", // the API origin; cookies are sent automatically
     plugins: [emailOTPClient()],
 });
 
@@ -468,7 +468,7 @@ await signIn.email({ email, password, rememberMe });
 // Signup (the two-phase flow from §6)
 await authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" }); // step 1
 await signIn.emailOtp({ email, otp }); // step 2 (creates + logs in)
-await fetch("http://localhost:4000/set-initial-password", {
+await fetch("http://localhost:8000/set-initial-password", {
     // step 3 (your endpoint)
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -530,7 +530,7 @@ config/env correctly.
 
 - [ ] Server re-validates **every** request — the UI's steps prove nothing (§0).
 - [ ] `BETTER_AUTH_SECRET` is set in `.env` (a long random string) and **git-ignored**.
-- [ ] `BETTER_AUTH_URL` matches the API origin (`http://localhost:4000` in dev).
+- [ ] `BETTER_AUTH_URL` matches the API origin (`http://localhost:8000` in dev).
 - [ ] Passwords are hashed by Better Auth (**scrypt**) — never stored or returned in plaintext.
 - [ ] OTPs are hashed, expiring, single-use (Better Auth's `verification` table) — don't disable that.
 - [ ] Session lives in Better Auth's **httpOnly** cookie, never in `localStorage`.
