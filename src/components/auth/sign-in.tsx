@@ -2,16 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { signIn } from "@/lib/auth-client";
+
+const handleGoogleSignIn = () => signIn.social({ provider: "google", callbackURL: "/" });
+const handleGitHubSignIn = () => signIn.social({ provider: "github", callbackURL: "/" });
 
 export default function SignIn() {
-  const router = useRouter();
-
-  const handleGoogleSignIn = () => {
-    localStorage.setItem("qatoto_authenticated", "1");
-    router.push("/");
-  };
-
   return (
     <main className="flex min-h-screen w-screen flex-col">
       <header className="space-y-10 bg-background pt-2 pb-4">
@@ -43,6 +39,7 @@ export default function SignIn() {
         </button>
         <button
           type={"button"}
+          onClick={handleGitHubSignIn}
           className={
             "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-[#00696E]"
           }

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { signOut } from "@/lib/auth-client";
 import {
   AppearancePanel,
   THEME_SUMMARY,
@@ -99,10 +100,11 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
     menuPanelRef.current?.scrollTo({ top: 0 });
   }, [view]);
 
-  // Sign the user out: drop the persisted auth flag, close the menu, and
-  // navigate to the home page (full reload resets any in-memory auth state).
-  const handleSignOut = () => {
-    localStorage.removeItem("qatoto_authenticated");
+  // Sign the user out: end the Better Auth session (clears the httpOnly
+  // cookie), close the menu, and navigate home with a full reload so any
+  // in-memory auth state resets.
+  const handleSignOut = async () => {
+    await signOut();
     onClose();
     window.location.href = "/";
   };

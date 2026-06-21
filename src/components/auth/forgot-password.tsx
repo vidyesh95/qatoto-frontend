@@ -2,15 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { emailOtp } from "@/lib/auth-client";
 
 export default function ForgotPassword() {
+  const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const stepContent: Record<1 | 2 | 3, { title: string; description: string }> = {
     1: {
@@ -33,28 +37,37 @@ export default function ForgotPassword() {
     }
   };
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      // TODO: Call API to send OTP to email
-      setStep(2);
+  const handleEmailSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email) return;
+    setErrorMessage("");
+    const { error } = await emailOtp.sendVerificationOtp({ email, type: "forget-password" });
+    if (error) {
+      setErrorMessage("Could not send the code. Try again.");
+      return;
     }
+    setStep(2);
   };
 
-  const handleOtpSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const otpValue = otp.join("");
-    if (otpValue.length === 6) {
-      // TODO: Call API to verify OTP
+  // OTP is verified by resetPassword on the final step: step 2 advances the UI.
+  const handleOtpSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (otp.join("").length === 6) {
       setStep(3);
     }
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password) {
-      // TODO: Call API to reset password
+  const handlePasswordSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!password) return;
+    setErrorMessage("");
+    const { error } = await emailOtp.resetPassword({ email, otp: otp.join(""), password });
+    if (error) {
+      setErrorMessage("Invalid or expired code.");
+      setStep(2);
+      return;
     }
+    router.push("/sign-in");
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -139,6 +152,7 @@ export default function ForgotPassword() {
       <hgroup className="mt-6 space-y-1 px-4">
         <h2 className="text-xl text-foreground">{stepContent[step].title}</h2>
         <p className="text-sm text-muted-foreground">{stepContent[step].description}</p>
+        {errorMessage && <p className="text-sm font-medium text-red-600">{errorMessage}</p>}
       </hgroup>
 
       <section className="space-y-4 p-4">

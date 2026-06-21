@@ -1,7 +1,32 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { signIn } from "@/lib/auth-client";
+
+const handleGoogleSignIn = () => signIn.social({ provider: "google", callbackURL: "/" });
+const handleGitHubSignIn = () => signIn.social({ provider: "github", callbackURL: "/" });
 
 export default function SignIn() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setErrorMessage("");
+    const { error } = await signIn.email({ email, password, rememberMe });
+    if (error) {
+      setErrorMessage("Incorrect email or password.");
+      return;
+    }
+    router.push("/");
+  };
+
   return (
     <main className="flex min-h-screen w-screen flex-col">
       <header className="space-y-10 bg-background pt-2 pb-4">
@@ -16,7 +41,7 @@ export default function SignIn() {
         <h1 className="mx-5 text-3xl">Sign in with Password</h1>
       </header>
       <section className="space-y-4 p-4">
-        <form action="" className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
             <div className="relative flex h-14 items-center rounded border border-[#6F7979] px-3">
               <label
@@ -37,6 +62,8 @@ export default function SignIn() {
                 type="email"
                 id="email"
                 aria-label="Email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="host@domain.com"
                 className="h-full flex-1 bg-transparent text-base outline-none placeholder:text-foreground"
                 required
@@ -66,6 +93,8 @@ export default function SignIn() {
                 type="password"
                 id="password"
                 aria-label="Password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
                 placeholder="secretPassword123$"
                 className="h-full flex-1 bg-transparent text-base outline-none placeholder:text-foreground"
                 required
@@ -91,6 +120,8 @@ export default function SignIn() {
               <input
                 type="checkbox"
                 id="remember-me"
+                checked={rememberMe}
+                onChange={(event) => setRememberMe(event.target.checked)}
                 className="peer sr-only"
                 aria-label="Remember me toggle switch"
               />
@@ -130,6 +161,7 @@ export default function SignIn() {
               </div>
             </label>
           </div>
+          {errorMessage && <p className="pl-4 text-sm font-medium text-red-600">{errorMessage}</p>}
           <button
             type="submit"
             className={
@@ -158,6 +190,7 @@ export default function SignIn() {
         <div className="flex items-center justify-center gap-4">
           <button
             type={"button"}
+            onClick={handleGoogleSignIn}
             aria-label="Continue with Google"
             className={
               "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-[#00696E]"
@@ -172,6 +205,7 @@ export default function SignIn() {
           </button>
           <button
             type={"button"}
+            onClick={handleGitHubSignIn}
             aria-label="Continue with GitHub"
             className={
               "border-outline flex w-fit cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-4 pl-4 text-sm font-medium text-[#00696E]"

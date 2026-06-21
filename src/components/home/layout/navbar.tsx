@@ -3,8 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSidebar } from "@/state/sidebar-context";
+import { useSession } from "@/lib/auth-client";
 import AccountMenu from "@/components/home/account/account-menu";
 
 const ANIME_SUBPAGES: Record<string, string> = {
@@ -43,12 +44,9 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const sub = getSubHeader(pathname);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { data: session } = useSession();
+  const isAuthenticated = !!session;
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
-
-  useEffect(() => {
-    setIsAuthenticated(localStorage.getItem("qatoto_authenticated") === "1");
-  }, []);
 
   return (
     <nav className="sticky top-0 z-50 bg-background">
