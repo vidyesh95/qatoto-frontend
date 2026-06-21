@@ -66,7 +66,7 @@ export default function VideoCard({
         width={246}
         height={138}
         alt="thumbnail"
-        className="aspect-video w-full rounded-xl"
+        className="aspect-video h-auto w-full rounded-xl"
       />
       <div className="flex flex-row items-start gap-2 pt-2">
         {channelHref ? (
