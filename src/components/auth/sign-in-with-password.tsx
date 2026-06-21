@@ -14,6 +14,7 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -90,7 +91,7 @@ export default function SignIn() {
                 />
               </div>
               <input
-                type="password"
+                type={isPasswordVisible ? "text" : "password"}
                 id="password"
                 aria-label="Password"
                 value={password}
@@ -99,14 +100,23 @@ export default function SignIn() {
                 className="h-full flex-1 bg-transparent text-base outline-none placeholder:text-foreground"
                 required
               />
-              <div className="ml-3 flex cursor-pointer items-center justify-center">
+              <button
+                type="button"
+                onClick={() => setIsPasswordVisible((isVisible) => !isVisible)}
+                aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                className="ml-3 flex cursor-pointer items-center justify-center"
+              >
                 <Image
-                  src={"/icons/visibility_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"}
-                  alt={"Show Password"}
+                  src={
+                    isPasswordVisible
+                      ? "/icons/visibility_off_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+                      : "/icons/visibility_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+                  }
+                  alt={isPasswordVisible ? "Hide password" : "Show password"}
                   width={24}
                   height={24}
                 />
-              </div>
+              </button>
             </div>
             <p className="mt-1 w-full pl-4 text-xs text-[#3F4949]">
               Click Forgot Password? if forgotten
