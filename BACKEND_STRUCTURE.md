@@ -57,7 +57,7 @@ answer to "is this user logged in?" comes from Better Auth's session (the
 `GET /api/auth/get-session` endpoint, or the `useSession()` hook — see §6).
 `localStorage` is the wrong place for a real session — see §7.
 
-**Google / Apple OAuth is out of scope for now.** Better Auth makes it a later add
+**Google / GitHub OAuth is out of scope for now.** Better Auth makes it a later add
 (`socialProviders` in the config). Build email + password + OTP first; add OAuth in §9.
 
 ---
@@ -516,7 +516,7 @@ Each step is a small, runnable win. Don't skip ahead.
 
 ### Later (explicitly NOT now)
 
-- Google / Apple OAuth (`socialProviders` in `auth.ts`)
+- Google / GitHub OAuth (`socialProviders` in `auth.ts`)
 - Real email delivery (nodemailer, Resend, or Postmark) inside `sendVerificationOTP`
 - Rate limiting (Better Auth has built-in rate-limit options — turn them up for prod)
 - Move SQLite → Postgres (change the Drizzle driver + `provider`)
