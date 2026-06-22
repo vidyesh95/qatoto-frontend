@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useSession } from "@/lib/auth-client";
 
 /** One actionable row in the settings list. */
 type SettingsItem = {
@@ -28,6 +29,9 @@ type SettingsPanelProps = {
  * must be re-validated and authorized by the Express backend.
  */
 export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
+  const { data: session } = useSession();
+  const avatarSrc = session?.user.image ?? "/dummy/profile_photo_girl.avif";
+
   const items: SettingsItem[] = [
     {
       label: "Your account",
@@ -91,7 +95,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
 
       <section className="relative m-4 mt-8 flex flex-col gap-4 rounded-2xl bg-card p-4 pt-16 shadow-sm">
         <Image
-          src="/dummy/profile_photo_girl.avif"
+          src={avatarSrc}
           alt=""
           width={320}
           height={320}
@@ -101,7 +105,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
           @drDong2w
         </div>
         <Image
-          src="/dummy/profile_photo_girl.avif"
+          src={avatarSrc}
           alt="Current avatar"
           width={64}
           height={64}
