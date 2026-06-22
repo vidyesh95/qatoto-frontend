@@ -99,7 +99,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
           alt=""
           width={320}
           height={320}
-          className="aspect-square w-full rounded-xl object-cover"
+          className="aspect-square w-full rounded-xl border border-background object-cover"
         />
         <div className="rounded-xl bg-muted px-4 py-3 text-center text-base leading-6 tracking-[0.5px] text-secondary-foreground">
           @drDong2w
@@ -109,7 +109,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
           alt="Current avatar"
           width={64}
           height={64}
-          className="absolute -top-4 left-4 aspect-square size-16 rounded-lg object-cover"
+          className="absolute -top-4 left-4 aspect-square size-16 rounded-lg border border-background object-cover"
         />
       </section>
 
