@@ -210,7 +210,7 @@ export default function Navbar() {
                   className="flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-primary"
                 >
                   <Image
-                    src={"/dummy/profile_photo_girl.avif"}
+                    src={session?.user.image ?? "/dummy/profile_photo_girl.avif"}
                     alt={"Account"}
                     width={39}
                     height={39}

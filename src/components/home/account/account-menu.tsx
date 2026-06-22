@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { signOut } from "@/lib/auth-client";
+import { signOut, useSession } from "@/lib/auth-client";
 import {
   AppearancePanel,
   THEME_SUMMARY,
@@ -67,6 +67,9 @@ type MenuView =
 export default function AccountMenu({ onClose }: AccountMenuProps) {
   // Reference to the root panel element, used to detect clicks landing outside it.
   const menuPanelRef = useRef<HTMLDivElement>(null);
+
+  // Signed-in user's name + avatar come from the Better Auth session (get-session).
+  const { data: session } = useSession();
 
   // Which panel is showing, and the browser-local appearance preference.
   const [view, setView] = useState<MenuView>("main");
@@ -143,7 +146,9 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               <div className="flex w-full flex-row">
                 <div className="min-w-0 flex-1">
                   <div className="w-full py-4 pl-4">
-                    <p className="w-full truncate text-base text-[#041F21]">董雪博士</p>
+                    <p className="w-full truncate text-base text-[#041F21]">
+                      {session?.user.name ?? "董雪博士"}
+                    </p>
                     <p className="w-full truncate text-xs text-[#041F21]">@drDong2w</p>
                   </div>
                   <p className="ml-4 flex w-full gap-1 text-4xl text-[#1DBDC5]">
@@ -159,7 +164,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                     className="cursor-pointer rounded-full"
                   >
                     <Image
-                      src="/dummy/profile_photo_girl.avif"
+                      src={session?.user.image ?? "/dummy/profile_photo_girl.avif"}
                       alt="Account"
                       width={40}
                       height={40}
