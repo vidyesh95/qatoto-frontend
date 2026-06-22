@@ -14,10 +14,12 @@ export default function SignIn() {
   const router = useRouter();
 
   // WebAuthn ceremony runs in the browser; success sets the session cookie (§5d /passkey/*).
-  const handlePasskeySignIn = async () => {
-    const result = await signIn.passkey();
-    if (!result?.error) router.push("/");
-  };
+  // autoFill:false → explicit modal prompt on click (autoFill is for conditional-UI autofill).
+  const handlePasskeySignIn = () =>
+    signIn.passkey({
+      autoFill: false,
+      fetchOptions: { onSuccess: () => router.push("/") },
+    });
 
   return (
     <main className="flex min-h-screen w-screen flex-col">
