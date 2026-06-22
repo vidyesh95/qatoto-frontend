@@ -54,6 +54,20 @@ export default function SignIn() {
           />
           <span>Continue with GitHub</span>
         </button>
+        <button
+          type={"button"}
+          className={
+            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-[#00696E]"
+          }
+        >
+          <Image
+            src={"/icons/passkey_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+            alt={"Sign in with Passkey"}
+            width={18}
+            height={18}
+          />
+          <span>Sign in with Passkey</span>
+        </button>
         <div className="flex items-center gap-4 px-4 text-[#BEC8C9]">
           <hr className="flex-1" />
           <span className="text-xs">or</span>
