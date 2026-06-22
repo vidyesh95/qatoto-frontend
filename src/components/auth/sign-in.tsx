@@ -4,8 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { signIn } from "@/lib/auth-client";
 
-const handleGoogleSignIn = () => signIn.social({ provider: "google", callbackURL: window.location.origin });
-const handleGitHubSignIn = () => signIn.social({ provider: "github", callbackURL: window.location.origin });
+const handleGoogleSignIn = () =>
+  signIn.social({ provider: "google", callbackURL: window.location.origin });
+const handleGitHubSignIn = () =>
+  signIn.social({ provider: "github", callbackURL: window.location.origin });
 
 export default function SignIn() {
   return (

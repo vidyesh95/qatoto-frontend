@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signIn } from "@/lib/auth-client";
 
-const handleGoogleSignIn = () => signIn.social({ provider: "google", callbackURL: window.location.origin });
-const handleGitHubSignIn = () => signIn.social({ provider: "github", callbackURL: window.location.origin });
+const handleGoogleSignIn = () =>
+  signIn.social({ provider: "google", callbackURL: window.location.origin });
+const handleGitHubSignIn = () =>
+  signIn.social({ provider: "github", callbackURL: window.location.origin });
 
 export default function SignIn() {
   const router = useRouter();

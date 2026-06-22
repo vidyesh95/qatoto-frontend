@@ -8,8 +8,10 @@ import { emailOtp, signIn } from "@/lib/auth-client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-const handleGoogleSignIn = () => signIn.social({ provider: "google", callbackURL: window.location.origin });
-const handleGitHubSignIn = () => signIn.social({ provider: "github", callbackURL: window.location.origin });
+const handleGoogleSignIn = () =>
+  signIn.social({ provider: "google", callbackURL: window.location.origin });
+const handleGitHubSignIn = () =>
+  signIn.social({ provider: "github", callbackURL: window.location.origin });
 
 export default function SignUp() {
   const router = useRouter();
