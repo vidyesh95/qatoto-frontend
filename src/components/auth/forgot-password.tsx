@@ -238,7 +238,11 @@ export default function ForgotPassword() {
             </form>
             <p className="text-center text-sm font-medium text-[#3F4949]">
               Didn&apos;t receive the code?{" "}
-              <button type="button" className="cursor-pointer font-medium text-[#00696E]">
+              <button
+                type="button"
+                onClick={() => emailOtp.sendVerificationOtp({ email, type: "forget-password" })}
+                className="cursor-pointer font-medium text-[#00696E]"
+              >
                 Resend
               </button>
             </p>

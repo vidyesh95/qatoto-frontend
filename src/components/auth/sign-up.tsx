@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { emailOtp, signIn } from "@/lib/auth-client";
+import { signIn } from "@/lib/auth-client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -44,19 +44,25 @@ export default function SignUp() {
     }
   };
 
+  // Step 1 (§5e): /signup/start sends the OTP. Creates NO account.
   const handleEmailSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!email) return;
     setErrorMessage("");
-    const { error } = await emailOtp.sendVerificationOtp({ email, type: "sign-in" });
-    if (error) {
+    const response = await fetch(`${API_URL}/signup/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email }),
+    });
+    if (!response.ok) {
       setErrorMessage("Could not send the code. Try again.");
       return;
     }
     setStep(2);
   };
 
-  // OTP is verified on the final step (§6): step 2 just advances the UI.
+  // OTP is verified server-side on the final step (§6): step 2 just advances the UI.
   const handleOtpSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (otp.join("").length === 6) {
@@ -64,28 +70,27 @@ export default function SignUp() {
     }
   };
 
-  // Two-phase signup (§6): the OTP call creates + signs in the user, then our
-  // own endpoint sets their first password.
+  // Final step (§5e): /signup/complete verifies the OTP AND sets the password in
+  // one atomic call — the ONLY place the account is created, and it opens the session.
   const handlePasswordSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!password) return;
     setErrorMessage("");
 
-    const { error } = await signIn.emailOtp({ email, otp: otp.join("") });
-    if (error) {
-      setErrorMessage("Invalid or expired code.");
-      setStep(2);
-      return;
-    }
-
-    const response = await fetch(`${API_URL}/set-initial-password`, {
+    const response = await fetch(`${API_URL}/signup/complete`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ email, otp: otp.join(""), password }),
     });
     if (!response.ok) {
-      setErrorMessage("Could not set your password. Try again.");
+      // Bad/expired OTP → 401; nothing was created. Send the user back to re-enter it.
+      setErrorMessage(
+        response.status === 409
+          ? "Email already registered. Please sign in."
+          : "Invalid or expired code.",
+      );
+      if (response.status !== 409) setStep(2);
       return;
     }
 
@@ -271,7 +276,14 @@ export default function SignUp() {
               Didn&apos;t receive the code?{" "}
               <button
                 type="button"
-                onClick={() => emailOtp.sendVerificationOtp({ email, type: "sign-in" })}
+                onClick={() =>
+                  fetch(`${API_URL}/signup/start`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ email }),
+                  })
+                }
                 className="cursor-pointer font-medium text-[#00696E]"
               >
                 Resend
