@@ -4,20 +4,12 @@ import { useEffect, useRef, useState } from "react";
 
 import Image from "next/image";
 
+import type { Address, AddressLabel } from "@/types/store";
+
 // Address management bottom sheet for the product page (UI-only phase, no fetch).
 // Two modes: a list of saved addresses (select one, edit, or add) and a form
 // (add a new address or edit an existing one). Backed by parent state — when
 // the backend phase starts these callbacks call the Express API instead.
-
-export type AddressLabel = "HOME" | "WORK" | "OTHER";
-
-export type Address = {
-  id: string;
-  recipientName: string;
-  pincode: string;
-  fullAddress: string;
-  label: AddressLabel;
-};
 
 export const MAX_SAVED_ADDRESSES = 5;
 

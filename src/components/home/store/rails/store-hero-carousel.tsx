@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { HeroSlide } from "@/lib/store";
+import type { HeroSlide } from "@/types/store";
 
 const ROTATION_INTERVAL = 4000;
 

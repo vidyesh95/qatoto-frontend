@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { StoreCategory } from "@/lib/store";
+import type { StoreCategory } from "@/types/store";
 
 // A single category tile: square image + name. Tapping drills into the
 // catch-all category route, which decides whether to show sub-categories or

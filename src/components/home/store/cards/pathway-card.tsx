@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Pathway } from "@/lib/store";
+import type { Pathway } from "@/types/store";
 
 // Portrait card for the "Pathways for you" rail. Tapping opens the pathway
 // detail page where the user buys the whole look or individual items from it.

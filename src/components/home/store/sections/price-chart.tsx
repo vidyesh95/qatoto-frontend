@@ -5,15 +5,11 @@ import { useState } from "react";
 import Image from "next/image";
 
 import PriceChartSheet from "@/components/home/store/sheets/price-chart-sheet";
+import type { ProductPricingTier } from "@/types/store";
 
 // Price chart block on the product page. Shows a compact tier preview; tapping
 // the header "more" chevron opens the detailed price-chart bottom sheet. UI-only
 // mock — real pricing comes from the backend later; the client never owns it.
-
-export type ProductPricingTier = {
-  unitPrice: string;
-  minimumOrderQuantity: string;
-};
 
 export default function PriceChart({ pricingTiers }: { pricingTiers: ProductPricingTier[] }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);

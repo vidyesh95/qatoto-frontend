@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { StoreProduct } from "@/lib/store";
+import type { StoreProduct } from "@/types/store";
 
 // Product tile used in the horizontal feed rails. Name + subtitle + price sit
 // below the image. Fixed width so rows scroll horizontally.

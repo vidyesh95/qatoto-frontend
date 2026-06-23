@@ -1,30 +1,4 @@
-import type { Comment, Review, SaleItem } from "@/components/home/watch/comments";
-
-export type Episode = { id: string; label: string; isPremium: boolean };
-export type Season = { id: string; label: string; episodes: Episode[] };
-
-export type WatchVideo = {
-  id: string;
-  videoSrc: string;
-  title: string;
-  profileSrc: string;
-  channelName: string;
-  subscribers: string;
-  views: string;
-  postedAt: string;
-  description: string;
-  verified?: boolean;
-  stats: { likes: string; comments: string; bookmarks: string; shares: string };
-  chapters: { title: string; time: string; thumbSrc: string }[];
-  transcriptTitle: string;
-  transcript: { time: string; text: string }[];
-  trending: string;
-  comments: Comment[];
-  saleItem?: SaleItem;
-  reviews?: Review[];
-  isPremium?: boolean;
-  seasons?: Season[];
-};
+import type { Season, WatchVideo } from "@/types/video";
 
 const VIDEO_API_URL = process.env.QATOTO_VIDEO_API_URL;
 

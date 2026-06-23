@@ -1,19 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export type VideoCardProps = {
-  thumbnailSrc: string;
-  profileSrc: string;
-  title: string;
-  channelName: string;
-  views: string;
-  postedAt: string;
-  verified?: boolean;
-  hoverBg?: string;
-  isChannelLive?: boolean;
-  href?: string;
-  channelHref?: string;
-};
+import type { VideoCardProps } from "@/types/video";
 
 export default function VideoCard({
   thumbnailSrc,

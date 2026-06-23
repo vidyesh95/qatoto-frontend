@@ -4,52 +4,7 @@ import { useState } from "react";
 
 import Image from "next/image";
 
-export type Reply = {
-  id: string;
-  profileSrc: string;
-  author: string;
-  /** Author this reply is directed at — shows the "▶ name" badge. */
-  replyingTo?: string;
-  postedAt: string;
-  location: string;
-  text: string;
-  likes: string;
-};
-
-export type Comment = {
-  id: string;
-  profileSrc: string;
-  author: string;
-  postedAt: string;
-  location: string;
-  text: string;
-  likes: string;
-  /** Count badge fallback; prefer replyList.length when replies are attached. */
-  replies: string;
-  replyList?: Reply[];
-};
-
-export type Review = {
-  id: string;
-  profileSrc: string;
-  author: string;
-  variant: string;
-  rating: number;
-  text: string;
-  images: string[];
-  postedAt: string;
-  location: string;
-  likes: string;
-  verified: boolean;
-  /** Buyer Q&A under the review — viewers ask, reviewer replies. */
-  replyList?: Reply[];
-};
-
-export type SaleItem = {
-  name: string;
-  price: string;
-  sold: string;
-};
+import type { Comment, Reply, Review, SaleItem } from "@/types/video";
 
 export type CommentsProps = {
   count: string;

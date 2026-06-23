@@ -1,6 +1,6 @@
 import SectionHeader from "@/components/home/store/sections/section-header";
 import StoreCategoryCard from "@/components/home/store/cards/store-category-card";
-import type { StoreCategory } from "@/lib/store";
+import type { StoreCategory } from "@/types/store";
 
 // Root "Categories" strip: a fixed 4-column row of top-level category tiles.
 export default function CategoryRail({ categories }: { categories: StoreCategory[] }) {

@@ -8,11 +8,12 @@ import Comments from "@/components/home/watch/comments";
 import FocusButton from "@/components/home/watch/focus-button";
 import ShareButton from "@/components/home/watch/share-sheet";
 import StatPill from "@/components/home/watch/stat-pill";
-import VideoCard, { type VideoCardProps } from "@/components/home/shared/video-card";
+import VideoCard from "@/components/home/shared/video-card";
+import type { VideoCardProps } from "@/types/video";
 import VideoDescription from "@/components/home/watch/video-description";
 import VideoPlayer from "@/components/home/watch/video-player";
 import WatchInfoPanel from "@/components/home/watch/watch-info-panel";
-import type { Episode, Season, WatchVideo } from "@/lib/videos";
+import type { Episode, Season, WatchVideo } from "@/types/video";
 
 const RECOMMENDED_VIDEOS: VideoCardProps[] = [
   {

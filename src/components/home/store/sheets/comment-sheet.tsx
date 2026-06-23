@@ -4,11 +4,9 @@ import { useEffect, useRef } from "react";
 
 import Image from "next/image";
 
-import Comments, {
-  type Comment,
-  type Review,
-  type SaleItem,
-} from "@/components/home/watch/comments";
+import Comments from "@/components/home/watch/comments";
+
+import type { Comment, Review, SaleItem } from "@/types/video";
 
 // Mock comment thread for the product page (UI-only phase, no fetch).
 const MOCK_COMMENTS: Comment[] = [

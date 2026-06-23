@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { PathwayItem } from "@/lib/store";
+import type { PathwayItem } from "@/types/store";
 
 // One buyable piece of a pathway "look" — image, category badge, name, price.
 // Tapping navigates to the item's product/category surface; actual cart adds

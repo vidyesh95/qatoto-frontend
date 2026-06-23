@@ -6,7 +6,8 @@ import CustomizationOptions from "@/components/home/store/sections/customization
 import DeliverTo from "@/components/home/store/sections/deliver-to";
 import DeliveryCost from "@/components/home/store/sections/delivery-cost";
 import EngagementBar from "@/components/home/store/sections/engagement-bar";
-import PriceChart, { type ProductPricingTier } from "@/components/home/store/sections/price-chart";
+import PriceChart from "@/components/home/store/sections/price-chart";
+import type { ProductPricingTier } from "@/types/store";
 import ProductCarousel from "@/components/home/store/rails/product-carousel";
 import ProductDetailsSection from "@/components/home/store/sections/product-details-section";
 import ProductHighlights from "@/components/home/store/sections/product-highlights";

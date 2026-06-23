@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { B2BLink } from "@/lib/store";
+import type { B2BLink } from "@/types/store";
 
 // One "For your Business" shortcut: icon over a label on a pale blue tile.
 // Each links to a dedicated B2B essentials surface (RFQ, logistics, …).
