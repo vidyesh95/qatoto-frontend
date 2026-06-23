@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Cropper, { type Area } from "react-easy-crop";
 import { useSession } from "@/lib/auth-client";
 
 /** One actionable row in the settings list. */
@@ -303,6 +304,64 @@ function readUploadErrorMessage(payload: unknown): string {
   return body.message ?? fallback;
 }
 
+/** Load an object-URL into an HTMLImageElement so we can draw it to a canvas. */
+function loadImageElement(source: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new window.Image();
+    image.addEventListener("load", () => resolve(image));
+    image.addEventListener("error", () => reject(new Error("Could not load image")));
+    image.src = source;
+  });
+}
+
+/** Bounding box of an image after rotating it `rotationDegrees`. */
+function rotatedBoundingBox(width: number, height: number, rotationDegrees: number) {
+  const rotationRadians = (rotationDegrees * Math.PI) / 180;
+  return {
+    width:
+      Math.abs(Math.cos(rotationRadians) * width) + Math.abs(Math.sin(rotationRadians) * height),
+    height:
+      Math.abs(Math.sin(rotationRadians) * width) + Math.abs(Math.cos(rotationRadians) * height),
+  };
+}
+
+/**
+ * Crop `imageSource` to `cropArea` (pixel coords from react-easy-crop), applying
+ * `rotationDegrees`, and re-encode as WebP. The backend still re-validates and
+ * re-encodes — this is only so the user uploads what they actually framed.
+ */
+async function getCroppedWebpBlob(
+  imageSource: string,
+  cropArea: Area,
+  rotationDegrees: number,
+): Promise<Blob | null> {
+  const image = await loadImageElement(imageSource);
+  const context = document.createElement("canvas").getContext("2d");
+  if (context === null) return null;
+  const canvas = context.canvas;
+
+  // Draw the whole image rotated about its centre into a box big enough to hold it.
+  const boundingBox = rotatedBoundingBox(image.width, image.height, rotationDegrees);
+  canvas.width = boundingBox.width;
+  canvas.height = boundingBox.height;
+  context.translate(boundingBox.width / 2, boundingBox.height / 2);
+  context.rotate((rotationDegrees * Math.PI) / 180);
+  context.drawImage(image, -image.width / 2, -image.height / 2);
+
+  // Lift out just the cropped rectangle, then resize the canvas down to it.
+  const croppedPixels = context.getImageData(
+    cropArea.x,
+    cropArea.y,
+    cropArea.width,
+    cropArea.height,
+  );
+  canvas.width = cropArea.width;
+  canvas.height = cropArea.height;
+  context.putImageData(croppedPixels, 0, 0);
+
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.9));
+}
+
 /**
  * Editor for the account's profile photo. The photo may initially come from the
  * Google or GitHub OAuth profile, but once the user uploads their own, the
@@ -318,6 +377,24 @@ function ProfilePhotoPanel({ currentPhotoUrl, hasExistingPhoto, onBack }: Profil
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>({ status: "idle" });
+  // Cropper view state (only meaningful while a freshly picked image is open).
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  // The confirmed crop result, awaiting the final Save. null = still cropping.
+  const [confirmedBlob, setConfirmedBlob] = useState<Blob | null>(null);
+  const [confirmedPreviewUrl, setConfirmedPreviewUrl] = useState<string | null>(null);
+
+  const handleCropComplete = useCallback((_croppedArea: Area, croppedPixels: Area) => {
+    setCroppedAreaPixels(croppedPixels);
+  }, []);
+
+  // Revoke the confirmed-crop object URL when it changes or the panel unmounts.
+  useEffect(() => {
+    if (confirmedPreviewUrl === null) return undefined;
+    return () => URL.revokeObjectURL(confirmedPreviewUrl);
+  }, [confirmedPreviewUrl]);
 
   // Revoke the object URL when the preview changes or the panel unmounts.
   useEffect(() => {
@@ -328,7 +405,7 @@ function ProfilePhotoPanel({ currentPhotoUrl, hasExistingPhoto, onBack }: Profil
   const isSaving = uploadState.status === "saving";
   const isRemoving = uploadState.status === "removing";
   const isBusy = isSaving || isRemoving;
-  const isSaveDisabled = isBusy || selectedFile === null;
+  const isSaveDisabled = isBusy || confirmedBlob === null;
   // Remove only makes sense for a real stored photo and when no new pick is pending.
   const canRemove = hasExistingPhoto && selectedFile === null;
 
@@ -347,7 +424,31 @@ function ProfilePhotoPanel({ currentPhotoUrl, hasExistingPhoto, onBack }: Profil
 
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setRotation(0);
+    setCroppedAreaPixels(null);
+    setConfirmedBlob(null);
+    setConfirmedPreviewUrl(null);
     setUploadState({ status: "idle" });
+  };
+
+  const handleConfirmCrop = async () => {
+    if (previewUrl === null || croppedAreaPixels === null) return;
+    const croppedBlob = await getCroppedWebpBlob(previewUrl, croppedAreaPixels, rotation).catch(
+      () => null,
+    );
+    if (croppedBlob === null) {
+      setUploadState({ status: "error", message: "Couldn't crop the image. Please try again." });
+      return;
+    }
+    setConfirmedBlob(croppedBlob);
+    setConfirmedPreviewUrl(URL.createObjectURL(croppedBlob));
+  };
+
+  const handleRecrop = () => {
+    setConfirmedBlob(null);
+    setConfirmedPreviewUrl(null);
   };
 
   const handleRemove = async () => {
@@ -376,11 +477,11 @@ function ProfilePhotoPanel({ currentPhotoUrl, hasExistingPhoto, onBack }: Profil
 
   const handleSubmit = async (formEvent: React.FormEvent<HTMLFormElement>) => {
     formEvent.preventDefault();
-    if (isSaveDisabled || selectedFile === null) return;
+    if (isSaveDisabled || confirmedBlob === null) return;
     setUploadState({ status: "saving" });
 
     const formData = new FormData();
-    formData.append("photo", selectedFile);
+    formData.append("photo", confirmedBlob, "avatar.webp");
 
     try {
       const response = await fetch(`${API_BASE_URL}/users/me/photo`, {
@@ -424,14 +525,90 @@ function ProfilePhotoPanel({ currentPhotoUrl, hasExistingPhoto, onBack }: Profil
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-4">
         <div className="flex flex-col items-center gap-4">
-          <Image
-            src={previewUrl ?? currentPhotoUrl}
-            alt="Profile photo preview"
-            width={160}
-            height={160}
-            unoptimized={previewUrl !== null}
-            className="aspect-square size-40 rounded-full border border-black/10 object-cover"
-          />
+          {confirmedPreviewUrl !== null ? (
+            // Confirm step: review the cropped result before saving.
+            <>
+              <Image
+                src={confirmedPreviewUrl}
+                alt="Cropped profile photo"
+                width={160}
+                height={160}
+                unoptimized
+                className="aspect-square size-40 rounded-full border border-black/10 object-cover"
+              />
+              <button
+                type="button"
+                onClick={handleRecrop}
+                disabled={isBusy}
+                className="cursor-pointer rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted disabled:opacity-50"
+              >
+                Recrop
+              </button>
+            </>
+          ) : previewUrl !== null ? (
+            // Crop stage — drag to reposition, slider to zoom, buttons to rotate.
+            <>
+              <div className="relative aspect-square w-full max-w-80 overflow-hidden rounded-xl bg-black">
+                <Cropper
+                  image={previewUrl}
+                  crop={crop}
+                  zoom={zoom}
+                  rotation={rotation}
+                  aspect={1}
+                  cropShape="round"
+                  showGrid
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onRotationChange={setRotation}
+                  onCropComplete={handleCropComplete}
+                />
+              </div>
+
+              <input
+                type="range"
+                aria-label="Zoom"
+                min={1}
+                max={3}
+                step={0.01}
+                value={zoom}
+                onChange={(rangeEvent) => setZoom(Number(rangeEvent.target.value))}
+                className="w-full max-w-80 cursor-pointer accent-primary"
+              />
+
+              <div className="flex flex-row flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRotation((current) => (current - 90 + 360) % 360)}
+                  className="cursor-pointer rounded-full border border-black/10 px-3 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+                >
+                  Rotate left
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRotation((current) => (current + 90) % 360)}
+                  className="cursor-pointer rounded-full border border-black/10 px-3 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+                >
+                  Rotate right
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleConfirmCrop}
+                className="cursor-pointer rounded-full bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:opacity-90"
+              >
+                Confirm crop
+              </button>
+            </>
+          ) : (
+            <Image
+              src={currentPhotoUrl}
+              alt="Profile photo preview"
+              width={160}
+              height={160}
+              className="aspect-square size-40 rounded-full border border-black/10 object-cover"
+            />
+          )}
           <input
             ref={fileInputRef}
             type="file"
