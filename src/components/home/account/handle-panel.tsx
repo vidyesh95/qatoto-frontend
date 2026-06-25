@@ -40,6 +40,7 @@ const HandleMetadataEnvelopeSchema = z
     data: z.object({
       handle: z.string().nullable(),
       maxChanges: z.number(),
+      windowDays: z.number(),
       changesRemaining: z.number(),
       isChangeLocked: z.boolean(),
       cooldownResetAt: z.string().nullable(),
@@ -96,6 +97,7 @@ type MetadataState =
       status: "ready";
       handle: string | null;
       maxChanges: number;
+      windowDays: number;
       changesRemaining: number;
       isChangeLocked: boolean;
       cooldownResetAt: string | null;
@@ -316,16 +318,28 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-4">
           {isChangeLocked ? (
-            <p className="rounded-xl bg-red-50 px-4 py-3 text-xs text-red-700">
-              You&apos;ve used all {metadataState.maxChanges} handle changes.
-              {metadataState.cooldownResetAt
-                ? ` Next change available ${formatHandleDate(metadataState.cooldownResetAt)}.`
-                : ""}
-            </p>
+            <div className="flex flex-col gap-1 rounded-xl bg-red-50 px-4 py-3 text-xs text-red-700">
+              <p className="font-medium">
+                You&apos;ve used all {metadataState.maxChanges} handle changes for now.
+              </p>
+              <p>
+                {metadataState.cooldownResetAt
+                  ? `You can change it again on ${formatHandleDate(metadataState.cooldownResetAt)}.`
+                  : "Try again later."}
+              </p>
+            </div>
           ) : (
-            <p className="text-xs text-muted-foreground">
-              {metadataState.changesRemaining} of {metadataState.maxChanges} changes remaining.
-            </p>
+            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+              <p className="font-medium text-secondary-foreground">
+                {metadataState.changesRemaining} of {metadataState.maxChanges} handle changes
+                remaining.
+              </p>
+              <p>
+                You can change your handle up to {metadataState.maxChanges} times every{" "}
+                {metadataState.windowDays} days. The {metadataState.windowDays}-day countdown starts
+                at your first change, and reverting to a past handle counts as a change.
+              </p>
+            </div>
           )}
 
           {revertableHandle && normalizedHandle !== revertableHandle ? (
