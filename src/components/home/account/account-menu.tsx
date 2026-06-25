@@ -149,7 +149,9 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                     <p className="w-full truncate text-base text-[#041F21]">
                       {session?.user.name ?? "董雪博士"}
                     </p>
-                    <p className="w-full truncate text-xs text-[#041F21]">@drDong2w</p>
+                    <p className="w-full truncate text-xs text-[#041F21]">
+                      @{session?.user.handle ?? "…"}
+                    </p>
                   </div>
                   <p className="ml-4 flex w-full gap-1 text-4xl text-[#1DBDC5]">
                     <span>Level</span>

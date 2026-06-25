@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { FullNamePanel } from "@/components/home/account/full-name-panel";
 import { ProfilePhotoPanel } from "@/components/home/account/profile-photo-panel";
+import { HandlePanel } from "@/components/home/account/handle-panel";
 
 /** One actionable row in the settings list. */
 type SettingsItem = {
@@ -36,7 +37,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
   const avatarSrc = session?.user.image ?? "/dummy/profile_photo_girl.avif";
 
   // Which view of the settings panel is showing: the action list, or a sub-editor.
-  const [view, setView] = useState<"list" | "full-name" | "profile-photo">("list");
+  const [view, setView] = useState<"list" | "full-name" | "profile-photo" | "handle">("list");
 
   if (view === "full-name") {
     return (
@@ -52,6 +53,10 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
         onBack={() => setView("list")}
       />
     );
+  }
+
+  if (view === "handle") {
+    return <HandlePanel onBack={() => setView("list")} />;
   }
 
   const items: SettingsItem[] = [
@@ -72,6 +77,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     {
       label: "Set handle",
       icon: "/icons/alternate_email_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      onClick: () => setView("handle"),
     },
     {
       label: "Set phone number",
@@ -129,7 +135,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
           className="aspect-square h-auto w-full rounded-xl border border-background object-cover"
         />
         <div className="rounded-xl bg-muted px-4 py-3 text-center text-base leading-6 tracking-[0.5px] text-secondary-foreground">
-          @drDong2w
+          @{session?.user.handle ?? "…"}
         </div>
         <Image
           src={avatarSrc}
