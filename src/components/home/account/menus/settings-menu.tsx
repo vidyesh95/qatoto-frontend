@@ -31,12 +31,7 @@ type SettingsItem = {
 /** Backend contract for GET /users/me/linked-accounts (untrusted — parsed, not asserted). */
 const LinkedAccountsResponseSchema = z
   .object({
-    data: z
-      .array(
-        z
-          .object({ providerId: z.string(), email: z.string().nullable() })
-          .strip(),
-      ),
+    data: z.array(z.object({ providerId: z.string(), email: z.string().nullable() }).strip()),
   })
   .strip();
 
@@ -100,10 +95,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
           return;
         }
         const accountsByProvider = new Map(
-          parsed.data.data.map((linkedAccount) => [
-            linkedAccount.providerId,
-            linkedAccount.email,
-          ]),
+          parsed.data.data.map((linkedAccount) => [linkedAccount.providerId, linkedAccount.email]),
         );
         setLinkedAccountsState({ status: "ready", accountsByProvider });
       } catch {

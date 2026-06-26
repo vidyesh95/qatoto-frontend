@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { authClient, useSession } from "@/lib/auth-client";
 import { findOriginalProviderId } from "@/lib/account-links";
 
 /**
@@ -82,6 +82,7 @@ function readLinkErrorFromUrl(provider: SocialProvider): string | null {
 }
 
 export function SocialLinkPanel({ provider, onBack }: SocialLinkPanelProps) {
+  const { data: session } = useSession();
   const [linkState, setLinkState] = useState<LinkState>({ status: "loading" });
   const providerLabel = PROVIDER_LABEL[provider];
 
@@ -199,6 +200,7 @@ export function SocialLinkPanel({ provider, onBack }: SocialLinkPanelProps) {
         <SocialLinkBody
           state={linkState}
           providerLabel={providerLabel}
+          linkedEmail={session?.user.email ?? null}
           onConnect={handleConnectClick}
           onRequestUnlink={handleRequestUnlink}
           onConfirmUnlink={handleConfirmUnlink}
@@ -213,6 +215,7 @@ export function SocialLinkPanel({ provider, onBack }: SocialLinkPanelProps) {
 function SocialLinkBody({
   state,
   providerLabel,
+  linkedEmail,
   onConnect,
   onRequestUnlink,
   onConfirmUnlink,
@@ -220,6 +223,7 @@ function SocialLinkBody({
 }: {
   state: LinkState;
   providerLabel: string;
+  linkedEmail: string | null;
   onConnect: () => void;
   onRequestUnlink: (accountId: string) => void;
   onConfirmUnlink: (accountId: string) => void;
@@ -237,14 +241,17 @@ function SocialLinkBody({
   );
 
   const connectedRow = (
-    <div className="flex flex-row items-center gap-2 text-sm font-medium text-[#00696E]">
-      <Image
-        src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-        alt=""
-        width={20}
-        height={20}
-      />
-      <span>{providerLabel} is connected</span>
+    <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-row items-center gap-2 text-sm font-medium text-[#00696E]">
+        <Image
+          src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+          alt=""
+          width={20}
+          height={20}
+        />
+        <span>{providerLabel} is connected</span>
+      </div>
+      {linkedEmail ? <span className="text-xs text-muted-foreground">{linkedEmail}</span> : null}
     </div>
   );
 

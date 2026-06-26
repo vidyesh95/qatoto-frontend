@@ -239,6 +239,17 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
           <p className="text-center text-sm font-medium text-[#00696E]">
             Email &amp; password sign-in is already enabled for this account.
           </p>
+          {email ? (
+            <div className="flex flex-row items-center gap-2 self-stretch rounded-xl border border-black/10 bg-muted px-4 py-3">
+              <Image
+                src="/icons/mail_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+                alt=""
+                width={20}
+                height={20}
+              />
+              <span className="text-base text-secondary-foreground">{email}</span>
+            </div>
+          ) : null}
           {credentialState.isOriginal ? (
             <p className="text-center text-sm text-muted-foreground">
               This is your primary sign-in method and can&apos;t be disconnected.
