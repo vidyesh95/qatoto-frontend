@@ -118,6 +118,10 @@ export function SocialLinkPanel({ provider, onBack }: SocialLinkPanelProps) {
     const { data, error } = await authClient.linkSocial({
       provider,
       callbackURL: window.location.href,
+      // On a failed link (e.g. the provider email doesn't match this account)
+      // come back to the app with `?error=…` instead of Better Auth's raw error
+      // page; readLinkErrorFromUrl() turns it into a friendly message.
+      errorCallbackURL: window.location.href,
     });
     if (error) {
       setLinkState({
