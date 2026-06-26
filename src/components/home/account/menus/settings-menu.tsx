@@ -10,7 +10,6 @@ import { ProfilePhotoPanel } from "@/components/home/account/panels/profile-phot
 import { HandlePanel } from "@/components/home/account/panels/handle-panel";
 import { SocialLinkPanel } from "@/components/home/account/panels/social-link-panel";
 import { EmailCredentialPanel } from "@/components/home/account/panels/email-credential-panel";
-import { RecoveryEmailPanel } from "@/components/home/account/panels/recovery-email-panel";
 
 /** One actionable row in the settings list. */
 type SettingsItem = {
@@ -69,7 +68,6 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     | "link-google"
     | "link-github"
     | "email-credential"
-    | "recovery-email"
   >("list");
 
   // Which providers are linked, so the list can show "Connected" chips and hide
@@ -139,10 +137,6 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     return <EmailCredentialPanel onBack={() => setView("list")} />;
   }
 
-  if (view === "recovery-email") {
-    return <RecoveryEmailPanel onBack={() => setView("list")} />;
-  }
-
   const accountsByProvider =
     linkedAccountsState.status === "ready" ? linkedAccountsState.accountsByProvider : null;
   const googleEmail = accountsByProvider?.get("google") ?? null;
@@ -206,11 +200,6 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       icon: "/icons/mail_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       onClick: () => setView("email-credential"),
       badge: hasCredential ? "Connected" : undefined,
-    },
-    {
-      label: "Set recovery email address",
-      icon: "/icons/forward_to_inbox_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-      onClick: () => setView("recovery-email"),
     },
     { label: "Time watched", icon: "/icons/bar_chart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
     {
