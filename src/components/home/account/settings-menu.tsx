@@ -173,9 +173,8 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     {
       label: hasCredential ? "Email & password enabled" : "Set email address",
       icon: "/icons/mail_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-      onClick: hasCredential ? undefined : () => setView("email-credential"),
+      onClick: () => setView("email-credential"),
       badge: hasCredential ? "Connected" : undefined,
-      disabled: hasCredential,
     },
     {
       label: "Set recovery email address",
