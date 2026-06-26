@@ -15,6 +15,7 @@ export default function VideoCard({
   isChannelLive = false,
   href,
   channelHref,
+  isPriority = false,
 }: VideoCardProps) {
   const isLive = isChannelLive;
 
@@ -54,6 +55,7 @@ export default function VideoCard({
         width={246}
         height={138}
         alt="thumbnail"
+        priority={isPriority}
         className="aspect-video h-auto w-full rounded-xl"
       />
       <div className="flex flex-row items-start gap-2 pt-2">

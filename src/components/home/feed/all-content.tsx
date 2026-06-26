@@ -346,8 +346,8 @@ export default function AllContent() {
       <div>
         <SectionDivider title="RECOMMENDED FOR YOU" />
         <div className="grid grid-cols-1 gap-x-3 gap-y-6 px-4 py-2 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
-          {RECOMMENDED_VIDEOS.map(({ id, ...video }) => (
-            <VideoCard key={id} {...video} />
+          {RECOMMENDED_VIDEOS.map(({ id, ...video }, index) => (
+            <VideoCard key={id} {...video} isPriority={index < 6} />
           ))}
         </div>
       </div>

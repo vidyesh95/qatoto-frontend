@@ -86,4 +86,6 @@ export type VideoCardProps = {
   isChannelLive?: boolean;
   href?: string;
   channelHref?: string;
+  /** Eager-load the thumbnail when the card is above the fold (LCP candidate). */
+  isPriority?: boolean;
 };
