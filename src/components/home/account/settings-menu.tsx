@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { useSession } from "@/lib/auth-client";
+import { useEffect, useState } from "react";
+import { authClient, useSession } from "@/lib/auth-client";
 import { FullNamePanel } from "@/components/home/account/full-name-panel";
 import { ProfilePhotoPanel } from "@/components/home/account/profile-photo-panel";
 import { HandlePanel } from "@/components/home/account/handle-panel";
+import { SocialLinkPanel } from "@/components/home/account/social-link-panel";
+import { EmailCredentialPanel } from "@/components/home/account/email-credential-panel";
 
 /** One actionable row in the settings list. */
 type SettingsItem = {
@@ -15,7 +17,17 @@ type SettingsItem = {
   icon: string;
   /** Optional click handler; omitted rows are inert nav stubs for now. */
   onClick?: () => void;
+  /** Right-aligned status chip (e.g. "Connected") for already-linked actions. */
+  badge?: string;
+  /** When true, the row is shown but not actionable. */
+  disabled?: boolean;
 };
+
+/** Which providers are linked to the account — drives the "Connected" chips. */
+type LinkedAccountsState =
+  | { status: "loading" }
+  | { status: "ready"; providerIds: Set<string> }
+  | { status: "error" };
 
 type SettingsPanelProps = {
   /** Invoked by the header back button. */
@@ -37,7 +49,42 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
   const avatarSrc = session?.user.image ?? "/dummy/profile_photo_girl.avif";
 
   // Which view of the settings panel is showing: the action list, or a sub-editor.
-  const [view, setView] = useState<"list" | "full-name" | "profile-photo" | "handle">("list");
+  const [view, setView] = useState<
+    | "list"
+    | "full-name"
+    | "profile-photo"
+    | "handle"
+    | "link-google"
+    | "link-github"
+    | "email-credential"
+  >("list");
+
+  // Which providers are linked, so the list can show "Connected" chips and hide
+  // "Set email address" once a credential exists. Re-fetched whenever the list is
+  // shown — including after returning from a sub-panel that just linked something.
+  const [linkedAccountsState, setLinkedAccountsState] = useState<LinkedAccountsState>({
+    status: "loading",
+  });
+
+  useEffect(() => {
+    if (view !== "list") return undefined;
+    let isActive = true;
+    void (async () => {
+      const { data: linkedAccounts, error } = await authClient.listAccounts();
+      if (!isActive) return;
+      if (error || !linkedAccounts) {
+        setLinkedAccountsState({ status: "error" });
+        return;
+      }
+      setLinkedAccountsState({
+        status: "ready",
+        providerIds: new Set(linkedAccounts.map((linkedAccount) => linkedAccount.providerId)),
+      });
+    })();
+    return () => {
+      isActive = false;
+    };
+  }, [view]);
 
   if (view === "full-name") {
     return (
@@ -58,6 +105,24 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
   if (view === "handle") {
     return <HandlePanel onBack={() => setView("list")} />;
   }
+
+  if (view === "link-google") {
+    return <SocialLinkPanel provider="google" onBack={() => setView("list")} />;
+  }
+
+  if (view === "link-github") {
+    return <SocialLinkPanel provider="github" onBack={() => setView("list")} />;
+  }
+
+  if (view === "email-credential") {
+    return <EmailCredentialPanel onBack={() => setView("list")} />;
+  }
+
+  const providerIds =
+    linkedAccountsState.status === "ready" ? linkedAccountsState.providerIds : null;
+  const isGoogleLinked = providerIds?.has("google") ?? false;
+  const isGithubLinked = providerIds?.has("github") ?? false;
+  const hasCredential = providerIds?.has("credential") ?? false;
 
   const items: SettingsItem[] = [
     {
@@ -93,9 +158,25 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       onClick: () => setView("profile-photo"),
     },
-    { label: "Link Google account", icon: "/icons/google_logo_tint.svg" },
-    { label: "Link Github account", icon: "/icons/github_logo_light.svg" },
-    { label: "Set email address", icon: "/icons/mail_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+    {
+      label: "Link Google account",
+      icon: "/icons/google_logo_tint.svg",
+      onClick: () => setView("link-google"),
+      badge: isGoogleLinked ? "Connected" : undefined,
+    },
+    {
+      label: "Link Github account",
+      icon: "/icons/github_logo_light.svg",
+      onClick: () => setView("link-github"),
+      badge: isGithubLinked ? "Connected" : undefined,
+    },
+    {
+      label: hasCredential ? "Email & password enabled" : "Set email address",
+      icon: "/icons/mail_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      onClick: hasCredential ? undefined : () => setView("email-credential"),
+      badge: hasCredential ? "Connected" : undefined,
+      disabled: hasCredential,
+    },
     {
       label: "Set recovery email address",
       icon: "/icons/forward_to_inbox_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
@@ -152,10 +233,24 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
             <button
               type="button"
               onClick={item.onClick}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
+              disabled={item.disabled}
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
             >
               <Image src={item.icon} alt="" width={24} height={24} className="size-6 shrink-0" />
-              <span className="text-sm font-medium text-secondary-foreground">{item.label}</span>
+              <span className="flex-1 text-left text-sm font-medium text-secondary-foreground">
+                {item.label}
+              </span>
+              {item.badge ? (
+                <span className="flex shrink-0 flex-row items-center gap-1 text-xs font-medium text-[#00696E]">
+                  <Image
+                    src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                    alt=""
+                    width={16}
+                    height={16}
+                  />
+                  {item.badge}
+                </span>
+              ) : null}
             </button>
           </li>
         ))}
