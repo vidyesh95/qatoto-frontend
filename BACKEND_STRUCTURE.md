@@ -74,9 +74,11 @@ The real answer to "is this user logged in?" comes from Better Auth's session
 the wrong place for a real session — see §7. The session also carries the user's
 **handle** (via `additionalFields`), so the navbar/avatar menu reads it directly.
 
-**One user = one email.** A person who first signs in with Google and later adds a
-password (or vice-versa) ends up as **one** account, not two — Better Auth's account
-linking attaches the new provider onto the existing user. See §5a / §6.
+**One user, one canonical email.** A person who first signs in with Google and later adds
+a password (or vice-versa) ends up as **one** account, not two — Better Auth's account
+linking attaches the new provider onto the existing user. `user.email` stays unique, but a
+signed-in user may also link a trusted provider (Google/GitHub) whose email **differs** from
+that canonical email (`allowDifferentEmails: true`) and remain one user. See §5a / §6.
 
 ---
 
@@ -216,10 +218,13 @@ Tables in `src/db/schema.ts`:
   bookkeeping for the 2-changes-per-14-days window (§5g). The server is the sole
   authority; the client only previews the lock.
 
-The `UNIQUE(email)` on `user` is the structural guarantee behind "one user = one email":
-a second provider reporting the same verified email links onto the existing row rather
-than inserting a duplicate. `UNIQUE(handle)` is the equivalent guarantee for handles and
-the final race-guard behind the SELECT-based availability checks.
+The `UNIQUE(email)` on `user` is the structural guarantee that each user has one canonical
+email: a second provider reporting the same verified email links onto the existing row
+rather than inserting a duplicate. A signed-in user may additionally link a trusted provider
+whose email differs (`allowDifferentEmails: true`, §5a) — that does not add a `user` row or a
+second canonical email, it just attaches another `account` row to the same `userId`.
+`UNIQUE(handle)` is the equivalent guarantee for handles and the final race-guard behind the
+SELECT-based availability checks.
 
 Protections still hold: OTPs hashed/expiring/single-use; password hashed (argon2id),
 never stored or returned in plaintext; session cookie carries only an opaque reference.
@@ -301,9 +306,17 @@ export const auth = betterAuth({
         },
     },
 
-    // One user = one email. google/github are trusted (first-party OAuth). "email-password"
-    // is deliberately NOT trusted — a credential signup must prove the email via OTP (our
-    // /signup/complete, Path C) before it can ride onto an existing OAuth account.
+    // One canonical email per user (user.email is UNIQUE), but a signed-in user may attach
+    // trusted providers reporting a DIFFERENT email. google/github are trusted (first-party
+    // OAuth). "email-password" is deliberately NOT trusted — a credential signup must prove
+    // the email via OTP (our /signup/complete, Path C) before it can ride onto an existing
+    // OAuth account.
+    // allowDifferentEmails:true → a signed-in user may link a trusted provider whose email
+    // differs from their account email (personal-email signup linking a work-email GitHub)
+    // and still be ONE user. The active session is the trust anchor — you must already BE
+    // the user to attach a different-email provider, so this never auto-merges two separate
+    // accounts at fresh sign-in; it only relaxes the same-email requirement on the
+    // authenticated link flow, and only for trustedProviders.
     // updateUserInfoOnLink:false → linking a 2nd provider must NOT overwrite the local
     // name/image (would clobber a user-set name/photo). OAuth still seeds name/image at
     // FIRST sign-in (user creation); only the link-time overwrite is suppressed.
@@ -311,6 +324,7 @@ export const auth = betterAuth({
         accountLinking: {
             enabled: true,
             trustedProviders: ["google", "github"],
+            allowDifferentEmails: true,
             updateUserInfoOnLink: false,
         },
     },
@@ -672,7 +686,11 @@ If the user bails before the final call, no account exists — nothing to recove
 provider links onto that user — **one** account, not a duplicate (§5a `accountLinking`).
 A brand-new OAuth user is seeded `name`/`image` (with `imageSource: "oauth"`) and a
 placeholder handle at creation; a **link** onto an existing user does NOT overwrite their
-name/photo (`updateUserInfoOnLink: false`).
+name/photo (`updateUserInfoOnLink: false`). With `allowDifferentEmails: true`, a
+**signed-in** user can also link a trusted provider whose email **differs** from their
+account email (e.g. a personal-email account linking a work-email GitHub) and stay one
+user — the session is the trust anchor (you must already be the user to link), so this
+never auto-merges two separate accounts at a fresh, sessionless sign-in.
 
 **Add a password to an OAuth-only account:** run `/signup/complete` for that email →
 **Path C** attaches the credential to the same user.
@@ -820,8 +838,9 @@ Done and live:
 0. Hello server, DB + Drizzle, Better Auth (email+password), password login + session.
 1. OTP plugin + OTP-gated signup (`/signup/start` → `/signup/complete`).
 2. Logout, forgot-password.
-3. **OAuth** (Google + GitHub) with account linking (one user = one email); original
-   provider cannot be unlinked.
+3. **OAuth** (Google + GitHub) with account linking (one user, one canonical email;
+   `allowDifferentEmails: true` lets a signed-in user link a different-email provider);
+   original provider cannot be unlinked.
 4. **Passkeys** (`@better-auth/passkey`, `requireSession`).
 5. **Anonymous** guest sessions.
 6. **Real email** via Brevo (`src/lib/email.ts`); dev still console.log's the OTP.
@@ -878,8 +897,10 @@ limit — 2 changes per rolling 14-day window (§5g), enforced in `handle.servic
       `/handles/*`) before any action (Zod, `422` on failure).
 - [ ] Account created **only** by `/signup/complete` (OTP + password atomic);
       `disableSignUp: true` + passkey `requireSession: true` block orphan creation.
-- [ ] **One user = one email**: `UNIQUE(email)` + account linking; `email-password` is
-      NOT a trusted linker (must prove email via OTP first — Path C).
+- [ ] **One user, one canonical email**: `UNIQUE(email)` + account linking; `email-password`
+      is NOT a trusted linker (must prove email via OTP first — Path C).
+      `allowDifferentEmails: true` lets a signed-in user link a trusted provider whose email
+      differs — by deliberate choice, not a bug.
 - [ ] **Identity is self-only**: every `/users/me*` route takes the user id from
       `req.user` (the session), never the body — a caller can only change themselves.
 - [ ] **Handle is server-owned**: `additionalFields … input:false` blocks Better Auth's
