@@ -3,12 +3,12 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { authClient, useSession } from "@/lib/auth-client";
-import { FullNamePanel } from "@/components/home/account/full-name-panel";
-import { ProfilePhotoPanel } from "@/components/home/account/profile-photo-panel";
-import { HandlePanel } from "@/components/home/account/handle-panel";
-import { SocialLinkPanel } from "@/components/home/account/social-link-panel";
-import { EmailCredentialPanel } from "@/components/home/account/email-credential-panel";
-import { RecoveryEmailPanel } from "@/components/home/account/recovery-email-panel";
+import { FullNamePanel } from "@/components/home/account/panels/full-name-panel";
+import { ProfilePhotoPanel } from "@/components/home/account/panels/profile-photo-panel";
+import { HandlePanel } from "@/components/home/account/panels/handle-panel";
+import { SocialLinkPanel } from "@/components/home/account/panels/social-link-panel";
+import { EmailCredentialPanel } from "@/components/home/account/panels/email-credential-panel";
+import { RecoveryEmailPanel } from "@/components/home/account/panels/recovery-email-panel";
 
 /** One actionable row in the settings list. */
 type SettingsItem = {

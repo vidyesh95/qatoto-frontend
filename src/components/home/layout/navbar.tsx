@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useSidebar } from "@/state/sidebar-context";
 import { useSession } from "@/lib/auth-client";
-import AccountMenu from "@/components/home/account/account-menu";
+import AccountMenu from "@/components/home/account/menus/account-menu";
 
 const ANIME_SUBPAGES: Record<string, string> = {
   "/anime/genre": "Genre",
