@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { findOriginalProviderId } from "@/lib/account-links";
 
 /**
  * Links a social provider (Google / GitHub) onto the CURRENTLY signed-in account
@@ -36,7 +37,11 @@ const PROVIDER_ICON: Record<SocialProvider, string> = {
 type LinkState =
   | { status: "loading" }
   | { status: "unlinked" }
-  | { status: "linked" }
+  // `isOriginal` = this is the provider the account was created with, so it can't
+  // be disconnected. `accountId` is what `unlinkAccount` needs to target the row.
+  | { status: "linked"; accountId: string; isOriginal: boolean }
+  | { status: "confirm-unlink"; accountId: string }
+  | { status: "unlinking" }
   | { status: "redirecting" }
   | { status: "error"; message: string };
 
@@ -100,10 +105,18 @@ export function SocialLinkPanel({ provider, onBack }: SocialLinkPanelProps) {
         });
         return;
       }
-      const isProviderLinked = linkedAccounts.some(
+      const thisProviderAccount = linkedAccounts.find(
         (linkedAccount) => linkedAccount.providerId === provider,
       );
-      setLinkState({ status: isProviderLinked ? "linked" : "unlinked" });
+      if (!thisProviderAccount) {
+        setLinkState({ status: "unlinked" });
+        return;
+      }
+      setLinkState({
+        status: "linked",
+        accountId: thisProviderAccount.accountId,
+        isOriginal: findOriginalProviderId(linkedAccounts) === provider,
+      });
     })();
 
     return () => {
@@ -134,6 +147,32 @@ export function SocialLinkPanel({ provider, onBack }: SocialLinkPanelProps) {
     if (data?.url) window.location.href = data.url;
   }
 
+  // Two-step confirm so a disconnect is never one stray tap; the original
+  // provider never reaches here because its row shows no Disconnect button.
+  function handleRequestUnlink(accountId: string) {
+    setLinkState({ status: "confirm-unlink", accountId });
+  }
+
+  function handleCancelUnlink(accountId: string) {
+    setLinkState({ status: "linked", accountId, isOriginal: false });
+  }
+
+  async function handleConfirmUnlink(accountId: string) {
+    setLinkState({ status: "unlinking" });
+    const { error } = await authClient.unlinkAccount({ providerId: provider, accountId });
+    if (error) {
+      setLinkState({
+        status: "error",
+        message:
+          error.code === "FAILED_TO_UNLINK_LAST_ACCOUNT"
+            ? "This is the only sign-in method on your account, so it can't be removed."
+            : `Couldn't disconnect your ${providerLabel} account. Please try again.`,
+      });
+      return;
+    }
+    setLinkState({ status: "unlinked" });
+  }
+
   return (
     <div>
       <header className="sticky top-0 z-10 flex flex-row items-center gap-4 border-b border-black/10 bg-background p-4">
@@ -161,6 +200,9 @@ export function SocialLinkPanel({ provider, onBack }: SocialLinkPanelProps) {
           state={linkState}
           providerLabel={providerLabel}
           onConnect={handleConnectClick}
+          onRequestUnlink={handleRequestUnlink}
+          onConfirmUnlink={handleConfirmUnlink}
+          onCancelUnlink={handleCancelUnlink}
         />
       </div>
     </div>
@@ -172,10 +214,16 @@ function SocialLinkBody({
   state,
   providerLabel,
   onConnect,
+  onRequestUnlink,
+  onConfirmUnlink,
+  onCancelUnlink,
 }: {
   state: LinkState;
   providerLabel: string;
   onConnect: () => void;
+  onRequestUnlink: (accountId: string) => void;
+  onConfirmUnlink: (accountId: string) => void;
+  onCancelUnlink: (accountId: string) => void;
 }) {
   const connectButton = (label: string, disabled: boolean) => (
     <button
@@ -186,6 +234,18 @@ function SocialLinkBody({
     >
       {label}
     </button>
+  );
+
+  const connectedRow = (
+    <div className="flex flex-row items-center gap-2 text-sm font-medium text-[#00696E]">
+      <Image
+        src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+        alt=""
+        width={20}
+        height={20}
+      />
+      <span>{providerLabel} is connected</span>
+    </div>
   );
 
   switch (state.status) {
@@ -212,14 +272,57 @@ function SocialLinkBody({
       );
     case "linked":
       return (
-        <div className="flex flex-row items-center gap-2 text-sm font-medium text-[#00696E]">
-          <Image
-            src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt=""
-            width={20}
-            height={20}
-          />
-          <span>{providerLabel} is connected</span>
+        <div className="flex w-full flex-col items-center gap-4">
+          {connectedRow}
+          {state.isOriginal ? (
+            <p className="text-center text-sm text-muted-foreground">
+              This is your primary sign-in method and can&apos;t be disconnected.
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onRequestUnlink(state.accountId)}
+              className="flex w-full cursor-pointer items-center justify-center rounded-full border border-red-300 px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+            >
+              Disconnect {providerLabel}
+            </button>
+          )}
+        </div>
+      );
+    case "confirm-unlink":
+      return (
+        <div className="flex w-full flex-col items-center gap-4">
+          {connectedRow}
+          <p className="text-center text-sm text-muted-foreground">
+            Disconnect {providerLabel}? You can reconnect it later.
+          </p>
+          <button
+            type="button"
+            onClick={() => onConfirmUnlink(state.accountId)}
+            className="flex w-full cursor-pointer items-center justify-center rounded-full bg-red-600 px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          >
+            Disconnect {providerLabel}
+          </button>
+          <button
+            type="button"
+            onClick={() => onCancelUnlink(state.accountId)}
+            className="flex w-full cursor-pointer items-center justify-center rounded-full border border-black/10 px-4 py-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+          >
+            Cancel
+          </button>
+        </div>
+      );
+    case "unlinking":
+      return (
+        <div className="flex w-full flex-col items-center gap-4">
+          {connectedRow}
+          <button
+            type="button"
+            disabled
+            className="flex w-full cursor-not-allowed items-center justify-center rounded-full border border-red-300 px-4 py-3 text-sm font-medium text-red-600 opacity-50"
+          >
+            Disconnecting…
+          </button>
         </div>
       );
     case "error":

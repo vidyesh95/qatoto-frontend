@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { authClient, useSession } from "@/lib/auth-client";
 import { API_BASE_URL } from "@/lib/api";
+import { findOriginalProviderId } from "@/lib/account-links";
 
 /**
  * Enables email + password sign-in on an account that signed up with OAuth only
@@ -38,7 +39,19 @@ function readCompleteError(payload: unknown): string {
 }
 
 /** Does the account already have an email+password credential? */
-type CredentialState = { status: "loading" } | { status: "already-set" } | { status: "available" };
+type CredentialState =
+  | { status: "loading" }
+  // `accountId` targets the row for unlink; `isOriginal` locks the disconnect off
+  // when email+password is the method the account was created with.
+  | { status: "already-set"; accountId: string; isOriginal: boolean }
+  | { status: "available" };
+
+/** The disconnect (unlink credential) flow, separate from the add-credential flow. */
+type UnlinkState =
+  | { status: "idle" }
+  | { status: "confirming" }
+  | { status: "unlinking" }
+  | { status: "error"; message: string };
 
 /** The send-OTP → verify+set-password flow. */
 type FlowState =
@@ -59,6 +72,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
   const email = session?.user.email ?? "";
 
   const [credentialState, setCredentialState] = useState<CredentialState>({ status: "loading" });
+  const [unlinkState, setUnlinkState] = useState<UnlinkState>({ status: "idle" });
   const [flowState, setFlowState] = useState<FlowState>({ status: "start" });
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [password, setPassword] = useState("");
@@ -76,10 +90,18 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
         setCredentialState({ status: "available" });
         return;
       }
-      const hasCredential = linkedAccounts.some(
+      const credentialAccount = linkedAccounts.find(
         (linkedAccount) => linkedAccount.providerId === "credential",
       );
-      setCredentialState({ status: hasCredential ? "already-set" : "available" });
+      if (!credentialAccount) {
+        setCredentialState({ status: "available" });
+        return;
+      }
+      setCredentialState({
+        status: "already-set",
+        accountId: credentialAccount.accountId,
+        isOriginal: findOriginalProviderId(linkedAccounts) === "credential",
+      });
     })();
     return () => {
       isActive = false;
@@ -134,6 +156,26 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
     } catch {
       setFlowState({ status: "verify-error", message: "Network error. Please try again." });
     }
+  }
+
+  // Remove the email+password credential. The original provider never reaches
+  // here (its row hides the button), and the backend re-checks both rules.
+  async function handleUnlinkCredential(accountId: string) {
+    setUnlinkState({ status: "unlinking" });
+    const { error } = await authClient.unlinkAccount({ providerId: "credential", accountId });
+    if (error) {
+      setUnlinkState({
+        status: "error",
+        message:
+          error.code === "FAILED_TO_UNLINK_LAST_ACCOUNT"
+            ? "This is the only sign-in method on your account, so it can't be removed."
+            : "Couldn't disconnect email & password. Please try again.",
+      });
+      return;
+    }
+    await refetch();
+    setUnlinkState({ status: "idle" });
+    setCredentialState({ status: "available" });
   }
 
   function handleOtpChange(index: number, value: string) {
@@ -197,6 +239,52 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
           <p className="text-center text-sm font-medium text-[#00696E]">
             Email &amp; password sign-in is already enabled for this account.
           </p>
+          {credentialState.isOriginal ? (
+            <p className="text-center text-sm text-muted-foreground">
+              This is your primary sign-in method and can&apos;t be disconnected.
+            </p>
+          ) : unlinkState.status === "confirming" ? (
+            <div className="flex w-full flex-col gap-3">
+              <p className="text-center text-sm text-muted-foreground">
+                Disconnect email &amp; password? You can set it up again later.
+              </p>
+              <button
+                type="button"
+                onClick={() => handleUnlinkCredential(credentialState.accountId)}
+                className="flex w-full cursor-pointer items-center justify-center rounded-full bg-red-600 px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+              >
+                Disconnect email &amp; password
+              </button>
+              <button
+                type="button"
+                onClick={() => setUnlinkState({ status: "idle" })}
+                className="flex w-full cursor-pointer items-center justify-center rounded-full border border-black/10 px-4 py-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : unlinkState.status === "unlinking" ? (
+            <button
+              type="button"
+              disabled
+              className="flex w-full cursor-not-allowed items-center justify-center rounded-full border border-red-300 px-4 py-3 text-sm font-medium text-red-600 opacity-50"
+            >
+              Disconnecting…
+            </button>
+          ) : (
+            <div className="flex w-full flex-col gap-2">
+              {unlinkState.status === "error" ? (
+                <p className="text-center text-sm text-red-600">{unlinkState.message}</p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setUnlinkState({ status: "confirming" })}
+                className="flex w-full cursor-pointer items-center justify-center rounded-full border border-red-300 px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+              >
+                Disconnect email &amp; password
+              </button>
+            </div>
+          )}
         </div>
       ) : flowState.status === "verify" ||
         flowState.status === "submitting" ||
