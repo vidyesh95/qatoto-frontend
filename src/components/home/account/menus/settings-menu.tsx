@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { authClient, useSession } from "@/lib/auth-client";
+import { z } from "zod";
+import { useSession } from "@/lib/auth-client";
+import { API_BASE_URL } from "@/lib/api";
 import { FullNamePanel } from "@/components/home/account/panels/full-name-panel";
 import { ProfilePhotoPanel } from "@/components/home/account/panels/profile-photo-panel";
 import { HandlePanel } from "@/components/home/account/panels/handle-panel";
@@ -14,6 +16,8 @@ import { RecoveryEmailPanel } from "@/components/home/account/panels/recovery-em
 type SettingsItem = {
   /** Visible label. */
   label: string;
+  /** Optional muted second line under the label (e.g. the linked provider email). */
+  subtitle?: string;
   /** Icon path under `public/icons` (or `public/...` for brand marks). */
   icon: string;
   /** Optional click handler; omitted rows are inert nav stubs for now. */
@@ -24,10 +28,22 @@ type SettingsItem = {
   disabled?: boolean;
 };
 
-/** Which providers are linked to the account — drives the "Connected" chips. */
+/** Backend contract for GET /users/me/linked-accounts (untrusted — parsed, not asserted). */
+const LinkedAccountsResponseSchema = z
+  .object({
+    data: z
+      .array(
+        z
+          .object({ providerId: z.string(), email: z.string().nullable() })
+          .strip(),
+      ),
+  })
+  .strip();
+
+/** Which providers are linked and the email each is linked as — drives the chips + subtitles. */
 type LinkedAccountsState =
   | { status: "loading" }
-  | { status: "ready"; providerIds: Set<string> }
+  | { status: "ready"; accountsByProvider: Map<string, string | null> }
   | { status: "error" };
 
 type SettingsPanelProps = {
@@ -72,16 +88,27 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     if (view !== "list") return undefined;
     let isActive = true;
     void (async () => {
-      const { data: linkedAccounts, error } = await authClient.listAccounts();
-      if (!isActive) return;
-      if (error || !linkedAccounts) {
-        setLinkedAccountsState({ status: "error" });
-        return;
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/me/linked-accounts`, {
+          credentials: "include",
+        });
+        const rawBody: unknown = await response.json();
+        if (!isActive) return;
+        const parsed = LinkedAccountsResponseSchema.safeParse(rawBody);
+        if (!response.ok || !parsed.success) {
+          setLinkedAccountsState({ status: "error" });
+          return;
+        }
+        const accountsByProvider = new Map(
+          parsed.data.data.map((linkedAccount) => [
+            linkedAccount.providerId,
+            linkedAccount.email,
+          ]),
+        );
+        setLinkedAccountsState({ status: "ready", accountsByProvider });
+      } catch {
+        if (isActive) setLinkedAccountsState({ status: "error" });
       }
-      setLinkedAccountsState({
-        status: "ready",
-        providerIds: new Set(linkedAccounts.map((linkedAccount) => linkedAccount.providerId)),
-      });
     })();
     return () => {
       isActive = false;
@@ -124,11 +151,14 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     return <RecoveryEmailPanel onBack={() => setView("list")} />;
   }
 
-  const providerIds =
-    linkedAccountsState.status === "ready" ? linkedAccountsState.providerIds : null;
-  const isGoogleLinked = providerIds?.has("google") ?? false;
-  const isGithubLinked = providerIds?.has("github") ?? false;
-  const hasCredential = providerIds?.has("credential") ?? false;
+  const accountsByProvider =
+    linkedAccountsState.status === "ready" ? linkedAccountsState.accountsByProvider : null;
+  const googleEmail = accountsByProvider?.get("google") ?? null;
+  const githubEmail = accountsByProvider?.get("github") ?? null;
+  const credentialEmail = accountsByProvider?.get("credential") ?? null;
+  const isGoogleLinked = accountsByProvider?.has("google") ?? false;
+  const isGithubLinked = accountsByProvider?.has("github") ?? false;
+  const hasCredential = accountsByProvider?.has("credential") ?? false;
 
   const items: SettingsItem[] = [
     {
@@ -166,18 +196,21 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     },
     {
       label: "Link Google account",
+      subtitle: googleEmail ?? undefined,
       icon: "/icons/google_logo_tint.svg",
       onClick: () => setView("link-google"),
       badge: isGoogleLinked ? "Connected" : undefined,
     },
     {
       label: "Link Github account",
+      subtitle: githubEmail ?? undefined,
       icon: "/icons/github_logo_light.svg",
       onClick: () => setView("link-github"),
       badge: isGithubLinked ? "Connected" : undefined,
     },
     {
       label: hasCredential ? "Email & password enabled" : "Set email address",
+      subtitle: credentialEmail ?? undefined,
       icon: "/icons/mail_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       onClick: () => setView("email-credential"),
       badge: hasCredential ? "Connected" : undefined,
@@ -243,8 +276,11 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
             >
               <Image src={item.icon} alt="" width={24} height={24} className="size-6 shrink-0" />
-              <span className="flex-1 text-left text-sm font-medium text-secondary-foreground">
-                {item.label}
+              <span className="flex flex-1 flex-col text-left">
+                <span className="text-sm font-medium text-secondary-foreground">{item.label}</span>
+                {item.subtitle ? (
+                  <span className="text-xs text-muted-foreground">{item.subtitle}</span>
+                ) : null}
               </span>
               {item.badge ? (
                 <span className="flex shrink-0 flex-row items-center gap-1 text-xs font-medium text-[#00696E]">
