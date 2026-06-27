@@ -132,7 +132,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
   }
 
   if (view === "switch-account") {
-    return <SwitchAccountPanel onBack={() => setView("list")} />;
+    return <SwitchAccountPanel onBack={() => setView("list")} onSignOutAll={onSignOut} />;
   }
 
   if (view === "phone-number") {

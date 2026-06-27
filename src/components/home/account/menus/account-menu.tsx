@@ -142,7 +142,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
       ) : view === "settings" ? (
         <SettingsPanel onBack={() => setView("main")} onSignOut={handleSignOut} />
       ) : view === "switch-account" ? (
-        <SwitchAccountPanel onBack={() => setView("main")} />
+        <SwitchAccountPanel onBack={() => setView("main")} onSignOutAll={handleSignOut} />
       ) : (
         <div className="space-y-8">
           <div className="rounded-lg bg-secondary">

@@ -3,6 +3,7 @@ import { passkeyClient } from "@better-auth/passkey/client";
 import {
   emailOTPClient,
   inferAdditionalFields,
+  multiSessionClient,
   phoneNumberClient,
 } from "better-auth/client/plugins";
 
@@ -19,6 +20,10 @@ export const authClient = createAuthClient({
     // checked entirely by the Express backend (Better Auth phoneNumber plugin +
     // SMS provider) — the client only triggers it and submits the typed code.
     phoneNumberClient(),
+    // Mirrors the backend multiSession() plugin: enables authClient.multiSession
+    // .listDeviceSessions / .setActive / .revoke for the account switcher. Also
+    // registers the listener that auto-refreshes useSession() after setActive.
+    multiSessionClient(),
     // Mirror the backend's user.additionalFields so the session is typed without
     // a cast. `handle` is written ONLY by PATCH /users/me/handle (the rate-limit
     // + reservation transaction); `phoneNumber` / `phoneNumberVerified` are
