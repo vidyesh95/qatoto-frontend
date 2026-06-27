@@ -125,23 +125,28 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     return <HandlePanel onBack={() => setView("list")} />;
   }
 
+  const accountsByProvider =
+    linkedAccountsState.status === "ready" ? linkedAccountsState.accountsByProvider : null;
+  const googleEmail = accountsByProvider?.get("google") ?? null;
+  const githubEmail = accountsByProvider?.get("github") ?? null;
+  const credentialEmail = accountsByProvider?.get("credential") ?? null;
+
   if (view === "link-google") {
-    return <SocialLinkPanel provider="google" onBack={() => setView("list")} />;
+    return (
+      <SocialLinkPanel provider="google" linkedEmail={googleEmail} onBack={() => setView("list")} />
+    );
   }
 
   if (view === "link-github") {
-    return <SocialLinkPanel provider="github" onBack={() => setView("list")} />;
+    return (
+      <SocialLinkPanel provider="github" linkedEmail={githubEmail} onBack={() => setView("list")} />
+    );
   }
 
   if (view === "email-credential") {
     return <EmailCredentialPanel onBack={() => setView("list")} />;
   }
 
-  const accountsByProvider =
-    linkedAccountsState.status === "ready" ? linkedAccountsState.accountsByProvider : null;
-  const googleEmail = accountsByProvider?.get("google") ?? null;
-  const githubEmail = accountsByProvider?.get("github") ?? null;
-  const credentialEmail = accountsByProvider?.get("credential") ?? null;
   const isGoogleLinked = accountsByProvider?.has("google") ?? false;
   const isGithubLinked = accountsByProvider?.has("github") ?? false;
   const hasCredential = accountsByProvider?.has("credential") ?? false;

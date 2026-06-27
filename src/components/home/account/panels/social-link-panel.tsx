@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { authClient, useSession } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 import { findOriginalProviderId } from "@/lib/account-links";
 
 /**
@@ -48,6 +48,12 @@ type LinkState =
 type SocialLinkPanelProps = {
   /** Which provider this panel links. */
   provider: SocialProvider;
+  /**
+   * Email this provider is actually linked as — comes from the backend's
+   * linked-accounts list, NOT the session. The two can differ, so never fall back
+   * to `session.user.email` here or the panel shows the wrong address.
+   */
+  linkedEmail: string | null;
   /** Return to the settings action list. */
   onBack: () => void;
 };
@@ -81,8 +87,7 @@ function readLinkErrorFromUrl(provider: SocialProvider): string | null {
   }
 }
 
-export function SocialLinkPanel({ provider, onBack }: SocialLinkPanelProps) {
-  const { data: session } = useSession();
+export function SocialLinkPanel({ provider, linkedEmail, onBack }: SocialLinkPanelProps) {
   const [linkState, setLinkState] = useState<LinkState>({ status: "loading" });
   const providerLabel = PROVIDER_LABEL[provider];
 
@@ -200,7 +205,7 @@ export function SocialLinkPanel({ provider, onBack }: SocialLinkPanelProps) {
         <SocialLinkBody
           state={linkState}
           providerLabel={providerLabel}
-          linkedEmail={session?.user.email ?? null}
+          linkedEmail={linkedEmail}
           onConnect={handleConnectClick}
           onRequestUnlink={handleRequestUnlink}
           onConfirmUnlink={handleConfirmUnlink}
