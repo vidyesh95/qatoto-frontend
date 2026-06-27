@@ -11,6 +11,7 @@ import { HandlePanel } from "@/components/home/account/panels/handle-panel";
 import { SocialLinkPanel } from "@/components/home/account/panels/social-link-panel";
 import { EmailCredentialPanel } from "@/components/home/account/panels/email-credential-panel";
 import { ChangePasswordPanel } from "@/components/home/account/panels/change-password-panel";
+import { PhoneNumberPanel } from "@/components/home/account/panels/phone-number-panel";
 
 /** One actionable row in the settings list. */
 type SettingsItem = {
@@ -66,6 +67,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     | "full-name"
     | "profile-photo"
     | "handle"
+    | "phone-number"
     | "link-google"
     | "link-github"
     | "email-credential"
@@ -127,6 +129,15 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     return <HandlePanel onBack={() => setView("list")} />;
   }
 
+  if (view === "phone-number") {
+    return (
+      <PhoneNumberPanel
+        initialPhoneNumber={session?.user.phoneNumber ?? ""}
+        onBack={() => setView("list")}
+      />
+    );
+  }
+
   const accountsByProvider =
     linkedAccountsState.status === "ready" ? linkedAccountsState.accountsByProvider : null;
   const googleEmail = accountsByProvider?.get("google") ?? null;
@@ -184,8 +195,11 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       onClick: () => setView("handle"),
     },
     {
-      label: "Set phone number",
+      label: session?.user.phoneNumberVerified ? "Phone number verified" : "Set phone number",
+      subtitle: session?.user.phoneNumber ?? undefined,
       icon: "/icons/add_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      onClick: () => setView("phone-number"),
+      badge: session?.user.phoneNumberVerified ? "Verified" : undefined,
     },
     {
       label: "Set full name",
