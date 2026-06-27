@@ -12,6 +12,7 @@ import { SocialLinkPanel } from "@/components/home/account/panels/social-link-pa
 import { EmailCredentialPanel } from "@/components/home/account/panels/email-credential-panel";
 import { ChangePasswordPanel } from "@/components/home/account/panels/change-password-panel";
 import { PhoneNumberPanel } from "@/components/home/account/panels/phone-number-panel";
+import { SwitchAccountPanel } from "@/components/home/account/menus/switch-account-menu";
 
 /** One actionable row in the settings list. */
 type SettingsItem = {
@@ -72,6 +73,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     | "link-github"
     | "email-credential"
     | "change-password"
+    | "switch-account"
   >("list");
 
   // Which providers are linked, so the list can show "Connected" chips and hide
@@ -129,6 +131,10 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     return <HandlePanel onBack={() => setView("list")} />;
   }
 
+  if (view === "switch-account") {
+    return <SwitchAccountPanel onBack={() => setView("list")} />;
+  }
+
   if (view === "phone-number") {
     return (
       <PhoneNumberPanel
@@ -177,6 +183,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     {
       label: "Switch account",
       icon: "/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      onClick: () => setView("switch-account"),
     },
     {
       label: "Sign out",

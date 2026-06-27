@@ -19,6 +19,7 @@ import { ChildPanel } from "@/components/home/account/menus/child-menu";
 import { IncognitoPanel } from "@/components/home/account/menus/incognito-menu";
 import { AiAssistPanel } from "@/components/home/account/menus/ai-assist-menu";
 import { SettingsPanel } from "@/components/home/account/menus/settings-menu";
+import { SwitchAccountPanel } from "@/components/home/account/menus/switch-account-menu";
 
 type AccountMenuProps = {
   /** Called when the menu should close — e.g. an outside click or after sign-out. */
@@ -55,7 +56,8 @@ type MenuView =
   | "ai-assist"
   | "language"
   | "location"
-  | "settings";
+  | "settings"
+  | "switch-account";
 
 /**
  * Dropdown panel showing the signed-in user's profile, rewards, and account
@@ -139,6 +141,8 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
         <LocationPanel selected={location} onSelect={setLocation} onBack={() => setView("main")} />
       ) : view === "settings" ? (
         <SettingsPanel onBack={() => setView("main")} onSignOut={handleSignOut} />
+      ) : view === "switch-account" ? (
+        <SwitchAccountPanel onBack={() => setView("main")} />
       ) : (
         <div className="space-y-8">
           <div className="rounded-lg bg-secondary">
@@ -315,6 +319,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <button
               type="button"
+              onClick={() => setView("switch-account")}
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
