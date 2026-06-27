@@ -46,6 +46,7 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
   const [isCurrentPasswordVisible, setIsCurrentPasswordVisible] = useState(false);
   const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const isOtpMode =
     changePasswordState.status === "otp-start" ||
@@ -172,6 +173,18 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
 
       {!isOtpMode ? (
         <form onSubmit={handleChangeWithCurrentPassword} className="flex flex-col gap-6 p-4">
+          {/* Hidden username field so the browser's password manager associates the
+              saved credential with the account email instead of a stray value. */}
+          <input
+            type="email"
+            name="username"
+            autoComplete="username"
+            value={email}
+            readOnly
+            tabIndex={-1}
+            aria-hidden="true"
+            className="sr-only"
+          />
           <p className="text-sm text-muted-foreground">
             Enter your current password and a new password for{" "}
             <span className="font-medium">{email}</span>.
@@ -183,6 +196,7 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
               <input
                 type={isCurrentPasswordVisible ? "text" : "password"}
                 aria-label="Current password"
+                autoComplete="current-password"
                 value={currentPassword}
                 onChange={(inputEvent) => {
                   setCurrentPassword(inputEvent.target.value);
@@ -220,6 +234,7 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
               <input
                 type={isNewPasswordVisible ? "text" : "password"}
                 aria-label="New password"
+                autoComplete="new-password"
                 value={newPassword}
                 onChange={(inputEvent) => {
                   setNewPassword(inputEvent.target.value);
@@ -255,6 +270,56 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
             ) : null}
           </label>
 
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor="change-pw-remember-me" className="w-full text-sm font-medium">
+              Remember me
+            </label>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                id="change-pw-remember-me"
+                checked={rememberMe}
+                onChange={(inputEvent) => setRememberMe(inputEvent.target.checked)}
+                className="peer sr-only"
+                aria-label="Remember me toggle switch"
+              />
+              {/* Track */}
+              <div className="h-8 w-13 rounded-full border-2 border-[#6F7979] bg-[#DAE4E5] transition-colors duration-200 ease-in-out peer-checked:border-[#00696E] peer-checked:bg-[#00696E]"></div>
+
+              {/* Thumb */}
+              <div className="pointer-events-none absolute top-0.75 left-0.75 flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[#6F7979] shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-5 peer-checked:bg-white peer-checked:[&>svg.check-icon]:opacity-100 peer-checked:[&>svg.x-icon]:opacity-0">
+                {/* X Icon - shown when unchecked */}
+                <svg
+                  className="x-icon absolute h-4 w-4 text-white opacity-100 transition-opacity duration-200"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                {/* Checkmark Icon - shown when checked */}
+                <svg
+                  className="check-icon absolute h-4 w-4 text-[#00696E] opacity-0 transition-opacity duration-200"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+            </label>
+          </div>
+
           <button
             type="submit"
             disabled={
@@ -279,6 +344,17 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
         changePasswordState.status === "otp-submitting" ||
         changePasswordState.status === "otp-error" ? (
         <form onSubmit={handleResetWithOtp} className="flex flex-col gap-6 p-4">
+          {/* Hidden username field so the saved credential maps to the account email. */}
+          <input
+            type="email"
+            name="username"
+            autoComplete="username"
+            value={email}
+            readOnly
+            tabIndex={-1}
+            aria-hidden="true"
+            className="sr-only"
+          />
           <p className="text-sm text-muted-foreground">
             Enter the 6-digit code we sent to <span className="font-medium">{email}</span> and
             choose a new password.
@@ -308,6 +384,7 @@ export function ChangePasswordPanel({ onBack }: ChangePasswordPanelProps) {
               <input
                 type={isNewPasswordVisible ? "text" : "password"}
                 aria-label="New password"
+                autoComplete="new-password"
                 value={newPassword}
                 onChange={(inputEvent) => {
                   setNewPassword(inputEvent.target.value);
