@@ -165,7 +165,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       icon: "/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       onClick: onSignOut,
     },
-    { label: "Set password", icon: "/icons/lock_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+    { label: "Set or change password", icon: "/icons/lock_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
     {
       label: "Set handle",
       icon: "/icons/alternate_email_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
