@@ -77,6 +77,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Path C only applies to OAuth-only accounts. If a `credential` row already
   // exists, completing again would 409 — so detect it up front and say so.
@@ -301,6 +302,18 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
         flowState.status === "submitting" ||
         flowState.status === "verify-error" ? (
         <form onSubmit={handleComplete} className="flex flex-col gap-6 p-4">
+          {/* Hidden username field so the browser's password manager associates the
+              saved credential with the account email instead of a stray value. */}
+          <input
+            type="email"
+            name="username"
+            autoComplete="username"
+            value={email}
+            readOnly
+            tabIndex={-1}
+            aria-hidden="true"
+            className="sr-only"
+          />
           <p className="text-sm text-muted-foreground">
             Enter the 6-digit code we sent to <span className="font-medium">{email}</span> and
             choose a password to enable email sign-in.
@@ -330,6 +343,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
               <input
                 type={isPasswordVisible ? "text" : "password"}
                 aria-label="Password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(inputEvent) => {
                   setPassword(inputEvent.target.value);
@@ -362,6 +376,56 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
               <span className="text-xs text-red-600">{flowState.message}</span>
             ) : null}
           </label>
+
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor="email-credential-remember-me" className="w-full text-sm font-medium">
+              Remember me
+            </label>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                id="email-credential-remember-me"
+                checked={rememberMe}
+                onChange={(inputEvent) => setRememberMe(inputEvent.target.checked)}
+                className="peer sr-only"
+                aria-label="Remember me toggle switch"
+              />
+              {/* Track */}
+              <div className="h-8 w-13 rounded-full border-2 border-[#6F7979] bg-[#DAE4E5] transition-colors duration-200 ease-in-out peer-checked:border-[#00696E] peer-checked:bg-[#00696E]"></div>
+
+              {/* Thumb */}
+              <div className="pointer-events-none absolute top-0.75 left-0.75 flex h-6.5 w-6.5 items-center justify-center rounded-full bg-[#6F7979] shadow-sm transition-transform duration-200 ease-in-out peer-checked:translate-x-5 peer-checked:bg-white peer-checked:[&>svg.check-icon]:opacity-100 peer-checked:[&>svg.x-icon]:opacity-0">
+                {/* X Icon - shown when unchecked */}
+                <svg
+                  className="x-icon absolute h-4 w-4 text-white opacity-100 transition-opacity duration-200"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                {/* Checkmark Icon - shown when checked */}
+                <svg
+                  className="check-icon absolute h-4 w-4 text-[#00696E] opacity-0 transition-opacity duration-200"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+            </label>
+          </div>
 
           <button
             type="submit"
