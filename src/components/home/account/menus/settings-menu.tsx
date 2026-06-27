@@ -10,6 +10,7 @@ import { ProfilePhotoPanel } from "@/components/home/account/panels/profile-phot
 import { HandlePanel } from "@/components/home/account/panels/handle-panel";
 import { SocialLinkPanel } from "@/components/home/account/panels/social-link-panel";
 import { EmailCredentialPanel } from "@/components/home/account/panels/email-credential-panel";
+import { ChangePasswordPanel } from "@/components/home/account/panels/change-password-panel";
 
 /** One actionable row in the settings list. */
 type SettingsItem = {
@@ -68,6 +69,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     | "link-google"
     | "link-github"
     | "email-credential"
+    | "change-password"
   >("list");
 
   // Which providers are linked, so the list can show "Connected" chips and hide
@@ -147,9 +149,14 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     return <EmailCredentialPanel onBack={() => setView("list")} />;
   }
 
+  if (view === "change-password") {
+    return <ChangePasswordPanel onBack={() => setView("list")} />;
+  }
+
   const isGoogleLinked = accountsByProvider?.has("google") ?? false;
   const isGithubLinked = accountsByProvider?.has("github") ?? false;
   const hasCredential = accountsByProvider?.has("credential") ?? false;
+  const isLinkedAccountsReady = linkedAccountsState.status === "ready";
 
   const items: SettingsItem[] = [
     {
@@ -165,7 +172,12 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       icon: "/icons/logout_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       onClick: onSignOut,
     },
-    { label: "Set or change password", icon: "/icons/lock_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
+    {
+      label: "Set or change password",
+      icon: "/icons/lock_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      onClick: () => setView(hasCredential ? "change-password" : "email-credential"),
+      disabled: !isLinkedAccountsReady,
+    },
     {
       label: "Set handle",
       icon: "/icons/alternate_email_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
