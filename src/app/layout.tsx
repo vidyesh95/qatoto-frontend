@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+// import Script from "next/script";
 import { Geist, Geist_Mono, Roboto_Serif } from "next/font/google";
 // eslint-disable-next-line import/no-unassigned-import -- global stylesheet has no exports to bind
 import "./globals.css";
