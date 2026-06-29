@@ -477,8 +477,10 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               />
             </button>
             <hr className="mx-4" />
-            <button
-              type="button"
+            <a
+              href="https://github.com/vidyesh95/qatoto-frontend"
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
@@ -488,7 +490,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 height={24}
               />
               <span className="text-sm font-medium text-secondary-foreground">Forum</span>
-            </button>
+            </a>
             <button
               type="button"
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
