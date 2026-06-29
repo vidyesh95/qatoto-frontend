@@ -478,7 +478,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <hr className="mx-4" />
             <a
-              href="https://github.com/vidyesh95/qatoto-frontend"
+              href="https://github.com/vidyesh95/qatoto-frontend/discussions"
               target="_blank"
               rel="noopener noreferrer"
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
