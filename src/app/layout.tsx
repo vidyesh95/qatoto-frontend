@@ -68,24 +68,24 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {process.env.NODE_ENV === "development" && (
+        {/* {process.env.NODE_ENV === "development" && (
           <Script
             src="//unpkg.com/react-grab/dist/index.global.js"
             crossOrigin="anonymous"
             strategy="beforeInteractive"
           />
-        )}
+        )} */}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${robotoSerif.variable} antialiased`}
       >
-        {process.env.NODE_ENV === "development" && (
+        {/* {process.env.NODE_ENV === "development" && (
           <Script
             src="https://unpkg.com/react-scan/dist/auto.global.js"
             crossOrigin="anonymous"
             strategy="beforeInteractive"
           />
-        )}
+        )} */}
         {children}
       </body>
     </html>
