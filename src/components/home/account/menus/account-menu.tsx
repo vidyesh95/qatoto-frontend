@@ -79,7 +79,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   const [childMode, setChildMode] = useState(false);
   const [incognitoMode, setIncognitoMode] = useState(false);
   const [aiAssistMode, setAiAssistMode] = useState(false);
-  const [language, setLanguage] = useState("English (US)");
+  const [language, setLanguage] = useState("English");
   const [location, setLocation] = useState(DEFAULT_COUNTRY_CODE);
 
   // Close the menu whenever the user presses down anywhere outside the panel.
