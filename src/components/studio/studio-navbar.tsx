@@ -44,7 +44,7 @@ export default function StudioNavbar() {
         </div>
 
         {/* Search + voice */}
-        <div className="hidden items-center justify-end gap-2 xl:flex xl:w-xl">
+        <div className="hidden items-center justify-end gap-2 xl:absolute xl:left-1/2 xl:flex xl:w-xl xl:-translate-x-1/2">
           <form
             action="/search"
             method="get"
