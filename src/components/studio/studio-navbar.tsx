@@ -118,18 +118,6 @@ export default function StudioNavbar() {
               height={24}
             />
           </button>
-          <button
-            type="button"
-            aria-label="Language"
-            className="cursor-pointer rounded-full border border-primary bg-white p-1.75"
-          >
-            <Image
-              src="/icons/translate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt="Language"
-              width={24}
-              height={24}
-            />
-          </button>
           {isAuthenticated ? (
             <div className="relative">
               <button
