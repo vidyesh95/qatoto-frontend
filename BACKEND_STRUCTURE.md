@@ -194,13 +194,12 @@ Tables in `src/db/schema.ts`:
 
 | Table                 | What it holds                                                                                                                                                                                                                                                                                                                                                                             |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `user`                | id, `name` (notNull), `nameSetByUser`, **`email` (UNIQUE)**, emailVerified, `image`, `imageSource`, **`handle` (UNIQUE, nullable)**, `handleUpdatedAt`, `handleChangeCount`, `handleWindowStartedAt`, `recoveryEmail` (nullable, **NOT UNIQUE**), `recoveryEmailVerified`, `recoveryEmailUpdatedAt`, `isAnonymous`, timestamps. **No raw password here.**                                 |
+| `user`                | id, `name` (notNull), `nameSetByUser`, **`email` (UNIQUE)**, emailVerified, `image`, `imageSource`, **`handle` (UNIQUE, nullable)**, `handleUpdatedAt`, `handleChangeCount`, `handleWindowStartedAt`, `isAnonymous`, timestamps. **No raw password here.**                                 |
 | `account`             | one row **per provider** for a user: `providerId` (`credential` / `google` / `github`), the argon2id `password` hash for credential rows, OAuth tokens for the rest. Account linking = multiple `account` rows pointing at the **same** `userId`.                                                                                                                                         |
 | `session`             | one row per logged-in session — the cookie holds only an opaque token; everything else stays server-side. Indexed on `userId`.                                                                                                                                                                                                                                                            |
 | `verification`        | short-lived OTP / verification records (hashed, expiring, single-use).                                                                                                                                                                                                                                                                                                                    |
 | `passkey`             | WebAuthn credentials (publicKey, counter, deviceType, transports…) keyed to a user.                                                                                                                                                                                                                                                                                                       |
 | `handle_reservations` | a handle a user **previously** held, parked for 14 days. PK is `reserved_handle` (the normalized string → one reservation per handle); also `userId` (FK, cascade), `expiresAt`, `createdAt`. Indexed on `userId` and `expiresAt`. See §5g.                                                                                                                                               |
-| `recovery_email_otp`  | our **own** OTP store for the recovery-email feature — Better Auth's OTP endpoints can't serve an address that isn't a login email (§5h). Composite PK `(userId, purpose)`; `purpose` ∈ `verify_address`/`reset_password`; columns `candidateEmail`, `otpHash` (argon2), `expiresAt`, `attempts` (cap 3), `createdAt`. One pending challenge per user per purpose. FK → `user` (cascade). |
 
 **Identity columns on `user`** (we own these; Better Auth owns the rest):
 
@@ -218,13 +217,6 @@ Tables in `src/db/schema.ts`:
 - `handleUpdatedAt`, `handleChangeCount`, `handleWindowStartedAt` — rate-limit
   bookkeeping for the 2-changes-per-14-days window (§5g). The server is the sole
   authority; the client only previews the lock.
-- `recoveryEmail` (nullable, **NOT UNIQUE**), `recoveryEmailVerified` (bool, default
-  false), `recoveryEmailUpdatedAt` — the user's **backup** email for account recovery
-  (§5h). It is **not** a login identifier: you can't sign in with it, and it is
-  deliberately not UNIQUE (a shared family/admin inbox is legitimate, and a UNIQUE index
-  would be an enumeration oracle). `recoveryEmailVerified` mirrors `emailVerified`: it is
-  `true` only after an OTP sent **to that address** proves ownership, and resets on any
-  change. An **unverified** recovery email can never recover an account.
 
 The `UNIQUE(email)` on `user` is the structural guarantee that each user has one canonical
 email: a second provider reporting the same verified email links onto the existing row
@@ -665,47 +657,6 @@ the session field) and governed by a **two-tier** design:
   reservations (`purgeExpiredHandleReservations`). Pure housekeeping — lazy reads already
   treat expired holds as available.
 
-### 5h. The recovery-email endpoints YOU write
-
-A **recovery email** is a backup address, separate from the primary login `email`, that
-lets a user reset their password if they lose access to the primary inbox. Two halves:
-**(1)** set + verify the backup (session-guarded, step-up gated), **(2)** recover the
-account through it (public — the user is locked out).
-
-**The Better Auth constraint that shapes this.** The `emailOTP` plugin runs with
-`disableSignUp: true` (§5a). Its `sendVerificationOTP` therefore **silently no-ops** for
-any email that is not already a user, and `checkVerificationOTP` throws `USER_NOT_FOUND`.
-A recovery address is by definition **not** a login email, so Better Auth's OTP endpoints
-cannot send to or verify it. We therefore own a small OTP primitive end-to-end
-(`src/services/recovery-otp.service.ts` → table `recovery_email_otp`, §4): a 6-digit code,
-argon2-hashed, expiring (10 min), single-use, attempt-capped (3), delivered via the same
-`sendTransactionalEmail` helper (dev still `console.log`s it). Step-up against the
-**primary** email still uses Better Auth (`signInEmail` / `checkVerificationOTP`) because
-the primary IS a user.
-
-**Step-up (changing the recovery email is sensitive).** A plain session is **not** enough
-to set/change/remove the recovery email. The caller must additionally prove identity with
-**either** their password (verified against the stored argon2 hash — no session side
-effect) **or** a one-time code mailed to their **primary** email (the universal path —
-OAuth-only users have no password). The write only happens after the step-up succeeds.
-
-| Method & path                                       | Body / input                                    | Behavior & statuses                                                                                                                                                                                  |
-| --------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET    /users/me/recovery-email`                   | — (session)                                     | `200` `{ recoveryEmail, recoveryEmailVerified, recoveryEmailUpdatedAt }` (owner-only) · `404`.                                                                                                       |
-| `POST   /users/me/recovery-email/step-up-challenge` | — (session)                                     | Mail a step-up code to the PRIMARY email (for OAuth-only users). `200`. Rate-limited per-user.                                                                                                       |
-| `POST   /users/me/recovery-email/start`             | `{ recoveryEmail }`                             | Email an ownership code to the NEW address. `202` · `409` same as primary · `422`. Rate-limited per-user.                                                                                            |
-| `POST   /users/me/recovery-email/verify`            | `{ otp, stepUpPassword? \| stepUpOtp? }`        | Step-up + code → store as verified. `200` PublicUser · `401` step-up/OTP · `410` expired · `403` attempts.                                                                                           |
-| `DELETE /users/me/recovery-email`                   | `{ stepUpPassword? \| stepUpOtp? }`             | Step-up → clear the recovery email. `200` PublicUser · `401` · `404`.                                                                                                                                |
-| `POST   /recovery/start`                            | `{ recoveryEmail }` (**public**)                | If a VERIFIED recovery email is on file, mail a reset code. **Always** generic `200` (anti-enumeration). Rate-limited per-IP + per-recovery-email.                                                   |
-| `POST   /recovery/complete`                         | `{ recoveryEmail, otp, password }` (**public**) | Verify the code, set a new password on the PRIMARY account, **revoke all sessions**. Generic `200`; bad code OR unknown recovery email both → generic `401`. No session minted. Rate-limited per-IP. |
-
-The owner-only recovery fields ride on `PublicUser` (returned by the `/users/me/*` routes);
-they are **never** exposed by `GET /users` or `GET /users/:id` (those keep narrow SELECTs).
-`POST /recovery/complete` resets the password by writing the `account` credential row
-directly (argon2 hash via `@node-rs/argon2`, the same hasher Better Auth uses), creating
-the credential row for an OAuth-only user, then deleting the user's sessions — a recovery
-implies possible compromise, so every live session is killed and the user signs in fresh.
-
 ---
 
 ## 6. How a request flows
@@ -900,9 +851,6 @@ Done and live:
 10. **Handles** — placeholder seeding on signup, Tier-1 availability + Tier-2 atomic
     set/revert, 2-changes/14-days rate limit, 14-day revert reservations + daily cron.
 11. **Backfill scripts** — placeholder handles, OAuth name/image profile.
-12. **Recovery email** (§5h) — set + verify a backup address (own OTP, step-up gated) and
-    recover the account through it (public reset; revokes all sessions). Owner-only fields
-    on `PublicUser`; never leaked by the public `GET /users` reads.
 
 ### Later (NOT now)
 
@@ -923,9 +871,7 @@ custom routes need their own):
   **per-IP** (8/15min) **and per-email** (4/15min) (stops OTP spam + inbox-bombing);
   `/signup/complete` capped **per-IP** (12/15min); `/handles/availability` capped
   **per-user** (60/min). 429 returns the standard ApiResponse envelope with
-  `retryAfterSeconds`. The recovery-email feature adds: `/users/me/recovery-email/start`
-  (+ step-up-challenge) **per-user** (4/15min); `/recovery/start` **per-IP** (8/15min) **and
-  per-recovery-email** (4/15min); `/recovery/complete` **per-IP** (12/15min).
+  `retryAfterSeconds`.
 - **Better Auth `rateLimit`** (`src/lib/auth.ts`): `send-verification-otp` 3/60s,
   `sign-in/email-otp` 5/60s, `reset-password` 5/60s, `sign-in/email` 5/10s. Enabled in
   all envs.
@@ -962,20 +908,6 @@ limit — 2 changes per rolling 14-day window (§5g), enforced in `handle.servic
       2 changes/14 days) enforced server-side; `UNIQUE(handle)` is the race-guard.
 - [ ] **Photo is server-validated**: the mimetype is untrusted — `sharp` decodes to prove
       it's a real image, bounds dimensions, re-encodes to webp + strips EXIF before store.
-- [ ] **Recovery email is a backup, never a login** (§5h): not a Better Auth identifier,
-      **not UNIQUE**, ownership proven by an OTP sent to that address before it is stored.
-      Differs from the primary (`409`), checked server-side from `req.user.email`.
-- [ ] **Changing the recovery email needs step-up auth**, not just a session: a valid
-      password (argon2 verify) or a fresh primary-email OTP. OAuth-only users use the OTP
-      path. The write only happens after the step-up Result succeeds.
-- [ ] **Recovery OTP is owned by us** (`recovery_email_otp`): argon2-hashed, expiring,
-      single-use, attempt-capped (3) — Better Auth's OTP endpoints can't serve a non-login
-      address (`disableSignUp` no-op). An **unverified** recovery email can never recover.
-- [ ] **Recovery flow is anti-enumeration**: `/recovery/start` always returns a generic
-      `200`; `/recovery/complete` returns a generic `401` for both "unknown recovery email"
-      and "wrong code". On success it **revokes all sessions** and mints none.
-- [ ] **Recovery fields are owner-only**: on `PublicUser` (the `/users/me/*` routes) but
-      **never** on `GET /users` / `GET /users/:id` (narrow SELECTs, pinned with comments).
 - [ ] **Identity locks** survive OAuth linking: `nameSetByUser` / `imageSource:"user"` +
       `updateUserInfoOnLink:false` stop a linked provider clobbering a user-set name/photo.
 - [ ] **Original provider cannot be unlinked** — `hooks.before` on `/unlink-account`
