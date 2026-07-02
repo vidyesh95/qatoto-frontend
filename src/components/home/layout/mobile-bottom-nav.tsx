@@ -21,7 +21,7 @@ const NAV_ITEMS = [
     inactiveIcon: "/icons/live_tv_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
-    href: "/create",
+    href: "/studio",
     label: "Create",
     activeIcon: "/icons/video_call_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactiveIcon: "/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",

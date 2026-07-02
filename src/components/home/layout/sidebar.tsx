@@ -76,7 +76,7 @@ const ICON_PATHS = {
 
 /* ---------- Route paths (outside component) ---------- */
 const ROUTES = {
-  create: "/create",
+  create: "/studio",
   home: "/",
   anime: "/anime",
   store: "/store",
