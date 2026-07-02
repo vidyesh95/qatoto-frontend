@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { useSidebar } from "@/state/sidebar-context";
 import { useSession } from "@/lib/auth-client";
 import AccountMenu from "@/components/home/account/menus/account-menu";
 
@@ -10,6 +11,7 @@ import AccountMenu from "@/components/home/account/menus/account-menu";
 // swaps the brand for the "Qatoto | Creator Studio" wordmark and replaces the
 // cart with a language (translate) control. Presentational only.
 export default function StudioNavbar() {
+  const { toggleSidebar } = useSidebar();
   const { data: session } = useSession();
   const isAuthenticated = !!session;
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -23,6 +25,7 @@ export default function StudioNavbar() {
             type="button"
             aria-label="Toggle sidebar"
             className="hidden cursor-pointer p-2 text-primary-foreground md:block"
+            onClick={toggleSidebar}
           >
             <Image
               src="/icons/menu_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
