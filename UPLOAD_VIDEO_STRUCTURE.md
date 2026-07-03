@@ -141,6 +141,49 @@ flowchart TD
 | Comments & ratings               | on/off, moderation, who-can-comment, sort |       |
 | Show likes count                 | checkbox                                  |       |
 
+### Step 1 (conditional) — Anime episode mode
+
+Shown **only when `Video type = Anime episode`** (the field in Details). Anime is
+curated content, so this branch adds series structure + a release schedule and
+routes the upload into an **admin approval queue** instead of publishing straight to
+the creator's channel. See `ADMIN_STRUCTURE.md` for the review side.
+
+| Field                     | Notes                                        | Keep? |
+| ------------------------- | -------------------------------------------- | ----- |
+| Series                    | pick existing series or create new           |       |
+| Season                    | number / name (e.g. Season 3)                |       |
+| Episode number            | ordering within the season                   |       |
+| Episode title             | per-episode title (separate from series)     |       |
+| Release schedule          | weekly day + time — "new ep every Fri 18:00" |       |
+| Premiere / simulcast date | when it goes live in `/anime`                |       |
+| Sub / dub + language      | subbed / dubbed, language list               |       |
+| Age rating                | anime rating (not the YouTube kids toggle)   |       |
+| Genre tags                | reuse `/anime/genre` taxonomy                |       |
+
+**Destination differs from normal videos:**
+
+- Normal creator video → publishes to the creator's channel directly.
+- **Anime episode → "Pending review" queue.** Shows in `/anime` **only after a
+  Qatoto admin manually approves.** Approval decision is **server-side only** —
+  client never self-approves (thin-client rule, CLAUDE.md).
+
+```mermaid
+flowchart TD
+    A["Upload, Video type = Anime episode"] --> B[Fill series / season / episode / schedule]
+    B --> C[Submit → Pending review queue]
+    C --> D{Admin approves?}
+    D -->|Yes| E[Appears in /anime on premiere/release date]
+    D -->|No| F[Rejected → back to creator with reason]
+    E --> G[Weekly schedule drives next-episode release]
+```
+
+Open decisions:
+
+- **Who can upload anime?** any creator, or a gated "anime partner" role only?
+- **Series ownership** — one series owned by one creator/studio, or shared?
+- **Schedule engine** — does the weekly day auto-release queued episodes, or does
+  admin release each manually? (Crunchyroll = scheduled auto-release after licensing.)
+
 ### Step 2 — Video elements
 
 | Field                               | Notes                                                    | Keep? |
@@ -152,7 +195,7 @@ flowchart TD
 | Recruit / open roles                | "Join team" — attach open roles, viewers apply           |       |
 | Team members list                   | credit founders/team (idea → team step)                  |       |
 | Collaborators / team credit         | extend Invite collaborator → show team on video          |       |
-| Pitch deck / docs attach            | PDF deck, whitepaper — download under video               |       |
+| Pitch deck / docs attach            | PDF deck, whitepaper — download under video              |       |
 | Milestones / roadmap                | build → ship progress shown to viewers/backers           |       |
 | Chapters (manual)                   | timestamp + label list — see **Chapters editor** below   |       |
 | Add subtitles                       |                                                          |       |
@@ -174,10 +217,10 @@ jump.
 - **Add chapter** button → new row: `timestamp (mm:ss)` + `title` inputs
 - List of chapter rows, reorderable / removable
 - Rules (YouTube-compatible, enforce in UI + backend later):
-  - First chapter **must** start at `00:00`
-  - Minimum **3** chapters to show on player
-  - Each chapter **≥ 10 seconds** long
-  - Timestamps strictly ascending, none past video duration
+    - First chapter **must** start at `00:00`
+    - Minimum **3** chapters to show on player
+    - Each chapter **≥ 10 seconds** long
+    - Timestamps strictly ascending, none past video duration
 - Empty state: "No chapters yet — add one to let viewers jump around"
 
 ```mermaid
@@ -189,11 +232,11 @@ flowchart TD
     D --> F[≥3 chapters? → segments show on scrubber]
 ```
 
-| Field per chapter | Notes                        | Keep? |
-|-------------------|------------------------------|-------|
-| Timestamp         | `mm:ss` / `hh:mm:ss` input   |       |
-| Title             | short label, e.g. "Demo"     |       |
-| Reorder / remove  | drag handle + delete         |       |
+| Field per chapter | Notes                      | Keep? |
+| ----------------- | -------------------------- | ----- |
+| Timestamp         | `mm:ss` / `hh:mm:ss` input |       |
+| Title             | short label, e.g. "Demo"   |       |
+| Reorder / remove  | drag handle + delete       |       |
 
 #### Store products picker
 
@@ -294,6 +337,26 @@ Strike / edit anything here, then we build to match:
 4. **Videos list storage** — A / B / C above?
 5. **Multi-file** — dropzone accepts many files. One modal per file, or batch?
 6. **Go Live** + **Create Store Listing** — confirmed out of scope for this doc.
+7. **Anime approval** — anime episodes route to admin review, not instant publish.
+   See §6.5 + `ADMIN_STRUCTURE.md`.
+
+---
+
+## 6.5 Admin approval boundary
+
+Anime episodes (and possibly flagged content later) don't publish on save — they
+enter a **Pending review** queue and appear in `/anime` only after a Qatoto admin
+approves. The admin side lives in a **separate `(admin)` route group in this same
+app**, role-gated **server-side** — not a separate website (see `ADMIN_STRUCTURE.md`
+for the full reasoning and structure).
+
+```mermaid
+flowchart LR
+    U[Creator uploads anime ep] --> Q[(Pending review queue)]
+    Q --> ADM["/admin — Qatoto staff"]
+    ADM -->|Approve| PUB[Shows in /anime]
+    ADM -->|Reject| BACK[Back to creator + reason]
+```
 
 ---
 
