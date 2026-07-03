@@ -11,8 +11,8 @@ doc** — tweak / delete any step you don't want, then we build only what's left
 
 ## 1. What exists today
 
-| Piece                | Location                                                                     | State                                                                  |
-|----------------------|------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| Piece                | Location                                                                     | State                                                                   |
+| -------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | Dropzone card        | [create-studio-page.tsx](src/components/studio/pages/create-studio-page.tsx) | ✅ built — drag/drop + file picker, lists files locally, has **Remove** |
 | Studio landing route | [studio/page.tsx](<src/app/(studio)/studio/page.tsx>)                        | ✅ renders dropzone                                                     |
 | My Videos route      | [studio/videos/page.tsx](<src/app/(studio)/studio/videos/page.tsx>)          | ⛔ stub — just `<h1>My Videos</h1>`                                     |
@@ -63,15 +63,27 @@ flowchart LR
 
 ### Step 1 — Details
 
-| Field                                | Notes                                                         | Keep? |
-|--------------------------------------|---------------------------------------------------------------|-------|
-| Title (required)                     | 0/100 counter                                                 |       |
-| Description                          | @-mention hint                                                |       |
-| Thumbnail                            | screenshot shows "change in mobile app" — decide own behavior |       |
-| Playlists                            | picker → see **Playlists picker** below                       |       |
-| Audience — made for kids? (required) | Yes / No radio                                                |       |
-| Age restriction (advanced)           | collapsible                                                   |       |
-| Show more                            | Paid promotion, AI use, etc. (below)                          |       |
+| Field                                | Notes                                                                | Keep? |
+| ------------------------------------ | -------------------------------------------------------------------- | ----- |
+| Title (required)                     | 0/100 counter                                                        |       |
+| Description                          | @-mention hint                                                       |       |
+| Thumbnail                            | screenshot shows "change in mobile app" — decide own behavior        |       |
+| Website URL                          | separate clickable CTA on watch page, not in description (see below) |       |
+| Social / contact links               | LinkedIn, X, email — structured fields, not in description           |       |
+| Playlists                            | picker → see **Playlists picker** below                              |       |
+| Audience — made for kids? (required) | Yes / No radio                                                       |       |
+| Age restriction (advanced)           | collapsible                                                          |       |
+| Show more                            | Paid promotion, AI use, etc. (below)                                 |       |
+
+#### Website URL & social links (Qatoto-specific)
+
+Structured fields, **not** links dumped in the description. Each renders as its own
+clickable element on the watch page.
+
+- **Website URL** → "Visit website" CTA button. Show domain (not raw href).
+- **Social / contact** → LinkedIn, X, email rows.
+- Trust note (CLAUDE.md): validate/normalize URL **server-side**, render
+  `rel="nofollow noopener"`, don't trust client-claimed verified status.
 
 #### Playlists picker
 
@@ -101,7 +113,7 @@ flowchart TD
 ##### Create a new playlist modal
 
 | Field                          | Notes                       | Keep? |
-|--------------------------------|-----------------------------|-------|
+| ------------------------------ | --------------------------- | ----- |
 | Title (required)               | "Add title"                 |       |
 | Description                    | "Add description"           |       |
 | Visibility                     | Public / Unlisted / Private |       |
@@ -112,7 +124,7 @@ flowchart TD
 ### Step 1 (expanded) — "Show more"
 
 | Field                            | Notes                                     | Keep? |
-|----------------------------------|-------------------------------------------|-------|
+| -------------------------------- | ----------------------------------------- | ----- |
 | Paid promotion                   | checkbox                                  |       |
 | AI use disclosure                | Yes / No                                  |       |
 | Tags                             | 0/500, comma-separated                    |       |
@@ -127,15 +139,23 @@ flowchart TD
 
 ### Step 2 — Video elements
 
-| Field                               | Notes                                           | Keep? |
-|-------------------------------------|-------------------------------------------------|-------|
-| Add related video                   |                                                 |       |
-| Attach store products               | shoppable — see **Store products picker** below |       |
-| Add subtitles                       |                                                 |       |
-| Collaboration / Invite collaborator | modal-in-modal                                  |       |
-| Automatic chapters                  | checkbox                                        |       |
-| Featured places                     | checkbox                                        |       |
-| Automatic concepts (experiment)     | checkbox                                        |       |
+| Field                               | Notes                                                    | Keep? |
+| ----------------------------------- | -------------------------------------------------------- | ----- |
+| Add related video                   |                                                          |       |
+| Attach store products               | shoppable — see **Store products picker** below          |       |
+| Attach pitch / project              | link to a `/studio/pitches` project seeking funding/team |       |
+| Funding / raise CTA                 | "Back this" / invest button → `/studio/funding`          |       |
+| Recruit / open roles                | "Join team" — attach open roles, viewers apply           |       |
+| Collaborators / team credit         | extend Invite collaborator → show team on video          |       |
+| Add subtitles                       |                                                          |       |
+| Collaboration / Invite collaborator | modal-in-modal                                           |       |
+| Automatic chapters                  | checkbox                                                 |       |
+| Featured places                     | checkbox                                                 |       |
+| Automatic concepts (experiment)     | checkbox                                                 |       |
+
+Qatoto-specific rows (pitch / funding / recruit / team) are the thesis
+differentiators — idea → **team** → **fund** → build → ship. Prioritize these over
+the YouTube-carryover rows below them.
 
 #### Store products picker
 
@@ -166,14 +186,14 @@ re-validates ownership, price, and inventory — never trust client-sent price/q
 
 ### Step 3 — Checks
 
-| Field           | Notes                    | Keep? |
-|-----------------|--------------------------|-------|
+| Field           | Notes                     | Keep? |
+| --------------- | ------------------------- | ----- |
 | Copyright check | mock "No issues found" ✅ |       |
 
 ### Step 4 — Visibility
 
 | Field                 | Notes                             | Keep? |
-|-----------------------|-----------------------------------|-------|
+| --------------------- | --------------------------------- | ----- |
 | Save or publish       | Private / Unlisted / Public radio |       |
 | Schedule              | collapsible date picker           |       |
 | Pre-publish reminders | static copy                       |       |
@@ -235,11 +255,11 @@ Strike / edit anything here, then we build to match:
 
 ## 7. Files to touch (when we build)
 
-| File                                                                         | Change                    |
-|------------------------------------------------------------------------------|---------------------------|
+| File                                                                         | Change                     |
+| ---------------------------------------------------------------------------- | -------------------------- |
 | `src/components/studio/upload/upload-modal.tsx`                              | ➕ new — the 4-step wizard |
 | `src/components/studio/upload/steps/*.tsx`                                   | ➕ new — one per step      |
-| [create-studio-page.tsx](src/components/studio/pages/create-studio-page.tsx) | open modal on file select |
-| [studio/videos/page.tsx](<src/app/(studio)/studio/videos/page.tsx>)          | render list, replace stub |
+| [create-studio-page.tsx](src/components/studio/pages/create-studio-page.tsx) | open modal on file select  |
+| [studio/videos/page.tsx](<src/app/(studio)/studio/videos/page.tsx>)          | render list, replace stub  |
 | `src/components/studio/videos/videos-list.tsx`                               | ➕ new — the list UI       |
 | `src/state/studio-videos-context.tsx`                                        | ➕ new (only if option C)  |
