@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import VideosList from "@/components/studio/videos/videos-list";
 
 export const metadata: Metadata = {
   title: "My Videos",
@@ -6,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function StudioMyVideos() {
-  return <h1>My Videos</h1>;
+  return <VideosList />;
 }

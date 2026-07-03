@@ -3,12 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
+import UploadVideoModal from "@/components/studio/upload/upload-modal";
 
 // Landing view of the Creator Studio: an upload dropzone card and a "Go Live
-// Stream" alternative. Dropzone accepts video files via drag-and-drop or the
-// file picker and lists them locally — no upload backend yet (UI phase).
+// Stream" alternative. Picking files opens the 4-step upload modal for the
+// first one; the rest wait in the local list behind an "Edit details" button.
+// No upload backend yet (UI phase) — saved videos land in the studio-videos
+// context.
 export default function CreateStudioPage() {
   const [selectedVideoFiles, setSelectedVideoFiles] = useState<File[]>([]);
+  const [activeUploadFileIndex, setActiveUploadFileIndex] = useState<number | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -17,6 +21,10 @@ export default function CreateStudioPage() {
     const videoFiles = Array.from(incomingFiles).filter((file) => file.type.startsWith("video/"));
     if (videoFiles.length === 0) return;
     setSelectedVideoFiles((previousFiles) => [...previousFiles, ...videoFiles]);
+    // Auto-open the modal for the first file of this batch unless one is open.
+    if (activeUploadFileIndex === null) {
+      setActiveUploadFileIndex(selectedVideoFiles.length);
+    }
   }
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
@@ -50,7 +58,29 @@ export default function CreateStudioPage() {
     setSelectedVideoFiles((previousFiles) =>
       previousFiles.filter((_, fileIndex) => fileIndex !== fileIndexToRemove),
     );
+    // Keep the open modal pointing at the same file if an earlier row goes away.
+    if (activeUploadFileIndex !== null && fileIndexToRemove < activeUploadFileIndex) {
+      setActiveUploadFileIndex(activeUploadFileIndex - 1);
+    }
   }
+
+  function handleEditDetailsClick(fileIndexToEdit: number) {
+    setActiveUploadFileIndex(fileIndexToEdit);
+  }
+
+  // Fires on Save and on X-close alike — both commit the video to the shared
+  // list, so the local dropzone row is done and gets removed.
+  function handleUploadModalClose() {
+    if (activeUploadFileIndex === null) return;
+    const committedFileIndex = activeUploadFileIndex;
+    setSelectedVideoFiles((previousFiles) =>
+      previousFiles.filter((_, fileIndex) => fileIndex !== committedFileIndex),
+    );
+    setActiveUploadFileIndex(null);
+  }
+
+  const activeUploadFile =
+    activeUploadFileIndex === null ? null : (selectedVideoFiles[activeUploadFileIndex] ?? null);
 
   return (
     <div className="p-6">
@@ -111,13 +141,22 @@ export default function CreateStudioPage() {
                   {formatFileSizeLabel(videoFile.size)}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => handleRemoveFileClick(fileIndex)}
-                className="cursor-pointer text-sm text-muted-foreground hover:text-foreground"
-              >
-                Remove
-              </button>
+              <div className="flex shrink-0 items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleEditDetailsClick(fileIndex)}
+                  className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+                >
+                  Edit details
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFileClick(fileIndex)}
+                  className="cursor-pointer text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Remove
+                </button>
+              </div>
             </li>
           ))}
         </ul>
@@ -190,6 +229,14 @@ export default function CreateStudioPage() {
       <p className="mt-6 text-center text-sm text-muted-foreground">
         List your product on the Qatoto Store to reach buyers, partners, and B2B customers.
       </p>
+
+      {activeUploadFile && (
+        <UploadVideoModal
+          key={`${activeUploadFile.name}-${activeUploadFile.size}-${activeUploadFileIndex}`}
+          videoFile={activeUploadFile}
+          onClose={handleUploadModalClose}
+        />
+      )}
     </div>
   );
 }
