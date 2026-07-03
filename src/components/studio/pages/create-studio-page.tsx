@@ -14,9 +14,7 @@ export default function CreateStudioPage() {
 
   function addVideoFiles(incomingFiles: FileList | null) {
     if (!incomingFiles) return;
-    const videoFiles = Array.from(incomingFiles).filter((file) =>
-      file.type.startsWith("video/"),
-    );
+    const videoFiles = Array.from(incomingFiles).filter((file) => file.type.startsWith("video/"));
     if (videoFiles.length === 0) return;
     setSelectedVideoFiles((previousFiles) => [...previousFiles, ...videoFiles]);
   }

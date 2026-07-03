@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ProductsPage from "@/components/studio/pages/products-page";
 
 export const metadata: Metadata = {
   title: "My Products",
@@ -6,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function StudioMyProducts() {
-  return <h1>My Products</h1>;
+  return <ProductsPage />;
 }
