@@ -10,6 +10,32 @@ only what survives.
 
 ---
 
+## 0. Reality check — build vs buy (READ FIRST)
+
+Startups don't hand-build a full admin console pre-launch. They run ops from the
+**database directly** (Drizzle Studio, since backend is Postgres + Drizzle) or an
+off-the-shelf panel (Retool / Forest). Building custom admin UI = time not spent on
+product.
+
+**Decision for now:**
+
+| Admin flow                                       | Tool                                              |
+| ------------------------------------------------ | ------------------------------------------------- |
+| **Anime review — watch + approve/reject**        | ✅ **hand-build `/admin/review`** (§4.1)          |
+| Users, catalog, schedule, store, audit, settings | **Drizzle Studio** — no build (§4.2–4.6 deferred) |
+
+**Why anime review is the one exception:** the job is _watch the video, then decide_.
+Drizzle Studio only shows the video URL as a text cell — no player. You'd copy the
+URL, open a tab, watch, return, edit the `status` column by hand. Fine for you
+reviewing a handful solo; unusable for a hired reviewer or any volume. A player
+next to an Approve button is the whole point, so that page is worth building.
+
+Everything else (users, catalog CRUD, settings) is plain table editing → Drizzle
+Studio handles it free. **Only §4.1 gets built now.** §4.2–4.6 stay specced for
+later but are **not** in the current build.
+
+---
+
 ## 1. Big decision — separate website or same app?
 
 **Recommendation: same repo & same Next app, separate `(admin)` route group,
@@ -87,6 +113,14 @@ Priority-ordered. Strike what you don't want.
 
 The reason this exists now. Anime episodes land here before showing in `/anime`.
 
+> **Two queues, don't conflate:**
+>
+> - **`/studio/queue`** — the _creator's_ side. Their "my submissions" list with
+>   read-only status (Pending / Approved / Rejected + reason). No approve buttons.
+>   This is a **page in the studio**, not part of the upload modal.
+> - **`/admin/review`** (this section) — the _staff_ side. Where approve/reject
+>   actions actually happen. Same underlying items, different surface + permissions.
+
 | Piece           | Notes                                                         | Keep? |
 | --------------- | ------------------------------------------------------------- | ----- |
 | Pending list    | rows: thumbnail · series/season/ep · creator · submitted date |       |
@@ -104,7 +138,7 @@ flowchart TD
     C -->|Reject| E[Back to creator + reason]
 ```
 
-### 4.2 User management
+### 4.2 User management — 🗄️ Drizzle Studio for now (not built)
 
 | Piece         | Notes                                       | Keep? |
 | ------------- | ------------------------------------------- | ----- |
@@ -113,7 +147,7 @@ flowchart TD
 | Suspend / ban | with reason + duration                      |       |
 | Role assign   | grant creator / anime-partner / staff roles |       |
 
-### 4.3 Anime catalog management
+### 4.3 Anime catalog management — 🗄️ Drizzle Studio for now (not built)
 
 | Piece            | Notes                                      | Keep? |
 | ---------------- | ------------------------------------------ | ----- |
@@ -122,7 +156,7 @@ flowchart TD
 | Schedule board   | weekly calendar of what releases which day |       |
 | Feature / hero   | pick `/anime` hero + featured rows         |       |
 
-### 4.4 Reports & moderation
+### 4.4 Reports & moderation — 🗄️ Drizzle Studio for now (not built)
 
 | Piece            | Notes                              | Keep? |
 | ---------------- | ---------------------------------- | ----- |
@@ -130,7 +164,7 @@ flowchart TD
 | Takedown         | remove + notify                    |       |
 | Copyright claims | ties to `/studio/copyright`        |       |
 
-### 4.5 Store / orders oversight (B2B thesis)
+### 4.5 Store / orders oversight (B2B thesis) — 🗄️ Drizzle Studio for now (not built)
 
 | Piece             | Notes                                      | Keep? |
 | ----------------- | ------------------------------------------ | ----- |
@@ -138,7 +172,7 @@ flowchart TD
 | Orders / disputes | refunds, chargebacks (server-authorized)   |       |
 | Funding / pitches | review raises, verify claims               |       |
 
-### 4.6 Platform
+### 4.6 Platform — 🗄️ Drizzle Studio for now (not built)
 
 | Piece     | Notes                               | Keep? |
 | --------- | ----------------------------------- | ----- |
@@ -168,12 +202,19 @@ src/app/(admin)/admin/
 
 ## 6. Build order (my rec)
 
+**In scope now — only the anime review path:**
+
 1. **`(admin)` route group + layout + mock role gate** — skeleton.
-2. **Content review queue (4.1)** — the piece that unblocks anime. Mock pending list
-   → detail → approve/reject (state only).
-3. Wire anime upload's "Pending review" destination to feed this queue (mock).
-4. User management (4.2) next.
-5. Rest as needed.
+2. **`/admin/review` (4.1)** — the ⭐ custom page: **video player** + metadata beside
+   it + Approve / Reject+reason. Mock pending list → detail → decision (state only).
+3. **Creator-side `/studio/queue`** — read-only "my submissions" page in the studio
+   (Pending / Approved / Rejected + reason). Shares the same mock items.
+4. Wire anime upload's Save → feed both queues (mock).
+
+**Deferred — use Drizzle Studio, don't build (§4.2–4.6):**
+users, catalog, schedule, reports, store/orders, audit, settings. Revisit only when
+Drizzle Studio stops being enough (volume, non-technical staff, or a flow that needs
+video/rich context like review did).
 
 Everything else waits until you say go.
 

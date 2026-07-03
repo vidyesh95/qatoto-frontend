@@ -163,18 +163,30 @@ the creator's channel. See `ADMIN_STRUCTURE.md` for the review side.
 **Destination differs from normal videos:**
 
 - Normal creator video → publishes to the creator's channel directly.
-- **Anime episode → "Pending review" queue.** Shows in `/anime` **only after a
-  Qatoto admin manually approves.** Approval decision is **server-side only** —
-  client never self-approves (thin-client rule, CLAUDE.md).
+- **Anime episode → on Save, lands in the creator's `/studio/queue`** (their pending
+  list), **not** shown as a queue inside the upload modal. The modal just closes;
+  status is tracked on the `/studio/queue` page.
+- From there a Qatoto admin reviews it (`/admin/review`). Shows in `/anime` **only
+  after admin approves.** Approval is **server-side only** — client never
+  self-approves (thin-client rule, CLAUDE.md).
+
+Two separate surfaces — don't conflate:
+
+- **`/studio/queue`** — creator's view. "My submissions" + their status
+  (Pending / Approved / Rejected + reason). Read-only status, no approve buttons.
+- **`/admin/review`** — staff view. The actual approve/reject actions
+  (see `ADMIN_STRUCTURE.md` §4.1).
 
 ```mermaid
 flowchart TD
     A["Upload, Video type = Anime episode"] --> B[Fill series / season / episode / schedule]
-    B --> C[Submit → Pending review queue]
-    C --> D{Admin approves?}
-    D -->|Yes| E[Appears in /anime on premiere/release date]
-    D -->|No| F[Rejected → back to creator with reason]
-    E --> G[Weekly schedule drives next-episode release]
+    B --> C[Save → modal closes]
+    C --> D["/studio/queue: shows as Pending (creator side)"]
+    D --> E["/admin/review: Qatoto staff reviews"]
+    E --> F{Admin decision}
+    F -->|Approve| G[Appears in /anime on premiere/release date]
+    F -->|Reject| H["/studio/queue shows Rejected + reason"]
+    G --> I[Weekly schedule drives next-episode release]
 ```
 
 Open decisions:
@@ -344,18 +356,22 @@ Strike / edit anything here, then we build to match:
 
 ## 6.5 Admin approval boundary
 
-Anime episodes (and possibly flagged content later) don't publish on save — they
-enter a **Pending review** queue and appear in `/anime` only after a Qatoto admin
-approves. The admin side lives in a **separate `(admin)` route group in this same
-app**, role-gated **server-side** — not a separate website (see `ADMIN_STRUCTURE.md`
-for the full reasoning and structure).
+Anime episodes (and possibly flagged content later) don't publish on save. Two
+surfaces track them — kept separate:
+
+- **`/studio/queue`** (creator side) — the creator's own "my submissions" list with
+  status Pending / Approved / Rejected. Read-only. This is where a submitted episode
+  goes right after Save; **the queue is a page, not part of the upload modal.**
+- **`/admin/review`** (staff side) — Qatoto admins do the actual approve/reject. Lives
+  in a **separate `(admin)` route group in this same app**, role-gated
+  **server-side** — not a separate website (see `ADMIN_STRUCTURE.md`).
 
 ```mermaid
 flowchart LR
-    U[Creator uploads anime ep] --> Q[(Pending review queue)]
-    Q --> ADM["/admin — Qatoto staff"]
+    U[Creator saves anime ep] --> Q["/studio/queue — creator's Pending list"]
+    Q --> ADM["/admin/review — Qatoto staff"]
     ADM -->|Approve| PUB[Shows in /anime]
-    ADM -->|Reject| BACK[Back to creator + reason]
+    ADM -->|Reject| BACK["/studio/queue → Rejected + reason"]
 ```
 
 ---
