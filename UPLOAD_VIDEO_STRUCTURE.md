@@ -67,8 +67,12 @@ flowchart LR
 | ------------------------------------ | -------------------------------------------------------------------- | ----- |
 | Title (required)                     | 0/100 counter                                                        |       |
 | Description                          | @-mention hint                                                       |       |
+| Video type                           | pitch / demo / update / AMA — shapes watch-page layout               |       |
+| Sector / industry tags               | B2B discovery (AI, fintech, health…) — replaces YouTube Category     |       |
+| Stage badge                          | idea / MVP / scaling / shipped — signals pipeline stage              |       |
 | Thumbnail                            | screenshot shows "change in mobile app" — decide own behavior        |       |
 | Website URL                          | separate clickable CTA on watch page, not in description (see below) |       |
+| Call-to-action button (custom)       | generic CTA — book demo, join waitlist, etc.                         |       |
 | Social / contact links               | LinkedIn, X, email — structured fields, not in description           |       |
 | Playlists                            | picker → see **Playlists picker** below                              |       |
 | Audience — made for kids? (required) | Yes / No radio                                                       |       |
@@ -146,7 +150,10 @@ flowchart TD
 | Attach pitch / project              | link to a `/studio/pitches` project seeking funding/team |       |
 | Funding / raise CTA                 | "Back this" / invest button → `/studio/funding`          |       |
 | Recruit / open roles                | "Join team" — attach open roles, viewers apply           |       |
+| Team members list                   | credit founders/team (idea → team step)                  |       |
 | Collaborators / team credit         | extend Invite collaborator → show team on video          |       |
+| Pitch deck / docs attach            | PDF deck, whitepaper — download under video               |       |
+| Milestones / roadmap                | build → ship progress shown to viewers/backers           |       |
 | Chapters (manual)                   | timestamp + label list — see **Chapters editor** below   |       |
 | Add subtitles                       |                                                          |       |
 | Collaboration / Invite collaborator | modal-in-modal                                           |       |
@@ -223,12 +230,18 @@ re-validates ownership, price, and inventory — never trust client-sent price/q
 
 ### Step 4 — Visibility
 
-| Field                 | Notes                             | Keep? |
-| --------------------- | --------------------------------- | ----- |
-| Save or publish       | Private / Unlisted / Public radio |       |
-| Schedule              | collapsible date picker           |       |
-| Pre-publish reminders | static copy                       |       |
-| **Save** button       | commits video to list             |       |
+| Field                  | Notes                                                        | Keep? |
+| ---------------------- | ------------------------------------------------------------ | ----- |
+| Save or publish        | Private / Unlisted / Public radio                            |       |
+| Investor-only audience | 4th visibility tier beyond private/unlisted/public           |       |
+| NDA / gated visibility | private pitch to selected investors only — gate before watch |       |
+| Schedule               | collapsible date picker                                      |       |
+| Pre-publish reminders  | static copy                                                  |       |
+| **Save** button        | commits video to list                                        |       |
+
+**Visibility tiers (Qatoto):** Private · Unlisted · Public · **Investor-only**.
+NDA gating optional on Investor-only — viewer accepts NDA before playback. Trust
+note: NDA acceptance + investor identity enforced **server-side**, never client.
 
 ---
 
