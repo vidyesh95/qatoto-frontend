@@ -5,7 +5,7 @@ import Link from "next/link";
 // Stream" alternative. Presentational only — no file handling wired up yet.
 export default function CreateStudioPage() {
   return (
-    <div className="mx-auto max-w-4xl px-6 py-8">
+    <div className="p-6">
       {/* Upload dropzone */}
       <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-border py-24">
         <span className="flex size-32 items-center justify-center rounded-full bg-secondary">
