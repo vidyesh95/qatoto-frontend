@@ -147,15 +147,46 @@ flowchart TD
 | Funding / raise CTA                 | "Back this" / invest button → `/studio/funding`          |       |
 | Recruit / open roles                | "Join team" — attach open roles, viewers apply           |       |
 | Collaborators / team credit         | extend Invite collaborator → show team on video          |       |
+| Chapters (manual)                   | timestamp + label list — see **Chapters editor** below   |       |
 | Add subtitles                       |                                                          |       |
 | Collaboration / Invite collaborator | modal-in-modal                                           |       |
-| Automatic chapters                  | checkbox                                                 |       |
-| Featured places                     | checkbox                                                 |       |
-| Automatic concepts (experiment)     | checkbox                                                 |       |
 
 Qatoto-specific rows (pitch / funding / recruit / team) are the thesis
 differentiators — idea → **team** → **fund** → build → ship. Prioritize these over
 the YouTube-carryover rows below them.
+
+Dropped from YouTube: ~~Automatic chapters~~, ~~Featured places~~,
+~~Automatic concepts~~. Chapters kept but **manual only** (below).
+
+#### Chapters editor (manual)
+
+Creator defines chapters by hand — no AI auto-detect. Each chapter = a start
+timestamp + a label. Renders as segments on the player scrubber; viewer clicks to
+jump.
+
+- **Add chapter** button → new row: `timestamp (mm:ss)` + `title` inputs
+- List of chapter rows, reorderable / removable
+- Rules (YouTube-compatible, enforce in UI + backend later):
+  - First chapter **must** start at `00:00`
+  - Minimum **3** chapters to show on player
+  - Each chapter **≥ 10 seconds** long
+  - Timestamps strictly ascending, none past video duration
+- Empty state: "No chapters yet — add one to let viewers jump around"
+
+```mermaid
+flowchart TD
+    A[Click Add chapter] --> B[Row: timestamp + title]
+    B --> C{Valid?}
+    C -->|First=00:00, ascending, ≥10s apart, ≤ duration| D[Chapter saved]
+    C -->|Invalid| E[Inline error, block save]
+    D --> F[≥3 chapters? → segments show on scrubber]
+```
+
+| Field per chapter | Notes                        | Keep? |
+|-------------------|------------------------------|-------|
+| Timestamp         | `mm:ss` / `hh:mm:ss` input   |       |
+| Title             | short label, e.g. "Demo"     |       |
+| Reorder / remove  | drag handle + delete         |       |
 
 #### Store products picker
 
