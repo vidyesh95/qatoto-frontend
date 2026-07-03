@@ -23,12 +23,12 @@ type LinkedAccountSummary = {
  */
 export function findOriginalProviderId(linkedAccounts: LinkedAccountSummary[]): string | null {
   let originalAccount: LinkedAccountSummary | null = null;
+  let originalAccountCreatedAtMs = Number.POSITIVE_INFINITY;
   for (const linkedAccount of linkedAccounts) {
-    if (
-      originalAccount === null ||
-      new Date(linkedAccount.createdAt).getTime() < new Date(originalAccount.createdAt).getTime()
-    ) {
+    const linkedAccountCreatedAtMs = new Date(linkedAccount.createdAt).getTime();
+    if (linkedAccountCreatedAtMs < originalAccountCreatedAtMs) {
       originalAccount = linkedAccount;
+      originalAccountCreatedAtMs = linkedAccountCreatedAtMs;
     }
   }
   return originalAccount?.providerId ?? null;
