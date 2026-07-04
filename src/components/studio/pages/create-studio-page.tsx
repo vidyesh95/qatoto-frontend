@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRef, useState } from "react";
 import UploadVideoModal from "@/components/studio/upload/upload-modal";
 
@@ -201,33 +200,6 @@ export default function CreateStudioPage() {
         <br />
         Please make sure that you do not violate others{" "}
         <TermsLink>copyright or privacy rights.</TermsLink>
-      </p>
-
-      {/* OR divider */}
-      <div className="my-8 flex items-center gap-4">
-        <hr className="flex-1 border-border" />
-        <span className="text-lg font-medium text-foreground">OR</span>
-        <hr className="flex-1 border-border" />
-      </div>
-
-      {/* Create store listing */}
-      <div className="flex justify-center">
-        <Link
-          href="/studio/products"
-          className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium transition-opacity hover:opacity-90"
-        >
-          <Image
-            src="/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt=""
-            width={20}
-            height={20}
-          />
-          Create Store Listing
-        </Link>
-      </div>
-
-      <p className="mt-6 text-center text-sm text-muted-foreground">
-        List your product on the Qatoto Store to reach buyers, partners, and B2B customers.
       </p>
 
       {activeUploadFile && (
