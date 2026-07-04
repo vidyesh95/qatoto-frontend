@@ -4,7 +4,7 @@ import { createContext, use, useState, ReactNode } from "react";
 
 // Shared store for the Creator Studio upload flow (UI phase — mock data only).
 // Holds every saved upload plus the creator's playlists so /studio (upload
-// modal), /studio/videos (list), and /studio/queue (anime submissions) stay in
+// modal) and /studio/videos (list, including anime review status) stay in
 // sync while navigating. Seeded rows below stand in for backend data.
 
 export type StudioVideoType = "pitch" | "demo" | "update" | "ama" | "anime-episode";
@@ -283,6 +283,7 @@ type StudioVideosContextType = {
   videos: StudioVideo[];
   playlists: StudioPlaylist[];
   addVideo: (video: StudioVideo) => void;
+  updateVideo: (updatedVideo: StudioVideo) => void;
   addPlaylist: (playlist: StudioPlaylist) => void;
 };
 
@@ -295,11 +296,18 @@ export function StudioVideosProvider({ children }: { children: ReactNode }) {
   const addVideo = (video: StudioVideo) =>
     setVideos((previousVideos) => [video, ...previousVideos]);
 
+  const updateVideo = (updatedVideo: StudioVideo) =>
+    setVideos((previousVideos) =>
+      previousVideos.map((existingVideo) =>
+        existingVideo.id === updatedVideo.id ? updatedVideo : existingVideo,
+      ),
+    );
+
   const addPlaylist = (playlist: StudioPlaylist) =>
     setPlaylists((previousPlaylists) => [...previousPlaylists, playlist]);
 
   return (
-    <StudioVideosContext.Provider value={{ videos, playlists, addVideo, addPlaylist }}>
+    <StudioVideosContext.Provider value={{ videos, playlists, addVideo, updateVideo, addPlaylist }}>
       {children}
     </StudioVideosContext.Provider>
   );

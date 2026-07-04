@@ -23,9 +23,6 @@ const ICON_PATHS = {
   package: {
     static: "/icons/package_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
-  forwardToInbox: {
-    static: "/icons/forward_to_inbox_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-  },
   analytics: {
     active: "/icons/analytics_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/analytics_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
@@ -85,7 +82,6 @@ const STUDIO_ROUTES = {
   home: "/",
   create: "/studio",
   myVideos: "/studio/videos",
-  queue: "/studio/queue",
   myProducts: "/studio/products",
   analytics: "/studio/analytics",
   pitches: "/studio/pitches",
@@ -287,7 +283,6 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
     items: [
       { path: STUDIO_ROUTES.create, label: "Create", iconKey: "videoCall" },
       { path: STUDIO_ROUTES.myVideos, label: "My Videos", iconKey: "videoLibrary" },
-      { path: STUDIO_ROUTES.queue, label: "Queue", iconKey: "forwardToInbox" },
       { path: STUDIO_ROUTES.myProducts, label: "My Products", iconKey: "package" },
       { path: STUDIO_ROUTES.analytics, label: "Analytics", iconKey: "analytics" },
     ],

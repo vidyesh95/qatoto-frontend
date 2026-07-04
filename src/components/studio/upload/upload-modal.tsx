@@ -17,11 +17,13 @@ import VideoElementsStep from "./steps/video-elements-step";
 import ChecksStep from "./steps/checks-step";
 import VisibilityStep from "./steps/visibility-step";
 
-// The YouTube-style 4-step upload wizard (UPLOAD_VIDEO_STRUCTURE.md §3).
-// Closing with X or Escape still commits the upload as a private draft (§2);
-// only leaving via Save publishes with the chosen visibility. Sub-pickers are
-// stacked overlay layers driven by one ActiveOverlay union, so a single Escape
-// handler always closes the innermost layer first.
+// The YouTube-style 4-step upload wizard (UPLOAD_VIDEO_STRUCTURE.md §3), also
+// reused as the edit dialog for saved videos. Create mode: X or Escape still
+// commits the upload as a private draft (§2). Edit mode: X or Escape discards
+// changes; only Save applies them — and saving an anime episode sends it back
+// to Pending review. Sub-pickers are stacked overlay layers driven by one
+// ActiveOverlay union, so a single Escape handler always closes the innermost
+// layer first.
 const UPLOAD_STEPS = [
   { id: "details", label: "Details" },
   { id: "video-elements", label: "Video elements" },
@@ -38,15 +40,17 @@ type ActiveOverlay =
   | "store-products-picker"
   | "invite-collaborator";
 
-type UploadVideoModalProps = {
-  videoFile: File;
-  onClose: () => void;
-};
+type UploadVideoModalProps =
+  | { mode: "create"; videoFile: File; onClose: () => void }
+  | { mode: "edit"; videoToEdit: StudioVideo; onClose: () => void };
 
-export default function UploadVideoModal({ videoFile, onClose }: UploadVideoModalProps) {
-  const { addVideo, addPlaylist } = useStudioVideos();
+export default function UploadVideoModal(props: UploadVideoModalProps) {
+  const { onClose } = props;
+  const { addVideo, updateVideo, addPlaylist } = useStudioVideos();
   const [draft, setDraft] = useState<UploadDraft>(() =>
-    createEmptyUploadDraft(videoFile.name, videoFile.size),
+    props.mode === "create"
+      ? createEmptyUploadDraft(props.videoFile.name, props.videoFile.size)
+      : createDraftFromVideo(props.videoToEdit),
   );
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [activeOverlay, setActiveOverlay] = useState<ActiveOverlay>("none");
@@ -55,23 +59,27 @@ export default function UploadVideoModal({ videoFile, onClose }: UploadVideoModa
     setDraft((previousDraft) => ({ ...previousDraft, ...draftPatch }));
   }
 
-  function commitVideo(saveMode: "explicit-save" | "close-as-draft") {
-    const video = buildVideoFromDraft(draft, saveMode);
-    addVideo(video);
+  function handleSaveClick() {
+    if (draft.title.trim() === "") return;
+    if (props.mode === "create") {
+      addVideo(buildVideoFromDraft(draft, "explicit-save"));
+    } else {
+      updateVideo(buildEditedVideo(draft, props.videoToEdit));
+    }
     onClose();
   }
 
-  function handleSaveClick() {
-    if (draft.title.trim() === "") return;
-    commitVideo("explicit-save");
-  }
-
-  function handleCloseAsDraft() {
-    commitVideo("close-as-draft");
+  // X / Escape at the top level: create commits a private draft (doc §2);
+  // edit simply discards the changes.
+  function handleModalDismiss() {
+    if (props.mode === "create") {
+      addVideo(buildVideoFromDraft(draft, "close-as-draft"));
+    }
+    onClose();
   }
 
   // Escape needs the latest draft without re-subscribing on every keystroke.
-  const handleCloseAsDraftRef = useLatestCallbackRef(handleCloseAsDraft);
+  const handleModalDismissRef = useLatestCallbackRef(handleModalDismiss);
 
   // Body scroll locks for the modal's whole lifetime.
   useEffect(() => {
@@ -93,18 +101,18 @@ export default function UploadVideoModal({ videoFile, onClose }: UploadVideoModa
       } else if (activeOverlay !== "none") {
         setActiveOverlay("none");
       } else {
-        handleCloseAsDraftRef.current();
+        handleModalDismissRef.current();
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [activeOverlay, handleCloseAsDraftRef]);
+  }, [activeOverlay, handleModalDismissRef]);
 
   const currentStep = UPLOAD_STEPS[currentStepIndex];
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === UPLOAD_STEPS.length - 1;
   const isSaveDisabled = draft.title.trim() === "";
-  const modalTitle = draft.title.trim() === "" ? videoFile.name : draft.title;
+  const modalTitle = draft.title.trim() === "" ? draft.fileName : draft.title;
 
   function renderCurrentStep(stepId: UploadStepId) {
     switch (stepId) {
@@ -148,8 +156,12 @@ export default function UploadVideoModal({ videoFile, onClose }: UploadVideoModa
           <h2 className="min-w-0 truncate text-lg font-semibold text-foreground">{modalTitle}</h2>
           <button
             type="button"
-            onClick={handleCloseAsDraft}
-            aria-label="Close and save as private draft"
+            onClick={handleModalDismiss}
+            aria-label={
+              props.mode === "create"
+                ? "Close and save as private draft"
+                : "Close without saving changes"
+            }
             className="shrink-0 cursor-pointer rounded-full p-2 transition-colors hover:bg-muted"
           >
             <Image
@@ -217,7 +229,11 @@ export default function UploadVideoModal({ videoFile, onClose }: UploadVideoModa
             {renderCurrentStep(currentStep.id)}
           </div>
           <div className="hidden w-80 shrink-0 overflow-y-auto border-l border-black/10 p-6 lg:block">
-            <VideoPreviewCard videoFile={videoFile} />
+            {props.mode === "create" ? (
+              <VideoPreviewCard videoFile={props.videoFile} />
+            ) : (
+              <VideoPreviewCard fileName={props.videoToEdit.fileName} />
+            )}
           </div>
         </div>
 
@@ -307,6 +323,27 @@ export default function UploadVideoModal({ videoFile, onClose }: UploadVideoModa
 }
 
 /* ---------- Save helpers ---------- */
+
+function createDraftFromVideo(videoToEdit: StudioVideo): UploadDraft {
+  const { id, status, uploadedAtLabel, ...editableDraftFields } = videoToEdit;
+  void id;
+  void status;
+  void uploadedAtLabel;
+  return editableDraftFields;
+}
+
+// Applying an edit keeps the original id and upload date. Anime episodes go
+// back to Pending review after any edit — approval is server-side, so edited
+// content must be re-reviewed. Other videos follow the normal save rules.
+function buildEditedVideo(draft: UploadDraft, videoBeingEdited: StudioVideo): StudioVideo {
+  return {
+    ...draft,
+    id: videoBeingEdited.id,
+    title: draft.title.trim() === "" ? draft.fileName : draft.title.trim(),
+    uploadedAtLabel: videoBeingEdited.uploadedAtLabel,
+    status: resolveVideoStatus(draft, "explicit-save"),
+  };
+}
 
 function buildVideoFromDraft(
   draft: UploadDraft,

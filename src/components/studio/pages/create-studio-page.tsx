@@ -233,6 +233,7 @@ export default function CreateStudioPage() {
       {activeUploadFile && (
         <UploadVideoModal
           key={`${activeUploadFile.name}-${activeUploadFile.size}-${activeUploadFileIndex}`}
+          mode="create"
           videoFile={activeUploadFile}
           onClose={handleUploadModalClose}
         />

@@ -4,8 +4,8 @@ import Image from "next/image";
 import { AnimeEpisodeDetails } from "@/state/studio-videos-context";
 
 // Conditional Details-step section, shown only when Video type = Anime
-// episode. Anime is curated: on Save the upload goes to /studio/queue for
-// admin review instead of publishing directly (approval is server-side only).
+// episode. Anime is curated: on Save the upload shows as Pending in My Videos
+// until admin review passes (approval is server-side only).
 const MOCK_EXISTING_SERIES = ["Stellar Drift", "Moonlit Dojo", "Create new series…"];
 const WEEKDAY_OPTIONS = [
   "Monday",
@@ -68,8 +68,8 @@ export default function AnimeEpisodeFields({
       <div>
         <h3 className="text-base font-semibold text-foreground">Anime episode</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Anime episodes go to admin review before appearing in Anime — track status in Studio →
-          Queue.
+          Anime episodes go to admin review before appearing in Anime — status shows as Pending in
+          My Videos until approved.
         </p>
       </div>
 
