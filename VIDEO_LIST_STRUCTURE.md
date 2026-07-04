@@ -28,7 +28,7 @@ yet**.
 
 ## 2. Layout (reference: YouTube Studio "Channel content")
 
-```
+```text
 Channel content
 [ Videos ] [ Live ] [ Playlists ]            ← tabs (trim YouTube's set, below)
 ⌕ Filter
@@ -97,7 +97,7 @@ still todo — visibility currently renders as a read-only badge (`VisibilityBad
 
 Selecting one+ checkboxes shows a bar above the table:
 
-```
+```text
 [ 3 selected ]   Set visibility ▾   Schedule…   Delete   ✕
 ```
 
