@@ -113,11 +113,13 @@ Priority-ordered. Strike what you don't want.
 
 The reason this exists now. Anime episodes land here before showing in `/anime`.
 
-> **Two queues, don't conflate:**
+> **Two surfaces, don't conflate:**
 >
-> - **`/studio/queue`** — the _creator's_ side. Their "my submissions" list with
->   read-only status (Pending / Approved / Rejected + reason). No approve buttons.
->   This is a **page in the studio**, not part of the upload modal.
+> - **My Videos (`/studio/videos`)** — the _creator's_ side. Anime episodes show
+>   inline in the creator's normal video list with a read-only status badge
+>   (Pending / Approved / Rejected + reason). No approve buttons. **There is no
+>   separate `/studio/queue` page** — it was merged into My Videos so anime doesn't
+>   get its own endpoint.
 > - **`/admin/review`** (this section) — the _staff_ side. Where approve/reject
 >   actions actually happen. Same underlying items, different surface + permissions.
 
@@ -207,9 +209,12 @@ src/app/(admin)/admin/
 1. **`(admin)` route group + layout + mock role gate** — skeleton.
 2. **`/admin/review` (4.1)** — the ⭐ custom page: **video player** + metadata beside
    it + Approve / Reject+reason. Mock pending list → detail → decision (state only).
-3. **Creator-side `/studio/queue`** — read-only "my submissions" page in the studio
-   (Pending / Approved / Rejected + reason). Shares the same mock items.
-4. Wire anime upload's Save → feed both queues (mock).
+3. **Creator-side status in My Videos** — ✅ done. Anime episodes show inline in
+   `/studio/videos` with a read-only status badge (Pending / Approved / Rejected +
+   reason). No separate `/studio/queue` page — merged in to avoid an anime-only
+   endpoint. Editing an episode resets it to Pending.
+4. Wire anime upload's Save → feed the admin review queue (mock). The creator side
+   already reads the shared `studio-videos-context` store.
 
 **Deferred — use Drizzle Studio, don't build (§4.2–4.6):**
 users, catalog, schedule, reports, store/orders, audit, settings. Revisit only when

@@ -9,15 +9,20 @@ Tweak / delete anything; we build only what survives.
 > state only — real persistence + auth come later.
 
 Related: uploads land here after Save (see `UPLOAD_VIDEO_STRUCTURE.md` §5). Anime
-episodes go to `/studio/queue` instead until approved (see that doc + `ADMIN_STRUCTURE.md`).
+episodes land here **too** — shown inline with a `Pending` review badge until a Qatoto
+admin approves them (see that doc + `ADMIN_STRUCTURE.md`). There is **no separate
+`/studio/queue`** creator page; it was merged into this list.
 
 ---
 
 ## 1. What exists today
 
-`/studio/videos` = stub `<h1>My Videos</h1>`
-([studio/videos/page.tsx](<src/app/(studio)/studio/videos/page.tsx>)). This doc
-specs the real list that replaces it.
+`/studio/videos` renders `VideosList`
+([videos-list.tsx](src/components/studio/videos/videos-list.tsx)) — a **minimal list
+is built**: per-row thumbnail · title · filename (or series/season/ep for anime) ·
+visibility badge · status badge · date · **Edit** button. The richer "Channel
+content" table specced below (tabs, filter, bulk actions, ⋯ menu) is **not built
+yet**.
 
 ---
 
@@ -38,10 +43,13 @@ Channel content
 - **Tabs** — trim YouTube's (no Shorts/Podcasts/Posts for now):
   | Tab | Keep? |
   |-----|-------|
-  | Videos | ✅ default |
-  | Anime episodes | (links status to `/studio/queue`) |
+  | Videos | ✅ default — anime episodes appear here too, tagged by a review-status badge |
   | Live | later |
   | Playlists | later |
+
+    No separate "Anime episodes" tab — anime rows are interleaved into the main list;
+    their `Pending` / `Approved` / `Rejected` badge tells them apart.
+
 - **Filter bar** — search + filter chips (visibility, date). Search is client-side
   for UI phase; heavy filtering → backend later (CLAUDE.md: don't sort/filter big
   lists on client).
@@ -114,6 +122,10 @@ the source of truth.
 
 ## 5. Per-row ⋯ menu
 
+**Built now:** a visible **Edit** button on every row reopens the upload modal in edit
+mode, pre-filled (see `UPLOAD_VIDEO_STRUCTURE.md` §3). The remaining actions below stay
+specced for the future ⋯ menu.
+
 | Action             | Notes                                 | Keep? |
 | ------------------ | ------------------------------------- | ----- |
 | Edit details       | reopen the upload modal on this video |       |
@@ -130,13 +142,18 @@ the source of truth.
 
 Model each row's status as one union, render exhaustively (CLAUDE.md Pattern 1):
 
-| State            | Shows                                                |
-| ---------------- | ---------------------------------------------------- |
-| `processing`     | "Processing…" placeholder, actions limited           |
-| `draft`          | saved private, not published                         |
-| `scheduled`      | "Scheduled for {date}"                               |
-| `published`      | live, with visibility badge                          |
-| `pending-review` | anime ep awaiting approval → link to `/studio/queue` |
+| State            | Shows                                                     |
+| ---------------- | --------------------------------------------------------- |
+| `processing`     | "Processing…" placeholder, actions limited                |
+| `draft`          | saved private, not published                              |
+| `scheduled`      | "Scheduled for {date}"                                    |
+| `published`      | live, with visibility badge                               |
+| `pending-review` | anime ep awaiting admin approval — `Pending` badge inline |
+| `approved`       | anime ep admin-approved — `Approved` badge                |
+| `rejected`       | anime ep admin-rejected — `Rejected` badge + reason line  |
+
+These match the `StudioVideoStatus` union in `studio-videos-context.tsx`; the list's
+`StatusBadge` renders them with an exhaustive `switch` (CLAUDE.md Pattern 1).
 
 ---
 
@@ -152,7 +169,7 @@ Same open question as `UPLOAD_VIDEO_STRUCTURE.md` §5 — where the list lives:
 
 - **A)** local state (lost on refresh) — simplest
 - **B)** mock array in a shared module — seeded rows, survives nav
-- **C)** context/provider so `/studio` (upload) and `/studio/videos` (list) share it ✅ likely
+- **C)** context/provider so `/studio` (upload) and `/studio/videos` (list) share it — ✅ **chosen & built** (`studio-videos-context.tsx`; `addVideo` on upload, `updateVideo` on edit)
 
 Pick once; both docs use the same choice.
 
@@ -170,10 +187,10 @@ Pick once; both docs use the same choice.
 
 ## 10. Files to touch (when we build)
 
-| File                                                                | Change                                    |
-| ------------------------------------------------------------------- | ----------------------------------------- |
-| [studio/videos/page.tsx](<src/app/(studio)/studio/videos/page.tsx>) | render list, replace stub                 |
-| `src/components/studio/videos/videos-list.tsx`                      | ➕ table + tabs + filter                  |
-| `src/components/studio/videos/video-row.tsx`                        | ➕ one row + visibility dropdown + ⋯ menu |
-| `src/components/studio/videos/bulk-action-bar.tsx`                  | ➕ selection bar                          |
-| `src/state/studio-videos-context.tsx`                               | ➕ shared store (if option C)             |
+| File                                                                | Change                                                                                                                   |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| [studio/videos/page.tsx](<src/app/(studio)/studio/videos/page.tsx>) | ✅ renders `VideosList`                                                                                                  |
+| `src/components/studio/videos/videos-list.tsx`                      | ✅ minimal list + anime status badges + per-row **Edit** (row/badge markup inline for now; table/tabs/filter still todo) |
+| `src/components/studio/videos/video-row.tsx`                        | ➕ later — split-out row + visibility dropdown + ⋯ menu                                                                  |
+| `src/components/studio/videos/bulk-action-bar.tsx`                  | ➕ later — selection bar                                                                                                 |
+| `src/state/studio-videos-context.tsx`                               | ✅ shared store (option C) — `addVideo` / `updateVideo`                                                                  |

@@ -11,16 +11,16 @@ doc** — tweak / delete any step you don't want, then we build only what's left
 
 ## 1. What exists today
 
-| Piece                | Location                                                                     | State                                                                   |
-| -------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Dropzone card        | [create-studio-page.tsx](src/components/studio/pages/create-studio-page.tsx) | ✅ built — drag/drop + file picker, lists files locally, has **Remove** |
-| Studio landing route | [studio/page.tsx](<src/app/(studio)/studio/page.tsx>)                        | ✅ renders dropzone                                                     |
-| My Videos route      | [studio/videos/page.tsx](<src/app/(studio)/studio/videos/page.tsx>)          | ⛔ stub — just `<h1>My Videos</h1>`                                     |
-| Upload details modal | —                                                                            | ❌ not built (the screenshots)                                          |
+| Piece                | Location                                                                     | State                                                                                               |
+| -------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Dropzone card        | [create-studio-page.tsx](src/components/studio/pages/create-studio-page.tsx) | ✅ built — drag/drop + file picker; first file opens the modal, the rest wait with **Edit details** |
+| Studio landing route | [studio/page.tsx](<src/app/(studio)/studio/page.tsx>)                        | ✅ renders dropzone                                                                                 |
+| My Videos route      | [studio/videos/page.tsx](<src/app/(studio)/studio/videos/page.tsx>)          | ✅ built — list of saved videos incl. anime review status + per-row **Edit**                        |
+| Upload details modal | `src/components/studio/upload/upload-modal.tsx`                              | ✅ built — the 4-step wizard (create **and** edit modes)                                            |
 
-**Gap:** picking a file just adds it to a list. The YouTube-style modal
-(Details → Video elements → Checks → Visibility) and the populated videos list
-don't exist yet.
+**Built:** the YouTube-style modal (Details → Video elements → Checks → Visibility)
+and the populated videos list now exist. The same modal is reused to **edit** a saved
+video (see §3). Remaining phase note still holds: UI + mock data only, no backend.
 
 ---
 
@@ -55,6 +55,16 @@ Video elements · Checks · Visibility). Left = form. Right = video preview card
 (thumbnail, "Processing video…" then player, video link, filename). Bottom bar =
 processing status + **Back / Next / Save**.
 
+**Two modes** (same wizard component):
+
+- **Create** — opened from the dropzone on file select. X / Escape saves the
+  in-progress upload as a **private draft** (§2). Right-side preview runs the fake
+  "Processing video…" → player.
+- **Edit** — opened from a My Videos row's **Edit** button, pre-filled with the saved
+  video's fields so anything skipped at upload can be completed later. X / Escape
+  **discards** changes; only **Save** applies them. There's no `File` object on edit,
+  so the preview shows a static "Preview available on the watch page" placeholder.
+
 ```mermaid
 flowchart LR
     S1[Details] --> S2[Video elements] --> S3[Checks] --> S4[Visibility]
@@ -63,21 +73,21 @@ flowchart LR
 
 ### Step 1 — Details
 
-| Field                                | Notes                                                                | Keep? |
-| ------------------------------------ | -------------------------------------------------------------------- | ----- |
-| Title (required)                     | 0/100 counter                                                        |       |
-| Description                          | @-mention hint                                                       |       |
-| Video type                           | pitch / demo / update / AMA — shapes watch-page layout               |       |
-| Sector / industry tags               | B2B discovery (AI, fintech, health…) — replaces YouTube Category     |       |
-| Stage badge                          | idea / MVP / scaling / shipped — signals pipeline stage              |       |
-| Thumbnail                            | screenshot shows "change in mobile app" — decide own behavior        |       |
-| Website URL                          | separate clickable CTA on watch page, not in description (see below) |       |
-| Call-to-action button (custom)       | generic CTA — book demo, join waitlist, etc.                         |       |
-| Social / contact links               | LinkedIn, X, email — structured fields, not in description           |       |
-| Playlists                            | picker → see **Playlists picker** below                              |       |
-| Audience — made for kids? (required) | Yes / No radio                                                       |       |
-| Age restriction (advanced)           | collapsible                                                          |       |
-| Show more                            | Paid promotion, AI use, etc. (below)                                 |       |
+| Field                                | Notes                                                                                                                     | Keep? |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ----- |
+| Title (required)                     | 0/100 counter                                                                                                             |       |
+| Description                          | @-mention hint                                                                                                            |       |
+| Video type                           | pitch / demo / update / AMA / **Anime episode** — shapes watch-page layout; Anime episode reveals the anime section below |       |
+| Sector / industry tags               | B2B discovery (AI, fintech, health…) — replaces YouTube Category                                                          |       |
+| Stage badge                          | idea / MVP / scaling / shipped — signals pipeline stage                                                                   |       |
+| Thumbnail                            | screenshot shows "change in mobile app" — decide own behavior                                                             |       |
+| Website URL                          | separate clickable CTA on watch page, not in description (see below)                                                      |       |
+| Call-to-action button (custom)       | generic CTA — book demo, join waitlist, etc.                                                                              |       |
+| Social / contact links               | LinkedIn, X, email — structured fields, not in description                                                                |       |
+| Playlists                            | picker → see **Playlists picker** below                                                                                   |       |
+| Audience — made for kids? (required) | Yes / No radio                                                                                                            |       |
+| Age restriction (advanced)           | collapsible                                                                                                               |       |
+| Show more                            | Paid promotion, AI use, etc. (below)                                                                                      |       |
 
 #### Website URL & social links (Qatoto-specific)
 
@@ -163,17 +173,22 @@ the creator's channel. See `ADMIN_STRUCTURE.md` for the review side.
 **Destination differs from normal videos:**
 
 - Normal creator video → publishes to the creator's channel directly.
-- **Anime episode → on Save, lands in the creator's `/studio/queue`** (their pending
-  list), **not** shown as a queue inside the upload modal. The modal just closes;
-  status is tracked on the `/studio/queue` page.
+- **Anime episode → on Save, appears in the creator's My Videos (`/studio/videos`)
+  with a `Pending` review badge** — not published to `/anime` yet. The modal just
+  closes; status is tracked **inline in the My Videos list**. There is **no separate
+  `/studio/queue` page** — it was merged into My Videos so anime doesn't get its own
+  endpoint.
 - From there a Qatoto admin reviews it (`/admin/review`). Shows in `/anime` **only
   after admin approves.** Approval is **server-side only** — client never
   self-approves (thin-client rule, CLAUDE.md).
+- **Re-editing:** editing an anime episode (any status) and saving resets it to
+  `Pending` — edited content must be re-reviewed.
 
-Two separate surfaces — don't conflate:
+Two surfaces — don't conflate:
 
-- **`/studio/queue`** — creator's view. "My submissions" + their status
-  (Pending / Approved / Rejected + reason). Read-only status, no approve buttons.
+- **My Videos (`/studio/videos`)** — creator's view. Anime rows show read-only status
+  (Pending / Approved / Rejected + reason) inline alongside normal videos. No approve
+  buttons.
 - **`/admin/review`** — staff view. The actual approve/reject actions
   (see `ADMIN_STRUCTURE.md` §4.1).
 
@@ -181,11 +196,11 @@ Two separate surfaces — don't conflate:
 flowchart TD
     A["Upload, Video type = Anime episode"] --> B[Fill series / season / episode / schedule]
     B --> C[Save → modal closes]
-    C --> D["/studio/queue: shows as Pending (creator side)"]
+    C --> D["My Videos: row shows as Pending (creator side)"]
     D --> E["/admin/review: Qatoto staff reviews"]
     E --> F{Admin decision}
     F -->|Approve| G[Appears in /anime on premiere/release date]
-    F -->|Reject| H["/studio/queue shows Rejected + reason"]
+    F -->|Reject| H["My Videos row shows Rejected + reason"]
     G --> I[Weekly schedule drives next-episode release]
 ```
 
@@ -340,7 +355,13 @@ Open questions:
 
 ## 6. Decisions for you to make
 
-Strike / edit anything here, then we build to match:
+Resolved & built: **1** full 4-step wizard · **2** all "show more" fields kept ·
+**3** fake processing kept · **4** storage = **C** (shared context) · **5** first
+file opens the modal, the rest wait behind **Edit details** · **7** anime routes to
+review, and its creator-side status now lives **inline in My Videos** (no separate
+`/studio/queue`).
+
+Original questions, for reference:
 
 1. **Modal scope** — full 4-step wizard, or trim to Details + Visibility only?
 2. **Which Step-1 "show more" fields survive?** (long list above — most are
@@ -350,6 +371,7 @@ Strike / edit anything here, then we build to match:
 5. **Multi-file** — dropzone accepts many files. One modal per file, or batch?
 6. **Go Live** + **Create Store Listing** — confirmed out of scope for this doc.
 7. **Anime approval** — anime episodes route to admin review, not instant publish.
+   Creator-side status shows inline in My Videos (not a separate queue page).
    See §6.5 + `ADMIN_STRUCTURE.md`.
 
 ---
@@ -359,30 +381,34 @@ Strike / edit anything here, then we build to match:
 Anime episodes (and possibly flagged content later) don't publish on save. Two
 surfaces track them — kept separate:
 
-- **`/studio/queue`** (creator side) — the creator's own "my submissions" list with
-  status Pending / Approved / Rejected. Read-only. This is where a submitted episode
-  goes right after Save; **the queue is a page, not part of the upload modal.**
+- **My Videos (`/studio/videos`)** (creator side) — anime rows carry a read-only
+  status badge (Pending / Approved / Rejected + reason) inline in the normal video
+  list. This is where a submitted episode shows right after Save. **There is no
+  separate `/studio/queue` page** — merged into My Videos so anime doesn't get its own
+  endpoint.
 - **`/admin/review`** (staff side) — Qatoto admins do the actual approve/reject. Lives
   in a **separate `(admin)` route group in this same app**, role-gated
   **server-side** — not a separate website (see `ADMIN_STRUCTURE.md`).
 
 ```mermaid
 flowchart LR
-    U[Creator saves anime ep] --> Q["/studio/queue — creator's Pending list"]
+    U[Creator saves anime ep] --> Q["My Videos — creator's list, Pending badge"]
     Q --> ADM["/admin/review — Qatoto staff"]
     ADM -->|Approve| PUB[Shows in /anime]
-    ADM -->|Reject| BACK["/studio/queue → Rejected + reason"]
+    ADM -->|Reject| BACK["My Videos row → Rejected + reason"]
 ```
 
 ---
 
 ## 7. Files to touch (when we build)
 
-| File                                                                         | Change                     |
-| ---------------------------------------------------------------------------- | -------------------------- |
-| `src/components/studio/upload/upload-modal.tsx`                              | ➕ new — the 4-step wizard |
-| `src/components/studio/upload/steps/*.tsx`                                   | ➕ new — one per step      |
-| [create-studio-page.tsx](src/components/studio/pages/create-studio-page.tsx) | open modal on file select  |
-| [studio/videos/page.tsx](<src/app/(studio)/studio/videos/page.tsx>)          | render list, replace stub  |
-| `src/components/studio/videos/videos-list.tsx`                               | ➕ new — the list UI       |
-| `src/state/studio-videos-context.tsx`                                        | ➕ new (only if option C)  |
+| File                                                                                                                                 | Change                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| `src/components/studio/upload/upload-modal.tsx`                                                                                      | ✅ 4-step wizard, create + edit modes                               |
+| `src/components/studio/upload/steps/*.tsx`                                                                                           | ✅ one per step (+ `anime-episode-fields.tsx`)                      |
+| `src/components/studio/upload/{video-preview-card,chapters-editor,playlists-picker,create-playlist-modal,store-products-picker}.tsx` | ✅ modal sub-components                                             |
+| [create-studio-page.tsx](src/components/studio/pages/create-studio-page.tsx)                                                         | ✅ opens modal on file select (`mode="create"`)                     |
+| [studio/videos/page.tsx](<src/app/(studio)/studio/videos/page.tsx>)                                                                  | ✅ renders `VideosList`                                             |
+| `src/components/studio/videos/videos-list.tsx`                                                                                       | ✅ list + anime status badges + per-row **Edit** (`mode="edit"`)    |
+| `src/state/studio-videos-context.tsx`                                                                                                | ✅ shared store (option C) — `addVideo` / `updateVideo` / playlists |
+| ~~`src/components/studio/queue/*` · `/studio/queue`~~                                                                                | ❌ removed — merged into My Videos                                  |
