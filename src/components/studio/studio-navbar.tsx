@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useSidebar } from "@/state/sidebar-context";
 import { useSession } from "@/lib/auth-client";
 import AccountMenu from "@/components/home/account/menus/account-menu";
+import CreateMenu from "@/components/studio/create-menu";
 
 // Top bar for the Creator Studio hub. Mirrors the main Navbar's layout but
 // swaps the brand for the "Qatoto | Creator Studio" wordmark and replaces the
@@ -15,6 +16,7 @@ export default function StudioNavbar() {
   const { data: session } = useSession();
   const isAuthenticated = !!session;
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
 
   return (
     <nav className="sticky top-0 z-50 bg-background">
@@ -106,6 +108,23 @@ export default function StudioNavbar() {
               height={24}
             />
           </Link>
+          <div className="relative">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              onClick={() => setIsCreateMenuOpen((isOpen) => !isOpen)}
+              className="flex cursor-pointer items-center gap-2 rounded-full border border-primary bg-white px-3 py-1.75"
+            >
+              <Image
+                src="/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt=""
+                width={24}
+                height={24}
+              />
+              <span className="hidden text-sm font-medium sm:inline">Create</span>
+            </button>
+            {isCreateMenuOpen && <CreateMenu onClose={() => setIsCreateMenuOpen(false)} />}
+          </div>
           <button
             type="button"
             aria-label="Notifications"
