@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 
 interface CreateMenuProps {
@@ -10,24 +11,29 @@ interface CreateMenuProps {
 interface CreateMenuItem {
   label: string;
   iconSrc: string;
+  href: string;
 }
 
 const CREATE_MENU_ITEMS: CreateMenuItem[] = [
   {
     label: "Upload videos",
     iconSrc: "/icons/upload_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    href: "/studio",
   },
   {
     label: "Go live stream",
     iconSrc: "/icons/stream_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    href: "/studio",
   },
   {
     label: "New playlist",
     iconSrc: "/icons/playlist_add_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    href: "/studio/playlists",
   },
   {
     label: "Add product",
     iconSrc: "/icons/box_add_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    href: "/studio/products/create",
   },
 ];
 
@@ -66,16 +72,17 @@ export default function CreateMenu({ onClose }: CreateMenuProps) {
       className="absolute top-12 right-0 z-50 w-56 rounded-lg border border-black/10 bg-background py-2 shadow-lg"
     >
       {CREATE_MENU_ITEMS.map((menuItem) => (
-        <button
+        <Link
           key={menuItem.label}
-          type="button"
+          href={menuItem.href}
           role="menuitem"
+          tabIndex={0}
           onClick={onClose}
           className="flex w-full cursor-pointer flex-row items-center gap-4 px-4 py-3 transition-colors hover:bg-muted"
         >
           <Image src={menuItem.iconSrc} alt="" width={24} height={24} />
           <span className="text-sm font-medium text-secondary-foreground">{menuItem.label}</span>
-        </button>
+        </Link>
       ))}
     </div>
   );
