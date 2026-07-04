@@ -44,7 +44,7 @@ export default function PlaylistsPicker({
         onClick={onDone}
         className="fixed inset-0 z-60 cursor-default bg-black/40"
       />
-      <div className="fixed inset-x-4 top-1/2 z-70 mx-auto flex max-h-[70dvh] w-auto max-w-sm -translate-y-1/2 flex-col rounded-2xl border border-black/10 bg-background shadow-lg">
+      <div className="fixed inset-x-4 top-1/2 z-70 mx-auto flex max-h-[70dvh] w-auto max-w-sm -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-black/10 bg-background shadow-lg">
         {playlists.length === 0 ? (
           <div className="flex flex-col items-center gap-4 p-8 text-center">
             <p className="text-sm text-muted-foreground">Please create a playlist</p>
