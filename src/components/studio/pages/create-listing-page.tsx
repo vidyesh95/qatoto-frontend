@@ -586,126 +586,124 @@ export default function CreateListingPage() {
 
   return (
     <div className="p-6">
-      <div className="mx-auto max-w-4xl">
-        <Link
-          href="/studio/products"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <Image
-            src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt=""
-            width={18}
-            height={18}
-          />
-          Back to products
-        </Link>
+      <Link
+        href="/studio/products"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <Image
+          src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+          alt=""
+          width={18}
+          height={18}
+        />
+        Back to products
+      </Link>
 
-        <h1 className="mt-4 text-2xl font-semibold text-foreground">Create Store Listing</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          List your product on the Qatoto Store to reach buyers, partners, and B2B customers.
-        </p>
+      <h1 className="mt-4 text-2xl font-semibold text-foreground">Create Store Listing</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        List your product on the Qatoto Store to reach buyers, partners, and B2B customers.
+      </p>
 
-        {/* Step tabs */}
-        <ol className="mt-8 flex items-center">
-          {LISTING_STEPS.map((step, stepIndex) => {
-            const isCompletedStep = stepIndex < currentStepIndex;
-            const isCurrentStep = stepIndex === currentStepIndex;
-            return (
-              <li key={step.id} className={`flex items-center ${stepIndex > 0 ? "flex-1" : ""}`}>
-                {stepIndex > 0 && (
-                  <span
-                    className={`mx-2 h-0.5 flex-1 rounded-full ${
-                      isCompletedStep || isCurrentStep ? "bg-[#1DBDC5]" : "bg-border"
-                    }`}
-                  />
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleGoToStepClick(stepIndex)}
-                  disabled={stepIndex >= currentStepIndex}
-                  className={`flex shrink-0 items-center gap-2 ${
-                    isCompletedStep ? "cursor-pointer" : "cursor-default"
+      {/* Step tabs */}
+      <ol className="mt-8 flex items-center">
+        {LISTING_STEPS.map((step, stepIndex) => {
+          const isCompletedStep = stepIndex < currentStepIndex;
+          const isCurrentStep = stepIndex === currentStepIndex;
+          return (
+            <li key={step.id} className={`flex items-center ${stepIndex > 0 ? "flex-1" : ""}`}>
+              {stepIndex > 0 && (
+                <span
+                  className={`mx-2 h-0.5 flex-1 rounded-full ${
+                    isCompletedStep || isCurrentStep ? "bg-[#1DBDC5]" : "bg-border"
+                  }`}
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => handleGoToStepClick(stepIndex)}
+                disabled={stepIndex >= currentStepIndex}
+                className={`flex shrink-0 items-center gap-2 ${
+                  isCompletedStep ? "cursor-pointer" : "cursor-default"
+                }`}
+              >
+                <span
+                  className={`flex size-8 items-center justify-center rounded-full text-sm font-medium ${
+                    isCurrentStep
+                      ? "bg-primary text-primary-foreground ring-2 ring-[#1DBDC5]"
+                      : isCompletedStep
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-muted-foreground"
                   }`}
                 >
-                  <span
-                    className={`flex size-8 items-center justify-center rounded-full text-sm font-medium ${
-                      isCurrentStep
-                        ? "bg-primary text-primary-foreground ring-2 ring-[#1DBDC5]"
-                        : isCompletedStep
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-secondary text-muted-foreground"
-                    }`}
-                  >
-                    {isCompletedStep ? (
-                      <Image
-                        src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                        alt=""
-                        width={16}
-                        height={16}
-                      />
-                    ) : (
-                      stepIndex + 1
-                    )}
-                  </span>
-                  <span
-                    className={`hidden text-sm md:block ${
-                      isCurrentStep ? "font-medium text-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
-
-        <div className="mt-6">{renderCurrentStep(currentStep.id)}</div>
-
-        {/* Footer navigation */}
-        <div className="mt-6 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={handleBackClick}
-            className={`cursor-pointer rounded-full border border-border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 ${
-              currentStepIndex === 0 ? "invisible" : ""
-            }`}
-          >
-            Back
-          </button>
-
-          {isLastStep ? (
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className="cursor-pointer rounded-full border border-border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
-              >
-                Save Draft
+                  {isCompletedStep ? (
+                    <Image
+                      src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                      alt=""
+                      width={16}
+                      height={16}
+                    />
+                  ) : (
+                    stepIndex + 1
+                  )}
+                </span>
+                <span
+                  className={`hidden text-sm md:block ${
+                    isCurrentStep ? "font-medium text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {step.label}
+                </span>
               </button>
-              <button
-                type="button"
-                onClick={handlePublishClick}
-                className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90"
-              >
-                <Image
-                  src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  alt=""
-                  width={20}
-                  height={20}
-                />
-                Publish Listing
-              </button>
-            </div>
-          ) : (
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="mt-6">{renderCurrentStep(currentStep.id)}</div>
+
+      {/* Footer navigation */}
+      <div className="mt-6 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={handleBackClick}
+          className={`cursor-pointer rounded-full border border-border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 ${
+            currentStepIndex === 0 ? "invisible" : ""
+          }`}
+        >
+          Back
+        </button>
+
+        {isLastStep ? (
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={handleNextClick}
-              className="cursor-pointer rounded-full bg-primary px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90"
+              className="cursor-pointer rounded-full border border-border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
             >
-              Next: {LISTING_STEPS[currentStepIndex + 1].label}
+              Save Draft
             </button>
-          )}
-        </div>
+            <button
+              type="button"
+              onClick={handlePublishClick}
+              className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90"
+            >
+              <Image
+                src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt=""
+                width={20}
+                height={20}
+              />
+              Publish Listing
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleNextClick}
+            className="cursor-pointer rounded-full bg-primary px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90"
+          >
+            Next: {LISTING_STEPS[currentStepIndex + 1].label}
+          </button>
+        )}
       </div>
     </div>
   );
