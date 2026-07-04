@@ -32,6 +32,9 @@ const ICON_PATHS = {
     active: "/icons/slideshow_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/slideshow_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  playlistPlay: {
+    static: "/icons/playlist_play_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   group: {
     active: "/icons/group_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/group_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
@@ -90,6 +93,7 @@ const STUDIO_ROUTES = {
   create: "/studio",
   myVideos: "/studio/videos",
   myProducts: "/studio/products",
+  playlists: "/studio/playlists",
   analytics: "/studio/analytics",
   pitches: "/studio/pitches",
   team: "/studio/team",
@@ -291,7 +295,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
       { path: STUDIO_ROUTES.create, label: "Create", iconKey: "videoCall" },
       { path: STUDIO_ROUTES.myVideos, label: "My Videos", iconKey: "videoLibrary" },
       { path: STUDIO_ROUTES.myProducts, label: "My Products", iconKey: "package" },
-      { path: STUDIO_ROUTES.analytics, label: "Analytics", iconKey: "analytics" },
+      { path: STUDIO_ROUTES.playlists, label: "Playlists", iconKey: "playlistPlay" },
     ],
     hasDivider: true,
   },
@@ -323,6 +327,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
       { path: STUDIO_ROUTES.copyright, label: "Copyright", iconKey: "copyright" },
       { path: STUDIO_ROUTES.subtitles, label: "Subtitles", iconKey: "subtitles" },
       { path: STUDIO_ROUTES.learn, label: "Learn", iconKey: "school" },
+      { path: STUDIO_ROUTES.analytics, label: "Analytics", iconKey: "analytics" },
     ],
   },
 ];
@@ -333,7 +338,7 @@ const COLLAPSED_NAV_CONFIG: StudioNavItem[] = [
   { path: STUDIO_ROUTES.create, label: "Create", iconKey: "videoCall" },
   { path: STUDIO_ROUTES.myVideos, label: "My Videos", iconKey: "videoLibrary" },
   { path: STUDIO_ROUTES.myProducts, label: "My Products", iconKey: "package" },
-  { path: STUDIO_ROUTES.analytics, label: "Analytics", iconKey: "analytics" },
+  { path: STUDIO_ROUTES.playlists, label: "Playlists", iconKey: "playlistPlay" },
 ];
 
 /* ---------- Main Component ---------- */
