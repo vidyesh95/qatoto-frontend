@@ -89,7 +89,7 @@ export default function CreateStudioPage() {
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`flex flex-col items-center justify-center gap-4 rounded-2xl border py-24 transition-colors ${
+        className={`flex flex-col items-center justify-center gap-4 rounded-2xl border py-16 transition-colors ${
           isDraggingOver ? "border-[#1DBDC5] bg-secondary/50" : "border-border"
         }`}
       >
