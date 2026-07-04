@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PlaylistsPage from "@/components/studio/playlists/playlists-page";
 
 export const metadata: Metadata = {
   title: "Playlists",
@@ -6,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function StudioPlaylists() {
-  return <h1>Playlists</h1>;
+  return <PlaylistsPage />;
 }

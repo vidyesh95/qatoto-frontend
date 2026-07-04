@@ -1,12 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { AnimeEpisodeDetails } from "@/state/studio-videos-context";
+import Link from "next/link";
+import { useState } from "react";
+import { AnimeEpisodeDetails, useStudioVideos } from "@/state/studio-videos-context";
 
 // Conditional Details-step section, shown only when Video type = Anime
 // episode. Anime is curated: on Save the upload shows as Pending in My Videos
-// until admin review passes (approval is server-side only).
-const MOCK_EXISTING_SERIES = ["Stellar Drift", "Moonlit Dojo", "Create new series…"];
+// until admin review passes (approval is server-side only). Series and season
+// options come from the shared studio context (managed in /studio/series);
+// typing a new name here does not create the series — episodes get formally
+// attached on the series detail page.
+const CREATE_NEW_SERIES_OPTION_VALUE = "__create-new-series__";
+const CREATE_NEW_SEASON_OPTION_VALUE = "__create-new-season__";
 const WEEKDAY_OPTIONS = [
   "Monday",
   "Tuesday",
@@ -54,6 +60,52 @@ export default function AnimeEpisodeFields({
   episodeDetails,
   onEpisodeDetailsChange,
 }: AnimeEpisodeFieldsProps) {
+  const { seriesList } = useStudioVideos();
+
+  // Edit-mode safety: a saved seriesName that no series matches was typed as
+  // new, so the wizard reopens in create-new mode instead of an empty select.
+  const [isCreatingNewSeries, setIsCreatingNewSeries] = useState(
+    () =>
+      episodeDetails.seriesName !== "" &&
+      !seriesList.some((existingSeries) => existingSeries.title === episodeDetails.seriesName),
+  );
+
+  const selectedSeries = isCreatingNewSeries
+    ? undefined
+    : seriesList.find((existingSeries) => existingSeries.title === episodeDetails.seriesName);
+
+  const [isCreatingNewSeason, setIsCreatingNewSeason] = useState(
+    () =>
+      episodeDetails.seasonLabel !== "" &&
+      !seriesList
+        .find((existingSeries) => existingSeries.title === episodeDetails.seriesName)
+        ?.seasons.some(
+          (existingSeason) => existingSeason.seasonLabel === episodeDetails.seasonLabel,
+        ),
+  );
+
+  function handleSeriesSelectChange(selectedValue: string) {
+    if (selectedValue === CREATE_NEW_SERIES_OPTION_VALUE) {
+      setIsCreatingNewSeries(true);
+      onEpisodeDetailsChange({ seriesName: "", seasonLabel: "" });
+      return;
+    }
+    setIsCreatingNewSeries(false);
+    setIsCreatingNewSeason(false);
+    // Clear the season — the previous pick may not exist on the new series.
+    onEpisodeDetailsChange({ seriesName: selectedValue, seasonLabel: "" });
+  }
+
+  function handleSeasonSelectChange(selectedValue: string) {
+    if (selectedValue === CREATE_NEW_SEASON_OPTION_VALUE) {
+      setIsCreatingNewSeason(true);
+      onEpisodeDetailsChange({ seasonLabel: "" });
+      return;
+    }
+    setIsCreatingNewSeason(false);
+    onEpisodeDetailsChange({ seasonLabel: selectedValue });
+  }
+
   function handleGenreTagToggle(genreTag: string) {
     const isAlreadySelected = episodeDetails.genreTags.includes(genreTag);
     onEpisodeDetailsChange({
@@ -81,16 +133,19 @@ export default function AnimeEpisodeFields({
           <div className="relative">
             <select
               id="anime-series-name"
-              value={episodeDetails.seriesName}
-              onChange={(event) => onEpisodeDetailsChange({ seriesName: event.target.value })}
+              value={
+                isCreatingNewSeries ? CREATE_NEW_SERIES_OPTION_VALUE : episodeDetails.seriesName
+              }
+              onChange={(event) => handleSeriesSelectChange(event.target.value)}
               className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
             >
               <option value="">Select a series</option>
-              {MOCK_EXISTING_SERIES.map((seriesOption) => (
-                <option key={seriesOption} value={seriesOption}>
-                  {seriesOption}
+              {seriesList.map((existingSeries) => (
+                <option key={existingSeries.id} value={existingSeries.title}>
+                  {existingSeries.title}
                 </option>
               ))}
+              <option value={CREATE_NEW_SERIES_OPTION_VALUE}>Create new series…</option>
             </select>
             <Image
               src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -100,20 +155,65 @@ export default function AnimeEpisodeFields({
               className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2"
             />
           </div>
+          {isCreatingNewSeries && (
+            <>
+              <input
+                type="text"
+                aria-label="New series name"
+                value={episodeDetails.seriesName}
+                onChange={(event) => onEpisodeDetailsChange({ seriesName: event.target.value })}
+                placeholder="New series name"
+                className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+              />
+              <p className="text-xs text-muted-foreground">
+                Manage seasons and episodes later in{" "}
+                <Link href="/studio/series" className="text-[#1DBDC5] hover:underline">
+                  Studio → Series
+                </Link>
+                .
+              </p>
+            </>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="anime-season-label" className="text-sm font-medium text-foreground">
             Season
           </label>
-          <input
-            id="anime-season-label"
-            type="text"
-            value={episodeDetails.seasonLabel}
-            onChange={(event) => onEpisodeDetailsChange({ seasonLabel: event.target.value })}
-            placeholder="e.g. Season 3"
-            className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
-          />
+          {selectedSeries && !isCreatingNewSeason ? (
+            <div className="relative">
+              <select
+                id="anime-season-label"
+                value={episodeDetails.seasonLabel}
+                onChange={(event) => handleSeasonSelectChange(event.target.value)}
+                className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+              >
+                <option value="">Select a season</option>
+                {selectedSeries.seasons.map((existingSeason) => (
+                  <option key={existingSeason.id} value={existingSeason.seasonLabel}>
+                    {existingSeason.seasonLabel}
+                  </option>
+                ))}
+                <option value={CREATE_NEW_SEASON_OPTION_VALUE}>New season…</option>
+              </select>
+              <Image
+                src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt=""
+                width={20}
+                height={20}
+                className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2"
+              />
+            </div>
+          ) : (
+            <input
+              id="anime-season-label"
+              type="text"
+              value={episodeDetails.seasonLabel}
+              onChange={(event) => onEpisodeDetailsChange({ seasonLabel: event.target.value })}
+              placeholder="e.g. Season 3"
+              className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">

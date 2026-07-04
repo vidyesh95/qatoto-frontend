@@ -7,7 +7,10 @@ import { StudioPlaylist, StudioPlaylistVisibility } from "@/state/studio-videos-
 // "Create a new playlist" modal, layered above the playlists picker. Only
 // title + visibility persist on the mock playlist record for now; the other
 // fields exist per the spec and will matter once the backend arrives.
+// Passing playlistToEdit switches the modal to edit mode (used by
+// /studio/playlists); onCreate then receives the updated playlist.
 type CreatePlaylistModalProps = {
+  playlistToEdit?: StudioPlaylist;
   onCreate: (playlist: StudioPlaylist) => void;
   onCancel: () => void;
 };
@@ -21,10 +24,16 @@ const PLAYLIST_ORDER_OPTIONS = [
 ];
 const PLAYLIST_LANGUAGE_OPTIONS = ["English", "Hindi", "Japanese", "Spanish", "German"];
 
-export default function CreatePlaylistModal({ onCreate, onCancel }: CreatePlaylistModalProps) {
-  const [playlistTitle, setPlaylistTitle] = useState("");
+export default function CreatePlaylistModal({
+  playlistToEdit,
+  onCreate,
+  onCancel,
+}: CreatePlaylistModalProps) {
+  const [playlistTitle, setPlaylistTitle] = useState(playlistToEdit?.title ?? "");
   const [playlistDescription, setPlaylistDescription] = useState("");
-  const [playlistVisibility, setPlaylistVisibility] = useState<StudioPlaylistVisibility>("public");
+  const [playlistVisibility, setPlaylistVisibility] = useState<StudioPlaylistVisibility>(
+    playlistToEdit?.visibility ?? "public",
+  );
   const [defaultVideoOrder, setDefaultVideoOrder] = useState(PLAYLIST_ORDER_OPTIONS[0]);
   const [playlistLanguage, setPlaylistLanguage] = useState(PLAYLIST_LANGUAGE_OPTIONS[0]);
 
@@ -44,7 +53,9 @@ export default function CreatePlaylistModal({ onCreate, onCancel }: CreatePlayli
         className="fixed inset-0 z-80 cursor-default bg-black/40"
       />
       <div className="fixed inset-x-4 top-1/2 z-90 mx-auto flex max-h-[80dvh] w-auto max-w-sm -translate-y-1/2 flex-col overflow-y-auto rounded-2xl border border-black/10 bg-background p-6 shadow-lg">
-        <h2 className="text-lg font-semibold text-foreground">Create a new playlist</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          {playlistToEdit ? "Edit playlist" : "Create a new playlist"}
+        </h2>
 
         <div className="mt-4 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -129,7 +140,7 @@ export default function CreatePlaylistModal({ onCreate, onCancel }: CreatePlayli
             disabled={isCreateDisabled}
             className="cursor-pointer rounded-full bg-primary px-5 py-2 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-40"
           >
-            Create
+            {playlistToEdit ? "Save" : "Create"}
           </button>
         </div>
       </div>

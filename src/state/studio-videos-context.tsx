@@ -96,6 +96,29 @@ export type StudioPlaylist = {
   visibility: StudioPlaylistVisibility;
 };
 
+export type StudioEpisode = {
+  id: string;
+  episodeNumber: number;
+  episodeTitle: string;
+  isPremium: boolean;
+  attachedVideoId: string | null; // StudioVideo id once an upload is attached
+};
+
+export type StudioSeason = {
+  id: string;
+  seasonLabel: string;
+  episodes: StudioEpisode[];
+};
+
+export type StudioSeries = {
+  id: string;
+  title: string;
+  description: string;
+  posterImagePath: string | null; // null renders a placeholder tile (UI phase)
+  genreTags: string[];
+  seasons: StudioSeason[];
+};
+
 // The upload modal edits this shape; id/status/uploadedAtLabel are stamped on save.
 export type UploadDraft = Omit<StudioVideo, "id" | "status" | "uploadedAtLabel">;
 
@@ -268,6 +291,84 @@ const SEEDED_VIDEOS: StudioVideo[] = [
   }),
 ];
 
+// Seeded series correlate with the seeded anime videos above so /studio/series
+// and /studio/videos tell the same story. Season 2 of Stellar Drift is empty
+// on purpose to exercise the empty-season UI.
+const SEEDED_SERIES: StudioSeries[] = [
+  {
+    id: "stellar-drift",
+    title: "Stellar Drift",
+    description:
+      "A salvage crew drifts through a dying solar system, chasing the signal that grounded their fleet.",
+    posterImagePath: null,
+    genreTags: ["Sci-fi", "Drama"],
+    seasons: [
+      {
+        id: "stellar-drift-season-1",
+        seasonLabel: "Season 1",
+        episodes: [
+          {
+            id: "stellar-drift-s1-ep1",
+            episodeNumber: 1,
+            episodeTitle: "Cold Launch",
+            isPremium: false,
+            attachedVideoId: null,
+          },
+          {
+            id: "stellar-drift-s1-ep2",
+            episodeNumber: 2,
+            episodeTitle: "Debris Field",
+            isPremium: false,
+            attachedVideoId: null,
+          },
+          {
+            id: "stellar-drift-s1-ep3",
+            episodeNumber: 3,
+            episodeTitle: "Gravity Well",
+            isPremium: false,
+            attachedVideoId: "seed-anime-stellar-drift-ep3",
+          },
+          {
+            id: "stellar-drift-s1-ep4",
+            episodeNumber: 4,
+            episodeTitle: "The Silent Orbit",
+            isPremium: true,
+            attachedVideoId: "seed-anime-stellar-drift-ep4",
+          },
+        ],
+      },
+      {
+        id: "stellar-drift-season-2",
+        seasonLabel: "Season 2",
+        episodes: [],
+      },
+    ],
+  },
+  {
+    id: "moonlit-dojo",
+    title: "Moonlit Dojo",
+    description:
+      "A retired kendo champion reopens her family dojo and trains a team that only practices after dark.",
+    posterImagePath: null,
+    genreTags: ["Sports", "Slice of life"],
+    seasons: [
+      {
+        id: "moonlit-dojo-season-1",
+        seasonLabel: "Season 1",
+        episodes: [
+          {
+            id: "moonlit-dojo-s1-ep1",
+            episodeNumber: 1,
+            episodeTitle: "First Stance",
+            isPremium: false,
+            attachedVideoId: "seed-anime-moonlit-dojo-ep1",
+          },
+        ],
+      },
+    ],
+  },
+];
+
 const SEEDED_PLAYLISTS: StudioPlaylist[] = [
   { title: "Car music", visibility: "public" },
   { title: "jav 001", visibility: "private" },
@@ -282,9 +383,15 @@ const SEEDED_PLAYLISTS: StudioPlaylist[] = [
 type StudioVideosContextType = {
   videos: StudioVideo[];
   playlists: StudioPlaylist[];
+  seriesList: StudioSeries[];
   addVideo: (video: StudioVideo) => void;
   updateVideo: (updatedVideo: StudioVideo) => void;
   addPlaylist: (playlist: StudioPlaylist) => void;
+  updatePlaylist: (previousTitle: string, updatedPlaylist: StudioPlaylist) => void;
+  deletePlaylist: (playlistTitle: string) => void;
+  addSeries: (series: StudioSeries) => void;
+  updateSeries: (updatedSeries: StudioSeries) => void;
+  deleteSeries: (seriesId: string) => void;
 };
 
 const StudioVideosContext = createContext<StudioVideosContextType | undefined>(undefined);
@@ -292,6 +399,7 @@ const StudioVideosContext = createContext<StudioVideosContextType | undefined>(u
 export function StudioVideosProvider({ children }: { children: ReactNode }) {
   const [videos, setVideos] = useState<StudioVideo[]>(SEEDED_VIDEOS);
   const [playlists, setPlaylists] = useState<StudioPlaylist[]>(SEEDED_PLAYLISTS);
+  const [seriesList, setSeriesList] = useState<StudioSeries[]>(SEEDED_SERIES);
 
   const addVideo = (video: StudioVideo) =>
     setVideos((previousVideos) => [video, ...previousVideos]);
@@ -306,8 +414,52 @@ export function StudioVideosProvider({ children }: { children: ReactNode }) {
   const addPlaylist = (playlist: StudioPlaylist) =>
     setPlaylists((previousPlaylists) => [...previousPlaylists, playlist]);
 
+  // Playlists are title-keyed (no ids yet), so edits pass the previous title.
+  const updatePlaylist = (previousTitle: string, updatedPlaylist: StudioPlaylist) =>
+    setPlaylists((previousPlaylists) =>
+      previousPlaylists.map((existingPlaylist) =>
+        existingPlaylist.title === previousTitle ? updatedPlaylist : existingPlaylist,
+      ),
+    );
+
+  const deletePlaylist = (playlistTitle: string) =>
+    setPlaylists((previousPlaylists) =>
+      previousPlaylists.filter((existingPlaylist) => existingPlaylist.title !== playlistTitle),
+    );
+
+  const addSeries = (series: StudioSeries) =>
+    setSeriesList((previousSeriesList) => [series, ...previousSeriesList]);
+
+  // Whole-object replace by id — covers metadata edits, season add/reorder,
+  // and episode add/edit/remove with a single action.
+  const updateSeries = (updatedSeries: StudioSeries) =>
+    setSeriesList((previousSeriesList) =>
+      previousSeriesList.map((existingSeries) =>
+        existingSeries.id === updatedSeries.id ? updatedSeries : existingSeries,
+      ),
+    );
+
+  const deleteSeries = (seriesId: string) =>
+    setSeriesList((previousSeriesList) =>
+      previousSeriesList.filter((existingSeries) => existingSeries.id !== seriesId),
+    );
+
   return (
-    <StudioVideosContext.Provider value={{ videos, playlists, addVideo, updateVideo, addPlaylist }}>
+    <StudioVideosContext.Provider
+      value={{
+        videos,
+        playlists,
+        seriesList,
+        addVideo,
+        updateVideo,
+        addPlaylist,
+        updatePlaylist,
+        deletePlaylist,
+        addSeries,
+        updateSeries,
+        deleteSeries,
+      }}
+    >
       {children}
     </StudioVideosContext.Provider>
   );
