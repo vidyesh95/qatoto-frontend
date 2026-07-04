@@ -41,11 +41,12 @@ Channel content
 
 - **Header:** "Channel content" (or "My videos")
 - **Tabs** — trim YouTube's (no Shorts/Podcasts/Posts for now):
-  | Tab | Keep? |
-  |-----|-------|
-  | Videos | ✅ default — anime episodes appear here too, tagged by a review-status badge |
-  | Live | later |
-  | Playlists | later |
+
+  | Tab       | Keep?                                                                         |
+  | --------- | ----------------------------------------------------------------------------- |
+  | Videos    | ✅ default — anime episodes appear here too, tagged by a review-status badge  |
+  | Live      | later                                                                         |
+  | Playlists | later                                                                         |
 
     No separate "Anime episodes" tab — anime rows are interleaved into the main list;
     their `Pending` / `Approved` / `Rejected` badge tells them apart.
