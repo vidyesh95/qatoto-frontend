@@ -66,7 +66,7 @@ export default function ProductsPage() {
           className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium transition-opacity hover:opacity-90"
         >
           <Image
-            src="/icons/add_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            src="/icons/box_add_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
             alt=""
             width={20}
             height={20}

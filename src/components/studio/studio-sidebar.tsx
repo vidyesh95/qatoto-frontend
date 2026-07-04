@@ -21,7 +21,8 @@ const ICON_PATHS = {
     inactive: "/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   package: {
-    static: "/icons/package_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    active: "/icons/package_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/package_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   analytics: {
     active: "/icons/analytics_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
@@ -42,8 +43,13 @@ const ICON_PATHS = {
   rateReview: {
     static: "/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  feedback: {
+    active: "/icons/feedback_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/feedback_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   orders: {
-    static: "/icons/orders_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    active: "/icons/orders_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/orders_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   localShipping: {
     active: "/icons/local_shipping_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
@@ -53,7 +59,8 @@ const ICON_PATHS = {
     static: "/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   paid: {
-    static: "/icons/paid_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    active: "/icons/paid_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/paid_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   comment: {
     active: "/icons/comment_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
@@ -294,7 +301,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
       { path: STUDIO_ROUTES.pitches, label: "Pitches", iconKey: "slideshow" },
       { path: STUDIO_ROUTES.team, label: "Team", iconKey: "group" },
       { path: STUDIO_ROUTES.funding, label: "Funding", iconKey: "requestQuote" },
-      { path: STUDIO_ROUTES.feedback, label: "Feedback", iconKey: "rateReview" },
+      { path: STUDIO_ROUTES.feedback, label: "Feedback", iconKey: "feedback" },
     ],
     hasDivider: true,
   },

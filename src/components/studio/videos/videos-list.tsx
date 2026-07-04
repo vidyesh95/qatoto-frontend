@@ -17,11 +17,27 @@ export default function VideosList() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold text-foreground">My videos</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Uploads you saved from the upload flow. Anime episodes stay in review (Pending) until Qatoto
-        staff approve them.
-      </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">My videos</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Uploads you saved from the upload flow. Anime episodes stay in review (Pending) until
+            Qatoto staff approve them.
+          </p>
+        </div>
+        <Link
+          href="/studio"
+          className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium transition-opacity hover:opacity-90"
+        >
+          <Image
+            src="/icons/upload_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+            alt=""
+            width={20}
+            height={20}
+          />
+          Upload video
+        </Link>
+      </div>
 
       {videos.length === 0 ? (
         <div className="mt-10 flex flex-col items-center gap-4 rounded-2xl border border-border py-16">

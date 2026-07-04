@@ -27,7 +27,7 @@ const CREATE_MENU_ITEMS: CreateMenuItem[] = [
   },
   {
     label: "Add product",
-    iconSrc: "/icons/package_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    iconSrc: "/icons/box_add_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
 ];
 
