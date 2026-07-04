@@ -108,6 +108,18 @@ export default function StudioNavbar() {
               height={24}
             />
           </Link>
+          <button
+            type="button"
+            aria-label="Notifications"
+            className="cursor-pointer rounded-full border border-primary bg-white p-1.75"
+          >
+            <Image
+              src="/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+              alt="Notifications"
+              width={24}
+              height={24}
+            />
+          </button>
           <div className="relative">
             <button
               type="button"
@@ -125,18 +137,6 @@ export default function StudioNavbar() {
             </button>
             {isCreateMenuOpen && <CreateMenu onClose={() => setIsCreateMenuOpen(false)} />}
           </div>
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="cursor-pointer rounded-full border border-primary bg-white p-1.75"
-          >
-            <Image
-              src="/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt="Notifications"
-              width={24}
-              height={24}
-            />
-          </button>
           {isAuthenticated ? (
             <div className="relative">
               <button
