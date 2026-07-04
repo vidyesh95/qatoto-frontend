@@ -18,8 +18,8 @@ const CREATE_MENU_ITEMS: CreateMenuItem[] = [
     iconSrc: "/icons/upload_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
   },
   {
-    label: "Go live",
-    iconSrc: "/icons/live_tv_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    label: "Go live stream",
+    iconSrc: "/icons/stream_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
     label: "New playlist",
