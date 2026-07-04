@@ -81,12 +81,17 @@ Two ways, both drive the same state:
 
 Click the Visibility cell → popover:
 
-| Option    | Meaning                                |
-| --------- | -------------------------------------- |
-| Public    | listed — everyone can watch            |
-| Unlisted  | link-only                              |
-| Private   | only creator                           |
-| Schedule… | pick date/time → auto-goes Public then |
+| Option        | Meaning                                |
+| ------------- | -------------------------------------- |
+| Public        | listed — everyone can watch            |
+| Unlisted      | link-only                              |
+| Private       | only creator                           |
+| Investor-only | listed to verified investors only      |
+| Schedule…     | pick date/time → auto-goes Public then |
+
+`StudioVideoVisibility` in `studio-videos-context.tsx` is `private | unlisted | public | investor-only`.
+`Scheduled` is a **row status**, not a visibility value (see §6). The dropdown itself is
+still todo — visibility currently renders as a read-only badge (`VisibilityBadge`).
 
 ### 4.2 Bulk — select rows → action bar
 
@@ -142,15 +147,15 @@ specced for the future ⋯ menu.
 
 Model each row's status as one union, render exhaustively (CLAUDE.md Pattern 1):
 
-| State            | Shows                                                     |
-| ---------------- | --------------------------------------------------------- |
-| `processing`     | "Processing…" placeholder, actions limited                |
-| `draft`          | saved private, not published                              |
-| `scheduled`      | "Scheduled for {date}"                                    |
-| `published`      | live, with visibility badge                               |
-| `pending-review` | anime ep awaiting admin approval — `Pending` badge inline |
-| `approved`       | anime ep admin-approved — `Approved` badge                |
-| `rejected`       | anime ep admin-rejected — `Rejected` badge + reason line  |
+| State            | Shows                                                             |
+| ---------------- | ----------------------------------------------------------------- |
+| `processing`     | "Processing…" text (Edit still enabled — actions not yet limited) |
+| `draft`          | saved private, not published — renders a "Draft" pill             |
+| `scheduled`      | "Scheduled for {date}"                                            |
+| `published`      | live, with visibility badge                                       |
+| `pending-review` | anime ep awaiting admin approval — `Pending` badge inline         |
+| `approved`       | anime ep admin-approved — `Approved` badge                        |
+| `rejected`       | anime ep admin-rejected — `Rejected` badge + reason line          |
 
 These match the `StudioVideoStatus` union in `studio-videos-context.tsx`; the list's
 `StatusBadge` renders them with an exhaustive `switch` (CLAUDE.md Pattern 1).
