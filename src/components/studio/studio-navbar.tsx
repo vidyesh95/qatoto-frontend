@@ -120,23 +120,25 @@ export default function StudioNavbar() {
               height={24}
             />
           </button>
-          <div className="relative">
-            <button
-              type="button"
-              aria-haspopup="menu"
-              onClick={() => setIsCreateMenuOpen((isOpen) => !isOpen)}
-              className="flex cursor-pointer items-center gap-2 rounded-full border border-primary bg-white px-3 py-1.75"
-            >
-              <Image
-                src="/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={24}
-                height={24}
-              />
-              <span className="hidden text-sm font-medium sm:inline">Create</span>
-            </button>
-            {isCreateMenuOpen && <CreateMenu onClose={() => setIsCreateMenuOpen(false)} />}
-          </div>
+          {isAuthenticated && (
+            <div className="relative">
+              <button
+                type="button"
+                aria-haspopup="menu"
+                onClick={() => setIsCreateMenuOpen((isOpen) => !isOpen)}
+                className="flex cursor-pointer items-center gap-2 rounded-full border border-primary bg-white px-3 py-1.75"
+              >
+                <Image
+                  src="/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                  alt=""
+                  width={24}
+                  height={24}
+                />
+                <span className="hidden text-sm font-medium sm:inline">Create</span>
+              </button>
+              {isCreateMenuOpen && <CreateMenu onClose={() => setIsCreateMenuOpen(false)} />}
+            </div>
+          )}
           {isAuthenticated ? (
             <div className="relative">
               <button
