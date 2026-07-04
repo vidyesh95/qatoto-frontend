@@ -237,7 +237,7 @@ const CollapsedNavItem = memo(function CollapsedNavItem({
       </span>
       <span
         className={joinClassNames(
-          "mt-1 text-xs",
+          "mt-1 text-xs text-center",
           isActive ? "font-medium text-foreground" : "text-foreground",
         )}
       >
