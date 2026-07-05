@@ -21,7 +21,7 @@ export type AuditLogEntry = {
 const SEEDED_AUDIT_LOG_ENTRIES: AuditLogEntry[] = [
   {
     id: "audit-seed-1",
-    actorName: "Pratik Bhadane",
+    actorName: "Vidyesh Churi",
     actorRole: "admin",
     actionLabel: "Approved episode",
     targetLabel: "Stellar Drift · Season 1 · Ep 2",
@@ -39,7 +39,7 @@ const SEEDED_AUDIT_LOG_ENTRIES: AuditLogEntry[] = [
   },
   {
     id: "audit-seed-3",
-    actorName: "Pratik Bhadane",
+    actorName: "Vidyesh Churi",
     actorRole: "admin",
     actionLabel: "Granted role",
     targetLabel: "mira.okafor@qatoto.com → moderator",
@@ -57,7 +57,7 @@ const SEEDED_AUDIT_LOG_ENTRIES: AuditLogEntry[] = [
   },
   {
     id: "audit-seed-5",
-    actorName: "Pratik Bhadane",
+    actorName: "Vidyesh Churi",
     actorRole: "admin",
     actionLabel: "Approved episode",
     targetLabel: "Stellar Drift · Season 1 · Ep 1",

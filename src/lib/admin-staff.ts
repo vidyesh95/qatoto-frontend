@@ -18,7 +18,7 @@ export const MOCK_CURRENT_STAFF_MEMBER: MockStaffMember = {
 
 // Videos have no creator field yet (awaits real auth) — every review row
 // shows this stand-in creator name.
-export const MOCK_CREATOR_NAME = "Vidyesh Churi";
+export const MOCK_CREATOR_NAME = "Aki Films";
 
 export function hasStaffAccess(role: StaffRole): boolean {
   return role === "moderator" || role === "admin";
