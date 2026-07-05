@@ -37,7 +37,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.9",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "fallow": "^2.104.0",
+    "fallow": "^3.1.0",
     "jsdom": "^29.1.1",
     "next-devtools-mcp": "0.3.10",
     "oxfmt": "^0.57.0",
