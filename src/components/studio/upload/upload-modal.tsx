@@ -332,9 +332,9 @@ function createDraftFromVideo(videoToEdit: StudioVideo): UploadDraft {
   return editableDraftFields;
 }
 
-// Applying an edit keeps the original id and upload date. Anime episodes go
+// Applying an edit keeps the original id and upload date. Saved videos go
 // back to Pending review after any edit — approval is server-side, so edited
-// content must be re-reviewed. Other videos follow the normal save rules.
+// content must be re-reviewed.
 function buildEditedVideo(draft: UploadDraft, videoBeingEdited: StudioVideo): StudioVideo {
   return {
     ...draft,
@@ -366,33 +366,18 @@ function buildVideoFromDraft(
   };
 }
 
-// Anime episodes always enter the admin review queue regardless of how the
-// modal was left; normal videos publish on Save (or stay a draft on X-close).
+// Every saved upload enters the admin review queue (ADMIN_STRUCTURE.md §7 —
+// anime and regular videos both need approval before going live); X-close
+// keeps a draft out of the queue. Anime episodes always enter review, even
+// when the modal is closed. Approval precedes publishing/scheduling, so the
+// scheduled/published statuses are set after review, not on save.
 function resolveVideoStatus(
   draft: UploadDraft,
   saveMode: "explicit-save" | "close-as-draft",
 ): StudioVideo["status"] {
   if (draft.videoType === "anime-episode") return { kind: "pending-review" };
   if (saveMode === "close-as-draft") return { kind: "draft" };
-  if (draft.scheduledPublishDate !== "") {
-    return {
-      kind: "scheduled",
-      scheduledForLabel: formatScheduledForLabel(draft.scheduledPublishDate),
-    };
-  }
-  return { kind: "published" };
-}
-
-function formatScheduledForLabel(scheduledPublishDate: string) {
-  const parsedDate = new Date(scheduledPublishDate);
-  if (Number.isNaN(parsedDate.getTime())) return scheduledPublishDate;
-  return parsedDate.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return { kind: "pending-review" };
 }
 
 // Stores the latest callback in a ref so a mount-once event listener can call

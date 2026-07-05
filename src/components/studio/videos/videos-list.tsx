@@ -21,7 +21,7 @@ export default function VideosList() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">My videos</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Uploads you saved from the upload flow. Anime episodes stay in review (Pending) until
+            Uploads you saved from the upload flow. Saved videos stay in review (Pending) until
             Qatoto staff approve them.
           </p>
         </div>
