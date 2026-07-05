@@ -228,8 +228,37 @@ Everything else waits until you say go.
 ## 7. Open decisions
 
 1. **Route-group vs separate app** — confirm `(admin)` in this repo for now?
+   Answer: In this repo probably accessible via /admin you decide route and also authorization.
 2. **Roles** — start with `moderator` + `admin` only, or add scoped roles now?
+   Answer: Role-Based Access Control (RBAC) authorization. Start with 'user', 'moderator', 'admin'. Write a seed script that checks if an admin exists. If not, it creates one using credentials from environment variables (or prompts).
 3. **Anime auto-release** — after approval, does the weekly schedule auto-publish
    each episode, or does a human release each one?
+   Answer: Auto publish after approval
 4. **What else needs approval besides anime?** store listings? funding pitches?
+   Answer: keep anime and videos both for approval
 5. **Audit log** — build now (cheap, mock) or defer?
+   build mock for now
+
+Typical startup admin panel checklist
+Since your platform is R&D/product‑development heavy, your admin will likely include:
+
+User management (roles, bans, verification)
+
+Content moderation (flagged research articles, videos, product listings)
+
+Analytics dashboards (protected React Query calls to summary endpoints)
+
+Product/R&D submission review queue
+
+System health & logs
+
+Summary
+Route: /admin/\* inside the same Next.js app.
+
+Authorization: Roles stored in DB (user, moderator, admin). Backend middleware checks JWT; frontend guards render admin UI.
+
+First admin: One‑time seed script using INITIAL_ADMIN_EMAIL + INITIAL_ADMIN_PASSWORD env vars. Immediately change password and create real admin accounts after deploy.
+
+Ongoing management: Admin UI to promote/demote users. No .env involved in daily operations.
+
+Recovery: Re‑run the seed or update the DB directly.
