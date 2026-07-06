@@ -2,39 +2,39 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { MOCK_CURRENT_STAFF_MEMBER } from "@/lib/admin-staff";
-
-const ADMIN_NAV_LINKS = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/review", label: "Review" },
-  { href: "/admin/audit", label: "Audit log" },
-] as const;
+import { useState } from "react";
+import { useSidebar } from "@/state/sidebar-context";
+import { useSession } from "@/lib/auth-client";
+import AccountMenu from "@/components/home/account/menus/account-menu";
 
 // Top bar for the staff console. Mirrors the (home) Navbar shell — same
-// sticky wrapper, padding, and brand type scale — so switching between
-// surfaces causes no layout shift. Only the built surfaces get links (users,
-// catalog, reports, store, settings stay in Drizzle Studio per
-// ADMIN_STRUCTURE.md §0), so no dead nav entries.
+// sticky wrapper, padding, brand type scale, sidebar toggle, and the
+// notifications + account cluster at the end — so switching between
+// surfaces causes no layout shift. Navigation lives in AdminSidebar
+// (desktop) and AdminMobileBottomNav (mobile).
 export default function AdminNavbar() {
-  const pathname = usePathname();
+  const { toggleSidebar } = useSidebar();
+  const { data: session } = useSession();
+  const isAuthenticated = !!session;
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
   return (
     <nav className="sticky top-0 z-50 bg-background">
       <div className="relative mx-auto flex items-center justify-between px-4 py-2 lg:px-6">
         <div className="flex min-w-0 items-center gap-2.5 lg:gap-4.5">
-          {/* Invisible sidebar toggle — the admin surface has no sidebar, but
-              keeping the button's box reserves the same horizontal space the
-              (home) Navbar's toggle occupies, so the brand aligns identically
-              and there is no layout shift switching surfaces. */}
-          <span aria-hidden className="hidden p-2 md:invisible md:block">
+          <button
+            type={"button"}
+            aria-label="Toggle sidebar"
+            className={"hidden cursor-pointer p-2 text-primary-foreground md:block"}
+            onClick={toggleSidebar}
+          >
             <Image
-              src="/icons/menu_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt=""
+              src={"/icons/menu_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+              alt={"toggle sidebar"}
               width={24}
               height={24}
             />
-          </span>
+          </button>
           <div className="flex min-w-0 items-baseline gap-2">
             <Link href="/" className="shrink-0 font-serif text-3xl font-medium text-[#00696E]">
               Qatoto
@@ -49,40 +49,54 @@ export default function AdminNavbar() {
           </div>
         </div>
 
-        <div className="flex items-center gap-x-2">
-          <div className="hidden items-center gap-1 md:flex">
-            {ADMIN_NAV_LINKS.map((navLink) => {
-              // /admin is the index — match it exactly so it doesn't stay
-              // highlighted on /admin/review and /admin/audit.
-              const isActive =
-                navLink.href === "/admin"
-                  ? pathname === "/admin"
-                  : pathname.startsWith(navLink.href);
-
-              return (
-                <Link
-                  key={navLink.href}
-                  href={navLink.href}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-secondary text-secondary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+        <div className="flex items-center gap-x-2 text-black">
+          {isAuthenticated ? (
+            <>
+              <button
+                type={"button"}
+                aria-label="Notifications"
+                className={"cursor-pointer rounded-full border border-primary bg-white p-1.75"}
+              >
+                <Image
+                  src={"/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                  alt={"Notifications"}
+                  width={24}
+                  height={24}
+                />
+              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  aria-label="Account"
+                  aria-haspopup="menu"
+                  onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
+                  className="flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-primary"
                 >
-                  {navLink.label}
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="ml-2 flex items-center gap-2">
-            <span className="hidden text-sm text-foreground sm:inline">
-              {MOCK_CURRENT_STAFF_MEMBER.fullName}
-            </span>
-            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground capitalize">
-              {MOCK_CURRENT_STAFF_MEMBER.role}
-            </span>
-          </div>
+                  <Image
+                    src={session?.user.image ?? "/dummy/profile_photo_girl.avif"}
+                    alt={"Account"}
+                    width={39}
+                    height={39}
+                    className="rounded-full"
+                  />
+                </button>
+                {isAccountMenuOpen && <AccountMenu onClose={() => setIsAccountMenuOpen(false)} />}
+              </div>
+            </>
+          ) : (
+            <Link
+              href={"/sign-in"}
+              className="flex gap-2 rounded-full border border-primary bg-white px-2 py-1.75 text-[#1DBDC5]"
+            >
+              <Image
+                src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
+                alt={"Signin"}
+                width={24}
+                height={24}
+              />
+              Sign in
+            </Link>
+          )}
         </div>
       </div>
     </nav>
