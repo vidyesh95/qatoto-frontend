@@ -5,20 +5,27 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 // Bottom tab bar shown only on mobile (md:hidden). Mirrors the (home)
-// MobileBottomNav shell with the three admin surfaces. Active item gets a
-// filled icon inside a teal pill, matching the collapsed-sidebar style.
+// MobileBottomNav shell with the admin surfaces plus Create, like the home
+// bar. Active item gets a filled icon inside a teal pill, matching the
+// collapsed-sidebar style.
 const NAV_ITEMS = [
   {
     href: "/admin",
     label: "Dashboard",
-    activeIcon: "/icons/dashboard_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    inactiveIcon: "/icons/dashboard_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    activeIcon: "/icons/dashboard_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/dashboard_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
     href: "/admin/review",
     label: "Review",
     activeIcon: "/icons/reviews_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactiveIcon: "/icons/reviews_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
+    href: "/studio",
+    label: "Create",
+    activeIcon: "/icons/video_call_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
     href: "/admin/audit",
