@@ -13,8 +13,8 @@ const ADMIN_NAVIGATION_ITEMS = [
   {
     href: "/admin",
     label: "Dashboard",
-    activeIcon: "/icons/dashboard_customize_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    inactiveIcon: "/icons/dashboard_customize_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    activeIcon: "/icons/dashboard_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/dashboard_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
     href: "/admin/review",
