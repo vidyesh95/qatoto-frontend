@@ -9,7 +9,7 @@ const TAB_SCROLL_FRACTION = 0.6;
 
 // "All product details" bottom sheet for the product page (UI-only phase, no
 // fetch). Horizontally scrollable tabs (Features & Specs, Item details,
-// Measurements, Additional details), each rendering a list of spec label/value
+// Measurements, Additional details, Packaging & delivery), each rendering a list of spec label/value
 // rows. Static mock copy for now — real specs come from the backend later; the
 // client only renders them. Bottom sheet on mobile, centered modal on desktop —
 // mirrors TradeProtectionSheet.
@@ -65,6 +65,18 @@ const SPEC_TABS: SpecTab[] = [
       { label: "Colour", value: "Raspberry Red" },
       { label: "Style", value: "Modern Folding" },
       { label: "Warranty", value: "1 Year Manufacturer Warranty" },
+    ],
+  },
+  {
+    id: "packaging-and-delivery",
+    label: "Packaging & delivery",
+    rows: [
+      { label: "Selling Units", value: "Single item" },
+      { label: "Single Package Size", value: "52 x 46 x 12 cm" },
+      { label: "Single Gross Weight", value: "4.8 kg" },
+      { label: "Lead Time (1 - 49 sets)", value: "15 days" },
+      { label: "Lead Time (50 - 499 sets)", value: "30 days" },
+      { label: "Lead Time (>= 500 sets)", value: "To be negotiated" },
     ],
   },
 ];

@@ -66,6 +66,16 @@ const REVIEWS = [
   },
 ];
 
+const REVIEW_SUB_SCORES = [
+  { label: "Service", score: 4.9 },
+  { label: "Shipping", score: 4.7 },
+  { label: "Quality", score: 4.8 },
+];
+
+// Filter/sort chips are display-only for the UI phase (same precedent as the
+// handler-less "Rate product" button); the first chip renders as active.
+const REVIEW_FILTER_CHIPS = ["All", "With photos (128)", "Rating ▾", "Sort by ▾"];
+
 const CHEVRON = "/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
 
 function Stars({ rating }: { rating: number }) {
@@ -124,15 +134,29 @@ export default function RatingsAndReviews() {
         </button>
       </div>
 
-      {/* Rating summary */}
-      <div className="flex items-center gap-2 px-4 py-1 lg:px-6">
-        <span className="flex items-center gap-1 rounded bg-[#4A6364] px-1.5 py-1 text-[11px] font-medium text-white">
-          4.8
-          <span className="text-xs leading-none">★</span>
-        </span>
-        <span className="text-sm font-medium text-[#6F7979]">
-          26,692 Ratings &amp; 2,432 Reviews
-        </span>
+      {/* Rating summary — overall score plus per-dimension sub-scores */}
+      <div className="flex items-center gap-4 px-4 py-2 lg:px-6">
+        <div className="flex flex-col gap-1">
+          <span className="text-4xl font-medium text-[#191C1C]">4.8</span>
+          <Stars rating={5} />
+          <span className="text-xs font-medium text-[#6F7979]">
+            26,692 Ratings &amp; 2,432 Reviews
+          </span>
+        </div>
+        <div className="flex flex-1 flex-col gap-2">
+          {REVIEW_SUB_SCORES.map((subScore) => (
+            <div key={subScore.label} className="flex items-center gap-2">
+              <span className="w-14 text-xs text-[#6F7979]">{subScore.label}</span>
+              <span className="h-1 flex-1 overflow-hidden rounded-full bg-[#E0E3E3]">
+                <span
+                  className="block h-full rounded-full bg-[#00696E]"
+                  style={{ width: `${(subScore.score / 5) * 100}%` }}
+                />
+              </span>
+              <span className="text-xs font-medium text-[#191C1C]">{subScore.score}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Videos */}
@@ -145,6 +169,24 @@ export default function RatingsAndReviews() {
       <div className="py-2">
         <SectionHeader title="Photos" />
         <ThumbStrip images={PHOTOS} alt="Review photo" />
+      </div>
+
+      {/* Filter/sort chips */}
+      <div className="flex gap-2 overflow-x-auto px-4 py-2 lg:px-6">
+        {REVIEW_FILTER_CHIPS.map((chip, chipIndex) => (
+          <button
+            key={chip}
+            type="button"
+            aria-pressed={chipIndex === 0}
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs whitespace-nowrap ${
+              chipIndex === 0
+                ? "border-[#2A76FD] bg-[#D6E3FF]/40 font-medium text-[#191C1C]"
+                : "border-[#CAC4D0] text-[#6F7979]"
+            }`}
+          >
+            {chip}
+          </button>
+        ))}
       </div>
 
       {/* Reviews */}

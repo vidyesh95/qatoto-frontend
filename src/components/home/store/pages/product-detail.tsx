@@ -1,21 +1,26 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import CategoryBreadcrumb from "@/components/home/store/sections/category-breadcrumb";
 import CompanyDetailsSection from "@/components/home/store/sections/company-details-section";
 import CustomizationOptions from "@/components/home/store/sections/customization-options";
 import DeliverTo from "@/components/home/store/sections/deliver-to";
 import DeliveryCost from "@/components/home/store/sections/delivery-cost";
 import EngagementBar from "@/components/home/store/sections/engagement-bar";
+import PackagingAndDelivery from "@/components/home/store/sections/packaging-and-delivery";
 import PriceChart from "@/components/home/store/sections/price-chart";
-import type { ProductPricingTier } from "@/types/store";
+import type { ProductPricingTier, ProductRail as ProductRailData } from "@/types/store";
 import ProductCarousel from "@/components/home/store/rails/product-carousel";
 import ProductDetailsSection from "@/components/home/store/sections/product-details-section";
 import ProductHighlights from "@/components/home/store/sections/product-highlights";
+import ProductRail from "@/components/home/store/rails/product-rail";
 import QuestionsAndAnswers from "@/components/home/store/sections/questions-and-answers";
 import RatingsAndReviews from "@/components/home/store/sections/ratings-and-reviews";
+import SamplePrice from "@/components/home/store/sections/sample-price";
 import SimilarAndCompare from "@/components/home/store/sections/similar-and-compare";
 import StoreAndChatActions from "@/components/home/store/sections/store-and-chat-actions";
 import TradeProtection from "@/components/home/store/sections/trade-protection";
+import { MOCK_CATEGORY_RAILS } from "@/lib/store-mocks";
 
 const HERO_IMAGES = [
   "/dummy/chair_raspberry_red.avif",
@@ -38,6 +43,22 @@ const COLORS = [
 // Price + customization will come from the backend API. For the UI phase these
 // dummy getters stand in for that fetch — swap the body for a real call later,
 // keep the shape and the call sites unchanged.
+
+// Both rails borrow products from the exported category pools so no new mock
+// products are authored here. Different pools keep the two rails distinct.
+const FREQUENTLY_BOUGHT_TOGETHER_RAIL: ProductRailData = {
+  id: "frequently-bought-together",
+  title: "Frequently bought together",
+  href: "/store/stacking-chair",
+  products: MOCK_CATEGORY_RAILS["stacking-chair"][0].products,
+};
+
+const OTHER_RECOMMENDATIONS_RAIL: ProductRailData = {
+  id: "other-recommendations",
+  title: "Other recommendations",
+  href: "/store/chairs",
+  products: MOCK_CATEGORY_RAILS["chairs"][1].products,
+};
 
 function getProductPricingTiers(productSlug: string): ProductPricingTier[] {
   void productSlug; // single mock product for now
@@ -71,6 +92,9 @@ export default function ProductDetail({ slug }: { slug: string }) {
 
   return (
     <div className="mx-auto w-full max-w-md pb-40 md:pb-24">
+      {/* Breadcrumb category trail */}
+      <CategoryBreadcrumb />
+
       {/* Hero carousel + dots */}
       <ProductCarousel images={HERO_IMAGES} alt="Louis Vuitton Folding Metal Living Room Chair" />
 
@@ -145,6 +169,9 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* Price chart — tap "more" opens the detailed price-chart sheet */}
       <PriceChart pricingTiers={pricingTiers} />
 
+      {/* Sample price — order one unit before committing to a bulk order */}
+      <SamplePrice />
+
       {/* Customization options — tap opens the seller's allowed-customizations sheet */}
       <CustomizationOptions />
 
@@ -154,6 +181,9 @@ export default function ProductDetail({ slug }: { slug: string }) {
       {/* Delivery cost — tap opens the delivery options sheet (map + modes) */}
       <DeliveryCost />
 
+      {/* Packaging and delivery — collapsed spec rows + nested lead time */}
+      <PackagingAndDelivery />
+
       {/* Trade protection — tap opens the sheet explaining each guarantee */}
       <TradeProtection />
 
@@ -162,6 +192,9 @@ export default function ProductDetail({ slug }: { slug: string }) {
 
       {/* View similar / Add to Compare — each opens its own bottom sheet */}
       <SimilarAndCompare />
+
+      {/* Frequently bought together */}
+      <ProductRail rail={FREQUENTLY_BOUGHT_TOGETHER_RAIL} />
 
       {/* Company details — "Verified capabilities" and "All company details"
           each open their own bottom sheet */}
@@ -179,6 +212,21 @@ export default function ProductDetail({ slug }: { slug: string }) {
 
       {/* Questions and answers */}
       <QuestionsAndAnswers />
+
+      {/* Report abuse */}
+      <div className="flex justify-center px-4 py-3 lg:px-6">
+        <Link href="#" className="flex items-center gap-1 text-xs font-medium text-[#6F7979]">
+          <Icon
+            src="flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            size={16}
+            className="opacity-70"
+          />
+          Report abuse
+        </Link>
+      </div>
+
+      {/* Other recommendations — end-of-page discovery rail */}
+      <ProductRail rail={OTHER_RECOMMENDATIONS_RAIL} />
 
       {/* Sticky action bar — sits above the mobile bottom nav (md:hidden adds
           its ~80px height); on md+ there's no bottom nav so it drops to 0. */}

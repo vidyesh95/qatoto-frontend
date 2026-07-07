@@ -20,6 +20,15 @@ const VERIFIED_CAPABILITIES = [
   "Drop shipping",
 ];
 
+const COMPANY_STATS = [
+  { label: "On-time delivery rate", value: "98.6%" },
+  { label: "Online revenue", value: "US $2.4M+" },
+  { label: "Response time", value: "≤ 2h" },
+  { label: "Year founded", value: "2009" },
+  { label: "Collaborating factories", value: "12" },
+  { label: "Reorder rate", value: "31%" },
+];
+
 function Divider() {
   return (
     <div className="px-4 lg:px-6">
@@ -51,6 +60,16 @@ export default function CompanyDetailsSection() {
             Guangdong Puda Electrical Appliance Co., Ltd
           </p>
 
+          <span className="inline-flex w-fit items-center gap-1 rounded bg-[#F2F4F4] px-2 py-1">
+            <Image
+              src="/icons/verified_24dp_00696E_FILL1_wght400_GRAD0_opsz24.svg"
+              width={16}
+              height={16}
+              alt=""
+            />
+            <span className="text-xs font-medium text-[#00696E]">Verified by Intertek</span>
+          </span>
+
           <div className="flex items-center gap-2">
             <Image
               src="/icons/location_on_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -71,6 +90,15 @@ export default function CompanyDetailsSection() {
             <span className="text-sm leading-5 font-medium tracking-[0.1px] text-[#6F7979]">
               26,692 Ratings &amp; 2,432 Reviews
             </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-x-2 gap-y-3 py-1">
+            {COMPANY_STATS.map((stat) => (
+              <div key={stat.label} className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium text-[#191C1C]">{stat.value}</span>
+                <span className="text-[11px] leading-4 text-[#6F7979]">{stat.label}</span>
+              </div>
+            ))}
           </div>
 
           <div className="flex flex-col gap-1">
