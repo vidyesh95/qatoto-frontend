@@ -162,7 +162,13 @@ function AnimeSeasonPanel({
   );
 }
 
-export default function WatchContent({ video }: { video: WatchVideo | null }) {
+export default function WatchContent({
+  video,
+  startTimeSeconds,
+}: {
+  video: WatchVideo | null;
+  startTimeSeconds?: number;
+}) {
   const [commentsOpen, setCommentsOpen] = useState(true);
   const [selectedEpisodeId, setSelectedEpisodeId] = useState<string>(
     () => video?.seasons?.[0]?.episodes[0]?.id ?? "",
@@ -189,7 +195,15 @@ export default function WatchContent({ video }: { video: WatchVideo | null }) {
           {showPremium ? (
             <PremiumBanner />
           ) : (
-            <VideoPlayer src={video.videoSrc} label={video.title} autoPlay muted />
+            <VideoPlayer
+              src={video.videoSrc}
+              label={video.title}
+              autoPlay
+              muted
+              chapters={video.chapters}
+              thumbnailsSrc={video.thumbnailsSrc}
+              startTimeSeconds={startTimeSeconds}
+            />
           )}
 
           {/* In-video panel — mobile only, hidden for premium */}

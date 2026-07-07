@@ -54,6 +54,8 @@ export type SaleItem = {
 export type WatchVideo = {
   id: string;
   videoSrc: string;
+  /** WebVTT storyboard file for seek-bar hover previews. */
+  thumbnailsSrc?: string;
   title: string;
   profileSrc: string;
   channelName: string;

@@ -71,6 +71,7 @@ const MOCK_VIDEOS: Record<string, WatchVideo> = {
   "1": {
     id: "1",
     videoSrc: "/dummy/video/Sintel_1080_10s_1MB.mp4",
+    thumbnailsSrc: "/dummy/video/sintel-thumbnails.vtt",
     title: "Pomporo singing 🌼Fengzhi Senai🌼 at Disney Land",
     profileSrc: "/dummy/profile_image_01.avif",
     channelName: "Arin Light",
@@ -281,6 +282,7 @@ const MOCK_VIDEOS: Record<string, WatchVideo> = {
   "anime-free": {
     id: "anime-free",
     videoSrc: "/dummy/video/Sintel_1080_10s_1MB.mp4",
+    thumbnailsSrc: "/dummy/video/sintel-thumbnails.vtt",
     title: "Pomporo singing 🌼Fengzhi Senai🌼 at Disney Land",
     profileSrc: "/dummy/profile_image_01.avif",
     channelName: "Arin Light",
@@ -344,6 +346,7 @@ const MOCK_VIDEOS: Record<string, WatchVideo> = {
   "anime-premium": {
     id: "anime-premium",
     videoSrc: "/dummy/video/Sintel_1080_10s_1MB.mp4",
+    thumbnailsSrc: "/dummy/video/sintel-thumbnails.vtt",
     title: "Pomporo singing 🌼Fengzhi Senai🌼 at Disney Land",
     profileSrc: "/dummy/profile_image_01.avif",
     channelName: "Arin Light",
