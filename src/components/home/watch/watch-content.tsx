@@ -296,7 +296,7 @@ export default function WatchContent({
 
         {/* Right column — in-video panel + recommended */}
         <div className="mt-4 space-y-4 lg:mt-0 lg:w-100 lg:shrink-0">
-          {!showPremium && (
+          {/* {!showPremium && (
             <WatchInfoPanel
               videoId={video.id}
               chapters={video.chapters}
@@ -304,7 +304,7 @@ export default function WatchContent({
               transcript={video.transcript}
               className="hidden w-full lg:block lg:h-68 xl:h-130 2xl:h-130"
             />
-          )}
+          )} */}
 
           <div className="space-y-4">
             <h2 className="text-lg font-medium">Recommended for You</h2>
