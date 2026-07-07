@@ -371,7 +371,7 @@ const SEEDED_SERIES: StudioSeries[] = [
 
 const SEEDED_PLAYLISTS: StudioPlaylist[] = [
   { title: "Car music", visibility: "public" },
-  { title: "jav 001", visibility: "private" },
+  { title: "java", visibility: "private" },
   { title: "Medatation", visibility: "public" },
   { title: "Ai and Maths", visibility: "public" },
   { title: "maths", visibility: "unlisted" },

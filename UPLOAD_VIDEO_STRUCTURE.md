@@ -104,7 +104,7 @@ clickable element on the watch page.
 Clicking the **Playlists** select opens a picker popover (not a plain dropdown):
 
 - **Search** box — "Search for a playlist"
-- **Checkbox list** of existing playlists (multi-select), e.g. Car music, jav 001,
+- **Checkbox list** of existing playlists (multi-select), e.g. Car music, java,
   Medatation, Ai and Maths, maths, health and fitness, Health, Watch today…
 - **New playlist** button (bottom-left) → opens **Create a new playlist** modal
 - **Done** button (bottom-right) closes the picker
