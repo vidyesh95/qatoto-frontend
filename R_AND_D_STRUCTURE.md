@@ -213,9 +213,8 @@ Feed of `DailyLogCard`s, date-grouped:
 - Category filter chips (client-side filter).
 - Report sheet appends to a page-local list (lost on refresh — §12 Q5).
 
-⚠️ **Asset gap**: no world-map image exists in `/public`. Needs one new file —
-`public/dummy/world_map.svg` (single-color public-domain outline). Fallback without a
-new asset: an abstract named-region tile grid (§12 Q2).
+✅ **Asset ready**: `public/dummy/world_map.svg` is committed — the map canvas renders
+it via `next/image` and overlays the pins.
 
 ---
 
@@ -320,7 +319,7 @@ every badge appears), `MOCK_OPEN_ROLES`, `MOCK_MARKET_INSIGHTS`,
 - Icons already in `/public/icons` (FILL0/FILL1 pairs): `science` (in use), `flag`,
   `school`, `group`, `paid`, `fact_check`, `analytics`, `factory`, `local_shipping`,
   `forum`, `diamond`, `lock`
-- ⚠️ Missing: `world_map.svg` (§6)
+- Map canvas: `/dummy/world_map.svg` (§6) ✅
 
 ---
 
@@ -341,9 +340,9 @@ every badge appears), `MOCK_OPEN_ROLES`, `MOCK_MARKET_INSIGHTS`,
    (`market-research`, `problem-validation`, `team-building`, `building-mvp`,
    `raising-funding`, `go-to-market`), and are the labels right? These become badges
    everywhere.
-2. **Map rendering** — static `world_map.svg` + percent-positioned pins (recommended:
-   zero dependencies, matches phase) vs abstract named-region tile grid (no new asset)
-   vs a real map library (new dependency — against phase rules)?
+2. **Map rendering** — ✅ resolved: static `public/dummy/world_map.svg` (committed) +
+   percent-positioned pins. Zero dependencies, matches phase. Real map library stays a
+   backend-phase question.
 3. **Post-idea** — sheet now (recommended) or dedicated `/new` wizard route from day
    one?
 4. **Tabs** — client-state only (recommended) or URL-addressable (`?tab=` / nested
@@ -439,7 +438,7 @@ sheets/                            🏝️  each self-contained: own trigger + s
 | [sidebar.tsx](src/components/home/layout/sidebar.tsx) | Per §12 Q8: +2 `ICON_PATHS` entries (`flag`, `school` — SVGs exist), +2 `ROUTES`, +2 items in the R&D section; fix double-space typo | ✏️ edit |
 | [navbar.tsx](src/components/home/layout/navbar.tsx) | `RESEARCH_AND_DEVELOPMENT_SUBPAGES` map (mirrors `ANIME_SUBPAGES`) + `getSubHeader` branch; `startsWith("/research-and-development/")` fallthrough prettifies the last segment for `/project/[id]`, parent label per §12 Q11 | ✏️ edit |
 | [mobile-bottom-nav.tsx](src/components/home/layout/mobile-bottom-nav.tsx) | None — R&D tab + sub-path matching already work | ✅ exists |
-| `public/dummy/world_map.svg` | Public-domain world outline (§6, §12 Q2) | ➕ new |
+| `public/dummy/world_map.svg` | World outline for the map canvas (§6) | ✅ exists |
 
 ### Build order
 
@@ -450,6 +449,6 @@ sheets/                            🏝️  each self-contained: own trigger + s
 2. **Project detail** — `[id]` route + `generateStaticParams`, header, tabs island,
    five tab sections, back-project + apply-role sheets. Deepest page; pure consumer of
    phase 1's `ResearchProject` shape.
-3. **Problem map + knowledge hub** — independent of each other and of phase 2; the map
-   carries the only asset dependency (`world_map.svg`), so isolating it last keeps
-   earlier phases unblocked.
+3. **Problem map + knowledge hub** — independent of each other and of phase 2; all
+   assets already in place (`world_map.svg` committed), so ordering is purely
+   scope-driven.
