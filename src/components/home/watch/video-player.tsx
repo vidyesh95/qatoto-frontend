@@ -54,9 +54,7 @@ export default function VideoPlayer({
   // Media fragment (#t=) makes the native player start at the given offset
   // without any JS seeking.
   const srcWithStartTime =
-    startTimeSeconds !== undefined && startTimeSeconds > 0
-      ? `${src}#t=${startTimeSeconds}`
-      : src;
+    startTimeSeconds !== undefined && startTimeSeconds > 0 ? `${src}#t=${startTimeSeconds}` : src;
 
   return (
     // eslint-disable-next-line jsx-a11y/media-has-caption -- caption tracks arrive with real uploads; mock clips have none

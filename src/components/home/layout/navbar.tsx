@@ -15,6 +15,11 @@ const ANIME_SUBPAGES: Record<string, string> = {
   "/anime/ranking": "Ranking",
 };
 
+const RESEARCH_AND_DEVELOPMENT_SUBPAGES: Record<string, string> = {
+  "/research-and-development/problem-map": "Problem Map",
+  "/research-and-development/knowledge-hub": "Knowledge Hub",
+};
+
 function prettifySlug(slug: string): string {
   const s = slug.replace(/-/g, " ");
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -23,11 +28,27 @@ function prettifySlug(slug: string): string {
 type SubHeader = { title: string; parentHref: string; parentLabel: string };
 
 // Sub-page header shown on mobile (back arrow + title) and desktop (breadcrumb).
-// Anime uses a fixed title map; store category/pathway routes derive their
-// title from the last URL segment.
+// Anime and R&D use fixed title maps; store category/pathway and R&D project
+// routes derive their title from the last URL segment.
 function getSubHeader(pathname: string): SubHeader | null {
   const anime = ANIME_SUBPAGES[pathname];
   if (anime) return { title: anime, parentHref: "/anime", parentLabel: "Anime" };
+  const researchAndDevelopment = RESEARCH_AND_DEVELOPMENT_SUBPAGES[pathname];
+  if (researchAndDevelopment) {
+    return {
+      title: researchAndDevelopment,
+      parentHref: "/research-and-development",
+      parentLabel: "R&D",
+    };
+  }
+  if (pathname.startsWith("/research-and-development/")) {
+    const last = pathname.split("/").filter(Boolean).pop() ?? "";
+    return {
+      title: prettifySlug(last),
+      parentHref: "/research-and-development",
+      parentLabel: "R&D",
+    };
+  }
   if (pathname.startsWith("/store/")) {
     const last = pathname.split("/").filter(Boolean).pop() ?? "";
     return {

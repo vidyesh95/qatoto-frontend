@@ -28,6 +28,14 @@ const ICON_PATHS = {
     active: "/icons/science_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/science_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  flag: {
+    active: "/icons/flag_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  school: {
+    active: "/icons/school_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/school_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   selfImprovement: {
     static: "/icons/self_improvement_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
@@ -81,6 +89,8 @@ const ROUTES = {
   anime: "/anime",
   store: "/store",
   researchAndDevelopment: "/research-and-development",
+  problemMap: "/research-and-development/problem-map",
+  knowledgeHub: "/research-and-development/knowledge-hub",
   projectImmortal: "/project-immortal",
   library: "/library",
   history: "/history",
@@ -295,8 +305,10 @@ const NAVIGATION_CONFIG: NavSection[] = [
     hasDivider: true,
   },
   {
-    title: "Research and  Development",
+    title: "Research and Development",
     items: [
+      { path: ROUTES.problemMap, label: "Problem Map", iconKey: "flag" },
+      { path: ROUTES.knowledgeHub, label: "Knowledge Hub", iconKey: "school" },
       { path: ROUTES.projectImmortal, label: "PROJECT IMMORTAL", iconKey: "selfImprovement" },
     ],
     hasDivider: true,

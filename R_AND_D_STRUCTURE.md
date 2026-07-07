@@ -18,21 +18,21 @@ only what survives.
 
 ## 1. What exists today
 
-| Piece | Location | State |
-| --- | --- | --- |
-| R&D route stub | [page.tsx](src/app/(home)/research-and-development/page.tsx) | ✅ exists — renders only `<h1>Research and Development</h1>`, metadata title "R&D" |
-| Component dir | [src/components/home/research-and-development/](src/components/home/research-and-development/) | ✅ exists — **empty**, waiting for this plan |
-| Sidebar nav item | [sidebar.tsx:293](src/components/home/layout/sidebar.tsx#L293) | ✅ wired — label "R&D", iconKey `science`; also in `COLLAPSED_NAV_CONFIG` (line 354) |
-| Sidebar section title | [sidebar.tsx:298](src/components/home/layout/sidebar.tsx#L298) | ✅ exists — `"Research and  Development"` (⚠️ double-space typo), holds only PROJECT IMMORTAL |
-| Mobile bottom nav | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36) | ✅ wired — R&D tab, sub-path matching already works |
-| Navbar breadcrumb | [navbar.tsx:28-40](src/components/home/layout/navbar.tsx#L28-L40) | ✖ no R&D branch — `getSubHeader` handles only `/anime/*` and `/store/*`; sub-routes need one |
-| Project Immortal stub | [page.tsx](src/app/(home)/project-immortal/page.tsx) | ✅ exists — `<h1>` stub; **mention-only in this doc**, gets its own structure doc later |
-| This doc | `R_AND_D_STRUCTURE.md` | was empty — you are reading the plan |
+| Piece                 | Location                                                                                       | State                                                                                         |
+| --------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| R&D route stub        | [page.tsx](<src/app/(home)/research-and-development/page.tsx>)                                 | ✅ exists — renders only `<h1>Research and Development</h1>`, metadata title "R&D"            |
+| Component dir         | [src/components/home/research-and-development/](src/components/home/research-and-development/) | ✅ exists — **empty**, waiting for this plan                                                  |
+| Sidebar nav item      | [sidebar.tsx:293](src/components/home/layout/sidebar.tsx#L293)                                 | ✅ wired — label "R&D", iconKey `science`; also in `COLLAPSED_NAV_CONFIG` (line 354)          |
+| Sidebar section title | [sidebar.tsx:298](src/components/home/layout/sidebar.tsx#L298)                                 | ✅ exists — `"Research and  Development"` (⚠️ double-space typo), holds only PROJECT IMMORTAL |
+| Mobile bottom nav     | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36)               | ✅ wired — R&D tab, sub-path matching already works                                           |
+| Navbar breadcrumb     | [navbar.tsx:28-40](src/components/home/layout/navbar.tsx#L28-L40)                              | ✖ no R&D branch — `getSubHeader` handles only `/anime/*` and `/store/*`; sub-routes need one  |
+| Project Immortal stub | [page.tsx](<src/app/(home)/project-immortal/page.tsx>)                                         | ✅ exists — `<h1>` stub; **mention-only in this doc**, gets its own structure doc later       |
+| This doc              | `R_AND_D_STRUCTURE.md`                                                                         | was empty — you are reading the plan                                                          |
 
 Pattern donors elsewhere in the repo:
 
 - **Component decomposition**: [src/components/home/store/](src/components/home/store/) — `pages/ rails/ cards/ sections/ sheets/`; landing composes rails like [store-page.tsx](src/components/home/store/pages/store-page.tsx).
-- **Dynamic route under `cacheComponents: true`**: [store/product/[id]/page.tsx](src/app/(home)/store/product/[id]/page.tsx) — `generateStaticParams` is **required** or the build breaks.
+- **Dynamic route under `cacheComponents: true`**: [store/product/[id]/page.tsx](<src/app/(home)/store/product/[id]/page.tsx>) — `generateStaticParams` is **required** or the build breaks.
 - **Mock data shape**: [src/types/store.ts](src/types/store.ts) + [src/lib/store-mocks.ts](src/lib/store-mocks.ts) — but R&D takes **mocks only, no fetch/getter layer** (phase rule).
 
 ---
@@ -41,16 +41,16 @@ Pattern donors elsewhere in the repo:
 
 The founder's eight pillars, and which surface carries each:
 
-| # | Pillar | Carried by |
-| --- | --- | --- |
-| 1 | Market-demand research & feasibility | `/research-and-development/knowledge-hub` + demand chips on project Overview |
-| 2 | Problem Mapping / "Civic Pulse" | `/research-and-development/problem-map` |
-| 3 | Knowledge Hub (market intelligence) | `/research-and-development/knowledge-hub` |
-| 4 | Talent matching / Virtual Workshop | Open-roles rail + Team tab now; `/talent` + `/workshop` later (§11) |
-| 5 | Funding (crowd / VC, transparency) | Funding tab on project detail; investor `/funding` view later (§11) |
-| 6 | Daily Update Protocol (AI logs, Proof of Effort) | Daily Logs tab on project detail |
-| 7 | Financial governance (escrow, anti-corruption) | Governance tab on project detail |
-| 8 | Go-to-market (suppliers, ODM, shipping, storefront) | Pipeline-stage card pointing at the existing **`/store`** B2B surface — no new route |
+| #   | Pillar                                              | Carried by                                                                           |
+| --- | --------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| 1   | Market-demand research & feasibility                | `/research-and-development/knowledge-hub` + demand chips on project Overview         |
+| 2   | Problem Mapping / "Civic Pulse"                     | `/research-and-development/problem-map`                                              |
+| 3   | Knowledge Hub (market intelligence)                 | `/research-and-development/knowledge-hub`                                            |
+| 4   | Talent matching / Virtual Workshop                  | Open-roles rail + Team tab now; `/talent` + `/workshop` later (§11)                  |
+| 5   | Funding (crowd / VC, transparency)                  | Funding tab on project detail; investor `/funding` view later (§11)                  |
+| 6   | Daily Update Protocol (AI logs, Proof of Effort)    | Daily Logs tab on project detail                                                     |
+| 7   | Financial governance (escrow, anti-corruption)      | Governance tab on project detail                                                     |
+| 8   | Go-to-market (suppliers, ODM, shipping, storefront) | Pipeline-stage card pointing at the existing **`/store`** B2B surface — no new route |
 
 Related surfaces that are **not** part of this doc:
 
@@ -83,13 +83,13 @@ flowchart LR
 /research-and-development/new                    ➕ later — multi-step idea wizard (sheet for now)
 ```
 
-| Route | Purpose | Phase |
-| --- | --- | --- |
-| `/research-and-development` | Landing: whole pipeline story + rails into every sub-surface | ✅ now |
-| `/research-and-development/project/[id]` | One project's full lifecycle: overview, daily logs, team, funding, governance | ✅ now |
-| `/research-and-development/problem-map` | World map of reported infrastructure gaps → opportunity heat map | ✅ now |
-| `/research-and-development/knowledge-hub` | Where demand is highest: insights, demand leaderboard, trends | ✅ now |
-| `/talent`, `/funding`, `/workshop`, `/new` | See §11 | ➕ later |
+| Route                                      | Purpose                                                                       | Phase    |
+| ------------------------------------------ | ----------------------------------------------------------------------------- | -------- |
+| `/research-and-development`                | Landing: whole pipeline story + rails into every sub-surface                  | ✅ now   |
+| `/research-and-development/project/[id]`   | One project's full lifecycle: overview, daily logs, team, funding, governance | ✅ now   |
+| `/research-and-development/problem-map`    | World map of reported infrastructure gaps → opportunity heat map              | ✅ now   |
+| `/research-and-development/knowledge-hub`  | Where demand is highest: insights, demand leaderboard, trends                 | ✅ now   |
+| `/talent`, `/funding`, `/workshop`, `/new` | See §11                                                                       | ➕ later |
 
 Route decisions baked in:
 
@@ -107,7 +107,7 @@ Route decisions baked in:
 import { MOCK_RESEARCH_PROJECTS } from "@/lib/research-and-development-mocks";
 
 export function generateStaticParams() {
-  return MOCK_RESEARCH_PROJECTS.map((project) => ({ id: project.id }));
+    return MOCK_RESEARCH_PROJECTS.map((project) => ({ id: project.id }));
 }
 ```
 
@@ -117,16 +117,16 @@ export function generateStaticParams() {
 
 Top-to-bottom composition (server component, mirrors [store-page.tsx](src/components/home/store/pages/store-page.tsx)):
 
-| # | Section | Purpose / content | Mock needs | Keep? |
-| --- | --- | --- | --- | --- |
-| 4.1 | **Hero band** (`pipeline-hero`) | "From concept to consumer." One-paragraph pitch + two CTAs: **Post your idea** (opens sheet §8.1) and **Explore projects** (anchor to 4.3) | Static copy, one `/public/dummy/*.avif` background | |
-| 4.2 | **Pipeline stages strip** (`pipeline-stages-strip`) | Horizontal scroll of **6 stage cards** condensing the 8 pillars: Market Research → Problem Mapping → Team Building → Build & Daily Logs → Funding & Governance → Go-to-Market. Each: icon, one-line blurb, link (knowledge-hub / problem-map / project tabs / `/store`) | Static `PIPELINE_STAGES` array inline in the component | |
-| 4.3 | **Featured projects rail** (`projects-rail`) | The main event. `ProjectCard`s: cover, name, tagline, stage badge, funding progress bar, team avatar stack, open-roles count → `/project/[id]` | `MOCK_RESEARCH_PROJECTS` (~6, spanning all stages so every badge appears) | |
-| 4.4 | **Problem map teaser** (`problem-map-preview`) | Split: left, stylized map thumbnail with 3–4 pins; right, "Top reported gaps" list (location, category, report count, opportunity score). CTA → `/problem-map` | Top slice of `MOCK_PROBLEM_REPORTS` | |
-| 4.5 | **Market insights rail** (`market-insights-rail`) | `MarketInsightCard`s: headline stat ("Demand for off-grid cold storage up 34% in East Africa"), trend arrow, region + category chips. CTA → `/knowledge-hub` | `MOCK_MARKET_INSIGHTS` | |
-| 4.6 | **Open roles rail** (`open-roles-rail`) | "Join a team for equity": role title, project name, skill chips, equity range, commitment tag, **Express interest** button (client toggle → "Interest sent"). Carries pillar 4 until `/talent` exists | `MOCK_OPEN_ROLES` joined to projects | |
-| 4.7 | **Project Immortal banner** (`project-immortal-banner`) | Single full-width featured card, distinct moonshot styling → links `/project-immortal`. **Mention-only** | Static copy + one image | |
-| 4.8 | **Bottom CTA band** | "Have an idea the world needs? Post it." → same post-idea sheet | none | |
+| #   | Section                                                 | Purpose / content                                                                                                                                                                                                                                                       | Mock needs                                                                | Keep? |
+| --- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----- |
+| 4.1 | **Hero band** (`pipeline-hero`)                         | "From concept to consumer." One-paragraph pitch + two CTAs: **Post your idea** (opens sheet §8.1) and **Explore projects** (anchor to 4.3)                                                                                                                              | Static copy, one `/public/dummy/*.avif` background                        |       |
+| 4.2 | **Pipeline stages strip** (`pipeline-stages-strip`)     | Horizontal scroll of **6 stage cards** condensing the 8 pillars: Market Research → Problem Mapping → Team Building → Build & Daily Logs → Funding & Governance → Go-to-Market. Each: icon, one-line blurb, link (knowledge-hub / problem-map / project tabs / `/store`) | Static `PIPELINE_STAGES` array inline in the component                    |       |
+| 4.3 | **Featured projects rail** (`projects-rail`)            | The main event. `ProjectCard`s: cover, name, tagline, stage badge, funding progress bar, team avatar stack, open-roles count → `/project/[id]`                                                                                                                          | `MOCK_RESEARCH_PROJECTS` (~6, spanning all stages so every badge appears) |       |
+| 4.4 | **Problem map teaser** (`problem-map-preview`)          | Split: left, stylized map thumbnail with 3–4 pins; right, "Top reported gaps" list (location, category, report count, opportunity score). CTA → `/problem-map`                                                                                                          | Top slice of `MOCK_PROBLEM_REPORTS`                                       |       |
+| 4.5 | **Market insights rail** (`market-insights-rail`)       | `MarketInsightCard`s: headline stat ("Demand for off-grid cold storage up 34% in East Africa"), trend arrow, region + category chips. CTA → `/knowledge-hub`                                                                                                            | `MOCK_MARKET_INSIGHTS`                                                    |       |
+| 4.6 | **Open roles rail** (`open-roles-rail`)                 | "Join a team for equity": role title, project name, skill chips, equity range, commitment tag, **Express interest** button (client toggle → "Interest sent"). Carries pillar 4 until `/talent` exists                                                                   | `MOCK_OPEN_ROLES` joined to projects                                      |       |
+| 4.7 | **Project Immortal banner** (`project-immortal-banner`) | Single full-width featured card, distinct moonshot styling → links `/project-immortal`. **Mention-only**                                                                                                                                                                | Static copy + one image                                                   |       |
+| 4.8 | **Bottom CTA band**                                     | "Have an idea the world needs? Post it." → same post-idea sheet                                                                                                                                                                                                         | none                                                                      |       |
 
 ---
 
@@ -237,25 +237,25 @@ All four are self-contained `"use client"` components exporting their own trigge
 button + bottom sheet (mirrors the store sheets pattern, e.g.
 [deliver-to.tsx](src/components/home/store/sections/deliver-to.tsx) → `address-sheet`).
 
-| # | Sheet | Trigger | Fields | On submit (mock) |
-| --- | --- | --- | --- | --- |
-| 8.1 | `post-idea-sheet` | Landing hero + bottom CTA | idea name, one-line pitch, category select, problem it solves, roles needed (chips) | Confirmation state ("Idea posted — team matching begins"); whether it appends a card to rail 4.3 is §12 Q6 |
-| 8.2 | `report-problem-sheet` | Problem-map header + landing teaser | title, category select, location text, description | Appends to page-local report list |
-| 8.3 | `back-project-sheet` | Project header + Funding tab | pledge amount picker, escrow explainer copy, confirm | Button flips to "Backed"; progress bar does **not** move (§12 Q6) |
-| 8.4 | `apply-role-sheet` | Open-role cards (landing 4.6 + Team tab) | short pitch, skills (chips), commitment select, equity expectation | Button flips to "Interest sent" |
+| #   | Sheet                  | Trigger                                  | Fields                                                                              | On submit (mock)                                                                                           |
+| --- | ---------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 8.1 | `post-idea-sheet`      | Landing hero + bottom CTA                | idea name, one-line pitch, category select, problem it solves, roles needed (chips) | Confirmation state ("Idea posted — team matching begins"); whether it appends a card to rail 4.3 is §12 Q6 |
+| 8.2 | `report-problem-sheet` | Problem-map header + landing teaser      | title, category select, location text, description                                  | Appends to page-local report list                                                                          |
+| 8.3 | `back-project-sheet`   | Project header + Funding tab             | pledge amount picker, escrow explainer copy, confirm                                | Button flips to "Backed"; progress bar does **not** move (§12 Q6)                                          |
+| 8.4 | `apply-role-sheet`     | Open-role cards (landing 4.6 + Team tab) | short pitch, skills (chips), commitment select, equity expectation                  | Button flips to "Interest sent"                                                                            |
 
 ---
 
 ## 9. User journeys
 
-| Journey | Phase-1 behavior | Real or visual? |
-| --- | --- | --- |
-| Browse → open project → read all 5 tabs | Full navigation + tab switching | ✅ Real (mock data) |
-| Express interest in a role | Button → "Interest sent" toggle | ✅ Real, client state only |
-| Back a project | Sheet → confirm → "Backed" | ✅ Real, client state; bar doesn't move |
-| Report a problem | Sheet → appends to local list | ✅ Real, lost on refresh |
-| Founder posts idea | CTA → sheet → confirmation | ✅ Real; rail append is §12 Q6 |
-| AI chips, Proof of Effort, escrow ledger, confidence meter, opportunity scores | Static render | 👁️ Visual-only, backend later |
+| Journey                                                                        | Phase-1 behavior                | Real or visual?                         |
+| ------------------------------------------------------------------------------ | ------------------------------- | --------------------------------------- |
+| Browse → open project → read all 5 tabs                                        | Full navigation + tab switching | ✅ Real (mock data)                     |
+| Express interest in a role                                                     | Button → "Interest sent" toggle | ✅ Real, client state only              |
+| Back a project                                                                 | Sheet → confirm → "Backed"      | ✅ Real, client state; bar doesn't move |
+| Report a problem                                                               | Sheet → appends to local list   | ✅ Real, lost on refresh                |
+| Founder posts idea                                                             | CTA → sheet → confirmation      | ✅ Real; rail append is §12 Q6          |
+| AI chips, Proof of Effort, escrow ledger, confidence meter, opportunity scores | Static render                   | 👁️ Visual-only, backend later           |
 
 ```mermaid
 flowchart LR
@@ -282,26 +282,26 @@ Money / percentages are **display-formatted strings** (matches
 `StoreProduct.price: string` in [src/types/store.ts](src/types/store.ts)); only
 values that drive CSS (progress-bar width, pin position) are numbers.
 
-| Entity | Key fields |
-| --- | --- |
-| `ResearchProject` | `id` (slug, used in URL), `name`, `tagline`, `description`, `category`, `stage` (union below), `coverImageSrc`, `founderId`, `teamMembers[]`, `openRoles[]`, `milestones[]`, `dailyLogs[]`, `fundingRounds[]`, `escrowLedger[]`, `watchersCount`, `dailyLogStreakDays`, `originProblemReportId?` |
-| `TeamMember` | `id`, `name`, `avatarImageSrc`, `role`, `skills[]`, `equityShare` ("4.5%"), `effortHoursLogged`, `joinedDate`, `isFounder?` |
-| `OpenRole` | `id`, `projectId`, `projectName`, `roleTitle`, `skills[]`, `equityRange` ("2–4%"), `commitment` (`"full-time" \| "part-time" \| "hobby"`) |
-| `DailyLog` | `id`, `authorId`, `date`, `videoThumbnailSrc`, `transcriptExcerpt`, `detail`, `aiSummaryChips[]` (`{ kind: "blocker" \| "progress" \| "velocity" \| "suggestion"; label }`), `isEffortVerified` |
-| `Milestone` | `id`, `title`, `description`, `targetDate`, `status` (`"done" \| "current" \| "upcoming"`), `escrowReleaseAmount?` |
-| `FundingRound` | `id`, `type` (`"equity" \| "crowdfunding" \| "venture"`), `goalAmount`, `raisedAmount`, `percentageFunded` (number 0–100, drives bar width), `backersCount`, `closesOnDate`, `status` (`"open" \| "closed"`) |
-| `EscrowLedgerEntry` | `id`, `date`, `description`, `direction` (`"in" \| "out"`), `amount`, `linkedMilestoneId?`, `verificationStatus` (`"verified" \| "pending"`) |
-| `ProblemReport` | `id`, `title`, `category`, `locationLabel`, `countryCode`, `mapPosition` (`{ leftPercent, topPercent }` numbers), `reportCount`, `opportunityScore`, `description`, `reportedDate` |
-| `MarketInsight` | `id`, `headline`, `statValue`, `trendDirection` (`"up" \| "down" \| "flat"`), `region`, `category`, `sourceNote` |
+| Entity              | Key fields                                                                                                                                                                                                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ResearchProject`   | `id` (slug, used in URL), `name`, `tagline`, `description`, `category`, `stage` (union below), `coverImageSrc`, `founderId`, `teamMembers[]`, `openRoles[]`, `milestones[]`, `dailyLogs[]`, `fundingRounds[]`, `escrowLedger[]`, `watchersCount`, `dailyLogStreakDays`, `originProblemReportId?` |
+| `TeamMember`        | `id`, `name`, `avatarImageSrc`, `role`, `skills[]`, `equityShare` ("4.5%"), `effortHoursLogged`, `joinedDate`, `isFounder?`                                                                                                                                                                      |
+| `OpenRole`          | `id`, `projectId`, `projectName`, `roleTitle`, `skills[]`, `equityRange` ("2–4%"), `commitment` (`"full-time" \| "part-time" \| "hobby"`)                                                                                                                                                        |
+| `DailyLog`          | `id`, `authorId`, `date`, `videoThumbnailSrc`, `transcriptExcerpt`, `detail`, `aiSummaryChips[]` (`{ kind: "blocker" \| "progress" \| "velocity" \| "suggestion"; label }`), `isEffortVerified`                                                                                                  |
+| `Milestone`         | `id`, `title`, `description`, `targetDate`, `status` (`"done" \| "current" \| "upcoming"`), `escrowReleaseAmount?`                                                                                                                                                                               |
+| `FundingRound`      | `id`, `type` (`"equity" \| "crowdfunding" \| "venture"`), `goalAmount`, `raisedAmount`, `percentageFunded` (number 0–100, drives bar width), `backersCount`, `closesOnDate`, `status` (`"open" \| "closed"`)                                                                                     |
+| `EscrowLedgerEntry` | `id`, `date`, `description`, `direction` (`"in" \| "out"`), `amount`, `linkedMilestoneId?`, `verificationStatus` (`"verified" \| "pending"`)                                                                                                                                                     |
+| `ProblemReport`     | `id`, `title`, `category`, `locationLabel`, `countryCode`, `mapPosition` (`{ leftPercent, topPercent }` numbers), `reportCount`, `opportunityScore`, `description`, `reportedDate`                                                                                                               |
+| `MarketInsight`     | `id`, `headline`, `statValue`, `trendDirection` (`"up" \| "down" \| "flat"`), `region`, `category`, `sourceNote`                                                                                                                                                                                 |
 
 ```typescript
 export type ProjectStage =
-  | "market-research"
-  | "problem-validation"
-  | "team-building"
-  | "building-mvp"
-  | "raising-funding"
-  | "go-to-market";
+    | "market-research"
+    | "problem-validation"
+    | "team-building"
+    | "building-mvp"
+    | "raising-funding"
+    | "go-to-market";
 ```
 
 Exports: `MOCK_RESEARCH_PROJECTS` (~6, each with embedded team/logs/funding/
@@ -325,12 +325,12 @@ every badge appears), `MOCK_OPEN_ROLES`, `MOCK_MARKET_INSIGHTS`,
 
 ## 11. Deferred surfaces (specced, not built)
 
-| Surface | One-liner | Teased now by |
-| --- | --- | --- |
-| `/research-and-development/talent` ➕ | Browse-people marketplace: person cards, skills, equity asks, availability | Open-roles rail (4.6) + Team tab |
-| `/research-and-development/funding` ➕ | Investor deal-flow: filterable list of raising projects, confidence signals. ⚠️ Overlaps existing creator-side `/studio/pitches` + `/studio/funding` — resolve in §12 Q7 | Funding tab |
-| `/research-and-development/project/[id]/workshop` ➕ | Virtual Workshop: collab space for MVP building (heavy — boards, files, chat) | "Virtual Workshop" copy on Overview |
-| `/research-and-development/new` ➕ | Multi-step idea wizard (mirrors the upload-modal pattern) | Post-idea sheet (8.1) |
+| Surface                                              | One-liner                                                                                                                                                                | Teased now by                       |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| `/research-and-development/talent` ➕                | Browse-people marketplace: person cards, skills, equity asks, availability                                                                                               | Open-roles rail (4.6) + Team tab    |
+| `/research-and-development/funding` ➕               | Investor deal-flow: filterable list of raising projects, confidence signals. ⚠️ Overlaps existing creator-side `/studio/pitches` + `/studio/funding` — resolve in §12 Q7 | Funding tab                         |
+| `/research-and-development/project/[id]/workshop` ➕ | Virtual Workshop: collab space for MVP building (heavy — boards, files, chat)                                                                                            | "Virtual Workshop" copy on Overview |
+| `/research-and-development/new` ➕                   | Multi-step idea wizard (mirrors the upload-modal pattern)                                                                                                                | Post-idea sheet (8.1)               |
 
 ---
 
@@ -372,18 +372,18 @@ every badge appears), `MOCK_OPEN_ROLES`, `MOCK_MARKET_INSIGHTS`,
 
 ### Routes (`src/app/(home)/research-and-development/`)
 
-| File | Change | Status |
-| --- | --- | --- |
-| `page.tsx` | Replace `<h1>` stub with thin shell rendering `<ResearchAndDevelopmentPage />`; keep metadata | ✏️ edit |
-| `project/[id]/page.tsx` | New dynamic route: `generateStaticParams` over `MOCK_RESEARCH_PROJECTS` ids (§3 snippet), `generateMetadata` → `` `${project.name} · R&D` ``, renders `ProjectDetail` | ➕ new |
-| `problem-map/page.tsx` | New shell, metadata "Problem Map · R&D", renders `ProblemMapPage` | ➕ new |
-| `knowledge-hub/page.tsx` | New shell, metadata "Knowledge Hub · R&D", renders `KnowledgeHubPage` | ➕ new |
+| File                     | Change                                                                                                                                                                | Status  |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `page.tsx`               | Replace `<h1>` stub with thin shell rendering `<ResearchAndDevelopmentPage />`; keep metadata                                                                         | ✏️ edit |
+| `project/[id]/page.tsx`  | New dynamic route: `generateStaticParams` over `MOCK_RESEARCH_PROJECTS` ids (§3 snippet), `generateMetadata` → `` `${project.name} · R&D` ``, renders `ProjectDetail` | ➕ new  |
+| `problem-map/page.tsx`   | New shell, metadata "Problem Map · R&D", renders `ProblemMapPage`                                                                                                     | ➕ new  |
+| `knowledge-hub/page.tsx` | New shell, metadata "Knowledge Hub · R&D", renders `KnowledgeHubPage`                                                                                                 | ➕ new  |
 
 ### Data
 
-| File | Change | Status |
-| --- | --- | --- |
-| `src/types/research-and-development.ts` | Entity types (§10) | ➕ new |
+| File                                        | Change                                 | Status |
+| ------------------------------------------- | -------------------------------------- | ------ |
+| `src/types/research-and-development.ts`     | Entity types (§10)                     | ➕ new |
 | `src/lib/research-and-development-mocks.ts` | `MOCK_*` consts — no fetch, no getters | ➕ new |
 
 ### Components (`src/components/home/research-and-development/`)
@@ -433,12 +433,12 @@ sheets/                            🏝️  each self-contained: own trigger + s
 
 ### Layout + assets
 
-| File | Change | Status |
-| --- | --- | --- |
-| [sidebar.tsx](src/components/home/layout/sidebar.tsx) | Per §12 Q8: +2 `ICON_PATHS` entries (`flag`, `school` — SVGs exist), +2 `ROUTES`, +2 items in the R&D section; fix double-space typo | ✏️ edit |
-| [navbar.tsx](src/components/home/layout/navbar.tsx) | `RESEARCH_AND_DEVELOPMENT_SUBPAGES` map (mirrors `ANIME_SUBPAGES`) + `getSubHeader` branch; `startsWith("/research-and-development/")` fallthrough prettifies the last segment for `/project/[id]`, parent label per §12 Q11 | ✏️ edit |
-| [mobile-bottom-nav.tsx](src/components/home/layout/mobile-bottom-nav.tsx) | None — R&D tab + sub-path matching already work | ✅ exists |
-| `public/dummy/world_map.svg` | World outline for the map canvas (§6) | ✅ exists |
+| File                                                                      | Change                                                                                                                                                                                                                       | Status    |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| [sidebar.tsx](src/components/home/layout/sidebar.tsx)                     | Per §12 Q8: +2 `ICON_PATHS` entries (`flag`, `school` — SVGs exist), +2 `ROUTES`, +2 items in the R&D section; fix double-space typo                                                                                         | ✏️ edit   |
+| [navbar.tsx](src/components/home/layout/navbar.tsx)                       | `RESEARCH_AND_DEVELOPMENT_SUBPAGES` map (mirrors `ANIME_SUBPAGES`) + `getSubHeader` branch; `startsWith("/research-and-development/")` fallthrough prettifies the last segment for `/project/[id]`, parent label per §12 Q11 | ✏️ edit   |
+| [mobile-bottom-nav.tsx](src/components/home/layout/mobile-bottom-nav.tsx) | None — R&D tab + sub-path matching already work                                                                                                                                                                              | ✅ exists |
+| `public/dummy/world_map.svg`                                              | World outline for the map canvas (§6)                                                                                                                                                                                        | ✅ exists |
 
 ### Build order
 
