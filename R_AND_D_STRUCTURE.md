@@ -454,3 +454,33 @@ sheets/                            🏝️  each self-contained: own trigger + s
 3. **Problem map + knowledge hub** — independent of each other and of phase 2; all
    assets already in place (`world_map.svg` committed), so ordering is purely
    scope-driven.
+
+---
+
+## 14. Placeholder assets needed
+
+Current build reuses generic furniture/anime dummies (`category_*`, `spotlight_image*`,
+`pathways_*`, `machinery.avif`, `thumbnail_image*`, `profile_image_*`) verified via grep
+over `research-and-development-mocks.ts` — resolves §12 Q10: **reused, nothing new
+added yet**. World map (§6) is the only R&D-dedicated asset in repo.
+
+If/when dedicated R&D art is wanted, save under `public/dummy/` using the
+`rnd_<purpose>_NN.avif` pattern (zero-padded 2-digit index, matches this doc's asset
+naming; keeps R&D art `grep`-able and separate from the store/anime dummy sets):
+
+| Purpose                                                                                                                                               | Used by                                                         | Count             | Save as                                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------- |
+| Pipeline hero background (wide, lab/blueprint/concept-to-consumer mood)                                                                               | `pipeline-hero.tsx` (§4.1)                                      | 1                 | `rnd_hero_bg_01.avif`                                                   |
+| Project cover art, one per mock project stage (solar/cold-chain, water filtration, agri-drone, modular construction, circuit/hardware, generic build) | `MOCK_RESEARCH_PROJECTS[].coverImageSrc` (§4.3, §5)             | 6                 | `rnd_project_cover_01.avif` … `rnd_project_cover_06.avif`               |
+| Project Immortal banner (distinct moonshot styling, darker/futuristic)                                                                                | `project-immortal-banner.tsx` (§4.7)                            | 1                 | `rnd_immortal_banner_01.avif`                                           |
+| Daily-log video thumbnails (in-progress build shots — workshop, prototype, whiteboard)                                                                | `MOCK_RESEARCH_PROJECTS[].dailyLogs[].videoThumbnailSrc` (§5.2) | 8–12              | `rnd_log_thumb_01.avif` … `rnd_log_thumb_12.avif`                       |
+| Problem-map pin category icons (optional — category-coded markers instead of plain dots)                                                              | `problem-map-canvas.tsx` (§6)                                   | per category (~6) | `rnd_pin_<category>.svg` e.g. `rnd_pin_water.svg`, `rnd_pin_energy.svg` |
+| Knowledge-hub trend/insight art (optional — small illustrative accents, not charts)                                                                   | `market-insight-card.tsx` (§4.5, §7)                            | 6–8               | `rnd_insight_art_01.avif` … `rnd_insight_art_08.avif`                   |
+
+Not needed as new assets — existing dummies already cover these adequately:
+
+- **Avatars** — `profile_image_01..12.avif` / `profile_photo_girl.avif` are generic
+  enough for `TeamMember.avatarImageSrc`; no R&D-specific portraits required.
+- **World map** — `world_map.svg` already committed and R&D-specific.
+- **Icons** (`flag`, `school`, `science`, etc.) — already in `/public/icons`, cover
+  every nav/section glyph this doc calls for.
