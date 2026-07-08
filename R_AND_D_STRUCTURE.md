@@ -20,14 +20,14 @@ only what survives.
 
 | Piece                 | Location                                                                                       | State                                                                                         |
 | --------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| R&D route stub        | [page.tsx](<src/app/(home)/research-and-development/page.tsx>)                                 | ✅ exists — renders only `<h1>Research and Development</h1>`, metadata title "R&D"            |
-| Component dir         | [src/components/home/research-and-development/](src/components/home/research-and-development/) | ✅ exists — **empty**, waiting for this plan                                                  |
+| R&D route stub        | [page.tsx](<src/app/(home)/research-and-development/page.tsx>)                                 | ✅ **built** — thin shell renders `<ResearchAndDevelopmentPage />`, metadata title "R&D"      |
+| Component dir         | [src/components/home/research-and-development/](src/components/home/research-and-development/) | ✅ **built** — all 32 planned files present (pages/rails/cards/sections/sheets)               |
 | Sidebar nav item      | [sidebar.tsx:293](src/components/home/layout/sidebar.tsx#L293)                                 | ✅ wired — label "R&D", iconKey `science`; also in `COLLAPSED_NAV_CONFIG` (line 354)          |
-| Sidebar section title | [sidebar.tsx:298](src/components/home/layout/sidebar.tsx#L298)                                 | ✅ exists — `"Research and  Development"` (⚠️ double-space typo), holds only PROJECT IMMORTAL |
+| Sidebar section title | [sidebar.tsx:298](src/components/home/layout/sidebar.tsx#L298)                                 | ✅ **built** — typo fixed (single space), section now holds Problem Map, Knowledge Hub, PROJECT IMMORTAL |
 | Mobile bottom nav     | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36)               | ✅ wired — R&D tab, sub-path matching already works                                           |
-| Navbar breadcrumb     | [navbar.tsx:28-40](src/components/home/layout/navbar.tsx#L28-L40)                              | ✖ no R&D branch — `getSubHeader` handles only `/anime/*` and `/store/*`; sub-routes need one  |
+| Navbar breadcrumb     | [navbar.tsx:28-40](src/components/home/layout/navbar.tsx#L28-L40)                              | ✅ **built** — `RESEARCH_AND_DEVELOPMENT_SUBPAGES` map + `getSubHeader` branch, fallthrough prettifies `/project/[id]`, parent label "R&D" |
 | Project Immortal stub | [page.tsx](<src/app/(home)/project-immortal/page.tsx>)                                         | ✅ exists — `<h1>` stub; **mention-only in this doc**, gets its own structure doc later       |
-| This doc              | `R_AND_D_STRUCTURE.md`                                                                         | was empty — you are reading the plan                                                          |
+| This doc              | `R_AND_D_STRUCTURE.md`                                                                         | plan fully implemented — see checked-off sections below                                       |
 
 Pattern donors elsewhere in the repo:
 
@@ -72,10 +72,10 @@ flowchart LR
 ## 3. Route map
 
 ```text
-/research-and-development                        ✅ build now — pipeline hub landing
-/research-and-development/project/[id]           ✅ build now — project detail (5 tabs)
-/research-and-development/problem-map            ✅ build now — Civic Pulse map + reports
-/research-and-development/knowledge-hub          ✅ build now — market intelligence
+/research-and-development                        ✅ built — pipeline hub landing
+/research-and-development/project/[id]           ✅ built — project detail (5 tabs)
+/research-and-development/problem-map            ✅ built — Civic Pulse map + reports
+/research-and-development/knowledge-hub          ✅ built — market intelligence
 --- later (specced in §11, teased by rails/sheets now) ---
 /research-and-development/talent                 ➕ later — browse people trading skills for equity
 /research-and-development/funding                ➕ later — investor deal-flow view
@@ -83,13 +83,13 @@ flowchart LR
 /research-and-development/new                    ➕ later — multi-step idea wizard (sheet for now)
 ```
 
-| Route                                      | Purpose                                                                       | Phase    |
-| ------------------------------------------ | ----------------------------------------------------------------------------- | -------- |
-| `/research-and-development`                | Landing: whole pipeline story + rails into every sub-surface                  | ✅ now   |
-| `/research-and-development/project/[id]`   | One project's full lifecycle: overview, daily logs, team, funding, governance | ✅ now   |
-| `/research-and-development/problem-map`    | World map of reported infrastructure gaps → opportunity heat map              | ✅ now   |
-| `/research-and-development/knowledge-hub`  | Where demand is highest: insights, demand leaderboard, trends                 | ✅ now   |
-| `/talent`, `/funding`, `/workshop`, `/new` | See §11                                                                       | ➕ later |
+| Route                                      | Purpose                                                                       | Phase      |
+| ------------------------------------------ | ----------------------------------------------------------------------------- | ---------- |
+| `/research-and-development`                | Landing: whole pipeline story + rails into every sub-surface                  | ✅ built   |
+| `/research-and-development/project/[id]`   | One project's full lifecycle: overview, daily logs, team, funding, governance | ✅ built   |
+| `/research-and-development/problem-map`    | World map of reported infrastructure gaps → opportunity heat map              | ✅ built   |
+| `/research-and-development/knowledge-hub`  | Where demand is highest: insights, demand leaderboard, trends                 | ✅ built   |
+| `/talent`, `/funding`, `/workshop`, `/new` | See §11                                                                       | ➕ later   |
 
 Route decisions baked in:
 
@@ -336,35 +336,33 @@ every badge appears), `MOCK_OPEN_ROLES`, `MOCK_MARKET_INSIGHTS`,
 
 ## 12. Decisions for you
 
-1. **Stage taxonomy** — is the 6-stage condensation of your 8 pillars right
+1. **Stage taxonomy** — ✅ resolved: the 6-stage taxonomy shipped as specced
    (`market-research`, `problem-validation`, `team-building`, `building-mvp`,
-   `raising-funding`, `go-to-market`), and are the labels right? These become badges
-   everywhere.
+   `raising-funding`, `go-to-market`) — `ProjectStage` in
+   `src/types/research-and-development.ts` matches exactly.
 2. **Map rendering** — ✅ resolved: static `public/dummy/world_map.svg` (committed) +
    percent-positioned pins. Zero dependencies, matches phase. Real map library stays a
    backend-phase question.
-3. **Post-idea** — sheet now (recommended) or dedicated `/new` wizard route from day
-   one?
-4. **Tabs** — client-state only (recommended) or URL-addressable (`?tab=` / nested
-   segments) so tabs are shareable/linkable?
-5. **Local-mutation storage** — page-local state (lost on nav), or a context provider
-   (like `studio-videos-context.tsx`) so posted ideas / reports / toggles survive
-   in-session navigation? Affects 8.1–8.4.
-6. **Honest mock interactions** — should "Back this project" move the progress bar
-   locally, and should a posted idea appear in the featured rail? Or is
-   confirmation-only honest enough for the mock phase (recommended)?
-7. **Relationship to `/studio/pitches` + `/studio/funding`** — creator-side money
-   surfaces already exist; does the Funding tab cross-link them, or stay independent
-   until backend?
-8. **Sidebar sub-links** — add Problem Map + Knowledge Hub under the "Research and
-   Development" section (icons `flag` + `school` already exist)? And fix the
-   `"Research and  Development"` double-space typo while editing that block?
-9. **Project Immortal** — stays a standalone `/project-immortal` route (recommended,
-   per locked decision) or becomes mock project #1 inside `MOCK_RESEARCH_PROJECTS`?
-10. **Placeholder imagery** — reuse furniture/anime dummies (recommended for now) or
-    add a few R&D-themed `.avif`s to `/public/dummy` first?
-11. **Breadcrumb parent label** — `"R&D"` (matches sidebar/bottom-nav label,
-    recommended) vs full `"Research and Development"`?
+3. **Post-idea** — ✅ resolved: shipped as a sheet (`post-idea-sheet.tsx`), not a
+   dedicated route. `/new` wizard stays deferred (§11).
+4. **Tabs** — ✅ resolved: client-state only. `project-tabs.tsx` is the 🏝️ client
+   island; no `?tab=` / nested-segment addressing was added.
+5. **Local-mutation storage** — ⚠️ unresolved — not verified by this pass. Check
+   whether sheets/toggles use page-local state or a context provider before relying on
+   in-session persistence.
+6. **Honest mock interactions** — ⚠️ unresolved — not verified by this pass. Check
+   whether "Back this project" moves the progress bar and whether posted ideas append
+   to the featured rail.
+7. **Relationship to `/studio/pitches` + `/studio/funding`** — ⚠️ unresolved — not
+   verified by this pass. Check whether the Funding tab cross-links those surfaces.
+8. **Sidebar sub-links** — ✅ resolved: Problem Map (`flag`) + Knowledge Hub (`school`)
+   added under the section; double-space typo fixed.
+9. **Project Immortal** — ✅ resolved: stayed a standalone `/project-immortal` route
+   (mention-only banner links out, not folded into `MOCK_RESEARCH_PROJECTS`).
+10. **Placeholder imagery** — ⚠️ unresolved — not verified by this pass. Check whether
+    reused furniture/anime dummies or new R&D-themed assets were added.
+11. **Breadcrumb parent label** — ✅ resolved: `"R&D"` (short form), per
+    `navbar.tsx`'s `getSubHeader` branch.
 
 ---
 
@@ -374,21 +372,25 @@ every badge appears), `MOCK_OPEN_ROLES`, `MOCK_MARKET_INSIGHTS`,
 
 | File                     | Change                                                                                                                                                                | Status  |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `page.tsx`               | Replace `<h1>` stub with thin shell rendering `<ResearchAndDevelopmentPage />`; keep metadata                                                                         | ✏️ edit |
-| `project/[id]/page.tsx`  | New dynamic route: `generateStaticParams` over `MOCK_RESEARCH_PROJECTS` ids (§3 snippet), `generateMetadata` → `` `${project.name} · R&D` ``, renders `ProjectDetail` | ➕ new  |
-| `problem-map/page.tsx`   | New shell, metadata "Problem Map · R&D", renders `ProblemMapPage`                                                                                                     | ➕ new  |
-| `knowledge-hub/page.tsx` | New shell, metadata "Knowledge Hub · R&D", renders `KnowledgeHubPage`                                                                                                 | ➕ new  |
+| `page.tsx`               | Replace `<h1>` stub with thin shell rendering `<ResearchAndDevelopmentPage />`; keep metadata                                                                         | ✅ done |
+| `project/[id]/page.tsx`  | New dynamic route: `generateStaticParams` over `MOCK_RESEARCH_PROJECTS` ids (§3 snippet), `generateMetadata` → `` `${project.name} · R&D` ``, renders `ProjectDetail` | ✅ done |
+| `problem-map/page.tsx`   | New shell, metadata "Problem Map · R&D", renders `ProblemMapPage`                                                                                                     | ✅ done |
+| `knowledge-hub/page.tsx` | New shell, metadata "Knowledge Hub · R&D", renders `KnowledgeHubPage`                                                                                                 | ✅ done |
 
 ### Data
 
 | File                                        | Change                                 | Status |
 | ------------------------------------------- | -------------------------------------- | ------ |
-| `src/types/research-and-development.ts`     | Entity types (§10)                     | ➕ new |
-| `src/lib/research-and-development-mocks.ts` | `MOCK_*` consts — no fetch, no getters | ➕ new |
+| `src/types/research-and-development.ts`     | Entity types (§10)                     | ✅ done |
+| `src/lib/research-and-development-mocks.ts` | `MOCK_*` consts — no fetch, no getters | ✅ done |
 
 ### Components (`src/components/home/research-and-development/`)
 
 All server components unless marked 🏝️ (client island — keep small per `CLAUDE.md`).
+
+✅ **All 32 files below are built.** Two extras beyond this plan also exist:
+`sections/request-to-join-button.tsx` (client island pulled out of `project-header.tsx`)
+and `sections/daily-logs-feed.tsx` (feed logic split out of `daily-logs-tab.tsx`).
 
 ```text
 pages/
@@ -435,8 +437,8 @@ sheets/                            🏝️  each self-contained: own trigger + s
 
 | File                                                                      | Change                                                                                                                                                                                                                       | Status    |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| [sidebar.tsx](src/components/home/layout/sidebar.tsx)                     | Per §12 Q8: +2 `ICON_PATHS` entries (`flag`, `school` — SVGs exist), +2 `ROUTES`, +2 items in the R&D section; fix double-space typo                                                                                         | ✏️ edit   |
-| [navbar.tsx](src/components/home/layout/navbar.tsx)                       | `RESEARCH_AND_DEVELOPMENT_SUBPAGES` map (mirrors `ANIME_SUBPAGES`) + `getSubHeader` branch; `startsWith("/research-and-development/")` fallthrough prettifies the last segment for `/project/[id]`, parent label per §12 Q11 | ✏️ edit   |
+| [sidebar.tsx](src/components/home/layout/sidebar.tsx)                     | Per §12 Q8: +2 `ICON_PATHS` entries (`flag`, `school` — SVGs exist), +2 `ROUTES`, +2 items in the R&D section; fix double-space typo                                                                                         | ✅ done   |
+| [navbar.tsx](src/components/home/layout/navbar.tsx)                       | `RESEARCH_AND_DEVELOPMENT_SUBPAGES` map (mirrors `ANIME_SUBPAGES`) + `getSubHeader` branch; `startsWith("/research-and-development/")` fallthrough prettifies the last segment for `/project/[id]`, parent label per §12 Q11 | ✅ done   |
 | [mobile-bottom-nav.tsx](src/components/home/layout/mobile-bottom-nav.tsx) | None — R&D tab + sub-path matching already work                                                                                                                                                                              | ✅ exists |
 | `public/dummy/world_map.svg`                                              | World outline for the map canvas (§6)                                                                                                                                                                                        | ✅ exists |
 
