@@ -97,11 +97,11 @@ flowchart LR
 - Gate: server-side role check on every `/admin/*` request. Client redirect for
   non-staff is UX sugar only.
 - Roles (start simple, expand later):
-  | Role | Can do |
-  | ----------- | --------------------------------------------------- |
-  | `moderator` | review content queue, approve/reject anime episodes |
-  | `admin` | everything moderator + user management, settings |
-  | (later) | `finance`, `support`, `rights` — scoped roles |
+    | Role        | Can do                                              |
+    | ----------- | --------------------------------------------------- |
+    | `moderator` | review content queue, approve/reject anime episodes |
+    | `admin`     | everything moderator + user management, settings    |
+    | (later)     | `finance`, `support`, `rights` — scoped roles       |
 
 ---
 

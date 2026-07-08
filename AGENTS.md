@@ -102,8 +102,7 @@ Do not rely on implicit success or component-level `try/catch` to model failure 
 
 ```typescript
 type ActionResponse<T> =
-    | { success: true; data: T }
-    | { success: false; error: { code: string; message: string } };
+    { success: true; data: T } | { success: false; error: { code: string; message: string } };
 ```
 
 Combine with Pattern 1: lift `ActionResponse<T>` into the component's `DashboardState`-style union so the UI for each error code is explicit and exhaustive.
