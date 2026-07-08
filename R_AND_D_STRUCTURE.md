@@ -18,16 +18,16 @@ only what survives.
 
 ## 1. What exists today
 
-| Piece                 | Location                                                                                       | State                                                                                         |
-| --------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| R&D route stub        | [page.tsx](<src/app/(home)/research-and-development/page.tsx>)                                 | ✅ **built** — thin shell renders `<ResearchAndDevelopmentPage />`, metadata title "R&D"      |
-| Component dir         | [src/components/home/research-and-development/](src/components/home/research-and-development/) | ✅ **built** — all 32 planned files present (pages/rails/cards/sections/sheets)               |
-| Sidebar nav item      | [sidebar.tsx:293](src/components/home/layout/sidebar.tsx#L293)                                 | ✅ wired — label "R&D", iconKey `science`; also in `COLLAPSED_NAV_CONFIG` (line 354)          |
-| Sidebar section title | [sidebar.tsx:298](src/components/home/layout/sidebar.tsx#L298)                                 | ✅ **built** — typo fixed (single space), section now holds Problem Map, Knowledge Hub, PROJECT IMMORTAL |
-| Mobile bottom nav     | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36)               | ✅ wired — R&D tab, sub-path matching already works                                           |
+| Piece                 | Location                                                                                       | State                                                                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| R&D route stub        | [page.tsx](<src/app/(home)/research-and-development/page.tsx>)                                 | ✅ **built** — thin shell renders `<ResearchAndDevelopmentPage />`, metadata title "R&D"                                                   |
+| Component dir         | [src/components/home/research-and-development/](src/components/home/research-and-development/) | ✅ **built** — all 32 planned files present (pages/rails/cards/sections/sheets)                                                            |
+| Sidebar nav item      | [sidebar.tsx:293](src/components/home/layout/sidebar.tsx#L293)                                 | ✅ wired — label "R&D", iconKey `science`; also in `COLLAPSED_NAV_CONFIG` (line 354)                                                       |
+| Sidebar section title | [sidebar.tsx:298](src/components/home/layout/sidebar.tsx#L298)                                 | ✅ **built** — typo fixed (single space), section now holds Problem Map, Knowledge Hub, PROJECT IMMORTAL                                   |
+| Mobile bottom nav     | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36)               | ✅ wired — R&D tab, sub-path matching already works                                                                                        |
 | Navbar breadcrumb     | [navbar.tsx:28-40](src/components/home/layout/navbar.tsx#L28-L40)                              | ✅ **built** — `RESEARCH_AND_DEVELOPMENT_SUBPAGES` map + `getSubHeader` branch, fallthrough prettifies `/project/[id]`, parent label "R&D" |
-| Project Immortal stub | [page.tsx](<src/app/(home)/project-immortal/page.tsx>)                                         | ✅ exists — `<h1>` stub; **mention-only in this doc**, gets its own structure doc later       |
-| This doc              | `R_AND_D_STRUCTURE.md`                                                                         | plan fully implemented — see checked-off sections below                                       |
+| Project Immortal stub | [page.tsx](<src/app/(home)/project-immortal/page.tsx>)                                         | ✅ exists — `<h1>` stub; **mention-only in this doc**, gets its own structure doc later                                                    |
+| This doc              | `R_AND_D_STRUCTURE.md`                                                                         | plan fully implemented — see checked-off sections below                                                                                    |
 
 Pattern donors elsewhere in the repo:
 
@@ -83,13 +83,13 @@ flowchart LR
 /research-and-development/new                    ➕ later — multi-step idea wizard (sheet for now)
 ```
 
-| Route                                      | Purpose                                                                       | Phase      |
-| ------------------------------------------ | ----------------------------------------------------------------------------- | ---------- |
-| `/research-and-development`                | Landing: whole pipeline story + rails into every sub-surface                  | ✅ built   |
-| `/research-and-development/project/[id]`   | One project's full lifecycle: overview, daily logs, team, funding, governance | ✅ built   |
-| `/research-and-development/problem-map`    | World map of reported infrastructure gaps → opportunity heat map              | ✅ built   |
-| `/research-and-development/knowledge-hub`  | Where demand is highest: insights, demand leaderboard, trends                 | ✅ built   |
-| `/talent`, `/funding`, `/workshop`, `/new` | See §11                                                                       | ➕ later   |
+| Route                                      | Purpose                                                                       | Phase    |
+| ------------------------------------------ | ----------------------------------------------------------------------------- | -------- |
+| `/research-and-development`                | Landing: whole pipeline story + rails into every sub-surface                  | ✅ built |
+| `/research-and-development/project/[id]`   | One project's full lifecycle: overview, daily logs, team, funding, governance | ✅ built |
+| `/research-and-development/problem-map`    | World map of reported infrastructure gaps → opportunity heat map              | ✅ built |
+| `/research-and-development/knowledge-hub`  | Where demand is highest: insights, demand leaderboard, trends                 | ✅ built |
+| `/talent`, `/funding`, `/workshop`, `/new` | See §11                                                                       | ➕ later |
 
 Route decisions baked in:
 
@@ -379,8 +379,8 @@ every badge appears), `MOCK_OPEN_ROLES`, `MOCK_MARKET_INSIGHTS`,
 
 ### Data
 
-| File                                        | Change                                 | Status |
-| ------------------------------------------- | -------------------------------------- | ------ |
+| File                                        | Change                                 | Status  |
+| ------------------------------------------- | -------------------------------------- | ------- |
 | `src/types/research-and-development.ts`     | Entity types (§10)                     | ✅ done |
 | `src/lib/research-and-development-mocks.ts` | `MOCK_*` consts — no fetch, no getters | ✅ done |
 
