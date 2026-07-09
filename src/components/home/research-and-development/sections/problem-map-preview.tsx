@@ -15,6 +15,7 @@ export default function ProblemMapPreview({ reports }: { reports: ProblemReport[
           width={1200}
           height={600}
           alt=""
+          priority
           className="aspect-2/1 h-auto w-full"
         />
         {reports.map((report) => (
