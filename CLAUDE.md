@@ -14,8 +14,8 @@ Next.js 16 (App Router) on React 19 with the React Compiler. Turbopack is used f
 pnpm dev                              # next dev --turbopack (https via localhost.pem)
 pnpm build                            # next build --turbopack
 pnpm start                            # production server
-pnpm lint                             # eslint (next/core-web-vitals + next/typescript)
-pnpm lint:fix                         # oxlint --fix (type-aware oxlint, see .oxlintrc.json)
+pnpm lint                             # oxlint (type-aware, see .oxlintrc.json)
+pnpm lint:fix                         # oxlint --fix
 pnpm fmt                              # oxfmt write
 pnpm fmt:check                        # oxfmt check (CI)
 pnpm test                             # vitest run (unit tests, run once)
@@ -213,4 +213,4 @@ If a name needs a comment to explain what it holds, the name is wrong — rename
 
 - TLS dev certs (`localhost.pem`, `localhost-key.pem`) are committed and used by `next dev`. Don't delete or regenerate without reason.
 - `pnpm-workspace.yaml` pins `@types/react`/`@types/react-dom` overrides and allows `sharp` + `unrs-resolver` builds. Don't remove these — they prevent React 19 type drift.
-- ESLint flat config (`eslint.config.mjs`) ignores `.next/`, `node_modules/`, `out/`, `build/`, `next-env.d.ts`. `lint:fix` uses **oxlint**, not eslint — they are not interchangeable.
+- `pnpm lint` and `pnpm lint:fix` both run **oxlint** (`.oxlintrc.json`), not ESLint. There is no separate eslint script — an `eslint.config.mjs` may still exist but is not wired to any package.json script.
