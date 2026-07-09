@@ -448,7 +448,7 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       "ClearFlow designs a stackable filtration module that bolts onto existing tube wells and community water points, removing arsenic and biological contaminants without electricity. Modules share one molded housing so villages can add capacity as they grow, and spent filter media swaps out in minutes with no tools. The team is validating the problem household by household in Khulna Division before freezing the filter-media mix.",
     category: "Water & Sanitation",
     stage: "problem-validation",
-    coverImageSrc: "/dummy/category_03.avif",
+    coverImageSrc: "/dummy/rnd_project_cover_02.avif",
     founderId: "farhana-rahman",
     teamMembers: [
       {
@@ -673,7 +673,7 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       "AgriFly packages a crop-scouting drone as a kit: composite airframe, open flight firmware, and a multispectral camera tuned for terraced smallholdings that imported services refuse to fly. Kits are assembled and repaired by local technicians, keeping the service price within reach of farms under two hectares. The reference design has flown; the team is now hiring the pilots and supply-chain hands to run the first ten-farm trial.",
     category: "Precision Agriculture",
     stage: "team-building",
-    coverImageSrc: "/dummy/spotlight_image01.avif",
+    coverImageSrc: "/dummy/rnd_project_cover_03.avif",
     founderId: "mateo-villanueva",
     teamMembers: [
       {
@@ -1239,7 +1239,7 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       "Sankofa Circuits replaces open-pit cable burning with a safe, mechanized recovery line: licensed collectors feed sorted e-waste into shredding, separation, and hydrometallurgical recovery stages that out-pay the informal burn yards while eliminating the dioxin exposure around them. The pilot shed already runs at two tonnes a week; the venture round now open funds the full line and a smelter offtake agreement.",
     category: "E-Waste & Recycling",
     stage: "raising-funding",
-    coverImageSrc: "/dummy/category_07.avif",
+    coverImageSrc: "/dummy/rnd_project_cover_05.avif",
     founderId: "kwame-mensah",
     teamMembers: [
       {
@@ -1525,7 +1525,7 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       "ThermaSure builds reusable pharma shippers that hold 2–8°C for 120 hours using phase-change panels, with embedded telemetry that writes a tamper-proof temperature log for every leg of the journey. Couriers return the shippers into a refurbishment loop, cutting per-shipment packaging cost below single-use gel packs. With three specialty-pharma contracts signed and production at scale, the team is now launching into the Nordic markets.",
     category: "Medical Logistics",
     stage: "go-to-market",
-    coverImageSrc: "/dummy/spotlight_image02.avif",
+    coverImageSrc: "/dummy/rnd_project_cover_06.avif",
     founderId: "elise-moreau",
     teamMembers: [
       {
