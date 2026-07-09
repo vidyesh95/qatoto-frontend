@@ -8,14 +8,14 @@ import type { ProblemReport } from "@/types/research-and-development";
 // CTA into the full problem-map page. Pins are sized by opportunity score.
 export default function ProblemMapPreview({ reports }: { reports: ProblemReport[] }) {
   return (
-    <section className="grid items-center gap-6 px-4 md:grid-cols-2 lg:px-6">
+    <section className="grid grid-cols-1 items-center gap-6 px-4 md:grid-cols-2 lg:px-6">
       <div className="relative rounded-2xl bg-[#00696E]/5 p-4">
         <Image
           src="/dummy/world_map.svg"
           width={1200}
           height={600}
           alt=""
-          className="aspect-[2/1] h-auto w-full"
+          className="aspect-2/1 h-auto w-full"
         />
         {reports.map((report) => (
           <span

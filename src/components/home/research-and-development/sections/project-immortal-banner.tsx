@@ -6,7 +6,7 @@ import Link from "next/link";
 // landing so the moonshot reads as its own thing, not another project card.
 export default function ProjectImmortalBanner() {
   return (
-    <section className="mx-4 rounded-2xl bg-gradient-to-r from-[#0B1F21] via-[#00393C] to-[#00696E] p-6 text-white md:p-10 lg:mx-6">
+    <section className="mx-4 rounded-2xl bg-linear-to-r from-[#0B1F21] via-[#00393C] to-[#00696E] p-6 text-white md:p-10 lg:mx-6">
       <Image
         src="/icons/diamond_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
         width={24}
