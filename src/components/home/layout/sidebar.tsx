@@ -36,6 +36,14 @@ const ICON_PATHS = {
     active: "/icons/school_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/school_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  group: {
+    active: "/icons/group_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/group_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  paid: {
+    active: "/icons/paid_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/paid_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   selfImprovement: {
     static: "/icons/self_improvement_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
@@ -91,6 +99,8 @@ const ROUTES = {
   researchAndDevelopment: "/research-and-development",
   problemMap: "/research-and-development/problem-map",
   knowledgeHub: "/research-and-development/knowledge-hub",
+  talent: "/research-and-development/talent",
+  funding: "/research-and-development/funding",
   projectImmortal: "/project-immortal",
   library: "/library",
   history: "/history",
@@ -309,6 +319,8 @@ const NAVIGATION_CONFIG: NavSection[] = [
     items: [
       { path: ROUTES.problemMap, label: "Problem Map", iconKey: "flag" },
       { path: ROUTES.knowledgeHub, label: "Knowledge Hub", iconKey: "school" },
+      { path: ROUTES.talent, label: "Talent", iconKey: "group" },
+      { path: ROUTES.funding, label: "Funding", iconKey: "paid" },
       { path: ROUTES.projectImmortal, label: "PROJECT IMMORTAL", iconKey: "selfImprovement" },
     ],
     hasDivider: true,

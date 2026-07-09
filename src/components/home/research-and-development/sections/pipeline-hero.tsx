@@ -1,11 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import PostIdeaSheet from "@/components/home/research-and-development/sheets/post-idea-sheet";
-
 // Static hero band for the R&D landing — deliberately not a carousel. Pitches
 // the whole concept-to-consumer pipeline in one paragraph with two CTAs: the
-// post-idea sheet and an anchor down to the featured-projects rail.
+// post-idea wizard and an anchor down to the featured-projects rail.
 export default function PipelineHero() {
   return (
     <section className="relative mx-4 overflow-hidden rounded-2xl lg:mx-6">
@@ -19,7 +17,12 @@ export default function PipelineHero() {
           the finished product to customers worldwide — one pipeline, end to end.
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <PostIdeaSheet />
+          <Link
+            href="/research-and-development/new"
+            className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Post your idea
+          </Link>
           <Link
             href="#featured-projects"
             className="cursor-pointer rounded-full border border-white/70 px-4 py-2 text-sm font-medium text-white"

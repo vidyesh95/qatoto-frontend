@@ -35,6 +35,14 @@ export default function OverviewTab({ project, relatedInsights, originReport }: 
           </div>
         </section>
       )}
+      <div>
+        <Link
+          href={`/research-and-development/project/${project.id}/workshop`}
+          className="inline-flex items-center gap-2 rounded-full bg-[#00696E]/10 px-3 py-1.5 text-xs font-medium text-[#00696E] transition hover:bg-[#00696E]/20"
+        >
+          Open the Virtual Workshop — boards, files, and team chat →
+        </Link>
+      </div>
       {originReport && (
         <Link
           href="/research-and-development/problem-map"

@@ -18,6 +18,9 @@ const ANIME_SUBPAGES: Record<string, string> = {
 const RESEARCH_AND_DEVELOPMENT_SUBPAGES: Record<string, string> = {
   "/research-and-development/problem-map": "Problem Map",
   "/research-and-development/knowledge-hub": "Knowledge Hub",
+  "/research-and-development/talent": "Talent",
+  "/research-and-development/funding": "Funding",
+  "/research-and-development/new": "Post an Idea",
 };
 
 function prettifySlug(slug: string): string {

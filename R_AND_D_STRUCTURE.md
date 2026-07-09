@@ -76,11 +76,10 @@ flowchart LR
 /research-and-development/project/[id]           ✅ built — project detail (5 tabs)
 /research-and-development/problem-map            ✅ built — Civic Pulse map + reports
 /research-and-development/knowledge-hub          ✅ built — market intelligence
---- later (specced in §11, teased by rails/sheets now) ---
-/research-and-development/talent                 ➕ later — browse people trading skills for equity
-/research-and-development/funding                ➕ later — investor deal-flow view
-/research-and-development/project/[id]/workshop  ➕ later — Virtual Workshop collab space
-/research-and-development/new                    ➕ later — multi-step idea wizard (sheet for now)
+/research-and-development/talent                 ✅ built — browse people trading skills for equity
+/research-and-development/funding                ✅ built — investor deal-flow view
+/research-and-development/project/[id]/workshop  ✅ built — Virtual Workshop collab space
+/research-and-development/new                    ✅ built — multi-step idea wizard
 ```
 
 | Route                                      | Purpose                                                                       | Phase    |
@@ -89,7 +88,7 @@ flowchart LR
 | `/research-and-development/project/[id]`   | One project's full lifecycle: overview, daily logs, team, funding, governance | ✅ built |
 | `/research-and-development/problem-map`    | World map of reported infrastructure gaps → opportunity heat map              | ✅ built |
 | `/research-and-development/knowledge-hub`  | Where demand is highest: insights, demand leaderboard, trends                 | ✅ built |
-| `/talent`, `/funding`, `/workshop`, `/new` | See §11                                                                       | ➕ later |
+| `/talent`, `/funding`, `/workshop`, `/new` | See §11 — all four now built                                                  | ✅ built |
 
 Route decisions baked in:
 
@@ -323,14 +322,14 @@ every badge appears), `MOCK_OPEN_ROLES`, `MOCK_MARKET_INSIGHTS`,
 
 ---
 
-## 11. Deferred surfaces (specced, not built)
+## 11. Deferred surfaces — ✅ all four now built
 
-| Surface                                              | One-liner                                                                                                                                                                | Teased now by                       |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
-| `/research-and-development/talent` ➕                | Browse-people marketplace: person cards, skills, equity asks, availability                                                                                               | Open-roles rail (4.6) + Team tab    |
-| `/research-and-development/funding` ➕               | Investor deal-flow: filterable list of raising projects, confidence signals. ⚠️ Overlaps existing creator-side `/studio/pitches` + `/studio/funding` — resolve in §12 Q7 | Funding tab                         |
-| `/research-and-development/project/[id]/workshop` ➕ | Virtual Workshop: collab space for MVP building (heavy — boards, files, chat)                                                                                            | "Virtual Workshop" copy on Overview |
-| `/research-and-development/new` ➕                   | Multi-step idea wizard (mirrors the upload-modal pattern)                                                                                                                | Post-idea sheet (8.1)               |
+| Surface                                              | Shipped as                                                                                                                                                                                                                                                                                                    |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/research-and-development/talent` ✅                | `pages/talent-page.tsx`: commitment + skill-category filter chips (🏝️ `talent-filter-grid`), `TalentProfileCard` grid over new `MOCK_TALENT_PROFILES` (9 people), invite toggle (🏝️ `invite-talent-button`), open-roles cross-rail                                                                          |
+| `/research-and-development/funding` ✅               | `pages/funding-page.tsx`: deals derived from open rounds of `MOCK_RESEARCH_PROJECTS`, trimmed to a serializable `FundingDeal` view; round-type + stage filters (🏝️ `funding-deal-filter-grid`); card reuses `BackProjectSheet` + confidence meter fed by `MOCK_INVESTOR_CONFIDENCE_BY_PROJECT_ID`. `/studio/pitches` + `/studio/funding` remain untouched h1 stubs (§12 Q7 cross-link still open) |
+| `/research-and-development/project/[id]/workshop` ✅ | `pages/workshop-page.tsx`: boards / files / chat as server panels behind 🏝️ `workshop-tabs` (project-tabs pattern); own `generateStaticParams`; data in new `src/lib/research-and-development-workshop-mocks.ts`; linked from a chip on the Overview tab                                                     |
+| `/research-and-development/new` ✅                   | `wizard/new-idea-wizard-page.tsx` (🏝️) + 4 step files: stepper + draft-patch pattern (duplicated from studio upload-modal, not imported); landing hero + bottom CTAs now link here; `post-idea-sheet.tsx` kept in repo intentionally unwired                                                                 |
 
 ---
 
@@ -343,8 +342,10 @@ every badge appears), `MOCK_OPEN_ROLES`, `MOCK_MARKET_INSIGHTS`,
 2. **Map rendering** — ✅ resolved: static `public/dummy/world_map.svg` (committed) +
    percent-positioned pins. Zero dependencies, matches phase. Real map library stays a
    backend-phase question.
-3. **Post-idea** — ✅ resolved: shipped as a sheet (`post-idea-sheet.tsx`), not a
-   dedicated route. `/new` wizard stays deferred (§11).
+3. **Post-idea** — ✅ resolved (updated): the sheet has been promoted to the `/new`
+   wizard page (§11). Landing hero + bottom CTAs now link to
+   `/research-and-development/new`; `post-idea-sheet.tsx` stays in the repo,
+   intentionally unwired, as the compact-form donor.
 4. **Tabs** — ✅ resolved: client-state only. `project-tabs.tsx` is the 🏝️ client
    island; no `?tab=` / nested-segment addressing was added.
 5. **Local-mutation storage** — ⚠️ unresolved — not verified by this pass. Check
@@ -353,10 +354,13 @@ every badge appears), `MOCK_OPEN_ROLES`, `MOCK_MARKET_INSIGHTS`,
 6. **Honest mock interactions** — ⚠️ unresolved — not verified by this pass. Check
    whether "Back this project" moves the progress bar and whether posted ideas append
    to the featured rail.
-7. **Relationship to `/studio/pitches` + `/studio/funding`** — ⚠️ unresolved — not
-   verified by this pass. Check whether the Funding tab cross-links those surfaces.
-8. **Sidebar sub-links** — ✅ resolved: Problem Map (`flag`) + Knowledge Hub (`school`)
-   added under the section; double-space typo fixed.
+7. **Relationship to `/studio/pitches` + `/studio/funding`** — ⚠️ partially resolved:
+   the R&D `/funding` deal-flow view is built standalone; both studio routes remain
+   untouched h1 stubs and nothing cross-links them yet. Revisit when the studio
+   surfaces get real content.
+8. **Sidebar sub-links** — ✅ resolved (updated): Problem Map (`flag`), Knowledge Hub
+   (`school`), Talent (`group`), Funding (`paid`) all under the R&D section;
+   double-space typo fixed.
 9. **Project Immortal** — ✅ resolved: stayed a standalone `/project-immortal` route
    (mention-only banner links out, not folded into `MOCK_RESEARCH_PROJECTS`).
 10. **Placeholder imagery** — ⚠️ unresolved — not verified by this pass. Check whether
@@ -454,6 +458,47 @@ sheets/                            🏝️  each self-contained: own trigger + s
 3. **Problem map + knowledge hub** — independent of each other and of phase 2; all
    assets already in place (`world_map.svg` committed), so ordering is purely
    scope-driven.
+
+### Deferred-surfaces build (§11) — files added ✅
+
+Routes (each a thin shell; workshop carries its own `generateStaticParams`):
+`talent/page.tsx`, `funding/page.tsx`, `project/[id]/workshop/page.tsx`, `new/page.tsx`.
+
+Data: `TalentProfile` + `Workshop*` types appended to
+`src/types/research-and-development.ts`; `MOCK_TALENT_PROFILES` +
+`MOCK_INVESTOR_CONFIDENCE_BY_PROJECT_ID` appended to the mocks file;
+`src/lib/research-and-development-workshop-mocks.ts` new (`MOCK_PROJECT_WORKSHOPS`,
+one per project, member ids resolve against each project's roster).
+
+```text
+pages/
+├── talent-page.tsx                     header + filter grid + open-roles cross-rail
+├── funding-page.tsx                    derives FundingDeal views from open rounds
+└── workshop-page.tsx                   header + tabs island over 3 server panels; notFound on bad slug
+cards/
+├── talent-profile-card.tsx             avatar, headline role, availability pill, equity ask, invite button
+└── funding-deal-card.tsx               cover→detail link, round badge, raise bar, confidence meter, BackProjectSheet
+sections/
+├── talent-filter-grid.tsx         🏝️  commitment + skill-category chips, client filter
+├── invite-talent-button.tsx       🏝️  invite toggle (mirrors request-to-join-button)
+├── funding-deal-filter-grid.tsx   🏝️  round-type + stage chips, client filter
+├── workshop-tabs.tsx              🏝️  boards/files/chat union, exhaustive switch (project-tabs clone)
+├── workshop-board.tsx                  static kanban columns, priority dots, assignee avatars
+├── workshop-files.tsx                  file rows, lettered kind glyphs (no new icon assets)
+└── workshop-chat.tsx                   static transcript + decorative composer (no dead input)
+wizard/                            🏝️  new-idea-wizard-page.tsx holds the only "use client"
+├── new-idea-wizard-page.tsx            step index + draft-patch + stepper (duplicated from upload-modal)
+├── wizard-shared.ts                    NewIdeaDraft type + field options (mirrors post-idea-sheet)
+├── idea-basics-step.tsx                name, pitch, category
+├── problem-and-market-step.tsx         problem, region, demand evidence
+├── roles-needed-step.tsx               role chips, equity offer, commitment
+└── review-and-submit-step.tsx          read-only draft recap
+```
+
+Modified: `pipeline-hero.tsx` + `research-and-development-page.tsx` (CTAs → `/new`),
+`overview-tab.tsx` (Virtual Workshop link chip), `sidebar.tsx` (+`group`/`paid` icons,
++Talent/Funding items), `navbar.tsx` (+Talent/Funding/"Post an Idea" labels; workshop
+breadcrumb comes from the `startsWith` fallback).
 
 ---
 

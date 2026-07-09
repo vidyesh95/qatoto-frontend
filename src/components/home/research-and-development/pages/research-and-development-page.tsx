@@ -5,7 +5,7 @@ import PipelineHero from "@/components/home/research-and-development/sections/pi
 import PipelineStagesStrip from "@/components/home/research-and-development/sections/pipeline-stages-strip";
 import ProblemMapPreview from "@/components/home/research-and-development/sections/problem-map-preview";
 import ProjectImmortalBanner from "@/components/home/research-and-development/sections/project-immortal-banner";
-import PostIdeaSheet from "@/components/home/research-and-development/sheets/post-idea-sheet";
+import Link from "next/link";
 import {
   MOCK_MARKET_INSIGHTS,
   MOCK_OPEN_ROLES,
@@ -37,7 +37,12 @@ export default function ResearchAndDevelopmentPage() {
           Post it and Qatoto lines up the demand data, teammates, and backers to build it.
         </p>
         <div className="mt-4 flex justify-center">
-          <PostIdeaSheet triggerLabel="Post your idea" />
+          <Link
+            href="/research-and-development/new"
+            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+          >
+            Post your idea
+          </Link>
         </div>
       </section>
     </div>
