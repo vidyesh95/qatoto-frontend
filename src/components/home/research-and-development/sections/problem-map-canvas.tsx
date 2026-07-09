@@ -14,6 +14,19 @@ const buildCategoryChipClassName = (isActive: boolean) =>
       : "border-[#CAC4D0]/60 text-foreground hover:bg-black/5"
   }`;
 
+// Category-coded pin markers (§14 R_AND_D_STRUCTURE.md). "Education" icon is
+// reserved for a future category — none of the current mock reports use it.
+const PIN_ICON_SRC_BY_CATEGORY: Record<string, string> = {
+  "Water & Sanitation": "/dummy/icons/rnd_pin_water.svg",
+  "Precision Agriculture": "/dummy/icons/rnd_pin_agriculture.svg",
+  Healthcare: "/dummy/icons/rnd_pin_health.svg",
+  "Medical Logistics": "/dummy/icons/rnd_pin_health.svg",
+  "Cold Chain": "/dummy/icons/rnd_pin_energy.svg",
+  Housing: "/dummy/icons/rnd_pin_infrastructure.svg",
+  "E-Waste & Recycling": "/dummy/icons/rnd_pin_infrastructure.svg",
+};
+const DEFAULT_PIN_ICON_SRC = "/dummy/icons/rnd_pin_infrastructure.svg";
+
 // Civic Pulse interactive island — owns the page-local report list, the
 // category filter, and the pin/card selection sync. Pins are percent-positioned
 // buttons over a static world-map image (no map library, mock phase); reports
@@ -81,12 +94,13 @@ export default function ProblemMapCanvas() {
                 : report.opportunityScore >= 60
                   ? "size-4"
                   : "size-3";
-            const pinColorClassName =
+            const pinRingClassName =
               report.opportunityScore >= 80
-                ? "bg-red-500"
+                ? "ring-red-500"
                 : report.opportunityScore >= 60
-                  ? "bg-amber-500"
-                  : "bg-[#00696E]";
+                  ? "ring-amber-500"
+                  : "ring-[#00696E]";
+            const pinIconSrc = PIN_ICON_SRC_BY_CATEGORY[report.category] ?? DEFAULT_PIN_ICON_SRC;
 
             return (
               <button
@@ -99,10 +113,18 @@ export default function ProblemMapCanvas() {
                   left: `${report.mapPosition.leftPercent}%`,
                   top: `${report.mapPosition.topPercent}%`,
                 }}
-                className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full ${pinSizeClassName} ${pinColorClassName} ${
-                  isSelected ? "z-10 ring-2 ring-[#00696E] ring-offset-2" : ""
+                className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer overflow-hidden rounded-full bg-white ring-2 ${pinSizeClassName} ${pinRingClassName} ${
+                  isSelected ? "z-10 ring-[3px] ring-offset-2" : ""
                 }`}
-              />
+              >
+                <Image
+                  src={pinIconSrc}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="h-full w-full object-cover"
+                />
+              </button>
             );
           })}
         </div>

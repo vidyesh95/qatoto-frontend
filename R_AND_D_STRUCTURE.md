@@ -482,11 +482,37 @@ If/when the rest of the dedicated R&D art is wanted, save under `public/dummy/` 
 `rnd_<purpose>_NN.avif` pattern (zero-padded 2-digit index, matches this doc's asset
 naming; keeps R&D art `grep`-able and separate from the store/anime dummy sets):
 
+Problem-map pin category icons are done — 6 SVGs wired into `problem-map-canvas.tsx`,
+replacing the plain colored dots:
+
+| Category (mock)                              | Icon                                          | File                          |
+| ----------------------------------------------- | ------------------------------------------------ | -------------------------------- |
+| Water & Sanitation                            | 💧                                            | `rnd_pin_water.svg`           |
+| Precision Agriculture                         | 🌾                                            | `rnd_pin_agriculture.svg`     |
+| Healthcare, Medical Logistics                 | ⚕️                                             | `rnd_pin_health.svg`          |
+| Cold Chain                                    | ⚡                                             | `rnd_pin_energy.svg`          |
+| Housing, E-Waste & Recycling, default fallback | 🏗️                                            | `rnd_pin_infrastructure.svg`  |
+| *(reserved, no current category maps to it)*  | 🎓                                            | `rnd_pin_education.svg`       |
+
+Pin markers keep the opportunity-score signal as a colored ring (red ≥80 / amber ≥60 /
+teal below) around the category icon instead of a solid fill color; size still scales
+`size-3`/`size-4`/`size-5` by score. Mapping lives in
+`PIN_ICON_SRC_BY_CATEGORY` in `problem-map-canvas.tsx` — extend it if new report
+categories are added to the mocks.
+
+All 6 SVGs were shipped at a 240×240 fixed canvas with no `viewBox` (couldn't be
+resized without clipping) and ~8-decimal path precision (100–250 paths each, 39–178 KB
+files) — oversized for a ~12–20px map pin. Fixed in place: added `viewBox="0 0 240 240"`,
+shrunk the `width`/`height` attrs to 32, and rounded path/transform coordinates to 2
+decimals. Cut 23–33% of file size with no visible difference at pin scale, and the pins
+now scale correctly instead of clipping.
+
+Remaining placeholder assets:
+
 | Purpose                                                                                                                                               | Used by                                                         | Count             | Save as                                                                 |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------- |
 | Project Immortal banner (distinct moonshot styling, darker/futuristic)                                                                                | `project-immortal-banner.tsx` (§4.7)                            | 1                 | `rnd_immortal_banner_01.avif`                                           |
 | Daily-log video thumbnails (in-progress build shots — workshop, prototype, whiteboard)                                                                | `MOCK_RESEARCH_PROJECTS[].dailyLogs[].videoThumbnailSrc` (§5.2) | 8–12              | `rnd_log_thumb_01.avif` … `rnd_log_thumb_12.avif`                       |
-| Problem-map pin category icons (optional — category-coded markers instead of plain dots)                                                              | `problem-map-canvas.tsx` (§6)                                   | per category (~6) | `rnd_pin_<category>.svg` e.g. `rnd_pin_water.svg`, `rnd_pin_energy.svg` |
 | Knowledge-hub trend/insight art (optional — small illustrative accents, not charts)                                                                   | `market-insight-card.tsx` (§4.5, §7)                            | 6–8               | `rnd_insight_art_01.avif` … `rnd_insight_art_08.avif`                   |
 
 Not needed as new assets — existing dummies already cover these adequately:
