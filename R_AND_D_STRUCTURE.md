@@ -462,15 +462,15 @@ sheets/                            🏝️  each self-contained: own trigger + s
 Hero + all 6 planned project covers now live in repo, wired in place of their generic
 placeholders:
 
-| Purpose                                 | Used by                                                              | File                        | Status                                        |
-| ----------------------------------------- | ----------------------------------------------------------------------- | ----------------------------- | ------------------------------------------------ |
-| Pipeline hero background                | `pipeline-hero.tsx` (§4.1)                                           | `rnd_hero_bg_01.avif`       | ✅ done — replaced `spotlight_image01.avif`   |
-| Project cover — SolarChill Cold Storage | `MOCK_RESEARCH_PROJECTS[0]` (`solar-cold-storage`)                   | `rnd_project_cover_01.avif` | ✅ done — replaced `machinery.avif`           |
-| Project cover — ClearFlow Modular Purification | `MOCK_RESEARCH_PROJECTS[1]` (`modular-water-purification`)    | `rnd_project_cover_02.avif` | ✅ done — replaced `category_03.avif`         |
-| Project cover — AgriFly Drone Kits      | `MOCK_RESEARCH_PROJECTS[2]` (`agricultural-drone-kits`)              | `rnd_project_cover_03.avif` | ✅ done — replaced `spotlight_image01.avif`   |
-| Project cover — Bayanihan Build Panels  | `MOCK_RESEARCH_PROJECTS[3]` (`prefab-housing-panels`)                | `rnd_project_cover_04.avif` | ✅ done — replaced `pathways_2.avif`          |
-| Project cover — Sankofa Circuits Recovery | `MOCK_RESEARCH_PROJECTS[4]` (`e-waste-recycling-line`)             | `rnd_project_cover_05.avif` | ✅ done — replaced `category_07.avif`         |
-| Project cover — ThermaSure Med Packaging | `MOCK_RESEARCH_PROJECTS[5]` (`medical-cold-chain-packaging`)        | `rnd_project_cover_06.avif` | ✅ done — replaced `spotlight_image02.avif`   |
+| Purpose                                        | Used by                                                      | File                        | Status                                      |
+| ---------------------------------------------- | ------------------------------------------------------------ | --------------------------- | ------------------------------------------- |
+| Pipeline hero background                       | `pipeline-hero.tsx` (§4.1)                                   | `rnd_hero_bg_01.avif`       | ✅ done — replaced `spotlight_image01.avif` |
+| Project cover — SolarChill Cold Storage        | `MOCK_RESEARCH_PROJECTS[0]` (`solar-cold-storage`)           | `rnd_project_cover_01.avif` | ✅ done — replaced `machinery.avif`         |
+| Project cover — ClearFlow Modular Purification | `MOCK_RESEARCH_PROJECTS[1]` (`modular-water-purification`)   | `rnd_project_cover_02.avif` | ✅ done — replaced `category_03.avif`       |
+| Project cover — AgriFly Drone Kits             | `MOCK_RESEARCH_PROJECTS[2]` (`agricultural-drone-kits`)      | `rnd_project_cover_03.avif` | ✅ done — replaced `spotlight_image01.avif` |
+| Project cover — Bayanihan Build Panels         | `MOCK_RESEARCH_PROJECTS[3]` (`prefab-housing-panels`)        | `rnd_project_cover_04.avif` | ✅ done — replaced `pathways_2.avif`        |
+| Project cover — Sankofa Circuits Recovery      | `MOCK_RESEARCH_PROJECTS[4]` (`e-waste-recycling-line`)       | `rnd_project_cover_05.avif` | ✅ done — replaced `category_07.avif`       |
+| Project cover — ThermaSure Med Packaging       | `MOCK_RESEARCH_PROJECTS[5]` (`medical-cold-chain-packaging`) | `rnd_project_cover_06.avif` | ✅ done — replaced `spotlight_image02.avif` |
 
 Resolves §12 Q10: **hero + all 6 project covers now dedicated R&D art.** Remaining
 generic placeholders in use elsewhere on the surface — `thumbnail_image*` (daily-log
@@ -485,14 +485,14 @@ naming; keeps R&D art `grep`-able and separate from the store/anime dummy sets):
 Problem-map pin category icons are done — 6 SVGs wired into `problem-map-canvas.tsx`,
 replacing the plain colored dots:
 
-| Category (mock)                              | Icon                                          | File                          |
-| ----------------------------------------------- | ------------------------------------------------ | -------------------------------- |
-| Water & Sanitation                            | 💧                                            | `rnd_pin_water.svg`           |
-| Precision Agriculture                         | 🌾                                            | `rnd_pin_agriculture.svg`     |
-| Healthcare, Medical Logistics                 | ⚕️                                             | `rnd_pin_health.svg`          |
-| Cold Chain                                    | ⚡                                             | `rnd_pin_energy.svg`          |
-| Housing, E-Waste & Recycling, default fallback | 🏗️                                            | `rnd_pin_infrastructure.svg`  |
-| *(reserved, no current category maps to it)*  | 🎓                                            | `rnd_pin_education.svg`       |
+| Category (mock)                                | Icon | File                         |
+| ---------------------------------------------- | ---- | ---------------------------- |
+| Water & Sanitation                             | 💧   | `rnd_pin_water.svg`          |
+| Precision Agriculture                          | 🌾   | `rnd_pin_agriculture.svg`    |
+| Healthcare, Medical Logistics                  | ⚕️   | `rnd_pin_health.svg`         |
+| Cold Chain                                     | ⚡   | `rnd_pin_energy.svg`         |
+| Housing, E-Waste & Recycling, default fallback | 🏗️   | `rnd_pin_infrastructure.svg` |
+| _(reserved, no current category maps to it)_   | 🎓   | `rnd_pin_education.svg`      |
 
 Pin markers keep the opportunity-score signal as a colored ring (red ≥80 / amber ≥60 /
 teal below) around the category icon instead of a solid fill color; size still scales
@@ -509,11 +509,11 @@ now scale correctly instead of clipping.
 
 Remaining placeholder assets:
 
-| Purpose                                                                                                                                               | Used by                                                         | Count             | Save as                                                                 |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------- |
-| Project Immortal banner (distinct moonshot styling, darker/futuristic)                                                                                | `project-immortal-banner.tsx` (§4.7)                            | 1                 | `rnd_immortal_banner_01.avif`                                           |
-| Daily-log video thumbnails (in-progress build shots — workshop, prototype, whiteboard)                                                                | `MOCK_RESEARCH_PROJECTS[].dailyLogs[].videoThumbnailSrc` (§5.2) | 8–12              | `rnd_log_thumb_01.avif` … `rnd_log_thumb_12.avif`                       |
-| Knowledge-hub trend/insight art (optional — small illustrative accents, not charts)                                                                   | `market-insight-card.tsx` (§4.5, §7)                            | 6–8               | `rnd_insight_art_01.avif` … `rnd_insight_art_08.avif`                   |
+| Purpose                                                                                | Used by                                                         | Count | Save as                                               |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----- | ----------------------------------------------------- |
+| Project Immortal banner (distinct moonshot styling, darker/futuristic)                 | `project-immortal-banner.tsx` (§4.7)                            | 1     | `rnd_immortal_banner_01.avif`                         |
+| Daily-log video thumbnails (in-progress build shots — workshop, prototype, whiteboard) | `MOCK_RESEARCH_PROJECTS[].dailyLogs[].videoThumbnailSrc` (§5.2) | 8–12  | `rnd_log_thumb_01.avif` … `rnd_log_thumb_12.avif`     |
+| Knowledge-hub trend/insight art (optional — small illustrative accents, not charts)    | `market-insight-card.tsx` (§4.5, §7)                            | 6–8   | `rnd_insight_art_01.avif` … `rnd_insight_art_08.avif` |
 
 Not needed as new assets — existing dummies already cover these adequately:
 
