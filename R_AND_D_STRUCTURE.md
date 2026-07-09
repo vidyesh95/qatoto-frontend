@@ -459,19 +459,28 @@ sheets/                            🏝️  each self-contained: own trigger + s
 
 ## 14. Placeholder assets needed
 
-Current build reuses generic furniture/anime dummies (`category_*`, `spotlight_image*`,
-`pathways_*`, `machinery.avif`, `thumbnail_image*`, `profile_image_*`) verified via grep
-over `research-and-development-mocks.ts` — resolves §12 Q10: **reused, nothing new
-added yet**. World map (§6) is the only R&D-dedicated asset in repo.
+3 of the 6 planned R&D-dedicated project images now live in repo, wired in place of
+their generic placeholders:
 
-If/when dedicated R&D art is wanted, save under `public/dummy/` using the
+| Purpose                                 | Used by                                                             | File                        | Status                                      |
+| ---------------------------------------- | -------------------------------------------------------------------- | ---------------------------- | --------------------------------------------- |
+| Pipeline hero background                | `pipeline-hero.tsx` (§4.1)                                          | `rnd_hero_bg_01.avif`        | ✅ done — replaced `spotlight_image01.avif` |
+| Project cover — SolarChill Cold Storage | `MOCK_RESEARCH_PROJECTS[0].coverImageSrc` (`solar-cold-storage`)    | `rnd_project_cover_01.avif`  | ✅ done — replaced `machinery.avif`         |
+| Project cover — Bayanihan Build Panels  | `MOCK_RESEARCH_PROJECTS[3].coverImageSrc` (`prefab-housing-panels`) | `rnd_project_cover_04.avif`  | ✅ done — replaced `pathways_2.avif`        |
+
+Remaining generic placeholders still in use — `category_*`, `spotlight_image*`,
+`pathways_*`, `thumbnail_image*`, `profile_image_*` — verified via grep over
+`research-and-development-mocks.ts`. Partially resolves §12 Q10: **3 of 6 project
+covers + hero now dedicated; rest still generic.** World map (§6) remains the only
+other R&D-dedicated asset.
+
+If/when the rest of the dedicated R&D art is wanted, save under `public/dummy/` using the
 `rnd_<purpose>_NN.avif` pattern (zero-padded 2-digit index, matches this doc's asset
 naming; keeps R&D art `grep`-able and separate from the store/anime dummy sets):
 
 | Purpose                                                                                                                                               | Used by                                                         | Count             | Save as                                                                 |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------- |
-| Pipeline hero background (wide, lab/blueprint/concept-to-consumer mood)                                                                               | `pipeline-hero.tsx` (§4.1)                                      | 1                 | `rnd_hero_bg_01.avif`                                                   |
-| Project cover art, one per mock project stage (solar/cold-chain, water filtration, agri-drone, modular construction, circuit/hardware, generic build) | `MOCK_RESEARCH_PROJECTS[].coverImageSrc` (§4.3, §5)             | 6                 | `rnd_project_cover_01.avif` … `rnd_project_cover_06.avif`               |
+| Project cover art, remaining stages (water filtration, agri-drone, circuit/hardware, generic build)                                                   | `MOCK_RESEARCH_PROJECTS[].coverImageSrc` (§4.3, §5)             | 4                 | `rnd_project_cover_02.avif`, `_03`, `_05`, `_06`                        |
 | Project Immortal banner (distinct moonshot styling, darker/futuristic)                                                                                | `project-immortal-banner.tsx` (§4.7)                            | 1                 | `rnd_immortal_banner_01.avif`                                           |
 | Daily-log video thumbnails (in-progress build shots — workshop, prototype, whiteboard)                                                                | `MOCK_RESEARCH_PROJECTS[].dailyLogs[].videoThumbnailSrc` (§5.2) | 8–12              | `rnd_log_thumb_01.avif` … `rnd_log_thumb_12.avif`                       |
 | Problem-map pin category icons (optional — category-coded markers instead of plain dots)                                                              | `problem-map-canvas.tsx` (§6)                                   | per category (~6) | `rnd_pin_<category>.svg` e.g. `rnd_pin_water.svg`, `rnd_pin_energy.svg` |

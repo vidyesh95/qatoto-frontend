@@ -215,7 +215,7 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       "SolarChill builds pay-per-crate cold rooms at produce aggregation points between Nakuru farms and Nairobi wholesale markets. Each unit pairs locally serviceable vapor-compression refrigeration with an oversized solar array and thermal storage, so vendors keep produce fresh through multi-day grid outages without diesel. The team is currently sizing demand: how many crates per market, at what price per night, and which cooperatives will anchor the first three sites.",
     category: "Cold Chain",
     stage: "market-research",
-    coverImageSrc: "/dummy/machinery.avif",
+    coverImageSrc: "/dummy/rnd_project_cover_01.avif",
     founderId: "wanjiru-kamau",
     teamMembers: [
       {
@@ -941,7 +941,7 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       "Bayanihan Build makes fiber-cement composite wall panels that interlock like oversized bricks, letting a trained four-person crew erect a typhoon-rated home shell in three days instead of three months. Panels are pressed at small regional plants sited near rebuild zones, cutting freight cost and lead time out of government housing programs. The pilot line is running; the demo house in Tacloban is going up now.",
     category: "Modular Construction",
     stage: "building-mvp",
-    coverImageSrc: "/dummy/pathways_2.avif",
+    coverImageSrc: "/dummy/rnd_project_cover_04.avif",
     founderId: "maricel-santos",
     teamMembers: [
       {

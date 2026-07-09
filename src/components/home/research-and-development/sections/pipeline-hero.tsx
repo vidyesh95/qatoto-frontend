@@ -10,7 +10,7 @@ export default function PipelineHero() {
   return (
     <section className="relative mx-4 overflow-hidden rounded-2xl lg:mx-6">
       <Image
-        src="/dummy/spotlight_image01.avif"
+        src="/dummy/rnd_hero_bg_01.avif"
         fill
         sizes="100vw"
         alt=""
