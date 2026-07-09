@@ -80,7 +80,7 @@ export default function FundingTab({ project }: { project: ResearchProject }) {
         <section className="space-y-3">
           <h3 className="text-sm font-medium tracking-wide xl:text-lg">Past rounds</h3>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[28rem] text-left text-sm">
+            <table className="w-full min-w-md text-left text-sm">
               <thead>
                 <tr className="border-b border-border text-xs text-muted-foreground">
                   <th className="py-2 pr-4 font-medium">Type</th>
