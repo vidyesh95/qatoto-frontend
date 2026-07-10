@@ -11,6 +11,7 @@ import { HandlePanel } from "@/components/home/account/panels/handle-panel";
 import { SocialLinkPanel } from "@/components/home/account/panels/social-link-panel";
 import { EmailCredentialPanel } from "@/components/home/account/panels/email-credential-panel";
 import { ChangePasswordPanel } from "@/components/home/account/panels/change-password-panel";
+import { PasskeysPanel } from "@/components/home/account/panels/passkeys-panel";
 import { PhoneNumberPanel } from "@/components/home/account/panels/phone-number-panel";
 import { SwitchAccountPanel } from "@/components/home/account/menus/switch-account-menu";
 
@@ -73,6 +74,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     | "link-github"
     | "email-credential"
     | "change-password"
+    | "passkeys"
     | "switch-account"
   >("list");
 
@@ -170,6 +172,10 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     return <ChangePasswordPanel onBack={() => setView("list")} />;
   }
 
+  if (view === "passkeys") {
+    return <PasskeysPanel onBack={() => setView("list")} />;
+  }
+
   const isGoogleLinked = accountsByProvider?.has("google") ?? false;
   const isGithubLinked = accountsByProvider?.has("github") ?? false;
   const hasCredential = accountsByProvider?.has("credential") ?? false;
@@ -195,6 +201,11 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       icon: "/icons/lock_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       onClick: () => setView(hasCredential ? "change-password" : "email-credential"),
       disabled: !isLinkedAccountsReady,
+    },
+    {
+      label: "Passkeys",
+      icon: "/icons/passkey_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      onClick: () => setView("passkeys"),
     },
     {
       label: "Set handle",

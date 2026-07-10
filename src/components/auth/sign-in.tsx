@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { signIn } from "@/lib/auth-client";
 
 const handleGoogleSignIn = () =>
@@ -10,16 +11,37 @@ const handleGoogleSignIn = () =>
 const handleGitHubSignIn = () =>
   signIn.social({ provider: "github", callbackURL: window.location.origin });
 
+type PasskeySignInState =
+  | { status: "idle" }
+  | { status: "authenticating" }
+  | { status: "error"; message: string };
+
 export default function SignIn() {
   const router = useRouter();
+  const [passkeySignInState, setPasskeySignInState] = useState<PasskeySignInState>({
+    status: "idle",
+  });
 
   // WebAuthn ceremony runs in the browser; success sets the session cookie (§5d /passkey/*).
   // autoFill:false → explicit modal prompt on click (autoFill is for conditional-UI autofill).
-  const handlePasskeySignIn = () =>
-    signIn.passkey({
-      autoFill: false,
-      fetchOptions: { onSuccess: () => router.push("/") },
-    });
+  const handlePasskeySignIn = async () => {
+    setPasskeySignInState({ status: "authenticating" });
+    const { error } = await signIn.passkey({ autoFill: false });
+    if (error) {
+      // Dismissing the OS prompt is a normal outcome, not an error to surface.
+      if ("code" in error && error.code === "AUTH_CANCELLED") {
+        setPasskeySignInState({ status: "idle" });
+        return;
+      }
+      setPasskeySignInState({
+        status: "error",
+        message:
+          "Couldn't sign in with a passkey. Make sure this device has one, or use another method.",
+      });
+      return;
+    }
+    router.push("/");
+  };
 
   return (
     <main className="flex min-h-screen w-screen flex-col">
@@ -68,8 +90,9 @@ export default function SignIn() {
         <button
           type={"button"}
           onClick={handlePasskeySignIn}
+          disabled={passkeySignInState.status === "authenticating"}
           className={
-            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-[#00696E]"
+            "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-[#00696E] disabled:cursor-not-allowed disabled:opacity-50"
           }
         >
           <Image
@@ -78,8 +101,15 @@ export default function SignIn() {
             width={18}
             height={18}
           />
-          <span>Sign in with Passkey</span>
+          <span>
+            {passkeySignInState.status === "authenticating"
+              ? "Waiting for your device…"
+              : "Sign in with Passkey"}
+          </span>
         </button>
+        {passkeySignInState.status === "error" ? (
+          <p className="px-4 text-center text-xs text-red-600">{passkeySignInState.message}</p>
+        ) : null}
         <div className="flex items-center gap-4 px-4 text-[#BEC8C9]">
           <hr className="flex-1" />
           <span className="text-xs">or</span>

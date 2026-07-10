@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "@/lib/auth-client";
 
 const handleGoogleSignIn = () =>
@@ -18,6 +18,24 @@ export default function SignIn() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // Conditional-UI passkey autofill: pends silently until the user picks a
+  // saved passkey from the email field's autofill dropdown (autoComplete
+  // includes "webauthn"). Never resolves with an error worth surfacing — the
+  // user simply ignoring the dropdown is the normal case.
+  useEffect(() => {
+    let isActive = true;
+    void (async () => {
+      const isConditionalUiAvailable =
+        await window.PublicKeyCredential?.isConditionalMediationAvailable?.();
+      if (!isActive || !isConditionalUiAvailable) return;
+      const { error } = await signIn.passkey({ autoFill: true });
+      if (isActive && !error) router.push("/");
+    })();
+    return () => {
+      isActive = false;
+    };
+  }, [router]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -65,6 +83,8 @@ export default function SignIn() {
                 type="email"
                 id="email"
                 aria-label="Email"
+                // eslint-disable-next-line jsx-a11y/autocomplete-valid -- "webauthn" is the WebAuthn conditional-UI token (HTML spec); the rule's token list predates it
+                autoComplete="username webauthn"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="host@domain.com"
