@@ -19,7 +19,7 @@ export default function ProjectImmortalBanner() {
         Qatoto&apos;s open, long-horizon research program into extending healthy human life.
       </p>
       <Link
-        href="/project-immortal"
+        href="/research-and-development/projects/project-immortal"
         className="mt-6 inline-block cursor-pointer rounded-full bg-white px-4 py-2 text-sm font-medium text-[#00696E]"
       >
         Explore Project Immortal

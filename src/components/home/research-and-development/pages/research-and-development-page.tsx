@@ -1,6 +1,7 @@
 import MarketInsightsRail from "@/components/home/research-and-development/rails/market-insights-rail";
 import OpenRolesRail from "@/components/home/research-and-development/rails/open-roles-rail";
 import ProjectsRail from "@/components/home/research-and-development/rails/projects-rail";
+import LifecycleRolesStrip from "@/components/home/research-and-development/sections/lifecycle-roles-strip";
 import PipelineHero from "@/components/home/research-and-development/sections/pipeline-hero";
 import PipelineStagesStrip from "@/components/home/research-and-development/sections/pipeline-stages-strip";
 import ProblemMapPreview from "@/components/home/research-and-development/sections/problem-map-preview";
@@ -14,8 +15,9 @@ import {
 } from "@/lib/research-and-development-mocks";
 
 // R&D landing page body. Server component — composes the pipeline story top to
-// bottom (§4 of R_AND_D_STRUCTURE.md): hero, stage strip, featured projects,
-// problem-map teaser, market insights, open roles, moonshot banner, bottom CTA.
+// bottom (§4 of R_AND_D_STRUCTURE.md): hero, stage strip, lifecycle roles,
+// featured projects, problem-map teaser, market insights, open roles, moonshot
+// banner, bottom CTA.
 export default function ResearchAndDevelopmentPage() {
   const topReportedGaps = MOCK_PROBLEM_REPORTS.toSorted(
     (firstReport, secondReport) => secondReport.opportunityScore - firstReport.opportunityScore,
@@ -26,6 +28,7 @@ export default function ResearchAndDevelopmentPage() {
     <div className="space-y-8 pb-8">
       <PipelineHero />
       <PipelineStagesStrip />
+      <LifecycleRolesStrip />
       <ProjectsRail projects={MOCK_RESEARCH_PROJECTS} />
       <ProblemMapPreview reports={topReportedGaps} />
       <MarketInsightsRail insights={featuredInsights} />

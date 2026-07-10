@@ -1,10 +1,7 @@
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Project Immortal",
-  description: "Project Immortal page for Qatoto",
-};
-
-export default function ProjectImmortal() {
-  return <h1>Project Immortal</h1>;
+// Project Immortal moved under the R&D surface. Keep the old URL working for
+// bookmarks and links that predate the move.
+export default function ProjectImmortalLegacyRoute() {
+  redirect("/research-and-development/projects/project-immortal");
 }

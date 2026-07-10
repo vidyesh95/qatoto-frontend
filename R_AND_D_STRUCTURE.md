@@ -26,7 +26,7 @@ only what survives.
 | Sidebar section title | [sidebar.tsx:298](src/components/home/layout/sidebar.tsx#L298)                                 | ✅ **built** — typo fixed (single space), section now holds Problem Map, Knowledge Hub, PROJECT IMMORTAL                                   |
 | Mobile bottom nav     | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36)               | ✅ wired — R&D tab, sub-path matching already works                                                                                        |
 | Navbar breadcrumb     | [navbar.tsx:28-40](src/components/home/layout/navbar.tsx#L28-L40)                              | ✅ **built** — `RESEARCH_AND_DEVELOPMENT_SUBPAGES` map + `getSubHeader` branch, fallthrough prettifies `/project/[id]`, parent label "R&D" |
-| Project Immortal stub | [page.tsx](<src/app/(home)/project-immortal/page.tsx>)                                         | ✅ exists — `<h1>` stub; **mention-only in this doc**, gets its own structure doc later                                                    |
+| Project Immortal      | [page.tsx](<src/app/(home)/research-and-development/projects/project-immortal/page.tsx>)       | ✅ **built** — see §4b; the old `/project-immortal` route now `redirect()`s here                                                           |
 | This doc              | `R_AND_D_STRUCTURE.md`                                                                         | plan fully implemented — see checked-off sections below                                                                                    |
 
 Pattern donors elsewhere in the repo:
@@ -55,7 +55,7 @@ The founder's eight pillars, and which surface carries each:
 Related surfaces that are **not** part of this doc:
 
 - **Anime** (`/anime`) — the creative-inspiration R&D feed. Already built; the landing may reference it in copy only.
-- **Project Immortal** (`/project-immortal`) — moonshot research. Featured banner on the landing links to the existing stub; full structure in its own future doc.
+- **Project Immortal** (`/research-and-development/projects/project-immortal`) — moonshot research, now part of this surface (§4b). The landing's featured banner links to it.
 
 ```mermaid
 flowchart LR
@@ -80,6 +80,7 @@ flowchart LR
 /research-and-development/funding                ✅ built — investor deal-flow view
 /research-and-development/project/[id]/workshop  ✅ built — Virtual Workshop collab space
 /research-and-development/new                    ✅ built — multi-step idea wizard
+/research-and-development/projects/project-immortal  ✅ built — moonshot research program (§4b)
 ```
 
 | Route                                      | Purpose                                                                       | Phase    |
@@ -116,16 +117,38 @@ export function generateStaticParams() {
 
 Top-to-bottom composition (server component, mirrors [store-page.tsx](src/components/home/store/pages/store-page.tsx)):
 
-| #   | Section                                                 | Purpose / content                                                                                                                                                                                                                                                       | Mock needs                                                                | Keep? |
-| --- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----- |
-| 4.1 | **Hero band** (`pipeline-hero`)                         | "From concept to consumer." One-paragraph pitch + two CTAs: **Post your idea** (opens sheet §8.1) and **Explore projects** (anchor to 4.3)                                                                                                                              | Static copy, one `/public/dummy/*.avif` background                        |       |
-| 4.2 | **Pipeline stages strip** (`pipeline-stages-strip`)     | Horizontal scroll of **6 stage cards** condensing the 8 pillars: Market Research → Problem Mapping → Team Building → Build & Daily Logs → Funding & Governance → Go-to-Market. Each: icon, one-line blurb, link (knowledge-hub / problem-map / project tabs / `/store`) | Static `PIPELINE_STAGES` array inline in the component                    |       |
-| 4.3 | **Featured projects rail** (`projects-rail`)            | The main event. `ProjectCard`s: cover, name, tagline, stage badge, funding progress bar, team avatar stack, open-roles count → `/project/[id]`                                                                                                                          | `MOCK_RESEARCH_PROJECTS` (~6, spanning all stages so every badge appears) |       |
-| 4.4 | **Problem map teaser** (`problem-map-preview`)          | Split: left, stylized map thumbnail with 3–4 pins; right, "Top reported gaps" list (location, category, report count, opportunity score). CTA → `/problem-map`                                                                                                          | Top slice of `MOCK_PROBLEM_REPORTS`                                       |       |
-| 4.5 | **Market insights rail** (`market-insights-rail`)       | `MarketInsightCard`s: headline stat ("Demand for off-grid cold storage up 34% in East Africa"), trend arrow, region + category chips. CTA → `/knowledge-hub`                                                                                                            | `MOCK_MARKET_INSIGHTS`                                                    |       |
-| 4.6 | **Open roles rail** (`open-roles-rail`)                 | "Join a team for equity": role title, project name, skill chips, equity range, commitment tag, **Express interest** button (client toggle → "Interest sent"). Carries pillar 4 until `/talent` exists                                                                   | `MOCK_OPEN_ROLES` joined to projects                                      |       |
-| 4.7 | **Project Immortal banner** (`project-immortal-banner`) | Single full-width featured card, distinct moonshot styling → links `/project-immortal`. **Mention-only**                                                                                                                                                                | Static copy + one image                                                   |       |
-| 4.8 | **Bottom CTA band**                                     | "Have an idea the world needs? Post it." → same post-idea sheet                                                                                                                                                                                                         | none                                                                      |       |
+| #    | Section                                                 | Purpose / content                                                                                                                                                                                                                                                       | Mock needs                                                                | Keep? |
+| ---- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----- |
+| 4.1  | **Hero band** (`pipeline-hero`)                         | "From concept to consumer." One-paragraph pitch + two CTAs: **Post your idea** (opens sheet §8.1) and **Explore projects** (anchor to 4.3)                                                                                                                              | Static copy, one `/public/dummy/*.avif` background                        |       |
+| 4.2  | **Pipeline stages strip** (`pipeline-stages-strip`)     | Horizontal scroll of **6 stage cards** condensing the 8 pillars: Market Research → Problem Mapping → Team Building → Build & Daily Logs → Funding & Governance → Go-to-Market. Each: icon, one-line blurb, link (knowledge-hub / problem-map / project tabs / `/store`) | Static `PIPELINE_STAGES` array inline in the component                    |       |
+| 4.2b | **Lifecycle roles strip** (`lifecycle-roles-strip`)     | The five ways to contribute — Researcher, Founder & Director, Venture Capitalist, Supplier, Supporter — each with a blurb and the compensation modes it supports (salary / one-time / equity). Stages are _what_ gets built; this is _who_ builds it                    | Static `LIFECYCLE_ROLES` array inline in the component                    |       |
+| 4.3  | **Featured projects rail** (`projects-rail`)            | The main event. `ProjectCard`s: cover, name, tagline, stage badge, funding progress bar, team avatar stack, open-roles count → `/project/[id]`                                                                                                                          | `MOCK_RESEARCH_PROJECTS` (~6, spanning all stages so every badge appears) |       |
+| 4.4  | **Problem map teaser** (`problem-map-preview`)          | Split: left, stylized map thumbnail with 3–4 pins; right, "Top reported gaps" list (location, category, report count, opportunity score). CTA → `/problem-map`                                                                                                          | Top slice of `MOCK_PROBLEM_REPORTS`                                       |       |
+| 4.5  | **Market insights rail** (`market-insights-rail`)       | `MarketInsightCard`s: headline stat ("Demand for off-grid cold storage up 34% in East Africa"), trend arrow, region + category chips. CTA → `/knowledge-hub`                                                                                                            | `MOCK_MARKET_INSIGHTS`                                                    |       |
+| 4.6  | **Open roles rail** (`open-roles-rail`)                 | "Join a team for equity": role title, project name, skill chips, equity range, commitment tag, **Express interest** button (client toggle → "Interest sent"). Carries pillar 4 until `/talent` exists                                                                   | `MOCK_OPEN_ROLES` joined to projects                                      |       |
+| 4.7  | **Project Immortal banner** (`project-immortal-banner`) | Single full-width featured card, distinct moonshot styling → links `/research-and-development/projects/project-immortal` (§4b)                                                                                                                                          | Static copy + one image                                                   |       |
+| 4.8  | **Bottom CTA band**                                     | "Have an idea the world needs? Post it." → same post-idea sheet                                                                                                                                                                                                         | none                                                                      |       |
+
+---
+
+## 4b. Project Immortal — `/research-and-development/projects/project-immortal`
+
+The moonshot research program (extending healthy human life), and the reference
+implementation of what an R&D _research_ project looks like on Qatoto. Body in
+`pages/project-immortal-page.tsx`; mocks in `src/lib/project-immortal-mocks.ts`;
+`Immortal*` types appended to `src/types/research-and-development.ts`. Sections, in order:
+
+| Section                              | Content                                                                                                                                                                                                                                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `project-immortal-hero`              | Same teal-gradient identity as the landing banner + four program stats                                                                                                                                                                                                         |
+| `research-branch-map` 🏝️             | Hand-rolled SVG flowchart of every research branch the crowd works on. Status-coded nodes (`active`/`emerging`/`contested`/`missing`); `missing` = a gap Qatoto highlights; `overlappingGroupCount >= 2` = duplicated work Qatoto marks. Selecting a node fills a detail panel |
+| `project-immortal-products`          | Monetizable products Qatoto highlights as derivable from each branch                                                                                                                                                                                                           |
+| `project-immortal-papers` 🏝️         | **Formal** paper library + upload dropzone (local list only; no network)                                                                                                                                                                                                       |
+| `project-immortal-informal-posts` 🏝️ | **Informal** track — blog-style ideas, no proofs or citations                                                                                                                                                                                                                  |
+| `project-immortal-contributors` 🏝️   | Who is building it, effort/money tracked, compensation preference (salary / one-time / equity), role filter chips                                                                                                                                                              |
+| `project-immortal-discussion` 🏝️     | Netizen ideas on increasing lifespan; composer + expandable replies                                                                                                                                                                                                            |
+
+The old `/project-immortal` route is a `redirect()` shim, kept so pre-move links resolve.
 
 ---
 
@@ -401,7 +424,8 @@ pages/
 ├── research-and-development-page.tsx   landing composition — mirrors store-page.tsx
 ├── project-detail.tsx                  header + stats + tab shell; passes server panels into the tabs island
 ├── problem-map-page.tsx                map canvas + report list + report CTA
-└── knowledge-hub-page.tsx              insight grid + leaderboard + trends
+├── knowledge-hub-page.tsx              insight grid + leaderboard + trends
+└── project-immortal-page.tsx           moonshot program composition (§4b)
 rails/
 ├── projects-rail.tsx                   horizontal scroll of ProjectCard (like product-rail.tsx)
 ├── open-roles-rail.tsx                 equity-for-skills teaser
@@ -417,8 +441,16 @@ sections/
 ├── section-header.tsx                  title + see-all chevron (duplicated from store, not cross-imported)
 ├── pipeline-hero.tsx                   static hero — deliberately not a carousel (no client state)
 ├── pipeline-stages-strip.tsx           6 stage cards (§4.2)
+├── lifecycle-roles-strip.tsx           5 contributor roles + compensation modes (§4.2b)
 ├── problem-map-preview.tsx             landing teaser (§4.4)
-├── project-immortal-banner.tsx         moonshot banner → /project-immortal
+├── project-immortal-banner.tsx         moonshot banner → /research-and-development/projects/project-immortal
+├── project-immortal-hero.tsx           moonshot page hero + program stats (§4b)
+├── research-branch-map.tsx        🏝️  hand-rolled svg research flowchart (§4b)
+├── project-immortal-products.tsx       monetizable products from the research (§4b)
+├── project-immortal-papers.tsx    🏝️  formal paper library + upload (§4b)
+├── project-immortal-informal-posts.tsx 🏝️  informal blog-style papers (§4b)
+├── project-immortal-contributors.tsx 🏝️  contributors + compensation (§4b)
+├── project-immortal-discussion.tsx 🏝️  netizen idea threads (§4b)
 ├── project-header.tsx                  cover band, badges, stats row, join/back buttons
 ├── project-tabs.tsx               🏝️  tab state only; panels arrive as ReactNode props (~40 lines)
 ├── overview-tab.tsx                    problem/solution, demand chips, origin-report link

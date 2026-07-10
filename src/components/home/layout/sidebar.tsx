@@ -101,7 +101,7 @@ const ROUTES = {
   knowledgeHub: "/research-and-development/knowledge-hub",
   talent: "/research-and-development/talent",
   funding: "/research-and-development/funding",
-  projectImmortal: "/project-immortal",
+  projectImmortal: "/research-and-development/projects/project-immortal",
   library: "/library",
   history: "/history",
   wishlist: "/wishlist",
