@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "@/lib/auth-client";
 
 const handleGoogleSignIn = () =>
@@ -21,6 +21,12 @@ export default function SignIn() {
   const [passkeySignInState, setPasskeySignInState] = useState<PasskeySignInState>({
     status: "idle",
   });
+  // Assume support until the effect below can check; avoids SSR window access.
+  const [isWebAuthnSupported, setIsWebAuthnSupported] = useState(true);
+
+  useEffect(() => {
+    if (typeof window.PublicKeyCredential === "undefined") setIsWebAuthnSupported(false);
+  }, []);
 
   // WebAuthn ceremony runs in the browser; success sets the session cookie (§5d /passkey/*).
   // autoFill:false → explicit modal prompt on click (autoFill is for conditional-UI autofill).
@@ -28,11 +34,11 @@ export default function SignIn() {
     setPasskeySignInState({ status: "authenticating" });
     const { error } = await signIn.passkey({ autoFill: false });
     if (error) {
-      // Dismissing the OS prompt is a normal outcome, not an error to surface.
-      if ("code" in error && error.code === "AUTH_CANCELLED") {
-        setPasskeySignInState({ status: "idle" });
-        return;
-      }
+      // Better Auth's passkey client only preserves a distinct error code for
+      // recognized WebAuthn failures; anything else (including a genuine user
+      // cancel) collapses to a generic code with no detail, so we can't tell
+      // "dismissed the prompt" apart from a real failure — always show
+      // something rather than silently doing nothing.
       setPasskeySignInState({
         status: "error",
         message:
@@ -90,7 +96,7 @@ export default function SignIn() {
         <button
           type={"button"}
           onClick={handlePasskeySignIn}
-          disabled={passkeySignInState.status === "authenticating"}
+          disabled={!isWebAuthnSupported || passkeySignInState.status === "authenticating"}
           className={
             "border-outline flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border py-2.5 pr-6 pl-4 text-sm font-medium text-[#00696E] disabled:cursor-not-allowed disabled:opacity-50"
           }
@@ -109,6 +115,10 @@ export default function SignIn() {
         </button>
         {passkeySignInState.status === "error" ? (
           <p className="px-4 text-center text-xs text-red-600">{passkeySignInState.message}</p>
+        ) : !isWebAuthnSupported ? (
+          <p className="px-4 text-center text-xs text-muted-foreground">
+            Your browser doesn't support passkeys.
+          </p>
         ) : null}
         <div className="flex items-center gap-4 px-4 text-[#BEC8C9]">
           <hr className="flex-1" />
