@@ -30,6 +30,7 @@ type PasskeyMutationState =
   | { status: "deleting"; passkeyId: string }
   | { status: "renaming"; passkeyId: string }
   | { status: "rename-saving"; passkeyId: string }
+  | { status: "rename-error"; passkeyId: string; message: string }
   | { status: "error"; message: string };
 
 type PasskeysPanelProps = {
@@ -127,8 +128,10 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
     setMutationState({ status: "rename-saving", passkeyId });
     const { error } = await authClient.passkey.updatePasskey({ id: passkeyId, name: trimmedName });
     if (error) {
+      // Keep the row's input open so the typed name isn't lost on retry.
       setMutationState({
-        status: "error",
+        status: "rename-error",
+        passkeyId,
         message: "Couldn't rename the passkey. Please try again.",
       });
       return;
@@ -144,8 +147,14 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
 
   function renderPasskeyRow(rowPasskey: Passkey) {
     const isRowRenaming =
-      (mutationState.status === "renaming" || mutationState.status === "rename-saving") &&
+      (mutationState.status === "renaming" ||
+        mutationState.status === "rename-saving" ||
+        mutationState.status === "rename-error") &&
       mutationState.passkeyId === rowPasskey.id;
+    const rowRenameErrorMessage =
+      mutationState.status === "rename-error" && mutationState.passkeyId === rowPasskey.id
+        ? mutationState.message
+        : null;
     const isRowConfirmingDelete =
       mutationState.status === "confirm-delete" && mutationState.passkeyId === rowPasskey.id;
     const isRowDeleting =
@@ -197,7 +206,10 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
         </div>
 
         {isRowRenaming ? (
-          <div className="flex flex-row justify-end gap-4">
+          <div className="flex flex-row items-center justify-end gap-4">
+            {rowRenameErrorMessage ? (
+              <span className="flex-1 text-xs text-red-600">{rowRenameErrorMessage}</span>
+            ) : null}
             <button
               type="button"
               onClick={() => setMutationState({ status: "idle" })}
