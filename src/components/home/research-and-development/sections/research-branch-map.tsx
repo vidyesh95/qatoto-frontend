@@ -112,7 +112,7 @@ export default function ResearchBranchMap({ branches }: ResearchBranchMapProps) 
       <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
         <div className="space-y-3">
           <div className="overflow-x-auto rounded-2xl bg-[#00696E]/5 p-2 sm:p-4">
-            <div className="relative h-[420px] min-w-[720px] sm:h-[480px]">
+            <div className="relative h-105 min-w-180 sm:h-120">
               <svg
                 aria-hidden
                 viewBox="0 0 100 100"
