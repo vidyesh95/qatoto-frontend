@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { WebAuthnAbortService } from "@simplewebauthn/browser";
 import { signIn } from "@/lib/auth-client";
 
 const handleGoogleSignIn = () =>
@@ -23,6 +24,13 @@ export default function SignIn() {
   // saved passkey from the email field's autofill dropdown (autoComplete
   // includes "webauthn"). Never resolves with an error worth surfacing — the
   // user simply ignoring the dropdown is the normal case.
+  //
+  // This starts a long-lived navigator.credentials.get() call that only ends
+  // when the user picks a credential, this page unmounts and cancels it below,
+  // or another WebAuthn ceremony starts elsewhere and aborts it. Client-side
+  // navigation away from this page (no full reload) would otherwise leave it
+  // pending, and the next explicit passkey sign-in call to the same browser
+  // WebAuthn stack can then be rejected outright with no prompt at all.
   useEffect(() => {
     let isActive = true;
     void (async () => {
@@ -34,6 +42,7 @@ export default function SignIn() {
     })();
     return () => {
       isActive = false;
+      WebAuthnAbortService.cancelCeremony();
     };
   }, [router]);
 

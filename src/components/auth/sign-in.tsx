@@ -34,11 +34,18 @@ export default function SignIn() {
     setPasskeySignInState({ status: "authenticating" });
     const { error } = await signIn.passkey({ autoFill: false });
     if (error) {
-      // Better Auth's passkey client only preserves a distinct error code for
-      // recognized WebAuthn failures; anything else (including a genuine user
-      // cancel) collapses to a generic code with no detail, so we can't tell
-      // "dismissed the prompt" apart from a real failure — always show
-      // something rather than silently doing nothing.
+      const webAuthnErrorCode = "code" in error ? error.code : undefined;
+      // The user dismissing the OS prompt surfaces as a passed-through
+      // NotAllowedError or an aborted ceremony — a normal outcome, not an
+      // error to show. (Better Auth's own AUTH_CANCELLED code is NOT a cancel
+      // signal: it's the catch-all for unrecognized exceptions.)
+      if (
+        webAuthnErrorCode === "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" ||
+        webAuthnErrorCode === "ERROR_CEREMONY_ABORTED"
+      ) {
+        setPasskeySignInState({ status: "idle" });
+        return;
+      }
       setPasskeySignInState({
         status: "error",
         message:

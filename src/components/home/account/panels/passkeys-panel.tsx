@@ -83,15 +83,19 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
     const { error } = await authClient.passkey.addPasskey();
     if (error) {
       const registrationErrorCode = "code" in error ? error.code : undefined;
-      // Dismissing the OS prompt is a normal outcome, not an error to surface.
-      if (registrationErrorCode === "REGISTRATION_CANCELLED") {
+      // Dismissing the OS prompt surfaces as a passed-through NotAllowedError
+      // or an aborted ceremony — a normal outcome, not an error to surface.
+      if (
+        registrationErrorCode === "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" ||
+        registrationErrorCode === "ERROR_CEREMONY_ABORTED"
+      ) {
         setMutationState({ status: "idle" });
         return;
       }
       setMutationState({
         status: "error",
         message:
-          registrationErrorCode === "PREVIOUSLY_REGISTERED"
+          registrationErrorCode === "ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED"
             ? "This device already has a passkey for your account."
             : registrationErrorCode === "SESSION_REQUIRED"
               ? "Please sign in again to add a passkey."
