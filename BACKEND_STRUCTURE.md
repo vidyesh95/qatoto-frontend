@@ -769,7 +769,7 @@ the session field) and governed by a **two-tier** design:
   treat expired holds as available.
 - **`pnpm db:merge-duplicate-user`** — one-time repair for pre-citext case-duplicate
   users (§4): discover with `-- --email=<addr>`, dry-run with `-- --keep=<id>
-  --remove=<id>`, write with `--apply`. Must run **before** the citext migration
+--remove=<id>`, write with `--apply`. Must run **before** the citext migration
   (drizzle/0008).
 
 ---
