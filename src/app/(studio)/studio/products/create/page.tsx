@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import CreateListingPage from "@/components/studio/pages/create-listing-page";
+import { Suspense } from "react";
+import CreateListingRoute from "@/components/studio/pages/create-listing-route";
 
 export const metadata: Metadata = {
   title: "Create Store Listing",
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function StudioCreateListing() {
-  return <CreateListingPage />;
+  return (
+    <Suspense fallback={null}>
+      <CreateListingRoute />
+    </Suspense>
+  );
 }

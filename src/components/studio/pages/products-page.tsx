@@ -2,56 +2,24 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { useDeleteProductMutation, useMyProductsQuery } from "@/lib/products/hooks";
+import { centsToPriceLabel } from "@/lib/products/schemas";
 
-interface MockProduct {
-  name: string;
-  skuCode: string;
-  priceLabel: string;
-  stockQuantity: number;
-  status: "Active" | "Draft";
-}
-
-const MOCK_PRODUCTS: MockProduct[] = [
-  {
-    name: "Wireless Noise-Cancelling Headphones",
-    skuCode: "QT-AUDIO-001",
-    priceLabel: "$129.99",
-    stockQuantity: 42,
-    status: "Active",
-  },
-  {
-    name: "Anime Collectible Figure — Limited Edition",
-    skuCode: "QT-ANIME-014",
-    priceLabel: "$89.00",
-    stockQuantity: 8,
-    status: "Active",
-  },
-  {
-    name: "4K Streaming Camera Kit",
-    skuCode: "QT-VIDEO-007",
-    priceLabel: "$349.00",
-    stockQuantity: 0,
-    status: "Draft",
-  },
-  {
-    name: "Creator Desk Lamp with Ring Light",
-    skuCode: "QT-HOME-023",
-    priceLabel: "$54.50",
-    stockQuantity: 120,
-    status: "Active",
-  },
-  {
-    name: "Digital Art Brush Pack (Download)",
-    skuCode: "QT-DIGI-102",
-    priceLabel: "$19.00",
-    stockQuantity: 999,
-    status: "Draft",
-  },
-];
-
-// Seller-facing list of store products with a link into the create-listing
-// wizard. Mock data only — no backend yet (UI phase).
+// Seller-facing list of store products, backed by GET /products/mine. Links into
+// the create wizard and, per row, into edit / delete.
 export default function ProductsPage() {
+  const myProductsQuery = useMyProductsQuery(1);
+  const deleteProductMutation = useDeleteProductMutation();
+  // Id of the row awaiting a delete confirmation (inline two-step, no window.confirm).
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+
+  function handleConfirmDelete(productId: string) {
+    deleteProductMutation.mutate(productId, {
+      onSettled: () => setConfirmingDeleteId(null),
+    });
+  }
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between">
@@ -75,10 +43,53 @@ export default function ProductsPage() {
         </Link>
       </div>
 
-      <ul className="mt-6 flex flex-col gap-2">
-        {MOCK_PRODUCTS.map((product) => (
+      <div className="mt-6">{renderProductsList()}</div>
+    </div>
+  );
+
+  function renderProductsList() {
+    if (myProductsQuery.isPending) {
+      return <StatusPanel message="Loading your products…" />;
+    }
+    if (myProductsQuery.isError) {
+      return (
+        <StatusPanel
+          message="Couldn't load your products."
+          action={
+            <button
+              type="button"
+              onClick={() => myProductsQuery.refetch()}
+              className="cursor-pointer rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
+            >
+              Try again
+            </button>
+          }
+        />
+      );
+    }
+
+    const products = myProductsQuery.data.rows;
+    if (products.length === 0) {
+      return (
+        <StatusPanel
+          message="You haven't listed any products yet."
+          action={
+            <Link
+              href="/studio/products/create"
+              className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+            >
+              Create your first listing
+            </Link>
+          }
+        />
+      );
+    }
+
+    return (
+      <ul className="flex flex-col gap-2">
+        {products.map((product) => (
           <li
-            key={product.skuCode}
+            key={product.id}
             className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3"
           >
             <div className="flex min-w-0 items-center gap-4">
@@ -91,37 +102,78 @@ export default function ProductsPage() {
                 />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
-                <p className="text-xs text-muted-foreground">SKU: {product.skuCode}</p>
+                <p className="truncate text-sm font-medium text-foreground">{product.title}</p>
+                <p className="text-xs text-muted-foreground">
+                  SKU: {product.sku ?? "—"}
+                </p>
               </div>
             </div>
 
             <div className="flex shrink-0 items-center gap-6">
               <span
                 className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  product.status === "Active"
+                  product.status === "active"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-muted-foreground"
                 }`}
               >
-                {product.status}
+                {product.status === "active" ? "Active" : "Draft"}
               </span>
               <span className="w-20 text-right text-sm font-medium text-foreground">
-                {product.priceLabel}
+                {centsToPriceLabel(product.priceInCents)}
               </span>
               <span className="w-24 text-right text-sm text-muted-foreground">
                 {product.stockQuantity} in stock
               </span>
-              <button
-                type="button"
-                className="cursor-pointer text-sm text-[#1DBDC5] hover:underline"
-              >
-                Edit
-              </button>
+              {confirmingDeleteId === product.id ? (
+                <span className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleConfirmDelete(product.id)}
+                    disabled={deleteProductMutation.isPending}
+                    className="cursor-pointer text-sm font-medium text-red-500 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {deleteProductMutation.isPending ? "Deleting…" : "Confirm"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDeleteId(null)}
+                    className="cursor-pointer text-sm text-muted-foreground hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </span>
+              ) : (
+                <span className="flex items-center gap-6">
+                  <Link
+                    href={`/studio/products/create?id=${product.id}`}
+                    className="cursor-pointer text-sm text-[#1DBDC5] hover:underline"
+                  >
+                    Edit
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDeleteId(product.id)}
+                    className="cursor-pointer text-sm text-red-500 hover:underline"
+                  >
+                    Delete
+                  </button>
+                </span>
+              )}
             </div>
           </li>
         ))}
       </ul>
+    );
+  }
+}
+
+// Centered placeholder for loading / error / empty states.
+function StatusPanel({ message, action }: { message: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-4 rounded-2xl border border-border py-24">
+      <p className="text-sm text-muted-foreground">{message}</p>
+      {action}
     </div>
   );
 }

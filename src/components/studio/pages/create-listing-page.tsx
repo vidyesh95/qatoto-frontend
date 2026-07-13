@@ -2,7 +2,26 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import {
+  ApiRequestError,
+  useCreateListingMutation,
+  useProductQuery,
+  useUpdateListingMutation,
+  type SaveProgress,
+} from "@/lib/products/hooks";
+import {
+  CATEGORY_LABEL_TO_SLUG,
+  CATEGORY_LABELS,
+  centsToDollarString,
+  CONDITION_LABEL_TO_SLUG,
+  CONDITION_LABELS,
+  dollarsToCents,
+  SLUG_TO_CATEGORY_LABEL,
+  SLUG_TO_CONDITION_LABEL,
+  type CreateProductInput,
+} from "@/lib/products/schemas";
 
 const LISTING_STEPS = [
   { id: "identity", label: "Product Identity" },
@@ -14,28 +33,39 @@ const LISTING_STEPS = [
 
 type ListingStepId = (typeof LISTING_STEPS)[number]["id"];
 
-const PRODUCT_CATEGORIES = [
-  "Electronics",
-  "Fashion",
-  "Home & Kitchen",
-  "Anime & Collectibles",
-  "Digital Goods",
-  "Books & Media",
-  "Sports & Outdoors",
-  "Beauty & Personal Care",
-];
-
-const PRODUCT_CONDITIONS = ["New", "Refurbished", "Used"] as const;
+const PRODUCT_CATEGORIES = CATEGORY_LABELS;
+const PRODUCT_CONDITIONS = CONDITION_LABELS;
 
 const PRODUCT_TITLE_MAX_LENGTH = 200;
 const MAX_PRODUCT_IMAGES = 9;
 
-// Multi-step wizard for creating a store listing (Amazon/Alibaba-style).
-// All state is local and nothing is submitted anywhere — no backend yet
-// (UI phase).
-export default function CreateListingPage() {
+/** A pricing tier as typed in the form (dollar/quantity strings). */
+interface PricingTierDraft {
+  unitPriceInDollars: string;
+  minimumOrderQuantity: string;
+}
+
+/** An image already stored on the backend (edit mode). */
+interface ExistingImage {
+  id: string;
+  url: string;
+}
+
+// Multi-step wizard for creating (or, with `productId`, editing) a store listing.
+// Submits through the /products API: create draft -> upload each image -> publish.
+export default function CreateListingPage({ productId }: { productId?: string }) {
+  const router = useRouter();
+  const isEditMode = Boolean(productId);
+
+  const productQuery = useProductQuery(productId);
+  const createMutation = useCreateListingMutation();
+  const updateMutation = useUpdateListingMutation();
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isPublished, setIsPublished] = useState(false);
+  const [saveProgress, setSaveProgress] = useState<SaveProgress>({ phase: "idle" });
+  const [localError, setLocalError] = useState<string | null>(null);
 
   // Step 1 — product identity
   const [productTitle, setProductTitle] = useState("");
@@ -45,6 +75,9 @@ export default function CreateListingPage() {
 
   // Step 2 — images
   const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
+  const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,9 +91,54 @@ export default function CreateListingPage() {
   const [compareAtPriceInDollars, setCompareAtPriceInDollars] = useState("");
   const [stockQuantity, setStockQuantity] = useState("");
   const [skuCode, setSkuCode] = useState("");
+  const [pricingTiers, setPricingTiers] = useState<PricingTierDraft[]>([]);
 
   const currentStep = LISTING_STEPS[currentStepIndex];
   const isLastStep = currentStepIndex === LISTING_STEPS.length - 1;
+
+  const imageCount = existingImages.length + selectedImageFiles.length;
+  const mutationErrorMessage = readMutationError(createMutation.error ?? updateMutation.error);
+  const errorMessage = localError ?? mutationErrorMessage;
+
+  // Prefill the form once from the loaded product (edit mode).
+  const hasPrefilledRef = useRef(false);
+  useEffect(() => {
+    if (!isEditMode || hasPrefilledRef.current || !productQuery.data) return;
+    hasPrefilledRef.current = true;
+    const product = productQuery.data;
+    setProductTitle(product.title);
+    setBrandName(product.brand ?? "");
+    setSelectedCategory(SLUG_TO_CATEGORY_LABEL[product.category] ?? "");
+    setSelectedCondition(SLUG_TO_CONDITION_LABEL[product.condition] ?? PRODUCT_CONDITIONS[0]);
+    setProductDescription(product.description ?? "");
+    setKeyFeatures(product.keyFeatures);
+    setPriceInDollars(centsToDollarString(product.priceInCents));
+    setCompareAtPriceInDollars(
+      product.compareAtPriceInCents === null ? "" : centsToDollarString(product.compareAtPriceInCents),
+    );
+    setStockQuantity(String(product.stockQuantity));
+    setSkuCode(product.sku ?? "");
+    setExistingImages(
+      product.images
+        .toSorted((first, second) => first.position - second.position)
+        .map((image) => ({ id: image.id, url: image.url })),
+    );
+    setPricingTiers(
+      product.pricingTiers
+        .toSorted((first, second) => first.position - second.position)
+        .map((tier) => ({
+          unitPriceInDollars: centsToDollarString(tier.unitPriceInCents),
+          minimumOrderQuantity: String(tier.minimumOrderQuantity),
+        })),
+    );
+  }, [isEditMode, productQuery.data]);
+
+  // Object-URL previews for newly selected files; revoked when the set changes.
+  useEffect(() => {
+    const urls = selectedImageFiles.map((file) => URL.createObjectURL(file));
+    setImagePreviewUrls(urls);
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [selectedImageFiles]);
 
   function handleGoToStepClick(stepIndex: number) {
     if (stepIndex < currentStepIndex) setCurrentStepIndex(stepIndex);
@@ -80,8 +158,9 @@ export default function CreateListingPage() {
     if (!incomingFiles) return;
     const imageFiles = Array.from(incomingFiles).filter((file) => file.type.startsWith("image/"));
     if (imageFiles.length === 0) return;
+    const remainingSlots = MAX_PRODUCT_IMAGES - existingImages.length;
     setSelectedImageFiles((previousFiles) =>
-      [...previousFiles, ...imageFiles].slice(0, MAX_PRODUCT_IMAGES),
+      [...previousFiles, ...imageFiles].slice(0, Math.max(0, remainingSlots)),
     );
   }
 
@@ -118,6 +197,11 @@ export default function CreateListingPage() {
     );
   }
 
+  function handleRemoveExistingImage(imageId: string) {
+    setExistingImages((previousImages) => previousImages.filter((image) => image.id !== imageId));
+    setRemovedImageIds((previousIds) => [...previousIds, imageId]);
+  }
+
   function handleAddKeyFeatureClick() {
     const trimmedFeature = keyFeatureDraft.trim();
     if (trimmedFeature.length === 0) return;
@@ -131,8 +215,103 @@ export default function CreateListingPage() {
     );
   }
 
-  function handlePublishClick() {
-    setIsPublished(true);
+  function handleAddTierClick() {
+    setPricingTiers((previousTiers) => [
+      ...previousTiers,
+      { unitPriceInDollars: "", minimumOrderQuantity: "" },
+    ]);
+  }
+
+  function handleTierChange(tierIndex: number, field: keyof PricingTierDraft, value: string) {
+    setPricingTiers((previousTiers) =>
+      previousTiers.map((tier, index) => (index === tierIndex ? { ...tier, [field]: value } : tier)),
+    );
+  }
+
+  function handleRemoveTierClick(tierIndexToRemove: number) {
+    setPricingTiers((previousTiers) =>
+      previousTiers.filter((_, tierIndex) => tierIndex !== tierIndexToRemove),
+    );
+  }
+
+  /** Build the request DTO from form state, or return a client-side error. */
+  function collectListingInput(): CreateProductInput | { error: string } {
+    const title = productTitle.trim();
+    if (title.length === 0) return { error: "Product title is required." };
+
+    const categorySlug = CATEGORY_LABEL_TO_SLUG[selectedCategory];
+    if (!categorySlug) return { error: "Select a category." };
+
+    const priceInCents = dollarsToCents(priceInDollars);
+    if (priceInCents === null) return { error: "Enter a valid price." };
+
+    const compareAtPriceInCents = dollarsToCents(compareAtPriceInDollars);
+    const parsedStock = Number.parseInt(stockQuantity, 10);
+    const resolvedStock = Number.isFinite(parsedStock) && parsedStock > 0 ? parsedStock : 0;
+
+    const tiers: { unitPriceInCents: number; minimumOrderQuantity: number }[] = [];
+    for (const tier of pricingTiers) {
+      const isBlankRow =
+        tier.unitPriceInDollars.trim().length === 0 && tier.minimumOrderQuantity.trim().length === 0;
+      if (isBlankRow) continue;
+      const unitPriceInCents = dollarsToCents(tier.unitPriceInDollars);
+      const minimumOrderQuantity = Number.parseInt(tier.minimumOrderQuantity, 10);
+      if (unitPriceInCents === null || !Number.isFinite(minimumOrderQuantity) || minimumOrderQuantity < 1) {
+        return {
+          error: "Each pricing tier needs a valid unit price and a minimum quantity of at least 1.",
+        };
+      }
+      tiers.push({ unitPriceInCents, minimumOrderQuantity });
+    }
+
+    return {
+      title,
+      brand: brandName.trim() || undefined,
+      category: categorySlug,
+      condition: CONDITION_LABEL_TO_SLUG[selectedCondition] ?? "new",
+      description: productDescription.trim() || undefined,
+      keyFeatures,
+      priceInCents,
+      compareAtPriceInCents: compareAtPriceInCents ?? undefined,
+      stockQuantity: resolvedStock,
+      sku: skuCode.trim() || undefined,
+      pricingTiers: tiers,
+    };
+  }
+
+  function handleSave(publish: boolean) {
+    if (isSaving) return;
+    const input = collectListingInput();
+    if ("error" in input) {
+      setLocalError(input.error);
+      return;
+    }
+    setLocalError(null);
+
+    if (isEditMode && productId) {
+      updateMutation.mutate(
+        {
+          productId,
+          patch: input,
+          newImageFiles: selectedImageFiles,
+          removedImageIds,
+          publish,
+          onProgress: setSaveProgress,
+        },
+        { onSuccess: () => router.push("/studio/products") },
+      );
+      return;
+    }
+
+    createMutation.mutate(
+      { input, imageFiles: selectedImageFiles, publish, onProgress: setSaveProgress },
+      {
+        onSuccess: () => {
+          if (publish) setIsPublished(true);
+          else router.push("/studio/products");
+        },
+      },
+    );
   }
 
   if (isPublished) {
@@ -161,6 +340,32 @@ export default function CreateListingPage() {
               width={20}
               height={20}
             />
+            Back to My Products
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Edit mode: block the form until the listing loads (or show a load error).
+  if (isEditMode && productQuery.isPending) {
+    return (
+      <div className="p-6">
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-border py-24">
+          <p className="text-sm text-muted-foreground">Loading listing…</p>
+        </div>
+      </div>
+    );
+  }
+  if (isEditMode && productQuery.isError) {
+    return (
+      <div className="p-6">
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-border py-24">
+          <p className="text-sm text-muted-foreground">Couldn&apos;t load this listing.</p>
+          <Link
+            href="/studio/products"
+            className="cursor-pointer rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
+          >
             Back to My Products
           </Link>
         </div>
@@ -310,23 +515,23 @@ export default function CreateListingPage() {
               </button>
             </div>
 
-            {selectedImageFiles.length > 0 && (
+            {imageCount > 0 && (
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
-                {selectedImageFiles.map((imageFile, imageIndex) => (
+                {existingImages.map((image, imageIndex) => (
                   <div
-                    key={`${imageFile.name}-${imageFile.size}-${imageIndex}`}
-                    className="relative flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-border bg-secondary/30 p-2"
+                    key={image.id}
+                    className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-border bg-secondary/30"
                   >
                     {imageIndex === 0 && (
-                      <span className="absolute top-1.5 left-1.5 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
+                      <span className="absolute top-1.5 left-1.5 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
                         Main image
                       </span>
                     )}
                     <button
                       type="button"
-                      onClick={() => handleRemoveImageClick(imageIndex)}
-                      aria-label={`Remove ${imageFile.name}`}
-                      className="absolute top-1.5 right-1.5 flex size-6 cursor-pointer items-center justify-center rounded-full bg-background transition-opacity hover:opacity-80"
+                      onClick={() => handleRemoveExistingImage(image.id)}
+                      aria-label="Remove image"
+                      className="absolute top-1.5 right-1.5 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full bg-background transition-opacity hover:opacity-80"
                     >
                       <Image
                         src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -335,22 +540,56 @@ export default function CreateListingPage() {
                         height={14}
                       />
                     </button>
-                    <Image
-                      src="/icons/image_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                      alt=""
-                      width={28}
-                      height={28}
-                    />
-                    <p className="w-full truncate text-center text-xs text-muted-foreground">
-                      {imageFile.name}
-                    </p>
+                    {/* Remote Cloudinary asset; plain <img> avoids next/image domain config. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={image.url} alt="" className="size-full object-cover" />
+                  </div>
+                ))}
+                {selectedImageFiles.map((imageFile, imageIndex) => (
+                  <div
+                    key={`${imageFile.name}-${imageFile.size}-${imageIndex}`}
+                    className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-border bg-secondary/30"
+                  >
+                    {existingImages.length === 0 && imageIndex === 0 && (
+                      <span className="absolute top-1.5 left-1.5 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
+                        Main image
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImageClick(imageIndex)}
+                      aria-label={`Remove ${imageFile.name}`}
+                      className="absolute top-1.5 right-1.5 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full bg-background transition-opacity hover:opacity-80"
+                    >
+                      <Image
+                        src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                        alt=""
+                        width={14}
+                        height={14}
+                      />
+                    </button>
+                    {imagePreviewUrls[imageIndex] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={imagePreviewUrls[imageIndex]}
+                        alt={imageFile.name}
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <Image
+                        src="/icons/image_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                        alt=""
+                        width={28}
+                        height={28}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
             )}
 
             <p className="text-xs text-muted-foreground">
-              {selectedImageFiles.length}/{MAX_PRODUCT_IMAGES} images added
+              {imageCount}/{MAX_PRODUCT_IMAGES} images added
             </p>
           </StepCard>
         );
@@ -518,6 +757,90 @@ export default function CreateListingPage() {
                 </p>
               </div>
             </div>
+
+            {/* B2B volume pricing tiers (optional). */}
+            <div className="flex flex-col gap-3 border-t border-border pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">Bulk pricing tiers</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Offer a lower unit price for larger B2B orders. Optional.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddTierClick}
+                  className="flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
+                >
+                  <Image
+                    src="/icons/add_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                    alt=""
+                    width={18}
+                    height={18}
+                  />
+                  Add tier
+                </button>
+              </div>
+
+              {pricingTiers.length > 0 && (
+                <ul className="flex flex-col gap-2">
+                  {pricingTiers.map((tier, tierIndex) => (
+                    <li
+                      key={tierIndex}
+                      className="grid grid-cols-[1fr_1fr_auto] items-end gap-3 rounded-xl border border-border p-3"
+                    >
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Unit price
+                        </span>
+                        <div className="flex h-11 items-center rounded-lg border border-border px-3 focus-within:border-[#1DBDC5]">
+                          <span className="mr-2 text-sm text-muted-foreground">$</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={tier.unitPriceInDollars}
+                            onChange={(event) =>
+                              handleTierChange(tierIndex, "unitPriceInDollars", event.target.value)
+                            }
+                            placeholder="0.00"
+                            className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Min. quantity
+                        </span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={tier.minimumOrderQuantity}
+                          onChange={(event) =>
+                            handleTierChange(tierIndex, "minimumOrderQuantity", event.target.value)
+                          }
+                          placeholder="e.g. 10"
+                          className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTierClick(tierIndex)}
+                        aria-label="Remove tier"
+                        className="flex h-11 cursor-pointer items-center transition-opacity hover:opacity-70"
+                      >
+                        <Image
+                          src="/icons/delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                          alt=""
+                          width={20}
+                          height={20}
+                        />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </StepCard>
         );
 
@@ -544,8 +867,8 @@ export default function CreateListingPage() {
                 {
                   label: "Images",
                   value:
-                    selectedImageFiles.length > 0
-                      ? `${selectedImageFiles.length} image${selectedImageFiles.length === 1 ? "" : "s"} added`
+                    imageCount > 0
+                      ? `${imageCount} image${imageCount === 1 ? "" : "s"} added`
                       : "",
                 },
               ]}
@@ -572,6 +895,13 @@ export default function CreateListingPage() {
                 },
                 { label: "Quantity", value: stockQuantity },
                 { label: "SKU", value: skuCode },
+                {
+                  label: "Bulk tiers",
+                  value:
+                    pricingTiers.length > 0
+                      ? `${pricingTiers.length} tier${pricingTiers.length === 1 ? "" : "s"}`
+                      : "",
+                },
               ]}
             />
           </StepCard>
@@ -599,7 +929,9 @@ export default function CreateListingPage() {
         Back to products
       </Link>
 
-      <h1 className="mt-4 text-2xl font-semibold text-foreground">Create Store Listing</h1>
+      <h1 className="mt-4 text-2xl font-semibold text-foreground">
+        {isEditMode ? "Edit Store Listing" : "Create Store Listing"}
+      </h1>
       <p className="mt-1 text-sm text-muted-foreground">
         List your product on the Qatoto Store to reach buyers, partners, and B2B customers.
       </p>
@@ -661,6 +993,15 @@ export default function CreateListingPage() {
 
       <div className="mt-6">{renderCurrentStep(currentStep.id)}</div>
 
+      {errorMessage && isLastStep && (
+        <p className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+          {errorMessage}
+        </p>
+      )}
+      {isSaving && (
+        <p className="mt-4 text-sm text-muted-foreground">{describeProgress(saveProgress)}</p>
+      )}
+
       {/* Footer navigation */}
       <div className="mt-6 flex items-center justify-between">
         <button
@@ -677,14 +1018,17 @@ export default function CreateListingPage() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              className="cursor-pointer rounded-full border border-border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
+              onClick={() => handleSave(false)}
+              disabled={isSaving}
+              className="cursor-pointer rounded-full border border-border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Save Draft
+              {isEditMode ? "Save Changes" : "Save Draft"}
             </button>
             <button
               type="button"
-              onClick={handlePublishClick}
-              className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90"
+              onClick={() => handleSave(true)}
+              disabled={isSaving}
+              className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Image
                 src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -692,7 +1036,7 @@ export default function CreateListingPage() {
                 width={20}
                 height={20}
               />
-              Publish Listing
+              {isSaving ? "Publishing…" : "Publish Listing"}
             </button>
           </div>
         ) : (
@@ -707,6 +1051,32 @@ export default function CreateListingPage() {
       </div>
     </div>
   );
+}
+
+/** Read a human message off a mutation error (backend envelope when present). */
+function readMutationError(error: unknown): string | null {
+  if (!error) return null;
+  if (error instanceof ApiRequestError) return error.apiError.message;
+  return "Something went wrong. Please try again.";
+}
+
+/** One-line progress label for the multi-step save. */
+function describeProgress(progress: SaveProgress): string {
+  switch (progress.phase) {
+    case "creating":
+      return "Saving listing…";
+    case "uploading":
+      return `Uploading image ${progress.current}/${progress.total}…`;
+    case "publishing":
+      return "Publishing…";
+    case "idle":
+    case "done":
+      return "Working…";
+    default: {
+      const exhaustiveCheck: never = progress;
+      return exhaustiveCheck;
+    }
+  }
 }
 
 // Shared card wrapper for each wizard step.
