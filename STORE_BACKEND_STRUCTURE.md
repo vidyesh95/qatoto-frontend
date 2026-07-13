@@ -599,6 +599,7 @@ to them in My Products, never to buyers. Nothing to clean up.
 
 1. `pnpm db:generate && pnpm db:migrate` — apply the three new tables + enums.
 2. Sign in (get a session cookie), then exercise the flow:
+
     ```bash
     # create a draft
     curl -X POST https://localhost:8000/products -b cookies.txt -H 'content-type: application/json' \
@@ -618,6 +619,7 @@ to them in My Products, never to buyers. Nothing to clean up.
     curl https://localhost:8000/products/mine -b cookies.txt
     # → 200, row with status "active"
     ```
+
 3. Confirm the contract covers every wizard field (`productTitle`, `brandName`,
    `selectedCategory`, `selectedCondition`, `selectedImageFiles`, `productDescription`,
    `keyFeatures`, `priceInDollars`, `compareAtPriceInDollars`, `stockQuantity`, `skuCode`) and
