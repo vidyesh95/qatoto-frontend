@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import type {
   EscrowDirection,
   EscrowVerificationStatus,
@@ -151,6 +153,14 @@ export default function GovernanceTab({ project }: { project: ResearchProject })
         <p className="text-xs text-muted-foreground">
           Calculated from logged effort — mock rate, backend-owned later.
         </p>
+        <div>
+          <Link
+            href={`/research-and-development/project/${project.id}/proof-of-effort`}
+            className="inline-flex items-center gap-2 rounded-full bg-[#00696E]/10 px-3 py-1.5 text-xs font-medium text-[#00696E] transition hover:bg-[#00696E]/20"
+          >
+            Slice-by-slice equity breakdown on the Proof of Effort ledger →
+          </Link>
+        </div>
       </section>
     </div>
   );

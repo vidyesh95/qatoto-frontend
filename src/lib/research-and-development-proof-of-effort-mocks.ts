@@ -1,0 +1,1620 @@
+import type { ProjectProofOfEffortLedger } from "@/types/research-and-development";
+
+// Proof of Effort fixtures — one ledger per research project. Static mocks
+// only (phase rule): the Slicing Pie math, verification pipeline, and dispute
+// escrow are backend-owned later; the frontend only renders these strings.
+// Every memberId / dailyLogId resolves against the matching project in
+// research-and-development-mocks.ts.
+//
+// Math recipe (kept exact so every displayed figure divides cleanly):
+// - 1% of equity = 2,000 slices, so every project's pool is 200,000 slices.
+// - memberTotalSlices = equitySharePercent × 2,000 (reuses the Team tab's
+//   equityShare verbatim).
+// - time slices = effortHoursLogged × lockedFairMarketRate × 2 (reuses the
+//   Team tab's hours verbatim).
+// - cash contribution = (memberTotalSlices − timeSlices) / 4.
+// - The equity the Team tab leaves unallocated is modelled as a team-agreed
+//   reserve slice pool for open roles — a mild deviation from orthodox
+//   Slicing Pie (where every slice belongs to a contributor), noted here so
+//   the backend phase can revisit it.
+// - Per-claim awards = claimedHours × that member's locked rate × 2; cash
+//   dispute entries use × 4.
+export const MOCK_PROJECT_PROOF_OF_EFFORT_LEDGERS: ProjectProofOfEffortLedger[] = [
+  {
+    projectId: "solar-cold-storage",
+    pieStatus: "dynamic",
+    pieStatusNote:
+      "Every verified hour and dollar reshapes the split until the pie bakes at breakeven or a priced round.",
+    totalSlicesInPoolLabel: "200,000 slices",
+    memberSliceBreakdowns: [
+      {
+        memberId: "wanjiru-kamau",
+        lockedFairMarketRateLabel: "$120/hr",
+        verifiedUnpaidHoursLabel: "148 hrs",
+        timeSliceEquationLabel: "148 hrs × $120 × 2 = 35,520 slices",
+        cashSliceEquationLabel: "$22,120 × 4 = 88,480 slices",
+        totalSlicesLabel: "124,000 slices",
+        sliceSharePercent: 62,
+        liveEquityShareLabel: "62%",
+      },
+      {
+        memberId: "daniel-otieno",
+        lockedFairMarketRateLabel: "$85/hr",
+        verifiedUnpaidHoursLabel: "96 hrs",
+        timeSliceEquationLabel: "96 hrs × $85 × 2 = 16,320 slices",
+        cashSliceEquationLabel: "$420 × 4 = 1,680 slices",
+        totalSlicesLabel: "18,000 slices",
+        sliceSharePercent: 9,
+        liveEquityShareLabel: "9%",
+      },
+      {
+        memberId: "grace-muthoni",
+        lockedFairMarketRateLabel: "$60/hr",
+        verifiedUnpaidHoursLabel: "82 hrs",
+        timeSliceEquationLabel: "82 hrs × $60 × 2 = 9,840 slices",
+        cashSliceEquationLabel: "$290 × 4 = 1,160 slices",
+        totalSlicesLabel: "11,000 slices",
+        sliceSharePercent: 5.5,
+        liveEquityShareLabel: "5.5%",
+      },
+      {
+        memberId: "samuel-kiprop",
+        lockedFairMarketRateLabel: "$60/hr",
+        verifiedUnpaidHoursLabel: "61 hrs",
+        timeSliceEquationLabel: "61 hrs × $60 × 2 = 7,320 slices",
+        cashSliceEquationLabel: "$170 × 4 = 680 slices",
+        totalSlicesLabel: "8,000 slices",
+        sliceSharePercent: 4,
+        liveEquityShareLabel: "4%",
+      },
+    ],
+    reservedSlicesLabel: "39,000 slices",
+    reservedSliceSharePercent: 19.5,
+    reservedSlicesNote: "Reserved for the open Cooling Systems Engineer role.",
+    claimVerificationRuns: [
+      {
+        id: "solar-verify-jul-7",
+        memberId: "grace-muthoni",
+        dailyLogId: "solar-log-jul-7",
+        claimDateLabel: "Jul 7, 2026",
+        claimSummary: "8 hrs analyzing the 400-vendor demand-survey dataset",
+        claimedHoursLabel: "8 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (8 hrs) and one artifact claim (survey analysis workbook).",
+            evidenceLabels: ["Time: 8 hrs", "Artifact: survey workbook"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Shared-drive revision history confirms the workbook was edited on the claim date.",
+            evidenceLabels: ["Drive: 14 revisions", "Owner key matches"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary:
+              "Revisions add new pivot models and cleaned records — not copy-paste padding.",
+            evidenceLabels: ["Substance score 0.82"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "flagged",
+            findingSummary:
+              "All 14 file revisions land in a 12-minute window at 11:48 PM — inconsistent with 8 hours of spread-out work.",
+            evidenceLabels: ["Revision window: 12 min", "Claimed: 8 hrs"],
+          },
+        ],
+        verdict: "flagged-for-review",
+        verdictDetail:
+          "Temporal mismatch between the claim and the revision trail — allocation withheld and posted to the dispute window.",
+        slicesAwardedLabel: "960 slices withheld",
+      },
+      {
+        id: "solar-verify-jul-6",
+        memberId: "daniel-otieno",
+        dailyLogId: "solar-log-jul-6",
+        claimDateLabel: "Jul 6, 2026",
+        claimSummary: "5 hrs sourcing an alternative R290 compressor supplier",
+        claimedHoursLabel: "5 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (5 hrs) and two artifact claims (supplier quote, comparison sheet).",
+            evidenceLabels: ["Time: 5 hrs", "Artifacts: quote, sheet"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Mombasa supplier quote PDF and the comparison sheet both landed in the project drive on the claim date.",
+            evidenceLabels: ["Quote PDF uploaded", "Sheet: 9 revisions"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary:
+              "Comparison sheet models duty cycles and landed cost — substantive original work.",
+            evidenceLabels: ["Substance score 0.77"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Edits spread across the afternoon, consistent with the claimed hours.",
+            evidenceLabels: ["Edit spread: 4.6 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "5 hrs verified → 850 slices pushed to the ledger.",
+        slicesAwardedLabel: "850 slices",
+      },
+      {
+        id: "solar-verify-jul-5",
+        memberId: "wanjiru-kamau",
+        dailyLogId: "solar-log-jul-5",
+        claimDateLabel: "Jul 5, 2026",
+        claimSummary: "6 hrs closing the farmer-cooperative pilot agreement",
+        claimedHoursLabel: "6 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (6 hrs) and one artifact claim (signed pilot agreement).",
+            evidenceLabels: ["Time: 6 hrs", "Artifact: agreement"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Countersigned agreement uploaded and the cooperative's confirmation email is on the shared thread.",
+            evidenceLabels: ["Agreement PDF", "Email thread"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Final agreement includes negotiated volume and payment terms.",
+            evidenceLabels: ["Substance score 0.85"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Calendar shows two cooperative meetings inside the claimed window.",
+            evidenceLabels: ["Calendar: 2 meetings"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "6 hrs verified → 1,440 slices pushed to the ledger.",
+        slicesAwardedLabel: "1,440 slices",
+      },
+      {
+        id: "solar-verify-jul-4",
+        memberId: "samuel-kiprop",
+        dailyLogId: "solar-log-jul-4",
+        claimDateLabel: "Jul 4, 2026",
+        claimSummary: "7 hrs thermal testing on the insulation panel assembly",
+        claimedHoursLabel: "7 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (7 hrs) and one artifact claim (thermal test log).",
+            evidenceLabels: ["Time: 7 hrs", "Artifact: test log"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Sensor CSV exports and the test-log spreadsheet were committed to the project drive during the window.",
+            evidenceLabels: ["CSV exports: 5", "Log: 11 revisions"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Test log records a full cool-down curve per panel variant.",
+            evidenceLabels: ["Substance score 0.8"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Sensor exports are timestamped across the full claimed window.",
+            evidenceLabels: ["Export spread: 6.8 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "7 hrs verified → 840 slices pushed to the ledger.",
+        slicesAwardedLabel: "840 slices",
+      },
+    ],
+    disputeWindowEntries: [
+      {
+        id: "solar-dispute-samuel-jul-7",
+        memberId: "samuel-kiprop",
+        allocationDateLabel: "Jul 7, 2026",
+        proposedAllocationSummary: "3 hrs pilot-site prep at the Nakuru cooperative",
+        proposedSlicesLabel: "360 slices",
+        status: "open",
+        timeRemainingToLockLabel: "Locks in 9h 14m",
+      },
+      {
+        id: "solar-dispute-grace-jul-7",
+        memberId: "grace-muthoni",
+        allocationDateLabel: "Jul 7, 2026",
+        proposedAllocationSummary: "8 hrs demand-survey dataset analysis",
+        proposedSlicesLabel: "960 slices",
+        status: "disputed",
+        disputeNote:
+          "Flagged by the temporal audit and disputed by Daniel Otieno — revision timestamps don't match the claimed hours. Slices frozen in escrow.",
+      },
+      {
+        id: "solar-dispute-daniel-jul-5",
+        memberId: "daniel-otieno",
+        allocationDateLabel: "Jul 5, 2026",
+        proposedAllocationSummary: "4 hrs compressor supplier calls",
+        proposedSlicesLabel: "680 slices",
+        status: "consensus-reached",
+        disputeNote:
+          "Disputed by Wanjiru Kamau — only two of the claimed calls appear on the shared calendar.",
+        consensusOutcomeLabel: "Re-verified at 3 hrs — adjusted to 510 slices.",
+      },
+      {
+        id: "solar-dispute-wanjiru-jul-5",
+        memberId: "wanjiru-kamau",
+        allocationDateLabel: "Jul 5, 2026",
+        proposedAllocationSummary: "6 hrs cooperative pilot agreement close",
+        proposedSlicesLabel: "1,440 slices",
+        status: "locked",
+        lockedOnLabel: "Locked Jul 6, 2026",
+      },
+      {
+        id: "solar-dispute-samuel-jul-4",
+        memberId: "samuel-kiprop",
+        allocationDateLabel: "Jul 4, 2026",
+        proposedAllocationSummary: "7 hrs insulation panel thermal testing",
+        proposedSlicesLabel: "840 slices",
+        status: "locked",
+        lockedOnLabel: "Locked Jul 5, 2026",
+      },
+    ],
+    physicalWorkReceipts: [
+      {
+        id: "solar-receipt-cabinet-photo",
+        memberId: "samuel-kiprop",
+        dailyLogId: "solar-log-jul-4",
+        receiptKind: "photo",
+        fileName: "cold-room-cabinet-assembly.jpg",
+        fileSizeLabel: "4.8 MB",
+        uploadedDateLabel: "Jul 4, 2026",
+        claimSummary: "4 hrs assembling the insulated cold-room cabinet",
+        forensicsChecks: [
+          {
+            kind: "exif-metadata",
+            result: "passed",
+            findingSummary: "EXIF timestamp Jul 4, 3:22 PM sits inside the claim window.",
+          },
+          {
+            kind: "device-fingerprint",
+            result: "passed",
+            findingSummary: "Camera fingerprint matches Samuel's registered device.",
+          },
+          {
+            kind: "reverse-image-search",
+            result: "passed",
+            findingSummary: "No matches in stock libraries or prior uploads.",
+          },
+        ],
+        verdict: "accepted",
+        verdictDetail: "4 hrs of physical assembly verified → 480 slices.",
+      },
+      {
+        id: "solar-receipt-insulation-invoice",
+        memberId: "daniel-otieno",
+        receiptKind: "material-receipt",
+        fileName: "insulation-panels-invoice.pdf",
+        fileSizeLabel: "0.6 MB",
+        uploadedDateLabel: "Jun 30, 2026",
+        claimSummary: "$180 out-of-pocket on insulation panel stock",
+        forensicsChecks: [
+          {
+            kind: "exif-metadata",
+            result: "passed",
+            findingSummary: "Invoice metadata matches the supplier's issuing system.",
+          },
+          {
+            kind: "reverse-image-search",
+            result: "passed",
+            findingSummary: "Invoice is not a reused image from a prior claim.",
+          },
+        ],
+        verdict: "accepted",
+        verdictDetail: "$180 × 4 = 720 slices credited as a cash contribution.",
+      },
+    ],
+  },
+  {
+    projectId: "modular-water-purification",
+    pieStatus: "dynamic",
+    pieStatusNote:
+      "Every verified hour and dollar reshapes the split until the pie bakes at breakeven or a priced round.",
+    totalSlicesInPoolLabel: "200,000 slices",
+    memberSliceBreakdowns: [
+      {
+        memberId: "farhana-rahman",
+        lockedFairMarketRateLabel: "$110/hr",
+        verifiedUnpaidHoursLabel: "176 hrs",
+        timeSliceEquationLabel: "176 hrs × $110 × 2 = 38,720 slices",
+        cashSliceEquationLabel: "$24,320 × 4 = 97,280 slices",
+        totalSlicesLabel: "136,000 slices",
+        sliceSharePercent: 68,
+        liveEquityShareLabel: "68%",
+      },
+      {
+        memberId: "arjun-mehta",
+        lockedFairMarketRateLabel: "$70/hr",
+        verifiedUnpaidHoursLabel: "104 hrs",
+        timeSliceEquationLabel: "104 hrs × $70 × 2 = 14,560 slices",
+        cashSliceEquationLabel: "$360 × 4 = 1,440 slices",
+        totalSlicesLabel: "16,000 slices",
+        sliceSharePercent: 8,
+        liveEquityShareLabel: "8%",
+      },
+      {
+        memberId: "nusrat-jahan",
+        lockedFairMarketRateLabel: "$65/hr",
+        verifiedUnpaidHoursLabel: "88 hrs",
+        timeSliceEquationLabel: "88 hrs × $65 × 2 = 11,440 slices",
+        cashSliceEquationLabel: "$140 × 4 = 560 slices",
+        totalSlicesLabel: "12,000 slices",
+        sliceSharePercent: 6,
+        liveEquityShareLabel: "6%",
+      },
+    ],
+    reservedSlicesLabel: "36,000 slices",
+    reservedSliceSharePercent: 18,
+    reservedSlicesNote: "Reserved for the open Water Quality Chemist role.",
+    claimVerificationRuns: [
+      {
+        id: "water-verify-jul-7",
+        memberId: "nusrat-jahan",
+        dailyLogId: "water-log-jul-7",
+        claimDateLabel: "Jul 7, 2026",
+        claimSummary: "6 hrs preparing the municipal permit documentation",
+        claimedHoursLabel: "6 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (6 hrs) and one artifact claim (permit application pack).",
+            evidenceLabels: ["Time: 6 hrs", "Artifact: permit pack"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Permit application draft and its annexes were edited in the shared drive on the claim date.",
+            evidenceLabels: ["Drive: 17 revisions"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Annexes add site-specific water-quality data, not boilerplate.",
+            evidenceLabels: ["Substance score 0.79"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Edits spread across the day, consistent with the claim.",
+            evidenceLabels: ["Edit spread: 5.7 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "6 hrs verified → 780 slices pushed to the ledger.",
+        slicesAwardedLabel: "780 slices",
+      },
+      {
+        id: "water-verify-jul-6",
+        memberId: "farhana-rahman",
+        dailyLogId: "water-log-jul-6",
+        claimDateLabel: "Jul 6, 2026",
+        claimSummary: "7 hrs running membrane fouling test cycles",
+        claimedHoursLabel: "7 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (7 hrs) and one artifact claim (fouling test dataset).",
+            evidenceLabels: ["Time: 7 hrs", "Artifact: test dataset"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Bench-rig sensor exports and the analysis notebook landed in the project drive during the window.",
+            evidenceLabels: ["Sensor exports: 8", "Notebook: 6 revisions"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Notebook adds flux-decline curves for three membrane batches.",
+            evidenceLabels: ["Substance score 0.84"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Export timestamps track the full claimed window.",
+            evidenceLabels: ["Export spread: 6.9 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "7 hrs verified → 1,540 slices pushed to the ledger.",
+        slicesAwardedLabel: "1,540 slices",
+      },
+      {
+        id: "water-verify-jul-5",
+        memberId: "arjun-mehta",
+        dailyLogId: "water-log-jul-5",
+        claimDateLabel: "Jul 5, 2026",
+        claimSummary: "5 hrs revising the filtration housing CAD",
+        claimedHoursLabel: "5 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (5 hrs) and one artifact claim (housing CAD revision).",
+            evidenceLabels: ["Time: 5 hrs", "Artifact: CAD rev"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Two CAD check-ins pushed to the project repository; commit signatures match Arjun's key.",
+            evidenceLabels: ["Commits: 2", "Signature match"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Diff reworks the clamp geometry — substantive design change.",
+            evidenceLabels: ["Substance score 0.76"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Check-ins bracket the claimed window.",
+            evidenceLabels: ["Check-in spread: 4.4 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "5 hrs verified → 700 slices pushed to the ledger.",
+        slicesAwardedLabel: "700 slices",
+      },
+    ],
+    disputeWindowEntries: [
+      {
+        id: "water-dispute-nusrat-jul-7",
+        memberId: "nusrat-jahan",
+        allocationDateLabel: "Jul 7, 2026",
+        proposedAllocationSummary: "4 hrs distributor outreach in Chattogram",
+        proposedSlicesLabel: "520 slices",
+        status: "open",
+        timeRemainingToLockLabel: "Locks in 16h 40m",
+      },
+      {
+        id: "water-dispute-arjun-jul-4",
+        memberId: "arjun-mehta",
+        allocationDateLabel: "Jul 4, 2026",
+        proposedAllocationSummary: "10 hrs filtration housing CAD work",
+        proposedSlicesLabel: "1,400 slices",
+        status: "consensus-reached",
+        disputeNote:
+          "Disputed by Farhana Rahman — repository activity covers a shorter window than claimed.",
+        consensusOutcomeLabel: "Re-verified at 6 hrs — adjusted to 840 slices.",
+      },
+      {
+        id: "water-dispute-farhana-jul-6",
+        memberId: "farhana-rahman",
+        allocationDateLabel: "Jul 6, 2026",
+        proposedAllocationSummary: "7 hrs membrane fouling test cycles",
+        proposedSlicesLabel: "1,540 slices",
+        status: "locked",
+        lockedOnLabel: "Locked Jul 7, 2026",
+      },
+    ],
+    physicalWorkReceipts: [
+      {
+        id: "water-receipt-intake-photo",
+        memberId: "nusrat-jahan",
+        receiptKind: "photo",
+        fileName: "pilot-site-intake-install.jpg",
+        fileSizeLabel: "3.1 MB",
+        uploadedDateLabel: "Jul 2, 2026",
+        claimSummary: "3 hrs installing the pilot-site intake manifold",
+        forensicsChecks: [
+          {
+            kind: "exif-metadata",
+            result: "flagged",
+            findingSummary: "EXIF stripped — the image was re-compressed by a messaging app.",
+          },
+          {
+            kind: "device-fingerprint",
+            result: "flagged",
+            findingSummary: "No registered-device fingerprint recoverable after re-compression.",
+          },
+          {
+            kind: "reverse-image-search",
+            result: "passed",
+            findingSummary: "No matches in stock libraries or prior uploads.",
+          },
+        ],
+        verdict: "under-review",
+        verdictDetail: "Original photo requested — slices pending re-upload with intact metadata.",
+      },
+    ],
+  },
+  {
+    projectId: "agricultural-drone-kits",
+    pieStatus: "dynamic",
+    pieStatusNote:
+      "Every verified hour and dollar reshapes the split until the pie bakes at breakeven or a priced round.",
+    totalSlicesInPoolLabel: "200,000 slices",
+    memberSliceBreakdowns: [
+      {
+        memberId: "mateo-villanueva",
+        lockedFairMarketRateLabel: "$95/hr",
+        verifiedUnpaidHoursLabel: "232 hrs",
+        timeSliceEquationLabel: "232 hrs × $95 × 2 = 44,080 slices",
+        cashSliceEquationLabel: "$17,980 × 4 = 71,920 slices",
+        totalSlicesLabel: "116,000 slices",
+        sliceSharePercent: 58,
+        liveEquityShareLabel: "58%",
+      },
+      {
+        memberId: "camila-rojas",
+        lockedFairMarketRateLabel: "$70/hr",
+        verifiedUnpaidHoursLabel: "141 hrs",
+        timeSliceEquationLabel: "141 hrs × $70 × 2 = 19,740 slices",
+        cashSliceEquationLabel: "$65 × 4 = 260 slices",
+        totalSlicesLabel: "20,000 slices",
+        sliceSharePercent: 10,
+        liveEquityShareLabel: "10%",
+      },
+      {
+        memberId: "diego-fernandez",
+        lockedFairMarketRateLabel: "$60/hr",
+        verifiedUnpaidHoursLabel: "128 hrs",
+        timeSliceEquationLabel: "128 hrs × $60 × 2 = 15,360 slices",
+        cashSliceEquationLabel: "$160 × 4 = 640 slices",
+        totalSlicesLabel: "16,000 slices",
+        sliceSharePercent: 8,
+        liveEquityShareLabel: "8%",
+      },
+      {
+        memberId: "lucia-herrera",
+        lockedFairMarketRateLabel: "$50/hr",
+        verifiedUnpaidHoursLabel: "87 hrs",
+        timeSliceEquationLabel: "87 hrs × $50 × 2 = 8,700 slices",
+        cashSliceEquationLabel: "$325 × 4 = 1,300 slices",
+        totalSlicesLabel: "10,000 slices",
+        sliceSharePercent: 5,
+        liveEquityShareLabel: "5%",
+      },
+    ],
+    reservedSlicesLabel: "38,000 slices",
+    reservedSliceSharePercent: 19,
+    reservedSlicesNote:
+      "Reserved for the open Flight Test Pilot, Supply Chain Lead, and Firmware Contributor roles.",
+    claimVerificationRuns: [
+      {
+        id: "drone-verify-jul-7",
+        memberId: "diego-fernandez",
+        dailyLogId: "drone-log-jul-7",
+        claimDateLabel: "Jul 7, 2026",
+        claimSummary: "6 hrs tuning the flight-controller firmware",
+        claimedHoursLabel: "6 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (6 hrs) and one code claim (controller gain tuning).",
+            evidenceLabels: ["Time: 6 hrs", "Code: gain tuning"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Four commits to the flight-controller module; signatures match Diego's key.",
+            evidenceLabels: ["Commits: 4", "Signature match"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Diff rewrites the PID gain schedule with new test coverage.",
+            evidenceLabels: ["Substance score 0.81"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Commits spread across the afternoon, consistent with the claim.",
+            evidenceLabels: ["Commit spread: 5.5 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "6 hrs verified → 720 slices pushed to the ledger.",
+        slicesAwardedLabel: "720 slices",
+      },
+      {
+        id: "drone-verify-jul-6",
+        memberId: "mateo-villanueva",
+        dailyLogId: "drone-log-jul-6",
+        claimDateLabel: "Jul 6, 2026",
+        claimSummary: "8 hrs coordinating the Mendoza field trials",
+        claimedHoursLabel: "8 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (8 hrs) and two artifact claims (trial plan, grower signups).",
+            evidenceLabels: ["Time: 8 hrs", "Artifacts: plan, signups"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Trial plan revisions and the signup tracker both updated on the claim date; calendar shows three grower meetings.",
+            evidenceLabels: ["Drive: 12 revisions", "Calendar: 3 meetings"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Plan adds flight windows and per-plot spray maps.",
+            evidenceLabels: ["Substance score 0.78"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Activity spans the full claimed window.",
+            evidenceLabels: ["Activity spread: 7.4 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "8 hrs verified → 1,520 slices pushed to the ledger.",
+        slicesAwardedLabel: "1,520 slices",
+      },
+      {
+        id: "drone-verify-jul-4",
+        memberId: "lucia-herrera",
+        dailyLogId: "drone-log-jul-4",
+        claimDateLabel: "Jul 4, 2026",
+        claimSummary: "5 hrs calibrating the spray nozzle assembly",
+        claimedHoursLabel: "5 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (5 hrs) and one artifact claim (calibration log).",
+            evidenceLabels: ["Time: 5 hrs", "Artifact: calibration log"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Calibration log and bench video uploads landed in the project drive during the window.",
+            evidenceLabels: ["Log: 7 revisions", "Bench videos: 2"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Log records droplet-size sweeps per nozzle setting.",
+            evidenceLabels: ["Substance score 0.75"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Uploads spread across the claimed window.",
+            evidenceLabels: ["Upload spread: 4.6 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "5 hrs verified → 500 slices pushed to the ledger.",
+        slicesAwardedLabel: "500 slices",
+      },
+      {
+        id: "drone-verify-jul-1-archived",
+        memberId: "diego-fernandez",
+        claimDateLabel: "Jul 1, 2026",
+        claimSummary: "7 hrs building out the telemetry module",
+        claimedHoursLabel: "7 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (7 hrs) and one code claim (telemetry module).",
+            evidenceLabels: ["Time: 7 hrs", "Code: telemetry"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary: "One commit to the telemetry module; signature matches Diego's key.",
+            evidenceLabels: ["Commits: 1", "Signature match"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "flagged",
+            findingSummary:
+              "4,900-line diff is 96% vendored dependency files — substance score 0.04.",
+            evidenceLabels: ["Diff: 4,900 lines", "Vendored: 96%"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "not-run",
+            findingSummary: "Skipped — pipeline halted at the substance check.",
+            evidenceLabels: [],
+          },
+        ],
+        verdict: "flagged-for-review",
+        verdictDetail:
+          "Diff substance does not support the claimed hours — allocation withheld and posted to the dispute window.",
+        slicesAwardedLabel: "840 slices withheld",
+      },
+    ],
+    disputeWindowEntries: [
+      {
+        id: "drone-dispute-camila-jul-7",
+        memberId: "camila-rojas",
+        allocationDateLabel: "Jul 7, 2026",
+        proposedAllocationSummary: "4 hrs distributor demos in Mendoza",
+        proposedSlicesLabel: "560 slices",
+        status: "open",
+        timeRemainingToLockLabel: "Locks in 21h 5m",
+      },
+      {
+        id: "drone-dispute-lucia-jul-3",
+        memberId: "lucia-herrera",
+        allocationDateLabel: "Jul 3, 2026",
+        proposedAllocationSummary: "$325 out-of-pocket on airframe materials",
+        proposedSlicesLabel: "1,300 slices",
+        status: "locked",
+        lockedOnLabel: "Locked Jul 4, 2026",
+      },
+      {
+        id: "drone-dispute-mateo-jul-6",
+        memberId: "mateo-villanueva",
+        allocationDateLabel: "Jul 6, 2026",
+        proposedAllocationSummary: "8 hrs Mendoza field-trial coordination",
+        proposedSlicesLabel: "1,520 slices",
+        status: "locked",
+        lockedOnLabel: "Locked Jul 7, 2026",
+      },
+    ],
+    physicalWorkReceipts: [
+      {
+        id: "drone-receipt-airframe-photo",
+        memberId: "camila-rojas",
+        receiptKind: "photo",
+        fileName: "field-trial-airframe.jpg",
+        fileSizeLabel: "1.9 MB",
+        uploadedDateLabel: "Jul 5, 2026",
+        claimSummary: "5 hrs assembling the field-trial airframe",
+        forensicsChecks: [
+          {
+            kind: "exif-metadata",
+            result: "flagged",
+            findingSummary: "No EXIF metadata present on the upload.",
+          },
+          {
+            kind: "device-fingerprint",
+            result: "flagged",
+            findingSummary: "Image does not match any registered device.",
+          },
+          {
+            kind: "reverse-image-search",
+            result: "flagged",
+            findingSummary: "Matched a commercial stock-photo library listing.",
+          },
+        ],
+        verdict: "rejected",
+        verdictDetail: "Reverse-image search matched a commercial stock photo → 0 slices.",
+      },
+      {
+        id: "drone-receipt-nozzle-cad",
+        memberId: "lucia-herrera",
+        dailyLogId: "drone-log-jul-4",
+        receiptKind: "cad-file",
+        fileName: "nozzle-mount-rev2.step",
+        fileSizeLabel: "6.4 MB",
+        uploadedDateLabel: "Jul 4, 2026",
+        claimSummary: "3 hrs modelling the nozzle mount revision",
+        forensicsChecks: [
+          {
+            kind: "device-fingerprint",
+            result: "passed",
+            findingSummary: "Export fingerprint matches Lucía's registered CAD workstation.",
+          },
+        ],
+        verdict: "accepted",
+        verdictDetail: "3 hrs of CAD work verified → 300 slices.",
+      },
+    ],
+  },
+  {
+    projectId: "prefab-housing-panels",
+    pieStatus: "dynamic",
+    pieStatusNote:
+      "Every verified hour and dollar reshapes the split until the pie bakes at breakeven or a priced round.",
+    totalSlicesInPoolLabel: "200,000 slices",
+    memberSliceBreakdowns: [
+      {
+        memberId: "maricel-santos",
+        lockedFairMarketRateLabel: "$90/hr",
+        verifiedUnpaidHoursLabel: "298 hrs",
+        timeSliceEquationLabel: "298 hrs × $90 × 2 = 53,640 slices",
+        cashSliceEquationLabel: "$13,590 × 4 = 54,360 slices",
+        totalSlicesLabel: "108,000 slices",
+        sliceSharePercent: 54,
+        liveEquityShareLabel: "54%",
+      },
+      {
+        memberId: "josef-tan",
+        lockedFairMarketRateLabel: "$40/hr",
+        verifiedUnpaidHoursLabel: "231 hrs",
+        timeSliceEquationLabel: "231 hrs × $40 × 2 = 18,480 slices",
+        cashSliceEquationLabel: "$130 × 4 = 520 slices",
+        totalSlicesLabel: "19,000 slices",
+        sliceSharePercent: 9.5,
+        liveEquityShareLabel: "9.5%",
+      },
+      {
+        memberId: "anh-nguyen",
+        lockedFairMarketRateLabel: "$30/hr",
+        verifiedUnpaidHoursLabel: "205 hrs",
+        timeSliceEquationLabel: "205 hrs × $30 × 2 = 12,300 slices",
+        cashSliceEquationLabel: "$425 × 4 = 1,700 slices",
+        totalSlicesLabel: "14,000 slices",
+        sliceSharePercent: 7,
+        liveEquityShareLabel: "7%",
+      },
+      {
+        memberId: "rafael-cruz",
+        lockedFairMarketRateLabel: "$25/hr",
+        verifiedUnpaidHoursLabel: "152 hrs",
+        timeSliceEquationLabel: "152 hrs × $25 × 2 = 7,600 slices",
+        cashSliceEquationLabel: "$350 × 4 = 1,400 slices",
+        totalSlicesLabel: "9,000 slices",
+        sliceSharePercent: 4.5,
+        liveEquityShareLabel: "4.5%",
+      },
+      {
+        memberId: "kim-reyes",
+        lockedFairMarketRateLabel: "$25/hr",
+        verifiedUnpaidHoursLabel: "118 hrs",
+        timeSliceEquationLabel: "118 hrs × $25 × 2 = 5,900 slices",
+        cashSliceEquationLabel: "$275 × 4 = 1,100 slices",
+        totalSlicesLabel: "7,000 slices",
+        sliceSharePercent: 3.5,
+        liveEquityShareLabel: "3.5%",
+      },
+    ],
+    reservedSlicesLabel: "43,000 slices",
+    reservedSliceSharePercent: 21.5,
+    reservedSlicesNote: "Reserved for the open Industrial Designer role.",
+    claimVerificationRuns: [
+      {
+        id: "prefab-verify-jul-7",
+        memberId: "josef-tan",
+        dailyLogId: "prefab-log-jul-7",
+        claimDateLabel: "Jul 7, 2026",
+        claimSummary: "6 hrs running panel load tests",
+        claimedHoursLabel: "6 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (6 hrs) and one artifact claim (load-test results).",
+            evidenceLabels: ["Time: 6 hrs", "Artifact: test results"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Load-cell exports and the results sheet landed in the project drive during the window.",
+            evidenceLabels: ["Exports: 6", "Sheet: 9 revisions"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Results sheet records failure loads per panel batch.",
+            evidenceLabels: ["Substance score 0.8"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Exports spread across the claimed window.",
+            evidenceLabels: ["Export spread: 5.8 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "6 hrs verified → 480 slices pushed to the ledger.",
+        slicesAwardedLabel: "480 slices",
+      },
+      {
+        id: "prefab-verify-jul-6",
+        memberId: "maricel-santos",
+        dailyLogId: "prefab-log-jul-6",
+        claimDateLabel: "Jul 6, 2026",
+        claimSummary: "7 hrs negotiating with the housing authority",
+        claimedHoursLabel: "7 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (7 hrs) and one artifact claim (term-sheet redlines).",
+            evidenceLabels: ["Time: 7 hrs", "Artifact: redlines"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Redlined term sheet uploaded; calendar shows two authority meetings in the window.",
+            evidenceLabels: ["Redlines uploaded", "Calendar: 2 meetings"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Redlines rework the delivery schedule and penalty clauses.",
+            evidenceLabels: ["Substance score 0.83"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Activity spans the full claimed window.",
+            evidenceLabels: ["Activity spread: 6.5 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "7 hrs verified → 1,260 slices pushed to the ledger.",
+        slicesAwardedLabel: "1,260 slices",
+      },
+      {
+        id: "prefab-verify-jul-5",
+        memberId: "anh-nguyen",
+        dailyLogId: "prefab-log-jul-5",
+        claimDateLabel: "Jul 5, 2026",
+        claimSummary: "8 hrs revising the panel mold drawings",
+        claimedHoursLabel: "8 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (8 hrs) and one artifact claim (mold drawing revision).",
+            evidenceLabels: ["Time: 8 hrs", "Artifact: mold rev"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Three CAD check-ins pushed to the project repository; signatures match Anh's key.",
+            evidenceLabels: ["Check-ins: 3", "Signature match"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Revision reworks the draft angles and rib spacing.",
+            evidenceLabels: ["Substance score 0.79"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Check-ins spread across the claimed window.",
+            evidenceLabels: ["Check-in spread: 7.2 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "8 hrs verified → 480 slices pushed to the ledger.",
+        slicesAwardedLabel: "480 slices",
+      },
+      {
+        id: "prefab-verify-jul-3",
+        memberId: "kim-reyes",
+        dailyLogId: "prefab-log-jul-3",
+        claimDateLabel: "Jul 3, 2026",
+        claimSummary: "5 hrs of supplier compliance calls",
+        claimedHoursLabel: "5 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary: "Transcript parsed into one time claim (5 hrs of supplier calls).",
+            evidenceLabels: ["Time: 5 hrs"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "flagged",
+            findingSummary:
+              "No calendar events, call logs, or shared documents found for the claimed window.",
+            evidenceLabels: ["Calendar: 0 events", "Documents: 0"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "not-run",
+            findingSummary: "Skipped — no artifacts to analyze.",
+            evidenceLabels: [],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "not-run",
+            findingSummary: "Skipped — no artifacts to analyze.",
+            evidenceLabels: [],
+          },
+        ],
+        verdict: "unverified-zero-slices",
+        verdictDetail: "No digital receipts found → 0 slices.",
+        slicesAwardedLabel: "0 slices",
+      },
+    ],
+    disputeWindowEntries: [
+      {
+        id: "prefab-dispute-rafael-jul-7",
+        memberId: "rafael-cruz",
+        allocationDateLabel: "Jul 7, 2026",
+        proposedAllocationSummary: "4 hrs panel curing checks",
+        proposedSlicesLabel: "200 slices",
+        status: "open",
+        timeRemainingToLockLabel: "Locks in 5h 32m",
+      },
+      {
+        id: "prefab-dispute-kim-jul-3",
+        memberId: "kim-reyes",
+        allocationDateLabel: "Jul 3, 2026",
+        proposedAllocationSummary: "5 hrs supplier compliance calls",
+        proposedSlicesLabel: "250 slices",
+        status: "disputed",
+        disputeNote:
+          "Disputed by Maricel Santos — the calls are not on the shared calendar. Slices frozen in escrow pending team consensus.",
+      },
+      {
+        id: "prefab-dispute-josef-jul-2",
+        memberId: "josef-tan",
+        allocationDateLabel: "Jul 2, 2026",
+        proposedAllocationSummary: "9 hrs load-rig assembly",
+        proposedSlicesLabel: "720 slices",
+        status: "consensus-reached",
+        disputeNote: "Disputed by Anh Nguyen — rig photos cover a shorter session than claimed.",
+        consensusOutcomeLabel: "Re-verified at 7 hrs — adjusted to 560 slices.",
+      },
+      {
+        id: "prefab-dispute-maricel-jul-6",
+        memberId: "maricel-santos",
+        allocationDateLabel: "Jul 6, 2026",
+        proposedAllocationSummary: "7 hrs housing-authority negotiation",
+        proposedSlicesLabel: "1,260 slices",
+        status: "locked",
+        lockedOnLabel: "Locked Jul 7, 2026",
+      },
+      {
+        id: "prefab-dispute-anh-jul-5",
+        memberId: "anh-nguyen",
+        allocationDateLabel: "Jul 5, 2026",
+        proposedAllocationSummary: "8 hrs panel mold drawing revisions",
+        proposedSlicesLabel: "480 slices",
+        status: "locked",
+        lockedOnLabel: "Locked Jul 6, 2026",
+      },
+    ],
+    physicalWorkReceipts: [
+      {
+        id: "prefab-receipt-mold-cad",
+        memberId: "anh-nguyen",
+        dailyLogId: "prefab-log-jul-5",
+        receiptKind: "cad-file",
+        fileName: "panel-mold-rev3.step",
+        fileSizeLabel: "11.2 MB",
+        uploadedDateLabel: "Jul 5, 2026",
+        claimSummary: "8 hrs of panel mold revision modelling",
+        forensicsChecks: [
+          {
+            kind: "device-fingerprint",
+            result: "passed",
+            findingSummary: "Export fingerprint matches Anh's registered CAD workstation.",
+          },
+        ],
+        verdict: "accepted",
+        verdictDetail: "Backs the Jul 5 mold-revision claim — 480 slices confirmed.",
+      },
+      {
+        id: "prefab-receipt-load-test-photo",
+        memberId: "rafael-cruz",
+        receiptKind: "photo",
+        fileName: "load-test-rig-panel-47.jpg",
+        fileSizeLabel: "5.3 MB",
+        uploadedDateLabel: "Jul 1, 2026",
+        claimSummary: "4 hrs documenting the panel-47 load test",
+        forensicsChecks: [
+          {
+            kind: "exif-metadata",
+            result: "passed",
+            findingSummary: "EXIF timestamp Jul 1, 10:04 AM sits inside the claim window.",
+          },
+          {
+            kind: "device-fingerprint",
+            result: "passed",
+            findingSummary: "Camera fingerprint matches Rafael's registered device.",
+          },
+          {
+            kind: "reverse-image-search",
+            result: "passed",
+            findingSummary: "No matches in stock libraries or prior uploads.",
+          },
+        ],
+        verdict: "accepted",
+        verdictDetail: "4 hrs of physical test work verified → 200 slices.",
+      },
+    ],
+  },
+  {
+    projectId: "e-waste-recycling-line",
+    pieStatus: "dynamic",
+    pieStatusNote:
+      "Every verified hour and dollar reshapes the split until the pie bakes at breakeven or a priced round.",
+    totalSlicesInPoolLabel: "200,000 slices",
+    memberSliceBreakdowns: [
+      {
+        memberId: "kwame-mensah",
+        lockedFairMarketRateLabel: "$85/hr",
+        verifiedUnpaidHoursLabel: "342 hrs",
+        timeSliceEquationLabel: "342 hrs × $85 × 2 = 58,140 slices",
+        cashSliceEquationLabel: "$15,465 × 4 = 61,860 slices",
+        totalSlicesLabel: "120,000 slices",
+        sliceSharePercent: 60,
+        liveEquityShareLabel: "60%",
+      },
+      {
+        memberId: "efua-boateng",
+        lockedFairMarketRateLabel: "$30/hr",
+        verifiedUnpaidHoursLabel: "276 hrs",
+        timeSliceEquationLabel: "276 hrs × $30 × 2 = 16,560 slices",
+        cashSliceEquationLabel: "$110 × 4 = 440 slices",
+        totalSlicesLabel: "17,000 slices",
+        sliceSharePercent: 8.5,
+        liveEquityShareLabel: "8.5%",
+      },
+      {
+        memberId: "chidi-nwosu",
+        lockedFairMarketRateLabel: "$25/hr",
+        verifiedUnpaidHoursLabel: "244 hrs",
+        timeSliceEquationLabel: "244 hrs × $25 × 2 = 12,200 slices",
+        cashSliceEquationLabel: "$450 × 4 = 1,800 slices",
+        totalSlicesLabel: "14,000 slices",
+        sliceSharePercent: 7,
+        liveEquityShareLabel: "7%",
+      },
+      {
+        memberId: "fatima-diallo",
+        lockedFairMarketRateLabel: "$24/hr",
+        verifiedUnpaidHoursLabel: "189 hrs",
+        timeSliceEquationLabel: "189 hrs × $24 × 2 = 9,072 slices",
+        cashSliceEquationLabel: "$232 × 4 = 928 slices",
+        totalSlicesLabel: "10,000 slices",
+        sliceSharePercent: 5,
+        liveEquityShareLabel: "5%",
+      },
+    ],
+    reservedSlicesLabel: "39,000 slices",
+    reservedSliceSharePercent: 19.5,
+    reservedSlicesNote: "Reserved for the open Plant Automation Engineer role.",
+    claimVerificationRuns: [
+      {
+        id: "ewaste-verify-jul-7",
+        memberId: "chidi-nwosu",
+        dailyLogId: "ewaste-log-jul-7",
+        claimDateLabel: "Jul 7, 2026",
+        claimSummary: "6 hrs of leaching assay quality checks",
+        claimedHoursLabel: "6 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (6 hrs) and one artifact claim (assay QA log).",
+            evidenceLabels: ["Time: 6 hrs", "Artifact: QA log"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Assay QA log and spectrometer exports landed in the project drive during the window.",
+            evidenceLabels: ["Log: 8 revisions", "Exports: 4"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Log records recovery-rate checks per leaching batch.",
+            evidenceLabels: ["Substance score 0.78"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Exports spread across the claimed window.",
+            evidenceLabels: ["Export spread: 5.4 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "6 hrs verified → 300 slices pushed to the ledger.",
+        slicesAwardedLabel: "300 slices",
+      },
+      {
+        id: "ewaste-verify-jul-6",
+        memberId: "kwame-mensah",
+        dailyLogId: "ewaste-log-jul-6",
+        claimDateLabel: "Jul 6, 2026",
+        claimSummary: "7 hrs commissioning the recovery line",
+        claimedHoursLabel: "7 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (7 hrs) and one artifact claim (commissioning checklist).",
+            evidenceLabels: ["Time: 7 hrs", "Artifact: checklist"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Commissioning checklist and line-sensor exports both updated on the claim date.",
+            evidenceLabels: ["Checklist: 13 revisions", "Sensor exports: 6"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Checklist closes out interlock and throughput items with readings.",
+            evidenceLabels: ["Substance score 0.82"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Activity spans the full claimed window.",
+            evidenceLabels: ["Activity spread: 6.7 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "7 hrs verified → 1,190 slices pushed to the ledger.",
+        slicesAwardedLabel: "1,190 slices",
+      },
+      {
+        id: "ewaste-verify-jul-4",
+        memberId: "fatima-diallo",
+        dailyLogId: "ewaste-log-jul-4",
+        claimDateLabel: "Jul 4, 2026",
+        claimSummary: "5 hrs preparing the Basel Convention shipment report",
+        claimedHoursLabel: "5 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (5 hrs) and one artifact claim (shipment report draft).",
+            evidenceLabels: ["Time: 5 hrs", "Artifact: report draft"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary: "Report draft edited in the shared drive on the claim date.",
+            evidenceLabels: ["Drive: 10 revisions"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Draft adds manifest reconciliations, not template filler.",
+            evidenceLabels: ["Substance score 0.77"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Edits spread across the claimed window.",
+            evidenceLabels: ["Edit spread: 4.8 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail: "5 hrs verified → 240 slices pushed to the ledger.",
+        slicesAwardedLabel: "240 slices",
+      },
+    ],
+    disputeWindowEntries: [
+      {
+        id: "ewaste-dispute-efua-jul-7",
+        memberId: "efua-boateng",
+        allocationDateLabel: "Jul 7, 2026",
+        proposedAllocationSummary: "6 hrs sorting-line throughput optimization",
+        proposedSlicesLabel: "360 slices",
+        status: "open",
+        timeRemainingToLockLabel: "Locks in 12h 48m",
+      },
+      {
+        id: "ewaste-dispute-chidi-jul-4",
+        memberId: "chidi-nwosu",
+        allocationDateLabel: "Jul 4, 2026",
+        proposedAllocationSummary: "8 hrs assay documentation",
+        proposedSlicesLabel: "400 slices",
+        status: "consensus-reached",
+        disputeNote:
+          "Disputed by Efua Boateng — the documentation session overlapped a plant tour.",
+        consensusOutcomeLabel: "Re-verified at 8 hrs — original allocation upheld.",
+      },
+      {
+        id: "ewaste-dispute-kwame-jul-6",
+        memberId: "kwame-mensah",
+        allocationDateLabel: "Jul 6, 2026",
+        proposedAllocationSummary: "7 hrs recovery-line commissioning",
+        proposedSlicesLabel: "1,190 slices",
+        status: "locked",
+        lockedOnLabel: "Locked Jul 7, 2026",
+      },
+    ],
+    physicalWorkReceipts: [
+      {
+        id: "ewaste-receipt-reagent-invoice",
+        memberId: "fatima-diallo",
+        receiptKind: "material-receipt",
+        fileName: "reagent-supplier-invoice.pdf",
+        fileSizeLabel: "0.4 MB",
+        uploadedDateLabel: "Jun 26, 2026",
+        claimSummary: "$232 out-of-pocket on leaching reagents",
+        forensicsChecks: [
+          {
+            kind: "exif-metadata",
+            result: "passed",
+            findingSummary: "Invoice metadata matches the supplier's issuing system.",
+          },
+          {
+            kind: "reverse-image-search",
+            result: "passed",
+            findingSummary: "Invoice is not a reused image from a prior claim.",
+          },
+        ],
+        verdict: "accepted",
+        verdictDetail: "$232 × 4 = 928 slices credited as a cash contribution.",
+      },
+    ],
+  },
+  {
+    projectId: "medical-cold-chain-packaging",
+    pieStatus: "baked",
+    pieStatusNote:
+      "Pie baked at the Series A close — percentages frozen; ESOP paperwork generated from the final math.",
+    totalSlicesInPoolLabel: "200,000 slices",
+    memberSliceBreakdowns: [
+      {
+        memberId: "elise-moreau",
+        lockedFairMarketRateLabel: "$75/hr",
+        verifiedUnpaidHoursLabel: "412 hrs",
+        timeSliceEquationLabel: "412 hrs × $75 × 2 = 61,800 slices",
+        cashSliceEquationLabel: "$10,050 × 4 = 40,200 slices",
+        totalSlicesLabel: "102,000 slices",
+        sliceSharePercent: 51,
+        liveEquityShareLabel: "51%",
+      },
+      {
+        memberId: "jonas-weber",
+        lockedFairMarketRateLabel: "$30/hr",
+        verifiedUnpaidHoursLabel: "388 hrs",
+        timeSliceEquationLabel: "388 hrs × $30 × 2 = 23,280 slices",
+        cashSliceEquationLabel: "$180 × 4 = 720 slices",
+        totalSlicesLabel: "24,000 slices",
+        sliceSharePercent: 12,
+        liveEquityShareLabel: "12%",
+      },
+      {
+        memberId: "ingrid-sorensen",
+        lockedFairMarketRateLabel: "$30/hr",
+        verifiedUnpaidHoursLabel: "296 hrs",
+        timeSliceEquationLabel: "296 hrs × $30 × 2 = 17,760 slices",
+        cashSliceEquationLabel: "$60 × 4 = 240 slices",
+        totalSlicesLabel: "18,000 slices",
+        sliceSharePercent: 9,
+        liveEquityShareLabel: "9%",
+      },
+    ],
+    reservedSlicesLabel: "56,000 slices",
+    reservedSliceSharePercent: 28,
+    reservedSlicesNote:
+      "Unissued pool frozen at the bake — allocated to the ESOP under the Series A terms.",
+    claimVerificationRuns: [
+      {
+        id: "med-verify-jul-7",
+        memberId: "ingrid-sorensen",
+        dailyLogId: "med-log-jul-7",
+        claimDateLabel: "Jul 7, 2026",
+        claimSummary: "6 hrs preparing the Nordic courier tender submission",
+        claimedHoursLabel: "6 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (6 hrs) and one artifact claim (tender submission pack).",
+            evidenceLabels: ["Time: 6 hrs", "Artifact: tender pack"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary: "Tender pack revisions landed in the shared drive on the claim date.",
+            evidenceLabels: ["Drive: 15 revisions"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Pack adds pricing schedules and compliance annexes.",
+            evidenceLabels: ["Substance score 0.81"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Edits spread across the claimed window.",
+            evidenceLabels: ["Edit spread: 5.6 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail:
+          "6 hrs verified — recorded for salary compensation; the baked pie no longer shifts.",
+        slicesAwardedLabel: "0 slices — pie baked",
+      },
+      {
+        id: "med-verify-jul-6",
+        memberId: "jonas-weber",
+        dailyLogId: "med-log-jul-6",
+        claimDateLabel: "Jul 6, 2026",
+        claimSummary: "5 hrs escalating the OTA signing-certificate renewal",
+        claimedHoursLabel: "5 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (5 hrs) and two artifact claims (escalation ticket, fallback plan).",
+            evidenceLabels: ["Time: 5 hrs", "Artifacts: ticket, plan"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Escalation ticket opened with the certificate authority; fallback plan committed to the drive.",
+            evidenceLabels: ["Ticket opened", "Plan: 7 revisions"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Fallback plan stages depot-by-depot manual updates.",
+            evidenceLabels: ["Substance score 0.8"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Activity spread matches the claimed hours.",
+            evidenceLabels: ["Activity spread: 4.7 hrs"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail:
+          "5 hrs verified — recorded for salary compensation; the baked pie no longer shifts.",
+        slicesAwardedLabel: "0 slices — pie baked",
+      },
+      {
+        id: "med-verify-jul-5",
+        memberId: "elise-moreau",
+        dailyLogId: "med-log-jul-5",
+        claimDateLabel: "Jul 5, 2026",
+        claimSummary: "4 hrs closing the Lyon distributor contract",
+        claimedHoursLabel: "4 hrs claimed",
+        steps: [
+          {
+            kind: "claim-extraction",
+            status: "passed",
+            findingSummary:
+              "Transcript parsed into one time claim (4 hrs) and one artifact claim (countersigned contract).",
+            evidenceLabels: ["Time: 4 hrs", "Artifact: contract"],
+          },
+          {
+            kind: "artifact-grounding",
+            status: "passed",
+            findingSummary:
+              "Countersigned contract uploaded; the distributor's confirmation is on the shared thread.",
+            evidenceLabels: ["Contract PDF", "Email thread"],
+          },
+          {
+            kind: "substance-analysis",
+            status: "passed",
+            findingSummary: "Contract carries the negotiated three-year fleet terms.",
+            evidenceLabels: ["Substance score 0.86"],
+          },
+          {
+            kind: "temporal-analysis",
+            status: "passed",
+            findingSummary: "Calendar shows the signing call inside the claimed window.",
+            evidenceLabels: ["Calendar: 1 meeting"],
+          },
+        ],
+        verdict: "verified",
+        verdictDetail:
+          "4 hrs verified — recorded for salary compensation; the baked pie no longer shifts.",
+        slicesAwardedLabel: "0 slices — pie baked",
+      },
+    ],
+    disputeWindowEntries: [
+      {
+        id: "med-dispute-elise-jun-30",
+        memberId: "elise-moreau",
+        allocationDateLabel: "Jun 30, 2026",
+        proposedAllocationSummary: "Final pre-bake allocation — 6 hrs Series A diligence",
+        proposedSlicesLabel: "900 slices",
+        status: "locked",
+        lockedOnLabel: "Locked Jun 30, 2026 — final entry before the bake",
+      },
+      {
+        id: "med-dispute-jonas-jun-29",
+        memberId: "jonas-weber",
+        allocationDateLabel: "Jun 29, 2026",
+        proposedAllocationSummary: "7 hrs shipper firmware release",
+        proposedSlicesLabel: "420 slices",
+        status: "locked",
+        lockedOnLabel: "Locked Jun 30, 2026",
+      },
+      {
+        id: "med-dispute-ingrid-jun-27",
+        memberId: "ingrid-sorensen",
+        allocationDateLabel: "Jun 27, 2026",
+        proposedAllocationSummary: "12 hrs courier tender preparation",
+        proposedSlicesLabel: "720 slices",
+        status: "consensus-reached",
+        disputeNote:
+          "Disputed by Jonas Weber — part of the session overlapped the all-hands offsite.",
+        consensusOutcomeLabel: "Re-verified at 9 hrs — adjusted to 540 slices.",
+      },
+    ],
+    physicalWorkReceipts: [
+      {
+        id: "med-receipt-test-rig-photo",
+        memberId: "jonas-weber",
+        receiptKind: "photo",
+        fileName: "phase-change-panel-test-rig.jpg",
+        fileSizeLabel: "4.2 MB",
+        uploadedDateLabel: "Jun 24, 2026",
+        claimSummary: "5 hrs building the phase-change panel test rig",
+        forensicsChecks: [
+          {
+            kind: "exif-metadata",
+            result: "passed",
+            findingSummary: "EXIF timestamp Jun 24, 2:41 PM sits inside the claim window.",
+          },
+          {
+            kind: "device-fingerprint",
+            result: "passed",
+            findingSummary: "Camera fingerprint matches Jonas's registered device.",
+          },
+          {
+            kind: "reverse-image-search",
+            result: "passed",
+            findingSummary: "No matches in stock libraries or prior uploads.",
+          },
+        ],
+        verdict: "accepted",
+        verdictDetail: "5 hrs of rig build verified → 300 slices (pre-bake).",
+      },
+    ],
+  },
+];
