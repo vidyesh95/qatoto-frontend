@@ -766,9 +766,7 @@ Livepeer is **one implementation behind a seam**, so switching later is cheap an
     ```ts
     export interface VideoProvider {
         // Create a remote asset + return where the client uploads the bytes directly.
-        requestUpload(input: {
-            name: string;
-        }): Promise<
+        requestUpload(input: { name: string }): Promise<
             Result<
                 {
                     assetId: string;

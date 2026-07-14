@@ -41,16 +41,16 @@ Pattern donors elsewhere in the repo:
 
 The founder's eight pillars, and which surface carries each:
 
-| #   | Pillar                                              | Carried by                                                                           |
-| --- | --------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| 1   | Market-demand research & feasibility                | `/research-and-development/knowledge-hub` + demand chips on project Overview         |
-| 2   | Problem Mapping / "Civic Pulse"                     | `/research-and-development/problem-map`                                              |
-| 3   | Knowledge Hub (market intelligence)                 | `/research-and-development/knowledge-hub`                                            |
-| 4   | Talent matching / Virtual Workshop                  | Open-roles rail + Team tab now; `/talent` + `/workshop` later (§11)                  |
-| 5   | Funding (crowd / VC, transparency)                  | Funding tab on project detail; investor `/funding` view later (§11)                  |
-| 6   | Daily Update Protocol (AI logs, Proof of Effort)    | Daily Logs tab on project detail                                                     |
-| 7   | Financial governance (escrow, anti-corruption)      | Governance tab on project detail                                                     |
-| 8   | Go-to-market (suppliers, ODM, shipping, storefront) | Pipeline-stage card pointing at the existing **`/store`** B2B surface — no new route |
+| #   | Pillar                                              | Carried by                                                                                                |
+| --- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 1   | Market-demand research & feasibility                | `/research-and-development/knowledge-hub` + demand chips on project Overview                              |
+| 2   | Problem Mapping / "Civic Pulse"                     | `/research-and-development/problem-map`                                                                   |
+| 3   | Knowledge Hub (market intelligence)                 | `/research-and-development/knowledge-hub`                                                                 |
+| 4   | Talent matching / Virtual Workshop                  | Open-roles rail + Team tab now; `/talent` + `/workshop` later (§11)                                       |
+| 5   | Funding (crowd / VC, transparency)                  | Funding tab on project detail; investor `/funding` view later (§11)                                       |
+| 6   | Daily Update Protocol (AI logs, Proof of Effort)    | Daily Logs tab on project detail — mechanism spec'd in [PROOF_OF_EFFORT_SPEC.md](PROOF_OF_EFFORT_SPEC.md) |
+| 7   | Financial governance (escrow, anti-corruption)      | Governance tab on project detail                                                                          |
+| 8   | Go-to-market (suppliers, ODM, shipping, storefront) | Pipeline-stage card pointing at the existing **`/store`** B2B surface — no new route                      |
 
 Related surfaces that are **not** part of this doc:
 
@@ -177,6 +177,10 @@ switcher (`project-tabs.tsx`) is a small `"use client"` island that receives eac
 
 ### 5.2 Daily Logs (pillar 6)
 
+> **Mechanism spec:** [PROOF_OF_EFFORT_SPEC.md](PROOF_OF_EFFORT_SPEC.md) §3–4 — the
+> Slicing Pie equity math and multi-layer verification pipeline these chips/badges
+> stand in for. Everything below is a static mock render of that spec's output.
+
 Feed of `DailyLogCard`s, date-grouped:
 
 - date, author avatar, **video-thumbnail placeholder** with play glyph,
@@ -190,6 +194,10 @@ Feed of `DailyLogCard`s, date-grouped:
 > pipeline is backend-later.
 
 ### 5.3 Team (pillar 4)
+
+> **Mechanism spec:** `TeamMember.equityShare` and the split bar below render the
+> output of the Slicing Pie formula — see
+> [PROOF_OF_EFFORT_SPEC.md](PROOF_OF_EFFORT_SPEC.md) §3.
 
 - **Equity split summary bar** — stacked horizontal, one segment per member +
   unallocated.
@@ -208,6 +216,10 @@ Feed of `DailyLogCard`s, date-grouped:
 - **Back this project** → sheet §8.3.
 
 ### 5.5 Governance (pillar 7)
+
+> **Mechanism spec:** [PROOF_OF_EFFORT_SPEC.md](PROOF_OF_EFFORT_SPEC.md) §2–4 — the
+> Trust Protocol framing, the ledger-bake exit event, and why `verificationStatus`
+> exists on `EscrowLedgerEntry` at all.
 
 - **Escrow ledger table**: date, event description, in/out, amount, linked
   milestone/log, verified/pending status.
