@@ -114,7 +114,9 @@ export default function CreateListingPage({ productId }: { productId?: string })
     setKeyFeatures(product.keyFeatures);
     setPriceInDollars(centsToDollarString(product.priceInCents));
     setCompareAtPriceInDollars(
-      product.compareAtPriceInCents === null ? "" : centsToDollarString(product.compareAtPriceInCents),
+      product.compareAtPriceInCents === null
+        ? ""
+        : centsToDollarString(product.compareAtPriceInCents),
     );
     setStockQuantity(String(product.stockQuantity));
     setSkuCode(product.sku ?? "");
@@ -224,7 +226,9 @@ export default function CreateListingPage({ productId }: { productId?: string })
 
   function handleTierChange(tierIndex: number, field: keyof PricingTierDraft, value: string) {
     setPricingTiers((previousTiers) =>
-      previousTiers.map((tier, index) => (index === tierIndex ? { ...tier, [field]: value } : tier)),
+      previousTiers.map((tier, index) =>
+        index === tierIndex ? { ...tier, [field]: value } : tier,
+      ),
     );
   }
 
@@ -252,11 +256,16 @@ export default function CreateListingPage({ productId }: { productId?: string })
     const tiers: { unitPriceInCents: number; minimumOrderQuantity: number }[] = [];
     for (const tier of pricingTiers) {
       const isBlankRow =
-        tier.unitPriceInDollars.trim().length === 0 && tier.minimumOrderQuantity.trim().length === 0;
+        tier.unitPriceInDollars.trim().length === 0 &&
+        tier.minimumOrderQuantity.trim().length === 0;
       if (isBlankRow) continue;
       const unitPriceInCents = dollarsToCents(tier.unitPriceInDollars);
       const minimumOrderQuantity = Number.parseInt(tier.minimumOrderQuantity, 10);
-      if (unitPriceInCents === null || !Number.isFinite(minimumOrderQuantity) || minimumOrderQuantity < 1) {
+      if (
+        unitPriceInCents === null ||
+        !Number.isFinite(minimumOrderQuantity) ||
+        minimumOrderQuantity < 1
+      ) {
         return {
           error: "Each pricing tier needs a valid unit price and a minimum quantity of at least 1.",
         };
@@ -867,9 +876,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 {
                   label: "Images",
                   value:
-                    imageCount > 0
-                      ? `${imageCount} image${imageCount === 1 ? "" : "s"} added`
-                      : "",
+                    imageCount > 0 ? `${imageCount} image${imageCount === 1 ? "" : "s"} added` : "",
                 },
               ]}
             />

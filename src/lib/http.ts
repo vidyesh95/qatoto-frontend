@@ -6,9 +6,7 @@ import { API_BASE_URL } from "@/lib/api";
  * not thrown). Component/hook code branches on `success` and never guesses whether
  * an error was swallowed.
  */
-export type ActionResponse<T> =
-  | { success: true; data: T }
-  | { success: false; error: ApiError };
+export type ActionResponse<T> = { success: true; data: T } | { success: false; error: ApiError };
 
 export interface ApiError {
   /** Machine-readable-ish code: HTTP status, "NETWORK", or "PARSE". */
@@ -55,7 +53,10 @@ async function request<T>(
       credentials: "include",
     });
   } catch {
-    return { success: false, error: { code: "NETWORK", message: "Network error. Please try again." } };
+    return {
+      success: false,
+      error: { code: "NETWORK", message: "Network error. Please try again." },
+    };
   }
 
   const rawPayload = await response.json().catch(() => null);
@@ -111,7 +112,11 @@ export function sendForm<T>(
   formData: FormData,
   dataSchema: z.ZodType<T>,
 ): Promise<ActionResponse<T>> {
-  return request(path, { method, headers: { Accept: "application/json" }, body: formData }, dataSchema);
+  return request(
+    path,
+    { method, headers: { Accept: "application/json" }, body: formData },
+    dataSchema,
+  );
 }
 
 /**
@@ -131,7 +136,10 @@ export async function getPaginated<T>(
       headers: { Accept: "application/json" },
     });
   } catch {
-    return { success: false, error: { code: "NETWORK", message: "Network error. Please try again." } };
+    return {
+      success: false,
+      error: { code: "NETWORK", message: "Network error. Please try again." },
+    };
   }
 
   const rawPayload = await response.json().catch(() => null);

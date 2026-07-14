@@ -103,9 +103,7 @@ export default function ProductsPage() {
               </span>
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-foreground">{product.title}</p>
-                <p className="text-xs text-muted-foreground">
-                  SKU: {product.sku ?? "—"}
-                </p>
+                <p className="text-xs text-muted-foreground">SKU: {product.sku ?? "—"}</p>
               </div>
             </div>
 
