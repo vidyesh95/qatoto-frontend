@@ -363,10 +363,10 @@ function ReviewItem({ review }: { review: Review }) {
         {review.images.length > 0 && (
           <>
             <div className="mt-2 grid w-max grid-cols-3 gap-1">
-              {review.images.map((src, i) => (
+              {review.images.map((imageUrl) => (
                 <Image
-                  key={i}
-                  src={src}
+                  key={imageUrl}
+                  src={imageUrl}
                   width={72}
                   height={72}
                   alt="review photo"

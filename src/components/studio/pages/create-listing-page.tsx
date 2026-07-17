@@ -41,6 +41,8 @@ const MAX_PRODUCT_IMAGES = 9;
 
 /** A pricing tier as typed in the form (dollar/quantity strings). */
 interface PricingTierDraft {
+  /** Stable per-row key for the React list; generated on create/hydrate, never sent to the backend. */
+  id: string;
   unitPriceInDollars: string;
   minimumOrderQuantity: string;
 }
@@ -129,6 +131,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
       product.pricingTiers
         .toSorted((first, second) => first.position - second.position)
         .map((tier) => ({
+          id: crypto.randomUUID(),
           unitPriceInDollars: centsToDollarString(tier.unitPriceInCents),
           minimumOrderQuantity: String(tier.minimumOrderQuantity),
         })),
@@ -220,7 +223,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
   function handleAddTierClick() {
     setPricingTiers((previousTiers) => [
       ...previousTiers,
-      { unitPriceInDollars: "", minimumOrderQuantity: "" },
+      { id: crypto.randomUUID(), unitPriceInDollars: "", minimumOrderQuantity: "" },
     ]);
   }
 
@@ -795,7 +798,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 <ul className="flex flex-col gap-2">
                   {pricingTiers.map((tier, tierIndex) => (
                     <li
-                      key={tierIndex}
+                      key={tier.id}
                       className="grid grid-cols-[1fr_1fr_auto] items-end gap-3 rounded-xl border border-border p-3"
                     >
                       <div className="flex flex-col gap-1.5">

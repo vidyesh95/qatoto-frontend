@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { emailOtp } from "@/lib/auth-client";
 
+const OTP_FIELD_IDS = ["otp-1", "otp-2", "otp-3", "otp-4", "otp-5", "otp-6"] as const;
+
 export default function ForgotPassword() {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -207,15 +209,15 @@ export default function ForgotPassword() {
           <>
             <form onSubmit={handleOtpSubmit} className="space-y-4">
               <div className="flex justify-center gap-3">
-                {otp.map((digit, index) => (
+                {OTP_FIELD_IDS.map((fieldId, index) => (
                   <input
-                    key={index}
+                    key={fieldId}
                     type="text"
                     inputMode="numeric"
                     id={`otp-${index}`}
                     aria-label={`Verification code digit ${index + 1}`}
                     maxLength={1}
-                    value={digit}
+                    value={otp[index]}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
                     className="h-14 w-12 rounded border border-[#6F7979] bg-transparent text-center text-xl font-semibold transition-colors outline-none focus:border-2 focus:border-[#00696E]"

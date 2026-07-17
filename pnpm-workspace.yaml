@@ -2,6 +2,12 @@ allowBuilds:
   msgpackr-extract: true
   sharp: true
   unrs-resolver: true
+# Supply-chain hardening: wait 7 days before installing a freshly published version
+# (malware is usually caught & unpublished within hours), refuse trust downgrades between
+# resolutions, and block transitive deps from non-registry (git:/file:/tarball) sources.
+# minimumReleaseAge: 10080
+# trustPolicy: no-downgrade
+# blockExoticSubdeps: true
 minimumReleaseAgeExclude:
   - "@oxfmt/binding-android-arm-eabi@0.51.0 || 0.52.0"
   - "@oxfmt/binding-android-arm64@0.51.0 || 0.52.0"

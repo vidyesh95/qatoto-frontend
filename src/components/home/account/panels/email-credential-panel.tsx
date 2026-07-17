@@ -7,6 +7,8 @@ import { authClient, useSession } from "@/lib/auth-client";
 import { API_BASE_URL } from "@/lib/api";
 import { findOriginalProviderId } from "@/lib/account-links";
 
+const OTP_FIELD_IDS = ["otp-1", "otp-2", "otp-3", "otp-4", "otp-5", "otp-6"] as const;
+
 /**
  * Enables email + password sign-in on an account that signed up with OAuth only
  * (Google / GitHub) — the contract's "Path C" (BACKEND_STRUCTURE.md §5e/§6):
@@ -320,15 +322,15 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
           </p>
 
           <div className="flex justify-center gap-3">
-            {otp.map((digit, index) => (
+            {OTP_FIELD_IDS.map((fieldId, index) => (
               <input
-                key={index}
+                key={fieldId}
                 type="text"
                 inputMode="numeric"
                 id={`credential-otp-${index}`}
                 aria-label={`Verification code digit ${index + 1}`}
                 maxLength={1}
-                value={digit}
+                value={otp[index]}
                 onChange={(inputEvent) => handleOtpChange(index, inputEvent.target.value)}
                 onKeyDown={(keyEvent) => handleOtpKeyDown(index, keyEvent)}
                 className="h-14 w-12 rounded-xl border border-black/10 bg-card text-center text-xl font-semibold text-secondary-foreground outline-none focus:border-primary"

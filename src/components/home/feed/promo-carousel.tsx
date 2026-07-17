@@ -97,9 +97,9 @@ export default function PromoCarousel() {
 
       {/* Indicator dots */}
       <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-        {CAROUSEL_IMAGES.map((_, index) => (
+        {CAROUSEL_IMAGES.map((image, index) => (
           <button
-            key={index}
+            key={image.src}
             className={`h-2 w-2 rounded-full transition ${
               index === currentIndex ? "bg-black" : "bg-gray-400"
             }`}
