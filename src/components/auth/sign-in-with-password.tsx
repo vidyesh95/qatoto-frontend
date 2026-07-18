@@ -38,7 +38,7 @@ export default function SignIn() {
         await window.PublicKeyCredential?.isConditionalMediationAvailable?.();
       if (!isActive || !isConditionalUiAvailable) return;
       const { error } = await signIn.passkey({ autoFill: true });
-      if (isActive && !error) router.push("/");
+      if (isActive && !error) router.replace("/");
     })();
     return () => {
       isActive = false;
