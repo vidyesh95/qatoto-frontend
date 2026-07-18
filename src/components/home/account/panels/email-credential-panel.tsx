@@ -447,7 +447,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
         </form>
       ) : (
         <div className="flex flex-col gap-6 p-4">
-          <label className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
             <span className="text-sm font-medium text-secondary-foreground">Email address</span>
             <div className="flex flex-row items-center gap-2 rounded-xl border border-black/10 bg-muted px-4 py-3">
               <Image
@@ -464,7 +464,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
             {flowState.status === "start-error" ? (
               <span className="text-xs text-red-600">{flowState.message}</span>
             ) : null}
-          </label>
+          </div>
 
           <button
             type="button"
