@@ -1,4 +1,18 @@
-import type { Milestone, MilestoneStatus } from "@/types/research-and-development";
+import type {
+  Milestone,
+  MilestoneStatus,
+  MilestoneVarianceStatus,
+} from "@/types/research-and-development";
+
+const MILESTONE_VARIANCE_STYLES: Record<
+  MilestoneVarianceStatus,
+  { label: string; chipClassName: string }
+> = {
+  "on-track": { label: "On track", chipClassName: "bg-[#00696E]/10 text-[#00696E]" },
+  ahead: { label: "Ahead", chipClassName: "bg-green-100 text-green-800" },
+  behind: { label: "Behind", chipClassName: "bg-amber-100 text-amber-800" },
+  "at-risk": { label: "At risk", chipClassName: "bg-red-100 text-red-800" },
+};
 
 const MILESTONE_STATUS_STYLES: Record<
   MilestoneStatus,
@@ -59,6 +73,35 @@ export default function MilestoneTimeline({ milestones }: { milestones: Mileston
                 <span className="inline-block rounded-full bg-[#D6E3FF] px-2 py-0.5 text-xs font-medium text-[#191C1C]">
                   Releases {milestone.escrowReleaseAmount} from escrow
                 </span>
+              )}
+              {milestone.variance && (
+                <div className="mt-2 space-y-1.5 rounded-xl border border-[#CAC4D0]/60 p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-medium">Production variance</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${MILESTONE_VARIANCE_STYLES[milestone.variance.varianceStatus].chipClassName}`}
+                    >
+                      {MILESTONE_VARIANCE_STYLES[milestone.variance.varianceStatus].label} ·{" "}
+                      {milestone.variance.varianceLabel}
+                    </span>
+                  </div>
+                  <dl className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+                    <div className="flex gap-1">
+                      <dt>Expected:</dt>
+                      <dd className="text-foreground">
+                        {milestone.variance.expectedQuantityLabel}
+                      </dd>
+                    </div>
+                    <div className="flex gap-1">
+                      <dt>Actual:</dt>
+                      <dd className="text-foreground">{milestone.variance.actualQuantityLabel}</dd>
+                    </div>
+                    <div className="flex gap-1">
+                      <dt>Quality:</dt>
+                      <dd className="text-foreground">{milestone.variance.qualityMetricLabel}</dd>
+                    </div>
+                  </dl>
+                </div>
               )}
             </div>
           </li>

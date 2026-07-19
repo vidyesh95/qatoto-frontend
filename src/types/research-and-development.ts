@@ -73,6 +73,20 @@ export type DailyLog = {
   isEffortVerified: boolean;
 };
 
+export type MilestoneVarianceStatus = "on-track" | "ahead" | "behind" | "at-risk";
+
+// Structured expected-vs-actual metrics on a milestone (idea 2). Distinct from
+// the PROOF_OF_EFFORT_SPEC.md §4 fraud/time-theft anomaly work: this tracks
+// whether real output is on-pace and on-quality, not whether an effort claim
+// was faked. Display-only mock strings — variance math is backend-owned later.
+export type MilestoneVariance = {
+  expectedQuantityLabel: string; // e.g. "200 units"
+  actualQuantityLabel: string; // e.g. "148 units"
+  qualityMetricLabel: string; // e.g. "4.2 / 5 QA"
+  varianceLabel: string; // signed, e.g. "26% behind" | "On pace" | "3 days early"
+  varianceStatus: MilestoneVarianceStatus;
+};
+
 export type Milestone = {
   id: string;
   title: string;
@@ -81,6 +95,8 @@ export type Milestone = {
   status: MilestoneStatus;
   // Display-formatted, e.g. "$12,000". Escrow release is backend-owned later.
   escrowReleaseAmount?: string;
+  // Set on milestones tracked with structured production metrics.
+  variance?: MilestoneVariance;
 };
 
 export type FundingRound = {
@@ -535,4 +551,65 @@ export type ProjectProofOfEffortLedger = {
   claimVerificationRuns: ClaimVerificationRun[];
   disputeWindowEntries: DisputeWindowEntry[];
   physicalWorkReceipts: PhysicalWorkReceipt[];
+  optimizationSuggestions: OptimizationSuggestion[];
+  auditTrailEntries: ProjectAuditEntry[];
+};
+
+// ---------- AI build-process optimization (idea 1) ----------
+// Promotes the daily-log `suggestion` chip into a first-class project-level
+// surface. The engine that watches every logged build step and proposes these
+// is backend-owned later (critical-path/PERT-CPM analysis over the §4
+// verification pipeline); these are display-only mock strings.
+
+export type OptimizationSuggestionKind =
+  | "time-reduction"
+  | "parallelization"
+  | "resequencing"
+  | "quality";
+
+export type OptimizationImpact = "high" | "medium" | "low";
+
+export type OptimizationSuggestion = {
+  id: string;
+  kind: OptimizationSuggestionKind;
+  // e.g. "Parallelize firmware and chassis tracks".
+  title: string;
+  // One-line why, grounded in logged steps.
+  rationale: string;
+  // Evidence chips, e.g. ["12 daily logs", "Milestone: Chassis v2"].
+  evidenceLabels: string[];
+  impact: OptimizationImpact;
+  // Display-formatted projected saving, e.g. "~9 days" — omitted for pure
+  // quality wins that don't move the schedule.
+  estimatedTimeSavedLabel?: string;
+};
+
+// ---------- Audit-trail-as-a-service (idea 3) ----------
+// A project-scoped, stakeholder-visible log of governance events. Reuses the
+// admin audit-log card-list shape but widens the scope (decisions, payments,
+// hires, task assignments) and the audience (any stakeholder, not just staff).
+// Hash-chain framing so the mock reads as tamper-evident rather than merely
+// append-only — the real immutable chain is written server-side later.
+
+export type ProjectAuditEventKind = "decision" | "payment" | "hire" | "task-assignment";
+
+export type ProjectAuditEntry = {
+  id: string;
+  eventKind: ProjectAuditEventKind;
+  actorName: string;
+  // Free-form so backers/investors (not on teamMembers) can appear, e.g.
+  // "Founder", "CFO", "Backer".
+  actorRole: string;
+  // e.g. "Released escrow milestone".
+  actionLabel: string;
+  // e.g. "Chassis v2 → $12,000".
+  targetLabel: string;
+  // "" when there's no extra context.
+  detailNote: string;
+  // Pre-formatted display string, e.g. "Jul 7, 2026 · 14:12".
+  occurredAtLabel: string;
+  // Short display hash of this entry, e.g. "a1f9c3".
+  entryHashLabel: string;
+  // The prior entry's hash folded into this one; "genesis" for the first.
+  previousEntryHashLabel: string;
 };

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import DisputeWindowTab from "@/components/home/research-and-development/sections/dispute-window-tab";
+import OptimizationTab from "@/components/home/research-and-development/sections/optimization-tab";
+import ProjectAuditTrailTab from "@/components/home/research-and-development/sections/project-audit-trail-tab";
 import ProofOfEffortTabs from "@/components/home/research-and-development/sections/proof-of-effort-tabs";
 import SliceLedgerTab from "@/components/home/research-and-development/sections/slice-ledger-tab";
 import VerificationPipelineTab from "@/components/home/research-and-development/sections/verification-pipeline-tab";
@@ -52,6 +54,8 @@ export default function ProofOfEffortPage({ projectId }: { projectId: string }) 
             teamMembers={project.teamMembers}
           />
         }
+        optimizationPanel={<OptimizationTab suggestions={ledger.optimizationSuggestions} />}
+        auditTrailPanel={<ProjectAuditTrailTab entries={ledger.auditTrailEntries} />}
       />
     </div>
   );

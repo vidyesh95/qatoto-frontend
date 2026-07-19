@@ -1012,6 +1012,13 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       {
         id: "prefab-milestone-panel-formula",
         title: "Lock composite panel formula after weathering tests",
+        variance: {
+          expectedQuantityLabel: "3 formula candidates",
+          actualQuantityLabel: "3 candidates",
+          qualityMetricLabel: "6/6 weather cycles passed",
+          varianceLabel: "On pace",
+          varianceStatus: "on-track",
+        },
         description:
           "Fiber-cement mix selected after 90-day accelerated weathering and salt-spray exposure.",
         targetDate: "Mar 14, 2026",
@@ -1021,6 +1028,13 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       {
         id: "prefab-milestone-load-testing",
         title: "Pass simulated 250 km/h wind-load test",
+        variance: {
+          expectedQuantityLabel: "250 km/h rating",
+          actualQuantityLabel: "228 km/h achieved",
+          qualityMetricLabel: "1 reinforcement redo",
+          varianceLabel: "9% below target",
+          varianceStatus: "behind",
+        },
         description:
           "Full wall assembly held design load at the university structures lab with no connection failures.",
         targetDate: "Apr 30, 2026",
@@ -1030,6 +1044,13 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       {
         id: "prefab-milestone-pilot-line",
         title: "Commission pilot production line",
+        variance: {
+          expectedQuantityLabel: "40 panels/day",
+          actualQuantityLabel: "24 panels/day",
+          qualityMetricLabel: "line calibrating",
+          varianceLabel: "40% behind",
+          varianceStatus: "at-risk",
+        },
         description: "First regional press line running at Tacloban with two trained shifts.",
         targetDate: "Jun 12, 2026",
         status: "done",
@@ -1300,6 +1321,13 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       {
         id: "ewaste-milestone-collection-network",
         title: "Sign 25 licensed scrap-collector agreements",
+        variance: {
+          expectedQuantityLabel: "25 agreements",
+          actualQuantityLabel: "25 agreements",
+          qualityMetricLabel: "3 audited",
+          varianceLabel: "On pace",
+          varianceStatus: "on-track",
+        },
         description:
           "Formal supply agreements paying above informal burn-yard rates for sorted e-waste.",
         targetDate: "Jan 30, 2026",
@@ -1309,6 +1337,13 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       {
         id: "ewaste-milestone-bench-process",
         title: "Validate bench-scale recovery at 92% copper yield",
+        variance: {
+          expectedQuantityLabel: "92% copper yield",
+          actualQuantityLabel: "94% yield",
+          qualityMetricLabel: "2 verified runs",
+          varianceLabel: "2 pts above target",
+          varianceStatus: "ahead",
+        },
         description:
           "Leaching and recovery chemistry proven on representative scrap batches with independent assay confirmation.",
         targetDate: "Mar 22, 2026",
@@ -1327,6 +1362,13 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       {
         id: "ewaste-milestone-pilot-throughput",
         title: "Hit 2 tonnes/week pilot throughput",
+        variance: {
+          expectedQuantityLabel: "2 t/week",
+          actualQuantityLabel: "1.3 t/week",
+          qualityMetricLabel: "feedstock variance",
+          varianceLabel: "35% behind",
+          varianceStatus: "at-risk",
+        },
         description:
           "Sustained four-week run at target throughput with recovery yields holding above 88%.",
         targetDate: "Jun 25, 2026",
@@ -1566,6 +1608,13 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       {
         id: "med-milestone-thermal-validation",
         title: "Pass 120-hour thermal validation at ISTA lab",
+        variance: {
+          expectedQuantityLabel: "120-hr hold",
+          actualQuantityLabel: "126-hr hold",
+          qualityMetricLabel: "ISTA pass",
+          varianceLabel: "6 hrs above spec",
+          varianceStatus: "ahead",
+        },
         description:
           "Independent lab confirmed 2–8°C hold across summer and winter ambient profiles.",
         targetDate: "Sep 25, 2025",
@@ -1575,6 +1624,13 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       {
         id: "med-milestone-gdp-audit",
         title: "Clear GDP compliance audit with zero major findings",
+        variance: {
+          expectedQuantityLabel: "0 major findings",
+          actualQuantityLabel: "0 major findings",
+          qualityMetricLabel: "2 minor closed",
+          varianceLabel: "On pace",
+          varianceStatus: "on-track",
+        },
         description:
           "Good Distribution Practice audit passed, unlocking regulated pharma shipments.",
         targetDate: "Dec 12, 2025",
@@ -1593,6 +1649,13 @@ export const MOCK_RESEARCH_PROJECTS: ResearchProject[] = [
       {
         id: "med-milestone-production-scale",
         title: "Scale production to 1,000 shippers per month",
+        variance: {
+          expectedQuantityLabel: "1,000 shippers/mo",
+          actualQuantityLabel: "740 shippers/mo",
+          qualityMetricLabel: "line B ramping",
+          varianceLabel: "26% behind",
+          varianceStatus: "behind",
+        },
         description:
           "Contract manufacturer qualified and refurbishment loop running at target volume.",
         targetDate: "Apr 24, 2026",

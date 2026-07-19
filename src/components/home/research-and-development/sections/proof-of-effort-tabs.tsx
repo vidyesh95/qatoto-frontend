@@ -2,20 +2,35 @@
 
 import { useState, type ReactNode } from "react";
 
-type ProofOfEffortSection = "slice-ledger" | "verification" | "disputes";
+type ProofOfEffortSection =
+  | "slice-ledger"
+  | "verification"
+  | "disputes"
+  | "optimization"
+  | "audit-trail";
 
 const SECTION_LABELS: Record<ProofOfEffortSection, string> = {
   "slice-ledger": "Slice Ledger",
   verification: "Verification",
   disputes: "Disputes",
+  optimization: "Optimization",
+  "audit-trail": "Audit Trail",
 };
 
-const SECTION_ORDER: ProofOfEffortSection[] = ["slice-ledger", "verification", "disputes"];
+const SECTION_ORDER: ProofOfEffortSection[] = [
+  "slice-ledger",
+  "verification",
+  "disputes",
+  "optimization",
+  "audit-trail",
+];
 
 type ProofOfEffortTabsProps = {
   sliceLedgerPanel: ReactNode;
   verificationPanel: ReactNode;
   disputesPanel: ReactNode;
+  optimizationPanel: ReactNode;
+  auditTrailPanel: ReactNode;
 };
 
 // Client island holding only the active-section state — every panel arrives as
@@ -31,6 +46,10 @@ export default function ProofOfEffortTabs(props: ProofOfEffortTabsProps) {
         return props.verificationPanel;
       case "disputes":
         return props.disputesPanel;
+      case "optimization":
+        return props.optimizationPanel;
+      case "audit-trail":
+        return props.auditTrailPanel;
       default: {
         const exhaustiveCheck: never = activeSection;
         return exhaustiveCheck;
