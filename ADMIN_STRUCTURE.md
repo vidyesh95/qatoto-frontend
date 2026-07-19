@@ -97,6 +97,7 @@ flowchart LR
 - Gate: server-side role check on every `/admin/*` request. Client redirect for
   non-staff is UX sugar only.
 - Roles (start simple, expand later):
+
     | Role        | Can do                                              |
     | ----------- | --------------------------------------------------- |
     | `moderator` | review content queue, approve/reject anime episodes |
@@ -186,7 +187,7 @@ flowchart TD
 
 ## 5. Suggested route map
 
-```
+```text
 src/app/(admin)/admin/
   page.tsx                 # dashboard
   review/                  # 4.1 content review queue ⭐
