@@ -52,8 +52,8 @@ export type TeamMember = {
 };
 
 // A role/person can pay/ask in one or more of these ways; a blend combines
-// several. Intentionally identical to ImmortalCompensationPreference (below) —
-// the repo's canonical compensation trio.
+// several. The repo's canonical compensation trio — ImmortalCompensationPreference
+// (below) is aliased to this so the two unions can never drift apart.
 export type CompensationKind = "salary" | "one-time" | "equity";
 
 // One strand of a compensation offer (role) or ask (talent). Display-only — the
@@ -370,7 +370,10 @@ export type ImmortalContributorRole =
   | "supplier"
   | "supporter";
 
-export type ImmortalCompensationPreference = "salary" | "one-time" | "equity";
+// Aliased to CompensationKind (above) — same union, one source of truth. Adding
+// a 4th kind there forces every Immortal Record map to handle it (compile error
+// until it does), so the two can't silently drift.
+export type ImmortalCompensationPreference = CompensationKind;
 
 // Qatoto tracks each contributor's effort and money applied to the project and
 // distributes compensation per the contributor's stated preference.
