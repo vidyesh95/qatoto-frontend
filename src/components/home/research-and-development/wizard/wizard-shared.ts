@@ -43,3 +43,11 @@ export type NewIdeaStepProps = {
   draft: NewIdeaDraft;
   onDraftChange: (draftPatch: Partial<NewIdeaDraft>) => void;
 };
+
+// Step 1 also owns the category picker, which needs the live option list (seed
+// categories plus anything the user created this session) and a single commit
+// callback covering both "picked an existing one" and "made a new one".
+export type IdeaBasicsStepProps = NewIdeaStepProps & {
+  categoryOptions: string[];
+  onCategoryCommit: (committedCategoryName: string) => void;
+};

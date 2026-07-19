@@ -34,7 +34,7 @@ type NewIdeaWizardViewState =
 const EMPTY_NEW_IDEA_DRAFT: NewIdeaDraft = {
   ideaName: "",
   oneLinePitch: "",
-  category: IDEA_CATEGORIES[0],
+  category: "",
   problemItSolves: "",
   targetRegion: "",
   demandEvidenceNotes: "",
@@ -49,9 +49,26 @@ export default function NewIdeaWizardPage() {
     currentStepIndex: 0,
   });
   const [draft, setDraft] = useState<NewIdeaDraft>(EMPTY_NEW_IDEA_DRAFT);
+  // Categories the user invented this session. Held here rather than in step 1
+  // because that step unmounts on every step change; this page does not, so a
+  // created category survives navigating away and back. It does not survive a
+  // reload — that needs the backend.
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([...IDEA_CATEGORIES]);
 
   const applyDraftPatch = (draftPatch: Partial<NewIdeaDraft>) => {
     setDraft((previousDraft) => ({ ...previousDraft, ...draftPatch }));
+  };
+
+  const handleCategoryCommit = (committedCategoryName: string) => {
+    setCategoryOptions((previousCategoryOptions) =>
+      previousCategoryOptions.some(
+        (existingCategory) =>
+          existingCategory.toLowerCase() === committedCategoryName.toLowerCase(),
+      )
+        ? previousCategoryOptions
+        : [...previousCategoryOptions, committedCategoryName],
+    );
+    applyDraftPatch({ category: committedCategoryName });
   };
 
   const isDraftValid = draft.ideaName.trim() !== "" && draft.oneLinePitch.trim() !== "";
@@ -59,7 +76,14 @@ export default function NewIdeaWizardPage() {
   const renderCurrentStep = (stepId: NewIdeaStepId) => {
     switch (stepId) {
       case "idea-basics":
-        return <IdeaBasicsStep draft={draft} onDraftChange={applyDraftPatch} />;
+        return (
+          <IdeaBasicsStep
+            draft={draft}
+            onDraftChange={applyDraftPatch}
+            categoryOptions={categoryOptions}
+            onCategoryCommit={handleCategoryCommit}
+          />
+        );
       case "problem-and-market":
         return <ProblemAndMarketStep draft={draft} onDraftChange={applyDraftPatch} />;
       case "roles-needed":

@@ -1,13 +1,18 @@
+import CategoryCombobox from "@/components/home/research-and-development/wizard/category-combobox";
 import {
-  IDEA_CATEGORIES,
   INPUT_CLASS,
   LABEL_CLASS,
-  type NewIdeaStepProps,
+  type IdeaBasicsStepProps,
 } from "@/components/home/research-and-development/wizard/wizard-shared";
 
 // Step 1: name, pitch, category — the minimum needed to post (the submit gate
 // checks name + pitch only, same rule as the original sheet).
-export default function IdeaBasicsStep({ draft, onDraftChange }: NewIdeaStepProps) {
+export default function IdeaBasicsStep({
+  draft,
+  onDraftChange,
+  categoryOptions,
+  onCategoryCommit,
+}: IdeaBasicsStepProps) {
   return (
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
@@ -30,20 +35,11 @@ export default function IdeaBasicsStep({ draft, onDraftChange }: NewIdeaStepProp
           className={INPUT_CLASS}
         />
       </label>
-      <label className="flex flex-col gap-1">
-        <span className={LABEL_CLASS}>Category</span>
-        <select
-          value={draft.category}
-          onChange={(changeEvent) => onDraftChange({ category: changeEvent.target.value })}
-          className={INPUT_CLASS}
-        >
-          {IDEA_CATEGORIES.map((categoryOption) => (
-            <option key={categoryOption} value={categoryOption}>
-              {categoryOption}
-            </option>
-          ))}
-        </select>
-      </label>
+      <CategoryCombobox
+        selectedCategory={draft.category}
+        categoryOptions={categoryOptions}
+        onCategoryCommit={onCategoryCommit}
+      />
     </div>
   );
 }
