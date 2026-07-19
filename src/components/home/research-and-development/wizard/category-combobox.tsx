@@ -252,11 +252,24 @@ export default function CategoryCombobox({
           placeholder={CATEGORY_PLACEHOLDER}
           className={`${INPUT_CLASS} pr-8`}
         />
+        {/* Inline SVG rather than a ▾ glyph — the glyph renders hairline-thin and
+            undersized, and there is no down-chevron in public/icons. */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-[#6F7979]"
+          className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[#6F7979]"
         >
-          ▾
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
         </span>
 
         {comboboxState.status === "open" && (
