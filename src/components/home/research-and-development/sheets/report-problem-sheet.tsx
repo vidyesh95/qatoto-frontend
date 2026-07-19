@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import Image from "next/image";
 
 import type { ProblemReport } from "@/types/research-and-development";
+
+import CreatableCombobox, { appendOptionNameIfNew } from "@/components/ui/creatable-combobox";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 
 // Self-contained "report a problem" trigger + bottom sheet (§8.2, Civic Pulse).
 // Mock phase: the built report is handed to the optional callback (the problem
@@ -21,10 +24,6 @@ const PROBLEM_CATEGORIES = [
   "Waste",
 ];
 
-const INPUT_CLASS =
-  "w-full rounded-lg border border-[#6F7979] bg-transparent px-3 py-2 text-sm outline-none focus:border-[#00696E]";
-const LABEL_CLASS = "text-xs font-medium text-[#6F7979]";
-
 type ReportProblemSheetProps = {
   onReportSubmitted?: (report: ProblemReport) => void;
 };
@@ -33,14 +32,38 @@ export default function ReportProblemSheet({ onReportSubmitted }: ReportProblemS
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState(PROBLEM_CATEGORIES[0]);
+  const [category, setCategory] = useState("");
   const [locationText, setLocationText] = useState("");
   const [description, setDescription] = useState("");
+  // Categories invented this session. Held here, not inside the sheet panel,
+  // because that subtree unmounts on close while this component does not — so a
+  // created category survives closing and reopening. It does not survive a
+  // reload; that needs the backend. Deliberately NOT reset by handleSheetClose.
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([...PROBLEM_CATEGORIES]);
+
+  // useCallback here is for effect-dependency stability, not memoization — the
+  // keydown effect below depends on it, and an unstable identity would re-wire
+  // the listener and thrash document.body.style.overflow on every render.
+  // Every useState setter is referentially stable, so [] is correct.
+  const handleSheetClose = useCallback(() => {
+    setIsSheetOpen(false);
+    setIsSubmitted(false);
+    setTitle("");
+    setCategory("");
+    setLocationText("");
+    setDescription("");
+    // categoryOptions survives on purpose — see its declaration.
+  }, []);
 
   useEffect(() => {
     if (!isSheetOpen) return undefined;
     const handleKeyDown = (keyEvent: KeyboardEvent) => {
-      if (keyEvent.key === "Escape") setIsSheetOpen(false);
+      // A nested popup preventDefaults Escape when it consumes it, so one press
+      // closes the category list and a second closes the sheet. Checking
+      // defaultPrevented rather than relying on stopPropagation because in the
+      // App Router the React root container is `document` — this listener sits
+      // on the same node as React's, where stopPropagation cannot reach it.
+      if (keyEvent.key === "Escape" && !keyEvent.defaultPrevented) handleSheetClose();
     };
     document.addEventListener("keydown", handleKeyDown);
     const previousOverflow = document.body.style.overflow;
@@ -49,17 +72,15 @@ export default function ReportProblemSheet({ onReportSubmitted }: ReportProblemS
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [isSheetOpen]);
+  }, [isSheetOpen, handleSheetClose]);
 
-  const isFormValid = title.trim() !== "" && locationText.trim() !== "";
+  const isFormValid = title.trim() !== "" && category.trim() !== "" && locationText.trim() !== "";
 
-  const handleClose = () => {
-    setIsSheetOpen(false);
-    setIsSubmitted(false);
-    setTitle("");
-    setCategory(PROBLEM_CATEGORIES[0]);
-    setLocationText("");
-    setDescription("");
+  const handleCategoryCommit = (committedCategoryName: string) => {
+    setCategoryOptions((previousCategoryOptions) =>
+      appendOptionNameIfNew(previousCategoryOptions, committedCategoryName),
+    );
+    setCategory(committedCategoryName);
   };
 
   const handleSubmit = () => {
@@ -94,7 +115,7 @@ export default function ReportProblemSheet({ onReportSubmitted }: ReportProblemS
           <button
             type="button"
             aria-label="Close report problem sheet"
-            onClick={handleClose}
+            onClick={handleSheetClose}
             className="fixed inset-0 z-55 bg-black/40"
           />
 
@@ -111,7 +132,7 @@ export default function ReportProblemSheet({ onReportSubmitted }: ReportProblemS
               <h2 className="flex-1 text-base font-medium">Report a problem</h2>
               <button
                 type="button"
-                onClick={handleClose}
+                onClick={handleSheetClose}
                 aria-label="Close"
                 className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
               >
@@ -137,7 +158,7 @@ export default function ReportProblemSheet({ onReportSubmitted }: ReportProblemS
                   </p>
                   <button
                     type="button"
-                    onClick={handleClose}
+                    onClick={handleSheetClose}
                     className="mt-2 cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
                   >
                     Done
@@ -162,20 +183,14 @@ export default function ReportProblemSheet({ onReportSubmitted }: ReportProblemS
                     />
                   </label>
 
-                  <label className="flex flex-col gap-1">
-                    <span className={LABEL_CLASS}>Category</span>
-                    <select
-                      value={category}
-                      onChange={(changeEvent) => setCategory(changeEvent.target.value)}
-                      className={INPUT_CLASS}
-                    >
-                      {PROBLEM_CATEGORIES.map((categoryOption) => (
-                        <option key={categoryOption} value={categoryOption}>
-                          {categoryOption}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <CreatableCombobox
+                    labelText="Category"
+                    placeholderText="Search or create a category"
+                    selectedOptionName={category}
+                    optionNames={categoryOptions}
+                    onOptionCommit={handleCategoryCommit}
+                    helpText="Pick a category or type a new one — press Enter to create it."
+                  />
 
                   <label className="flex flex-col gap-1">
                     <span className={LABEL_CLASS}>Location</span>

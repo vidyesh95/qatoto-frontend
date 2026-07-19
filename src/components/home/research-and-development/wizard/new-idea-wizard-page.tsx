@@ -12,6 +12,7 @@ import {
   IDEA_CATEGORIES,
   type NewIdeaDraft,
 } from "@/components/home/research-and-development/wizard/wizard-shared";
+import { appendOptionNameIfNew } from "@/components/ui/creatable-combobox";
 
 // Multi-step post-idea wizard (§11) — the promoted form of the post-idea
 // sheet. Mock phase: submitting shows a confirmation only; nothing is
@@ -61,12 +62,7 @@ export default function NewIdeaWizardPage() {
 
   const handleCategoryCommit = (committedCategoryName: string) => {
     setCategoryOptions((previousCategoryOptions) =>
-      previousCategoryOptions.some(
-        (existingCategory) =>
-          existingCategory.toLowerCase() === committedCategoryName.toLowerCase(),
-      )
-        ? previousCategoryOptions
-        : [...previousCategoryOptions, committedCategoryName],
+      appendOptionNameIfNew(previousCategoryOptions, committedCategoryName),
     );
     applyDraftPatch({ category: committedCategoryName });
   };

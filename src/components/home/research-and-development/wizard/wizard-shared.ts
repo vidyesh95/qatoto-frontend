@@ -1,6 +1,6 @@
 // Shared vocabulary for the post-idea wizard steps. Field options mirror the
 // original post-idea sheet (sheets/post-idea-sheet.tsx, kept as the compact
-// entry point's donor); styling constants match the R&D sheet inputs.
+// entry point's donor). Field styling lives in @/components/ui/field-classes.
 
 import type { RoleCommitment } from "@/types/research-and-development";
 
@@ -22,10 +22,6 @@ export const ROLES_NEEDED_OPTIONS = [
   "Operations",
   "Finance",
 ];
-
-export const INPUT_CLASS =
-  "w-full rounded-lg border border-[#6F7979] bg-transparent px-3 py-2 text-sm outline-none focus:border-[#00696E]";
-export const LABEL_CLASS = "text-xs font-medium text-[#6F7979]";
 
 export type NewIdeaDraft = {
   ideaName: string;

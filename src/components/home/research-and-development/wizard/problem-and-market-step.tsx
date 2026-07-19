@@ -1,8 +1,5 @@
-import {
-  INPUT_CLASS,
-  LABEL_CLASS,
-  type NewIdeaStepProps,
-} from "@/components/home/research-and-development/wizard/wizard-shared";
+import type { NewIdeaStepProps } from "@/components/home/research-and-development/wizard/wizard-shared";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 
 // Step 2: the demand story — who has the problem, where, and what evidence
 // exists. Free text this phase; the Knowledge Hub cross-check is backend-later.

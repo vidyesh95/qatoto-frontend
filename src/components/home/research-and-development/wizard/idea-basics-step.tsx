@@ -1,9 +1,6 @@
-import CategoryCombobox from "@/components/home/research-and-development/wizard/category-combobox";
-import {
-  INPUT_CLASS,
-  LABEL_CLASS,
-  type IdeaBasicsStepProps,
-} from "@/components/home/research-and-development/wizard/wizard-shared";
+import type { IdeaBasicsStepProps } from "@/components/home/research-and-development/wizard/wizard-shared";
+import CreatableCombobox from "@/components/ui/creatable-combobox";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 
 // Step 1: name, pitch, category — the minimum needed to post (the submit gate
 // checks name + pitch only, same rule as the original sheet).
@@ -35,10 +32,13 @@ export default function IdeaBasicsStep({
           className={INPUT_CLASS}
         />
       </label>
-      <CategoryCombobox
-        selectedCategory={draft.category}
-        categoryOptions={categoryOptions}
-        onCategoryCommit={onCategoryCommit}
+      <CreatableCombobox
+        labelText="Category"
+        placeholderText="Search or create a category"
+        selectedOptionName={draft.category}
+        optionNames={categoryOptions}
+        onOptionCommit={onCategoryCommit}
+        helpText="Pick a category or type a new one — press Enter to create it."
       />
     </div>
   );

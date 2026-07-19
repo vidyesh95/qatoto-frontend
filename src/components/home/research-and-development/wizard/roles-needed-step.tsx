@@ -1,11 +1,10 @@
 import type { RoleCommitment } from "@/types/research-and-development";
 
 import {
-  INPUT_CLASS,
-  LABEL_CLASS,
   ROLES_NEEDED_OPTIONS,
   type NewIdeaStepProps,
 } from "@/components/home/research-and-development/wizard/wizard-shared";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 
 const COMMITMENT_OPTIONS: { value: RoleCommitment; label: string }[] = [
   { value: "full-time", label: "Full-time" },
