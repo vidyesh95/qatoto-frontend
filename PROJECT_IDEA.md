@@ -46,6 +46,34 @@ Two of these deserve special attention because they are the parts of the idea th
 
 ---
 
+## 2A. Proposed extensions to the Proof-of-Effort pillar
+
+_Addendum — researched 2026-07-19, checked against `R_AND_D_STRUCTURE.md`, `PROOF_OF_EFFORT_SPEC.md`, and the current admin audit-log mock (`src/state/admin-audit-log-context.tsx`)._
+
+Three related feature ideas were proposed as deepenings of pillar 6 (Daily Update Protocol) and pillar 7 (Financial governance). All three pass feasibility review for the current UI+mock-data phase: none require new regulatory categories beyond §7, and all three strengthen — rather than compete with — the pillar §9.6 already names as the most defensible moat.
+
+### AI build-process optimization engine
+
+Watches every logged build step across a project (daily updates, task completions) and proactively suggests time reduction, resequencing/parallelization, or quality improvements — not just reactively flagging blockers.
+
+**Feasibility: high, and it's a deepening, not a new pillar.** The five-stage pipeline story in Section 2 (line 24) already promises "AI ingests every update, flags blockers, and suggests workflow changes, resequencing, or parallelization," and `R_AND_D_STRUCTURE.md`'s `aiSummaryChips` mock type already includes a `kind: "suggestion"` variant. This idea is best framed as making that existing, currently-thin capability into a first-class, visible surface (e.g. a dedicated "Optimization suggestions" panel) rather than a new pillar. Buildable now as richer mock chip content, no backend needed. For a real implementation later, the underlying technique is closer to classic project-scheduling critical-path analysis (PERT/CPM) layered on top of the verification pipeline `PROOF_OF_EFFORT_SPEC.md` §4 already specs — not exotic, no new legal exposure.
+
+### Milestone Variance Tracking (structured task/milestone tracking + deviation flags)
+
+Extend the daily-update system to accept structured fields — quantity produced, quality metrics, task-completion timestamps — alongside the existing video/text update, and compute expected-vs-actual to flag deviations.
+
+**Feasibility: high, but name it distinctly from the fraud-detection anomaly work already spec'd.** `PROOF_OF_EFFORT_SPEC.md:151-153` already has "temporal anomaly detection" (Isolation Forests on commit metadata) — that's about catching _faked_ effort claims (time-theft), a different problem from tracking whether real output is on-pace and on-quality. Calling both "anomaly detection" in the doc would blur two distinct systems. This idea is closer to Earned Value Management (construction/manufacturing PM) or statistical process control than to fraud detection. Buildable now as UI/mock: add structured fields to the `DailyLog` mock type plus a variance display. Worth flagging one product-narrative tension: the pipeline's marketing pitch centers on a _video_ EOD update; asking teams to also fill structured forms every day pulls against that "just talk, AI does the rest" framing. A hybrid (video stays primary, structured fields optional) is more realistic than fully replacing video intake.
+
+### Audit-trail-as-a-service
+
+Every decision, payment, hire, and task assignment gets a log that any stakeholder (team member, investor, backer) can inspect — extending the escrow-governance pillar (7) beyond its current admin-only scope.
+
+**Feasibility: high, and it's a genuine scope expansion, not a duplicate.** An audit-log UI already exists (`src/components/admin/audit/audit-log-page.tsx`, backed by `src/state/admin-audit-log-context.tsx`), but it's explicitly scoped to admin/moderation actions only (episode approvals, role grants, takedowns) and its own code comment notes the real trail isn't written server-side yet. This idea asks for a different data scope (project financial/governance events) and a different audience (any stakeholder, not just admin staff) — same pattern, bigger surface. No new regulatory category is introduced; it's a natural companion to the money-transmission/custody questions §7.2 already raises for escrow. One scope decision worth making explicit before building: a plain append-only log (cheap, matches the existing pattern) versus a hash-chained, tamper-evident ledger where each entry's hash incorporates the previous entry's (deliberately "immutable," still no blockchain dependency needed) — pick one on purpose rather than let "immutable" be aspirational copy.
+
+**Net read:** treat all three as in-scope refinements of pillars 6/7 for the current UI-building phase. The main risk to manage isn't feasibility, it's naming collision — keep "fraud-detection anomaly" (existing spec) and "production-variance anomaly" (new) visibly distinct in future planning docs.
+
+---
+
 ## 3. Supporting / adjacent surfaces
 
 These are described in the marketing copy as surfaces that share "the same identity, ledger, audience, and AI layer" as the core pipeline, but are conceptually distinct products in their own right:
