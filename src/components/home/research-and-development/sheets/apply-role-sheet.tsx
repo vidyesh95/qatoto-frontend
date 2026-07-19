@@ -4,10 +4,14 @@ import { useEffect, useState } from "react";
 
 import Image from "next/image";
 
+import CompensationBadges, {
+  COMPENSATION_KIND_LABELS,
+  summarizeCompensationKinds,
+} from "@/components/home/research-and-development/cards/compensation-badges";
 import type { OpenRole, RoleCommitment } from "@/types/research-and-development";
 
 // Self-contained "express interest" trigger + bottom sheet for an open role
-// (§8.4, equity-for-skills). Mock phase: submitting flips the trigger to
+// (§8.4, skills-for-compensation). Mock phase: submitting flips the trigger to
 // "Interest sent" in local state only — applications go to the Express
 // backend later.
 
@@ -33,7 +37,7 @@ export default function ApplyRoleSheet({ role }: ApplyRoleSheetProps) {
   const [shortPitch, setShortPitch] = useState("");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [commitment, setCommitment] = useState<RoleCommitment>(role.commitment);
-  const [equityExpectation, setEquityExpectation] = useState("");
+  const [compensationExpectation, setCompensationExpectation] = useState("");
 
   useEffect(() => {
     if (!isSheetOpen) return undefined;
@@ -95,7 +99,7 @@ export default function ApplyRoleSheet({ role }: ApplyRoleSheetProps) {
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-base font-medium">{role.roleTitle}</h2>
                 <p className="truncate text-xs text-muted-foreground">
-                  {role.projectName} · {role.equityRange} equity
+                  {role.projectName} · {summarizeCompensationKinds(role.compensation)}
                 </p>
               </div>
               <button
@@ -140,6 +144,32 @@ export default function ApplyRoleSheet({ role }: ApplyRoleSheetProps) {
                     if (isFormValid) setHasSentInterest(true);
                   }}
                 >
+                  <div className="flex flex-col gap-1.5 rounded-lg bg-muted/40 p-3">
+                    <span className={LABEL_CLASS}>What this role offers</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      <CompensationBadges components={role.compensation} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Every payout is earned as Qatoto verifies your logged work — nothing upfront.
+                      Equity is computed by Qatoto&apos;s Slicing Pie formula from your verified
+                      effort.
+                    </p>
+                    {role.compensation.some((component) => component.earnedAsLabel) && (
+                      <ul className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+                        {role.compensation
+                          .filter((component) => component.earnedAsLabel)
+                          .map((component) => (
+                            <li key={component.kind}>
+                              <span className="font-medium text-foreground">
+                                {COMPENSATION_KIND_LABELS[component.kind]}:
+                              </span>{" "}
+                              {component.earnedAsLabel}
+                            </li>
+                          ))}
+                      </ul>
+                    )}
+                  </div>
+
                   <label className="flex flex-col gap-1">
                     <span className={LABEL_CLASS}>Short pitch</span>
                     <textarea
@@ -196,12 +226,16 @@ export default function ApplyRoleSheet({ role }: ApplyRoleSheetProps) {
                   </label>
 
                   <label className="flex flex-col gap-1">
-                    <span className={LABEL_CLASS}>Equity expectation</span>
+                    <span className={LABEL_CLASS}>Your compensation expectation</span>
                     <input
                       type="text"
-                      value={equityExpectation}
-                      onChange={(changeEvent) => setEquityExpectation(changeEvent.target.value)}
-                      placeholder={role.equityRange}
+                      value={compensationExpectation}
+                      onChange={(changeEvent) =>
+                        setCompensationExpectation(changeEvent.target.value)
+                      }
+                      placeholder={role.compensation
+                        .map((component) => component.amountLabel)
+                        .join(" + ")}
                       className={INPUT_CLASS}
                     />
                   </label>

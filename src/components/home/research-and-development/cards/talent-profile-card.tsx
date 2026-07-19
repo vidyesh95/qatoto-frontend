@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import CompensationBadges from "@/components/home/research-and-development/cards/compensation-badges";
 import InviteTalentButton from "@/components/home/research-and-development/sections/invite-talent-button";
 import type { TalentAvailability, TalentProfile } from "@/types/research-and-development";
 
@@ -22,8 +23,9 @@ const COMMITMENT_LABELS: Record<TalentProfile["commitment"], string> = {
 };
 
 // Marketplace tile for /talent: avatar, headline role, availability, top
-// skills, equity ask, and an invite toggle. All figures are display-only
-// mocks — matching and outreach are backend-owned later.
+// skills, compensation ask (blended salary/one-time/equity), and an invite
+// toggle. All figures are display-only mocks — matching and outreach are
+// backend-owned later.
 export default function TalentProfileCard({ profile }: { profile: TalentProfile }) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
@@ -55,9 +57,8 @@ export default function TalentProfileCard({ profile }: { profile: TalentProfile 
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span className="rounded bg-[#D6E3FF] px-1.5 py-0.5 font-medium text-[#191C1C]">
-          Asks {profile.equityAsk} equity
-        </span>
+        <span className="shrink-0">Wants</span>
+        <CompensationBadges components={profile.compensationAsk} />
         <span className="rounded-full bg-muted px-2 py-0.5">
           {COMMITMENT_LABELS[profile.commitment]}
         </span>

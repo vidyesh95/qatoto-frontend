@@ -51,14 +51,35 @@ export type TeamMember = {
   isFounder?: boolean;
 };
 
+// A role/person can pay/ask in one or more of these ways; a blend combines
+// several. Intentionally identical to ImmortalCompensationPreference (below) —
+// the repo's canonical compensation trio.
+export type CompensationKind = "salary" | "one-time" | "equity";
+
+// One strand of a compensation offer (role) or ask (talent). Display-only — the
+// backend owns the real Slicing Pie / escrow math later. Invariant (upheld in
+// mocks, backend-enforced later): a role/profile carries >= 1 strand and at most
+// one strand per kind.
+export type CompensationComponent = {
+  kind: CompensationKind;
+  // How much, e.g. "$4k–6k/mo", "$9k", "2–4%".
+  amountLabel: string;
+  // How it's earned — reinforces the work-verified, not-upfront model. Set on
+  // role OFFERS (salary/one-time → escrow-release wording; equity → Slicing Pie
+  // wording); omitted on talent ASKS, which state a wish, not a mechanism.
+  // e.g. "Paid from escrow as milestones verify", "Vests via Slicing Pie as
+  // verified effort lands".
+  earnedAsLabel?: string;
+};
+
 export type OpenRole = {
   id: string;
   projectId: string;
   projectName: string;
   roleTitle: string;
   skills: string[];
-  // Display-formatted, e.g. "2–4%".
-  equityRange: string;
+  // A blended offer: >= 1 strand, at most one per kind. Never empty.
+  compensation: CompensationComponent[];
   commitment: RoleCommitment;
 };
 
@@ -165,8 +186,9 @@ export type TalentProfile = {
   avatarImageSrc: string;
   headlineRole: string;
   skills: string[];
-  // Display-formatted, e.g. "2–4%".
-  equityAsk: string;
+  // What the person wants in return: >= 1 strand, at most one per kind. No
+  // earnedAsLabel — that mechanism belongs to the role offering the work.
+  compensationAsk: CompensationComponent[];
   commitment: RoleCommitment;
   locationLabel: string;
   availability: TalentAvailability;
