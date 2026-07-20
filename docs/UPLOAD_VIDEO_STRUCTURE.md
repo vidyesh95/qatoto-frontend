@@ -244,10 +244,10 @@ jump.
 - **Add chapter** button → new row: `timestamp (mm:ss)` + `title` inputs
 - List of chapter rows, reorderable / removable
 - Rules (YouTube-compatible, enforce in UI + backend later):
-  - First chapter **must** start at `00:00`
-  - Minimum **3** chapters to show on player
-  - Each chapter **≥ 10 seconds** long
-  - Timestamps strictly ascending, none past video duration
+    - First chapter **must** start at `00:00`
+    - Minimum **3** chapters to show on player
+    - Each chapter **≥ 10 seconds** long
+    - Timestamps strictly ascending, none past video duration
 - Empty state: "No chapters yet — add one to let viewers jump around"
 
 ```mermaid
@@ -346,9 +346,9 @@ flowchart TD
 Open questions:
 
 - Where does the list live? Options:
-  - **A)** Local React state (lost on refresh) — simplest for UI phase.
-  - **B)** Mock array in a shared module — survives navigation, seeded rows.
-  - **C)** Context/provider so `/studio` and `/studio/videos` share it.
+    - **A)** Local React state (lost on refresh) — simplest for UI phase.
+    - **B)** Mock array in a shared module — survives navigation, seeded rows.
+    - **C)** Context/provider so `/studio` and `/studio/videos` share it.
 - List item shape (columns): thumbnail · title · visibility badge · date · ⋯ menu?
 
 ---

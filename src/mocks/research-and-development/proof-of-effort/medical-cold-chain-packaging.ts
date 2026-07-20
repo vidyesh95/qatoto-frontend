@@ -1,0 +1,311 @@
+import type { ProjectProofOfEffortLedger } from "@/types/research-and-development";
+
+export const MEDICAL_COLD_CHAIN_PACKAGING_LEDGER: ProjectProofOfEffortLedger = {
+  projectId: "medical-cold-chain-packaging",
+  optimizationSuggestions: [
+    {
+      id: "med-opt-1",
+      kind: "parallelization",
+      title: "Integrate the second courier network alongside the production scale-up",
+      rationale:
+        "Telemetry integration and line scaling touch different teams; running both concurrently protects the launch date.",
+      evidenceLabels: [
+        "Milestone: Integrate two EU courier networks",
+        "Milestone: 1,000 shippers/month",
+      ],
+      impact: "high",
+      estimatedTimeSavedLabel: "~12 days",
+    },
+    {
+      id: "med-opt-2",
+      kind: "time-reduction",
+      title: "Reuse the ISTA validation dossier for the GDP audit",
+      rationale:
+        "The thermal-validation evidence covers most GDP audit exhibits; cross-referencing avoids re-testing.",
+      evidenceLabels: ["Milestone: 120-hour thermal validation", "Milestone: GDP compliance audit"],
+      impact: "medium",
+      estimatedTimeSavedLabel: "~6 days",
+    },
+    {
+      id: "med-opt-3",
+      kind: "quality",
+      title: "Attach the telemetry export to each shipment log",
+      rationale:
+        "Courier hand-offs are logged as text; raw telemetry makes the cold-chain compliance trail defensible.",
+      evidenceLabels: ["Head of Engineering logs"],
+      impact: "medium",
+    },
+  ],
+  auditTrailEntries: [
+    {
+      id: "med-audit-4",
+      eventKind: "decision",
+      actorName: "Elise Moreau",
+      actorRole: "Founder & CEO",
+      actionLabel: "Signed logistics contract",
+      targetLabel: "Nordic specialty-pharma distributor",
+      detailNote: "3-year, 1,200 shippers/mo",
+      occurredAtLabel: "Jul 7, 2026 · 09:50",
+      entryHashLabel: "b8f4e0",
+      previousEntryHashLabel: "d2a761",
+    },
+    {
+      id: "med-audit-3",
+      eventKind: "payment",
+      actorName: "Elise Moreau",
+      actorRole: "Founder & CEO",
+      actionLabel: "Released escrow milestone",
+      targetLabel: "Production scale-up → $22,000",
+      detailNote: "",
+      occurredAtLabel: "Jul 5, 2026 · 14:25",
+      entryHashLabel: "d2a761",
+      previousEntryHashLabel: "5c9e13",
+    },
+    {
+      id: "med-audit-2",
+      eventKind: "task-assignment",
+      actorName: "Jonas Weber",
+      actorRole: "Head of Engineering",
+      actionLabel: "Assigned courier integration",
+      targetLabel: "EU carrier telemetry API",
+      detailNote: "",
+      occurredAtLabel: "Jul 3, 2026 · 10:15",
+      entryHashLabel: "5c9e13",
+      previousEntryHashLabel: "9014ab",
+    },
+    {
+      id: "med-audit-1",
+      eventKind: "hire",
+      actorName: "Ingrid Sørensen",
+      actorRole: "Commercial Director",
+      actionLabel: "Onboarded contractor",
+      targetLabel: "Nordic sales rep (Oslo)",
+      detailNote: "",
+      occurredAtLabel: "Jul 1, 2026 · 15:30",
+      entryHashLabel: "9014ab",
+      previousEntryHashLabel: "genesis",
+    },
+  ],
+  pieStatus: "baked",
+  pieStatusNote:
+    "Pie baked at the Series A close — percentages frozen; ESOP paperwork generated from the final math.",
+  totalSlicesInPoolLabel: "200,000 slices",
+  memberSliceBreakdowns: [
+    {
+      memberId: "elise-moreau",
+      lockedFairMarketRateLabel: "$75/hr",
+      verifiedUnpaidHoursLabel: "412 hrs",
+      timeSliceEquationLabel: "412 hrs × $75 × 2 = 61,800 slices",
+      cashSliceEquationLabel: "$10,050 × 4 = 40,200 slices",
+      totalSlicesLabel: "102,000 slices",
+      sliceSharePercent: 51,
+      liveEquityShareLabel: "51%",
+    },
+    {
+      memberId: "jonas-weber",
+      lockedFairMarketRateLabel: "$30/hr",
+      verifiedUnpaidHoursLabel: "388 hrs",
+      timeSliceEquationLabel: "388 hrs × $30 × 2 = 23,280 slices",
+      cashSliceEquationLabel: "$180 × 4 = 720 slices",
+      totalSlicesLabel: "24,000 slices",
+      sliceSharePercent: 12,
+      liveEquityShareLabel: "12%",
+    },
+    {
+      memberId: "ingrid-sorensen",
+      lockedFairMarketRateLabel: "$30/hr",
+      verifiedUnpaidHoursLabel: "296 hrs",
+      timeSliceEquationLabel: "296 hrs × $30 × 2 = 17,760 slices",
+      cashSliceEquationLabel: "$60 × 4 = 240 slices",
+      totalSlicesLabel: "18,000 slices",
+      sliceSharePercent: 9,
+      liveEquityShareLabel: "9%",
+    },
+  ],
+  reservedSlicesLabel: "56,000 slices",
+  reservedSliceSharePercent: 28,
+  reservedSlicesNote:
+    "Unissued pool frozen at the bake — allocated to the ESOP under the Series A terms.",
+  claimVerificationRuns: [
+    {
+      id: "med-verify-jul-7",
+      memberId: "ingrid-sorensen",
+      dailyLogId: "med-log-jul-7",
+      claimDateLabel: "Jul 7, 2026",
+      claimSummary: "6 hrs preparing the Nordic courier tender submission",
+      claimedHoursLabel: "6 hrs claimed",
+      steps: [
+        {
+          kind: "claim-extraction",
+          status: "passed",
+          findingSummary:
+            "Transcript parsed into one time claim (6 hrs) and one artifact claim (tender submission pack).",
+          evidenceLabels: ["Time: 6 hrs", "Artifact: tender pack"],
+        },
+        {
+          kind: "artifact-grounding",
+          status: "passed",
+          findingSummary: "Tender pack revisions landed in the shared drive on the claim date.",
+          evidenceLabels: ["Drive: 15 revisions"],
+        },
+        {
+          kind: "substance-analysis",
+          status: "passed",
+          findingSummary: "Pack adds pricing schedules and compliance annexes.",
+          evidenceLabels: ["Substance score 0.81"],
+        },
+        {
+          kind: "temporal-analysis",
+          status: "passed",
+          findingSummary: "Edits spread across the claimed window.",
+          evidenceLabels: ["Edit spread: 5.6 hrs"],
+        },
+      ],
+      verdict: "verified",
+      verdictDetail:
+        "6 hrs verified — recorded for salary compensation; the baked pie no longer shifts.",
+      slicesAwardedLabel: "0 slices — pie baked",
+    },
+    {
+      id: "med-verify-jul-6",
+      memberId: "jonas-weber",
+      dailyLogId: "med-log-jul-6",
+      claimDateLabel: "Jul 6, 2026",
+      claimSummary: "5 hrs escalating the OTA signing-certificate renewal",
+      claimedHoursLabel: "5 hrs claimed",
+      steps: [
+        {
+          kind: "claim-extraction",
+          status: "passed",
+          findingSummary:
+            "Transcript parsed into one time claim (5 hrs) and two artifact claims (escalation ticket, fallback plan).",
+          evidenceLabels: ["Time: 5 hrs", "Artifacts: ticket, plan"],
+        },
+        {
+          kind: "artifact-grounding",
+          status: "passed",
+          findingSummary:
+            "Escalation ticket opened with the certificate authority; fallback plan committed to the drive.",
+          evidenceLabels: ["Ticket opened", "Plan: 7 revisions"],
+        },
+        {
+          kind: "substance-analysis",
+          status: "passed",
+          findingSummary: "Fallback plan stages depot-by-depot manual updates.",
+          evidenceLabels: ["Substance score 0.8"],
+        },
+        {
+          kind: "temporal-analysis",
+          status: "passed",
+          findingSummary: "Activity spread matches the claimed hours.",
+          evidenceLabels: ["Activity spread: 4.7 hrs"],
+        },
+      ],
+      verdict: "verified",
+      verdictDetail:
+        "5 hrs verified — recorded for salary compensation; the baked pie no longer shifts.",
+      slicesAwardedLabel: "0 slices — pie baked",
+    },
+    {
+      id: "med-verify-jul-5",
+      memberId: "elise-moreau",
+      dailyLogId: "med-log-jul-5",
+      claimDateLabel: "Jul 5, 2026",
+      claimSummary: "4 hrs closing the Lyon distributor contract",
+      claimedHoursLabel: "4 hrs claimed",
+      steps: [
+        {
+          kind: "claim-extraction",
+          status: "passed",
+          findingSummary:
+            "Transcript parsed into one time claim (4 hrs) and one artifact claim (countersigned contract).",
+          evidenceLabels: ["Time: 4 hrs", "Artifact: contract"],
+        },
+        {
+          kind: "artifact-grounding",
+          status: "passed",
+          findingSummary:
+            "Countersigned contract uploaded; the distributor's confirmation is on the shared thread.",
+          evidenceLabels: ["Contract PDF", "Email thread"],
+        },
+        {
+          kind: "substance-analysis",
+          status: "passed",
+          findingSummary: "Contract carries the negotiated three-year fleet terms.",
+          evidenceLabels: ["Substance score 0.86"],
+        },
+        {
+          kind: "temporal-analysis",
+          status: "passed",
+          findingSummary: "Calendar shows the signing call inside the claimed window.",
+          evidenceLabels: ["Calendar: 1 meeting"],
+        },
+      ],
+      verdict: "verified",
+      verdictDetail:
+        "4 hrs verified — recorded for salary compensation; the baked pie no longer shifts.",
+      slicesAwardedLabel: "0 slices — pie baked",
+    },
+  ],
+  disputeWindowEntries: [
+    {
+      id: "med-dispute-elise-jun-30",
+      memberId: "elise-moreau",
+      allocationDateLabel: "Jun 30, 2026",
+      proposedAllocationSummary: "Final pre-bake allocation — 6 hrs Series A diligence",
+      proposedSlicesLabel: "900 slices",
+      status: "locked",
+      lockedOnLabel: "Locked Jun 30, 2026 — final entry before the bake",
+    },
+    {
+      id: "med-dispute-jonas-jun-29",
+      memberId: "jonas-weber",
+      allocationDateLabel: "Jun 29, 2026",
+      proposedAllocationSummary: "7 hrs shipper firmware release",
+      proposedSlicesLabel: "420 slices",
+      status: "locked",
+      lockedOnLabel: "Locked Jun 30, 2026",
+    },
+    {
+      id: "med-dispute-ingrid-jun-27",
+      memberId: "ingrid-sorensen",
+      allocationDateLabel: "Jun 27, 2026",
+      proposedAllocationSummary: "12 hrs courier tender preparation",
+      proposedSlicesLabel: "720 slices",
+      status: "consensus-reached",
+      disputeNote:
+        "Disputed by Jonas Weber — part of the session overlapped the all-hands offsite.",
+      consensusOutcomeLabel: "Re-verified at 9 hrs — adjusted to 540 slices.",
+    },
+  ],
+  physicalWorkReceipts: [
+    {
+      id: "med-receipt-test-rig-photo",
+      memberId: "jonas-weber",
+      receiptKind: "photo",
+      fileName: "phase-change-panel-test-rig.jpg",
+      fileSizeLabel: "4.2 MB",
+      uploadedDateLabel: "Jun 24, 2026",
+      claimSummary: "5 hrs building the phase-change panel test rig",
+      forensicsChecks: [
+        {
+          kind: "exif-metadata",
+          result: "passed",
+          findingSummary: "EXIF timestamp Jun 24, 2:41 PM sits inside the claim window.",
+        },
+        {
+          kind: "device-fingerprint",
+          result: "passed",
+          findingSummary: "Camera fingerprint matches Jonas's registered device.",
+        },
+        {
+          kind: "reverse-image-search",
+          result: "passed",
+          findingSummary: "No matches in stock libraries or prior uploads.",
+        },
+      ],
+      verdict: "accepted",
+      verdictDetail: "5 hrs of rig build verified → 300 slices (pre-bake).",
+    },
+  ],
+};

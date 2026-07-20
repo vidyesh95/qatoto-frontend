@@ -1,0 +1,108 @@
+import type { ProblemReport } from "@/types/research-and-development";
+
+export const MOCK_PROBLEM_REPORTS: ProblemReport[] = [
+  {
+    id: "report-produce-spoilage-nakuru",
+    title: "Fresh produce spoils before reaching Nairobi markets",
+    category: "Cold Chain",
+    locationLabel: "Nakuru County, Kenya",
+    countryCode: "KE",
+    mapPosition: { leftPercent: 58, topPercent: 55 },
+    reportCount: 342,
+    opportunityScore: 91,
+    description:
+      "Vendors report losing up to a third of tomatoes and leafy greens in transit because no affordable cold storage exists between farm-gate aggregation points and the city wholesale market.",
+    reportedDate: "May 12, 2026",
+  },
+  {
+    id: "report-clinic-vaccine-storage-mwanza",
+    title: "Rural clinics lose vaccine stock during grid outages",
+    category: "Healthcare",
+    locationLabel: "Mwanza, Tanzania",
+    countryCode: "TZ",
+    mapPosition: { leftPercent: 59, topPercent: 58 },
+    reportCount: 187,
+    opportunityScore: 84,
+    description:
+      "Health workers describe discarding entire vaccine batches after multi-day power cuts; backup generators are shared across facilities and rarely reach the outlying dispensaries in time.",
+    reportedDate: "Jun 2, 2026",
+  },
+  {
+    id: "report-arsenic-groundwater-khulna",
+    title: "Tube wells test above arsenic safety limits",
+    category: "Water & Sanitation",
+    locationLabel: "Khulna Division, Bangladesh",
+    countryCode: "BD",
+    mapPosition: { leftPercent: 69, topPercent: 47 },
+    reportCount: 428,
+    opportunityScore: 93,
+    description:
+      "Community testing drives keep flagging shallow tube wells above national arsenic limits, but households have no affordable point-of-use treatment and keep drinking from the marked wells.",
+    reportedDate: "Apr 28, 2026",
+  },
+  {
+    id: "report-crop-monitoring-cost-cusco",
+    title: "Crop-health scouting is unaffordable for terraced smallholdings",
+    category: "Precision Agriculture",
+    locationLabel: "Cusco Region, Peru",
+    countryCode: "PE",
+    mapPosition: { leftPercent: 31, topPercent: 63 },
+    reportCount: 156,
+    opportunityScore: 72,
+    description:
+      "Imported drone-scouting services quote per-hectare rates designed for flat industrial farms; terraced plots under two hectares are quoted at triple the price or refused outright.",
+    reportedDate: "May 30, 2026",
+  },
+  {
+    id: "report-coffee-frost-losses-minas",
+    title: "Frost damage on coffee farms goes undetected until harvest",
+    category: "Precision Agriculture",
+    locationLabel: "Minas Gerais, Brazil",
+    countryCode: "BR",
+    mapPosition: { leftPercent: 36, topPercent: 64 },
+    reportCount: 203,
+    opportunityScore: 77,
+    description:
+      "Growers only discover the extent of frost burn at picking time, months after intervention could have saved part of the crop; affordable canopy-level imaging simply is not on offer.",
+    reportedDate: "Jun 15, 2026",
+  },
+  {
+    id: "report-typhoon-housing-backlog-tacloban",
+    title: "Typhoon rebuild queue exceeds three years for displaced families",
+    category: "Housing",
+    locationLabel: "Tacloban, Philippines",
+    countryCode: "PH",
+    mapPosition: { leftPercent: 75, topPercent: 53 },
+    reportCount: 512,
+    opportunityScore: 95,
+    description:
+      "Families displaced by the last two typhoon seasons remain in transitional shelters because conventional concrete-block construction cannot keep pace with the government rebuild backlog.",
+    reportedDate: "Mar 19, 2026",
+  },
+  {
+    id: "report-informal-e-waste-burning-accra",
+    title: "Open burning of imported e-waste at Agbogbloshie",
+    category: "E-Waste & Recycling",
+    locationLabel: "Accra, Ghana",
+    countryCode: "GH",
+    mapPosition: { leftPercent: 46, topPercent: 53 },
+    reportCount: 389,
+    opportunityScore: 89,
+    description:
+      "Informal workers burn cable insulation and circuit boards to recover copper, releasing dioxins near residential areas; no formal recovery facility pays competitive scrap prices.",
+    reportedDate: "Feb 24, 2026",
+  },
+  {
+    id: "report-cold-chain-audit-failures-lyon",
+    title: "Specialty pharma couriers fail temperature audits on last-mile legs",
+    category: "Medical Logistics",
+    locationLabel: "Lyon, France",
+    countryCode: "FR",
+    mapPosition: { leftPercent: 49, topPercent: 33 },
+    reportCount: 98,
+    opportunityScore: 68,
+    description:
+      "Regional couriers report recurring excursions above 8°C on final-hour deliveries of biologics; single-use gel-pack shippers cannot bridge summer heat waves in delivery vans.",
+    reportedDate: "Jun 21, 2026",
+  },
+];

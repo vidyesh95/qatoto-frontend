@@ -8,24 +8,15 @@ import CompensationBadges, {
   COMPENSATION_KIND_LABELS,
   summarizeCompensationKinds,
 } from "@/components/home/research-and-development/cards/compensation-badges";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import type { OpenRole, RoleCommitment } from "@/types/research-and-development";
+
+import { COMMITMENT_LABELS, COMMITMENT_OPTIONS } from "./sheet-shared";
 
 // Self-contained "express interest" trigger + bottom sheet for an open role
 // (§8.4, skills-for-compensation). Mock phase: submitting flips the trigger to
 // "Interest sent" in local state only — applications go to the Express
 // backend later.
-
-const COMMITMENT_OPTIONS: RoleCommitment[] = ["full-time", "part-time", "hobby"];
-
-const COMMITMENT_LABELS: Record<RoleCommitment, string> = {
-  "full-time": "Full-time",
-  "part-time": "Part-time",
-  hobby: "Hobby",
-};
-
-const INPUT_CLASS =
-  "w-full rounded-lg border border-[#6F7979] bg-transparent px-3 py-2 text-sm outline-none focus:border-[#00696E]";
-const LABEL_CLASS = "text-xs font-medium text-[#6F7979]";
 
 type ApplyRoleSheetProps = {
   role: OpenRole;

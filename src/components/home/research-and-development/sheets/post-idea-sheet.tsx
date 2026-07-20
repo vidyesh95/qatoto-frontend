@@ -4,33 +4,14 @@ import { useEffect, useState } from "react";
 
 import Image from "next/image";
 
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
+
+import { IDEA_CATEGORIES, ROLES_NEEDED_OPTIONS } from "../wizard/wizard-shared";
+
 // Self-contained "post your idea" trigger + bottom sheet (§8.1). Mock phase:
 // submitting shows a confirmation only — nothing is persisted and no card is
 // appended to the featured rail. The real submission goes to the Express
 // backend later.
-
-const IDEA_CATEGORIES = [
-  "Agriculture",
-  "Clean Energy",
-  "Healthcare",
-  "Housing",
-  "Logistics",
-  "Manufacturing",
-  "Water",
-];
-
-const ROLES_NEEDED_OPTIONS = [
-  "Engineer",
-  "Designer",
-  "Hardware",
-  "Marketing",
-  "Operations",
-  "Finance",
-];
-
-const INPUT_CLASS =
-  "w-full rounded-lg border border-[#6F7979] bg-transparent px-3 py-2 text-sm outline-none focus:border-[#00696E]";
-const LABEL_CLASS = "text-xs font-medium text-[#6F7979]";
 
 type PostIdeaSheetProps = {
   triggerLabel?: string;
