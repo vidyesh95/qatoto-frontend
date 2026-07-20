@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import WorkshopPage from "@/components/home/research-and-development/pages/workshop-page";
-import { MOCK_RESEARCH_PROJECTS } from "@/lib/research-and-development-mocks";
+import { MOCK_RESEARCH_PROJECTS } from "@/mocks/research-and-development-mocks";
 
 // Prerender every mock project slug — required for a dynamic route under
 // cacheComponents.

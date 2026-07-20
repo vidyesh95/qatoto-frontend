@@ -5,8 +5,8 @@ import WorkshopBoard from "@/components/home/research-and-development/sections/w
 import WorkshopChat from "@/components/home/research-and-development/sections/workshop-chat";
 import WorkshopFiles from "@/components/home/research-and-development/sections/workshop-files";
 import WorkshopTabs from "@/components/home/research-and-development/sections/workshop-tabs";
-import { MOCK_RESEARCH_PROJECTS } from "@/lib/research-and-development-mocks";
-import { MOCK_PROJECT_WORKSHOPS } from "@/lib/research-and-development-workshop-mocks";
+import { MOCK_RESEARCH_PROJECTS } from "@/mocks/research-and-development-mocks";
+import { MOCK_PROJECT_WORKSHOPS } from "@/mocks/research-and-development-workshop-mocks";
 
 // Virtual Workshop composition (§11): the project team's collab space —
 // boards, files, chat — as three server-rendered panels behind a small tabs

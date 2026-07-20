@@ -3,7 +3,7 @@ import FundingDealFilterGrid from "@/components/home/research-and-development/se
 import {
   MOCK_INVESTOR_CONFIDENCE_BY_PROJECT_ID,
   MOCK_RESEARCH_PROJECTS,
-} from "@/lib/research-and-development-mocks";
+} from "@/mocks/research-and-development-mocks";
 
 // Investor deal-flow composition (§11): every project with an open round,
 // trimmed to a serializable deal view before crossing into the client filter

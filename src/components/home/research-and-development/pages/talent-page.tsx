@@ -1,6 +1,6 @@
 import OpenRolesRail from "@/components/home/research-and-development/rails/open-roles-rail";
 import TalentFilterGrid from "@/components/home/research-and-development/sections/talent-filter-grid";
-import { MOCK_OPEN_ROLES, MOCK_TALENT_PROFILES } from "@/lib/research-and-development-mocks";
+import { MOCK_OPEN_ROLES, MOCK_TALENT_PROFILES } from "@/mocks/research-and-development-mocks";
 
 // Talent marketplace composition (§11): filterable grid of people trading
 // skills for pay & equity, plus the open-roles rail as the reverse path — apply

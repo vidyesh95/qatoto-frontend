@@ -7,8 +7,8 @@ import ProjectAuditTrailTab from "@/components/home/research-and-development/sec
 import ProofOfEffortTabs from "@/components/home/research-and-development/sections/proof-of-effort-tabs";
 import SliceLedgerTab from "@/components/home/research-and-development/sections/slice-ledger-tab";
 import VerificationPipelineTab from "@/components/home/research-and-development/sections/verification-pipeline-tab";
-import { MOCK_RESEARCH_PROJECTS } from "@/lib/research-and-development-mocks";
-import { MOCK_PROJECT_PROOF_OF_EFFORT_LEDGERS } from "@/lib/research-and-development-proof-of-effort-mocks";
+import { MOCK_RESEARCH_PROJECTS } from "@/mocks/research-and-development-mocks";
+import { MOCK_PROJECT_PROOF_OF_EFFORT_LEDGERS } from "@/mocks/research-and-development-proof-of-effort-mocks";
 
 // Proof of Effort composition: slice ledger, verification pipeline, and the
 // 24-hour dispute window — three server-rendered panels behind a small tabs

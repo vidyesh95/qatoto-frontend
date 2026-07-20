@@ -10,7 +10,7 @@ import {
   useProductQuery,
   useUpdateListingMutation,
   type SaveProgress,
-} from "@/lib/products/hooks";
+} from "@/hooks/products";
 import {
   CATEGORY_LABEL_TO_SLUG,
   CATEGORY_LABELS,

@@ -1,7 +1,7 @@
 // Shared domain types for the Research & Development surface (concept-to-consumer
 // pipeline). Data truth lives in the Express backend; these shapes are the
 // client-side contract only. UI-building phase: consumed from static mocks in
-// `src/lib/research-and-development-mocks.ts`, no fetch layer yet.
+// `src/mocks/research-and-development-mocks.ts`, no fetch layer yet.
 
 export type ProjectStage =
   | "market-research"
@@ -269,7 +269,7 @@ export type ResearchProject = {
 };
 
 // ---------- Project Immortal (moonshot open-research program) ----------
-// Mock fixtures live in src/lib/project-immortal-mocks.ts.
+// Mock fixtures live in src/mocks/project-immortal-mocks.ts.
 
 export type ImmortalPaperCategory =
   | "longevity-biology"
@@ -401,7 +401,7 @@ export type ImmortalProgramStat = {
 // (verification pipeline, 24-hour dispute window, physical receipts). Every
 // figure arrives as a pre-computed display string — the deterministic formula
 // and the verification pipeline are backend-owned later. Mock fixtures live
-// in src/lib/research-and-development-proof-of-effort-mocks.ts.
+// in src/mocks/research-and-development-proof-of-effort-mocks.ts.
 
 // "dynamic" = the pie recalculates as verified effort lands; "baked" = frozen
 // at an exit event (cash-flow breakeven or a priced round).

@@ -14,7 +14,7 @@ import {
   MOCK_IMMORTAL_PROGRAM_STATS,
   MOCK_IMMORTAL_RESEARCH_BRANCHES,
   MOCK_IMMORTAL_RESEARCH_PAPERS,
-} from "@/lib/project-immortal-mocks";
+} from "@/mocks/project-immortal-mocks";
 
 // Project Immortal page body. Server component — the moonshot story top to
 // bottom: what the program is, the crowd's research map, what it can ship,

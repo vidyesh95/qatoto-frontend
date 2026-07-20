@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import BackProjectSheet from "@/components/home/research-and-development/sheets/back-project-sheet";
-import { PROJECT_STAGE_LABELS } from "@/lib/research-and-development-mocks";
+import { PROJECT_STAGE_LABELS } from "@/mocks/research-and-development-mocks";
 import type {
   FundingRound,
   FundingRoundType,

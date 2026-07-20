@@ -2,7 +2,7 @@ import Image from "next/image";
 
 import RequestToJoinButton from "@/components/home/research-and-development/sections/request-to-join-button";
 import BackProjectSheet from "@/components/home/research-and-development/sheets/back-project-sheet";
-import { PROJECT_STAGE_LABELS } from "@/lib/research-and-development-mocks";
+import { PROJECT_STAGE_LABELS } from "@/mocks/research-and-development-mocks";
 import type { ResearchProject } from "@/types/research-and-development";
 
 // Always-visible project header above the detail tabs: cover band, name +

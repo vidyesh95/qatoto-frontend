@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useDeleteProductMutation, useMyProductsQuery } from "@/lib/products/hooks";
+import { useDeleteProductMutation, useMyProductsQuery } from "@/hooks/products";
 import { centsToPriceLabel } from "@/lib/products/schemas";
 
 // Seller-facing list of store products, backed by GET /products/mine. Links into

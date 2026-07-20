@@ -12,7 +12,7 @@ import {
   MOCK_OPEN_ROLES,
   MOCK_PROBLEM_REPORTS,
   MOCK_RESEARCH_PROJECTS,
-} from "@/lib/research-and-development-mocks";
+} from "@/mocks/research-and-development-mocks";
 
 // R&D landing page body. Server component — composes the pipeline story top to
 // bottom (§4 of R_AND_D_STRUCTURE.md): hero, stage strip, lifecycle roles,

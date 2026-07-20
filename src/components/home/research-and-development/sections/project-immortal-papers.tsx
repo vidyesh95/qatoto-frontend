@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState, type ChangeEvent } from "react";
 
-import { IMMORTAL_PAPER_CATEGORY_LABELS } from "@/lib/project-immortal-mocks";
+import { IMMORTAL_PAPER_CATEGORY_LABELS } from "@/mocks/project-immortal-mocks";
 import type {
   ImmortalPaperCategory,
   ImmortalResearchPaper,

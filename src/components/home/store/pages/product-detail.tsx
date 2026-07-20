@@ -20,7 +20,7 @@ import SamplePrice from "@/components/home/store/sections/sample-price";
 import SimilarAndCompare from "@/components/home/store/sections/similar-and-compare";
 import StoreAndChatActions from "@/components/home/store/sections/store-and-chat-actions";
 import TradeProtection from "@/components/home/store/sections/trade-protection";
-import { MOCK_CATEGORY_RAILS } from "@/lib/store-mocks";
+import { MOCK_CATEGORY_RAILS } from "@/mocks/store-mocks";
 
 const HERO_IMAGES = [
   "/dummy/chair_raspberry_red.avif",

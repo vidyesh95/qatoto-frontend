@@ -5,7 +5,7 @@ import { useState } from "react";
 import FundingDealCard, {
   type FundingDeal,
 } from "@/components/home/research-and-development/cards/funding-deal-card";
-import { PROJECT_STAGE_LABELS } from "@/lib/research-and-development-mocks";
+import { PROJECT_STAGE_LABELS } from "@/mocks/research-and-development-mocks";
 import type { FundingRoundType, ProjectStage } from "@/types/research-and-development";
 
 const ROUND_TYPE_FILTER_LABELS: Record<FundingRoundType | "all", string> = {

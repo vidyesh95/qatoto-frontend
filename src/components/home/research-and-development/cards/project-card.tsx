@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { PROJECT_STAGE_LABELS } from "@/lib/research-and-development-mocks";
+import { PROJECT_STAGE_LABELS } from "@/mocks/research-and-development-mocks";
 import type { ResearchProject } from "@/types/research-and-development";
 
 // Project tile for the featured-projects rail: cover with a stage badge, funding

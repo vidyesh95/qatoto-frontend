@@ -11,7 +11,7 @@ import {
   MOCK_MARKET_INSIGHTS,
   MOCK_PROBLEM_REPORTS,
   MOCK_RESEARCH_PROJECTS,
-} from "@/lib/research-and-development-mocks";
+} from "@/mocks/research-and-development-mocks";
 
 // Project detail page body: resolves one mock project by slug plus its
 // cross-referenced insights and origin report, then hands the five

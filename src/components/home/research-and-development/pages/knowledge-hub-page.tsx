@@ -1,6 +1,9 @@
 import MarketInsightCard from "@/components/home/research-and-development/cards/market-insight-card";
 import TrendingDemandSignals from "@/components/home/research-and-development/sections/trending-demand-signals";
-import { MOCK_MARKET_INSIGHTS, MOCK_TRENDING_SIGNALS } from "@/lib/research-and-development-mocks";
+import {
+  MOCK_MARKET_INSIGHTS,
+  MOCK_TRENDING_SIGNALS,
+} from "@/mocks/research-and-development-mocks";
 
 // Knowledge-hub composition ("where demand is highest"): the full market-insight
 // grid plus trending demand signals (rising-category chips + leaderboard).

@@ -6,7 +6,7 @@ import { useState } from "react";
 import {
   IMMORTAL_COMPENSATION_PREFERENCE_LABELS,
   IMMORTAL_CONTRIBUTOR_ROLE_LABELS,
-} from "@/lib/project-immortal-mocks";
+} from "@/mocks/project-immortal-mocks";
 import type {
   ImmortalCompensationPreference,
   ImmortalContributor,

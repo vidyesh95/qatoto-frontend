@@ -16,7 +16,7 @@ import {
   MOCK_LEAF_RAILS,
   MOCK_PATHWAYS,
   MOCK_STORE_HOME,
-} from "./store-mocks";
+} from "@/mocks/store-mocks";
 
 const STORE_API_URL = process.env.QATOTO_STORE_API_URL;
 

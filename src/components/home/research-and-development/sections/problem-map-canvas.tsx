@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import ProblemReportList from "@/components/home/research-and-development/sections/problem-report-list";
 import ReportProblemSheet from "@/components/home/research-and-development/sheets/report-problem-sheet";
-import { MOCK_PROBLEM_REPORTS } from "@/lib/research-and-development-mocks";
+import { MOCK_PROBLEM_REPORTS } from "@/mocks/research-and-development-mocks";
 import type { ProblemReport } from "@/types/research-and-development";
 
 const buildCategoryChipClassName = (isActive: boolean) =>

@@ -32,4 +32,4 @@ log in against.
 
 ---
 
-_Reference contract: [../BACKEND_STRUCTURE.md](../BACKEND_STRUCTURE.md)_
+_Reference contract: [../docs/BACKEND_STRUCTURE.md](../docs/BACKEND_STRUCTURE.md)_

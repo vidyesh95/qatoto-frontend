@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { PROJECT_IMMORTAL_ROOT_BRANCH_ID } from "@/lib/project-immortal-mocks";
+import { PROJECT_IMMORTAL_ROOT_BRANCH_ID } from "@/mocks/project-immortal-mocks";
 import type {
   ImmortalBranchStatus,
   ImmortalResearchBranch,
