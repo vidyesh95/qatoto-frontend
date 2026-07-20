@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import KnowledgeHubPage from "@/components/home/research-and-development/pages/knowledge-hub-page";
+import KnowledgeHubPage from "@/components/home/research-and-development/knowledge-hub-page";
 
 export const metadata: Metadata = {
   title: "Knowledge Hub · R&D",

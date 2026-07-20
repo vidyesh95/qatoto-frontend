@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import TalentPage from "@/components/home/research-and-development/pages/talent-page";
+import TalentPage from "@/components/home/research-and-development/talent-page";
 
 export const metadata: Metadata = {
   title: "Talent · R&D",

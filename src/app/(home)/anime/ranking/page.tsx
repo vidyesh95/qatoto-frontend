@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import RankingPage from "@/components/home/anime/pages/ranking-page";
+import RankingPage from "@/components/home/anime/ranking-page";
 
 export const metadata: Metadata = {
   title: "Ranking",

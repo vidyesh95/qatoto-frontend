@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ProductDetail from "@/components/home/store/pages/product-detail";
+import ProductDetail from "@/components/home/store/product-detail";
 import { prettifySlugForDisplay } from "@/lib/store";
 
 // Single mock product for the UI-building phase. Prerender the one id so the

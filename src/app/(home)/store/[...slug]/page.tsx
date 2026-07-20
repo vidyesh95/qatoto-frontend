@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import CategoryPage from "@/components/home/store/pages/category-page";
+import CategoryPage from "@/components/home/store/category-page";
 import { getCategorySlugs, getLastSlugSegment, prettifySlugForDisplay } from "@/lib/store";
 
 export async function generateStaticParams() {

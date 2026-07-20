@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import ProofOfEffortPage from "@/components/home/research-and-development/pages/proof-of-effort-page";
+import ProofOfEffortPage from "@/components/home/research-and-development/proof-of-effort-page";
 import { MOCK_RESEARCH_PROJECTS } from "@/mocks/research-and-development-mocks";
 
 // Prerender every mock project slug — required for a dynamic route under

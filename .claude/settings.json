@@ -1,6 +1,13 @@
 {
   "permissions": {
-    "allow": ["Bash(sort -k2)", "Bash(pnpm build *)"],
+    "allow": [
+      "Bash(sort -k2)",
+      "Bash(pnpm build *)",
+      "Bash(mkdir -p /Users/vinitchuri/.claude/plans)",
+      "Read(//Users/vinitchuri/.claude/plans/**)",
+      "Bash(xargs sed -i '' 's#@/components/home/research-and-development/pages/#@/components/home/research-and-development/#')",
+      "Bash(xargs sed -i '' 's#@/components/home/store/pages/#@/components/home/store/#')"
+    ],
     "additionalDirectories": ["/private/tmp"]
   }
 }

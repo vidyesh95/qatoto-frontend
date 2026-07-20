@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import AnimePage from "@/components/home/anime/pages/anime-page";
+import AnimePage from "@/components/home/anime/anime-page";
 
 export const metadata: Metadata = {
   title: "Anime",

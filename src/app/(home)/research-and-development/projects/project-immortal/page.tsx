@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ProjectImmortalPage from "@/components/home/research-and-development/pages/project-immortal-page";
+import ProjectImmortalPage from "@/components/home/research-and-development/project-immortal-page";
 
 export const metadata: Metadata = {
   title: "Project Immortal · R&D",

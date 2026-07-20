@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import FundingPage from "@/components/home/research-and-development/pages/funding-page";
+import FundingPage from "@/components/home/research-and-development/funding-page";
 
 export const metadata: Metadata = {
   title: "Funding · R&D",

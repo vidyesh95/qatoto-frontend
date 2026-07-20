@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import FavoritePage from "@/components/home/anime/pages/favorite-page";
+import FavoritePage from "@/components/home/anime/favorite-page";
 
 export const metadata: Metadata = {
   title: "Favorite",
