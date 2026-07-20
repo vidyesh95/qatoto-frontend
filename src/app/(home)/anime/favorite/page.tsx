@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import FavoriteContent from "@/components/home/anime/favorite-content";
+import FavoritePage from "@/components/home/anime/pages/favorite-page";
 
 export const metadata: Metadata = {
   title: "Favorite",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Favorite() {
-  return <FavoriteContent />;
+  return <FavoritePage />;
 }

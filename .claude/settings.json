@@ -1,5 +1,6 @@
 {
   "permissions": {
-    "allow": ["Bash(sort -k2)"]
+    "allow": ["Bash(sort -k2)", "Bash(pnpm build *)"],
+    "additionalDirectories": ["/private/tmp"]
   }
 }

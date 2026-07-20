@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import GenreContent from "@/components/home/anime/genre-content";
+import GenrePage from "@/components/home/anime/pages/genre-page";
 
 export const metadata: Metadata = {
   title: "Genre",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Genre() {
-  return <GenreContent />;
+  return <GenrePage />;
 }

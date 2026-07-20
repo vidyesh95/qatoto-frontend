@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import AnimeContent from "@/components/home/anime/anime-content";
+import AnimePage from "@/components/home/anime/pages/anime-page";
 
 export const metadata: Metadata = {
   title: "Anime",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Anime() {
-  return <AnimeContent />;
+  return <AnimePage />;
 }

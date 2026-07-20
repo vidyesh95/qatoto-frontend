@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import RankingContent from "@/components/home/anime/ranking-content";
+import RankingPage from "@/components/home/anime/pages/ranking-page";
 
 export const metadata: Metadata = {
   title: "Ranking",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Ranking() {
-  return <RankingContent />;
+  return <RankingPage />;
 }
