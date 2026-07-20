@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 // the first and the first slide after the last, so a swipe past either end
 // lands on a clone and then silently jumps to the matching real slide — the
 // track reads as an endless loop scrollable from either side at the start.
-export default function ProductCarousel({ images, alt }: { images: string[]; alt: string }) {
+export default function ProductImageGallery({ images, alt }: { images: string[]; alt: string }) {
   const scrollTrackRef = useRef<HTMLDivElement>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 

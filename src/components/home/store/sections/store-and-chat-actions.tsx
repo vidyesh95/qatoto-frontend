@@ -5,7 +5,7 @@ import { useState } from "react";
 import Image from "next/image";
 
 import ManufacturerChatSheet from "@/components/home/store/sheets/manufacturer-chat-sheet";
-import StoreProductsSheet from "@/components/home/store/sheets/store-products-sheet";
+import ManufacturerStorefrontSheet from "@/components/home/store/sheets/manufacturer-storefront-sheet";
 
 // "Store" / "Chat now" button pair on the product page. "Store" opens the
 // manufacturer's storefront sheet (a grid of their other products); "Chat now"
@@ -48,7 +48,7 @@ export default function StoreAndChatActions() {
         </button>
       </div>
 
-      {isStoreOpen && <StoreProductsSheet onClose={() => setIsStoreOpen(false)} />}
+      {isStoreOpen && <ManufacturerStorefrontSheet onClose={() => setIsStoreOpen(false)} />}
       {isChatOpen && <ManufacturerChatSheet onClose={() => setIsChatOpen(false)} />}
     </>
   );

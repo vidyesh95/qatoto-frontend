@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import BuyActionButtons from "@/components/home/store/cards/buy-action-buttons";
+import RatingBadge from "@/components/home/store/cards/rating-badge";
 import CategoryBreadcrumb from "@/components/home/store/sections/category-breadcrumb";
 import CompanyDetailsSection from "@/components/home/store/sections/company-details-section";
 import CustomizationOptions from "@/components/home/store/sections/customization-options";
@@ -9,8 +11,8 @@ import DeliveryCost from "@/components/home/store/sections/delivery-cost";
 import EngagementBar from "@/components/home/store/sections/engagement-bar";
 import PackagingAndDelivery from "@/components/home/store/sections/packaging-and-delivery";
 import PriceChart from "@/components/home/store/sections/price-chart";
-import type { ProductPricingTier, ProductRail as ProductRailData } from "@/types/store";
-import ProductCarousel from "@/components/home/store/rails/product-carousel";
+import type { ProductRail as ProductRailData } from "@/types/store";
+import ProductImageGallery from "@/components/home/store/sections/product-image-gallery";
 import ProductDetailsSection from "@/components/home/store/sections/product-details-section";
 import ProductHighlights from "@/components/home/store/sections/product-highlights";
 import ProductRail from "@/components/home/store/rails/product-rail";
@@ -20,29 +22,17 @@ import SamplePrice from "@/components/home/store/sections/sample-price";
 import SimilarAndCompare from "@/components/home/store/sections/similar-and-compare";
 import StoreAndChatActions from "@/components/home/store/sections/store-and-chat-actions";
 import TradeProtection from "@/components/home/store/sections/trade-protection";
-import { MOCK_CATEGORY_RAILS } from "@/mocks/store-mocks";
-
-const HERO_IMAGES = [
-  "/dummy/chair_raspberry_red.avif",
-  "/dummy/chair_raspberry_red02.avif",
-  "/dummy/chair_raspberry_red03.avif",
-];
+import {
+  MOCK_CATEGORY_RAILS,
+  MOCK_PRODUCT_COLORS,
+  MOCK_PRODUCT_HERO_IMAGES,
+  MOCK_PRODUCT_PRICING_TIERS,
+} from "@/mocks/store-mocks";
 
 // Product detail (chair) view. UI-only mock — static data baked in, no fetch.
 // Mirrors the Figma spec: image + 360 banner, color picker, price tiers,
 // customization, delivery, trade protection, product + company details,
 // highlights, reviews, photos and a Q&A block, with a sticky buy bar.
-
-const COLORS = [
-  { name: "Raspberry red", src: "/dummy/chair_raspberry_red.avif", selected: true },
-  { name: "Royal purple", src: "/dummy/chair_royal_purple.avif" },
-  { name: "Sea blue", src: "/dummy/chair_sea_blue.avif" },
-  { name: "Charcoal black", src: "/dummy/chair_charcoal_black.avif" },
-];
-
-// Price + customization will come from the backend API. For the UI phase these
-// dummy getters stand in for that fetch — swap the body for a real call later,
-// keep the shape and the call sites unchanged.
 
 // Both rails borrow products from the exported category pools so no new mock
 // products are authored here. Different pools keep the two rails distinct.
@@ -60,62 +50,12 @@ const OTHER_RECOMMENDATIONS_RAIL: ProductRailData = {
   products: MOCK_CATEGORY_RAILS["chairs"][1].products,
 };
 
-function getProductPricingTiers(productSlug: string): ProductPricingTier[] {
-  void productSlug; // single mock product for now
-  return [
-    { unitPrice: "$1230.79", minimumOrderQuantity: "1 to 49 sets" },
-    { unitPrice: "$1000.23", minimumOrderQuantity: "50 to 499 sets" },
-    { unitPrice: "$753.80", minimumOrderQuantity: ">=500 sets" },
-  ];
-}
-
 function Icon({ src, size = 24, className }: { src: string; size?: number; className?: string }) {
   return <Image src={`/icons/${src}`} width={size} height={size} alt="" className={className} />;
 }
 
-// The three buy CTAs — rendered twice: in the mobile/tablet fixed bottom bar
-// and inline at the end of the desktop buy column. Keep classes identical.
-function BuyActionButtons() {
-  return (
-    <>
-      <button
-        type="button"
-        className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
-      >
-        Send inquiry
-      </button>
-      <button
-        type="button"
-        className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
-      >
-        Add to cart
-      </button>
-      <button
-        type="button"
-        className="flex-1 rounded-full bg-[#00696E] px-4 py-1.5 text-xs font-medium text-white"
-      >
-        Buy now
-      </button>
-    </>
-  );
-}
-
-// Compact dark rating pill (e.g. "4.8 ★").
-function RatingBadge({ value }: { value: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-sm bg-[#4A6364] p-1 text-xs font-medium tracking-wide text-white">
-      {value}
-      <span aria-hidden className="text-white">
-        ★
-      </span>
-    </span>
-  );
-}
-
 export default function ProductDetail({ slug }: { slug: string }) {
   void slug; // single mock product for now
-
-  const pricingTiers = getProductPricingTiers(slug);
 
   return (
     <div className="mx-auto w-full max-w-md pb-40 md:max-w-2xl md:pb-24 lg:max-w-6xl lg:pb-12">
@@ -129,9 +69,9 @@ export default function ProductDetail({ slug }: { slug: string }) {
         {/* Gallery column — sticks just under the 56px navbar while the buy
             column scrolls */}
         <div className="lg:sticky lg:top-16">
-          {/* Hero carousel + dots */}
-          <ProductCarousel
-            images={HERO_IMAGES}
+          {/* Hero image gallery + dots */}
+          <ProductImageGallery
+            images={MOCK_PRODUCT_HERO_IMAGES}
             alt="Louis Vuitton Folding Metal Living Room Chair"
           />
 
@@ -160,7 +100,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
             <div className="px-4 pt-2 lg:order-2 lg:px-6">
               <p className="py-2 text-xs font-medium tracking-wide text-foreground">Select Color</p>
               <div className="flex gap-4 overflow-x-auto pb-2">
-                {COLORS.map((color) => (
+                {MOCK_PRODUCT_COLORS.map((color) => (
                   <div key={color.name} className="w-14 shrink-0">
                     <div
                       className={`relative aspect-square overflow-hidden rounded ${
@@ -211,7 +151,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
           <EngagementBar />
 
           {/* Price chart — tap "more" opens the detailed price-chart sheet */}
-          <PriceChart pricingTiers={pricingTiers} />
+          <PriceChart pricingTiers={MOCK_PRODUCT_PRICING_TIERS} />
 
           {/* Sample price — order one unit before committing to a bulk order */}
           <SamplePrice />

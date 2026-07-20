@@ -5,7 +5,7 @@ import type { StoreCategory } from "@/types/store";
 // A single category tile: square image + name. Tapping drills into the
 // catch-all category route, which decides whether to show sub-categories or
 // products based on the node's children.
-export default function StoreCategoryCard({ category }: { category: StoreCategory }) {
+export default function CategoryCard({ category }: { category: StoreCategory }) {
   return (
     <Link
       href={`/store/${category.slug}`}

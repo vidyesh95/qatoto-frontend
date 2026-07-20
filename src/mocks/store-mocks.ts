@@ -7,6 +7,7 @@ import type {
   B2BLink,
   HeroSlide,
   Pathway,
+  ProductPricingTier,
   ProductRail,
   StoreCategory,
   StoreHome,
@@ -2057,3 +2058,26 @@ export const MOCK_STORE_HOME: StoreHome = {
   b2bLinks: MOCK_B2B_LINKS,
   rails: MOCK_RAILS,
 };
+
+// Product detail page (single mock product, "lv-folding-chair") mock data.
+
+export const MOCK_PRODUCT_HERO_IMAGES = [
+  "/dummy/chair_raspberry_red.avif",
+  "/dummy/chair_raspberry_red02.avif",
+  "/dummy/chair_raspberry_red03.avif",
+];
+
+export const MOCK_PRODUCT_COLORS = [
+  { name: "Raspberry red", src: "/dummy/chair_raspberry_red.avif", selected: true },
+  { name: "Royal purple", src: "/dummy/chair_royal_purple.avif" },
+  { name: "Sea blue", src: "/dummy/chair_sea_blue.avif" },
+  { name: "Charcoal black", src: "/dummy/chair_charcoal_black.avif" },
+];
+
+// Price + customization will come from the backend API. For the UI phase this
+// dummy tier list stands in for that fetch — swap for a real call later.
+export const MOCK_PRODUCT_PRICING_TIERS: ProductPricingTier[] = [
+  { unitPrice: "$1230.79", minimumOrderQuantity: "1 to 49 sets" },
+  { unitPrice: "$1000.23", minimumOrderQuantity: "50 to 499 sets" },
+  { unitPrice: "$753.80", minimumOrderQuantity: ">=500 sets" },
+];

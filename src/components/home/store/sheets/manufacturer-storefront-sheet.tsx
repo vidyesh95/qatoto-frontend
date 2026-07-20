@@ -88,7 +88,7 @@ const STOREFRONT_PRODUCTS: StorefrontProduct[] = [
   },
 ];
 
-export default function StoreProductsSheet({ onClose }: { onClose: () => void }) {
+export default function ManufacturerStorefrontSheet({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     const handleKeyDown = (keyEvent: KeyboardEvent) => {
       if (keyEvent.key === "Escape") onClose();

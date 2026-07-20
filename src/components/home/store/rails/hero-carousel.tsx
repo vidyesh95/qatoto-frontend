@@ -10,7 +10,7 @@ const ROTATION_INTERVAL = 4000;
 // Full-bleed auto-advancing hero at the top of the store. Whole banner is a
 // link to its slide target; dots are position indicators only (no nested
 // buttons inside the link).
-export default function StoreHeroCarousel({ slides }: { slides: HeroSlide[] }) {
+export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {

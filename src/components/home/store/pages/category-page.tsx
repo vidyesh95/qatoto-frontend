@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getCategory, getStoreHome } from "@/lib/store";
-import StoreHeroCarousel from "@/components/home/store/rails/store-hero-carousel";
+import HeroCarousel from "@/components/home/store/rails/hero-carousel";
 import CategoryRail from "@/components/home/store/rails/category-rail";
 import PathwaysRail from "@/components/home/store/rails/pathways-rail";
 import ProductRail from "@/components/home/store/rails/product-rail";
@@ -17,7 +17,7 @@ export default async function CategoryPage({ slug }: { slug: string }) {
 
   return (
     <div className="space-y-8 pb-8">
-      <StoreHeroCarousel slides={home.hero} />
+      <HeroCarousel slides={home.hero} />
       {!isLeaf && <CategoryRail categories={children} />}
       <PathwaysRail pathways={pathways} />
       {rails.map((rail) => (

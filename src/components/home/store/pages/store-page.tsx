@@ -1,5 +1,5 @@
 import { getStoreHome } from "@/lib/store";
-import StoreHeroCarousel from "@/components/home/store/rails/store-hero-carousel";
+import HeroCarousel from "@/components/home/store/rails/hero-carousel";
 import CategoryRail from "@/components/home/store/rails/category-rail";
 import PathwaysRail from "@/components/home/store/rails/pathways-rail";
 import B2BRail from "@/components/home/store/rails/b2b-rail";
@@ -12,7 +12,7 @@ export default async function StorePage() {
 
   return (
     <div className="space-y-8 pb-8">
-      <StoreHeroCarousel slides={hero} />
+      <HeroCarousel slides={hero} />
       <CategoryRail categories={rootCategories} />
       <PathwaysRail pathways={pathways} />
       <B2BRail links={b2bLinks} />

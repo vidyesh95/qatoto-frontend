@@ -85,3 +85,16 @@ export async function getPathwaySlugs(): Promise<string[]> {
   const remote = await storeFetch<string[]>("/store/pathway-slugs");
   return remote ?? MOCK_PATHWAYS.map((p) => p.slug);
 }
+
+// Turns a kebab-case slug into a display title, e.g. "living-room" -> "Living room".
+export function prettifySlugForDisplay(slug: string): string {
+  const spaced = slug.replace(/-/g, " ");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+// The catch-all category route nests slugs for breadcrumbs/shareability
+// (/store/furniture/home-furniture/chairs), but slugs are globally unique, so
+// only the last segment is the node to render.
+export function getLastSlugSegment(slug: string[]): string {
+  return slug[slug.length - 1] ?? "";
+}
