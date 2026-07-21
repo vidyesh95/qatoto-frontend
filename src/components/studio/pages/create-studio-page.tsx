@@ -106,6 +106,61 @@ export default function CreateStudioPage() {
 
   return (
     <div className="p-6">
+      {/* Link a YouTube-hosted video */}
+      <form
+        onSubmit={handleAddYoutubeVideoSubmit}
+        className="mx-auto flex w-full max-w-2xl flex-col gap-3"
+      >
+        <div className="text-center">
+          <p className="text-lg font-medium text-foreground">Add a video from YouTube</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Paste the link to a video you already host on YouTube.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <input
+            type="url"
+            inputMode="url"
+            value={youtubeUrlInput}
+            onChange={(changeEvent) => setYoutubeUrlInput(changeEvent.target.value)}
+            placeholder="https://www.youtube.com/watch?v=…"
+            aria-label="YouTube video link"
+            aria-invalid={shouldShowYoutubeUrlError}
+            className="min-w-0 flex-1 rounded-full border border-border bg-transparent px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+          />
+          <button
+            type="submit"
+            disabled={!isYoutubeUrlValid}
+            className="flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-40"
+          >
+            Add video
+          </button>
+        </div>
+
+        <p className="text-center text-xs text-muted-foreground">
+          {shouldShowYoutubeUrlError
+            ? "Enter a valid YouTube video link."
+            : "Watch, Shorts and youtu.be links all work."}
+        </p>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        By linking and submitting your videos to Qatoto, you acknowledge that you agree to
+        Qatoto&apos;s <TermsLink>Terms of Service</TermsLink> and{" "}
+        <TermsLink>Community Guidelines.</TermsLink>
+        <br />
+        Please make sure that you do not violate others{" "}
+        <TermsLink>copyright or privacy rights.</TermsLink>
+      </p>
+
+      {/* OR divider */}
+      <div className="my-8 flex items-center gap-4">
+        <hr className="flex-1 border-border" />
+        <span className="text-lg font-medium text-foreground">OR</span>
+        <hr className="flex-1 border-border" />
+      </div>
+
       {/* Upload dropzone */}
       <div
         onDrop={handleDrop}
@@ -186,61 +241,6 @@ export default function CreateStudioPage() {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         By uploading and submitting your videos to Qatoto, you acknowledge that you agree to
-        Qatoto&apos;s <TermsLink>Terms of Service</TermsLink> and{" "}
-        <TermsLink>Community Guidelines.</TermsLink>
-        <br />
-        Please make sure that you do not violate others{" "}
-        <TermsLink>copyright or privacy rights.</TermsLink>
-      </p>
-
-      {/* OR divider */}
-      <div className="my-8 flex items-center gap-4">
-        <hr className="flex-1 border-border" />
-        <span className="text-lg font-medium text-foreground">OR</span>
-        <hr className="flex-1 border-border" />
-      </div>
-
-      {/* Link a YouTube-hosted video */}
-      <form
-        onSubmit={handleAddYoutubeVideoSubmit}
-        className="mx-auto flex w-full max-w-2xl flex-col gap-3"
-      >
-        <div className="text-center">
-          <p className="text-lg font-medium text-foreground">Add a video from YouTube</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Paste the link to a video you already host on YouTube.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <input
-            type="url"
-            inputMode="url"
-            value={youtubeUrlInput}
-            onChange={(changeEvent) => setYoutubeUrlInput(changeEvent.target.value)}
-            placeholder="https://www.youtube.com/watch?v=…"
-            aria-label="YouTube video link"
-            aria-invalid={shouldShowYoutubeUrlError}
-            className="min-w-0 flex-1 rounded-full border border-border bg-transparent px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
-          />
-          <button
-            type="submit"
-            disabled={!isYoutubeUrlValid}
-            className="flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-40"
-          >
-            Add video
-          </button>
-        </div>
-
-        <p className="text-center text-xs text-muted-foreground">
-          {shouldShowYoutubeUrlError
-            ? "Enter a valid YouTube video link."
-            : "Watch, Shorts and youtu.be links all work."}
-        </p>
-      </form>
-
-      <p className="mt-6 text-center text-sm text-muted-foreground">
-        By linking and submitting your videos to Qatoto, you acknowledge that you agree to
         Qatoto&apos;s <TermsLink>Terms of Service</TermsLink> and{" "}
         <TermsLink>Community Guidelines.</TermsLink>
         <br />
