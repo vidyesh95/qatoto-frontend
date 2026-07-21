@@ -2,20 +2,26 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { buildYoutubeEmbedUrl, extractYoutubeVideoId } from "@/lib/youtube";
 
-// Right-hand column of the upload modal. Create mode gets the picked File —
-// a short timeout fakes the "Processing video…" → playable preview transition
-// (UPLOAD_VIDEO_STRUCTURE.md §4). Edit mode only has the stored filename (no
-// File object survives a save), so it shows a static placeholder instead.
+// Right-hand column of the upload modal. A linked YouTube video embeds
+// directly — the iframe shows YouTube's own thumbnail until it is played, so
+// there is nothing to "process". A picked File uses a short timeout to fake the
+// "Processing video…" → playable preview transition (UPLOAD_VIDEO_STRUCTURE.md
+// §4). Edit mode only has the stored filename (no File object survives a save),
+// so it shows a static placeholder instead.
 type PreviewStage = "processing" | "ready";
 
 const FAKE_PROCESSING_DURATION_MS = 2000;
 
-type VideoPreviewCardProps = { videoFile: File } | { fileName: string };
+type VideoPreviewCardProps = { videoFile: File } | { youtubeUrl: string } | { fileName: string };
 
 export default function VideoPreviewCard(props: VideoPreviewCardProps) {
   const videoFile = "videoFile" in props ? props.videoFile : null;
-  const fileName = "videoFile" in props ? props.videoFile.name : props.fileName;
+  const youtubeUrl = "youtubeUrl" in props ? props.youtubeUrl : null;
+  const youtubeVideoId = youtubeUrl === null ? null : extractYoutubeVideoId(youtubeUrl);
+  const sourceLabel = youtubeUrl ?? ("videoFile" in props ? props.videoFile.name : null);
+  const fileName = sourceLabel ?? ("fileName" in props ? props.fileName : "");
 
   const [previewStage, setPreviewStage] = useState<PreviewStage>("processing");
   const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
@@ -44,7 +50,20 @@ export default function VideoPreviewCard(props: VideoPreviewCardProps) {
 
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl bg-secondary/50">
-      {!videoFile ? (
+      {youtubeVideoId ? (
+        <iframe
+          src={buildYoutubeEmbedUrl(youtubeVideoId)}
+          title="YouTube video preview"
+          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          // The player needs both to run; youtube-nocookie is a foreign origin, so
+          // same-origin only grants it its own storage, never ours. Top-level
+          // navigation and form submission stay blocked.
+          // oxlint-disable-next-line iframe-missing-sandbox
+          sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+          allowFullScreen
+          className="aspect-video w-full bg-black"
+        />
+      ) : !videoFile ? (
         <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 bg-secondary">
           <Image
             src="/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -94,7 +113,9 @@ export default function VideoPreviewCard(props: VideoPreviewCardProps) {
         </div>
 
         <div className="min-w-0">
-          <p className="text-xs text-muted-foreground">Filename</p>
+          <p className="text-xs text-muted-foreground">
+            {youtubeUrl === null ? "Filename" : "YouTube link"}
+          </p>
           <p className="truncate text-sm text-foreground">{fileName}</p>
         </div>
       </div>

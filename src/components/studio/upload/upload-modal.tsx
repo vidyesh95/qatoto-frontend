@@ -40,8 +40,13 @@ type ActiveOverlay =
   | "store-products-picker"
   | "invite-collaborator";
 
+// What the new video is sourced from. Direct file hosting is paused (too
+// expensive) — the studio only offers the YouTube-link path today, but the file
+// variant stays wired for when hosting is switched back on.
+type UploadSource = { kind: "file"; videoFile: File } | { kind: "youtube"; youtubeUrl: string };
+
 type UploadVideoModalProps =
-  | { mode: "create"; videoFile: File; onClose: () => void }
+  | { mode: "create"; source: UploadSource; onClose: () => void }
   | { mode: "edit"; videoToEdit: StudioVideo; onClose: () => void };
 
 export default function UploadVideoModal(props: UploadVideoModalProps) {
@@ -49,7 +54,7 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
   const { addVideo, updateVideo, addPlaylist } = useStudioVideos();
   const [draft, setDraft] = useState<UploadDraft>(() =>
     props.mode === "create"
-      ? createEmptyUploadDraft(props.videoFile.name, props.videoFile.size)
+      ? createDraftFromSource(props.source)
       : createDraftFromVideo(props.videoToEdit),
   );
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -229,11 +234,7 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
             {renderCurrentStep(currentStep.id)}
           </div>
           <div className="hidden w-80 shrink-0 overflow-y-auto border-l border-black/10 p-6 lg:block">
-            {props.mode === "create" ? (
-              <VideoPreviewCard videoFile={props.videoFile} />
-            ) : (
-              <VideoPreviewCard fileName={props.videoToEdit.fileName} />
-            )}
+            {renderPreviewCard(props)}
           </div>
         </div>
 
@@ -323,6 +324,36 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
 }
 
 /* ---------- Save helpers ---------- */
+
+// A linked YouTube video has no file, so the URL doubles as its display name
+// and its size stays zero.
+function createDraftFromSource(source: UploadSource): UploadDraft {
+  switch (source.kind) {
+    case "file":
+      return createEmptyUploadDraft(source.videoFile.name, source.videoFile.size);
+    case "youtube":
+      return { ...createEmptyUploadDraft(source.youtubeUrl, 0), youtubeUrl: source.youtubeUrl };
+    default: {
+      const exhaustiveCheck: never = source;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+function renderPreviewCard(props: UploadVideoModalProps) {
+  if (props.mode === "edit") {
+    return props.videoToEdit.youtubeUrl === "" ? (
+      <VideoPreviewCard fileName={props.videoToEdit.fileName} />
+    ) : (
+      <VideoPreviewCard youtubeUrl={props.videoToEdit.youtubeUrl} />
+    );
+  }
+  return props.source.kind === "file" ? (
+    <VideoPreviewCard videoFile={props.source.videoFile} />
+  ) : (
+    <VideoPreviewCard youtubeUrl={props.source.youtubeUrl} />
+  );
+}
 
 function createDraftFromVideo(videoToEdit: StudioVideo): UploadDraft {
   const { id, status, uploadedAtLabel, ...editableDraftFields } = videoToEdit;

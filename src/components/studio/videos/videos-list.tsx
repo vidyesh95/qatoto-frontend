@@ -106,6 +106,7 @@ function VideoRow({ video, onEditClick }: { video: StudioVideo; onEditClick: () 
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
+        {video.youtubeUrl !== "" && <SourceBadge />}
         <VisibilityBadge visibility={video.visibility} />
         <StatusBadge video={video} />
         <span className="w-24 text-right text-xs text-muted-foreground">
@@ -120,6 +121,16 @@ function VideoRow({ video, onEditClick }: { video: StudioVideo; onEditClick: () 
         </button>
       </div>
     </li>
+  );
+}
+
+// Only linked videos are badged — Qatoto-hosted ones are the default, so the
+// row stays quiet unless the source is worth calling out.
+function SourceBadge() {
+  return (
+    <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
+      YouTube
+    </span>
   );
 }
 

@@ -12,8 +12,6 @@
       "Bash(grep -n \"^#\\\\{1,4\\\\} \\\\|Workshop\\\\|workshop\\\\|Daily Log\\\\|dailyLog\" /Users/vinitchuri/code/frontend/qatoto-frontend/docs/R_AND_D_STRUCTURE.md)",
       "Bash(python3 -c ' *)"
     ],
-    "additionalDirectories": [
-      "/private/tmp"
-    ]
+    "additionalDirectories": ["/private/tmp"]
   }
 }

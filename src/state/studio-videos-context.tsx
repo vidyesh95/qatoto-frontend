@@ -86,6 +86,8 @@ export type StudioVideo = {
   scheduledPublishDate: string;
   fileName: string;
   fileSizeInBytes: number;
+  // Empty for videos hosted by Qatoto; set when the creator linked a YouTube video.
+  youtubeUrl: string;
   uploadedAtLabel: string;
   animeEpisodeDetails: AnimeEpisodeDetails | null;
   status: StudioVideoStatus;
@@ -167,6 +169,7 @@ export function createEmptyUploadDraft(fileName: string, fileSizeInBytes: number
     scheduledPublishDate: "",
     fileName,
     fileSizeInBytes,
+    youtubeUrl: "",
     animeEpisodeDetails: null,
   };
 }

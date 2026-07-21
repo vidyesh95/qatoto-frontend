@@ -3,17 +3,31 @@
 import Image from "next/image";
 import { useRef, useState } from "react";
 import UploadVideoModal from "@/components/studio/upload/upload-modal";
+import { extractYoutubeVideoId } from "@/lib/youtube";
 
-// Landing view of the Creator Studio: an upload dropzone card and a "Go Live
-// Stream" alternative. Picking files opens the 4-step upload modal for the
-// first one; the rest wait in the local list behind an "Edit details" button.
-// No upload backend yet (UI phase) — saved videos land in the studio-videos
-// context.
+// Landing view of the Creator Studio. Two ways in: upload video files to
+// Qatoto, or link a video already hosted on YouTube. Either one opens the same
+// 4-step upload modal, which commits the video to the studio-videos context.
+// Picked files queue locally — the first opens right away, the rest wait behind
+// an "Edit details" button. No upload backend yet (UI phase).
+
+// Only one wizard can be open at a time, so the open source is a single union
+// rather than one piece of state per upload path.
+type ActiveUpload =
+  | { kind: "none" }
+  | { kind: "file"; fileIndex: number }
+  | { kind: "youtube"; youtubeUrl: string };
+
 export default function CreateStudioPage() {
   const [selectedVideoFiles, setSelectedVideoFiles] = useState<File[]>([]);
-  const [activeUploadFileIndex, setActiveUploadFileIndex] = useState<number | null>(null);
+  const [activeUpload, setActiveUpload] = useState<ActiveUpload>({ kind: "none" });
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [youtubeUrlInput, setYoutubeUrlInput] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const trimmedYoutubeUrl = youtubeUrlInput.trim();
+  const isYoutubeUrlValid = extractYoutubeVideoId(trimmedYoutubeUrl) !== null;
+  const shouldShowYoutubeUrlError = trimmedYoutubeUrl !== "" && !isYoutubeUrlValid;
 
   function addVideoFiles(incomingFiles: FileList | null) {
     if (!incomingFiles) return;
@@ -21,8 +35,8 @@ export default function CreateStudioPage() {
     if (videoFiles.length === 0) return;
     setSelectedVideoFiles((previousFiles) => [...previousFiles, ...videoFiles]);
     // Auto-open the modal for the first file of this batch unless one is open.
-    if (activeUploadFileIndex === null) {
-      setActiveUploadFileIndex(selectedVideoFiles.length);
+    if (activeUpload.kind === "none") {
+      setActiveUpload({ kind: "file", fileIndex: selectedVideoFiles.length });
     }
   }
 
@@ -58,28 +72,37 @@ export default function CreateStudioPage() {
       previousFiles.filter((_, fileIndex) => fileIndex !== fileIndexToRemove),
     );
     // Keep the open modal pointing at the same file if an earlier row goes away.
-    if (activeUploadFileIndex !== null && fileIndexToRemove < activeUploadFileIndex) {
-      setActiveUploadFileIndex(activeUploadFileIndex - 1);
+    if (activeUpload.kind === "file" && fileIndexToRemove < activeUpload.fileIndex) {
+      setActiveUpload({ kind: "file", fileIndex: activeUpload.fileIndex - 1 });
     }
   }
 
   function handleEditDetailsClick(fileIndexToEdit: number) {
-    setActiveUploadFileIndex(fileIndexToEdit);
+    setActiveUpload({ kind: "file", fileIndex: fileIndexToEdit });
+  }
+
+  function handleAddYoutubeVideoSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!isYoutubeUrlValid) return;
+    setActiveUpload({ kind: "youtube", youtubeUrl: trimmedYoutubeUrl });
   }
 
   // Fires on Save and on X-close alike — both commit the video to the shared
-  // list, so the local dropzone row is done and gets removed.
+  // list, so whichever input produced it is done and gets cleared.
   function handleUploadModalClose() {
-    if (activeUploadFileIndex === null) return;
-    const committedFileIndex = activeUploadFileIndex;
-    setSelectedVideoFiles((previousFiles) =>
-      previousFiles.filter((_, fileIndex) => fileIndex !== committedFileIndex),
-    );
-    setActiveUploadFileIndex(null);
+    if (activeUpload.kind === "file") {
+      const committedFileIndex = activeUpload.fileIndex;
+      setSelectedVideoFiles((previousFiles) =>
+        previousFiles.filter((_, fileIndex) => fileIndex !== committedFileIndex),
+      );
+    } else if (activeUpload.kind === "youtube") {
+      setYoutubeUrlInput("");
+    }
+    setActiveUpload({ kind: "none" });
   }
 
   const activeUploadFile =
-    activeUploadFileIndex === null ? null : (selectedVideoFiles[activeUploadFileIndex] ?? null);
+    activeUpload.kind === "file" ? (selectedVideoFiles[activeUpload.fileIndex] ?? null) : null;
 
   return (
     <div className="p-6">
@@ -177,24 +200,47 @@ export default function CreateStudioPage() {
         <hr className="flex-1 border-border" />
       </div>
 
-      {/* Go live */}
-      <div className="flex justify-center">
-        <button
-          type="button"
-          className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium transition-opacity hover:opacity-90"
-        >
-          <Image
-            src="/icons/stream_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt=""
-            width={20}
-            height={20}
+      {/* Link a YouTube-hosted video */}
+      <form
+        onSubmit={handleAddYoutubeVideoSubmit}
+        className="mx-auto flex w-full max-w-2xl flex-col gap-3"
+      >
+        <div className="text-center">
+          <p className="text-lg font-medium text-foreground">Add a video from YouTube</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Paste the link to a video you already host on YouTube.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <input
+            type="url"
+            inputMode="url"
+            value={youtubeUrlInput}
+            onChange={(changeEvent) => setYoutubeUrlInput(changeEvent.target.value)}
+            placeholder="https://www.youtube.com/watch?v=…"
+            aria-label="YouTube video link"
+            aria-invalid={shouldShowYoutubeUrlError}
+            className="min-w-0 flex-1 rounded-full border border-border bg-transparent px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
           />
-          Go Live Stream
-        </button>
-      </div>
+          <button
+            type="submit"
+            disabled={!isYoutubeUrlValid}
+            className="flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-40"
+          >
+            Add video
+          </button>
+        </div>
+
+        <p className="text-center text-xs text-muted-foreground">
+          {shouldShowYoutubeUrlError
+            ? "Enter a valid YouTube video link."
+            : "Watch, Shorts and youtu.be links all work."}
+        </p>
+      </form>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        By streaming and submitting your videos to Qatoto, you acknowledge that you agree to
+        By linking and submitting your videos to Qatoto, you acknowledge that you agree to
         Qatoto&apos;s <TermsLink>Terms of Service</TermsLink> and{" "}
         <TermsLink>Community Guidelines.</TermsLink>
         <br />
@@ -202,11 +248,20 @@ export default function CreateStudioPage() {
         <TermsLink>copyright or privacy rights.</TermsLink>
       </p>
 
-      {activeUploadFile && (
+      {activeUpload.kind === "youtube" && (
         <UploadVideoModal
-          key={`${activeUploadFile.name}-${activeUploadFile.size}-${activeUploadFileIndex}`}
+          key={activeUpload.youtubeUrl}
           mode="create"
-          videoFile={activeUploadFile}
+          source={{ kind: "youtube", youtubeUrl: activeUpload.youtubeUrl }}
+          onClose={handleUploadModalClose}
+        />
+      )}
+
+      {activeUpload.kind === "file" && activeUploadFile && (
+        <UploadVideoModal
+          key={`${activeUploadFile.name}-${activeUploadFile.size}-${activeUpload.fileIndex}`}
+          mode="create"
+          source={{ kind: "file", videoFile: activeUploadFile }}
           onClose={handleUploadModalClose}
         />
       )}
