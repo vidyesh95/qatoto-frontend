@@ -167,7 +167,7 @@ export default function CreateStudioPage() {
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`opacity-50 flex flex-col items-center justify-center gap-4 rounded-2xl border py-12 transition-colors ${
+        className={`flex flex-col items-center justify-center gap-4 rounded-2xl border py-12 opacity-50 transition-colors ${
           isDraggingOver ? "border-[#1DBDC5] bg-secondary/50" : "border-border"
         }`}
       >

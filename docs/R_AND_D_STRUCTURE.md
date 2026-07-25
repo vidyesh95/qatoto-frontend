@@ -3,16 +3,26 @@
 Planning doc for the `/research-and-development` surface — the home of Qatoto's full
 **concept-to-consumer pipeline**: market-demand research → problem mapping → team
 building (equity for skills) → build with AI-analyzed daily logs → transparent
-funding & escrow governance → go-to-market. The landing page tells the whole
+compensation governance → go-to-market. The landing page tells the whole
 pipeline story; deep features live on sub-routes. Tweak / delete anything; we build
 only what survives.
 
 > **Phase note:** UI + mock data only. No backend, no fetch, no Zod, no loading/error
-> states, no new abstractions. Every number on this surface (funding, equity, escrow,
+> states, no new abstractions. Every number on this surface (funding, equity, compensation,
 > AI analysis, opportunity scores, demand stats) is a **static mock**; every
-> interaction mutates local client state only. Escrow, compensation math, AI log
+> interaction mutates local client state only. Compensation math, AI log
 > analysis, and verification are **backend-owned later** — the frontend only renders
 > them (thin-client invariant, `CLAUDE.md` §Core principle).
+>
+> **Escrow left this surface.** The backend contract
+> ([R_AND_D_BACKEND_STRUCTURE.md](R_AND_D_BACKEND_STRUCTURE.md) §7, §7A) made this domain **fully
+> non-custodial and free**: Qatoto computes what each member is owed each month in cash and equity,
+> and the parties settle it between themselves. Holding funds is regulated money movement in the EU,
+> US and India, and gating a wage on a verification verdict — which the escrow design did — is
+> unlawful withholding. The escrow ledger design survives in
+> [ESCROW_LEDGER_STRUCTURE.md](ESCROW_LEDGER_STRUCTURE.md) for the store's buyer↔seller flow.
+> §5.5 and §10 below are updated; the mock components are not, and rewiring them is a later-phase
+> task.
 
 ---
 
@@ -41,16 +51,16 @@ Pattern donors elsewhere in the repo:
 
 The founder's eight pillars, and which surface carries each:
 
-| #   | Pillar                                              | Carried by                                                                                                |
-| --- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| 1   | Market-demand research & feasibility                | `/research-and-development/knowledge-hub` + demand chips on project Overview                              |
-| 2   | Problem Mapping / "Civic Pulse"                     | `/research-and-development/problem-map`                                                                   |
-| 3   | Knowledge Hub (market intelligence)                 | `/research-and-development/knowledge-hub`                                                                 |
-| 4   | Talent matching / Virtual Workshop                  | Open-roles rail + Team tab now; `/talent` + `/workshop` later (§11)                                       |
-| 5   | Funding (crowd / VC, transparency)                  | Funding tab on project detail; investor `/funding` view later (§11)                                       |
-| 6   | Daily Update Protocol (AI logs, Proof of Effort)    | Daily Logs tab on project detail — mechanism spec'd in [PROOF_OF_EFFORT_SPEC.md](PROOF_OF_EFFORT_SPEC.md) |
-| 7   | Financial governance (escrow, anti-corruption)      | Governance tab on project detail                                                                          |
-| 8   | Go-to-market (suppliers, ODM, shipping, storefront) | Pipeline-stage card pointing at the existing **`/store`** B2B surface — no new route                      |
+| #   | Pillar                                               | Carried by                                                                                                |
+| --- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 1   | Market-demand research & feasibility                 | `/research-and-development/knowledge-hub` + demand chips on project Overview                              |
+| 2   | Problem Mapping / "Civic Pulse"                      | `/research-and-development/problem-map`                                                                   |
+| 3   | Knowledge Hub (market intelligence)                  | `/research-and-development/knowledge-hub`                                                                 |
+| 4   | Talent matching / Virtual Workshop                   | Open-roles rail + Team tab now; `/talent` + `/workshop` later (§11)                                       |
+| 5   | Funding (crowd / VC, transparency)                   | Funding tab on project detail; investor `/funding` view later (§11)                                       |
+| 6   | Daily Update Protocol (AI logs, Proof of Effort)     | Daily Logs tab on project detail — mechanism spec'd in [PROOF_OF_EFFORT_SPEC.md](PROOF_OF_EFFORT_SPEC.md) |
+| 7   | Financial governance (compensation, anti-corruption) | Compensation & governance tab on project detail                                                           |
+| 8   | Go-to-market (suppliers, ODM, shipping, storefront)  | Pipeline-stage card pointing at the existing **`/store`** B2B surface — no new route                      |
 
 Related surfaces that are **not** part of this doc:
 
@@ -63,7 +73,7 @@ flowchart LR
   KH --> IDEA[Post idea<br/>sheet]
   IDEA --> TEAM[Team building<br/>equity for skills]
   TEAM --> BUILD[Build + Daily Logs<br/>AI Proof of Effort]
-  BUILD --> FUND[Funding + Escrow<br/>Governance]
+  BUILD --> FUND[Funding +<br/>Compensation Governance]
   FUND --> GTM[Go-to-market<br/>/store B2B]
 ```
 
@@ -172,7 +182,7 @@ switcher (`project-tabs.tsx`) is a small `"use client"` island that receives eac
 - "Born from Civic Pulse report" link chip when `originProblemReportId` is set →
   `/problem-map`.
 - **Milestone timeline** (`milestone-timeline`) — vertical, done / current / upcoming
-  states, with escrow-release amounts per milestone (governance tie-in). Lives here
+  states, with planned payout per milestone (governance tie-in). Lives here
   rather than a sixth tab to keep the bar tight.
 
 ### 5.2 Daily Logs (pillar 6)
@@ -215,21 +225,36 @@ Feed of `DailyLogCard`s, date-grouped:
   log streak + verified milestones. **Display-only mock; backend computes later.**
 - **Back this project** → sheet §8.3.
 
-### 5.5 Governance (pillar 7)
+### 5.5 Compensation & governance (pillar 7)
 
 > **Mechanism spec:** [PROOF_OF_EFFORT_SPEC.md](PROOF_OF_EFFORT_SPEC.md) §2–4 — the
-> Trust Protocol framing, the ledger-bake exit event, and why `verificationStatus`
-> exists on `EscrowLedgerEntry` at all.
+> Trust Protocol framing, the statement layer, and the ledger-bake exit event.
+> **Contract:** [R_AND_D_BACKEND_STRUCTURE.md](R_AND_D_BACKEND_STRUCTURE.md) §7A.
 
-- **Escrow ledger table**: date, event description, in/out, amount, linked
-  milestone/log, verified/pending status.
-- Fund-allocation summary cards: allocated vs released vs held.
-- **Per-member compensation table** — "calculated from logged effort" framing
-  (anti-corruption story). Mock numbers only.
+What this tab renders today (an escrow ledger) is superseded. What it should render is the
+**month-end compensation statement** — the pipeline's headline output:
 
-> Trust note (non-negotiable): every escrow, equity, and compensation figure here is a
-> static mock. The platform-as-neutral-auditor logic is entirely server-owned when the
-> backend phase starts. The frontend never computes or enforces any of it.
+- **Period header**: the month, the project's time zone, `open` / `finalized` / `superseded`, and
+  for a finalized period who finalized it, who countersigned it, and the statement hash.
+- **Per-member statement table**: one row per member with **cash owed** (retainer or hourly, with
+  the verified minutes behind an hourly line) and the **equity delta** in basis points for the
+  period — signed, because a share falls when others out-contribute you.
+- **Payment state per line**: unpaid / recorded / **confirmed by the member**. A recorded payment
+  the member has not confirmed must render as _unconfirmed_, never as paid.
+- **Actions**: finalize (founder), countersign (a different admin), record a payment, confirm a
+  payment (the member), export CSV/JSON for the founder's payroll provider.
+- Funding cards stay, re-labelled: a pledge is a **commitment**, not a charge. No allocated /
+  released / held cards — there is no pool to allocate from.
+
+> **Trust note (non-negotiable):** every equity and compensation figure here is a static mock, and
+> the math is entirely server-owned when the backend phase starts. The frontend never computes or
+> enforces any of it.
+>
+> **Two rules the copy on this tab must respect**, because both have a statute behind them
+> (backend §7A.6). Cash is **never** reduced or withheld by a verification verdict — a flagged claim
+> annotates a line and changes no number. And the statement is **gross only**: no tax, no
+> withholding, no social contribution, and the surface says so. Qatoto is not a payroll processor
+> and does not move money.
 
 ---
 
@@ -271,25 +296,25 @@ All four are self-contained `"use client"` components exporting their own trigge
 button + bottom sheet (mirrors the store sheets pattern, e.g.
 [deliver-to.tsx](src/components/home/store/sections/deliver-to.tsx) → `address-sheet`).
 
-| #   | Sheet                  | Trigger                                  | Fields                                                                              | On submit (mock)                                                                                           |
-| --- | ---------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| 8.1 | `post-idea-sheet`      | Landing hero + bottom CTA                | idea name, one-line pitch, category select, problem it solves, roles needed (chips) | Confirmation state ("Idea posted — team matching begins"); whether it appends a card to rail 4.3 is §12 Q6 |
-| 8.2 | `report-problem-sheet` | Problem-map header + landing teaser      | title, category select, location text, description                                  | Appends to page-local report list                                                                          |
-| 8.3 | `back-project-sheet`   | Project header + Funding tab             | pledge amount picker, escrow explainer copy, confirm                                | Button flips to "Backed"; progress bar does **not** move (§12 Q6)                                          |
-| 8.4 | `apply-role-sheet`     | Open-role cards (landing 4.6 + Team tab) | short pitch, skills (chips), commitment select, equity expectation                  | Button flips to "Interest sent"                                                                            |
+| #   | Sheet                  | Trigger                                  | Fields                                                                                  | On submit (mock)                                                                                           |
+| --- | ---------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 8.1 | `post-idea-sheet`      | Landing hero + bottom CTA                | idea name, one-line pitch, category select, problem it solves, roles needed (chips)     | Confirmation state ("Idea posted — team matching begins"); whether it appends a card to rail 4.3 is §12 Q6 |
+| 8.2 | `report-problem-sheet` | Problem-map header + landing teaser      | title, category select, location text, description                                      | Appends to page-local report list                                                                          |
+| 8.3 | `back-project-sheet`   | Project header + Funding tab             | pledge amount picker, **commitment** explainer copy (no charge, no funds held), confirm | Button flips to "Backed"; progress bar does **not** move (§12 Q6)                                          |
+| 8.4 | `apply-role-sheet`     | Open-role cards (landing 4.6 + Team tab) | short pitch, skills (chips), commitment select, equity expectation                      | Button flips to "Interest sent"                                                                            |
 
 ---
 
 ## 9. User journeys
 
-| Journey                                                                        | Phase-1 behavior                | Real or visual?                         |
-| ------------------------------------------------------------------------------ | ------------------------------- | --------------------------------------- |
-| Browse → open project → read all 5 tabs                                        | Full navigation + tab switching | ✅ Real (mock data)                     |
-| Express interest in a role                                                     | Button → "Interest sent" toggle | ✅ Real, client state only              |
-| Back a project                                                                 | Sheet → confirm → "Backed"      | ✅ Real, client state; bar doesn't move |
-| Report a problem                                                               | Sheet → appends to local list   | ✅ Real, lost on refresh                |
-| Founder posts idea                                                             | CTA → sheet → confirmation      | ✅ Real; rail append is §12 Q6          |
-| AI chips, Proof of Effort, escrow ledger, confidence meter, opportunity scores | Static render                   | 👁️ Visual-only, backend later           |
+| Journey                                                                                  | Phase-1 behavior                | Real or visual?                         |
+| ---------------------------------------------------------------------------------------- | ------------------------------- | --------------------------------------- |
+| Browse → open project → read all 5 tabs                                                  | Full navigation + tab switching | ✅ Real (mock data)                     |
+| Express interest in a role                                                               | Button → "Interest sent" toggle | ✅ Real, client state only              |
+| Back a project                                                                           | Sheet → confirm → "Backed"      | ✅ Real, client state; bar doesn't move |
+| Report a problem                                                                         | Sheet → appends to local list   | ✅ Real, lost on refresh                |
+| Founder posts idea                                                                       | CTA → sheet → confirmation      | ✅ Real; rail append is §12 Q6          |
+| AI chips, Proof of Effort, compensation statements, confidence meter, opportunity scores | Static render                   | 👁️ Visual-only, backend later           |
 
 ```mermaid
 flowchart LR
@@ -316,17 +341,20 @@ Money / percentages are **display-formatted strings** (matches
 `StoreProduct.price: string` in [src/types/store.ts](src/types/store.ts)); only
 values that drive CSS (progress-bar width, pin position) are numbers.
 
-| Entity              | Key fields                                                                                                                                                                                                                                                                                       |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ResearchProject`   | `id` (slug, used in URL), `name`, `tagline`, `description`, `category`, `stage` (union below), `coverImageSrc`, `founderId`, `teamMembers[]`, `openRoles[]`, `milestones[]`, `dailyLogs[]`, `fundingRounds[]`, `escrowLedger[]`, `watchersCount`, `dailyLogStreakDays`, `originProblemReportId?` |
-| `TeamMember`        | `id`, `name`, `avatarImageSrc`, `role`, `skills[]`, `equityShare` ("4.5%"), `effortHoursLogged`, `joinedDate`, `isFounder?`                                                                                                                                                                      |
-| `OpenRole`          | `id`, `projectId`, `projectName`, `roleTitle`, `skills[]`, `equityRange` ("2–4%"), `commitment` (`"full-time" \| "part-time" \| "hobby"`)                                                                                                                                                        |
-| `DailyLog`          | `id`, `authorId`, `date`, `videoThumbnailSrc`, `transcriptExcerpt`, `detail`, `aiSummaryChips[]` (`{ kind: "blocker" \| "progress" \| "velocity" \| "suggestion"; label }`), `isEffortVerified`                                                                                                  |
-| `Milestone`         | `id`, `title`, `description`, `targetDate`, `status` (`"done" \| "current" \| "upcoming"`), `escrowReleaseAmount?`                                                                                                                                                                               |
-| `FundingRound`      | `id`, `type` (`"equity" \| "crowdfunding" \| "venture"`), `goalAmount`, `raisedAmount`, `percentageFunded` (number 0–100, drives bar width), `backersCount`, `closesOnDate`, `status` (`"open" \| "closed"`)                                                                                     |
-| `EscrowLedgerEntry` | `id`, `date`, `description`, `direction` (`"in" \| "out"`), `amount`, `linkedMilestoneId?`, `verificationStatus` (`"verified" \| "pending"`)                                                                                                                                                     |
-| `ProblemReport`     | `id`, `title`, `category`, `locationLabel`, `countryCode`, `mapPosition` (`{ leftPercent, topPercent }` numbers), `reportCount`, `opportunityScore`, `description`, `reportedDate`                                                                                                               |
-| `MarketInsight`     | `id`, `headline`, `statValue`, `trendDirection` (`"up" \| "down" \| "flat"`), `region`, `category`, `sourceNote`                                                                                                                                                                                 |
+| Entity                  | Key fields                                                                                                                                                                                                                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ResearchProject`       | `id` (slug, used in URL), `name`, `tagline`, `description`, `category`, `stage` (union below), `coverImageSrc`, `founderId`, `teamMembers[]`, `openRoles[]`, `milestones[]`, `dailyLogs[]`, `fundingRounds[]`, `compensationPeriods[]` (was `escrowLedger[]`), `watchersCount`, `dailyLogStreakDays`, `originProblemReportId?` |
+| `TeamMember`            | `id`, `name`, `avatarImageSrc`, `role`, `skills[]`, `equityShare` ("4.5%"), `effortHoursLogged`, `joinedDate`, `isFounder?`                                                                                                                                                                                                    |
+| `OpenRole`              | `id`, `projectId`, `projectName`, `roleTitle`, `skills[]`, `equityRange` ("2–4%"), `commitment` (`"full-time" \| "part-time" \| "hobby"`)                                                                                                                                                                                      |
+| `DailyLog`              | `id`, `authorId`, `date`, `videoThumbnailSrc`, `transcriptExcerpt`, `detail`, `aiSummaryChips[]` (`{ kind: "blocker" \| "progress" \| "velocity" \| "suggestion"; label }`), `isEffortVerified`                                                                                                                                |
+| `Milestone`             | `id`, `title`, `description`, `targetDate`, `status` (`"done" \| "current" \| "upcoming"`), `escrowReleaseAmount?` → **rename `plannedPayout?`** — it is a plan, not an instruction to a payment rail                                                                                                                          |
+| `FundingRound`          | `id`, `type` (`"equity" \| "crowdfunding" \| "venture"`), `goalAmount`, `raisedAmount` (a sum of **commitments**), `percentageFunded` (number 0–100, drives bar width), `backersCount`, `closesOnDate`, `status` (`"open" \| "closed"`)                                                                                        |
+| ~~`EscrowLedgerEntry`~~ | **Removed** — the backend contract no longer describes an escrow ledger here. Replaced by the three types below                                                                                                                                                                                                                |
+| `CompensationPeriod`    | `id`, `periodStartDate`, `periodEndDate`, `timeZone`, `status` (`"open" \| "finalized" \| "superseded"`), `finalizedByName?`, `countersignedByName?`, `statementHash?`                                                                                                                                                         |
+| `CompensationLine`      | A **discriminated union on `kind`**: `"cash_retainer"` and `"cash_hourly"` carry `grossAmount` + `currency` (`cash_hourly` adds `effortMinutes`); `"equity_delta"` carries `equityBasisPointsAtStart` / `…AtEnd` / `…Delta` and **no money field**. Plus `memberId`, `verificationNote?`                                       |
+| `PaymentRecord`         | `id`, `lineId`, `paidAmount`, `paidOnDate`, `methodLabel`, `referenceNote?`, `confirmedByMemberAt?` — an unconfirmed record renders as **unconfirmed**, never as paid. **No account numbers, ever**                                                                                                                            |
+| `ProblemReport`         | `id`, `title`, `category`, `locationLabel`, `countryCode`, `mapPosition` (`{ leftPercent, topPercent }` numbers), `reportCount`, `opportunityScore`, `description`, `reportedDate`                                                                                                                                             |
+| `MarketInsight`         | `id`, `headline`, `statValue`, `trendDirection` (`"up" \| "down" \| "flat"`), `region`, `category`, `sourceNote`                                                                                                                                                                                                               |
 
 ```typescript
 export type ProjectStage =
@@ -466,11 +494,11 @@ sections/
 ├── project-header.tsx                  cover band, badges, stats row, join/back buttons
 ├── project-tabs.tsx               🏝️  tab state only; panels arrive as ReactNode props (~40 lines)
 ├── overview-tab.tsx                    problem/solution, demand chips, origin-report link
-├── milestone-timeline.tsx              vertical timeline + escrow releases
+├── milestone-timeline.tsx              vertical timeline + planned payouts
 ├── daily-logs-tab.tsx                  date-grouped feed; native <details> expansion (zero JS)
 ├── team-tab.tsx                        equity split bar, roster, open roles
 ├── funding-tab.tsx                     round card, backers, confidence meter (display-only)
-├── governance-tab.tsx                  escrow ledger, allocation cards, compensation table
+├── governance-tab.tsx                  compensation statements + payment state (§5.5)
 ├── problem-map-canvas.tsx         🏝️  selectedReportId state, percent-positioned pins
 ├── problem-report-list.tsx             stacked report cards (mobile-first view)
 └── trending-demand-signals.tsx         knowledge hub stat tiles / leaderboard

@@ -626,3 +626,30 @@ to them in My Products, never to buyers. Nothing to clean up.
    every My Products column (`status`, `skuCode`, price, `stockQuantity`).
 4. Negative checks: publish an imageless draft → `422 INCOMPLETE_FOR_PUBLISH`; POST a 10th image →
    `409 TOO_MANY_IMAGES`; another seller's `GET /products/:id` → `404`; reused SKU → `409`.
+
+---
+
+## 13. Orders, settlement and buyer↔seller escrow — specced elsewhere, not built
+
+This document is **catalog only**: products, images, pricing tiers. There is no order table, no
+checkout, no payment and no settlement here, and nothing in §1–§12 should be read as implying any.
+
+When that phase starts, the money side is already designed:
+**[ESCROW_LEDGER_STRUCTURE.md](ESCROW_LEDGER_STRUCTURE.md)**. It carries the double-entry
+entitlement ledger, the six-account model and its sign conventions, the zero-sum invariant, the
+canonical hash chain, four-way append-only enforcement, the delivery-gated four-eyes release, and
+reconciliation. It arrived there by way of the R&D domain, which built and exercised all of it
+against a real database before that domain was made fully non-custodial
+([R_AND_D_BACKEND_STRUCTURE.md](R_AND_D_BACKEND_STRUCTURE.md) §7, §7A).
+
+**One thing to read before writing a line of it: Qatoto does not hold buyer funds.** Holding money
+between buyer and seller is regulated money movement — PSD2 authorisation in the EU, state
+money-transmitter licensing plus FinCEN registration in the US, RBI payment-aggregator authorisation
+in India — whether or not a fee is charged, and no fee is (R&D §0). The shape that works is
+**provider-custodied split settlement**: a licensed provider (Razorpay Route or Cashfree Easy Split
+in India, Stripe Connect / Adyen for Platforms / Mangopay in the EU and US) holds and splits the
+money, and Qatoto's ledger mirrors it as an entitlement record. The provider is authoritative for
+cash; the ledger is authoritative for entitlement.
+
+`product.currency` is already server-owned (§4), which is the one piece of that contract this
+document does ship today.

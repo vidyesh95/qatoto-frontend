@@ -18,8 +18,6 @@
       "Bash(read f *)",
       "Bash([ -f \"docs/$f\" ])"
     ],
-    "additionalDirectories": [
-      "/private/tmp"
-    ]
+    "additionalDirectories": ["/private/tmp"]
   }
 }
