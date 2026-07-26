@@ -44,21 +44,22 @@ pipeline story; deep features live on sub-routes.
 
 ## 1. What exists today
 
-Everything on this surface is built. The table is an inventory, not a plan.
+Everything marked ✅ is built — those rows are an inventory, not a plan. Rows marked ⏳ are **specced,
+not built**: the four stage routes of §4c exist on paper only, exactly like §11–§14.
 
-| Piece                    | Location                                                                                          | State                                                                                                       |
-| ------------------------ | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Routes                   | [src/app/(home)/research-and-development/](<src/app/(home)/research-and-development/>)            | ✅ **10 page routes**, each with a sibling `loading.tsx`. No `layout.tsx` / `error.tsx` in the subtree      |
-| Components               | [src/components/home/research-and-development/](src/components/home/research-and-development/)    | ✅ **94 files** — 10 page bodies, 14 cards, 3 rails, 53 sections, 8 sheets, 6 wizard. **36 client islands** |
-| Types                    | [src/types/research-and-development/](src/types/research-and-development/)                        | ✅ **8 files, 100 exported types** — the six original domains plus `compensation` and `oversight`           |
-| Types re-export composer | [src/types/research-and-development.ts](src/types/research-and-development.ts)                    | ✅ kept deliberately — ~55 importers use the flat specifier and must keep working                           |
-| Mocks                    | [src/mocks/research-and-development/](src/mocks/research-and-development/)                        | ✅ **46 leaf files** behind 6 top-level composers (§10)                                                     |
-| Proof-of-Effort surface  | [proof-of-effort-page.tsx](src/components/home/research-and-development/proof-of-effort-page.tsx) | ✅ **its own route with 6 tabs** (§5b) — Integrations joined the original five                              |
-| Project Immortal         | [page.tsx](<src/app/(home)/research-and-development/projects/project-immortal/page.tsx>)          | ✅ see §4b; the old `/project-immortal` route is a 6-line `redirect()` shim                                 |
-| Sidebar nav              | [sidebar.tsx](src/components/home/layout/sidebar.tsx)                                             | ✅ top-level "R&D" (`science`) + a 5-item **Research and Development** section (§15 Q8)                     |
-| Mobile bottom nav        | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36)                  | ✅ single R&D tab; sub-path matching works, no sub-links                                                    |
-| Navbar breadcrumb        | [navbar.tsx](src/components/home/layout/navbar.tsx)                                               | ✅ `RESEARCH_AND_DEVELOPMENT_SUBPAGES` (5 entries) + a `prettifySlug` fallthrough for everything else       |
-| Network layer            | —                                                                                                 | ❌ **none, by design** — zero fetch/React Query on the surface                                              |
+| Piece                    | Location                                                                                          | State                                                                                                                                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Routes                   | [src/app/(home)/research-and-development/](<src/app/(home)/research-and-development/>)            | ✅ **10 page routes** built, each with a sibling `loading.tsx` · ⏳ **4 stage routes specced** (§4c). No `layout.tsx` / `error.tsx` in the subtree                                    |
+| Components               | [src/components/home/research-and-development/](src/components/home/research-and-development/)    | ✅ **94 files** — 10 page bodies, 14 cards, 3 rails, 53 sections, 8 sheets, 6 wizard. **36 client islands**                                                                           |
+| Types                    | [src/types/research-and-development/](src/types/research-and-development/)                        | ✅ **8 files, 100 exported types** — the six original domains plus `compensation` and `oversight`                                                                                     |
+| Types re-export composer | [src/types/research-and-development.ts](src/types/research-and-development.ts)                    | ✅ kept deliberately — ~55 importers use the flat specifier and must keep working                                                                                                     |
+| Mocks                    | [src/mocks/research-and-development/](src/mocks/research-and-development/)                        | ✅ **46 leaf files** behind 6 top-level composers (§10)                                                                                                                               |
+| Proof-of-Effort surface  | [proof-of-effort-page.tsx](src/components/home/research-and-development/proof-of-effort-page.tsx) | ✅ **its own route with 6 tabs** (§5b) — Integrations joined the original five                                                                                                        |
+| Project Immortal         | [page.tsx](<src/app/(home)/research-and-development/projects/project-immortal/page.tsx>)          | ✅ see §4b; the old `/project-immortal` route is a 6-line `redirect()` shim                                                                                                           |
+| Sidebar nav              | [sidebar.tsx](src/components/home/layout/sidebar.tsx)                                             | ✅ top-level "R&D" (`science`) + a 5-item **Research and Development** section (§15 Q8)                                                                                               |
+| Mobile bottom nav        | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36)                  | ✅ single R&D tab; sub-path matching works, no sub-links                                                                                                                              |
+| Navbar breadcrumb        | [navbar.tsx](src/components/home/layout/navbar.tsx)                                               | ✅ `RESEARCH_AND_DEVELOPMENT_SUBPAGES` (5 entries) + a `prettifySlug` fallthrough · ⏳ owes 4 more entries (§4c) — the fallthrough would render "Build log", not "Build & Daily Logs" |
+| Network layer            | —                                                                                                 | ❌ **none, by design** — zero fetch/React Query on the surface                                                                                                                        |
 
 Pattern donors elsewhere in the repo:
 
@@ -77,16 +78,16 @@ Pattern donors elsewhere in the repo:
 
 The founder's eight pillars, and which surface carries each:
 
-| #   | Pillar                                               | Carried by                                                                                |
-| --- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| 1   | Market-demand research & feasibility                 | `/knowledge-hub` + demand chips on project Overview                                       |
-| 2   | Problem Mapping / "Civic Pulse"                      | `/problem-map`                                                                            |
-| 3   | Knowledge Hub (market intelligence)                  | `/knowledge-hub`                                                                          |
-| 4   | Talent matching / Virtual Workshop                   | `/talent`, open-roles rail, Team tab, `/project/[id]/workshop`                            |
-| 5   | Funding (crowd / VC, transparency)                   | Funding tab + `/funding` deal flow. **Records of intent only** — a pledge is a commitment |
-| 6   | Daily Update Protocol (AI logs, Proof of Effort)     | Daily Logs tab + the whole `/project/[id]/proof-of-effort` route (§5b)                    |
-| 7   | Financial governance (compensation, anti-corruption) | Compensation & governance tab (§5.5) — a **month-end statement**, not an escrow ledger    |
-| 8   | Go-to-market (suppliers, ODM, shipping, storefront)  | Pipeline-stage card pointing at the existing **`/store`** B2B surface — no new route      |
+| #   | Pillar                                               | Carried by                                                                                                               |
+| --- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Market-demand research & feasibility                 | `/knowledge-hub` + demand chips on project Overview                                                                      |
+| 2   | Problem Mapping / "Civic Pulse"                      | `/problem-map`                                                                                                           |
+| 3   | Knowledge Hub (market intelligence)                  | `/knowledge-hub`                                                                                                         |
+| 4   | Talent matching / Virtual Workshop                   | ⏳ `/team-building` (§4c) · `/talent`, open-roles rail, Team tab, `/project/[id]/workshop`                               |
+| 5   | Funding (crowd / VC, transparency)                   | ⏳ `/governance` (§4c) · Funding tab + `/funding` deal flow. **Records of intent only** — a pledge is a commitment       |
+| 6   | Daily Update Protocol (AI logs, Proof of Effort)     | ⏳ `/build-log` (§4c) · Daily Logs tab + the whole `/project/[id]/proof-of-effort` route (§5b)                           |
+| 7   | Financial governance (compensation, anti-corruption) | ⏳ `/governance` (§4c) · Compensation & governance tab (§5.5) — a **month-end statement**, not an escrow ledger          |
+| 8   | Go-to-market (suppliers, ODM, shipping, storefront)  | ⏳ `/go-to-market` (§4c) — the stage page, whose primary CTA is **`/studio/products`**, where a store listing is created |
 
 Related surface **not** part of this doc: **Anime** (`/anime`), the creative-inspiration R&D feed.
 Already built; referenced in copy only.
@@ -99,14 +100,19 @@ flowchart LR
   TEAM --> BUILD[Workshop + Daily Logs]
   BUILD --> POE[Proof of Effort<br/>verified slices]
   POE --> COMP[Month-end statement<br/>cash + equity owed]
-  COMP --> GTM[Go-to-market<br/>/store B2B]
+  COMP --> GTM[Go-to-market<br/>/go-to-market]
+  GTM --> LIST[/studio/products<br/>create a store listing]
+  LIST --> STORE[/store<br/>live B2B storefront]
 ```
+
+Each of the six stage cards on the landing strip (§4.2) now lands on a **page that explains its
+stage**, four of which are still to be built (§4c).
 
 ---
 
 ## 3. Route map
 
-Ten page routes, each with a `loading.tsx`.
+Ten page routes built, each with a `loading.tsx`, plus four stage routes specced in §4c.
 
 ```text
 /research-and-development                             ✅ pipeline hub landing
@@ -114,16 +120,34 @@ Ten page routes, each with a `loading.tsx`.
 /research-and-development/project/[id]                ✅ project detail (5 tabs)
 /research-and-development/project/[id]/workshop       ✅ Virtual Workshop (boards/files/chat)
 /research-and-development/project/[id]/proof-of-effort ✅ Slicing Pie ledger (5 tabs) — §5b
-/research-and-development/problem-map                 ✅ Civic Pulse map + reports
-/research-and-development/knowledge-hub               ✅ market intelligence
+/research-and-development/problem-map                 ✅ Civic Pulse map + reports        — stage 02
+/research-and-development/knowledge-hub               ✅ market intelligence              — stage 01
 /research-and-development/talent                      ✅ people trading skills for equity
 /research-and-development/funding                     ✅ investor deal-flow view
 /research-and-development/projects/project-immortal   ✅ moonshot research program — §4b
 /project-immortal                                     ✅ redirect() shim, pre-move links
+/research-and-development/team-building               ⏳ equity-for-skills entry          — stage 03, §4c.1
+/research-and-development/build-log                   ⏳ cross-project daily-log feed     — stage 04, §4c.2
+/research-and-development/governance                  ⏳ commitments + month-end statements — stage 05, §4c.3
+/research-and-development/go-to-market                ⏳ suppliers → store listing        — stage 06, §4c.4
 ```
 
 Route decisions baked in:
 
+- **A stage card lands on a page, never an anchor.** Stages 03/04/05 pointed at `#open-roles` and
+  `#featured-projects` — 04 and 05 shared one target — so three of the six cards scrolled the
+  landing page instead of teaching the stage. A visitor who has not picked a project yet could not
+  reach team building, daily logs or governance at all, because those exist only as tabs _inside_ a
+  project. §4c gives each stage a cross-project page. (§15 Q12.)
+- **The four stage routes sit beside `/talent` and `/funding`, they do not replace them.**
+  `/talent` is people-first browse — profiles, skills, availability; `/team-building` is role-first —
+  every open role across every project, plus the equity-for-skills explainer. `/funding` is investor
+  deal flow — rounds to back; `/governance` is public accountability — commitments, month-end
+  statements, dispute and audit mechanics. Each stage page links to its neighbour rather than
+  duplicating it.
+- **A stage page is cross-project; the per-project tab stays.** `/build-log` renders every project's
+  logs, the Daily Logs tab renders one project's. Neither is deleted, and no panel is shared between
+  them beyond the cards (`daily-log-card.tsx`, `open-role-card.tsx`, `project-card.tsx`).
 - **Project detail is one route with client-state tabs**, not nested tab segments — nested segments
   under `[id]` each need `generateStaticParams` plumbing and buy nothing in a mock phase.
 - **Proof of Effort is a sibling route, not a sixth tab** — it carries five tabs of its own, so
@@ -154,7 +178,7 @@ Top-to-bottom composition (server component, mirrors [store-page.tsx](src/compon
 | #    | Section                                                 | Purpose / content                                                                                                                                                                                        | Mock source                                  |
 | ---- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
 | 4.1  | **Hero band** (`pipeline-hero`)                         | "From concept to consumer." Pitch + two CTAs: **Post your idea** → `/new`, **Explore projects** → anchor to 4.3                                                                                          | static copy + `rnd_hero_bg_01.avif`          |
-| 4.2  | **Pipeline stages strip** (`pipeline-stages-strip`)     | 6 stage cards condensing the 8 pillars: Market Research → Problem Mapping → Team Building → Build & Daily Logs → Funding & Governance → Go-to-Market                                                     | inline `PIPELINE_STAGES`                     |
+| 4.2  | **Pipeline stages strip** (`pipeline-stages-strip`)     | 6 stage cards condensing the 8 pillars, each linking to its stage page (table below)                                                                                                                     | inline `PIPELINE_STAGES`                     |
 | 4.2b | **Lifecycle roles strip** (`lifecycle-roles-strip`)     | The five ways to contribute — Researcher, Founder & Director, Venture Capitalist, Supplier, Supporter — with the compensation modes each supports. Stages are _what_ gets built; this is _who_ builds it | inline `LIFECYCLE_ROLES`                     |
 | 4.3  | **Featured projects rail** (`projects-rail`)            | `ProjectCard`s: cover, name, tagline, stage badge, funding progress bar, team avatar stack, open-roles count → `/project/[id]`                                                                           | `MOCK_RESEARCH_PROJECTS` (6, all stages)     |
 | 4.4  | **Problem map teaser** (`problem-map-preview`)          | Split: stylized map thumbnail with pins; "Top reported gaps" list (location, category, report count, opportunity score). CTA → `/problem-map`                                                            | top slice of `MOCK_PROBLEM_REPORTS`          |
@@ -162,6 +186,22 @@ Top-to-bottom composition (server component, mirrors [store-page.tsx](src/compon
 | 4.6  | **Open roles rail** (`open-roles-rail`)                 | "Join a team for equity": role title, project name, skill chips, equity range, commitment tag, **Express interest** (client toggle → "Interest sent")                                                    | `MOCK_OPEN_ROLES` (flatMapped from projects) |
 | 4.7  | **Project Immortal banner** (`project-immortal-banner`) | Full-width featured card, teal-gradient moonshot styling → `/research-and-development/projects/project-immortal`                                                                                         | static copy + a `diamond` glyph              |
 | 4.8  | **Bottom CTA band**                                     | "Have an idea the world needs? Post it." → `/new`                                                                                                                                                        | none                                         |
+
+The six `href`s in `PIPELINE_STAGES` — three of which are anchors today and must become routes:
+
+| #   | Stage                | Today                | Becomes                                      |
+| --- | -------------------- | -------------------- | -------------------------------------------- |
+| 01  | Market Research      | `/knowledge-hub`     | unchanged                                    |
+| 02  | Problem Mapping      | `/problem-map`       | unchanged                                    |
+| 03  | Team Building        | `#open-roles`        | ⏳ `/research-and-development/team-building` |
+| 04  | Build & Daily Logs   | `#featured-projects` | ⏳ `/research-and-development/build-log`     |
+| 05  | Funding & Governance | `#featured-projects` | ⏳ `/research-and-development/governance`    |
+| 06  | Go-to-Market         | `/store`             | ⏳ `/research-and-development/go-to-market`  |
+
+Stage 05's blurb still reads "Milestone-gated escrow keeps every dollar accountable." **Escrow left
+this surface** — rewrite it to commitments and month-end statements when the route lands. Stage 06's
+blurb keeps its meaning but its destination changes: `/store` is the consumer browse surface, not
+where a founder lists a product.
 
 ---
 
@@ -188,6 +228,129 @@ only the interaction code.
 > **This is the one surface with no backend behind it.** Backend §11f is ⏳ pending — no
 > `research-programs.routes.ts`, no controller, no migration. Everything here stays mock until backend
 > phase 6.
+
+---
+
+## 4c. Stage routes — ⏳ specced, not built
+
+Four pages, one per pipeline stage that has no destination today (§4.2). **None of them exists on
+disk** — this section is the spec that builds them, written in the style of §4/§6/§7 so the
+implementer has the composition, the mock source and the component to reuse for every section.
+
+Three rules hold across all four, and they are what keep these pages from becoming a second copy of
+the project detail tabs:
+
+- **A stage page is cross-project.** It answers "what is this stage and who is in it right now",
+  aggregating all six mock projects. The per-project tab answers "where is _this_ project in the
+  stage". Both stay.
+- **Reuse the cards, not the panels.** `project-card`, `open-role-card`, `daily-log-card` and
+  `compensation-format.ts` are shared; tab panels (`team-tab`, `daily-logs-tab`, `governance-tab`)
+  are not lifted or generalized.
+- **Mock phase rules still apply** (`CLAUDE.md`): static mock data, no fetch, no Zod, page-local
+  `useState` for any interaction, islands kept small. Server component by default; a `"use client"`
+  island only where a filter or a toggle needs one.
+
+Each route follows the existing static-route shape: a thin `page.tsx` exporting a plain `metadata`
+object plus a sibling `loading.tsx` rendering the shared `loading-skeleton.tsx`.
+
+### 4c.1 Team Building — `/research-and-development/team-building` (stage 03)
+
+The role-first entry to equity for skills. `/talent` browses **people**; this browses **roles**.
+
+| Section                       | Purpose / content                                                                                                                                   | Mock source                                                |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `team-building-hero`          | "Trade your skills for a stake." Two CTAs: jump to the roles grid, and → `/talent` to be found instead                                              | static copy                                                |
+| `equity-for-skills-explainer` | How a stake is earned, not granted: verified effort → slices → basis points. Links to `/project/[id]/proof-of-effort` and `PROOF_OF_EFFORT_SPEC.md` | static copy                                                |
+| `open-roles-grid` 🏝️          | Every open role, not the 6-card landing rail. Filter chips by `commitment` and skill. Reuses `cards/open-role-card.tsx`; apply via §8.4             | `MOCK_OPEN_ROLES` (full set)                               |
+| `teams-forming-rail`          | Projects actively recruiting. Reuses `cards/project-card.tsx`                                                                                       | `MOCK_RESEARCH_PROJECTS` where `stage === "team-building"` |
+| `talent-spotlight-strip`      | A few profiles with a see-all → `/talent`. Reuses `cards/talent-profile-card.tsx`                                                                   | top slice of `MOCK_TALENT_PROFILES`                        |
+
+> Equity is **computed, never asserted** (backend §0) — the same rule as §5.3. A role's equity range
+> is an _offer_, and the explainer must not let it read as an allocated stake.
+>
+> Filter by **skill** here inherits the `talent-filter-grid.tsx` substring bug (§12 `discovery.ts`):
+> a "Water" chip matches "Water Polo". Match on equality this phase; slugs fix it at integration.
+
+### 4c.2 Build & Daily Logs — `/research-and-development/build-log` (stage 04)
+
+The Daily Update Protocol, every project at once.
+
+| Section                    | Purpose / content                                                                                                                                      | Mock source                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| `build-log-hero`           | "Effort becomes proof." What a daily log is, what the AI reads, what verification does and does not decide                                             | static copy                                                      |
+| `log-legend`               | The four `AiSummaryChipKind`s (`blocker` / `progress` / `velocity` / `suggestion`) with their colors, plus the verified badge, spelled out once        | `AiSummaryChipKind`                                              |
+| `global-daily-log-feed` 🏝️ | Every project's logs merged, date-grouped, each card gaining a **project chip**. Filter by project and by chip kind. Reuses `cards/daily-log-card.tsx` | `MOCK_RESEARCH_PROJECTS.flatMap((project) => project.dailyLogs)` |
+| `log-streak-leaderboard`   | Projects ranked by `dailyLogStreakDays` — rank, project, streak, log count                                                                             | `MOCK_RESEARCH_PROJECTS`                                         |
+| Bottom CTA                 | "See how a log becomes a slice" → a project's `/proof-of-effort`                                                                                       | none                                                             |
+
+> `DailyLog` carries no `projectId` today — it is nested under its project. The merged feed must
+> attach the project while flatMapping (`{ ...log, projectId, projectName }`), not fabricate one.
+> At integration the cross-project feed is **keyset-paginated** (§13) — a merged feed over a
+> two-year-old project set is unbounded.
+>
+> `isEffortVerified` is a boolean this phase and becomes a **six-value enum** (§12). The legend must
+> not present verification as a binary yes/no in copy that the enum will then contradict.
+
+### 4c.3 Funding & Governance — `/research-and-development/governance` (stage 05)
+
+Public accountability, cross-project. `/funding` is the investor's view (rounds to back); this is
+everyone's view (what was committed, what is owed, how a disagreement is settled).
+
+| Section                    | Purpose / content                                                                                                                                                                      | Mock source                                             |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `governance-hero`          | "Every rupee and every share, accounted for."                                                                                                                                          | static copy                                             |
+| `governance-rules-band`    | The **three copy rules** from this doc's header, stated publicly: Qatoto holds no funds and charges nobody · a verification verdict never reduces cash · a statement is **gross only** | static copy                                             |
+| `commitments-overview`     | Funding rounds across projects — type, goal, **committed** total, backer count, closes-on. Sums are of _committed pledges_ and the label says so                                       | `MOCK_RESEARCH_PROJECTS[*].fundingRounds`               |
+| `statement-walkthrough`    | One worked month-end statement, **read-only**: period header, per-member cash line, signed equity delta, payment state. Formats via `sections/compensation-format.ts`                  | one period from `MOCK_PROJECT_COMPENSATION_LEDGERS`     |
+| `accountability-explainer` | The 24-hour dispute window, the **three-way** human review, and the audit-trail hash chain — each with a link to the per-project tab that operates it                                  | static copy + `MOCK_PROJECT_OVERSIGHT` for the examples |
+| Bottom CTA                 | → `/funding` deal flow, and → a project's Governance tab (§5.5) to act                                                                                                                 | none                                                    |
+
+> **Read-only, deliberately.** Finalize, countersign, record-payment and confirm-receipt stay on the
+> per-project tab (§5.5), which owns the mock role switch. A cross-project page has no single actor,
+> so putting an actor-scoped action on it would mean a second role switch and two places to reason
+> about who may finalize. Export stays there too.
+>
+> The three copy rules are load-bearing, not decoration — each has a statute behind it (backend
+> §7A.6). No section on this page may imply a payment rail, a hold, a charge, or a fee.
+
+### 4c.4 Go-to-Market — `/research-and-development/go-to-market` (stage 06)
+
+The last stage and the bridge out of R&D into commerce. Its job is to end on **`/studio/products`**.
+
+| Section                      | Purpose / content                                                                                                                                              | Mock source                                               |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `go-to-market-hero`          | "From verified build to a live listing." Primary CTA → `/studio/products`                                                                                      | static copy                                               |
+| `go-to-market-explainer`     | The four steps of the stage: supplier / ODM selection → manufacturing run → logistics and shipping → storefront listing                                        | static copy                                               |
+| `launch-readiness-checklist` | What a project needs before it lists. Reuses the `met` / `not_met` / `waived` shape already established by `pie-bake-panel.tsx` — do not invent a fourth state | new mock (below)                                          |
+| `supplier-directory`         | Manufacturing and ODM partners: name, region, capability chips, MOQ, lead time, verification state                                                             | new mock (below)                                          |
+| `launch-ready-projects-rail` | Reuses `cards/project-card.tsx`                                                                                                                                | `MOCK_RESEARCH_PROJECTS` where `stage === "go-to-market"` |
+| `create-listing-cta-band`    | Full-width: **"Create your store listing" → `/studio/products`** (the manager; `studio/products/create` is the form behind it). Secondary → `/store`           | none                                                      |
+
+**Why `/studio/products` and not `/store`.** `/store` is the browse surface — it shows a buyer what
+exists. `/studio/products` is where the founder of a launch-ready project actually creates and
+manages the listing. The stage strip pointed at `/store`, which sent a founder ready to sell into a
+shopping view. That is the one link change in this whole spec that fixes a wrong destination rather
+than an absent one.
+
+**New data this section needs** — the only genuinely new mock in §4c:
+
+| File                                              | Exports                                                               |
+| ------------------------------------------------- | --------------------------------------------------------------------- |
+| `src/mocks/research-and-development/suppliers.ts` | `MOCK_SUPPLIER_PROFILES`, and the launch-readiness checklist items    |
+| `src/types/research-and-development/discovery.ts` | `SupplierProfile` + `SupplierCapability` (added to the existing file) |
+
+Author the supplier shape in **§11 wire format from the start** — `leadTimeDays`,
+`minimumOrderQuantity`, `…InCents` with a `currency` — like `compensation.ts` and `oversight.ts` did.
+It has no legacy importers, so there is nothing to migrate later and §12 never has to touch it.
+
+### What §4c owes the rest of the doc when it is built
+
+- Four `RESEARCH_AND_DEVELOPMENT_SUBPAGES` entries in `navbar.tsx` — the `prettifySlug` fallthrough
+  would render "Build log" and "Go to market", which are not the stage names.
+- **Sidebar stays at five R&D items** (§15 Q13). The stage routes are reached from the strip and from
+  each other; adding them would make a nine-item section that buries Problem Map and Talent.
+- §1's route/component counts, §16's file inventory, and §13's endpoint rows — all four already have
+  placeholder rows there.
 
 ---
 
@@ -371,12 +534,12 @@ never accepted in a body.
 All four are self-contained `"use client"` components exporting their own trigger button + bottom
 sheet (mirrors the store sheets pattern). Shared field options live in `sheets/sheet-shared.ts`.
 
-| #   | Sheet                  | Trigger                                                 | Fields                                                                                  | On submit (mock)                                                |
-| --- | ---------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| 8.1 | `post-idea-sheet`      | **unwired** — kept as the compact-form donor for `/new` | idea name, one-line pitch, category, problem it solves, roles needed (chips)            | confirmation state only                                         |
-| 8.2 | `report-problem-sheet` | Problem-map header                                      | title, category (creatable combobox), location text, description                        | appends to `problem-map-canvas`'s local list                    |
-| 8.3 | `back-project-sheet`   | Project header + Funding tab                            | pledge preset / custom amount, **commitment** explainer copy (no charge, no funds held) | trigger flips to "Backed ✓"; the progress bar does **not** move |
-| 8.4 | `apply-role-sheet`     | Open-role cards (landing 4.6 + Team tab)                | short pitch, skills (chips), commitment select, equity expectation                      | button flips to "Interest sent"                                 |
+| #   | Sheet                  | Trigger                                                               | Fields                                                                                  | On submit (mock)                                                |
+| --- | ---------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| 8.1 | `post-idea-sheet`      | **unwired** — kept as the compact-form donor for `/new`               | idea name, one-line pitch, category, problem it solves, roles needed (chips)            | confirmation state only                                         |
+| 8.2 | `report-problem-sheet` | Problem-map header                                                    | title, category (creatable combobox), location text, description                        | appends to `problem-map-canvas`'s local list                    |
+| 8.3 | `back-project-sheet`   | Project header + Funding tab                                          | pledge preset / custom amount, **commitment** explainer copy (no charge, no funds held) | trigger flips to "Backed ✓"; the progress bar does **not** move |
+| 8.4 | `apply-role-sheet`     | Open-role cards (landing 4.6 + Team tab; ⏳ + `/team-building` §4c.1) | short pitch, skills (chips), commitment select, equity expectation                      | button flips to "Interest sent"                                 |
 
 ---
 
@@ -400,6 +563,8 @@ sheet (mirrors the store sheets pattern). Shared field options live in `sheets/s
 | Workshop: add/move a task, attach or link a file, send a message                                  | Local list mutations                   | ✅ Real, lost on refresh                |
 | Edit a project · edit your talent profile · moderate a paper                                      | Sheet / queue → confirmation           | ✅ Real; nothing is saved               |
 | AI chips, Proof of Effort, slice ledgers, compensation statements, confidence, opportunity scores | Static render                          | 👁️ Visual-only, backend-owned           |
+| Landing → stage card → stage page → a project in that stage                                       | Six cards, six destinations (§4.2)     | ⏳ specced (§4c) — 3 of 6 land today    |
+| Launch-ready project → `/studio/products` → create a store listing                                | Cross-surface handoff out of R&D       | ⏳ specced (§4c.4)                      |
 
 ```mermaid
 flowchart LR
@@ -409,6 +574,8 @@ flowchart LR
   D -->|Overview chips| W[Workshop] & P[Proof of Effort]
   L -->|teaser| M[Problem map] -->|sheet| R[Report added locally]
   L -->|hero CTA| I[/new wizard → confirmation]
+  L -->|stage card ⏳| S[Stage page §4c] --> D
+  S -->|go-to-market| SP[/studio/products → create listing]
 ```
 
 ---
@@ -425,7 +592,7 @@ zero runtime exports:
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `shared.ts`          | cross-cutting unions: `ProjectStage`, `RoleCommitment`, `AiSummaryChip*`, `MilestoneStatus`, `FundingRound*`, `Escrow*`, `TrendDirection`                                                              |
 | `project.ts`         | `ResearchProject`, `TeamMember`, `OpenRole`, `DailyLog`, `Milestone*`, `FundingRound`, `CompensationComponent`, `EscrowLedgerEntry`, `MapPosition`                                                     |
-| `discovery.ts`       | `ProblemReport`, `MarketInsight`, `TrendingSignal`, `TalentProfile`, `TalentAvailability`                                                                                                              |
+| `discovery.ts`       | `ProblemReport`, `MarketInsight`, `TrendingSignal`, `TalentProfile`, `TalentAvailability`; ⏳ gains `SupplierProfile` + `SupplierCapability` (§4c.4)                                                   |
 | `workshop.ts`        | `ProjectWorkshop`, `WorkshopBoardColumn`, `WorkshopTask*`, `WorkshopFile*`, `WorkshopChatMessage`                                                                                                      |
 | `immortal.ts`        | 13 `Immortal*` types — branches, papers, posts, ideas, contributors, product opportunities, program stats                                                                                              |
 | `proof-of-effort.ts` | 20 types — `MemberSliceBreakdown`, `VerificationStep*`, `ClaimVerificationRun`, `DisputeWindow*`, `PhysicalWorkReceipt*`, `OptimizationSuggestion*`, `ProjectAuditEntry`, `ProjectProofOfEffortLedger` |
@@ -451,11 +618,12 @@ of the flat specifier keep working. New code may import either.
 | `src/mocks/research-and-development-oversight-mocks.ts`       | `MOCK_PROJECT_OVERSIGHT` + `INTEGRATION_PROVIDER_LABELS` — disputes, overrides, integrations, rate locks, bake readiness, chain inputs (§14)                                         |
 | `src/mocks/project-immortal-mocks.ts`                         | re-export-only composer for every `MOCK_IMMORTAL_*` + the four label maps                                                                                                            |
 
-Leaf files under `src/mocks/research-and-development/` (34):
+Leaf files under `src/mocks/research-and-development/` (46 on disk, ⏳ 47 with §4c.4's `suppliers.ts`):
 
 ```text
 investor-confidence.ts  market-insights.ts  problem-reports.ts
 project-stage-labels.ts talent-profiles.ts  trending-signals.ts
+suppliers.ts            ⏳ §4c.4 — supplier/ODM directory + launch-readiness checklist
 immortal/        branches · contributors · ideas · informal-posts · papers ·
                  paper-moderation · product-opportunities · program-stats · labels
 projects/        one file per slug → <SLUG>_PROJECT
@@ -631,6 +799,21 @@ already exists.
 | `/funding`                      | `GET /funding/deals` · `POST /funding-rounds/:id/pledges` (`{ amountInCents }`, nothing else) · `GET …/investor-confidence`                                                                     | ✅ shipped     |
 | Governance tab (§5.5)           | `…/compensation-agreements` · `…/compensation-periods[/:id]` · `/finalize` · `/countersign` · `/supersede` · `…/payments[/:id]/confirm` · `/export` · `/verify`                                 | ✅ shipped     |
 | `/projects/project-immortal`    | `/research-programs/*`                                                                                                                                                                          | ⏳ **pending** |
+| ⏳ `/team-building` (§4c.1)     | `GET /open-roles` (unfiltered) · `GET /research-projects?stage=team_building` · `GET /discovery/talent`                                                                                         | ✅ shipped     |
+| ⏳ `/build-log` (§4c.2)         | a **cross-project** `GET /daily-logs` — keyset-paginated, project-annotated                                                                                                                     | ⚠️ see below   |
+| ⏳ `/governance` (§4c.3)        | `GET /research-projects/:slug/compensation-periods` · `/funding-rounds`, read-only — no `/finalize`, `/countersign`, `/payments` or `/export` from this page                                    | ✅ shipped     |
+| ⏳ `/go-to-market` (§4c.4)      | a suppliers / ODM directory endpoint · `GET /research-projects?stage=go_to_market`. Listing creation is **not an R&D endpoint** — it is the studio's, reached by link                           | ⚠️ see below   |
+
+Two of those four have no endpoint to call yet, and the gap is worth naming rather than papering
+over:
+
+- **Cross-project daily logs.** Backend §11 ships `/research-projects/:slug/daily-logs` — scoped to
+  one project. A cross-project feed either needs a new list endpoint or the page fans out per project
+  and merges client-side, which contradicts `CLAUDE.md` §Performance for anything past six projects.
+  **Prefer the endpoint.** Note also that logs are membership-scoped: the feed shows a stranger only
+  what they may see, and absence must not leak which projects exist (404-not-403 above).
+- **Supplier / ODM directory.** No backend §11 entry exists — no route, no table. It is mock-only
+  through the integration phase, and this doc should not invent a path for it.
 
 **404 is the not-authorized answer.** Every project-scoped route re-checks membership and fails
 **`404`**, not `403`, so a stranger cannot probe which project ids exist. Treat 404 as "no access or
@@ -722,9 +905,11 @@ surface is unreachable), and `PaperModerationQueue` showing review buttons to ev
 6. **Honest mock interactions** — ✅ resolved as **honest**. "Back this project" flips the trigger to
    "Backed ✓" and the funding bar does **not** move; the `/new` wizard shows a confirmation and
    appends nothing to the featured rail. Only the problem-map report list actually grows.
-7. **Relationship to `/studio/pitches` + `/studio/funding`** — ⚠️ still open: the R&D `/funding`
-   deal-flow view is standalone; both studio routes remain untouched `h1` stubs and nothing
-   cross-links them. Revisit when the studio surfaces get real content.
+7. **Relationship to the studio surfaces** — ◐ **partly resolved.** `/studio/products` is now the
+   named go-to-market destination: §4c.4's CTA band sends a launch-ready founder there to create a
+   store listing, replacing the stage strip's `/store` link. `/studio/pitches` and `/studio/funding`
+   stay open — both are untouched `h1` stubs, and the R&D `/funding` deal-flow view remains
+   standalone. Revisit those two when they get real content.
 8. **Sidebar sub-links** — ✅ five items under the **Research and Development** section: Problem Map
    (`flag`), Knowledge Hub (`school`), Talent (`group`), Funding (`paid`), PROJECT IMMORTAL
    (`selfImprovement`). `/new` is navbar-only ("Post an Idea"), not in the sidebar.
@@ -734,6 +919,20 @@ surface is unreachable), and `PaperModerationQueue` showing review buttons to ev
 10. **Placeholder imagery** — ✅ dedicated R&D art for the hero, all 6 project covers and all 6 map
     pins; daily-log thumbs and avatars still use the generic dummy sets (§17).
 11. **Breadcrumb parent label** — ✅ `"R&D"` (short form), per `navbar.tsx`'s `getSubHeader`.
+12. **A stage card gets a route, never an anchor** — ⏳ specced (§4c). Three of the six cards pointed
+    at `#open-roles` / `#featured-projects`, two of them at the _same_ anchor, so clicking a stage
+    scrolled the page it was already on. Team building, daily logs and governance lived only as tabs
+    inside a project, unreachable to anyone who had not picked one. Each stage now gets a
+    cross-project page. The alternative — deep-linking a stage card into some arbitrary project's tab
+    — was rejected: it picks a project for the visitor and teaches nothing about the stage.
+13. **Sidebar stays at five R&D items** — ⏳ decided with §4c. The four stage routes get navbar
+    breadcrumb entries and are reached from the stages strip and from each other, not from the
+    sidebar. Nine items would bury Problem Map, Knowledge Hub and Talent, and the strip is already
+    the canonical stage entry point on the landing page.
+14. **`/team-building` and `/governance` do not absorb `/talent` and `/funding`** — ⏳ decided with
+    §4c. Folding them in was considered and rejected: `/talent` is a people-first browse with its own
+    profile-editing surface, and `/funding` is an investor deal-flow view. The stage pages are
+    role-first and accountability-first respectively. Four routes, cross-linked, no redirect shims.
 
 ---
 
@@ -757,6 +956,13 @@ projects/project-immortal/page.tsx
 
 Plus `src/app/(home)/project-immortal/page.tsx` — a 6-line `redirect()` shim.
 
+⏳ Four more `page.tsx` + `loading.tsx` pairs when §4c lands, all static routes (plain `metadata`,
+no `generateStaticParams`):
+
+```text
+team-building/page.tsx  build-log/page.tsx  governance/page.tsx  go-to-market/page.tsx
+```
+
 ### Data
 
 | File                                                          | Contents                                   |
@@ -769,7 +975,7 @@ Plus `src/app/(home)/project-immortal/page.tsx` — a 6-line `redirect()` shim.
 | `src/mocks/research-and-development-compensation-mocks.ts`    | month-end statements (§5.5)                |
 | `src/mocks/research-and-development-oversight-mocks.ts`       | disputes / consent / rates / bake (§14)    |
 | `src/mocks/project-immortal-mocks.ts`                         | program composer                           |
-| `src/mocks/research-and-development/**`                       | 46 leaf files (§10)                        |
+| `src/mocks/research-and-development/**`                       | 46 leaf files (§10); ⏳ `+ suppliers.ts`   |
 
 ### Components — `src/components/home/research-and-development/`
 
@@ -788,7 +994,11 @@ none of them may reach for a context provider (§15 Q5).
 ├── talent-page.tsx                    filters + profile grid + open-roles rail
 ├── funding-page.tsx                   derives FundingDeal views from open rounds
 ├── project-immortal-page.tsx          moonshot program composition (§4b)
-└── loading-skeleton.tsx               shared placeholder for the ten loading.tsx files
+├── loading-skeleton.tsx               shared placeholder for the ten loading.tsx files
+├── team-building-page.tsx          ⏳ stage 03 (§4c.1)
+├── build-log-page.tsx              ⏳ stage 04 (§4c.2)
+├── governance-page.tsx             ⏳ stage 05 (§4c.3) — cross-project, not the per-project tab
+└── go-to-market-page.tsx           ⏳ stage 06 (§4c.4)
 rails/
 ├── projects-rail.tsx · open-roles-rail.tsx · market-insights-rail.tsx
 cards/
@@ -836,7 +1046,18 @@ sections/
 ├── idea-item.tsx                           🏝️  · idea-reply-item.tsx
 ├── research-branch-map.tsx                 🏝️  hand-rolled svg flowchart
 ├── research-branch-map.constants.ts · research-branch-map.geometry.ts
-└── research-branch-detail-panel.tsx
+├── research-branch-detail-panel.tsx
+│   ⏳ §4c stage-page sections, when they land:
+├── team-building-hero.tsx · equity-for-skills-explainer.tsx
+├── open-roles-grid.tsx                     🏝️  commitment + skill filters (§4c.1)
+├── teams-forming-rail.tsx · talent-spotlight-strip.tsx
+├── build-log-hero.tsx · log-legend.tsx · log-streak-leaderboard.tsx
+├── global-daily-log-feed.tsx               🏝️  project + chip-kind filters (§4c.2)
+├── governance-hero.tsx · governance-rules-band.tsx · commitments-overview.tsx
+├── statement-walkthrough.tsx · accountability-explainer.tsx   read-only (§4c.3)
+├── go-to-market-hero.tsx · go-to-market-explainer.tsx
+└── launch-readiness-checklist.tsx · supplier-directory.tsx ·
+    launch-ready-projects-rail.tsx · create-listing-cta-band.tsx   (§4c.4)
 sheets/                                     🏝️  each self-contained: own trigger + sheet
 ├── post-idea-sheet.tsx (unwired) · report-problem-sheet.tsx
 ├── back-project-sheet.tsx                  tiered + multi-currency commitments (§14.6)
@@ -852,11 +1073,11 @@ wizard/                                     🏝️  new-idea-wizard-page.tsx ho
 
 ### Layout
 
-| File                                                                      | State                                                                                       |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| [sidebar.tsx](src/components/home/layout/sidebar.tsx)                     | ✅ 6 `ROUTES` keys, top-level R&D entry (+ `COLLAPSED_NAV_CONFIG`), 5-item R&D section      |
-| [navbar.tsx](src/components/home/layout/navbar.tsx)                       | ✅ `RESEARCH_AND_DEVELOPMENT_SUBPAGES` (5) + `prettifySlug` fallthrough, parent label "R&D" |
-| [mobile-bottom-nav.tsx](src/components/home/layout/mobile-bottom-nav.tsx) | ✅ single R&D tab, sub-path matching                                                        |
+| File                                                                      | State                                                                                                                                                                     |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [sidebar.tsx](src/components/home/layout/sidebar.tsx)                     | ✅ 6 `ROUTES` keys, top-level R&D entry (+ `COLLAPSED_NAV_CONFIG`), 5-item R&D section — **stays at 5** (§15 Q13)                                                         |
+| [navbar.tsx](src/components/home/layout/navbar.tsx)                       | ✅ `RESEARCH_AND_DEVELOPMENT_SUBPAGES` (5) + `prettifySlug` fallthrough, parent label "R&D" · ⏳ + 4 entries: Team Building, Build & Daily Logs, Governance, Go-to-Market |
+| [mobile-bottom-nav.tsx](src/components/home/layout/mobile-bottom-nav.tsx) | ✅ single R&D tab, sub-path matching                                                                                                                                      |
 
 ---
 
