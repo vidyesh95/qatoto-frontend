@@ -2,24 +2,29 @@ import Image from "next/image";
 
 import ClaimVerificationCard from "@/components/home/research-and-development/cards/claim-verification-card";
 import PhysicalWorkReceiptCard from "@/components/home/research-and-development/cards/physical-work-receipt-card";
+import VerificationOverridePanel from "@/components/home/research-and-development/sections/verification-override-panel";
 import type {
   ClaimVerificationRun,
   DailyLog,
   PhysicalWorkReceipt,
   TeamMember,
+  VerificationOverrideRequest,
 } from "@/types/research-and-development";
 
-// Verification Pipeline tab: claim audits over the daily-log feed plus
-// physical work receipts. All verdicts arrive precomputed on the mock data —
-// the audit pipeline is backend-owned later.
+// Verification Pipeline tab: claim audits over the daily-log feed, physical
+// work receipts, and the human-review queue where a member can contest an
+// automated verdict and a maintainer decides (§14.1). Verdicts arrive
+// precomputed on the mock data — the audit pipeline is backend-owned later.
 export default function VerificationPipelineTab({
   claimVerificationRuns,
   physicalWorkReceipts,
+  overrideRequests,
   teamMembers,
   dailyLogs,
 }: {
   claimVerificationRuns: ClaimVerificationRun[];
   physicalWorkReceipts: PhysicalWorkReceipt[];
+  overrideRequests: VerificationOverrideRequest[];
   teamMembers: TeamMember[];
   dailyLogs: DailyLog[];
 }) {
@@ -82,6 +87,19 @@ export default function VerificationPipelineTab({
             );
           })}
         </div>
+      </section>
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Human review</h3>
+        <p className="text-xs text-muted-foreground">
+          Any member can ask for a person to re-examine a verdict a machine reached about their
+          work, and a maintainer answers in writing. Whichever way it goes, no cash line moves —
+          verification gates equity only.
+        </p>
+        <VerificationOverridePanel
+          overrideRequests={overrideRequests}
+          claimVerificationRuns={claimVerificationRuns}
+          teamMembers={teamMembers}
+        />
       </section>
       <p className="text-xs text-muted-foreground">
         Verification runs are display-only mocks — the audit pipeline is backend-owned later.

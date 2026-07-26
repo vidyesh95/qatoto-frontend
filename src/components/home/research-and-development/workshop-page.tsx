@@ -9,9 +9,11 @@ import { MOCK_RESEARCH_PROJECTS } from "@/mocks/research-and-development-mocks";
 import { MOCK_PROJECT_WORKSHOPS } from "@/mocks/research-and-development-workshop-mocks";
 
 // Virtual Workshop composition (§11): the project team's collab space —
-// boards, files, chat — as three server-rendered panels behind a small tabs
-// island (same handoff as project-detail → project-tabs). All collaboration
-// data is a static mock this phase.
+// boards, files, chat — behind a small tabs island (same handoff as
+// project-detail → project-tabs). Each panel is now a client island of its own
+// because all three accept writes (§14.5): add and move tasks, attach or link a
+// file, send a message. Every write is local to the session — collaboration
+// data is backend-owned later.
 export default function WorkshopPage({ projectId }: { projectId: string }) {
   const project = MOCK_RESEARCH_PROJECTS.find(
     (candidateProject) => candidateProject.id === projectId,
@@ -37,11 +39,19 @@ export default function WorkshopPage({ projectId }: { projectId: string }) {
       </header>
       <WorkshopTabs
         boardsPanel={
-          <WorkshopBoard boardColumns={workshop.boardColumns} teamMembers={project.teamMembers} />
+          <WorkshopBoard
+            initialBoardColumns={workshop.boardColumns}
+            teamMembers={project.teamMembers}
+          />
         }
-        filesPanel={<WorkshopFiles files={workshop.files} teamMembers={project.teamMembers} />}
+        filesPanel={
+          <WorkshopFiles initialFiles={workshop.files} teamMembers={project.teamMembers} />
+        }
         chatPanel={
-          <WorkshopChat chatMessages={workshop.chatMessages} teamMembers={project.teamMembers} />
+          <WorkshopChat
+            initialChatMessages={workshop.chatMessages}
+            teamMembers={project.teamMembers}
+          />
         }
       />
     </div>

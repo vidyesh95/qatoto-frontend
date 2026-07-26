@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import RequestToJoinButton from "@/components/home/research-and-development/sections/request-to-join-button";
 import BackProjectSheet from "@/components/home/research-and-development/sheets/back-project-sheet";
+import EditProjectSheet from "@/components/home/research-and-development/sheets/edit-project-sheet";
 import { PROJECT_STAGE_LABELS } from "@/mocks/research-and-development-mocks";
 import type { ResearchProject } from "@/types/research-and-development";
 
@@ -78,6 +79,7 @@ export default function ProjectHeader({ project }: { project: ResearchProject })
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <RequestToJoinButton />
           <BackProjectSheet projectName={project.name} />
+          <EditProjectSheet project={project} />
         </div>
       </div>
     </div>

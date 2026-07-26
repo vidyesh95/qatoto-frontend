@@ -13,3 +13,5 @@ export * from "./research-and-development/discovery";
 export * from "./research-and-development/workshop";
 export * from "./research-and-development/immortal";
 export * from "./research-and-development/proof-of-effort";
+export * from "./research-and-development/compensation";
+export * from "./research-and-development/oversight";

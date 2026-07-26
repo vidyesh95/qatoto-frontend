@@ -1,9 +1,13 @@
 import Image from "next/image";
 
 import MemberSliceBreakdownCard from "@/components/home/research-and-development/cards/member-slice-breakdown-card";
+import PieBakePanel from "@/components/home/research-and-development/sections/pie-bake-panel";
+import RateLockPanel from "@/components/home/research-and-development/sections/rate-lock-panel";
 import type {
+  PieBakeReadiness,
   PieStatus,
   ProjectProofOfEffortLedger,
+  RateLockProposal,
   TeamMember,
 } from "@/types/research-and-development";
 
@@ -15,14 +19,20 @@ const PIE_STATUS_BADGES: Record<PieStatus, { label: string; className: string }>
 const SLICE_SEGMENT_COLORS = ["#00696E", "#1DBDC5", "#4A6363", "#7DA0A2", "#B4D2D4"];
 
 // Slice ledger tab: pie status, the slice pool as a stacked bar with an
-// open-role reserve, and per-member Slicing Pie breakdowns. Every figure is a
-// pre-computed display string — the deterministic formula is backend-owned later.
+// open-role reserve, per-member Slicing Pie breakdowns, the fair-market rate
+// locks every time slice is multiplied by (§14.4), and the pre-bake checklist
+// (§14.6). Ledger figures are pre-computed display strings; the rate and bake
+// panels carry typed integers. The deterministic formula is backend-owned later.
 export default function SliceLedgerTab({
   ledger,
   teamMembers,
+  rateLockProposals,
+  pieBakeReadiness,
 }: {
   ledger: ProjectProofOfEffortLedger;
   teamMembers: TeamMember[];
+  rateLockProposals: RateLockProposal[];
+  pieBakeReadiness: PieBakeReadiness;
 }) {
   const pieStatusBadge = PIE_STATUS_BADGES[ledger.pieStatus];
   const sliceSegments = ledger.memberSliceBreakdowns.flatMap((breakdown, breakdownIndex) => {
@@ -118,6 +128,12 @@ export default function SliceLedgerTab({
           ))}
         </div>
       </section>
+      <RateLockPanel proposals={rateLockProposals} teamMembers={teamMembers} />
+      <PieBakePanel
+        readiness={pieBakeReadiness}
+        pieStatus={ledger.pieStatus}
+        teamMembers={teamMembers}
+      />
       <p className="text-xs text-muted-foreground">
         Slice math is a display-only mock — the deterministic Slicing Pie formula runs on the
         backend later.

@@ -3,6 +3,7 @@ import ProjectImmortalDiscussion from "@/components/home/research-and-developmen
 import ProjectImmortalHero from "@/components/home/research-and-development/sections/project-immortal-hero";
 import ProjectImmortalInformalPosts from "@/components/home/research-and-development/sections/project-immortal-informal-posts";
 import ProjectImmortalPapers from "@/components/home/research-and-development/sections/project-immortal-papers";
+import PaperModerationQueue from "@/components/home/research-and-development/sections/paper-moderation-queue";
 import ProjectImmortalProducts from "@/components/home/research-and-development/sections/project-immortal-products";
 import ResearchBranchMap from "@/components/home/research-and-development/sections/research-branch-map";
 import SectionHeader from "@/components/home/research-and-development/sections/section-header";
@@ -10,6 +11,7 @@ import {
   MOCK_IMMORTAL_CONTRIBUTORS,
   MOCK_IMMORTAL_IDEAS,
   MOCK_IMMORTAL_INFORMAL_POSTS,
+  MOCK_IMMORTAL_PAPER_MODERATION_QUEUE,
   MOCK_IMMORTAL_PRODUCT_OPPORTUNITIES,
   MOCK_IMMORTAL_PROGRAM_STATS,
   MOCK_IMMORTAL_RESEARCH_BRANCHES,
@@ -38,6 +40,11 @@ export default function ProjectImmortalPage() {
       <section className="space-y-4">
         <SectionHeader title="Formal research papers" />
         <ProjectImmortalPapers initialPapers={MOCK_IMMORTAL_RESEARCH_PAPERS} />
+      </section>
+
+      <section className="space-y-4">
+        <SectionHeader title="Paper moderation queue" />
+        <PaperModerationQueue entries={MOCK_IMMORTAL_PAPER_MODERATION_QUEUE} />
       </section>
 
       <section className="space-y-4">

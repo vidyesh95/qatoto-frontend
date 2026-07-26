@@ -6,6 +6,7 @@ type ProofOfEffortSection =
   | "slice-ledger"
   | "verification"
   | "disputes"
+  | "integrations"
   | "optimization"
   | "audit-trail";
 
@@ -13,6 +14,7 @@ const SECTION_LABELS: Record<ProofOfEffortSection, string> = {
   "slice-ledger": "Slice Ledger",
   verification: "Verification",
   disputes: "Disputes",
+  integrations: "Integrations",
   optimization: "Optimization",
   "audit-trail": "Audit Trail",
 };
@@ -21,6 +23,7 @@ const SECTION_ORDER: ProofOfEffortSection[] = [
   "slice-ledger",
   "verification",
   "disputes",
+  "integrations",
   "optimization",
   "audit-trail",
 ];
@@ -29,6 +32,7 @@ type ProofOfEffortTabsProps = {
   sliceLedgerPanel: ReactNode;
   verificationPanel: ReactNode;
   disputesPanel: ReactNode;
+  integrationsPanel: ReactNode;
   optimizationPanel: ReactNode;
   auditTrailPanel: ReactNode;
 };
@@ -46,6 +50,8 @@ export default function ProofOfEffortTabs(props: ProofOfEffortTabsProps) {
         return props.verificationPanel;
       case "disputes":
         return props.disputesPanel;
+      case "integrations":
+        return props.integrationsPanel;
       case "optimization":
         return props.optimizationPanel;
       case "audit-trail":

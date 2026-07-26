@@ -1,167 +1,121 @@
 import Link from "next/link";
 
-import type {
-  EscrowDirection,
-  EscrowVerificationStatus,
-  ResearchProject,
-} from "@/types/research-and-development";
+import CompensationAgreementsPanel from "@/components/home/research-and-development/sections/compensation-agreements-panel";
+import { formatIsoDate } from "@/components/home/research-and-development/sections/compensation-format";
+import CompensationStatementPanel from "@/components/home/research-and-development/sections/compensation-statement-panel";
+import { MOCK_PROJECT_COMPENSATION_LEDGERS } from "@/mocks/research-and-development-compensation-mocks";
+import type { ResearchProject } from "@/types/research-and-development";
 
-const ESCROW_DIRECTION_BADGES: Record<EscrowDirection, { label: string; className: string }> = {
-  in: { label: "In", className: "bg-green-100 text-green-800" },
-  out: { label: "Out", className: "bg-red-100 text-red-800" },
-};
-
-const ESCROW_STATUS_BADGES: Record<EscrowVerificationStatus, { label: string; className: string }> =
-  {
-    verified: { label: "Verified", className: "bg-[#00696E]/10 text-[#00696E]" },
-    pending: { label: "Pending", className: "bg-amber-100 text-amber-800" },
-  };
-
-const MOCK_HOURLY_PAYOUT_RATE_IN_DOLLARS = 18;
-
-function parseAmountToNumber(displayAmount: string): number {
-  return Number(displayAmount.replace(/[^0-9.]/g, ""));
-}
-
-function formatDollarAmount(amountInDollars: number): string {
-  return `$${amountInDollars.toLocaleString()}`;
-}
-
-// Governance tab: fund-allocation summary, the escrow ledger, and per-member
-// compensation. Every figure here is summed from static mock strings for
-// display only — escrow and compensation math is server-owned later.
+// Compensation & governance tab (§5.5): the month-end statement, not an escrow
+// ledger. Qatoto computes what each member is owed in cash and equity; the
+// parties settle it between themselves. There is no pool to allocate from, no
+// hold, and no release — so there are no allocated / released / held cards here
+// and no client copy may imply a payment rail exists.
 export default function GovernanceTab({ project }: { project: ResearchProject }) {
-  const allocatedInDollars = project.escrowLedger
-    .filter((ledgerEntry) => ledgerEntry.direction === "in")
-    .reduce(
-      (runningTotal, ledgerEntry) => runningTotal + parseAmountToNumber(ledgerEntry.amount),
-      0,
-    );
-  const releasedInDollars = project.escrowLedger
-    .filter((ledgerEntry) => ledgerEntry.direction === "out")
-    .reduce(
-      (runningTotal, ledgerEntry) => runningTotal + parseAmountToNumber(ledgerEntry.amount),
-      0,
-    );
-  const heldInDollars = allocatedInDollars - releasedInDollars;
-
-  const fundAllocationSummaries = [
-    { label: "Allocated", amountInDollars: allocatedInDollars },
-    { label: "Released", amountInDollars: releasedInDollars },
-    { label: "Held", amountInDollars: heldInDollars },
-  ];
+  const compensationLedger = MOCK_PROJECT_COMPENSATION_LEDGERS.find(
+    (candidateLedger) => candidateLedger.projectId === project.id,
+  );
+  const openFundingRound = project.fundingRounds.find(
+    (fundingRound) => fundingRound.status === "open",
+  );
 
   return (
-    <div className="space-y-6 px-4 lg:px-6">
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Fund allocation</h3>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {fundAllocationSummaries.map((allocationSummary) => (
-            <div
-              key={allocationSummary.label}
-              className="rounded-2xl border border-[#CAC4D0]/60 p-4"
-            >
-              <p className="text-xs text-muted-foreground">{allocationSummary.label}</p>
-              <p className="text-xl font-semibold">
-                {formatDollarAmount(allocationSummary.amountInDollars)}
-              </p>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Display-only mock — escrow math is server-owned later.
-        </p>
-      </section>
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Escrow ledger</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-160 text-left text-sm">
-            <thead>
-              <tr className="border-b border-border text-xs text-muted-foreground">
-                <th className="py-2 pr-4 font-medium">Date</th>
-                <th className="py-2 pr-4 font-medium">Description</th>
-                <th className="py-2 pr-4 font-medium">Direction</th>
-                <th className="py-2 pr-4 font-medium">Amount</th>
-                <th className="py-2 pr-4 font-medium">Milestone</th>
-                <th className="py-2 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {project.escrowLedger.map((ledgerEntry) => {
-                const directionBadge = ESCROW_DIRECTION_BADGES[ledgerEntry.direction];
-                const statusBadge = ESCROW_STATUS_BADGES[ledgerEntry.verificationStatus];
-                const linkedMilestoneTitle =
-                  project.milestones.find(
-                    (milestone) => milestone.id === ledgerEntry.linkedMilestoneId,
-                  )?.title ?? "—";
+    <div className="space-y-8 px-4 lg:px-6">
+      <p className="text-sm text-muted-foreground">
+        Every month, Qatoto computes what each member is owed — cash and equity — and both sides
+        sign off on the result. Qatoto holds no funds, charges nobody and moves no money.
+      </p>
 
-                return (
-                  <tr key={ledgerEntry.id} className="border-b border-border/50">
-                    <td className="py-2 pr-4 whitespace-nowrap">{ledgerEntry.date}</td>
-                    <td className="py-2 pr-4">{ledgerEntry.description}</td>
-                    <td className="py-2 pr-4">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${directionBadge.className}`}
-                      >
-                        {directionBadge.label}
-                      </span>
-                    </td>
-                    <td className="py-2 pr-4 whitespace-nowrap">{ledgerEntry.amount}</td>
-                    <td className="py-2 pr-4">{linkedMilestoneTitle}</td>
-                    <td className="py-2">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge.className}`}
-                      >
-                        {statusBadge.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Member compensation</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-md text-left text-sm">
-            <thead>
-              <tr className="border-b border-border text-xs text-muted-foreground">
-                <th className="py-2 pr-4 font-medium">Member</th>
-                <th className="py-2 pr-4 font-medium">Role</th>
-                <th className="py-2 pr-4 font-medium">Hours logged</th>
-                <th className="py-2 font-medium">Payout</th>
-              </tr>
-            </thead>
-            <tbody>
-              {project.teamMembers.map((teamMember) => (
-                <tr key={teamMember.id} className="border-b border-border/50">
-                  <td className="py-2 pr-4">{teamMember.name}</td>
-                  <td className="py-2 pr-4">{teamMember.role}</td>
-                  <td className="py-2 pr-4">{teamMember.effortHoursLogged}</td>
-                  <td className="py-2 whitespace-nowrap">
-                    {formatDollarAmount(
-                      teamMember.effortHoursLogged * MOCK_HOURLY_PAYOUT_RATE_IN_DOLLARS,
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Calculated from logged effort — mock rate, backend-owned later.
+      {compensationLedger ? (
+        <>
+          <CompensationAgreementsPanel
+            agreements={compensationLedger.agreements}
+            teamMembers={project.teamMembers}
+          />
+          <CompensationStatementPanel
+            projectName={project.name}
+            periods={compensationLedger.periods}
+            teamMembers={project.teamMembers}
+          />
+        </>
+      ) : (
+        <p className="rounded-2xl border border-[#CAC4D0]/60 p-4 text-sm text-muted-foreground">
+          No compensation period has been computed for this project yet.
         </p>
-        <div>
-          <Link
-            href={`/research-and-development/project/${project.id}/proof-of-effort`}
-            className="inline-flex items-center gap-2 rounded-full bg-[#00696E]/10 px-3 py-1.5 text-xs font-medium text-[#00696E] transition hover:bg-[#00696E]/20"
-          >
-            Slice-by-slice equity breakdown on the Proof of Effort ledger →
-          </Link>
-        </div>
+      )}
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Funding commitments</h3>
+        <p className="text-xs text-muted-foreground">
+          A pledge is a <span className="font-medium text-foreground">commitment</span>, not a
+          charge. Nothing is collected, held or escrowed by Qatoto — the totals below are records of
+          intent.
+        </p>
+        {openFundingRound ? (
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+              <p className="text-xs text-muted-foreground">Committed so far</p>
+              <p className="text-xl font-semibold">{openFundingRound.raisedAmount}</p>
+            </div>
+            <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+              <p className="text-xs text-muted-foreground">Round goal</p>
+              <p className="text-xl font-semibold">{openFundingRound.goalAmount}</p>
+            </div>
+            <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
+              <p className="text-xs text-muted-foreground">Backers committed</p>
+              <p className="text-xl font-semibold">{openFundingRound.backersCount}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="rounded-2xl border border-[#CAC4D0]/60 p-4 text-sm text-muted-foreground">
+            No open round right now.
+          </p>
+        )}
+        {openFundingRound && (
+          <p className="text-xs text-muted-foreground">
+            Round closes {openFundingRound.closesOnDate}.
+          </p>
+        )}
       </section>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Planned milestone payouts</h3>
+        <p className="text-xs text-muted-foreground">
+          What the team plans to pay on each milestone. A plan, not an instruction to a payment rail
+          — nothing here releases money.
+        </p>
+        <ul className="divide-y divide-border/50 rounded-2xl border border-[#CAC4D0]/60">
+          {project.milestones
+            .filter((milestone) => milestone.escrowReleaseAmount)
+            .map((milestone) => (
+              <li key={milestone.id} className="flex flex-wrap items-center gap-3 p-3">
+                <span className="min-w-0 flex-1 truncate text-sm">{milestone.title}</span>
+                <span className="text-xs text-muted-foreground">Target {milestone.targetDate}</span>
+                <span className="rounded bg-[#D6E3FF] px-1.5 py-0.5 text-xs font-medium text-[#191C1C]">
+                  {milestone.escrowReleaseAmount}
+                </span>
+              </li>
+            ))}
+        </ul>
+      </section>
+
+      <div>
+        <Link
+          href={`/research-and-development/project/${project.id}/proof-of-effort`}
+          className="inline-flex items-center gap-2 rounded-full bg-[#00696E]/10 px-3 py-1.5 text-xs font-medium text-[#00696E] transition hover:bg-[#00696E]/20"
+        >
+          Slice-by-slice equity breakdown on the Proof of Effort ledger →
+        </Link>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Statement generated for the period ending{" "}
+        {compensationLedger?.periods[0]
+          ? formatIsoDate(compensationLedger.periods[0].periodEndDate)
+          : "—"}
+        . Every figure is a static mock this phase and entirely server-owned once integration
+        starts.
+      </p>
     </div>
   );
 }

@@ -49,11 +49,11 @@ Everything on this surface is built. The table is an inventory, not a plan.
 | Piece                    | Location                                                                                          | State                                                                                                       |
 | ------------------------ | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Routes                   | [src/app/(home)/research-and-development/](<src/app/(home)/research-and-development/>)            | ✅ **10 page routes**, each with a sibling `loading.tsx`. No `layout.tsx` / `error.tsx` in the subtree      |
-| Components               | [src/components/home/research-and-development/](src/components/home/research-and-development/)    | ✅ **81 files** — 10 page bodies, 13 cards, 3 rails, 44 sections, 5 sheets, 6 wizard. **21 client islands** |
-| Types                    | [src/types/research-and-development/](src/types/research-and-development/)                        | ✅ **6 files, 67 exported types** — `shared` `project` `discovery` `workshop` `immortal` `proof-of-effort`  |
+| Components               | [src/components/home/research-and-development/](src/components/home/research-and-development/)    | ✅ **94 files** — 10 page bodies, 14 cards, 3 rails, 53 sections, 8 sheets, 6 wizard. **36 client islands** |
+| Types                    | [src/types/research-and-development/](src/types/research-and-development/)                        | ✅ **8 files, 100 exported types** — the six original domains plus `compensation` and `oversight`           |
 | Types re-export composer | [src/types/research-and-development.ts](src/types/research-and-development.ts)                    | ✅ kept deliberately — ~55 importers use the flat specifier and must keep working                           |
-| Mocks                    | [src/mocks/research-and-development/](src/mocks/research-and-development/)                        | ✅ **34 leaf files** behind 4 top-level composers (§10)                                                     |
-| Proof-of-Effort surface  | [proof-of-effort-page.tsx](src/components/home/research-and-development/proof-of-effort-page.tsx) | ✅ **its own route with 5 tabs** (§5b) — not documented in earlier revisions of this file                   |
+| Mocks                    | [src/mocks/research-and-development/](src/mocks/research-and-development/)                        | ✅ **46 leaf files** behind 6 top-level composers (§10)                                                     |
+| Proof-of-Effort surface  | [proof-of-effort-page.tsx](src/components/home/research-and-development/proof-of-effort-page.tsx) | ✅ **its own route with 6 tabs** (§5b) — Integrations joined the original five                              |
 | Project Immortal         | [page.tsx](<src/app/(home)/research-and-development/projects/project-immortal/page.tsx>)          | ✅ see §4b; the old `/project-immortal` route is a 6-line `redirect()` shim                                 |
 | Sidebar nav              | [sidebar.tsx](src/components/home/layout/sidebar.tsx)                                             | ✅ top-level "R&D" (`science`) + a 5-item **Research and Development** section (§15 Q8)                     |
 | Mobile bottom nav        | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36)                  | ✅ single R&D tab; sub-path matching works, no sub-links                                                    |
@@ -257,9 +257,12 @@ Feed of `DailyLogCard`s, date-grouped, behind 🏝️ `daily-logs-feed` (member 
 
 ### 5.5 Compensation & governance (pillar 7)
 
-What `governance-tab.tsx` renders today is an **escrow ledger the contract no longer describes**.
-What it must render is the **month-end compensation statement** — the pipeline's headline output
-(backend §7A):
+✅ **Built.** `governance-tab.tsx` no longer renders an escrow ledger; it renders the **month-end
+compensation statement** — the pipeline's headline output (backend §7A) — over
+`MOCK_PROJECT_COMPENSATION_LEDGERS`. Composition: a `compensation-agreements-panel` 🏝️ (§14.3
+propose/accept/decline), then a `compensation-statement-panel` 🏝️ carrying everything below, then
+funding **commitments** and planned milestone payouts. All money is integer cents formatted by
+`compensation-format.ts` (§11 wire format), not pre-rendered strings.
 
 - **Period header**: the month, the project's time zone, `open` / `finalized` / `superseded`; for a
   finalized period, who finalized it, who countersigned it, and the statement hash. For an **open**
@@ -274,7 +277,15 @@ What it must render is the **month-end compensation statement** — the pipeline
 - Funding cards stay, re-labelled: a pledge is a **commitment**, not a charge. No allocated /
   released / held cards — there is no pool to allocate from.
 - Corrections **supersede**; nothing is ever edited. There is no PATCH on a period or a line, and no
-  endpoint that marks a line paid directly.
+  endpoint that marks a line paid directly. The solar fixture carries a May pair — the original
+  superseded, the correction finalized — so the UI for it is real, not hypothetical.
+
+Two mock-phase affordances worth knowing about. There is no session this phase, so the statement
+panel carries a **role switch** (founder / second admin / member) — finalize and countersign are
+admin powers, confirming that a payment arrived is the member's alone, and without the switch half
+the surface would be unreachable. And **export CSV / JSON** builds the file client-side from the raw
+integers (cents, basis points, minutes), never the formatted labels, because a payroll provider
+needs `198000`, not `"$1,980"`.
 
 > Every figure here is a static mock today and entirely server-owned once integration starts. The
 > frontend never computes or enforces any of it — and the three copy rules in the header note
@@ -286,17 +297,19 @@ What it must render is the **month-end compensation statement** — the pipeline
 
 The Slicing Pie ledger, and the most numerically dense surface in the app. Body in
 `proof-of-effort-page.tsx` (server): resolves the project from `MOCK_RESEARCH_PROJECTS` and the
-ledger from `MOCK_PROJECT_PROOF_OF_EFFORT_LEDGERS`, `notFound()` on either miss, then hands five
-server-rendered panels to 🏝️ `proof-of-effort-tabs` as `ReactNode` props. Only client state is
-`activeSection`, over a `ProofOfEffortSection` union with an exhaustive `switch`.
+ledger from `MOCK_PROJECT_PROOF_OF_EFFORT_LEDGERS` and the oversight fixture from
+`MOCK_PROJECT_OVERSIGHT`, `notFound()` on any miss, then hands **six** server-rendered panels to 🏝️
+`proof-of-effort-tabs` as `ReactNode` props. Only client state is `activeSection`, over a
+`ProofOfEffortSection` union with an exhaustive `switch`.
 
-| #   | Section id     | Label        | Panel                       | Cards                                                   |
-| --- | -------------- | ------------ | --------------------------- | ------------------------------------------------------- |
-| 1   | `slice-ledger` | Slice Ledger | `slice-ledger-tab`          | `member-slice-breakdown-card`, `compensation-badges`    |
-| 2   | `verification` | Verification | `verification-pipeline-tab` | `claim-verification-card`, `physical-work-receipt-card` |
-| 3   | `disputes`     | Disputes     | `dispute-window-tab`        | `dispute-window-entry-card` 🏝️                          |
-| 4   | `optimization` | Optimization | `optimization-tab`          | —                                                       |
-| 5   | `audit-trail`  | Audit Trail  | `project-audit-trail-tab`   | —                                                       |
+| #   | Section id     | Label        | Panel                        | Also carries                                                                              |
+| --- | -------------- | ------------ | ---------------------------- | ----------------------------------------------------------------------------------------- |
+| 1   | `slice-ledger` | Slice Ledger | `slice-ledger-tab`           | `member-slice-breakdown-card`, `rate-lock-panel` 🏝️ (§14.4), `pie-bake-panel` 🏝️ (§14.6)  |
+| 2   | `verification` | Verification | `verification-pipeline-tab`  | `claim-verification-card`, `physical-work-receipt-card`, `verification-override-panel` 🏝️ |
+| 3   | `disputes`     | Disputes     | `dispute-window-tab`         | `dispute-window-entry-card` 🏝️, `dispute-case-card` 🏝️, `raise-dispute-sheet` 🏝️          |
+| 4   | `integrations` | Integrations | `integration-consent-tab` 🏝️ | connect / scope / revoke (§14.2)                                                          |
+| 5   | `optimization` | Optimization | `optimization-tab`           | —                                                                                         |
+| 6   | `audit-trail`  | Audit Trail  | `project-audit-trail-tab`    | `chain-verification-panel` 🏝️ (§14.6)                                                     |
 
 Mechanism spec: [PROOF_OF_EFFORT_SPEC.md](PROOF_OF_EFFORT_SPEC.md) §3 (Slicing Pie math) and §4
 (verification pipeline, 24-hour dispute window, physical receipts). Backend §9 is **✅ shipped in
@@ -378,6 +391,14 @@ sheet (mirrors the store sheets pattern). Shared field options live in `sheets/s
 | Report a problem                                                                                  | Sheet → appends to canvas list         | ✅ Real, lost on refresh                |
 | Founder posts idea                                                                                | `/new` wizard → 4 steps → confirmation | ✅ Real; nothing is appended anywhere   |
 | Invite talent                                                                                     | Button → "Invited" toggle              | ✅ Real, client state only              |
+| Raise a dispute → vote on a case                                                                  | Sheet + vote buttons, quorum bar moves | ✅ Real, client state only              |
+| Ask for human review → maintainer decides                                                         | Three-way decision, written rationale  | ✅ Real, client state only              |
+| Connect / scope / revoke an integration                                                           | Scope ticks, connect, revoke           | ✅ Real, client state only              |
+| Finalize → countersign → record payment → confirm receipt                                         | Via the mock role switch (§5.5)        | ✅ Real, client state only              |
+| Export a statement as CSV / JSON                                                                  | Client-side file of raw integers       | ✅ Real, actually downloads             |
+| Propose and lock a rate · preview a pie bake                                                      | Form + checklist + frozen cap table    | ✅ Real, client state only              |
+| Workshop: add/move a task, attach or link a file, send a message                                  | Local list mutations                   | ✅ Real, lost on refresh                |
+| Edit a project · edit your talent profile · moderate a paper                                      | Sheet / queue → confirmation           | ✅ Real; nothing is saved               |
 | AI chips, Proof of Effort, slice ledgers, compensation statements, confidence, opportunity scores | Static render                          | 👁️ Visual-only, backend-owned           |
 
 ```mermaid
@@ -408,6 +429,12 @@ zero runtime exports:
 | `workshop.ts`        | `ProjectWorkshop`, `WorkshopBoardColumn`, `WorkshopTask*`, `WorkshopFile*`, `WorkshopChatMessage`                                                                                                      |
 | `immortal.ts`        | 13 `Immortal*` types — branches, papers, posts, ideas, contributors, product opportunities, program stats                                                                                              |
 | `proof-of-effort.ts` | 20 types — `MemberSliceBreakdown`, `VerificationStep*`, `ClaimVerificationRun`, `DisputeWindow*`, `PhysicalWorkReceipt*`, `OptimizationSuggestion*`, `ProjectAuditEntry`, `ProjectProofOfEffortLedger` |
+| `compensation.ts`    | §5.5 / §7A — `CompensationAgreement` (union on `engagementKind`), `CompensationPeriod`, `CompensationPeriodLine` (union on `kind`), `CompensationPaymentRecord`, `ProjectCompensationLedger`           |
+| `oversight.ts`       | §14.1/2/4/6 — `DisputeCase` + `DisputeVote`, `VerificationOverrideRequest`, `IntegrationConnection` + `IntegrationScope`, `RateLockProposal`, `PieBakeReadiness`, `ProjectChainVerification`           |
+
+> **The two new files already carry §11 wire-format values** — integer cents / basis points /
+> minutes with the unit in the field name, ISO instants and date-only days, full 64-char hashes.
+> They have no legacy importers, so there was nothing to migrate; §12 does not apply to them.
 
 [src/types/research-and-development.ts](src/types/research-and-development.ts) is a **re-export
 composer** (`export * from "./research-and-development/shared"`, …), kept so ~55 existing importers
@@ -420,6 +447,8 @@ of the flat specifier keep working. New code may import either.
 | `src/mocks/research-and-development-mocks.ts`                 | `MOCK_RESEARCH_PROJECTS` (6) + `MOCK_OPEN_ROLES` (flatMapped from them); re-exports insights, problem reports, talent, trending signals, investor confidence, `PROJECT_STAGE_LABELS` |
 | `src/mocks/research-and-development-proof-of-effort-mocks.ts` | `MOCK_PROJECT_PROOF_OF_EFFORT_LEDGERS`; its header carries the Slicing Pie recipe the mocks were computed with                                                                       |
 | `src/mocks/research-and-development-workshop-mocks.ts`        | `MOCK_PROJECT_WORKSHOPS`                                                                                                                                                             |
+| `src/mocks/research-and-development-compensation-mocks.ts`    | `MOCK_PROJECT_COMPENSATION_LEDGERS` — agreements + monthly statements per project (§5.5)                                                                                             |
+| `src/mocks/research-and-development-oversight-mocks.ts`       | `MOCK_PROJECT_OVERSIGHT` + `INTEGRATION_PROVIDER_LABELS` — disputes, overrides, integrations, rate locks, bake readiness, chain inputs (§14)                                         |
 | `src/mocks/project-immortal-mocks.ts`                         | re-export-only composer for every `MOCK_IMMORTAL_*` + the four label maps                                                                                                            |
 
 Leaf files under `src/mocks/research-and-development/` (34):
@@ -428,10 +457,12 @@ Leaf files under `src/mocks/research-and-development/` (34):
 investor-confidence.ts  market-insights.ts  problem-reports.ts
 project-stage-labels.ts talent-profiles.ts  trending-signals.ts
 immortal/        branches · contributors · ideas · informal-posts · papers ·
-                 product-opportunities · program-stats · labels
+                 paper-moderation · product-opportunities · program-stats · labels
 projects/        one file per slug → <SLUG>_PROJECT
 proof-of-effort/ one file per slug → <SLUG>_LEDGER
 workshop/        one file per slug → <SLUG>_WORKSHOP
+compensation/    one file per slug → <SLUG>_COMPENSATION
+oversight/       one file per slug → <SLUG>_OVERSIGHT, plus integration-scopes.ts
 ```
 
 The six slugs are identical across `projects/`, `proof-of-effort/` and `workshop/`:
@@ -628,31 +659,49 @@ tagged result, lifted into the component's state union (`CLAUDE.md` Patterns 1�
 
 ---
 
-## 14. Missing screens, and the order to build them
+## 14. Previously-missing screens — all six now built
 
-Backend §14 — API exists, no UI at all. The first two have **stopped being UX debt and become
-compliance gaps**, which is why they lead (backend §16).
+Backend §14 listed six surfaces where the API existed and the UI did not. **All six are built as
+mock UI.** Each row below says where it lives and what the integration phase still owes it. The
+first two were never merely UX debt — they are compliance surfaces (backend §16).
 
-1. **Dispute / vote / override UI.** No dispute button, no vote UI, no quorum progress, no "who
-   raised it", and no surface for a maintainer to review a flagged step and override it. This is the
-   GDPR Art. 22 contestability path and the EU AI Act Art. 14 human-oversight control — **a backend
-   that offers human intervention through an endpoint no screen calls does not, in practice, offer
-   it.**
-2. **Integration consent screen** (connect / scope / revoke). No frontend at all; the single largest
-   missing screen, and the lawful-basis + transparency surface for worker monitoring. Proof of Effort
-   cannot function without it.
-3. **The whole §7A compensation surface.** No agreement proposal or acceptance, no statement view, no
-   finalize or countersign, no payment attestation or member confirmation, no export.
-   `governance-tab.tsx` renders an escrow ledger the contract no longer describes. This is the
-   product's headline output (§5.5).
-4. **Rate lock.** No UI to propose, review, lock, or view the history of a fair market rate — the
-   foundation of every number on the Proof-of-Effort page.
-5. **Workshop writes.** The kanban is not draggable and the chat composer is a decorative `div`. No
-   create-task, move-task, add-file or send-message affordance exists.
-6. **Everything else**: pie bake (action + pre-bake checklist + frozen cap-table view), chain
-   verification ("Verify chain" + hash-input inspector — without it the hash-chain framing is
-   decoration), project edit entry point, talent profile editing, paper moderation queue, tiered /
-   multi-currency funding.
+1. **Dispute / vote / override UI** — ✅ `raise-dispute-sheet` 🏝️ (grounds + evidence),
+   `dispute-case-card` 🏝️ (who raised it, why, every vote with its rationale, quorum progress,
+   cast-your-vote), and `verification-override-panel` 🏝️ on the Verification tab, where a member's
+   request for human review gets a maintainer decision in writing. The decision goes **three ways**
+   on purpose — reverse the flag, uphold it, or reverse it against the member — because a review
+   that can only agree with the person who asked is not a review. This is the GDPR Art. 22
+   contestability path and the EU AI Act Art. 14 human-oversight control: _a backend that offers
+   human intervention through an endpoint no screen calls does not, in practice, offer it._
+2. **Integration consent screen** — ✅ `integration-consent-tab` 🏝️, the sixth Proof-of-Effort tab.
+   Per provider: status, every scope with a plain-language **purpose note**, which scopes are
+   granted, retention in days, what the connection contributes to a verification run, and connect /
+   revoke. Scope catalogues live in `mocks/…/oversight/integration-scopes.ts`. Copy states plainly
+   that Qatoto reads **metadata only** — never source, documents, or design contents.
+3. **The whole §7A compensation surface** — ✅ see §5.5. Agreements, statements, finalize,
+   countersign, payment attestation, member confirmation, supersede, CSV/JSON export.
+4. **Rate lock** — ✅ `rate-lock-panel` 🏝️ inside the Slice Ledger tab: propose against a cited
+   benchmark band, flag a proposal outside its band, review-and-lock, and a collapsed **history** of
+   superseded rates. A locked rate is never editable, only superseded.
+5. **Workshop writes** — ✅ all three panels became islands. Add a task, move it between columns,
+   attach a file, link a hosted file, send a message. Movement uses explicit ← / → buttons rather
+   than drag, so the board is operable by keyboard and announceable by a screen reader.
+6. **Everything else** — ✅ `pie-bake-panel` 🏝️ (pre-bake checklist with `met`/`not_met`/`waived`,
+   blocked action, full frozen cap-table preview), `chain-verification-panel` 🏝️ ("Verify chain" +
+   per-entry inspector showing the exact canonical payload hashed), `edit-project-sheet` 🏝️ on the
+   project header, `edit-talent-profile-sheet` 🏝️ on `/talent`, `paper-moderation-queue` 🏝️ on
+   Project Immortal, and tiered / multi-currency pledging in `back-project-sheet` (per-currency tier
+   ladders, authored not FX-converted).
+
+What the integration phase still owes these screens: every action above mutates **page-local state
+only**. None of them send, poll, retry, or take an idempotency key, and none of them handle the
+`202`-then-poll shape the contract specifies for claim submit, receipt upload, dispute raise and
+problem report. §13's client-side rules — keyset pagination, server-side filtering, never
+fabricating a missing signal — apply to all of them unchanged.
+
+Two deliberate mock-phase affordances that must **not** survive integration: the statement panel's
+founder / second-admin / member **role switch** (there is no session yet, and without it half the
+surface is unreachable), and `PaperModerationQueue` showing review buttons to everyone.
 
 ---
 
@@ -712,18 +761,21 @@ Plus `src/app/(home)/project-immortal/page.tsx` — a 6-line `redirect()` shim.
 
 | File                                                          | Contents                                   |
 | ------------------------------------------------------------- | ------------------------------------------ |
-| `src/types/research-and-development/*.ts`                     | 6 files, 67 types (§10)                    |
+| `src/types/research-and-development/*.ts`                     | 8 files, 100 types (§10)                   |
 | `src/types/research-and-development.ts`                       | re-export composer — do not delete         |
 | `src/mocks/research-and-development-mocks.ts`                 | projects + derived open roles + re-exports |
 | `src/mocks/research-and-development-proof-of-effort-mocks.ts` | slice ledgers                              |
 | `src/mocks/research-and-development-workshop-mocks.ts`        | workshops                                  |
+| `src/mocks/research-and-development-compensation-mocks.ts`    | month-end statements (§5.5)                |
+| `src/mocks/research-and-development-oversight-mocks.ts`       | disputes / consent / rates / bake (§14)    |
 | `src/mocks/project-immortal-mocks.ts`                         | program composer                           |
-| `src/mocks/research-and-development/**`                       | 34 leaf files (§10)                        |
+| `src/mocks/research-and-development/**`                       | 46 leaf files (§10)                        |
 
 ### Components — `src/components/home/research-and-development/`
 
-81 files. Server components unless marked 🏝️ (client island — 21 of them; keep them small per
-`CLAUDE.md`).
+94 files. Server components unless marked 🏝️ (client island — 36 of them; keep them small per
+`CLAUDE.md`). The island count grew with §14: every write surface has to hold its own state, and
+none of them may reach for a context provider (§15 Q5).
 
 ```text
 (root — page bodies)
@@ -745,7 +797,8 @@ cards/
 ├── talent-profile-card.tsx · funding-deal-card.tsx · compensation-badges.tsx
 ├── member-slice-breakdown-card.tsx · claim-verification-card.tsx
 ├── physical-work-receipt-card.tsx
-└── dispute-window-entry-card.tsx           🏝️
+├── dispute-window-entry-card.tsx           🏝️
+└── dispute-case-card.tsx                   🏝️  votes, quorum, resolution (§14.1)
 sections/
 ├── section-header.tsx                      title + see-all chevron
 ├── pipeline-hero.tsx · pipeline-stages-strip.tsx · lifecycle-roles-strip.tsx
@@ -756,13 +809,24 @@ sections/
 ├── overview-tab.tsx · milestone-timeline.tsx
 ├── daily-logs-tab.tsx
 ├── daily-logs-feed.tsx                     🏝️  member filter chips
-├── team-tab.tsx · funding-tab.tsx · governance-tab.tsx   ← governance is §5.5's rewrite target
+├── team-tab.tsx · funding-tab.tsx
+├── governance-tab.tsx                          §5.5 — month-end statement, not an escrow ledger
+├── compensation-format.ts                      cents/basis-points/minutes → labels, timezone-free
+├── compensation-agreements-panel.tsx       🏝️  propose / accept / decline (§14.3)
+├── compensation-statement-panel.tsx        🏝️  periods, lines, payments, finalize, export
+├── verification-override-panel.tsx         🏝️  human review of an automated verdict (§14.1)
+├── integration-consent-tab.tsx             🏝️  connect / scope / revoke (§14.2)
+├── rate-lock-panel.tsx                     🏝️  propose / review / lock / history (§14.4)
+├── pie-bake-panel.tsx                      🏝️  checklist + frozen cap table (§14.6)
+├── chain-verification-panel.tsx            🏝️  verify chain + hash-input inspector (§14.6)
+├── paper-moderation-queue.tsx              🏝️  formal-track review queue (§14.6)
 ├── problem-map-canvas.tsx                  🏝️  pins, selection, category filter, report list state
 ├── problem-report-list.tsx                     renders only inside that island; no directive
 ├── trending-demand-signals.tsx
 ├── talent-filter-grid.tsx                  🏝️  · invite-talent-button.tsx 🏝️
 ├── funding-deal-filter-grid.tsx            🏝️
-├── workshop-tabs.tsx                       🏝️  · workshop-board.tsx · workshop-files.tsx · workshop-chat.tsx
+├── workshop-tabs.tsx                       🏝️
+├── workshop-board.tsx 🏝️ · workshop-files.tsx 🏝️ · workshop-chat.tsx 🏝️   ← all three take writes (§14.5)
 ├── proof-of-effort-tabs.tsx                🏝️
 ├── slice-ledger-tab.tsx · verification-pipeline-tab.tsx · dispute-window-tab.tsx
 ├── optimization-tab.tsx · project-audit-trail-tab.tsx
@@ -775,7 +839,9 @@ sections/
 └── research-branch-detail-panel.tsx
 sheets/                                     🏝️  each self-contained: own trigger + sheet
 ├── post-idea-sheet.tsx (unwired) · report-problem-sheet.tsx
-├── back-project-sheet.tsx · apply-role-sheet.tsx
+├── back-project-sheet.tsx                  tiered + multi-currency commitments (§14.6)
+├── apply-role-sheet.tsx · raise-dispute-sheet.tsx (§14.1)
+├── edit-project-sheet.tsx (§14.6) · edit-talent-profile-sheet.tsx (§14.6)
 └── sheet-shared.ts                         shared field options
 wizard/                                     🏝️  new-idea-wizard-page.tsx holds the only "use client"
 ├── new-idea-wizard-page.tsx                step index + draft-patch + stepper

@@ -17,6 +17,7 @@ export { MOCK_IMMORTAL_PROGRAM_STATS } from "./research-and-development/immortal
 export { MOCK_IMMORTAL_RESEARCH_BRANCHES } from "./research-and-development/immortal/branches";
 export { MOCK_IMMORTAL_PRODUCT_OPPORTUNITIES } from "./research-and-development/immortal/product-opportunities";
 export { MOCK_IMMORTAL_RESEARCH_PAPERS } from "./research-and-development/immortal/papers";
+export { MOCK_IMMORTAL_PAPER_MODERATION_QUEUE } from "./research-and-development/immortal/paper-moderation";
 export { MOCK_IMMORTAL_INFORMAL_POSTS } from "./research-and-development/immortal/informal-posts";
 export { MOCK_IMMORTAL_IDEAS } from "./research-and-development/immortal/ideas";
 export { MOCK_IMMORTAL_CONTRIBUTORS } from "./research-and-development/immortal/contributors";

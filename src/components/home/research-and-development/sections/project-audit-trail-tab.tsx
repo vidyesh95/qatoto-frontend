@@ -1,4 +1,9 @@
-import type { ProjectAuditEntry, ProjectAuditEventKind } from "@/types/research-and-development";
+import ChainVerificationPanel from "@/components/home/research-and-development/sections/chain-verification-panel";
+import type {
+  ProjectAuditEntry,
+  ProjectAuditEventKind,
+  ProjectChainVerification,
+} from "@/types/research-and-development";
 
 const AUDIT_EVENT_BADGES: Record<ProjectAuditEventKind, { label: string; className: string }> = {
   decision: { label: "Decision", className: "bg-violet-100 text-violet-800" },
@@ -12,7 +17,13 @@ const AUDIT_EVENT_BADGES: Record<ProjectAuditEventKind, { label: string; classNa
 // admin audit-log row layout but widens scope and audience. The hash-chain
 // chip (this entry's hash folds in the previous entry's) renders the mock as
 // tamper-evident; the real immutable chain is written server-side later.
-export default function ProjectAuditTrailTab({ entries }: { entries: ProjectAuditEntry[] }) {
+export default function ProjectAuditTrailTab({
+  entries,
+  chainVerification,
+}: {
+  entries: ProjectAuditEntry[];
+  chainVerification: ProjectChainVerification;
+}) {
   return (
     <div className="space-y-6 px-4 lg:px-6">
       <section className="space-y-3">
@@ -66,6 +77,7 @@ export default function ProjectAuditTrailTab({ entries }: { entries: ProjectAudi
           Immutable, tamper-evident log — written server-side later.
         </p>
       </section>
+      <ChainVerificationPanel chainVerification={chainVerification} />
     </div>
   );
 }

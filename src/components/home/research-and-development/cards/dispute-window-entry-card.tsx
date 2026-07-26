@@ -11,13 +11,15 @@ import type {
 
 const DISPUTE_STATUS_BADGES: Record<DisputeWindowStatus, { label: string; className: string }> = {
   open: { label: "Open — 24h window", className: "bg-blue-100 text-blue-800" },
-  disputed: { label: "Disputed — frozen in escrow", className: "bg-red-100 text-red-800" },
+  disputed: { label: "Disputed — slices frozen", className: "bg-red-100 text-red-800" },
   "consensus-reached": { label: "Consensus reached", className: "bg-green-100 text-green-800" },
   locked: { label: "Locked", className: "bg-[#00696E]/10 text-[#00696E]" },
 };
 
 // Transparency-ledger entry with a local-state-only Dispute toggle. No dispute
-// is sent in the UI-building phase — escrow and consensus are backend-owned.
+// is sent in the UI-building phase — freezing and consensus are backend-owned.
+// "Frozen" means slices held outside the pie while a case runs; it is never
+// money, and no cash line is ever affected by a dispute.
 export default function DisputeWindowEntryCard({
   entry,
   member,
@@ -39,7 +41,8 @@ export default function DisputeWindowEntryCard({
       case "open":
         return hasViewerDisputed ? (
           <p className="text-xs text-muted-foreground">
-            You disputed this allocation — slices frozen in escrow pending team consensus.
+            You disputed this allocation — slices frozen outside the pie pending team consensus.
+            Nobody&apos;s cash is affected.
           </p>
         ) : (
           <div className="flex flex-wrap items-center gap-2">

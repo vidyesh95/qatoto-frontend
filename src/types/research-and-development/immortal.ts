@@ -25,6 +25,27 @@ export type ImmortalResearchPaper = {
   isUploadedByViewer?: boolean;
 };
 
+export type ImmortalPaperModerationStatus = "queued" | "approved" | "rejected" | "needs_changes";
+
+// A submitted paper waiting on a human before it joins the library (§14.6).
+// The formal track claims citations and proofs, so somebody has to check that
+// claim before the program's name is attached to it. Instants are ISO-8601.
+export type ImmortalPaperModerationEntry = {
+  id: string;
+  paperTitle: string;
+  authorName: string;
+  authorAffiliation: string;
+  category: ImmortalPaperCategory;
+  submittedAt: string;
+  status: ImmortalPaperModerationStatus;
+  // What the automated pre-check noticed, e.g. "No references section".
+  // Empty when nothing was flagged.
+  flagReasons: string[];
+  reviewerName: string | null;
+  reviewedAt: string | null;
+  reviewerNote: string | null;
+};
+
 // Informal track — blog-like research idea, no proofs or citations required.
 export type ImmortalInformalPost = {
   id: string;
