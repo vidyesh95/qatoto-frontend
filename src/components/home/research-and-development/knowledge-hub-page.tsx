@@ -10,7 +10,7 @@ import {
 // Server component over static mocks — no fetching this phase.
 export default function KnowledgeHubPage() {
   return (
-    <div className="space-y-8 px-4 pb-8 lg:px-6">
+    <div className="space-y-8 px-4 pt-4 pb-4 lg:px-6 lg:pt-6 lg:pb-6">
       <header className="space-y-1">
         <h1 className="font-serif text-2xl font-semibold md:text-3xl">Knowledge Hub</h1>
         <p className="text-sm text-muted-foreground">

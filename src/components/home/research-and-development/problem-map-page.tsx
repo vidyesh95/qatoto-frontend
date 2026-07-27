@@ -4,7 +4,7 @@ import ProblemMapCanvas from "@/components/home/research-and-development/section
 // interaction state lives in the ProblemMapCanvas client island below.
 export default function ProblemMapPage() {
   return (
-    <div className="space-y-6 px-4 pb-8 lg:px-6">
+    <div className="space-y-6 px-4 pt-4 pb-4 lg:px-6 lg:pt-6 lg:pb-6">
       <div>
         <h1 className="font-serif text-2xl font-semibold md:text-3xl">Problem Map</h1>
         <p className="mt-1 text-sm text-muted-foreground">

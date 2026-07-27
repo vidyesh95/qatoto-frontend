@@ -3,8 +3,8 @@
 // props, no data, no logic (UI + mock data phase, see CLAUDE.md).
 export default function ResearchAndDevelopmentLoadingSkeleton() {
   return (
-    <div className="animate-pulse space-y-8 px-4 pb-8 lg:px-6">
-      <div className="space-y-3 pt-4">
+    <div className="animate-pulse space-y-8 px-4 pt-4 pb-4 lg:px-6 lg:pt-6 lg:pb-6">
+      <div className="space-y-3">
         <div className="h-6 w-48 rounded-full bg-muted" />
         <div className="h-4 w-72 rounded-full bg-muted" />
       </div>

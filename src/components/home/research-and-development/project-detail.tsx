@@ -30,7 +30,7 @@ export default function ProjectDetail({ projectId }: { projectId: string }) {
   );
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pt-4 pb-4 lg:pt-6 lg:pb-6">
       <ProjectHeader project={project} />
       <ProjectTabs
         overviewPanel={

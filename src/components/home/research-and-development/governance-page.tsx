@@ -23,7 +23,7 @@ import {
 // to reason about who may sign.
 export default function GovernancePage() {
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
       <GovernanceHero />
       <GovernanceRulesBand disclosureKeys={MOCK_GOVERNANCE_SUMMARY.disclosureKeys} />
       <CommitmentsOverview rows={MOCK_GOVERNANCE_SUMMARY.rows} />

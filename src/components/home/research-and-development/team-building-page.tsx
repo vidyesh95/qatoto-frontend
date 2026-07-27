@@ -22,7 +22,7 @@ export default function TeamBuildingPage() {
   const spotlightProfiles = MOCK_TALENT_PROFILES.slice(0, 4);
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
       <TeamBuildingHero />
       <EquityForSkillsExplainer />
       <OpenRolesGrid roles={MOCK_OPEN_ROLES} />

@@ -27,7 +27,7 @@ export default function GoToMarketPage() {
     : undefined;
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
       <GoToMarketHero />
       <GoToMarketExplainer />
       {showcaseProject && showcaseReadiness && (

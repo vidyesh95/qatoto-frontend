@@ -25,7 +25,7 @@ export default function FundingPage() {
   );
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
       <header className="space-y-1 px-4 lg:px-6">
         <h1 className="font-serif text-2xl font-semibold md:text-3xl">Deal Flow</h1>
         <p className="text-sm text-muted-foreground">

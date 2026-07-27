@@ -24,8 +24,8 @@ export default function WorkshopPage({ projectId }: { projectId: string }) {
   if (!project || !workshop) notFound();
 
   return (
-    <div className="space-y-6 pb-8">
-      <header className="space-y-1 px-4 pt-2 lg:px-6">
+    <div className="space-y-6 pt-4 pb-4 lg:pt-6 lg:pb-6">
+      <header className="space-y-1 px-4 lg:px-6">
         <Link
           href={`/research-and-development/project/${project.id}`}
           className="text-xs font-medium text-[#00696E]"

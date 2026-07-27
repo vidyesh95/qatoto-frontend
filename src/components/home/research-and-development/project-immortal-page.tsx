@@ -24,7 +24,7 @@ import {
 // get paid, and the open discussion.
 export default function ProjectImmortalPage() {
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
       <ProjectImmortalHero stats={MOCK_IMMORTAL_PROGRAM_STATS} />
 
       <section className="space-y-4">
