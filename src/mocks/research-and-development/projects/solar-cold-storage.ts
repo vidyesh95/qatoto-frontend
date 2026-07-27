@@ -64,7 +64,7 @@ export const SOLAR_COLD_STORAGE_PROJECT: ResearchProject = {
         {
           kind: "salary",
           amountLabel: "$4k–6k/mo",
-          earnedAsLabel: "Paid from milestone escrow as logged work verifies",
+          earnedAsLabel: "Paid by the project each month as logged work verifies",
         },
         {
           kind: "equity",

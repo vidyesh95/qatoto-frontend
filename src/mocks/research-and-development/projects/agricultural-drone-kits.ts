@@ -64,7 +64,7 @@ export const AGRICULTURAL_DRONE_KITS_PROJECT: ResearchProject = {
         {
           kind: "one-time",
           amountLabel: "$3.5k",
-          earnedAsLabel: "Released per verified flight-test campaign",
+          earnedAsLabel: "Paid per verified flight-test campaign",
         },
       ],
       commitment: "part-time",
@@ -79,12 +79,12 @@ export const AGRICULTURAL_DRONE_KITS_PROJECT: ResearchProject = {
         {
           kind: "salary",
           amountLabel: "$5k/mo",
-          earnedAsLabel: "Paid from escrow as milestones verify",
+          earnedAsLabel: "Paid by the project each month as milestones verify",
         },
         {
           kind: "one-time",
           amountLabel: "$4k",
-          earnedAsLabel: "Released once sourcing setup is verified",
+          earnedAsLabel: "Paid once sourcing setup is verified",
         },
         {
           kind: "equity",

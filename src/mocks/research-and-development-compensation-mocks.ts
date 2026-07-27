@@ -6,6 +6,15 @@ import { MODULAR_WATER_PURIFICATION_COMPENSATION } from "@/mocks/research-and-de
 import { PREFAB_HOUSING_PANELS_COMPENSATION } from "@/mocks/research-and-development/compensation/prefab-housing-panels";
 import { SOLAR_COLD_STORAGE_COMPENSATION } from "@/mocks/research-and-development/compensation/solar-cold-storage";
 
+// Cross-project governance rollup (§4c.3) — aggregates and an authored sample
+// statement, never a real member's row. Re-exported here so the governance
+// stage page imports one compensation-family composer.
+export {
+  MOCK_GOVERNANCE_SUMMARY,
+  SAMPLE_STATEMENT_MEMBER_LABELS,
+  SAMPLE_STATEMENT_WALKTHROUGH,
+} from "@/mocks/research-and-development/governance-summary";
+
 // Month-end compensation statements — one ledger per research project
 // (R_AND_D_STRUCTURE.md §5.5). Static mocks only: the statement math, the
 // finalize/countersign chain and the statement hash are backend-owned later.

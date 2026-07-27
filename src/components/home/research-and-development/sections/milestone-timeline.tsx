@@ -36,8 +36,11 @@ const MILESTONE_STATUS_STYLES: Record<
 };
 
 // Vertical milestone timeline for the Overview tab: a left rail of status
-// dots joined by a connector line, with per-milestone escrow-release chips.
-// Escrow releases are display-only mocks — the ledger is backend-owned later.
+// dots joined by a connector line, with the planned payout per milestone.
+// A payout is what the project plans to pay when the milestone lands — Qatoto
+// holds no funds and releases none. Display-only mocks; the figures are
+// backend-owned later, and the field keeps its legacy `escrowReleaseAmount`
+// name until the §12 rename to `plannedPayoutInCents`.
 export default function MilestoneTimeline({ milestones }: { milestones: Milestone[] }) {
   return (
     <ol>
@@ -71,7 +74,7 @@ export default function MilestoneTimeline({ milestones }: { milestones: Mileston
               <p className="text-xs text-muted-foreground">Target: {milestone.targetDate}</p>
               {milestone.escrowReleaseAmount && (
                 <span className="inline-block rounded-full bg-[#D6E3FF] px-2 py-0.5 text-xs font-medium text-[#191C1C]">
-                  Releases {milestone.escrowReleaseAmount} from escrow
+                  Planned payout {milestone.escrowReleaseAmount}
                 </span>
               )}
               {milestone.variance && (

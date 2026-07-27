@@ -21,6 +21,13 @@ const RESEARCH_AND_DEVELOPMENT_SUBPAGES: Record<string, string> = {
   "/research-and-development/talent": "Talent",
   "/research-and-development/funding": "Funding",
   "/research-and-development/new": "Post an Idea",
+  // The four pipeline stage routes. They need explicit entries because the
+  // prettifySlug fallthrough would render "Build log" and "Go to market",
+  // which are not the stage names.
+  "/research-and-development/team-building": "Team Building",
+  "/research-and-development/build-log": "Build & Daily Logs",
+  "/research-and-development/governance": "Governance",
+  "/research-and-development/go-to-market": "Go-to-Market",
 };
 
 function prettifySlug(slug: string): string {

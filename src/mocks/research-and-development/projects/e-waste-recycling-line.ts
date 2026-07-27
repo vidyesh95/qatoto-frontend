@@ -65,7 +65,7 @@ export const E_WASTE_RECYCLING_LINE_PROJECT: ResearchProject = {
         {
           kind: "salary",
           amountLabel: "$5k–7k/mo",
-          earnedAsLabel: "Paid from milestone escrow as logged work verifies",
+          earnedAsLabel: "Paid by the project each month as logged work verifies",
         },
       ],
       commitment: "full-time",
@@ -132,7 +132,8 @@ export const E_WASTE_RECYCLING_LINE_PROJECT: ResearchProject = {
     {
       id: "ewaste-milestone-series-round",
       title: "Close $250,000 venture round",
-      description: "Round closed and escrow settled to fund the full recovery line build-out.",
+      description:
+        "Round closed and every commitment settled to fund the full recovery line build-out.",
       targetDate: "Aug 20, 2026",
       status: "current",
     },
@@ -168,9 +169,9 @@ export const E_WASTE_RECYCLING_LINE_PROJECT: ResearchProject = {
       date: "Jul 6, 2026",
       videoThumbnailSrc: "/dummy/thumbnail_image09.avif",
       transcriptExcerpt:
-        "Term-sheet redlines came back from the lead investor — the sticking points are down to board composition and the escrow release schedule, both solvable.",
+        "Term-sheet redlines came back from the lead investor — the sticking points are down to board composition and the milestone payout schedule, both solvable.",
       detail:
-        "They accepted the valuation and the milestone-gated escrow structure outright, which tells me the Qatoto ledger history did the convincing. I countered on board seats: two founders, two investors, one independent. Call with counsel tomorrow morning.",
+        "They accepted the valuation and the milestone-gated payout schedule outright, which tells me the Qatoto ledger history did the convincing. I countered on board seats: two founders, two investors, one independent. Call with counsel tomorrow morning.",
       aiSummaryChips: [{ kind: "progress", label: "Term-sheet redlines returned" }],
       isEffortVerified: true,
     },
@@ -210,9 +211,9 @@ export const E_WASTE_RECYCLING_LINE_PROJECT: ResearchProject = {
       date: "Jul 3, 2026",
       videoThumbnailSrc: "/dummy/thumbnail_image12.avif",
       transcriptExcerpt:
-        "Data room is 90% complete — uploaded the throughput logs, assay certificates, and the full Qatoto escrow ledger export for investor diligence.",
+        "Data room is 90% complete — uploaded the throughput logs, assay certificates, and the full Qatoto compensation-statement export for investor diligence.",
       detail:
-        "The escrow ledger export is doing heavy lifting in diligence: every milestone release is timestamped and verified, so the investors' operational questions are mostly pre-answered. Remaining items are the updated environmental permit and two collector-agreement renewals.",
+        "The statement export is doing heavy lifting in diligence: every milestone payout is timestamped and verified, so the investors' operational questions are mostly pre-answered. Remaining items are the updated environmental permit and two collector-agreement renewals.",
       aiSummaryChips: [{ kind: "velocity", label: "Diligence data room 90% complete" }],
       isEffortVerified: true,
     },

@@ -145,3 +145,46 @@ export type ProjectCompensationLedger = {
   // Newest period first.
   periods: CompensationPeriod[];
 };
+
+// ---------------------------------------------------------------------------
+// Cross-project governance rollup (§4c.3, backend §11h) — what the public
+// /governance stage page renders.
+//
+// A statement line names a person and what they are owed, which is personal
+// data and specially sensitive in several jurisdictions. So this shape carries
+// AGGREGATES AND MECHANICS, NEVER PEOPLE: no member id, no user id, no name,
+// no per-member amount. Per-member lines stay on the per-project tab (§5.5),
+// behind membership, with the actions.
+// ---------------------------------------------------------------------------
+
+// The three §7A.6 copy rules travel as keys, not English sentences — server
+// prose would force three native clients to render un-localizable strings.
+export type GovernanceDisclosureKey =
+  | "platform_holds_no_funds"
+  | "verification_never_reduces_cash"
+  | "statement_is_gross_only";
+
+export type GovernanceProjectRollupRow = {
+  // Matches ResearchProject.id.
+  projectId: string;
+  projectName: string;
+  openPeriodCount: number;
+  finalizedPeriodCount: number;
+  supersededPeriodCount: number;
+  // Of the finalized periods, how many a second admin countersigned.
+  countersignedPeriodCount: number;
+  // Sum of COMMITTED pledges. No card is charged and no funds are held — this
+  // is a record of intent, and no label on it may imply a rail, hold or fee.
+  committedFundingInCents: number;
+  currency: string;
+  // Null when the nightly job has never computed one. Never coerced to 0,
+  // which would publish "no confidence" as a finding about the project rather
+  // than about the job.
+  investorConfidencePoints: number | null;
+};
+
+export type GovernanceSummary = {
+  rows: GovernanceProjectRollupRow[];
+  disclosureKeys: GovernanceDisclosureKey[];
+  asOf: string;
+};

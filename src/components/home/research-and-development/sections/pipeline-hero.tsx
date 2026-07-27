@@ -13,8 +13,8 @@ export default function PipelineHero() {
         <h1 className="font-serif text-3xl md:text-5xl">From concept to consumer.</h1>
         <p className="mt-4 text-sm text-white/90 md:text-base">
           Research where demand is real, map the problems people report on the ground, build a team
-          that trades skills for equity, fund every milestone through transparent escrow, and ship
-          the finished product to customers worldwide — one pipeline, end to end.
+          that trades skills for equity, keep every commitment and every month-end statement on the
+          record, and ship the finished product to customers worldwide — one pipeline, end to end.
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Link

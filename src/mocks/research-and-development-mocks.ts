@@ -20,6 +20,11 @@ export { MOCK_INVESTOR_CONFIDENCE_BY_PROJECT_ID } from "@/mocks/research-and-dev
 export { MOCK_MARKET_INSIGHTS } from "@/mocks/research-and-development/market-insights";
 export { PROJECT_STAGE_LABELS } from "@/mocks/research-and-development/project-stage-labels";
 export { MOCK_PROBLEM_REPORTS } from "@/mocks/research-and-development/problem-reports";
+export {
+  MOCK_LAUNCH_READINESS_BY_PROJECT_ID,
+  MOCK_SUPPLIER_CAPABILITIES,
+  MOCK_SUPPLIER_PROFILES,
+} from "@/mocks/research-and-development/suppliers";
 export { MOCK_TALENT_PROFILES } from "@/mocks/research-and-development/talent-profiles";
 export { MOCK_TRENDING_SIGNALS } from "@/mocks/research-and-development/trending-signals";
 

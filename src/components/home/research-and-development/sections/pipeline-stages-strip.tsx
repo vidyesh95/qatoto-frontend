@@ -29,34 +29,36 @@ const PIPELINE_STAGES: PipelineStage[] = [
     title: "Team Building",
     blurb: "Join a project and trade your skills for equity.",
     iconSrc: "/icons/group_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    href: "#open-roles",
+    href: "/research-and-development/team-building",
   },
   {
     stepNumber: "04",
     title: "Build & Daily Logs",
-    blurb: "AI-analyzed video logs turn effort into proof.",
+    blurb: "AI-analyzed daily logs turn effort into proof. Logs stay private to their team.",
     iconSrc: "/icons/fact_check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    href: "#featured-projects",
+    href: "/research-and-development/build-log",
   },
   {
     stepNumber: "05",
     title: "Funding & Governance",
-    blurb: "Milestone-gated escrow keeps every dollar accountable.",
+    blurb: "Commitments on the record, and a month-end statement everyone can check.",
     iconSrc: "/icons/paid_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    href: "#featured-projects",
+    href: "/research-and-development/governance",
   },
   {
     stepNumber: "06",
     title: "Go-to-Market",
-    blurb: "Manufacture, ship, and sell through the Qatoto store.",
+    blurb: "Find a manufacturer, ship the batch, and list the product for sale.",
     iconSrc: "/icons/local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    href: "/store",
+    href: "/research-and-development/go-to-market",
   },
 ];
 
-// Horizontally scrolling strip of the six pipeline stages. Each card links to
-// the surface that carries that stage (knowledge hub, problem map, in-page
-// anchors, or the store for go-to-market).
+// Horizontally scrolling strip of the six pipeline stages. Every card lands on
+// a page that teaches its stage — never an in-page anchor, which used to scroll
+// the landing page instead of going anywhere, and left team building, daily
+// logs and governance reachable only from inside a project someone had already
+// picked.
 export default function PipelineStagesStrip() {
   return (
     <div className="flex gap-3 overflow-x-auto px-4 lg:px-6">

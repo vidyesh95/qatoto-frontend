@@ -28,7 +28,7 @@ const LIFECYCLE_ROLES: LifecycleRole[] = [
   {
     title: "Venture Capitalist",
     blurb:
-      "Fund the project through milestone-gated escrow; every dollar is tracked to the work it backs.",
+      "Commit funding to a project and settle it directly; every commitment is tracked to the work it backs.",
     iconSrc: "/icons/paid_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
     compensationModes: ["Equity"],
   },

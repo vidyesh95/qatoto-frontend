@@ -158,7 +158,7 @@ export const MEDICAL_COLD_CHAIN_PACKAGING_PROJECT: ResearchProject = {
       transcriptExcerpt:
         "Contract number three is countersigned — the Lyon distributor committed to a 400-shipper fleet with a three-year term and quarterly volume ramps.",
       detail:
-        "This is the contract that started as a cold outreach after their couriers kept failing temperature audits. Their audit-failure problem became our reference case. The signed fleet commitment also releases the final contract milestone in escrow.",
+        "This is the contract that started as a cold outreach after their couriers kept failing temperature audits. Their audit-failure problem became our reference case. The signed fleet commitment also closes out the final contract milestone.",
       aiSummaryChips: [{ kind: "progress", label: "Third pharma contract countersigned" }],
       isEffortVerified: true,
     },

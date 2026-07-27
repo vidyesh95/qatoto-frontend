@@ -75,7 +75,7 @@ export const PREFAB_HOUSING_PANELS_PROJECT: ResearchProject = {
         {
           kind: "one-time",
           amountLabel: "$9k",
-          earnedAsLabel: "Released on verified delivery of the design package",
+          earnedAsLabel: "Paid on verified delivery of the design package",
         },
         {
           kind: "equity",
@@ -222,7 +222,7 @@ export const PREFAB_HOUSING_PANELS_PROJECT: ResearchProject = {
       transcriptExcerpt:
         "Pre-filed the certification paperwork so the review clock starts before the demo house is even finished — the accreditation office confirmed receipt this morning.",
       detail:
-        "Certification review takes a statutory 60 days, and nothing stops us filing the documentary sections now and appending the demo-house inspection report later. That could pull the whole go-to-market date forward a month. Also reconciled the June escrow statement.",
+        "Certification review takes a statutory 60 days, and nothing stops us filing the documentary sections now and appending the demo-house inspection report later. That could pull the whole go-to-market date forward a month. Also reconciled the June compensation statement.",
       aiSummaryChips: [{ kind: "suggestion", label: "Pre-file certification paperwork" }],
       isEffortVerified: false,
     },

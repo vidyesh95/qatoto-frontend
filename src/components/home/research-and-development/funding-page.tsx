@@ -29,7 +29,8 @@ export default function FundingPage() {
       <header className="space-y-1 px-4 lg:px-6">
         <h1 className="font-serif text-2xl font-semibold md:text-3xl">Deal Flow</h1>
         <p className="text-sm text-muted-foreground">
-          Projects raising right now — every pledge held in milestone-gated escrow.
+          Projects raising right now — every pledge is a commitment on the record, settled between
+          the backer and the project. Qatoto holds no funds and charges nobody.
         </p>
       </header>
       <FundingDealFilterGrid deals={openFundingDeals} />

@@ -77,6 +77,15 @@ export type DailyLog = {
   isEffortVerified: boolean;
 };
 
+// A DailyLog carries no project of its own — it is nested under one. The
+// cross-project feed on /build-log (§4c.2) attaches the project while
+// flatMapping so a card can render a project chip; it never fabricates one.
+export type ProjectAnnotatedDailyLog = DailyLog & {
+  projectId: string;
+  projectName: string;
+  projectStage: ProjectStage;
+};
+
 export type MilestoneVarianceStatus = "on-track" | "ahead" | "behind" | "at-risk";
 
 // Structured expected-vs-actual metrics on a milestone (idea 2). Distinct from
