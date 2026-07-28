@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import {
   derivePaymentState,
   formatEffortFromMinutes,

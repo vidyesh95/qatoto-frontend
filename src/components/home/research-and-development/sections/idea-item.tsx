@@ -1,3 +1,6 @@
+// TRANSPORT: props-only — client island. Holds interaction state only; all data
+// arrives as props from a server parent. Fetches nothing, so it needs no
+// QueryProvider. If this ever calls a hook in src/hooks/rnd, relabel it client-query.
 "use client";
 
 import Image from "next/image";

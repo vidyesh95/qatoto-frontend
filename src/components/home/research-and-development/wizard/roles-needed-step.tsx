@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import type { RoleCommitment } from "@/types/research-and-development";
 
 import {
@@ -7,8 +9,8 @@ import {
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 
 const COMMITMENT_OPTIONS: { value: RoleCommitment; label: string }[] = [
-  { value: "full-time", label: "Full-time" },
-  { value: "part-time", label: "Part-time" },
+  { value: "full_time", label: "Full-time" },
+  { value: "part_time", label: "Part-time" },
   { value: "hobby", label: "Hobby" },
 ];
 

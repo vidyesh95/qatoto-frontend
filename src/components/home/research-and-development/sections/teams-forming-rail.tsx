@@ -1,19 +1,21 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import ProjectCard from "@/components/home/research-and-development/cards/project-card";
 import SectionHeader from "@/components/home/research-and-development/sections/section-header";
-import type { ResearchProject } from "@/types/research-and-development";
+import type { ResearchProjectListRow } from "@/lib/rnd/projects.schemas";
 
 // Projects currently in the team-building stage — the ones actively assembling
 // a founding team rather than merely carrying a leftover open role. Mirrors
 // `GET /research-projects?stage=team_building`, so the rail is as narrow as the
 // query is and is not padded with projects at other stages.
-export default function TeamsFormingRail({ projects }: { projects: ResearchProject[] }) {
+export default function TeamsFormingRail({ projects }: { projects: ResearchProjectListRow[] }) {
   return (
     <section className="space-y-1">
       <SectionHeader title="Teams forming right now" />
       {projects.length > 0 ? (
         <div className="flex gap-4 overflow-x-auto px-4 pt-2 pb-2 lg:px-6">
           {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard key={project.slug} project={project} />
           ))}
         </div>
       ) : (

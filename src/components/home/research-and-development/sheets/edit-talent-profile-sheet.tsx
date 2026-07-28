@@ -1,3 +1,6 @@
+// TRANSPORT: props-only — client island. Holds interaction state only; all data
+// arrives as props from a server parent. Fetches nothing, so it needs no
+// QueryProvider. If this ever calls a hook in src/hooks/rnd, relabel it client-query.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -17,14 +20,14 @@ import type { RoleCommitment, TalentAvailability } from "@/types/research-and-de
 // Saves nothing this phase.
 
 const AVAILABILITY_OPTIONS: TalentAvailability[] = [
-  "open-to-work",
-  "open-to-offers",
+  "open_to_work",
+  "open_to_offers",
   "unavailable",
 ];
 
 const AVAILABILITY_LABELS: Record<TalentAvailability, string> = {
-  "open-to-work": "Open to work",
-  "open-to-offers": "Open to offers",
+  open_to_work: "Open to work",
+  open_to_offers: "Open to offers",
   unavailable: "Unavailable",
 };
 
@@ -35,8 +38,8 @@ export default function EditTalentProfileSheet() {
   const [draftLocationLabel, setDraftLocationLabel] = useState("");
   const [draftSkills, setDraftSkills] = useState<string[]>([]);
   const [draftSkillInput, setDraftSkillInput] = useState("");
-  const [draftCommitment, setDraftCommitment] = useState<RoleCommitment>("part-time");
-  const [draftAvailability, setDraftAvailability] = useState<TalentAvailability>("open-to-offers");
+  const [draftCommitment, setDraftCommitment] = useState<RoleCommitment>("part_time");
+  const [draftAvailability, setDraftAvailability] = useState<TalentAvailability>("open_to_offers");
 
   useEffect(() => {
     if (!isSheetOpen) return undefined;

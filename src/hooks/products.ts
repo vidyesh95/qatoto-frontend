@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ActionResponse, ApiError } from "@/lib/http";
+import { unwrap } from "@/lib/http";
 import {
   createProduct,
   deleteProduct,
@@ -21,24 +21,10 @@ export const productKeys = {
   detail: (productId: string) => ["products", "detail", productId] as const,
 };
 
-/**
- * Error thrown by the mutation flows so React Query's `error` carries the backend
- * envelope (message, code, 422 fieldErrors). UI reads `.apiError`.
- */
-export class ApiRequestError extends Error {
-  readonly apiError: ApiError;
-  constructor(apiError: ApiError) {
-    super(apiError.message);
-    this.name = "ApiRequestError";
-    this.apiError = apiError;
-  }
-}
-
-/** Throw on failure so a mutation chain aborts; return data on success. */
-function unwrap<T>(result: ActionResponse<T>): T {
-  if (!result.success) throw new ApiRequestError(result.error);
-  return result.data;
-}
+// `ApiRequestError` and `unwrap` moved to `@/lib/http` so the research-and-
+// development hooks can share them without importing from a products module.
+// Re-exported here because existing consumers import them from this path.
+export { ApiRequestError } from "@/lib/http";
 
 const DEFAULT_PAGE_LIMIT = 20;
 

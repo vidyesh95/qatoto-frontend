@@ -1,7 +1,9 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import MarketInsightCard from "@/components/home/research-and-development/cards/market-insight-card";
 import SectionHeader from "@/components/home/research-and-development/sections/section-header";
 
-import type { MarketInsight } from "@/types/research-and-development";
+import type { MarketInsight } from "@/lib/rnd/discovery.schemas";
 
 type MarketInsightsRailProps = {
   insights: MarketInsight[];

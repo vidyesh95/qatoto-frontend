@@ -1,3 +1,6 @@
+// TRANSPORT: mock — NOT WIRED, AND NOT SCHEDULED. Project Immortal has no
+// backend at all: no /research-programs route, no controller, no table. This stays
+// mock until that domain is built (docs/R_AND_D_STRUCTURE.md §18, backend §11f).
 import ProjectImmortalContributors from "@/components/home/research-and-development/sections/project-immortal-contributors";
 import ProjectImmortalDiscussion from "@/components/home/research-and-development/sections/project-immortal-discussion";
 import ProjectImmortalHero from "@/components/home/research-and-development/sections/project-immortal-hero";

@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import type { GovernanceDisclosureKey } from "@/types/research-and-development";
 
 // The three rules arrive as KEYS, never as server prose, so each client renders

@@ -1,4 +1,7 @@
-import OpenRoleCard from "@/components/home/research-and-development/cards/open-role-card";
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
+import Link from "next/link";
+
 import TeamMemberCard from "@/components/home/research-and-development/cards/team-member-card";
 import type { ResearchProject } from "@/types/research-and-development";
 
@@ -57,17 +60,30 @@ export default function TeamTab({ project }: { project: ResearchProject }) {
           ))}
         </div>
       </section>
+      {/* PER-PROJECT OPEN ROLES ARE DEFERRED TO PHASE 2, not dropped.
+          `OpenRoleCard` now renders the wire shape from `GET /open-roles`, which carries
+          typed compensation integers and a resolved currency. The mock project's roles
+          carry pre-formatted strings like "$4k–6k/mo" instead, and there is no way back
+          from a formatted string to the cents it was rendered from — so adapting them
+          would mean fabricating numbers.
+          The real source is `GET /research-projects/:slug/roles`, which arrives with the
+          phase-2 project read. `/open-roles` cannot substitute: its query schema has no
+          `projectSlug` facet, so it cannot be narrowed to one project.
+          Meanwhile every role on this project is reachable, unfiltered, from
+          /research-and-development/team-building. */}
       <section className="space-y-3">
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">Open roles</h3>
-        {project.openRoles.length > 0 ? (
-          <div className="flex flex-wrap gap-3">
-            {project.openRoles.map((openRole) => (
-              <OpenRoleCard key={openRole.id} role={openRole} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">No open roles right now.</p>
-        )}
+        <p className="text-sm text-muted-foreground">
+          {project.openRoles.length > 0
+            ? `This project has ${project.openRoles.length} open role${project.openRoles.length === 1 ? "" : "s"}. `
+            : "No open roles right now. "}
+          <Link
+            href="/research-and-development/team-building"
+            className="font-medium text-[#00696E] underline"
+          >
+            Browse every open role
+          </Link>
+        </p>
       </section>
     </div>
   );

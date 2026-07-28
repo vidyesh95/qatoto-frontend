@@ -1,23 +1,34 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import Image from "next/image";
 import Link from "next/link";
 
 import MarketInsightCard from "@/components/home/research-and-development/cards/market-insight-card";
 import MilestoneTimeline from "@/components/home/research-and-development/sections/milestone-timeline";
-import type {
-  MarketInsight,
-  ProblemReport,
-  ResearchProject,
-} from "@/types/research-and-development";
+import type { MarketInsight } from "@/lib/rnd/discovery.schemas";
+import type { ProblemCluster } from "@/lib/rnd/discovery.schemas";
+import type { ResearchProject } from "@/types/research-and-development";
 
 type OverviewTabProps = {
   project: ResearchProject;
+  /**
+   * Demand evidence for THIS project. Empty until phase 2 wires the project detail
+   * read: linking a project to an insight needs the server-side link, and matching a
+   * mock project's `relatedInsightIds` against real insight ids resolves to nothing.
+   * The section is guarded on length, so it simply does not render meanwhile.
+   */
   relatedInsights: MarketInsight[];
-  originReport?: ProblemReport;
+  /** Same story — the origin link arrives with the phase-2 project read. */
+  originReport?: ProblemCluster;
 };
 
 // Overview tab: problem & solution prose, market-demand evidence insights, the
 // Civic Pulse origin-report link when the project was born from one, and the
 // milestone timeline.
+//
+// When the founder's own `demandEvidenceNotes` lands in phase 2, keep it VISUALLY
+// DISTINCT from these platform-computed insights. An assertion must never read as
+// verified evidence.
 export default function OverviewTab({ project, relatedInsights, originReport }: OverviewTabProps) {
   return (
     <div className="space-y-6 px-4 lg:px-6">

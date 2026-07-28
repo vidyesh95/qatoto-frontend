@@ -1,53 +1,80 @@
-"use client";
-
-import { useState } from "react";
-
-import OpenRoleCard from "@/components/home/research-and-development/cards/open-role-card";
-import type { OpenRole, RoleCommitment } from "@/types/research-and-development";
-
-const COMMITMENT_FILTER_LABELS: Record<RoleCommitment | "all", string> = {
-  all: "Any commitment",
-  "full-time": "Full-time",
-  "part-time": "Part-time",
-  hobby: "Hobby",
-};
-
-const COMMITMENT_FILTER_ORDER: (RoleCommitment | "all")[] = [
-  "all",
-  "full-time",
-  "part-time",
-  "hobby",
-];
-
-const FILTER_CHIP_CLASS =
-  "shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors";
-
-function chipClassName(isSelected: boolean): string {
-  return `${FILTER_CHIP_CLASS} ${
-    isSelected ? "bg-[#00696E] text-white" : "bg-muted text-foreground hover:bg-muted/70"
-  }`;
-}
-
-// Client island: every open role across every project, filtered by commitment
-// and by a single skill.
+// TRANSPORT: props-only — presentational server component. Fetches nothing; roles, the
+// skill vocabulary and the current selections arrive as props from team-building-page,
+// which read GET /open-roles and GET /discovery/skills.
 //
-// The skill chips are built from the roles themselves and matched by EQUALITY,
-// not `String.includes` — the substring predicate in talent-filter-grid.tsx
-// makes a "Water" chip match "Water Polo", and copying it here would spread the
-// bug. Server-side filtering replaces both when the backend lands.
-export default function OpenRolesGrid({ roles }: { roles: OpenRole[] }) {
-  const [selectedCommitment, setSelectedCommitment] = useState<RoleCommitment | "all">("all");
-  // "all" is the no-filter sentinel; any other value is an exact skill name.
-  const [selectedSkill, setSelectedSkill] = useState("all");
+// NO LONGER A CLIENT ISLAND. Filtering moved into the query string, so the chips are
+// Links and the backend filters in SQL.
+import FilterChipRow, {
+  type FilterChipOption,
+} from "@/components/home/research-and-development/sections/filter-chip-row";
+import OpenRoleCard from "@/components/home/research-and-development/cards/open-role-card";
+import type { OpenRole } from "@/lib/rnd/catalog.schemas";
+import type { DiscoverySkill } from "@/lib/rnd/discovery.schemas";
+import { buildFilterHref, type RawSearchParams } from "@/lib/rnd/filter-href";
+import { ROLE_COMMITMENT_LABELS } from "@/lib/rnd/labels";
+import { ROLE_COMMITMENTS } from "@/lib/rnd/shared.schemas";
+import type { PaginationMeta } from "@/lib/http";
 
-  const availableSkills = [...new Set(roles.flatMap((role) => role.skills))].toSorted();
+const MAX_SKILL_CHIPS = 12;
 
-  const filteredRoles = roles.filter((role) => {
-    const matchesCommitment =
-      selectedCommitment === "all" || role.commitment === selectedCommitment;
-    const matchesSkill = selectedSkill === "all" || role.skills.includes(selectedSkill);
-    return matchesCommitment && matchesSkill;
-  });
+/**
+ * Every open role across every project, filtered by commitment and by skill.
+ *
+ * ONE SKILL AT A TIME, deliberately. `/open-roles` takes `?skill=` as a single value —
+ * unlike `/discovery/talent`, whose `?skill=` repeats and ANDs — so selecting a second
+ * skill replaces the first rather than narrowing. Repeating the key here would be a 422
+ * from the `.strict()` schema. Widening it is a backend change, not a chip change.
+ *
+ * The chips come from `GET /discovery/skills` and match BY SLUG EQUALITY. They used to
+ * be built from the fetched roles themselves, which cannot work against a paginated
+ * feed: the chip row would only ever offer the skills on the current page.
+ *
+ * The count reads "N roles" rather than "N of M": the total is the SERVER's total across
+ * every page, so comparing it to the rows in hand would print a fraction of a filter.
+ */
+export default function OpenRolesGrid({
+  roles,
+  skillOptions,
+  pagination,
+  searchParams,
+}: {
+  roles: OpenRole[];
+  skillOptions: DiscoverySkill[];
+  pagination: PaginationMeta | null;
+  searchParams: RawSearchParams;
+}) {
+  const selectedCommitment = searchParams.commitment;
+  const selectedSkill = typeof searchParams.skill === "string" ? searchParams.skill : undefined;
+
+  const commitmentChips: FilterChipOption[] = [
+    {
+      label: "Any commitment",
+      href: buildFilterHref(searchParams, { commitment: undefined }),
+      isSelected: selectedCommitment === undefined,
+    },
+    ...ROLE_COMMITMENTS.map((commitment) => ({
+      label: ROLE_COMMITMENT_LABELS[commitment],
+      href: buildFilterHref(searchParams, { commitment }),
+      isSelected: selectedCommitment === commitment,
+    })),
+  ];
+
+  const skillChips: FilterChipOption[] = [
+    {
+      label: "All skills",
+      href: buildFilterHref(searchParams, { skill: undefined }),
+      isSelected: selectedSkill === undefined,
+    },
+    ...skillOptions.slice(0, MAX_SKILL_CHIPS).map((skill) => ({
+      label: skill.displayLabel,
+      // Clicking the selected chip clears it — with a single-valued param there is no
+      // other way to get back to "all skills" from the keyboard.
+      href: buildFilterHref(searchParams, {
+        skill: selectedSkill === skill.slug ? undefined : skill.slug,
+      }),
+      isSelected: selectedSkill === skill.slug,
+    })),
+  ];
 
   return (
     <section id="open-roles-grid" className="scroll-mt-20 space-y-4 px-4 lg:px-6">
@@ -55,49 +82,25 @@ export default function OpenRolesGrid({ roles }: { roles: OpenRole[] }) {
         <h2 className="text-sm font-medium tracking-wide xl:text-lg">
           Open roles across every project
         </h2>
-        <p className="text-xs text-muted-foreground">
-          {filteredRoles.length} of {roles.length} roles
-        </p>
+        {pagination !== null && (
+          <p className="text-xs text-muted-foreground">
+            {pagination.total} role{pagination.total === 1 ? "" : "s"}
+            {pagination.totalPages > 1 && ` · showing page ${pagination.page}`}
+          </p>
+        )}
       </div>
       <div className="space-y-2">
-        <div className="flex gap-2 overflow-x-auto">
-          {COMMITMENT_FILTER_ORDER.map((commitmentFilter) => (
-            <button
-              key={commitmentFilter}
-              type="button"
-              onClick={() => setSelectedCommitment(commitmentFilter)}
-              className={chipClassName(selectedCommitment === commitmentFilter)}
-            >
-              {COMMITMENT_FILTER_LABELS[commitmentFilter]}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2 overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setSelectedSkill("all")}
-            className={chipClassName(selectedSkill === "all")}
-          >
-            All skills
-          </button>
-          {availableSkills.map((skill) => (
-            <button
-              key={skill}
-              type="button"
-              onClick={() => setSelectedSkill(skill)}
-              className={chipClassName(selectedSkill === skill)}
-            >
-              {skill}
-            </button>
-          ))}
-        </div>
+        <FilterChipRow options={commitmentChips} ariaLabel="Filter by commitment" />
+        {skillOptions.length > 0 && (
+          <FilterChipRow options={skillChips} ariaLabel="Filter by skill" />
+        )}
       </div>
-      {/* The card is a fixed-width tile (w-72) shared with the landing rail, so
-          the grid is a wrapping flex row rather than a column grid that would
-          leave each card stranded at the left of a wide cell. */}
-      {filteredRoles.length > 0 ? (
+      {/* The card is a fixed-width tile (w-72) shared with the landing rail, so the grid
+          is a wrapping flex row rather than a column grid that would leave each card
+          stranded at the left of a wide cell. */}
+      {roles.length > 0 ? (
         <div className="flex flex-wrap gap-4">
-          {filteredRoles.map((role) => (
+          {roles.map((role) => (
             <OpenRoleCard key={role.id} role={role} />
           ))}
         </div>

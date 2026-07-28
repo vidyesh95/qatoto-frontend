@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import DisputeCaseCard from "@/components/home/research-and-development/cards/dispute-case-card";
 import DisputeWindowEntryCard from "@/components/home/research-and-development/cards/dispute-window-entry-card";
 import RaiseDisputeSheet from "@/components/home/research-and-development/sheets/raise-dispute-sheet";

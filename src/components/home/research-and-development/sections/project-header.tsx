@@ -1,9 +1,12 @@
+// TRANSPORT: props-only — renders what its parent passes. The one src/mocks
+// import is a LABEL MAP, not data; it belongs in src/lib and moves there when the
+// phase that owns this component wires up.
 import Image from "next/image";
 
 import RequestToJoinButton from "@/components/home/research-and-development/sections/request-to-join-button";
 import BackProjectSheet from "@/components/home/research-and-development/sheets/back-project-sheet";
 import EditProjectSheet from "@/components/home/research-and-development/sheets/edit-project-sheet";
-import { PROJECT_STAGE_LABELS } from "@/mocks/research-and-development-mocks";
+import { PROJECT_STAGE_LABELS } from "@/lib/rnd/labels";
 import type { ResearchProject } from "@/types/research-and-development";
 
 // Always-visible project header above the detail tabs: cover band, name +

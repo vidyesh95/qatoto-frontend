@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import type { NewIdeaStepProps } from "@/components/home/research-and-development/wizard/wizard-shared";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 

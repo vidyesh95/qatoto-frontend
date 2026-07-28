@@ -7,6 +7,13 @@ export const metadata: Metadata = {
     "Manufacturing and ODM partners, launch readiness, and the handoff from a verified build to a store listing",
 };
 
-export default function GoToMarket() {
-  return <GoToMarketPage />;
+// `searchParams` carries the capability / region / verification filters, forwarded to the
+// backend as query params — the repeated `?capability=` is ANDed in SQL. Reading it makes
+// this route dynamic under `cacheComponents`; the sibling `loading.tsx` is the boundary.
+export default function GoToMarket({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  return <GoToMarketPage searchParams={searchParams} />;
 }

@@ -32,6 +32,6 @@ export const IMMORTAL_COMPENSATION_PREFERENCE_LABELS: Record<
   string
 > = {
   salary: "Salary",
-  "one-time": "One-time",
+  one_time: "One-time",
   equity: "Equity",
 };

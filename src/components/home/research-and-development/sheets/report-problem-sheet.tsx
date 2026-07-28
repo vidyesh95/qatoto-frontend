@@ -1,18 +1,30 @@
+// TRANSPORT: props-only — client island. Holds interaction state only; all data
+// arrives as props from a server parent. Fetches nothing, so it needs no
+// QueryProvider. If this ever calls a hook in src/hooks/rnd, relabel it client-query.
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
 
 import Image from "next/image";
 
-import type { ProblemReport } from "@/types/research-and-development";
-
 import CreatableCombobox, { appendOptionNameIfNew } from "@/components/ui/creatable-combobox";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 
 // Self-contained "report a problem" trigger + bottom sheet (§8.2, Civic Pulse).
-// Mock phase: the built report is handed to the optional callback (the problem
-// map appends it to its page-local list — lost on refresh) and a confirmation
-// is shown. Real reports go to the Express backend later.
+//
+// IT NO LONGER ADDS A PIN, and it must not. `POST /discovery/problem-reports` answers
+// **202**, not a cluster: clustering is a background job, and `countryCode`,
+// `distinctReporterCount`, `opportunityScore` and the cluster assignment are ALL
+// server-derived. The old code fabricated every one of them client-side —
+// `mapPosition: {50, 50}`, `reportCount: 1`, `opportunityScore: 40` — and dropped the
+// result onto the map as though it were a clustered finding.
+//
+// A submission is also not a report: `distinctReporterCount` counts distinct PEOPLE, so
+// one person's submission cannot become a pin on its own. The sheet therefore confirms
+// receipt and says the report is queued.
+//
+// The submit itself is still not wired — the POST needs `requireIdentifiedUser` and
+// lat/lng from a place picker, neither of which exists on this surface yet.
 
 const PROBLEM_CATEGORIES = [
   "Water",
@@ -24,11 +36,7 @@ const PROBLEM_CATEGORIES = [
   "Waste",
 ];
 
-type ReportProblemSheetProps = {
-  onReportSubmitted?: (report: ProblemReport) => void;
-};
-
-export default function ReportProblemSheet({ onReportSubmitted }: ReportProblemSheetProps) {
+export default function ReportProblemSheet() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [title, setTitle] = useState("");
@@ -84,19 +92,8 @@ export default function ReportProblemSheet({ onReportSubmitted }: ReportProblemS
   };
 
   const handleSubmit = () => {
-    const newReport: ProblemReport = {
-      id: `local-report-${Date.now()}`,
-      title: title.trim(),
-      category,
-      locationLabel: locationText.trim(),
-      countryCode: "",
-      mapPosition: { leftPercent: 50, topPercent: 50 },
-      reportCount: 1,
-      opportunityScore: 40,
-      description: description.trim(),
-      reportedDate: "Just now",
-    };
-    onReportSubmitted?.(newReport);
+    // Confirmation only. Nothing is appended to the map: a queued submission is not a
+    // cluster, and inventing one would put a fabricated opportunity score on screen.
     setIsSubmitted(true);
   };
 

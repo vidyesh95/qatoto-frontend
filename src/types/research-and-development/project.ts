@@ -1,13 +1,20 @@
-// Project core: team, roles, milestones, funding, and escrow for a single
-// Research & Development project. Data truth lives in the Express backend;
-// these shapes are the client-side contract only. UI-building phase: consumed
-// from static mocks in `src/mocks/research-and-development-mocks.ts`, no fetch
-// layer yet.
+// Project core: team, roles, milestones and funding for a single Research &
+// Development project. Data truth lives in the Express backend; these shapes are the
+// client-side contract only.
+//
+// STILL MOCK-BACKED (phase 2 — docs/R_AND_D_STRUCTURE.md §18). The project LIST rows
+// are already wired and take their type from `@/lib/rnd/projects.schemas`; this is the
+// detail shape, which the detail / workshop / proof-of-effort routes still read from
+// `src/mocks/research-and-development-mocks.ts`. The two are deliberately separate —
+// the backend's list projection is genuinely narrower than its detail projection.
+//
+// ESCROW IS GONE FROM THIS DOMAIN. `EscrowLedgerEntry`, `EscrowDirection` and
+// `EscrowVerificationStatus` are deleted: the backend routed nine escrow paths to 404
+// and holding someone else's money is a licensing decision, not a code change. What
+// replaces them is the month-end compensation statement in `compensation.ts`.
 
 import type {
   AiSummaryChip,
-  EscrowDirection,
-  EscrowVerificationStatus,
   FundingRoundStatus,
   FundingRoundType,
   MilestoneStatus,
@@ -37,7 +44,7 @@ export type TeamMember = {
 // A role/person can pay/ask in one or more of these ways; a blend combines
 // several. The repo's canonical compensation trio — ImmortalCompensationPreference
 // (in ./immortal) is aliased to this so the two unions can never drift apart.
-export type CompensationKind = "salary" | "one-time" | "equity";
+export type CompensationKind = "salary" | "one_time" | "equity";
 
 // One strand of a compensation offer (role) or ask (talent). Display-only — the
 // backend owns the real Slicing Pie / escrow math later. Invariant (upheld in
@@ -124,16 +131,6 @@ export type FundingRound = {
   status: FundingRoundStatus;
 };
 
-export type EscrowLedgerEntry = {
-  id: string;
-  date: string;
-  description: string;
-  direction: EscrowDirection;
-  amount: string;
-  linkedMilestoneId?: string;
-  verificationStatus: EscrowVerificationStatus;
-};
-
 export type ResearchProject = {
   // Slug, used in the /research-and-development/project/[id] URL.
   id: string;
@@ -149,7 +146,6 @@ export type ResearchProject = {
   milestones: Milestone[];
   dailyLogs: DailyLog[];
   fundingRounds: FundingRound[];
-  escrowLedger: EscrowLedgerEntry[];
   watchersCount: number;
   dailyLogStreakDays: number;
   // Set when the project was born from a Civic Pulse problem report.

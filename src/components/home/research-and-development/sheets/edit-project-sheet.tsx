@@ -1,3 +1,6 @@
+// TRANSPORT: props-only — renders what its parent passes. The one src/mocks
+// import is a LABEL MAP, not data; it belongs in src/lib and moves there when the
+// phase that owns this component wires up.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,7 +8,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
-import { PROJECT_STAGE_LABELS } from "@/mocks/research-and-development-mocks";
+import { PROJECT_STAGE_LABELS } from "@/lib/rnd/labels";
 import type { ProjectStage, ResearchProject } from "@/types/research-and-development";
 
 // Project edit entry point (§14.6). Until now a project could be posted through
@@ -14,12 +17,12 @@ import type { ProjectStage, ResearchProject } from "@/types/research-and-develop
 // product; the mock shows the form to everyone and saves nothing.
 
 const STAGE_ORDER: ProjectStage[] = [
-  "market-research",
-  "problem-validation",
-  "team-building",
-  "building-mvp",
-  "raising-funding",
-  "go-to-market",
+  "market_research",
+  "problem_validation",
+  "team_building",
+  "building_mvp",
+  "raising_funding",
+  "go_to_market",
 ];
 
 export default function EditProjectSheet({ project }: { project: ResearchProject }) {

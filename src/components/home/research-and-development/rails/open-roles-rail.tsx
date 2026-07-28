@@ -1,7 +1,9 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import OpenRoleCard from "@/components/home/research-and-development/cards/open-role-card";
 import SectionHeader from "@/components/home/research-and-development/sections/section-header";
 
-import type { OpenRole } from "@/types/research-and-development";
+import type { OpenRole } from "@/lib/rnd/catalog.schemas";
 
 // Horizontally scrolling feed of open roles across all projects. Anchored so
 // the Team Building stage card can deep-link here.

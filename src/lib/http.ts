@@ -34,138 +34,196 @@ function toEnvelope(payload: unknown): ApiEnvelope {
   return typeof payload === "object" && payload !== null ? (payload as ApiEnvelope) : {};
 }
 
+const NETWORK_ERROR: ApiError = {
+  code: "NETWORK",
+  message: "Network error. Please try again.",
+};
+
+const PARSE_ERROR: ApiError = {
+  code: "PARSE",
+  message: "Client-side contract validation failed.",
+};
+
 /**
- * Core request runner. Sends cookies (`credentials:"include"` — CORS is
- * credentials:true with a single origin), parses the envelope, and validates the
- * `data` field with the caller's Zod schema. `body` is either a JSON-serializable
- * value or a `FormData` (multipart) — we must NOT set Content-Type for FormData so
- * the browser can add the multipart boundary.
+ * Extra per-call transport options. `headers` exists so a server component can
+ * forward the session cookie explicitly — `credentials:"include"` is a browser
+ * concept and does nothing server-side (see `src/lib/server-http.ts`).
  */
-async function request<T>(
+export interface RequestOptions {
+  readonly headers?: Readonly<Record<string, string>>;
+  /**
+   * Caching hint for a server-component read. Leave unset in the browser — React
+   * Query owns freshness there.
+   */
+  readonly cache?: RequestCache;
+}
+
+/**
+ * Reads the envelope off a Response. Returns the envelope on success, or the
+ * `ApiError` describing why the call failed. Every verb below shares this so the
+ * error contract can't drift between them.
+ */
+async function readEnvelope(response: Response): Promise<ActionResponse<ApiEnvelope>> {
+  const rawPayload = await response.json().catch(() => null);
+  const envelope = toEnvelope(rawPayload);
+
+  if (!response.ok || envelope.status === "error") {
+    return {
+      success: false,
+      error: {
+        code: String(envelope.statusCode ?? response.status),
+        message: envelope.message ?? "Something went wrong. Please try again.",
+        fieldErrors: envelope.errors,
+      },
+    };
+  }
+
+  return { success: true, data: envelope };
+}
+
+/**
+ * Init for the shared fetch. `headers` is narrowed to a plain record rather than
+ * `HeadersInit` on purpose: `HeadersInit` also admits an array and a `Headers`, and
+ * spreading either into an object yields numeric indices instead of header names.
+ */
+interface EnvelopeRequestInit extends Omit<RequestInit, "headers"> {
+  headers: Record<string, string>;
+}
+
+/**
+ * The single fetch. Sends cookies (`credentials:"include"` — CORS is
+ * credentials:true against a single origin) and merges any caller-supplied
+ * headers. `body` is either a JSON-serializable value or a `FormData`
+ * (multipart) — we must NOT set Content-Type for FormData so the browser can add
+ * the multipart boundary.
+ */
+async function fetchEnvelope(
   path: string,
-  init: RequestInit,
-  dataSchema: z.ZodType<T>,
-): Promise<ActionResponse<T>> {
+  init: EnvelopeRequestInit,
+  options: RequestOptions = {},
+): Promise<ActionResponse<ApiEnvelope>> {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       credentials: "include",
+      headers: { ...init.headers, ...options.headers },
+      ...(options.cache === undefined ? {} : { cache: options.cache }),
     });
   } catch {
-    return {
-      success: false,
-      error: { code: "NETWORK", message: "Network error. Please try again." },
-    };
+    return { success: false, error: NETWORK_ERROR };
   }
 
-  const rawPayload = await response.json().catch(() => null);
-  const envelope = toEnvelope(rawPayload);
+  return readEnvelope(response);
+}
 
-  if (!response.ok || envelope.status === "error") {
-    return {
-      success: false,
-      error: {
-        code: String(envelope.statusCode ?? response.status),
-        message: envelope.message ?? "Something went wrong. Please try again.",
-        fieldErrors: envelope.errors,
-      },
-    };
-  }
+/** GET with a Zod schema over `data`. */
+export async function getJson<T>(
+  path: string,
+  dataSchema: z.ZodType<T>,
+  options?: RequestOptions,
+): Promise<ActionResponse<T>> {
+  const envelopeResult = await fetchEnvelope(
+    path,
+    { method: "GET", headers: { Accept: "application/json" } },
+    options,
+  );
+  if (!envelopeResult.success) return envelopeResult;
 
-  const parsed = dataSchema.safeParse(envelope.data);
-  if (!parsed.success) {
-    return {
-      success: false,
-      error: { code: "PARSE", message: "Client-side contract validation failed." },
-    };
-  }
+  const parsed = dataSchema.safeParse(envelopeResult.data.data);
+  if (!parsed.success) return { success: false, error: PARSE_ERROR };
 
   return { success: true, data: parsed.data };
 }
 
-/** GET with a Zod schema over `data`. */
-export function getJson<T>(path: string, dataSchema: z.ZodType<T>): Promise<ActionResponse<T>> {
-  return request(path, { method: "GET", headers: { Accept: "application/json" } }, dataSchema);
-}
-
 /** JSON-body mutation (POST/PATCH/DELETE). Pass `undefined` for a bodyless call. */
-export function sendJson<T>(
+export async function sendJson<T>(
   path: string,
   method: "POST" | "PATCH" | "DELETE",
   body: unknown,
   dataSchema: z.ZodType<T>,
+  options?: RequestOptions,
 ): Promise<ActionResponse<T>> {
   const headers: Record<string, string> = { Accept: "application/json" };
-  const init: RequestInit = { method, headers };
+  const init: EnvelopeRequestInit = { method, headers };
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(body);
   }
-  return request(path, init, dataSchema);
+
+  const envelopeResult = await fetchEnvelope(path, init, options);
+  if (!envelopeResult.success) return envelopeResult;
+
+  const parsed = dataSchema.safeParse(envelopeResult.data.data);
+  if (!parsed.success) return { success: false, error: PARSE_ERROR };
+
+  return { success: true, data: parsed.data };
 }
 
 /** Multipart mutation. Never sets Content-Type — the browser sets the boundary. */
-export function sendForm<T>(
+export async function sendForm<T>(
   path: string,
   method: "POST" | "PATCH",
   formData: FormData,
   dataSchema: z.ZodType<T>,
+  options?: RequestOptions,
 ): Promise<ActionResponse<T>> {
-  return request(
+  const envelopeResult = await fetchEnvelope(
     path,
     { method, headers: { Accept: "application/json" }, body: formData },
-    dataSchema,
+    options,
   );
+  if (!envelopeResult.success) return envelopeResult;
+
+  const parsed = dataSchema.safeParse(envelopeResult.data.data);
+  if (!parsed.success) return { success: false, error: PARSE_ERROR };
+
+  return { success: true, data: parsed.data };
 }
 
 /**
- * GET a paginated list. The backend puts the array in `data` and pagination as a
- * SIBLING of `data`, so we parse the whole envelope here rather than via `request`.
+ * GET an offset-paginated list. The backend puts the array in `data` and
+ * pagination as a SIBLING of `data`, which is why this parses the envelope rather
+ * than only its `data` field.
  */
 export async function getPaginated<T>(
   path: string,
   rowSchema: z.ZodType<T>,
   paginationSchema: z.ZodType<PaginationMeta>,
+  options?: RequestOptions,
 ): Promise<ActionResponse<{ rows: T[]; pagination: PaginationMeta }>> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      method: "GET",
-      credentials: "include",
-      headers: { Accept: "application/json" },
-    });
-  } catch {
-    return {
-      success: false,
-      error: { code: "NETWORK", message: "Network error. Please try again." },
-    };
-  }
+  const envelopeResult = await fetchEnvelope(
+    path,
+    { method: "GET", headers: { Accept: "application/json" } },
+    options,
+  );
+  if (!envelopeResult.success) return envelopeResult;
 
-  const rawPayload = await response.json().catch(() => null);
-  const envelope = toEnvelope(rawPayload);
-
-  if (!response.ok || envelope.status === "error") {
-    return {
-      success: false,
-      error: {
-        code: String(envelope.statusCode ?? response.status),
-        message: envelope.message ?? "Something went wrong. Please try again.",
-        fieldErrors: envelope.errors,
-      },
-    };
-  }
-
-  const rowsParsed = rowSchema.array().safeParse(envelope.data);
-  const paginationParsed = paginationSchema.safeParse(envelope.pagination);
+  const rowsParsed = rowSchema.array().safeParse(envelopeResult.data.data);
+  const paginationParsed = paginationSchema.safeParse(envelopeResult.data.pagination);
   if (!rowsParsed.success || !paginationParsed.success) {
-    return {
-      success: false,
-      error: { code: "PARSE", message: "Client-side contract validation failed." },
-    };
+    return { success: false, error: PARSE_ERROR };
   }
 
   return { success: true, data: { rows: rowsParsed.data, pagination: paginationParsed.data } };
+}
+
+/**
+ * GET a keyset-paginated list. Unlike the offset shape above, the cursor rides
+ * INSIDE `data` — `{ …rows, nextCursor }` — so the caller passes a schema for the
+ * whole `data` object rather than for one row.
+ *
+ * Cursors are opaque plain strings, not base64: `logDate_submittedAtMs_id` for the
+ * daily-log feed, `sentAtMs_id` for workshop chat. Never construct or compare one
+ * client-side — echo back exactly what the server sent, or it is a
+ * `422 CURSOR_MALFORMED`.
+ */
+export function getCursorPaginated<T>(
+  path: string,
+  pageSchema: z.ZodType<T>,
+  options?: RequestOptions,
+): Promise<ActionResponse<T>> {
+  return getJson(path, pageSchema, options);
 }
 
 export interface PaginationMeta {
@@ -173,4 +231,64 @@ export interface PaginationMeta {
   limit: number;
   total: number;
   totalPages: number;
+}
+
+/** A value that can appear in a query string. `undefined` is dropped entirely. */
+export type QueryParamValue = string | number | boolean | readonly string[] | undefined;
+
+/**
+ * Builds a query string from a param record, returning "" when nothing survives
+ * (so callers can always append it).
+ *
+ * An array value REPEATS its key — `{ capability: ["cnc", "injection"] }` becomes
+ * `?capability=cnc&capability=injection`, which `GET /suppliers` reads as AND. An
+ * empty array is dropped, exactly like `undefined`: it means "no filter", not
+ * "match nothing".
+ *
+ * Callers must only pass keys the endpoint's schema declares. Every backend query
+ * schema is `.strict()`, so an unrecognized key is a 422, never a silently
+ * ignored param.
+ */
+export function buildQueryString(params: Record<string, QueryParamValue>): string {
+  const searchParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined) continue;
+    if (Array.isArray(value)) {
+      for (const entry of value) searchParams.append(key, entry);
+      continue;
+    }
+    searchParams.append(key, String(value));
+  }
+
+  const queryString = searchParams.toString();
+  return queryString.length > 0 ? `?${queryString}` : "";
+}
+
+/**
+ * Error thrown at the hook boundary so React Query's `error` carries the backend
+ * envelope (message, code, 422 fieldErrors). UI reads `.apiError`.
+ *
+ * The transport layer above never throws — this is the one place a tagged result
+ * is converted into an exception, because React Query needs one to mark a query
+ * failed.
+ */
+export class ApiRequestError extends Error {
+  readonly apiError: ApiError;
+  constructor(apiError: ApiError) {
+    super(apiError.message);
+    this.name = "ApiRequestError";
+    this.apiError = apiError;
+  }
+}
+
+/** Throw on failure so a mutation chain aborts; return data on success. */
+export function unwrap<T>(result: ActionResponse<T>): T {
+  if (!result.success) throw new ApiRequestError(result.error);
+  return result.data;
+}
+
+/** True when the backend refused for want of a session. */
+export function isUnauthorized(error: ApiError): boolean {
+  return error.code === "401";
 }

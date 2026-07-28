@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import type { ImmortalResearchBranch } from "@/types/research-and-development";
 
 import { BRANCH_STATUS_STYLES } from "./research-branch-map.constants";

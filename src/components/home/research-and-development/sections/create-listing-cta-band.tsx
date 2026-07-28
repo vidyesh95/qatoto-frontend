@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import Link from "next/link";
 
 // The end of the pipeline: a founder with a launch-ready project creates the

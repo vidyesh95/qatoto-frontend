@@ -1,3 +1,6 @@
+// TRANSPORT: props-only — renders what its parent passes. The one src/mocks
+// import is a LABEL MAP, not data; it belongs in src/lib and moves there when the
+// phase that owns this component wires up.
 "use client";
 
 import { useMemo, useState } from "react";

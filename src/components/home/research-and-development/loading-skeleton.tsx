@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 // Minimal route-segment loading placeholder shared by every R&D route. Pure
 // pulsing blocks approximating a header bar plus a few content cards — no
 // props, no data, no logic (UI + mock data phase, see CLAUDE.md).

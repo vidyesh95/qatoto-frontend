@@ -128,19 +128,66 @@ Names are the primary documentation. A reader (human or agent) must understand w
 
 If a name needs a comment to explain what it holds, the name is wrong — rename it instead of commenting.
 
+### Naming — wire casing (NON-NEGOTIABLE)
+
+Four different casings coexist, on purpose. Which one applies depends on **what the string is**, not
+on where it appears. Mirrored in `AGENTS.md` and `GEMINI.md` — keep all three in sync.
+
+| Surface                          | Casing         | Example                                                | Why                                                                                                             |
+| -------------------------------- | -------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Path segments & directories      | **kebab**      | `/research-and-development/go-to-market`               | The one place kebab is a genuine web convention — URL tokenizers treat `-` as a word break and `_` as a joiner |
+| Slugs (URL identities)           | **kebab**      | `solar-cold-storage` · `east-africa` · `injection-molding` | Server-generated and public. A slug is linked to the moment it exists, so it is unwritable after creation      |
+| Query keys & JSON fields         | **camelCase**  | `?minOpportunityScorePoints=80`                        | Matches the response body field names — one spelling across request and response                                |
+| Enum values (query **and** body) | **snake_case** | `?stage=team_building` · `{ "stage": "team_building" }` | They are Postgres `pgEnum` labels, sent verbatim in both directions                                             |
+
+The rule underneath all four: **one spelling per concept, in both directions of the exchange.**
+
+> **Do not "correct" a `snake_case` enum value to kebab-case.** These are not identifiers — they are
+> data that must byte-match the backend's `pgEnum` labels. `z.enum(["full_time"]).safeParse("full-time")`
+> fails, `stage === "team_building"` is `false` against `"team-building"`, and `?stage=team-building`
+> is a **422** from the backend's `.strict()` query schema rather than an ignored value.
+>
+> The authority is `src/db/schema.ts` in the backend repo and the service view interfaces beside it —
+> **never a doc**, which drifts. `src/lib/rnd/shared.schemas.ts` holds the frontend's copy of these
+> tuples, and `src/lib/products/schemas.ts` is the older precedent (`home_kitchen`,
+> `anime_collectibles`).
+
+Kebab-case is still correct for **file names, directory names, path segments and slugs** — none of
+which changed. A file called `discovery.schemas.ts` exporting `"team_building"` is following both
+rules at once, not contradicting itself.
+
+
 ### Tests — do not write unless explicitly asked
 
 **Do not write, add, or modify tests unless the user explicitly asks for them.** This applies to unit tests (Vitest), E2E tests (Playwright), and any other test files. Do not create test files as part of a feature implementation, bug fix, or refactor. Do not suggest writing tests unless the user requests it.
 
-## Current phase: UI + mock data only
+## Current phase: mixed — some surfaces are wired, most are not
 
-**We are in a UI-building phase. Do not do anything complex.**
+**There is no longer one global phase.** Integration happens surface by surface, so the
+rule depends on which file you are in. Check before you write code.
 
-- Use inline mock/static data — no real API calls, no fetch, no backend integration
-- No Zod parsing, no error state handling, no loading states beyond simple placeholders
-- No new abstractions, no utility layers, no data fetching hooks
-- Build the UI shape: layout, components, styles, interactions — that's it
-- When the backend integration phase starts, this section will be removed
+**Wired surfaces** (talking to the Express backend today): the store/studio `/products`
+flow, and R&D's public discovery reads — `/research-and-development` (landing),
+`/knowledge-hub`, `/problem-map`, `/talent`, `/team-building`, `/go-to-market`,
+`/funding`. Here the full discipline applies: `unknown` → Zod `.strip()` → tagged
+result, lifted into a discriminated-union view state with an exhaustive `switch`
+(Patterns 1–3 above). Server-side filtering and pagination, never client-side over a
+fetched page. Never fabricate a value the server returned as `null`.
+
+**Unwired surfaces** (still static mock data): R&D project detail, workshop, proof of
+effort, build log, governance, and Project Immortal. Here the old rule still holds —
+inline mock data, no fetch, no new abstractions, page-local `useState` for interaction.
+Build the UI shape and stop.
+
+**Project Immortal is blocked, not merely unscheduled.** There is no
+`/research-programs` route, controller, service or table in the backend. It stays mock
+until that domain exists.
+
+**How to tell which one you are in:** every file under
+`src/components/home/research-and-development/` carries a `TRANSPORT:` banner on its
+first line — `server-fetch`, `client-query`, `props-only` or `mock`. That banner is the
+answer, and `grep -rn "TRANSPORT: mock"` is the live list of what is still unwired. See
+`docs/R_AND_D_STRUCTURE.md` §18 (phase order) and §19 (transport map).
 
 ## Things to know
 

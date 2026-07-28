@@ -42,7 +42,7 @@ export type TrendingSignal = {
   relatedProjectsCount: number;
 };
 
-export type TalentAvailability = "open-to-work" | "open-to-offers" | "unavailable";
+export type TalentAvailability = "open_to_work" | "open_to_offers" | "unavailable";
 
 // One person on the /talent equity-for-skills marketplace.
 export type TalentProfile = {

@@ -1,3 +1,6 @@
+// TRANSPORT: mock — NOT WIRED (phase 4). Reads a static dataset from
+// src/mocks/research-and-development*. Every figure here is fabricated; see
+// docs/R_AND_D_STRUCTURE.md §18 for what wires it and §19 for the transport map.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 

@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 // Shared vocabulary for the post-idea wizard steps. Field options mirror the
 // original post-idea sheet (sheets/post-idea-sheet.tsx, kept as the compact
 // entry point's donor). Field styling lives in @/components/ui/field-classes.

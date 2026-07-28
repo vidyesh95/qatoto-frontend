@@ -1,3 +1,9 @@
+// TRANSPORT: server-fetch — server component. Reads GET /research-projects,
+// GET /discovery/problem-clusters, GET /discovery/market-insights and GET /open-roles
+// via @/lib/rnd/*.api, with the session cookie forwarded by callerRequestOptions().
+// All four are public (attachOptionalUser). No React Query here.
+import Link from "next/link";
+
 import MarketInsightsRail from "@/components/home/research-and-development/rails/market-insights-rail";
 import OpenRolesRail from "@/components/home/research-and-development/rails/open-roles-rail";
 import ProjectsRail from "@/components/home/research-and-development/rails/projects-rail";
@@ -6,33 +12,103 @@ import PipelineHero from "@/components/home/research-and-development/sections/pi
 import PipelineStagesStrip from "@/components/home/research-and-development/sections/pipeline-stages-strip";
 import ProblemMapPreview from "@/components/home/research-and-development/sections/problem-map-preview";
 import ProjectImmortalBanner from "@/components/home/research-and-development/sections/project-immortal-banner";
-import Link from "next/link";
-import {
-  MOCK_MARKET_INSIGHTS,
-  MOCK_OPEN_ROLES,
-  MOCK_PROBLEM_REPORTS,
-  MOCK_RESEARCH_PROJECTS,
-} from "@/mocks/research-and-development-mocks";
+import RndStatusPanel, {
+  RndErrorPanel,
+} from "@/components/home/research-and-development/sections/rnd-status-panel";
+import SectionHeader from "@/components/home/research-and-development/sections/section-header";
+import { listOpenRoles } from "@/lib/rnd/catalog.api";
+import { listMarketInsights, listProblemClusters } from "@/lib/rnd/discovery.api";
+import { listResearchProjects } from "@/lib/rnd/projects.api";
+import { toListViewState, type ListViewState } from "@/lib/rnd/view-state";
+import { callerRequestOptions } from "@/lib/server-http";
 
-// R&D landing page body. Server component — composes the pipeline story top to
-// bottom (§4 of R_AND_D_STRUCTURE.md): hero, stage strip, lifecycle roles,
-// featured projects, problem-map teaser, market insights, open roles, moonshot
-// banner, bottom CTA.
-export default function ResearchAndDevelopmentPage() {
-  const topReportedGaps = MOCK_PROBLEM_REPORTS.toSorted(
-    (firstReport, secondReport) => secondReport.opportunityScore - firstReport.opportunityScore,
-  ).slice(0, 4);
-  const featuredInsights = MOCK_MARKET_INSIGHTS.slice(0, 5);
+const FEATURED_PROJECTS_LIMIT = 12;
+const TOP_GAPS_LIMIT = 4;
+const FEATURED_INSIGHTS_LIMIT = 5;
+const FEATURED_OPEN_ROLES_LIMIT = 12;
+
+/**
+ * R&D landing page body — the pipeline story top to bottom (§4 of
+ * R_AND_D_STRUCTURE.md): hero, stage strip, lifecycle roles, featured projects,
+ * problem-map teaser, market insights, open roles, moonshot banner, bottom CTA.
+ *
+ * FOUR CONCURRENT READS, one per rail. They share no data, so `Promise.all` keeps the
+ * page's time to first byte at the slowest single read rather than the sum of four.
+ * Each rail owns its own view state: one dead endpoint dims one rail and leaves the
+ * rest of the pipeline story intact.
+ *
+ * The server does the ranking. `?sort=opportunity` on the cluster read is what
+ * "top reported gaps" means — the old code pulled every mock report and sorted client
+ * side, which cannot work against a paginated feed: sorting one fetched page ranks
+ * that page, not the data.
+ */
+export default async function ResearchAndDevelopmentPage() {
+  const requestOptions = await callerRequestOptions();
+
+  const [projectsResult, topGapsResult, insightsResult, openRolesResult] = await Promise.all([
+    listResearchProjects({ limit: FEATURED_PROJECTS_LIMIT }, requestOptions),
+    listProblemClusters({ sort: "opportunity", limit: TOP_GAPS_LIMIT }, requestOptions),
+    listMarketInsights({ limit: FEATURED_INSIGHTS_LIMIT }, requestOptions),
+    listOpenRoles({ limit: FEATURED_OPEN_ROLES_LIMIT }, requestOptions),
+  ]);
+
+  const projectsState = toListViewState(projectsResult);
+  const topGapsState = toListViewState(topGapsResult);
+  const insightsState = toListViewState(insightsResult);
+  const openRolesState = toListViewState(openRolesResult);
 
   return (
     <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
       <PipelineHero />
       <PipelineStagesStrip />
       <LifecycleRolesStrip />
-      <ProjectsRail projects={MOCK_RESEARCH_PROJECTS} />
-      <ProblemMapPreview reports={topReportedGaps} />
-      <MarketInsightsRail insights={featuredInsights} />
-      <OpenRolesRail roles={MOCK_OPEN_ROLES} />
+
+      {projectsState.status === "ready" ? (
+        <ProjectsRail projects={projectsState.rows} />
+      ) : (
+        <RailFallback
+          anchorId="featured-projects"
+          title="Featured projects"
+          state={projectsState}
+          emptyMessage="No published projects yet. Be the first — post your idea."
+          errorMessage="Couldn't load featured projects."
+        />
+      )}
+
+      {topGapsState.status === "ready" ? (
+        <ProblemMapPreview clusters={topGapsState.rows} />
+      ) : (
+        <RailFallback
+          title="Top reported gaps"
+          state={topGapsState}
+          emptyMessage="No problems have been clustered yet."
+          errorMessage="Couldn't load the problem map."
+        />
+      )}
+
+      {insightsState.status === "ready" ? (
+        <MarketInsightsRail insights={insightsState.rows} />
+      ) : (
+        <RailFallback
+          title="Market insights"
+          state={insightsState}
+          emptyMessage="No market insights published yet."
+          errorMessage="Couldn't load market insights."
+        />
+      )}
+
+      {openRolesState.status === "ready" ? (
+        <OpenRolesRail roles={openRolesState.rows} />
+      ) : (
+        <RailFallback
+          anchorId="open-roles"
+          title="Join a team"
+          state={openRolesState}
+          emptyMessage="No open roles right now."
+          errorMessage="Couldn't load open roles."
+        />
+      )}
+
       <ProjectImmortalBanner />
       <section className="mx-4 rounded-2xl bg-[#00696E]/5 p-6 text-center md:p-8 lg:mx-6">
         <h2 className="text-xl font-semibold md:text-2xl">Have an idea the world needs?</h2>
@@ -50,4 +126,46 @@ export default function ResearchAndDevelopmentPage() {
       </section>
     </div>
   );
+}
+
+/**
+ * The empty / error stand-in for one rail, keeping its heading and its anchor so the
+ * stage strip's deep links still land somewhere even when a read failed.
+ *
+ * Takes the non-`ready` states only — a `ready` rail renders its real component — and
+ * still switches exhaustively, so `ready` reaching here is a compile error rather than
+ * a blank section.
+ */
+function RailFallback({
+  anchorId,
+  title,
+  state,
+  emptyMessage,
+  errorMessage,
+}: {
+  anchorId?: string;
+  title: string;
+  state: Exclude<ListViewState<unknown>, { status: "ready" }>;
+  emptyMessage: string;
+  errorMessage: string;
+}) {
+  return (
+    <section id={anchorId} className="scroll-mt-20 space-y-1">
+      <SectionHeader title={title} />
+      <div className="px-4 lg:px-6">{renderFallbackBody()}</div>
+    </section>
+  );
+
+  function renderFallbackBody() {
+    switch (state.status) {
+      case "error":
+        return <RndErrorPanel message={errorMessage} />;
+      case "empty":
+        return <RndStatusPanel message={emptyMessage} />;
+      default: {
+        const exhaustiveCheck: never = state;
+        return exhaustiveCheck;
+      }
+    }
+  }
 }

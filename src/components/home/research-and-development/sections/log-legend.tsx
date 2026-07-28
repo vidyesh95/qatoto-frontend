@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import type { AiSummaryChipKind } from "@/types/research-and-development";
 
 // The four chip kinds the AI pass can attach to a log, with the exact colors

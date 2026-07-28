@@ -6,6 +6,13 @@ export const metadata: Metadata = {
   description: "Investor deal flow — Qatoto R&D projects raising right now",
 };
 
-export default function Funding() {
-  return <FundingPage />;
+// `searchParams` carries the round-type / stage filters, forwarded to the backend as query
+// params. Reading it makes this route dynamic under `cacheComponents`; the sibling
+// `loading.tsx` is the Suspense boundary that covers it.
+export default function Funding({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  return <FundingPage searchParams={searchParams} />;
 }

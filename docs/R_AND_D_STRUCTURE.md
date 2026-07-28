@@ -17,15 +17,24 @@ pipeline story; deep features live on sub-routes.
   (the **commerce** domain). It is not part of this surface any more.
 - [CLAUDE.md](CLAUDE.md) — thin-client invariant, naming rules, current phase.
 
-> **Phase note:** UI + mock data only. No fetch, no Zod, no loading/error states beyond simple
-> placeholders, no new abstractions. Verified: **zero** `fetch(` / `useQuery` / `@tanstack` matches
-> anywhere on this surface — every number on it (funding, equity, compensation, AI analysis, slice
-> ledgers, opportunity scores, demand stats) is a **static mock**, and every interaction mutates
-> page-local client state only.
+> **Phase note: integration has started, and it is running surface by surface.** There is no longer
+> one global phase — **seven of the fourteen routes read the Express backend today** and the rest are
+> still static mocks. §18 is the phase order; §19 is the per-file transport map.
 >
-> The backend being live does **not** move this surface into integration. §11–§14 below record what
-> the integration phase must do — the wire format it adopts, the type shapes that must change, the
-> endpoints each route calls, the screens that do not exist yet. They are a spec, not a changelog.
+> | Phase                                                                                                                   | State                                    |
+> | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+> | **0 · foundations** — `src/lib/rnd/`, `src/lib/server-http.ts`, `QueryProvider` in `(home)`                             | ✅ done                                  |
+> | **1 · public discovery reads** — landing, knowledge-hub, problem-map, talent, team-building, go-to-market, funding      | ✅ done                                  |
+> | **2 · projects & detail** · **3 · workshop & daily logs** · **4 · proof of effort** · **5 · compensation & governance** | ⏳ still mock                            |
+> | **6 · Project Immortal**                                                                                                | 🚫 **blocked** — no backend exists (§18) |
+>
+> **The `TRANSPORT:` banner on line 1 of every component is the authority**, not this doc. Four
+> values, a closed set: `server-fetch` · `client-query` · `props-only` · `mock`. So
+> `grep -rn "TRANSPORT: mock" src/components/home/research-and-development/` is the live list of
+> what is still fabricated, and it cannot drift the way a hand-maintained table does.
+>
+> §11–§14 were written as a spec for this work. They are now **partly a changelog**: each section
+> says which of its rows landed and which are still owed.
 
 > **Escrow left this surface.** The backend contract made this domain **fully non-custodial and
 > free**: Qatoto computes what each member is owed each month in cash and equity, and the parties
@@ -47,19 +56,20 @@ pipeline story; deep features live on sub-routes.
 Everything marked ✅ is built — those rows are an inventory, not a plan. **The four stage routes of
 §4c are now built too**; what remains ⏳ is §11–§14, the integration phase.
 
-| Piece                    | Location                                                                                          | State                                                                                                                                                                                                                     |
-| ------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Routes                   | [src/app/(home)/research-and-development/](<src/app/(home)/research-and-development/>)            | ✅ **14 page routes** built, each with a sibling `loading.tsx` — the ten originals plus the four stage routes (§4c). No `layout.tsx` / `error.tsx` in the subtree                                                          |
-| Components               | [src/components/home/research-and-development/](src/components/home/research-and-development/)    | ✅ **119 files** — 14 page bodies, 15 cards, 3 rails, 73 sections, 8 sheets, 6 wizard. **40 client islands**                                                                                                               |
-| Types                    | [src/types/research-and-development/](src/types/research-and-development/)                        | ✅ **8 files, 113 exported types** — the six original domains plus `compensation` and `oversight`                                                                                                                          |
-| Types re-export composer | [src/types/research-and-development.ts](src/types/research-and-development.ts)                    | ✅ kept deliberately — ~55 importers use the flat specifier and must keep working                                                                                                                                          |
-| Mocks                    | [src/mocks/research-and-development/](src/mocks/research-and-development/)                        | ✅ **48 leaf files** behind 6 top-level composers (§10)                                                                                                                                                                    |
-| Proof-of-Effort surface  | [proof-of-effort-page.tsx](src/components/home/research-and-development/proof-of-effort-page.tsx) | ✅ **its own route with 6 tabs** (§5b) — Integrations joined the original five                                                                                                                                             |
-| Project Immortal         | [page.tsx](<src/app/(home)/research-and-development/projects/project-immortal/page.tsx>)          | ✅ see §4b; the old `/project-immortal` route is a 6-line `redirect()` shim                                                                                                                                                |
-| Sidebar nav              | [sidebar.tsx](src/components/home/layout/sidebar.tsx)                                             | ✅ top-level "R&D" (`science`) + a 5-item **Research and Development** section (§15 Q8)                                                                                                                                    |
-| Mobile bottom nav        | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36)                  | ✅ single R&D tab; sub-path matching works, no sub-links                                                                                                                                                                   |
-| Navbar breadcrumb        | [navbar.tsx](src/components/home/layout/navbar.tsx)                                               | ✅ `RESEARCH_AND_DEVELOPMENT_SUBPAGES` (9 entries — 5 originals + the 4 stage routes) + a `prettifySlug` fallthrough. The stage entries are explicit because the fallthrough renders "Build log", not "Build & Daily Logs" |
-| Network layer            | —                                                                                                 | ❌ **none, by design** — zero fetch/React Query on the surface                                                                                                                                                             |
+| Piece                    | Location                                                                                          | State                                                                                                                                                                                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Routes                   | [src/app/(home)/research-and-development/](<src/app/(home)/research-and-development/>)            | ✅ **14 page routes** built, each with a sibling `loading.tsx` — the ten originals plus the four stage routes (§4c). No `layout.tsx` / `error.tsx` in the subtree                                                                                          |
+| Components               | [src/components/home/research-and-development/](src/components/home/research-and-development/)    | ✅ **121 files** — 14 page bodies, 15 cards, 3 rails, 75 sections, 8 sheets, 6 wizard. **35 client islands** — five stopped being islands in phase 1 when their filtering moved to the URL (§19)                                                           |
+| Types                    | [src/types/research-and-development/](src/types/research-and-development/)                        | ✅ 8 files — **the shapes for surfaces still on mocks**. Wired surfaces take their types from `z.infer` over the response schemas in `src/lib/rnd/*.schemas.ts`, so this tree shrinks each phase (§10)                                                     |
+| Types re-export composer | [src/types/research-and-development.ts](src/types/research-and-development.ts)                    | ✅ kept deliberately — ~55 importers use the flat specifier and must keep working                                                                                                                                                                          |
+| Mocks                    | [src/mocks/research-and-development/](src/mocks/research-and-development/)                        | ◐ **41 leaf files** behind 5 composers — phase 1 deleted seven (§1.6 of the plan: insights, problem reports, trending signals, talent, suppliers + launch readiness, investor confidence, and the stage-label map, which moved to `src/lib/rnd/labels.ts`) |
+| Proof-of-Effort surface  | [proof-of-effort-page.tsx](src/components/home/research-and-development/proof-of-effort-page.tsx) | ✅ **its own route with 6 tabs** (§5b) — Integrations joined the original five                                                                                                                                                                             |
+| Project Immortal         | [page.tsx](<src/app/(home)/research-and-development/projects/project-immortal/page.tsx>)          | ✅ see §4b; the old `/project-immortal` route is a 6-line `redirect()` shim                                                                                                                                                                                |
+| Sidebar nav              | [sidebar.tsx](src/components/home/layout/sidebar.tsx)                                             | ✅ top-level "R&D" (`science`) + a 5-item **Research and Development** section (§15 Q8)                                                                                                                                                                    |
+| Mobile bottom nav        | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36)                  | ✅ single R&D tab; sub-path matching works, no sub-links                                                                                                                                                                                                   |
+| Navbar breadcrumb        | [navbar.tsx](src/components/home/layout/navbar.tsx)                                               | ✅ `RESEARCH_AND_DEVELOPMENT_SUBPAGES` (9 entries — 5 originals + the 4 stage routes) + a `prettifySlug` fallthrough. The stage entries are explicit because the fallthrough renders "Build log", not "Build & Daily Logs"                                 |
+| Network layer            | [src/lib/rnd/](src/lib/rnd/) + [src/lib/server-http.ts](src/lib/server-http.ts)                   | ✅ **built** (§18 phase 0) — five schema/api module pairs plus `format`, `discovery-format`, `map-projection`, `filter-href`, `view-state`, `labels`. `QueryProvider` now mounted in `(home)/layout.tsx`                                                   |
+| Transport labelling      | every component's first line                                                                      | ✅ **121/121 labelled** over a closed 4-value set (§19): 7 `server-fetch`, 7 `mock`, the rest `props-only`. No `client-query` yet — phase 3 is the first surface that needs one                                                                            |
 
 Pattern donors elsewhere in the repo:
 
@@ -78,16 +88,16 @@ Pattern donors elsewhere in the repo:
 
 The founder's eight pillars, and which surface carries each:
 
-| # | Pillar                                               | Carried by                                                                                                              |
-| - | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| 1 | Market-demand research & feasibility                 | `/knowledge-hub` + demand chips on project Overview                                                                     |
-| 2 | Problem Mapping / "Civic Pulse"                      | `/problem-map`                                                                                                          |
-| 3 | Knowledge Hub (market intelligence)                  | `/knowledge-hub`                                                                                                        |
-| 4 | Talent matching / Virtual Workshop                   | ✅ `/team-building` (§4c) · `/talent`, open-roles rail, Team tab, `/project/[id]/workshop`                               |
-| 5 | Funding (crowd / VC, transparency)                   | ✅ `/governance` (§4c) · Funding tab + `/funding` deal flow. **Records of intent only** — a pledge is a commitment       |
-| 6 | Daily Update Protocol (AI logs, Proof of Effort)     | ✅ `/build-log` (§4c) · Daily Logs tab + the whole `/project/[id]/proof-of-effort` route (§5b)                           |
-| 7 | Financial governance (compensation, anti-corruption) | ✅ `/governance` (§4c) · Compensation & governance tab (§5.5) — a **month-end statement**, not an escrow ledger          |
-| 8 | Go-to-market (suppliers, ODM, shipping, storefront)  | ✅ `/go-to-market` (§4c) — the stage page, whose primary CTA is **`/studio/products`**, where a store listing is created |
+| #   | Pillar                                               | Carried by                                                                                                               |
+| --- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Market-demand research & feasibility                 | `/knowledge-hub` + demand chips on project Overview                                                                      |
+| 2   | Problem Mapping / "Civic Pulse"                      | `/problem-map`                                                                                                           |
+| 3   | Knowledge Hub (market intelligence)                  | `/knowledge-hub`                                                                                                         |
+| 4   | Talent matching / Virtual Workshop                   | ✅ `/team-building` (§4c) · `/talent`, open-roles rail, Team tab, `/project/[id]/workshop`                               |
+| 5   | Funding (crowd / VC, transparency)                   | ✅ `/governance` (§4c) · Funding tab + `/funding` deal flow. **Records of intent only** — a pledge is a commitment       |
+| 6   | Daily Update Protocol (AI logs, Proof of Effort)     | ✅ `/build-log` (§4c) · Daily Logs tab + the whole `/project/[id]/proof-of-effort` route (§5b)                           |
+| 7   | Financial governance (compensation, anti-corruption) | ✅ `/governance` (§4c) · Compensation & governance tab (§5.5) — a **month-end statement**, not an escrow ledger          |
+| 8   | Go-to-market (suppliers, ODM, shipping, storefront)  | ✅ `/go-to-market` (§4c) — the stage page, whose primary CTA is **`/studio/products`**, where a store listing is created |
 
 Related surface **not** part of this doc: **Anime** (`/anime`), the creative-inspiration R&D feed.
 Already built; referenced in copy only.
@@ -114,23 +124,30 @@ stage** — all six are built (§4c).
 
 Fourteen page routes built, each with a `loading.tsx`.
 
+`🔌` reads the backend · `🧪` still static mock · `🚫` blocked, no backend exists.
+
 ```text
-/research-and-development                             ✅ pipeline hub landing
-/research-and-development/new                         ✅ 4-step idea wizard
-/research-and-development/project/[id]                ✅ project detail (5 tabs)
-/research-and-development/project/[id]/workshop       ✅ Virtual Workshop (boards/files/chat)
-/research-and-development/project/[id]/proof-of-effort ✅ Slicing Pie ledger (5 tabs) — §5b
-/research-and-development/problem-map                 ✅ Civic Pulse map + reports        — stage 02
-/research-and-development/knowledge-hub               ✅ market intelligence              — stage 01
-/research-and-development/talent                      ✅ people trading skills for equity
-/research-and-development/funding                     ✅ investor deal-flow view
-/research-and-development/projects/project-immortal   ✅ moonshot research program — §4b
-/project-immortal                                     ✅ redirect() shim, pre-move links
-/research-and-development/team-building               ✅ equity-for-skills entry          — stage 03, §4c.1
-/research-and-development/build-log                   ✅ cross-project daily-log feed     — stage 04, §4c.2
-/research-and-development/governance                  ✅ commitments + month-end statements — stage 05, §4c.3
-/research-and-development/go-to-market                ✅ suppliers → store listing        — stage 06, §4c.4
+🔌 /research-and-development                             pipeline hub landing
+🧪 /research-and-development/new                         4-step idea wizard              — phase 2
+🧪 /research-and-development/project/[id]                project detail (5 tabs)         — phase 2
+🧪 /research-and-development/project/[id]/workshop       Virtual Workshop                — phase 3
+🧪 /research-and-development/project/[id]/proof-of-effort Slicing Pie ledger (6 tabs)    — phase 4, §5b
+🔌 /research-and-development/problem-map                 Civic Pulse map                 — stage 02
+🔌 /research-and-development/knowledge-hub               market intelligence             — stage 01
+🔌 /research-and-development/talent                      people trading skills for equity
+🔌 /research-and-development/funding                     investor deal-flow view
+🚫 /research-and-development/projects/project-immortal   moonshot research program — §4b, §18
+✅ /project-immortal                                     redirect() shim, pre-move links
+🔌 /research-and-development/team-building               equity-for-skills entry         — stage 03, §4c.1
+🧪 /research-and-development/build-log                   cross-project daily-log feed    — stage 04, phase 3
+🧪 /research-and-development/governance                  commitments + statements        — stage 05, phase 5
+🔌 /research-and-development/go-to-market                suppliers → store listing       — stage 06, §4c.4
 ```
+
+**Every wired route reads `searchParams` and is therefore dynamic** (`◐` in the build output), because
+its filters are query params the backend applies in SQL. The three still-mock static routes remain
+`○` prerendered. That split is visible in `pnpm build` and is the cheapest check that a route is
+actually wired.
 
 Route decisions baked in:
 
@@ -189,14 +206,14 @@ Top-to-bottom composition (server component, mirrors [store-page.tsx](src/compon
 
 The six `href`s in `PIPELINE_STAGES` — every one of them now a route, none an anchor:
 
-| #  | Stage                | Was                  | Now                                         |
-| -- | -------------------- | -------------------- | ------------------------------------------- |
-| 01 | Market Research      | `/knowledge-hub`     | unchanged                                   |
-| 02 | Problem Mapping      | `/problem-map`       | unchanged                                   |
-| 03 | Team Building        | `#open-roles`        | ✅ `/research-and-development/team-building` |
-| 04 | Build & Daily Logs   | `#featured-projects` | ✅ `/research-and-development/build-log`     |
-| 05 | Funding & Governance | `#featured-projects` | ✅ `/research-and-development/governance`    |
-| 06 | Go-to-Market         | `/store`             | ✅ `/research-and-development/go-to-market`  |
+| #   | Stage                | Was                  | Now                                          |
+| --- | -------------------- | -------------------- | -------------------------------------------- |
+| 01  | Market Research      | `/knowledge-hub`     | unchanged                                    |
+| 02  | Problem Mapping      | `/problem-map`       | unchanged                                    |
+| 03  | Team Building        | `#open-roles`        | ✅ `/research-and-development/team-building` |
+| 04  | Build & Daily Logs   | `#featured-projects` | ✅ `/research-and-development/build-log`     |
+| 05  | Funding & Governance | `#featured-projects` | ✅ `/research-and-development/governance`    |
+| 06  | Go-to-Market         | `/store`             | ✅ `/research-and-development/go-to-market`  |
 
 Stage 05's blurb no longer mentions escrow — it reads commitments and month-end statements, because
 **escrow left this surface**. The same rewrite landed on `pipeline-hero.tsx` ("fund every milestone
@@ -496,14 +513,14 @@ ledger from `MOCK_PROJECT_PROOF_OF_EFFORT_LEDGERS` and the oversight fixture fro
 `proof-of-effort-tabs` as `ReactNode` props. Only client state is `activeSection`, over a
 `ProofOfEffortSection` union with an exhaustive `switch`.
 
-| # | Section id     | Label        | Panel                        | Also carries                                                                              |
-| - | -------------- | ------------ | ---------------------------- | ----------------------------------------------------------------------------------------- |
-| 1 | `slice-ledger` | Slice Ledger | `slice-ledger-tab`           | `member-slice-breakdown-card`, `rate-lock-panel` 🏝️ (§14.4), `pie-bake-panel` 🏝️ (§14.6)  |
-| 2 | `verification` | Verification | `verification-pipeline-tab`  | `claim-verification-card`, `physical-work-receipt-card`, `verification-override-panel` 🏝️ |
-| 3 | `disputes`     | Disputes     | `dispute-window-tab`         | `dispute-window-entry-card` 🏝️, `dispute-case-card` 🏝️, `raise-dispute-sheet` 🏝️          |
-| 4 | `integrations` | Integrations | `integration-consent-tab` 🏝️ | connect / scope / revoke (§14.2)                                                          |
-| 5 | `optimization` | Optimization | `optimization-tab`           | —                                                                                         |
-| 6 | `audit-trail`  | Audit Trail  | `project-audit-trail-tab`    | `chain-verification-panel` 🏝️ (§14.6)                                                     |
+| #   | Section id     | Label        | Panel                        | Also carries                                                                              |
+| --- | -------------- | ------------ | ---------------------------- | ----------------------------------------------------------------------------------------- |
+| 1   | `slice-ledger` | Slice Ledger | `slice-ledger-tab`           | `member-slice-breakdown-card`, `rate-lock-panel` 🏝️ (§14.4), `pie-bake-panel` 🏝️ (§14.6)  |
+| 2   | `verification` | Verification | `verification-pipeline-tab`  | `claim-verification-card`, `physical-work-receipt-card`, `verification-override-panel` 🏝️ |
+| 3   | `disputes`     | Disputes     | `dispute-window-tab`         | `dispute-window-entry-card` 🏝️, `dispute-case-card` 🏝️, `raise-dispute-sheet` 🏝️          |
+| 4   | `integrations` | Integrations | `integration-consent-tab` 🏝️ | connect / scope / revoke (§14.2)                                                          |
+| 5   | `optimization` | Optimization | `optimization-tab`           | —                                                                                         |
+| 6   | `audit-trail`  | Audit Trail  | `project-audit-trail-tab`    | `chain-verification-panel` 🏝️ (§14.6)                                                     |
 
 Mechanism spec: [PROOF_OF_EFFORT_SPEC.md](PROOF_OF_EFFORT_SPEC.md) §3 (Slicing Pie math) and §4
 (verification pipeline, 24-hour dispute window, physical receipts). Backend §9 is **✅ shipped in
@@ -533,16 +550,27 @@ Two things this surface currently renders that the contract contradicts, both on
 - Category filter chips + `selectedReportId` cross-highlighting, both client-side.
 - **Report a problem** sheet (§8.2) appends to the canvas's local `reports` state — lost on refresh.
 
-> **`mapPosition` cannot survive integration.** It is a CSS offset into one specific SVG at one
-> aspect ratio, so MapKit / MapLibre / Google Maps cannot render it and both native clients are dead
-> on arrival. The backend stores **lat/lng microdegrees**; web keeps its SVG by projecting them to
-> percentages client-side (§12).
+> **✅ `mapPosition` is gone, and the projection moved to the client.** It was a CSS offset into one
+> specific SVG at one aspect ratio, so MapKit / MapLibre / Google Maps could not render it and both
+> native clients were dead on arrival. The backend sends **lat/lng microdegrees** and
+> [src/lib/rnd/map-projection.ts](src/lib/rnd/map-projection.ts) projects them.
 >
-> Also integration-phase: the sheet currently fabricates `countryCode: ""`,
-> `mapPosition: {50, 50}`, `reportCount: 1` and `opportunityScore: 40` client-side. **Every one of
-> those becomes server-derived** — and a submission is not a report: `reportCount: 342` means 342
-> distinct people, so the map renders a server-side **cluster**, and `POST` returns **`202`** because
-> clustering is a job.
+> **A correction this doc had wrong.** The plan for this work assumed `world_map.svg` was plain
+> equirectangular. It is **2000 × 857 — 2.33:1, not 2:1** — an equirectangular map with the poles
+> cropped (Simplemaps cuts Antarctica). So the projection is linear in longitude across the full
+> 360° but linear in latitude only across a **154.26° window**, whose two bounds are named constants
+> in that file. They are **calibrated estimates from the aspect ratio, not exact**: the SVG carries no
+> `viewBox` and declares no projection, so if a pin sits visibly off its country the fix is one visual
+> pass against known coordinates, adjusting those two constants and nothing else.
+>
+> **✅ The sheet no longer adds a pin.** It used to fabricate `countryCode: ""`,
+> `mapPosition: {50, 50}`, `reportCount: 1` and `opportunityScore: 40` client-side and drop the result
+> on the map as though it were a clustered finding. All four are server-derived, a submission is not a
+> report (`distinctReporterCount: 342` means 342 distinct **people**), and `POST` returns **`202`**
+> because clustering is a job. The sheet confirms receipt and says the report is queued.
+>
+> ⏳ **Still owed:** the submit itself. `POST /discovery/problem-reports` needs
+> `requireIdentifiedUser` and lat/lng from a place picker, neither of which exists on this surface.
 
 ---
 
@@ -576,8 +604,8 @@ sheet (mirrors the store sheets pattern). Shared field options live in `sheets/s
 
 ## 9. User journeys
 
-| Journey                                                                                           | Phase-1 behavior                       | Real or visual?                        |
-| ------------------------------------------------------------------------------------------------- | -------------------------------------- | -------------------------------------- |
+| Journey                                                                                           | Phase-1 behavior                       | Real or visual?                         |
+| ------------------------------------------------------------------------------------------------- | -------------------------------------- | --------------------------------------- |
 | Browse → open project → read all 5 tabs                                                           | Full navigation + tab switching        | ✅ Real (mock data)                     |
 | Project → Workshop / Proof of Effort sibling routes                                               | Full navigation + 3- and 5-tab islands | ✅ Real (mock data)                     |
 | Express interest in a role                                                                        | Button → "Interest sent" toggle        | ✅ Real, client state only              |
@@ -593,7 +621,7 @@ sheet (mirrors the store sheets pattern). Shared field options live in `sheets/s
 | Propose and lock a rate · preview a pie bake                                                      | Form + checklist + frozen cap table    | ✅ Real, client state only              |
 | Workshop: add/move a task, attach or link a file, send a message                                  | Local list mutations                   | ✅ Real, lost on refresh                |
 | Edit a project · edit your talent profile · moderate a paper                                      | Sheet / queue → confirmation           | ✅ Real; nothing is saved               |
-| AI chips, Proof of Effort, slice ledgers, compensation statements, confidence, opportunity scores | Static render                          | 👁️ Visual-only, backend-owned          |
+| AI chips, Proof of Effort, slice ledgers, compensation statements, confidence, opportunity scores | Static render                          | 👁️ Visual-only, backend-owned           |
 | Landing → stage card → stage page → a project in that stage                                       | Six cards, six destinations (§4.2)     | ✅ Real — all six land on a page        |
 | Launch-ready project → `/studio/products` → create a store listing                                | Cross-surface handoff out of R&D       | ✅ Real — link handoff (§4c.4)          |
 
@@ -612,6 +640,18 @@ flowchart LR
 ---
 
 ## 10. Types & mocks — where they actually live
+
+> **◐ Partly superseded by phase 1.** There are now **three** trees, not two. Wired surfaces take
+> their types from `z.infer` over the response schemas in `src/lib/rnd/*.schemas.ts` — one source of
+> truth per surface, no hand-maintained copy to drift. The two trees described below are what remains
+> for the **unwired** surfaces, and both shrink each phase (§18). Seven mock leaves and the
+> stage-label map are already gone.
+>
+> The fetch layer did **not** slot in on top without moving anything, and could not have: the wire
+> shapes differ from the mock shapes deeply enough (§12) that reusing the mock types would have meant
+> lying about what arrives. `"use cache"` is also wrong for these reads — they are per-visitor
+> projections, so `src/lib/server-http.ts` sets `no-store`; caching one would serve one member's view
+> to the next visitor.
 
 Two trees, both split by domain. Neither has a fetch layer, a getter, or a `"use cache"` annotation —
 that layer slots in on top at integration without moving anything.
@@ -681,6 +721,14 @@ are themselves on the migration list (§12).
 
 ## 11. The wire-format contract (integration phase)
 
+> **✅ Adopted, for wired surfaces.** Rendering lives in
+> [src/lib/rnd/format.ts](src/lib/rnd/format.ts) (money, basis points, minutes, bytes, score points,
+> ISO dates and instants, open-ended ranges) and
+> [src/lib/rnd/discovery-format.ts](src/lib/rnd/discovery-format.ts) (the knowledge-hub statistic,
+> composed from `statKind` + `statValueMilli` + `statUnitKey`). Every helper is deterministic and
+> locale-pinned so a server render and a client render cannot disagree — no `Date.now()`, no
+> `new Date()`, no locale read. Unwired surfaces still carry display strings.
+
 Backend §1. The server sends **raw integers in explicitly named units** and each client formats.
 This replaces the display-string convention above.
 
@@ -693,6 +741,28 @@ This replaces the display-string convention above.
 | Score        | `…Points`      | integer, stated range                                       |
 | Instant      | `…At`          | ISO-8601 UTC                                                |
 | Calendar day | `…Date`        | ISO-8601 date-only `YYYY-MM-DD`                             |
+
+### Casing on the wire
+
+Units are half the contract; **casing is the other half**, and it is four different rules depending
+on what the string is. Full statement in `CLAUDE.md` § "Naming — wire casing"; the short form:
+
+| Surface                          | Casing         | Example                                                |
+| -------------------------------- | -------------- | ------------------------------------------------------ |
+| Path segments & directories      | **kebab**      | `/research-and-development/go-to-market`               |
+| Slugs (URL identities)           | **kebab**      | `solar-cold-storage` · `east-africa`                   |
+| Query keys & JSON fields         | **camelCase**  | `?minOpportunityScorePoints=80`                        |
+| Enum values (query **and** body) | **snake_case** | `?stage=team_building` · `{ "stage": "team_building" }` |
+
+**No enum value appears in a path segment anywhere on this surface**, so the URLs are kebab-case
+throughout — the visible `snake_case` is confined to query *values*, where it is the `pgEnum` label
+being echoed. The same value returns in the response body, which is why kebab-ing only the query
+string would put two spellings of one concept inside a single round trip.
+
+The backend contract doc declared this first (§4d: "All enum values are `snake_case`, matching the
+existing `product_category` precedent"). This records it on the frontend side so the two agree, and
+so nobody "fixes" it back — `z.enum` compares byte-for-byte, and the backend's `.strict()` query
+schemas answer **422** rather than ignoring a misspelled value.
 
 Three reasons it is not negotiable:
 
@@ -715,6 +785,21 @@ Two corollaries for this repo specifically:
 ---
 
 ## 12. Type-shape migration checklist (integration phase)
+
+> **◐ Partly done.** Landed in phase 0/1: **every wire-relevant kebab-case enum → `snake_case`**;
+> `EscrowDirection`, `EscrowVerificationStatus` and `EscrowLedgerEntry` **deleted outright** along with
+> the `escrowLedger` fixture arrays; the whole `discovery.ts` family re-derived from the response
+> schemas (`mapPosition` gone, `reportCount` → `distinctReporterCount`, `category` → a `{ slug,
+displayLabel, pinIconKey }` ref, `statValue` → three fields, skills → slug objects, hours →
+> minutes).
+>
+> **Still owed**, and left deliberately untouched because their components are unwired:
+> `project.ts` (phase 2), `workshop.ts` (phase 3), `proof-of-effort.ts` (phase 4), `immortal.ts`
+> (blocked). `escrowReleaseAmount` → `plannedPayoutInCents` is a phase-2 rename. §18 also lists the
+> phase-4/5 enum values still on the old convention.
+>
+> One row below is **wrong as written** — see §13 on the go-to-market types, which the doc claimed
+> needed no migration and which disagreed with three shipped pgEnums.
 
 Backend §15. Not just values — **shapes**. Every row is a compile error the migration works through.
 
@@ -819,8 +904,8 @@ note on `MemberSliceBreakdown`. Both must be rewritten when §11 lands, not befo
 Backend §11. Five of six domains are shipped, so the integration phase can be ordered by what
 already exists.
 
-| Frontend route                  | Endpoints                                                                                                                                                                                        | Backend       |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| Frontend route                  | Endpoints                                                                                                                                                                                        | Backend        |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
 | `/research-and-development`     | `GET /research-projects` · `GET /discovery/problem-clusters` · `/market-insights` · `GET /open-roles`                                                                                            | ✅ shipped     |
 | `/new`                          | `POST /research-projects` (creates a **draft** — an idea _is_ a project) · `POST …/publish` · `GET /research-categories`                                                                         | ✅ shipped     |
 | `/project/[id]`                 | `GET /research-projects/:slug` · `/team` · `/milestones` · `/daily-logs` · `/funding-rounds` · `/investor-confidence` · `/compensation-periods`                                                  | ✅ shipped     |
@@ -836,6 +921,32 @@ already exists.
 | `/build-log` (§4c.2)            | `GET /daily-logs` — root-mounted, **member-scoped**, keyset `(logDate, submittedAt, id)`, project-annotated · `GET /daily-logs/streak-leaderboard` (public)                                      | ✅ shipped     |
 | `/governance` (§4c.3)           | `GET /governance/summary` — public aggregates + `disclosureKeys`, plus the caller's own open lines · `GET /funding/deals`. No `/finalize`, `/countersign`, `/payments` or `/export` here         | ✅ shipped     |
 | `/go-to-market` (§4c.4)         | `GET /suppliers` (repeated `capability` = AND) · `/suppliers/:slug` · `/supplier-capabilities` · `/launch-ready-projects` · `…/launch-readiness` (member-only). Listing creation is the studio's | ✅ shipped     |
+
+### ⚠️ Three places the backend contract doc is wrong about its own backend
+
+Found by reading the route files rather than the doc, while wiring phase 1. Each would have shipped a
+`422` — every backend query schema is `.strict()`, so an unrecognized param is an error, not an
+ignored key.
+
+| `R_AND_D_BACKEND_STRUCTURE.md` says                                          | The backend actually accepts                                                                        |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `GET /research-projects?…&sort=` (§11a)                                      | **no `sort` at all** — `ListProjectsQuerySchema` is `.strict()` over `category, stage, page, limit` |
+| `GET /discovery/problem-clusters?…&minOpportunityScore=` (§11b)              | **`minOpportunityScorePoints`** — renamed to carry its unit                                         |
+| §4c.4: the go-to-market types "have no legacy importers, nothing to migrate" | **three of their enums disagreed with the shipped pgEnums** (below)                                 |
+
+That third one is the one that would have bitten hardest, because the claim was that these shapes
+needed no migration:
+
+| Frontend type had                                            | Backend pgEnum has                                                             |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `SupplierVerificationState` — 3 values                       | **4** — `documents_pending` was missing                                        |
+| `SupplierCapabilityKind` — 4 values                          | **8** — `assembly`, `tooling`, `packaging`, `design`, `sourcing` missing       |
+| `SupplierContactPolicy` — `open` / `request_only` / `closed` | **`via_platform` / `direct_email` / `no_contact`** — entirely different values |
+| `LaunchReadinessItem.observedCount: number`                  | **`number \| null`** — null when the underlying signal was never computed      |
+
+The values now in [src/lib/rnd/suppliers.schemas.ts](src/lib/rnd/suppliers.schemas.ts) are the shipped
+ones. **Read `src/db/schema.ts` and the service view interfaces, not the contract doc**, when adding a
+schema — the doc is a design record and drifts.
 
 Both gaps the earlier draft named are closed (backend §11h, §11i, Appendix B), and how they closed
 constrains the frontend:
@@ -879,6 +990,13 @@ tagged result, lifted into the component's state union (`CLAUDE.md` Patterns 1�
 ---
 
 ## 14. Previously-missing screens — all six now built
+
+> **Status after phase 1: still all mock, and still all owed.** None of these six screens was in
+> phase 1's scope — they belong to phases 4 and 5 (§18) — so every action on them continues to mutate
+> page-local state only. Nothing sends, polls, retries or takes an idempotency key, and none of them
+> handles the `202`-then-poll shape the contract specifies. The two mock-phase affordances flagged at
+> the end of this section (the statement panel's role switch, and `PaperModerationQueue` showing review
+> buttons to everyone) are both still present and must not survive their phase.
 
 Backend §14 listed six surfaces where the API existed and the UI did not. **All six are built as
 mock UI.** Each row below says where it lives and what the integration phase still owes it. The
@@ -1108,8 +1226,8 @@ wizard/                                     🏝️  new-idea-wizard-page.tsx ho
 
 ### Layout
 
-| File                                                                      | State                                                                                                                                                                      |
-| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| File                                                                      | State                                                                                                                                                                       |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [sidebar.tsx](src/components/home/layout/sidebar.tsx)                     | ✅ 6 `ROUTES` keys, top-level R&D entry (+ `COLLAPSED_NAV_CONFIG`), 5-item R&D section — **stays at 5** (§15 Q13)                                                           |
 | [navbar.tsx](src/components/home/layout/navbar.tsx)                       | ✅ `RESEARCH_AND_DEVELOPMENT_SUBPAGES` (9 — the 5 originals + Team Building, Build & Daily Logs, Governance, Go-to-Market) + `prettifySlug` fallthrough, parent label "R&D" |
 | [mobile-bottom-nav.tsx](src/components/home/layout/mobile-bottom-nav.tsx) | ✅ single R&D tab, sub-path matching                                                                                                                                        |
@@ -1146,3 +1264,116 @@ If dedicated art is wanted later, save under `public/dummy/` as `rnd_<purpose>_N
 2-digit index) — it keeps R&D art `grep`-able and separate from the store/anime dummy sets. The
 candidates: daily-log video thumbnails (8–12, in-progress build shots) and optional knowledge-hub
 insight accents (6–8, illustrative, not charts).
+
+---
+
+## 18. Integration phases
+
+Integration runs **surface by surface**, and a mock leaf is **deleted** when its route is wired rather
+than kept as a fallback. That is deliberate: a silent fallback masks a broken endpoint, and it forces
+every mock to be migrated to the wire format to stay type-compatible. What is left on disk is
+therefore exactly what is still fabricated.
+
+| Phase                             | Scope                                                                                                                                                                                                     | State          |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| **0 · foundations**               | `src/lib/rnd/` (schemas, api, formatters, view state, filter hrefs, map projection, labels) · `src/lib/server-http.ts` · `QueryProvider` in `(home)` · `snake_case` enum migration · `TRANSPORT:` banners | ✅ done        |
+| **1 · public discovery reads**    | landing · `/knowledge-hub` · `/problem-map` · `/talent` · `/team-building` · `/go-to-market` · `/funding`                                                                                                 | ✅ done        |
+| **2 · projects & detail**         | `/research-projects/slugs` for `generateStaticParams` · detail · team · milestones · funding rounds · investor confidence · `/new` wizard → `POST` + `/publish`                                           | ⏳ next        |
+| **3 · workshop & daily logs**     | board / files / chat (keyset cursor) · per-project logs · `/build-log` (member-scoped, `401` signed out)                                                                                                  | ⏳             |
+| **4 · proof of effort**           | slice ledger · verification · disputes · integrations · audit trail · rate lock · pie bake                                                                                                                | ⏳             |
+| **5 · compensation & governance** | agreements · periods · finalize / countersign / payments / export · `/governance/summary`                                                                                                                 | ⏳             |
+| **6 · Project Immortal**          | —                                                                                                                                                                                                         | 🚫 **blocked** |
+
+**Phase 6 is blocked, not merely unscheduled.** `grep -rn "research-programs" src/` in the backend
+returns **zero hits** — no route, no controller, no service, no migration, no table. It also needs the
+platform `moderator` role, which does not exist either. Nothing about this surface can be wired until
+that domain is built.
+
+**Two of the remaining phases carry compliance weight**, and should be read that way when
+prioritising: the dispute / override UI and the integration-consent screen (both phase 4) are the GDPR
+Art. 22 contestability path and the EU AI Act Art. 14 human-oversight control. A backend that offers
+human intervention through an endpoint no screen calls does not, in practice, offer it.
+
+### What phase 1 deliberately left dark
+
+Each of these is a consequence of deleting a mock while a neighbouring surface is still unwired. None
+is a regression to fix now; each resolves when its phase lands.
+
+| Surface                                   | What is dark                                                                                                                                                                                                                                                                                            | Resolves in           |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| Overview tab — demand-evidence chips      | A mock project's `relatedInsightIds` match no real insight id, so the section is length-guarded and hidden. Fabricating a match would be inventing evidence                                                                                                                                             | phase 2               |
+| Overview tab — Civic Pulse origin link    | Same, for `originProblemReportId` against real cluster ids                                                                                                                                                                                                                                              | phase 2               |
+| Team tab — open-role cards                | `OpenRoleCard` renders typed compensation integers; the mock roles carry pre-formatted strings, and there is no way back from `"$4k–6k/mo"` to the cents it was rendered from. `/open-roles` cannot substitute — its query schema has no `projectSlug` facet. The tab links to `/team-building` instead | phase 2 (`…/roles`)   |
+| `/go-to-market` — readiness checklist     | `…/launch-readiness` is member-only and `404`s otherwise, and this page holds no slug. Renders the six derived gates as an explainer with no states or counts                                                                                                                                           | phase 2 (per-project) |
+| `/talent` — pay-kind filter chips         | **Removed.** `/discovery/talent` accepts no such param; restoring the filter needs a backend column, not a chip                                                                                                                                                                                         | —                     |
+| Supplier directory — region chips         | **Removed.** They were built from `regionSlug` values on the fetched page, which offers only the regions already visible. `?region=` is a real filter; the row returns when it reads `GET /discovery/regions`                                                                                           | —                     |
+| Project card — funding bar + avatar stack | **Removed.** `GET /research-projects` returns counts, not rounds or member rows; either would be an N+1 per card                                                                                                                                                                                        | —                     |
+| Deal card — investor-confidence meter     | **Removed.** `/funding/deals` carries no confidence, and `…/investor-confidence` `404`s when never computed. The old card defaulted it to `50`, publishing a fabricated finding                                                                                                                         | —                     |
+
+### Phase-4/5 enum values still on the old convention
+
+Phase 0 converted every wire-relevant kebab-case union to `snake_case` (§11 "Casing on the wire").
+Left as-is on purpose: `proof-of-effort.ts` and `oversight.ts` still carry `"not-run"`,
+`"flagged-for-review"`, `"artifact-grounding"`, `"exif-metadata"`, `"agreements-accepted"` and
+friends. Their components are untouched and unwired, so converting them then would have been churn
+with no consumer.
+
+**They must land with phase 4/5**, converted to the spelling the backend already ships —
+`not_run`, `flagged_for_review`, `artifact_grounding`, `exif_metadata`, `agreements_accepted`. Read
+the values off `src/db/schema.ts` in the backend, not off a doc: this doc had three go-to-market
+enums wrong (§13), and being wrong here means a silent `z.enum` parse failure rather than a compile
+error.
+
+**Do not convert the slugs in the same sweep.** Kebab-case that is correct and stays: region slugs
+(`east-africa`), skill slugs, supplier capability slugs (`injection-molding`), and mock entity ids. A
+slug is a URL identity and kebab by backend convention; an enum value is a `pgEnum` label and
+snake_case. The two live side by side in these files, and the difference is what the string *is*,
+not where it appears.
+
+---
+
+## 19. Transport map
+
+`grep -rn "TRANSPORT:" src/components/home/research-and-development/` regenerates the ground truth.
+**The banners are the source of truth and this table is the readable summary** — when they disagree,
+the banner is right.
+
+Four values, a closed set so a fifth kind cannot appear silently:
+
+| Banner         | Meaning                                                                                                                                                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server-fetch` | Server component. Reads the API through `src/lib/rnd/*.api` with the session cookie forwarded by `callerRequestOptions()`. Adding `"use client"` breaks the build — `next/headers` does not resolve in a client bundle |
+| `client-query` | `"use client"` island using React Query. Needs `QueryProvider`, mounted in `(home)/layout.tsx`. **None yet** — phase 3 is the first surface that needs one                                                             |
+| `props-only`   | Fetches nothing; data arrives as props. Safe on either side of the boundary                                                                                                                                            |
+| `mock`         | Not wired. Renders fabricated data                                                                                                                                                                                     |
+
+### The seven `server-fetch` page bodies
+
+| Body                                | Endpoints                                                                                                            | Notes                                                                       |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `research-and-development-page.tsx` | `/research-projects` · `/discovery/problem-clusters?sort=opportunity` · `/discovery/market-insights` · `/open-roles` | 4 concurrent reads, one view state per rail — a dead endpoint dims one rail |
+| `knowledge-hub-page.tsx`            | `/discovery/market-insights` · `/discovery/demand-signals`                                                           | Leaderboard renders `asOf`; empty means no scoring run, not zero demand     |
+| `problem-map-page.tsx`              | `/discovery/problem-clusters` · `/research-categories?status=approved`                                               | Category chips are Links; canvas island holds selection only                |
+| `talent-page.tsx`                   | `/discovery/talent` **(requireAuth)** · `/discovery/skills` · `/open-roles`                                          | Signed out → sign-in panel + empty grid                                     |
+| `team-building-page.tsx`            | `/open-roles` · `/research-projects?stage=team_building` · `/discovery/skills` · `/discovery/talent`                 | Spotlight strip has its own signed-out branch                               |
+| `go-to-market-page.tsx`             | `/suppliers` · `/supplier-capabilities` · `/launch-ready-projects`                                                   | Repeated `?capability=` is **AND**ed in SQL                                 |
+| `funding-page.tsx`                  | `/funding/deals` **(requireAuth)**                                                                                   | Unpaginated on the wire — plain envelope, no `pagination` sibling           |
+
+### Conventions every wired surface follows
+
+- **Concurrent reads, independent view states.** `Promise.all` per page; each section maps its result
+  through `toListViewState` and renders an exhaustive `switch` with a `never` default. A failed
+  secondary read (a facet vocabulary) degrades via `rowsOrEmpty`; a failed primary read never
+  collapses into "empty".
+- **Never fabricate a `null`.** `opportunityScorePoints`, `verifiedEffortMinutes`,
+  `projectsCompletedCount`, `observedCount`, `statsComputedAt` and investor confidence are all
+  nullable, and null renders as an absence. Zero is a finding; null is the absence of one.
+- **Filters live in the URL, and the backend applies them.** Chips are `<Link>`s built by
+  `buildFilterHref`; unrecognized values are dropped by `readEnumParam` rather than forwarded, because
+  a `.strict()` schema turns a hand-edited URL into a 422. Five islands stopped being islands as a
+  result.
+- **Money is a decimal string where the column is `bigint`.** Parse with `BigInt`, never `Number`;
+  `formatMoneyFromCents` accepts both and falls back to an exact unlocalized label past 2^53 cents
+  rather than letting `Intl` round someone's compensation.
+- **404 is the not-authorized answer.** Never render a permission hint from one; it leaks which ids
+  exist.

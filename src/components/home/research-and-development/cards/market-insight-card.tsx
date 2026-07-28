@@ -1,4 +1,8 @@
-import type { MarketInsight, TrendDirection } from "@/types/research-and-development";
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props from a server parent that read GET /discovery/market-insights.
+import { formatMarketInsightStat } from "@/lib/rnd/discovery-format";
+import type { MarketInsight } from "@/lib/rnd/discovery.schemas";
+import type { TrendDirection } from "@/lib/rnd/shared.schemas";
 
 const TREND_INDICATORS: Record<TrendDirection, { glyph: string; colorClassName: string }> = {
   up: { glyph: "▲", colorClassName: "text-green-600" },
@@ -6,24 +10,40 @@ const TREND_INDICATORS: Record<TrendDirection, { glyph: string; colorClassName: 
   flat: { glyph: "—", colorClassName: "text-muted-foreground" },
 };
 
-// Market-intelligence stat tile shared by the landing rail and the knowledge
-// hub grid: headline stat with a trend glyph, region + category chips, and a
-// source note. Fills its parent's width — parents control sizing.
+// Market-intelligence stat tile shared by the landing rail and the knowledge hub
+// grid. The headline figure is COMPOSED HERE from statKind + statValueMilli +
+// statUnitKey — the server sends no pre-rendered "+34%" for it to print.
+// Fills its parent's width; parents control sizing.
 export default function MarketInsightCard({ insight }: { insight: MarketInsight }) {
   const trendIndicator = TREND_INDICATORS[insight.trendDirection];
 
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
       <p className="flex items-baseline gap-2 text-2xl font-semibold">
-        {insight.statValue}
+        {formatMarketInsightStat(insight)}
         <span className={`text-base ${trendIndicator.colorClassName}`}>{trendIndicator.glyph}</span>
       </p>
       <p className="text-sm">{insight.headline}</p>
       <div className="flex flex-wrap gap-1.5">
-        <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{insight.region}</span>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{insight.category}</span>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+          {insight.region.displayLabel}
+        </span>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+          {insight.category.displayLabel}
+        </span>
       </div>
-      <p className="text-xs text-muted-foreground">{insight.sourceNote}</p>
+      {/* `sourceNote` split into three fields, so the citation can be a real link. */}
+      <p className="text-xs text-muted-foreground">
+        {insight.sourceUrl === null ? (
+          insight.sourceName
+        ) : (
+          <a href={insight.sourceUrl} target="_blank" rel="noreferrer" className="underline">
+            {insight.sourceName}
+          </a>
+        )}
+        {" · "}
+        {insight.sourcePublishedDate}
+      </p>
     </div>
   );
 }

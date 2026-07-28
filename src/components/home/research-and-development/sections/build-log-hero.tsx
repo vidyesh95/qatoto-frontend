@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 import Link from "next/link";
 
 // Stage 04 hero for /research-and-development/build-log. States up front what

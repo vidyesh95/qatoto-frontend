@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — presentational server component. Fetches nothing; data
+// arrives as props. Safe on either side of the boundary.
 // Nodes and edges share one 0–100 coordinate space: the svg viewBox is stretched
 // to fill the canvas (preserveAspectRatio="none"), and node left/top are the same
 // percentages, so an edge endpoint lands exactly on its node's center.

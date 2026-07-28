@@ -1,3 +1,6 @@
+// TRANSPORT: props-only — client island. Holds interaction state only; all data
+// arrives as props from a server parent. Fetches nothing, so it needs no
+// QueryProvider. If this ever calls a hook in src/hooks/rnd, relabel it client-query.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,7 +12,9 @@ import CompensationBadges, {
   summarizeCompensationKinds,
 } from "@/components/home/research-and-development/cards/compensation-badges";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
-import type { OpenRole, RoleCommitment } from "@/types/research-and-development";
+import type { OpenRole } from "@/lib/rnd/catalog.schemas";
+import { COMPENSATION_EARNED_AS_POLICY_LABELS } from "@/lib/rnd/labels";
+import type { RoleCommitment } from "@/lib/rnd/shared.schemas";
 
 import { COMMITMENT_LABELS, COMMITMENT_OPTIONS } from "./sheet-shared";
 
@@ -138,27 +143,30 @@ export default function ApplyRoleSheet({ role }: ApplyRoleSheetProps) {
                   <div className="flex flex-col gap-1.5 rounded-lg bg-muted/40 p-3">
                     <span className={LABEL_CLASS}>What this role offers</span>
                     <div className="flex flex-wrap gap-1.5">
-                      <CompensationBadges components={role.compensation} />
+                      <CompensationBadges strands={role.compensation} currency={role.currency} />
                     </div>
+                    {/* Equity is COMPUTED, never asserted: it comes from the Slicing
+                        Pie ledger and no endpoint sets a share from a request body. So
+                        the range above is an offer, and this says so. Cash is paid by
+                        the company and reported on Qatoto — Qatoto holds no funds. */}
                     <p className="text-xs text-muted-foreground">
-                      Every payout is earned as Qatoto verifies your logged work — nothing upfront.
                       Equity is computed by Qatoto&apos;s Slicing Pie formula from your verified
-                      effort.
+                      effort — the range above is what the project is offering, not an allocated
+                      stake.
                     </p>
-                    {role.compensation.some((component) => component.earnedAsLabel) && (
-                      <ul className="flex flex-col gap-0.5 text-xs text-muted-foreground">
-                        {role.compensation
-                          .filter((component) => component.earnedAsLabel)
-                          .map((component) => (
-                            <li key={component.kind}>
-                              <span className="font-medium text-foreground">
-                                {COMPENSATION_KIND_LABELS[component.kind]}:
-                              </span>{" "}
-                              {component.earnedAsLabel}
-                            </li>
-                          ))}
-                      </ul>
-                    )}
+                    {/* The policy per strand, from the enum rather than prose a founder
+                        typed, so a role cannot advertise a mechanism that does not exist. */}
+                    <ul className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+                      {role.compensation.map((strand) => (
+                        <li key={strand.kind}>
+                          <span className="font-medium text-foreground">
+                            {COMPENSATION_KIND_LABELS[strand.kind]}:
+                          </span>{" "}
+                          {COMPENSATION_EARNED_AS_POLICY_LABELS[strand.earnedAsPolicy]}
+                          {strand.earnedAsNote !== null && ` — ${strand.earnedAsNote}`}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
 
                   <label className="flex flex-col gap-1">
@@ -224,9 +232,7 @@ export default function ApplyRoleSheet({ role }: ApplyRoleSheetProps) {
                       onChange={(changeEvent) =>
                         setCompensationExpectation(changeEvent.target.value)
                       }
-                      placeholder={role.compensation
-                        .map((component) => component.amountLabel)
-                        .join(" + ")}
+                      placeholder={summarizeCompensationKinds(role.compensation)}
                       className={INPUT_CLASS}
                     />
                   </label>

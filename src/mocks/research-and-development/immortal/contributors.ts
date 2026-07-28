@@ -74,7 +74,7 @@ export const MOCK_IMMORTAL_CONTRIBUTORS: ImmortalContributor[] = [
     role: "supplier",
     effortLabel: "142 hrs logged",
     contributionLabel: "Perfusion rig assembly, 24 units shipped",
-    compensationPreference: "one-time",
+    compensationPreference: "one_time",
   },
   {
     id: "contributor-kanpur-biolabs",
@@ -83,7 +83,7 @@ export const MOCK_IMMORTAL_CONTRIBUTORS: ImmortalContributor[] = [
     role: "supplier",
     effortLabel: "89 hrs logged",
     contributionLabel: "Methylation test kits, 5,000-unit run",
-    compensationPreference: "one-time",
+    compensationPreference: "one_time",
   },
   {
     id: "contributor-yuki-sato",
@@ -101,6 +101,6 @@ export const MOCK_IMMORTAL_CONTRIBUTORS: ImmortalContributor[] = [
     role: "supporter",
     effortLabel: "76 hrs logged",
     contributionLabel: "Kit onboarding walkthroughs and returns handling",
-    compensationPreference: "one-time",
+    compensationPreference: "one_time",
   },
 ];

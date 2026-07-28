@@ -1,3 +1,6 @@
+// TRANSPORT: props-only — renders what its parent passes. The one src/mocks
+// import is a LABEL MAP, not data; it belongs in src/lib and moves there when the
+// phase that owns this component wires up.
 "use client";
 
 import Image from "next/image";
@@ -25,7 +28,7 @@ const ROLE_FILTER_ORDER: ImmortalContributorRole[] = [
 
 const COMPENSATION_CHIP_CLASS_NAMES: Record<ImmortalCompensationPreference, string> = {
   salary: "bg-[#D6E3FF] text-blue-900",
-  "one-time": "bg-amber-100 text-amber-800",
+  one_time: "bg-amber-100 text-amber-800",
   equity: "bg-[#00696E]/10 text-[#00696E]",
 };
 
