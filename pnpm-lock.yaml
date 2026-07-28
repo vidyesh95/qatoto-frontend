@@ -367,6 +367,9 @@ packages:
   '@emnapi/runtime@1.11.2':
     resolution: {integrity: sha512-kyOl3X0DuTiT1h2ft8r2fYO8JYtU9a9Xis/zBSiGArNaagCOWx90N1k2wxp18czFDH+OgcWGb5ZP/XMt3dcyPA==}
 
+  '@emnapi/runtime@1.11.3':
+    resolution: {integrity: sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA==}
+
   '@emnapi/wasi-threads@1.2.1':
     resolution: {integrity: sha512-uTII7OYF+/Mes/MrcIOYp5yOtSMLBWSIoLPpcgwipoiKbli6k322tcoFsxoIIxPDqW01SQGAgko4EzZi2BNv2w==}
 
@@ -463,8 +466,8 @@ packages:
   '@hexagon/base64@1.1.28':
     resolution: {integrity: sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==}
 
-  '@hono/node-server@1.19.15':
-    resolution: {integrity: sha512-Za2ai6TLdKjUvnur+eenO6nuYYipVAEhyCAdaV8IRvmU9kK8crOZUSYvIXn72E4f8fJqyAbpcJuTsYYmZp9Deg==}
+  '@hono/node-server@1.19.17':
+    resolution: {integrity: sha512-dSneS5qhiauZWGDCeK4o695Xd9nUNjviSZCMQrj10eetr8Uln1ucn6bbphOM6UynAMMtNIzZNSpL9vnASJwrPQ==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
@@ -1651,6 +1654,10 @@ packages:
     resolution: {integrity: sha512-lp1ZSs1auw7HrCESSYt/n4dOUaKPVUIAKyVYRk6xVr4bMIN3RPub/H5Wm7QPj9CpXVC5bQFvB6+dHZXz809oMg==}
     engines: {node: '>=18'}
 
+  '@shaderfrog/glsl-parser@7.0.1':
+    resolution: {integrity: sha512-8mpfsoPeRhesY3pOrzNZBL8uG6N5GVX1EHLBYbd4gzKs+c7vaEIqpTNK5VrffU33qQN4cwpP2v3u4aPPBU32sw==}
+    engines: {node: '>=16'}
+
   '@simplewebauthn/browser@13.3.0':
     resolution: {integrity: sha512-BE/UWv6FOToAdVk0EokzkqQQDOWtNydYlY6+OrmiZ5SCNmb41VehttboTetUM3T/fr6EAFYVXjz4My2wg230rQ==}
 
@@ -2317,13 +2324,13 @@ packages:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
     engines: {node: 18 || 20 || >=22}
 
-  baseline-browser-mapping@2.11.0:
-    resolution: {integrity: sha512-oCu2wfipvX3AePSgmOuKkIywOu+8n9psz7hXYmk56ghpu3+7KzNIBopaOs4c9BrtdnTtW30unG9GTfHo7EwERQ==}
+  baseline-browser-mapping@2.11.1:
+    resolution: {integrity: sha512-HYXq73DDpCtNzOmrFsm9eSwCvWCql0RzqjpDzXN9EadiLJ4DNat0nsZ/Bzmy+Ud12mb4/zKDY0cQ805ZzN+i0A==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  baseline-browser-mapping@2.11.1:
-    resolution: {integrity: sha512-HYXq73DDpCtNzOmrFsm9eSwCvWCql0RzqjpDzXN9EadiLJ4DNat0nsZ/Bzmy+Ud12mb4/zKDY0cQ805ZzN+i0A==}
+  baseline-browser-mapping@2.11.4:
+    resolution: {integrity: sha512-s4+sLr9mZ/CyqeRritFeYV/Zx73OAtmaHn6kkBS1XRoJn1hrg3xIDUcpicAEX68tkcIN0iBCgti31C8zxtkhsQ==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -2631,8 +2638,8 @@ packages:
     resolution: {integrity: sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==}
     engines: {node: '>=6'}
 
-  deslop-js@0.9.1:
-    resolution: {integrity: sha512-eo3Tn37bqC1mMS3BwsdwRITYgQQQdT30g8SMY9C/zRbMu6ekNf9o7aGNUEkxWiKd1dTND58Sndi5fBlT9V6UvA==}
+  deslop-js@0.9.2:
+    resolution: {integrity: sha512-rGhQ17gHnmsjG5KFJM4+oN4bOxktHiPGqzJxKqWt0Qw/NLZIsEgLH1wIo1tTXRyN/MNwhchKbfUieFiWyAh0pQ==}
 
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
@@ -3710,8 +3717,8 @@ packages:
       vite-plus:
         optional: true
 
-  oxlint-plugin-react-doctor@0.9.1:
-    resolution: {integrity: sha512-yCW8USbiuszbVsUMN4fL1iU7mRu3Ae3w96+k/xqCyWvW6bF6DzCMtLy5N/w6WLRX78iQsWxVqW/SEgzRBXLfsA==}
+  oxlint-plugin-react-doctor@0.9.2:
+    resolution: {integrity: sha512-fTciSOgAGe/KAgvFDKLz9crjxHyAuu0BvT5sXfSdo2B5QmY5Y/j3nliqX6FaGr7Wud1SYvkAky+/m+58b6K6fQ==}
     engines: {node: ^20.19.0 || >=22.13.0}
 
   oxlint-tsgolint@0.23.0:
@@ -3832,10 +3839,6 @@ packages:
     resolution: {integrity: sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==}
     engines: {node: ^10 || ^12 || >=14}
 
-  postcss@8.5.21:
-    resolution: {integrity: sha512-v4sDNP3fdNiWMfabO7OwOQdOX8TiQSztKyT1Wj0w+j7LDallJThJRBBBmzVGyYj0crMh7jlV4zepPkiNu9UwDQ==}
-    engines: {node: ^10 || ^12 || >=14}
-
   postcss@8.5.23:
     resolution: {integrity: sha512-g50586zr4bZmwFiTlflMu8E0bDTb5I5gertgwAKmsdUlTQIhZtunzUlD1WSzwcVWPoAVpsrA6vlfCD7oXvRwgg==}
     engines: {node: ^10 || ^12 || >=14}
@@ -3897,8 +3900,8 @@ packages:
     resolution: {integrity: sha512-K5zQjDllxWkf7Z5xJdV0/B0WTNqx6vxG70zJE4N0kBs4LovmEYWJzQGxC9bS9RAKu3bgM40lrd5zoLJ12MQ5BA==}
     engines: {node: '>= 0.10'}
 
-  react-doctor@0.9.1:
-    resolution: {integrity: sha512-pKCWENXuYZK7UNBHpNLbEBlpy+oVWwPnOxTD2B//gmrQLm+UvIknArzP3IOjNP5Nk1NKCR9uavypFA1QMbYFyg==}
+  react-doctor@0.9.2:
+    resolution: {integrity: sha512-A/e21t0y3j7zUTS8lJyNI2pKMfYLDH+zZwqAC7+MQW1vCD3xqWc2x8XCCWKnrQQwtFd6dwSZw2017x1iSLnGTA==}
     engines: {node: ^20.19.0 || >=22.13.0}
     hasBin: true
 
@@ -4634,8 +4637,8 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  yoctocolors@2.1.2:
-    resolution: {integrity: sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug==}
+  yoctocolors@2.2.0:
+    resolution: {integrity: sha512-xYqdZFUK/VYazNl/oCDYN+3WloWQwMfZxBoiNt6qNyk+xfOdi598muWE42rNZFp1kNOiqW936q5RhUdnpqElSg==}
     engines: {node: '>=18'}
 
   yoga-layout@3.2.1:
@@ -4928,6 +4931,11 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
+  '@emnapi/runtime@1.11.3':
+    dependencies:
+      tslib: 2.8.1
+    optional: true
+
   '@emnapi/wasi-threads@1.2.1':
     dependencies:
       tslib: 2.8.1
@@ -5014,7 +5022,7 @@ snapshots:
 
   '@hexagon/base64@1.1.28': {}
 
-  '@hono/node-server@1.19.15(hono@4.12.31)':
+  '@hono/node-server@1.19.17(hono@4.12.31)':
     dependencies:
       hono: 4.12.31
 
@@ -5121,7 +5129,7 @@ snapshots:
 
   '@img/sharp-wasm32@0.34.5':
     dependencies:
-      '@emnapi/runtime': 1.11.2
+      '@emnapi/runtime': 1.11.3
     optional: true
 
   '@img/sharp-win32-arm64@0.34.5':
@@ -5156,7 +5164,7 @@ snapshots:
 
   '@modelcontextprotocol/sdk@1.25.2(hono@4.12.31)(supports-color@7.2.0)(zod@3.25.76)':
     dependencies:
-      '@hono/node-server': 1.19.15(hono@4.12.31)
+      '@hono/node-server': 1.19.17(hono@4.12.31)
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
       content-type: 1.0.5
@@ -5834,6 +5842,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@shaderfrog/glsl-parser@7.0.1': {}
+
   '@simplewebauthn/browser@13.3.0': {}
 
   '@simplewebauthn/server@13.3.2':
@@ -6434,9 +6444,9 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  baseline-browser-mapping@2.11.0: {}
-
   baseline-browser-mapping@2.11.1: {}
+
+  baseline-browser-mapping@2.11.4: {}
 
   better-auth@1.6.25(@opentelemetry/api@1.9.1)(next@16.2.10(@babel/core@7.29.7(supports-color@7.2.0))(@opentelemetry/api@1.9.1)(@playwright/test@1.62.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.0.14(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))):
     dependencies:
@@ -6516,7 +6526,7 @@ snapshots:
 
   browserslist@4.28.4:
     dependencies:
-      baseline-browser-mapping: 2.11.0
+      baseline-browser-mapping: 2.11.1
       caniuse-lite: 1.0.30001806
       electron-to-chromium: 1.5.387
       node-releases: 2.0.50
@@ -6704,7 +6714,7 @@ snapshots:
 
   dequal@2.0.3: {}
 
-  deslop-js@0.9.1:
+  deslop-js@0.9.2:
     dependencies:
       '@oxc-project/types': 0.141.0
       fast-glob: 3.3.3
@@ -7112,7 +7122,7 @@ snapshots:
       pretty-ms: 9.3.0
       signal-exit: 4.1.0
       strip-final-newline: 4.0.0
-      yoctocolors: 2.1.2
+      yoctocolors: 2.2.0
 
   expect-type@1.4.0: {}
 
@@ -7737,7 +7747,7 @@ snapshots:
   log-symbols@7.0.1:
     dependencies:
       is-unicode-supported: 2.1.0
-      yoctocolors: 2.1.2
+      yoctocolors: 2.2.0
 
   loglevel@1.9.2: {}
 
@@ -7830,7 +7840,7 @@ snapshots:
     dependencies:
       '@next/env': 16.2.10
       '@swc/helpers': 0.5.15
-      baseline-browser-mapping: 2.11.1
+      baseline-browser-mapping: 2.11.4
       caniuse-lite: 1.0.30001806
       postcss: 8.4.31
       react: 19.2.7
@@ -8027,8 +8037,9 @@ snapshots:
       '@oxfmt/binding-win32-ia32-msvc': 0.60.0
       '@oxfmt/binding-win32-x64-msvc': 0.60.0
 
-  oxlint-plugin-react-doctor@0.9.1:
+  oxlint-plugin-react-doctor@0.9.2:
     dependencies:
+      '@shaderfrog/glsl-parser': 7.0.1
       '@typescript-eslint/types': 8.65.0
       eslint-scope: 9.1.2
       eslint-visitor-keys: 5.0.1
@@ -8153,12 +8164,6 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  postcss@8.5.21:
-    dependencies:
-      nanoid: 3.3.16
-      picocolors: 1.1.1
-      source-map-js: 1.2.1
-
   postcss@8.5.23:
     dependencies:
       nanoid: 3.3.16
@@ -8219,22 +8224,23 @@ snapshots:
       iconv-lite: 0.7.3
       unpipe: 1.0.0
 
-  react-doctor@0.9.1(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@types/react@19.2.17)(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(oxlint-tsgolint@0.23.0)(supports-color@7.2.0):
+  react-doctor@0.9.2(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@types/react@19.2.17)(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(oxlint-tsgolint@0.23.0)(supports-color@7.2.0):
     dependencies:
       '@babel/code-frame': 7.29.7
       '@sentry/node': 10.68.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@7.2.0)
       agent-install: 0.0.5
       conf: 15.1.0
       confbox: 0.2.4
-      deslop-js: 0.9.1
+      deslop-js: 0.9.2
       eslint-plugin-react-hooks: 7.1.1(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)
       figures: 6.1.0
       ink: 7.1.1(@types/react@19.2.17)(react@19.2.5)
       ink-spinner: 5.0.0(ink@7.1.1(@types/react@19.2.17)(react@19.2.5))(react@19.2.5)
       jiti: 2.7.0
       magicast: 0.5.3
+      oxc-resolver: 11.24.2
       oxlint: 1.74.0(oxlint-tsgolint@0.23.0)
-      oxlint-plugin-react-doctor: 0.9.1
+      oxlint-plugin-react-doctor: 0.9.2
       prompts: 2.4.2
       react: 19.2.5
       typescript: 5.9.3
@@ -8293,7 +8299,7 @@ snapshots:
       preact: 10.29.7
       prompts: 2.4.2
       react: 19.2.7
-      react-doctor: 0.9.1(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@types/react@19.2.17)(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(oxlint-tsgolint@0.23.0)(supports-color@7.2.0)
+      react-doctor: 0.9.2(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@types/react@19.2.17)(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(oxlint-tsgolint@0.23.0)(supports-color@7.2.0)
       react-dom: 19.2.7(react@19.2.7)
       react-grab: 0.1.50(react@19.2.7)
     optionalDependencies:
@@ -8918,7 +8924,7 @@ snapshots:
     dependencies:
       lightningcss: 1.32.0
       picomatch: 4.0.5
-      postcss: 8.5.21
+      postcss: 8.5.23
       rolldown: 1.0.2
       tinyglobby: 0.2.17
     optionalDependencies:
@@ -9070,7 +9076,7 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  yoctocolors@2.1.2: {}
+  yoctocolors@2.2.0: {}
 
   yoga-layout@3.2.1: {}
 
