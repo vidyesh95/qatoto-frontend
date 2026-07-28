@@ -200,12 +200,12 @@ If a name needs a comment to explain what it holds, the name is wrong — rename
 Four different casings coexist, on purpose. Which one applies depends on **what the string is**, not
 on where it appears. Mirrored in `AGENTS.md` and `GEMINI.md` — keep all three in sync.
 
-| Surface                          | Casing         | Example                                                | Why                                                                                                             |
-| -------------------------------- | -------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| Path segments & directories      | **kebab**      | `/research-and-development/go-to-market`               | The one place kebab is a genuine web convention — URL tokenizers treat `-` as a word break and `_` as a joiner |
+| Surface                          | Casing         | Example                                                    | Why                                                                                                            |
+| -------------------------------- | -------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Path segments & directories      | **kebab**      | `/research-and-development/go-to-market`                   | The one place kebab is a genuine web convention — URL tokenizers treat `-` as a word break and `_` as a joiner |
 | Slugs (URL identities)           | **kebab**      | `solar-cold-storage` · `east-africa` · `injection-molding` | Server-generated and public. A slug is linked to the moment it exists, so it is unwritable after creation      |
-| Query keys & JSON fields         | **camelCase**  | `?minOpportunityScorePoints=80`                        | Matches the response body field names — one spelling across request and response                                |
-| Enum values (query **and** body) | **snake_case** | `?stage=team_building` · `{ "stage": "team_building" }` | They are Postgres `pgEnum` labels, sent verbatim in both directions                                             |
+| Query keys & JSON fields         | **camelCase**  | `?minOpportunityScorePoints=80`                            | Matches the response body field names — one spelling across request and response                               |
+| Enum values (query **and** body) | **snake_case** | `?stage=team_building` · `{ "stage": "team_building" }`    | They are Postgres `pgEnum` labels, sent verbatim in both directions                                            |
 
 The rule underneath all four: **one spelling per concept, in both directions of the exchange.**
 
@@ -222,7 +222,6 @@ The rule underneath all four: **one spelling per concept, in both directions of 
 Kebab-case is still correct for **file names, directory names, path segments and slugs** — none of
 which changed. A file called `discovery.schemas.ts` exporting `"team_building"` is following both
 rules at once, not contradicting itself.
-
 
 ### Tests — do not write unless explicitly asked
 

@@ -3119,11 +3119,25 @@ POST …/allocation-proposals/:id/dispute  → slices freeze in escrow, OUTSIDE 
 > rather than on code; the appendix records what each decision was and what shipped on it. Every one
 > of the four is therefore now a row in this section rather than in that one — the backend is ahead
 > of the frontend on all of them.
+>
+> **Frontend phases 2 and 3 are now wired** (R_AND_D_STRUCTURE.md §18), which closes several rows
+> below and sharpens the rest. `/project/[id]` reads the detail, team, roles, milestones,
+> funding-rounds and investor-confidence endpoints; `/project/[id]/workshop` reads `…/workshop`;
+> `/build-log` reads `GET /daily-logs` and the streak leaderboard. All of it is **reads only** — every
+> row about a WRITE below still stands.
+>
+> Two things the wiring proved that this document did not say:
+> **`GET /:projectSlug/disputes` and a list form of `GET /:projectSlug/effort-claims` do not exist**
+> (§11e lists no such routes and `src/routes/proof-of-effort.routes.ts` has neither), and **signed-out
+> is `401`, not `404`**, on `…/workshop` and `/daily-logs` — the 404-not-403 rule governs signed-in
+> non-members, and a client has to render both.
 
 Backend supported, no UI yet:
 
-- **Workshop writes.** The kanban is not draggable and the chat composer is a decorative `div`. No
-  create-task, move-task, upload-file, or send-message affordance exists.
+- **Workshop writes.** Still owed, and the gap is now cleaner rather than smaller: phase 3 **deleted**
+  the decorative add-task, move-task, upload-file and send-message affordances instead of wiring them,
+  because each wrote to `useState` and posted nowhere. The board, files and chat now render real data
+  and offer no controls at all, which is honest but not finished.
 - **Dispute and consensus.** No dispute button, no vote UI, no quorum progress, no "who raised it".
 - **Integration consent.** The entire connect / scope / revoke flow has **no frontend at all** —
   the single largest missing screen, and §9 cannot function without it.
@@ -3134,15 +3148,20 @@ Backend supported, no UI yet:
   hash-chain framing is decoration.
 - **Override / review.** No surface for a founder to review a flagged step and override it.
 - **Project edit.** `GET` + `PATCH` exist; there is no edit entry point.
-- **The four §4c stage routes.** All four backends shipped (Appendix B): `/team-building` is served
-  by five endpoints, `/build-log` by `GET /daily-logs` + the streak leaderboard, `/governance` by
-  `GET /governance/summary`, and `/go-to-market` by the §11i supplier and readiness reads. **No page
-  calls any of them yet.** Three notes the UI has to honour: the build-log feed is **member-scoped**,
-  so a signed-out visitor gets the explainer, the legend and the leaderboard with an **empty** feed —
-  never a fabricated one; the governance page's per-member walkthrough must be **authored sample
-  data**, because the backend deliberately returns nobody else's line; and the readiness checklist's
-  `waived` state is representable but never produced today, so the UI must not imply a waiver path
-  exists.
+- **The four §4c stage routes — three of four now call their backend.** `/team-building` and
+  `/go-to-market` wired in phase 1; `/build-log` wired in phase 3 and reads `GET /daily-logs` plus the
+  streak leaderboard. **`/governance` is the one still on mock data**, and it is phase 5's job.
+  The three notes the UI had to honour held up: the build-log feed is **member-scoped**, so a
+  signed-out visitor gets the explainer, the legend and the leaderboard with an **empty** feed and a
+  sign-in prompt — never a fabricated one; the governance page's per-member walkthrough must stay
+  **authored sample data**, because the backend deliberately returns nobody else's line; and the
+  readiness checklist's `waived` state is representable but never produced today, so the UI must not
+  imply a waiver path exists.
+- **Per-project compensation has no host screen at all right now.** The frontend's Governance TAB was
+  removed in phase 2: it was bound to a mock project shape the detail page stopped reading, and its
+  funding half still rendered `escrowReleaseAmount`, a field this contract retired. The panels it hosted
+  (`compensation-agreements-panel`, `compensation-statement-panel`) survive unmounted, and phase 5
+  remounts them against `…/compensation-agreements` and `…/compensation-periods`.
 - **Tiered / multi-currency funding, paper moderation queue, talent profile editing.**
 
 Two of these have stopped being UX debt and become **compliance gaps**, and they should be read that
@@ -3156,19 +3175,28 @@ way in planning:
 
 The entire §7A surface is missing too, and it is the product's headline output: no agreement
 proposal or acceptance, no statement view, no finalize or countersign action, no payment
-acknowledgment, no export. `governance-tab.tsx` renders an escrow ledger that this contract no
-longer describes.
+acknowledgment, no export. The `governance-tab.tsx` that rendered an escrow ledger this contract no
+longer describes has been **deleted** rather than corrected — see the bullet above.
 
 Frontend-side work the contract forces:
 
 - **Pagination everywhere.** `ProjectProofOfEffortLedger` is a flat object with unbounded arrays. A
-  two-year-old project has thousands of entries.
+  two-year-old project has thousands of entries. Phases 2–3 took the first bite: `GET /daily-logs`
+  is keyset-paged behind `getCursorPaginated`, and the per-project log read is capped at a `limit`.
+  **No page renders a "load more" control yet**, so a `nextCursor` is currently parsed and dropped.
 - **Async states.** Claim submission returns `202`, not a verdict. The UI assumes verdicts exist
-  synchronously; it needs pending states plus polling or SSE.
+  synchronously; it needs pending states plus polling or SSE. Phase 3 wired the read half of this
+  correctly — `effortVerificationStatus` renders all six states, so `queued` and `running` no longer
+  look like a refusal.
 - **Idempotency keys** on claim submit, receipt upload and dispute raise, or a retried request on a
-  flaky mobile connection duplicates.
+  flaky mobile connection duplicates. Untouched — nothing writes yet.
 - **Multiple verification attempts.** `ClaimVerificationRun` models one run; re-verification
   produces attempt 2+ and the UI would show stale results.
+- **A member-scoped read needs a fourth render state**, which phases 2–3 had to add: not just
+  loading / error / empty / ready, but **restricted**. `MemberScopedListViewState` collapses `401`
+  and `404` into one `restricted` variant while keeping `isSignInRequired`, so a stranger gets a
+  sign-in prompt and a signed-in non-member gets "this is the team's" — and neither answer reveals
+  whether the child resource exists. It is only safe because the PUBLIC parent read resolves first.
 
 ---
 

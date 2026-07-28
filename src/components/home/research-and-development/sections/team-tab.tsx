@@ -1,89 +1,102 @@
-// TRANSPORT: props-only — presentational server component. Fetches nothing; data
-// arrives as props. Safe on either side of the boundary.
+// TRANSPORT: props-only — presentational server component. Fetches nothing; the
+// roster arrives embedded on the project detail read and the roles as their own
+// view state from GET …/roles.
 import Link from "next/link";
 
+import OpenRoleCard from "@/components/home/research-and-development/cards/open-role-card";
 import TeamMemberCard from "@/components/home/research-and-development/cards/team-member-card";
-import type { ResearchProject } from "@/types/research-and-development";
+import RndStatusPanel, {
+  RndErrorPanel,
+} from "@/components/home/research-and-development/sections/rnd-status-panel";
+import type { OpenRole } from "@/lib/rnd/catalog.schemas";
+import type { ResearchProjectDetail } from "@/lib/rnd/projects.schemas";
+import type { MemberScopedListViewState } from "@/lib/rnd/view-state";
 
-const EQUITY_SEGMENT_COLORS = ["#00696E", "#1DBDC5", "#4A6363", "#7DA0A2", "#B4D2D4"];
+type TeamTabProps = {
+  project: ResearchProjectDetail;
+  /** `…/roles` is public, so `restricted` is unreachable — handled for exhaustiveness. */
+  openRolesState: MemberScopedListViewState<OpenRole>;
+};
 
-// Team tab: stacked equity-split bar with legend, the member roster, and open
-// equity-for-skills roles. Equity figures are display-only mocks — the split
-// math is backend-owned later.
-export default function TeamTab({ project }: { project: ResearchProject }) {
-  const equitySegments = project.teamMembers.map((teamMember, memberIndex) => ({
-    member: teamMember,
-    widthPercent: parseFloat(teamMember.equityShare),
-    color: EQUITY_SEGMENT_COLORS[memberIndex % EQUITY_SEGMENT_COLORS.length],
-  }));
-  const allocatedPercent = equitySegments.reduce(
-    (runningTotal, segment) => runningTotal + segment.widthPercent,
-    0,
-  );
-  const unallocatedPercent = Math.round((100 - allocatedPercent) * 10) / 10;
+/**
+ * Team tab: the roster, and this project's open equity-for-skills roles.
+ *
+ * THE EQUITY SPLIT BAR IS DELETED, and this is the important part of the change.
+ * `ProjectTeamMemberView` carries no `equityBasisPoints` and no `verifiedEffortMinutes`
+ * — the backend omits both DELIBERATELY, because they are derived by the §9 slice
+ * ledger and returning a default would render a fabricated number as fact on a Slicing
+ * Pie surface. The old bar was driven by `parseFloat("68%")` over an authored string.
+ * There is no honest substitute: the real cap table is the Proof-of-Effort equity
+ * snapshot, which is phase 4.
+ *
+ * OPEN ROLES ARE NOW REAL. `GET …/roles` returns the same row shape as the
+ * cross-project `/open-roles`, which could never substitute here — its query schema is
+ * `.strict()` and has no `projectSlug` facet.
+ */
+export default function TeamTab({ project, openRolesState }: TeamTabProps) {
+  function renderOpenRoles() {
+    switch (openRolesState.status) {
+      case "error":
+        return <RndErrorPanel message="Couldn't load this project's open roles." />;
+      case "restricted":
+        return <RndErrorPanel message="Couldn't load this project's open roles." />;
+      case "empty":
+        return (
+          <p className="text-sm text-muted-foreground">
+            No open roles right now.{" "}
+            <Link
+              href="/research-and-development/team-building"
+              className="font-medium text-[#00696E] underline"
+            >
+              Browse every open role
+            </Link>
+          </p>
+        );
+      case "ready":
+        return (
+          <div className="flex flex-wrap gap-3">
+            {openRolesState.rows.map((openRole) => (
+              <OpenRoleCard key={openRole.id} role={openRole} />
+            ))}
+          </div>
+        );
+      default: {
+        const exhaustiveCheck: never = openRolesState;
+        return exhaustiveCheck;
+      }
+    }
+  }
 
   return (
     <div className="space-y-6 px-4 lg:px-6">
       <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Equity split</h3>
-        <div className="flex h-3 w-full overflow-hidden rounded-full">
-          {equitySegments.map((segment) => (
-            <div
-              key={segment.member.id}
-              style={{ width: `${segment.widthPercent}%`, backgroundColor: segment.color }}
-            />
-          ))}
-          <div className="flex-1 bg-muted" />
-        </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          {equitySegments.map((segment) => (
-            <span key={segment.member.id} className="flex items-center gap-1.5">
-              <span
-                aria-hidden
-                className="size-2 rounded-full"
-                style={{ backgroundColor: segment.color }}
-              />
-              {segment.member.name} — {segment.member.equityShare}
-            </span>
-          ))}
-          <span className="flex items-center gap-1.5">
-            <span aria-hidden className="size-2 rounded-full bg-muted" />
-            Unallocated {unallocatedPercent}%
-          </span>
-        </div>
-      </section>
-      <section className="space-y-3">
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">Team roster</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {project.teamMembers.map((teamMember) => (
-            <TeamMemberCard key={teamMember.id} member={teamMember} />
-          ))}
-        </div>
+        {project.team.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {project.team.map((teamMember) => (
+              <TeamMemberCard key={teamMember.memberId} member={teamMember} />
+            ))}
+          </div>
+        ) : (
+          <RndStatusPanel message="Nobody has joined this project yet." />
+        )}
       </section>
-      {/* PER-PROJECT OPEN ROLES ARE DEFERRED TO PHASE 2, not dropped.
-          `OpenRoleCard` now renders the wire shape from `GET /open-roles`, which carries
-          typed compensation integers and a resolved currency. The mock project's roles
-          carry pre-formatted strings like "$4k–6k/mo" instead, and there is no way back
-          from a formatted string to the cents it was rendered from — so adapting them
-          would mean fabricating numbers.
-          The real source is `GET /research-projects/:slug/roles`, which arrives with the
-          phase-2 project read. `/open-roles` cannot substitute: its query schema has no
-          `projectSlug` facet, so it cannot be narrowed to one project.
-          Meanwhile every role on this project is reachable, unfiltered, from
-          /research-and-development/team-building. */}
+      <section className="space-y-2">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Equity split</h3>
+        <p className="max-w-prose text-sm text-muted-foreground">
+          Equity here is earned, not assigned: verified effort mints slices at a locked rate and the
+          slices decide the split. The ledger that computes it is not on this page — nothing on this
+          tab is a share of the company.
+        </p>
+        {project.stats?.allocatedEquityBasisPoints === null && (
+          <p className="text-xs text-muted-foreground">
+            No slices have been allocated on this project yet.
+          </p>
+        )}
+      </section>
       <section className="space-y-3">
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">Open roles</h3>
-        <p className="text-sm text-muted-foreground">
-          {project.openRoles.length > 0
-            ? `This project has ${project.openRoles.length} open role${project.openRoles.length === 1 ? "" : "s"}. `
-            : "No open roles right now. "}
-          <Link
-            href="/research-and-development/team-building"
-            className="font-medium text-[#00696E] underline"
-          >
-            Browse every open role
-          </Link>
-        </p>
+        {renderOpenRoles()}
       </section>
     </div>
   );

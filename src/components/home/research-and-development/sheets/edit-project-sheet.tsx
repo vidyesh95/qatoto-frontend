@@ -1,6 +1,5 @@
-// TRANSPORT: props-only — renders what its parent passes. The one src/mocks
-// import is a LABEL MAP, not data; it belongs in src/lib and moves there when the
-// phase that owns this component wires up.
+// TRANSPORT: props-only — client island. Holds draft-form state only; the project
+// arrives as a prop from a server parent that read GET /research-projects/:slug.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,29 +8,28 @@ import Image from "next/image";
 
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import { PROJECT_STAGE_LABELS } from "@/lib/rnd/labels";
-import type { ProjectStage, ResearchProject } from "@/types/research-and-development";
+import type { ResearchProjectDetail } from "@/lib/rnd/projects.schemas";
+import { PROJECT_STAGES, type ProjectStage } from "@/lib/rnd/shared.schemas";
 
 // Project edit entry point (§14.6). Until now a project could be posted through
 // the /new wizard and never changed again — a stage that moves, a tagline that
-// was wrong on day one, and no way to fix either. Founder-only in the real
-// product; the mock shows the form to everyone and saves nothing.
+// was wrong on day one, and no way to fix either.
+//
+// THE FORM READS REAL DATA AND STILL SAVES NOTHING. `PATCH /research-projects/:slug`
+// and `PATCH …/stage` both exist and are founder-scoped, but this pass is reads-only,
+// so submitting captures the draft locally and the page keeps showing the server's
+// values. It is also shown to every visitor, which the real edit path will not be.
 
-const STAGE_ORDER: ProjectStage[] = [
-  "market_research",
-  "problem_validation",
-  "team_building",
-  "building_mvp",
-  "raising_funding",
-  "go_to_market",
-];
+const STAGE_ORDER: readonly ProjectStage[] = PROJECT_STAGES;
 
-export default function EditProjectSheet({ project }: { project: ResearchProject }) {
+export default function EditProjectSheet({ project }: { project: ResearchProjectDetail }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [hasSaved, setHasSaved] = useState(false);
   const [draftName, setDraftName] = useState(project.name);
   const [draftTagline, setDraftTagline] = useState(project.tagline);
-  const [draftDescription, setDraftDescription] = useState(project.description);
-  const [draftCategory, setDraftCategory] = useState(project.category);
+  // `description` is nullable on the wire; a controlled textarea needs a string.
+  const [draftDescription, setDraftDescription] = useState(project.description ?? "");
+  const [draftCategory, setDraftCategory] = useState(project.category.label);
   const [draftStage, setDraftStage] = useState<ProjectStage>(project.stage);
 
   useEffect(() => {
@@ -102,7 +100,8 @@ export default function EditProjectSheet({ project }: { project: ResearchProject
                   </span>
                   <p className="text-base font-medium">Changes captured</p>
                   <p className="text-sm text-muted-foreground">
-                    Mock phase: nothing was saved and the page still shows the fixture.
+                    Nothing was sent — this surface reads the backend and does not write to it yet,
+                    so the page still shows the saved values.
                   </p>
                   <button
                     type="button"

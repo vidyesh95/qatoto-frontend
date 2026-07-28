@@ -9,6 +9,10 @@
 // reason the backend never sends prose (backend §4d).
 
 import type {
+  DailyLogAnalysisStatus,
+  EffortVerificationStatus,
+} from "@/lib/rnd/daily-logs.schemas";
+import type {
   CompensationEarnedAsPolicy,
   ProjectStage,
   RoleCommitment,
@@ -46,6 +50,37 @@ export const COMPENSATION_EARNED_AS_POLICY_LABELS: Record<CompensationEarnedAsPo
   slicing_pie_vesting: "Vests as verified effort earns slices",
   off_platform_payroll: "Paid by the company, reported here",
   direct_transfer: "Paid directly, reported here",
+};
+
+/**
+ * The six verification states, which replace a boolean that could only say yes or no.
+ *
+ * Each label states what the PIPELINE has done, never a judgement about the member.
+ * `not_run` and `unverified` must read differently — one means nothing was ever asked,
+ * the other means it was asked and the answer was no — and the two in-flight states
+ * must not read as a refusal.
+ */
+export const EFFORT_VERIFICATION_STATUS_LABELS: Record<EffortVerificationStatus, string> = {
+  not_run: "Not checked yet",
+  queued: "Queued for checking",
+  running: "Checking now",
+  verified: "Verified",
+  flagged_for_review: "Flagged for review",
+  unverified: "Could not verify",
+};
+
+/**
+ * The analysis job's lifecycle. `skipped_unconfigured` is deliberately not phrased as a
+ * failure — it is an operator fact about this environment, and calling it a failure
+ * sends a member chasing a problem with their log that does not exist.
+ */
+export const DAILY_LOG_ANALYSIS_STATUS_LABELS: Record<DailyLogAnalysisStatus, string> = {
+  not_requested: "Not requested",
+  queued: "Queued",
+  running: "Analyzing",
+  succeeded: "Analyzed",
+  failed: "Analysis failed",
+  skipped_unconfigured: "Analysis unavailable here",
 };
 
 export const TALENT_AVAILABILITY_LABELS: Record<TalentAvailability, string> = {

@@ -1,82 +1,96 @@
-// TRANSPORT: props-only — presentational server component. Fetches nothing; data
-// arrives as props. Safe on either side of the boundary.
-import Image from "next/image";
+// TRANSPORT: props-only — presentational server component. Fetches nothing; the
+// project and its milestone view state arrive as props from a parent that read
+// GET /research-projects/:slug and GET …/milestones.
 import Link from "next/link";
 
-import MarketInsightCard from "@/components/home/research-and-development/cards/market-insight-card";
 import MilestoneTimeline from "@/components/home/research-and-development/sections/milestone-timeline";
-import type { MarketInsight } from "@/lib/rnd/discovery.schemas";
-import type { ProblemCluster } from "@/lib/rnd/discovery.schemas";
-import type { ResearchProject } from "@/types/research-and-development";
+import RndStatusPanel, {
+  RndErrorPanel,
+  RndMembersOnlyPanel,
+  RndSignInRequiredPanel,
+} from "@/components/home/research-and-development/sections/rnd-status-panel";
+import type { Milestone } from "@/lib/rnd/funding.schemas";
+import type { ResearchProjectDetail } from "@/lib/rnd/projects.schemas";
+import type { MemberScopedListViewState } from "@/lib/rnd/view-state";
 
 type OverviewTabProps = {
-  project: ResearchProject;
-  /**
-   * Demand evidence for THIS project. Empty until phase 2 wires the project detail
-   * read: linking a project to an insight needs the server-side link, and matching a
-   * mock project's `relatedInsightIds` against real insight ids resolves to nothing.
-   * The section is guarded on length, so it simply does not render meanwhile.
-   */
-  relatedInsights: MarketInsight[];
-  /** Same story — the origin link arrives with the phase-2 project read. */
-  originReport?: ProblemCluster;
+  project: ResearchProjectDetail;
+  /** `…/milestones` is member-scoped, so this tab renders four distinct outcomes. */
+  milestonesState: MemberScopedListViewState<Milestone>;
 };
 
-// Overview tab: problem & solution prose, market-demand evidence insights, the
-// Civic Pulse origin-report link when the project was born from one, and the
-// milestone timeline.
-//
-// When the founder's own `demandEvidenceNotes` lands in phase 2, keep it VISUALLY
-// DISTINCT from these platform-computed insights. An assertion must never read as
-// verified evidence.
-export default function OverviewTab({ project, relatedInsights, originReport }: OverviewTabProps) {
+/**
+ * Overview tab: the problem and solution prose, the founder's own demand evidence, and
+ * the milestone timeline.
+ *
+ * THE MARKET-DEMAND CHIPS AND THE CIVIC PULSE ORIGIN LINK ARE GONE, and not merely
+ * deferred. `ResearchProjectDetailView` carries no `relatedInsightIds` and no
+ * `originProblemReportId` — there is no server-side link between a project and the
+ * insight or cluster it grew from, so there is nothing to resolve. They return when the
+ * backend adds the relation, not when a phase lands. See R_AND_D_STRUCTURE.md §18.
+ *
+ * THE PROOF-OF-EFFORT LINK IS ALSO GONE for now: that route still renders mock data
+ * keyed by mock slugs, so a real slug reaching it is a 404. It returns with phase 4.
+ */
+export default function OverviewTab({ project, milestonesState }: OverviewTabProps) {
+  function renderMilestones() {
+    switch (milestonesState.status) {
+      case "error":
+        return <RndErrorPanel message="Couldn't load the milestone timeline." />;
+      case "restricted":
+        return milestonesState.isSignInRequired ? (
+          <RndSignInRequiredPanel message="Sign in to see this project's milestones." />
+        ) : (
+          <RndMembersOnlyPanel message="Milestones are visible to this project's team." />
+        );
+      case "empty":
+        return <RndStatusPanel message="No milestones planned yet." />;
+      case "ready":
+        return <MilestoneTimeline milestones={milestonesState.rows} />;
+      default: {
+        const exhaustiveCheck: never = milestonesState;
+        return exhaustiveCheck;
+      }
+    }
+  }
+
   return (
     <div className="space-y-6 px-4 lg:px-6">
       <section className="space-y-2">
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">The problem &amp; solution</h3>
-        <p className="max-w-prose text-sm leading-6">{project.description}</p>
+        {project.problemStatement && (
+          <p className="max-w-prose text-sm leading-6">{project.problemStatement}</p>
+        )}
+        {project.solutionSummary && (
+          <p className="max-w-prose text-sm leading-6">{project.solutionSummary}</p>
+        )}
+        {project.description && !project.problemStatement && !project.solutionSummary && (
+          <p className="max-w-prose text-sm leading-6">{project.description}</p>
+        )}
       </section>
-      {relatedInsights.length > 0 && (
-        <section className="space-y-3">
-          <h3 className="text-sm font-medium tracking-wide xl:text-lg">Market-demand evidence</h3>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {relatedInsights.map((insight) => (
-              <MarketInsightCard key={insight.id} insight={insight} />
-            ))}
-          </div>
+      {/* The founder's OWN assertion, kept visually distinct from anything the platform
+          computed. An assertion must never read as verified evidence. */}
+      {project.demandEvidenceNotes && (
+        <section className="space-y-2 rounded-2xl border border-dashed border-[#CAC4D0] p-4">
+          <h3 className="text-sm font-medium tracking-wide xl:text-lg">
+            Demand evidence, as stated by the founder
+          </h3>
+          <p className="max-w-prose text-sm leading-6 text-muted-foreground">
+            {project.demandEvidenceNotes}
+          </p>
         </section>
       )}
       <div className="flex flex-wrap gap-2">
         <Link
-          href={`/research-and-development/project/${project.id}/workshop`}
+          href={`/research-and-development/project/${project.slug}/workshop`}
           className="inline-flex items-center gap-2 rounded-full bg-[#00696E]/10 px-3 py-1.5 text-xs font-medium text-[#00696E] transition hover:bg-[#00696E]/20"
         >
           Open the Virtual Workshop — boards, files, and team chat →
         </Link>
-        <Link
-          href={`/research-and-development/project/${project.id}/proof-of-effort`}
-          className="inline-flex items-center gap-2 rounded-full bg-[#00696E]/10 px-3 py-1.5 text-xs font-medium text-[#00696E] transition hover:bg-[#00696E]/20"
-        >
-          See the Proof of Effort ledger — slices, verification, disputes →
-        </Link>
       </div>
-      {originReport && (
-        <Link
-          href="/research-and-development/problem-map"
-          className="inline-flex items-center gap-2 rounded-full bg-[#D6E3FF] px-3 py-1.5 text-xs font-medium text-[#191C1C] transition hover:bg-[#D6E3FF]/70"
-        >
-          <Image
-            src="/icons/flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            width={20}
-            height={20}
-            alt=""
-          />
-          Born from Civic Pulse report: {originReport.title}
-        </Link>
-      )}
       <section className="space-y-3">
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">Milestone timeline</h3>
-        <MilestoneTimeline milestones={project.milestones} />
+        {renderMilestones()}
       </section>
     </div>
   );

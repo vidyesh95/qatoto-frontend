@@ -1,42 +1,96 @@
-// TRANSPORT: mock — NOT WIRED (phase 2). Reads a static dataset from
-// src/mocks/research-and-development*. Every figure here is fabricated; see
-// docs/R_AND_D_STRUCTURE.md §18 for what wires it and §19 for the transport map.
+// TRANSPORT: server-fetch — server component. Reads GET /research-projects/:slug
+// (public) plus four member-scoped child reads, forwarding the session cookie through
+// callerRequestOptions(). See docs/R_AND_D_STRUCTURE.md §19 for the transport map.
 import { notFound } from "next/navigation";
 
 import DailyLogsTab from "@/components/home/research-and-development/sections/daily-logs-tab";
 import FundingTab from "@/components/home/research-and-development/sections/funding-tab";
-import GovernanceTab from "@/components/home/research-and-development/sections/governance-tab";
 import OverviewTab from "@/components/home/research-and-development/sections/overview-tab";
 import ProjectHeader from "@/components/home/research-and-development/sections/project-header";
 import ProjectTabs from "@/components/home/research-and-development/sections/project-tabs";
+import { RndErrorPanel } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import TeamTab from "@/components/home/research-and-development/sections/team-tab";
-import { MOCK_RESEARCH_PROJECTS } from "@/mocks/research-and-development-mocks";
+import { listProjectDailyLogs } from "@/lib/rnd/daily-logs.api";
+import {
+  getProjectInvestorConfidence,
+  listProjectFundingRounds,
+  listProjectMilestones,
+} from "@/lib/rnd/funding.api";
+import { getResearchProjectDetail, listProjectOpenRoles } from "@/lib/rnd/projects.api";
+import { toMemberScopedItemViewState, toMemberScopedListViewState } from "@/lib/rnd/view-state";
+import { callerRequestOptions } from "@/lib/server-http";
 
-// Project detail page body: resolves one mock project by slug, then hands the five
-// server-rendered tab panels to the client tabs island.
-//
-// THE OVERVIEW CROSS-REFERENCES ARE DARK UNTIL PHASE 2, and deliberately so. Market
-// insights and problem clusters are now read from the API, so the mock market-insight
-// and problem-report arrays are gone. A mock project's `relatedInsightIds` /
-// `originProblemReportId` are authored slugs that match no real row, so resolving them
-// against live data would yield nothing anyway — and fabricating a match to keep the
-// chips on screen would be inventing evidence. Both sections are length-guarded and
-// stay hidden until the phase-2 project read supplies the server-side links.
-export default function ProjectDetail({ projectId }: { projectId: string }) {
-  const project = MOCK_RESEARCH_PROJECTS.find(
-    (candidateProject) => candidateProject.id === projectId,
-  );
-  if (!project) notFound();
+const DAILY_LOGS_PAGE_LIMIT = 30;
+
+/**
+ * Project detail page body.
+ *
+ * THE READ ORDER IS LOAD-BEARING. The public detail read runs alone and first: its
+ * `404` means "no such project, or a draft you do not own" and becomes `notFound()`,
+ * which leaks nothing. Only once it SUCCEEDS is the project's existence public
+ * knowledge the visitor arrived with — which is what makes a "members only" message
+ * legitimate on the four child reads, and only there. Everywhere else in this app a 404
+ * must stay silent about why.
+ *
+ * The four child reads then run concurrently off one `callerRequestOptions()`, and each
+ * gets its OWN view state: a dead `…/milestones` dims the Overview tab's timeline and
+ * nothing else.
+ */
+export default async function ProjectDetail({ projectSlug }: { projectSlug: string }) {
+  const requestOptions = await callerRequestOptions();
+  const detailResult = await getResearchProjectDetail(projectSlug, requestOptions);
+
+  if (!detailResult.success) {
+    if (detailResult.error.code === "404") notFound();
+    return (
+      <div className="px-4 pt-6 lg:px-6">
+        <RndErrorPanel message="Couldn't load this project." />
+      </div>
+    );
+  }
+
+  const project = detailResult.data;
+
+  const [
+    openRolesResult,
+    milestonesResult,
+    dailyLogsResult,
+    fundingRoundsResult,
+    confidenceResult,
+  ] = await Promise.all([
+    listProjectOpenRoles(projectSlug, requestOptions),
+    listProjectMilestones(projectSlug, requestOptions),
+    listProjectDailyLogs(projectSlug, { limit: DAILY_LOGS_PAGE_LIMIT }, requestOptions),
+    listProjectFundingRounds(projectSlug, requestOptions),
+    getProjectInvestorConfidence(projectSlug, requestOptions),
+  ]);
 
   return (
     <div className="space-y-6 pt-4 pb-4 lg:pt-6 lg:pb-6">
       <ProjectHeader project={project} />
       <ProjectTabs
-        overviewPanel={<OverviewTab project={project} relatedInsights={[]} />}
-        dailyLogsPanel={<DailyLogsTab project={project} />}
-        teamPanel={<TeamTab project={project} />}
-        fundingPanel={<FundingTab project={project} />}
-        governancePanel={<GovernanceTab project={project} />}
+        overviewPanel={
+          <OverviewTab
+            project={project}
+            milestonesState={toMemberScopedListViewState(milestonesResult)}
+          />
+        }
+        dailyLogsPanel={
+          <DailyLogsTab dailyLogsState={toMemberScopedListViewState(dailyLogsResult)} />
+        }
+        teamPanel={
+          <TeamTab
+            project={project}
+            openRolesState={toMemberScopedListViewState(openRolesResult)}
+          />
+        }
+        fundingPanel={
+          <FundingTab
+            projectName={project.name}
+            fundingRoundsState={toMemberScopedListViewState(fundingRoundsResult)}
+            investorConfidenceState={toMemberScopedItemViewState(confidenceResult)}
+          />
+        }
       />
     </div>
   );

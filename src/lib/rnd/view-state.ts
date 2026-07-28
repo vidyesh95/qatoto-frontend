@@ -32,12 +32,62 @@ export type ListViewState<TRow> =
   | { status: "empty" }
   | { status: "ready"; rows: TRow[]; pagination: PaginationMeta | null };
 
+/**
+ * A list read that sits behind project membership, on a project the caller can
+ * ALREADY see.
+ *
+ * `restricted` is legitimate here and NOWHERE ELSE. The rule everywhere else is that a
+ * 404 must never become a permission hint, because it is the backend's answer to "no
+ * access or no such thing" and rendering "you don't have permission" from it would
+ * confirm which ids exist. On these reads the parent detail read already succeeded, so
+ * the project's existence is public knowledge the visitor arrived with — a 404 on its
+ * child route can only mean "not a member", and saying so leaks nothing.
+ *
+ * There is no `pagination`: every member-scoped read this covers
+ * (`…/daily-logs`, `…/funding-rounds`, `…/milestones`, `…/roles`) returns a bare array.
+ */
+export type MemberScopedListViewState<TRow> =
+  | { status: "error"; message: string }
+  | { status: "restricted"; isSignInRequired: boolean }
+  | { status: "empty" }
+  | { status: "ready"; rows: TRow[] };
+
+/**
+ * A single member-scoped object rather than a list — `…/investor-confidence`, which
+ * additionally 404s when the signal was never computed.
+ *
+ * `restricted` and `absent` are deliberately the same variant: the endpoint answers 404
+ * for both "not a member" and "never computed", and the frontend cannot tell them
+ * apart. Both render as an absence, which is the honest output either way. Never
+ * substitute a default — a fabricated confidence score is a published finding.
+ */
+export type MemberScopedItemViewState<TItem> =
+  | { status: "error"; message: string }
+  | { status: "restricted"; isSignInRequired: boolean }
+  | { status: "ready"; item: TItem };
+
+/**
+ * A keyset page. `GET /daily-logs` is the repo's first consumer.
+ *
+ * `nextCursor` is an opaque server string — echo it back verbatim or the backend
+ * answers `422 CURSOR_MALFORMED`. Never construct or compare one client-side.
+ */
+export type CursorListViewState<TRow> =
+  | { status: "error"; message: string; isSignInRequired: boolean }
+  | { status: "empty" }
+  | { status: "ready"; rows: TRow[]; nextCursor: string | null };
+
 function toErrorState(error: ApiError): Extract<ListViewState<never>, { status: "error" }> {
   return {
     status: "error",
     message: error.message,
     isSignInRequired: isUnauthorized(error),
   };
+}
+
+/** 404 means "not a member" only once the parent resource is known to exist. */
+function isMembershipRefusal(error: ApiError): boolean {
+  return error.code === "404" || isUnauthorized(error);
 }
 
 /** For an offset-paginated read — `{ rows, pagination }`. */
@@ -66,4 +116,53 @@ export function toArrayViewState<TRow>(result: ActionResponse<TRow[]>): ListView
  */
 export function rowsOrEmpty<TRow>(result: ActionResponse<TRow[]>): TRow[] {
   return result.success ? result.data : [];
+}
+
+/**
+ * For a bare-array read behind project membership, on a project already resolved by a
+ * successful public detail read. See `MemberScopedListViewState` for why 404 is allowed
+ * to become a visible "members only" here and nowhere else.
+ */
+export function toMemberScopedListViewState<TRow>(
+  result: ActionResponse<TRow[]>,
+): MemberScopedListViewState<TRow> {
+  if (!result.success) {
+    if (isMembershipRefusal(result.error)) {
+      return { status: "restricted", isSignInRequired: isUnauthorized(result.error) };
+    }
+    return { status: "error", message: result.error.message };
+  }
+  if (result.data.length === 0) return { status: "empty" };
+  return { status: "ready", rows: result.data };
+}
+
+/** The single-object counterpart, for `…/investor-confidence`. */
+export function toMemberScopedItemViewState<TItem>(
+  result: ActionResponse<TItem>,
+): MemberScopedItemViewState<TItem> {
+  if (!result.success) {
+    if (isMembershipRefusal(result.error)) {
+      return { status: "restricted", isSignInRequired: isUnauthorized(result.error) };
+    }
+    return { status: "error", message: result.error.message };
+  }
+  return { status: "ready", item: result.data };
+}
+
+/**
+ * For a keyset page.
+ *
+ * The caller supplies `selectRows` because each backend keyset envelope NAMES ITS ARRAY
+ * FOR ITS DOMAIN — `logs` on the daily-log feed, `messages` on workshop chat. There is
+ * no shared `items` key to read and no generic envelope schema to write, so the one
+ * place that knows the key hands it over here.
+ */
+export function toCursorListViewState<TPage, TRow>(
+  result: ActionResponse<TPage>,
+  selectRows: (page: TPage) => { rows: TRow[]; nextCursor: string | null },
+): CursorListViewState<TRow> {
+  if (!result.success) return toErrorState(result.error);
+  const { rows, nextCursor } = selectRows(result.data);
+  if (rows.length === 0) return { status: "empty" };
+  return { status: "ready", rows, nextCursor };
 }

@@ -1,66 +1,27 @@
-// TRANSPORT: props-only — client island. Holds interaction state only; all data
-// arrives as props from a server parent. Fetches nothing, so it needs no
-// QueryProvider. If this ever calls a hook in src/hooks/rnd, relabel it client-query.
-"use client";
-
-import { useState } from "react";
-
+// TRANSPORT: props-only — presentational server component. Fetches nothing; rows
+// arrive as props from a parent that read GET …/daily-logs.
 import DailyLogCard from "@/components/home/research-and-development/cards/daily-log-card";
-import type { DailyLog, TeamMember } from "@/types/research-and-development";
+import type { DailyLogView } from "@/lib/rnd/daily-logs.schemas";
 
-type DailyLogsFeedProps = {
-  logs: DailyLog[];
-  teamMembers: TeamMember[];
-};
-
-function buildFilterChipClassName(isSelected: boolean): string {
-  return `shrink-0 cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-    isSelected ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70"
-  }`;
-}
-
-// Client island for the Daily Logs tab: a single-select member filter over the
-// static mock log feed — filtering is a display convenience only.
-export default function DailyLogsFeed({ logs, teamMembers }: DailyLogsFeedProps) {
-  const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null);
-
-  const visibleLogs = selectedAuthorId
-    ? logs.filter((log) => log.authorId === selectedAuthorId)
-    : logs;
-
+/**
+ * The Daily Logs tab's feed.
+ *
+ * THE MEMBER FILTER IS DELETED AND THE ISLAND IS GONE WITH IT. It filtered the fetched
+ * page client-side, and `GET …/daily-logs` accepts `limit` and nothing else — no author
+ * facet exists. Over a capped page that filter lies: a member whose logs fall past the
+ * limit renders as "no logs from this member" when they have plenty. A filter the
+ * server cannot apply is not a filter, and phase 1 already established that chips are
+ * `<Link>`s the backend honours or they do not ship.
+ *
+ * Each row carries its own author name and avatar, so there is no roster lookup table
+ * to thread through and a card never fabricates an author.
+ */
+export default function DailyLogsFeed({ logs }: { logs: DailyLogView[] }) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setSelectedAuthorId(null)}
-          className={buildFilterChipClassName(selectedAuthorId === null)}
-        >
-          All
-        </button>
-        {teamMembers.map((teamMember) => (
-          <button
-            key={teamMember.id}
-            type="button"
-            onClick={() => setSelectedAuthorId(teamMember.id)}
-            className={buildFilterChipClassName(selectedAuthorId === teamMember.id)}
-          >
-            {teamMember.name}
-          </button>
-        ))}
-      </div>
-      <div className="space-y-4">
-        {visibleLogs.map((log) => (
-          <DailyLogCard
-            key={log.id}
-            log={log}
-            author={teamMembers.find((teamMember) => teamMember.id === log.authorId)}
-          />
-        ))}
-        {visibleLogs.length === 0 && (
-          <p className="text-sm text-muted-foreground">No logs from this member yet.</p>
-        )}
-      </div>
+      {logs.map((log) => (
+        <DailyLogCard key={log.id} log={log} />
+      ))}
     </div>
   );
 }

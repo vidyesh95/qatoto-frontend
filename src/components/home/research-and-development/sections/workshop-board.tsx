@@ -1,18 +1,10 @@
-// TRANSPORT: props-only — client island. Holds interaction state only; all data
-// arrives as props from a server parent. Fetches nothing, so it needs no
-// QueryProvider. If this ever calls a hook in src/hooks/rnd, relabel it client-query.
-"use client";
-
+// TRANSPORT: props-only — presentational server component. Fetches nothing; columns
+// and the roster arrive as props from a parent that read GET …/workshop.
 import Image from "next/image";
-import { useState } from "react";
 
-import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
-import type {
-  TeamMember,
-  WorkshopBoardColumn,
-  WorkshopTask,
-  WorkshopTaskPriority,
-} from "@/types/research-and-development";
+import { formatIsoDate } from "@/lib/rnd/format";
+import type { ProjectTeamMember } from "@/lib/rnd/projects.schemas";
+import type { WorkshopBoardColumn, WorkshopTaskPriority } from "@/lib/rnd/workshop.schemas";
 
 const PRIORITY_DOT_CLASSES: Record<WorkshopTaskPriority, string> = {
   high: "bg-[#BA1A1A]",
@@ -26,141 +18,41 @@ const PRIORITY_LABELS: Record<WorkshopTaskPriority, string> = {
   low: "Low",
 };
 
-const PRIORITY_ORDER: WorkshopTaskPriority[] = ["high", "medium", "low"];
-
 type WorkshopBoardProps = {
-  initialBoardColumns: WorkshopBoardColumn[];
-  teamMembers: TeamMember[];
+  boardColumns: WorkshopBoardColumn[];
+  teamMembers: ProjectTeamMember[];
 };
 
-// Kanban board with local writes (§14.5): add a task to a column, and move one
-// between columns. Movement is by explicit ← / → buttons rather than drag: a
-// button is keyboard-reachable and screen-reader-announceable, and a board
-// nobody can operate without a mouse is not usable. Nothing is persisted —
-// task state is backend-owned later.
-export default function WorkshopBoard({ initialBoardColumns, teamMembers }: WorkshopBoardProps) {
-  const [boardColumns, setBoardColumns] = useState<WorkshopBoardColumn[]>(initialBoardColumns);
-  const [composingColumnId, setComposingColumnId] = useState<string | null>(null);
-  const [draftTaskTitle, setDraftTaskTitle] = useState("");
-  const [draftAssigneeMemberId, setDraftAssigneeMemberId] = useState(teamMembers[0]?.id ?? "");
-  const [draftPriority, setDraftPriority] = useState<WorkshopTaskPriority>("medium");
-
-  const findAssignee = (assigneeMemberId: string) =>
-    teamMembers.find((teamMember) => teamMember.id === assigneeMemberId);
-
-  const handleAddTaskSubmit = (columnId: string, submitEvent: React.FormEvent) => {
-    submitEvent.preventDefault();
-    if (draftTaskTitle.trim() === "") return;
-    const newTask: WorkshopTask = {
-      id: `local-task-${columnId}-${Date.now()}`,
-      title: draftTaskTitle.trim(),
-      assigneeMemberId: draftAssigneeMemberId,
-      priority: draftPriority,
-      labels: ["Added here"],
-    };
-    setBoardColumns((currentColumns) =>
-      currentColumns.map((column) =>
-        column.id === columnId ? { ...column, tasks: [newTask, ...column.tasks] } : column,
-      ),
-    );
-    setDraftTaskTitle("");
-    setComposingColumnId(null);
-  };
-
-  const handleMoveTask = (taskId: string, fromColumnIndex: number, directionStep: -1 | 1) => {
-    const targetColumnIndex = fromColumnIndex + directionStep;
-    if (targetColumnIndex < 0 || targetColumnIndex >= boardColumns.length) return;
-    const movingTask = boardColumns[fromColumnIndex].tasks.find((task) => task.id === taskId);
-    if (!movingTask) return;
-    setBoardColumns((currentColumns) =>
-      currentColumns.map((column, columnIndex) => {
-        if (columnIndex === fromColumnIndex) {
-          return { ...column, tasks: column.tasks.filter((task) => task.id !== taskId) };
-        }
-        if (columnIndex === targetColumnIndex) {
-          return { ...column, tasks: [movingTask, ...column.tasks] };
-        }
-        return column;
-      }),
-    );
-  };
+/**
+ * The kanban board, read-only.
+ *
+ * THE ADD-TASK FORM AND THE MOVE BUTTONS ARE GONE, and the component stopped being a
+ * client island with them. They wrote to `useState` and posted nowhere: a control that
+ * looks like it moved a task and did not is worse than no control, because the next
+ * reader believes the board. `POST …/workshop/tasks` and `…/tasks/:id/move` are both
+ * shipped and this pass is reads-only, so the affordances come back when the writes do.
+ *
+ * `assigneeMemberId` is nullable and resolves against the project's roster by
+ * `memberId` — the backend sends the id and the client looks up the name, so a renamed
+ * member is never stale on a card. An unresolvable id renders as no assignee, never as
+ * a placeholder person.
+ */
+export default function WorkshopBoard({ boardColumns, teamMembers }: WorkshopBoardProps) {
+  function findAssignee(assigneeMemberId: string | null): ProjectTeamMember | undefined {
+    if (assigneeMemberId === null) return undefined;
+    return teamMembers.find((teamMember) => teamMember.memberId === assigneeMemberId);
+  }
 
   return (
     <div className="space-y-3">
       <div className="flex gap-4 overflow-x-auto px-4 pb-2 lg:px-6">
-        {boardColumns.map((boardColumn, columnIndex) => (
+        {boardColumns.map((boardColumn) => (
           <div key={boardColumn.id} className="w-72 shrink-0 rounded-2xl bg-muted/40 p-3">
             <div className="flex items-center justify-between px-1 pb-2">
               <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 {boardColumn.title} · {boardColumn.tasks.length}
               </p>
-              <button
-                type="button"
-                aria-label={`Add a task to ${boardColumn.title}`}
-                onClick={() =>
-                  setComposingColumnId(composingColumnId === boardColumn.id ? null : boardColumn.id)
-                }
-                className="cursor-pointer rounded-full px-2 text-lg leading-none text-muted-foreground transition-colors hover:bg-background"
-              >
-                +
-              </button>
             </div>
-
-            {composingColumnId === boardColumn.id && (
-              <form
-                onSubmit={(submitEvent) => handleAddTaskSubmit(boardColumn.id, submitEvent)}
-                className="mb-2 space-y-2 rounded-xl border border-[#CAC4D0]/60 bg-background p-3"
-              >
-                <label className="flex flex-col gap-1">
-                  <span className={LABEL_CLASS}>Task</span>
-                  <input
-                    type="text"
-                    value={draftTaskTitle}
-                    onChange={(changeEvent) => setDraftTaskTitle(changeEvent.target.value)}
-                    placeholder="What needs doing?"
-                    className={INPUT_CLASS}
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className={LABEL_CLASS}>Assignee</span>
-                  <select
-                    value={draftAssigneeMemberId}
-                    onChange={(changeEvent) => setDraftAssigneeMemberId(changeEvent.target.value)}
-                    className={INPUT_CLASS}
-                  >
-                    {teamMembers.map((teamMember) => (
-                      <option key={teamMember.id} value={teamMember.id}>
-                        {teamMember.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {PRIORITY_ORDER.map((priority) => (
-                    <button
-                      key={priority}
-                      type="button"
-                      aria-pressed={draftPriority === priority}
-                      onClick={() => setDraftPriority(priority)}
-                      className={`cursor-pointer rounded-full px-2.5 py-1 text-xs transition-colors ${
-                        draftPriority === priority
-                          ? "bg-[#00696E] text-white"
-                          : "bg-muted hover:bg-muted/70"
-                      }`}
-                    >
-                      {PRIORITY_LABELS[priority]}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="submit"
-                  className="w-full cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
-                >
-                  Add task
-                </button>
-              </form>
-            )}
-
             <div className="space-y-2">
               {boardColumn.tasks.map((task) => {
                 const assignee = findAssignee(task.assigneeMemberId);
@@ -170,6 +62,11 @@ export default function WorkshopBoard({ initialBoardColumns, teamMembers }: Work
                     className="space-y-2 rounded-xl border border-[#CAC4D0]/60 bg-background p-3"
                   >
                     <p className="text-sm font-medium">{task.title}</p>
+                    {task.description && (
+                      <p className="line-clamp-2 text-xs text-muted-foreground">
+                        {task.description}
+                      </p>
+                    )}
                     <div className="flex flex-wrap items-center gap-1.5">
                       {task.labels.map((label) => (
                         <span key={label} className="rounded-full bg-muted px-2 py-0.5 text-xs">
@@ -186,52 +83,34 @@ export default function WorkshopBoard({ initialBoardColumns, teamMembers }: Work
                     <div className="flex items-center justify-between">
                       {assignee && (
                         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Image
-                            src={assignee.avatarImageSrc}
-                            width={20}
-                            height={20}
-                            alt={assignee.name}
-                            className="size-5 rounded-full object-cover"
-                          />
+                          {assignee.avatarImageUrl && (
+                            <Image
+                              src={assignee.avatarImageUrl}
+                              width={20}
+                              height={20}
+                              alt={assignee.name}
+                              className="size-5 rounded-full object-cover"
+                            />
+                          )}
                           {assignee.name}
                         </span>
                       )}
-                      {task.dueDateLabel && (
+                      {task.dueDate && (
                         <span className="text-xs text-muted-foreground">
-                          Due {task.dueDateLabel}
+                          Due {formatIsoDate(task.dueDate)}
                         </span>
                       )}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        disabled={columnIndex === 0}
-                        aria-label={`Move "${task.title}" to the previous column`}
-                        onClick={() => handleMoveTask(task.id, columnIndex, -1)}
-                        className="cursor-pointer rounded-full border border-[#6F7979] px-2 py-0.5 text-xs disabled:cursor-not-allowed disabled:opacity-30"
-                      >
-                        ←
-                      </button>
-                      <button
-                        type="button"
-                        disabled={columnIndex === boardColumns.length - 1}
-                        aria-label={`Move "${task.title}" to the next column`}
-                        onClick={() => handleMoveTask(task.id, columnIndex, 1)}
-                        className="cursor-pointer rounded-full border border-[#6F7979] px-2 py-0.5 text-xs disabled:cursor-not-allowed disabled:opacity-30"
-                      >
-                        →
-                      </button>
                     </div>
                   </div>
                 );
               })}
+              {boardColumn.tasks.length === 0 && (
+                <p className="px-1 text-xs text-muted-foreground">Nothing here.</p>
+              )}
             </div>
           </div>
         ))}
       </div>
-      <p className="px-4 text-xs text-muted-foreground lg:px-6">
-        Board edits live in this session only — task state and ordering are backend-owned later.
-      </p>
     </div>
   );
 }

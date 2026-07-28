@@ -1,36 +1,59 @@
-// TRANSPORT: mock — NOT WIRED (phase 3). Reads a static dataset from
-// src/mocks/research-and-development*. Every figure here is fabricated; see
-// docs/R_AND_D_STRUCTURE.md §18 for what wires it and §19 for the transport map.
+// TRANSPORT: server-fetch — server component. Reads GET /research-projects/:slug
+// (public) for the header and roster, then GET …/workshop (member-only) for the
+// content. See docs/R_AND_D_STRUCTURE.md §19 for the transport map.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import {
+  RndErrorPanel,
+  RndMembersOnlyPanel,
+  RndSignInRequiredPanel,
+} from "@/components/home/research-and-development/sections/rnd-status-panel";
 import WorkshopBoard from "@/components/home/research-and-development/sections/workshop-board";
 import WorkshopChat from "@/components/home/research-and-development/sections/workshop-chat";
 import WorkshopFiles from "@/components/home/research-and-development/sections/workshop-files";
 import WorkshopTabs from "@/components/home/research-and-development/sections/workshop-tabs";
-import { MOCK_RESEARCH_PROJECTS } from "@/mocks/research-and-development-mocks";
-import { MOCK_PROJECT_WORKSHOPS } from "@/mocks/research-and-development-workshop-mocks";
+import { getResearchProjectDetail } from "@/lib/rnd/projects.api";
+import { getProjectWorkshop } from "@/lib/rnd/workshop.api";
+import { isUnauthorized, type ApiError } from "@/lib/http";
+import { callerRequestOptions } from "@/lib/server-http";
 
-// Virtual Workshop composition (§11): the project team's collab space —
-// boards, files, chat — behind a small tabs island (same handoff as
-// project-detail → project-tabs). Each panel is now a client island of its own
-// because all three accept writes (§14.5): add and move tasks, attach or link a
-// file, send a message. Every write is local to the session — collaboration
-// data is backend-owned later.
-export default function WorkshopPage({ projectId }: { projectId: string }) {
-  const project = MOCK_RESEARCH_PROJECTS.find(
-    (candidateProject) => candidateProject.id === projectId,
-  );
-  const workshop = MOCK_PROJECT_WORKSHOPS.find(
-    (candidateWorkshop) => candidateWorkshop.projectId === projectId,
-  );
-  if (!project || !workshop) notFound();
+/**
+ * The Virtual Workshop — the project team's boards, files and chat.
+ *
+ * TWO READS, IN THIS ORDER, FOR A REASON. The public detail read resolves the project
+ * and supplies the roster every panel needs to turn a `memberId` into a name; its 404
+ * is `notFound()` and leaks nothing. The workshop read then runs behind membership at
+ * role `contributor` and answers 404 to everyone else. Because the project is already
+ * known to exist by then, saying "this is the team's space" is safe here — a
+ * non-member sees the real project header above an honest explanation, rather than a
+ * blank 404 for a project they can browse elsewhere.
+ *
+ * The whole workshop is ONE request: the backend composes board, files, chat and read
+ * state from four concurrent service calls, so fanning out client-side would be three
+ * round trips for a payload the server already assembles.
+ */
+export default async function WorkshopPage({ projectSlug }: { projectSlug: string }) {
+  const requestOptions = await callerRequestOptions();
+  const detailResult = await getResearchProjectDetail(projectSlug, requestOptions);
+
+  if (!detailResult.success) {
+    if (detailResult.error.code === "404") notFound();
+    return (
+      <div className="px-4 pt-6 lg:px-6">
+        <RndErrorPanel message="Couldn't load this project." />
+      </div>
+    );
+  }
+
+  const project = detailResult.data;
+  const workshopResult = await getProjectWorkshop(projectSlug, requestOptions);
 
   return (
     <div className="space-y-6 pt-4 pb-4 lg:pt-6 lg:pb-6">
       <header className="space-y-1 px-4 lg:px-6">
         <Link
-          href={`/research-and-development/project/${project.id}`}
+          href={`/research-and-development/project/${project.slug}`}
           className="text-xs font-medium text-[#00696E]"
         >
           ← {project.name}
@@ -40,23 +63,37 @@ export default function WorkshopPage({ projectId }: { projectId: string }) {
           Where the {project.name} team plans, shares, and talks — boards, files, and chat.
         </p>
       </header>
-      <WorkshopTabs
-        boardsPanel={
-          <WorkshopBoard
-            initialBoardColumns={workshop.boardColumns}
-            teamMembers={project.teamMembers}
-          />
-        }
-        filesPanel={
-          <WorkshopFiles initialFiles={workshop.files} teamMembers={project.teamMembers} />
-        }
-        chatPanel={
-          <WorkshopChat
-            initialChatMessages={workshop.chatMessages}
-            teamMembers={project.teamMembers}
-          />
-        }
-      />
+      {workshopResult.success ? (
+        <WorkshopTabs
+          boardsPanel={
+            <WorkshopBoard boardColumns={workshopResult.data.board} teamMembers={project.team} />
+          }
+          filesPanel={
+            <WorkshopFiles files={workshopResult.data.files} teamMembers={project.team} />
+          }
+          chatPanel={
+            <WorkshopChat
+              chatMessages={workshopResult.data.chatMessages}
+              teamMembers={project.team}
+            />
+          }
+        />
+      ) : (
+        <div className="px-4 lg:px-6">{renderWorkshopRefusal(workshopResult.error)}</div>
+      )}
     </div>
   );
+}
+
+/** 404 here means "not a member"; the project's existence was settled by the read above. */
+function renderWorkshopRefusal(error: ApiError) {
+  if (isUnauthorized(error)) {
+    return <RndSignInRequiredPanel message="Sign in to open this project's workshop." />;
+  }
+  if (error.code === "404") {
+    return (
+      <RndMembersOnlyPanel message="The workshop is open to this project's team — boards, files and chat stay inside it." />
+    );
+  }
+  return <RndErrorPanel message="Couldn't load the workshop." />;
 }

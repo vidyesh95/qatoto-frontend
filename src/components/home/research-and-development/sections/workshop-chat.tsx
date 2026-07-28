@@ -1,106 +1,76 @@
-// TRANSPORT: props-only — client island. Holds interaction state only; all data
-// arrives as props from a server parent. Fetches nothing, so it needs no
-// QueryProvider. If this ever calls a hook in src/hooks/rnd, relabel it client-query.
-"use client";
-
+// TRANSPORT: props-only — presentational server component. Fetches nothing; messages
+// and the roster arrive as props from a parent that read GET …/workshop.
 import Image from "next/image";
-import { useState } from "react";
 
-import type { TeamMember, WorkshopChatMessage } from "@/types/research-and-development";
+import { formatIsoInstant } from "@/lib/rnd/format";
+import type { ProjectTeamMember } from "@/lib/rnd/projects.schemas";
+import type { WorkshopChatMessage } from "@/lib/rnd/workshop.schemas";
 
 type WorkshopChatProps = {
-  initialChatMessages: WorkshopChatMessage[];
-  teamMembers: TeamMember[];
+  chatMessages: WorkshopChatMessage[];
+  teamMembers: ProjectTeamMember[];
 };
 
-// Team-chat panel with a working composer (§14.5). Sending appends to the local
-// transcript and nothing leaves the browser — messaging, delivery and read
-// state are backend-owned later. The composer is a real form rather than a
-// decorative div so the interaction is honest about what it does.
-export default function WorkshopChat({ initialChatMessages, teamMembers }: WorkshopChatProps) {
-  const [chatMessages, setChatMessages] = useState<WorkshopChatMessage[]>(initialChatMessages);
-  const [draftMessageText, setDraftMessageText] = useState("");
-
-  const findAuthor = (authorMemberId: string) =>
-    teamMembers.find((teamMember) => teamMember.id === authorMemberId);
-
-  const handleSendSubmit = (submitEvent: React.FormEvent) => {
-    submitEvent.preventDefault();
-    if (draftMessageText.trim() === "") return;
-    setChatMessages((currentMessages) => [
-      ...currentMessages,
-      {
-        id: `local-message-${currentMessages.length}`,
-        authorMemberId: "viewer",
-        sentAtLabel: "Just now",
-        messageText: draftMessageText.trim(),
-      },
-    ]);
-    setDraftMessageText("");
-  };
+/**
+ * The team-chat transcript, read-only.
+ *
+ * THE COMPOSER IS GONE, and the component stopped being a client island with it. It
+ * appended to `useState` and nothing left the browser — a send button that convincingly
+ * "sends" is the most misleading control on this page, because a member could believe
+ * they had told their team something. `POST …/workshop/chat` is shipped and this pass
+ * is reads-only.
+ *
+ * `chatMessages` is the recent OLDEST-FIRST slice the workshop snapshot carries; it has
+ * no cursor. Older history comes from `GET …/workshop/chat`, whose envelope keys its
+ * array `messages` and whose `sentAtMs_id` cursor is opaque — that read lands with the
+ * "load older" control, not before.
+ */
+export default function WorkshopChat({ chatMessages, teamMembers }: WorkshopChatProps) {
+  function findAuthor(authorMemberId: string): ProjectTeamMember | undefined {
+    return teamMembers.find((teamMember) => teamMember.memberId === authorMemberId);
+  }
 
   return (
     <div className="max-w-2xl space-y-4 px-4 lg:px-6">
       <div className="space-y-3">
         {chatMessages.map((chatMessage) => {
           const author = findAuthor(chatMessage.authorMemberId);
-          const isFromViewer = chatMessage.authorMemberId === "viewer";
           return (
             <div key={chatMessage.id} className="flex items-start gap-2.5">
-              {author ? (
+              {author?.avatarImageUrl ? (
                 <Image
-                  src={author.avatarImageSrc}
+                  src={author.avatarImageUrl}
                   width={32}
                   height={32}
                   alt={author.name}
                   className="size-8 shrink-0 rounded-full object-cover"
                 />
               ) : (
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#00696E]/10 text-xs font-medium text-[#00696E]">
-                  You
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-xs font-medium">
+                  {(author?.name ?? "?").slice(0, 1).toUpperCase()}
                 </span>
               )}
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">
+                  {/* An unresolvable author id renders as a former member, never as an
+                      invented name — the roster carries only ACTIVE members. */}
                   <span className="font-medium text-foreground">
-                    {author?.name ?? (isFromViewer ? "You" : "Teammate")}
+                    {author?.name ?? "Former member"}
                   </span>{" "}
-                  · {chatMessage.sentAtLabel}
+                  · {formatIsoInstant(chatMessage.sentAt)}
+                  {chatMessage.editedAt && " · edited"}
                 </p>
-                <p
-                  className={`mt-1 w-fit rounded-2xl px-3 py-2 text-sm ${
-                    isFromViewer ? "bg-[#00696E]/10" : "bg-muted"
-                  }`}
-                >
+                <p className="mt-1 w-fit rounded-2xl bg-muted px-3 py-2 text-sm">
                   {chatMessage.messageText}
                 </p>
               </div>
             </div>
           );
         })}
+        {chatMessages.length === 0 && (
+          <p className="text-sm text-muted-foreground">No messages yet.</p>
+        )}
       </div>
-
-      <form onSubmit={handleSendSubmit} className="flex items-center gap-2">
-        <input
-          type="text"
-          value={draftMessageText}
-          onChange={(changeEvent) => setDraftMessageText(changeEvent.target.value)}
-          placeholder="Message the team…"
-          aria-label="Message the team"
-          className="flex-1 rounded-full border border-[#6F7979] bg-transparent px-4 py-2.5 text-sm outline-none focus:border-[#00696E]"
-        />
-        <button
-          type="submit"
-          disabled={draftMessageText.trim() === ""}
-          className="cursor-pointer rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Send
-        </button>
-      </form>
-
-      <p className="text-xs text-muted-foreground">
-        Messages stay in this session — nothing is sent and nobody is notified.
-      </p>
     </div>
   );
 }

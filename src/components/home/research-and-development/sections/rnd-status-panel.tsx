@@ -47,6 +47,20 @@ export function RndSignInRequiredPanel({ message }: { message: string }) {
 }
 
 /**
+ * The `restricted` branch of a member-scoped read, and the ONE place a 404 is allowed
+ * to become a visible "you are not in this" message.
+ *
+ * It is safe only because the caller already resolved the project through its PUBLIC
+ * detail read, so the project's existence is something the visitor arrived knowing.
+ * Everywhere else a 404 must stay silent about why — see `MemberScopedListViewState`.
+ *
+ * Says nothing about how to get in: joining is an application, not a button on a tab.
+ */
+export function RndMembersOnlyPanel({ message }: { message: string }) {
+  return <RndStatusPanel message={message} />;
+}
+
+/**
  * The generic failure branch.
  *
  * No retry button: this renders inside a server component, where retrying means

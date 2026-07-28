@@ -1,29 +1,39 @@
-// TRANSPORT: props-only — renders what its parent passes. The one src/mocks
-// import is a LABEL MAP, not data; it belongs in src/lib and moves there when the
-// phase that owns this component wires up.
+// TRANSPORT: props-only — presentational server component. Fetches nothing; the
+// project arrives as a prop from a parent that read GET /research-projects/:slug.
 import Image from "next/image";
 
 import RequestToJoinButton from "@/components/home/research-and-development/sections/request-to-join-button";
 import BackProjectSheet from "@/components/home/research-and-development/sheets/back-project-sheet";
 import EditProjectSheet from "@/components/home/research-and-development/sheets/edit-project-sheet";
+import { formatIsoInstant } from "@/lib/rnd/format";
 import { PROJECT_STAGE_LABELS } from "@/lib/rnd/labels";
-import type { ResearchProject } from "@/types/research-and-development";
+import type { ResearchProjectDetail } from "@/lib/rnd/projects.schemas";
 
-// Always-visible project header above the detail tabs: cover band, name +
-// tagline, stage/category badges, founder row, stats row, and the join/back
-// actions. All figures are display-only mocks — backend-owned later.
-export default function ProjectHeader({ project }: { project: ResearchProject }) {
-  const founder = project.teamMembers.find((teamMember) => teamMember.isFounder);
-  const openFundingRound = project.fundingRounds.find(
-    (fundingRound) => fundingRound.status === "open",
-  );
-  const teamSize = project.teamMembers.length;
+/** `coverImageUrl` is nullable on the wire; the mock field it replaced was not. */
+const FALLBACK_COVER_IMAGE_SRC = "/dummy/rnd_project_cover_01.avif";
+
+/**
+ * Always-visible project header above the detail tabs.
+ *
+ * THE FUNDING LINE IS GONE. It used to read "{percentageFunded}% of {goalAmount}
+ * raised" off the project's embedded rounds, but `GET /research-projects/:slug` carries
+ * no rounds — they are a member-scoped read that lives on the Funding tab. Restating a
+ * figure here would need a second request whose 404 this header cannot honestly render.
+ *
+ * The stats row reads the `stats` sidecar, which is job-computed and STORED. Every
+ * figure on it is nullable and renders as an absence: a project whose stats job has not
+ * run has no streak, which is not the same as a streak of zero.
+ */
+export default function ProjectHeader({ project }: { project: ResearchProjectDetail }) {
+  const founder = project.team.find((teamMember) => teamMember.isFounder);
+  const teamMemberCount = project.stats?.teamMemberCount ?? project.team.length;
+  const dailyLogStreakDays = project.stats?.dailyLogStreakDays ?? null;
 
   return (
     <div className="space-y-4">
       <div className="relative mx-4 h-48 overflow-hidden rounded-2xl md:h-64 lg:mx-6">
         <Image
-          src={project.coverImageSrc}
+          src={project.coverImageUrl ?? FALLBACK_COVER_IMAGE_SRC}
           fill
           priority
           sizes="(min-width: 1024px) 1024px, 100vw"
@@ -41,44 +51,54 @@ export default function ProjectHeader({ project }: { project: ResearchProject })
             {PROJECT_STAGE_LABELS[project.stage]}
           </span>
           <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">
-            {project.category}
+            {project.category.label}
           </span>
+          {project.targetRegion && (
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">
+              {project.targetRegion}
+            </span>
+          )}
         </div>
         {founder && (
           <div className="flex items-center gap-2">
-            <Image
-              src={founder.avatarImageSrc}
-              width={32}
-              height={32}
-              alt={founder.name}
-              className="size-8 rounded-full object-cover"
-            />
+            {founder.avatarImageUrl && (
+              <Image
+                src={founder.avatarImageUrl}
+                width={32}
+                height={32}
+                alt={founder.name}
+                className="size-8 rounded-full object-cover"
+              />
+            )}
             <span className="text-sm">
               Founded by <span className="font-medium">{founder.name}</span>
             </span>
           </div>
         )}
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-          {openFundingRound && (
+          <span>
+            <span className="font-semibold text-foreground">{teamMemberCount}</span> team member
+            {teamMemberCount === 1 ? "" : "s"}
+          </span>
+          {dailyLogStreakDays !== null && (
             <span>
-              <span className="font-semibold text-foreground">
-                {openFundingRound.percentageFunded}%
-              </span>{" "}
-              of {openFundingRound.goalAmount} raised
+              <span className="font-semibold text-foreground">{dailyLogStreakDays}</span>
+              -day log streak
             </span>
           )}
-          <span>
-            <span className="font-semibold text-foreground">{teamSize}</span> team member
-            {teamSize === 1 ? "" : "s"}
-          </span>
-          <span>
-            <span className="font-semibold text-foreground">{project.dailyLogStreakDays}</span>
-            -day log streak
-          </span>
-          <span>
-            <span className="font-semibold text-foreground">{project.watchersCount}</span> watchers
-          </span>
+          {project.stats && (
+            <span>
+              <span className="font-semibold text-foreground">{project.stats.watchersCount}</span>{" "}
+              watchers
+            </span>
+          )}
         </div>
+        {/* A stored counter shown without its freshness bound reads as a live number. */}
+        {project.stats?.statsComputedAt && (
+          <p className="text-xs text-muted-foreground">
+            Stats as of {formatIsoInstant(project.stats.statsComputedAt)}
+          </p>
+        )}
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <RequestToJoinButton />
           <BackProjectSheet projectName={project.name} />

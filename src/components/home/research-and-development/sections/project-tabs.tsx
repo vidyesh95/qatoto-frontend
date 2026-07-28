@@ -5,24 +5,27 @@
 
 import { useState, type ReactNode } from "react";
 
-type ProjectDetailTab = "overview" | "daily-logs" | "team" | "funding" | "governance";
+// THE GOVERNANCE TAB IS REMOVED, not merely emptied. It rendered an escrow ledger this
+// contract retired — nine escrow routes now 404 — off a mock project shape that no
+// longer exists. Compensation statements are phase 5 and the cross-project mechanics
+// already live at /research-and-development/governance, so a tab printing fabricated
+// escrow figures beside four wired tabs was the one option that had to go.
+type ProjectDetailTab = "overview" | "daily-logs" | "team" | "funding";
 
 const TAB_LABELS: Record<ProjectDetailTab, string> = {
   overview: "Overview",
   "daily-logs": "Daily Logs",
   team: "Team",
   funding: "Funding",
-  governance: "Governance",
 };
 
-const TAB_ORDER: ProjectDetailTab[] = ["overview", "daily-logs", "team", "funding", "governance"];
+const TAB_ORDER: ProjectDetailTab[] = ["overview", "daily-logs", "team", "funding"];
 
 type ProjectTabsProps = {
   overviewPanel: ReactNode;
   dailyLogsPanel: ReactNode;
   teamPanel: ReactNode;
   fundingPanel: ReactNode;
-  governancePanel: ReactNode;
 };
 
 // Client island holding only the active-tab state — every panel arrives as a
@@ -40,8 +43,6 @@ export default function ProjectTabs(props: ProjectTabsProps) {
         return props.teamPanel;
       case "funding":
         return props.fundingPanel;
-      case "governance":
-        return props.governancePanel;
       default: {
         const exhaustiveCheck: never = activeTab;
         return exhaustiveCheck;
