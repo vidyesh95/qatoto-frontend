@@ -1,5 +1,7 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; the logs
-// arrive as a view state from a parent that read GET …/daily-logs.
+// arrive as a view state from a parent that read GET …/daily-logs. The composer nested
+// below IS a client-query island — it creates, edits and submits a log.
+import DailyLogComposer from "@/components/home/research-and-development/sections/daily-log-composer";
 import DailyLogsFeed from "@/components/home/research-and-development/sections/daily-logs-feed";
 import RndStatusPanel, {
   RndErrorPanel,
@@ -22,8 +24,13 @@ import type { MemberScopedListViewState } from "@/lib/rnd/view-state";
  */
 export default function DailyLogsTab({
   dailyLogsState,
+  projectSlug,
+  viewerProjectRole,
 }: {
   dailyLogsState: MemberScopedListViewState<DailyLogView>;
+  projectSlug: string;
+  /** Only a member may write a log — a stranger gets a 404 from the route itself. */
+  viewerProjectRole: string | null;
 }) {
   function renderFeed() {
     switch (dailyLogsState.status) {
@@ -52,6 +59,11 @@ export default function DailyLogsTab({
         Verification is computed by Qatoto from the log and its linked evidence. A state other than
         &ldquo;verified&rdquo; is about the check, not about the person.
       </p>
+      {viewerProjectRole !== null && (
+        <div className="max-w-2xl">
+          <DailyLogComposer projectSlug={projectSlug} />
+        </div>
+      )}
       <div className="max-w-2xl">{renderFeed()}</div>
     </div>
   );

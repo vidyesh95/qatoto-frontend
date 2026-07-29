@@ -3,6 +3,7 @@
 import Image from "next/image";
 
 import RequestToJoinButton from "@/components/home/research-and-development/sections/request-to-join-button";
+import WatchProjectButton from "@/components/home/research-and-development/sections/watch-project-button";
 import EditProjectSheet from "@/components/home/research-and-development/sheets/edit-project-sheet";
 import { formatIsoInstant } from "@/lib/rnd/format";
 import { PROJECT_STAGE_LABELS } from "@/lib/rnd/labels";
@@ -103,6 +104,10 @@ export default function ProjectHeader({ project }: { project: ResearchProjectDet
             sheet that flipped local state and posted nowhere. The real control lives on
             the Funding tab beside the round it commits to. */}
         <div className="flex flex-wrap items-center gap-3 pt-1">
+          <WatchProjectButton
+            projectSlug={project.slug}
+            isWatchedByViewer={project.isWatchedByViewer}
+          />
           <RequestToJoinButton projectSlug={project.slug} />
           <EditProjectSheet project={project} />
         </div>

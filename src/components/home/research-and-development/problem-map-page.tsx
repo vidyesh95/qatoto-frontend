@@ -5,6 +5,7 @@
 import FilterChipRow, {
   type FilterChipOption,
 } from "@/components/home/research-and-development/sections/filter-chip-row";
+import MyProblemReportsPanel from "@/components/home/research-and-development/sections/my-problem-reports-panel";
 import ProblemMapCanvas from "@/components/home/research-and-development/sections/problem-map-canvas";
 import RndStatusPanel, {
   RndErrorPanel,
@@ -123,6 +124,7 @@ export default async function ProblemMapPage({
       </div>
 
       {renderCanvas()}
+      <MyProblemReportsPanel />
     </div>
   );
 

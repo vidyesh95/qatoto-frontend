@@ -6,8 +6,6 @@
 // `GET /discovery/*`. One function per route, each returning the tagged
 // `ActionResponse` — no throwing, no `any`, no `as` (CLAUDE.md Pattern 3).
 
-import { z } from "zod";
-
 import {
   buildQueryString,
   getJson,
@@ -19,6 +17,9 @@ import {
 } from "@/lib/http";
 import {
   DemandSignalSchema,
+  MyProblemReportSchema,
+  ProblemSubmissionReceiptSchema,
+  TalentProfileMeSchema,
   DiscoveryRegionSchema,
   DiscoverySkillSchema,
   MarketInsightSchema,
@@ -29,10 +30,14 @@ import {
   type DiscoverySkill,
   type MarketInsight,
   type MarketInsightStatKind,
+  type MyProblemReport,
   type ProblemCluster,
+  type ProblemSubmissionReceipt,
   type ProblemClusterSort,
   type TalentAvailability,
   type TalentProfile,
+  type TalentProfileInput,
+  type TalentProfileMe,
   type TalentSort,
 } from "@/lib/rnd/discovery.schemas";
 import { PaginationMetaSchema, type RoleCommitment } from "@/lib/rnd/shared.schemas";
@@ -196,25 +201,114 @@ export function getTalentProfile(
  * scoring all happen afterwards on a schedule, and the pin a reporter eventually sees may
  * merge theirs with other people's. Nothing here may say "your report is on the map".
  *
- * COORDINATES ARE SERVER-GEOCODED FROM WHAT IS SUBMITTED and the centroid is quantized
- * before publication, so no single report can be located from the pin it contributes to.
+ * **THE LOCATION IS FREE TEXT, AND THE CLIENT SENDS NO COORDINATES.** `locationText` is
+ * geocoded server-side and the resulting centroid is quantized before publication, so no
+ * single report can be located from the pin it contributes to. An earlier version of this
+ * wrapper sent `latitudeMicrodegrees` / `longitudeMicrodegrees` / `locationLabel` — every
+ * one of which `CreateProblemReportSchema.strict()` rejects with a `422`, and it omitted
+ * the required `locationText` entirely. It had no caller, which is exactly why nobody
+ * noticed; see R_AND_D_BACKEND_STRUCTURE.md Appendix D.
  */
 export function createProblemReport(
   input: {
     readonly title: string;
-    readonly description: string;
     readonly categoryId: string;
-    readonly latitudeMicrodegrees?: number;
-    readonly longitudeMicrodegrees?: number;
-    readonly locationLabel?: string;
+    readonly description: string;
+    /** Free text — "Nakuru County market road", not a coordinate pair. Server-geocoded. */
+    readonly locationText: string;
   },
   options?: RequestOptions,
-): Promise<ActionResponse<{ submissionId: string }>> {
+): Promise<ActionResponse<ProblemSubmissionReceipt>> {
   return sendJson(
     "/discovery/problem-reports",
     "POST",
     input,
-    z.object({ submissionId: z.string() }).strip(),
+    ProblemSubmissionReceiptSchema,
+    options,
+  );
+}
+
+/**
+ * The caller's own submissions — the poll target the `202` needs.
+ *
+ * WITHOUT THIS READ A REPORTER NEVER LEARNS WHAT HAPPENED TO THEIR REPORT. The receipt
+ * carries `clusteringStatus: "queued"` and `clusterId: null` by construction, so the only
+ * way to see it become `clustered` (or `geocode_failed`, or `rejected`) is here.
+ *
+ * No `userId` param exists and none may be added — the filter is the session.
+ */
+export function listMyProblemReports(
+  filter: {
+    readonly clusteringStatus?: string;
+    readonly page?: number;
+    readonly limit?: number;
+  } = {},
+  options?: RequestOptions,
+): PagedResult<MyProblemReport> {
+  return getPaginated(
+    `/discovery/problem-reports/mine${buildQueryString({ ...filter })}`,
+    MyProblemReportSchema,
+    PaginationMetaSchema,
+    options,
+  );
+}
+
+// --- The caller's own talent profile ------------------------------------------
+
+/**
+ * `GET /discovery/talent/me` — the editable copy, with the publish gate's HINT.
+ *
+ * `completeness` exists so the publish button can be disabled before a round trip and can
+ * NAME what is missing. It is not the check: `publishTalentProfile` re-derives it
+ * server-side at request time, so a client that ignored this field would simply get a
+ * refusal instead of a published profile.
+ */
+export function getMyTalentProfile(
+  options?: RequestOptions,
+): Promise<ActionResponse<TalentProfileMe>> {
+  return getJson("/discovery/talent/me", TalentProfileMeSchema, options);
+}
+
+/**
+ * `PUT /discovery/talent/me` — upsert. The whole profile every time, never a patch.
+ *
+ * `skillSlugs` are CANONICAL `discovery_skill` slugs and are validated as a subset
+ * server-side: an unknown slug is a typed `422` naming the offenders rather than silently
+ * creating taxonomy. Read the vocabulary from `GET /discovery/skills` and send slugs from
+ * it, never free text.
+ *
+ * `compensationAsks` is a DISCRIMINATED UNION of at most three strands, so an equity ask
+ * carrying a salary range is unrepresentable rather than merely discouraged.
+ */
+export function putMyTalentProfile(
+  input: TalentProfileInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<TalentProfileMe>> {
+  return sendJson("/discovery/talent/me", "PUT", input, TalentProfileMeSchema, options);
+}
+
+/** Publish. The server re-derives completeness; a missing requirement is a refusal. */
+export function publishMyTalentProfile(
+  options?: RequestOptions,
+): Promise<ActionResponse<TalentProfileMe>> {
+  return sendJson(
+    "/discovery/talent/me/publish",
+    "POST",
+    undefined,
+    TalentProfileMeSchema,
+    options,
+  );
+}
+
+/** Unpublish. The row survives; it stops appearing in the directory and 404s by handle. */
+export function unpublishMyTalentProfile(
+  options?: RequestOptions,
+): Promise<ActionResponse<TalentProfileMe>> {
+  return sendJson(
+    "/discovery/talent/me/unpublish",
+    "POST",
+    undefined,
+    TalentProfileMeSchema,
     options,
   );
 }

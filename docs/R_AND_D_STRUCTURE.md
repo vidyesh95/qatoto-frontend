@@ -18,8 +18,9 @@ pipeline story; deep features live on sub-routes.
 - [CLAUDE.md](CLAUDE.md) — thin-client invariant, naming rules, current phase.
 
 > **Phase note: integration is finished except for Project Immortal.** Every route on this surface
-> reads the Express backend today, **and the domain has writes** — it had none until phase 4/5.
-> §18 is the phase order; §19 is the per-file transport map.
+> reads the Express backend, **every shipped write has a control on a page**, and the five mock
+> sheets that posted nowhere are gone or wired. §18 is the phase order; §19 is the per-file
+> transport map.
 >
 > | Phase                                                                                                              | State                                    |
 > | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
@@ -1389,16 +1390,17 @@ than kept as a fallback. That is deliberate: a silent fallback masks a broken en
 every mock to be migrated to the wire format to stay type-compatible. What is left on disk is
 therefore exactly what is still fabricated.
 
-| Phase                             | Scope                                                                                                                                                                                                     | State          |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| **0 · foundations**               | `src/lib/rnd/` (schemas, api, formatters, view state, filter hrefs, map projection, labels) · `src/lib/server-http.ts` · `QueryProvider` in `(home)` · `snake_case` enum migration · `TRANSPORT:` banners | ✅ done        |
-| **1 · public discovery reads**    | landing · `/knowledge-hub` · `/problem-map` · `/talent` · `/team-building` · `/go-to-market` · `/funding`                                                                                                 | ✅ done        |
-| **2 · projects & detail**         | `/research-projects/slugs` for `generateStaticParams` · detail · team · roles · milestones · funding rounds · investor confidence                                                                         | ✅ done        |
-| **3 · workshop & daily logs**     | board / files / chat in one `…/workshop` read · per-project logs · `/build-log` (member-scoped, `401` signed out)                                                                                         | ✅ done        |
-| **4 · proof of effort**           | slice ledger · verification · disputes · integrations · audit trail · rate lock · pie bake                                                                                                                | ✅ done        |
-| **5 · compensation & governance** | agreements · periods · finalize / countersign / payments / export · `/governance/summary`                                                                                                                 | ✅ done        |
-| **W · writes**                    | the whole mutation surface — PoE, compensation, funding pledges, project create/publish, applications & invites, workshop board / files / chat                                                            | ✅ done        |
-| **6 · Project Immortal**          | —                                                                                                                                                                                                         | 🚫 **blocked** |
+| Phase                             | Scope                                                                                                                                                                                                            | State          |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| **0 · foundations**               | `src/lib/rnd/` (schemas, api, formatters, view state, filter hrefs, map projection, labels) · `src/lib/server-http.ts` · `QueryProvider` in `(home)` · `snake_case` enum migration · `TRANSPORT:` banners        | ✅ done        |
+| **1 · public discovery reads**    | landing · `/knowledge-hub` · `/problem-map` · `/talent` · `/team-building` · `/go-to-market` · `/funding`                                                                                                        | ✅ done        |
+| **2 · projects & detail**         | `/research-projects/slugs` for `generateStaticParams` · detail · team · roles · milestones · funding rounds · investor confidence                                                                                | ✅ done        |
+| **3 · workshop & daily logs**     | board / files / chat in one `…/workshop` read · per-project logs · `/build-log` (member-scoped, `401` signed out)                                                                                                | ✅ done        |
+| **4 · proof of effort**           | slice ledger · verification · disputes · integrations · audit trail · rate lock · pie bake                                                                                                                       | ✅ done        |
+| **5 · compensation & governance** | agreements · periods · finalize / countersign / payments / export · `/governance/summary`                                                                                                                        | ✅ done        |
+| **W · writes**                    | the whole mutation surface — PoE, compensation, funding pledges, project create/publish, applications & invites, workshop board / files / chat                                                                   | ✅ done        |
+| **W2 · write UI**                 | a control for every one of them: the rate lifecycle, claim + receipt, founder round/milestone/role/member management, the application inbox, daily-log authoring, board editing, talent profile, problem reports | ✅ done        |
+| **6 · Project Immortal**          | —                                                                                                                                                                                                                | 🚫 **blocked** |
 
 **Phase W is the one that was not in the original plan**, and it is the larger half of what
 landed. Until it, `rg 'sendJson|sendForm' src/lib/rnd/` returned NOTHING: every control on this
@@ -1434,32 +1436,38 @@ the situation until phase 4. They are now:
 there was no `GET …/disputes` to read. Backend §11j.2 shipped it along with `GET …/disputes/:disputeId`,
 so neither compliance item is waiting on backend work. They are screens.
 
-### Writes with a wrapper and a hook but no control yet
+### Every write has a control — and the audit that proves it
 
-**Recorded rather than hidden, because this is exactly the shape Appendix C of the backend doc
-exists to name**: a wrapper with no caller looks like coverage from the outside and is not. Each row
-below has its `src/lib/rnd/*.api.ts` wrapper and its `src/hooks/rnd/` hook, both parsed and typed
-against the shipped route — what it does not have is a control on a page.
+The previous pass shipped the write LAYER and left about twenty writes with a wrapper, a hook and a
+parsed response but **no control on a page**. That table is gone because it is empty.
 
-They are grouped by who the missing control belongs to, because that is what decides where it goes.
+A wrapper with no caller is not coverage, it is UNVERIFIED CODE — and this pass proved the point
+twice by finding two wrappers that could never have worked:
 
-| Actor           | Writes wired but unsurfaced                                                                                               | Where the control belongs                            |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Founder / admin | funding round create · edit · open · close · delete; milestone create · edit · complete · variance · delete               | a Funding-tab management panel                       |
-| Founder         | compensation agreement propose; fair-market-rate propose → member accept → lock                                           | the Compensation tab and the slice-ledger rate panel |
-| Member          | effort-claim submit (`202`) · physical-receipt upload (`202`) · receipt delete                                            | the verification tab                                 |
-| Maintainer      | application accept / decline off `…/:projectSlug/applications`; invite create                                             | a Team-tab inbox                                     |
-| Founder         | project stage change · unpublish · archive · cover upload · edit; member role change                                      | the project header / an edit surface                 |
-| Anyone          | watch / unwatch a project; pledge cancel off `/pledges/mine`                                                              | the header, and a "my commitments" surface           |
-| Member          | workshop column CRUD + reorder · task move / edit / delete · file rename / delete · chat edit / delete · chat read marker | the board and chat panels                            |
+- **`createProblemReport` sent a body the backend rejects.** It posted
+  `latitudeMicrodegrees` / `longitudeMicrodegrees` / `locationLabel`, all three of which
+  `CreateProblemReportSchema.strict()` refuses with a `422`, and it omitted the required
+  `locationText` entirely. Wiring the report sheet is what found it.
+- **`markWorkshopChatRead` sent `lastReadMessageId`.** The field is `throughMessageId` — the same
+  name the read state comes back with, which is the convention the whole wire follows.
 
-**Two writes have no wrapper at all**, and are the honest remaining gap in this layer: the talent
-profile editor (`PUT /discovery/talent/me`, `/publish`, `/unpublish`) and per-project daily-log
-authoring (`POST …/daily-logs` → `/transcript` → `/submit`). `edit-talent-profile-sheet.tsx` is
-still the mock form it always was.
+Both are recorded in `R_AND_D_BACKEND_STRUCTURE.md` Appendix D, because the general lesson is the
+useful part: an uncalled wrapper has never been checked against the schema it claims to match.
 
-**None of these is blocked**, on either side. Each is a form against a route that already ships,
-and the parsing, error rendering and invalidation they need already exist.
+**The audit that keeps this true**, and the one to run before claiming coverage again:
+
+```bash
+for h in $(rg -o 'export function (use\w+)' -r '$1' src/hooks/rnd/); do
+  rg -q "\b$h\b" src/components || echo "UNCALLED $h"
+done
+```
+
+It currently prints nothing. Getting there also **deleted four query hooks** —
+`useCompensationAgreementsQuery`, `useCompensationPeriodsQuery`, `useDisputesQuery` and
+`useEffortClaimsQuery` — rather than finding callers for them: each duplicated a read the server
+component already makes, so they were two ways to fetch one thing and the unused one would have
+drifted. What survives is the reads that are genuinely on demand: a claim's detail (it fans out to
+runs, steps and evidence), a statement's detail, and one member's rate history.
 
 ### What the wired phases left dark, and what came back
 
@@ -1528,12 +1536,12 @@ the banner is right.
 
 Four values, a closed set so a fifth kind cannot appear silently:
 
-| Banner         | Meaning                                                                                                                                                                                                                                                                                                                                                    |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `server-fetch` | Server component. Reads the API through `src/lib/rnd/*.api` with the session cookie forwarded by `callerRequestOptions()`. Adding `"use client"` breaks the build — `next/headers` does not resolve in a client bundle                                                                                                                                     |
-| `client-query` | `"use client"` island using React Query. Needs `QueryProvider`, mounted in `(home)/layout.tsx`. **Fourteen of them**, all introduced by phases 4–5 and the write phase. Phase 3 was predicted to need the first and did not — reads-only meant the workshop's three write controls were deleted rather than upgraded, and they came back here as real ones |
-| `props-only`   | Fetches nothing; data arrives as props. Safe on either side of the boundary                                                                                                                                                                                                                                                                                |
-| `mock`         | Not wired. Renders fabricated data                                                                                                                                                                                                                                                                                                                         |
+| Banner         | Meaning                                                                                                                                                                                                                                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `server-fetch` | Server component. Reads the API through `src/lib/rnd/*.api` with the session cookie forwarded by `callerRequestOptions()`. Adding `"use client"` breaks the build — `next/headers` does not resolve in a client bundle                                                                                       |
+| `client-query` | `"use client"` island using React Query. Needs `QueryProvider`, mounted in `(home)/layout.tsx`. **Twenty-eight of them.** Phase 3 was predicted to need the first and did not — reads-only meant the workshop's three write controls were deleted rather than upgraded, and they came back here as real ones |
+| `props-only`   | Fetches nothing; data arrives as props. Safe on either side of the boundary                                                                                                                                                                                                                                  |
+| `mock`         | Not wired. Renders fabricated data                                                                                                                                                                                                                                                                           |
 
 ### The fifteen `server-fetch` page bodies
 
@@ -1555,27 +1563,46 @@ Four values, a closed set so a fifth kind cannot appear silently:
 | `workshop-page.tsx`                 | `/research-projects/:slug` (public, for the header + roster) · `…/workshop` (member-only)                                                                                                                                                                                                                      | Two reads total; three write islands nested inside the tabs                                                   |
 | `build-log-page.tsx`                | `/daily-logs` **(requireAuth, keyset)** · `/daily-logs/streak-leaderboard` (public)                                                                                                                                                                                                                            | The repo's only cursor read. Signed out → hero + legend + public leaderboard + **empty** feed                 |
 
-### The fourteen `client-query` islands
+### The twenty-eight `client-query` islands
 
-`client-query` stopped being an empty category with phase 4. Every one of these is small, holds
-interaction state plus one or more mutations, and sits inside a `server-fetch` page.
+`client-query` was an empty category until phase 4. Every island is small, holds interaction state
+plus one or more mutations, and sits inside a `server-fetch` page or a sheet.
 
-| Island                           | Writes                                                                                         |
-| -------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `claim-detail-disclosure.tsx`    | step override (**AI Act Art. 14**) · re-verify (`202`). Polls the claim while a verdict is out |
-| `raise-dispute-island.tsx`       | raise a dispute (**GDPR Art. 22**), with a per-attempt idempotency key                         |
-| `dispute-actions-island.tsx`     | vote · withdraw · resolve (`re_verified` answers `202`)                                        |
-| `integration-consent-tab.tsx`    | authorize-url → provider redirect · revoke (self-only)                                         |
-| `optimization-tab.tsx`           | accept · dismiss a suggestion                                                                  |
-| `pie-bake-panel.tsx`             | bake the pie — irreversible, once ever, with `expectedSnapshotId`                              |
-| `compensation-period-island.tsx` | finalize · countersign · supersede · record a payment · confirm receipt · export               |
-| `pledge-island.tsx`              | record a funding COMMITMENT. No card, no hold, no fee                                          |
-| `new-idea-wizard-page.tsx`       | propose a category → create the project as a DRAFT                                             |
-| `request-to-join-button.tsx`     | apply to a project                                                                             |
-| `application-inbox-page.tsx`     | accept / decline an invite, off `/applications/mine` and `/invites/mine`                       |
-| `workshop-task-composer.tsx`     | create a board task                                                                            |
-| `workshop-file-linker.tsx`       | link a file — a URL, never bytes                                                               |
-| `workshop-chat-composer.tsx`     | send a chat message (polled, not streamed)                                                     |
+| Island                              | Writes                                                                                          |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Proof of Effort**                 |                                                                                                 |
+| `rate-lock-panel.tsx`               | propose → **member accepts** → lock, rendered as three steps because the split is the safeguard |
+| `claim-submit-island.tsx`           | file a claim (`202`) · upload a receipt (`202`, multipart) · delete one. **No minutes field**   |
+| `claim-detail-disclosure.tsx`       | step override (**AI Act Art. 14**) · re-verify (`202`). Polls the claim while a verdict is out  |
+| `raise-dispute-island.tsx`          | raise a dispute (**GDPR Art. 22**), with a per-attempt idempotency key                          |
+| `dispute-actions-island.tsx`        | vote · withdraw · resolve (`re_verified` answers `202`)                                         |
+| `integration-consent-tab.tsx`       | authorize-url → provider redirect · revoke (self-only)                                          |
+| `optimization-tab.tsx`              | accept · dismiss a suggestion                                                                   |
+| `pie-bake-panel.tsx`                | bake the pie — irreversible, once ever, `expectedSnapshotId` echoed                             |
+| **Compensation**                    |                                                                                                 |
+| `compensation-agreement-island.tsx` | propose (founder) · accept / decline (the member) · withdraw (the proposer)                     |
+| `compensation-period-island.tsx`    | finalize · countersign · supersede · record a payment · confirm receipt · export                |
+| **Funding**                         |                                                                                                 |
+| `pledge-island.tsx`                 | record a COMMITMENT. No card, no hold, no fee                                                   |
+| `my-pledges-panel.tsx`              | the caller's own commitments, and withdrawing one                                               |
+| `funding-management-island.tsx`     | round create / open / close / discard · milestone create / complete                             |
+| **Projects, team, discovery**       |                                                                                                 |
+| `new-idea-wizard-page.tsx`          | propose a category → create the project as a DRAFT                                              |
+| `edit-project-sheet.tsx`            | edit · cover upload · publish / unpublish · stage change (its own audited route)                |
+| `watch-project-button.tsx`          | follow / unfollow, idempotent by verb                                                           |
+| `request-to-join-button.tsx`        | an OPEN application                                                                             |
+| `apply-role-sheet.tsx`              | an application **with `openRoleId`**                                                            |
+| `team-management-island.tsx`        | application inbox · invite · role CRUD + close/reopen · member role / removal · leave           |
+| `application-inbox-page.tsx`        | accept / decline an invite, off `/applications/mine` and `/invites/mine`                        |
+| `report-problem-sheet.tsx`          | submit a problem report (`202`)                                                                 |
+| `my-problem-reports-panel.tsx`      | the reporter's own submissions, polled while any is queued — the other half of that `202`       |
+| `edit-talent-profile-sheet.tsx`     | save the profile · publish / unpublish. Skills chosen from the vocabulary, never typed          |
+| **Workshop**                        |                                                                                                 |
+| `daily-log-composer.tsx`            | create → edit → submit a daily log (`202`), then polls the analysis                             |
+| `workshop-task-composer.tsx`        | create a board task                                                                             |
+| `workshop-board-controls.tsx`       | column create / rename / delete / **reorder (whole order)** · task move · task delete           |
+| `workshop-file-linker.tsx`          | link a file — a URL, never bytes                                                                |
+| `workshop-chat-composer.tsx`        | send a message, and mark the transcript read (guarded against a re-render loop)                 |
 
 ### Conventions every wired surface follows
 

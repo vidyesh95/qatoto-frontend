@@ -723,6 +723,18 @@ export type HashInput = z.infer<typeof HashInputSchema>;
 
 // --- The pie bake -------------------------------------------------------------
 
+/**
+ * The exact strings the server compares against, byte for byte.
+ *
+ * DECLARED HERE RATHER THAN INSIDE THE COMPONENTS THAT PROMPT FOR THEM, because a typed
+ * acknowledgement is only a safeguard if it matches: `"BAKE"` where the server expects
+ * `"BAKE THE PIE"` is an `ACKNOWLEDGEMENT_MISMATCH` on the most irreversible action in the
+ * product, discovered by the founder at the worst possible moment. Read off
+ * `pie-bake.service.ts` and `fair-market-rate.service.ts`, never guessed.
+ */
+export const PIE_BAKE_ACKNOWLEDGEMENT = "BAKE THE PIE";
+export const RATE_LOCK_ACKNOWLEDGEMENT = "LOCK THIS RATE";
+
 export const PIE_BAKE_TRIGGERS = ["cash_flow_breakeven", "priced_round"] as const;
 export const PieBakeTriggerSchema = z.enum(PIE_BAKE_TRIGGERS);
 export type PieBakeTrigger = z.infer<typeof PieBakeTriggerSchema>;

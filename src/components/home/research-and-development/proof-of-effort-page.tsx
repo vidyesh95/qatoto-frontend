@@ -145,6 +145,7 @@ export default async function ProofOfEffortPage({
             pieBakeState={pieBakeState}
             projectCurrency={project.currency}
             projectSlug={projectSlug}
+            team={project.team}
             viewerProjectRole={project.viewerProjectRole}
           />
         }

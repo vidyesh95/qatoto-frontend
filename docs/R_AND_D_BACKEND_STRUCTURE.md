@@ -4443,9 +4443,15 @@ Counted on the tree at `qatoto-frontend/src/app/(home)/research-and-development/
 >   `workshop.api.ts`, `discovery.api.ts` and `catalog.api.ts`.
 > - `rg -n '^// TRANSPORT:' …` prints `mock` on **one** file, `project-immortal-page.tsx`. It was
 >   three.
-> - C2 is EMPTY: all four written-but-uncalled wrappers now have callers.
+> - C2 is EMPTY: all four written-but-uncalled wrappers now have callers, and so does every
+>   hook — `for h in $(rg -o 'export function (use\w+)' -r '$1' src/hooks/rnd/); do rg -q "\b$h\b" src/components || echo "UNCALLED $h"; done`
+>   prints nothing. Two wrappers that had never been called turned out never to have matched their
+>   `.strict()` body (D10), which is the strongest argument this appendix makes.
 > - Both `0 called` rows in C3 — Proof of Effort and Compensation — are wired end to end, reads and
 >   writes, including the two compliance paths (§11j.2's dispute reads and the step override).
+> - The five mock sheets that flipped `useState` and posted nowhere are gone or wired, so a person
+>   can no longer believe they reported a problem, applied for a role or published a profile when
+>   nothing left the browser.
 > - Three routes were added on the frontend side: `/problem-map/cluster/[clusterId]`,
 >   `/go-to-market/supplier/[supplierSlug]` and `/talent/[handle]`, plus `/applications` for
 >   §11j.2's two `/mine` reads. Fourteen page.tsx files, not eleven.
@@ -4748,7 +4754,53 @@ the wired surface**, and it should not be "fixed".
 
 ---
 
-### D10. Absences confirmed as intended
+### D10. Two frontend wrappers that never matched a shipped `.strict()` body
+
+**Not backend gaps — frontend defects, recorded here because the appendix is where the two repos
+compare notes, and because the pattern is the useful part.**
+
+Both were written during the read pass, both parsed and typed cleanly, both were never called, and
+both would have failed on their first request:
+
+| Wrapper                | Sent                                                                                                | The `.strict()` schema takes                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `createProblemReport`  | `{ title, description, categoryId, latitudeMicrodegrees?, longitudeMicrodegrees?, locationLabel? }` | `{ title, categoryId, description, locationText }` — three unknown keys, and the required `locationText` missing |
+| `markWorkshopChatRead` | `{ lastReadMessageId }`                                                                             | `{ throughMessageId }` — the same name the read state comes back with                                            |
+
+**The lesson, and it applies to Appendix C's whole "uncalled surface" table:** a wrapper with no
+caller has never been checked against the schema it claims to match. TypeScript cannot catch it —
+the body is an object literal and every backend query and body schema is `.strict()`, so the failure
+only appears as a `422` at runtime. The frontend's own §18 now carries an audit that fails the build
+process rather than a person's attention:
+
+```bash
+for h in $(rg -o 'export function (use\w+)' -r '$1' src/hooks/rnd/); do
+  rg -q "\b$h\b" src/components || echo "UNCALLED $h"
+done
+```
+
+**Second-order effect worth copying:** the same audit found four query hooks duplicating reads the
+server components already made. They were DELETED rather than given callers — two ways to fetch one
+thing means the unused one drifts, which is how the first defect above survived a whole pass.
+
+---
+
+### D11. `locationText` is the whole geography contract, and it is worth stating
+
+Not a gap either, but it was not obvious from §6 and it is the reason D10's first defect looked
+plausible.
+
+**The client sends free text and NEVER coordinates.** `CreateProblemReportSchema` has no lat/lng
+fields at all: `locationText` is geocoded server-side, and the resulting centroid is quantized
+before publication so no single report can be located from the pin it contributes to. A frontend
+that offered a place picker — as the mock sheet's shape implied — would be collecting precision the
+design deliberately destroys.
+
+The receipt says the same thing in its type: `clusterId` is `null`, always, on the `202`.
+
+---
+
+### D12. Absences confirmed as intended
 
 Checked against §11j.6 while wiring, and each one held. Recorded so the next pass does not re-open
 them:

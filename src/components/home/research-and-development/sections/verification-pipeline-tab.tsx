@@ -3,6 +3,7 @@
 // read GET …/effort-claims and GET …/physical-receipts. The per-claim disclosure below is
 // a client island of its own.
 import ClaimDetailDisclosure from "@/components/home/research-and-development/sections/claim-detail-disclosure";
+import ClaimSubmitIsland from "@/components/home/research-and-development/sections/claim-submit-island";
 import FilterChipRow, {
   type FilterChipOption,
 } from "@/components/home/research-and-development/sections/filter-chip-row";
@@ -114,6 +115,12 @@ export default function VerificationPipelineTab({
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">Your physical receipts</h3>
         {renderReceipts()}
       </section>
+
+      <ClaimSubmitIsland
+        projectSlug={projectSlug}
+        receipts={receiptsState.status === "ready" ? receiptsState.rows : []}
+        viewerProjectRole={viewerProjectRole}
+      />
     </div>
   );
 

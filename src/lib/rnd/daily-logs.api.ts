@@ -7,18 +7,25 @@ import {
   buildQueryString,
   getCursorPaginated,
   getJson,
+  sendJson,
   type ActionResponse,
   type RequestOptions,
 } from "@/lib/http";
 import {
+  DailyLogDetailSchema,
   DailyLogFeedPageSchema,
   DailyLogStreakStandingSchema,
   DailyLogViewSchema,
+  SubmitDailyLogReceiptSchema,
+  type CreateDailyLogInput,
+  type DailyLogDetail,
   type DailyLogFeedPage,
   type DailyLogStreakStanding,
   type DailyLogView,
   type ListDailyLogFeedFilter,
   type ListProjectDailyLogsFilter,
+  type SubmitDailyLogReceipt,
+  type UpdateDailyLogInput,
 } from "@/lib/rnd/daily-logs.schemas";
 
 /**
@@ -74,4 +81,95 @@ export function listDailyLogStreakLeaderboard(
   options?: RequestOptions,
 ): Promise<ActionResponse<DailyLogStreakStanding[]>> {
   return getJson("/daily-logs/streak-leaderboard", DailyLogStreakStandingSchema.array(), options);
+}
+
+// --- Authoring ----------------------------------------------------------------
+
+/** One log with its transcript, chips, extracted claims and evidence. Member-scoped. */
+export function getDailyLog(
+  projectSlug: string,
+  logId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<DailyLogDetail>> {
+  return getJson(
+    `/research-projects/${projectSlug}/daily-logs/${logId}`,
+    DailyLogDetailSchema,
+    options,
+  );
+}
+
+/**
+ * Create a DRAFT.
+ *
+ * `requireIdentifiedUser`, not merely `requireAuth`: a daily log is the input to the
+ * entire equity ledger, and an anonymous session is still a real session.
+ */
+export function createDailyLog(
+  projectSlug: string,
+  input: CreateDailyLogInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<DailyLogView>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/daily-logs`,
+    "POST",
+    input,
+    DailyLogViewSchema,
+    options,
+  );
+}
+
+/** Edit a draft. Sending `youtubeUrl: null` detaches the video; omitting it keeps it. */
+export function updateDailyLog(
+  projectSlug: string,
+  logId: string,
+  input: UpdateDailyLogInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<DailyLogView>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/daily-logs/${logId}`,
+    "PATCH",
+    input,
+    DailyLogViewSchema,
+    options,
+  );
+}
+
+export function deleteDailyLog(
+  projectSlug: string,
+  logId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<DailyLogView>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/daily-logs/${logId}`,
+    "DELETE",
+    undefined,
+    DailyLogViewSchema,
+    options,
+  );
+}
+
+/**
+ * Submit a draft. **`202` AND A RECEIPT, NEVER A VERDICT.**
+ *
+ * The submit freezes the log, moves the streak and enqueues the analysis in ONE
+ * transaction — so `dailyLogStreakDays` on the receipt is real while `analysisStatus` is
+ * merely `queued`. Nothing about what the log is worth exists yet.
+ *
+ * `idempotencyKey` is the one client-supplied string this endpoint takes, and it is an
+ * opaque dedup token rather than a value the server owns: a retried submit on a flaky
+ * connection must return the FIRST receipt, not file a second log.
+ */
+export function submitDailyLog(
+  projectSlug: string,
+  logId: string,
+  input: { readonly idempotencyKey: string },
+  options?: RequestOptions,
+): Promise<ActionResponse<SubmitDailyLogReceipt>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/daily-logs/${logId}/submit`,
+    "POST",
+    input,
+    SubmitDailyLogReceiptSchema,
+    options,
+  );
 }

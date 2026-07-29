@@ -239,6 +239,130 @@ export const TalentProfileSchema = z
   .strip();
 export type TalentProfile = z.infer<typeof TalentProfileSchema>;
 
+/**
+ * The caller's OWN profile — `GET`/`PUT /discovery/talent/me`.
+ *
+ * `completeness` IS A HINT FOR THE PUBLISH BUTTON, NEVER THE CHECK.
+ * `publishTalentProfile` re-derives it server-side at request time (§0), so a client that
+ * ignored `isPublishable` gets a refusal rather than a published profile. `missing` names
+ * the fields, which is what lets the button say WHY it is disabled instead of just being
+ * grey.
+ */
+export const TalentProfileMeSchema = TalentProfileSchema.extend({
+  isPublished: z.boolean(),
+  publishedAt: z.string().nullable(),
+  completeness: z
+    .object({
+      isPublishable: z.boolean(),
+      missing: z.string().array(),
+    })
+    .strip(),
+}).strip();
+export type TalentProfileMe = z.infer<typeof TalentProfileMeSchema>;
+
+/**
+ * What the caller SENDS on `PUT /discovery/talent/me`.
+ *
+ * A DIFFERENT SHAPE FROM WHAT COMES BACK, and the differences are all deliberate:
+ * `skillSlugs` goes out (canonical slugs, validated as a subset server-side) while
+ * `skills` comes back (with the job-written `isVerified` a request can never set), and
+ * `regionId` goes out while a resolved `region` comes back.
+ *
+ * An UPSERT of the whole profile, never a patch: sending a partial would make "cleared
+ * this field" and "did not touch this field" the same request.
+ */
+export interface TalentProfileInput {
+  readonly headlineRole: string;
+  readonly availability: TalentAvailability;
+  readonly commitment?: z.infer<typeof RoleCommitmentSchema>;
+  readonly locationLabel?: string | null;
+  readonly regionId?: string | null;
+  readonly bio?: string | null;
+  /** Canonical `discovery_skill` slugs. An unknown one is a 422 naming the offenders. */
+  readonly skillSlugs: readonly string[];
+  readonly compensationAsks: readonly TalentCompensationAskInput[];
+}
+
+/**
+ * The ask as SENT — no `currency`, because it is derived, and no nullable maxima, because
+ * an absent maximum is an open-ended range rather than an explicit null.
+ */
+export type TalentCompensationAskInput =
+  | {
+      readonly kind: "salary";
+      readonly salaryMinInCentsPerMonth: number;
+      readonly salaryMaxInCentsPerMonth?: number;
+    }
+  | {
+      readonly kind: "one_time";
+      readonly oneTimeMinInCents: number;
+      readonly oneTimeMaxInCents?: number;
+    }
+  | {
+      readonly kind: "equity";
+      readonly equityBasisPointsMin: number;
+      readonly equityBasisPointsMax?: number;
+    };
+
+// --- Problem reports ----------------------------------------------------------
+
+export const PROBLEM_SUBMISSION_STATUSES = [
+  "queued",
+  "clustered",
+  "geocode_failed",
+  "rejected",
+  "failed",
+] as const;
+export const ProblemSubmissionStatusSchema = z.enum(PROBLEM_SUBMISSION_STATUSES);
+export type ProblemSubmissionStatus = z.infer<typeof ProblemSubmissionStatusSchema>;
+
+/**
+ * The `202` receipt from `POST /discovery/problem-reports`.
+ *
+ * **`clusteringStatus` IS ALWAYS `queued` AND `clusterId` IS ALWAYS NULL HERE.** Geocoding
+ * and clustering are jobs, so nothing about where this report lands exists yet. Any UI
+ * that reads a cluster off this receipt is reading a field that is null by construction —
+ * the client polls `GET /discovery/problem-reports/mine` instead.
+ */
+export const ProblemSubmissionReceiptSchema = z
+  .object({
+    submissionId: z.string(),
+    clusteringStatus: ProblemSubmissionStatusSchema,
+    clusterId: z.null(),
+    submittedAt: z.string(),
+  })
+  .strip();
+export type ProblemSubmissionReceipt = z.infer<typeof ProblemSubmissionReceiptSchema>;
+
+/**
+ * One of the caller's own submissions.
+ *
+ * `locationText` is WHAT THE REPORTER TYPED — their own words, never authoritative
+ * geography. The coordinates beside it are server-geocoded and NULL until the job has run,
+ * which is also when `clusterId` and `clusterTitle` stop being null.
+ *
+ * `geocodeFailureReason` is the honest ending: a report whose location could not be
+ * resolved never reaches a cluster, and saying so beats leaving it `queued` forever.
+ */
+export const MyProblemReportSchema = z
+  .object({
+    submissionId: z.string(),
+    title: z.string(),
+    description: z.string(),
+    category: DiscoveryCategoryRefSchema,
+    locationText: z.string(),
+    countryCode: z.string().nullable(),
+    latitudeMicrodegrees: z.number().nullable(),
+    longitudeMicrodegrees: z.number().nullable(),
+    clusteringStatus: ProblemSubmissionStatusSchema,
+    clusterId: z.string().nullable(),
+    clusterTitle: z.string().nullable(),
+    geocodeFailureReason: z.string().nullable(),
+    submittedAt: z.string(),
+  })
+  .strip();
+export type MyProblemReport = z.infer<typeof MyProblemReportSchema>;
+
 export const TALENT_SORTS = ["recent", "effort"] as const;
 export type TalentSort = (typeof TALENT_SORTS)[number];
 

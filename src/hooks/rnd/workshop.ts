@@ -7,7 +7,7 @@
 // there are no finer-grained caches to invalidate. Splitting the read into four to get
 // four keys would trade one round trip for three.
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { rndKeys } from "@/hooks/rnd/keys";
 import { unwrap } from "@/lib/http";
@@ -27,7 +27,25 @@ import {
   updateWorkshopTask,
   type WorkshopTaskInput,
 } from "@/lib/rnd/workshop.api";
+import {
+  createDailyLog,
+  deleteDailyLog,
+  getDailyLog,
+  submitDailyLog,
+  updateDailyLog,
+} from "@/lib/rnd/daily-logs.api";
+import type {
+  CreateDailyLogInput,
+  DailyLogAnalysisStatus,
+  UpdateDailyLogInput,
+} from "@/lib/rnd/daily-logs.schemas";
 import type { WorkshopFileKind } from "@/lib/rnd/workshop.schemas";
+
+/** The analysis job is a Gemini call over a transcript — slower than the claim pipeline. */
+const ANALYSIS_POLL_INTERVAL_MS = 5_000;
+
+/** Everything else is terminal, including `skipped_unconfigured`. */
+const IN_FLIGHT_ANALYSIS_STATUSES: readonly DailyLogAnalysisStatus[] = ["queued", "running"];
 
 function useWorkshopInvalidation(projectSlug: string) {
   const queryClient = useQueryClient();
@@ -159,12 +177,93 @@ export function useSendWorkshopChatMessageMutation(projectSlug: string) {
   });
 }
 
-/** The caller's own read marker. Nobody else's moves. */
+/**
+ * The caller's own read marker. Nobody else's moves.
+ *
+ * DOES NOT INVALIDATE THE WORKSHOP QUERY, unlike every other mutation here. The read
+ * marker is fired from an effect when the transcript renders, and invalidating would
+ * re-render the component that fired it — a request loop with nothing to find. The only
+ * thing it changes is the caller's own unread count, which the next natural read picks up.
+ */
 export function useMarkWorkshopChatReadMutation(projectSlug: string) {
-  const invalidateWorkshop = useWorkshopInvalidation(projectSlug);
   return useMutation({
-    mutationFn: async (lastReadMessageId: string) =>
-      unwrap(await markWorkshopChatRead(projectSlug, { lastReadMessageId })),
-    onSuccess: invalidateWorkshop,
+    mutationFn: async (throughMessageId: string) =>
+      unwrap(await markWorkshopChatRead(projectSlug, { throughMessageId })),
+  });
+}
+
+// --- Daily logs ------------------------------------------------------------------
+
+/**
+ * One log with its analysis, polled while the analysis job is still running.
+ *
+ * The poll terminates on `succeeded`, `failed` and `skipped_unconfigured` alike — the
+ * third is an OPERATOR fact ("no model key in this environment"), not a failure of the
+ * log, and polling past it would wait forever for a job nobody scheduled.
+ */
+export function useDailyLogQuery(projectSlug: string, logId: string | undefined) {
+  return useQuery({
+    queryKey: rndKeys.dailyLog(projectSlug, logId ?? "none"),
+    queryFn: async () => {
+      if (!logId) throw new Error("Missing log id");
+      return unwrap(await getDailyLog(projectSlug, logId));
+    },
+    enabled: Boolean(logId),
+    refetchInterval: (query) => {
+      const analysisStatus = query.state.data?.analysisStatus;
+      if (analysisStatus === undefined) return false;
+      return IN_FLIGHT_ANALYSIS_STATUSES.includes(analysisStatus)
+        ? ANALYSIS_POLL_INTERVAL_MS
+        : false;
+    },
+  });
+}
+
+/**
+ * Create, edit, delete and submit a daily log.
+ *
+ * **SUBMIT ANSWERS `202` AND A RECEIPT.** The streak on that receipt is real — it moves
+ * inside the submit transaction — but the analysis is merely `queued`, so nothing about
+ * what the log is worth exists yet. The caller polls `useDailyLogQuery` for that.
+ *
+ * The idempotency key is the caller's, held once per attempt: a retried submit must return
+ * the FIRST receipt rather than file a second log.
+ */
+export function useDailyLogMutation(projectSlug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: {
+      action: "create" | "update" | "delete" | "submit";
+      logId?: string;
+      input?: CreateDailyLogInput;
+      patch?: UpdateDailyLogInput;
+      idempotencyKey?: string;
+    }) => {
+      if (variables.action === "create") {
+        if (!variables.input) throw new Error("Missing daily log input");
+        return unwrap(await createDailyLog(projectSlug, variables.input));
+      }
+      if (!variables.logId) throw new Error("Missing log id");
+      if (variables.action === "update") {
+        return unwrap(await updateDailyLog(projectSlug, variables.logId, variables.patch ?? {}));
+      }
+      if (variables.action === "delete") {
+        return unwrap(await deleteDailyLog(projectSlug, variables.logId));
+      }
+      if (!variables.idempotencyKey) throw new Error("Missing idempotency key");
+      return unwrap(
+        await submitDailyLog(projectSlug, variables.logId, {
+          idempotencyKey: variables.idempotencyKey,
+        }),
+      );
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.projectDailyLogs(projectSlug) });
+      if (variables.logId) {
+        void queryClient.invalidateQueries({
+          queryKey: rndKeys.dailyLog(projectSlug, variables.logId),
+        });
+      }
+    },
   });
 }

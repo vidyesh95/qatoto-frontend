@@ -9,20 +9,34 @@ import { rndKeys } from "@/hooks/rnd/keys";
 import { unwrap } from "@/lib/http";
 import { createResearchCategory, listResearchCategories } from "@/lib/rnd/catalog.api";
 import {
+  createOpenRole,
   createProjectApplication,
   createProjectInvite,
   createResearchProject,
   decideProjectApplication,
+  deleteOpenRole,
+  leaveProject,
   listMyApplications,
   listMyInvites,
+  listProjectApplications,
+  listProjectInvites,
   publishResearchProject,
+  removeProjectMember,
   respondToProjectInvite,
+  setOpenRoleOpenState,
+  setProjectStage,
+  unpublishResearchProject,
   unwatchProject,
+  updateOpenRole,
+  updateProjectMember,
+  updateResearchProject,
   uploadProjectCover,
   watchProject,
   type CreateApplicationInput,
   type CreateResearchProjectInput,
+  type OpenRoleInput,
 } from "@/lib/rnd/projects.api";
+import type { ProjectStage } from "@/lib/rnd/shared.schemas";
 
 // --- Queries ------------------------------------------------------------------
 
@@ -34,8 +48,27 @@ import {
  */
 export function useResearchCategoriesQuery() {
   return useQuery({
-    queryKey: ["rnd", "research-categories", "approved"] as const,
+    queryKey: rndKeys.researchCategories("approved"),
     queryFn: async () => unwrap(await listResearchCategories({ status: "approved" })),
+  });
+}
+
+/**
+ * The FOUNDER's application inbox — a different read from `useMyApplicationsQuery`, with
+ * different rows and a different actor. Maintainer-gated; a non-maintainer gets `404`.
+ */
+export function useProjectApplicationsQuery(projectSlug: string, status?: string) {
+  return useQuery({
+    queryKey: rndKeys.projectApplications(projectSlug, status),
+    queryFn: async () => unwrap(await listProjectApplications(projectSlug, { status })),
+  });
+}
+
+/** Invites this project has SENT. The inverse of `useMyInvitesQuery`. */
+export function useProjectInvitesQuery(projectSlug: string) {
+  return useQuery({
+    queryKey: rndKeys.projectInvites(projectSlug),
+    queryFn: async () => unwrap(await listProjectInvites(projectSlug)),
   });
 }
 
@@ -210,6 +243,129 @@ export function useRespondToInviteMutation() {
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: rndKeys.myInvites(undefined) });
+    },
+  });
+}
+
+// --- Editing the project itself --------------------------------------------------
+
+/**
+ * Edit, cover, publish, unpublish, stage.
+ *
+ * STAGE IS A SEPARATE ACTION AND NOT A FIELD ON THE EDIT, because every stage change
+ * writes an append-only audit row. A stage buried in a PATCH body would let the pipeline
+ * move without anyone being recorded as having moved it.
+ *
+ * Publishing is likewise its own act: before it, the project answers `404` to everyone but
+ * its founder, so a draft's URL is safe to hold and unsafe to share.
+ */
+export function useProjectSettingsMutation(projectSlug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: {
+      action: "update" | "cover" | "publish" | "unpublish" | "stage";
+      input?: Partial<CreateResearchProjectInput>;
+      coverFile?: File;
+      stage?: ProjectStage;
+      stageNote?: string;
+    }) => {
+      if (variables.action === "update") {
+        return unwrap(await updateResearchProject(projectSlug, variables.input ?? {}));
+      }
+      if (variables.action === "cover") {
+        if (!variables.coverFile) throw new Error("Missing cover file");
+        return unwrap(await uploadProjectCover(projectSlug, variables.coverFile));
+      }
+      if (variables.action === "publish") {
+        return unwrap(await publishResearchProject(projectSlug));
+      }
+      if (variables.action === "unpublish") {
+        return unwrap(await unpublishResearchProject(projectSlug));
+      }
+      if (!variables.stage) throw new Error("Missing stage");
+      return unwrap(
+        await setProjectStage(projectSlug, { stage: variables.stage, note: variables.stageNote }),
+      );
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.project(projectSlug) });
+    },
+  });
+}
+
+// --- Open roles --------------------------------------------------------------------
+
+/**
+ * Create, edit, close, reopen, delete.
+ *
+ * CLOSE IS NOT DELETE, and the UI should prefer it: `DELETE` is refused once the role has
+ * applications (`409 ROLE_HAS_REFERENCES`), because the people who applied to it are a
+ * record. Closing keeps them and stops new ones.
+ */
+export function useOpenRoleMutation(projectSlug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: {
+      action: "create" | "update" | "close" | "reopen" | "delete";
+      roleId?: string;
+      input?: OpenRoleInput;
+      patch?: Partial<OpenRoleInput>;
+    }) => {
+      if (variables.action === "create") {
+        if (!variables.input) throw new Error("Missing role input");
+        return unwrap(await createOpenRole(projectSlug, variables.input));
+      }
+      if (!variables.roleId) throw new Error("Missing role id");
+      if (variables.action === "update") {
+        return unwrap(await updateOpenRole(projectSlug, variables.roleId, variables.patch ?? {}));
+      }
+      if (variables.action === "delete") {
+        return unwrap(await deleteOpenRole(projectSlug, variables.roleId));
+      }
+      return unwrap(await setOpenRoleOpenState(projectSlug, variables.roleId, variables.action));
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.projectRoles(projectSlug) });
+      void queryClient.invalidateQueries({ queryKey: rndKeys.project(projectSlug) });
+    },
+  });
+}
+
+// --- Membership ---------------------------------------------------------------------
+
+/**
+ * Change a role, remove someone, or leave.
+ *
+ * LEAVING IS ITS OWN ENDPOINT (`/members/me`) rather than removing yourself by id, because
+ * the two are different acts with different authorization: anyone may leave; removing
+ * someone else needs maintainer.
+ */
+export function useProjectMemberMutation(projectSlug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: {
+      action: "update" | "remove" | "leave";
+      memberId?: string;
+      projectRole?: "maintainer" | "contributor";
+      roleTitle?: string | null;
+    }) => {
+      if (variables.action === "leave") {
+        return unwrap(await leaveProject(projectSlug));
+      }
+      if (!variables.memberId) throw new Error("Missing member id");
+      if (variables.action === "remove") {
+        return unwrap(await removeProjectMember(projectSlug, variables.memberId));
+      }
+      return unwrap(
+        await updateProjectMember(projectSlug, variables.memberId, {
+          projectRole: variables.projectRole,
+          roleTitle: variables.roleTitle,
+        }),
+      );
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.project(projectSlug) });
+      void queryClient.invalidateQueries({ queryKey: rndKeys.projectTeam(projectSlug) });
     },
   });
 }

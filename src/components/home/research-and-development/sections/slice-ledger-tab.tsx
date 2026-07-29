@@ -3,6 +3,7 @@
 // states from proof-of-effort-page, which read GET …/proof-of-effort, …/slice-ledger,
 // …/equity/open-role-projection and …/pie-bake.
 import PieBakePanel from "@/components/home/research-and-development/sections/pie-bake-panel";
+import RateLockPanel from "@/components/home/research-and-development/sections/rate-lock-panel";
 import RndStatusPanel, {
   RndErrorPanel,
   RndMembersOnlyPanel,
@@ -19,6 +20,7 @@ import type {
   PieBake,
   ProofOfEffortSummary,
 } from "@/lib/rnd/proof-of-effort.schemas";
+import type { ProjectTeamMember } from "@/lib/rnd/projects.schemas";
 import type { MemberScopedItemViewState, MemberScopedListViewState } from "@/lib/rnd/view-state";
 
 const SLICE_SEGMENT_COLORS = ["#00696E", "#1DBDC5", "#4A6363", "#7DA0A2", "#B4D2D4"];
@@ -49,6 +51,7 @@ export default function SliceLedgerTab({
   pieBakeState,
   projectCurrency,
   projectSlug,
+  team,
   viewerProjectRole,
 }: {
   summaryState: MemberScopedItemViewState<ProofOfEffortSummary>;
@@ -57,6 +60,7 @@ export default function SliceLedgerTab({
   pieBakeState: MemberScopedItemViewState<PieBake>;
   projectCurrency: string;
   projectSlug: string;
+  team: ProjectTeamMember[];
   viewerProjectRole: string | null;
 }) {
   return (
@@ -77,6 +81,8 @@ export default function SliceLedgerTab({
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">Slice ledger</h3>
         {renderLedger()}
       </section>
+
+      <RateLockPanel projectSlug={projectSlug} team={team} viewerProjectRole={viewerProjectRole} />
 
       <PieBakePanel
         pieBakeState={pieBakeState}

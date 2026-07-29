@@ -21,6 +21,7 @@ import {
   MyInviteSchema,
   ProjectApplicationSchema,
   ProjectInviteSchema,
+  ProjectTeamMemberSchema,
   ResearchProjectDetailSchema,
   ResearchProjectListRowSchema,
   ResearchProjectSlugsSchema,
@@ -29,6 +30,7 @@ import {
   type MyInvite,
   type ProjectApplication,
   type ProjectInvite,
+  type ProjectTeamMember,
   type ResearchProjectDetail,
   type ResearchProjectListRow,
 } from "@/lib/rnd/projects.schemas";
@@ -392,6 +394,186 @@ export function respondToProjectInvite(
     "POST",
     undefined,
     ProjectInviteSchema,
+    options,
+  );
+}
+
+// --- Open roles ----------------------------------------------------------------
+
+/**
+ * One advertised compensation strand as SENT.
+ *
+ * A DISCRIMINATED UNION, not a bag of optionals, and the pairing rules are the reason:
+ * cash is paid by the company and reported under §7A, equity vests through Slicing Pie,
+ * and `equity` therefore admits ONLY `slicing_pie_vesting`. Pairing them the other way
+ * would let a founder advertise a mechanism that does not exist. A DB CHECK enforces the
+ * same rule; the union makes the illegal combination unrepresentable before it is sent.
+ */
+export type OpenRoleCompensationStrandInput =
+  | {
+      readonly kind: "salary";
+      readonly salaryMinInCentsPerMonth: number;
+      readonly salaryMaxInCentsPerMonth?: number;
+      readonly earnedAsPolicy: "off_platform_payroll" | "direct_transfer";
+      readonly earnedAsNote?: string;
+    }
+  | {
+      readonly kind: "one_time";
+      readonly oneTimeMinInCents: number;
+      readonly oneTimeMaxInCents?: number;
+      readonly earnedAsPolicy: "off_platform_payroll" | "direct_transfer";
+      readonly earnedAsNote?: string;
+    }
+  | {
+      readonly kind: "equity";
+      readonly equityBasisPointsMin: number;
+      readonly equityBasisPointsMax?: number;
+      readonly earnedAsPolicy: "slicing_pie_vesting";
+      readonly earnedAsNote?: string;
+    };
+
+export interface OpenRoleInput {
+  readonly roleTitle: string;
+  readonly skills?: readonly string[];
+  readonly commitment: RoleCommitment;
+  readonly slotsTotal?: number;
+  readonly description?: string;
+  /** At most three strands. */
+  readonly compensation?: readonly OpenRoleCompensationStrandInput[];
+}
+
+/**
+ * Advertise a role. Maintainer and above.
+ *
+ * `slotsFilledCount` IS ABSENT FROM THE BODY AND MUST STAY ABSENT — it is a server-owned
+ * counter moved only by the accept transaction, and `.strict()` rejects a client that
+ * tries to set it. A form field for it would be a form field for "how many people have
+ * joined", answered by the person advertising.
+ */
+export function createOpenRole(
+  projectSlug: string,
+  input: OpenRoleInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<OpenRole>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/roles`,
+    "POST",
+    input,
+    OpenRoleSchema,
+    options,
+  );
+}
+
+export function updateOpenRole(
+  projectSlug: string,
+  roleId: string,
+  input: Partial<OpenRoleInput>,
+  options?: RequestOptions,
+): Promise<ActionResponse<OpenRole>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/roles/${roleId}`,
+    "PATCH",
+    input,
+    OpenRoleSchema,
+    options,
+  );
+}
+
+/**
+ * Close or reopen. SEPARATE VERBS rather than a `status` field on the edit, for the same
+ * reason the project's stage is its own route: it is an event, not an attribute.
+ */
+export function setOpenRoleOpenState(
+  projectSlug: string,
+  roleId: string,
+  nextState: "close" | "reopen",
+  options?: RequestOptions,
+): Promise<ActionResponse<OpenRole>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/roles/${roleId}/${nextState}`,
+    "POST",
+    undefined,
+    OpenRoleSchema,
+    options,
+  );
+}
+
+/** Refused once the role has applications — `409 ROLE_HAS_REFERENCES`. Close it instead. */
+export function deleteOpenRole(
+  projectSlug: string,
+  roleId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<OpenRole>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/roles/${roleId}`,
+    "DELETE",
+    undefined,
+    OpenRoleSchema,
+    options,
+  );
+}
+
+// --- Membership -----------------------------------------------------------------
+
+/**
+ * Change a member's role or role title.
+ *
+ * **THE ENUM IS `maintainer | contributor` AND NOTHING ELSE.** `founder` is absent because
+ * it is written exactly once, by the create transaction — a project cannot gain a second
+ * founder or transfer the first. `admin` is absent because its purpose is co-signing, and
+ * pre-seeding admins before that flow exists is risk bought for nothing. A dropdown here
+ * must offer two options, not four.
+ */
+export function updateProjectMember(
+  projectSlug: string,
+  memberId: string,
+  input: {
+    readonly projectRole?: "maintainer" | "contributor";
+    readonly roleTitle?: string | null;
+  },
+  options?: RequestOptions,
+): Promise<ActionResponse<ProjectTeamMember>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/members/${memberId}`,
+    "PATCH",
+    input,
+    ProjectTeamMemberSchema,
+    options,
+  );
+}
+
+/** Remove someone. Maintainer and above; the founder cannot be removed. */
+export function removeProjectMember(
+  projectSlug: string,
+  memberId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ProjectTeamMember>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/members/${memberId}`,
+    "DELETE",
+    undefined,
+    ProjectTeamMemberSchema,
+    options,
+  );
+}
+
+/**
+ * Leave a project.
+ *
+ * ITS OWN ROUTE (`/members/me`) rather than `removeProjectMember` with your own id,
+ * because the two are different acts with different authorization: anyone may leave,
+ * while removing someone else needs maintainer. Declared above `/:memberId` server-side so
+ * `me` is never read as an id.
+ */
+export function leaveProject(
+  projectSlug: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ProjectTeamMember>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/members/me`,
+    "DELETE",
+    undefined,
+    ProjectTeamMemberSchema,
     options,
   );
 }

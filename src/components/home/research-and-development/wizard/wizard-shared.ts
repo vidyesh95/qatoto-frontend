@@ -1,8 +1,11 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; data
 // arrives as props. Safe on either side of the boundary.
-// Shared vocabulary for the post-idea wizard steps. Field options mirror the
-// original post-idea sheet (sheets/post-idea-sheet.tsx, kept as the compact
-// entry point's donor). Field styling lives in @/components/ui/field-classes.
+// Shared vocabulary for the post-idea wizard steps. Field styling lives in
+// @/components/ui/field-classes.
+//
+// `sheets/post-idea-sheet.tsx` is GONE. It was a second, mock entry point for the same
+// act, and once the wizard started creating real drafts a sheet that posted nowhere was
+// a way to believe you had posted an idea you had not.
 
 import type { RoleCommitment } from "@/lib/rnd/shared.schemas";
 

@@ -14,7 +14,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { rndKeys, type ClaimListFilter } from "@/hooks/rnd/keys";
+import { rndKeys } from "@/hooks/rnd/keys";
 import { unwrap } from "@/lib/http";
 import {
   acceptFairMarketRate,
@@ -25,8 +25,6 @@ import {
   deletePhysicalReceipt,
   dismissOptimizationSuggestion,
   getEffortClaim,
-  listDisputes,
-  listEffortClaims,
   lockFairMarketRate,
   listMemberFairMarketRates,
   overrideVerificationStep,
@@ -44,10 +42,8 @@ import {
   type SubmitClaimInput,
 } from "@/lib/rnd/proof-of-effort.api";
 import type {
-  DisputeStatus,
   DisputeVotePosition,
   IntegrationProvider,
-  ListClaimsFilter,
   PhysicalReceiptKind,
   VerificationStepStatus,
 } from "@/lib/rnd/proof-of-effort.schemas";
@@ -61,29 +57,16 @@ import type {
  */
 const VERDICT_POLL_INTERVAL_MS = 2_000;
 
-// --- Queries ------------------------------------------------------------------
-
-/**
- * The verification index.
- *
- * The filter is the API's own `ListClaimsFilter` rather than the key factory's looser
- * `ClaimListFilter`, so `status` stays the six-value enum all the way to the request. A
- * cast at this boundary would let a typo reach a `.strict()` query schema as a 422.
- */
-export function useEffortClaimsQuery(projectSlug: string, filter: ListClaimsFilter = {}) {
-  const claimListFilter: ClaimListFilter = {
-    status: filter.status,
-    memberUserId: filter.memberUserId,
-    page: filter.page,
-  };
-  return useQuery({
-    queryKey: rndKeys.claims(projectSlug, claimListFilter),
-    queryFn: async () => unwrap(await listEffortClaims(projectSlug, filter)),
-  });
-}
-
 /** The two statuses whose verdict has not landed. Everything else is terminal. */
 const IN_FLIGHT_VERIFICATION_STATUSES: readonly string[] = ["queued", "running"];
+
+// --- Queries ------------------------------------------------------------------
+
+// THE CLAIM AND DISPUTE LIST HOOKS WERE DELETED. `proof-of-effort-page.tsx` reads both
+// server-side and passes them down, so a client hook for the same rows was a second way
+// to fetch one thing. What survives is the per-claim detail read, which is genuinely
+// on-demand: it fans out to runs, steps and evidence and is only wanted when someone
+// opens a row.
 
 /**
  * One claim, self-polling while its verdict is outstanding.
@@ -110,13 +93,6 @@ export function useEffortClaimQuery(projectSlug: string, claimId: string | undef
         ? VERDICT_POLL_INTERVAL_MS
         : false;
     },
-  });
-}
-
-export function useDisputesQuery(projectSlug: string, status?: DisputeStatus) {
-  return useQuery({
-    queryKey: rndKeys.disputes(projectSlug, status),
-    queryFn: async () => unwrap(await listDisputes(projectSlug, { status })),
   });
 }
 

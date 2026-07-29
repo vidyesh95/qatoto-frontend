@@ -27,6 +27,12 @@ export const rndKeys = {
   projectTeam: (projectSlug: string) => ["rnd", "project", projectSlug, "team"] as const,
   myApplications: (status: string | undefined) => ["rnd", "applications", "mine", status] as const,
   myInvites: (status: string | undefined) => ["rnd", "invites", "mine", status] as const,
+  /** The FOUNDER's inbox, distinct from `myApplications` — different rows, different actor. */
+  projectApplications: (projectSlug: string, status: string | undefined) =>
+    ["rnd", "project", projectSlug, "applications", status] as const,
+  projectInvites: (projectSlug: string) => ["rnd", "project", projectSlug, "invites"] as const,
+  researchCategories: (status: string | undefined) =>
+    ["rnd", "research-categories", status] as const,
 
   // --- Proof of Effort -------------------------------------------------------
   proofOfEffort: (projectSlug: string) => ["rnd", "poe", projectSlug] as const,
@@ -80,4 +86,8 @@ export const rndKeys = {
   // --- Discovery -------------------------------------------------------------
   myTalentProfile: () => ["rnd", "talent", "me"] as const,
   talentProfile: (handleOrUserId: string) => ["rnd", "talent", handleOrUserId] as const,
+  myProblemReports: (clusteringStatus: string | undefined) =>
+    ["rnd", "problem-reports", "mine", clusteringStatus] as const,
+  dailyLog: (projectSlug: string, logId: string) =>
+    ["rnd", "workshop", projectSlug, "daily-log", logId] as const,
 } as const;

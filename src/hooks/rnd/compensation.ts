@@ -18,8 +18,6 @@ import {
   declineCompensationAgreement,
   finalizeCompensationPeriod,
   getCompensationPeriod,
-  listCompensationAgreements,
-  listCompensationPeriods,
   proposeCompensationAgreement,
   recordCompensationPayment,
   supersedeCompensationPeriod,
@@ -27,29 +25,13 @@ import {
   type ProposeAgreementInput,
   type RecordPaymentInput,
 } from "@/lib/rnd/compensation.api";
-import type { CompensationPeriodStatus } from "@/lib/rnd/compensation.schemas";
-
-const PERIOD_PAGE_LIMIT = 12;
 
 // --- Queries ------------------------------------------------------------------
 
-export function useCompensationAgreementsQuery(projectSlug: string, memberId?: string) {
-  return useQuery({
-    queryKey: rndKeys.compensationAgreements(projectSlug, memberId),
-    queryFn: async () => unwrap(await listCompensationAgreements(projectSlug, { memberId })),
-  });
-}
-
-export function useCompensationPeriodsQuery(
-  projectSlug: string,
-  status?: CompensationPeriodStatus,
-) {
-  return useQuery({
-    queryKey: rndKeys.compensationPeriods(projectSlug, status, 1),
-    queryFn: async () =>
-      unwrap(await listCompensationPeriods(projectSlug, { status, limit: PERIOD_PAGE_LIMIT })),
-  });
-}
+// THE AGREEMENT AND PERIOD LIST HOOKS WERE DELETED. Both duplicated a read the project
+// detail page already makes server-side, so they were two ways to fetch one thing — and
+// the unused one would have drifted. The lists arrive as props; only the PERIOD DETAIL is
+// fetched on demand, because it is opened one at a time.
 
 export function useCompensationPeriodQuery(projectSlug: string, periodId: string | undefined) {
   return useQuery({

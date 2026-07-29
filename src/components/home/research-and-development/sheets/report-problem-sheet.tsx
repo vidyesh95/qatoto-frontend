@@ -1,101 +1,70 @@
-// TRANSPORT: props-only — client island. Holds interaction state only; all data
-// arrives as props from a server parent. Fetches nothing, so it needs no
-// QueryProvider. If this ever calls a hook in src/hooks/rnd, relabel it client-query.
+// TRANSPORT: client-query — "use client" island. Reads GET /research-categories to resolve
+// the category id and writes POST /discovery/problem-reports. Needs QueryProvider, which
+// (home)/layout.tsx mounts.
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
-import Image from "next/image";
-
-import CreatableCombobox, { appendOptionNameIfNew } from "@/components/ui/creatable-combobox";
+import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
+import RndSheet, {
+  RndSheetConfirmation,
+} from "@/components/home/research-and-development/sheets/rnd-sheet";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
+import { useCreateProblemReportMutation } from "@/hooks/rnd/discovery";
+import { useResearchCategoriesQuery } from "@/hooks/rnd/projects";
+import { ApiRequestError } from "@/lib/http";
 
-// Self-contained "report a problem" trigger + bottom sheet (§8.2, Civic Pulse).
-//
-// IT NO LONGER ADDS A PIN, and it must not. `POST /discovery/problem-reports` answers
-// **202**, not a cluster: clustering is a background job, and `countryCode`,
-// `distinctReporterCount`, `opportunityScore` and the cluster assignment are ALL
-// server-derived. The old code fabricated every one of them client-side —
-// `mapPosition: {50, 50}`, `reportCount: 1`, `opportunityScore: 40` — and dropped the
-// result onto the map as though it were a clustered finding.
-//
-// A submission is also not a report: `distinctReporterCount` counts distinct PEOPLE, so
-// one person's submission cannot become a pin on its own. The sheet therefore confirms
-// receipt and says the report is queued.
-//
-// The submit itself is still not wired — the POST needs `requireIdentifiedUser` and
-// lat/lng from a place picker, neither of which exists on this surface yet.
-
-const PROBLEM_CATEGORIES = [
-  "Water",
-  "Power",
-  "Transport",
-  "Healthcare",
-  "Housing",
-  "Connectivity",
-  "Waste",
-];
-
+/**
+ * Report a problem to Civic Pulse.
+ *
+ * **IT DOES NOT ADD A PIN, AND IT MUST NOT SAY IT DID.** `POST /discovery/problem-reports`
+ * answers `202` with a receipt whose `clusterId` is null by construction: clustering,
+ * geocoding and scoring are jobs that run afterwards. The old version of this sheet
+ * fabricated a pin client-side — `mapPosition: {50, 50}`, `reportCount: 1`,
+ * `opportunityScore: 40` — and dropped it on the map as a clustered finding.
+ *
+ * A SUBMISSION IS NOT A REPORT COUNT EITHER. `distinctReporterCount` counts distinct
+ * PEOPLE, so one person's submission can never become a pin on its own; it joins a cluster
+ * with other people's or it does not.
+ *
+ * **THE LOCATION IS FREE TEXT AND THE CLIENT SENDS NO COORDINATES.** `locationText` is
+ * geocoded server-side and the centroid is quantized before publication, so no single
+ * report can be located from the pin it contributes to. There is no place picker here
+ * because there must not be one.
+ *
+ * THE CATEGORY IS AN ID, so this reads the approved taxonomy rather than offering free
+ * text. Unlike the project wizard there is no propose-a-category path: `categoryId` on
+ * this body is `z.uuid()`, and a citizen report is not where new taxonomy should enter.
+ */
 export default function ReportProblemSheet() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [locationText, setLocationText] = useState("");
   const [description, setDescription] = useState("");
-  // Categories invented this session. Held here, not inside the sheet panel,
-  // because that subtree unmounts on close while this component does not — so a
-  // created category survives closing and reopening. It does not survive a
-  // reload; that needs the backend. Deliberately NOT reset by handleSheetClose.
-  const [categoryOptions, setCategoryOptions] = useState<string[]>([...PROBLEM_CATEGORIES]);
 
-  // useCallback here is for effect-dependency stability, not memoization — the
-  // keydown effect below depends on it, and an unstable identity would re-wire
-  // the listener and thrash document.body.style.overflow on every render.
-  // Every useState setter is referentially stable, so [] is correct.
-  const handleSheetClose = useCallback(() => {
+  const categoriesQuery = useResearchCategoriesQuery();
+  const reportMutation = useCreateProblemReportMutation();
+
+  const reportError =
+    reportMutation.error instanceof ApiRequestError ? reportMutation.error.apiError : null;
+
+  // Mirrors the server's own minimums so the button does not invite a 422 the user can
+  // see coming. The server re-checks; this is courtesy, not validation.
+  const isFormValid =
+    title.trim().length >= 8 &&
+    categoryId !== "" &&
+    locationText.trim().length >= 2 &&
+    description.trim().length >= 20;
+
+  function closeSheet() {
     setIsSheetOpen(false);
-    setIsSubmitted(false);
+    reportMutation.reset();
     setTitle("");
-    setCategory("");
+    setCategoryId("");
     setLocationText("");
     setDescription("");
-    // categoryOptions survives on purpose — see its declaration.
-  }, []);
-
-  useEffect(() => {
-    if (!isSheetOpen) return undefined;
-    const handleKeyDown = (keyEvent: KeyboardEvent) => {
-      // A nested popup preventDefaults Escape when it consumes it, so one press
-      // closes the category list and a second closes the sheet. Checking
-      // defaultPrevented rather than relying on stopPropagation because in the
-      // App Router the React root container is `document` — this listener sits
-      // on the same node as React's, where stopPropagation cannot reach it.
-      if (keyEvent.key === "Escape" && !keyEvent.defaultPrevented) handleSheetClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isSheetOpen, handleSheetClose]);
-
-  const isFormValid = title.trim() !== "" && category.trim() !== "" && locationText.trim() !== "";
-
-  const handleCategoryCommit = (committedCategoryName: string) => {
-    setCategoryOptions((previousCategoryOptions) =>
-      appendOptionNameIfNew(previousCategoryOptions, committedCategoryName),
-    );
-    setCategory(committedCategoryName);
-  };
-
-  const handleSubmit = () => {
-    // Confirmation only. Nothing is appended to the map: a queued submission is not a
-    // cluster, and inventing one would put a fabricated opportunity score on screen.
-    setIsSubmitted(true);
-  };
+  }
 
   return (
     <>
@@ -107,123 +76,92 @@ export default function ReportProblemSheet() {
         Report a problem
       </button>
 
-      {isSheetOpen && (
-        <>
-          <button
-            type="button"
-            aria-label="Close report problem sheet"
-            onClick={handleSheetClose}
-            className="fixed inset-0 z-55 bg-black/40"
+      <RndSheet title="Report a problem" isOpen={isSheetOpen} onClose={closeSheet}>
+        {reportMutation.isSuccess ? (
+          <RndSheetConfirmation
+            headline="Received — we are matching it to a cluster"
+            detail="Your report is queued. It is not on the map yet: reports from separate people are grouped first, and where yours lands is decided by that job, not by this form."
+            onDismiss={closeSheet}
           />
-
-          <div
-            aria-label="Report a problem"
-            className="fixed inset-x-0 bottom-0 z-60 flex max-h-[85dvh] flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:h-max sm:max-h-[80dvh] sm:w-md sm:rounded-2xl sm:border sm:border-black/10"
+        ) : (
+          <form
+            className="flex flex-col gap-4 px-4 pb-6"
+            onSubmit={(submitEvent) => {
+              submitEvent.preventDefault();
+              if (!isFormValid) return;
+              reportMutation.mutate({
+                title: title.trim(),
+                categoryId,
+                description: description.trim(),
+                locationText: locationText.trim(),
+              });
+            }}
           >
-            {/* Drag handle — mobile affordance only. */}
-            <div className="flex justify-center pt-3 sm:hidden">
-              <span className="h-1.5 w-10 rounded-full bg-black/15" />
-            </div>
+            <label className="flex flex-col gap-1">
+              <span className={LABEL_CLASS}>Title</span>
+              <input
+                type="text"
+                value={title}
+                onChange={(changeEvent) => setTitle(changeEvent.target.value)}
+                placeholder="e.g. No reliable cold storage at the market"
+                className={INPUT_CLASS}
+              />
+            </label>
 
-            <header className="flex shrink-0 items-center gap-2 px-4 py-3">
-              <h2 className="flex-1 text-base font-medium">Report a problem</h2>
-              <button
-                type="button"
-                onClick={handleSheetClose}
-                aria-label="Close"
-                className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
+            <label className="flex flex-col gap-1">
+              <span className={LABEL_CLASS}>Category</span>
+              <select
+                value={categoryId}
+                onChange={(changeEvent) => setCategoryId(changeEvent.target.value)}
+                className={INPUT_CLASS}
               >
-                <Image
-                  src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  alt=""
-                  width={24}
-                  height={24}
-                />
-              </button>
-            </header>
+                <option value="">Choose a category</option>
+                {(categoriesQuery.data ?? []).map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.displayLabel}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-            <div className="min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
-              {isSubmitted ? (
-                <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
-                  <span className="grid size-12 place-items-center rounded-full bg-[#00696E]/10 text-2xl text-[#00696E]">
-                    ✓
-                  </span>
-                  <p className="text-base font-medium">Report added to the map</p>
-                  <p className="text-sm text-muted-foreground">
-                    Reports raise the opportunity signal for builders. This one is session-local in
-                    the mock phase.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleSheetClose}
-                    className="mt-2 cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
-                  >
-                    Done
-                  </button>
-                </div>
-              ) : (
-                <form
-                  className="flex flex-col gap-4 px-4 pb-6"
-                  onSubmit={(submitEvent) => {
-                    submitEvent.preventDefault();
-                    if (isFormValid) handleSubmit();
-                  }}
-                >
-                  <label className="flex flex-col gap-1">
-                    <span className={LABEL_CLASS}>Title</span>
-                    <input
-                      type="text"
-                      value={title}
-                      onChange={(changeEvent) => setTitle(changeEvent.target.value)}
-                      placeholder="e.g. No reliable cold storage at the market"
-                      className={INPUT_CLASS}
-                    />
-                  </label>
+            <label className="flex flex-col gap-1">
+              <span className={LABEL_CLASS}>Where is it?</span>
+              <input
+                type="text"
+                value={locationText}
+                onChange={(changeEvent) => setLocationText(changeEvent.target.value)}
+                placeholder="City, region or country"
+                className={INPUT_CLASS}
+              />
+              <span className="text-xs text-muted-foreground">
+                In your own words. We resolve it to coordinates and blur them before anything is
+                published, so no pin can be traced back to one report.
+              </span>
+            </label>
 
-                  <CreatableCombobox
-                    labelText="Category"
-                    placeholderText="Search or create a category"
-                    selectedOptionName={category}
-                    optionNames={categoryOptions}
-                    onOptionCommit={handleCategoryCommit}
-                    helpText="Pick a category or type a new one — press Enter to create it."
-                  />
+            <label className="flex flex-col gap-1">
+              <span className={LABEL_CLASS}>Description</span>
+              <textarea
+                value={description}
+                onChange={(changeEvent) => setDescription(changeEvent.target.value)}
+                placeholder="What's broken, who does it affect, how often?"
+                rows={3}
+                className={INPUT_CLASS}
+              />
+            </label>
 
-                  <label className="flex flex-col gap-1">
-                    <span className={LABEL_CLASS}>Location</span>
-                    <input
-                      type="text"
-                      value={locationText}
-                      onChange={(changeEvent) => setLocationText(changeEvent.target.value)}
-                      placeholder="City, region or country"
-                      className={INPUT_CLASS}
-                    />
-                  </label>
+            <button
+              type="submit"
+              disabled={!isFormValid || reportMutation.isPending}
+              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            >
+              {reportMutation.isPending ? "Sending…" : "Send my report"}
+            </button>
 
-                  <label className="flex flex-col gap-1">
-                    <span className={LABEL_CLASS}>Description</span>
-                    <textarea
-                      value={description}
-                      onChange={(changeEvent) => setDescription(changeEvent.target.value)}
-                      placeholder="What's broken, who does it affect, how often?"
-                      rows={3}
-                      className={INPUT_CLASS}
-                    />
-                  </label>
-
-                  <button
-                    type="submit"
-                    disabled={!isFormValid}
-                    className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-                  >
-                    Add report
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </>
-      )}
+            {reportError !== null && <MutationErrorNotice error={reportError} />}
+          </form>
+        )}
+      </RndSheet>
     </>
   );
 }

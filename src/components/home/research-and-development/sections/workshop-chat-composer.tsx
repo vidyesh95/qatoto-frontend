@@ -2,10 +2,13 @@
 // One write: POST …/workshop/chat.
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
-import { useSendWorkshopChatMessageMutation } from "@/hooks/rnd/workshop";
+import {
+  useMarkWorkshopChatReadMutation,
+  useSendWorkshopChatMessageMutation,
+} from "@/hooks/rnd/workshop";
 import { ApiRequestError } from "@/lib/http";
 
 /**
@@ -20,9 +23,31 @@ import { ApiRequestError } from "@/lib/http";
  * returns it. Rendering an instant bubble would claim a delivery this transport cannot
  * make.
  */
-export default function WorkshopChatComposer({ projectSlug }: { projectSlug: string }) {
+export default function WorkshopChatComposer({
+  projectSlug,
+  latestMessageId,
+}: {
+  projectSlug: string;
+  /** The newest message the transcript above rendered, or null when there are none. */
+  latestMessageId: string | null;
+}) {
   const sendMutation = useSendWorkshopChatMessageMutation(projectSlug);
+  const markReadMutation = useMarkWorkshopChatReadMutation(projectSlug);
   const [bodyText, setBodyText] = useState("");
+
+  // Marks the transcript read up to whatever is on screen, once per id.
+  //
+  // THE GUARD IS THE POINT: the read marker invalidates the workshop query, which
+  // re-renders this component — so firing it unconditionally in an effect is an infinite
+  // request loop. Recording the id already sent breaks it, and a new message arriving
+  // legitimately fires it once more.
+  const lastMarkedMessageIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (latestMessageId === null) return;
+    if (lastMarkedMessageIdRef.current === latestMessageId) return;
+    lastMarkedMessageIdRef.current = latestMessageId;
+    markReadMutation.mutate(latestMessageId);
+  }, [latestMessageId, markReadMutation]);
 
   const sendError =
     sendMutation.error instanceof ApiRequestError ? sendMutation.error.apiError : null;

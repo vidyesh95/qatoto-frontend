@@ -1,7 +1,9 @@
 // TRANSPORT: server-fetch — server component. Reads GET /funding/deals (requireAuth) via
 // @/lib/rnd/funding.api, with the session cookie forwarded by callerRequestOptions().
-// No React Query here.
+// Two client-query islands hang off it: the caller's own commitments, and the pledge form
+// on each deal card.
 import FundingDealFilterGrid from "@/components/home/research-and-development/sections/funding-deal-filter-grid";
+import MyPledgesPanel from "@/components/home/research-and-development/sections/my-pledges-panel";
 import RndStatusPanel, {
   RndErrorPanel,
   RndSignInRequiredPanel,
@@ -56,6 +58,7 @@ export default async function FundingPage({
           the backer and the project. Qatoto holds no funds and charges nobody.
         </p>
       </header>
+      <MyPledgesPanel />
       {renderDeals()}
     </div>
   );

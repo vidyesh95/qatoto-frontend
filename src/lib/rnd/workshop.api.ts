@@ -290,10 +290,17 @@ export function deleteWorkshopChatMessage(
   );
 }
 
-/** Mark chat read up to a message. The caller's own state; nobody else's moves. */
+/**
+ * Mark chat read up to a message. The caller's own state; nobody else's moves.
+ *
+ * **THE FIELD IS `throughMessageId`, NOT `lastReadMessageId`.** `MarkChatReadSchema` is
+ * `.strict()`, so the wrong name is a `422` rather than an ignored key — and it is the
+ * same name the read state comes back with, which is the convention the whole wire
+ * follows: one spelling per concept, in both directions.
+ */
 export function markWorkshopChatRead(
   projectSlug: string,
-  input: { readonly lastReadMessageId: string },
+  input: { readonly throughMessageId: string },
   options?: RequestOptions,
 ): Promise<ActionResponse<WorkshopChatReadState>> {
   return sendJson(

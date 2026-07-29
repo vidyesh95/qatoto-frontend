@@ -1,6 +1,7 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; rounds
 // and the confidence signal arrive as view states from a parent that read
 // GET …/funding-rounds and GET …/investor-confidence.
+import FundingManagementIsland from "@/components/home/research-and-development/sections/funding-management-island";
 import PledgeIsland from "@/components/home/research-and-development/sections/pledge-island";
 import RndStatusPanel, {
   RndErrorPanel,
@@ -8,7 +9,12 @@ import RndStatusPanel, {
   RndSignInRequiredPanel,
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import { formatIsoInstant, formatMoneyFromCents } from "@/lib/rnd/format";
-import type { FundingRound, FundingRoundType, InvestorConfidence } from "@/lib/rnd/funding.schemas";
+import type {
+  FundingRound,
+  FundingRoundType,
+  InvestorConfidence,
+  Milestone,
+} from "@/lib/rnd/funding.schemas";
 import type { MemberScopedItemViewState, MemberScopedListViewState } from "@/lib/rnd/view-state";
 
 const FUNDING_ROUND_TYPE_LABELS: Record<FundingRoundType, string> = {
@@ -23,6 +29,10 @@ const FULLY_FUNDED_BASIS_POINTS = 10000;
 type FundingTabProps = {
   fundingRoundsState: MemberScopedListViewState<FundingRound>;
   investorConfidenceState: MemberScopedItemViewState<InvestorConfidence>;
+  milestonesState: MemberScopedListViewState<Milestone>;
+  projectSlug: string;
+  projectCurrency: string;
+  viewerProjectRole: string | null;
 };
 
 /**
@@ -46,6 +56,10 @@ type FundingTabProps = {
 export default function FundingTab({
   fundingRoundsState,
   investorConfidenceState,
+  milestonesState,
+  projectSlug,
+  projectCurrency,
+  viewerProjectRole,
 }: FundingTabProps) {
   function renderRounds() {
     switch (fundingRoundsState.status) {
@@ -212,6 +226,13 @@ export default function FundingTab({
     <div className="space-y-6 px-4 lg:px-6">
       {renderRounds()}
       <section className="max-w-xl space-y-2">{renderInvestorConfidence()}</section>
+      <FundingManagementIsland
+        projectSlug={projectSlug}
+        rounds={fundingRoundsState.status === "ready" ? fundingRoundsState.rows : []}
+        milestones={milestonesState.status === "ready" ? milestonesState.rows : []}
+        projectCurrency={projectCurrency}
+        viewerProjectRole={viewerProjectRole}
+      />
     </div>
   );
 }

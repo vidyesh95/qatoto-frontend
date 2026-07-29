@@ -173,3 +173,116 @@ export interface ListDailyLogFeedFilter {
   readonly cursor?: string;
   readonly limit?: number;
 }
+
+// --- Authoring: the detail read and the submit receipt -------------------------
+
+export const EXTRACTED_CLAIM_KINDS = ["time", "cash", "milestone", "blocker"] as const;
+export const ExtractedClaimKindSchema = z.enum(EXTRACTED_CLAIM_KINDS);
+export type ExtractedClaimKind = z.infer<typeof ExtractedClaimKindSchema>;
+
+/**
+ * `GET …/daily-logs/:logId` — one log with everything the analysis produced.
+ *
+ * WIDER THAN THE FEED ROW ON PURPOSE. Chips, transcript segments, extracted claims and
+ * evidence links are four fan-outs, which is right for one log and catastrophic for a
+ * feed — that is why the list read carries none of them (§18's dark table).
+ *
+ * `extractedMinutes` IS WHAT THE MEMBER SAID. It is not grounded, it pays nobody, and it
+ * is not equity; §9's `groundedMinutes` is the number that prices anything. Any UI
+ * labelling this "effort" has published a claim as a finding.
+ *
+ * The three `analysis*` provenance fields ship because an AI-produced row whose model is
+ * hidden reads as a platform ruling.
+ */
+export const DailyLogDetailSchema = DailyLogViewSchema.extend({
+  transcriptSegments: z
+    .object({
+      sequenceNumber: z.number(),
+      startOffsetSeconds: z.number(),
+      endOffsetSeconds: z.number().nullable(),
+      speakerLabel: z.string().nullable(),
+      segmentText: z.string(),
+    })
+    .strip()
+    .array(),
+  aiSummaryChips: z
+    .object({
+      kind: AiSummaryChipKindSchema,
+      label: z.string(),
+      confidenceBps: z.number().nullable(),
+    })
+    .strip()
+    .array(),
+  extractedClaims: z
+    .object({
+      claimKind: ExtractedClaimKindSchema,
+      extractedMinutes: z.number().nullable(),
+      extractedCashInCents: z.string().nullable(),
+      claimSummary: z.string(),
+      confidenceBps: z.number().nullable(),
+    })
+    .strip()
+    .array(),
+  evidenceLinks: z
+    .object({
+      provider: z.string(),
+      sourceKind: z.string(),
+      externalUrl: z.string(),
+      externalHost: z.string(),
+    })
+    .strip()
+    .array(),
+  analysisModelName: z.string().nullable(),
+  analysisModelVersion: z.string().nullable(),
+  analysisPromptVersion: z.string().nullable(),
+}).strip();
+export type DailyLogDetail = z.infer<typeof DailyLogDetailSchema>;
+
+/**
+ * The `202` receipt from `POST …/daily-logs/:logId/submit`.
+ *
+ * **A RECEIPT, NEVER A VERDICT.** `effortVerificationStatus` is always `not_run` here and
+ * `analysisStatus` is `queued` (or `skipped_unconfigured` where no model key is set) — the
+ * analysis has not happened at the moment this returns. `dailyLogStreakDays` is the one
+ * real number on it, because the streak moves inside the submit transaction.
+ */
+export const SubmitDailyLogReceiptSchema = z
+  .object({
+    logId: z.string(),
+    submittedAt: z.string(),
+    analysisStatus: DailyLogAnalysisStatusSchema,
+    effortVerificationStatus: EffortVerificationStatusSchema,
+    dailyLogStreakDays: z.number(),
+  })
+  .strip();
+export type SubmitDailyLogReceipt = z.infer<typeof SubmitDailyLogReceiptSchema>;
+
+/**
+ * `POST …/daily-logs` — create a DRAFT.
+ *
+ * `logDate` is the day CLAIMED, date-only, and stays distinct from `submittedAt`: a
+ * backfilled log is a real thing and collapsing the two would erase it.
+ *
+ * `youtubeUrl` accepts a bare 11-character id or a schemeless link, matching the
+ * backend's own parser. The hostname allowlist check happens server-side, so this field
+ * is deliberately NOT `z.url()` on either side — validating it as a URL here would reject
+ * inputs the server accepts.
+ */
+export interface CreateDailyLogInput {
+  readonly logDate: string;
+  readonly narrative?: string;
+  readonly youtubeUrl?: string;
+}
+
+/**
+ * `PATCH …/daily-logs/:logId`.
+ *
+ * **`youtubeUrl: null` DETACHES THE VIDEO; OMITTING IT LEAVES THE VIDEO ALONE.** The two
+ * must stay distinguishable or a narrative-only edit silently drops a member's video —
+ * which is why this is not `Partial<CreateDailyLogInput>`.
+ */
+export interface UpdateDailyLogInput {
+  readonly logDate?: string;
+  readonly narrative?: string;
+  readonly youtubeUrl?: string | null;
+}

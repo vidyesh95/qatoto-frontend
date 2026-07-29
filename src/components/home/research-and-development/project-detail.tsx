@@ -94,7 +94,11 @@ export default async function ProjectDetail({ projectSlug }: { projectSlug: stri
           />
         }
         dailyLogsPanel={
-          <DailyLogsTab dailyLogsState={toMemberScopedListViewState(dailyLogsResult)} />
+          <DailyLogsTab
+            dailyLogsState={toMemberScopedListViewState(dailyLogsResult)}
+            projectSlug={projectSlug}
+            viewerProjectRole={project.viewerProjectRole}
+          />
         }
         teamPanel={
           <TeamTab
@@ -106,6 +110,10 @@ export default async function ProjectDetail({ projectSlug }: { projectSlug: stri
           <FundingTab
             fundingRoundsState={toMemberScopedListViewState(fundingRoundsResult)}
             investorConfidenceState={toMemberScopedItemViewState(confidenceResult)}
+            milestonesState={toMemberScopedListViewState(milestonesResult)}
+            projectSlug={projectSlug}
+            projectCurrency={project.currency}
+            viewerProjectRole={project.viewerProjectRole}
           />
         }
         compensationPanel={
@@ -114,6 +122,7 @@ export default async function ProjectDetail({ projectSlug }: { projectSlug: stri
             periodsState={toMemberScopedListViewState(periodsResult)}
             compensationState={toMemberScopedItemViewState(compensationResult)}
             projectSlug={projectSlug}
+            team={project.team}
             viewerProjectRole={project.viewerProjectRole}
           />
         }

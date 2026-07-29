@@ -12,6 +12,7 @@ import { useBakePieMutation } from "@/hooks/rnd/proof-of-effort";
 import { ApiRequestError } from "@/lib/http";
 import { formatIsoInstant, formatMoneyFromCents } from "@/lib/rnd/format";
 import {
+  PIE_BAKE_ACKNOWLEDGEMENT,
   PIE_BAKE_TRIGGERS,
   PieBakeTriggerSchema,
   type PieBake,
@@ -19,9 +20,6 @@ import {
   type ProofOfEffortSummary,
 } from "@/lib/rnd/proof-of-effort.schemas";
 import type { MemberScopedItemViewState } from "@/lib/rnd/view-state";
-
-/** The literal the backend compares against. A mismatch is `ACKNOWLEDGEMENT_MISMATCH`. */
-const BAKE_ACKNOWLEDGEMENT = "BAKE";
 
 const TRIGGER_LABELS: Record<PieBakeTrigger, string> = {
   cash_flow_breakeven: "The project reached cash-flow breakeven",
@@ -107,7 +105,7 @@ export default function PieBakePanel({
     );
   }
 
-  const isAcknowledgementTyped = typedAcknowledgement === BAKE_ACKNOWLEDGEMENT;
+  const isAcknowledgementTyped = typedAcknowledgement === PIE_BAKE_ACKNOWLEDGEMENT;
   const bakeError =
     bakeMutation.error instanceof ApiRequestError ? bakeMutation.error.apiError : null;
 
@@ -135,7 +133,7 @@ export default function PieBakePanel({
             trigger,
             triggerEvidenceNote,
             valuationCents: valuationCents.length > 0 ? valuationCents : undefined,
-            acknowledgement: BAKE_ACKNOWLEDGEMENT,
+            acknowledgement: PIE_BAKE_ACKNOWLEDGEMENT,
             expectedSnapshotId: snapshot.id,
           });
         }}
@@ -186,7 +184,7 @@ export default function PieBakePanel({
 
         <label className="block space-y-1">
           <span className="text-xs text-muted-foreground">
-            Type {BAKE_ACKNOWLEDGEMENT} to confirm
+            Type {PIE_BAKE_ACKNOWLEDGEMENT} to confirm
           </span>
           <input
             value={typedAcknowledgement}

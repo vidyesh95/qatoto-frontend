@@ -13,6 +13,7 @@ import {
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import WorkshopBoard from "@/components/home/research-and-development/sections/workshop-board";
 import WorkshopChat from "@/components/home/research-and-development/sections/workshop-chat";
+import WorkshopBoardControls from "@/components/home/research-and-development/sections/workshop-board-controls";
 import WorkshopChatComposer from "@/components/home/research-and-development/sections/workshop-chat-composer";
 import WorkshopFileLinker from "@/components/home/research-and-development/sections/workshop-file-linker";
 import WorkshopTaskComposer from "@/components/home/research-and-development/sections/workshop-task-composer";
@@ -79,6 +80,10 @@ export default async function WorkshopPage({ projectSlug }: { projectSlug: strin
                   columns={workshopResult.data.board}
                 />
               </div>
+              <WorkshopBoardControls
+                projectSlug={projectSlug}
+                boardColumns={workshopResult.data.board}
+              />
             </div>
           }
           filesPanel={
@@ -96,7 +101,10 @@ export default async function WorkshopPage({ projectSlug }: { projectSlug: strin
                 teamMembers={project.team}
               />
               <div className="px-4 lg:px-6">
-                <WorkshopChatComposer projectSlug={projectSlug} />
+                <WorkshopChatComposer
+                  projectSlug={projectSlug}
+                  latestMessageId={workshopResult.data.chatMessages.at(-1)?.id ?? null}
+                />
               </div>
             </div>
           }

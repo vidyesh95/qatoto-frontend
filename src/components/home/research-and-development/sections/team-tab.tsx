@@ -1,9 +1,11 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; the
 // roster arrives embedded on the project detail read and the roles as their own
-// view state from GET …/roles.
+// view state from GET …/roles. The management island nested below IS a client-query
+// island — it reads the application inbox and writes every people decision.
 import Link from "next/link";
 
 import OpenRoleCard from "@/components/home/research-and-development/cards/open-role-card";
+import TeamManagementIsland from "@/components/home/research-and-development/sections/team-management-island";
 import TeamMemberCard from "@/components/home/research-and-development/cards/team-member-card";
 import RndStatusPanel, {
   RndErrorPanel,
@@ -98,6 +100,12 @@ export default function TeamTab({ project, openRolesState }: TeamTabProps) {
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">Open roles</h3>
         {renderOpenRoles()}
       </section>
+      <TeamManagementIsland
+        projectSlug={project.slug}
+        team={project.team}
+        openRoles={openRolesState.status === "ready" ? openRolesState.rows : []}
+        viewerProjectRole={project.viewerProjectRole}
+      />
     </div>
   );
 }

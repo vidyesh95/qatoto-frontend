@@ -2,6 +2,7 @@
 // statements and the project compensation summary arrive as view states from
 // project-detail, which read GET …/compensation-agreements, …/compensation-periods and
 // …/compensation. The finalize / countersign / payment controls are client islands below.
+import CompensationAgreementIsland from "@/components/home/research-and-development/sections/compensation-agreement-island";
 import CompensationPeriodIsland from "@/components/home/research-and-development/sections/compensation-period-island";
 import RndStatusPanel, {
   RndErrorPanel,
@@ -24,6 +25,7 @@ import type {
   EngagementKind,
   ProjectCompensation,
 } from "@/lib/rnd/compensation.schemas";
+import type { ProjectTeamMember } from "@/lib/rnd/projects.schemas";
 import type { MemberScopedItemViewState, MemberScopedListViewState } from "@/lib/rnd/view-state";
 
 const ENGAGEMENT_KIND_LABELS: Record<EngagementKind, string> = {
@@ -72,12 +74,14 @@ export default function CompensationTab({
   periodsState,
   compensationState,
   projectSlug,
+  team,
   viewerProjectRole,
 }: {
   agreementsState: MemberScopedListViewState<CompensationAgreement>;
   periodsState: MemberScopedListViewState<CompensationPeriodSummary>;
   compensationState: MemberScopedItemViewState<ProjectCompensation>;
   projectSlug: string;
+  team: ProjectTeamMember[];
   viewerProjectRole: string | null;
 }) {
   return (
@@ -96,6 +100,13 @@ export default function CompensationTab({
         <h3 className="text-sm font-medium tracking-wide xl:text-lg">Cash agreements</h3>
         {renderAgreements()}
       </section>
+
+      <CompensationAgreementIsland
+        projectSlug={projectSlug}
+        team={team}
+        agreements={agreementsState.status === "ready" ? agreementsState.rows : []}
+        viewerProjectRole={viewerProjectRole}
+      />
     </div>
   );
 

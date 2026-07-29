@@ -1,203 +1,227 @@
-// TRANSPORT: props-only — client island. Holds draft-form state only; the project
-// arrives as a prop from a server parent that read GET /research-projects/:slug.
+// TRANSPORT: client-query — "use client" island calling useProjectSettingsMutation.
+// Writes PATCH /research-projects/:slug, POST …/cover, POST …/publish · /unpublish and
+// POST …/stage.
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import Image from "next/image";
-
+import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
+import RndSheet from "@/components/home/research-and-development/sheets/rnd-sheet";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
+import { useProjectSettingsMutation } from "@/hooks/rnd/projects";
+import { ApiRequestError } from "@/lib/http";
 import { PROJECT_STAGE_LABELS } from "@/lib/rnd/labels";
 import type { ResearchProjectDetail } from "@/lib/rnd/projects.schemas";
-import { PROJECT_STAGES, type ProjectStage } from "@/lib/rnd/shared.schemas";
+import { PROJECT_STAGES, ProjectStageSchema, type ProjectStage } from "@/lib/rnd/shared.schemas";
 
-// Project edit entry point (§14.6). Until now a project could be posted through
-// the /new wizard and never changed again — a stage that moves, a tagline that
-// was wrong on day one, and no way to fix either.
-//
-// THE FORM READS REAL DATA AND STILL SAVES NOTHING. `PATCH /research-projects/:slug`
-// and `PATCH …/stage` both exist and are founder-scoped, but this pass is reads-only,
-// so submitting captures the draft locally and the page keeps showing the server's
-// values. It is also shown to every visitor, which the real edit path will not be.
+/** Founder and maintainer edit; only the founder publishes or moves the stage. */
+const EDIT_ROLES = ["founder", "admin", "maintainer"];
 
-const STAGE_ORDER: readonly ProjectStage[] = PROJECT_STAGES;
+function canEdit(viewerProjectRole: string | null): boolean {
+  return viewerProjectRole !== null && EDIT_ROLES.includes(viewerProjectRole);
+}
 
+function isFounder(viewerProjectRole: string | null): boolean {
+  return viewerProjectRole === "founder";
+}
+
+/**
+ * Edit the project, change its cover, publish it, move its stage.
+ *
+ * **IT IS NO LONGER SHOWN TO EVERY VISITOR.** The old version rendered for anyone and saved
+ * nothing — a stranger could open an edit form for someone else's project, fill it in, and
+ * watch it "save". It is now gated on `viewerProjectRole`, with the server's own `404` as
+ * the real check.
+ *
+ * FOUR SEPARATE WRITES, NOT ONE FORM SUBMIT, because they are four different acts:
+ *
+ * - **Details** are a `PATCH`.
+ * - **The cover** is multipart and its own request.
+ * - **Publish** is the moment the project stops answering `404` to everyone but its
+ *   founder. It is deliberately not a checkbox inside the details form.
+ * - **Stage** has its own route because every change writes an append-only audit row. A
+ *   stage buried in a PATCH body would let the pipeline move with nobody recorded as
+ *   having moved it — which is why the note field beside it matters.
+ */
 export default function EditProjectSheet({ project }: { project: ResearchProjectDetail }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [hasSaved, setHasSaved] = useState(false);
   const [draftName, setDraftName] = useState(project.name);
   const [draftTagline, setDraftTagline] = useState(project.tagline);
   // `description` is nullable on the wire; a controlled textarea needs a string.
   const [draftDescription, setDraftDescription] = useState(project.description ?? "");
-  const [draftCategory, setDraftCategory] = useState(project.category.label);
   const [draftStage, setDraftStage] = useState<ProjectStage>(project.stage);
+  const [stageNote, setStageNote] = useState("");
 
-  useEffect(() => {
-    if (!isSheetOpen) return undefined;
-    const handleKeyDown = (keyEvent: KeyboardEvent) => {
-      if (keyEvent.key === "Escape") setIsSheetOpen(false);
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isSheetOpen]);
+  const settingsMutation = useProjectSettingsMutation(project.slug);
+  const settingsError =
+    settingsMutation.error instanceof ApiRequestError ? settingsMutation.error.apiError : null;
 
-  const isDraftValid = draftName.trim() !== "" && draftTagline.trim() !== "";
+  if (!canEdit(project.viewerProjectRole)) return null;
+
+  const isDraft = project.publishedAt === null;
 
   return (
     <>
       <button
         type="button"
         onClick={() => setIsSheetOpen(true)}
-        className="cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium"
+        className="cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E]"
       >
-        {hasSaved ? "Edited ✓" : "Edit project"}
+        Edit project
       </button>
 
-      {isSheetOpen && (
-        <>
-          <button
-            type="button"
-            aria-label="Close edit project sheet"
-            onClick={() => setIsSheetOpen(false)}
-            className="fixed inset-0 z-55 bg-black/40"
-          />
-
-          <div
-            aria-label={`Edit ${project.name}`}
-            className="fixed inset-x-0 bottom-0 z-60 flex max-h-[85dvh] flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:h-max sm:max-h-[80dvh] sm:w-md sm:rounded-2xl sm:border sm:border-black/10"
+      <RndSheet
+        title="Edit project"
+        isOpen={isSheetOpen}
+        onClose={() => {
+          setIsSheetOpen(false);
+          settingsMutation.reset();
+        }}
+      >
+        <div className="flex flex-col gap-6 px-4 pb-6">
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(submitEvent) => {
+              submitEvent.preventDefault();
+              settingsMutation.mutate({
+                action: "update",
+                input: {
+                  name: draftName.trim(),
+                  tagline: draftTagline.trim(),
+                  description: draftDescription.trim() || undefined,
+                },
+              });
+            }}
           >
-            <div className="flex justify-center pt-3 sm:hidden">
-              <span className="h-1.5 w-10 rounded-full bg-black/15" />
-            </div>
+            <label className="flex flex-col gap-1">
+              <span className={LABEL_CLASS}>Name</span>
+              <input
+                type="text"
+                value={draftName}
+                onChange={(changeEvent) => setDraftName(changeEvent.target.value)}
+                className={INPUT_CLASS}
+              />
+            </label>
 
-            <header className="flex shrink-0 items-center gap-2 px-4 py-3">
-              <h2 className="flex-1 truncate text-base font-medium">Edit project</h2>
-              <button
-                type="button"
-                onClick={() => setIsSheetOpen(false)}
-                aria-label="Close"
-                className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
+            <label className="flex flex-col gap-1">
+              <span className={LABEL_CLASS}>Tagline</span>
+              <input
+                type="text"
+                value={draftTagline}
+                onChange={(changeEvent) => setDraftTagline(changeEvent.target.value)}
+                className={INPUT_CLASS}
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className={LABEL_CLASS}>Description</span>
+              <textarea
+                value={draftDescription}
+                onChange={(changeEvent) => setDraftDescription(changeEvent.target.value)}
+                rows={4}
+                className={INPUT_CLASS}
+              />
+            </label>
+
+            <button
+              type="submit"
+              disabled={settingsMutation.isPending}
+              className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            >
+              Save details
+            </button>
+          </form>
+
+          <label className="flex flex-col gap-1 border-t border-[#CAC4D0]/40 pt-4">
+            <span className={LABEL_CLASS}>Cover image</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(changeEvent) => {
+                const coverFile = changeEvent.target.files?.[0];
+                if (coverFile) settingsMutation.mutate({ action: "cover", coverFile });
+              }}
+              className="text-sm"
+            />
+          </label>
+
+          {isFounder(project.viewerProjectRole) && (
+            <>
+              <form
+                className="flex flex-col gap-2 border-t border-[#CAC4D0]/40 pt-4"
+                onSubmit={(submitEvent) => {
+                  submitEvent.preventDefault();
+                  settingsMutation.mutate({
+                    action: "stage",
+                    stage: draftStage,
+                    stageNote: stageNote.trim() || undefined,
+                  });
+                }}
               >
-                <Image
-                  src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  alt=""
-                  width={24}
-                  height={24}
+                <label className="flex flex-col gap-1">
+                  <span className={LABEL_CLASS}>Pipeline stage</span>
+                  <select
+                    value={draftStage}
+                    onChange={(changeEvent) => {
+                      const parsed = ProjectStageSchema.safeParse(changeEvent.target.value);
+                      if (parsed.success) setDraftStage(parsed.data);
+                    }}
+                    className={INPUT_CLASS}
+                  >
+                    {PROJECT_STAGES.map((stage) => (
+                      <option key={stage} value={stage}>
+                        {PROJECT_STAGE_LABELS[stage]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <input
+                  type="text"
+                  value={stageNote}
+                  onChange={(changeEvent) => setStageNote(changeEvent.target.value)}
+                  placeholder="Why is it moving? (optional)"
+                  className={INPUT_CLASS}
                 />
-              </button>
-            </header>
-
-            <div className="min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
-              {hasSaved ? (
-                <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
-                  <span className="grid size-12 place-items-center rounded-full bg-[#00696E]/10 text-2xl text-[#00696E]">
-                    ✓
-                  </span>
-                  <p className="text-base font-medium">Changes captured</p>
-                  <p className="text-sm text-muted-foreground">
-                    Nothing was sent — this surface reads the backend and does not write to it yet,
-                    so the page still shows the saved values.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setIsSheetOpen(false)}
-                    className="mt-2 cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
-                  >
-                    Done
-                  </button>
-                </div>
-              ) : (
-                <form
-                  className="flex flex-col gap-4 px-4 pb-6"
-                  onSubmit={(submitEvent) => {
-                    submitEvent.preventDefault();
-                    if (isDraftValid) setHasSaved(true);
-                  }}
+                {/* Said out loud, because it is why this is not a dropdown that
+                    auto-saves: the move is recorded against the person making it. */}
+                <span className="text-xs text-muted-foreground">
+                  A stage change is recorded in the project&apos;s audit trail with your name on it.
+                  It cannot be edited afterwards, only followed by another change.
+                </span>
+                <button
+                  type="submit"
+                  disabled={settingsMutation.isPending || draftStage === project.stage}
+                  className="self-start rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E] disabled:opacity-40"
                 >
-                  <label className="flex flex-col gap-1.5">
-                    <span className={LABEL_CLASS}>Project name</span>
-                    <input
-                      type="text"
-                      value={draftName}
-                      onChange={(changeEvent) => setDraftName(changeEvent.target.value)}
-                      className={INPUT_CLASS}
-                    />
-                  </label>
+                  Move the stage
+                </button>
+              </form>
 
-                  <label className="flex flex-col gap-1.5">
-                    <span className={LABEL_CLASS}>One-line pitch</span>
-                    <input
-                      type="text"
-                      value={draftTagline}
-                      onChange={(changeEvent) => setDraftTagline(changeEvent.target.value)}
-                      className={INPUT_CLASS}
-                    />
-                  </label>
+              <div className="flex flex-col gap-2 border-t border-[#CAC4D0]/40 pt-4">
+                <span className={LABEL_CLASS}>Visibility</span>
+                <p className="text-xs text-muted-foreground">
+                  {isDraft
+                    ? "This is a draft. Nobody but you can open it — everyone else gets the same answer they would for a project that does not exist."
+                    : "This project is public. Unpublishing hides it again; it does not delete anything."}
+                </p>
+                <button
+                  type="button"
+                  disabled={settingsMutation.isPending}
+                  onClick={() =>
+                    settingsMutation.mutate({ action: isDraft ? "publish" : "unpublish" })
+                  }
+                  className="self-start rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+                >
+                  {isDraft ? "Publish it" : "Unpublish it"}
+                </button>
+              </div>
+            </>
+          )}
 
-                  <label className="flex flex-col gap-1.5">
-                    <span className={LABEL_CLASS}>Description</span>
-                    <textarea
-                      rows={4}
-                      value={draftDescription}
-                      onChange={(changeEvent) => setDraftDescription(changeEvent.target.value)}
-                      className={INPUT_CLASS}
-                    />
-                  </label>
-
-                  <label className="flex flex-col gap-1.5">
-                    <span className={LABEL_CLASS}>Category</span>
-                    <input
-                      type="text"
-                      value={draftCategory}
-                      onChange={(changeEvent) => setDraftCategory(changeEvent.target.value)}
-                      className={INPUT_CLASS}
-                    />
-                  </label>
-
-                  <div className="flex flex-col gap-1.5">
-                    <span className={LABEL_CLASS}>Pipeline stage</span>
-                    <div className="flex flex-wrap gap-2">
-                      {STAGE_ORDER.map((stage) => (
-                        <button
-                          key={stage}
-                          type="button"
-                          aria-pressed={draftStage === stage}
-                          onClick={() => setDraftStage(stage)}
-                          className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                            draftStage === stage
-                              ? "bg-[#00696E] text-white"
-                              : "bg-muted hover:bg-muted/70"
-                          }`}
-                        >
-                          {PROJECT_STAGE_LABELS[stage]}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <p className="rounded-2xl bg-muted/40 p-4 text-xs text-muted-foreground">
-                    Equity, slices and compensation are not editable here and never will be — they
-                    are computed from verified effort, not typed in by a founder.
-                  </p>
-
-                  <button
-                    type="submit"
-                    disabled={!isDraftValid}
-                    className="rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-                  >
-                    Save changes
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </>
-      )}
+          {settingsError !== null && <MutationErrorNotice error={settingsError} />}
+          {settingsMutation.isSuccess && <p className="text-sm text-[#00696E]">Saved.</p>}
+        </div>
+      </RndSheet>
     </>
   );
 }
