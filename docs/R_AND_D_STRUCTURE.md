@@ -17,21 +17,30 @@ pipeline story; deep features live on sub-routes.
   (the **commerce** domain). It is not part of this surface any more.
 - [CLAUDE.md](CLAUDE.md) — thin-client invariant, naming rules, current phase.
 
-> **Phase note: integration has started, and it is running surface by surface.** There is no longer
-> one global phase — **seven of the fourteen routes read the Express backend today** and the rest are
-> still static mocks. §18 is the phase order; §19 is the per-file transport map.
+> **Phase note: integration is finished except for Project Immortal.** Every route on this surface
+> reads the Express backend today, **and the domain has writes** — it had none until phase 4/5.
+> §18 is the phase order; §19 is the per-file transport map.
 >
-> | Phase                                                                                                                   | State                                    |
-> | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-> | **0 · foundations** — `src/lib/rnd/`, `src/lib/server-http.ts`, `QueryProvider` in `(home)`                             | ✅ done                                  |
-> | **1 · public discovery reads** — landing, knowledge-hub, problem-map, talent, team-building, go-to-market, funding      | ✅ done                                  |
-> | **2 · projects & detail** · **3 · workshop & daily logs** · **4 · proof of effort** · **5 · compensation & governance** | ⏳ still mock                            |
-> | **6 · Project Immortal**                                                                                                | 🚫 **blocked** — no backend exists (§18) |
+> | Phase                                                                                                              | State                                    |
+> | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+> | **0 · foundations** — `src/lib/rnd/`, `src/lib/server-http.ts`, `QueryProvider` in `(home)`                        | ✅ done                                  |
+> | **1 · public discovery reads** — landing, knowledge-hub, problem-map, talent, team-building, go-to-market, funding | ✅ done                                  |
+> | **2 · projects & detail** · **3 · workshop & daily logs**                                                          | ✅ done                                  |
+> | **4 · proof of effort** — ledger, verification, disputes, integrations, audit chain, pie bake                      | ✅ done                                  |
+> | **5 · compensation & governance** — agreements, statements, payments, `/governance/summary`                        | ✅ done                                  |
+> | **6 · Project Immortal**                                                                                           | 🚫 **blocked** — no backend exists (§18) |
+>
+> **The two compliance items are now built.** The dispute/override screen (GDPR Art. 22
+> contestability) and the integration-consent screen (EU AI Act Art. 14 human oversight) were the
+> two surfaces §18 flagged as legally weighted, and both were endpoints no screen called. They are
+> screens now — see `dispute-window-tab.tsx`, `dispute-actions-island.tsx`,
+> `claim-detail-disclosure.tsx` and `integration-consent-tab.tsx`.
 >
 > **The `TRANSPORT:` banner on line 1 of every component is the authority**, not this doc. Four
 > values, a closed set: `server-fetch` · `client-query` · `props-only` · `mock`. So
 > `grep -rn "TRANSPORT: mock" src/components/home/research-and-development/` is the live list of
-> what is still fabricated, and it cannot drift the way a hand-maintained table does.
+> what is still fabricated — **exactly one file now**, `project-immortal-page.tsx` — and it cannot
+> drift the way a hand-maintained table does.
 >
 > §11–§14 were written as a spec for this work. They are now **partly a changelog**: each section
 > says which of its rows landed and which are still owed.
@@ -418,7 +427,9 @@ that receives each **server-rendered panel as a `ReactNode` prop** — panels st
 - Problem statement + solution summary.
 - **Market-demand evidence chips** — 2–3 `MarketInsight`s cross-referenced from the knowledge-hub
   mocks (shows the surfaces interlock).
-- "Born from Civic Pulse report" link chip when `originProblemReportId` is set → `/problem-map`.
+- "Born from Civic Pulse" link chip when `originCluster` is set → `/problem-map`. The target is a
+  **cluster**, not one citizen's report — the deduplicated public entity this tree calls
+  `ProblemReport` — and it is addressed by id, because clusters carry no slug.
 - Link chips out to the **Virtual Workshop** and **Proof of Effort** sibling routes.
 - **Milestone timeline** (`milestone-timeline`) — vertical, done / current / upcoming, with the
   planned payout per milestone. Lives here rather than a sixth tab to keep the bar tight.
@@ -947,28 +958,31 @@ note on `MemberSliceBreakdown`. Both must be rewritten when §11 lands, not befo
 
 ---
 
-## 13. Route → endpoint map (integration phase)
+## 13. Route → endpoint map
 
-Backend §11. Five of six domains are shipped, so the integration phase can be ordered by what
-already exists.
+Every row below is wired. The table is the READ map; §19 lists the write islands separately,
+because a write belongs to a control rather than to a route.
 
-| Frontend route                  | Endpoints                                                                                                                                                                                        | Backend        |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
-| `/research-and-development`     | `GET /research-projects` · `GET /discovery/problem-clusters` · `/market-insights` · `GET /open-roles`                                                                                            | ✅ shipped     |
-| `/new`                          | `POST /research-projects` (creates a **draft** — an idea _is_ a project) · `POST …/publish` · `GET /research-categories`                                                                         | ✅ shipped     |
-| `/project/[id]`                 | `GET /research-projects/:slug` · `/team` · `/milestones` · `/daily-logs` · `/funding-rounds` · `/investor-confidence` · `/compensation-periods`                                                  | ✅ shipped     |
-| `/project/[id]/workshop`        | `…/workshop` · `/board` · `/columns` · `/tasks` · `/tasks/:id/move` · `/files` · `/chat` (keyset) · `/chat/read`                                                                                 | ✅ shipped     |
-| `/project/[id]/proof-of-effort` | `…/proof-of-effort` · `/slice-ledger` · `/equity` · `/equity/snapshots` · `/effort-claims` · `/allocation-proposals` · `/disputes` · `/audit-trail` · `/verify` · `/integrations` · `/pie-bake`  | ✅ shipped     |
-| `/problem-map`                  | `GET /discovery/problem-clusters[/:id]` · `POST /discovery/problem-reports` → **`202`**                                                                                                          | ✅ shipped     |
-| `/knowledge-hub`                | `GET /discovery/market-insights` · `/demand-signals` · `/regions`                                                                                                                                | ✅ shipped     |
-| `/talent`                       | `GET /discovery/talent` · `PUT /discovery/talent/me` · `POST …/invites`                                                                                                                          | ✅ shipped     |
-| `/funding`                      | `GET /funding/deals` · `POST /funding-rounds/:id/pledges` (`{ amountInCents }`, nothing else) · `GET …/investor-confidence`                                                                      | ✅ shipped     |
-| Governance tab (§5.5)           | `…/compensation-agreements` · `…/compensation-periods[/:id]` · `/finalize` · `/countersign` · `/supersede` · `…/payments[/:id]/confirm` · `/export` · `/verify`                                  | ✅ shipped     |
-| `/projects/project-immortal`    | `/research-programs/*`                                                                                                                                                                           | ⏳ **pending** |
-| `/team-building` (§4c.1)        | `GET /open-roles` (unfiltered) · `GET /research-projects?stage=team_building` · `GET /discovery/talent` · `GET /discovery/skills` for the chips                                                  | ✅ shipped     |
-| `/build-log` (§4c.2)            | `GET /daily-logs` — root-mounted, **member-scoped**, keyset `(logDate, submittedAt, id)`, project-annotated · `GET /daily-logs/streak-leaderboard` (public)                                      | ✅ shipped     |
-| `/governance` (§4c.3)           | `GET /governance/summary` — public aggregates + `disclosureKeys`, plus the caller's own open lines · `GET /funding/deals`. No `/finalize`, `/countersign`, `/payments` or `/export` here         | ✅ shipped     |
-| `/go-to-market` (§4c.4)         | `GET /suppliers` (repeated `capability` = AND) · `/suppliers/:slug` · `/supplier-capabilities` · `/launch-ready-projects` · `…/launch-readiness` (member-only). Listing creation is the studio's | ✅ shipped     |
+| Frontend route                          | Endpoints                                                                                                                                                                                                                                    | State          |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| `/research-and-development`             | `GET /research-projects` · `/discovery/problem-clusters` · `/discovery/market-insights` · `/open-roles`                                                                                                                                      | ✅ wired       |
+| `/new`                                  | `GET /research-categories?status=approved` → `POST /research-categories` (when new) → `POST /research-projects`. Creates a **DRAFT**; publishing is separate                                                                                 | ✅ wired       |
+| `/applications`                         | `GET /applications/mine` · `GET /invites/mine` → invite `accept` / `decline`                                                                                                                                                                 | ✅ wired       |
+| `/project/[id]`                         | `GET /research-projects/:slug` **first**, then `…/roles` · `…/milestones` · `…/daily-logs` · `…/funding-rounds` · `…/investor-confidence` · `…/launch-readiness` · `…/compensation-agreements` · `…/compensation-periods` · `…/compensation` | ✅ wired       |
+| `/project/[id]/workshop`                | `GET /research-projects/:slug` then `…/workshop` (board, files, chat, read state in one payload)                                                                                                                                             | ✅ wired       |
+| `/project/[id]/proof-of-effort`         | `GET /research-projects/:slug` then twelve §9 reads (§19)                                                                                                                                                                                    | ✅ wired       |
+| `/problem-map`                          | `GET /discovery/problem-clusters` · `/research-categories` · `/discovery/regions`                                                                                                                                                            | ✅ wired       |
+| `/problem-map/cluster/[clusterId]`      | `GET /discovery/problem-clusters/:clusterId`                                                                                                                                                                                                 | ✅ wired       |
+| `/knowledge-hub`                        | `GET /discovery/market-insights` · `/discovery/demand-signals`                                                                                                                                                                               | ✅ wired       |
+| `/talent`                               | `GET /discovery/talent` · `/discovery/skills` · `/open-roles`                                                                                                                                                                                | ✅ wired       |
+| `/talent/[handle]`                      | `GET /discovery/talent/:talentUserIdOrHandle`                                                                                                                                                                                                | ✅ wired       |
+| `/funding`                              | `GET /funding/deals` → `GET /funding-rounds/:id/pledge-options` → `POST …/pledges`                                                                                                                                                           | ✅ wired       |
+| `/governance`                           | `GET /governance/summary` — public aggregates, `disclosureKeys`, and the caller's own open lines                                                                                                                                             | ✅ wired       |
+| `/team-building`                        | `GET /open-roles` · `/research-projects?stage=team_building` · `/discovery/talent` · `/discovery/skills`                                                                                                                                     | ✅ wired       |
+| `/build-log`                            | `GET /daily-logs` (member-scoped, keyset) · `/daily-logs/streak-leaderboard` (public)                                                                                                                                                        | ✅ wired       |
+| `/go-to-market`                         | `GET /suppliers` · `/supplier-capabilities` · `/launch-ready-projects` · `/discovery/regions`                                                                                                                                                | ✅ wired       |
+| `/go-to-market/supplier/[supplierSlug]` | `GET /suppliers/:supplierSlug`                                                                                                                                                                                                               | ✅ wired       |
+| `/projects/project-immortal`            | `/research-programs/*`                                                                                                                                                                                                                       | 🚫 **blocked** |
 
 ### ⚠️ Where the backend contract doc is wrong about its own backend
 
@@ -997,17 +1011,19 @@ ones. **Read `src/db/schema.ts` and the service view interfaces, not the contrac
 schema — the doc is a design record and drifts.
 
 **Seven more found while wiring phases 2–3**, the same way — by reading `src/routes/` and the service
-view interfaces rather than §11:
+view interfaces rather than §11. **The first two have since been closed by backend §11j and are struck
+through** — they were true when found and are not any more, which is the failure mode this table
+exists to catch, pointed the other way:
 
-| The doc implies                                                      | The code has                                                                                                                                                              |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /research-projects/:slug/disputes` (§13 route map, §11e)        | **No such route.** Only `POST …/disputes/:id/{votes,withdraw,resolve}`; a dispute is reached through `activeDisputeId` on an allocation proposal                          |
-| `GET /research-projects/:slug/effort-claims` as a list (§13)         | **Detail only** — `GET …/effort-claims/:claimId`. There is no list endpoint                                                                                               |
-| A single paginated envelope                                          | **Three shapes.** Offset is `data[]` plus a `pagination` SIBLING; keyset is `{ logs \| messages, nextCursor }` INSIDE `data`; most R&D reads are bare arrays with neither |
-| `earnedAsLabel` on advertised compensation                           | **`earnedAsPolicy`**, an enum. Server prose was replaced by a key three clients localize themselves                                                                       |
-| `GET /research-categories` mirrors `/discovery/categories`'s `label` | Both return **`displayLabel` + `pinIconKey`** — it is literally the same controller                                                                                       |
-| `GET …/daily-logs` accepts the usual list params                     | **`limit` only** on the project-scoped read. No page, no cursor, no `?status=`, no author facet                                                                           |
-| A non-member always gets `404`                                       | Signed OUT is **`401`** on `…/workshop` and `/daily-logs`; a signed-in non-member gets `404`. Both must render, and they render differently                               |
+| The doc implies                                                      | The code has                                                                                                                                                                                                      |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~`GET /research-projects/:slug/disputes` (§13, §11e)~~              | ~~**No such route.**~~ **CLOSED by backend §11j.2.** `GET …/disputes` and `GET …/disputes/:disputeId` both ship. The dispute UI is the GDPR Art. 22 / AI Act Art. 14 path and is now blocked on the FRONTEND only |
+| ~~`GET /research-projects/:slug/effort-claims` as a list (§13)~~     | ~~**Detail only.**~~ **CLOSED by backend §11j.2.** The list ships alongside `GET …/effort-claims/:claimId`                                                                                                        |
+| A single paginated envelope                                          | **Three shapes.** Offset is `data[]` plus a `pagination` SIBLING; keyset is `{ logs \| messages, nextCursor }` INSIDE `data`; most R&D reads are bare arrays with neither                                         |
+| `earnedAsLabel` on advertised compensation                           | **`earnedAsPolicy`**, an enum. Server prose was replaced by a key three clients localize themselves                                                                                                               |
+| `GET /research-categories` mirrors `/discovery/categories`'s `label` | Both return **`displayLabel` + `pinIconKey`** — it is literally the same controller                                                                                                                               |
+| `GET …/daily-logs` accepts the usual list params                     | **`limit` only** on the project-scoped read. No page, no cursor, no `?status=`, no author facet                                                                                                                   |
+| A non-member always gets `404`                                       | Signed OUT is **`401`** on `…/workshop` and `/daily-logs`; a signed-in non-member gets `404`. Both must render, and they render differently                                                                       |
 
 The last row is what phases 2–3 were built around. `MemberScopedListViewState` maps `401` and `404`
 to the same `restricted` variant but keeps `isSignInRequired` on it, so a stranger gets a sign-in
@@ -1015,21 +1031,27 @@ prompt and a signed-in non-member gets "this is the team's". Neither reveals whe
 resource exists — and the exemption from the never-explain-a-404 rule is safe **only** because the
 public detail read has already resolved the project (see `view-state.ts`).
 
-**These findings now have a home on the backend side:
-[R_AND_D_BACKEND_STRUCTURE.md](R_AND_D_BACKEND_STRUCTURE.md) §11j**, which enumerates every R&D
-endpoint still missing (Project Immortal excluded) and, in §11j.6, every verb that is absent on
-purpose. **Two rows of §18's dark table turn out to be BACKEND gaps rather than frontend ones**, and
-§11j.1 is where that is recorded:
+**These findings had a home on the backend side:
+[R_AND_D_BACKEND_STRUCTURE.md](R_AND_D_BACKEND_STRUCTURE.md) §11j**, which enumerated every R&D
+endpoint then missing (Project Immortal excluded) and, in §11j.6, every verb that is absent on
+purpose. Three rows of §18's dark table turned out to be BACKEND gaps rather than frontend ones —
+**and all three have since shipped.** Recorded here rather than deleted, because the mis-attribution
+is the lesson:
 
-- The Overview tab's **demand-evidence chips and Civic Pulse origin link** are dark because
-  `problem_cluster_project_link` has no write path anywhere in the backend — only merge-proposal
-  moderation touches it, and only to re-point links that already exist. No endpoint can create the
-  project↔cluster relation those chips would render.
-- **`/knowledge-hub` renders an empty state that reads as "no insights yet".** It is actually "no
-  insight can be created": `market_insight` has no route, no job and no seed script writing it, so
-  that page and the landing insights rail are empty on every environment.
+- The Overview tab's **demand-evidence chips and Civic Pulse origin link** were dark because
+  `problem_cluster_project_link` had no write path anywhere in the backend, and no project ↔
+  `market_insight` relation existed at all. **Both halves are now built** — the writes with §11j.4,
+  and the reads the project detail needed with **§11k**: `ResearchProjectDetailView` carries
+  `originCluster: { clusterId, title } | null` and an ordered
+  `relatedInsights: { insightId, headline }[]`.
+- **`/knowledge-hub` rendered an empty state that read as "no insights yet".** It was actually "no
+  insight can be created": `market_insight` had no route, no job and no seed script writing it.
+  **Closed by §11j.4's `/discovery/admin/market-insights`.**
 
-Neither resolves with frontend work, and §18 must not be read as implying they will.
+**All three are now frontend work**, and §18's "returns when" column has been updated to say so.
+The general lesson stands: a dark surface is not automatically a frontend miss, and this section is
+where the check belongs — but check it against `src/routes/` and `src/db/schema.ts` in the backend
+repo each time, because a gap that was real when written may have closed since.
 
 Both gaps the earlier draft named are closed (backend §11h, §11i, Appendix B), and how they closed
 constrains the frontend:
@@ -1049,26 +1071,38 @@ constrains the frontend:
 **`404`**, not `403`, so a stranger cannot probe which project ids exist. Treat 404 as "no access or
 no such thing" and never render a "you don't have permission" hint that leaks existence.
 
-Client-side rules the contract forces, none of which the surface does today:
+**Findings from wiring phases 4–5 and the writes.** Same method — read `src/routes/` and the
+service view interfaces, never §11:
 
-- **Keyset pagination everywhere.** `ProjectProofOfEffortLedger` is one flat object of unbounded
-  arrays; a two-year-old project has thousands of entries.
-- **Async states are real.** Claim submit, log submit, receipt upload and problem report all return
-  **`202`**, not a verdict. Pending states plus polling — never an optimistic verdict.
-- **Idempotency keys** on claim submit, receipt upload, dispute raise and payment record, or a
-  retried request on a flaky mobile connection duplicates.
-- **Multiple verification attempts.** `ClaimVerificationRun` models one run; re-verification produces
-  attempt 2+ and the UI would show stale results.
-- **Server-side filtering replaces client filtering** on every list —
-  `?category=&region=&commitment=&skill=&availability=&sort=&page=&limit=`. Heavy work belongs on the
-  server (`CLAUDE.md` §Performance).
-- **A chip is not a control.** `ENABLED_FUNDING_ROUND_TYPES` is enforced at the API and in SQL;
-  hiding equity/venture in `funding-deal-filter-grid.tsx` stays cosmetic.
-- **Never fabricate a missing signal.** `investor-confidence` 404s when never computed; render the
-  absence.
+| The doc implies                                          | The code has                                                                                                                                                                           |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PUT`/`PATCH` are interchangeable for milestone variance | **`PUT /milestones/:id/variance`**, and the verb is the contract: recording the same variance twice must leave one row. `sendJson` gained `PUT` for this one route and no other        |
+| `GET …/compensation-periods` is offset-paginated         | **Keyset on `beforeSequenceNumber`**, and the list rows carry NO `lines` — those come with the detail read, alongside `payments`                                                       |
+| A dispute always has a `resolution`                      | **Nullable** while it is open. `dispute.resolution` carries no `.notNull()`                                                                                                            |
+| `GET …/equity` returns a snapshot                        | **`EquitySnapshotView \| null`** — null is a project with no cap table, which is not a cap table of zeroes                                                                             |
+| The compensation agreement status enum has `declined`    | **Four values, and `declined` is not one.** A member declining writes `withdrawn`; the audit kind `compensation_agreement_declined` is what distinguishes it from a founder retraction |
+| `?status=` on `/effort-claims` is a claim-specific enum  | It is the SHARED six-value `effort_verification_status`, the same enum the daily log and each run's verdict use                                                                        |
 
-When the integration phase opens, everything crossing the network is `unknown` → Zod `.strip()` →
-tagged result, lifted into the component's state union (`CLAUDE.md` Patterns 1–3). Not this phase.
+**Client-side rules the contract forces — all now implemented:**
+
+- **Keyset pagination.** `…/compensation-periods` uses `beforeSequenceNumber`; `/daily-logs` uses the
+  three-column log cursor. The slice ledger and audit trail page by sequence number.
+- **Async states are real.** Claim submit, re-verify, receipt upload and problem report all return
+  **`202`**, and `claim-detail-disclosure.tsx` polls the detail read until the status turns terminal
+  rather than rendering a verdict nobody computed.
+- **Idempotency keys** on claim submit, receipt upload, dispute raise and payment record, minted once
+  per attempt in component state.
+- **Multiple verification attempts.** `ClaimDetailSchema.runs` is a LIST and every attempt renders;
+  showing only the latest would display a stale verdict the moment anyone asks for a re-check.
+- **Server-side filtering** on every list, through `buildFilterHref` and `readEnumParam`.
+- **A chip is not a control.** `ENABLED_FUNDING_ROUND_TYPES` is enforced at the API and in SQL.
+- **Never fabricate a missing signal.** `investor-confidence` 404s when never computed, `…/pie-bake`
+  404s before the bake, `equity` is null before the first snapshot — all render as absences.
+
+Everything crossing the network is `unknown` → Zod `.strip()` → tagged result, lifted into the
+component's state union (`CLAUDE.md` Patterns 1–3). That now covers the writes too: a mutation's
+response is parsed exactly like a read's, so a backend that starts returning a different shape fails
+the parse instead of quietly rendering.
 
 ---
 
@@ -1361,60 +1395,122 @@ therefore exactly what is still fabricated.
 | **1 · public discovery reads**    | landing · `/knowledge-hub` · `/problem-map` · `/talent` · `/team-building` · `/go-to-market` · `/funding`                                                                                                 | ✅ done        |
 | **2 · projects & detail**         | `/research-projects/slugs` for `generateStaticParams` · detail · team · roles · milestones · funding rounds · investor confidence                                                                         | ✅ done        |
 | **3 · workshop & daily logs**     | board / files / chat in one `…/workshop` read · per-project logs · `/build-log` (member-scoped, `401` signed out)                                                                                         | ✅ done        |
-| **4 · proof of effort**           | slice ledger · verification · disputes · integrations · audit trail · rate lock · pie bake                                                                                                                | ⏳ next        |
-| **5 · compensation & governance** | agreements · periods · finalize / countersign / payments / export · `/governance/summary`                                                                                                                 | ⏳             |
+| **4 · proof of effort**           | slice ledger · verification · disputes · integrations · audit trail · rate lock · pie bake                                                                                                                | ✅ done        |
+| **5 · compensation & governance** | agreements · periods · finalize / countersign / payments / export · `/governance/summary`                                                                                                                 | ✅ done        |
+| **W · writes**                    | the whole mutation surface — PoE, compensation, funding pledges, project create/publish, applications & invites, workshop board / files / chat                                                            | ✅ done        |
 | **6 · Project Immortal**          | —                                                                                                                                                                                                         | 🚫 **blocked** |
 
+**Phase W is the one that was not in the original plan**, and it is the larger half of what
+landed. Until it, `rg 'sendJson|sendForm' src/lib/rnd/` returned NOTHING: every control on this
+surface that looked like it did something wrote to `useState`. That is worse than a missing feature
+— "Request sent ✓" on a button that sent nothing tells someone their application is with a team it
+never reached. The mutation wrappers now live beside their reads in `src/lib/rnd/*.api.ts`, the
+React Query hooks in `src/hooks/rnd/`, and every write control is a `client-query` island.
+
 **Phase 6 is blocked, not merely unscheduled.** `grep -rn "research-programs" src/` in the backend
-returns **zero hits** — no route, no controller, no service, no migration, no table. It also needs the
-platform `moderator` role, which does not exist either. Nothing about this surface can be wired until
-that domain is built.
+returns **zero hits** — no route, no controller, no service, no migration, no table. Nothing about
+this surface can be wired until that domain is built.
 
-**Two of the remaining phases carry compliance weight**, and should be read that way when
-prioritising: the dispute / override UI and the integration-consent screen (both phase 4) are the GDPR
+**The platform `moderator` role is no longer part of that block.** This paragraph used to say it
+"does not exist either"; `platformRoleEnum` (`src/db/schema.ts`) is `moderator | auditor | admin`,
+and §11j.4's `/discovery/admin/*` subtree runs `requirePlatformCapability` against it today. Phase 6
+is blocked on the `/research-programs` domain alone.
+
+**The two compliance items are built**, and this paragraph is kept because the reasoning is why
+they were prioritised. The dispute / override UI and the integration-consent screen are the GDPR
 Art. 22 contestability path and the EU AI Act Art. 14 human-oversight control. A backend that offers
-human intervention through an endpoint no screen calls does not, in practice, offer it.
+human intervention through an endpoint no screen calls does not, in practice, offer it — which was
+the situation until phase 4. They are now:
 
-### What the wired phases deliberately left dark
+- **Contest an automated decision** — `raise-dispute-island.tsx` (`POST …/allocation-proposals/:id/dispute`)
+  and `dispute-actions-island.tsx` (vote / withdraw / resolve), rendered by `dispute-window-tab.tsx`.
+- **Override an automated judgement** — `claim-detail-disclosure.tsx`
+  (`PATCH …/effort-claims/:claimId/steps/:stepId/override`). It edits a STEP STATUS and carries no
+  minutes field, so a human corrects the judgement and the formula recomputes the number.
+- **Withdraw consent** — `integration-consent-tab.tsx` (`DELETE …/integrations/:provider`), which
+  destroys the token and purges the payloads while the hashes survive.
 
-Cumulative across phases 1–3. Each is a consequence of refusing to fabricate a value the backend does
-not serve. None is a regression to fix by inventing data; each returns when its endpoint or field
-does.
+**Both are now blocked on this repo alone.** The dispute row was previously "blocked on both sides" —
+there was no `GET …/disputes` to read. Backend §11j.2 shipped it along with `GET …/disputes/:disputeId`,
+so neither compliance item is waiting on backend work. They are screens.
 
-| Surface                                                | What is dark                                                                                                                                                                                                     | Returns when                                         |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Overview tab — demand-evidence chips                   | **Not a phase-2 miss, and not fixable here.** `ResearchProjectDetailView` has no `relatedInsightIds`, and `market_insight` has **no writer anywhere in the backend** — no route, no job, no seed. Backend §11j.1 | backend §11j.4 makes insights writable               |
-| Overview tab — Civic Pulse origin link                 | Same shape: no `originProblemReportId` on the detail view, and `problem_cluster_project_link` is only ever re-pointed by merge moderation — nothing can create one. Backend §11j.1                               | backend §11j.4 adds the project-link write           |
-| Team tab — equity split bar                            | **Removed.** `ProjectTeamMemberView` carries neither `equityBasisPoints` nor `verifiedEffortMinutes`; the backend omits both deliberately. The bar was drawn from `parseFloat("68%")` over an authored string    | phase 4 (equity snapshot)                            |
-| Team member card — equity / hours footer               | **Removed**, same reason. The card now shows `projectRole`, `roleTitle` and `handle`, which are real                                                                                                             | phase 4                                              |
-| Daily-log card — AI summary chips                      | `DailyLogView` carries none; chips live on `GET …/daily-logs/:logId` alone, so a feed would be one request per card                                                                                              | the feed row carries chips                           |
-| `/build-log` — log-legend AI-tag half                  | **Removed** with the chips. A legend for symbols the page never renders teaches a vocabulary it does not speak                                                                                                   | same                                                 |
-| `/build-log` — project + chip-kind filter chips        | **Removed.** `?projectSlug=` and `?chipKind=` are real server filters, but the project chips could only offer projects already on the page, and a chip-kind match would render with nothing explaining it        | the page reads memberships; the row carries chips    |
-| Daily Logs tab — member filter                         | **Removed.** `GET …/daily-logs` takes `limit` and nothing else; filtering a capped page client-side reports "no logs from this member" for a member whose logs are past the limit                                | a backend author facet                               |
-| Funding tab — investor-confidence default              | **Removed.** The meter was a hardcoded `78`. `…/investor-confidence` 404s when never computed, and that is now rendered as an absence                                                                            | —                                                    |
-| Funding tab — backer avatar stack                      | **Removed.** Four `/dummy/*.avif` files presented as this round's backers. The `backersCount` integer stays                                                                                                      | `…/funding-rounds/:id/backers`, if worth the request |
-| Project detail — Governance tab                        | **Removed.** It rendered a retired escrow ledger off the dying mock shape; the cross-project mechanics already live at `/governance`                                                                             | phase 5                                              |
-| Workshop — add task / move task / upload / link / send | **Removed**, and the three panels stopped being client islands. Every control wrote to `useState` and posted nowhere; a send button that convincingly sends is the most misleading control on the page           | writes (post-phase-5)                                |
-| Links into `/proof-of-effort`                          | **Removed** from the Overview tab, the Daily Logs tab and the `/build-log` CTA. That route still prerenders mock slugs, so a real slug reaching it is a 404                                                      | phase 4                                              |
-| `/go-to-market` — readiness checklist                  | `…/launch-readiness` is member-only and 404s otherwise, and this page holds no slug. Renders the six derived gates as an explainer with no states or counts                                                      | a per-project surface                                |
-| `/talent` — pay-kind filter chips                      | **Removed.** `/discovery/talent` accepts no such param; restoring the filter needs a backend column, not a chip                                                                                                  | —                                                    |
-| Supplier directory — region chips                      | **Removed.** Built from `regionSlug` values on the fetched page, which offers only the regions already visible                                                                                                   | a read of `GET /discovery/regions`                   |
-| Project card — funding bar + avatar stack              | **Removed.** `GET /research-projects` returns counts, not rounds or member rows; either would be an N+1 per card                                                                                                 | —                                                    |
-| Deal card — investor-confidence meter                  | **Removed.** The old card defaulted a missing score to `50`, publishing a fabricated finding                                                                                                                     | —                                                    |
+### Writes with a wrapper and a hook but no control yet
 
-### Phase-4/5 enum values still on the old convention
+**Recorded rather than hidden, because this is exactly the shape Appendix C of the backend doc
+exists to name**: a wrapper with no caller looks like coverage from the outside and is not. Each row
+below has its `src/lib/rnd/*.api.ts` wrapper and its `src/hooks/rnd/` hook, both parsed and typed
+against the shipped route — what it does not have is a control on a page.
+
+They are grouped by who the missing control belongs to, because that is what decides where it goes.
+
+| Actor           | Writes wired but unsurfaced                                                                                               | Where the control belongs                            |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Founder / admin | funding round create · edit · open · close · delete; milestone create · edit · complete · variance · delete               | a Funding-tab management panel                       |
+| Founder         | compensation agreement propose; fair-market-rate propose → member accept → lock                                           | the Compensation tab and the slice-ledger rate panel |
+| Member          | effort-claim submit (`202`) · physical-receipt upload (`202`) · receipt delete                                            | the verification tab                                 |
+| Maintainer      | application accept / decline off `…/:projectSlug/applications`; invite create                                             | a Team-tab inbox                                     |
+| Founder         | project stage change · unpublish · archive · cover upload · edit; member role change                                      | the project header / an edit surface                 |
+| Anyone          | watch / unwatch a project; pledge cancel off `/pledges/mine`                                                              | the header, and a "my commitments" surface           |
+| Member          | workshop column CRUD + reorder · task move / edit / delete · file rename / delete · chat edit / delete · chat read marker | the board and chat panels                            |
+
+**Two writes have no wrapper at all**, and are the honest remaining gap in this layer: the talent
+profile editor (`PUT /discovery/talent/me`, `/publish`, `/unpublish`) and per-project daily-log
+authoring (`POST …/daily-logs` → `/transcript` → `/submit`). `edit-talent-profile-sheet.tsx` is
+still the mock form it always was.
+
+**None of these is blocked**, on either side. Each is a form against a route that already ships,
+and the parsing, error rendering and invalidation they need already exist.
+
+### What the wired phases left dark, and what came back
+
+Cumulative across phases 1–5 and the write phase. Each row is a consequence of refusing to
+fabricate a value the backend does not serve. **Most of them have now returned**, and the ones that
+have not are listed with the reason they still cannot.
+
+**Returned:**
+
+| Surface                                            | What came back, and how                                                                                                                                                                                                                    |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Overview tab — demand-evidence chips               | `relatedInsights: { insightId, headline }[]` on `ResearchProjectDetailSchema`. Rendered as NON-LINKING chips: there is no `GET /discovery/market-insights/:insightId`, so there is no page to open (Appendix D)                            |
+| Overview tab — Civic Pulse origin link             | `originCluster: { clusterId, title } \| null`, linking to the new `/problem-map/cluster/[clusterId]` route by ID — clusters have no slug                                                                                                   |
+| Team tab — equity split bar & member equity footer | Replaced rather than restored. The real cap table is the Proof-of-Effort equity snapshot, and it now renders on `/project/[id]/proof-of-effort` off `GET …/equity` — not reconstructed from a roster row that still carries neither figure |
+| Project detail — Governance tab                    | Returned as the **Compensation** tab, off §7A rather than the retired escrow ledger it used to draw: agreements, statements, lines, payments and the two totals                                                                            |
+| Links into `/proof-of-effort`                      | The route stopped prerendering six hardcoded mock slugs and now uses `GET /research-projects/slugs`, so a real slug resolves                                                                                                               |
+| Workshop — add task / upload / send                | Returned as three `client-query` islands: `workshop-task-composer.tsx`, `workshop-file-linker.tsx`, `workshop-chat-composer.tsx`. The file control is a LINK form, not a picker — object storage is deferred (Appendix A2)                 |
+| Supplier directory — region chips                  | Built from `GET /discovery/regions` instead of from the fetched page, and applied by the backend in SQL. The same row now exists on `/problem-map`                                                                                         |
+| `/go-to-market` — readiness checklist              | The cross-project page still renders the explainer, because `…/launch-readiness` is member-only. The REAL checklist, with states and counts, is now the project detail page's Go-to-market tab                                             |
+
+**Still dark, and why:**
+
+| Surface                                         | What is dark                                                                                                                                                           | Returns when                            |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Daily-log card — AI summary chips               | `DailyLogView` carries none; chips live on `GET …/daily-logs/:logId` alone, so a feed would be one request per card                                                    | the feed row carries chips (Appendix D) |
+| `/build-log` — log-legend AI-tag half           | Removed with the chips. A legend for symbols the page never renders teaches a vocabulary it does not speak                                                             | same                                    |
+| `/build-log` — project + chip-kind filter chips | `?projectSlug=` and `?chipKind=` are real server filters, but the project chips could only offer projects already on the page                                          | the page reads memberships              |
+| Daily Logs tab — member filter                  | `GET …/daily-logs` takes `limit` and nothing else                                                                                                                      | a backend author facet                  |
+| Funding tab — backer avatar stack               | `GET /funding-rounds/:roundId/backers` now has a wrapper, but rendering it is one request per round on a list page                                                     | a per-round detail surface              |
+| `/talent` — pay-kind filter chips               | `/discovery/talent` accepts no such param; restoring the filter needs a backend column, not a chip                                                                     | —                                       |
+| Project card — funding bar + avatar stack       | `GET /research-projects` returns counts, not rounds or member rows; either would be an N+1 per card                                                                    | —                                       |
+| Deal card — investor-confidence meter           | The old card defaulted a missing score to `50`, publishing a fabricated finding                                                                                        | —                                       |
+| Cluster detail — projects born from it          | `ProblemClusterView` exposes no linked-project list, though the link table exists and the reverse direction ships                                                      | Appendix D                              |
+| `/governance` — worked example statement        | Authored sample data, LABELLED as an example. Backend §11h declines to serve a real one, and a real member's row on a public page is what the design exists to prevent | never, by design (Appendix D)           |
+
+### Phase-4/5 enum values — ✅ resolved, by deletion
 
 Phase 0 converted every wire-relevant kebab-case union to `snake_case` (§11 "Casing on the wire").
-Phase 3 finished `workshop.ts`'s `"cad-model"` → `cad_model` by deleting the file. Left as-is on
-purpose: `proof-of-effort.ts` and `oversight.ts` still carry `"not-run"`, `"flagged-for-review"`,
-`"artifact-grounding"`, `"exif-metadata"`, `"agreements-accepted"` and friends. Their components are
-untouched and unwired, so converting them now would be churn with no consumer.
+Phase 3 finished `workshop.ts`'s `"cad-model"` → `cad_model` by deleting the file, and **phase 4
+closed `proof-of-effort.ts` and `oversight.ts` the same way**. Both carried `"not-run"`,
+`"flagged-for-review"`, `"artifact-grounding"`, `"exif-metadata"` and `"agreements-accepted"`;
+neither was converted, because both were replaced outright by
+`src/lib/rnd/proof-of-effort.schemas.ts`, whose enums are transcribed from the backend's
+`src/db/schema.ts` — `not_run`, `flagged_for_review`, `artifact_grounding`, `exif_present`,
+`capture_time_consistency` and the rest.
 
-**They must land with phase 4/5**, converted to the spelling the backend already ships —
-`not_run`, `flagged_for_review`, `artifact_grounding`, `exif_metadata`, `agreements_accepted`. Read
-the values off `src/db/schema.ts` in the backend, not off a doc: this doc had three go-to-market
-enums wrong (§13), and being wrong here means a silent `z.enum` parse failure rather than a compile
-error.
+**Converting would have been the worse option**, and this is worth keeping as the rule: a hand-edited
+kebab→snake sweep produces values that LOOK right and fail at runtime, because a `z.enum` mismatch is
+a silent parse failure rather than a compile error. Reading them off `schema.ts` while writing the
+schema file makes the same mistake impossible. This doc had three go-to-market enums wrong (§13)
+precisely because they were copied from prose.
 
 **Do not convert the slugs in the same sweep.** Kebab-case that is correct and stays: region slugs
 (`east-africa`), skill slugs, supplier capability slugs (`injection-molding`), and mock entity ids. A
@@ -1432,27 +1528,54 @@ the banner is right.
 
 Four values, a closed set so a fifth kind cannot appear silently:
 
-| Banner         | Meaning                                                                                                                                                                                                                                                        |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `server-fetch` | Server component. Reads the API through `src/lib/rnd/*.api` with the session cookie forwarded by `callerRequestOptions()`. Adding `"use client"` breaks the build — `next/headers` does not resolve in a client bundle                                         |
-| `client-query` | `"use client"` island using React Query. Needs `QueryProvider`, mounted in `(home)/layout.tsx`. **Still none.** Phase 3 was predicted to need the first one and did not: reads-only meant the workshop's three write islands were deleted rather than upgraded |
-| `props-only`   | Fetches nothing; data arrives as props. Safe on either side of the boundary                                                                                                                                                                                    |
-| `mock`         | Not wired. Renders fabricated data                                                                                                                                                                                                                             |
+| Banner         | Meaning                                                                                                                                                                                                                                                                                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server-fetch` | Server component. Reads the API through `src/lib/rnd/*.api` with the session cookie forwarded by `callerRequestOptions()`. Adding `"use client"` breaks the build — `next/headers` does not resolve in a client bundle                                                                                                                                     |
+| `client-query` | `"use client"` island using React Query. Needs `QueryProvider`, mounted in `(home)/layout.tsx`. **Fourteen of them**, all introduced by phases 4–5 and the write phase. Phase 3 was predicted to need the first and did not — reads-only meant the workshop's three write controls were deleted rather than upgraded, and they came back here as real ones |
+| `props-only`   | Fetches nothing; data arrives as props. Safe on either side of the boundary                                                                                                                                                                                                                                                                                |
+| `mock`         | Not wired. Renders fabricated data                                                                                                                                                                                                                                                                                                                         |
 
-### The ten `server-fetch` page bodies
+### The fifteen `server-fetch` page bodies
 
-| Body                                | Endpoints                                                                                                                               | Notes                                                                                                                                   |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `research-and-development-page.tsx` | `/research-projects` · `/discovery/problem-clusters?sort=opportunity` · `/discovery/market-insights` · `/open-roles`                    | 4 concurrent reads, one view state per rail — a dead endpoint dims one rail                                                             |
-| `knowledge-hub-page.tsx`            | `/discovery/market-insights` · `/discovery/demand-signals`                                                                              | Leaderboard renders `asOf`; empty means no scoring run, not zero demand                                                                 |
-| `problem-map-page.tsx`              | `/discovery/problem-clusters` · `/research-categories?status=approved`                                                                  | Category chips are Links; canvas island holds selection only                                                                            |
-| `talent-page.tsx`                   | `/discovery/talent` **(requireAuth)** · `/discovery/skills` · `/open-roles`                                                             | Signed out → sign-in panel + empty grid                                                                                                 |
-| `team-building-page.tsx`            | `/open-roles` · `/research-projects?stage=team_building` · `/discovery/skills` · `/discovery/talent`                                    | Spotlight strip has its own signed-out branch                                                                                           |
-| `go-to-market-page.tsx`             | `/suppliers` · `/supplier-capabilities` · `/launch-ready-projects`                                                                      | Repeated `?capability=` is **AND**ed in SQL                                                                                             |
-| `funding-page.tsx`                  | `/funding/deals` **(requireAuth)**                                                                                                      | Unpaginated on the wire — plain envelope, no `pagination` sibling                                                                       |
-| `project-detail.tsx`                | `/research-projects/:slug` (public) **then** `…/roles` · `…/milestones` · `…/daily-logs` · `…/funding-rounds` · `…/investor-confidence` | The public read runs FIRST and alone; its 404 is `notFound()`. Only then do the five run concurrently, each `MemberScopedListViewState` |
-| `workshop-page.tsx`                 | `/research-projects/:slug` (public, for the header + roster) · `…/workshop` (member-only)                                               | Two reads total — `…/workshop` returns board, files, chat and read state in one payload                                                 |
-| `build-log-page.tsx`                | `/daily-logs` **(requireAuth, keyset)** · `/daily-logs/streak-leaderboard` (public)                                                     | The repo's only cursor read. Signed out → hero + legend + public leaderboard + **empty** feed                                           |
+| Body                                | Endpoints                                                                                                                                                                                                                                                                                                      | Notes                                                                                                         |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `research-and-development-page.tsx` | `/research-projects` · `/discovery/problem-clusters?sort=opportunity` · `/discovery/market-insights` · `/open-roles`                                                                                                                                                                                           | 4 concurrent reads, one view state per rail — a dead endpoint dims one rail                                   |
+| `knowledge-hub-page.tsx`            | `/discovery/market-insights` · `/discovery/demand-signals`                                                                                                                                                                                                                                                     | Leaderboard renders `asOf`; empty means no scoring run, not zero demand                                       |
+| `problem-map-page.tsx`              | `/discovery/problem-clusters` · `/research-categories?status=approved` · `/discovery/regions`                                                                                                                                                                                                                  | Category AND region chips are Links; canvas island holds selection only                                       |
+| `cluster-detail-page.tsx`           | `/discovery/problem-clusters/:clusterId`                                                                                                                                                                                                                                                                       | Addressed by ID — clusters have no slug. A merged cluster links on to the one it merged into                  |
+| `talent-page.tsx`                   | `/discovery/talent` **(requireAuth)** · `/discovery/skills` · `/open-roles`                                                                                                                                                                                                                                    | Signed out → sign-in panel + empty grid                                                                       |
+| `talent-detail-page.tsx`            | `/discovery/talent/:handle` **(requireAuth)**                                                                                                                                                                                                                                                                  | Unpublished → `404` → `notFound()`, identical to a person who does not exist                                  |
+| `team-building-page.tsx`            | `/open-roles` · `/research-projects?stage=team_building` · `/discovery/skills` · `/discovery/talent`                                                                                                                                                                                                           | Spotlight strip has its own signed-out branch                                                                 |
+| `go-to-market-page.tsx`             | `/suppliers` · `/supplier-capabilities` · `/launch-ready-projects` · `/discovery/regions`                                                                                                                                                                                                                      | Repeated `?capability=` is **AND**ed in SQL                                                                   |
+| `supplier-detail-page.tsx`          | `/suppliers/:supplierSlug`                                                                                                                                                                                                                                                                                     | An INACTIVE supplier is a 404 — never rendered as "withdrawn"                                                 |
+| `funding-page.tsx`                  | `/funding/deals` **(requireAuth)**                                                                                                                                                                                                                                                                             | Unpaginated on the wire. Each deal card carries the pledge island                                             |
+| `governance-page.tsx`               | `/governance/summary` **(attachOptionalUser)**                                                                                                                                                                                                                                                                 | Renders signed out. Caller's own lines only; the worked example is authored and labelled                      |
+| `project-detail.tsx`                | `/research-projects/:slug` (public) **then** `…/roles` · `…/milestones` · `…/daily-logs` · `…/funding-rounds` · `…/investor-confidence` · `…/launch-readiness` · the three §7A reads                                                                                                                           | The public read runs FIRST and alone; its 404 is `notFound()`. Nine member-scoped reads then run concurrently |
+| `proof-of-effort-page.tsx`          | `/research-projects/:slug` **then** `…/proof-of-effort` · `…/slice-ledger` · `…/equity/open-role-projection` · `…/pie-bake` · `…/effort-claims` · `…/physical-receipts` · `…/allocation-proposals` · `…/disputes` · `…/integrations` · `…/optimization-suggestions` · `…/audit-trail` · `…/audit-trail/verify` | Same ordering rule. `…/pie-bake` 404s before the bake, and that is an ABSENCE rather than a failure           |
+| `workshop-page.tsx`                 | `/research-projects/:slug` (public, for the header + roster) · `…/workshop` (member-only)                                                                                                                                                                                                                      | Two reads total; three write islands nested inside the tabs                                                   |
+| `build-log-page.tsx`                | `/daily-logs` **(requireAuth, keyset)** · `/daily-logs/streak-leaderboard` (public)                                                                                                                                                                                                                            | The repo's only cursor read. Signed out → hero + legend + public leaderboard + **empty** feed                 |
+
+### The fourteen `client-query` islands
+
+`client-query` stopped being an empty category with phase 4. Every one of these is small, holds
+interaction state plus one or more mutations, and sits inside a `server-fetch` page.
+
+| Island                           | Writes                                                                                         |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `claim-detail-disclosure.tsx`    | step override (**AI Act Art. 14**) · re-verify (`202`). Polls the claim while a verdict is out |
+| `raise-dispute-island.tsx`       | raise a dispute (**GDPR Art. 22**), with a per-attempt idempotency key                         |
+| `dispute-actions-island.tsx`     | vote · withdraw · resolve (`re_verified` answers `202`)                                        |
+| `integration-consent-tab.tsx`    | authorize-url → provider redirect · revoke (self-only)                                         |
+| `optimization-tab.tsx`           | accept · dismiss a suggestion                                                                  |
+| `pie-bake-panel.tsx`             | bake the pie — irreversible, once ever, with `expectedSnapshotId`                              |
+| `compensation-period-island.tsx` | finalize · countersign · supersede · record a payment · confirm receipt · export               |
+| `pledge-island.tsx`              | record a funding COMMITMENT. No card, no hold, no fee                                          |
+| `new-idea-wizard-page.tsx`       | propose a category → create the project as a DRAFT                                             |
+| `request-to-join-button.tsx`     | apply to a project                                                                             |
+| `application-inbox-page.tsx`     | accept / decline an invite, off `/applications/mine` and `/invites/mine`                       |
+| `workshop-task-composer.tsx`     | create a board task                                                                            |
+| `workshop-file-linker.tsx`       | link a file — a URL, never bytes                                                               |
+| `workshop-chat-composer.tsx`     | send a chat message (polled, not streamed)                                                     |
 
 ### Conventions every wired surface follows
 
@@ -1485,3 +1608,27 @@ Four values, a closed set so a fifth kind cannot appear silently:
   rather than letting `Intl` round someone's compensation.
 - **404 is the not-authorized answer.** Never render a permission hint from one; it leaks which ids
   exist.
+- **A write is a `client-query` island, never a server action.** This repo talks to a separate
+  Express API; there are no Server Actions and no Next API routes for business logic. Each island
+  calls a wrapper in `src/lib/rnd/*.api.ts` through a hook in `src/hooks/rnd/`, which `unwrap`s the
+  tagged result into the exception React Query needs and invalidates keys from the ONE factory in
+  `src/hooks/rnd/keys.ts`.
+- **A `202` is never rendered as a result.** Claim submit, re-verify, receipt upload, problem-report
+  submit and a `re_verified` dispute resolution all answer 202: the row exists, the verdict does
+  not. The UI says "we have it, we are checking" and polls the detail read — on this surface an
+  optimistic verdict is an optimistic equity split.
+- **An idempotency key is minted once per ATTEMPT, in state.** Claim submit, receipt upload, dispute
+  raise and payment record all take one. A key regenerated inside the submit handler defeats the
+  mechanism, because the retry that duplicates the row is the same click.
+- **No mutation is optimistic.** Every one of these writes is an attestation about money, equity or
+  consent. Showing one as done before the server agreed puts a claim in front of someone that nobody
+  has actually made.
+- **A `409` is usually a finding, not a retry.** `RATE_NOT_LOCKED`, `SNAPSHOT_STALE`,
+  `UNSETTLED_ALLOCATIONS`, `RECEIPT_CITED`, `CHAIN_BROKEN` and `STATEMENT_CHAIN_BROKEN` each mean
+  something specific the user can act on, so `MutationErrorNotice` shows the backend's own message
+  and code rather than paraphrasing it into "something went wrong".
+- **Every dynamic route declares `generateStaticParams`, and never an empty one.**
+  `cacheComponents` fails the build on an empty list, while every read here returns `[]` rather than
+  throwing so an unreachable backend cannot break CI. `withSentinelValues`
+  (`src/lib/rnd/static-params.ts`) reconciles the two: no rows means one unresolvable param, which
+  the route renders as `notFound()`.

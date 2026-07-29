@@ -10,6 +10,7 @@ import {
   type ActionResponse,
   type PaginationMeta,
   type RequestOptions,
+  sendJson,
 } from "@/lib/http";
 import {
   OpenRoleSchema,
@@ -58,4 +59,22 @@ export function listResearchCategories(
     ResearchCategorySchema.array(),
     options,
   );
+}
+
+/**
+ * Propose a new research category.
+ *
+ * IT ARRIVES `pending`, NOT `approved`. The public taxonomy is moderated, so a founder
+ * who needs a category that does not exist proposes one and keeps going; a moderator
+ * decides later whether it joins the vocabulary or is merged into an existing entry.
+ *
+ * That is why the `/new` wizard sends a `categoryId` from this call rather than a free
+ * string: `research_project.categoryId` is a foreign key, and there is no "other" bucket
+ * for a name nobody has agreed to.
+ */
+export function createResearchCategory(
+  input: { readonly displayLabel: string; readonly pinIconKey?: string },
+  options?: RequestOptions,
+): Promise<ActionResponse<ResearchCategory>> {
+  return sendJson("/research-categories", "POST", input, ResearchCategorySchema, options);
 }

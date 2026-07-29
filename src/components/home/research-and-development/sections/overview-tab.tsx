@@ -23,14 +23,19 @@ type OverviewTabProps = {
  * Overview tab: the problem and solution prose, the founder's own demand evidence, and
  * the milestone timeline.
  *
- * THE MARKET-DEMAND CHIPS AND THE CIVIC PULSE ORIGIN LINK ARE GONE, and not merely
- * deferred. `ResearchProjectDetailView` carries no `relatedInsightIds` and no
- * `originProblemReportId` — there is no server-side link between a project and the
- * insight or cluster it grew from, so there is nothing to resolve. They return when the
- * backend adds the relation, not when a phase lands. See R_AND_D_STRUCTURE.md §18.
+ * THE CIVIC PULSE ORIGIN CHIP AND THE DEMAND-EVIDENCE CHIPS ARE BACK, off backend §11k's
+ * `originCluster` and `relatedInsights`. Three rules govern how they render:
  *
- * THE PROOF-OF-EFFORT LINK IS ALSO GONE for now: that route still renders mock data
- * keyed by mock slugs, so a real slug reaching it is a 404. It returns with phase 4.
+ * - The origin chip links by CLUSTER ID. Clusters have no slug anywhere in the backend.
+ * - `relatedInsights` chips DO NOT LINK. There is no `GET /discovery/market-insights/
+ *   :insightId` — the insight read is a list only — so there is no page to open. A chip
+ *   that navigates nowhere useful is worse than a chip that plainly does not navigate.
+ * - Both render below `demandEvidenceNotes` and look different from it. That block is the
+ *   founder's own assertion; these are moderated, platform-published evidence. Collapsing
+ *   the two would let an assertion borrow the credibility of a moderated insight.
+ *
+ * An empty `relatedInsights` and a null `originCluster` are both ordinary — most projects
+ * were not born from a cluster and cite nothing. Neither renders a placeholder.
  */
 export default function OverviewTab({ project, milestonesState }: OverviewTabProps) {
   function renderMilestones() {
@@ -78,6 +83,40 @@ export default function OverviewTab({ project, milestonesState }: OverviewTabPro
           <p className="max-w-prose text-sm leading-6 text-muted-foreground">
             {project.demandEvidenceNotes}
           </p>
+        </section>
+      )}
+      {/* Platform-moderated evidence, deliberately styled apart from the founder's own
+          notes above. Absent for most projects, and absence renders as nothing. */}
+      {(project.originCluster !== null || project.relatedInsights.length > 0) && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium tracking-wide xl:text-lg">
+            Evidence Qatoto moderated
+          </h3>
+          {project.originCluster && (
+            <Link
+              href={`/research-and-development/problem-map/cluster/${project.originCluster.clusterId}`}
+              className="inline-flex items-center gap-2 rounded-full bg-[#00696E]/10 px-3 py-1.5 text-xs font-medium text-[#00696E] transition hover:bg-[#00696E]/20"
+            >
+              Grew out of Civic Pulse: {project.originCluster.title} →
+            </Link>
+          )}
+          {project.relatedInsights.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Published market insights this project cites
+              </p>
+              <ul className="flex flex-wrap gap-2">
+                {project.relatedInsights.map((insight) => (
+                  <li
+                    key={insight.insightId}
+                    className="rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs"
+                  >
+                    {insight.headline}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </section>
       )}
       <div className="flex flex-wrap gap-2">

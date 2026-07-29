@@ -50,14 +50,37 @@ export default function RolesNeededStep({ draft, onDraftChange }: NewIdeaStepPro
         </div>
       </div>
       <label className="flex flex-col gap-1">
-        <span className={LABEL_CLASS}>Equity to offer</span>
-        <input
-          type="text"
-          value={draft.equityToOffer}
-          onChange={(changeEvent) => onDraftChange({ equityToOffer: changeEvent.target.value })}
-          placeholder="e.g. 2–4% per role"
-          className={INPUT_CLASS}
-        />
+        <span className={LABEL_CLASS}>Equity to offer, in percent</span>
+        {/* TWO NUMERIC FIELDS, NOT ONE FREE-TEXT RANGE. The old input took "2–4% per
+            role", which `offeredEquityBasisPointsMin` / `…Max` cannot be parsed out of —
+            they are integer basis points, and no float ever touches equity. */}
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={0.01}
+            value={draft.offeredEquityPercentMin}
+            onChange={(changeEvent) =>
+              onDraftChange({ offeredEquityPercentMin: changeEvent.target.value })
+            }
+            placeholder="Min"
+            className={INPUT_CLASS}
+          />
+          <span className="text-sm text-muted-foreground">to</span>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={0.01}
+            value={draft.offeredEquityPercentMax}
+            onChange={(changeEvent) =>
+              onDraftChange({ offeredEquityPercentMax: changeEvent.target.value })
+            }
+            placeholder="Max"
+            className={INPUT_CLASS}
+          />
+        </div>
       </label>
       <label className="flex flex-col gap-1">
         <span className={LABEL_CLASS}>Expected commitment</span>

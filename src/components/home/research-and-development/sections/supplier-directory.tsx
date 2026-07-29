@@ -9,9 +9,11 @@ import FilterChipRow, {
 } from "@/components/home/research-and-development/sections/filter-chip-row";
 import SupplierCard from "@/components/home/research-and-development/cards/supplier-card";
 import type { PaginationMeta } from "@/lib/http";
+import type { DiscoveryRegion } from "@/lib/rnd/discovery.schemas";
 import {
   buildFilterHref,
   readMultiParam,
+  readSingleParam,
   toggleMultiParamPatch,
   type RawSearchParams,
 } from "@/lib/rnd/filter-href";
@@ -31,11 +33,11 @@ import {
  * `GROUP BY … HAVING count(distinct …) = n`, matched by SLUG equality — a display-label
  * substring match is the bug that makes "casting" match "broadcasting".
  *
- * THE REGION CHIPS ARE GONE. They were built from `regionSlug` values found on the fetched
- * page, which against a paginated feed offers only the regions already visible and hides
- * every other one. `?region=` is a real backend filter, so restoring the row means reading
- * `GET /discovery/regions` for the vocabulary — worth doing, and not worth faking from a
- * page of results in the meantime.
+ * THE REGION CHIPS ARE BACK, and off the right source. The first version built them from
+ * `regionSlug` values found on the fetched page, which against a paginated feed offers
+ * only the regions already visible and hides every other one. The vocabulary now comes
+ * from `GET /discovery/regions` — the same read the problem map uses — and `?region=` is
+ * applied by the backend in SQL. Single-select, because the backend takes one slug.
  *
  * The directory is read-only here and moderator-written on the backend: a self-serve public
  * listing would need a moderation queue, a rate limiter and an abuse story before it
@@ -44,16 +46,19 @@ import {
 export default function SupplierDirectory({
   suppliers,
   capabilities,
+  regions,
   pagination,
   searchParams,
 }: {
   suppliers: Supplier[];
   capabilities: SupplierCapability[];
+  regions: DiscoveryRegion[];
   pagination: PaginationMeta | null;
   searchParams: RawSearchParams;
 }) {
   const selectedCapabilitySlugs = readMultiParam(searchParams, "capability");
   const selectedVerificationState = searchParams.verificationState;
+  const selectedRegionSlug = readSingleParam(searchParams, "region");
 
   const capabilityChips: FilterChipOption[] = [
     {
@@ -84,6 +89,19 @@ export default function SupplierDirectory({
     })),
   ];
 
+  const regionChips: FilterChipOption[] = [
+    {
+      label: "Any region",
+      href: buildFilterHref(searchParams, { region: undefined }),
+      isSelected: selectedRegionSlug === undefined,
+    },
+    ...regions.map((region) => ({
+      label: region.displayLabel,
+      href: buildFilterHref(searchParams, { region: region.slug }),
+      isSelected: selectedRegionSlug === region.slug,
+    })),
+  ];
+
   return (
     <section id="supplier-directory" className="scroll-mt-20 space-y-4 px-4 lg:px-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -100,6 +118,7 @@ export default function SupplierDirectory({
 
       <div className="space-y-2">
         <FilterChipRow options={capabilityChips} ariaLabel="Filter by capability" />
+        {regions.length > 0 && <FilterChipRow options={regionChips} ariaLabel="Filter by region" />}
         <FilterChipRow options={verificationChips} ariaLabel="Filter by verification status" />
         {selectedCapabilitySlugs.length > 1 && (
           <p className="text-[11px] text-muted-foreground">

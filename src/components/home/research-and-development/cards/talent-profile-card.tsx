@@ -82,7 +82,7 @@ export default function TalentProfileCard({ profile }: { profile: TalentProfile 
       {projectionFigures.length > 0 && (
         <p className="text-xs text-muted-foreground">{projectionFigures.join(" · ")}</p>
       )}
-      <InviteTalentButton />
+      <InviteTalentButton handleOrUserId={profile.handle ?? profile.userId} />
     </div>
   );
 }

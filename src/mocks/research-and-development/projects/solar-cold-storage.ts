@@ -193,7 +193,10 @@ export const SOLAR_COLD_STORAGE_PROJECT: ResearchProject = {
   ],
   watchersCount: 214,
   dailyLogStreakDays: 12,
-  originProblemReportId: "report-produce-spoilage-nakuru",
+  originCluster: {
+    clusterId: "cluster-produce-spoilage-nakuru",
+    title: "Produce spoiling before it reaches market in Nakuru",
+  },
   relatedInsightIds: [
     "insight-cold-storage-demand",
     "insight-solar-hardware-costs",

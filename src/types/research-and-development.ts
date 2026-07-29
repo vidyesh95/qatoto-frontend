@@ -6,13 +6,13 @@
 // wires up, its module leaves this list rather than being kept as a parallel shape.
 //
 // `./research-and-development/workshop` is gone — phase 3 replaced it with
-// `@/lib/rnd/workshop.schemas`. `./project` survives only because the phase-4
-// Proof-of-Effort page still reads `MOCK_RESEARCH_PROJECTS`.
+// `@/lib/rnd/workshop.schemas`. `./proof-of-effort` and `./oversight` are gone the same
+// way: phase 4 replaced both with `@/lib/rnd/proof-of-effort.schemas`, and their mocks
+// were deleted rather than kept as a fallback, because a silent fallback hides a broken
+// endpoint.
 
 export * from "./research-and-development/shared";
 export * from "./research-and-development/project";
 export * from "./research-and-development/discovery";
 export * from "./research-and-development/immortal";
-export * from "./research-and-development/proof-of-effort";
 export * from "./research-and-development/compensation";
-export * from "./research-and-development/oversight";

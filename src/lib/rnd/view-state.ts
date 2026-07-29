@@ -77,6 +77,31 @@ export type CursorListViewState<TRow> =
   | { status: "empty" }
   | { status: "ready"; rows: TRow[]; nextCursor: string | null };
 
+/**
+ * A write the server ACCEPTED but has not decided yet.
+ *
+ * `POST …/effort-claims`, `POST …/effort-claims/:claimId/reverify`,
+ * `POST …/physical-receipts`, `POST /discovery/problem-reports` and a `re_verified`
+ * dispute resolution all answer **`202`**, not a verdict. The row exists; the pipeline
+ * that grades it runs afterwards, and its result arrives through the detail read.
+ *
+ * THE `accepted` VARIANT MUST NEVER RENDER AS A RESULT. "Submitted — 240 minutes
+ * credited" after a 202 is a fabricated verdict, and on a Slicing Pie surface a
+ * fabricated verdict is a fabricated equity number. The only honest render is "we have
+ * it, we are checking", followed by whatever the poll returns — including `failed`.
+ *
+ * `settled` is deliberately generic over the eventual payload: the caller polls its own
+ * detail read and decides what "settled" means for its domain, because only it knows
+ * which verification status counts as terminal.
+ */
+export type AsyncJobViewState<TSettled> =
+  | { status: "idle" }
+  | { status: "submitting" }
+  | { status: "error"; message: string; fieldErrors?: Readonly<Record<string, string[]>> }
+  /** 202 received, nothing decided. Poll from here. */
+  | { status: "accepted"; jobReference: string }
+  | { status: "settled"; result: TSettled };
+
 function toErrorState(error: ApiError): Extract<ListViewState<never>, { status: "error" }> {
   return {
     status: "error",

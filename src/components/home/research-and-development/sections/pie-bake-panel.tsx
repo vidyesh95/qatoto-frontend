@@ -1,160 +1,213 @@
-// TRANSPORT: props-only — client island. Holds interaction state only; all data
-// arrives as props from a server parent. Fetches nothing, so it needs no
-// QueryProvider. If this ever calls a hook in src/hooks/rnd, relabel it client-query.
+// TRANSPORT: client-query — "use client" island calling useBakePieMutation. Reads arrive
+// as props from the server page; the one write here is POST …/pie-bake.
 "use client";
 
 import { useState } from "react";
 
-import { formatEquityFromBasisPoints } from "@/components/home/research-and-development/sections/compensation-format";
-import type {
-  PieBakeChecklistItemStatus,
-  PieBakeReadiness,
-  PieStatus,
-  TeamMember,
-} from "@/types/research-and-development";
+import {
+  MutationErrorNotice,
+  MutationSuccessNotice,
+} from "@/components/home/research-and-development/sections/mutation-feedback";
+import { useBakePieMutation } from "@/hooks/rnd/proof-of-effort";
+import { ApiRequestError } from "@/lib/http";
+import { formatIsoInstant, formatMoneyFromCents } from "@/lib/rnd/format";
+import {
+  PIE_BAKE_TRIGGERS,
+  PieBakeTriggerSchema,
+  type PieBake,
+  type PieBakeTrigger,
+  type ProofOfEffortSummary,
+} from "@/lib/rnd/proof-of-effort.schemas";
+import type { MemberScopedItemViewState } from "@/lib/rnd/view-state";
 
-const CHECKLIST_STATUS_GLYPHS: Record<
-  PieBakeChecklistItemStatus,
-  { glyph: string; className: string; label: string }
-> = {
-  met: { glyph: "✓", className: "bg-[#00696E] text-white", label: "Met" },
-  not_met: {
-    glyph: "!",
-    className: "bg-amber-100 text-amber-800 ring-2 ring-amber-500",
-    label: "Not met",
-  },
-  waived: { glyph: "–", className: "bg-muted text-muted-foreground", label: "Waived by the team" },
+/** The literal the backend compares against. A mismatch is `ACKNOWLEDGEMENT_MISMATCH`. */
+const BAKE_ACKNOWLEDGEMENT = "BAKE";
+
+const TRIGGER_LABELS: Record<PieBakeTrigger, string> = {
+  cash_flow_breakeven: "The project reached cash-flow breakeven",
+  priced_round: "The project closed a priced round",
 };
 
-// Pie bake (§14.6): the irreversible moment the dynamic pie stops recalculating
-// and the percentages freeze forever. Every blocking condition is listed before
-// the action, and the cap table it would freeze is shown in full — an
-// irreversible action with a hidden preview is not a decision, it's a trap.
-// Baking does nothing in the mock phase beyond revealing the frozen view.
-export default function PieBakePanel({
-  readiness,
-  pieStatus,
-  teamMembers,
-}: {
-  readiness: PieBakeReadiness;
-  pieStatus: PieStatus;
-  teamMembers: TeamMember[];
-}) {
-  const [hasPreviewedBake, setHasPreviewedBake] = useState(false);
+/** Founder only. Anyone else reaching the endpoint gets a 404, not a 403. */
+function canBake(viewerProjectRole: string | null): boolean {
+  return viewerProjectRole === "founder";
+}
 
-  const blockingItems = readiness.checklistItems.filter((item) => item.status === "not_met");
-  const isAlreadyBaked = pieStatus === "baked";
-  const canBake = blockingItems.length === 0 && !isAlreadyBaked;
-  const allocatedSlices = readiness.frozenCapTableRows.reduce(
-    (runningTotal, capTableRow) => runningTotal + capTableRow.totalSlices,
-    0,
-  );
+/**
+ * The bake — the last thing §9 ever does for a project.
+ *
+ * IRREVERSIBLE, ONCE PER PROJECT, EVER. `pie_bake_event` is unique per project and there
+ * is NO unbake endpoint: recovery is a manual, audited, out-of-band operation. Nothing in
+ * this panel may offer to undo it, soften it, or describe it as reversible.
+ *
+ * `expectedSnapshotId` is echoed from the snapshot the founder is actually looking at. It
+ * is what makes `409 SNAPSHOT_STALE` reachable — without it, a bake submitted while the
+ * nightly recompute ran would freeze a cap table nobody reviewed.
+ *
+ * `409 UNSETTLED_ALLOCATIONS` is not a failure to retry: it means a dispute window is
+ * still open, and the honest instruction is to settle it and come back.
+ */
+export default function PieBakePanel({
+  pieBakeState,
+  summaryState,
+  projectCurrency,
+  projectSlug,
+  viewerProjectRole,
+}: {
+  pieBakeState: MemberScopedItemViewState<PieBake>;
+  summaryState: MemberScopedItemViewState<ProofOfEffortSummary>;
+  projectCurrency: string;
+  projectSlug: string;
+  viewerProjectRole: string | null;
+}) {
+  const bakeMutation = useBakePieMutation(projectSlug);
+  const [trigger, setTrigger] = useState<PieBakeTrigger>("priced_round");
+  const [triggerEvidenceNote, setTriggerEvidenceNote] = useState("");
+  const [valuationCents, setValuationCents] = useState("");
+  const [typedAcknowledgement, setTypedAcknowledgement] = useState("");
+
+  // `restricted` here covers BOTH "not a member" and "never baked" — GET …/pie-bake 404s
+  // before the bake — so a project with a dynamic pie lands in the same branch as a
+  // stranger does. The summary read below is what separates them for a member.
+  if (pieBakeState.status === "ready") {
+    const pieBake = pieBakeState.item;
+    return (
+      <section className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">The pie is baked</h3>
+        <p className="text-sm text-muted-foreground">
+          Frozen on {formatIsoInstant(pieBake.bakedAt)} — {TRIGGER_LABELS[pieBake.trigger]}.
+          {pieBake.valuationCents !== null &&
+            ` Valued at ${formatMoneyFromCents(BigInt(pieBake.valuationCents), projectCurrency)}.`}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          The percentages above no longer move. Slice accrual has stopped and the nightly recompute
+          skips this project.
+        </p>
+      </section>
+    );
+  }
+
+  if (summaryState.status !== "ready" || summaryState.item.equity === null) {
+    return null;
+  }
+
+  const snapshot = summaryState.item.equity;
+  const openProposalCount = summaryState.item.openProposals.length;
+
+  if (!canBake(viewerProjectRole)) {
+    return (
+      <section className="space-y-2 rounded-2xl border border-dashed border-[#CAC4D0] p-4">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Baking the pie</h3>
+        <p className="text-sm text-muted-foreground">
+          When this project reaches cash-flow breakeven or closes a priced round, the founder
+          freezes the pie. After that the percentages are final and slices stop accruing. Only the
+          founder can do it, and it happens once.
+        </p>
+      </section>
+    );
+  }
+
+  const isAcknowledgementTyped = typedAcknowledgement === BAKE_ACKNOWLEDGEMENT;
+  const bakeError =
+    bakeMutation.error instanceof ApiRequestError ? bakeMutation.error.apiError : null;
 
   return (
-    <section className="space-y-3">
-      <h3 className="text-sm font-medium tracking-wide xl:text-lg">Baking the pie</h3>
-      <p className="text-xs text-muted-foreground">
-        Baking freezes every percentage permanently at{" "}
-        <span className="font-medium text-foreground">{readiness.triggerEventLabel}</span>. After a
-        bake, verified effort still earns cash but no longer mints slices. It cannot be undone.
+    <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+      <h3 className="text-sm font-medium tracking-wide xl:text-lg">Bake the pie</h3>
+      <p className="text-sm text-muted-foreground">
+        This freezes every percentage above, permanently. Slices stop accruing, the nightly
+        recompute stops running, and there is no way to undo it — recovery would be a manual
+        operation outside this app.
       </p>
 
-      <ul className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
-        {readiness.checklistItems.map((checklistItem) => {
-          const statusGlyph = CHECKLIST_STATUS_GLYPHS[checklistItem.status];
-          return (
-            <li key={checklistItem.key} className="flex items-start gap-3">
-              <span
-                aria-label={statusGlyph.label}
-                className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-xs ${statusGlyph.className}`}
-              >
-                {statusGlyph.glyph}
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm">{checklistItem.displayLabel}</span>
-                <span className="block text-xs text-muted-foreground">
-                  {checklistItem.detailNote}
-                </span>
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          disabled={!canBake}
-          onClick={() => setHasPreviewedBake(true)}
-          className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {isAlreadyBaked ? "Already baked" : "Bake the pie"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setHasPreviewedBake((isShown) => !isShown)}
-          className="cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium"
-        >
-          {hasPreviewedBake ? "Hide frozen cap table" : "Preview frozen cap table"}
-        </button>
-        {blockingItems.length > 0 && (
-          <span className="text-xs text-amber-800">
-            {blockingItems.length} condition{blockingItems.length === 1 ? "" : "s"} still blocking.
-          </span>
-        )}
-      </div>
-
-      {hasPreviewedBake && (
-        <div className="overflow-x-auto rounded-2xl border border-[#CAC4D0]/60">
-          <table className="w-full min-w-md text-left text-sm">
-            <thead>
-              <tr className="border-b border-border text-xs text-muted-foreground">
-                <th className="px-4 py-2 font-medium">Member</th>
-                <th className="px-4 py-2 font-medium">Slices</th>
-                <th className="px-4 py-2 font-medium">Frozen equity</th>
-              </tr>
-            </thead>
-            <tbody>
-              {readiness.frozenCapTableRows.map((capTableRow) => {
-                const member = teamMembers.find(
-                  (teamMember) => teamMember.id === capTableRow.memberId,
-                );
-                return (
-                  <tr key={capTableRow.memberId} className="border-b border-border/50">
-                    <td className="px-4 py-2">{member?.name ?? capTableRow.memberId}</td>
-                    <td className="px-4 py-2">{capTableRow.totalSlices.toLocaleString()}</td>
-                    <td className="px-4 py-2 font-medium">
-                      {formatEquityFromBasisPoints(capTableRow.equityBasisPoints)}
-                    </td>
-                  </tr>
-                );
-              })}
-              <tr className="border-b border-border/50 text-muted-foreground">
-                <td className="px-4 py-2">Open-role reserve</td>
-                <td className="px-4 py-2">{readiness.reservedSlices.toLocaleString()}</td>
-                <td className="px-4 py-2">
-                  {formatEquityFromBasisPoints(
-                    Math.round((readiness.reservedSlices / readiness.totalSlicesInPool) * 10000),
-                  )}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-2 font-medium">Pool</td>
-                <td className="px-4 py-2 font-medium">
-                  {allocatedSlices.toLocaleString()} of{" "}
-                  {readiness.totalSlicesInPool.toLocaleString()}
-                </td>
-                <td className="px-4 py-2 text-muted-foreground">100%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      {openProposalCount > 0 && (
+        <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">
+          {openProposalCount} allocation{openProposalCount === 1 ? " is" : "s are"} still inside a
+          dispute window. Baking will be refused until they settle.
+        </p>
       )}
 
-      <p className="text-xs text-muted-foreground">
-        Bake readiness is a display-only mock — the freeze, the snapshot and the cap-table write are
-        backend-owned later.
-      </p>
+      <form
+        className="space-y-3"
+        onSubmit={(submitEvent) => {
+          submitEvent.preventDefault();
+          bakeMutation.mutate({
+            trigger,
+            triggerEvidenceNote,
+            valuationCents: valuationCents.length > 0 ? valuationCents : undefined,
+            acknowledgement: BAKE_ACKNOWLEDGEMENT,
+            expectedSnapshotId: snapshot.id,
+          });
+        }}
+      >
+        <label className="block space-y-1">
+          <span className="text-xs text-muted-foreground">What triggered the bake</span>
+          <select
+            value={trigger}
+            onChange={(changeEvent) => {
+              // Parsed rather than cast: a select whose value reached the body unchecked
+              // would send a `.strict()` schema something it rejects with a 422.
+              const parsedTrigger = PieBakeTriggerSchema.safeParse(changeEvent.target.value);
+              if (parsedTrigger.success) setTrigger(parsedTrigger.data);
+            }}
+            className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+          >
+            {PIE_BAKE_TRIGGERS.map((triggerOption) => (
+              <option key={triggerOption} value={triggerOption}>
+                {TRIGGER_LABELS[triggerOption]}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block space-y-1">
+          <span className="text-xs text-muted-foreground">Evidence for it</span>
+          <textarea
+            required
+            value={triggerEvidenceNote}
+            onChange={(changeEvent) => setTriggerEvidenceNote(changeEvent.target.value)}
+            className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+            rows={3}
+          />
+        </label>
+
+        <label className="block space-y-1">
+          <span className="text-xs text-muted-foreground">
+            Valuation in cents, if there was one (whole cents, no decimal point)
+          </span>
+          <input
+            value={valuationCents}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            onChange={(changeEvent) => setValuationCents(changeEvent.target.value)}
+            className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+          />
+        </label>
+
+        <label className="block space-y-1">
+          <span className="text-xs text-muted-foreground">
+            Type {BAKE_ACKNOWLEDGEMENT} to confirm
+          </span>
+          <input
+            value={typedAcknowledgement}
+            onChange={(changeEvent) => setTypedAcknowledgement(changeEvent.target.value)}
+            className="w-full rounded-xl border border-[#CAC4D0] p-2 text-sm"
+          />
+        </label>
+
+        <button
+          type="submit"
+          disabled={!isAcknowledgementTyped || bakeMutation.isPending}
+          className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {bakeMutation.isPending ? "Baking…" : "Bake the pie permanently"}
+        </button>
+      </form>
+
+      {bakeError !== null && <MutationErrorNotice error={bakeError} />}
+      {bakeMutation.isSuccess && (
+        <MutationSuccessNotice message="The pie is baked. These percentages are final." />
+      )}
     </section>
   );
 }

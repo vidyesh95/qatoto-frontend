@@ -1,7 +1,7 @@
-// TRANSPORT: server-fetch — server component. Reads GET /discovery/problem-clusters and
-// GET /research-categories via @/lib/rnd/*.api, with the session cookie forwarded by
-// callerRequestOptions(). Both are public. The canvas below is a client island holding
-// pin/card selection only.
+// TRANSPORT: server-fetch — server component. Reads GET /discovery/problem-clusters,
+// GET /research-categories and GET /discovery/regions via @/lib/rnd/*.api, with the
+// session cookie forwarded by callerRequestOptions(). All three are public. The canvas
+// below is a client island holding pin/card selection only.
 import FilterChipRow, {
   type FilterChipOption,
 } from "@/components/home/research-and-development/sections/filter-chip-row";
@@ -11,7 +11,7 @@ import RndStatusPanel, {
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import ReportProblemSheet from "@/components/home/research-and-development/sheets/report-problem-sheet";
 import { listResearchCategories } from "@/lib/rnd/catalog.api";
-import { listProblemClusters } from "@/lib/rnd/discovery.api";
+import { listDiscoveryRegions, listProblemClusters } from "@/lib/rnd/discovery.api";
 import { buildFilterHref, readSingleParam, type RawSearchParams } from "@/lib/rnd/filter-href";
 import { rowsOrEmpty, toListViewState } from "@/lib/rnd/view-state";
 import { callerRequestOptions } from "@/lib/server-http";
@@ -41,18 +41,26 @@ export default async function ProblemMapPage({
   const resolvedSearchParams = await searchParams;
   const requestOptions = await callerRequestOptions();
   const selectedCategorySlug = readSingleParam(resolvedSearchParams, "category");
+  const selectedRegionSlug = readSingleParam(resolvedSearchParams, "region");
 
-  const [clustersResult, categoriesResult] = await Promise.all([
+  const [clustersResult, categoriesResult, regionsResult] = await Promise.all([
     listProblemClusters(
-      { sort: "opportunity", limit: CLUSTERS_PAGE_LIMIT, category: selectedCategorySlug },
+      {
+        sort: "opportunity",
+        limit: CLUSTERS_PAGE_LIMIT,
+        category: selectedCategorySlug,
+        region: selectedRegionSlug,
+      },
       requestOptions,
     ),
     listResearchCategories({ status: "approved" }, requestOptions),
+    listDiscoveryRegions({}, requestOptions),
   ]);
 
   const clustersState = toListViewState(clustersResult);
-  // Secondary read: losing it costs the chips, not the map.
+  // Secondary reads: losing either costs a chip row, not the map.
   const categoryOptions = rowsOrEmpty(categoriesResult);
+  const regionOptions = rowsOrEmpty(regionsResult);
 
   const categoryChips: FilterChipOption[] = [
     {
@@ -64,6 +72,23 @@ export default async function ProblemMapPage({
       label: category.displayLabel,
       href: buildFilterHref(resolvedSearchParams, { category: category.slug }),
       isSelected: selectedCategorySlug === category.slug,
+    })),
+  ];
+
+  // The region vocabulary comes from `GET /discovery/regions`, NOT from the regions
+  // present on the fetched page. A chip row derived from the page can only ever offer
+  // the regions already on screen, so it never lets a visitor reach the ones that are
+  // not — which is the whole job of a filter.
+  const regionChips: FilterChipOption[] = [
+    {
+      label: "Everywhere",
+      href: buildFilterHref(resolvedSearchParams, { region: undefined }),
+      isSelected: selectedRegionSlug === undefined,
+    },
+    ...regionOptions.map((region) => ({
+      label: region.displayLabel,
+      href: buildFilterHref(resolvedSearchParams, { region: region.slug }),
+      isSelected: selectedRegionSlug === region.slug,
     })),
   ];
 
@@ -83,13 +108,18 @@ export default async function ProblemMapPage({
         </p>
       </div>
 
-      <div className="flex flex-wrap justify-between gap-2">
-        {categoryOptions.length > 0 ? (
-          <FilterChipRow options={categoryChips} ariaLabel="Filter by category" />
-        ) : (
-          <span />
+      <div className="space-y-2">
+        <div className="flex flex-wrap justify-between gap-2">
+          {categoryOptions.length > 0 ? (
+            <FilterChipRow options={categoryChips} ariaLabel="Filter by category" />
+          ) : (
+            <span />
+          )}
+          <ReportProblemSheet />
+        </div>
+        {regionOptions.length > 0 && (
+          <FilterChipRow options={regionChips} ariaLabel="Filter by region" />
         )}
-        <ReportProblemSheet />
       </div>
 
       {renderCanvas()}
@@ -104,9 +134,9 @@ export default async function ProblemMapPage({
         return (
           <RndStatusPanel
             message={
-              selectedCategorySlug === undefined
+              selectedCategorySlug === undefined && selectedRegionSlug === undefined
                 ? "No problems have been clustered yet."
-                : "No clusters in this category yet."
+                : "No clusters match these filters yet."
             }
           />
         );

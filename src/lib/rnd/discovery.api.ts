@@ -6,10 +6,13 @@
 // `GET /discovery/*`. One function per route, each returning the tagged
 // `ActionResponse` — no throwing, no `any`, no `as` (CLAUDE.md Pattern 3).
 
+import { z } from "zod";
+
 import {
   buildQueryString,
   getJson,
   getPaginated,
+  sendJson,
   type ActionResponse,
   type PaginationMeta,
   type RequestOptions,
@@ -167,6 +170,51 @@ export function listTalentProfiles(
     `/discovery/talent${buildQueryString({ ...filter })}`,
     TalentProfileSchema,
     PaginationMetaSchema,
+    options,
+  );
+}
+
+/**
+ * One published talent profile, by handle or user id.
+ *
+ * AN UNPUBLISHED PROFILE IS A `404`, identical to a person who does not exist. That is
+ * the point: a directory that answered differently for "exists but hidden" would let
+ * anyone enumerate who has a profile they chose not to publish. Treat the 404 as
+ * `notFound()` and never as a permission hint.
+ */
+export function getTalentProfile(
+  talentUserIdOrHandle: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<TalentProfile>> {
+  return getJson(`/discovery/talent/${talentUserIdOrHandle}`, TalentProfileSchema, options);
+}
+
+/**
+ * Submit a problem report to Civic Pulse. **`202`**, not a verdict.
+ *
+ * THE REPORT IS NOT A CLUSTER. It is one person's submission; clustering, geocoding and
+ * scoring all happen afterwards on a schedule, and the pin a reporter eventually sees may
+ * merge theirs with other people's. Nothing here may say "your report is on the map".
+ *
+ * COORDINATES ARE SERVER-GEOCODED FROM WHAT IS SUBMITTED and the centroid is quantized
+ * before publication, so no single report can be located from the pin it contributes to.
+ */
+export function createProblemReport(
+  input: {
+    readonly title: string;
+    readonly description: string;
+    readonly categoryId: string;
+    readonly latitudeMicrodegrees?: number;
+    readonly longitudeMicrodegrees?: number;
+    readonly locationLabel?: string;
+  },
+  options?: RequestOptions,
+): Promise<ActionResponse<{ submissionId: string }>> {
+  return sendJson(
+    "/discovery/problem-reports",
+    "POST",
+    input,
+    z.object({ submissionId: z.string() }).strip(),
     options,
   );
 }

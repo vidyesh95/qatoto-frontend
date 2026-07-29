@@ -1,6 +1,6 @@
-// TRANSPORT: props-only — presentational server component. Fetches nothing; data
-// arrives as props. Safe on either side of the boundary.
-import type { GovernanceDisclosureKey } from "@/types/research-and-development";
+// TRANSPORT: props-only — presentational server component. Fetches nothing; the keys
+// arrive as props from governance-page, which read GET /governance/summary.
+import type { GovernanceDisclosureKey } from "@/lib/rnd/compensation.schemas";
 
 // The three rules arrive as KEYS, never as server prose, so each client renders
 // them in its own locale. Each one has a statute behind it, which is why none of

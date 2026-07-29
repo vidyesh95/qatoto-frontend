@@ -4,7 +4,7 @@
 // original post-idea sheet (sheets/post-idea-sheet.tsx, kept as the compact
 // entry point's donor). Field styling lives in @/components/ui/field-classes.
 
-import type { RoleCommitment } from "@/types/research-and-development";
+import type { RoleCommitment } from "@/lib/rnd/shared.schemas";
 
 export const IDEA_CATEGORIES = [
   "Agriculture",
@@ -33,7 +33,13 @@ export type NewIdeaDraft = {
   targetRegion: string;
   demandEvidenceNotes: string;
   rolesNeeded: string[];
-  equityToOffer: string;
+  /**
+   * Percent strings from two numeric inputs, converted to INTEGER BASIS POINTS on submit.
+   * The wire field is `offeredEquityBasisPointsMin` / `…Max` and no float ever touches
+   * equity, so "2–4% per role" as one free-text string had nowhere to go.
+   */
+  offeredEquityPercentMin: string;
+  offeredEquityPercentMax: string;
   expectedCommitment: RoleCommitment;
 };
 

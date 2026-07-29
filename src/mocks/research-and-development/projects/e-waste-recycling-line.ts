@@ -242,6 +242,9 @@ export const E_WASTE_RECYCLING_LINE_PROJECT: ResearchProject = {
   ],
   watchersCount: 468,
   dailyLogStreakDays: 17,
-  originProblemReportId: "report-informal-e-waste-burning-accra",
+  originCluster: {
+    clusterId: "cluster-informal-e-waste-burning-accra",
+    title: "Informal e-waste burning in Accra",
+  },
   relatedInsightIds: ["insight-e-waste-volume", "insight-solar-hardware-costs"],
 };

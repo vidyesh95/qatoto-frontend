@@ -1,5 +1,7 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; suppliers
 // arrive as props from a parent that read GET /suppliers.
+import Link from "next/link";
+
 import {
   SUPPLIER_CONTACT_POLICY_LABELS,
   SUPPLIER_VERIFICATION_STATE_LABELS,
@@ -47,7 +49,12 @@ export default function SupplierCard({ supplier }: { supplier: Supplier }) {
     <div className="flex flex-col gap-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate font-semibold">{supplier.name}</p>
+          <Link
+            href={`/research-and-development/go-to-market/supplier/${supplier.slug}`}
+            className="truncate font-semibold hover:text-[#00696E]"
+          >
+            {supplier.name}
+          </Link>
           <p className="truncate text-xs text-muted-foreground">
             {supplier.regionDisplayLabel ?? "Region not published"}
           </p>

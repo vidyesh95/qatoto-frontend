@@ -148,8 +148,20 @@ export type ResearchProject = {
   fundingRounds: FundingRound[];
   watchersCount: number;
   dailyLogStreakDays: number;
-  // Set when the project was born from a Civic Pulse problem report.
-  originProblemReportId?: string;
+  // Set when the project was born from a Civic Pulse CLUSTER — the deduplicated public
+  // entity this tree still calls `ProblemReport`, not one citizen's submission.
+  //
+  // NAMED FOR THE SHIPPED WIRE SHAPE. This was `originProblemReportId?: string` and both
+  // halves were wrong: the backend resolves it to `originCluster: { clusterId, title }`
+  // (`ResearchProjectDetailView`), and there is no scalar column behind it — a project's
+  // origin is the `problem_cluster_project_link` row whose `source` is `'origin'`, kept
+  // 1:1 by a partial unique index. Backend §11k.1 records why the column was never added.
+  // Clusters carry an id and no slug, so the id is the link target.
+  originCluster?: { clusterId: string; title: string };
   // MarketInsight ids shown as demand-evidence chips on the Overview tab.
+  // NOT RENAMED, and it does not match the wire either: the backend serves
+  // `relatedInsights: { insightId, headline }[]`, ordered `publishedAt DESC, id DESC` and
+  // filtered to published rows (backend §11k.2). Left on the id-array shape because the
+  // page that reads it is still mock; convert with the phase-4/5 sweep (§18), not before.
   relatedInsightIds: string[];
 };

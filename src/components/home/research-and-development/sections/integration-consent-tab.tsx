@@ -1,219 +1,203 @@
-// TRANSPORT: props-only — renders what its parent passes. The one src/mocks
-// import is a LABEL MAP, not data; it belongs in src/lib and moves there when the
-// phase that owns this component wires up.
+// TRANSPORT: client-query — "use client" island. Grants arrive as a view state from the
+// server page (GET …/integrations); connecting writes POST …/integrations/:provider/
+// authorize-url and revoking writes DELETE …/integrations/:provider.
 "use client";
 
 import { useState } from "react";
 
-import { formatIsoInstant } from "@/components/home/research-and-development/sections/compensation-format";
-import { INTEGRATION_PROVIDER_LABELS } from "@/mocks/research-and-development-oversight-mocks";
-import type {
-  IntegrationConnection,
-  IntegrationConnectionStatus,
-  TeamMember,
-} from "@/types/research-and-development";
+import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
+import {
+  RndErrorPanel,
+  RndMembersOnlyPanel,
+  RndSignInRequiredPanel,
+} from "@/components/home/research-and-development/sections/rnd-status-panel";
+import {
+  useIntegrationAuthorizeUrlMutation,
+  useRevokeIntegrationGrantMutation,
+} from "@/hooks/rnd/proof-of-effort";
+import { ApiRequestError } from "@/lib/http";
+import { formatIsoInstant } from "@/lib/rnd/format";
+import {
+  INTEGRATION_PROVIDERS,
+  type IntegrationGrant,
+  type IntegrationGrantStatus,
+  type IntegrationProvider,
+} from "@/lib/rnd/proof-of-effort.schemas";
+import type { MemberScopedListViewState } from "@/lib/rnd/view-state";
 
-const CONNECTION_STATUS_BADGES: Record<
-  IntegrationConnectionStatus,
-  { label: string; className: string }
-> = {
-  connected: { label: "Connected", className: "bg-[#00696E]/10 text-[#00696E]" },
-  not_connected: { label: "Not connected", className: "bg-muted text-muted-foreground" },
-  revoked: { label: "Revoked", className: "bg-red-100 text-red-800" },
-  expired: { label: "Expired", className: "bg-amber-100 text-amber-800" },
+const PROVIDER_LABELS: Record<IntegrationProvider, string> = {
+  github: "GitHub",
+  gitlab: "GitLab",
+  figma: "Figma",
+  jira: "Jira",
+  linear: "Linear",
 };
 
-type LocalConnectionState = {
-  providerKey: string;
-  status: IntegrationConnectionStatus;
-  grantedScopeKeys: string[];
+const GRANT_STATUS_LABELS: Record<IntegrationGrantStatus, string> = {
+  pending: "Authorization started, not finished",
+  active: "Connected",
+  revoked: "Revoked",
+  expired: "Expired",
 };
 
-// Integration consent (§14.2): connect, scope, revoke. This is the surface that
-// makes Proof of Effort lawful rather than merely functional — reading a
-// member's commits, tickets and file revisions is monitoring their work, and it
-// needs a screen where they can see exactly what is read, why, for how long, and
-// switch it off. Every action here is local state only this phase.
+/**
+ * Integration consent — which providers this member let Qatoto read, and what it may read.
+ *
+ * WHY THIS SCREEN IS NOT OPTIONAL CHROME. Without a connected provider the verification
+ * pipeline degrades honestly rather than silently: `artifact_grounding` resolves `flagged`
+ * instead of `passed` — real evidence withheld pending a human — and the claim lands at
+ * `flagged_for_review` with zero slices. This is where a member fixes that, so it is
+ * directly upstream of what they earn.
+ *
+ * THE TOKEN NEVER APPEARS HERE, only `hasStoredToken`. A response carrying the ciphertext
+ * would put an org-scoped token in every browser cache and proxy log on the path.
+ *
+ * CONNECTING IS SCOPE-LESS TODAY, and that is a backend gap rather than a choice. `GET
+ * …/integrations` returns existing grants only, so there is no catalogue describing a
+ * provider that has never been connected and no way to learn valid `requestedResourceIds`
+ * before authorizing. The first authorization therefore requests nothing specific and the
+ * narrowing happens at the provider's own consent screen. Recorded in
+ * R_AND_D_BACKEND_STRUCTURE.md Appendix D.
+ *
+ * REVOKING IS SELF-ONLY, and it destroys the token and purges the payloads it fetched. The
+ * HASHES SURVIVE — which is why a revoked grant does not erase past slices, and why a
+ * dispute against a purged claim answers `409 EVIDENCE_PURGED` rather than silently
+ * re-running against nothing.
+ */
 export default function IntegrationConsentTab({
-  connections,
-  teamMembers,
+  grantsState,
+  projectSlug,
 }: {
-  connections: IntegrationConnection[];
-  teamMembers: TeamMember[];
+  grantsState: MemberScopedListViewState<IntegrationGrant>;
+  projectSlug: string;
 }) {
-  const [localStates, setLocalStates] = useState<LocalConnectionState[]>([]);
-  const [draftScopeKeysByProvider, setDraftScopeKeysByProvider] = useState<
-    Record<string, string[]>
-  >({});
+  const authorizeUrlMutation = useIntegrationAuthorizeUrlMutation(projectSlug);
+  const revokeMutation = useRevokeIntegrationGrantMutation(projectSlug);
+  const [connectingProvider, setConnectingProvider] = useState<IntegrationProvider | null>(null);
 
-  const resolveConnection = (connection: IntegrationConnection) => {
-    const localState = localStates.find(
-      (candidateState) => candidateState.providerKey === connection.providerKey,
-    );
-    return localState
-      ? {
-          ...connection,
-          status: localState.status,
-          grantedScopeKeys: localState.grantedScopeKeys,
-        }
-      : connection;
-  };
+  const firstError = [authorizeUrlMutation.error, revokeMutation.error].find(
+    (error): error is ApiRequestError => error instanceof ApiRequestError,
+  );
 
-  const resolveDraftScopeKeys = (connection: IntegrationConnection) =>
-    draftScopeKeysByProvider[connection.providerKey] ??
-    connection.scopes.filter((scope) => scope.isRequired).map((scope) => scope.key);
-
-  const handleScopeToggle = (connection: IntegrationConnection, scopeKey: string) => {
-    const currentKeys = resolveDraftScopeKeys(connection);
-    setDraftScopeKeysByProvider((currentDrafts) => ({
-      ...currentDrafts,
-      [connection.providerKey]: currentKeys.includes(scopeKey)
-        ? currentKeys.filter((candidateKey) => candidateKey !== scopeKey)
-        : [...currentKeys, scopeKey],
-    }));
-  };
-
-  const handleConnectClick = (connection: IntegrationConnection) =>
-    setLocalStates((currentStates) => [
-      ...currentStates.filter(
-        (candidateState) => candidateState.providerKey !== connection.providerKey,
-      ),
-      {
-        providerKey: connection.providerKey,
-        status: "connected",
-        grantedScopeKeys: resolveDraftScopeKeys(connection),
-      },
-    ]);
-
-  const handleRevokeClick = (connection: IntegrationConnection) =>
-    setLocalStates((currentStates) => [
-      ...currentStates.filter(
-        (candidateState) => candidateState.providerKey !== connection.providerKey,
-      ),
-      { providerKey: connection.providerKey, status: "revoked", grantedScopeKeys: [] },
-    ]);
+  const grantsByProvider = new Map<IntegrationProvider, IntegrationGrant>(
+    grantsState.status === "ready" ? grantsState.rows.map((grant) => [grant.provider, grant]) : [],
+  );
 
   return (
     <div className="space-y-6 px-4 lg:px-6">
-      <div className="space-y-2 rounded-2xl bg-[#00696E]/5 p-4">
-        <p className="text-sm">
-          Proof of Effort works by cross-referencing your claims against receipts these tools
-          already produce. It reads <span className="font-medium">metadata only</span> — timestamps,
-          authorship, state changes. It never reads your source code, your documents, or the
-          contents of a design file.
-        </p>
+      <section className="space-y-2">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">
+          What Qatoto may read on your behalf
+        </h3>
         <p className="text-xs text-muted-foreground">
-          You can revoke any connection at any time. Claims made after a revocation simply verify
-          with fewer receipts — nothing is retroactively invalidated, and no cash is ever affected.
+          Connecting a provider is how your work gets independently timestamped. Without one, the
+          pipeline flags your claims for human review instead of verifying them — it does not assume
+          you did nothing, but it cannot confirm that you did.
         </p>
-      </div>
+      </section>
 
-      <div className="max-w-2xl space-y-3">
-        {connections.map((connection) => {
-          const resolvedConnection = resolveConnection(connection);
-          const statusBadge = CONNECTION_STATUS_BADGES[resolvedConnection.status];
-          const connector = resolvedConnection.connectedByMemberId
-            ? teamMembers.find(
-                (teamMember) => teamMember.id === resolvedConnection.connectedByMemberId,
-              )
-            : undefined;
-          const isConnected = resolvedConnection.status === "connected";
-          const draftScopeKeys = resolveDraftScopeKeys(connection);
+      {renderGrants()}
 
-          return (
-            <div
-              key={connection.providerKey}
-              className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium">
-                  {INTEGRATION_PROVIDER_LABELS[connection.providerKey]}
-                </span>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge.className}`}
-                >
-                  {statusBadge.label}
-                </span>
-                <span className="ml-auto text-xs text-muted-foreground">
-                  Receipts kept {resolvedConnection.dataRetentionDays} days
-                </span>
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                {resolvedConnection.evidenceContributionNote}
-              </p>
-
-              <ul className="space-y-2">
-                {connection.scopes.map((scope) => {
-                  const isGranted = isConnected
-                    ? resolvedConnection.grantedScopeKeys.includes(scope.key)
-                    : draftScopeKeys.includes(scope.key);
-                  return (
-                    <li key={scope.key} className="flex items-start gap-2.5">
-                      <input
-                        type="checkbox"
-                        checked={isGranted}
-                        disabled={isConnected || scope.isRequired}
-                        onChange={() => handleScopeToggle(connection, scope.key)}
-                        aria-label={scope.displayLabel}
-                        className="mt-0.5 size-4 shrink-0 accent-[#00696E]"
-                      />
-                      <span className="min-w-0">
-                        <span className="block text-sm">
-                          {scope.displayLabel}
-                          {scope.isRequired && (
-                            <span className="ml-1.5 text-xs text-muted-foreground">(required)</span>
-                          )}
-                        </span>
-                        <span className="block text-xs text-muted-foreground">
-                          {scope.purposeNote}
-                        </span>
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-
-              <div className="flex flex-wrap items-center gap-3">
-                {isConnected ? (
-                  <button
-                    type="button"
-                    onClick={() => handleRevokeClick(connection)}
-                    className="cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#BA1A1A]"
-                  >
-                    Revoke access
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleConnectClick(connection)}
-                    className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-                  >
-                    Connect {INTEGRATION_PROVIDER_LABELS[connection.providerKey]}
-                  </button>
-                )}
-                <span className="text-xs text-muted-foreground">
-                  {isConnected && connector ? `Connected by ${connector.name}` : ""}
-                  {isConnected && resolvedConnection.lastSyncedAt
-                    ? ` · last read ${formatIsoInstant(resolvedConnection.lastSyncedAt)}`
-                    : ""}
-                  {resolvedConnection.status === "revoked" && resolvedConnection.revokedAt
-                    ? `Revoked ${formatIsoInstant(resolvedConnection.revokedAt)}`
-                    : ""}
-                  {resolvedConnection.status === "expired"
-                    ? "Token expired — reconnect to restore receipts"
-                    : ""}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {firstError !== undefined && <MutationErrorNotice error={firstError.apiError} />}
 
       <p className="text-xs text-muted-foreground">
-        Consent, scopes and revocation are display-only mocks — the OAuth grant, the token store and
-        the retention job are backend-owned later.
+        Revoking deletes the stored token and the copies of anything it fetched. It does not remove
+        slices you already earned: the hashes of that evidence stay in the audit chain, so past
+        decisions remain checkable without keeping your data.
       </p>
     </div>
   );
+
+  function renderGrants() {
+    switch (grantsState.status) {
+      case "error":
+        return <RndErrorPanel message="Couldn't load your connections." />;
+      case "restricted":
+        return grantsState.isSignInRequired ? (
+          <RndSignInRequiredPanel message="Sign in to manage your connections." />
+        ) : (
+          <RndMembersOnlyPanel message="Connections are managed inside the project team." />
+        );
+      case "empty":
+      case "ready":
+        return (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {INTEGRATION_PROVIDERS.map((provider) => {
+              const grant = grantsByProvider.get(provider);
+              const isConnected = grant?.status === "active";
+
+              return (
+                <li key={provider} className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium">{PROVIDER_LABELS[provider]}</p>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+                      {grant === undefined ? "Not connected" : GRANT_STATUS_LABELS[grant.status]}
+                    </span>
+                  </div>
+
+                  {grant !== undefined && (
+                    <div className="space-y-0.5 text-xs text-muted-foreground">
+                      {grant.externalAccountLabel !== null && <p>{grant.externalAccountLabel}</p>}
+                      {grant.grantedAt !== null && (
+                        <p>Granted {formatIsoInstant(grant.grantedAt)}</p>
+                      )}
+                      {grant.expiresAt !== null && (
+                        <p>Expires {formatIsoInstant(grant.expiresAt)}</p>
+                      )}
+                      {grant.revokedAt !== null && (
+                        <p>Revoked {formatIsoInstant(grant.revokedAt)}</p>
+                      )}
+                      {grant.allowedResourceIds.length > 0 && (
+                        <p>Scoped to {grant.allowedResourceIds.length} resources</p>
+                      )}
+                      {!grant.hasStoredToken && grant.status === "pending" && (
+                        <p>No token held yet — the provider has not sent you back.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {isConnected ? (
+                    <button
+                      type="button"
+                      onClick={() => revokeMutation.mutate(provider)}
+                      disabled={revokeMutation.isPending}
+                      className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                    >
+                      {revokeMutation.isPending ? "Revoking…" : "Revoke"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={authorizeUrlMutation.isPending}
+                      onClick={() => {
+                        setConnectingProvider(provider);
+                        authorizeUrlMutation.mutate(
+                          { provider, requestedResourceIds: [] },
+                          {
+                            onSuccess: (authorizeUrlView) => {
+                              // Navigated immediately and never stored: the signed state
+                              // is single-use and expires in ten minutes.
+                              window.location.assign(authorizeUrlView.authorizeUrl);
+                            },
+                          },
+                        );
+                      }}
+                      className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                    >
+                      {authorizeUrlMutation.isPending && connectingProvider === provider
+                        ? "Opening…"
+                        : "Connect"}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        );
+      default: {
+        const exhaustiveCheck: never = grantsState;
+        return exhaustiveCheck;
+      }
+    }
+  }
 }

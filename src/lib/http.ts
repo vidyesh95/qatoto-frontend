@@ -136,10 +136,16 @@ export async function getJson<T>(
   return { success: true, data: parsed.data };
 }
 
-/** JSON-body mutation (POST/PATCH/DELETE). Pass `undefined` for a bodyless call. */
+/**
+ * JSON-body mutation. Pass `undefined` for a bodyless call.
+ *
+ * `PUT` is in the union for exactly one route — `PUT /milestones/:id/variance`, which is
+ * idempotent by design: recording the same variance twice must leave one row, not two.
+ * Do not reach for it elsewhere; every other mutation in this app is POST or PATCH.
+ */
 export async function sendJson<T>(
   path: string,
-  method: "POST" | "PATCH" | "DELETE",
+  method: "POST" | "PUT" | "PATCH" | "DELETE",
   body: unknown,
   dataSchema: z.ZodType<T>,
   options?: RequestOptions,

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import ProjectDetail from "@/components/home/research-and-development/project-detail";
 import { getResearchProjectDetail, listResearchProjectSlugs } from "@/lib/rnd/projects.api";
+import { withSentinelValues } from "@/lib/rnd/static-params";
 
 /**
  * Prerender every published slug — a dynamic route needs this under `cacheComponents`.
@@ -16,8 +17,7 @@ import { getResearchProjectDetail, listResearchProjectSlugs } from "@/lib/rnd/pr
  */
 export async function generateStaticParams() {
   const slugsResult = await listResearchProjectSlugs();
-  if (!slugsResult.success) return [];
-  return slugsResult.data.map((projectSlug) => ({ id: projectSlug }));
+  return withSentinelValues(slugsResult.success ? slugsResult.data : []).map((id) => ({ id }));
 }
 
 /**

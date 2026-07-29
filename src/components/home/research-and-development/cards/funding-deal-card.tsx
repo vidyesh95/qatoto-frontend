@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import BackProjectSheet from "@/components/home/research-and-development/sheets/back-project-sheet";
+import PledgeIsland from "@/components/home/research-and-development/sections/pledge-island";
 import { formatIsoInstant, formatMoneyFromCents } from "@/lib/rnd/format";
 import type { FundingDeal, FundingRoundType } from "@/lib/rnd/funding.schemas";
 import { PROJECT_STAGE_LABELS } from "@/lib/rnd/labels";
@@ -92,7 +92,7 @@ export default function FundingDealCard({ deal }: { deal: FundingDeal }) {
         </p>
       </div>
       <div className="mt-auto">
-        <BackProjectSheet projectName={deal.projectName} />
+        <PledgeIsland roundId={deal.id} roundTitle={deal.title} />
       </div>
     </div>
   );

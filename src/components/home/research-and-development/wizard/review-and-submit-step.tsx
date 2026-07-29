@@ -14,7 +14,13 @@ export default function ReviewAndSubmitStep({ draft }: { draft: NewIdeaDraft }) 
     { label: "Target region", value: draft.targetRegion },
     { label: "Demand evidence", value: draft.demandEvidenceNotes },
     { label: "Roles needed", value: draft.rolesNeeded.join(", ") },
-    { label: "Equity to offer", value: draft.equityToOffer },
+    {
+      label: "Equity to offer",
+      value:
+        draft.offeredEquityPercentMin === "" && draft.offeredEquityPercentMax === ""
+          ? ""
+          : `${draft.offeredEquityPercentMin || "0"}% to ${draft.offeredEquityPercentMax || "?"}%`,
+    },
     { label: "Expected commitment", value: draft.expectedCommitment },
   ];
 

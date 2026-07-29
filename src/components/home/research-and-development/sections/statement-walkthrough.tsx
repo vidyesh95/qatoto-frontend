@@ -1,5 +1,11 @@
-// TRANSPORT: props-only — presentational server component. Fetches nothing; data
-// arrives as props. Safe on either side of the boundary.
+// TRANSPORT: props-only — presentational server component, rendering AUTHORED SAMPLE
+// DATA and the only place left on this surface that does.
+//
+// That is deliberate and it is the backend's decision, not an unfinished migration: §11h
+// declines to serve a sample statement, because a real member's row on a public page is
+// exactly what the rest of the governance design exists to prevent. The example is
+// labelled as an example below. Recorded in R_AND_D_BACKEND_STRUCTURE.md Appendix D so it
+// stays a decision on the record rather than a stray mock somebody "fixes" later.
 import {
   derivePaymentState,
   formatEffortFromMinutes,

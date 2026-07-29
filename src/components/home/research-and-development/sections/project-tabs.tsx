@@ -10,22 +10,51 @@ import { useState, type ReactNode } from "react";
 // longer exists. Compensation statements are phase 5 and the cross-project mechanics
 // already live at /research-and-development/governance, so a tab printing fabricated
 // escrow figures beside four wired tabs was the one option that had to go.
-type ProjectDetailTab = "overview" | "daily-logs" | "team" | "funding";
+type ProjectDetailTab =
+  | "overview"
+  | "daily-logs"
+  | "team"
+  | "funding"
+  | "compensation"
+  | "go-to-market";
 
 const TAB_LABELS: Record<ProjectDetailTab, string> = {
   overview: "Overview",
   "daily-logs": "Daily Logs",
   team: "Team",
   funding: "Funding",
+  compensation: "Compensation",
+  "go-to-market": "Go-to-market",
 };
 
-const TAB_ORDER: ProjectDetailTab[] = ["overview", "daily-logs", "team", "funding"];
+const TAB_ORDER: ProjectDetailTab[] = [
+  "overview",
+  "daily-logs",
+  "team",
+  "funding",
+  "compensation",
+  "go-to-market",
+];
 
 type ProjectTabsProps = {
   overviewPanel: ReactNode;
   dailyLogsPanel: ReactNode;
   teamPanel: ReactNode;
   fundingPanel: ReactNode;
+  /**
+   * §7A — agreements, monthly statements and what was actually paid.
+   *
+   * THIS IS NOT THE TAB PHASE 2 DELETED. That one rendered a retired escrow ledger off a
+   * mock shape, and the nine escrow paths behind it now 404. This one is the record of
+   * what the company says it owes and what both parties agree it paid.
+   */
+  compensationPanel: ReactNode;
+  /**
+   * The launch-readiness checklist. It lives on a per-project tab and not on
+   * `/go-to-market` because `…/launch-readiness` is member-only: the cross-project page
+   * holds no slug and has no membership to prove, so it renders an explainer instead.
+   */
+  goToMarketPanel: ReactNode;
 };
 
 // Client island holding only the active-tab state — every panel arrives as a
@@ -43,6 +72,10 @@ export default function ProjectTabs(props: ProjectTabsProps) {
         return props.teamPanel;
       case "funding":
         return props.fundingPanel;
+      case "compensation":
+        return props.compensationPanel;
+      case "go-to-market":
+        return props.goToMarketPanel;
       default: {
         const exhaustiveCheck: never = activeTab;
         return exhaustiveCheck;

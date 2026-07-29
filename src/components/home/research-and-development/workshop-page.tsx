@@ -1,4 +1,6 @@
-// TRANSPORT: server-fetch — server component. Reads GET /research-projects/:slug
+// TRANSPORT: server-fetch — server component with three client-query islands nested
+// inside it (the task composer, the file linker and the chat composer).
+// Reads GET /research-projects/:slug
 // (public) for the header and roster, then GET …/workshop (member-only) for the
 // content. See docs/R_AND_D_STRUCTURE.md §19 for the transport map.
 import Link from "next/link";
@@ -11,6 +13,9 @@ import {
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import WorkshopBoard from "@/components/home/research-and-development/sections/workshop-board";
 import WorkshopChat from "@/components/home/research-and-development/sections/workshop-chat";
+import WorkshopChatComposer from "@/components/home/research-and-development/sections/workshop-chat-composer";
+import WorkshopFileLinker from "@/components/home/research-and-development/sections/workshop-file-linker";
+import WorkshopTaskComposer from "@/components/home/research-and-development/sections/workshop-task-composer";
 import WorkshopFiles from "@/components/home/research-and-development/sections/workshop-files";
 import WorkshopTabs from "@/components/home/research-and-development/sections/workshop-tabs";
 import { getResearchProjectDetail } from "@/lib/rnd/projects.api";
@@ -66,16 +71,34 @@ export default async function WorkshopPage({ projectSlug }: { projectSlug: strin
       {workshopResult.success ? (
         <WorkshopTabs
           boardsPanel={
-            <WorkshopBoard boardColumns={workshopResult.data.board} teamMembers={project.team} />
+            <div className="space-y-3">
+              <WorkshopBoard boardColumns={workshopResult.data.board} teamMembers={project.team} />
+              <div className="px-4 lg:px-6">
+                <WorkshopTaskComposer
+                  projectSlug={projectSlug}
+                  columns={workshopResult.data.board}
+                />
+              </div>
+            </div>
           }
           filesPanel={
-            <WorkshopFiles files={workshopResult.data.files} teamMembers={project.team} />
+            <div className="space-y-3">
+              <WorkshopFiles files={workshopResult.data.files} teamMembers={project.team} />
+              <div className="px-4 lg:px-6">
+                <WorkshopFileLinker projectSlug={projectSlug} />
+              </div>
+            </div>
           }
           chatPanel={
-            <WorkshopChat
-              chatMessages={workshopResult.data.chatMessages}
-              teamMembers={project.team}
-            />
+            <div className="space-y-3">
+              <WorkshopChat
+                chatMessages={workshopResult.data.chatMessages}
+                teamMembers={project.team}
+              />
+              <div className="px-4 lg:px-6">
+                <WorkshopChatComposer projectSlug={projectSlug} />
+              </div>
+            </div>
           }
         />
       ) : (

@@ -75,6 +75,77 @@ export interface ListFundingDealsFilter {
   readonly limit?: number;
 }
 
+export const PLEDGE_STATUSES = ["committed", "settled", "cancelled", "failed", "refunded"] as const;
+export const PledgeStatusSchema = z.enum(PLEDGE_STATUSES);
+export type PledgeStatus = z.infer<typeof PledgeStatusSchema>;
+
+/**
+ * One recorded COMMITMENT.
+ *
+ * `platformFeeInCents` and `netToEscrowInCents` are historical columns and are BOTH ZERO
+ * on anything created now: `PLATFORM_FEE_BASIS_POINTS` is `0` and the escrow subtree is
+ * retired. They survive so migration 0016's rows stay explicable, and no UI may render
+ * either as a fee taken or funds held — Qatoto operates no money rail.
+ *
+ * `settledAt` and `providerTransferId` are likewise historical. A pledge created today
+ * goes to `committed` and stays there; there is no settlement step because there is no
+ * custody.
+ */
+export const PledgeSchema = z
+  .object({
+    id: z.string(),
+    roundId: z.string(),
+    projectId: z.string(),
+    amountInCents: z.string(),
+    platformFeeInCents: z.string(),
+    netToEscrowInCents: z.string(),
+    currency: z.string(),
+    status: PledgeStatusSchema,
+    providerTransferId: z.string().nullable(),
+    settledAt: z.string().nullable(),
+    createdAt: z.string(),
+  })
+  .strip();
+export type Pledge = z.infer<typeof PledgeSchema>;
+
+/**
+ * The bounds the server WILL ENFORCE, returned so a form can show them.
+ *
+ * ADVISORY ONLY. `createPledge` re-derives every one of them, which is the whole point:
+ * these are for rendering a helpful field, never for deciding whether a pledge is allowed.
+ * `platformFeeBasisPoints` is `0` and is returned so no client has to assume it.
+ */
+export const PledgeOptionsSchema = z
+  .object({
+    currency: z.string(),
+    minimumPledgeInCents: z.string(),
+    maximumPledgeInCents: z.string().nullable(),
+    platformFeeBasisPoints: z.number(),
+    acceptingPledges: z.boolean(),
+    closesAt: z.string().nullable(),
+  })
+  .strip();
+export type PledgeOptions = z.infer<typeof PledgeOptionsSchema>;
+
+/**
+ * One backer whose commitment still stands.
+ *
+ * COMMITTED AND HISTORICALLY SETTLED, never cancelled, failed or refunded — a withdrawn
+ * commitment leaves this list rather than lingering as a name beside a number nobody owes.
+ */
+export const RoundBackerSchema = z
+  .object({
+    pledgeId: z.string(),
+    backerName: z.string(),
+    backerHandle: z.string().nullable(),
+    amountInCents: z.string(),
+    currency: z.string(),
+    status: PledgeStatusSchema,
+    pledgedAt: z.string(),
+  })
+  .strip();
+export type RoundBacker = z.infer<typeof RoundBackerSchema>;
+
 // --- The project-scoped reads -------------------------------------------------
 
 /**

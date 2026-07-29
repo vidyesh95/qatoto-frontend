@@ -3,9 +3,13 @@
 // so a server component should forward the session cookie through
 // `@/lib/server-http` rather than calling these directly.
 
+import { z } from "zod";
+
 import {
   buildQueryString,
   getJson,
+  sendForm,
+  sendJson,
   getPaginated,
   type ActionResponse,
   type PaginationMeta,
@@ -13,14 +17,26 @@ import {
 } from "@/lib/http";
 import { OpenRoleSchema, type OpenRole } from "@/lib/rnd/catalog.schemas";
 import {
+  MyApplicationSchema,
+  MyInviteSchema,
+  ProjectApplicationSchema,
+  ProjectInviteSchema,
   ResearchProjectDetailSchema,
   ResearchProjectListRowSchema,
   ResearchProjectSlugsSchema,
   type ListResearchProjectsFilter,
+  type MyApplication,
+  type MyInvite,
+  type ProjectApplication,
+  type ProjectInvite,
   type ResearchProjectDetail,
   type ResearchProjectListRow,
 } from "@/lib/rnd/projects.schemas";
-import { PaginationMetaSchema } from "@/lib/rnd/shared.schemas";
+import {
+  PaginationMetaSchema,
+  type ProjectStage,
+  type RoleCommitment,
+} from "@/lib/rnd/shared.schemas";
 
 /**
  * The public feed of `active` projects — the landing rail, and the stage-filtered
@@ -85,4 +101,297 @@ export function listProjectOpenRoles(
   options?: RequestOptions,
 ): Promise<ActionResponse<OpenRole[]>> {
   return getJson(`/research-projects/${projectSlug}/roles`, OpenRoleSchema.array(), options);
+}
+
+// --- Writes: creating and publishing a project ---------------------------------
+
+export interface CreateResearchProjectInput {
+  readonly name: string;
+  readonly tagline: string;
+  /** The CATEGORY ID, not its display name. Resolve it from `GET /research-categories`. */
+  readonly categoryId: string;
+  readonly description?: string;
+  readonly problemStatement?: string;
+  readonly solutionSummary?: string;
+  readonly targetRegion?: string;
+  readonly demandEvidenceNotes?: string;
+  readonly seedRolesNeeded?: readonly string[];
+  /** Basis points, integers only. No float ever touches equity. */
+  readonly offeredEquityBasisPointsMin?: number;
+  readonly offeredEquityBasisPointsMax?: number;
+  readonly expectedCommitment?: RoleCommitment;
+}
+
+/**
+ * Create a project.
+ *
+ * IT IS CREATED AS A **DRAFT**, and that is the model rather than a workflow nicety: an
+ * idea IS a project here. There is no separate "idea" table, so posting an idea and
+ * starting a project are the same act, and publishing is a later, separate decision.
+ *
+ * The founder `project_member` row and the `project_stats` sidecar are written in the
+ * SAME transaction, so a created project is never a project with no members.
+ *
+ * `422` on an inverted equity band — the minimum cannot exceed the maximum, checked
+ * inside one payload here and across patches in the service.
+ */
+export function createResearchProject(
+  input: CreateResearchProjectInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<ResearchProjectDetail>> {
+  return sendJson("/research-projects", "POST", input, ResearchProjectDetailSchema, options);
+}
+
+/** Edit a project. Founder/maintainer; the same field set as create, all optional. */
+export function updateResearchProject(
+  projectSlug: string,
+  input: Partial<CreateResearchProjectInput>,
+  options?: RequestOptions,
+): Promise<ActionResponse<ResearchProjectDetail>> {
+  return sendJson(
+    `/research-projects/${projectSlug}`,
+    "PATCH",
+    input,
+    ResearchProjectDetailSchema,
+    options,
+  );
+}
+
+/** The cover image. Multipart — the file is measured and stored server-side. */
+export function uploadProjectCover(
+  projectSlug: string,
+  coverFile: File,
+  options?: RequestOptions,
+): Promise<ActionResponse<ResearchProjectDetail>> {
+  const formData = new FormData();
+  formData.append("cover", coverFile);
+  return sendForm(
+    `/research-projects/${projectSlug}/cover`,
+    "POST",
+    formData,
+    ResearchProjectDetailSchema,
+    options,
+  );
+}
+
+/**
+ * Publish a draft.
+ *
+ * THE MOMENT THE PROJECT BECOMES PUBLIC. Before this the detail read answers `404` to
+ * everyone but the founder, which is why a draft's URL is safe to hold and unsafe to
+ * share.
+ */
+export function publishResearchProject(
+  projectSlug: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ResearchProjectDetail>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/publish`,
+    "POST",
+    undefined,
+    ResearchProjectDetailSchema,
+    options,
+  );
+}
+
+export function unpublishResearchProject(
+  projectSlug: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ResearchProjectDetail>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/unpublish`,
+    "POST",
+    undefined,
+    ResearchProjectDetailSchema,
+    options,
+  );
+}
+
+/**
+ * Move the project along the pipeline.
+ *
+ * ITS OWN ROUTE, not a field on the edit, BECAUSE EVERY CHANGE WRITES AN APPEND-ONLY
+ * AUDIT ROW. A stage buried in a PATCH body would let the pipeline move without anyone
+ * being recorded as having moved it.
+ */
+export function setProjectStage(
+  projectSlug: string,
+  input: { readonly stage: ProjectStage; readonly note?: string },
+  options?: RequestOptions,
+): Promise<ActionResponse<ResearchProjectDetail>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/stage`,
+    "POST",
+    input,
+    ResearchProjectDetailSchema,
+    options,
+  );
+}
+
+/** Follow a project. Idempotent by verb — a double-tap is harmless. */
+export function watchProject(
+  projectSlug: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ isWatchedByViewer: boolean }>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/watch`,
+    "POST",
+    undefined,
+    z.object({ isWatchedByViewer: z.boolean() }).strip(),
+    options,
+  );
+}
+
+export function unwatchProject(
+  projectSlug: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ isWatchedByViewer: boolean }>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/watch`,
+    "DELETE",
+    undefined,
+    z.object({ isWatchedByViewer: z.boolean() }).strip(),
+    options,
+  );
+}
+
+// --- Applications --------------------------------------------------------------
+
+export interface CreateApplicationInput {
+  /** Omit for an open application — someone offering to help with no role in mind. */
+  readonly openRoleId?: string;
+  readonly shortPitch: string;
+  readonly selectedSkills?: readonly string[];
+  readonly statedCommitment: RoleCommitment;
+  readonly expectedCompensationNote?: string;
+}
+
+/** Apply to a project, with or without a specific role. */
+export function createProjectApplication(
+  projectSlug: string,
+  input: CreateApplicationInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<ProjectApplication>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/applications`,
+    "POST",
+    input,
+    ProjectApplicationSchema,
+    options,
+  );
+}
+
+/** The FOUNDER'S inbox. Maintainer-gated — `404` to everyone else. */
+export function listProjectApplications(
+  projectSlug: string,
+  filter: { readonly status?: string; readonly page?: number } = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<ProjectApplication[]>> {
+  return getJson(
+    `/research-projects/${projectSlug}/applications${buildQueryString({ ...filter })}`,
+    ProjectApplicationSchema.array(),
+    options,
+  );
+}
+
+/**
+ * Accept, decline or withdraw an application.
+ *
+ * THE THREE VERBS HAVE DIFFERENT ACTORS: a maintainer accepts or declines, the APPLICANT
+ * withdraws. The backend enforces that; this wrapper does not pretend to.
+ */
+export function decideProjectApplication(
+  projectSlug: string,
+  applicationId: string,
+  decision: "accept" | "decline" | "withdraw",
+  input: { readonly reviewNote?: string } = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<ProjectApplication>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/applications/${applicationId}/${decision}`,
+    "POST",
+    input,
+    ProjectApplicationSchema,
+    options,
+  );
+}
+
+/**
+ * The caller's own applications.
+ *
+ * NO `?userId=` PARAM EXISTS AND NONE MAY BE ADDED — the filter is the session id. A
+ * client-supplied user id on a personal list is a client-supplied authorization input.
+ */
+export function listMyApplications(
+  filter: { readonly status?: string; readonly page?: number } = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<MyApplication[]>> {
+  return getJson(
+    `/applications/mine${buildQueryString({ ...filter })}`,
+    MyApplicationSchema.array(),
+    options,
+  );
+}
+
+// --- Invites -------------------------------------------------------------------
+
+/** Invite someone. `422 SELF_INVITE_FORBIDDEN`, `409 ALREADY_INVITED`. */
+export function createProjectInvite(
+  projectSlug: string,
+  input: {
+    readonly inviteeUserId: string;
+    readonly openRoleId?: string;
+    readonly roleTitle?: string;
+    readonly message?: string;
+  },
+  options?: RequestOptions,
+): Promise<ActionResponse<ProjectInvite>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/invites`,
+    "POST",
+    input,
+    ProjectInviteSchema,
+    options,
+  );
+}
+
+/** Invites the caller has SENT on this project. */
+export function listProjectInvites(
+  projectSlug: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ProjectInvite[]>> {
+  return getJson(`/research-projects/${projectSlug}/invites`, ProjectInviteSchema.array(), options);
+}
+
+/**
+ * Invites addressed to the caller.
+ *
+ * THE READ THAT MAKES THE INVITE FLOW TERMINATE SOMEWHERE. `/accept` and `/decline` both
+ * need an `inviteId` an invitee has no other way to obtain, because they hold no slug.
+ */
+export function listMyInvites(
+  filter: { readonly status?: string; readonly page?: number } = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<MyInvite[]>> {
+  return getJson(
+    `/invites/mine${buildQueryString({ ...filter })}`,
+    MyInviteSchema.array(),
+    options,
+  );
+}
+
+/** THE INVITEE only — `403 NOT_THE_INVITEE` for anyone else, including the inviter. */
+export function respondToProjectInvite(
+  projectSlug: string,
+  inviteId: string,
+  decision: "accept" | "decline",
+  options?: RequestOptions,
+): Promise<ActionResponse<ProjectInvite>> {
+  return sendJson(
+    `/research-projects/${projectSlug}/invites/${inviteId}/${decision}`,
+    "POST",
+    undefined,
+    ProjectInviteSchema,
+    options,
+  );
 }

@@ -266,6 +266,9 @@ export const PREFAB_HOUSING_PANELS_PROJECT: ResearchProject = {
   ],
   watchersCount: 587,
   dailyLogStreakDays: 23,
-  originProblemReportId: "report-typhoon-housing-backlog-tacloban",
+  originCluster: {
+    clusterId: "cluster-typhoon-housing-backlog-tacloban",
+    title: "Typhoon rebuild backlog in Tacloban",
+  },
   relatedInsightIds: ["insight-prefab-construction-surge", "insight-solar-hardware-costs"],
 };

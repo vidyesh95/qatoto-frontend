@@ -1,7 +1,7 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; rounds
 // and the confidence signal arrive as view states from a parent that read
 // GET …/funding-rounds and GET …/investor-confidence.
-import BackProjectSheet from "@/components/home/research-and-development/sheets/back-project-sheet";
+import PledgeIsland from "@/components/home/research-and-development/sections/pledge-island";
 import RndStatusPanel, {
   RndErrorPanel,
   RndMembersOnlyPanel,
@@ -21,7 +21,6 @@ const BASIS_POINTS_PER_PERCENT = 100;
 const FULLY_FUNDED_BASIS_POINTS = 10000;
 
 type FundingTabProps = {
-  projectName: string;
   fundingRoundsState: MemberScopedListViewState<FundingRound>;
   investorConfidenceState: MemberScopedItemViewState<InvestorConfidence>;
 };
@@ -45,7 +44,6 @@ type FundingTabProps = {
  * or a fee.
  */
 export default function FundingTab({
-  projectName,
   fundingRoundsState,
   investorConfidenceState,
 }: FundingTabProps) {
@@ -163,7 +161,7 @@ export default function FundingTab({
         <p className="text-xs text-muted-foreground">
           A pledge is a commitment to the founder, not a charge. Qatoto holds no funds.
         </p>
-        <BackProjectSheet projectName={projectName} />
+        <PledgeIsland roundId={openRound.id} roundTitle={openRound.title} />
       </div>
     );
   }

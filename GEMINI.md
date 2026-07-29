@@ -160,33 +160,45 @@ rules at once, not contradicting itself.
 
 **Do not write, add, or modify tests unless the user explicitly asks for them.** This applies to unit tests (Vitest), E2E tests (Playwright), and any other test files. Do not create test files as part of a feature implementation, bug fix, or refactor. Do not suggest writing tests unless the user requests it.
 
-## Current phase: mixed — some surfaces are wired, most are not
+## Current phase: R&D is wired, reads and writes — except Project Immortal
 
-**There is no longer one global phase.** Integration happens surface by surface, so the
-rule depends on which file you are in. Check before you write code.
+**Integration happened surface by surface and is now essentially done.** Every route under
+`/research-and-development` reads the Express backend, and the domain has a full write
+surface. The store/studio `/products` flow is wired too. The full discipline applies
+everywhere here:
 
-**Wired surfaces** (talking to the Express backend today): the store/studio `/products`
-flow, and R&D's public discovery reads — `/research-and-development` (landing),
-`/knowledge-hub`, `/problem-map`, `/talent`, `/team-building`, `/go-to-market`,
-`/funding`. Here the full discipline applies: `unknown` → Zod `.strip()` → tagged
-result, lifted into a discriminated-union view state with an exhaustive `switch`
-(Patterns 1–3 above). Server-side filtering and pagination, never client-side over a
-fetched page. Never fabricate a value the server returned as `null`.
+- `unknown` → Zod `.strip()` → tagged result, lifted into a discriminated-union view state
+  with an exhaustive `switch` (Patterns 1–3 above).
+- Server-side filtering and pagination, never client-side over a fetched page.
+- Never fabricate a value the server returned as `null`. Zero is a finding; null is the
+  absence of one.
 
-**Unwired surfaces** (still static mock data): R&D project detail, workshop, proof of
-effort, build log, governance, and Project Immortal. Here the old rule still holds —
-inline mock data, no fetch, no new abstractions, page-local `useState` for interaction.
-Build the UI shape and stop.
+**Writes are `client-query` islands.** A mutation lives in `src/lib/rnd/*.api.ts` beside
+its reads, is wrapped by a hook in `src/hooks/rnd/`, and is called from a small
+`"use client"` component. Four rules that are not negotiable on this surface:
 
-**Project Immortal is blocked, not merely unscheduled.** There is no
-`/research-programs` route, controller, service or table in the backend. It stays mock
-until that domain exists.
+- **A `202` is not a result.** Claim submit, re-verify, receipt upload, problem report and
+  a `re_verified` dispute resolution all answer 202 — the row exists, the verdict does
+  not. Render "we are checking" and poll; an optimistic verdict here is an optimistic
+  equity split.
+- **Idempotency keys are minted once per attempt**, in component state, on claim submit,
+  receipt upload, dispute raise and payment record.
+- **Nothing is optimistic.** These writes are attestations about money, equity and consent.
+- **A `409` is usually a finding, not a retry** — surface the backend's own code and
+  message.
+
+**Still mock: Project Immortal, and nothing else.** There is no `/research-programs` route,
+controller, service or table in the backend, so it stays mock until that domain exists. The
+one other piece of authored data on the surface is `/governance`'s worked-example statement,
+which is a deliberate decision (backend §11h) and is labelled as an example.
 
 **How to tell which one you are in:** every file under
 `src/components/home/research-and-development/` carries a `TRANSPORT:` banner on its
 first line — `server-fetch`, `client-query`, `props-only` or `mock`. That banner is the
-answer, and `grep -rn "TRANSPORT: mock"` is the live list of what is still unwired. See
-`docs/R_AND_D_STRUCTURE.md` §18 (phase order) and §19 (transport map).
+answer, and `grep -rn "TRANSPORT: mock"` is the live list of what is still unwired — one
+file. See `docs/R_AND_D_STRUCTURE.md` §18 (phase order), §19 (transport map) and
+`docs/R_AND_D_BACKEND_STRUCTURE.md` Appendix D (what the frontend needs and the backend
+does not have).
 
 ## Things to know
 

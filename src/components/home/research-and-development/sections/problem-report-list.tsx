@@ -1,5 +1,7 @@
 // TRANSPORT: props-only — renders inside the ProblemMapCanvas client island. Fetches
 // nothing; clusters arrive as props from the server page.
+import Link from "next/link";
+
 import ProblemClusterCard from "@/components/home/research-and-development/cards/problem-report-card";
 import type { ProblemCluster } from "@/lib/rnd/discovery.schemas";
 
@@ -24,12 +26,24 @@ export default function ProblemClusterList({
   return (
     <div className="space-y-3">
       {clusters.map((cluster) => (
-        <ProblemClusterCard
-          key={cluster.id}
-          cluster={cluster}
-          isSelected={cluster.id === selectedClusterId}
-          onSelectCluster={onSelectCluster}
-        />
+        <div key={cluster.id} className="space-y-1">
+          <ProblemClusterCard
+            cluster={cluster}
+            isSelected={cluster.id === selectedClusterId}
+            onSelectCluster={onSelectCluster}
+          />
+          {/* The link sits OUTSIDE the card because the card is a <button> here — an
+              anchor nested in a button is invalid HTML and the click targets fight. It
+              only appears for the selected cluster, so the list stays a list. */}
+          {cluster.id === selectedClusterId && (
+            <Link
+              href={`/research-and-development/problem-map/cluster/${cluster.id}`}
+              className="inline-block px-4 text-xs font-medium text-[#00696E]"
+            >
+              Open this cluster →
+            </Link>
+          )}
+        </div>
       ))}
     </div>
   );

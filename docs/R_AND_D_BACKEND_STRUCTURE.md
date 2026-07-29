@@ -904,9 +904,14 @@ export const researchProject = pgTable(
         // NOTE: there is deliberately NO reserveEquityBasisPoints column. The mock's 19.5%
         // "unallocated" segment is NOT persisted as a reserve — see §9.5, which rejects the
         // reserve pool outright and replaces it with a computed open-role projection.
-        // ← originProblemReportId, drives the "Born from Civic Pulse report" chip. Promote to a
-        // real .references(() => problemCluster.id) in the migration that creates §6.
-        originProblemClusterId: text("origin_problem_cluster_id"),
+        // 🗑️ THIS COLUMN WAS NEVER BUILT, and this sketch is the origin of a naming error the
+        // frontend inherited (it calls the field `originProblemReportId`; §11k.1 corrects it).
+        // A scalar cannot express "born from", because the same relation also carries
+        // founder-declared and moderator links — so the shipped schema puts all three in
+        // `problem_cluster_project_link` and keeps `source = 'origin'` 1:1 with a PARTIAL
+        // unique index. `ResearchProjectDetailView.originCluster` resolves it. Do not add
+        // this column.
+        // originProblemClusterId: text("origin_problem_cluster_id"),
         publishedAt: timestamp("published_at"),
         archivedAt: timestamp("archived_at"),
         createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -4424,7 +4429,26 @@ Counted on the tree at `qatoto-frontend/src/app/(home)/research-and-development/
 `src/routes/` here. Base URL on the client is `NEXT_PUBLIC_API_URL ?? http://localhost:8000`
 (`src/lib/api.ts`); the pages run on `localhost:3000`.
 
-**The headline:** **22 endpoints called · 197 R&D routes shipped · 0 writes.**
+**The headline, as of the frontend's phase 4/5 + write pass:**
+**~120 endpoints called · 197 R&D routes shipped · ~75 of them writes.**
+
+> **This appendix was measured when the frontend called 22 endpoints and issued zero writes.** That
+> is no longer true, and the tables below are kept with their original numbers because the SHAPE of
+> the finding is still the useful part — a surface can look built from the outside while calling
+> almost none of what stands behind it. Re-derive the counts with the commands in C4 before quoting
+> any figure here. What definitively changed:
+>
+> - `rg 'sendJson|sendForm' "$FRONTEND/src/lib/rnd/"` no longer returns nothing. The write surface
+>   spans `proof-of-effort.api.ts`, `compensation.api.ts`, `funding.api.ts`, `projects.api.ts`,
+>   `workshop.api.ts`, `discovery.api.ts` and `catalog.api.ts`.
+> - `rg -n '^// TRANSPORT:' …` prints `mock` on **one** file, `project-immortal-page.tsx`. It was
+>   three.
+> - C2 is EMPTY: all four written-but-uncalled wrappers now have callers.
+> - Both `0 called` rows in C3 — Proof of Effort and Compensation — are wired end to end, reads and
+>   writes, including the two compliance paths (§11j.2's dispute reads and the step override).
+> - Three routes were added on the frontend side: `/problem-map/cluster/[clusterId]`,
+>   `/go-to-market/supplier/[supplierSlug]` and `/talent/[handle]`, plus `/applications` for
+>   §11j.2's two `/mine` reads. Fourteen page.tsx files, not eleven.
 
 ### C1. Route → endpoint matrix
 
@@ -4476,6 +4500,12 @@ more **without one line of new backend work** — the cheapest surface on the ro
 | `getProjectLaunchReadiness` | `GET /research-projects/:projectSlug/launch-readiness` | The `/go-to-market` checklist, which renders static copy today because the page holds no slug (§11i) |
 
 So: **26 wrappers written, 22 called.**
+
+> **✅ ALL FOUR NOW HAVE CALLERS.** `listDiscoveryRegions` backs the region chip row on
+> `/problem-map` and `/go-to-market`; `getProblemCluster` backs the new
+> `/problem-map/cluster/[clusterId]`; `getSupplier` backs `/go-to-market/supplier/[supplierSlug]`;
+> and `getProjectLaunchReadiness` backs a Go-to-market tab on the project detail page — the
+> per-project surface this row said it needed, since the cross-project page holds no slug.
 
 ### C3. Backend surface with no frontend caller
 
@@ -4530,3 +4560,205 @@ done
 `$FRONTEND` is the Next.js repo. Its own `docs/R_AND_D_STRUCTURE.md` §13, §18 and §19 document the
 same wiring from the client side; when the two disagree, **`src/routes/` here is the authority**
 (§0 — the backend is the source of truth, including about itself).
+
+---
+
+## Appendix D — What the frontend needs and this backend does not have
+
+**Written from the other side.** Appendix C measures what the frontend CALLS. This one records what
+it tried to build and could not, found by wiring every remaining R&D surface — Proof of Effort,
+compensation, governance, the write surface, and four new routes — against `src/routes/` rather than
+against §11.
+
+Each entry says what the screen needed, what exists instead, and what the frontend does in the
+meantime. **None of these blocked the work**; every one shipped with a degraded or reshaped surface,
+which is the point of writing them down: a degradation nobody recorded becomes a bug report later.
+
+Ordered by how much they cost, not by domain.
+
+---
+
+### D1. `/research-programs/*` — the whole Project Immortal domain
+
+**The only surface the frontend cannot build at all.** Already §11f and last in §16; restated here
+because it is the single remaining `TRANSPORT: mock` file in the repo.
+
+`grep -rn "research-programs" src/` in this repo returns zero hits: no route, no controller, no
+service, no migration, no table. `/research-and-development/projects/project-immortal` renders
+fabricated data and says so in its banner.
+
+**Frontend today:** the page stays mock, and it is the only one. **What would unblock it:** §10's
+tables and §11f's route table, in that order.
+
+---
+
+### D2. No project-wide fair-market-rate read
+
+**Needed by:** the Proof-of-Effort slice-ledger panel, which wants each member's current rate and
+lock state beside the cap table — that is where a reader asks "what is an hour worth here?".
+
+**What exists:** `GET …/:projectSlug/members/:memberUserId/fair-market-rate` only, returning one
+member's full effective-dated history.
+
+**Why that is not enough:** a roster-wide rate panel is one request per member. On a ten-person
+project that is ten round trips for a table, and the page already issues twelve concurrent reads.
+
+**Frontend today:** the rate panel was NOT built as a roster table. Locked rates render on the
+project's Compensation tab instead, from `GET …/compensation`'s `members[].lockedRate`, which is the
+one place the backend already assembles them. The per-member history wrapper
+(`listMemberFairMarketRates`) exists and is called only from the rate-lock flow, one member at a
+time.
+
+**Asks for:** `GET /research-projects/:projectSlug/fair-market-rates` — the latest row per member,
+member-scoped, the same shape as the per-member read. Cheap: the service already has
+`findEffectiveRate`.
+
+---
+
+### D3. No override queue, and no `VerificationOverrideRequest` concept
+
+**Needed by:** the human-review surface. This is the **EU AI Act Art. 14** control, so its shape is
+a compliance question rather than a UI preference.
+
+**What exists:** `PATCH …/effort-claims/:claimId/steps/:stepId/override` — the write. Nothing lists
+steps awaiting review, nothing lists overrides already applied, and there is no request/decision
+entity anywhere in `src/db/schema.ts`.
+
+**Frontend today:** the queue is `GET …/effort-claims?status=flagged_for_review`, which is a
+genuinely good approximation — a flagged claim IS a claim awaiting a human — and each claim's steps
+are opened through the detail read. An applied override is visible as `overriddenStatus` and
+`overrideReason` on the step, so the audit story holds.
+
+**What to confirm:** whether the flagged-claims list is the INTENDED oversight queue. If it is, this
+entry closes as a documentation fix. If a reviewer is meant to see pending overrides across claims —
+or if a regulator would expect a distinct record of "a human was asked to look at this" — then it
+needs `GET …/override-queue` and probably a table, because a filter over claims cannot express
+"asked for review and not yet answered".
+
+---
+
+### D4. No allocation-proposal detail read
+
+**Needed by:** the dispute UI. A `DisputeView` carries `proposalId`, and a reader looking at a
+dispute wants the allocation it contests.
+
+**What exists:** `GET …/allocation-proposals?status=&page=` — list only.
+
+**Frontend today:** the dispute tab renders proposals and disputes as two lists side by side and
+matches them by eye. A dispute whose proposal has fallen off the page shows the dispute alone.
+
+**Asks for:** `GET …/allocation-proposals/:proposalId`. The service already returns
+`AllocationProposalView`; this is a `findFirst` and a controller.
+
+---
+
+### D5. No integration provider catalogue, and `requestedResourceIds` cannot be learned
+
+**Needed by:** the integration-consent screen — the surface where a member narrows what Qatoto may
+read, and the reason `artifact_grounding` can resolve `passed` instead of `flagged`.
+
+**What exists:** `GET …/integrations` returns EXISTING GRANTS only, and
+`POST …/integrations/:provider/authorize-url` requires `requestedResourceIds[]`.
+
+**The circularity:** a member who has never connected GitHub has no grant, so the read returns
+nothing about GitHub — the client cannot say whether the provider is even configured in this
+deployment (`isProviderConfigured` is server-side and unexposed). Worse, the resource ids are the
+provider's repos and projects, which nobody can enumerate before the OAuth round trip that would
+give access to enumerate them.
+
+**Frontend today:** the screen renders all five `integration_provider` values from the enum, marks
+the ones with grants, and sends `requestedResourceIds: []` on connect — broad scope, narrowed at the
+provider's own consent screen. `503 INTEGRATION_UNCONFIGURED` is rendered as "not available here"
+rather than as a retryable failure.
+
+**Asks for:** either `GET …/integrations/available` (provider, `isConfigured`, and the resource
+vocabulary once a token exists), or an explicit ruling in §9.10 that the first authorization is
+broad-scope and narrowing is a second, post-callback step. The second is cheaper and may be the
+right answer; it is currently neither documented nor implemented.
+
+---
+
+### D6. No market-insight detail read
+
+**Needed by:** the project Overview tab's demand-evidence chips, added by §11k.2.
+
+**What exists:** `GET /discovery/market-insights` (list) and the `/discovery/admin/market-insights`
+subtree. There is no `GET /discovery/market-insights/:insightId`.
+
+**Frontend today:** `relatedInsights` renders as NON-LINKING chips carrying the headline. A chip that
+navigated to `/knowledge-hub` and left the reader to find the insight would be worse than one that
+plainly does not navigate.
+
+**Asks for:** `GET /discovery/market-insights/:insightId`, public and published-only, matching the
+list row. Low cost, and it is what makes a cited piece of evidence checkable — which is the entire
+argument for citing it.
+
+---
+
+### D7. A cluster cannot show the projects it produced
+
+**Needed by:** the new `/problem-map/cluster/[clusterId]` page. The inverse direction ships —
+`ResearchProjectDetailView.originCluster` names where a project came from (§11k.1) — so the asymmetry
+is visible to anyone who follows the link.
+
+**What exists:** `problem_cluster_project_link` is written by
+`/discovery/problem-clusters/:clusterId/project-links` and read by `problem-clusters.service.ts` and
+the two recompute jobs. `ProblemClusterView` exposes no linked-project list and no count.
+
+**Frontend today:** the cluster page renders the cluster and links BACK to the map. It says nothing
+about projects, because it has nothing to say.
+
+**Asks for:** `linkedProjects: { slug, name, source }[]` on `ProblemClusterView`, or a
+`GET …/problem-clusters/:clusterId/projects`. This is the payoff §11j.1 was chasing when it called
+the write dead end closed — a cluster that cannot show what it produced still cannot close the loop.
+
+---
+
+### D8. Daily-log AI summary chips are detail-only
+
+**Restated from §18's dark table**, because it is a backend shape question rather than a frontend
+choice.
+
+**What exists:** chips live on `GET …/daily-logs/:logId`. Neither `DailyLogView` on the project-scoped
+list nor the row on the cross-project `/daily-logs` feed carries them, though `?chipKind=` filters on
+them in SQL.
+
+**Frontend today:** no chips on any feed, and `/build-log`'s legend dropped its AI-tag half rather
+than teaching a vocabulary the page does not speak. A chip-kind filter is not offered either: it
+would match rows with nothing visible explaining why.
+
+**Asks for:** chips on the feed row. §11h explicitly declined a denormalized `chipKinds` column for
+FILTERING, and that reasoning is sound — an index serves the filter. This is a different question:
+whether the read should join them for DISPLAY.
+
+---
+
+### D9. `/governance` has no sample statement, by design
+
+**Not a gap — a decision, recorded so it stays one.**
+
+§11h states that the worked example the frontend spec wants is authored sample data, and that the
+backend is not asked to supply a real member's row for it. That is correct: a real statement line
+names a person and what they are owed, on a page that renders signed out.
+
+**Frontend today:** `statement-walkthrough.tsx` renders authored data from
+`src/mocks/research-and-development-compensation-mocks.ts`, labelled "a worked example, not a real
+team's figures", and its `TRANSPORT:` banner explains why. **It is the only authored data left on
+the wired surface**, and it should not be "fixed".
+
+---
+
+### D10. Absences confirmed as intended
+
+Checked against §11j.6 while wiring, and each one held. Recorded so the next pass does not re-open
+them:
+
+| Absence                                                                 | Confirmed by                                                                                   |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| No unbake endpoint                                                      | The bake panel offers no undo and says the freeze is permanent                                 |
+| No `consensusAdjustedMinutes` on dispute resolve                        | The resolve form offers three outcomes and no number field                                     |
+| No endpoint marking a statement line `paid`                             | A payment renders as UNCONFIRMED until the member confirms; there is no third state to set     |
+| No `PATCH` on a finalized period or line                                | Corrections go through `/supersede`, and the UI says a correction is a new statement           |
+| No byte upload for workshop files                                       | The file control is a URL form. No picker exists, so no team can believe Qatoto holds the file |
+| No `?userId=` on `/pledges/mine`, `/applications/mine`, `/invites/mine` | All three wrappers take no user id and the inbox page passes none                              |
+| `POST /supplier-capabilities`, `DELETE /suppliers/:id`                  | The directory is read-only on this surface, as §11i intends                                    |

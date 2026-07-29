@@ -1,7 +1,7 @@
 // TRANSPORT: server-fetch — server component. Reads GET /suppliers,
-// GET /supplier-capabilities and GET /launch-ready-projects via @/lib/rnd/suppliers.api,
-// with the session cookie forwarded by callerRequestOptions(). All three are public.
-// No React Query here.
+// GET /supplier-capabilities, GET /launch-ready-projects and GET /discovery/regions via
+// @/lib/rnd/*.api, with the session cookie forwarded by callerRequestOptions(). All four
+// are public. No React Query here.
 import CreateListingCtaBand from "@/components/home/research-and-development/sections/create-listing-cta-band";
 import GoToMarketExplainer from "@/components/home/research-and-development/sections/go-to-market-explainer";
 import GoToMarketHero from "@/components/home/research-and-development/sections/go-to-market-hero";
@@ -9,6 +9,7 @@ import LaunchReadinessChecklist from "@/components/home/research-and-development
 import LaunchReadyProjectsRail from "@/components/home/research-and-development/sections/launch-ready-projects-rail";
 import { RndErrorPanel } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import SupplierDirectory from "@/components/home/research-and-development/sections/supplier-directory";
+import { listDiscoveryRegions } from "@/lib/rnd/discovery.api";
 import {
   listLaunchReadyProjects,
   listSupplierCapabilities,
@@ -62,16 +63,20 @@ export default async function GoToMarketPage({
     ),
   };
 
-  const [suppliersResult, capabilitiesResult, launchReadyResult] = await Promise.all([
-    listSuppliers(suppliersFilter, requestOptions),
-    listSupplierCapabilities(requestOptions),
-    listLaunchReadyProjects({ limit: LAUNCH_READY_LIMIT }, requestOptions),
-  ]);
+  const [suppliersResult, capabilitiesResult, launchReadyResult, regionsResult] = await Promise.all(
+    [
+      listSuppliers(suppliersFilter, requestOptions),
+      listSupplierCapabilities(requestOptions),
+      listLaunchReadyProjects({ limit: LAUNCH_READY_LIMIT }, requestOptions),
+      listDiscoveryRegions({}, requestOptions),
+    ],
+  );
 
   const suppliersState = toListViewState(suppliersResult);
   const launchReadyState = toListViewState(launchReadyResult);
-  // Secondary read: losing it costs the chips, not the directory.
+  // Secondary reads: losing either costs a chip row, not the directory.
   const capabilities = rowsOrEmpty(capabilitiesResult);
+  const regions = rowsOrEmpty(regionsResult);
 
   return (
     <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
@@ -87,6 +92,7 @@ export default async function GoToMarketPage({
         <SupplierDirectory
           suppliers={suppliersState.status === "ready" ? suppliersState.rows : []}
           capabilities={capabilities}
+          regions={regions}
           pagination={suppliersState.status === "ready" ? suppliersState.pagination : null}
           searchParams={resolvedSearchParams}
         />
