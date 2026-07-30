@@ -9,6 +9,14 @@
 // reason the backend never sends prose (backend §4d).
 
 import type {
+  ResearchContributionKind,
+  ResearchBranchStatus,
+  ResearchModerationActionKind,
+  ResearchPaperModerationStatus,
+  ResearchParticipantRole,
+  ResearchPostTrack,
+} from "@/lib/rnd/research-programs.schemas";
+import type {
   DailyLogAnalysisStatus,
   EffortVerificationStatus,
 } from "@/lib/rnd/daily-logs.schemas";
@@ -108,4 +116,78 @@ export const SUPPLIER_CONTACT_POLICY_LABELS: Record<SupplierContactPolicy, strin
   via_platform: "Contact via Qatoto",
   direct_email: "Direct email",
   no_contact: "Reference only",
+};
+
+// --- §10 research programs ---------------------------------------------------
+//
+// These replace four kebab-case label maps that lived in `src/mocks/` — the roles and the paper
+// categories among them. The roles are now `snake_case` pgEnum labels, and the CATEGORIES are
+// gone from here entirely: they are a table, so a paper carries a `categoryId` and the label
+// arrives joined on the wire. There is nothing left to hardcode.
+
+/**
+ * The branch map's four states, in reader-facing words.
+ *
+ * `missing` and `contested` are the two the surface exists for, and the labels say what they
+ * MEAN rather than naming the enum: "Missing research" is a gap nobody is working on, and
+ * "Overlapping work" is several groups asking one question. Both are derived nightly — never
+ * present them as something the branch's author chose.
+ */
+export const RESEARCH_BRANCH_STATUS_LABELS: Record<ResearchBranchStatus, string> = {
+  active: "Active",
+  emerging: "Emerging",
+  contested: "Overlapping work",
+  missing: "Missing research",
+};
+
+export const RESEARCH_PARTICIPANT_ROLE_LABELS: Record<ResearchParticipantRole, string> = {
+  researcher: "Researcher",
+  founder_director: "Founder & Director",
+  venture_capitalist: "Venture Capitalist",
+  supplier: "Supplier",
+  supporter: "Supporter",
+};
+
+export const RESEARCH_PAPER_MODERATION_STATUS_LABELS: Record<
+  ResearchPaperModerationStatus,
+  string
+> = {
+  queued: "Awaiting review",
+  approved: "Approved",
+  rejected: "Rejected",
+  // A request, not a refusal — and the label has to say so, because the author's next step is
+  // to re-submit rather than to give up.
+  needs_changes: "Changes requested",
+};
+
+export const RESEARCH_POST_TRACK_LABELS: Record<ResearchPostTrack, string> = {
+  informal_paper: "Informal paper",
+  idea: "Idea",
+};
+
+/**
+ * What a contribution WAS, not what it settled.
+ *
+ * `cash_commitment` is deliberately "Cash committed" rather than "Cash paid" or "Escrowed" —
+ * nothing on this surface moves money, and the mock this replaces said "$250K escrowed" about a
+ * mechanism that no longer exists in the backend at all.
+ */
+export const RESEARCH_CONTRIBUTION_KIND_LABELS: Record<ResearchContributionKind, string> = {
+  cash_commitment: "Cash committed",
+  material: "Materials",
+  data: "Data",
+  equipment: "Equipment",
+  expertise: "Expertise",
+};
+
+/** A moderator's decision, for the audit log. Past tense: these already happened. */
+export const RESEARCH_MODERATION_ACTION_LABELS: Record<ResearchModerationActionKind, string> = {
+  program_published: "Published this program",
+  program_rejected: "Rejected this program",
+  paper_approved: "Approved a paper",
+  paper_rejected: "Rejected a paper",
+  paper_needs_changes: "Requested changes to a paper",
+  post_hidden: "Hid a post",
+  post_restored: "Restored a post",
+  report_dismissed: "Dismissed a report",
 };

@@ -1,131 +1,267 @@
-// TRANSPORT: props-only — renders what its parent passes. The one src/mocks
-// import is a LABEL MAP, not data; it belongs in src/lib and moves there when the
-// phase that owns this component wires up.
+// TRANSPORT: client-query — the report queue is fetched on demand and every verdict is a mutation.
 "use client";
 
 import { useState } from "react";
 
-import { formatIsoInstant } from "@/components/home/research-and-development/sections/compensation-format";
-import { IMMORTAL_PAPER_CATEGORY_LABELS } from "@/mocks/project-immortal-mocks";
-import type {
-  ImmortalPaperModerationEntry,
-  ImmortalPaperModerationStatus,
-} from "@/types/research-and-development";
+import {
+  useDismissContentReportMutation,
+  useModerateProgramPaperMutation,
+  useProgramModerationActionsQuery,
+  useProgramModerationQueueQuery,
+} from "@/hooks/rnd/research-programs";
+import { ApiRequestError } from "@/lib/http";
+import { formatIsoInstant } from "@/lib/rnd/format";
+import {
+  RESEARCH_MODERATION_ACTION_LABELS,
+  RESEARCH_PAPER_MODERATION_STATUS_LABELS,
+} from "@/lib/rnd/labels";
+import type { ContentReportReason, ResearchPaper } from "@/lib/rnd/research-programs.schemas";
 
-const MODERATION_STATUS_BADGES: Record<
-  ImmortalPaperModerationStatus,
-  { label: string; className: string }
-> = {
-  queued: { label: "Awaiting review", className: "bg-blue-100 text-blue-800" },
-  approved: { label: "Approved", className: "bg-[#00696E]/10 text-[#00696E]" },
-  needs_changes: { label: "Changes requested", className: "bg-amber-100 text-amber-800" },
-  rejected: { label: "Rejected", className: "bg-red-100 text-red-800" },
+import { MutationErrorNotice } from "./mutation-feedback";
+
+const REPORT_REASON_LABELS: Record<ContentReportReason, string> = {
+  spam: "Spam",
+  plagiarism: "Plagiarism",
+  misinformation: "Misinformation",
+  harassment: "Harassment",
+  off_topic: "Off topic",
+  other: "Something else",
 };
 
-const REVIEW_ACTIONS: { status: ImmortalPaperModerationStatus; label: string }[] = [
-  { status: "approved", label: "Approve" },
-  { status: "needs_changes", label: "Request changes" },
-  { status: "rejected", label: "Reject" },
-];
+type PaperModerationQueueProps = {
+  programSlug: string;
+  /**
+   * Papers awaiting review, read server-side with the moderator's own session so the queue is
+   * populated on first paint rather than after a client round trip.
+   */
+  queuedPapers: ResearchPaper[];
+};
 
-// Formal-track moderation queue (§14.6). The formal library claims citations
-// and proofs; something has to check that claim before the program's name goes
-// on a paper. A rejection here is not a ban — the informal track exists exactly
-// so an unproven idea still has somewhere to live. Local state only this phase.
+/**
+ * The moderator's queue: papers awaiting a verdict, and open content reports.
+ *
+ * ONLY RENDERED FOR A `moderate_content` HOLDER. The server page decides that; this component
+ * assumes it, and its query would 403 for anyone else.
+ *
+ * EVERY VERDICT IS TERMINAL AND AUDITED. A paper is reviewed once — a second verdict is a 409 —
+ * and each decision appends to the platform audit chain in the same transaction as the row it
+ * changes. So these buttons are not undo-able, and they do not pretend to be.
+ *
+ * THE REVIEWER NOTE IS REQUIRED ON EVERY PATH, approval included: "yes" and "no" without a reason
+ * are both decisions somebody will later need explained. The mock had no note field at all.
+ */
 export default function PaperModerationQueue({
-  entries,
-}: {
-  entries: ImmortalPaperModerationEntry[];
-}) {
-  const [localStatusById, setLocalStatusById] = useState<
-    Record<string, ImmortalPaperModerationStatus>
-  >({});
+  programSlug,
+  queuedPapers,
+}: PaperModerationQueueProps) {
+  const queueQuery = useProgramModerationQueueQuery(programSlug, { isEnabled: true });
+  const paperVerdictMutation = useModerateProgramPaperMutation(programSlug);
+  const dismissMutation = useDismissContentReportMutation(programSlug);
+  const actionsQuery = useProgramModerationActionsQuery(programSlug, { isEnabled: true });
 
-  const resolveStatus = (entry: ImmortalPaperModerationEntry) =>
-    localStatusById[entry.id] ?? entry.status;
+  const [noteByPaperId, setNoteByPaperId] = useState<Record<string, string>>({});
+  const [noteByReportId, setNoteByReportId] = useState<Record<string, string>>({});
 
-  const queuedCount = entries.filter((entry) => resolveStatus(entry) === "queued").length;
+  const firstError = [paperVerdictMutation.error, dismissMutation.error].find(
+    (error): error is ApiRequestError => error instanceof ApiRequestError,
+  );
+
+  const openReports = queueQuery.data?.reports ?? [];
 
   return (
-    <div className="space-y-3 px-4 lg:px-6">
-      <p className="text-xs text-muted-foreground">
-        {queuedCount === 0
-          ? "Nothing is waiting on a reviewer."
-          : `${queuedCount} paper${queuedCount === 1 ? "" : "s"} waiting on a reviewer.`}{" "}
-        The informal track has no queue — it claims nothing, so there is nothing to check.
+    <div className="space-y-6 px-4 lg:px-6">
+      <p className="max-w-2xl text-sm text-muted-foreground">
+        Moderator view. Every decision here is recorded against your name in the platform audit
+        chain, and a paper can only be reviewed once.
       </p>
 
-      <ul className="space-y-3">
-        {entries.map((entry) => {
-          const resolvedStatus = resolveStatus(entry);
-          const statusBadge = MODERATION_STATUS_BADGES[resolvedStatus];
-          const isAwaitingReview = resolvedStatus === "queued";
+      {firstError && <MutationErrorNotice error={firstError.apiError} />}
 
-          return (
-            <li key={entry.id} className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="min-w-0 flex-1 text-sm font-medium">{entry.paperTitle}</span>
-                <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge.className}`}
-                >
-                  {statusBadge.label}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {entry.authorName} · {entry.authorAffiliation} ·{" "}
-                {IMMORTAL_PAPER_CATEGORY_LABELS[entry.category]} · submitted{" "}
-                {formatIsoInstant(entry.submittedAt)}
-              </p>
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium">
+          Papers awaiting review
+          {queueQuery.data ? ` (${String(queueQuery.data.queuedPaperCount)})` : ""}
+        </h3>
 
-              {entry.flagReasons.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {entry.flagReasons.map((flagReason) => (
-                    <span
-                      key={flagReason}
-                      className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800"
-                    >
-                      {flagReason}
-                    </span>
-                  ))}
+        {queuedPapers.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nothing waiting.</p>
+        ) : (
+          <ul className="space-y-3">
+            {queuedPapers.map((paper) => (
+              <li
+                key={paper.paperId}
+                className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+              >
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{paper.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {paper.uploader.name}
+                    {paper.authorAffiliation ? ` · ${paper.authorAffiliation}` : ""} ·{" "}
+                    {paper.categoryDisplayLabel} · submitted {formatIsoInstant(paper.createdAt)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {paper.hasFile ? "PDF attached" : "No file — DOI only"}
+                    {paper.doi ? ` · DOI ${paper.doi}` : ""}
+                  </p>
                 </div>
-              )}
 
-              {entry.reviewerNote && (
-                <p className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
-                  {entry.reviewerName ?? "A reviewer"}
-                  {entry.reviewedAt ? ` · ${formatIsoInstant(entry.reviewedAt)}` : ""} —{" "}
-                  {entry.reviewerNote}
-                </p>
-              )}
+                <textarea
+                  value={noteByPaperId[paper.paperId] ?? ""}
+                  onChange={(event) =>
+                    setNoteByPaperId((notes) => ({
+                      ...notes,
+                      [paper.paperId]: event.target.value,
+                    }))
+                  }
+                  maxLength={2000}
+                  rows={2}
+                  placeholder="Why? The author reads this."
+                  className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                />
 
-              {isAwaitingReview && (
                 <div className="flex flex-wrap gap-2">
-                  {REVIEW_ACTIONS.map((reviewAction) => (
+                  {(["approved", "needs_changes", "rejected"] as const).map((decision) => (
                     <button
-                      key={reviewAction.status}
+                      key={decision}
                       type="button"
-                      onClick={() =>
-                        setLocalStatusById((currentStatuses) => ({
-                          ...currentStatuses,
-                          [entry.id]: reviewAction.status,
-                        }))
+                      disabled={
+                        paperVerdictMutation.isPending ||
+                        !(noteByPaperId[paper.paperId] ?? "").trim()
                       }
-                      className="cursor-pointer rounded-full border border-[#6F7979] px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
+                      onClick={() =>
+                        paperVerdictMutation.mutate({
+                          paperId: paper.paperId,
+                          decision,
+                          reviewerNote: (noteByPaperId[paper.paperId] ?? "").trim(),
+                          flagReasons: [],
+                        })
+                      }
+                      className={`cursor-pointer rounded-full px-4 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                        decision === "approved"
+                          ? "bg-[#00696E] text-white hover:bg-[#00393C]"
+                          : decision === "rejected"
+                            ? "border border-[#BA1A1A] text-[#BA1A1A] hover:bg-[#BA1A1A]/10"
+                            : "border border-[#CAC4D0] hover:bg-muted"
+                      }`}
                     >
-                      {reviewAction.label}
+                      {RESEARCH_PAPER_MODERATION_STATUS_LABELS[decision]}
                     </button>
                   ))}
                 </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
-      <p className="text-xs text-muted-foreground">
-        Moderation decisions live in this session only — the queue and its notifications are
-        backend-owned later.
-      </p>
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium">Open reports ({openReports.length})</h3>
+
+        {queueQuery.isPending ? (
+          <p className="text-sm text-muted-foreground">Loading reports…</p>
+        ) : openReports.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No open reports.</p>
+        ) : (
+          <ul className="space-y-3">
+            {openReports.map((report) => (
+              <li
+                key={report.reportId}
+                className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4"
+              >
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">
+                    {REPORT_REASON_LABELS[report.reason]} · {report.targetKind}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Reported by {report.reporterName ?? "a former contributor"} ·{" "}
+                    {formatIsoInstant(report.createdAt)}
+                  </p>
+                  {report.detailText && (
+                    <p className="rounded-lg bg-muted p-2 text-xs">{report.detailText}</p>
+                  )}
+                </div>
+
+                <input
+                  value={noteByReportId[report.reportId] ?? ""}
+                  onChange={(event) =>
+                    setNoteByReportId((notes) => ({
+                      ...notes,
+                      [report.reportId]: event.target.value,
+                    }))
+                  }
+                  maxLength={2000}
+                  placeholder="Why is this fine?"
+                  className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+                />
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={
+                      dismissMutation.isPending || !(noteByReportId[report.reportId] ?? "").trim()
+                    }
+                    onClick={() =>
+                      dismissMutation.mutate({
+                        reportId: report.reportId,
+                        reasonNote: (noteByReportId[report.reportId] ?? "").trim(),
+                      })
+                    }
+                    className="cursor-pointer rounded-full border border-[#CAC4D0] px-4 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Dismiss — nothing wrong here
+                  </button>
+                  <p className="text-xs text-muted-foreground">
+                    {/*
+                      Hiding is the other outcome, and it deliberately lives on the post itself in
+                      the discussion feed — so a moderator reads the content in context before
+                      acting on it, rather than acting on a reason code alone.
+                    */}
+                    To act on it, hide the post from the discussion feed.
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium">Decision log</h3>
+        {/*
+          This domain's queryable view of the PLATFORM AUDIT CHAIN. Every row here was written in
+          the same transaction as the decision it records, and each carries the `auditEntryId` of
+          its tamper-evident counterpart — so "was this reviewed, and by whom" has an answer that
+          does not depend on anyone's memory.
+
+          The role is the one held AT THE TIME, snapshotted, because roles are revocable and a
+          join would quietly rewrite history.
+        */}
+        {actionsQuery.isPending ? (
+          <p className="text-sm text-muted-foreground">Loading the decision log…</p>
+        ) : !actionsQuery.data || actionsQuery.data.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No moderation decisions have been recorded for this programme.
+          </p>
+        ) : (
+          <ol className="space-y-2">
+            {actionsQuery.data.map((action) => (
+              <li
+                key={action.actionId}
+                className="rounded-xl border border-[#CAC4D0]/60 p-3 text-xs"
+              >
+                <p className="font-medium">
+                  {RESEARCH_MODERATION_ACTION_LABELS[action.actionKind]}
+                </p>
+                <p className="text-muted-foreground">
+                  {action.moderatorName} ({action.moderatorRoleSnapshot}) ·{" "}
+                  {formatIsoInstant(action.createdAt)}
+                </p>
+                <p className="mt-1">{action.reasonNote}</p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
     </div>
   );
 }

@@ -99,4 +99,60 @@ export const rndKeys = {
     ["rnd", "problem-reports", "mine", clusteringStatus] as const,
   dailyLog: (projectSlug: string, logId: string) =>
     ["rnd", "workshop", projectSlug, "daily-log", logId] as const,
+
+  // --- §10 research programs -------------------------------------------------
+  //
+  // Keyed on the SLUG, not the id: every route in the domain is addressed by slug, so a key
+  // built from an id would need a lookup the page does not otherwise perform.
+  //
+  // No page or cursor appears in any key below — keyset pages accumulate under one key through
+  // `useKeysetList`, which is what lets "load more" append rather than replace.
+  researchPrograms: (searchText: string | undefined) =>
+    ["rnd", "programs", "index", searchText] as const,
+  ownResearchPrograms: () => ["rnd", "programs", "mine"] as const,
+  programReviewQueue: () => ["rnd", "programs", "review-queue"] as const,
+  researchProgram: (programSlug: string) => ["rnd", "programs", programSlug] as const,
+  /**
+   * The stat tiles. A separate key from the program itself because they are a SNAPSHOT with its
+   * own `asOf` — invalidating the program detail after a write must not imply the nightly
+   * counts moved.
+   */
+  programStats: (programSlug: string) => ["rnd", "programs", programSlug, "stats"] as const,
+  programBranches: (programSlug: string) => ["rnd", "programs", programSlug, "branches"] as const,
+  programPapers: (programSlug: string, filter: ProgramPaperFilter) =>
+    [
+      "rnd",
+      "programs",
+      programSlug,
+      "papers",
+      filter.categoryId,
+      filter.branchId,
+      filter.moderationStatus,
+    ] as const,
+  programPosts: (programSlug: string, track: string) =>
+    ["rnd", "programs", programSlug, "posts", track] as const,
+  programPostReplies: (programSlug: string, postId: string) =>
+    ["rnd", "programs", programSlug, "posts", postId, "replies"] as const,
+  programContributors: (programSlug: string, role: string | undefined) =>
+    ["rnd", "programs", programSlug, "contributors", role] as const,
+  programOpportunities: (programSlug: string) =>
+    ["rnd", "programs", programSlug, "product-opportunities"] as const,
+  programModerationQueue: (programSlug: string) =>
+    ["rnd", "programs", programSlug, "moderation", "queue"] as const,
+  programModerationActions: (programSlug: string) =>
+    ["rnd", "programs", programSlug, "moderation", "actions"] as const,
+  /** Program-independent: one taxonomy the whole platform shares. */
+  researchPaperCategories: () => ["rnd", "paper-categories"] as const,
 } as const;
+
+/**
+ * The paper-library filter, as it appears in a query key.
+ *
+ * Declared as an interface rather than inlined so the key factory and the island that builds the
+ * filter cannot drift — the same reason `ClaimListFilter` exists above.
+ */
+export interface ProgramPaperFilter {
+  readonly categoryId?: string | undefined;
+  readonly branchId?: string | undefined;
+  readonly moderationStatus?: string | undefined;
+}

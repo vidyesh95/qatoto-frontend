@@ -107,9 +107,9 @@ type ActionResponse<T> =
 
 Combine with Pattern 1: lift `ActionResponse<T>` into the component's `DashboardState`-style union so the UI for each error code is explicit and exhaustive.
 
-## Current phase: R&D is wired, reads and writes — except Project Immortal
+## Current phase: R&D is wired end to end, reads and writes — nothing is mock
 
-**Integration happened surface by surface and is now essentially done.** Every route under
+**Integration happened surface by surface and is now COMPLETE.** Every route under
 `/research-and-development` reads the Express backend, and the domain has a full write
 surface. The store/studio `/products` flow is wired too. The full discipline applies
 everywhere here:
@@ -134,18 +134,46 @@ its reads, is wrapped by a hook in `src/hooks/rnd/`, and is called from a small
 - **A `409` is usually a finding, not a retry** — surface the backend's own code and
   message.
 
-**Still mock: Project Immortal, and nothing else.** There is no `/research-programs` route,
-controller, service or table in the backend, so it stays mock until that domain exists. The
-one other piece of authored data on the surface is `/governance`'s worked-example statement,
-which is a deliberate decision (backend §11h) and is labelled as an example.
+**Nothing on this surface is mock any more.** `/research-programs` shipped — 15 tables, 30
+routes, two nightly jobs — and Project Immortal became ONE ROW in it rather than a hardcoded
+page. Programmes are user-creatable: anyone with a full account may propose one at
+`/research-and-development/programs/new`, it lands `pending`, and a `moderate_content` holder
+publishes it. Three rules specific to §10:
+
+- **The branch map's two signals are DERIVED, never submitted.** `status` (`missing` = a gap
+  nobody is working on) and `overlappingGroupCount` (>= 2 = duplicated effort) are computed
+  nightly by `recompute-branch-signals` from claims, approved-paper coverage and integer
+  Jaccard similarity over branch wording. They appear in no request body, and a contributor
+  able to set them would make the map worthless.
+- **Programme contribution is NOT equity.** `research_effort_log` and
+  `research_contribution_ledger_entry` are self-reported records that mint nothing. A
+  `cash_commitment` is a commitment — escrow left this codebase (§7) and no programme-scoped
+  money rail exists, so no copy here may say "paid", "collected" or "escrowed".
+- **Layout is not data.** The branch tree carries `parentBranchId` + `siblingOrder`, and
+  `src/lib/rnd/branch-tree-layout.ts` runs a tidy layered layout at render time. There is no
+  `canvasPosition` on the wire.
+
+The one remaining piece of authored data on the surface is `/governance`'s worked-example
+statement, which is a deliberate decision (backend §11h) and is labelled as an example.
 
 **How to tell which one you are in:** every file under
 `src/components/home/research-and-development/` carries a `TRANSPORT:` banner on its
-first line — `server-fetch`, `client-query`, `props-only` or `mock`. That banner is the
-answer, and `grep -rn "TRANSPORT: mock"` is the live list of what is still unwired — one
-file. See `docs/R_AND_D_STRUCTURE.md` §18 (phase order), §19 (transport map) and
-`docs/R_AND_D_BACKEND_STRUCTURE.md` Appendix D (what the frontend needs and the backend
-does not have).
+first line — `server-fetch`, `client-query` or `props-only`. That banner is the answer, and
+`grep -rn "TRANSPORT: mock" src/` now returns NOTHING, which is the check that this section
+is still true. See `docs/R_AND_D_STRUCTURE.md` §18 (phase order) and §19 (transport map).
+
+**The audit that keeps the write surface honest**, and note the flag — the version of this
+loop that shipped in `docs/R_AND_D_STRUCTURE.md` omitted `--no-filename`, so `rg` prefixed
+every hook name with its path and the loop reported all 90 hooks as uncalled:
+
+```bash
+for h in $(rg --no-filename -o 'export function (use\w+)' -r '$1' src/hooks/rnd/ | sort -u); do
+  rg -q "\b$h\b" src/components || echo "UNCALLED $h"
+done
+```
+
+It currently prints nothing. An uncalled hook is UNVERIFIED CODE — wire it to a control or
+delete it, never leave it.
 
 ## Conventions
 

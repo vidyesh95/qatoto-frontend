@@ -42,8 +42,9 @@ export type TeamMember = {
 };
 
 // A role/person can pay/ask in one or more of these ways; a blend combines
-// several. The repo's canonical compensation trio — ImmortalCompensationPreference
-// (in ./immortal) is aliased to this so the two unions can never drift apart.
+// several. The repo's canonical compensation trio. §10's research programs use the
+// wire-inferred `CompensationKindSchema` from `@/lib/rnd/shared.schemas` instead — the
+// same three values, read off the backend pgEnum rather than declared twice.
 export type CompensationKind = "salary" | "one_time" | "equity";
 
 // One strand of a compensation offer (role) or ask (talent). Display-only — the

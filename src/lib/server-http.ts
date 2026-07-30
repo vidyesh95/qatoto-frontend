@@ -61,6 +61,24 @@ export async function callerRequestOptions(): Promise<RequestOptions> {
   };
 }
 
+/**
+ * Whether the visitor has a session cookie at all.
+ *
+ * NOT AN AUTHORIZATION CHECK, and it must never be used as one — the backend re-derives identity
+ * from the cookie on every request and is the only authority (CLAUDE.md §1.1). A forged or expired
+ * cookie passes this and fails there.
+ *
+ * What it is for: deciding whether to OFFER a control. A signed-out reader shown a "claim this
+ * branch" button gets a 401 for a click that could not have worked, which is a worse experience
+ * than not seeing the button. Pages on public-read surfaces need that distinction, and inspecting
+ * `callerRequestOptions()`'s headers at each call site would spread the cookie-name knowledge that
+ * this module exists to hold.
+ */
+export async function hasCallerSession(): Promise<boolean> {
+  const cookieStore = await cookies();
+  return cookieStore.getAll().some((cookie) => isAuthCookie(cookie.name));
+}
+
 async function withCallerSession(options: RequestOptions = {}): Promise<RequestOptions> {
   const callerOptions = await callerRequestOptions();
   return {

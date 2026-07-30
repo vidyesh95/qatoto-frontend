@@ -28,6 +28,11 @@ const RESEARCH_AND_DEVELOPMENT_SUBPAGES: Record<string, string> = {
   "/research-and-development/build-log": "Build & Daily Logs",
   "/research-and-development/governance": "Governance",
   "/research-and-development/go-to-market": "Go-to-Market",
+  // §10 research programmes. The index and the wizard are STATIC paths and need entries;
+  // an individual programme is `/programs/[programSlug]` and falls through to prettifySlug,
+  // which renders its slug — the right answer, because the programme names itself.
+  "/research-and-development/programs": "Research Programmes",
+  "/research-and-development/programs/new": "Propose a Programme",
 };
 
 function prettifySlug(slug: string): string {

@@ -11,7 +11,7 @@ import LifecycleRolesStrip from "@/components/home/research-and-development/sect
 import PipelineHero from "@/components/home/research-and-development/sections/pipeline-hero";
 import PipelineStagesStrip from "@/components/home/research-and-development/sections/pipeline-stages-strip";
 import ProblemMapPreview from "@/components/home/research-and-development/sections/problem-map-preview";
-import ProjectImmortalBanner from "@/components/home/research-and-development/sections/project-immortal-banner";
+import ResearchProgramBanner from "@/components/home/research-and-development/sections/research-program-banner";
 import RndStatusPanel, {
   RndErrorPanel,
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
@@ -109,7 +109,7 @@ export default async function ResearchAndDevelopmentPage() {
         />
       )}
 
-      <ProjectImmortalBanner />
+      <ResearchProgramBanner />
       <section className="mx-4 rounded-2xl bg-[#00696E]/5 p-6 text-center md:p-8 lg:mx-6">
         <h2 className="text-xl font-semibold md:text-2xl">Have an idea the world needs?</h2>
         <p className="mt-2 text-sm text-muted-foreground">

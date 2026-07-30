@@ -16,7 +16,7 @@ export const COMPENSATION_KIND_LABELS: Record<CompensationKind, string> = {
   equity: "Equity",
 };
 
-// Canonical per-kind chip colors — matches the Immortal contributor chips so a
+// Canonical per-kind chip colors — matches the research-program contributor chips so a
 // compensation kind reads the same everywhere in the app.
 const COMPENSATION_KIND_BADGE_CLASS: Record<CompensationKind, string> = {
   salary: "bg-[#D6E3FF] text-blue-900",

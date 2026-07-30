@@ -101,7 +101,10 @@ const ROUTES = {
   knowledgeHub: "/research-and-development/knowledge-hub",
   talent: "/research-and-development/talent",
   funding: "/research-and-development/funding",
-  projectImmortal: "/research-and-development/projects/project-immortal",
+  // Project Immortal is now ONE ROW in the generic /programs surface rather than a hardcoded
+  // page, so its URL moved. The old path still resolves — it is a redirect — but the sidebar
+  // points at the real one so the active state can match it exactly.
+  projectImmortal: "/research-and-development/programs/project-immortal",
   library: "/library",
   history: "/history",
   wishlist: "/wishlist",
@@ -133,12 +136,23 @@ function joinClassNames(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-// Home matches exactly; every other route is active for itself and any sub-path
-// (e.g. /anime/genre keeps /anime active).
+/**
+ * Two routes match EXACTLY; every other one is active for itself and any sub-path (e.g.
+ * /anime/genre keeps /anime active).
+ *
+ * `projectImmortal` is exact because it names ONE programme inside a generic surface. Under
+ * prefix matching it would still be correct for its own page — but the surface around it is not
+ * its own: `/research-and-development/programs`, `/programs/new` and every other programme are
+ * siblings, not children, and none of them should light up an entry labelled PROJECT IMMORTAL.
+ * Those pages highlight the top-level R&D entry instead, like any ordinary R&D sub-route.
+ */
+const EXACT_MATCH_ROUTES: readonly string[] = [ROUTES.projectImmortal];
+
 function isRouteActive(pathname: string, routePath: string) {
   // Home owns "/" and the top-level watch player ("/watch"). Anime's own
   // player lives at "/anime/watch", which stays under the Anime route below.
   if (routePath === ROUTES.home) return pathname === routePath || pathname === "/watch";
+  if (EXACT_MATCH_ROUTES.includes(routePath)) return pathname === routePath;
   return pathname === routePath || pathname.startsWith(`${routePath}/`);
 }
 

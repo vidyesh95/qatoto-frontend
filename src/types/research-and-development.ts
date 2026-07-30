@@ -14,5 +14,4 @@
 export * from "./research-and-development/shared";
 export * from "./research-and-development/project";
 export * from "./research-and-development/discovery";
-export * from "./research-and-development/immortal";
 export * from "./research-and-development/compensation";

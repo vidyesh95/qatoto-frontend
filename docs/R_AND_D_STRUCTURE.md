@@ -235,31 +235,53 @@ a product.
 
 ---
 
-## 4b. Project Immortal — `/research-and-development/projects/project-immortal`
+## 4b. Research programmes — `/research-and-development/programs`
 
-The moonshot research program (extending healthy human life), and the reference implementation of
-what an R&D _research_ project looks like on Qatoto. Body in `project-immortal-page.tsx`; mocks under
-`src/mocks/research-and-development/immortal/`; types in `src/types/research-and-development/immortal.ts`.
+**A programme is not a project**, and this is now a generic, user-creatable surface rather than
+one hardcoded page. Backend §10 argues the split at length: a `research_project` has one
+founder, a closed team, a funding round and a Slicing Pie ledger over verified daily logs; a
+`research_program` has thousands of open contributors, a branch tree, a public paper library and
+contribution tracking that is **not equity at all**. They share the `user` table and the §4d
+`compensation_kind` vocabulary, and nothing else.
 
-| Section                              | Content                                                                                                                                                                                                                                                        |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `project-immortal-hero`              | Teal-gradient identity matching the landing banner + four program stats                                                                                                                                                                                        |
-| `research-branch-map` 🏝️             | Hand-rolled SVG flowchart of every research branch. Status-coded nodes (`active`/`emerging`/`contested`/`missing`); `missing` = a gap Qatoto highlights; `overlappingGroupCount >= 2` = duplicated work. Selecting a node fills `research-branch-detail-panel` |
-| `project-immortal-products`          | Monetizable products derivable from each branch                                                                                                                                                                                                                |
-| `project-immortal-papers` 🏝️         | **Formal** paper library + upload dropzone (local list only; no network)                                                                                                                                                                                       |
-| `project-immortal-informal-posts` 🏝️ | **Informal** track — blog-style ideas, no proofs or citations                                                                                                                                                                                                  |
-| `project-immortal-contributors` 🏝️   | Who is building it, effort/money tracked, compensation preference, role filter chips                                                                                                                                                                           |
-| `project-immortal-discussion` 🏝️     | Netizen ideas on increasing lifespan; composer + expandable replies (`idea-item` 🏝️ + `idea-reply-item`)                                                                                                                                                       |
+Project Immortal is one row. Anybody with a full account can propose the next one.
 
-The geometry and node constants are split out of the island into
-`research-branch-map.constants.ts` / `research-branch-map.geometry.ts` so the client bundle carries
-only the interaction code.
+| Route                           | What it is                                                                                                                                   |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/programs`                     | Public index (published + archived), server-side search, plus a signed-in visitor's own submissions and — for a moderator — the review queue |
+| `/programs/new`                 | The propose-a-programme wizard. Lands `pending`; the confirmation says so                                                                    |
+| `/programs/[programSlug]`       | One programme, eight sections. `generateStaticParams` over `GET /research-programs/slugs`                                                    |
+| `/projects/project-immortal`    | `redirect()` — the path the sidebar used before the move                                                                                     |
+| `/project-immortal` (top level) | `redirect()` — the original path, pointing straight at the final URL, not through the hop above                                              |
 
-> **This is the one surface with no backend behind it.** Backend §11f is ⏳ pending — no
-> `research-programs.routes.ts`, no controller, no migration. Everything here stays mock until backend
-> phase 6.
+Body in `research-program-page.tsx`; index in `research-programs-index-page.tsx`; wizard in
+`wizard/new-program-wizard-page.tsx`. Types are inferred from
+`src/lib/rnd/research-programs.schemas.ts` — `src/types/research-and-development/immortal.ts`
+and `src/mocks/research-and-development/immortal/**` are **deleted**, per the §18 rule that a
+mock leaf goes when its route is wired.
 
----
+| Section                            | Content                                                                                                                                                                                                  |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `research-program-hero`            | Teal-gradient identity matching the landing banner + four stat tiles from `GET …/stats`, each carrying the snapshot's `asOf`. **404 = "not counted yet"**, never four zeroes                             |
+| `research-branch-map` 🏝️           | SVG flowchart of every branch. Positions are **COMPUTED** by `branch-tree-layout.ts` from `parentBranchId` + `siblingOrder`; there is no `canvasPosition` on the wire. Status-coded nodes, claim control |
+| `research-program-products`        | Monetizable derivations. `estimatedMarketSizeInCents` (bigint) + `readinessMin/MaxMonths` replace the mock's two label strings, so the rail sorts                                                        |
+| `research-program-papers` 🏝️       | **Formal** library + a REAL two-step upload (metadata row, then multipart PDF to Backblaze B2), category picker over the `research_paper_category` table, inline category proposal, presigned download   |
+| `paper-moderation-queue` 🏝️        | Moderator only. Paper verdicts (note required on every path, including approval), open reports, and the decision log — this domain's view of the platform audit chain                                    |
+| `research-program-discussion` 🏝️   | **ONE component for BOTH tracks**, because the backend serves both from one table. `informal_paper` requires a title; `idea` must not have one and can be filed against a branch                         |
+| `research-post-item` 🏝️            | One post with its replies, reactions (`PUT`/`DELETE`, idempotent by verb), report control and moderation. The mock's like/reply buttons had `aria-label`s and **no `onClick` at all**                    |
+| `research-program-contributors` 🏝️ | Roster, role filter applied **in SQL** via a link per chip, join/edit form. The mock's `effortLabel` is split into `totalEffortMinutes` and `fundingTrancheIndex`/`Total`                                |
+| `program-contributor-tools` 🏝️     | Log effort, record a contribution. Both self-reported, both idempotency-keyed, neither mints anything                                                                                                    |
+| `program-owner-tools` 🏝️           | Creator-or-staff: edit the programme (no `slug`, no `status`), add or remove a product opportunity                                                                                                       |
+
+**Three things the wire refuses to carry**, each because the mock got it wrong:
+
+- **The branch map's two signals.** `status` and `overlappingGroupCount` are derived nightly by
+  `recompute-branch-signals` and appear in no request body. A contributor able to mark their own
+  branch `active`, or a rival's `missing`, would make the map worthless.
+- **Money on the hero.** The mock's fourth tile read "$4.2M compensation pool escrowed". Escrow
+  left the backend (§7 — nine routes 404) and no programme-scoped money rail exists, so the tile
+  is **hours logged**.
+- **Layout.** See `research-branch-map` above.
 
 ## 4c. Stage routes — ✅ all four built
 
@@ -1484,18 +1506,18 @@ than kept as a fallback. That is deliberate: a silent fallback masks a broken en
 every mock to be migrated to the wire format to stay type-compatible. What is left on disk is
 therefore exactly what is still fabricated.
 
-| Phase                             | Scope                                                                                                                                                                                                            | State          |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| **0 · foundations**               | `src/lib/rnd/` (schemas, api, formatters, view state, filter hrefs, map projection, labels) · `src/lib/server-http.ts` · `QueryProvider` in `(home)` · `snake_case` enum migration · `TRANSPORT:` banners        | ✅ done        |
-| **1 · public discovery reads**    | landing · `/knowledge-hub` · `/problem-map` · `/talent` · `/team-building` · `/go-to-market` · `/funding`                                                                                                        | ✅ done        |
-| **2 · projects & detail**         | `/research-projects/slugs` for `generateStaticParams` · detail · team · roles · milestones · funding rounds · investor confidence                                                                                | ✅ done        |
-| **3 · workshop & daily logs**     | board / files / chat in one `…/workshop` read · per-project logs · `/build-log` (member-scoped, `401` signed out)                                                                                                | ✅ done        |
-| **4 · proof of effort**           | slice ledger · verification · disputes · integrations · audit trail · rate lock · pie bake                                                                                                                       | ✅ done        |
-| **5 · compensation & governance** | agreements · periods · finalize / countersign / payments / export · `/governance/summary`                                                                                                                        | ✅ done        |
-| **W · writes**                    | the whole mutation surface — PoE, compensation, funding pledges, project create/publish, applications & invites, workshop board / files / chat                                                                   | ✅ done        |
-| **W2 · write UI**                 | a control for every one of them: the rate lifecycle, claim + receipt, founder round/milestone/role/member management, the application inbox, daily-log authoring, board editing, talent profile, problem reports | ✅ done        |
-| **K · keyset paging**             | six lists made pageable — the daily-log feed, the claim index, allocation proposals, the slice ledger, the project audit trail, compensation statements                                                          | ✅ done        |
-| **6 · Project Immortal**          | —                                                                                                                                                                                                                | 🚫 **blocked** |
+| Phase                             | Scope                                                                                                                                                                                                                                   | State   |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| **0 · foundations**               | `src/lib/rnd/` (schemas, api, formatters, view state, filter hrefs, map projection, labels) · `src/lib/server-http.ts` · `QueryProvider` in `(home)` · `snake_case` enum migration · `TRANSPORT:` banners                               | ✅ done |
+| **1 · public discovery reads**    | landing · `/knowledge-hub` · `/problem-map` · `/talent` · `/team-building` · `/go-to-market` · `/funding`                                                                                                                               | ✅ done |
+| **2 · projects & detail**         | `/research-projects/slugs` for `generateStaticParams` · detail · team · roles · milestones · funding rounds · investor confidence                                                                                                       | ✅ done |
+| **3 · workshop & daily logs**     | board / files / chat in one `…/workshop` read · per-project logs · `/build-log` (member-scoped, `401` signed out)                                                                                                                       | ✅ done |
+| **4 · proof of effort**           | slice ledger · verification · disputes · integrations · audit trail · rate lock · pie bake                                                                                                                                              | ✅ done |
+| **5 · compensation & governance** | agreements · periods · finalize / countersign / payments / export · `/governance/summary`                                                                                                                                               | ✅ done |
+| **W · writes**                    | the whole mutation surface — PoE, compensation, funding pledges, project create/publish, applications & invites, workshop board / files / chat                                                                                          | ✅ done |
+| **W2 · write UI**                 | a control for every one of them: the rate lifecycle, claim + receipt, founder round/milestone/role/member management, the application inbox, daily-log authoring, board editing, talent profile, problem reports                        | ✅ done |
+| **K · keyset paging**             | six lists made pageable — the daily-log feed, the claim index, allocation proposals, the slice ledger, the project audit trail, compensation statements                                                                                 | ✅ done |
+| **6 · research programmes**       | the whole `/research-programs` domain — index, detail, branch tree, paper library with real PDF upload, both post tracks, reactions, reports, moderation, contributors, effort and contribution records, the propose-a-programme wizard | ✅ done |
 
 **Phase W is the one that was not in the original plan**, and it is the larger half of what
 landed. Until it, `rg 'sendJson|sendForm' src/lib/rnd/` returned NOTHING: every control on this
@@ -1516,14 +1538,27 @@ Wiring it needed a BACKEND FIX FIRST, and that is the part worth remembering: th
 and the other three could not. Six `client-query` islands now sit inside the same `server-fetch`
 pages, seeded with the page the server already read so nothing is fetched twice on mount.
 
-**Phase 6 is blocked, not merely unscheduled.** `grep -rn "research-programs" src/` in the backend
-returns **zero hits** — no route, no controller, no service, no migration, no table. Nothing about
-this surface can be wired until that domain is built.
+**Phase 6 shipped, and it was blocked on the backend rather than on this repo.** The domain now
+exists: 15 tables, 30 routes, 11 services, two nightly jobs and migrations 0029–0031. Project
+Immortal stopped being a hardcoded page and became one row in it, which is what makes "and
+programmes like it" true — the propose-a-programme wizard is the feature, not the flagship.
 
-**The platform `moderator` role is no longer part of that block.** This paragraph used to say it
-"does not exist either"; `platformRoleEnum` (`src/db/schema.ts`) is `moderator | auditor | admin`,
-and §11j.4's `/discovery/admin/*` subtree runs `requirePlatformCapability` against it today. Phase 6
-is blocked on the `/research-programs` domain alone.
+**What the backend had to grow for it**, beyond the domain itself, because each was a real gap:
+
+| Gap                                           | What shipped                                                                                                                                                                                                                                                                                                 |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| No non-image object storage                   | `src/lib/object-storage.ts` over Backblaze B2's S3 API. The credentials were already in `.env` and read by NOTHING — no config entry, no `.env.example`, no SDK. Cloudinary could not serve it: all five of its families hardcode `resource_type: "image"` and `lib/image.ts` answers NOT_AN_IMAGE for a PDF |
+| No branch gap/overlap detection               | `recompute-branch-signals`, using the existing integer-Jaccard `lib/text-similarity.ts`. There is no pgvector, no embedding call and no cosine anywhere in the backend, and adding one to compute a nightly integer was not worth it                                                                         |
+| No `recompute-program-stats` job              | Shipped, and it runs AFTER the signals pass — the stat tiles count gaps and overlap flags from the statuses that job derives, so the cron order (03:20 then 03:35) is load-bearing                                                                                                                           |
+| No reaction, threading or reporting primitive | All three. Reactions are idempotent by verb; threading is depth-capped at one reply; a report is one per user per target                                                                                                                                                                                     |
+| No effort tracking outside a project          | `research_effort_log` + `research_contribution_ledger_entry`, both append-only by trigger, neither minting equity                                                                                                                                                                                            |
+| `authorLocation` had no backing column        | `user.locationLabel` — a self-set claim, geocoded by nothing and read by nothing but the discussion feed                                                                                                                                                                                                     |
+| Paper categories were a frontend-only union   | `research_paper_category`, a table on the `research_category` pattern: user-mintable, moderator-approved                                                                                                                                                                                                     |
+| Contributor roles were kebab-case             | A `snake_case` pgEnum. `founder-director` → `founder_director`                                                                                                                                                                                                                                               |
+
+**One §11l.2 item turned out to be stale.** It says no moderation service writes an audit row;
+`appendPlatformAuditEntry` already existed with three callers, so §10's moderation joined that
+convention rather than inventing a log.
 
 **The two compliance items are built**, and this paragraph is kept because the reasoning is why
 they were prioritised. The dispute / override UI and the integration-consent screen are the GDPR
@@ -1564,7 +1599,10 @@ useful part: an uncalled wrapper has never been checked against the schema it cl
 **The audit that keeps this true**, and the one to run before claiming coverage again:
 
 ```bash
-for h in $(rg -o 'export function (use\w+)' -r '$1' src/hooks/rnd/); do
+# NOTE `--no-filename`. Without it rg prefixes each hook name with its path, every `rg -q`
+# misses, and the loop reports ALL ~90 hooks as uncalled — which is how this check quietly
+# stopped checking anything.
+for h in $(rg --no-filename -o 'export function (use\w+)' -r '$1' src/hooks/rnd/ | sort -u); do
   rg -q "\b$h\b" src/components || echo "UNCALLED $h"
 done
 ```
