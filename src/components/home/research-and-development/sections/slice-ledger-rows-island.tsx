@@ -49,7 +49,7 @@ export default function SliceLedgerRowsIsland({
   return (
     <div className="space-y-2">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[42rem] text-sm">
+        <table className="w-full min-w-2xl text-sm">
           <thead className="text-left text-xs text-muted-foreground">
             <tr>
               <th className="p-2 font-medium">#</th>
