@@ -1,9 +1,11 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; agreements,
 // statements and the project compensation summary arrive as view states from
 // project-detail, which read GET …/compensation-agreements, …/compensation-periods and
-// …/compensation. The finalize / countersign / payment controls are client islands below.
+// …/compensation. The statement list is a client-query island — it pages earlier statements
+// by `?beforeSequenceNumber=` — and the finalize / countersign / payment controls are client
+// islands below.
 import CompensationAgreementIsland from "@/components/home/research-and-development/sections/compensation-agreement-island";
-import CompensationPeriodIsland from "@/components/home/research-and-development/sections/compensation-period-island";
+import CompensationPeriodsIsland from "@/components/home/research-and-development/sections/compensation-periods-island";
 import RndStatusPanel, {
   RndErrorPanel,
   RndMembersOnlyPanel,
@@ -15,7 +17,6 @@ import {
   formatIsoInstant,
   formatMoneyFromCents,
   formatPeriodRange,
-  shortenHashForDisplay,
 } from "@/lib/rnd/format";
 import type {
   CompensationAgreement,
@@ -229,54 +230,15 @@ export default function CompensationTab({
       case "empty":
         return <RndStatusPanel message="No statement has been opened yet." />;
       case "ready":
+        // The rows moved into an island so earlier statements are reachable — this tab still
+        // owns the first page, which the server already read.
         return (
-          <ul className="space-y-3">
-            {periodsState.rows.map((period) => (
-              <li key={period.id} className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-medium">
-                      {formatPeriodRange(period.periodStartDate, period.periodEndDate)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Statement #{period.sequenceNumber} · {period.timeZone}
-                    </p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                    {PERIOD_STATUS_LABELS[period.status]}
-                  </span>
-                </div>
-
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {period.status === "open"
-                    ? period.lastDraftedAt === null
-                      ? "The nightly draft has not run yet — that is not the same as everyone being owed zero."
-                      : `Last recomputed ${formatIsoInstant(period.lastDraftedAt)}. These figures still move.`
-                    : period.finalizedAt !== null &&
-                      `Finalized ${formatIsoInstant(period.finalizedAt)}`}
-                  {period.countersignedAt !== null &&
-                    ` · countersigned ${formatIsoInstant(period.countersignedAt)}`}
-                  {period.statementHash !== null &&
-                    ` · ${shortenHashForDisplay(period.statementHash)}`}
-                </p>
-
-                {period.supersededByPeriodId !== null && (
-                  <p className="mt-1 text-xs text-amber-800">
-                    Corrected by a later statement. Nothing here was edited — a correction is always
-                    a new statement.
-                  </p>
-                )}
-
-                <CompensationPeriodIsland
-                  projectSlug={projectSlug}
-                  periodId={period.id}
-                  periodStatus={period.status}
-                  isCountersigned={period.countersignedAt !== null}
-                  viewerProjectRole={viewerProjectRole}
-                />
-              </li>
-            ))}
-          </ul>
+          <CompensationPeriodsIsland
+            projectSlug={projectSlug}
+            viewerProjectRole={viewerProjectRole}
+            periodStatusLabels={PERIOD_STATUS_LABELS}
+            initialPeriods={periodsState.rows}
+          />
         );
       default: {
         const exhaustiveCheck: never = periodsState;

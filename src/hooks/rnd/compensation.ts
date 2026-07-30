@@ -114,7 +114,7 @@ export function useFinalizeCompensationPeriodMutation(projectSlug: string) {
         queryKey: rndKeys.compensationPeriod(projectSlug, periodId),
       });
       void queryClient.invalidateQueries({
-        queryKey: rndKeys.compensationPeriods(projectSlug, undefined, 1),
+        queryKey: rndKeys.compensationPeriods(projectSlug, undefined),
       });
     },
   });
@@ -155,7 +155,7 @@ export function useSupersedeCompensationPeriodMutation(projectSlug: string) {
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: rndKeys.compensationPeriods(projectSlug, undefined, 1),
+        queryKey: rndKeys.compensationPeriods(projectSlug, undefined),
       });
     },
   });

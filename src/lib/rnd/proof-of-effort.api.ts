@@ -17,7 +17,9 @@
 
 import {
   buildQueryString,
+  getCursorSiblingList,
   getJson,
+  getSequenceSiblingList,
   sendForm,
   sendJson,
   type ActionResponse,
@@ -127,15 +129,25 @@ export function listOpenRoleProjection(
  *
  * PAGINATED FOR A REASON: a two-year-old project has thousands of entries, and the
  * pre-wire mock modelled this as one flat unbounded array.
+ *
+ * ADVANCE WITH `fromSequence`, NOT `page`. This is an append-only table, which is exactly
+ * the shape where OFFSET drifts: an entry written between two page fetches shifts every
+ * later page by one and the reader silently skips a row. On a slice ledger that row is
+ * somebody's equity. `page` still works and is kept only for back-compat; `fromSequence`
+ * wins when both arrive.
  */
 export function listSliceLedger(
   projectSlug: string,
-  filter: { readonly page?: number; readonly limit?: number } = {},
+  filter: {
+    readonly page?: number;
+    readonly limit?: number;
+    readonly fromSequence?: number;
+  } = {},
   options?: RequestOptions,
-): Promise<ActionResponse<LedgerEntry[]>> {
-  return getJson(
+): Promise<ActionResponse<{ rows: LedgerEntry[]; nextSequence: number | null }>> {
+  return getSequenceSiblingList(
     projectPath(projectSlug, `/slice-ledger${buildQueryString({ ...filter })}`),
-    LedgerEntrySchema.array(),
+    LedgerEntrySchema,
     options,
   );
 }
@@ -166,15 +178,20 @@ export function listMemberFairMarketRates(
  *
  * `?status=flagged_for_review` is what the human-review queue reads, because no dedicated
  * override-queue endpoint exists (Appendix D).
+ *
+ * DUAL MODE. Without a `cursor` the backend serves an offset page and returns a
+ * `pagination` block; with one it serves a keyset page and drops that block rather than
+ * reporting a total it did not count. Either way `nextCursor` comes back, which is what
+ * lets a first request — which has no cursor by definition — bootstrap into keyset mode.
  */
 export function listEffortClaims(
   projectSlug: string,
   filter: ListClaimsFilter = {},
   options?: RequestOptions,
-): Promise<ActionResponse<ClaimSummary[]>> {
-  return getJson(
+): Promise<ActionResponse<{ rows: ClaimSummary[]; nextCursor: string | null }>> {
+  return getCursorSiblingList(
     projectPath(projectSlug, `/effort-claims${buildQueryString({ ...filter })}`),
-    ClaimSummarySchema.array(),
+    ClaimSummarySchema,
     options,
   );
 }
@@ -188,14 +205,26 @@ export function getEffortClaim(
   return getJson(projectPath(projectSlug, `/effort-claims/${claimId}`), ClaimDetailSchema, options);
 }
 
+/**
+ * The dispute-window ledger.
+ *
+ * ADVANCE WITH `cursor` — `<epochMs>_<id>` over `(windowClosesAt, id)`, echoed back
+ * verbatim from the previous page's `nextCursor`. Never send it with `page`, and never
+ * build one from a row: the epoch half depends on a column precision the backend owns.
+ */
 export function listAllocationProposals(
   projectSlug: string,
-  filter: { readonly status?: AllocationProposalStatus; readonly page?: number } = {},
+  filter: {
+    readonly status?: AllocationProposalStatus;
+    readonly page?: number;
+    readonly limit?: number;
+    readonly cursor?: string;
+  } = {},
   options?: RequestOptions,
-): Promise<ActionResponse<AllocationProposal[]>> {
-  return getJson(
+): Promise<ActionResponse<{ rows: AllocationProposal[]; nextCursor: string | null }>> {
+  return getCursorSiblingList(
     projectPath(projectSlug, `/allocation-proposals${buildQueryString({ ...filter })}`),
-    AllocationProposalSchema.array(),
+    AllocationProposalSchema,
     options,
   );
 }
@@ -273,10 +302,10 @@ export function listAuditTrail(
     readonly limit?: number;
   } = {},
   options?: RequestOptions,
-): Promise<ActionResponse<AuditEntry[]>> {
-  return getJson(
+): Promise<ActionResponse<{ rows: AuditEntry[]; nextSequence: number | null }>> {
+  return getSequenceSiblingList(
     projectPath(projectSlug, `/audit-trail${buildQueryString({ ...filter })}`),
-    AuditEntrySchema.array(),
+    AuditEntrySchema,
     options,
   );
 }

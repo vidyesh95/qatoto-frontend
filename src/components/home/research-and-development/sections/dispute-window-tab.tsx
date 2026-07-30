@@ -1,22 +1,26 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; proposals and
 // disputes arrive as view states from proof-of-effort-page, which read
-// GET …/allocation-proposals and GET …/disputes. The raise / vote / withdraw / resolve
+// GET …/allocation-proposals and GET …/disputes. The proposal list is a client-query island
+// — it pages earlier windows by `?cursor=` — and the raise / vote / withdraw / resolve
 // controls are client islands nested below.
+import AllocationProposalsIsland from "@/components/home/research-and-development/sections/allocation-proposals-island";
 import DisputeActionsIsland from "@/components/home/research-and-development/sections/dispute-actions-island";
-import RaiseDisputeIsland from "@/components/home/research-and-development/sections/raise-dispute-island";
 import RndStatusPanel, {
   RndErrorPanel,
   RndMembersOnlyPanel,
   RndSignInRequiredPanel,
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
-import { formatIsoDate, formatIsoInstant } from "@/lib/rnd/format";
+import { formatIsoInstant } from "@/lib/rnd/format";
 import type {
   AllocationProposal,
   AllocationProposalStatus,
   Dispute,
   DisputeStatus,
 } from "@/lib/rnd/proof-of-effort.schemas";
-import type { MemberScopedListViewState } from "@/lib/rnd/view-state";
+import type {
+  MemberScopedCursorListViewState,
+  MemberScopedListViewState,
+} from "@/lib/rnd/view-state";
 
 const PROPOSAL_STATUS_LABELS: Record<AllocationProposalStatus, string> = {
   open: "Window open",
@@ -61,7 +65,7 @@ export default function DisputeWindowTab({
   projectSlug,
   viewerProjectRole,
 }: {
-  proposalsState: MemberScopedListViewState<AllocationProposal>;
+  proposalsState: MemberScopedCursorListViewState<AllocationProposal>;
   disputesState: MemberScopedListViewState<Dispute>;
   projectSlug: string;
   viewerProjectRole: string | null;
@@ -99,44 +103,16 @@ export default function DisputeWindowTab({
       case "empty":
         return <RndStatusPanel message="No allocations are waiting in a window." />;
       case "ready":
+        // The rows moved into an island so earlier windows are reachable — this tab still
+        // owns the first page, which the server already read.
         return (
-          <ul className="space-y-3">
-            {proposalsState.rows.map((proposal) => (
-              <li key={proposal.id} className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-medium">{proposal.memberName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      For {formatIsoDate(proposal.claimedForDate)} · {proposal.claimSummary}
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${PROPOSAL_STATUS_BADGE_CLASS[proposal.status]}`}
-                  >
-                    {PROPOSAL_STATUS_LABELS[proposal.status]}
-                  </span>
-                </div>
-
-                <p className="mt-2 text-sm">
-                  {proposal.proposedSlices} slices proposed
-                  <span className="block text-xs text-muted-foreground">
-                    exact {proposal.proposedSliceNumerator}
-                    {proposal.escrowedSlices > 0 &&
-                      ` · ${proposal.escrowedSlices} frozen in escrow while this is disputed`}
-                  </span>
-                </p>
-
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Window closes {formatIsoInstant(proposal.windowClosesAt)}
-                  {proposal.settledLedgerEntryId !== null && " · already in the ledger"}
-                </p>
-
-                {proposal.status === "open" && (
-                  <RaiseDisputeIsland projectSlug={projectSlug} proposalId={proposal.id} />
-                )}
-              </li>
-            ))}
-          </ul>
+          <AllocationProposalsIsland
+            projectSlug={projectSlug}
+            statusLabels={PROPOSAL_STATUS_LABELS}
+            statusBadgeClasses={PROPOSAL_STATUS_BADGE_CLASS}
+            initialProposals={proposalsState.rows}
+            initialNextCursor={proposalsState.nextCursor}
+          />
         );
       default: {
         const exhaustiveCheck: never = proposalsState;

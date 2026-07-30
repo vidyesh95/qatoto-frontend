@@ -69,7 +69,12 @@ export default async function BuildLogPage() {
           </div>
         );
       case "ready":
-        return <GlobalDailyLogFeed logs={feedState.rows} />;
+        return (
+          <GlobalDailyLogFeed
+            initialLogs={feedState.rows}
+            initialNextCursor={feedState.nextCursor}
+          />
+        );
       default: {
         const exhaustiveCheck: never = feedState;
         return exhaustiveCheck;

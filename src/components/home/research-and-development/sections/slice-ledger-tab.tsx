@@ -1,7 +1,8 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; the equity
 // snapshot, the ledger page, the open-role projection and the bake record arrive as view
 // states from proof-of-effort-page, which read GET …/proof-of-effort, …/slice-ledger,
-// …/equity/open-role-projection and …/pie-bake.
+// …/equity/open-role-projection and …/pie-bake. The ledger rows are a client-query island —
+// they page the rest of the ledger by `?fromSequence=`.
 import PieBakePanel from "@/components/home/research-and-development/sections/pie-bake-panel";
 import RateLockPanel from "@/components/home/research-and-development/sections/rate-lock-panel";
 import RndStatusPanel, {
@@ -9,6 +10,7 @@ import RndStatusPanel, {
   RndMembersOnlyPanel,
   RndSignInRequiredPanel,
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
+import SliceLedgerRowsIsland from "@/components/home/research-and-development/sections/slice-ledger-rows-island";
 import {
   formatEquityFromBasisPoints,
   formatIsoInstant,
@@ -21,7 +23,11 @@ import type {
   ProofOfEffortSummary,
 } from "@/lib/rnd/proof-of-effort.schemas";
 import type { ProjectTeamMember } from "@/lib/rnd/projects.schemas";
-import type { MemberScopedItemViewState, MemberScopedListViewState } from "@/lib/rnd/view-state";
+import type {
+  MemberScopedItemViewState,
+  MemberScopedListViewState,
+  MemberScopedSequenceListViewState,
+} from "@/lib/rnd/view-state";
 
 const SLICE_SEGMENT_COLORS = ["#00696E", "#1DBDC5", "#4A6363", "#7DA0A2", "#B4D2D4"];
 
@@ -55,7 +61,7 @@ export default function SliceLedgerTab({
   viewerProjectRole,
 }: {
   summaryState: MemberScopedItemViewState<ProofOfEffortSummary>;
-  ledgerState: MemberScopedListViewState<LedgerEntry>;
+  ledgerState: MemberScopedSequenceListViewState<LedgerEntry>;
   projectionState: MemberScopedListViewState<OpenRoleProjection>;
   pieBakeState: MemberScopedItemViewState<PieBake>;
   projectCurrency: string;
@@ -251,53 +257,15 @@ export default function SliceLedgerTab({
       case "empty":
         return <RndStatusPanel message="No slices have been awarded yet." />;
       case "ready":
+        // The rows moved into an island so the rest of the ledger is reachable — this tab
+        // still owns the first page, which the server already read.
         return (
-          <div className="space-y-2">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[42rem] text-sm">
-                <thead className="text-left text-xs text-muted-foreground">
-                  <tr>
-                    <th className="p-2 font-medium">#</th>
-                    <th className="p-2 font-medium">Member</th>
-                    <th className="p-2 font-medium">Kind</th>
-                    <th className="p-2 font-medium">Slices</th>
-                    <th className="p-2 font-medium">Effort / cash</th>
-                    <th className="p-2 font-medium">Occurred</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ledgerState.rows.map((entry) => (
-                    <tr key={entry.id} className="border-t border-[#CAC4D0]/40">
-                      <td className="p-2 tabular-nums">{entry.sequenceNumber}</td>
-                      <td className="p-2">{entry.memberName}</td>
-                      <td className="p-2">
-                        {entry.entryKind === "reversal" ? "Reversal" : "Award"} ·{" "}
-                        {entry.contributionKind === "cash" ? "Cash" : "Time"}
-                      </td>
-                      <td className="p-2 tabular-nums">
-                        {entry.slicesAwarded}
-                        {/* The exact rational, kept beside the rounded integer so the
-                            half-slice is never presented as if it vanished. */}
-                        <span className="block text-xs text-muted-foreground">
-                          exact {entry.sliceNumerator}
-                        </span>
-                      </td>
-                      <td className="p-2">
-                        {entry.effortMinutes !== null && `${entry.effortMinutes} min`}
-                        {entry.cashInCents !== null &&
-                          formatMoneyFromCents(BigInt(entry.cashInCents), projectCurrency)}
-                      </td>
-                      <td className="p-2">{formatIsoInstant(entry.occurredAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              The ledger is append-only. A correction is a reversing entry, never an edit — which is
-              why sequence numbers never have gaps and a deleted row would be detectable.
-            </p>
-          </div>
+          <SliceLedgerRowsIsland
+            projectSlug={projectSlug}
+            projectCurrency={projectCurrency}
+            initialEntries={ledgerState.rows}
+            initialNextSequence={ledgerState.nextSequence}
+          />
         );
       default: {
         const exhaustiveCheck: never = ledgerState;

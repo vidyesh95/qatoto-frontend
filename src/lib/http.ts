@@ -28,6 +28,13 @@ interface ApiEnvelope {
   data?: unknown;
   errors?: Record<string, string[]>;
   pagination?: unknown;
+  /**
+   * Keyset tokens that ride as SIBLINGS of `data` rather than inside it. `unknown`
+   * because the network is untrusted — narrowed by `readSiblingCursor` /
+   * `readSiblingSequence` below, never asserted.
+   */
+  nextCursor?: unknown;
+  nextSequence?: unknown;
 }
 
 function toEnvelope(payload: unknown): ApiEnvelope {
@@ -215,9 +222,16 @@ export async function getPaginated<T>(
 }
 
 /**
- * GET a keyset-paginated list. Unlike the offset shape above, the cursor rides
- * INSIDE `data` — `{ …rows, nextCursor }` — so the caller passes a schema for the
- * whole `data` object rather than for one row.
+ * GET a keyset-paginated list whose cursor rides INSIDE `data` —
+ * `data: { …rows, nextCursor }` — so the caller passes a schema for the whole `data`
+ * object rather than for one row. `GET /daily-logs` (the array is named `logs`) is the
+ * only caller: `GET …/workshop/chat` (`messages`) and `GET /notifications`
+ * (`notifications`) have the same shape but no read in this repo yet — chat arrives as
+ * part of the single composite `…/workshop` read.
+ *
+ * THIS IS ONE OF TWO KEYSET ENVELOPE SHAPES, so check which one a read uses before
+ * reaching for a helper. The other puts the token as a SIBLING of a bare `data` array —
+ * see `getCursorSiblingList` / `getSequenceSiblingList` below.
  *
  * Cursors are opaque plain strings, not base64: `logDate_submittedAtMs_id` for the
  * daily-log feed, `sentAtMs_id` for workshop chat. Never construct or compare one
@@ -230,6 +244,91 @@ export function getCursorPaginated<T>(
   options?: RequestOptions,
 ): Promise<ActionResponse<T>> {
   return getJson(path, pageSchema, options);
+}
+
+/**
+ * Narrows an untrusted sibling cursor to `string | null`.
+ *
+ * Collapses THREE cases to `null` in one place: the key absent (offset-mode responses
+ * omit it), an explicit `null` (end of the list), and any non-string a backend change
+ * could put there. All three mean "there is no next page to ask for", which is the only
+ * question a caller has.
+ */
+function readSiblingCursor(envelope: ApiEnvelope): string | null {
+  return typeof envelope.nextCursor === "string" ? envelope.nextCursor : null;
+}
+
+/** The sequence counterpart. A non-integer is treated as absent, not coerced. */
+function readSiblingSequence(envelope: ApiEnvelope): number | null {
+  return typeof envelope.nextSequence === "number" && Number.isInteger(envelope.nextSequence)
+    ? envelope.nextSequence
+    : null;
+}
+
+/**
+ * GET a keyset list whose token is a SIBLING of a bare `data` array —
+ * `{ data: [...], nextCursor }`.
+ *
+ * The rows deliberately did NOT move under an envelope key when these reads gained a
+ * cursor, because that would have broken every client already parsing `data` as an array.
+ * So the shape is neither `getPaginated`'s nor `getCursorPaginated`'s, and it needs its
+ * own parse: the array comes from `data`, the token from the envelope root.
+ *
+ * Used by `GET …/effort-claims` (`<YYYY-MM-DD>_<id>`) and
+ * `GET …/allocation-proposals` (`<epochMs>_<id>`).
+ *
+ * NEVER SEND `page` AND `cursor` TOGETHER. The backend silently drops `page`, and on the
+ * claims list `pagination` disappears with it — no error, just a missing block.
+ */
+export async function getCursorSiblingList<TRow>(
+  path: string,
+  rowSchema: z.ZodType<TRow>,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: TRow[]; nextCursor: string | null }>> {
+  const envelopeResult = await fetchEnvelope(
+    path,
+    { method: "GET", headers: { Accept: "application/json" } },
+    options,
+  );
+  if (!envelopeResult.success) return envelopeResult;
+
+  const rowsParsed = rowSchema.array().safeParse(envelopeResult.data.data);
+  if (!rowsParsed.success) return { success: false, error: PARSE_ERROR };
+
+  return {
+    success: true,
+    data: { rows: rowsParsed.data, nextCursor: readSiblingCursor(envelopeResult.data) },
+  };
+}
+
+/**
+ * The same sibling shape, but the token is a SEQUENCE NUMBER —
+ * `{ data: [...], nextSequence }` — echoed back as `?fromSequence=`.
+ *
+ * Used by `GET …/slice-ledger` and `GET …/audit-trail`. Both are append-only and ordered
+ * by `sequenceNumber` ASC, which is gapless and monotonic by construction and therefore a
+ * better cursor than any timestamp: two rows can share a millisecond, and on a slice
+ * ledger a skipped row is somebody's equity.
+ */
+export async function getSequenceSiblingList<TRow>(
+  path: string,
+  rowSchema: z.ZodType<TRow>,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: TRow[]; nextSequence: number | null }>> {
+  const envelopeResult = await fetchEnvelope(
+    path,
+    { method: "GET", headers: { Accept: "application/json" } },
+    options,
+  );
+  if (!envelopeResult.success) return envelopeResult;
+
+  const rowsParsed = rowSchema.array().safeParse(envelopeResult.data.data);
+  if (!rowsParsed.success) return { success: false, error: PARSE_ERROR };
+
+  return {
+    success: true,
+    data: { rows: rowsParsed.data, nextSequence: readSiblingSequence(envelopeResult.data) },
+  };
 }
 
 export interface PaginationMeta {

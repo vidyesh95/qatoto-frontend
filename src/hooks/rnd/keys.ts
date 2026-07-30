@@ -12,10 +12,15 @@
 // clears the domain and nothing else.
 
 /** Filters that change a list's identity and therefore its cache entry. */
+/**
+ * NO PAGE OR CURSOR HERE. These lists are keyset and accumulate their pages under ONE key
+ * through `useInfiniteQuery` — putting the page token in the key would give every page its
+ * own cache entry and defeat the accumulation. Only the SERVER FILTERS belong in a key,
+ * because changing one of those is a different list.
+ */
 export interface ClaimListFilter {
   readonly status?: string | undefined;
   readonly memberUserId?: string | undefined;
-  readonly page?: number | undefined;
 }
 
 export const rndKeys = {
@@ -38,10 +43,9 @@ export const rndKeys = {
   proofOfEffort: (projectSlug: string) => ["rnd", "poe", projectSlug] as const,
   equity: (projectSlug: string) => ["rnd", "poe", projectSlug, "equity"] as const,
   equitySnapshots: (projectSlug: string) => ["rnd", "poe", projectSlug, "snapshots"] as const,
-  sliceLedger: (projectSlug: string, page: number) =>
-    ["rnd", "poe", projectSlug, "ledger", page] as const,
+  sliceLedger: (projectSlug: string) => ["rnd", "poe", projectSlug, "ledger"] as const,
   claims: (projectSlug: string, filter: ClaimListFilter) =>
-    ["rnd", "poe", projectSlug, "claims", filter.status, filter.memberUserId, filter.page] as const,
+    ["rnd", "poe", projectSlug, "claims", filter.status, filter.memberUserId] as const,
   claim: (projectSlug: string, claimId: string) =>
     ["rnd", "poe", projectSlug, "claim", claimId] as const,
   memberRate: (projectSlug: string, memberUserId: string) =>
@@ -56,15 +60,14 @@ export const rndKeys = {
   integrations: (projectSlug: string) => ["rnd", "poe", projectSlug, "integrations"] as const,
   optimizationSuggestions: (projectSlug: string) =>
     ["rnd", "poe", projectSlug, "optimization"] as const,
-  auditTrail: (projectSlug: string, fromSequence: number | undefined) =>
-    ["rnd", "poe", projectSlug, "audit", fromSequence] as const,
+  auditTrail: (projectSlug: string) => ["rnd", "poe", projectSlug, "audit"] as const,
   pieBake: (projectSlug: string) => ["rnd", "poe", projectSlug, "pie-bake"] as const,
 
   // --- Compensation ----------------------------------------------------------
   compensationAgreements: (projectSlug: string, memberId: string | undefined) =>
     ["rnd", "compensation", projectSlug, "agreements", memberId] as const,
-  compensationPeriods: (projectSlug: string, status: string | undefined, page: number) =>
-    ["rnd", "compensation", projectSlug, "periods", status, page] as const,
+  compensationPeriods: (projectSlug: string, status: string | undefined) =>
+    ["rnd", "compensation", projectSlug, "periods", status] as const,
   compensationPeriod: (projectSlug: string, periodId: string) =>
     ["rnd", "compensation", projectSlug, "period", periodId] as const,
   projectCompensation: (projectSlug: string) =>
@@ -82,6 +85,12 @@ export const rndKeys = {
   workshopChat: (projectSlug: string) => ["rnd", "workshop", projectSlug, "chat"] as const,
   projectDailyLogs: (projectSlug: string) =>
     ["rnd", "workshop", projectSlug, "daily-logs"] as const,
+  /**
+   * The CROSS-PROJECT feed. No slug in the key, deliberately: the WHERE clause is
+   * `projectId IN (caller's active memberships)`, so the read is scoped by the session
+   * rather than by anything the key could name.
+   */
+  dailyLogFeed: () => ["rnd", "daily-log-feed"] as const,
 
   // --- Discovery -------------------------------------------------------------
   myTalentProfile: () => ["rnd", "talent", "me"] as const,

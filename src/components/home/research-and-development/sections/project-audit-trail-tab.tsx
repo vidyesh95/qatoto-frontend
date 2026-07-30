@@ -1,6 +1,8 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; the chain
 // page and the verification summary arrive as view states from proof-of-effort-page, which
-// read GET …/audit-trail and GET …/audit-trail/verify.
+// read GET …/audit-trail and GET …/audit-trail/verify. The entry list itself is a
+// client-query island — it pages the rest of the chain by `?fromSequence=`.
+import AuditTrailEntriesIsland from "@/components/home/research-and-development/sections/audit-trail-entries-island";
 import RndStatusPanel, {
   RndErrorPanel,
   RndMembersOnlyPanel,
@@ -8,7 +10,10 @@ import RndStatusPanel, {
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import { formatIsoInstant, shortenHashForDisplay } from "@/lib/rnd/format";
 import type { AuditEntry, ChainVerification } from "@/lib/rnd/proof-of-effort.schemas";
-import type { MemberScopedItemViewState, MemberScopedListViewState } from "@/lib/rnd/view-state";
+import type {
+  MemberScopedItemViewState,
+  MemberScopedSequenceListViewState,
+} from "@/lib/rnd/view-state";
 
 /**
  * The append-only audit chain, and the verifier's report on it.
@@ -30,9 +35,11 @@ import type { MemberScopedItemViewState, MemberScopedListViewState } from "@/lib
 export default function ProjectAuditTrailTab({
   entriesState,
   chainVerificationState,
+  projectSlug,
 }: {
-  entriesState: MemberScopedListViewState<AuditEntry>;
+  entriesState: MemberScopedSequenceListViewState<AuditEntry>;
   chainVerificationState: MemberScopedItemViewState<ChainVerification>;
+  projectSlug: string;
 }) {
   return (
     <div className="space-y-6 px-4 lg:px-6">
@@ -109,31 +116,14 @@ export default function ProjectAuditTrailTab({
       case "empty":
         return <RndStatusPanel message="Nothing has been recorded yet." />;
       case "ready":
+        // The rows moved into an island so the rest of the chain is reachable — this tab
+        // still owns the first page, which the server already read.
         return (
-          <ol className="space-y-2">
-            {entriesState.rows.map((entry) => (
-              <li key={entry.id} className="rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="font-medium">
-                    #{entry.sequenceNumber} · {entry.actionLabel}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatIsoInstant(entry.occurredAt)}
-                  </p>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {entry.actorDisplayName ?? entry.actorNameSnapshot} ({entry.actorRoleSnapshot}) →{" "}
-                  {entry.targetLabel}
-                </p>
-                {entry.detailNote.length > 0 && <p className="mt-1 text-xs">{entry.detailNote}</p>}
-                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-                  {shortenHashForDisplay(entry.entryHash)}
-                  {entry.previousEntryHash !== null &&
-                    ` ← ${shortenHashForDisplay(entry.previousEntryHash)}`}
-                </p>
-              </li>
-            ))}
-          </ol>
+          <AuditTrailEntriesIsland
+            projectSlug={projectSlug}
+            initialEntries={entriesState.rows}
+            initialNextSequence={entriesState.nextSequence}
+          />
         );
       default: {
         const exhaustiveCheck: never = entriesState;

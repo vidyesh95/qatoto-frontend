@@ -1,8 +1,9 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; the claim
 // index and the caller's receipts arrive as view states from proof-of-effort-page, which
-// read GET …/effort-claims and GET …/physical-receipts. The per-claim disclosure below is
-// a client island of its own.
-import ClaimDetailDisclosure from "@/components/home/research-and-development/sections/claim-detail-disclosure";
+// read GET …/effort-claims and GET …/physical-receipts. The claim index is a client-query
+// island — it pages the rest of the index by `?cursor=` — and the per-claim disclosure
+// inside it is another.
+import ClaimIndexIsland from "@/components/home/research-and-development/sections/claim-index-island";
 import ClaimSubmitIsland from "@/components/home/research-and-development/sections/claim-submit-island";
 import FilterChipRow, {
   type FilterChipOption,
@@ -13,13 +14,16 @@ import RndStatusPanel, {
   RndSignInRequiredPanel,
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import { buildFilterHref, type RawSearchParams } from "@/lib/rnd/filter-href";
-import { formatIsoDate, formatIsoInstant, formatMoneyFromCents } from "@/lib/rnd/format";
+import { formatIsoInstant } from "@/lib/rnd/format";
 import type {
   ClaimSummary,
   EffortVerificationStatus,
   PhysicalReceipt,
 } from "@/lib/rnd/proof-of-effort.schemas";
-import type { MemberScopedListViewState } from "@/lib/rnd/view-state";
+import type {
+  MemberScopedCursorListViewState,
+  MemberScopedListViewState,
+} from "@/lib/rnd/view-state";
 
 const VERIFICATION_STATUS_LABELS: Record<EffortVerificationStatus, string> = {
   not_run: "Not run",
@@ -77,7 +81,7 @@ export default function VerificationPipelineTab({
   searchParams,
   selectedClaimStatus,
 }: {
-  claimsState: MemberScopedListViewState<ClaimSummary>;
+  claimsState: MemberScopedCursorListViewState<ClaimSummary>;
   receiptsState: MemberScopedListViewState<PhysicalReceipt>;
   projectSlug: string;
   projectCurrency: string;
@@ -145,51 +149,20 @@ export default function VerificationPipelineTab({
           />
         );
       case "ready":
+        // The rows moved into an island so the rest of the index is reachable — this tab
+        // still owns the first page, which the server already read, and still owns the
+        // status chips, which are URL state rather than client state.
         return (
-          <ul className="space-y-3">
-            {claimsState.rows.map((claim) => (
-              <li key={claim.id} className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-medium">{claim.memberName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      For {formatIsoDate(claim.claimedForDate)} ·{" "}
-                      {claim.sourceKind === "daily_log" ? "From a daily log" : "From receipts"}
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${VERIFICATION_STATUS_BADGE_CLASS[claim.verificationStatus]}`}
-                  >
-                    {VERIFICATION_STATUS_LABELS[claim.verificationStatus]}
-                  </span>
-                </div>
-
-                <p className="mt-2 text-sm">{claim.claimSummary}</p>
-
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {/* Null is not zero. A claim with no grounded minutes has not been
-                      graded; one with 0 was graded and found nothing. */}
-                  {claim.groundedMinutes === null
-                    ? "No grounded minutes yet"
-                    : `${claim.groundedMinutes} grounded minutes`}
-                  {claim.overriddenMinutes !== null &&
-                    ` · overridden to ${claim.overriddenMinutes} after review`}
-                  {claim.groundedCashInCents !== null &&
-                    ` · ${formatMoneyFromCents(BigInt(claim.groundedCashInCents), projectCurrency)} cash`}
-                  {claim.verdictReachedAt !== null &&
-                    ` · verdict ${formatIsoInstant(claim.verdictReachedAt)}`}
-                </p>
-
-                <ClaimDetailDisclosure
-                  projectSlug={projectSlug}
-                  claimId={claim.id}
-                  initialVerificationStatus={claim.verificationStatus}
-                  projectCurrency={projectCurrency}
-                  viewerProjectRole={viewerProjectRole}
-                />
-              </li>
-            ))}
-          </ul>
+          <ClaimIndexIsland
+            projectSlug={projectSlug}
+            projectCurrency={projectCurrency}
+            viewerProjectRole={viewerProjectRole}
+            selectedClaimStatus={selectedClaimStatus}
+            statusLabels={VERIFICATION_STATUS_LABELS}
+            statusBadgeClasses={VERIFICATION_STATUS_BADGE_CLASS}
+            initialClaims={claimsState.rows}
+            initialNextCursor={claimsState.nextCursor}
+          />
         );
       default: {
         const exhaustiveCheck: never = claimsState;

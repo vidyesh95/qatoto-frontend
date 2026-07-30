@@ -67,7 +67,8 @@ export type MemberScopedItemViewState<TItem> =
   | { status: "ready"; item: TItem };
 
 /**
- * A keyset page. `GET /daily-logs` is the repo's first consumer.
+ * A keyset page on a read that is NOT project-scoped — `GET /daily-logs`, which is
+ * root-mounted behind `requireAuth` and answers `401`, never a membership `404`.
  *
  * `nextCursor` is an opaque server string — echo it back verbatim or the backend
  * answers `422 CURSOR_MALFORMED`. Never construct or compare one client-side.
@@ -76,6 +77,38 @@ export type CursorListViewState<TRow> =
   | { status: "error"; message: string; isSignInRequired: boolean }
   | { status: "empty" }
   | { status: "ready"; rows: TRow[]; nextCursor: string | null };
+
+/**
+ * The keyset counterpart of `MemberScopedListViewState` — `…/effort-claims` and
+ * `…/allocation-proposals`.
+ *
+ * The `restricted` variant is why this cannot just be `CursorListViewState`: these are
+ * child reads of a project whose detail read already succeeded, so their `404` can only
+ * mean "not a member" and saying so leaks nothing. See `MemberScopedListViewState` for the
+ * full argument, which applies here unchanged.
+ */
+export type MemberScopedCursorListViewState<TRow> =
+  | { status: "error"; message: string }
+  | { status: "restricted"; isSignInRequired: boolean }
+  | { status: "empty" }
+  | { status: "ready"; rows: TRow[]; nextCursor: string | null };
+
+/**
+ * The same, but the token is a SEQUENCE NUMBER rather than an opaque cursor —
+ * `…/slice-ledger` and `…/audit-trail`, both append-only and both ordered
+ * `sequenceNumber` ASC.
+ *
+ * Kept separate from the cursor variant rather than generalized over the token type,
+ * because the two tokens are not interchangeable: this one is echoed back as
+ * `?fromSequence=` and is a number the rows themselves carry, while a cursor is an opaque
+ * string the client must never construct. Collapsing them would invite passing one where
+ * the other belongs.
+ */
+export type MemberScopedSequenceListViewState<TRow> =
+  | { status: "error"; message: string }
+  | { status: "restricted"; isSignInRequired: boolean }
+  | { status: "empty" }
+  | { status: "ready"; rows: TRow[]; nextSequence: number | null };
 
 /**
  * A write the server ACCEPTED but has not decided yet.
@@ -190,4 +223,38 @@ export function toCursorListViewState<TPage, TRow>(
   const { rows, nextCursor } = selectRows(result.data);
   if (rows.length === 0) return { status: "empty" };
   return { status: "ready", rows, nextCursor };
+}
+
+/**
+ * The member-scoped keyset lifter — `…/effort-claims`, `…/allocation-proposals`.
+ *
+ * No `selectRows` here, unlike `toCursorListViewState`: these reads put a BARE ARRAY in
+ * `data` with the token as a sibling, so `getCursorSiblingList` has already normalized
+ * them to `{ rows, nextCursor }` and there is no domain-specific array key left to name.
+ */
+export function toMemberScopedCursorListViewState<TRow>(
+  result: ActionResponse<{ rows: TRow[]; nextCursor: string | null }>,
+): MemberScopedCursorListViewState<TRow> {
+  if (!result.success) {
+    if (isMembershipRefusal(result.error)) {
+      return { status: "restricted", isSignInRequired: isUnauthorized(result.error) };
+    }
+    return { status: "error", message: result.error.message };
+  }
+  if (result.data.rows.length === 0) return { status: "empty" };
+  return { status: "ready", rows: result.data.rows, nextCursor: result.data.nextCursor };
+}
+
+/** The sequence-token counterpart, for `…/slice-ledger` and `…/audit-trail`. */
+export function toMemberScopedSequenceListViewState<TRow>(
+  result: ActionResponse<{ rows: TRow[]; nextSequence: number | null }>,
+): MemberScopedSequenceListViewState<TRow> {
+  if (!result.success) {
+    if (isMembershipRefusal(result.error)) {
+      return { status: "restricted", isSignInRequired: isUnauthorized(result.error) };
+    }
+    return { status: "error", message: result.error.message };
+  }
+  if (result.data.rows.length === 0) return { status: "empty" };
+  return { status: "ready", rows: result.data.rows, nextSequence: result.data.nextSequence };
 }

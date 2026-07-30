@@ -370,6 +370,12 @@ export interface ListClaimsFilter {
   readonly memberUserId?: string;
   readonly page?: number;
   readonly limit?: number;
+  /**
+   * Keyset mode — `<YYYY-MM-DD>_<id>`, echoed back verbatim from the previous page's
+   * `nextCursor`. NEVER send this together with `page`: the backend drops `page` silently
+   * and the `pagination` block disappears with it.
+   */
+  readonly cursor?: string;
 }
 
 // --- Allocation proposals and disputes ----------------------------------------

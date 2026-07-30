@@ -1,10 +1,19 @@
-// TRANSPORT: props-only — presentational server component. Fetches nothing; rows
-// arrive as props from a parent that read GET /daily-logs.
+"use client";
+
+// TRANSPORT: client-query — seeded with the first page build-log-page already read on the
+// server, then advances GET /daily-logs by its three-column cursor through `useKeysetList`.
 import Link from "next/link";
 
 import DailyLogCard from "@/components/home/research-and-development/cards/daily-log-card";
+import LoadMoreControl from "@/components/home/research-and-development/sections/load-more-control";
+import { rndKeys } from "@/hooks/rnd/keys";
+import { useKeysetList } from "@/hooks/rnd/keyset-list";
+import { listDailyLogFeed } from "@/lib/rnd/daily-logs.api";
 import { formatIsoDate } from "@/lib/rnd/format";
 import type { DailyLogFeedRow } from "@/lib/rnd/daily-logs.schemas";
+
+/** Matches `DAILY_LOG_FEED_PAGE_LIMIT` on the server page, so pages stay a uniform size. */
+const DAILY_LOG_FEED_PAGE_LIMIT = 30;
 
 /**
  * Every project the caller belongs to, merged into one date-grouped feed.
@@ -30,8 +39,41 @@ import type { DailyLogFeedRow } from "@/lib/rnd/daily-logs.schemas";
  * DESC)` and keyset-paginates on exactly that tuple; re-sorting a page here would
  * shuffle rows out of the order the cursor assumes. Grouping by `logDate` is a display
  * grouping over an already-ordered page, not a reordering.
+ *
+ * THE CURSOR IS NOW USED. The page had been computing `nextCursor` and dropping it, which
+ * capped a merged feed over every project the caller belongs to at one page — the exact
+ * unbounded read the keyset cursor exists to make pageable. Appended pages keep server
+ * order, so the date grouping above continues to hold across a page boundary: a date split
+ * across two pages lands in one group because the first appearance still takes its place.
  */
-export default function GlobalDailyLogFeed({ logs }: { logs: DailyLogFeedRow[] }) {
+export default function GlobalDailyLogFeed({
+  initialLogs,
+  initialNextCursor,
+}: {
+  initialLogs: DailyLogFeedRow[];
+  initialNextCursor: string | null;
+}) {
+  const feed = useKeysetList<DailyLogFeedRow>({
+    queryKey: rndKeys.dailyLogFeed(),
+    initialPage: { rows: initialLogs, nextToken: initialNextCursor },
+    fetchPage: (token) =>
+      listDailyLogFeed({
+        limit: DAILY_LOG_FEED_PAGE_LIMIT,
+        ...(typeof token === "string" ? { cursor: token } : {}),
+        // This read names its array `logs` and puts the cursor INSIDE `data`, unlike the
+        // sibling-cursor reads on Proof of Effort — hence the mapping here rather than
+        // `toCursorKeysetPage`.
+      }).then((result) =>
+        result.success
+          ? {
+              success: true as const,
+              data: { rows: result.data.logs, nextToken: result.data.nextCursor },
+            }
+          : result,
+      ),
+  });
+
+  const logs = feed.rows;
   // Preserves server order: the first time a date appears, it takes its place.
   const orderedLogDates = [...new Set(logs.map((log) => log.logDate))];
 
@@ -68,6 +110,13 @@ export default function GlobalDailyLogFeed({ logs }: { logs: DailyLogFeedRow[] }
           </div>
         ))}
       </div>
+      <LoadMoreControl
+        hasNextPage={feed.hasNextPage}
+        isFetchingNextPage={feed.isFetchingNextPage}
+        errorMessage={feed.loadMoreErrorMessage}
+        onLoadNextPage={feed.loadNextPage}
+        label="Load earlier logs"
+      />
     </section>
   );
 }

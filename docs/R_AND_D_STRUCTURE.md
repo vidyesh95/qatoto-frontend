@@ -18,9 +18,9 @@ pipeline story; deep features live on sub-routes.
 - [CLAUDE.md](CLAUDE.md) — thin-client invariant, naming rules, current phase.
 
 > **Phase note: integration is finished except for Project Immortal.** Every route on this surface
-> reads the Express backend, **every shipped write has a control on a page**, and the five mock
-> sheets that posted nowhere are gone or wired. §18 is the phase order; §19 is the per-file
-> transport map.
+> reads the Express backend, **every shipped write has a control on a page**, **every long list pages
+> past its first screen**, and the five mock sheets that posted nowhere are gone or wired. §18 is the
+> phase order; §19 is the per-file transport map.
 >
 > | Phase                                                                                                              | State                                    |
 > | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
@@ -29,6 +29,7 @@ pipeline story; deep features live on sub-routes.
 > | **2 · projects & detail** · **3 · workshop & daily logs**                                                          | ✅ done                                  |
 > | **4 · proof of effort** — ledger, verification, disputes, integrations, audit chain, pie bake                      | ✅ done                                  |
 > | **5 · compensation & governance** — agreements, statements, payments, `/governance/summary`                        | ✅ done                                  |
+> | **K · keyset paging** — six lists made pageable; the rest of each ledger, feed and index is reachable              | ✅ done                                  |
 > | **6 · Project Immortal**                                                                                           | 🚫 **blocked** — no backend exists (§18) |
 >
 > **The two compliance items are now built.** The dispute/override screen (GDPR Art. 22
@@ -69,17 +70,17 @@ Everything marked ✅ is built — those rows are an inventory, not a plan. **Th
 | Piece                    | Location                                                                                          | State                                                                                                                                                                                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Routes                   | [src/app/(home)/research-and-development/](<src/app/(home)/research-and-development/>)            | ✅ **14 page routes** built, each with a sibling `loading.tsx` — the ten originals plus the four stage routes (§4c). No `layout.tsx` / `error.tsx` in the subtree                                                                                          |
-| Components               | [src/components/home/research-and-development/](src/components/home/research-and-development/)    | ✅ **120 files** — 14 page bodies, 15 cards, 3 rails, sections, sheets, wizard. **32 client islands**; eight have stopped being islands across phases 1–3, as their filtering moved to the URL or their writes were removed (§19)                          |
+| Components               | [src/components/home/research-and-development/](src/components/home/research-and-development/)    | ✅ **137 files** — 14 page bodies, 15 cards, 3 rails, sections, sheets, wizard. **34 client islands**; six arrived with keyset paging (§19), eight earlier ones stopped being islands (§19)                                                                |
 | Types                    | [src/types/research-and-development/](src/types/research-and-development/)                        | ✅ 7 files — **the shapes for surfaces still on mocks**. Wired surfaces take their types from `z.infer` over the response schemas in `src/lib/rnd/*.schemas.ts`, so this tree shrinks each phase (§10)                                                     |
 | Types re-export composer | [src/types/research-and-development.ts](src/types/research-and-development.ts)                    | ✅ kept deliberately — ~55 importers use the flat specifier and must keep working                                                                                                                                                                          |
-| Mocks                    | [src/mocks/research-and-development/](src/mocks/research-and-development/)                        | ◐ **41 leaf files** behind 5 composers — phase 1 deleted seven (§1.6 of the plan: insights, problem reports, trending signals, talent, suppliers + launch readiness, investor confidence, and the stage-label map, which moved to `src/lib/rnd/labels.ts`) |
+| Mocks                    | [src/mocks/research-and-development/](src/mocks/research-and-development/)                        | ◐ **16 leaf files** behind 2 composers — phase 1 deleted seven (§1.6 of the plan: insights, problem reports, trending signals, talent, suppliers + launch readiness, investor confidence, and the stage-label map, which moved to `src/lib/rnd/labels.ts`) |
 | Proof-of-Effort surface  | [proof-of-effort-page.tsx](src/components/home/research-and-development/proof-of-effort-page.tsx) | ✅ **its own route with 6 tabs** (§5b) — Integrations joined the original five                                                                                                                                                                             |
 | Project Immortal         | [page.tsx](<src/app/(home)/research-and-development/projects/project-immortal/page.tsx>)          | ✅ see §4b; the old `/project-immortal` route is a 6-line `redirect()` shim                                                                                                                                                                                |
 | Sidebar nav              | [sidebar.tsx](src/components/home/layout/sidebar.tsx)                                             | ✅ top-level "R&D" (`science`) + a 5-item **Research and Development** section (§15 Q8)                                                                                                                                                                    |
 | Mobile bottom nav        | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36)                  | ✅ single R&D tab; sub-path matching works, no sub-links                                                                                                                                                                                                   |
 | Navbar breadcrumb        | [navbar.tsx](src/components/home/layout/navbar.tsx)                                               | ✅ `RESEARCH_AND_DEVELOPMENT_SUBPAGES` (9 entries — 5 originals + the 4 stage routes) + a `prettifySlug` fallthrough. The stage entries are explicit because the fallthrough renders "Build log", not "Build & Daily Logs"                                 |
 | Network layer            | [src/lib/rnd/](src/lib/rnd/) + [src/lib/server-http.ts](src/lib/server-http.ts)                   | ✅ **built** (§18 phase 0) — five schema/api module pairs plus `format`, `discovery-format`, `map-projection`, `filter-href`, `view-state`, `labels`. `QueryProvider` now mounted in `(home)/layout.tsx`                                                   |
-| Transport labelling      | every component's first line                                                                      | ✅ **120/120 labelled** over a closed 4-value set (§19): 10 `server-fetch`, 3 `mock`, 107 `props-only`. Still no `client-query` — phase 3 was expected to need the first one and did not (§19)                                                             |
+| Transport labelling      | every component's first line                                                                      | ✅ **137/137 labelled** over a closed 4-value set (§19): 15 `server-fetch`, 34 `client-query`, 87 `props-only`, 1 `mock`. Recount with the grep in §19 rather than trusting this number                                                                    |
 
 Pattern donors elsewhere in the repo:
 
@@ -710,7 +711,7 @@ that layer slots in on top at integration without moving anything.
 composer** (`export * from "./research-and-development/shared"`, …), kept so ~55 existing importers
 of the flat specifier keep working. New code may import either.
 
-**Mocks** — four top-level composers over a leaf tree:
+**Mocks** — two top-level composers over a leaf tree:
 
 | Composer                                                      | Exports                                                                                                                                                                                                            |
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -1020,10 +1021,13 @@ exists to catch, pointed the other way:
 | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ~~`GET /research-projects/:slug/disputes` (§13, §11e)~~              | ~~**No such route.**~~ **CLOSED by backend §11j.2.** `GET …/disputes` and `GET …/disputes/:disputeId` both ship. The dispute UI is the GDPR Art. 22 / AI Act Art. 14 path and is now blocked on the FRONTEND only |
 | ~~`GET /research-projects/:slug/effort-claims` as a list (§13)~~     | ~~**Detail only.**~~ **CLOSED by backend §11j.2.** The list ships alongside `GET …/effort-claims/:claimId`                                                                                                        |
-| A single paginated envelope                                          | **Three shapes.** Offset is `data[]` plus a `pagination` SIBLING; keyset is `{ logs \| messages, nextCursor }` INSIDE `data`; most R&D reads are bare arrays with neither                                         |
+| A single paginated envelope                                          | **Five shapes**, and which one a read uses is not guessable from its name — see the table under "Five envelope shapes" below                                                                                      |
 | `earnedAsLabel` on advertised compensation                           | **`earnedAsPolicy`**, an enum. Server prose was replaced by a key three clients localize themselves                                                                                                               |
 | `GET /research-categories` mirrors `/discovery/categories`'s `label` | Both return **`displayLabel` + `pinIconKey`** — it is literally the same controller                                                                                                                               |
 | `GET …/daily-logs` accepts the usual list params                     | **`limit` only** on the project-scoped read. No page, no cursor, no `?status=`, no author facet                                                                                                                   |
+| `GET …/allocation-proposals` takes `?status=&page=` (backend :2892)  | It also takes **`?cursor=&limit=`** (migration 0027). The §9 matrix was never updated when §11l.2's prose was                                                                                                     |
+| `GET …/slice-ledger` takes `?page=&limit=` (backend :2882)           | It also takes **`?fromSequence=`**, which WINS over `page`. Same un-updated matrix                                                                                                                                |
+| `GET …/compensation-periods` takes `?status=&page=` (backend :3017)  | **Actively wrong.** The schema is `.strict()` with NO `page` key, so `?page=2` is a **422**. The param is `beforeSequenceNumber`, named correctly elsewhere in that doc                                           |
 | A non-member always gets `404`                                       | Signed OUT is **`401`** on `…/workshop` and `/daily-logs`; a signed-in non-member gets `404`. Both must render, and they render differently                                                                       |
 
 The last row is what phases 2–3 were built around. `MemberScopedListViewState` maps `401` and `404`
@@ -1031,6 +1035,77 @@ to the same `restricted` variant but keeps `isSignInRequired` on it, so a strang
 prompt and a signed-in non-member gets "this is the team's". Neither reveals whether the child
 resource exists — and the exemption from the never-explain-a-404 rule is safe **only** because the
 public detail read has already resolved the project (see `view-state.ts`).
+
+#### Five envelope shapes
+
+There is no shared list envelope on this surface and there is no naming convention that tells you
+which shape a read uses. **Check the route before picking a transport helper** — the shapes are not
+interchangeable, and three of the five put their paging token in a different place.
+
+| Shape                                                                           | Reads                                                                      | Helper                   |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------ |
+| Bare array in `data`                                                            | Most R&D reads — `/funding/deals`, `…/disputes`, `…/compensation-periods`  | `getJson` + `.array()`   |
+| `data[]` + a `pagination` SIBLING                                               | `/research-projects`, `/suppliers`, `/discovery/*` — the nine offset lists | `getPaginated`           |
+| `data: { logs \| messages \| notifications, nextCursor }` — token INSIDE `data` | `/daily-logs` — the only one of these three read here                      | `getCursorPaginated`     |
+| `data[]` + a `nextSequence` SIBLING                                             | `…/slice-ledger`, `…/audit-trail`                                          | `getSequenceSiblingList` |
+| `data[]` + a `nextCursor` SIBLING                                               | `…/effort-claims`, `…/allocation-proposals` (backend migration 0027)       | `getCursorSiblingList`   |
+
+The last two exist because **the rows deliberately did not move under an envelope key** when those
+reads gained a token — that would have broken every client already parsing `data` as an array. So a
+sibling token is the compatible shape, not an inconsistency, and it is why `getCursorPaginated`
+cannot serve them: it reads `data` only.
+
+`…/compensation-periods` is the one keyset read with **no server token at all**. It is a bare array,
+and the backend intends the client to echo the last row's `sequenceNumber` back as
+`?beforeSequenceNumber=`, which it filters with a strict `<`. That is safe in a way constructing a
+cursor is not — a sequence number is a plain unique integer the row already carries, with nothing to
+encode and no precision to lose. The cost is that "is there another page?" has to be inferred from a
+FULL PAGE, so an exactly-full final page costs one extra request that returns nothing.
+
+`…/effort-claims` is the one read whose shape **depends on the request**: send a `cursor` and it
+answers keyset, dropping `pagination` rather than reporting a total it deliberately did not count;
+send none and it answers offset with `pagination`. `nextCursor` comes back either way, which is what
+lets a first request — which has no cursor by definition — enter keyset mode at all.
+
+> **That last sentence is a BACKEND FIX, not a contract we found.** As migration 0027 shipped it,
+> `hasMore` was gated on `isKeyset` in `effort-claims.service.ts`, `slice-allocation.service.ts` and
+> `slice-ledger.service.ts` — so a cursor-less first request always got `null` and there was no
+> `?paging=keyset` opt-in either. Chicken and egg: you could not obtain the token you had to send.
+> The keyset-ONLY reads in the same codebase never had that gate (`daily-logs.service.ts`,
+> `notifications.service.ts`, `project-audit.service.ts`), which is exactly why the daily-log feed
+> could page and these three could not — one bug in three places, and `slice-ledger` had carried it
+> since before 0027. Ungating it also gave offset mode a truthful `nextCursor` alongside its
+> `pagination`, which is coherent rather than contradictory: offset mode runs the `COUNT`, so both
+> fields are honest at once. **Do not "fix" this back.**
+
+#### What changed on the backend that this frontend cannot see
+
+Recorded so nobody re-derives it. Backend §11l.2 and §11l.4 closed four items with **no wire-visible
+effect on this repo** — no route, query param or response field was removed:
+
+- **Rate-limit buckets are shared through Postgres** (migration 0028). The `429` envelope is
+  unchanged. What actually changed is that the buckets no longer reset on deploy, which had been
+  handing a fresh OTP and credential-stuffing budget to anyone watching.
+- **Per-route JSON body caps now work** (§11l.4). They had never been in effect — a global
+  `express.json({ limit: "10kb" })` and three prefix mounts voided all 77 per-route parsers, so six
+  route groups were rejecting bodies their own schemas accept. Caps are now DERIVED from each route's
+  own Zod worst case, which is why nothing this frontend can legitimately send can `413`: a body that
+  trips a cap is one Zod would have rejected anyway. A `413` arrives in the normal `ApiResponse`
+  envelope.
+- **The derived OpenAPI document now carries request bodies** for all 71 R&D routes that take one.
+- **`window_closes_at` moved to `timestamp(3)`** (migration 0027). Invisible on the wire — the
+  frontend types `windowClosesAt` as `z.string()` and `JSON.stringify` already emitted exactly three
+  fractional digits. What improved is that the stored value and the wire value now agree, so a
+  countdown can no longer read the window as closing a fraction of a millisecond early.
+
+One item is **still open on the backend**: Better Auth's own rate limiter remains per-process
+(`src/lib/auth.ts`), because `drizzleAdapter` is built without a `schema` and a missing `rateLimit`
+model would throw on the first Better Auth request — a login-path outage rather than a boot failure.
+
+**One backend change IS observable here, and it is not a removal.** `…/allocation-proposals` now
+tie-breaks `id DESC` instead of `id ASC`, so proposals sharing a `windowClosesAt` arrive in the
+opposite relative order. The mixed directions were the reason no btree could serve that `ORDER BY`,
+so every page had been sorting every proposal in the project and discarding the offset.
 
 **These findings had a home on the backend side:
 [R_AND_D_BACKEND_STRUCTURE.md](R_AND_D_BACKEND_STRUCTURE.md) §11j**, which enumerated every R&D
@@ -1086,8 +1161,27 @@ service view interfaces, never §11:
 
 **Client-side rules the contract forces — all now implemented:**
 
-- **Keyset pagination.** `…/compensation-periods` uses `beforeSequenceNumber`; `/daily-logs` uses the
-  three-column log cursor. The slice ledger and audit trail page by sequence number.
+- **Keyset pagination, and it is now WIRED rather than merely available.** Six lists page:
+  `/daily-logs` (three-column log cursor), `…/effort-claims` (`<YYYY-MM-DD>_<id>`),
+  `…/allocation-proposals` (`<epochMs>_<id>`), `…/slice-ledger` and `…/audit-trail`
+  (`?fromSequence=`), and `…/compensation-periods` (`?beforeSequenceNumber=`). Each is a
+  `client-query` island seeded with the page its server component already read, accumulating through
+  `useKeysetList` (`src/hooks/rnd/keyset-list.ts`) and advancing via `LoadMoreControl`. Four rules
+  hold on every one of them:
+    - **A cursor is ECHOED, NEVER BUILT.** `src/lib/http.ts` says so and it is not stylistic: the claim
+      cursor carries a calendar date the backend keeps as a string end to end precisely so it never
+      passes through a `Date`, and the proposal cursor's epoch half depends on a column precision the
+      backend owns — `window_closes_at` was microseconds until backend migration 0027 moved it to
+      `timestamp(3)`. A cursor coarser than its column steps over rows it can neither match nor pass.
+      The one exception is `?beforeSequenceNumber=`, which is not a cursor but a plain unique integer
+      the row itself carries, and which the backend intends the client to derive.
+    - **Never send `page` and a token together.** The backend drops `page` silently, and on
+      `…/effort-claims` the `pagination` block goes with it — no error, just a missing block.
+    - **A malformed token is `422`, and it must SURFACE.** Never a silent restart: a feed that restarts
+      itself shows duplicate rows and gets reported as a backend bug. `LoadMoreControl` keeps the rows
+      already on screen and shows the backend's message beside the button.
+    - **The token's absence is the end of the list.** `null` means no more rows, so the control renders
+      nothing — a permanently visible button that returns nothing reads as a broken feed.
 - **Async states are real.** Claim submit, re-verify, receipt upload and problem report all return
   **`202`**, and `claim-detail-disclosure.tsx` polls the detail read until the status turns terminal
   rather than rendering a verdict nobody computed.
@@ -1249,16 +1343,16 @@ team-building/page.tsx  build-log/page.tsx  governance/page.tsx  go-to-market/pa
 
 ### Components — `src/components/home/research-and-development/`
 
-119 files. Server components unless marked 🏝️ (client island — 40 of them; keep them small per
+137 files. Server components unless marked 🏝️ (client island — 34 of them; keep them small per
 `CLAUDE.md`). The island count grew with §14 and again with §4c: every write surface and every
 filter has to hold its own state, and none of them may reach for a context provider (§15 Q5).
 
 ```text
 (root — page bodies)
 ├── research-and-development-page.tsx  landing composition
-├── project-detail.tsx                 header + stats + 5-tab shell
+├── project-detail.tsx                 header + stats + 6-tab shell
 ├── workshop-page.tsx                  3-tab shell (boards/files/chat)
-├── proof-of-effort-page.tsx           5-tab shell (§5b)
+├── proof-of-effort-page.tsx           6-tab shell (§5b)
 ├── problem-map-page.tsx               thin shell over the canvas island
 ├── knowledge-hub-page.tsx             insight grid + leaderboard + trends
 ├── talent-page.tsx                    filters + profile grid + open-roles rail
@@ -1400,6 +1494,7 @@ therefore exactly what is still fabricated.
 | **5 · compensation & governance** | agreements · periods · finalize / countersign / payments / export · `/governance/summary`                                                                                                                        | ✅ done        |
 | **W · writes**                    | the whole mutation surface — PoE, compensation, funding pledges, project create/publish, applications & invites, workshop board / files / chat                                                                   | ✅ done        |
 | **W2 · write UI**                 | a control for every one of them: the rate lifecycle, claim + receipt, founder round/milestone/role/member management, the application inbox, daily-log authoring, board editing, talent profile, problem reports | ✅ done        |
+| **K · keyset paging**             | six lists made pageable — the daily-log feed, the claim index, allocation proposals, the slice ledger, the project audit trail, compensation statements                                                          | ✅ done        |
 | **6 · Project Immortal**          | —                                                                                                                                                                                                                | 🚫 **blocked** |
 
 **Phase W is the one that was not in the original plan**, and it is the larger half of what
@@ -1408,6 +1503,18 @@ surface that looked like it did something wrote to `useState`. That is worse tha
 — "Request sent ✓" on a button that sent nothing tells someone their application is with a team it
 never reached. The mutation wrappers now live beside their reads in `src/lib/rnd/*.api.ts`, the
 React Query hooks in `src/hooks/rnd/`, and every write control is a `client-query` island.
+
+**Phase K came last and was not in the plan either.** Every list on this surface had been
+FIRST-PAGE-ONLY: `filter-href.ts` strips `page` from every URL patch, no component ever set one, and
+`build-log-page.tsx` was computing a `nextCursor` and throwing it away. So a project with two years
+of daily logs, or a ledger with thousands of entries, showed its first page and silently ended — the
+rest of the audit surface was unreachable through the UI that exists to show it.
+
+Wiring it needed a BACKEND FIX FIRST, and that is the part worth remembering: three services gated
+`hasMore` on `isKeyset`, so a cursor-less first request could never obtain the cursor it had to send
+(§13). The keyset-only reads had no such gate, which is precisely why the daily-log feed could page
+and the other three could not. Six `client-query` islands now sit inside the same `server-fetch`
+pages, seeded with the page the server already read so nothing is fetched twice on mount.
 
 **Phase 6 is blocked, not merely unscheduled.** `grep -rn "research-programs" src/` in the backend
 returns **zero hits** — no route, no controller, no service, no migration, no table. Nothing about
@@ -1536,12 +1643,28 @@ the banner is right.
 
 Four values, a closed set so a fifth kind cannot appear silently:
 
-| Banner         | Meaning                                                                                                                                                                                                                                                                                                      |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `server-fetch` | Server component. Reads the API through `src/lib/rnd/*.api` with the session cookie forwarded by `callerRequestOptions()`. Adding `"use client"` breaks the build — `next/headers` does not resolve in a client bundle                                                                                       |
-| `client-query` | `"use client"` island using React Query. Needs `QueryProvider`, mounted in `(home)/layout.tsx`. **Twenty-eight of them.** Phase 3 was predicted to need the first and did not — reads-only meant the workshop's three write controls were deleted rather than upgraded, and they came back here as real ones |
-| `props-only`   | Fetches nothing; data arrives as props. Safe on either side of the boundary                                                                                                                                                                                                                                  |
-| `mock`         | Not wired. Renders fabricated data                                                                                                                                                                                                                                                                           |
+| Banner         | Meaning                                                                                                                                                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server-fetch` | Server component. Reads the API through `src/lib/rnd/*.api` with the session cookie forwarded by `callerRequestOptions()`. Adding `"use client"` breaks the build — `next/headers` does not resolve in a client bundle |
+| `client-query` | `"use client"` island using React Query. Needs `QueryProvider`, mounted in `(home)/layout.tsx`. **Thirty-four of them.** Recount rather than trusting that number — the grep below is the authority                    |
+| `props-only`   | Fetches nothing; data arrives as props. Safe on either side of the boundary                                                                                                                                            |
+| `mock`         | Not wired. Renders fabricated data                                                                                                                                                                                     |
+
+**Every count in this doc is derived, so re-derive it rather than trusting it.** These numbers have
+drifted before — one section claimed "120 files, still no `client-query`" while §19 listed
+twenty-eight of them:
+
+```bash
+cd src/components/home/research-and-development
+find . -name '*.tsx' | wc -l
+for kind in server-fetch client-query props-only mock; do
+  echo "$kind: $(grep -rl "TRANSPORT: $kind" --include='*.tsx' . | wc -l)"
+done
+find . -name '*.tsx' -exec grep -L 'TRANSPORT:' {} \; | wc -l   # must be 0
+```
+
+The four kinds must sum to the file total, and the unlabelled count must be zero. At the time of
+writing: **137 files — 15 `server-fetch`, 34 `client-query`, 87 `props-only`, 1 `mock`.**
 
 ### The fifteen `server-fetch` page bodies
 
@@ -1561,14 +1684,16 @@ Four values, a closed set so a fifth kind cannot appear silently:
 | `project-detail.tsx`                | `/research-projects/:slug` (public) **then** `…/roles` · `…/milestones` · `…/daily-logs` · `…/funding-rounds` · `…/investor-confidence` · `…/launch-readiness` · the three §7A reads                                                                                                                           | The public read runs FIRST and alone; its 404 is `notFound()`. Nine member-scoped reads then run concurrently |
 | `proof-of-effort-page.tsx`          | `/research-projects/:slug` **then** `…/proof-of-effort` · `…/slice-ledger` · `…/equity/open-role-projection` · `…/pie-bake` · `…/effort-claims` · `…/physical-receipts` · `…/allocation-proposals` · `…/disputes` · `…/integrations` · `…/optimization-suggestions` · `…/audit-trail` · `…/audit-trail/verify` | Same ordering rule. `…/pie-bake` 404s before the bake, and that is an ABSENCE rather than a failure           |
 | `workshop-page.tsx`                 | `/research-projects/:slug` (public, for the header + roster) · `…/workshop` (member-only)                                                                                                                                                                                                                      | Two reads total; three write islands nested inside the tabs                                                   |
-| `build-log-page.tsx`                | `/daily-logs` **(requireAuth, keyset)** · `/daily-logs/streak-leaderboard` (public)                                                                                                                                                                                                                            | The repo's only cursor read. Signed out → hero + legend + public leaderboard + **empty** feed                 |
+| `build-log-page.tsx`                | `/daily-logs` **(requireAuth, keyset)** · `/daily-logs/streak-leaderboard` (public)                                                                                                                                                                                                                            | Its feed is now a keyset island (§13). Signed out → hero + legend + public leaderboard + **empty** feed       |
 
-### The twenty-eight `client-query` islands
+### The thirty-four `client-query` islands
 
-`client-query` was an empty category until phase 4. Every island is small, holds interaction state
-plus one or more mutations, and sits inside a `server-fetch` page or a sheet.
+`client-query` was an empty category until phase 4. Every island is small and sits inside a
+`server-fetch` page or a sheet. Most hold interaction state plus one or more mutations; the six in
+the keyset block hold **accumulated pages and no mutation at all** — they are the one kind of island
+here that exists purely to read further.
 
-| Island                              | Writes                                                                                          |
+| Island                              | Writes — or, in the keyset block, the read it pages                                             |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------- |
 | **Proof of Effort**                 |                                                                                                 |
 | `rate-lock-panel.tsx`               | propose → **member accepts** → lock, rendered as three steps because the split is the safeguard |
@@ -1579,6 +1704,13 @@ plus one or more mutations, and sits inside a `server-fetch` page or a sheet.
 | `integration-consent-tab.tsx`       | authorize-url → provider redirect · revoke (self-only)                                          |
 | `optimization-tab.tsx`              | accept · dismiss a suggestion                                                                   |
 | `pie-bake-panel.tsx`                | bake the pie — irreversible, once ever, `expectedSnapshotId` echoed                             |
+| **Keyset paging** (§13)             | Six lists. Each is seeded with its server page and appends — no write                           |
+| `global-daily-log-feed.tsx`         | `/daily-logs` — was props-only and DROPPED the cursor it fetched                                |
+| `claim-index-island.tsx`            | `…/effort-claims` — `<YYYY-MM-DD>_<id>`, keyset mode drops `pagination`                         |
+| `allocation-proposals-island.tsx`   | `…/allocation-proposals` — `<epochMs>_<id>`; nests the raise-dispute island                     |
+| `slice-ledger-rows-island.tsx`      | `…/slice-ledger` — `?fromSequence=`. Append-only, so OFFSET would skip equity                   |
+| `audit-trail-entries-island.tsx`    | `…/audit-trail` — `?fromSequence=` over a gapless chain                                         |
+| `compensation-periods-island.tsx`   | `…/compensation-periods` — `?beforeSequenceNumber=`, the one token the client derives           |
 | **Compensation**                    |                                                                                                 |
 | `compensation-agreement-island.tsx` | propose (founder) · accept / decline (the member) · withdraw (the proposer)                     |
 | `compensation-period-island.tsx`    | finalize · countersign · supersede · record a payment · confirm receipt · export                |

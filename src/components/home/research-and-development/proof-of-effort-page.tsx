@@ -30,7 +30,12 @@ import {
 } from "@/lib/rnd/proof-of-effort.api";
 import { EFFORT_VERIFICATION_STATUSES } from "@/lib/rnd/proof-of-effort.schemas";
 import { getResearchProjectDetail } from "@/lib/rnd/projects.api";
-import { toMemberScopedItemViewState, toMemberScopedListViewState } from "@/lib/rnd/view-state";
+import {
+  toMemberScopedCursorListViewState,
+  toMemberScopedItemViewState,
+  toMemberScopedListViewState,
+  toMemberScopedSequenceListViewState,
+} from "@/lib/rnd/view-state";
 import { callerRequestOptions } from "@/lib/server-http";
 
 const LEDGER_PAGE_LIMIT = 50;
@@ -140,7 +145,7 @@ export default async function ProofOfEffortPage({
         sliceLedgerPanel={
           <SliceLedgerTab
             summaryState={summaryState}
-            ledgerState={toMemberScopedListViewState(ledgerResult)}
+            ledgerState={toMemberScopedSequenceListViewState(ledgerResult)}
             projectionState={toMemberScopedListViewState(projectionResult)}
             pieBakeState={pieBakeState}
             projectCurrency={project.currency}
@@ -151,7 +156,7 @@ export default async function ProofOfEffortPage({
         }
         verificationPanel={
           <VerificationPipelineTab
-            claimsState={toMemberScopedListViewState(claimsResult)}
+            claimsState={toMemberScopedCursorListViewState(claimsResult)}
             receiptsState={toMemberScopedListViewState(receiptsResult)}
             projectSlug={projectSlug}
             projectCurrency={project.currency}
@@ -162,7 +167,7 @@ export default async function ProofOfEffortPage({
         }
         disputesPanel={
           <DisputeWindowTab
-            proposalsState={toMemberScopedListViewState(proposalsResult)}
+            proposalsState={toMemberScopedCursorListViewState(proposalsResult)}
             disputesState={toMemberScopedListViewState(disputesResult)}
             projectSlug={projectSlug}
             viewerProjectRole={project.viewerProjectRole}
@@ -182,8 +187,9 @@ export default async function ProofOfEffortPage({
         }
         auditTrailPanel={
           <ProjectAuditTrailTab
-            entriesState={toMemberScopedListViewState(auditEntriesResult)}
+            entriesState={toMemberScopedSequenceListViewState(auditEntriesResult)}
             chainVerificationState={toMemberScopedItemViewState(chainVerificationResult)}
+            projectSlug={projectSlug}
           />
         }
       />
