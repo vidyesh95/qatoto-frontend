@@ -37,9 +37,16 @@ export default function IdeaBasicsStep({
       <CreatableCombobox
         labelText="Category"
         placeholderText="Search or create a category"
-        selectedOptionName={draft.category}
-        optionNames={categoryOptions}
-        onOptionCommit={onCategoryCommit}
+        selectedOptionId={draft.category}
+        // A category has no row behind it — the name IS the identity, so it is
+        // also the id. Selecting and creating therefore land on the same
+        // handler, which appends the name only if it is new.
+        options={categoryOptions.map((categoryName) => ({
+          optionId: categoryName,
+          optionName: categoryName,
+        }))}
+        onOptionSelect={onCategoryCommit}
+        onCreateRequest={onCategoryCommit}
         helpText="Pick a category or type a new one — press Enter to create it."
       />
     </div>

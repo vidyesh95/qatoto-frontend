@@ -281,6 +281,7 @@ export default async function ResearchProgramPage({
             programSlug={programSlug}
             branches={branches}
             isViewerParticipant={program.isViewerParticipant}
+            canCreateBranch={canContribute}
           />
         </section>
       )}

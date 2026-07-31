@@ -18,6 +18,7 @@ import {
   type ResearchContributionKind,
 } from "@/lib/rnd/research-programs.schemas";
 
+import BranchPickerField from "./branch-picker-field";
 import { MutationAcceptedNotice, MutationErrorNotice } from "./mutation-feedback";
 
 type ProgramContributorToolsProps = {
@@ -25,6 +26,10 @@ type ProgramContributorToolsProps = {
   branches: ResearchBranch[];
   /** Only a participant can log effort — the backend answers 422 NOT_A_PARTICIPANT otherwise. */
   isViewerParticipant: boolean;
+  /** `published && signed in` — the precondition for `POST /branches`. Passed explicitly rather
+   *  than assumed from this section's own gating, so a page refactor cannot silently offer a
+   *  create control that 403s. */
+  canCreateBranch: boolean;
 };
 
 /**
@@ -46,6 +51,7 @@ export default function ProgramContributorTools({
   programSlug,
   branches,
   isViewerParticipant,
+  canCreateBranch,
 }: ProgramContributorToolsProps) {
   const effortMutation = useLogProgramEffortMutation(programSlug);
   const contributionMutation = useRecordProgramContributionMutation(programSlug);
@@ -175,23 +181,17 @@ export default function ProgramContributorTools({
             </label>
           </div>
 
-          {branches.length > 0 && (
-            <label className="block space-y-1 text-xs">
-              <span className="font-medium">Branch (optional)</span>
-              <select
-                value={effortBranchId}
-                onChange={(event) => setEffortBranchId(event.target.value)}
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
-              >
-                <option value="">Not branch-specific</option>
-                {branches.map((branch) => (
-                  <option key={branch.branchId} value={branch.branchId}>
-                    {branch.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
+          {/* No `branches.length > 0` gate: an empty tree is exactly when creating one matters. */}
+          <BranchPickerField
+            programSlug={programSlug}
+            branches={branches}
+            selectedBranchId={effortBranchId}
+            onBranchSelect={setEffortBranchId}
+            labelText="Branch (optional)"
+            noBranchOptionLabel="Not branch-specific"
+            helpText="Type a name that does not exist yet to create the branch."
+            canCreateBranch={canCreateBranch}
+          />
 
           <label className="block space-y-1 text-xs">
             <span className="font-medium">What did you do?</span>

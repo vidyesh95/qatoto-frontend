@@ -12,6 +12,7 @@ import type {
   ResearchPostTrack,
 } from "@/lib/rnd/research-programs.schemas";
 
+import BranchPickerField from "./branch-picker-field";
 import { MutationErrorNotice } from "./mutation-feedback";
 import { ResearchPostItem } from "./research-post-item";
 
@@ -116,25 +117,18 @@ export default function ResearchProgramDiscussion({
             className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
           />
 
-          {!isTitled && branches.length > 0 && (
-            <label className="block space-y-1 text-xs">
-              <span className="font-medium">About a branch? (optional)</span>
-              <select
-                value={branchId}
-                onChange={(event) => setBranchId(event.target.value)}
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
-              >
-                <option value="">Programme-wide</option>
-                {branches.map((branch) => (
-                  <option key={branch.branchId} value={branch.branchId}>
-                    {branch.title}
-                  </option>
-                ))}
-              </select>
-              <span className="text-[10px] text-muted-foreground">
-                Filing it against a branch is what makes it show on the research map.
-              </span>
-            </label>
+          {/* No `branches.length > 0` gate: an empty tree is exactly when creating one matters. */}
+          {!isTitled && (
+            <BranchPickerField
+              programSlug={programSlug}
+              branches={branches}
+              selectedBranchId={branchId}
+              onBranchSelect={setBranchId}
+              labelText="About a branch? (optional)"
+              noBranchOptionLabel="Programme-wide"
+              helpText="Filing it against a branch is what makes it show on the research map. Type a name that does not exist yet to create it."
+              canCreateBranch={canPost}
+            />
           )}
 
           <button

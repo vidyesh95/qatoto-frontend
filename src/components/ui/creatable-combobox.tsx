@@ -6,12 +6,25 @@ import { createPortal } from "react-dom";
 
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 
-// Typeahead over a list of names, plus a "create" row for anything new. The
-// owner holds the option list and decides whether a committed name is new.
+// Typeahead over a list of options, plus a "create" row for anything new. The
+// owner holds the option list and decides what creating actually means.
+//
+// OPTIONS ARE ID-KEYED, NOT NAME-KEYED. Two options may legitimately share a
+// name — research branches have no unique index on `title` — so committing a
+// name would silently resolve to whichever one happened to be first. Owners
+// whose identity IS the name (the idea wizard's categories) pass the name as
+// the id and lose nothing.
+//
+// SELECT AND CREATE ARE SEPARATE CALLBACKS, because they are not the same act.
+// Selecting is instant; creating may need more input than a name (a summary, a
+// parent) or a round trip. `onCreateRequest` therefore only reports what the
+// user typed — the owner decides whether that opens a form, fires a request, or
+// appends to a local array. Omitting it renders no create row at all, which is
+// how a caller without permission to create hides the affordance.
 //
 // The listbox is portaled to document.body and positioned `fixed` so it can be
 // used inside a clipping scroll container (an overflow-y-auto sheet body) as
-// well as in open page flow. Mock phase: nothing here is persisted.
+// well as in open page flow.
 
 // `query` exists only in the open variant, so the input's displayed value is
 // derived rather than stored — that is what makes Escape/blur revert for free.
@@ -26,11 +39,16 @@ type CreatableComboboxState =
       popupPlacement: PopupPlacement;
     };
 
-// Both variants carry `optionName`, so committing a row is variant-agnostic.
-// The distinction only matters when rendering.
+/** One selectable option. `optionId` is what the owner stores; `optionName` is
+ *  what is typed against and displayed. */
+export type ComboboxOption = { optionId: string; optionName: string };
+
+// The two variants no longer commit the same way — an existing row carries an
+// id to select, a create row carries only the raw text the user typed, because
+// nothing has been created yet. That asymmetry is the point of the union.
 type CreatableComboboxRow =
-  | { kind: "existing-option"; optionName: string }
-  | { kind: "create-option"; optionName: string };
+  | { kind: "existing-option"; option: ComboboxOption }
+  | { kind: "create-option"; typedOptionName: string };
 
 // Which viewport edge the popup is pinned to. A union rather than a
 // `shouldFlipUpward` boolean so `top` and `bottom` can never both be emitted.
@@ -46,13 +64,19 @@ export type CreatableComboboxProps = {
   labelText: string;
   /** Shown while nothing is committed. */
   placeholderText: string;
-  /** The committed value. "" renders the placeholder — the empty state. */
-  selectedOptionName: string;
+  /** The committed option's id. An id matching no option renders the
+   *  placeholder — which is also how "" behaves unless the owner offers an
+   *  option with that id (the sentinel trick: `{ optionId: "", optionName:
+   *  "Programme-wide" }` turns the empty state into a named, pickable row). */
+  selectedOptionId: string;
   /** Every option offered, including any created earlier this session. */
-  optionNames: string[];
-  /** Fires identically for an existing pick and a newly typed name; the owner
-   *  decides whether the name is new and appends it to optionNames. */
-  onOptionCommit: (committedOptionName: string) => void;
+  options: ComboboxOption[];
+  /** An existing row was picked. */
+  onOptionSelect: (selectedOptionId: string) => void;
+  /** The user asked to create what they typed. NOTHING HAS BEEN CREATED YET —
+   *  the owner decides what happens next and, if it succeeds, adds the option
+   *  and selects it. Omit to render no create row. */
+  onCreateRequest?: (typedOptionName: string) => void;
   /** Hint under the field. Omit to render no hint element at all. */
   helpText?: string;
 };
@@ -63,8 +87,9 @@ const POPUP_ANCHOR_GAP_PX = 4;
 const POPUP_VIEWPORT_MARGIN_PX = 8;
 
 /** Appends a committed name unless the list already has it (case-insensitive).
- *  Every CreatableCombobox owner needs exactly this, so it ships with the
- *  component rather than being re-derived at each call site. */
+ *  For owners whose option identity IS the name — a free-text taxonomy with no
+ *  server-side row behind it — creating is just this append. Owners backed by a
+ *  real record do NOT use this: their id comes from the server. */
 export function appendOptionNameIfNew(
   optionNames: string[],
   committedOptionName: string,
@@ -123,11 +148,14 @@ function buildPopupStyle(popupPlacement: PopupPlacement): React.CSSProperties {
 
 function resolveInputDisplayValue(
   comboboxState: CreatableComboboxState,
-  selectedOptionName: string,
+  options: ComboboxOption[],
+  selectedOptionId: string,
 ): string {
   switch (comboboxState.status) {
     case "closed":
-      return selectedOptionName;
+      // Derived from the id rather than stored, so a rename upstream shows up
+      // here without the owner having to re-commit anything.
+      return options.find((option) => option.optionId === selectedOptionId)?.optionName ?? "";
     case "open":
       return comboboxState.query;
     default: {
@@ -138,35 +166,39 @@ function resolveInputDisplayValue(
 }
 
 /** Prefix matches first, then substring matches; source order kept within each bucket. */
-function rankOptionMatches(optionNames: string[], rawQuery: string): string[] {
+function rankOptionMatches(options: ComboboxOption[], rawQuery: string): ComboboxOption[] {
   const normalizedQuery = rawQuery.trim().toLowerCase();
-  if (normalizedQuery === "") return optionNames;
+  if (normalizedQuery === "") return options;
 
-  const prefixMatches: string[] = [];
-  const substringMatches: string[] = [];
-  for (const optionName of optionNames) {
-    const normalizedOption = optionName.toLowerCase();
-    if (normalizedOption.startsWith(normalizedQuery)) {
-      prefixMatches.push(optionName);
-    } else if (normalizedOption.includes(normalizedQuery)) {
-      substringMatches.push(optionName);
+  const prefixMatches: ComboboxOption[] = [];
+  const substringMatches: ComboboxOption[] = [];
+  for (const option of options) {
+    const normalizedOptionName = option.optionName.toLowerCase();
+    if (normalizedOptionName.startsWith(normalizedQuery)) {
+      prefixMatches.push(option);
+    } else if (normalizedOptionName.includes(normalizedQuery)) {
+      substringMatches.push(option);
     }
   }
   return [...prefixMatches, ...substringMatches];
 }
 
-function buildComboboxRows(optionNames: string[], rawQuery: string): CreatableComboboxRow[] {
-  const existingOptionRows: CreatableComboboxRow[] = rankOptionMatches(optionNames, rawQuery).map(
-    (optionName) => ({ kind: "existing-option", optionName }),
+function buildComboboxRows(
+  options: ComboboxOption[],
+  rawQuery: string,
+  isCreateOffered: boolean,
+): CreatableComboboxRow[] {
+  const existingOptionRows: CreatableComboboxRow[] = rankOptionMatches(options, rawQuery).map(
+    (option) => ({ kind: "existing-option", option }),
   );
 
   const trimmedQuery = rawQuery.trim();
-  const hasExactOptionMatch = optionNames.some(
-    (optionName) => optionName.toLowerCase() === trimmedQuery.toLowerCase(),
+  const hasExactOptionMatch = options.some(
+    (option) => option.optionName.toLowerCase() === trimmedQuery.toLowerCase(),
   );
-  if (trimmedQuery === "" || hasExactOptionMatch) return existingOptionRows;
+  if (!isCreateOffered || trimmedQuery === "" || hasExactOptionMatch) return existingOptionRows;
 
-  return [...existingOptionRows, { kind: "create-option", optionName: trimmedQuery }];
+  return [...existingOptionRows, { kind: "create-option", typedOptionName: trimmedQuery }];
 }
 
 function renderComboboxRowContent(comboboxRow: CreatableComboboxRow, isRowSelectedOption: boolean) {
@@ -178,7 +210,7 @@ function renderComboboxRowContent(comboboxRow: CreatableComboboxRow, isRowSelect
             {isRowSelectedOption ? "✓" : ""}
           </span>
           <span>
-            {comboboxRow.optionName}
+            {comboboxRow.option.optionName}
             {isRowSelectedOption && <span className="sr-only"> (current selection)</span>}
           </span>
         </>
@@ -190,7 +222,8 @@ function renderComboboxRowContent(comboboxRow: CreatableComboboxRow, isRowSelect
             +
           </span>
           <span className="text-muted-foreground">
-            Create <span className="font-medium text-foreground">{comboboxRow.optionName}</span>
+            Create{" "}
+            <span className="font-medium text-foreground">{comboboxRow.typedOptionName}</span>
           </span>
         </>
       );
@@ -204,9 +237,10 @@ function renderComboboxRowContent(comboboxRow: CreatableComboboxRow, isRowSelect
 export default function CreatableCombobox({
   labelText,
   placeholderText,
-  selectedOptionName,
-  optionNames,
-  onOptionCommit,
+  selectedOptionId,
+  options,
+  onOptionSelect,
+  onCreateRequest,
   helpText,
 }: CreatableComboboxProps) {
   const [comboboxState, setComboboxState] = useState<CreatableComboboxState>({ status: "closed" });
@@ -219,7 +253,9 @@ export default function CreatableCombobox({
   const comboboxListboxId = `${instanceId}-listbox`;
 
   const comboboxRows =
-    comboboxState.status === "open" ? buildComboboxRows(optionNames, comboboxState.query) : [];
+    comboboxState.status === "open"
+      ? buildComboboxRows(options, comboboxState.query, onCreateRequest !== undefined)
+      : [];
 
   // Narrowed out of comboboxState so the scroll-into-view effect below does not
   // re-fire on every placement update — which would fight the user's own
@@ -321,10 +357,21 @@ export default function CreatableCombobox({
   };
 
   const commitOptionRow = (comboboxRow: CreatableComboboxRow) => {
-    // The owner appends the name to the option list only if it is new
-    // (case-insensitive), so both row kinds commit the same way.
-    onOptionCommit(comboboxRow.optionName);
+    // The list closes either way: a create row hands off to the owner, which may
+    // open a form under this field, and leaving a popup over it would cover it.
     closeOptionList();
+    switch (comboboxRow.kind) {
+      case "existing-option":
+        return onOptionSelect(comboboxRow.option.optionId);
+      case "create-option":
+        // Only reachable when onCreateRequest is defined — buildComboboxRows
+        // does not emit this row otherwise.
+        return onCreateRequest?.(comboboxRow.typedOptionName);
+      default: {
+        const exhaustiveCheck: never = comboboxRow;
+        return exhaustiveCheck;
+      }
+    }
   };
 
   const handleComboboxInputChange = (changeEvent: React.ChangeEvent<HTMLInputElement>) => {
@@ -367,9 +414,9 @@ export default function CreatableCombobox({
         keyDownEvent.preventDefault();
         if (comboboxState.status === "closed") {
           // Opening with an empty query means buildComboboxRows returns exactly
-          // optionNames with no create row appended, so the last option is the
-          // last row. That coupling is why this indexes optionNames.
-          return openOptionList("", Math.max(0, optionNames.length - 1));
+          // `options` with no create row appended, so the last option is the
+          // last row. That coupling is why this indexes `options`.
+          return openOptionList("", Math.max(0, options.length - 1));
         }
         if (comboboxRows.length === 0) return;
         return updateOpenOptionList(
@@ -430,7 +477,7 @@ export default function CreatableCombobox({
               ? `${comboboxListboxId}-row-${comboboxState.highlightedRowIndex}`
               : undefined
           }
-          value={resolveInputDisplayValue(comboboxState, selectedOptionName)}
+          value={resolveInputDisplayValue(comboboxState, options, selectedOptionId)}
           onChange={handleComboboxInputChange}
           onClick={handleComboboxInputClick}
           onBlur={handleComboboxInputBlur}
@@ -483,11 +530,17 @@ export default function CreatableCombobox({
               const isRowHighlighted = rowIndex === comboboxState.highlightedRowIndex;
               const isRowSelectedOption =
                 comboboxRow.kind === "existing-option" &&
-                comboboxRow.optionName === selectedOptionName;
+                comboboxRow.option.optionId === selectedOptionId;
               return (
                 // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- rows are intentionally non-focusable; keyboard selection lives on the input via aria-activedescendant
                 <li
-                  key={`${comboboxRow.kind}-${comboboxRow.optionName}`}
+                  // Keyed by id, not name: duplicate names are legal upstream and
+                  // would otherwise collide into one React key.
+                  key={
+                    comboboxRow.kind === "existing-option"
+                      ? `existing-${comboboxRow.option.optionId}`
+                      : "create-option"
+                  }
                   id={`${comboboxListboxId}-row-${rowIndex}`}
                   // eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/prefer-tag-over-role -- <option> is only valid inside select/datalist; see the listbox note above
                   role="option"
