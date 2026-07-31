@@ -40,6 +40,7 @@ import {
   createProgramPaper,
   createProgramPost,
   createResearchPaperCategory,
+  decideResearchPaperCategory,
   createResearchProgram,
   deleteProgramOpportunity,
   deleteProgramPaper,
@@ -142,8 +143,8 @@ export function useProgramReviewQueueQuery(options: { readonly isEnabled: boolea
 /** Approved paper categories — the upload form's picker options. */
 export function useResearchPaperCategoriesQuery() {
   return useQuery({
-    queryKey: rndKeys.researchPaperCategories(),
-    queryFn: async () => unwrap(await listResearchPaperCategories()),
+    queryKey: rndKeys.researchPaperCategories("approved"),
+    queryFn: async () => unwrap(await listResearchPaperCategories({ status: "approved" })),
     // The taxonomy changes when a moderator approves a proposal, which is rare. A long stale
     // time keeps a form that opens repeatedly from refetching a list of five rows every time.
     staleTime: 5 * 60 * 1000,
@@ -439,7 +440,41 @@ export function useCreateResearchPaperCategoryMutation() {
     mutationFn: async (input: { label: string }) =>
       unwrap(await createResearchPaperCategory(input)),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: rndKeys.researchPaperCategories() });
+      // The root, so the moderation queue picks the new row up too — it lands `pending`, so
+      // the `approved` list this invalidation once targeted is the one list it is NOT in.
+      void queryClient.invalidateQueries({ queryKey: rndKeys.paperCategoriesRoot() });
+    },
+  });
+}
+
+/**
+ * The moderation queue for the paper taxonomy.
+ *
+ * PUBLIC, like every status of this list. Deciding is what needs `moderate_taxonomy`.
+ */
+export function usePendingPaperCategoriesQuery() {
+  return useQuery({
+    queryKey: rndKeys.researchPaperCategories("pending"),
+    queryFn: async () => unwrap(await listResearchPaperCategories({ status: "pending" })),
+  });
+}
+
+/**
+ * Approve or reject a proposed paper category. `moderate_taxonomy`.
+ *
+ * Invalidates every status: an approval moves the row between two lists, and the `approved`
+ * one is what the paper upload form offers.
+ */
+export function useDecidePaperCategoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: {
+      categoryId: string;
+      input: { decision: "approve"; note?: string } | { decision: "reject"; note: string };
+    }) => unwrap(await decideResearchPaperCategory(variables.categoryId, variables.input)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.paperCategoriesRoot() });
+      void queryClient.invalidateQueries({ queryKey: ["rnd", "platform-audit"] });
     },
   });
 }

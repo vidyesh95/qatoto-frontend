@@ -28,6 +28,18 @@ const NAV_ITEMS = [
     inactiveIcon: "/icons/video_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    href: "/admin/categories",
+    label: "Categories",
+    activeIcon: "/icons/category_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/category_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
+    href: "/admin/staff",
+    label: "Staff",
+    activeIcon: "/icons/group_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/group_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     href: "/admin/audit",
     label: "Audit log",
     activeIcon: "/icons/fact_check_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",

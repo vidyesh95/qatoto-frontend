@@ -2931,7 +2931,7 @@ a §10 convenience:
 only writer. The rule is integer-only and lives in
 `src/services/research-branch-signals.service.ts`:
 
-```
+```text
 overlappingGroupCount = other branches in the programme scoring >= 3000 bp Jaccard on
                         (title + " " + summary), via the existing lib/text-similarity.ts
 

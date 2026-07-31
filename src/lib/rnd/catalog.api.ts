@@ -19,7 +19,7 @@ import {
   type OpenRole,
   type ResearchCategory,
 } from "@/lib/rnd/catalog.schemas";
-import { PaginationMetaSchema } from "@/lib/rnd/shared.schemas";
+import { PaginationMetaSchema, type CategoryPinIconKey } from "@/lib/rnd/shared.schemas";
 
 /**
  * Every open role across every project — the landing rail, `/talent`'s companion rail
@@ -89,6 +89,41 @@ export function createResearchCategory(
     "/research-categories",
     "POST",
     { label: input.label },
+    ResearchCategorySchema,
+    options,
+  );
+}
+
+/**
+ * A moderator's verdict on a proposed category. Requires `moderate_taxonomy`.
+ *
+ * A DISCRIMINATED UNION, because the two arms are not the same request. A rejection
+ * REQUIRES a note — the backend's `min(1)` — while an approval does not, and `pinIconKey`
+ * exists only on the approve arm because there is no pin to set on a term being turned
+ * away. One flat object with two optional fields could express neither rule.
+ *
+ * `pinIconKey` is OMITTED rather than sent as a default when the moderator does not choose
+ * one: the backend skips the column in that case instead of stamping it, so an approval can
+ * leave an existing icon alone.
+ *
+ * THE VERDICT IS TERMINAL. Re-deciding answers `409` naming the status it already holds,
+ * which is a finding — another moderator got there first — and never a retry.
+ */
+export function decideResearchCategory(
+  categoryId: string,
+  input:
+    | {
+        readonly decision: "approve";
+        readonly pinIconKey?: CategoryPinIconKey;
+        readonly note?: string;
+      }
+    | { readonly decision: "reject"; readonly note: string },
+  options?: RequestOptions,
+): Promise<ActionResponse<ResearchCategory>> {
+  return sendJson(
+    `/discovery/admin/categories/${encodeURIComponent(categoryId)}/decide`,
+    "POST",
+    input,
     ResearchCategorySchema,
     options,
   );

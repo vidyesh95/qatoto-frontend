@@ -36,6 +36,8 @@ export const rndKeys = {
   projectApplications: (projectSlug: string, status: string | undefined) =>
     ["rnd", "project", projectSlug, "applications", status] as const,
   projectInvites: (projectSlug: string) => ["rnd", "project", projectSlug, "invites"] as const,
+  /** Keyed by status: the pickers read `approved`, the moderation queue reads `pending`. */
+  researchCategoriesRoot: () => ["rnd", "research-categories"] as const,
   researchCategories: (status: string | undefined) =>
     ["rnd", "research-categories", status] as const,
 
@@ -141,8 +143,26 @@ export const rndKeys = {
     ["rnd", "programs", programSlug, "moderation", "queue"] as const,
   programModerationActions: (programSlug: string) =>
     ["rnd", "programs", programSlug, "moderation", "actions"] as const,
-  /** Program-independent: one taxonomy the whole platform shares. */
-  researchPaperCategories: () => ["rnd", "paper-categories"] as const,
+  /**
+   * Program-independent: one taxonomy the whole platform shares. Keyed BY STATUS, because
+   * the picker reads `approved` and the moderation queue reads `pending` — one key for both
+   * would make a verdict look like it had changed a list it did not.
+   *
+   * `paperCategoriesRoot` is the invalidation target that covers every status at once.
+   */
+  paperCategoriesRoot: () => ["rnd", "paper-categories"] as const,
+  researchPaperCategories: (status: string | undefined) =>
+    ["rnd", "paper-categories", status] as const,
+
+  // --- Platform roles --------------------------------------------------------
+  /** The caller's OWN standing. No parameter — it is never about another account. */
+  ownStaffContext: () => ["rnd", "staff-context"] as const,
+  platformRoleSubject: (email: string) => ["rnd", "platform-role-subject", email] as const,
+
+  // --- Platform audit --------------------------------------------------------
+  /** The staff decision log. Keyed by kind, since the page reads one slice of it. */
+  platformAuditTrail: (eventKind: string | undefined) =>
+    ["rnd", "platform-audit", eventKind] as const,
 } as const;
 
 /**

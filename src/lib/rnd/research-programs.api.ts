@@ -300,11 +300,48 @@ export function releaseProgramBranchClaim(
 
 // --- Paper categories --------------------------------------------------------------------
 
-/** Approved categories — the picker's options. Public. */
+/**
+ * The paper taxonomy, one status at a time. Public, unpaginated.
+ *
+ * Defaults to `approved` server-side, which is what a picker wants. `status: "pending"` is
+ * the moderation queue — readable without a session, because a proposed term is public the
+ * moment it is proposed; ACTING on it is what needs `moderate_taxonomy`.
+ */
 export function listResearchPaperCategories(
+  filter: { readonly status?: "pending" | "approved" | "rejected" } = {},
   options?: RequestOptions,
 ): Promise<ActionResponse<ResearchPaperCategory[]>> {
-  return getJson("/research-paper-categories", z.array(ResearchPaperCategorySchema), options);
+  return getJson(
+    `/research-paper-categories${buildQueryString({ ...filter })}`,
+    z.array(ResearchPaperCategorySchema),
+    options,
+  );
+}
+
+/**
+ * A moderator's verdict on a proposed paper category. Requires `moderate_taxonomy`.
+ *
+ * The §6 shape MINUS `pinIconKey` — that column belongs to the project taxonomy's problem
+ * map, and this table has no equivalent. A rejection still REQUIRES a note; an approval does
+ * not, which is why this is a union rather than one object with optional fields.
+ *
+ * NOTE THE PATH: no `/admin` prefix, unlike the project taxonomy's. The capability is
+ * identical; only the mount differs.
+ */
+export function decideResearchPaperCategory(
+  categoryId: string,
+  input:
+    | { readonly decision: "approve"; readonly note?: string }
+    | { readonly decision: "reject"; readonly note: string },
+  options?: RequestOptions,
+): Promise<ActionResponse<ResearchPaperCategory>> {
+  return sendJson(
+    `/research-paper-categories/${encodeURIComponent(categoryId)}/decide`,
+    "POST",
+    input,
+    ResearchPaperCategorySchema,
+    options,
+  );
 }
 
 /**

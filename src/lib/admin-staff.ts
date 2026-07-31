@@ -1,6 +1,9 @@
-// Mock staff identity for the (admin) surface (UI phase — no real auth).
-// Flip `role` to "user" to preview the access-denied panel. Display-only:
-// the real gate is server-side RBAC, added with backend integration.
+// Mock staff identity, kept ONLY for the (admin) pages that are still mock — the episode
+// review queue stamps its local audit rows with this name and role.
+//
+// IT NO LONGER GATES ANYTHING. `AdminStaffGate` reads `GET /admin/whoami` and decides who
+// gets into the console; `hasStaffAccess` was deleted with the gate that called it. Do not
+// reintroduce a role check here — this file cannot answer that question.
 
 export type StaffRole = "user" | "moderator" | "admin";
 
@@ -19,7 +22,3 @@ export const MOCK_CURRENT_STAFF_MEMBER: MockStaffMember = {
 // Videos have no creator field yet (awaits real auth) — every review row
 // shows this stand-in creator name.
 export const MOCK_CREATOR_NAME = "Aki Films";
-
-export function hasStaffAccess(role: StaffRole): boolean {
-  return role === "moderator" || role === "admin";
-}

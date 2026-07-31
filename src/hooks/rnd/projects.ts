@@ -7,7 +7,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { rndKeys } from "@/hooks/rnd/keys";
 import { unwrap } from "@/lib/http";
-import { createResearchCategory, listResearchCategories } from "@/lib/rnd/catalog.api";
+import {
+  createResearchCategory,
+  decideResearchCategory,
+  listResearchCategories,
+} from "@/lib/rnd/catalog.api";
+import type { CategoryPinIconKey } from "@/lib/rnd/shared.schemas";
 import {
   createOpenRole,
   createProjectApplication,
@@ -70,6 +75,43 @@ export function useCreateResearchCategoryMutation() {
   return useMutation({
     mutationFn: async (input: { label: string }) =>
       unwrap(await createResearchCategory({ label: input.label })),
+  });
+}
+
+/**
+ * The moderation queue for this taxonomy.
+ *
+ * PUBLIC, like every other status of this list — a proposed term is visible the moment it is
+ * proposed. Deciding on it is what needs `moderate_taxonomy`, so this read is not the staff
+ * gate and must not be treated as one.
+ */
+export function usePendingResearchCategoriesQuery() {
+  return useQuery({
+    queryKey: rndKeys.researchCategories("pending"),
+    queryFn: async () => unwrap(await listResearchCategories({ status: "pending" })),
+  });
+}
+
+/**
+ * Approve or reject a proposed category. `moderate_taxonomy`.
+ *
+ * INVALIDATES EVERY STATUS, not just `pending`: an approval moves a row from one list to the
+ * other, and the `approved` list is what every category picker in the app offers. Leaving it
+ * stale would mean a moderator approves a term and cannot then use it.
+ */
+export function useDecideResearchCategoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: {
+      categoryId: string;
+      input:
+        | { decision: "approve"; pinIconKey?: CategoryPinIconKey; note?: string }
+        | { decision: "reject"; note: string };
+    }) => unwrap(await decideResearchCategory(variables.categoryId, variables.input)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.researchCategoriesRoot() });
+      void queryClient.invalidateQueries({ queryKey: ["rnd", "platform-audit"] });
+    },
   });
 }
 
