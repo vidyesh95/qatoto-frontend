@@ -34,8 +34,13 @@ export default function FilterChipRow({
   // A `nav` rather than a `div role="group"`: these chips are links that change the URL,
   // so a screen reader should announce them as a set of destinations. The label is what
   // distinguishes one filter row from the next when several are stacked.
+  //
+  // `items-center` is load-bearing, not cosmetic. A row placed beside a taller flex
+  // sibling (the problem map's "Report a problem" trigger) inherits that sibling's 36px
+  // line height, and without it every chip stretches to fill — `rounded-full` clamps to
+  // an 18px radius and the pill reads as a lozenge.
   return (
-    <nav className="flex gap-2 overflow-x-auto" aria-label={ariaLabel}>
+    <nav className="flex items-center gap-2 overflow-x-auto" aria-label={ariaLabel}>
       {options.map((option) => (
         <Link
           key={option.href + option.label}
