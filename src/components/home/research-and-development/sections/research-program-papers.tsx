@@ -4,6 +4,7 @@
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
+import CreatableCombobox, { type ComboboxOption } from "@/components/ui/creatable-combobox";
 import {
   useCreatePaperDownloadLinkMutation,
   useCreateResearchPaperCategoryMutation,
@@ -15,8 +16,13 @@ import { ApiRequestError } from "@/lib/http";
 import { newIdempotencyKey } from "@/lib/rnd/idempotency";
 import { formatFileSizeFromBytes, formatIsoInstant } from "@/lib/rnd/format";
 import { RESEARCH_PAPER_MODERATION_STATUS_LABELS } from "@/lib/rnd/labels";
-import type { ResearchBranch, ResearchPaper } from "@/lib/rnd/research-programs.schemas";
+import type {
+  ResearchBranch,
+  ResearchPaper,
+  ResearchPaperCategory,
+} from "@/lib/rnd/research-programs.schemas";
 
+import BranchPickerField from "./branch-picker-field";
 import { MutationAcceptedNotice, MutationErrorNotice } from "./mutation-feedback";
 
 type ResearchProgramPapersProps = {
@@ -66,8 +72,14 @@ export default function ResearchProgramPapers({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   // `newIdempotencyKey` is passed UNCALLED so it runs once per mount, not once per render.
   const [uploadIdempotencyKey, setUploadIdempotencyKey] = useState(newIdempotencyKey);
-  const [proposedCategoryLabel, setProposedCategoryLabel] = useState("");
-  const [isProposingCategory, setIsProposingCategory] = useState(false);
+  /**
+   * Categories created during this session.
+   *
+   * They land `pending`, and `useResearchPaperCategoriesQuery` reads the approved facet, so
+   * invalidating it will not bring them back. This list is what keeps a category the user just
+   * created selectable — the same reason `BranchPickerField` holds its own created branches.
+   */
+  const [createdCategories, setCreatedCategories] = useState<ResearchPaperCategory[]>([]);
 
   const firstError = [
     uploadMutation.error,
@@ -75,6 +87,25 @@ export default function ResearchProgramPapers({
     downloadMutation.error,
     proposeCategoryMutation.error,
   ].find((error): error is ApiRequestError => error instanceof ApiRequestError);
+
+  /**
+   * Creates the category the user typed, then selects it.
+   *
+   * ONE FIELD, SO NO DRAFT FORM — unlike a branch, which needs a summary before it can exist.
+   * The response carries the whole row, so the status is read rather than assumed: if the
+   * backend ever auto-approves for a moderator, this already does the right thing.
+   */
+  function handleCategoryCreateRequest(typedCategoryLabel: string): void {
+    proposeCategoryMutation.mutate(
+      { label: typedCategoryLabel },
+      {
+        onSuccess: (createdCategory) => {
+          setCreatedCategories((previousCategories) => [...previousCategories, createdCategory]);
+          setCategoryId(createdCategory.id);
+        },
+      },
+    );
+  }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>): void {
     setSelectedFile(event.target.files?.[0] ?? null);
@@ -116,6 +147,17 @@ export default function ResearchProgramPapers({
   }
 
   const approvedCategories = categoriesQuery.data ?? [];
+  const categoryOptions: ComboboxOption[] = [
+    ...approvedCategories.map((category) => ({
+      optionId: category.id,
+      optionName: category.displayLabel,
+    })),
+    // Dropped as soon as the approved list carries them, so an entry cannot appear twice once a
+    // moderator approves one mid-session.
+    ...createdCategories
+      .filter((created) => !approvedCategories.some((category) => category.id === created.id))
+      .map((created) => ({ optionId: created.id, optionName: created.displayLabel })),
+  ];
 
   return (
     <div className="space-y-4 px-4 lg:px-6">
@@ -142,91 +184,39 @@ export default function ResearchProgramPapers({
               />
             </label>
 
-            <label className="space-y-1 text-xs">
-              <span className="font-medium">Category</span>
-              {/*
-                A REAL PICKER over the approved taxonomy, which is the defect this replaces —
-                the mock hardcoded one category for every upload.
-              */}
-              <select
-                required
-                value={categoryId}
-                onChange={(event) => setCategoryId(event.target.value)}
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
-              >
-                <option value="">Choose a category…</option>
-                {approvedCategories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.displayLabel}
-                  </option>
-                ))}
-              </select>
-              {/*
-                The taxonomy is a TABLE, not a fixed enum, precisely so a researcher can propose a
-                category the platform has not thought of. A proposal lands `pending`, so it is NOT
-                immediately selectable — which the copy says, because silently offering an
-                unusable option is how a form starts lying.
-              */}
-              {isProposingCategory ? (
-                <span className="mt-1 flex gap-2">
-                  <input
-                    value={proposedCategoryLabel}
-                    onChange={(event) => setProposedCategoryLabel(event.target.value)}
-                    maxLength={80}
-                    placeholder="New category name"
-                    className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-1.5 text-xs"
-                  />
-                  <button
-                    type="button"
-                    disabled={proposeCategoryMutation.isPending || !proposedCategoryLabel.trim()}
-                    onClick={() =>
-                      proposeCategoryMutation.mutate(
-                        { label: proposedCategoryLabel.trim() },
-                        {
-                          onSuccess: () => {
-                            setProposedCategoryLabel("");
-                            setIsProposingCategory(false);
-                          },
-                        },
-                      )
-                    }
-                    className="shrink-0 cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs text-white disabled:opacity-60"
-                  >
-                    Propose
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsProposingCategory(true)}
-                  className="mt-1 cursor-pointer text-[10px] text-[#00696E] underline"
-                >
-                  Category not listed? Propose one
-                </button>
-              )}
-              {proposeCategoryMutation.isSuccess && (
-                <span className="mt-1 block text-[10px] text-muted-foreground">
-                  Proposed. A moderator reviews it before it can be used, so pick an existing
-                  category for this upload.
-                </span>
-              )}
-            </label>
+            {/*
+              TYPE-TO-FILTER OVER THE TAXONOMY, AND CREATE FROM THE SAME FIELD. The taxonomy is a
+              TABLE, not a fixed enum, precisely so a researcher can name a research area the
+              platform has not thought of — and a category created here is usable on this upload
+              immediately, because the backend's rule for papers is now the project rule: anything
+              but `rejected` passes. The paper is `queued` either way, so one reviewer settles the
+              paper and the category together.
+            */}
+            <div className="text-xs">
+              <CreatableCombobox
+                labelText="Category"
+                placeholderText="Search or create a category"
+                selectedOptionId={categoryId}
+                options={categoryOptions}
+                onOptionSelect={setCategoryId}
+                onCreateRequest={handleCategoryCreateRequest}
+                helpText={
+                  proposeCategoryMutation.isPending
+                    ? "Creating…"
+                    : "Type a name that does not exist yet to create it. New categories are reviewed later."
+                }
+              />
+            </div>
 
-            <label className="space-y-1 text-xs">
-              <span className="font-medium">Research branch (optional)</span>
-              <select
-                value={branchId}
-                onChange={(event) => setBranchId(event.target.value)}
-                className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
-              >
-                <option value="">Not filed against a branch</option>
-                {branches.map((branch) => (
-                  <option key={branch.branchId} value={branch.branchId}>
-                    {branch.title}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <BranchPickerField
+              programSlug={programSlug}
+              branches={branches}
+              selectedBranchId={branchId}
+              onBranchSelect={setBranchId}
+              labelText="Research branch (optional)"
+              noBranchOptionLabel="Not filed against a branch"
+              canCreateBranch={canUploadPaper}
+            />
 
             <label className="space-y-1 text-xs">
               <span className="font-medium">DOI (optional)</span>

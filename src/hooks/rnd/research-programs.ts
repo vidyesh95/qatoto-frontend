@@ -432,7 +432,7 @@ export function useModerateProgramPaperMutation(programSlug: string) {
   });
 }
 
-/** Proposes a paper category. It lands `pending`, so it is not immediately selectable. */
+/** Creates a paper category. It lands `pending` but is selectable and usable immediately. */
 export function useCreateResearchPaperCategoryMutation() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -307,7 +307,11 @@ export function listResearchPaperCategories(
   return getJson("/research-paper-categories", z.array(ResearchPaperCategorySchema), options);
 }
 
-/** Proposes a category. Lands `pending`, so it is NOT immediately usable on a paper. */
+/**
+ * Creates a category. It lands `pending` and IS usable on a paper straight away — the backend
+ * refuses only a `rejected` category, matching the project taxonomy. A moderator settles it later
+ * via `POST /research-paper-categories/:categoryId/decide`.
+ */
 export function createResearchPaperCategory(
   input: { readonly label: string },
   options?: RequestOptions,
