@@ -158,6 +158,7 @@ export const rndKeys = {
   /** The caller's OWN standing. No parameter — it is never about another account. */
   ownStaffContext: () => ["rnd", "staff-context"] as const,
   platformRoleSubject: (email: string) => ["rnd", "platform-role-subject", email] as const,
+  platformRoleProposals: () => ["rnd", "platform-role-proposals"] as const,
 
   // --- Platform audit --------------------------------------------------------
   /** The staff decision log. Keyed by kind, since the page reads one slice of it. */

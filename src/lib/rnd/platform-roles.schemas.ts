@@ -26,6 +26,31 @@ export const StaffContextSchema = z
   .strip();
 export type StaffContext = z.infer<typeof StaffContextSchema>;
 
+/**
+ * A PROPOSED role change. Nothing about the subject's access has moved yet.
+ *
+ * The role changes only when a DIFFERENT admin countersigns — the same two-person rule
+ * `compensation_period` uses for money. `previousPlatformRole` is the snapshot the proposal
+ * was made against; if the live role has drifted since, countersigning is a 409 rather than
+ * a silent overwrite of somebody else's decision.
+ */
+export const PlatformRoleProposalSchema = z
+  .object({
+    proposalId: z.string(),
+    subjectUserId: z.string(),
+    subjectEmail: z.string(),
+    subjectName: z.string(),
+    previousPlatformRole: PlatformRoleSchema.nullable(),
+    nextPlatformRole: PlatformRoleSchema.nullable(),
+    proposedByUserId: z.string(),
+    /** Null when the proposer's account is gone. Render the id, never "Unknown admin". */
+    proposedByName: z.string().nullable(),
+    proposedAt: z.string(),
+    proposeNote: z.string(),
+  })
+  .strip();
+export type PlatformRoleProposal = z.infer<typeof PlatformRoleProposalSchema>;
+
 /** One account as the grant screen sees it. Reachable only with `manage_platform_roles`. */
 export const PlatformRoleSubjectSchema = z
   .object({

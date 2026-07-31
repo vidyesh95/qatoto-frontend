@@ -6,9 +6,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { rndKeys } from "@/hooks/rnd/keys";
 import { unwrap } from "@/lib/http";
 import {
+  cancelPlatformRoleProposal,
+  countersignPlatformRoleChange,
   getOwnStaffContext,
+  listPlatformRoleProposals,
   lookupUserForRoleGrant,
-  setPlatformRole,
+  proposePlatformRoleChange,
 } from "@/lib/rnd/platform-roles.api";
 import type { PlatformRole } from "@/lib/rnd/platform-roles.schemas";
 
@@ -45,24 +48,68 @@ export function usePlatformRoleSubjectQuery(email: string) {
   });
 }
 
+/** Every role change waiting for a second signature. */
+export function usePlatformRoleProposalsQuery() {
+  return useQuery({
+    queryKey: rndKeys.platformRoleProposals(),
+    queryFn: async () => unwrap(await listPlatformRoleProposals()),
+    retry: false,
+  });
+}
+
 /**
- * Grants, changes or revokes a role.
+ * Proposes a role change. **Nothing is granted here.**
  *
- * Invalidates the looked-up subject and the caller's own context — the latter because an
- * admin's capability set is what decides whether this screen keeps working at all, and a
- * stale copy of it is the one thing that could leave a revoked operator holding live
- * controls.
+ * Invalidates only the proposal queue and the looked-up subject — deliberately NOT the audit
+ * trail, because no role moved and nothing was written to the chain. A proposal is a request
+ * for a second signature, not a decision.
  */
-export function useSetPlatformRoleMutation() {
+export function useProposePlatformRoleMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { email: string; role: PlatformRole | null }) =>
-      unwrap(await setPlatformRole(input)),
+    mutationFn: async (input: { email: string; role: PlatformRole | null; note?: string }) =>
+      unwrap(await proposePlatformRoleChange(input)),
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.platformRoleProposals() });
+      void queryClient.invalidateQueries({ queryKey: ["rnd", "platform-role-subject"] });
+    },
+  });
+}
+
+/**
+ * Countersigns — the call that actually moves the role.
+ *
+ * Invalidates the caller's own context too: an admin's capability set decides whether this
+ * screen keeps working at all, and a stale copy is the one thing that could leave a revoked
+ * operator holding live controls.
+ */
+export function useCountersignPlatformRoleMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { proposalId: string; note?: string }) =>
+      unwrap(
+        await countersignPlatformRoleChange(
+          input.proposalId,
+          input.note === undefined ? {} : { note: input.note },
+        ),
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.platformRoleProposals() });
       void queryClient.invalidateQueries({ queryKey: ["rnd", "platform-role-subject"] });
       void queryClient.invalidateQueries({ queryKey: rndKeys.ownStaffContext() });
-      // A grant is an audit event, so the decision log on /admin/categories is now stale.
+      // This one DID write to the chain, so the decision log on /admin/categories is stale.
       void queryClient.invalidateQueries({ queryKey: ["rnd", "platform-audit"] });
+    },
+  });
+}
+
+/** Withdraws a live proposal. */
+export function useCancelPlatformRoleProposalMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (proposalId: string) => unwrap(await cancelPlatformRoleProposal(proposalId)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: rndKeys.platformRoleProposals() });
     },
   });
 }

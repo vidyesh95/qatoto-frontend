@@ -9,10 +9,14 @@ import {
   type ActionResponse,
   type RequestOptions,
 } from "@/lib/http";
+import { z } from "zod";
+
 import {
+  PlatformRoleProposalSchema,
   PlatformRoleSubjectSchema,
   StaffContextSchema,
   type PlatformRole,
+  type PlatformRoleProposal,
   type PlatformRoleSubject,
   type StaffContext,
 } from "@/lib/rnd/platform-roles.schemas";
@@ -51,18 +55,66 @@ export function lookupUserForRoleGrant(
   );
 }
 
+/** Every role change waiting for a second signature. Requires `manage_platform_roles`. */
+export function listPlatformRoleProposals(
+  options?: RequestOptions,
+): Promise<ActionResponse<PlatformRoleProposal[]>> {
+  return getJson("/admin/platform-roles/proposals", PlatformRoleProposalSchema.array(), options);
+}
+
 /**
- * Grants, changes or revokes a role. Requires `manage_platform_roles`.
+ * Proposes a role change. Requires `manage_platform_roles`. **Changes no role.**
  *
- * `role: null` REVOKES. Submitting the role the account already holds is a `200` no-op that
- * appends nothing to the audit chain.
+ * `role: null` REVOKES. `201` returns a proposal, not a grant — the subject's access is
+ * untouched until a different admin countersigns.
  *
- * `409` when the target is the caller: nobody may change their own role, in either
- * direction. Ask another admin.
+ * `409` when the target is the caller, when the account already holds that role, or when one
+ * proposal for them is already live.
  */
-export function setPlatformRole(
-  input: { readonly email: string; readonly role: PlatformRole | null },
+export function proposePlatformRoleChange(
+  input: { readonly email: string; readonly role: PlatformRole | null; readonly note?: string },
+  options?: RequestOptions,
+): Promise<ActionResponse<PlatformRoleProposal>> {
+  return sendJson(
+    "/admin/platform-roles/proposals",
+    "POST",
+    input,
+    PlatformRoleProposalSchema,
+    options,
+  );
+}
+
+/**
+ * The SECOND pair of eyes — this is what actually moves the role.
+ *
+ * `422` when the caller proposed it: one signature is not two, and the backend says so with
+ * the same rule §7A applies to a compensation statement. `409` when it is already decided, or
+ * when the subject's role drifted since the proposal was raised.
+ */
+export function countersignPlatformRoleChange(
+  proposalId: string,
+  input: { readonly note?: string },
   options?: RequestOptions,
 ): Promise<ActionResponse<PlatformRoleSubject>> {
-  return sendJson("/admin/platform-roles", "PUT", input, PlatformRoleSubjectSchema, options);
+  return sendJson(
+    `/admin/platform-roles/proposals/${encodeURIComponent(proposalId)}/countersign`,
+    "POST",
+    input,
+    PlatformRoleSubjectSchema,
+    options,
+  );
+}
+
+/** Withdraws a live proposal. Any admin, not only the one who raised it. */
+export function cancelPlatformRoleProposal(
+  proposalId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ proposalId: string }>> {
+  return sendJson(
+    `/admin/platform-roles/proposals/${encodeURIComponent(proposalId)}`,
+    "DELETE",
+    undefined,
+    z.object({ proposalId: z.string() }).strip(),
+    options,
+  );
 }
