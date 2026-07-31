@@ -68,8 +68,8 @@ export function useResearchCategoriesQuery() {
  */
 export function useCreateResearchCategoryMutation() {
   return useMutation({
-    mutationFn: async (input: { displayLabel: string }) =>
-      unwrap(await createResearchCategory({ displayLabel: input.displayLabel })),
+    mutationFn: async (input: { label: string }) =>
+      unwrap(await createResearchCategory({ label: input.label })),
   });
 }
 
@@ -154,7 +154,7 @@ export function useCreateResearchProjectMutation() {
         // Arrives `pending`, not `approved` — the taxonomy is moderated, and the project
         // links to the id regardless of whether the moderator later merges it.
         const category = unwrap(
-          await createResearchCategory({ displayLabel: variables.newCategoryLabel }),
+          await createResearchCategory({ label: variables.newCategoryLabel }),
         );
         categoryId = category.id;
       }

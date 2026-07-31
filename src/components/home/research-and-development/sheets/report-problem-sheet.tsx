@@ -41,20 +41,19 @@ import { RESEARCH_CATEGORY_STATUS_LABELS } from "@/lib/rnd/labels";
  * THE CATEGORY IS AN ID, so this reads the approved taxonomy rather than offering free
  * text — `categoryId` on this body is `z.uuid()`, and there is no "other" bucket.
  *
- * A CATEGORY CAN BE PROPOSED FROM HERE, BUT NEVER ADOPTED FROM HERE. `POST
- * /research-categories` lands the row `pending`, and `POST /discovery/problem-reports` calls
- * `checkCategoryUsable`, which demands `approved` and otherwise answers `422
- * CATEGORY_NOT_APPROVED`. So a category created in this field joins the list GREYED and
- * unpickable, and the report is filed under one that already exists.
+ * A CATEGORY CAN BE CREATED FROM HERE AND USED IMMEDIATELY. `POST /research-categories`
+ * lands the row `pending`, and every writer of `research_category` — this report, projects,
+ * market insights, discovery skills — refuses only `rejected`. `pending` is a real row with
+ * a real id, so it is a usable foreign key; the name is what is unsettled, not the row.
  *
- * THAT ASYMMETRY IS NOT AN OVERSIGHT TO ROUTE AROUND. `research_category` is one shared
- * table — the founder wizard, the map's chips, cluster facets and market insights all read
- * it — and this is its most public, least authenticated entry point. Three of its four
- * writers demand `approved`; only project create/update accept `pending`. Selecting a fresh
- * proposal here to save a step would arm a 422 the reporter cannot see coming.
+ * The three surfaces that once demanded `approved` were the reason a proposal could be made
+ * and then not used, on the one table the founder wizard, the map's chips, cluster facets
+ * and market insights all read. One table now has one rule.
  *
- * The proposal is not lost: `POST /discovery/admin/categories/:categoryId/decide` exists, so
- * a `moderate_taxonomy` holder settles it and it is selectable next time.
+ * MODERATION STILL DECIDES, it just no longer blocks. `POST
+ * /discovery/admin/categories/:categoryId/decide` settles the name, and a `rejected` verdict
+ * bites everywhere — so the list tags a `pending` entry "Awaiting review" rather than
+ * pretending it is already vocabulary.
  */
 
 type ReportProblemSheetProps = {
@@ -95,7 +94,11 @@ export default function ReportProblemSheet({ canCreateCategory }: ReportProblemS
       .map((proposed) => ({
         optionId: proposed.id,
         optionName: proposed.displayLabel,
-        unavailableReason: RESEARCH_CATEGORY_STATUS_LABELS[proposed.status],
+        // No tag once a moderator approves it — at that point it is an ordinary entry in the
+        // vocabulary and saying anything about it would be noise.
+        ...(proposed.status === "approved"
+          ? {}
+          : { optionNote: RESEARCH_CATEGORY_STATUS_LABELS[proposed.status] }),
       })),
   ];
 
@@ -109,9 +112,9 @@ export default function ReportProblemSheet({ canCreateCategory }: ReportProblemS
   const categoryHelpText = createCategoryMutation.isPending
     ? "Creating…"
     : proposedCategories.length > 0
-      ? "Created — a moderator reviews it before it can be used. Pick an approved category for this report."
+      ? "Created and selected. A moderator reviews the name later; your report is not held up by it."
       : canCreateCategory
-        ? "Type a name that does not exist yet to propose it."
+        ? "Type a name that does not exist yet to create it."
         : undefined;
 
   // Mirrors the server's own minimums so the button does not invite a 422 the user can
@@ -123,19 +126,20 @@ export default function ReportProblemSheet({ canCreateCategory }: ReportProblemS
     description.trim().length >= 20;
 
   /**
-   * Proposes the category the user typed — and does NOT select it.
+   * Proposes the category the user typed, then selects it.
    *
-   * That is the whole rule of this surface. The row lands `pending` and
-   * `POST /discovery/problem-reports` refuses anything but `approved`, so selecting it here
-   * would arm a 422 the user cannot see coming. It joins the list greyed instead, and the
-   * report goes in under a category that already exists.
+   * It lands `pending` and that is fine: every writer of `research_category` refuses only
+   * `rejected`, so a category minted a second ago is a usable foreign key. The row is tagged
+   * "Awaiting review" in the list rather than hidden — the reporter should know a moderator
+   * has not settled the name yet, without being blocked on it.
    */
   function handleCategoryCreateRequest(typedCategoryLabel: string): void {
     createCategoryMutation.mutate(
-      { displayLabel: typedCategoryLabel },
+      { label: typedCategoryLabel },
       {
         onSuccess: (createdCategory) => {
           setProposedCategories((previousCategories) => [...previousCategories, createdCategory]);
+          setCategoryId(createdCategory.id);
         },
       },
     );

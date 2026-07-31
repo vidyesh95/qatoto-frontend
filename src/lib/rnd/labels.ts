@@ -162,10 +162,10 @@ export const RESEARCH_PAPER_MODERATION_STATUS_LABELS: Record<
 };
 
 /**
- * Why a taxonomy row cannot be chosen — these render as the tag on an unavailable combobox
- * row, so each reads as a REASON rather than as a state name. `approved` is present because
- * the enum requires it, and is deliberately empty: an approved category is selectable, so it
- * never carries a tag.
+ * How settled a taxonomy row is — these render as the tag on a combobox row, beside a name
+ * the user can still pick. NOT a refusal: every writer of `research_category` accepts
+ * anything but `rejected`, so these qualify an option rather than disqualifying it.
+ * `approved` is deliberately empty — a settled category is just vocabulary and carries no tag.
  */
 export const RESEARCH_CATEGORY_STATUS_LABELS: Record<ResearchCategory["status"], string> = {
   pending: "Awaiting review",
