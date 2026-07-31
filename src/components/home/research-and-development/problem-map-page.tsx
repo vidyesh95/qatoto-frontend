@@ -15,7 +15,7 @@ import { listResearchCategories } from "@/lib/rnd/catalog.api";
 import { listDiscoveryRegions, listProblemClusters } from "@/lib/rnd/discovery.api";
 import { buildFilterHref, readSingleParam, type RawSearchParams } from "@/lib/rnd/filter-href";
 import { rowsOrEmpty, toListViewState } from "@/lib/rnd/view-state";
-import { callerRequestOptions } from "@/lib/server-http";
+import { callerRequestOptions, hasCallerSession } from "@/lib/server-http";
 
 // The map shows pins, not a feed. A page is bounded because a deep offset on a public
 // unauthenticated read is a scan amplifier; a real viewport-scoped fetch (the backend
@@ -40,7 +40,12 @@ export default async function ProblemMapPage({
   searchParams: Promise<RawSearchParams>;
 }) {
   const resolvedSearchParams = await searchParams;
-  const requestOptions = await callerRequestOptions();
+  // Proposing a category needs a real account, so the sheet is told rather than left to
+  // discover it from a 401 on a button it should not have offered.
+  const [requestOptions, isSignedIn] = await Promise.all([
+    callerRequestOptions(),
+    hasCallerSession(),
+  ]);
   const selectedCategorySlug = readSingleParam(resolvedSearchParams, "category");
   const selectedRegionSlug = readSingleParam(resolvedSearchParams, "region");
 
@@ -116,7 +121,7 @@ export default async function ProblemMapPage({
           ) : (
             <span />
           )}
-          <ReportProblemSheet />
+          <ReportProblemSheet canCreateCategory={isSignedIn} />
         </div>
         {regionOptions.length > 0 && (
           <FilterChipRow options={regionChips} ariaLabel="Filter by region" />

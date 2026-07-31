@@ -54,6 +54,26 @@ export function useResearchCategoriesQuery() {
 }
 
 /**
+ * Proposes a research category. It lands `pending`.
+ *
+ * WHAT THE CALLER MUST NOT ASSUME: `pending` is not usable everywhere. `createResearchProject`
+ * links to a pending id happily, but the problem report, the market-insight and the skill
+ * writes all demand `approved` and answer `422 CATEGORY_NOT_APPROVED`. Which rule applies is
+ * the calling form's business, so this hook returns the row — including its `status` — and
+ * decides nothing.
+ *
+ * NO INVALIDATION, deliberately. Every read of this taxonomy asks for `?status=approved`, and
+ * a row that just landed `pending` cannot have changed any of them. Refetching would imply it
+ * had.
+ */
+export function useCreateResearchCategoryMutation() {
+  return useMutation({
+    mutationFn: async (input: { displayLabel: string }) =>
+      unwrap(await createResearchCategory({ displayLabel: input.displayLabel })),
+  });
+}
+
+/**
  * The FOUNDER's application inbox — a different read from `useMyApplicationsQuery`, with
  * different rows and a different actor. Maintainer-gated; a non-maintainer gets `404`.
  */

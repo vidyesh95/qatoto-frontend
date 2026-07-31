@@ -9,10 +9,16 @@ import { MutationErrorNotice } from "@/components/home/research-and-development/
 import RndSheet, {
   RndSheetConfirmation,
 } from "@/components/home/research-and-development/sheets/rnd-sheet";
+import CreatableCombobox, { type ComboboxOption } from "@/components/ui/creatable-combobox";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import { useCreateProblemReportMutation } from "@/hooks/rnd/discovery";
-import { useResearchCategoriesQuery } from "@/hooks/rnd/projects";
+import {
+  useCreateResearchCategoryMutation,
+  useResearchCategoriesQuery,
+} from "@/hooks/rnd/projects";
 import { ApiRequestError } from "@/lib/http";
+import type { ResearchCategory } from "@/lib/rnd/catalog.schemas";
+import { RESEARCH_CATEGORY_STATUS_LABELS } from "@/lib/rnd/labels";
 
 /**
  * Report a problem to Civic Pulse.
@@ -33,21 +39,80 @@ import { ApiRequestError } from "@/lib/http";
  * because there must not be one.
  *
  * THE CATEGORY IS AN ID, so this reads the approved taxonomy rather than offering free
- * text. Unlike the project wizard there is no propose-a-category path: `categoryId` on
- * this body is `z.uuid()`, and a citizen report is not where new taxonomy should enter.
+ * text — `categoryId` on this body is `z.uuid()`, and there is no "other" bucket.
+ *
+ * A CATEGORY CAN BE PROPOSED FROM HERE, BUT NEVER ADOPTED FROM HERE. `POST
+ * /research-categories` lands the row `pending`, and `POST /discovery/problem-reports` calls
+ * `checkCategoryUsable`, which demands `approved` and otherwise answers `422
+ * CATEGORY_NOT_APPROVED`. So a category created in this field joins the list GREYED and
+ * unpickable, and the report is filed under one that already exists.
+ *
+ * THAT ASYMMETRY IS NOT AN OVERSIGHT TO ROUTE AROUND. `research_category` is one shared
+ * table — the founder wizard, the map's chips, cluster facets and market insights all read
+ * it — and this is its most public, least authenticated entry point. Three of its four
+ * writers demand `approved`; only project create/update accept `pending`. Selecting a fresh
+ * proposal here to save a step would arm a 422 the reporter cannot see coming.
+ *
+ * The proposal is not lost: `POST /discovery/admin/categories/:categoryId/decide` exists, so
+ * a `moderate_taxonomy` holder settles it and it is selectable next time.
  */
-export default function ReportProblemSheet() {
+
+type ReportProblemSheetProps = {
+  /** Signed in with a real account — the precondition for `POST /research-categories`.
+   *  False renders no create row rather than a control that 401s. */
+  canCreateCategory: boolean;
+};
+export default function ReportProblemSheet({ canCreateCategory }: ReportProblemSheetProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [locationText, setLocationText] = useState("");
   const [description, setDescription] = useState("");
+  /**
+   * Categories proposed during this session.
+   *
+   * Every read of this taxonomy asks for `?status=approved`, so a row that just landed
+   * `pending` appears in no query. Holding it here is what lets the field SHOW it — greyed,
+   * unpickable — instead of silently forgetting it and offering "Create" again on the next
+   * keystroke, which the backend answers with a 409.
+   */
+  const [proposedCategories, setProposedCategories] = useState<ResearchCategory[]>([]);
 
   const categoriesQuery = useResearchCategoriesQuery();
   const reportMutation = useCreateProblemReportMutation();
+  const createCategoryMutation = useCreateResearchCategoryMutation();
 
-  const reportError =
-    reportMutation.error instanceof ApiRequestError ? reportMutation.error.apiError : null;
+  const approvedCategories = categoriesQuery.data ?? [];
+  const categoryOptions: ComboboxOption[] = [
+    ...approvedCategories.map((category) => ({
+      optionId: category.id,
+      optionName: category.displayLabel,
+    })),
+    // Dropped the moment the approved list carries one, so an entry cannot appear twice if a
+    // moderator approves it while the sheet is open.
+    ...proposedCategories
+      .filter((proposed) => !approvedCategories.some((category) => category.id === proposed.id))
+      .map((proposed) => ({
+        optionId: proposed.id,
+        optionName: proposed.displayLabel,
+        unavailableReason: RESEARCH_CATEGORY_STATUS_LABELS[proposed.status],
+      })),
+  ];
+
+  // Whichever write failed first. The proposal and the report are separate requests with
+  // separate refusals — a 409 on a duplicate name and a 422 on the report are both worth
+  // reading verbatim, and showing only the report's would swallow half of them.
+  const firstError = [createCategoryMutation.error, reportMutation.error].find(
+    (error): error is ApiRequestError => error instanceof ApiRequestError,
+  );
+
+  const categoryHelpText = createCategoryMutation.isPending
+    ? "Creating…"
+    : proposedCategories.length > 0
+      ? "Created — a moderator reviews it before it can be used. Pick an approved category for this report."
+      : canCreateCategory
+        ? "Type a name that does not exist yet to propose it."
+        : undefined;
 
   // Mirrors the server's own minimums so the button does not invite a 422 the user can
   // see coming. The server re-checks; this is courtesy, not validation.
@@ -57,13 +122,34 @@ export default function ReportProblemSheet() {
     locationText.trim().length >= 2 &&
     description.trim().length >= 20;
 
+  /**
+   * Proposes the category the user typed — and does NOT select it.
+   *
+   * That is the whole rule of this surface. The row lands `pending` and
+   * `POST /discovery/problem-reports` refuses anything but `approved`, so selecting it here
+   * would arm a 422 the user cannot see coming. It joins the list greyed instead, and the
+   * report goes in under a category that already exists.
+   */
+  function handleCategoryCreateRequest(typedCategoryLabel: string): void {
+    createCategoryMutation.mutate(
+      { displayLabel: typedCategoryLabel },
+      {
+        onSuccess: (createdCategory) => {
+          setProposedCategories((previousCategories) => [...previousCategories, createdCategory]);
+        },
+      },
+    );
+  }
+
   function closeSheet() {
     setIsSheetOpen(false);
     reportMutation.reset();
+    createCategoryMutation.reset();
     setTitle("");
     setCategoryId("");
     setLocationText("");
     setDescription("");
+    setProposedCategories([]);
   }
 
   return (
@@ -108,21 +194,15 @@ export default function ReportProblemSheet() {
               />
             </label>
 
-            <label className="flex flex-col gap-1">
-              <span className={LABEL_CLASS}>Category</span>
-              <select
-                value={categoryId}
-                onChange={(changeEvent) => setCategoryId(changeEvent.target.value)}
-                className={INPUT_CLASS}
-              >
-                <option value="">Choose a category</option>
-                {(categoriesQuery.data ?? []).map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.displayLabel}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <CreatableCombobox
+              labelText="Category"
+              placeholderText="Search or create a category"
+              selectedOptionId={categoryId}
+              options={categoryOptions}
+              onOptionSelect={setCategoryId}
+              {...(canCreateCategory ? { onCreateRequest: handleCategoryCreateRequest } : {})}
+              helpText={categoryHelpText}
+            />
 
             <label className="flex flex-col gap-1">
               <span className={LABEL_CLASS}>Where is it?</span>
@@ -158,7 +238,7 @@ export default function ReportProblemSheet() {
               {reportMutation.isPending ? "Sending…" : "Send my report"}
             </button>
 
-            {reportError !== null && <MutationErrorNotice error={reportError} />}
+            {firstError && <MutationErrorNotice error={firstError.apiError} />}
           </form>
         )}
       </RndSheet>

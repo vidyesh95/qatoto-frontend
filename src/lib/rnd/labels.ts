@@ -25,6 +25,7 @@ import type {
   ProjectStage,
   RoleCommitment,
 } from "@/lib/rnd/shared.schemas";
+import type { ResearchCategory } from "@/lib/rnd/catalog.schemas";
 import type { SupplierContactPolicy, SupplierVerificationState } from "@/lib/rnd/suppliers.schemas";
 import type { TalentAvailability } from "@/lib/rnd/discovery.schemas";
 
@@ -158,6 +159,21 @@ export const RESEARCH_PAPER_MODERATION_STATUS_LABELS: Record<
   // A request, not a refusal — and the label has to say so, because the author's next step is
   // to re-submit rather than to give up.
   needs_changes: "Changes requested",
+};
+
+/**
+ * Why a taxonomy row cannot be chosen — these render as the tag on an unavailable combobox
+ * row, so each reads as a REASON rather than as a state name. `approved` is present because
+ * the enum requires it, and is deliberately empty: an approved category is selectable, so it
+ * never carries a tag.
+ */
+export const RESEARCH_CATEGORY_STATUS_LABELS: Record<ResearchCategory["status"], string> = {
+  pending: "Awaiting review",
+  approved: "",
+  rejected: "Not approved",
+  // Folded into another category by a moderator. The name still resolves, so it is shown
+  // rather than hidden — but choosing it would file against a row nobody maintains.
+  merged: "Merged into another",
 };
 
 export const RESEARCH_POST_TRACK_LABELS: Record<ResearchPostTrack, string> = {

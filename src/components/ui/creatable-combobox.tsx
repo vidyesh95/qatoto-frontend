@@ -41,7 +41,15 @@ type CreatableComboboxState =
 
 /** One selectable option. `optionId` is what the owner stores; `optionName` is
  *  what is typed against and displayed. */
-export type ComboboxOption = { optionId: string; optionName: string };
+export type ComboboxOption = {
+  optionId: string;
+  optionName: string;
+  /** Set when the option EXISTS but cannot be chosen — a taxonomy row awaiting
+   *  moderation, say. The row renders muted with this text beside it and
+   *  committing is a no-op. Listing it rather than hiding it is what stops the
+   *  user from typing the same name again and creating a duplicate. */
+  unavailableReason?: string;
+};
 
 // The two variants no longer commit the same way — an existing row carries an
 // id to select, a create row carries only the raw text the user typed, because
@@ -213,6 +221,13 @@ function renderComboboxRowContent(comboboxRow: CreatableComboboxRow, isRowSelect
             {comboboxRow.option.optionName}
             {isRowSelectedOption && <span className="sr-only"> (current selection)</span>}
           </span>
+          {comboboxRow.option.unavailableReason !== undefined && (
+            // Not sr-only and not a title attribute: the reason is why the row
+            // looks inert, so it has to be visible next to it.
+            <span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px]">
+              {comboboxRow.option.unavailableReason}
+            </span>
+          )}
         </>
       );
     case "create-option":
@@ -357,8 +372,17 @@ export default function CreatableCombobox({
   };
 
   const commitOptionRow = (comboboxRow: CreatableComboboxRow) => {
-    // The list closes either way: a create row hands off to the owner, which may
-    // open a form under this field, and leaving a popup over it would cover it.
+    // An unavailable row is inert, and the list STAYS OPEN — dismissing the popup
+    // on a misclick would read as "that worked" for a row that did nothing.
+    if (
+      comboboxRow.kind === "existing-option" &&
+      comboboxRow.option.unavailableReason !== undefined
+    ) {
+      return;
+    }
+
+    // Otherwise the list closes either way: a create row hands off to the owner,
+    // which may open a form under this field, and a popup over it would cover it.
     closeOptionList();
     switch (comboboxRow.kind) {
       case "existing-option":
@@ -531,6 +555,9 @@ export default function CreatableCombobox({
               const isRowSelectedOption =
                 comboboxRow.kind === "existing-option" &&
                 comboboxRow.option.optionId === selectedOptionId;
+              const isRowUnavailable =
+                comboboxRow.kind === "existing-option" &&
+                comboboxRow.option.unavailableReason !== undefined;
               return (
                 // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- rows are intentionally non-focusable; keyboard selection lives on the input via aria-activedescendant
                 <li
@@ -545,6 +572,11 @@ export default function CreatableCombobox({
                   // eslint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/prefer-tag-over-role -- <option> is only valid inside select/datalist; see the listbox note above
                   role="option"
                   aria-selected={isRowHighlighted}
+                  // Navigable but not selectable, per the ARIA APG. Skipping it in
+                  // the arrow-key cycle instead would hide from a screen-reader
+                  // user that the option exists at all — which is the one thing
+                  // this row is here to say.
+                  {...(isRowUnavailable ? { "aria-disabled": true } : {})}
                   ref={(rowElement) => {
                     rowElementRefs.current[rowIndex] = rowElement;
                     return () => {
@@ -557,8 +589,16 @@ export default function CreatableCombobox({
                     if (!isRowHighlighted) updateOpenOptionList(comboboxState.query, rowIndex);
                   }}
                   onClick={() => commitOptionRow(comboboxRow)}
-                  className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm ${
-                    isRowHighlighted ? "bg-[#00696E]/10 text-[#00696E]" : ""
+                  className={`flex items-center gap-2 px-3 py-2 text-sm ${
+                    isRowUnavailable ? "cursor-default text-muted-foreground" : "cursor-pointer"
+                  } ${
+                    isRowHighlighted
+                      ? // A highlighted unavailable row gets the neutral hover, not the
+                        // accent — the accent means "press Enter and this is yours".
+                        isRowUnavailable
+                        ? "bg-muted/60"
+                        : "bg-[#00696E]/10 text-[#00696E]"
+                      : ""
                   } ${comboboxRow.kind === "create-option" ? "border-t border-border/50" : ""}`}
                 >
                   {renderComboboxRowContent(comboboxRow, isRowSelectedOption)}
