@@ -5,7 +5,10 @@
 import Image from "next/image";
 import { useState } from "react";
 
-import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
+import {
+  MutationErrorNotice,
+  MutationSuccessNotice,
+} from "@/components/home/research-and-development/sections/mutation-feedback";
 import {
   useAdminPromotionalSlidesQuery,
   useCreatePromotionalSlideMutation,
@@ -17,6 +20,30 @@ import {
 import { useOwnStaffContextQuery } from "@/hooks/rnd/platform-roles";
 import { ApiRequestError } from "@/lib/http";
 import type { AdminPromotionalSlide, PromotionalDestinationKind } from "@/lib/promo/schemas";
+
+/**
+ * What the OS file picker may offer, mirroring ALLOWED_INPUT_FORMATS in the backend's
+ * `src/lib/image.ts`. Without it the picker offers files the server will refuse, and the
+ * admin only finds out after an upload round trip.
+ *
+ * BOTH MIME TYPES AND EXTENSIONS: some pickers filter on UTI/extension rather than MIME, and
+ * macOS Finder in particular greys files out when only MIME types are listed.
+ *
+ * `image/heic` IS DELIBERATELY ABSENT. The server cannot decode HEVC-coded HEIC — libheif is
+ * built with the AV1 decoder only — and on iOS an accept list with no HEIC entry makes Safari
+ * hand over a transcoded JPEG instead. Omitting it is the fix, not an oversight.
+ */
+const ACCEPTED_SLIDE_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".avif",
+].join(",");
 
 /**
  * The list has a `restricted` variant the other admin queues do not need.
@@ -88,19 +115,18 @@ export default function PromotionalSlideAdminPage() {
 
   const slidesQuery = useAdminPromotionalSlidesQuery(canManagePromotionalSlides);
 
+  // THE PAGE OWNS ONLY LIST-LEVEL WRITES. Update and image-replace live inside SlideRow, so
+  // their errors render on the row the admin clicked rather than in one banner at the top of
+  // the page — see the SlideRow doc comment for why that distinction was load-bearing.
+  // Reorder stays here on purpose: it sends the whole permutation, so its failure belongs to
+  // the list, not to any single row.
   const createSlide = useCreatePromotionalSlideMutation();
-  const updateSlide = useUpdatePromotionalSlideMutation();
-  const replaceImage = useReplacePromotionalSlideImageMutation();
   const reorderSlides = useReorderPromotionalSlidesMutation();
   const deleteSlide = useDeletePromotionalSlideMutation();
 
-  const firstError = [
-    createSlide.error,
-    updateSlide.error,
-    replaceImage.error,
-    reorderSlides.error,
-    deleteSlide.error,
-  ].find((error): error is ApiRequestError => error instanceof ApiRequestError);
+  const firstError = [createSlide.error, reorderSlides.error, deleteSlide.error].find(
+    (error): error is ApiRequestError => error instanceof ApiRequestError,
+  );
 
   const listState = toSlideListViewState(canManagePromotionalSlides, {
     isPending: slidesQuery.isPending,
@@ -206,15 +232,8 @@ export default function PromotionalSlideAdminPage() {
                 // A second permutation computed against a stale array would scramble the
                 // order, so every row's ordering control is disabled while one is in flight.
                 isReordering={reorderSlides.isPending}
-                isMutating={updateSlide.isPending || replaceImage.isPending}
                 isDeleting={deleteSlide.isPending}
                 onMove={handleMoveSlide}
-                onUpdate={(patch) => {
-                  updateSlide.mutate({ slideId: slide.id, patch });
-                }}
-                onReplaceImage={(imageFile) => {
-                  replaceImage.mutate({ slideId: slide.id, imageFile });
-                }}
                 onDelete={() => {
                   deleteSlide.mutate(slide.id);
                 }}
@@ -280,13 +299,15 @@ function CreateSlideForm({
           <input
             id="promotional-slide-image"
             type="file"
-            accept="image/*"
+            accept={ACCEPTED_SLIDE_IMAGE_TYPES}
             required
             className="block w-full text-sm"
             onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
           />
           <p className="text-xs text-muted-foreground">
-            JPEG, PNG or WebP, up to 5 MB. Re-encoded server-side.
+            JPEG, PNG, WebP or AVIF, up to 5 MB. Re-encoded server-side. iPhone photos saved as HEIC
+            aren&apos;t supported — set Settings → Camera → Formats → Most Compatible, or export as
+            JPEG.
           </p>
         </div>
 
@@ -375,29 +396,47 @@ function SlideRow({
   index,
   slideCount,
   isReordering,
-  isMutating,
   isDeleting,
   onMove,
-  onUpdate,
-  onReplaceImage,
   onDelete,
 }: {
   slide: AdminPromotionalSlide;
   index: number;
   slideCount: number;
   isReordering: boolean;
-  isMutating: boolean;
   isDeleting: boolean;
   onMove: (slideId: string, targetIndex: number) => void;
-  onUpdate: (patch: {
+  onDelete: () => void;
+}) {
+  /**
+   * THE ROW OWNS ITS OWN WRITES, and this is the fix for the bug that made a failed image
+   * replace read as a caching problem.
+   *
+   * When these two mutations lived on the page, a 422 from row three rendered in a single
+   * banner beside the page heading — often scrolled off the top — while the row itself sat
+   * there unchanged. Worse, one shared `isMutating` disabled the controls on EVERY row. The
+   * observable result was "I clicked Replace image and nothing happened", which is exactly
+   * what got reported, and it survived five retries before anyone read the server log.
+   *
+   * Owning the hooks here makes error and pending state row-scoped for free — no correlating
+   * `variables?.slideId` against the row, and no cross-row disabling.
+   */
+  const updateSlide = useUpdatePromotionalSlideMutation();
+  const replaceImage = useReplacePromotionalSlideImageMutation();
+
+  const isMutating = updateSlide.isPending || replaceImage.isPending;
+  const rowError = [replaceImage.error, updateSlide.error].find(
+    (error): error is ApiRequestError => error instanceof ApiRequestError,
+  );
+
+  function handleUpdate(patch: {
     altText?: string;
     destinationKind?: PromotionalDestinationKind;
     destinationValue?: string;
     isActive?: boolean;
-  }) => void;
-  onReplaceImage: (imageFile: File) => void;
-  onDelete: () => void;
-}) {
+  }) {
+    updateSlide.mutate({ slideId: slide.id, patch });
+  }
   const [isEditing, setIsEditing] = useState(false);
   const [draftAltText, setDraftAltText] = useState(slide.altText);
   const [draftDestinationKind, setDraftDestinationKind] = useState<PromotionalDestinationKind>(
@@ -415,7 +454,9 @@ function SlideRow({
           width={160}
           height={90}
           alt=""
-          className="h-auto w-40 rounded-lg object-cover"
+          className={`h-auto w-40 rounded-lg object-cover transition-opacity ${
+            replaceImage.isPending ? "opacity-40" : ""
+          }`}
         />
 
         <div className="min-w-0 flex-1 space-y-1">
@@ -481,7 +522,7 @@ function SlideRow({
         <button
           type="button"
           disabled={isMutating}
-          onClick={() => onUpdate({ isActive: !slide.isActive })}
+          onClick={() => handleUpdate({ isActive: !slide.isActive })}
           className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
         >
           {slide.isActive ? "Hide from home page" : "Show on home page"}
@@ -497,16 +538,21 @@ function SlideRow({
 
         {/* Its own control, separate from Edit — so it is never ambiguous whether a save is
             about to touch the image. */}
-        <label className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs">
-          Replace image
+        <label
+          aria-disabled={isMutating}
+          className={`rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs ${
+            isMutating ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+          }`}
+        >
+          {replaceImage.isPending ? "Replacing…" : "Replace image"}
           <input
             type="file"
-            accept="image/*"
+            accept={ACCEPTED_SLIDE_IMAGE_TYPES}
             className="hidden"
             disabled={isMutating}
             onChange={(event) => {
               const selectedFile = event.target.files?.[0];
-              if (selectedFile) onReplaceImage(selectedFile);
+              if (selectedFile) replaceImage.mutate({ slideId: slide.id, imageFile: selectedFile });
               event.target.value = "";
             }}
           />
@@ -542,12 +588,30 @@ function SlideRow({
         )}
       </div>
 
+      {/*
+        THE ROW'S OWN VERDICT, six inches from the button that caused it. Same components and
+        same visual language as everywhere else in the console — the point is the position,
+        not a new vocabulary.
+
+        The SUCCESS notice matters more than it looks: a replacement image can resemble the one
+        it replaced, so "Image replaced." is what tells the admin the write landed rather than
+        leaving them to squint at a thumbnail. React Query clears mutation state on the next
+        `mutate()`, so it needs no timer.
+      */}
+      {replaceImage.isPending && (
+        <output className="block text-xs text-muted-foreground">Replacing image…</output>
+      )}
+      {rowError && <MutationErrorNotice error={rowError.apiError} />}
+      {replaceImage.isSuccess && !replaceImage.isPending && (
+        <MutationSuccessNotice message="Image replaced." />
+      )}
+
       {isEditing && (
         <form
           className="space-y-3 border-t border-[#CAC4D0]/40 pt-3"
           onSubmit={(event) => {
             event.preventDefault();
-            onUpdate({
+            handleUpdate({
               altText: draftAltText,
               // Kind and value always travel together — the backend 422s a kind with no
               // value, because "/store" is a fine path and a broken URL.
