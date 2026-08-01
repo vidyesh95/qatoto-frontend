@@ -47,6 +47,14 @@ const ADMIN_NAVIGATION_ITEMS: AdminNavItem[] = [
     inactiveIcon: "/icons/category_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    // Desktop only, deliberately not added to admin-mobile-bottom-nav: that bar would go
+    // from six tabs to seven, and managing a carousel means picking image files.
+    href: "/admin/promotions",
+    label: "Promotions",
+    activeIcon: "/icons/slideshow_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/slideshow_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     href: "/admin/staff",
     label: "Staff",
     activeIcon: "/icons/group_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",

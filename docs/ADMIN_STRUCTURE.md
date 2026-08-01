@@ -22,7 +22,17 @@ product.
 | Admin flow                                       | Tool                                              |
 | ------------------------------------------------ | ------------------------------------------------- |
 | **Anime review — watch + approve/reject**        | ✅ **hand-build `/admin/review`** (§4.1)          |
+| **Home-page promotional carousel**               | ✅ **built — `/admin/promotions`** (§4.7)         |
 | Users, catalog, schedule, store, audit, settings | **Drizzle Studio** — no build (§4.2–4.6 deferred) |
+
+> **§4.7 was added after this table was first written**, so the "only §4.1 gets built"
+> line below is now stale twice over — `/admin/categories` and `/admin/staff` also shipped.
+
+**Why the carousel is the second exception**, on the same reasoning as anime review: the
+job is _look at the picture, then decide where it links and what order it sits in_. Drizzle
+Studio shows the Cloudinary URL as a text cell, and reordering means hand-editing an integer
+`position` column on every row without ever seeing the slides. It also cannot upload an
+image at all — the bytes have to go through sharp and Cloudinary, which only the API does.
 
 **Why anime review is the one exception:** the job is _watch the video, then decide_.
 Drizzle Studio only shows the video URL as a text cell — no player. You'd copy the
@@ -182,6 +192,35 @@ flowchart TD
 | Dashboard | pending counts, key metrics         |       |
 | Audit log | who did what, when (read-only)      |       |
 | Settings  | feature flags, categories, taxonomy |       |
+
+### 4.7 Promotions — ✅ built (`/admin/promotions`)
+
+The home-page carousel. Backed by `promotional_slide` and the `/promotions` router; the
+public read is `GET /promotions/slides` and every write is `/promotions/admin/slides/*`.
+
+| Piece         | Notes                                                                                         |
+| ------------- | --------------------------------------------------------------------------------------------- |
+| Add a slide   | multipart — image + alt text + destination, in ONE call. A slide with no image is not a slide |
+| Set the order | ▲/▼ **and** a "Show as 1st/2nd/3rd" select. Both send the WHOLE permutation atomically        |
+| Delete        | two-step inline confirm; destroys the Cloudinary asset first, then re-packs positions         |
+| Hide / show   | `isActive` — the row survives, the visitor stops seeing it                                    |
+| Schedule      | `startsAt` / `endsAt`, NULL = unbounded. Out-of-window slides stay in the admin list          |
+
+**Three things that are not negotiable on this surface:**
+
+- **`manage_promotions` is ADMIN-ONLY**, deliberately narrower than `moderate_content`. A
+  slide is a front-page placement that may point at an arbitrary external https URL — a
+  phishing lure wearing our own branding. That blast radius sits next to role management,
+  not next to a review queue.
+- **A destination is parsed, never trusted.** `src/lib/promotional-destination.ts` (backend)
+  refuses `//evil.tld`, `/\evil.tld`, `javascript:` and credentialed URLs, and the
+  `promotional_slide_destination_ck` CHECK makes those rows unrepresentable even if a future
+  code path skips the service. `pnpm db:verify-promotional-slide-constraints` exercises it.
+- **The order is set as a whole permutation**, never per-row. A partial list is a 422, not a
+  partial apply — a client working from a stale list would otherwise silently drop the slide
+  it had not seen to the end.
+
+Verified by `pnpm db:smoke-promotional-slides` (14 behaviours, cleans up after itself).
 
 ---
 
