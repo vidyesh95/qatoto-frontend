@@ -22,19 +22,19 @@ video stream the page splits into **Recommended** (top) and **Explore** (bottom,
 
 ## 1. What exists today
 
-| Piece | File | Transport | State |
-| --- | --- | --- | --- |
-| Route shell | `src/app/(home)/page.tsx` | — | ✅ thin, renders `<Home/>` |
-| Layout (QueryProvider, Sidebar, Navbar) | `src/app/(home)/layout.tsx` | — | ✅ |
-| Composition | `feed/home.tsx` | `props-only` | ✅ |
-| Promo carousel | `feed/promo-carousel-section.tsx` | `server-fetch` | ✅ **the only wired thing on this page** |
-| Filter chip row | `feed/filter.tsx` | *(no banner)* | ⚠️ real a11y, fake data, dead selection |
-| The four sections | `feed/all-content.tsx` | *(no banner)* | 🚫 four mock arrays |
-| Spotlight tile | `feed/spotlight-video-cards.tsx` | *(no banner)* | 🚫 image + alt only |
-| Category tile | `feed/video-category-card.tsx` | *(no banner)* | 🚫 no slug, no href |
-| Video card | `shared/video-card.tsx` | *(no banner)* | ⚠️ display-strings only, no video id |
-| Watch player | `watch/video-player.tsx` | — | 🚫 native `<video>`, **cannot play a YouTube row** |
-| Studio upload | `studio/upload/upload-modal.tsx` | — | 🚫 saves to an in-memory context, no fetch |
+| Piece                                   | File                              | Transport      | State                                              |
+| --------------------------------------- | --------------------------------- | -------------- | -------------------------------------------------- |
+| Route shell                             | `src/app/(home)/page.tsx`         | —              | ✅ thin, renders `<Home/>`                         |
+| Layout (QueryProvider, Sidebar, Navbar) | `src/app/(home)/layout.tsx`       | —              | ✅                                                 |
+| Composition                             | `feed/home.tsx`                   | `props-only`   | ✅                                                 |
+| Promo carousel                          | `feed/promo-carousel-section.tsx` | `server-fetch` | ✅ **the only wired thing on this page**           |
+| Filter chip row                         | `feed/filter.tsx`                 | _(no banner)_  | ⚠️ real a11y, fake data, dead selection            |
+| The four sections                       | `feed/all-content.tsx`            | _(no banner)_  | 🚫 four mock arrays                                |
+| Spotlight tile                          | `feed/spotlight-video-cards.tsx`  | _(no banner)_  | 🚫 image + alt only                                |
+| Category tile                           | `feed/video-category-card.tsx`    | _(no banner)_  | 🚫 no slug, no href                                |
+| Video card                              | `shared/video-card.tsx`           | _(no banner)_  | ⚠️ display-strings only, no video id               |
+| Watch player                            | `watch/video-player.tsx`          | —              | 🚫 native `<video>`, **cannot play a YouTube row** |
+| Studio upload                           | `studio/upload/upload-modal.tsx`  | —              | 🚫 saves to an in-memory context, no fetch         |
 
 Two things are worth keeping as they are:
 
@@ -68,18 +68,18 @@ Nothing here invents transport. `src/lib/http.ts` already has `getJson`, `getPag
 `sendJson`, `buildQueryString`, `unwrap`, `isUnauthorized` and the `ActionResponse<T>` tagged
 result; `src/lib/server-http.ts` already has `callerRequestOptions()` which forwards the
 better-auth cookies. `src/lib/feed/api.ts` carries the same banner as `src/lib/promo/api.ts` —
-*server-fetch + client-query, callable from both sides via the optional `RequestOptions`* — and
+_server-fetch + client-query, callable from both sides via the optional `RequestOptions`_ — and
 does the same thing.
 
 ### 2.1 Wire casing, applied
 
 Three casings meet on this page and none of them may be "corrected":
 
-| Thing | Casing | Example |
-| --- | --- | --- |
-| Category slugs | kebab | `?category=quantum-computing` |
-| Query keys and JSON fields | camelCase | `?categorySlug=…&rankSeed=…` |
-| Feed mode values | **snake_case** | `?mode=new_to_you` |
+| Thing                      | Casing         | Example                       |
+| -------------------------- | -------------- | ----------------------------- |
+| Category slugs             | kebab          | `?category=quantum-computing` |
+| Query keys and JSON fields | camelCase      | `?categorySlug=…&rankSeed=…`  |
+| Feed mode values           | **snake_case** | `?mode=new_to_you`            |
 
 `new_to_you` and `recently_uploaded` are `pgEnum` labels (backend §3.1). They are **data, not
 identifiers**. `z.enum(FEED_MODES).safeParse("new-to-you")` fails, and `?mode=new-to-you` is a 422
@@ -145,8 +145,8 @@ miniature.
 ```ts
 // src/lib/feed/chips.ts
 export type FeedChip =
-  | { kind: "mode"; mode: FeedMode; label: string }
-  | { kind: "topic"; categorySlug: string; label: string };
+    | { kind: "mode"; mode: FeedMode; label: string }
+    | { kind: "topic"; categorySlug: string; label: string };
 ```
 
 `buildFeedChips(categories)` returns the mode chips followed by one topic chip per active
@@ -204,10 +204,10 @@ Each section owns a discriminated union and an exhaustive `switch` with a `never
 
 ```ts
 type ExploreSectionState =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "empty" }
-  | { status: "ready"; videos: FeedVideo[]; hasNextPage: boolean };
+    | { status: "loading" }
+    | { status: "error"; message: string }
+    | { status: "empty" }
+    | { status: "ready"; videos: FeedVideo[]; hasNextPage: boolean };
 ```
 
 The chip row gets its own — a failed `/feed/categories` must render the mode chips alone rather
@@ -234,14 +234,14 @@ It gains a branch on `videoSource`:
 
 `use-watch-progress-beacon.ts`:
 
-| Event | Action |
-| --- | --- |
-| `onStateChange` → playing | start a 15s interval |
-| interval tick | read `getCurrentTime()` / `getDuration()`, POST `/videos/:id/view-beacon` |
-| `onStateChange` → paused/ended | stop the interval, flush once |
-| `onError` | POST the code to `/videos/:id/playback-error` (backend §8.2) |
-| `visibilitychange` / `pagehide` | flush via `navigator.sendBeacon` |
-| unmount | clear interval, destroy player, remove listeners |
+| Event                           | Action                                                                    |
+| ------------------------------- | ------------------------------------------------------------------------- |
+| `onStateChange` → playing       | start a 15s interval                                                      |
+| interval tick                   | read `getCurrentTime()` / `getDuration()`, POST `/videos/:id/view-beacon` |
+| `onStateChange` → paused/ended  | stop the interval, flush once                                             |
+| `onError`                       | POST the code to `/videos/:id/playback-error` (backend §8.2)              |
+| `visibilitychange` / `pagehide` | flush via `navigator.sendBeacon`                                          |
+| unmount                         | clear interval, destroy player, remove listeners                          |
 
 This is **best-effort by construction**. The beacon is a claim, not a measurement — the server
 clamps it against wall-clock elapsed and pins the duration on the first beacon (backend §3.3).
@@ -291,13 +291,13 @@ Two paths are deleted, not migrated:
 
 ## 9. Phase order
 
-| # | Scope | Done when |
-| --- | --- | --- |
-| 4 | `src/lib/feed/*` + `src/hooks/feed/*`; `filter.tsx` on real categories with URL params | Chips render from the backend; clicking one changes the URL |
-| 5 | `all-content.tsx` → the four sections + `splitFeedPage` | Homepage renders real videos; the mock arrays are deleted |
-| 6 | Explore infinite scroll + `filtered-feed.tsx` | Scrolling appends page 2; a chip swaps the page to one filtered grid |
-| 7 | Watch page YouTube branch + beacon hook + engagement UI | Playing a video moves `watchedSeconds` server-side |
-| 8 | Studio real writes; delete `src/lib/videos.ts`; `TRANSPORT:` banners everywhere | A creator's YouTube link reaches the homepage end to end |
+| #   | Scope                                                                                  | Done when                                                            |
+| --- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 4   | `src/lib/feed/*` + `src/hooks/feed/*`; `filter.tsx` on real categories with URL params | Chips render from the backend; clicking one changes the URL          |
+| 5   | `all-content.tsx` → the four sections + `splitFeedPage`                                | Homepage renders real videos; the mock arrays are deleted            |
+| 6   | Explore infinite scroll + `filtered-feed.tsx`                                          | Scrolling appends page 2; a chip swaps the page to one filtered grid |
+| 7   | Watch page YouTube branch + beacon hook + engagement UI                                | Playing a video moves `watchedSeconds` server-side                   |
+| 8   | Studio real writes; delete `src/lib/videos.ts`; `TRANSPORT:` banners everywhere        | A creator's YouTube link reaches the homepage end to end             |
 
 Numbering continues from the backend phases (backend §9) — 1–3 are backend-only and show nothing
 until 4 lands. **Phase 7 is what makes ranking non-trivial**: until real watch sessions exist, the
