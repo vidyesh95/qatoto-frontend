@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import TalentDetailPage from "@/components/home/research-and-development/talent-detail-page";
-import { withSentinelValues } from "@/lib/rnd/static-params";
+import { withSentinelValues } from "@/lib/static-params";
 
 export const metadata: Metadata = {
   title: "Profile · Talent · R&D",

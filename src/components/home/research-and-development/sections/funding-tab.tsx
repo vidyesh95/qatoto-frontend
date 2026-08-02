@@ -15,7 +15,7 @@ import type {
   InvestorConfidence,
   Milestone,
 } from "@/lib/rnd/funding.schemas";
-import type { MemberScopedItemViewState, MemberScopedListViewState } from "@/lib/rnd/view-state";
+import type { MemberScopedItemViewState, MemberScopedListViewState } from "@/lib/view-state";
 
 const FUNDING_ROUND_TYPE_LABELS: Record<FundingRoundType, string> = {
   equity: "Equity",

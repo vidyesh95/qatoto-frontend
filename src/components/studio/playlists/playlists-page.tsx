@@ -1,34 +1,55 @@
 "use client";
 
+// TRANSPORT: client-query — `GET /playlists/mine`, plus create / update / delete.
+//
+// TWO THINGS THE MOCK GOT WRONG AND THIS FIXES:
+//
+//   1. IDENTITY WAS THE TITLE. Edit, delete and the React `key` all used `playlist.title`, so
+//      two playlists with the same name were indistinguishable — deleting one deleted whichever
+//      the array reached first. Everything below keys on the server's id.
+//   2. THE VIDEO COUNT WAS COMPUTED CLIENT-SIDE by scanning every studio video for a matching
+//      playlist title. It is `videoCount` on the row now — the backend counts it in SQL, which
+//      is where counting belongs (CLAUDE.md thin-client rule) and which stays correct for
+//      playlists whose videos this page never loaded.
+
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
-import {
-  StudioPlaylist,
-  StudioPlaylistVisibility,
-  useStudioVideos,
-} from "@/state/studio-videos-context";
+
 import CreatePlaylistModal from "@/components/studio/upload/create-playlist-modal";
+import {
+  useDeletePlaylistMutation,
+  useMyPlaylistsQuery,
+  usePlaylistQuery,
+} from "@/hooks/playlists";
+import type { PlaylistListRow, PlaylistVisibility } from "@/lib/playlists/schemas";
 
-// Creator-facing playlist manager (UI phase — mock data only). Playlists are
-// simple flat curation lists — anime seasons/episodes live in /studio/series.
 export default function PlaylistsPage() {
-  const { playlists, videos, addPlaylist, updatePlaylist, deletePlaylist } = useStudioVideos();
+  const playlistsQuery = useMyPlaylistsQuery({ limit: 100 });
+  const deletePlaylistMutation = useDeletePlaylistMutation();
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [playlistBeingEdited, setPlaylistBeingEdited] = useState<StudioPlaylist | null>(null);
-  const [titlePendingDeletion, setTitlePendingDeletion] = useState<string | null>(null);
+  const [playlistIdBeingEdited, setPlaylistIdBeingEdited] = useState<string | null>(null);
+  const [playlistIdPendingDeletion, setPlaylistIdPendingDeletion] = useState<string | null>(null);
 
-  function countVideosInPlaylist(playlistTitle: string) {
-    return videos.filter((video) => video.selectedPlaylistTitles.includes(playlistTitle)).length;
-  }
+  // The edit modal needs the FULL playlist — description, order and language are not on the
+  // list row — so it reads the detail only once a row is actually being edited.
+  const editedPlaylistQuery = usePlaylistQuery(
+    playlistIdBeingEdited ?? "",
+    playlistIdBeingEdited !== null,
+  );
 
-  function handleDeleteClick(playlistTitle: string) {
-    if (titlePendingDeletion !== playlistTitle) {
-      setTitlePendingDeletion(playlistTitle);
+  function handleDeleteClick(playlistId: string) {
+    // Click once to arm, once to confirm. Delete is irreversible and there is no undo route.
+    if (playlistIdPendingDeletion !== playlistId) {
+      setPlaylistIdPendingDeletion(playlistId);
       return;
     }
-    deletePlaylist(playlistTitle);
-    setTitlePendingDeletion(null);
+    deletePlaylistMutation.mutate(playlistId);
+    setPlaylistIdPendingDeletion(null);
   }
+
+  const playlists = playlistsQuery.data?.rows ?? [];
 
   const newPlaylistButton = (
     <button
@@ -58,7 +79,13 @@ export default function PlaylistsPage() {
         {newPlaylistButton}
       </div>
 
-      {playlists.length === 0 ? (
+      {playlistsQuery.isPending ? (
+        <p className="mt-10 text-sm text-muted-foreground">Loading your playlists…</p>
+      ) : playlistsQuery.error !== null ? (
+        <p className="mt-10 text-sm text-destructive">
+          Couldn&rsquo;t load your playlists. Please try again.
+        </p>
+      ) : playlists.length === 0 ? (
         <div className="mt-10 flex flex-col items-center gap-4 rounded-2xl border border-border py-16">
           <p className="text-lg font-medium text-foreground">No playlists yet</p>
           {newPlaylistButton}
@@ -67,37 +94,36 @@ export default function PlaylistsPage() {
         <ul className="mt-6 flex flex-col gap-2">
           {playlists.map((playlist) => (
             <PlaylistRow
-              key={playlist.title}
+              key={playlist.id}
               playlist={playlist}
-              videoCount={countVideosInPlaylist(playlist.title)}
-              isDeletePending={titlePendingDeletion === playlist.title}
-              onEditClick={() => setPlaylistBeingEdited(playlist)}
-              onDeleteClick={() => handleDeleteClick(playlist.title)}
-              onDeleteBlur={() => setTitlePendingDeletion(null)}
+              isDeletePending={playlistIdPendingDeletion === playlist.id}
+              onEditClick={() => setPlaylistIdBeingEdited(playlist.id)}
+              onDeleteClick={() => handleDeleteClick(playlist.id)}
+              onDeleteBlur={() => setPlaylistIdPendingDeletion(null)}
             />
           ))}
         </ul>
       )}
 
+      {deletePlaylistMutation.error !== null && (
+        <p role="alert" className="mt-4 text-sm text-destructive">
+          Couldn&rsquo;t delete that playlist. Please try again.
+        </p>
+      )}
+
       {isCreateModalOpen && (
         <CreatePlaylistModal
-          onCreate={(createdPlaylist) => {
-            addPlaylist(createdPlaylist);
-            setIsCreateModalOpen(false);
-          }}
+          onCreated={() => setIsCreateModalOpen(false)}
           onCancel={() => setIsCreateModalOpen(false)}
         />
       )}
 
-      {playlistBeingEdited && (
+      {playlistIdBeingEdited !== null && editedPlaylistQuery.data !== undefined && (
         <CreatePlaylistModal
-          key={playlistBeingEdited.title}
-          playlistToEdit={playlistBeingEdited}
-          onCreate={(updatedPlaylist) => {
-            updatePlaylist(playlistBeingEdited.title, updatedPlaylist);
-            setPlaylistBeingEdited(null);
-          }}
-          onCancel={() => setPlaylistBeingEdited(null)}
+          key={playlistIdBeingEdited}
+          playlistToEdit={editedPlaylistQuery.data}
+          onCreated={() => setPlaylistIdBeingEdited(null)}
+          onCancel={() => setPlaylistIdBeingEdited(null)}
         />
       )}
     </div>
@@ -105,15 +131,14 @@ export default function PlaylistsPage() {
 }
 
 type PlaylistRowProps = {
-  playlist: StudioPlaylist;
-  videoCount: number;
+  playlist: PlaylistListRow;
   isDeletePending: boolean;
   onEditClick: () => void;
   onDeleteClick: () => void;
   onDeleteBlur: () => void;
 };
 
-const VISIBILITY_BADGE_STYLES: Record<StudioPlaylistVisibility, string> = {
+const VISIBILITY_BADGE_STYLES: Record<PlaylistVisibility, string> = {
   public: "bg-primary text-primary-foreground",
   unlisted: "border border-border text-muted-foreground",
   private: "border border-border text-muted-foreground",
@@ -121,13 +146,12 @@ const VISIBILITY_BADGE_STYLES: Record<StudioPlaylistVisibility, string> = {
 
 function PlaylistRow({
   playlist,
-  videoCount,
   isDeletePending,
   onEditClick,
   onDeleteClick,
   onDeleteBlur,
 }: PlaylistRowProps) {
-  const videoCountLabel = videoCount === 1 ? "1 video" : `${videoCount} videos`;
+  const videoCountLabel = playlist.videoCount === 1 ? "1 video" : `${playlist.videoCount} videos`;
 
   return (
     <li className="flex items-center gap-4 rounded-xl border border-border px-4 py-3">
@@ -140,10 +164,12 @@ function PlaylistRow({
         />
       </span>
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{playlist.title}</p>
+      <Link href={`/studio/playlists/${playlist.id}`} className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-foreground hover:underline">
+          {playlist.title}
+        </p>
         <p className="text-xs text-muted-foreground">{videoCountLabel}</p>
-      </div>
+      </Link>
 
       <div className="flex shrink-0 items-center gap-2">
         <span

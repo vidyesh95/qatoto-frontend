@@ -7,7 +7,14 @@ import Image from "next/image";
 type Chapter = {
   title: string;
   time: string;
-  thumbSrc: string;
+  /**
+   * Per-chapter still.
+   *
+   * OPTIONAL, because the real ones have none. `GET /feed/watch/:videoId` returns chapters as
+   * `{ startSeconds, title }` — generating a frame at a timestamp would mean decoding video the
+   * platform does not host. The row falls back to a text-only layout rather than a broken image.
+   */
+  thumbSrc?: string;
 };
 
 type TranscriptLine = {
@@ -43,6 +50,7 @@ export default function WatchInfoPanel({
   className = "",
 }: WatchInfoPanelProps) {
   const [tab, setTab] = useState<Tab>("chapters");
+  const hasTranscript = transcript.length > 0;
   const [selectedChapter, setSelectedChapter] = useState<string>(chapters[0]?.title ?? "");
   const [open, setOpen] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -69,7 +77,7 @@ export default function WatchInfoPanel({
       <div className="flex shrink-0 flex-row items-center justify-between border-b border-[#E5E7E7] py-2 pr-2 pl-4">
         <h2 className="text-lg">In this video</h2>
         <div className="flex flex-row items-center gap-2">
-          {tab === "transcript" && (
+          {hasTranscript && tab === "transcript" && (
             <div className="relative">
               <button
                 type="button"
@@ -153,15 +161,26 @@ export default function WatchInfoPanel({
         >
           Chapters
         </button>
-        <button
-          type="button"
-          onClick={() => setTab("transcript")}
-          className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-            tab === "transcript" ? "bg-foreground text-background" : "bg-[#F1F3F3] text-foreground"
-          }`}
-        >
-          Transcript
-        </button>
+        {/*
+          HIDDEN WHEN THERE IS NO TRANSCRIPT. The platform has no speech-to-text — no transcript
+          table, no ASR job, no column — so this list is always empty today. Leaving the tab
+          rendered gave the reader a control that opened a panel with a working search box and
+          nothing to search: a control that cannot do what it says, which is worse than an absent
+          one. It comes back the moment the field ships.
+        */}
+        {hasTranscript && (
+          <button
+            type="button"
+            onClick={() => setTab("transcript")}
+            className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              tab === "transcript"
+                ? "bg-foreground text-background"
+                : "bg-[#F1F3F3] text-foreground"
+            }`}
+          >
+            Transcript
+          </button>
+        )}
       </div>
 
       {/* Body */}
@@ -180,13 +199,15 @@ export default function WatchInfoPanel({
                   onClick={() => setSelectedChapter(chapter.title)}
                   className="flex min-w-0 flex-1 cursor-pointer flex-row items-center gap-3 text-left"
                 >
-                  <Image
-                    src={chapter.thumbSrc}
-                    width={96}
-                    height={54}
-                    alt=""
-                    className="aspect-video w-24 shrink-0 rounded-lg object-cover"
-                  />
+                  {chapter.thumbSrc !== undefined && (
+                    <Image
+                      src={chapter.thumbSrc}
+                      width={96}
+                      height={54}
+                      alt=""
+                      className="aspect-video w-24 shrink-0 rounded-lg object-cover"
+                    />
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{chapter.title}</p>
                     <span className="mt-1 inline-block rounded-md bg-[#EAF1FB] px-1.5 py-0.5 text-xs font-medium text-[#1B66C9]">

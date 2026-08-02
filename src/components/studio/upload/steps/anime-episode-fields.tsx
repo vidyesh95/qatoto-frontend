@@ -3,14 +3,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { AnimeEpisodeDetails, useStudioVideos } from "@/state/studio-videos-context";
+import { useMySeriesQuery, useSeriesQuery } from "@/hooks/series";
+import type { AnimeEpisodeDetails } from "@/lib/videos/studio-view";
 
-// Conditional Details-step section, shown only when Video type = Anime
-// episode. Anime is curated: on Save the upload shows as Pending in My Videos
-// until admin review passes (approval is server-side only). Series and season
-// options come from the shared studio context (managed in /studio/series);
-// typing a new name here does not create the series — episodes get formally
-// attached on the series detail page.
+// TRANSPORT: client-query — series and seasons from `GET /series/mine` and `GET /series/:id`.
+//
+// Conditional Details-step section, shown only when Video type = Anime episode. Anime is
+// curated: on Save the upload shows as Pending in My Videos until admin review passes
+// (approval is server-side only).
+//
+// SERIES IS AN ID NOW, NOT A NAME. The mock carried `seriesName` and matched series by string,
+// which meant two series with the same title were one, and a typo silently created a third.
+// The wire takes EXACTLY ONE of `seriesId` (an existing series) or `newSeriesTitle` (create it
+// as part of this upload) — the backend refines on that and 422s if both or neither is sent —
+// so the draft carries both fields and the "create new" toggle decides which is populated.
 const CREATE_NEW_SERIES_OPTION_VALUE = "__create-new-series__";
 const CREATE_NEW_SEASON_OPTION_VALUE = "__create-new-season__";
 const WEEKDAY_OPTIONS = [
@@ -37,7 +43,8 @@ const ANIME_GENRE_OPTIONS = [
 
 export function createEmptyAnimeEpisodeDetails(): AnimeEpisodeDetails {
   return {
-    seriesName: "",
+    seriesId: "",
+    newSeriesTitle: "",
     seasonLabel: "",
     episodeNumber: "",
     episodeTitle: "",
@@ -60,49 +67,74 @@ export default function AnimeEpisodeFields({
   episodeDetails,
   onEpisodeDetailsChange,
 }: AnimeEpisodeFieldsProps) {
-  const { seriesList } = useStudioVideos();
+  const seriesListQuery = useMySeriesQuery({ limit: 100 });
+  const seriesList = seriesListQuery.data?.rows ?? [];
 
-  // Edit-mode safety: a saved seriesName that no series matches was typed as
-  // new, so the wizard reopens in create-new mode instead of an empty select.
+  // Edit-mode safety: a draft holding `newSeriesTitle` was typed as new, so the wizard reopens
+  // in create-new mode rather than showing an empty select.
   const [isCreatingNewSeries, setIsCreatingNewSeries] = useState(
-    () =>
-      episodeDetails.seriesName !== "" &&
-      !seriesList.some((existingSeries) => existingSeries.title === episodeDetails.seriesName),
+    () => episodeDetails.seriesId === "" && episodeDetails.newSeriesTitle !== "",
   );
 
-  const selectedSeries = isCreatingNewSeries
-    ? undefined
-    : seriesList.find((existingSeries) => existingSeries.title === episodeDetails.seriesName);
-
-  const [isCreatingNewSeason, setIsCreatingNewSeason] = useState(
-    () =>
-      episodeDetails.seasonLabel !== "" &&
-      !seriesList
-        .find((existingSeries) => existingSeries.title === episodeDetails.seriesName)
-        ?.seasons.some(
-          (existingSeason) => existingSeason.seasonLabel === episodeDetails.seasonLabel,
-        ),
+  // The LIST row carries no seasons — `seasonCount` and nothing else — so the season options
+  // need the detail read for whichever series is selected. Skipped entirely while creating a
+  // new one, which has no seasons to offer.
+  const selectedSeriesQuery = useSeriesQuery(
+    episodeDetails.seriesId,
+    !isCreatingNewSeries && episodeDetails.seriesId !== "",
   );
+  const selectedSeries = selectedSeriesQuery.data;
+
+  /**
+   * Whether the creator EXPLICITLY chose "create new season" from the dropdown.
+   *
+   * DERIVED, NOT STORED, for the rest of it — and that is the fix for a real bug. The previous
+   * version was `useState(() => episodeDetails.seasonLabel !== "")`, which is true for EVERY
+   * saved episode, so reopening one replaced its season dropdown with a free-text box. The lazy
+   * initializer could never have got this right: it runs at mount, and the series (with its
+   * season list) is fetched asynchronously, so at that moment there is nothing to compare
+   * against.
+   */
+  const [didChooseNewSeason, setDidChooseNewSeason] = useState(false);
+
+  const doesSeasonLabelExist =
+    selectedSeries?.seasons.some(
+      (existingSeason) => existingSeason.seasonLabel === episodeDetails.seasonLabel,
+    ) ?? false;
+
+  /**
+   * Show the text box only when there is genuinely nothing to pick from.
+   *
+   * The third clause is the edit-mode case: once the series has LOADED, a label that matches no
+   * season was typed as new and should stay editable. It is gated on `selectedSeries !==
+   * undefined` so the control does not flicker into a text box while the read is in flight.
+   */
+  const isCreatingNewSeason =
+    didChooseNewSeason ||
+    isCreatingNewSeries ||
+    (selectedSeries !== undefined && episodeDetails.seasonLabel !== "" && !doesSeasonLabelExist);
 
   function handleSeriesSelectChange(selectedValue: string) {
     if (selectedValue === CREATE_NEW_SERIES_OPTION_VALUE) {
       setIsCreatingNewSeries(true);
-      onEpisodeDetailsChange({ seriesName: "", seasonLabel: "" });
+      // A brand-new series has no seasons, so the season must be typed too.
+      setDidChooseNewSeason(true);
+      onEpisodeDetailsChange({ seriesId: "", newSeriesTitle: "", seasonLabel: "" });
       return;
     }
     setIsCreatingNewSeries(false);
-    setIsCreatingNewSeason(false);
+    setDidChooseNewSeason(false);
     // Clear the season — the previous pick may not exist on the new series.
-    onEpisodeDetailsChange({ seriesName: selectedValue, seasonLabel: "" });
+    onEpisodeDetailsChange({ seriesId: selectedValue, newSeriesTitle: "", seasonLabel: "" });
   }
 
   function handleSeasonSelectChange(selectedValue: string) {
     if (selectedValue === CREATE_NEW_SEASON_OPTION_VALUE) {
-      setIsCreatingNewSeason(true);
+      setDidChooseNewSeason(true);
       onEpisodeDetailsChange({ seasonLabel: "" });
       return;
     }
-    setIsCreatingNewSeason(false);
+    setDidChooseNewSeason(false);
     onEpisodeDetailsChange({ seasonLabel: selectedValue });
   }
 
@@ -133,15 +165,13 @@ export default function AnimeEpisodeFields({
           <div className="relative">
             <select
               id="anime-series-name"
-              value={
-                isCreatingNewSeries ? CREATE_NEW_SERIES_OPTION_VALUE : episodeDetails.seriesName
-              }
+              value={isCreatingNewSeries ? CREATE_NEW_SERIES_OPTION_VALUE : episodeDetails.seriesId}
               onChange={(event) => handleSeriesSelectChange(event.target.value)}
               className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
             >
               <option value="">Select a series</option>
               {seriesList.map((existingSeries) => (
-                <option key={existingSeries.id} value={existingSeries.title}>
+                <option key={existingSeries.id} value={existingSeries.id}>
                   {existingSeries.title}
                 </option>
               ))}
@@ -160,8 +190,10 @@ export default function AnimeEpisodeFields({
               <input
                 type="text"
                 aria-label="New series name"
-                value={episodeDetails.seriesName}
-                onChange={(event) => onEpisodeDetailsChange({ seriesName: event.target.value })}
+                value={episodeDetails.newSeriesTitle}
+                onChange={(event) =>
+                  onEpisodeDetailsChange({ newSeriesTitle: event.target.value, seriesId: "" })
+                }
                 placeholder="New series name"
                 className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
               />

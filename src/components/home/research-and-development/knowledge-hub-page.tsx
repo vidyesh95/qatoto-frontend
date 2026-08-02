@@ -11,7 +11,7 @@ import RndStatusPanel, {
 import TrendingDemandSignals from "@/components/home/research-and-development/sections/trending-demand-signals";
 import type { DemandSignal, MarketInsight } from "@/lib/rnd/discovery.schemas";
 import { listDemandSignals, listMarketInsights } from "@/lib/rnd/discovery.api";
-import { toListViewState, type ListViewState } from "@/lib/rnd/view-state";
+import { toListViewState, type ListViewState } from "@/lib/view-state";
 import { callerRequestOptions } from "@/lib/server-http";
 
 const INSIGHTS_PAGE_LIMIT = 24;

@@ -5,9 +5,9 @@
 import Link from "next/link";
 
 import DailyLogCard from "@/components/home/research-and-development/cards/daily-log-card";
-import LoadMoreControl from "@/components/home/research-and-development/sections/load-more-control";
+import LoadMoreControl from "@/components/home/shared/load-more-control";
 import { rndKeys } from "@/hooks/rnd/keys";
-import { useKeysetList } from "@/hooks/rnd/keyset-list";
+import { useKeysetList } from "@/hooks/keyset-list";
 import { listDailyLogFeed } from "@/lib/rnd/daily-logs.api";
 import { formatIsoDate } from "@/lib/rnd/format";
 import type { DailyLogFeedRow } from "@/lib/rnd/daily-logs.schemas";

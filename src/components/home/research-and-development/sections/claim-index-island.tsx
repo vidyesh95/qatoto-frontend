@@ -4,9 +4,9 @@
 // the server, then advances GET …/effort-claims by its date cursor through `useKeysetList`.
 
 import ClaimDetailDisclosure from "@/components/home/research-and-development/sections/claim-detail-disclosure";
-import LoadMoreControl from "@/components/home/research-and-development/sections/load-more-control";
+import LoadMoreControl from "@/components/home/shared/load-more-control";
 import { rndKeys } from "@/hooks/rnd/keys";
-import { toCursorKeysetPage, useKeysetList } from "@/hooks/rnd/keyset-list";
+import { toCursorKeysetPage, useKeysetList } from "@/hooks/keyset-list";
 import { formatIsoDate, formatIsoInstant, formatMoneyFromCents } from "@/lib/rnd/format";
 import { listEffortClaims } from "@/lib/rnd/proof-of-effort.api";
 import type { ClaimSummary, EffortVerificationStatus } from "@/lib/rnd/proof-of-effort.schemas";

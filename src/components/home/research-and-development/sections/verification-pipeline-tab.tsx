@@ -13,17 +13,14 @@ import RndStatusPanel, {
   RndMembersOnlyPanel,
   RndSignInRequiredPanel,
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
-import { buildFilterHref, type RawSearchParams } from "@/lib/rnd/filter-href";
+import { buildFilterHref, type RawSearchParams } from "@/lib/filter-href";
 import { formatIsoInstant } from "@/lib/rnd/format";
 import type {
   ClaimSummary,
   EffortVerificationStatus,
   PhysicalReceipt,
 } from "@/lib/rnd/proof-of-effort.schemas";
-import type {
-  MemberScopedCursorListViewState,
-  MemberScopedListViewState,
-} from "@/lib/rnd/view-state";
+import type { MemberScopedCursorListViewState, MemberScopedListViewState } from "@/lib/view-state";
 
 const VERIFICATION_STATUS_LABELS: Record<EffortVerificationStatus, string> = {
   not_run: "Not run",

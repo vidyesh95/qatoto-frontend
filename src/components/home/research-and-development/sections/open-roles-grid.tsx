@@ -10,7 +10,7 @@ import FilterChipRow, {
 import OpenRoleCard from "@/components/home/research-and-development/cards/open-role-card";
 import type { OpenRole } from "@/lib/rnd/catalog.schemas";
 import type { DiscoverySkill } from "@/lib/rnd/discovery.schemas";
-import { buildFilterHref, type RawSearchParams } from "@/lib/rnd/filter-href";
+import { buildFilterHref, type RawSearchParams } from "@/lib/filter-href";
 import { ROLE_COMMITMENT_LABELS } from "@/lib/rnd/labels";
 import { ROLE_COMMITMENTS } from "@/lib/rnd/shared.schemas";
 import type { PaginationMeta } from "@/lib/http";

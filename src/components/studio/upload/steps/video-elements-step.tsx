@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import { UploadDraft } from "@/state/studio-videos-context";
+import type { UploadDraft } from "@/lib/videos/studio-view";
 import ChaptersEditor from "../chapters-editor";
 import { MOCK_STORE_PRODUCTS } from "../store-products-picker";
 

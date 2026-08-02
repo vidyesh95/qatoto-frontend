@@ -1,33 +1,33 @@
+// TRANSPORT: client-query — the chip row. Categories arrive from the server render as
+// `initialData` and React Query only refetches them; the SELECTION is not state here at all.
+//
+// THE CHIPS ARE LINKS, NOT BUTTONS, AND THAT IS THE WHOLE DESIGN.
+//
+// The old version held the selection in `useState`, which is exactly why the chips filtered
+// nothing: a selection the URL does not carry cannot be shared, cannot be bookmarked, and is
+// lost on back-navigation. The URL is the single source of truth for what the page is showing
+// (HOME_STRUCTURE §4) — the server page reads `searchParams`, passes them to the backend as
+// query params, and hands the resulting selection back down to this row.
+//
+// So a chip's job is to name a destination, and an anchor is what names a destination. It also
+// buys real middle-click and open-in-new-tab behaviour for free, which `router.replace` does
+// not.
+//
+// EVERY INTERACTION BEHAVIOUR BELOW IS UNCHANGED from the mock version: roving tabindex
+// (WAI-ARIA toolbar), drag-to-scroll with a 5px threshold, chevrons that appear only when
+// there is hidden content. Only the data source and the activation mechanism moved.
+
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// Labels rendered as filter chips. First entry is the default selection.
-const FILTER_CHIPS = [
-  "All",
-  "Live",
-  "Trending",
-  "New to you",
-  "News",
-  "Recently uploaded",
-  "Watched",
-  "Gaming",
-  "Shopping",
-  "Cosplay",
-  "Music",
-  "Robotics",
-  "AI",
-  "Research",
-  "Hardware",
-  "Upcoming",
-  "Minimalist",
-  "Retro",
-  "Electronics",
-  "Sports",
-  "Precision",
-  "Animated",
-];
+import { useFeedCategoriesQuery } from "@/hooks/feed/queries";
+import { buildFeedChips, isChipSelected, toChipHrefPatch } from "@/lib/feed/chips";
+import type { FeedSelection } from "@/lib/feed/feed-search-params";
+import type { ContentCategory } from "@/lib/feed/schemas";
+import { buildFilterHref, type RawSearchParams } from "@/lib/filter-href";
 
 // Distance the pointer must travel before we treat the gesture as a drag
 // rather than a click. Keeps small accidental mouse jiggles from being
@@ -37,7 +37,21 @@ const DRAG_THRESHOLD_PIXELS = 5;
 // Fraction of the visible chip-row width to advance per chevron click.
 const PAGE_SCROLL_FRACTION = 0.1;
 
-export default function Filter() {
+export default function Filter({
+  initialCategories,
+  searchParams,
+  selection,
+}: {
+  readonly initialCategories: ContentCategory[];
+  readonly searchParams: RawSearchParams;
+  readonly selection: FeedSelection;
+}) {
+  // A FAILED CATEGORY READ MUST NOT BLANK THIS ROW. `buildFeedChips([])` still returns the
+  // five mode chips, which do not depend on `/feed/categories` and are five working controls.
+  // Rendering an empty row instead would teach users the filters are broken.
+  const categoriesQuery = useFeedCategoriesQuery(initialCategories);
+  const chips = buildFeedChips(categoriesQuery.data ?? []);
+
   // Reference to the horizontally-scrollable container that holds the chips.
   // We read its scrollLeft/scrollWidth/clientWidth and imperatively scroll it.
   const chipsScrollContainerRef = useRef<HTMLDivElement>(null);
@@ -47,18 +61,20 @@ export default function Filter() {
   const [canScrollBackward, setCanScrollBackward] = useState(false);
   const [canScrollForward, setCanScrollForward] = useState(false);
 
-  // Currently selected chip's index in FILTER_CHIPS. Defaults to 0 ("All").
-  const [selectedChipIndex, setSelectedChipIndex] = useState(0);
-
   // Index of the chip that is currently keyboard-focusable. We use the WAI-ARIA
   // toolbar "roving tabindex" pattern: exactly one chip has tabIndex 0 (so the
   // whole row is a single Tab stop) and arrow keys move focus between chips.
-  // Initialised to the selected chip so Tab lands on the active filter.
-  const [focusedChipIndex, setFocusedChipIndex] = useState(0);
+  //
+  // This is the ONLY chip state left. The selection lives in the URL.
+  const selectedChipIndex = Math.max(
+    0,
+    chips.findIndex((chip) => isChipSelected(chip, selection)),
+  );
+  const [focusedChipIndex, setFocusedChipIndex] = useState(selectedChipIndex);
 
-  // Per-chip button refs so keyboard navigation can imperatively move DOM focus
+  // Per-chip refs so keyboard navigation can imperatively move DOM focus
   // and scroll the newly-focused chip into view.
-  const chipButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const chipLinkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
   // Recomputes whether the chip row currently overflows in either direction.
   // Called on mount, on every scroll event, and whenever the container is
@@ -75,6 +91,10 @@ export default function Filter() {
   // Wires the scroll listener and ResizeObserver that keep the chevron
   // visibility state up to date. Returns the matching cleanup so React tears
   // them down on unmount.
+  //
+  // `chips.length` is a dependency because the chip row grows when the category
+  // query resolves, and a row that just gained twelve chips overflows when it
+  // did not a moment ago.
   useEffect(() => {
     const container = chipsScrollContainerRef.current;
     if (!container) return undefined;
@@ -86,7 +106,7 @@ export default function Filter() {
       container.removeEventListener("scroll", recalculateScrollAvailability);
       resizeObserver.disconnect();
     };
-  }, [recalculateScrollAvailability]);
+  }, [recalculateScrollAvailability, chips.length]);
 
   // Scrolls the chip row one "page" in the requested direction with a smooth
   // animation. Triggered by the back/forward chevron buttons.
@@ -161,9 +181,10 @@ export default function Filter() {
     dragGestureRef.current = null;
   };
 
-  // Stops the synthetic click that fires after a drag from reaching the chip
-  // buttons. Without this, dragging across the row would also "select" the
-  // chip the user happened to release the pointer on.
+  // Stops the synthetic click that fires after a drag from reaching the chips.
+  // MORE LOAD-BEARING NOW THAN IT WAS: the chips are anchors, so an unsuppressed
+  // post-drag click does not merely reselect a filter, it NAVIGATES. `preventDefault`
+  // on the capture phase is what stops the browser following the href.
   const suppressClickAfterDrag = (event: React.MouseEvent<HTMLDivElement>) => {
     if (dragGestureRef.current?.hasMovedPastThreshold) {
       event.preventDefault();
@@ -175,18 +196,20 @@ export default function Filter() {
   // updates which chip is the single Tab stop, and scrolls it into view. We use
   // `block: "nearest"` so a horizontally-scrolling chip never jumps the page
   // vertically when it is already on screen.
-  const moveFocusToChip = useCallback((index: number) => {
-    const clampedIndex = Math.max(0, Math.min(index, FILTER_CHIPS.length - 1));
-    setFocusedChipIndex(clampedIndex);
-    const chip = chipButtonRefs.current[clampedIndex];
-    chip?.focus();
-    chip?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, []);
+  const moveFocusToChip = useCallback(
+    (index: number) => {
+      const clampedIndex = Math.max(0, Math.min(index, chips.length - 1));
+      setFocusedChipIndex(clampedIndex);
+      const chip = chipLinkRefs.current[clampedIndex];
+      chip?.focus();
+      chip?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    },
+    [chips.length],
+  );
 
   // Standard WAI-ARIA toolbar keyboard model: Left/Right move focus between
-  // chips, Home/End jump to the ends. Activation (selecting a filter) stays on
-  // the native button's Enter/Space → onClick, so arrowing through the row never
-  // triggers a filter change on its own.
+  // chips, Home/End jump to the ends. Activation stays on the anchor's own
+  // Enter handling, so arrowing through the row never navigates on its own.
   const handleChipRowKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     switch (event.key) {
       case "ArrowRight":
@@ -203,7 +226,7 @@ export default function Filter() {
         break;
       case "End":
         event.preventDefault();
-        moveFocusToChip(FILTER_CHIPS.length - 1);
+        moveFocusToChip(chips.length - 1);
         break;
     }
   };
@@ -241,27 +264,28 @@ export default function Filter() {
         onClickCapture={suppressClickAfterDrag}
         className="flex h-14 cursor-grab scrollbar-none flex-row items-center gap-2 overflow-x-auto px-4 select-none active:cursor-grabbing lg:px-6"
       >
-        {FILTER_CHIPS.map((chipLabel, chipIndex) => {
-          const isSelected = selectedChipIndex === chipIndex;
+        {chips.map((chip, chipIndex) => {
+          const isSelected = chipIndex === selectedChipIndex;
+          const chipKey = chip.kind === "mode" ? `mode:${chip.mode}` : `topic:${chip.categorySlug}`;
           return (
-            <button
-              key={chipIndex}
+            <Link
+              key={chipKey}
               ref={(node) => {
-                chipButtonRefs.current[chipIndex] = node;
+                chipLinkRefs.current[chipIndex] = node;
               }}
-              type="button"
-              aria-pressed={isSelected}
+              href={buildFilterHref(searchParams, toChipHrefPatch(chip))}
+              // The chip row sits above the feed; jumping to the top on every filter change
+              // would throw away the reader's position for no reason.
+              scroll={false}
+              aria-current={isSelected ? "true" : undefined}
               tabIndex={chipIndex === focusedChipIndex ? 0 : -1}
-              onClick={() => {
-                setSelectedChipIndex(chipIndex);
-                setFocusedChipIndex(chipIndex);
-              }}
+              onClick={() => setFocusedChipIndex(chipIndex)}
               className={`cursor-pointer rounded-lg border px-4 py-1.5 text-sm text-nowrap ${
                 isSelected ? "border-primary bg-primary" : "border-outline hover:bg-black/5"
               }`}
             >
-              {chipLabel}
-            </button>
+              {chip.label}
+            </Link>
           );
         })}
       </div>

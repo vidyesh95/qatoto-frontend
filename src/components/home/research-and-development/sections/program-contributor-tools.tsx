@@ -9,7 +9,7 @@ import {
   useRecordProgramContributionMutation,
 } from "@/hooks/rnd/research-programs";
 import { ApiRequestError } from "@/lib/http";
-import { newIdempotencyKey } from "@/lib/rnd/idempotency";
+import { newIdempotencyKey } from "@/lib/idempotency";
 import { RESEARCH_CONTRIBUTION_KIND_LABELS } from "@/lib/rnd/labels";
 import {
   RESEARCH_CONTRIBUTION_KINDS,

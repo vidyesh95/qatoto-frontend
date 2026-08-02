@@ -13,7 +13,7 @@ import type { AuditEntry, ChainVerification } from "@/lib/rnd/proof-of-effort.sc
 import type {
   MemberScopedItemViewState,
   MemberScopedSequenceListViewState,
-} from "@/lib/rnd/view-state";
+} from "@/lib/view-state";
 
 /**
  * The append-only audit chain, and the verifier's report on it.

@@ -18,7 +18,3 @@ export const MOCK_CURRENT_STAFF_MEMBER: MockStaffMember = {
   email: "vidyesh95@gmail.com",
   role: "admin",
 };
-
-// Videos have no creator field yet (awaits real auth) — every review row
-// shows this stand-in creator name.
-export const MOCK_CREATOR_NAME = "Aki Films";

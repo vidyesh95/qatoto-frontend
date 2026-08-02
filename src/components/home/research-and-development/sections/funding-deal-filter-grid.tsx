@@ -7,7 +7,7 @@ import FundingDealCard from "@/components/home/research-and-development/cards/fu
 import FilterChipRow, {
   type FilterChipOption,
 } from "@/components/home/research-and-development/sections/filter-chip-row";
-import { buildFilterHref, type RawSearchParams } from "@/lib/rnd/filter-href";
+import { buildFilterHref, type RawSearchParams } from "@/lib/filter-href";
 import { FUNDING_ROUND_TYPES, type FundingDeal } from "@/lib/rnd/funding.schemas";
 import { PROJECT_STAGE_LABELS } from "@/lib/rnd/labels";
 import { PROJECT_STAGES } from "@/lib/rnd/shared.schemas";

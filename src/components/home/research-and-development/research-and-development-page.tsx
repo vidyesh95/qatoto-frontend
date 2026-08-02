@@ -19,7 +19,7 @@ import SectionHeader from "@/components/home/research-and-development/sections/s
 import { listOpenRoles } from "@/lib/rnd/catalog.api";
 import { listMarketInsights, listProblemClusters } from "@/lib/rnd/discovery.api";
 import { listResearchProjects } from "@/lib/rnd/projects.api";
-import { toListViewState, type ListViewState } from "@/lib/rnd/view-state";
+import { toListViewState, type ListViewState } from "@/lib/view-state";
 import { callerRequestOptions } from "@/lib/server-http";
 
 const FEATURED_PROJECTS_LIMIT = 12;

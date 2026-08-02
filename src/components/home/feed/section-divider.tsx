@@ -1,3 +1,5 @@
+// TRANSPORT: props-only — a heading rule. Fetches nothing.
+
 interface SectionDividerProps {
   title: string;
 }

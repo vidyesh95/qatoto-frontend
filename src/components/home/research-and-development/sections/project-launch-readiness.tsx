@@ -12,7 +12,7 @@ import RndStatusPanel, {
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import { formatIsoInstant } from "@/lib/rnd/format";
 import type { LaunchReadiness, LaunchReadinessState } from "@/lib/rnd/suppliers.schemas";
-import type { MemberScopedItemViewState } from "@/lib/rnd/view-state";
+import type { MemberScopedItemViewState } from "@/lib/view-state";
 
 const READINESS_STATE_LABELS: Record<LaunchReadinessState, string> = {
   met: "Met",

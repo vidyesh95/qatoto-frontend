@@ -9,7 +9,7 @@ import RndStatusPanel, {
   RndSignInRequiredPanel,
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import type { DailyLogView } from "@/lib/rnd/daily-logs.schemas";
-import type { MemberScopedListViewState } from "@/lib/rnd/view-state";
+import type { MemberScopedListViewState } from "@/lib/view-state";
 
 /**
  * Daily Logs tab framing around the feed.

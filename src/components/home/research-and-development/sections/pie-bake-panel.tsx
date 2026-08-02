@@ -19,7 +19,7 @@ import {
   type PieBakeTrigger,
   type ProofOfEffortSummary,
 } from "@/lib/rnd/proof-of-effort.schemas";
-import type { MemberScopedItemViewState } from "@/lib/rnd/view-state";
+import type { MemberScopedItemViewState } from "@/lib/view-state";
 
 const TRIGGER_LABELS: Record<PieBakeTrigger, string> = {
   cash_flow_breakeven: "The project reached cash-flow breakeven",

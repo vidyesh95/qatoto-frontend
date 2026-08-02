@@ -5,9 +5,9 @@
 // `useKeysetList`.
 
 import CompensationPeriodIsland from "@/components/home/research-and-development/sections/compensation-period-island";
-import LoadMoreControl from "@/components/home/research-and-development/sections/load-more-control";
+import LoadMoreControl from "@/components/home/shared/load-more-control";
 import { rndKeys } from "@/hooks/rnd/keys";
-import { useKeysetList, type KeysetToken } from "@/hooks/rnd/keyset-list";
+import { useKeysetList, type KeysetToken } from "@/hooks/keyset-list";
 import { listCompensationPeriods } from "@/lib/rnd/compensation.api";
 import type {
   CompensationPeriodStatus,

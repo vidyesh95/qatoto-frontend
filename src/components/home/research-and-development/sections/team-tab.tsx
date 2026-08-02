@@ -12,7 +12,7 @@ import RndStatusPanel, {
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import type { OpenRole } from "@/lib/rnd/catalog.schemas";
 import type { ResearchProjectDetail } from "@/lib/rnd/projects.schemas";
-import type { MemberScopedListViewState } from "@/lib/rnd/view-state";
+import type { MemberScopedListViewState } from "@/lib/view-state";
 
 type TeamTabProps = {
   project: ResearchProjectDetail;

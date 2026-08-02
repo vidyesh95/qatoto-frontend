@@ -19,9 +19,9 @@ import {
   type DiscoverySkill,
   type TalentProfile,
 } from "@/lib/rnd/discovery.schemas";
-import { readEnumParam, readMultiParam, type RawSearchParams } from "@/lib/rnd/filter-href";
+import { readEnumParam, readMultiParam, type RawSearchParams } from "@/lib/filter-href";
 import { ROLE_COMMITMENTS } from "@/lib/rnd/shared.schemas";
-import { rowsOrEmpty, toListViewState, type ListViewState } from "@/lib/rnd/view-state";
+import { rowsOrEmpty, toListViewState, type ListViewState } from "@/lib/view-state";
 import { callerRequestOptions } from "@/lib/server-http";
 
 const TALENT_PAGE_LIMIT = 24;

@@ -1,29 +1,52 @@
 "use client";
 
+// TRANSPORT: client-query — `POST /videos` on create, `PATCH /videos/:videoId` on edit, and
+// `GET /videos/:videoId` to hydrate the edit form.
+//
+// THE SAVE PATH USED TO BE SYNCHRONOUS AND COULD NOT FAIL. `useStudioVideos().addVideo` pushed
+// onto a `useState` array, so this modal closed itself on the same tick it "saved". Three
+// things follow from making it a real request, and all three are visible in the UI now:
+//
+//   1. SAVE IS PENDING, THEN DONE OR FAILED. The modal stays open on failure with the backend's
+//      own message — a 422 here names the field the creator has to fix, and swallowing it would
+//      leave a Save button that appears to do nothing.
+//   2. X-CLOSE STILL COMMITS A PRIVATE DRAFT (UPLOAD_VIDEO_STRUCTURE §2) but now AWAITS it. A
+//      fire-and-forget draft save that 422s would lose the creator's work silently, which is
+//      the exact failure the draft behaviour exists to prevent.
+//   3. THE SERVER OWNS THE ID AND THE STATUS. No more `crypto.randomUUID()` and no local
+//      `resolveVideoStatus` — whether an anime episode needs review is the backend's call.
+
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import {
-  StudioVideo,
-  UploadDraft,
-  createEmptyUploadDraft,
-  useStudioVideos,
-} from "@/state/studio-videos-context";
-import VideoPreviewCard from "./video-preview-card";
-import PlaylistsPicker from "./playlists-picker";
-import CreatePlaylistModal from "./create-playlist-modal";
-import StoreProductsPicker from "./store-products-picker";
-import DetailsStep from "./steps/details-step";
-import VideoElementsStep from "./steps/video-elements-step";
-import ChecksStep from "./steps/checks-step";
-import VisibilityStep from "./steps/visibility-step";
 
-// The YouTube-style 4-step upload wizard (UPLOAD_VIDEO_STRUCTURE.md §3), also
-// reused as the edit dialog for saved videos. Create mode: X or Escape still
-// commits the upload as a private draft (§2). Edit mode: X or Escape discards
-// changes; only Save applies them — and saving an anime episode sends it back
-// to Pending review. Sub-pickers are stacked overlay layers driven by one
-// ActiveOverlay union, so a single Escape handler always closes the innermost
-// layer first.
+import ChecksStep from "./steps/checks-step";
+import CreatePlaylistModal from "./create-playlist-modal";
+import DetailsStep from "./steps/details-step";
+import PlaylistsPicker from "./playlists-picker";
+import StoreProductsPicker from "./store-products-picker";
+import VideoElementsStep from "./steps/video-elements-step";
+import VideoPreviewCard from "./video-preview-card";
+import VisibilityStep from "./steps/visibility-step";
+import {
+  useCreateVideoMutation,
+  useMyVideoQuery,
+  usePublishVideoMutation,
+  useReplaceVideoChaptersMutation,
+  useReplaceVideoPlaylistsMutation,
+  useReplaceVideoThumbnailMutation,
+  useUpdateVideoMutation,
+} from "@/hooks/videos";
+import { ApiRequestError } from "@/lib/http";
+import { describePublishRefusal } from "@/lib/videos/publish-refusal";
+import {
+  createEmptyUploadDraft,
+  toChapterInput,
+  toCreateVideoInput,
+  toUpdateVideoInput,
+  toUploadDraft,
+  type UploadDraft,
+} from "@/lib/videos/studio-view";
+
 const UPLOAD_STEPS = [
   { id: "details", label: "Details" },
   { id: "video-elements", label: "Video elements" },
@@ -40,51 +63,235 @@ type ActiveOverlay =
   | "store-products-picker"
   | "invite-collaborator";
 
-// What the new video is sourced from. Direct file hosting is paused (too
-// expensive) — the studio only offers the YouTube-link path today, but the file
-// variant stays wired for when hosting is switched back on.
+/**
+ * What the new video is sourced from.
+ *
+ * ONLY THE YOUTUBE PATH REACHES THE BACKEND. `POST /videos` requires a `youtubeUrl` and there is
+ * no video-file upload route anywhere on the platform — self-hosting is deferred (Studio
+ * Appendix A). The `file` variant is kept because the entry UI still offers it, and it now
+ * fails honestly at save time instead of appearing to work.
+ */
 type UploadSource = { kind: "file"; videoFile: File } | { kind: "youtube"; youtubeUrl: string };
+
+/**
+ * What a save actually did, returned rather than read back off state.
+ *
+ * The video and its three follow-up routes can fail INDEPENDENTLY — the row is written and the
+ * chapters are not — so "did it save" and "is everything saved" are different questions. The
+ * caller needs the second one to decide whether to close, and needs the id to publish.
+ */
+type SaveOutcome =
+  | { readonly kind: "create_failed" }
+  | { readonly kind: "saved_with_problem"; readonly videoId: string }
+  | { readonly kind: "saved"; readonly videoId: string };
 
 type UploadVideoModalProps =
   | { mode: "create"; source: UploadSource; onClose: () => void }
-  | { mode: "edit"; videoToEdit: StudioVideo; onClose: () => void };
+  | { mode: "edit"; videoIdToEdit: string; onClose: () => void };
 
 export default function UploadVideoModal(props: UploadVideoModalProps) {
   const { onClose } = props;
-  const { addVideo, updateVideo, addPlaylist } = useStudioVideos();
-  const [draft, setDraft] = useState<UploadDraft>(() =>
-    props.mode === "create"
-      ? createDraftFromSource(props.source)
-      : createDraftFromVideo(props.videoToEdit),
+
+  // Edit mode hydrates from the DETAIL read, not from the list row: the list carries thirteen
+  // fields and the form needs sixty. `enabled` keeps create mode from firing it.
+  const editedVideoQuery = useMyVideoQuery(
+    props.mode === "edit" ? props.videoIdToEdit : "",
+    props.mode === "edit",
   );
+
+  const [draft, setDraft] = useState<UploadDraft>(() =>
+    props.mode === "create" ? createDraftFromSource(props.source) : createEmptyUploadDraft(),
+  );
+  const [hasHydratedFromServer, setHasHydratedFromServer] = useState(props.mode === "create");
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [activeOverlay, setActiveOverlay] = useState<ActiveOverlay>("none");
+  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
+  /**
+   * Held here rather than in the draft, because a `File` is not JSON and never goes to
+   * `POST /videos`. The thumbnail is its own multipart route against a videoId that does not
+   * exist until after create, so the modal keeps the file and uploads it in the follow-up pass.
+   */
+  const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
+
+  const createVideoMutation = useCreateVideoMutation();
+  const updateVideoMutation = useUpdateVideoMutation();
+  const replaceChaptersMutation = useReplaceVideoChaptersMutation();
+  const replacePlaylistsMutation = useReplaceVideoPlaylistsMutation();
+  const replaceThumbnailMutation = useReplaceVideoThumbnailMutation();
+  const publishMutation = usePublishVideoMutation();
+  const isSaving =
+    createVideoMutation.isPending ||
+    updateVideoMutation.isPending ||
+    replaceChaptersMutation.isPending ||
+    replacePlaylistsMutation.isPending ||
+    replaceThumbnailMutation.isPending ||
+    publishMutation.isPending;
+
+  // Fills the form once the detail read lands. Guarded so a background refetch cannot throw
+  // away edits the creator has made since.
+  const editedVideo = editedVideoQuery.data;
+  useEffect(() => {
+    if (hasHydratedFromServer || editedVideo === undefined) return;
+    setDraft(toUploadDraft(editedVideo));
+    setHasHydratedFromServer(true);
+  }, [hasHydratedFromServer, editedVideo]);
 
   function applyDraftPatch(draftPatch: Partial<UploadDraft>) {
     setDraft((previousDraft) => ({ ...previousDraft, ...draftPatch }));
   }
 
-  function handleSaveClick() {
+  /**
+   * Saves the draft and everything that rides its own route, returning the saved video's id.
+   *
+   * THREE FOLLOW-UP CALLS, AND THEY ARE NOT OPTIONAL EXTRAS. Chapters, playlist membership and
+   * the thumbnail each have their own endpoint — `POST /videos` is `.strict()` and accepts none
+   * of them — so without this pass the wizard collects all three and silently discards them.
+   * That was the shipped behaviour and it was a bug: three working editors, none of them saving.
+   *
+   * SEQUENTIAL, NOT PARALLEL, so a failure names its own step. And the video IS SAVED even when
+   * a follow-up fails, so the message says which part did not stick rather than implying the
+   * whole thing was lost.
+   */
+  async function saveDraft(options: { readonly asPrivateDraft: boolean }): Promise<SaveOutcome> {
+    setSaveErrorMessage(null);
+    const draftToSave: UploadDraft = options.asPrivateDraft
+      ? { ...draft, visibility: "private" }
+      : draft;
+
+    let savedVideoId: string;
+    try {
+      if (props.mode === "create") {
+        const created = await createVideoMutation.mutateAsync(toCreateVideoInput(draftToSave));
+        savedVideoId = created.video.id;
+      } else {
+        const updated = await updateVideoMutation.mutateAsync({
+          videoId: props.videoIdToEdit,
+          input: toUpdateVideoInput(draftToSave),
+        });
+        savedVideoId = updated.id;
+      }
+    } catch (error) {
+      setSaveErrorMessage(describeSaveError(error));
+      return { kind: "create_failed" };
+    }
+
+    const chapterInput = toChapterInput(draftToSave.chapters);
+    try {
+      if (chapterInput.length > 0) {
+        await replaceChaptersMutation.mutateAsync({
+          videoId: savedVideoId,
+          input: { chapters: chapterInput },
+        });
+      }
+    } catch (error) {
+      // The backend validates the whole LIST, not each row: 1-2 chapters is a 422, the first
+      // must start at 0:00, and consecutive starts must be >= 10s apart. Its message already
+      // names the offending chapter, so it is passed through untouched.
+      setSaveErrorMessage(`Video saved, but the chapters were not: ${describeSaveError(error)}`);
+      return { kind: "saved_with_problem", videoId: savedVideoId };
+    }
+
+    try {
+      if (draftToSave.selectedPlaylistIds.length > 0) {
+        await replacePlaylistsMutation.mutateAsync({
+          videoId: savedVideoId,
+          playlistIds: draftToSave.selectedPlaylistIds,
+        });
+      }
+    } catch (error) {
+      setSaveErrorMessage(`Video saved, but the playlists were not: ${describeSaveError(error)}`);
+      return { kind: "saved_with_problem", videoId: savedVideoId };
+    }
+
+    try {
+      if (selectedThumbnailFile !== null) {
+        await replaceThumbnailMutation.mutateAsync({
+          videoId: savedVideoId,
+          imageFile: selectedThumbnailFile,
+        });
+      }
+    } catch (error) {
+      setSaveErrorMessage(`Video saved, but the thumbnail was not: ${describeSaveError(error)}`);
+      return { kind: "saved_with_problem", videoId: savedVideoId };
+    }
+
+    return { kind: "saved", videoId: savedVideoId };
+  }
+
+  async function handleSaveClick() {
     if (draft.title.trim() === "") return;
-    if (props.mode === "create") {
-      addVideo(buildVideoFromDraft(draft, "explicit-save"));
-    } else {
-      updateVideo(buildEditedVideo(draft, props.videoToEdit));
-    }
-    onClose();
+    const outcome = await saveDraft({ asPrivateDraft: false });
+    // Only a fully clean save closes the modal. `saveErrorMessage` cannot be read here —
+    // it was set during this same tick and the closure still holds the previous value, which
+    // is why the outcome is RETURNED rather than inferred from state.
+    if (outcome.kind === "saved") onClose();
   }
 
-  // X / Escape at the top level: create commits a private draft (doc §2);
-  // edit simply discards the changes.
-  function handleModalDismiss() {
-    if (props.mode === "create") {
-      addVideo(buildVideoFromDraft(draft, "close-as-draft"));
+  /**
+   * Save, then publish.
+   *
+   * WITHOUT THIS BUTTON A VIDEO NEVER LEAVES `draft`, and a draft is not in the feed's candidate
+   * pool — which is exactly why an uploaded video did not appear on the homepage.
+   *
+   * Publishing does NOT make a private video visible: `publishVideo` writes `publishStatus` and
+   * never touches `visibility`, so the check below happens before the request rather than
+   * letting a 200 imply something it did not do.
+   */
+  async function handleSaveAndPublishClick() {
+    if (draft.title.trim() === "") return;
+    if (draft.visibility !== "public") {
+      setSaveErrorMessage(
+        "Set visibility to Public on the last step before publishing — a private video stays hidden even once published.",
+      );
+      return;
     }
-    onClose();
+
+    const outcome = await saveDraft({ asPrivateDraft: false });
+    // A follow-up failure stops the publish: chapters or a thumbnail that did not save are
+    // worth fixing before the video goes live, and the message already says which.
+    if (outcome.kind !== "saved") return;
+
+    try {
+      const published = await publishMutation.mutateAsync(outcome.videoId);
+      // An anime episode is SUBMITTED, not published — the backend leaves `publishStatus` at
+      // draft and moves `reviewStatus` to pending. Closing with a "published" impression would
+      // send the creator looking for it on the homepage.
+      if (published.reviewStatus === "pending") {
+        setSaveErrorMessage(
+          "Saved and submitted for review. It goes live once a moderator approves it.",
+        );
+        return;
+      }
+      onClose();
+    } catch (error) {
+      const refusal = describePublishRefusal(error);
+      setSaveErrorMessage(`Video saved, but not published: ${refusal.message}`);
+    }
   }
 
-  // Escape needs the latest draft without re-subscribing on every keystroke.
-  const handleModalDismissRef = useLatestCallbackRef(handleModalDismiss);
+  /**
+   * X / Escape at the top level.
+   *
+   * CREATE commits a private draft, EDIT discards — unchanged behaviour. What changed is that a
+   * failed draft save now KEEPS THE MODAL OPEN with the reason, because the alternative is
+   * closing over the creator's unsaved work and telling them nothing.
+   *
+   * A draft with no YouTube link cannot be saved at all (the API requires one), so that case
+   * closes rather than trapping the creator in a modal they can never dismiss.
+   */
+  async function handleModalDismiss() {
+    if (props.mode !== "create" || draft.youtubeUrl.trim() === "") {
+      onClose();
+      return;
+    }
+    // The draft path closes on ANY outcome that produced a row — a chapter list that failed
+    // validation must not trap the creator in a modal they are trying to dismiss.
+    const outcome = await saveDraft({ asPrivateDraft: true });
+    if (outcome.kind !== "create_failed") onClose();
+  }
+
+  // Escape needs the latest callback without re-subscribing on every keystroke.
+  const handleModalDismissRef = useLatestCallbackRef(() => void handleModalDismiss());
 
   // Body scroll locks for the modal's whole lifetime.
   useEffect(() => {
@@ -95,9 +302,7 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
     };
   }, []);
 
-  // One Escape handler for the whole stack: innermost overlay first, then the
-  // modal itself (which commits a private draft). Re-subscribes only when the
-  // overlay layer changes — rare, unlike draft keystrokes.
+  // One Escape handler for the whole stack: innermost overlay first, then the modal itself.
   useEffect(() => {
     const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
       if (keyboardEvent.key !== "Escape") return;
@@ -116,8 +321,8 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
   const currentStep = UPLOAD_STEPS[currentStepIndex];
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === UPLOAD_STEPS.length - 1;
-  const isSaveDisabled = draft.title.trim() === "";
-  const modalTitle = draft.title.trim() === "" ? draft.fileName : draft.title;
+  const isSaveDisabled = draft.title.trim() === "" || isSaving;
+  const modalTitle = draft.title.trim() === "" ? draft.youtubeUrl || "New video" : draft.title;
 
   function renderCurrentStep(stepId: UploadStepId) {
     switch (stepId) {
@@ -127,6 +332,9 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
             draft={draft}
             onDraftChange={applyDraftPatch}
             onOpenPlaylistsPicker={() => setActiveOverlay("playlists-picker")}
+            currentThumbnailUrl={editedVideo?.thumbnailUrl ?? null}
+            selectedThumbnailFile={selectedThumbnailFile}
+            onThumbnailFileSelected={setSelectedThumbnailFile}
           />
         );
       case "video-elements":
@@ -149,6 +357,8 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
     }
   }
 
+  const isHydrating = props.mode === "edit" && !hasHydratedFromServer;
+
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/40" />
@@ -161,13 +371,14 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
           <h2 className="min-w-0 truncate text-lg font-semibold text-foreground">{modalTitle}</h2>
           <button
             type="button"
-            onClick={handleModalDismiss}
+            onClick={() => void handleModalDismiss()}
+            disabled={isSaving}
             aria-label={
               props.mode === "create"
                 ? "Close and save as private draft"
                 : "Close without saving changes"
             }
-            className="shrink-0 cursor-pointer rounded-full p-2 transition-colors hover:bg-muted"
+            className="shrink-0 cursor-pointer rounded-full p-2 transition-colors hover:bg-muted disabled:opacity-40"
           >
             <Image
               src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -231,18 +442,28 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
         {/* Body: form left, preview right */}
         <div className="flex min-h-0 flex-1">
           <div className="min-w-0 flex-1 overflow-y-auto p-6">
-            {renderCurrentStep(currentStep.id)}
+            {isHydrating ? (
+              <p className="text-sm text-muted-foreground">Loading this video…</p>
+            ) : (
+              renderCurrentStep(currentStep.id)
+            )}
           </div>
           <div className="hidden w-80 shrink-0 overflow-y-auto border-l border-black/10 p-6 lg:block">
-            {renderPreviewCard(props)}
+            {renderPreviewCard(props, draft)}
           </div>
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between gap-4 border-t border-black/10 px-6 py-4">
-          <p className="hidden min-w-0 truncate text-xs text-muted-foreground sm:block">
-            Checks complete. No issues found.
-          </p>
+          {saveErrorMessage === null ? (
+            <p className="hidden min-w-0 truncate text-xs text-muted-foreground sm:block">
+              Checks complete. No issues found.
+            </p>
+          ) : (
+            <p role="alert" className="min-w-0 flex-1 text-xs text-destructive">
+              {saveErrorMessage}
+            </p>
+          )}
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
@@ -254,15 +475,34 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
               Back
             </button>
             {isLastStep ? (
-              <button
-                type="button"
-                onClick={handleSaveClick}
-                disabled={isSaveDisabled}
-                title={isSaveDisabled ? "Add a title to save" : undefined}
-                className="cursor-pointer rounded-full bg-primary px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-40"
-              >
-                Save
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => void handleSaveClick()}
+                  disabled={isSaveDisabled}
+                  title={draft.title.trim() === "" ? "Add a title to save" : undefined}
+                  className="cursor-pointer rounded-full border border-border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:cursor-default disabled:opacity-40"
+                >
+                  {isSaving ? "Saving…" : "Save"}
+                </button>
+                {/*
+                  SAVE ALONE LEAVES THE VIDEO A DRAFT, and a draft is not in the feed's candidate
+                  pool. This is the control whose absence kept uploaded videos off the homepage.
+                */}
+                <button
+                  type="button"
+                  onClick={() => void handleSaveAndPublishClick()}
+                  disabled={isSaveDisabled}
+                  title={
+                    draft.visibility === "public"
+                      ? undefined
+                      : "Set visibility to Public — a private video stays hidden even once published"
+                  }
+                  className="cursor-pointer rounded-full bg-primary px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-40"
+                >
+                  {isSaving ? "Working…" : "Save & publish"}
+                </button>
+              </>
             ) : (
               <button
                 type="button"
@@ -281,9 +521,9 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
       {/* Stacked overlays */}
       {activeOverlay === "playlists-picker" && (
         <PlaylistsPicker
-          selectedPlaylistTitles={draft.selectedPlaylistTitles}
-          onSelectedPlaylistTitlesChange={(selectedPlaylistTitles) =>
-            applyDraftPatch({ selectedPlaylistTitles })
+          selectedPlaylistIds={draft.selectedPlaylistIds}
+          onSelectedPlaylistIdsChange={(selectedPlaylistIds) =>
+            applyDraftPatch({ selectedPlaylistIds })
           }
           onRequestCreatePlaylist={() => setActiveOverlay("create-playlist")}
           onDone={() => setActiveOverlay("none")}
@@ -291,10 +531,12 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
       )}
       {activeOverlay === "create-playlist" && (
         <CreatePlaylistModal
-          onCreate={(newPlaylist) => {
-            addPlaylist(newPlaylist);
+          onCreated={(createdPlaylist) => {
+            // The id comes back from the server, so the new playlist is selectable immediately
+            // and by the same key the picker uses. The mock selected it by title, which merged
+            // two playlists the moment a creator reused a name.
             applyDraftPatch({
-              selectedPlaylistTitles: [...draft.selectedPlaylistTitles, newPlaylist.title],
+              selectedPlaylistIds: [...draft.selectedPlaylistIds, createdPlaylist.id],
             });
             setActiveOverlay("playlists-picker");
           }}
@@ -325,14 +567,27 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
 
 /* ---------- Save helpers ---------- */
 
-// A linked YouTube video has no file, so the URL doubles as its display name
-// and its size stays zero.
+/**
+ * The backend's own message, verbatim.
+ *
+ * A 422 here names the field the creator must fix ("Not a YouTube video link", "You can only
+ * attach products you own"), and replacing that with a generic apology turns a fixable form
+ * into a dead end.
+ */
+function describeSaveError(error: unknown): string {
+  if (error instanceof ApiRequestError) return error.apiError.message;
+  return "Couldn't save this video. Please try again.";
+}
+
 function createDraftFromSource(source: UploadSource): UploadDraft {
+  const emptyDraft = createEmptyUploadDraft();
   switch (source.kind) {
     case "file":
-      return createEmptyUploadDraft(source.videoFile.name, source.videoFile.size);
+      // No `youtubeUrl`, so this draft cannot be saved — `POST /videos` requires one. The Save
+      // button surfaces the backend's refusal rather than this code inventing a link.
+      return emptyDraft;
     case "youtube":
-      return { ...createEmptyUploadDraft(source.youtubeUrl, 0), youtubeUrl: source.youtubeUrl };
+      return { ...emptyDraft, youtubeUrl: source.youtubeUrl };
     default: {
       const exhaustiveCheck: never = source;
       return exhaustiveCheck;
@@ -340,12 +595,12 @@ function createDraftFromSource(source: UploadSource): UploadDraft {
   }
 }
 
-function renderPreviewCard(props: UploadVideoModalProps) {
+function renderPreviewCard(props: UploadVideoModalProps, draft: UploadDraft) {
   if (props.mode === "edit") {
-    return props.videoToEdit.youtubeUrl === "" ? (
-      <VideoPreviewCard fileName={props.videoToEdit.fileName} />
+    return draft.youtubeUrl === "" ? (
+      <VideoPreviewCard fileName={draft.title} />
     ) : (
-      <VideoPreviewCard youtubeUrl={props.videoToEdit.youtubeUrl} />
+      <VideoPreviewCard youtubeUrl={draft.youtubeUrl} />
     );
   }
   return props.source.kind === "file" ? (
@@ -355,64 +610,8 @@ function renderPreviewCard(props: UploadVideoModalProps) {
   );
 }
 
-function createDraftFromVideo(videoToEdit: StudioVideo): UploadDraft {
-  const { id, status, uploadedAtLabel, ...editableDraftFields } = videoToEdit;
-  void id;
-  void status;
-  void uploadedAtLabel;
-  return editableDraftFields;
-}
-
-// Applying an edit keeps the original id and upload date. Saved videos go
-// back to Pending review after any edit — approval is server-side, so edited
-// content must be re-reviewed.
-function buildEditedVideo(draft: UploadDraft, videoBeingEdited: StudioVideo): StudioVideo {
-  return {
-    ...draft,
-    id: videoBeingEdited.id,
-    title: draft.title.trim() === "" ? draft.fileName : draft.title.trim(),
-    uploadedAtLabel: videoBeingEdited.uploadedAtLabel,
-    status: resolveVideoStatus(draft, "explicit-save"),
-  };
-}
-
-function buildVideoFromDraft(
-  draft: UploadDraft,
-  saveMode: "explicit-save" | "close-as-draft",
-): StudioVideo {
-  const resolvedTitle = draft.title.trim() === "" ? draft.fileName : draft.title.trim();
-  const uploadedAtLabel = new Date().toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-
-  return {
-    ...draft,
-    id: crypto.randomUUID(),
-    title: resolvedTitle,
-    visibility: saveMode === "close-as-draft" ? "private" : draft.visibility,
-    uploadedAtLabel,
-    status: resolveVideoStatus(draft, saveMode),
-  };
-}
-
-// Every saved upload enters the admin review queue (ADMIN_STRUCTURE.md §7 —
-// anime and regular videos both need approval before going live); X-close
-// keeps a draft out of the queue. Anime episodes always enter review, even
-// when the modal is closed. Approval precedes publishing/scheduling, so the
-// scheduled/published statuses are set after review, not on save.
-function resolveVideoStatus(
-  draft: UploadDraft,
-  saveMode: "explicit-save" | "close-as-draft",
-): StudioVideo["status"] {
-  if (draft.videoType === "anime-episode") return { kind: "pending-review" };
-  if (saveMode === "close-as-draft") return { kind: "draft" };
-  return { kind: "pending-review" };
-}
-
-// Stores the latest callback in a ref so a mount-once event listener can call
-// current state without re-subscribing.
+// Stores the latest callback in a ref so a mount-once event listener can call current state
+// without re-subscribing.
 function useLatestCallbackRef(callback: () => void) {
   const callbackRef = useRef(callback);
   useEffect(() => {

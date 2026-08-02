@@ -4,10 +4,10 @@
 // the server, then advances GET …/allocation-proposals by its instant cursor through
 // `useKeysetList`.
 
-import LoadMoreControl from "@/components/home/research-and-development/sections/load-more-control";
+import LoadMoreControl from "@/components/home/shared/load-more-control";
 import RaiseDisputeIsland from "@/components/home/research-and-development/sections/raise-dispute-island";
 import { rndKeys } from "@/hooks/rnd/keys";
-import { toCursorKeysetPage, useKeysetList } from "@/hooks/rnd/keyset-list";
+import { toCursorKeysetPage, useKeysetList } from "@/hooks/keyset-list";
 import { formatIsoDate, formatIsoInstant } from "@/lib/rnd/format";
 import { listAllocationProposals } from "@/lib/rnd/proof-of-effort.api";
 import type {

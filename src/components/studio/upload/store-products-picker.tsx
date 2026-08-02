@@ -13,7 +13,18 @@ export type MockStoreProduct = {
   priceLabel: string;
 };
 
-// Inline mock per UI phase — intentionally not imported from products-page.
+/**
+ * TRANSPORT: mock — three hardcoded products. NOTHING here reaches a backend.
+ *
+ * `GET /products` is real and `attachedProductIds` IS sent on video create/update, so the ids
+ * this picker produces do go to the server — but they are ids of products that do not exist,
+ * which the backend rejects with a 422 ("You can only attach products you own"). Wiring the
+ * picker to the real `/products` list is the fix; until then the control is a layout study.
+ *
+ * Listed in docs/HOME_STRUCTURE.md §10. Banner added because the §11 grep claim — that
+ * `TRANSPORT: mock` returns exactly the files §10 names — was previously true only because this
+ * one was unmarked.
+ */
 export const MOCK_STORE_PRODUCTS: MockStoreProduct[] = [
   {
     id: "product-headphones",

@@ -3,42 +3,40 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { StudioSeries, useStudioVideos } from "@/state/studio-videos-context";
 import SeriesEditorModal from "@/components/studio/series/series-editor-modal";
+import { useCreateSeasonMutation, useCreateSeriesMutation, useMySeriesQuery } from "@/hooks/series";
+import type { SeriesListRow } from "@/lib/series/schemas";
 
-// Creator-facing catalog of anime series (UI phase — mock data only). Each
-// card opens the series detail page where seasons and episodes are managed.
+// TRANSPORT: client-query — `GET /series/mine`, plus `POST /series`.
+//
+// THE SERVER MINTS THE ID. The mock slugified the title and hand-rolled a collision counter
+// against the array it happened to hold, so two creators — or one creator in two tabs — could
+// mint the same id. Ids come back from `POST /series` now.
 export default function SeriesPage() {
-  const { seriesList, addSeries } = useStudioVideos();
+  const seriesQuery = useMySeriesQuery({ limit: 100 });
+  const createSeriesMutation = useCreateSeriesMutation();
+  const createSeasonMutation = useCreateSeasonMutation();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  function buildUniqueSeriesId(seriesTitle: string) {
-    const baseSlug = seriesTitle
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-    let candidateSlug = baseSlug || "series";
-    let collisionCounter = 2;
-    while (seriesList.some((existingSeries) => existingSeries.id === candidateSlug)) {
-      candidateSlug = `${baseSlug}-${collisionCounter}`;
-      collisionCounter += 1;
-    }
-    return candidateSlug;
-  }
+  const seriesList = seriesQuery.data?.rows ?? [];
 
-  function handleSeriesCreate(
-    savedFields: Pick<StudioSeries, "title" | "description" | "genreTags">,
-  ) {
-    addSeries({
-      id: buildUniqueSeriesId(savedFields.title),
-      title: savedFields.title,
-      description: savedFields.description,
-      posterImagePath: null,
-      genreTags: savedFields.genreTags,
-      seasons: [{ id: crypto.randomUUID(), seasonLabel: "Season 1", episodes: [] }],
+  function handleSeriesCreate(savedFields: {
+    readonly title: string;
+    readonly description: string;
+    readonly genreTags: string[];
+  }) {
+    createSeriesMutation.mutate(savedFields, {
+      onSuccess: (createdSeries) => {
+        // A series with no seasons has nowhere to put an episode, so the first one is created
+        // here rather than left to the creator. TWO calls because `POST /series` takes no
+        // seasons — a nested create would need a route the backend does not have.
+        createSeasonMutation.mutate({
+          seriesId: createdSeries.id,
+          input: { seasonLabel: "Season 1", position: 0 },
+        });
+        setIsCreateModalOpen(false);
+      },
     });
-    setIsCreateModalOpen(false);
   }
 
   const newSeriesButton = (
@@ -69,7 +67,11 @@ export default function SeriesPage() {
         {newSeriesButton}
       </div>
 
-      {seriesList.length === 0 ? (
+      {seriesQuery.isPending ? (
+        <p className="mt-10 text-sm text-muted-foreground">Loading your series…</p>
+      ) : seriesQuery.error !== null ? (
+        <p className="mt-10 text-sm text-destructive">Couldn&rsquo;t load your series.</p>
+      ) : seriesList.length === 0 ? (
         <div className="mt-10 flex flex-col items-center gap-4 rounded-2xl border border-border py-16">
           <p className="text-lg font-medium text-foreground">No series yet</p>
           {newSeriesButton}
@@ -85,6 +87,10 @@ export default function SeriesPage() {
       {isCreateModalOpen && (
         <SeriesEditorModal
           onSave={handleSeriesCreate}
+          isSavePending={createSeriesMutation.isPending}
+          saveErrorMessage={
+            createSeriesMutation.error === null ? null : "Couldn't create that series."
+          }
           onCancel={() => setIsCreateModalOpen(false)}
         />
       )}
@@ -92,14 +98,13 @@ export default function SeriesPage() {
   );
 }
 
-function SeriesCard({ series }: { series: StudioSeries }) {
-  const totalEpisodeCount = series.seasons.reduce(
-    (episodeCount, season) => episodeCount + season.episodes.length,
-    0,
-  );
-  const seasonCountLabel =
-    series.seasons.length === 1 ? "1 season" : `${series.seasons.length} seasons`;
-  const episodeCountLabel = totalEpisodeCount === 1 ? "1 episode" : `${totalEpisodeCount} episodes`;
+function SeriesCard({ series }: { series: SeriesListRow }) {
+  // Both counts come from the list projection now. They were lost when this page was wired —
+  // `SeriesListRow` carried only `seasonCount` — and both are `countDistinct` on tables the
+  // query already joins, so restoring them cost no extra read.
+  const seasonCountLabel = series.seasonCount === 1 ? "1 season" : `${series.seasonCount} seasons`;
+  const episodeCountLabel =
+    series.episodeCount === 1 ? "1 episode" : `${series.episodeCount} episodes`;
 
   return (
     <li>
@@ -123,7 +128,8 @@ function SeriesCard({ series }: { series: StudioSeries }) {
             </span>
           )}
           <span className="text-xs text-muted-foreground">
-            {seasonCountLabel} · {episodeCountLabel}
+            <span className="capitalize">{series.status}</span> · {seasonCountLabel} ·{" "}
+            {episodeCountLabel}
           </span>
         </span>
       </Link>

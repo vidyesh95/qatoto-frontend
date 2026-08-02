@@ -65,7 +65,7 @@ export type WatchVideo = {
   description: string;
   verified?: boolean;
   stats: { likes: string; comments: string; bookmarks: string; shares: string };
-  chapters: { title: string; time: string; thumbSrc: string }[];
+  chapters: { title: string; time: string; thumbSrc?: string }[];
   transcriptTitle: string;
   transcript: { time: string; text: string }[];
   trending: string;
@@ -77,12 +77,34 @@ export type WatchVideo = {
 };
 
 export type VideoCardProps = {
+  /**
+   * The backend row id, when this card came from `GET /feed/videos`.
+   *
+   * OPTIONAL BY DESIGN, not by omission. The anime surface still builds `VideoCardProps`
+   * objects from `src/mocks/anime-mocks.ts`, and a required id there would be a compile error
+   * in three mock arrays for no benefit — those cards are not wired to engagement yet. Any
+   * control that needs an id must branch on its absence rather than assume it.
+   */
+  videoId?: string;
   thumbnailSrc: string;
   profileSrc: string;
   title: string;
   channelName: string;
   views: string;
+  /**
+   * A pre-formatted relative label such as `"12 hours ago"`.
+   *
+   * DEAD FOR ANY FEED-SOURCED CARD — pass `""` and set `publishedAt` instead. Computing a
+   * relative label during a server render freezes it into the `cacheComponents` entry, so the
+   * page keeps claiming "12 hours ago" for as long as the cache lives and the client disagrees
+   * on hydrate. Kept only for the mock surfaces that still hand-author the string.
+   */
   postedAt: string;
+  /**
+   * ISO 8601 publish instant, straight off the wire. Rendered by `<RelativeTime>`, which is a
+   * client component precisely so the relative label is computed in the browser.
+   */
+  publishedAt?: string | null;
   verified?: boolean;
   hoverBg?: string;
   isChannelLive?: boolean;

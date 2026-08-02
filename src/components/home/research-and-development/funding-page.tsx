@@ -8,11 +8,11 @@ import RndStatusPanel, {
   RndErrorPanel,
   RndSignInRequiredPanel,
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
-import { readEnumParam, type RawSearchParams } from "@/lib/rnd/filter-href";
+import { readEnumParam, type RawSearchParams } from "@/lib/filter-href";
 import { listFundingDeals } from "@/lib/rnd/funding.api";
 import { FUNDING_ROUND_TYPES, type ListFundingDealsFilter } from "@/lib/rnd/funding.schemas";
 import { PROJECT_STAGES } from "@/lib/rnd/shared.schemas";
-import { toArrayViewState } from "@/lib/rnd/view-state";
+import { toArrayViewState } from "@/lib/view-state";
 import { callerRequestOptions } from "@/lib/server-http";
 
 const DEALS_PAGE_LIMIT = 24;

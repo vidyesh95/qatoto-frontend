@@ -2,7 +2,7 @@
 // keyset island's `useKeysetList` is currently doing.
 
 /**
- * The one load-more control on the R&D surface.
+ * The one load-more control in the app — R&D keyset lists, and the home feed's Explore rail.
  *
  * IT RENDERS NOTHING WHEN THERE IS NO NEXT PAGE. Every keyset read here answers with a
  * token or `null`, and `null` means the server has no more rows — so the control's absence

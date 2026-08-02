@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { StudioSeries } from "@/state/studio-videos-context";
 
-// Create/edit modal for an anime series' metadata. Seasons and episodes are
-// managed on the series detail page, not here. Poster upload is a static
-// placeholder until the backend arrives (UI phase).
+import type { PublicSeries } from "@/lib/series/schemas";
+
+// TRANSPORT: props-only — collects the fields; the caller owns the mutation.
+//
+// Create/edit modal for an anime series' metadata. Seasons and episodes are managed on the
+// series detail page, not here.
+//
+// TRANSPORT: mock — the poster control. `PublicSeries.posterUrl` is a plain URL on the wire and
+// there is NO upload route for it (the only multipart route on the studio surface is the video
+// thumbnail). The picker is a layout study; see docs/HOME_STRUCTURE.md §10.
 const SERIES_GENRE_OPTIONS = [
   "Action",
   "Romance",
@@ -18,23 +24,31 @@ const SERIES_GENRE_OPTIONS = [
 ];
 
 type SeriesEditorModalProps = {
-  seriesToEdit?: StudioSeries;
-  onSave: (savedFields: Pick<StudioSeries, "title" | "description" | "genreTags">) => void;
+  seriesToEdit?: PublicSeries;
+  onSave: (savedFields: {
+    readonly title: string;
+    readonly description: string;
+    readonly genreTags: string[];
+  }) => void;
   onCancel: () => void;
+  isSavePending?: boolean;
+  saveErrorMessage?: string | null;
 };
 
 export default function SeriesEditorModal({
   seriesToEdit,
   onSave,
   onCancel,
+  isSavePending = false,
+  saveErrorMessage = null,
 }: SeriesEditorModalProps) {
   const [seriesTitle, setSeriesTitle] = useState(seriesToEdit?.title ?? "");
   const [seriesDescription, setSeriesDescription] = useState(seriesToEdit?.description ?? "");
-  const [selectedGenreTags, setSelectedGenreTags] = useState<string[]>(
-    seriesToEdit?.genreTags ?? [],
-  );
+  const [selectedGenreTags, setSelectedGenreTags] = useState<string[]>([
+    ...(seriesToEdit?.genreTags ?? []),
+  ]);
 
-  const isSaveDisabled = seriesTitle.trim() === "";
+  const isSaveDisabled = seriesTitle.trim() === "" || isSavePending;
 
   function handleGenreTagToggle(genreTag: string) {
     setSelectedGenreTags((previousTags) =>
@@ -126,6 +140,12 @@ export default function SeriesEditorModal({
           </div>
         </div>
 
+        {saveErrorMessage !== null && (
+          <p role="alert" className="mt-4 text-xs text-destructive">
+            {saveErrorMessage}
+          </p>
+        )}
+
         <div className="mt-6 flex items-center justify-end gap-2">
           <button
             type="button"
@@ -140,7 +160,7 @@ export default function SeriesEditorModal({
             disabled={isSaveDisabled}
             className="cursor-pointer rounded-full bg-primary px-5 py-2 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-40"
           >
-            {seriesToEdit ? "Save" : "Create"}
+            {isSavePending ? "Saving…" : seriesToEdit ? "Save" : "Create"}
           </button>
         </div>
       </div>

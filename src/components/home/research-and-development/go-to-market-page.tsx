@@ -20,12 +20,12 @@ import {
   readMultiParam,
   readSingleParam,
   type RawSearchParams,
-} from "@/lib/rnd/filter-href";
+} from "@/lib/filter-href";
 import {
   SUPPLIER_VERIFICATION_STATES,
   type ListSuppliersFilter,
 } from "@/lib/rnd/suppliers.schemas";
-import { rowsOrEmpty, toListViewState } from "@/lib/rnd/view-state";
+import { rowsOrEmpty, toListViewState } from "@/lib/view-state";
 import { callerRequestOptions } from "@/lib/server-http";
 
 const SUPPLIERS_PAGE_LIMIT = 24;

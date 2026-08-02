@@ -1,46 +1,63 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
-import { StudioEpisode, useStudioVideos } from "@/state/studio-videos-context";
 
-// Add/edit modal for a single episode inside a season. An episode can attach
-// one of the creator's uploaded anime videos; unattached episodes act as
-// planned placeholders (UI phase — mock data only).
+import type { AnimeEpisodeSummary } from "@/lib/series/schemas";
+
+// TRANSPORT: props-only — collects the fields; `series-detail-page.tsx` owns the mutation.
+//
+// THE "ATTACH UPLOADED VIDEO" SELECT IS GONE, AND ITS ABSENCE IS THE POINT.
+//
+// The episode create/update schema has NO `videoId` field — the link between an episode and a
+// video is made from the VIDEO side only, by uploading with an `anime` block that names this
+// series and season. One direction, so the link cannot end up half-made with an episode
+// pointing at a video that does not point back.
+//
+// The mock offered the select and wrote `attachedVideoId` into a local array, which looked like
+// it worked and had no wire counterpart at all. Sending it now would be a 422 from a `.strict()`
+// schema. Episodes still show whether a video is attached — that is `videoId` on the read.
 type EpisodeEditorModalProps = {
-  episodeToEdit?: StudioEpisode;
+  episodeToEdit?: AnimeEpisodeSummary;
   suggestedEpisodeNumber: number;
-  onSave: (episode: StudioEpisode) => void;
+  isSavePending?: boolean;
+  onSave: (episode: {
+    readonly episodeId: string | null;
+    readonly episodeNumber: number;
+    readonly episodeTitle: string;
+    readonly isPremium: boolean;
+  }) => void;
   onCancel: () => void;
 };
 
 export default function EpisodeEditorModal({
   episodeToEdit,
   suggestedEpisodeNumber,
+  isSavePending = false,
   onSave,
   onCancel,
 }: EpisodeEditorModalProps) {
-  const { videos } = useStudioVideos();
   const [episodeNumberInput, setEpisodeNumberInput] = useState(
     String(episodeToEdit?.episodeNumber ?? suggestedEpisodeNumber),
   );
   const [episodeTitle, setEpisodeTitle] = useState(episodeToEdit?.episodeTitle ?? "");
   const [isPremium, setIsPremium] = useState(episodeToEdit?.isPremium ?? false);
-  const [attachedVideoId, setAttachedVideoId] = useState(episodeToEdit?.attachedVideoId ?? "");
 
-  const attachableAnimeVideos = videos.filter((video) => video.videoType === "anime-episode");
   const parsedEpisodeNumber = Number.parseInt(episodeNumberInput, 10);
   const isSaveDisabled =
-    episodeTitle.trim() === "" || Number.isNaN(parsedEpisodeNumber) || parsedEpisodeNumber < 1;
+    episodeTitle.trim() === "" ||
+    Number.isNaN(parsedEpisodeNumber) ||
+    parsedEpisodeNumber < 1 ||
+    isSavePending;
 
   function handleSaveClick() {
     if (isSaveDisabled) return;
     onSave({
-      id: episodeToEdit?.id ?? crypto.randomUUID(),
+      // The SERVER mints episode ids. The mock called `crypto.randomUUID()` here, which meant
+      // the id in the UI was never the id in the database.
+      episodeId: episodeToEdit?.id ?? null,
       episodeNumber: parsedEpisodeNumber,
       episodeTitle: episodeTitle.trim(),
       isPremium,
-      attachedVideoId: attachedVideoId === "" ? null : attachedVideoId,
     });
   }
 
@@ -105,37 +122,6 @@ export default function EpisodeEditorModal({
               ))}
             </div>
           </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="episode-editor-video" className="text-sm font-medium text-foreground">
-              Attach uploaded video
-            </label>
-            <div className="relative">
-              <select
-                id="episode-editor-video"
-                value={attachedVideoId}
-                onChange={(event) => setAttachedVideoId(event.target.value)}
-                className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
-              >
-                <option value="">No video attached</option>
-                {attachableAnimeVideos.map((animeVideo) => (
-                  <option key={animeVideo.id} value={animeVideo.id}>
-                    {animeVideo.title}
-                  </option>
-                ))}
-              </select>
-              <Image
-                src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={20}
-                height={20}
-                className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Only anime-episode uploads from My Videos appear here.
-            </p>
-          </div>
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-2">
@@ -152,7 +138,7 @@ export default function EpisodeEditorModal({
             disabled={isSaveDisabled}
             className="cursor-pointer rounded-full bg-primary px-5 py-2 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-40"
           >
-            {episodeToEdit ? "Save" : "Add"}
+            {isSavePending ? "Saving…" : episodeToEdit ? "Save" : "Add"}
           </button>
         </div>
       </div>

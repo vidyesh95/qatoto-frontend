@@ -13,7 +13,7 @@ import {
   useUploadProgramPaperMutation,
 } from "@/hooks/rnd/research-programs";
 import { ApiRequestError } from "@/lib/http";
-import { newIdempotencyKey } from "@/lib/rnd/idempotency";
+import { newIdempotencyKey } from "@/lib/idempotency";
 import { formatFileSizeFromBytes, formatIsoInstant } from "@/lib/rnd/format";
 import { RESEARCH_PAPER_MODERATION_STATUS_LABELS } from "@/lib/rnd/labels";
 import type {

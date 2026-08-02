@@ -4,32 +4,58 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  StudioEpisode,
-  StudioSeason,
-  StudioSeries,
-  useStudioVideos,
-} from "@/state/studio-videos-context";
-import SeriesEditorModal from "@/components/studio/series/series-editor-modal";
 import EpisodeEditorModal from "@/components/studio/series/episode-editor-modal";
+import SeriesEditorModal from "@/components/studio/series/series-editor-modal";
+import {
+  useCreateEpisodeMutation,
+  useCreateSeasonMutation,
+  useDeleteEpisodeMutation,
+  useDeleteSeasonMutation,
+  useDeleteSeriesMutation,
+  useSeriesQuery,
+  useUpdateEpisodeMutation,
+  useUpdateSeasonMutation,
+  useUpdateSeriesMutation,
+} from "@/hooks/series";
+import type { AnimeEpisodeSummary, AnimeSeasonSummary } from "@/lib/series/schemas";
 
-// Series detail — the one place a creator manages a series: metadata, seasons
-// (add/reorder), and the episodes inside each season (add/edit/remove, attach
-// uploaded videos). UI phase — context state resets on hard refresh.
+// TRANSPORT: client-query — `GET /series/:seriesId`, plus season and episode mutations.
+//
+// EVERY WRITE ANSWERS THE WHOLE SERIES TREE, so there is no local season/episode array to keep
+// in sync and no cache patching to get wrong. The hooks adopt the returned tree; this component
+// just re-renders from it.
+//
+// SEASON REORDERING CHANGED SHAPE. The mock swapped two entries in an array; the wire has a
+// `position` integer per season, so moving one is TWO `PATCH .../seasons/:id` calls that swap
+// the two positions. Doing it as one array write would need a bulk-reorder route that does not
+// exist.
 export default function SeriesDetailPage({ seriesId }: { seriesId: string }) {
-  const { seriesList, videos, updateSeries, deleteSeries } = useStudioVideos();
   const router = useRouter();
+  const seriesQuery = useSeriesQuery(seriesId);
+
+  const updateSeriesMutation = useUpdateSeriesMutation();
+  const deleteSeriesMutation = useDeleteSeriesMutation();
+  const createSeasonMutation = useCreateSeasonMutation();
+  const updateSeasonMutation = useUpdateSeasonMutation();
+  const deleteSeasonMutation = useDeleteSeasonMutation();
+  const createEpisodeMutation = useCreateEpisodeMutation();
+  const updateEpisodeMutation = useUpdateEpisodeMutation();
+  const deleteEpisodeMutation = useDeleteEpisodeMutation();
 
   const [isEditSeriesModalOpen, setIsEditSeriesModalOpen] = useState(false);
   const [isDeleteSeriesPending, setIsDeleteSeriesPending] = useState(false);
   const [episodeEditorTarget, setEpisodeEditorTarget] = useState<{
     seasonId: string;
-    episodeToEdit?: StudioEpisode;
+    episodeToEdit?: AnimeEpisodeSummary;
   } | null>(null);
 
-  const matchingSeries = seriesList.find((series) => series.id === seriesId);
+  const matchingSeries = seriesQuery.data;
 
-  if (!matchingSeries) {
+  if (seriesQuery.isPending) {
+    return <div className="p-6 text-sm text-muted-foreground">Loading this series…</div>;
+  }
+
+  if (matchingSeries === undefined) {
     return (
       <div className="p-6">
         <div className="mt-10 flex flex-col items-center gap-4 rounded-2xl border border-border py-16">
@@ -45,93 +71,103 @@ export default function SeriesDetailPage({ seriesId }: { seriesId: string }) {
     );
   }
 
-  function handleSeriesMetadataSave(
-    savedFields: Pick<StudioSeries, "title" | "description" | "genreTags">,
-  ) {
-    if (!matchingSeries) return;
-    updateSeries({ ...matchingSeries, ...savedFields });
-    setIsEditSeriesModalOpen(false);
+  function handleSeriesMetadataSave(savedFields: {
+    readonly title: string;
+    readonly description: string;
+    readonly genreTags: string[];
+  }) {
+    updateSeriesMutation.mutate(
+      { seriesId, input: savedFields },
+      { onSuccess: () => setIsEditSeriesModalOpen(false) },
+    );
   }
 
   function handleDeleteSeriesClick() {
-    if (!matchingSeries) return;
+    // Click once to arm, once to confirm. Deleting a series takes its seasons and episodes
+    // with it and there is no undo route.
     if (!isDeleteSeriesPending) {
       setIsDeleteSeriesPending(true);
       return;
     }
-    deleteSeries(matchingSeries.id);
-    router.push("/studio/series");
+    deleteSeriesMutation.mutate(seriesId, {
+      // Navigate only AFTER the server confirms. The mock pushed immediately, so a failed
+      // delete left the creator on the series list looking at a series that still existed.
+      onSuccess: () => router.push("/studio/series"),
+    });
   }
 
+  // Captured AFTER the guard above. The two handlers below are hoisted `function` declarations,
+  // so TypeScript's narrowing of `matchingSeries` does not reach inside them — a plain local
+  // that is already known non-undefined does.
+  const seasons = matchingSeries.seasons;
+
   function handleAddSeasonClick() {
-    if (!matchingSeries) return;
-    updateSeries({
-      ...matchingSeries,
-      seasons: [
-        ...matchingSeries.seasons,
-        {
-          id: crypto.randomUUID(),
-          seasonLabel: `Season ${matchingSeries.seasons.length + 1}`,
-          episodes: [],
-        },
-      ],
+    createSeasonMutation.mutate({
+      seriesId,
+      input: {
+        seasonLabel: `Season ${seasons.length + 1}`,
+        position: seasons.length,
+      },
     });
   }
 
   function handleSeasonMove(seasonIndex: number, direction: -1 | 1) {
-    if (!matchingSeries) return;
     const targetIndex = seasonIndex + direction;
-    if (targetIndex < 0 || targetIndex >= matchingSeries.seasons.length) return;
-    const reorderedSeasons = [...matchingSeries.seasons];
-    [reorderedSeasons[seasonIndex], reorderedSeasons[targetIndex]] = [
-      reorderedSeasons[targetIndex],
-      reorderedSeasons[seasonIndex],
-    ];
-    updateSeries({ ...matchingSeries, seasons: reorderedSeasons });
+    if (targetIndex < 0 || targetIndex >= seasons.length) return;
+    const movingSeason = seasons[seasonIndex];
+    const displacedSeason = seasons[targetIndex];
+
+    // TWO calls, swapping the two `position` values. Sequential rather than parallel so the
+    // second write lands on the tree the first one produced.
+    updateSeasonMutation.mutate(
+      {
+        seriesId,
+        seasonId: movingSeason.id,
+        input: { position: displacedSeason.position },
+      },
+      {
+        onSuccess: () =>
+          updateSeasonMutation.mutate({
+            seriesId,
+            seasonId: displacedSeason.id,
+            input: { position: movingSeason.position },
+          }),
+      },
+    );
   }
 
-  function handleEpisodeSave(seasonId: string, savedEpisode: StudioEpisode) {
-    if (!matchingSeries) return;
-    updateSeries({
-      ...matchingSeries,
-      seasons: matchingSeries.seasons.map((season) => {
-        if (season.id !== seasonId) return season;
-        const isExistingEpisode = season.episodes.some(
-          (existingEpisode) => existingEpisode.id === savedEpisode.id,
-        );
-        return {
-          ...season,
-          episodes: isExistingEpisode
-            ? season.episodes.map((existingEpisode) =>
-                existingEpisode.id === savedEpisode.id ? savedEpisode : existingEpisode,
-              )
-            : [...season.episodes, savedEpisode],
-        };
-      }),
-    });
-    setEpisodeEditorTarget(null);
+  function handleEpisodeSave(
+    seasonId: string,
+    savedEpisode: {
+      readonly episodeId: string | null;
+      readonly episodeNumber: number;
+      readonly episodeTitle: string;
+      readonly isPremium: boolean;
+    },
+  ) {
+    const input = {
+      episodeNumber: savedEpisode.episodeNumber,
+      episodeTitle: savedEpisode.episodeTitle,
+      isPremium: savedEpisode.isPremium,
+    };
+    const onSuccess = () => setEpisodeEditorTarget(null);
+
+    if (savedEpisode.episodeId === null) {
+      createEpisodeMutation.mutate({ seriesId, seasonId, input }, { onSuccess });
+      return;
+    }
+    updateEpisodeMutation.mutate(
+      { seriesId, seasonId, episodeId: savedEpisode.episodeId, input },
+      { onSuccess },
+    );
   }
 
   function handleEpisodeRemove(seasonId: string, episodeId: string) {
-    if (!matchingSeries) return;
-    updateSeries({
-      ...matchingSeries,
-      seasons: matchingSeries.seasons.map((season) =>
-        season.id === seasonId
-          ? {
-              ...season,
-              episodes: season.episodes.filter(
-                (existingEpisode) => existingEpisode.id !== episodeId,
-              ),
-            }
-          : season,
-      ),
-    });
+    deleteEpisodeMutation.mutate({ seriesId, seasonId, episodeId });
   }
 
-  function findAttachedVideoTitle(attachedVideoId: string | null) {
-    if (attachedVideoId === null) return null;
-    return videos.find((video) => video.id === attachedVideoId)?.title ?? null;
+  function handleSeasonRemove(seasonId: string) {
+    deleteSeasonMutation.mutate({ seriesId, seasonId });
   }
 
   const targetSeasonForEditor = episodeEditorTarget
@@ -229,7 +265,7 @@ export default function SeriesDetailPage({ seriesId }: { seriesId: string }) {
               setEpisodeEditorTarget({ seasonId: season.id, episodeToEdit })
             }
             onRemoveEpisode={(episodeId) => handleEpisodeRemove(season.id, episodeId)}
-            findAttachedVideoTitle={findAttachedVideoTitle}
+            onRemoveSeason={() => handleSeasonRemove(season.id)}
           />
         ))}
       </div>
@@ -238,6 +274,10 @@ export default function SeriesDetailPage({ seriesId }: { seriesId: string }) {
         <SeriesEditorModal
           seriesToEdit={matchingSeries}
           onSave={handleSeriesMetadataSave}
+          isSavePending={updateSeriesMutation.isPending}
+          saveErrorMessage={
+            updateSeriesMutation.error === null ? null : "Couldn't save those series details."
+          }
           onCancel={() => setIsEditSeriesModalOpen(false)}
         />
       )}
@@ -246,6 +286,7 @@ export default function SeriesDetailPage({ seriesId }: { seriesId: string }) {
         <EpisodeEditorModal
           episodeToEdit={episodeEditorTarget.episodeToEdit}
           suggestedEpisodeNumber={suggestedEpisodeNumber}
+          isSavePending={createEpisodeMutation.isPending || updateEpisodeMutation.isPending}
           onSave={(savedEpisode) => handleEpisodeSave(episodeEditorTarget.seasonId, savedEpisode)}
           onCancel={() => setEpisodeEditorTarget(null)}
         />
@@ -255,15 +296,15 @@ export default function SeriesDetailPage({ seriesId }: { seriesId: string }) {
 }
 
 type SeasonCardProps = {
-  season: StudioSeason;
+  season: AnimeSeasonSummary;
   canMoveUp: boolean;
   canMoveDown: boolean;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onAddEpisodeClick: () => void;
-  onEditEpisodeClick: (episodeToEdit: StudioEpisode) => void;
+  onEditEpisodeClick: (episodeToEdit: AnimeEpisodeSummary) => void;
   onRemoveEpisode: (episodeId: string) => void;
-  findAttachedVideoTitle: (attachedVideoId: string | null) => string | null;
+  onRemoveSeason: () => void;
 };
 
 function SeasonCard({
@@ -275,8 +316,9 @@ function SeasonCard({
   onAddEpisodeClick,
   onEditEpisodeClick,
   onRemoveEpisode,
-  findAttachedVideoTitle,
+  onRemoveSeason,
 }: SeasonCardProps) {
+  const [isRemoveSeasonPending, setIsRemoveSeasonPending] = useState(false);
   const episodesSortedByNumber = season.episodes.toSorted(
     (firstEpisode, secondEpisode) => firstEpisode.episodeNumber - secondEpisode.episodeNumber,
   );
@@ -318,13 +360,39 @@ function SeasonCard({
             </button>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onAddEpisodeClick}
-          className="cursor-pointer rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
-        >
-          Add episode
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onAddEpisodeClick}
+            className="cursor-pointer rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
+          >
+            Add episode
+          </button>
+          {/*
+            Click once to arm, once to confirm — the same pattern as the episode row and the
+            playlists page. Deleting a season takes its episodes with it and there is no undo
+            route, so a single click must not be enough.
+          */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!isRemoveSeasonPending) {
+                setIsRemoveSeasonPending(true);
+                return;
+              }
+              onRemoveSeason();
+              setIsRemoveSeasonPending(false);
+            }}
+            onBlur={() => setIsRemoveSeasonPending(false)}
+            className={`cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              isRemoveSeasonPending
+                ? "bg-destructive/10 text-destructive"
+                : "border border-border text-muted-foreground hover:text-destructive"
+            }`}
+          >
+            {isRemoveSeasonPending ? "Confirm delete" : "Delete season"}
+          </button>
+        </div>
       </div>
 
       {episodesSortedByNumber.length === 0 ? (
@@ -335,7 +403,6 @@ function SeasonCard({
             <EpisodeRow
               key={episode.id}
               episode={episode}
-              attachedVideoTitle={findAttachedVideoTitle(episode.attachedVideoId)}
               onEditClick={() => onEditEpisodeClick(episode)}
               onRemove={() => onRemoveEpisode(episode.id)}
             />
@@ -347,13 +414,12 @@ function SeasonCard({
 }
 
 type EpisodeRowProps = {
-  episode: StudioEpisode;
-  attachedVideoTitle: string | null;
+  episode: AnimeEpisodeSummary;
   onEditClick: () => void;
   onRemove: () => void;
 };
 
-function EpisodeRow({ episode, attachedVideoTitle, onEditClick, onRemove }: EpisodeRowProps) {
+function EpisodeRow({ episode, onEditClick, onRemove }: EpisodeRowProps) {
   const [isRemovePending, setIsRemovePending] = useState(false);
 
   function handleRemoveClick() {
@@ -370,10 +436,15 @@ function EpisodeRow({ episode, attachedVideoTitle, onEditClick, onRemove }: Epis
         <p className="truncate text-sm font-medium text-foreground">
           Ep {episode.episodeNumber} · {episode.episodeTitle}
         </p>
-        {attachedVideoTitle !== null ? (
-          <p className="truncate text-xs text-muted-foreground">{attachedVideoTitle}</p>
-        ) : (
+        {/*
+          `videoId` is nullable BY DESIGN: a season can be planned before any of its episodes
+          has a video. The link is made from the VIDEO side — uploading with an `anime` block
+          naming this series and season — never from here, so this is a status, not a control.
+        */}
+        {episode.videoId === null ? (
           <p className="text-xs text-muted-foreground italic">No video attached</p>
+        ) : (
+          <p className="truncate text-xs text-muted-foreground">Video attached</p>
         )}
       </div>
 

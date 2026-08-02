@@ -23,7 +23,7 @@ import {
   type IntegrationGrantStatus,
   type IntegrationProvider,
 } from "@/lib/rnd/proof-of-effort.schemas";
-import type { MemberScopedListViewState } from "@/lib/rnd/view-state";
+import type { MemberScopedListViewState } from "@/lib/view-state";
 
 const PROVIDER_LABELS: Record<IntegrationProvider, string> = {
   github: "GitHub",

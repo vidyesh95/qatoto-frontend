@@ -2,8 +2,12 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { StudioStageBadge, StudioVideoType, UploadDraft } from "@/state/studio-videos-context";
+import type { StudioStageBadge, StudioVideoType, UploadDraft } from "@/lib/videos/studio-view";
 import AnimeEpisodeFields, { createEmptyAnimeEpisodeDetails } from "./anime-episode-fields";
+import ThumbnailPicker from "@/components/studio/upload/thumbnail-picker";
+import { useFeedCategoriesQuery } from "@/hooks/feed/queries";
+import { useMyPlaylistsQuery } from "@/hooks/playlists";
+import { MAX_CATEGORIES_PER_VIDEO } from "@/lib/videos/studio-view";
 
 // Step 1 of the upload wizard. Everything is optional for the UI phase except
 // the title (Save stays disabled without one — enforced by the modal footer).
@@ -15,7 +19,7 @@ const VIDEO_TYPE_OPTIONS: Array<{ value: StudioVideoType; label: string }> = [
   { value: "demo", label: "Demo" },
   { value: "update", label: "Update" },
   { value: "ama", label: "AMA" },
-  { value: "anime-episode", label: "Anime episode" },
+  { value: "anime_episode", label: "Anime episode" },
 ];
 
 const SECTOR_TAG_OPTIONS = [
@@ -42,27 +46,103 @@ const CAPTION_CERTIFICATION_OPTIONS = [
   "Has never aired on television in the U.S.",
   "Has only aired on television with captions",
 ];
-const CATEGORY_OPTIONS = [
-  "Science & Technology",
-  "Education",
-  "Entertainment",
-  "Gaming",
-  "Music",
-  "People & Blogs",
-];
 const COMMENT_MODERATION_OPTIONS = ["None", "Basic", "Strict", "Hold all"];
 const COMMENT_SORT_OPTIONS = ["Top", "Newest"];
+
+/**
+ * Up to three categories, chosen from the live taxonomy.
+ *
+ * Reads the same route the homepage chip row reads, so a category a moderator publishes is
+ * immediately taggable — that is the point of the taxonomy being a table rather than an enum.
+ */
+function CategoryMultiSelect({
+  selectedCategoryIds,
+  onCategoryToggle,
+}: {
+  readonly selectedCategoryIds: string[];
+  readonly onCategoryToggle: (categoryId: string) => void;
+}) {
+  const categoriesQuery = useFeedCategoriesQuery([]);
+  const categories = categoriesQuery.data ?? [];
+  const isAtLimit = selectedCategoryIds.length >= MAX_CATEGORIES_PER_VIDEO;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-sm font-medium text-foreground">
+        Categories (up to {MAX_CATEGORIES_PER_VIDEO})
+      </span>
+      {categoriesQuery.isPending ? (
+        <p className="text-sm text-muted-foreground">Loading categories…</p>
+      ) : categories.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No categories available.</p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {categories.map((category) => {
+            const isSelected = selectedCategoryIds.includes(category.id);
+            return (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => onCategoryToggle(category.id)}
+                aria-pressed={isSelected}
+                // Unselected chips go inert at the cap rather than vanishing, so the creator
+                // can see what they would have to give up to pick something else.
+                disabled={!isSelected && isAtLimit}
+                className={`cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                  isSelected
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border text-muted-foreground hover:text-foreground disabled:cursor-default disabled:opacity-40"
+                }`}
+              >
+                {category.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The chosen playlists by name, resolved from the same query the picker uses. */
+function SelectedPlaylistNames({
+  selectedPlaylistIds,
+}: {
+  readonly selectedPlaylistIds: string[];
+}) {
+  const playlistsQuery = useMyPlaylistsQuery({ limit: 100 });
+  if (selectedPlaylistIds.length === 0) return null;
+
+  const selectedTitles = (playlistsQuery.data?.rows ?? [])
+    .filter((playlist) => selectedPlaylistIds.includes(playlist.id))
+    .map((playlist) => playlist.title);
+
+  return (
+    <p className="text-xs text-muted-foreground">
+      {selectedTitles.length > 0
+        ? selectedTitles.join(" · ")
+        : `${selectedPlaylistIds.length} selected`}
+    </p>
+  );
+}
 
 type DetailsStepProps = {
   draft: UploadDraft;
   onDraftChange: (patch: Partial<UploadDraft>) => void;
   onOpenPlaylistsPicker: () => void;
+  /** The saved thumbnail in edit mode, so the picker previews it instead of YouTube's. */
+  currentThumbnailUrl?: string | null;
+  selectedThumbnailFile: File | null;
+  onThumbnailFileSelected: (file: File | null) => void;
 };
 
 export default function DetailsStep({
   draft,
   onDraftChange,
   onOpenPlaylistsPicker,
+  currentThumbnailUrl,
+  selectedThumbnailFile,
+  onThumbnailFileSelected,
 }: DetailsStepProps) {
   const [isAgeRestrictionSectionOpen, setIsAgeRestrictionSectionOpen] = useState(false);
   const [isShowMoreSectionOpen, setIsShowMoreSectionOpen] = useState(false);
@@ -71,7 +151,7 @@ export default function DetailsStep({
     onDraftChange({
       videoType,
       animeEpisodeDetails:
-        videoType === "anime-episode"
+        videoType === "anime_episode"
           ? (draft.animeEpisodeDetails ?? createEmptyAnimeEpisodeDetails())
           : draft.animeEpisodeDetails,
     });
@@ -87,11 +167,25 @@ export default function DetailsStep({
   }
 
   const playlistsTriggerLabel =
-    draft.selectedPlaylistTitles.length === 0
+    draft.selectedPlaylistIds.length === 0
       ? "Select playlists"
-      : `${draft.selectedPlaylistTitles.length} playlist${
-          draft.selectedPlaylistTitles.length === 1 ? "" : "s"
+      : `${draft.selectedPlaylistIds.length} playlist${
+          draft.selectedPlaylistIds.length === 1 ? "" : "s"
         } selected`;
+
+  function handleCategoryToggle(categoryId: string) {
+    const isAlreadySelected = draft.categoryIds.includes(categoryId);
+    if (isAlreadySelected) {
+      onDraftChange({
+        categoryIds: draft.categoryIds.filter((selectedId) => selectedId !== categoryId),
+      });
+      return;
+    }
+    // The backend caps this at 3 and answers 422 on a fourth. Refusing here as well means the
+    // creator meets the limit at the control rather than at Save, three steps later.
+    if (draft.categoryIds.length >= MAX_CATEGORIES_PER_VIDEO) return;
+    onDraftChange({ categoryIds: [...draft.categoryIds, categoryId] });
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -169,18 +263,18 @@ export default function DetailsStep({
           ))}
         </PillOptionGroup>
 
-        <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-foreground">Thumbnail</span>
-          <div className="flex aspect-video w-40 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border">
-            <Image
-              src="/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt=""
-              width={24}
-              height={24}
-            />
-            <p className="px-2 text-center text-xs text-muted-foreground">Change in mobile app</p>
-          </div>
-        </div>
+        {/*
+          WAS A DEAD BOX READING "Change in mobile app". `POST /videos/:videoId/thumbnail` has
+          existed the whole time; this slot just never called it. The picker validates the file
+          and hands it up — the MODAL owns the upload, because in create mode there is no
+          `videoId` to upload against until the video exists.
+        */}
+        <ThumbnailPicker
+          youtubeUrl={draft.youtubeUrl}
+          currentThumbnailUrl={currentThumbnailUrl}
+          selectedFile={selectedThumbnailFile}
+          onFileSelected={onThumbnailFileSelected}
+        />
       </section>
 
       <section className="flex flex-col gap-4 rounded-2xl border border-border p-6">
@@ -246,11 +340,13 @@ export default function DetailsStep({
             height={20}
           />
         </button>
-        {draft.selectedPlaylistTitles.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {draft.selectedPlaylistTitles.join(" · ")}
-          </p>
-        )}
+        {/*
+          NAMES, not a count. The draft holds ids so the picker can key on something unique, but
+          "3 selected" tells the creator nothing about WHICH three — the mock showed the titles
+          and losing them was a regression, not a simplification. The list is already fetched by
+          the picker, so this shares its cache entry rather than adding a request.
+        */}
+        <SelectedPlaylistNames selectedPlaylistIds={draft.selectedPlaylistIds} />
       </section>
 
       <section className="flex flex-col gap-4 rounded-2xl border border-border p-6">
@@ -387,8 +483,8 @@ export default function DetailsStep({
                 />
                 <SelectablePill
                   label="Creative Commons"
-                  isSelected={draft.license === "creative-commons"}
-                  onClick={() => onDraftChange({ license: "creative-commons" })}
+                  isSelected={draft.license === "creative_commons"}
+                  onClick={() => onDraftChange({ license: "creative_commons" })}
                 />
               </div>
             </div>
@@ -404,23 +500,27 @@ export default function DetailsStep({
               <div className="flex gap-2">
                 <SelectablePill
                   label="Video and audio"
-                  isSelected={draft.shortsRemixing === "video-and-audio"}
-                  onClick={() => onDraftChange({ shortsRemixing: "video-and-audio" })}
+                  isSelected={draft.shortsRemixing === "video_and_audio"}
+                  onClick={() => onDraftChange({ shortsRemixing: "video_and_audio" })}
                 />
                 <SelectablePill
                   label="Audio only"
-                  isSelected={draft.shortsRemixing === "audio-only"}
-                  onClick={() => onDraftChange({ shortsRemixing: "audio-only" })}
+                  isSelected={draft.shortsRemixing === "audio_only"}
+                  onClick={() => onDraftChange({ shortsRemixing: "audio_only" })}
                 />
               </div>
             </div>
 
-            <LabeledSelect
-              fieldId="upload-category"
-              label="Category"
-              value={draft.category}
-              options={CATEGORY_OPTIONS}
-              onValueChange={(category) => onDraftChange({ category })}
+            {/*
+              WAS A SINGLE SELECT OVER SIX HARDCODED STRINGS. Categories are a real table now
+              (`GET /feed/categories`), a video may carry up to three, and the wire takes IDS —
+              the free-text `video.category` column those strings wrote to is deprecated and
+              nothing reads it. This is also the control that decides which chip and which tile
+              a video appears under on the homepage.
+            */}
+            <CategoryMultiSelect
+              selectedCategoryIds={draft.categoryIds}
+              onCategoryToggle={handleCategoryToggle}
             />
 
             <div className="flex flex-col gap-3">
@@ -458,7 +558,7 @@ export default function DetailsStep({
         )}
       </section>
 
-      {draft.videoType === "anime-episode" && draft.animeEpisodeDetails && (
+      {draft.videoType === "anime_episode" && draft.animeEpisodeDetails && (
         <AnimeEpisodeFields
           episodeDetails={draft.animeEpisodeDetails}
           onEpisodeDetailsChange={(episodeDetailsPatch) =>

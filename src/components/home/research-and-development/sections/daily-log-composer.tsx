@@ -13,7 +13,7 @@ import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import { useDailyLogMutation, useDailyLogQuery } from "@/hooks/rnd/workshop";
 import { ApiRequestError } from "@/lib/http";
 import type { DailyLogAnalysisStatus } from "@/lib/rnd/daily-logs.schemas";
-import { newIdempotencyKey } from "@/lib/rnd/idempotency";
+import { newIdempotencyKey } from "@/lib/idempotency";
 
 const ANALYSIS_STATUS_MESSAGES: Record<DailyLogAnalysisStatus, string> = {
   not_requested: "Not analyzed — it has not been submitted yet.",

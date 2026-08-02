@@ -1,47 +1,98 @@
 "use client";
 
+// TRANSPORT: client-query — `POST /playlists` on create, `PATCH /playlists/:playlistId` on edit.
+//
+// ALL FIVE FIELDS NOW PERSIST. The mock kept only title and visibility and dropped description,
+// default order and language on the floor; the API takes all five, so the form no longer
+// collects things it silently discards.
+//
+// `defaultVideoOrder` is a pgEnum label sent verbatim — `date_published_newest`, snake_case.
+// The mock offered human strings ("Date published (newest)", "Most popular") as the VALUE, and
+// "Most popular" is not an option the backend has at all.
+
 import Image from "next/image";
 import { useState } from "react";
-import { StudioPlaylist, StudioPlaylistVisibility } from "@/state/studio-videos-context";
 
-// "Create a new playlist" modal, layered above the playlists picker. Only
-// title + visibility persist on the mock playlist record for now; the other
-// fields exist per the spec and will matter once the backend arrives.
-// Passing playlistToEdit switches the modal to edit mode (used by
-// /studio/playlists); onCreate then receives the updated playlist.
+import { useCreatePlaylistMutation, useUpdatePlaylistMutation } from "@/hooks/playlists";
+import { ApiRequestError } from "@/lib/http";
+import {
+  PLAYLIST_VIDEO_ORDERS,
+  PLAYLIST_VISIBILITIES,
+  type PlaylistVideoOrder,
+  type PlaylistVisibility,
+  type PublicPlaylist,
+} from "@/lib/playlists/schemas";
+
 type CreatePlaylistModalProps = {
-  playlistToEdit?: StudioPlaylist;
-  onCreate: (playlist: StudioPlaylist) => void;
+  /** Present in edit mode — the playlist whose id the PATCH targets. */
+  playlistToEdit?: PublicPlaylist;
+  /** Receives the SERVER's playlist, id included, so callers can select it immediately. */
+  onCreated: (playlist: PublicPlaylist) => void;
   onCancel: () => void;
 };
 
-const PLAYLIST_VISIBILITY_OPTIONS: StudioPlaylistVisibility[] = ["public", "unlisted", "private"];
-const PLAYLIST_ORDER_OPTIONS = [
+/** Display labels, index-aligned with `PLAYLIST_VIDEO_ORDERS`. Wire value != label. */
+const PLAYLIST_ORDER_LABELS = [
   "Date published (newest)",
   "Date published (oldest)",
-  "Most popular",
+  "Date added (newest)",
+  "Date added (oldest)",
   "Manual",
-];
+] as const;
+
 const PLAYLIST_LANGUAGE_OPTIONS = ["English", "Hindi", "Japanese", "Spanish", "German"];
 
 export default function CreatePlaylistModal({
   playlistToEdit,
-  onCreate,
+  onCreated,
   onCancel,
 }: CreatePlaylistModalProps) {
   const [playlistTitle, setPlaylistTitle] = useState(playlistToEdit?.title ?? "");
-  const [playlistDescription, setPlaylistDescription] = useState("");
-  const [playlistVisibility, setPlaylistVisibility] = useState<StudioPlaylistVisibility>(
+  const [playlistDescription, setPlaylistDescription] = useState(playlistToEdit?.description ?? "");
+  const [playlistVisibility, setPlaylistVisibility] = useState<PlaylistVisibility>(
     playlistToEdit?.visibility ?? "public",
   );
-  const [defaultVideoOrder, setDefaultVideoOrder] = useState(PLAYLIST_ORDER_OPTIONS[0]);
-  const [playlistLanguage, setPlaylistLanguage] = useState(PLAYLIST_LANGUAGE_OPTIONS[0]);
+  const [defaultVideoOrder, setDefaultVideoOrder] = useState<PlaylistVideoOrder>(
+    playlistToEdit?.defaultVideoOrder ?? "date_published_newest",
+  );
+  const [playlistLanguage, setPlaylistLanguage] = useState(
+    playlistToEdit?.language ?? PLAYLIST_LANGUAGE_OPTIONS[0],
+  );
+  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
 
-  const isCreateDisabled = playlistTitle.trim() === "";
+  const createPlaylistMutation = useCreatePlaylistMutation();
+  const updatePlaylistMutation = useUpdatePlaylistMutation();
+  const isSaving = createPlaylistMutation.isPending || updatePlaylistMutation.isPending;
+  const isCreateDisabled = playlistTitle.trim() === "" || isSaving;
 
-  function handleCreateClick() {
+  async function handleCreateClick() {
     if (isCreateDisabled) return;
-    onCreate({ title: playlistTitle.trim(), visibility: playlistVisibility });
+    setSaveErrorMessage(null);
+
+    const input = {
+      title: playlistTitle.trim(),
+      description: playlistDescription.trim(),
+      visibility: playlistVisibility,
+      defaultVideoOrder,
+      language: playlistLanguage,
+    };
+
+    try {
+      const savedPlaylist =
+        playlistToEdit === undefined
+          ? await createPlaylistMutation.mutateAsync(input)
+          : await updatePlaylistMutation.mutateAsync({
+              playlistId: playlistToEdit.id,
+              input,
+            });
+      onCreated(savedPlaylist);
+    } catch (error) {
+      setSaveErrorMessage(
+        error instanceof ApiRequestError
+          ? error.apiError.message
+          : "Couldn't save this playlist. Please try again.",
+      );
+    }
   }
 
   return (
@@ -92,7 +143,7 @@ export default function CreatePlaylistModal({
           <div className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-foreground">Visibility</span>
             <div className="flex flex-wrap gap-2">
-              {PLAYLIST_VISIBILITY_OPTIONS.map((visibilityOption) => (
+              {PLAYLIST_VISIBILITIES.map((visibilityOption) => (
                 <button
                   key={visibilityOption}
                   type="button"
@@ -109,13 +160,41 @@ export default function CreatePlaylistModal({
             </div>
           </div>
 
-          <SelectField
-            fieldId="new-playlist-order"
-            label="Default video order"
-            value={defaultVideoOrder}
-            options={PLAYLIST_ORDER_OPTIONS}
-            onValueChange={setDefaultVideoOrder}
-          />
+          {/* The <option> VALUE is the wire enum label; the visible text is the display label. */}
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="new-playlist-order" className="text-sm font-medium text-foreground">
+              Default video order
+            </label>
+            <div className="relative">
+              <select
+                id="new-playlist-order"
+                value={defaultVideoOrder}
+                onChange={(event) => {
+                  // NARROWED, not asserted (CLAUDE.md Pattern 2 — no `as` on a value the DOM
+                  // hands back as a plain string). An unrecognized order would reach the
+                  // backend's `.strict()` schema as a 422 rather than being ignored.
+                  const selectedOrder = PLAYLIST_VIDEO_ORDERS.find(
+                    (orderValue) => orderValue === event.target.value,
+                  );
+                  if (selectedOrder !== undefined) setDefaultVideoOrder(selectedOrder);
+                }}
+                className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+              >
+                {PLAYLIST_VIDEO_ORDERS.map((orderValue, orderIndex) => (
+                  <option key={orderValue} value={orderValue}>
+                    {PLAYLIST_ORDER_LABELS[orderIndex]}
+                  </option>
+                ))}
+              </select>
+              <Image
+                src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt=""
+                width={20}
+                height={20}
+                className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2"
+              />
+            </div>
+          </div>
 
           <SelectField
             fieldId="new-playlist-language"
@@ -125,6 +204,12 @@ export default function CreatePlaylistModal({
             onValueChange={setPlaylistLanguage}
           />
         </div>
+
+        {saveErrorMessage !== null && (
+          <p role="alert" className="mt-4 text-xs text-destructive">
+            {saveErrorMessage}
+          </p>
+        )}
 
         <div className="mt-6 flex items-center justify-end gap-2">
           <button
@@ -136,11 +221,11 @@ export default function CreatePlaylistModal({
           </button>
           <button
             type="button"
-            onClick={handleCreateClick}
+            onClick={() => void handleCreateClick()}
             disabled={isCreateDisabled}
             className="cursor-pointer rounded-full bg-primary px-5 py-2 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-40"
           >
-            {playlistToEdit ? "Save" : "Create"}
+            {isSaving ? "Saving…" : playlistToEdit ? "Save" : "Create"}
           </button>
         </div>
       </div>

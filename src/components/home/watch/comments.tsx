@@ -1,41 +1,62 @@
 "use client";
 
-import { useState } from "react";
+// TRANSPORT: client-query — the comments card. The thread itself is real
+// (`video-comment-thread.tsx`); this file is the shell around it.
+//
+// WHAT CHANGED: this used to be 447 lines rendering a mock `Comment[]` with Top/New sort pills
+// that sorted nothing, like buttons with no `onClick` at all, and no composer anywhere. The
+// thread moved to `video-comment-thread.tsx` and is wired to `GET/POST /videos/:id/comments`.
+//
+// WHAT DID NOT: the attached-item header and the Reviews tab, which are marked
+// `TRANSPORT: mock` below.
 
 import Image from "next/image";
+import { useState } from "react";
 
-import type { Comment, Reply, Review, SaleItem } from "@/types/video";
+import VideoCommentThread from "@/components/home/watch/video-comment-thread";
+import { formatCompactCountLabel } from "@/lib/feed/format";
+import type { VideoComment } from "@/lib/feed/schemas";
+import type { Review, SaleItem } from "@/types/video";
 
-export type CommentsProps = {
-  count: string;
-  comments: Comment[];
-  /** Trending search shown above comments when no item is attached. */
-  trending?: string;
-  /** Set when the creator attached an item for sale — unlocks the Reviews tab. */
-  saleItem?: SaleItem;
-  reviews?: Review[];
-  className?: string;
-};
+/**
+ * TRANSPORT: mock — `saleItem`, `reviews` and `trending` have no counterpart in
+ * `GET /feed/watch/:videoId`.
+ *
+ * Attaching a store product to a video is a real product intent and a real backend gap: the
+ * `/products` API exists, but nothing joins a product to a video and there is no product-review
+ * table. `trending` ("everyone is searching for…") has no search-term aggregation behind it
+ * either. All three are held empty so the tab bar collapses to the comments header rather than
+ * showing a Reviews tab over invented reviews. Deliberate; docs/HOME_STRUCTURE.md §10.
+ */
+const PLACEHOLDER_SALE_ITEM: SaleItem | undefined = undefined;
+const PLACEHOLDER_REVIEWS: Review[] = [];
+const PLACEHOLDER_TRENDING_SEARCH: string | undefined = undefined;
 
-type Tab = "comments" | "reviews";
-type Sort = "top" | "new";
+type CommentsTab = "comments" | "reviews";
 
 export default function Comments({
-  count,
-  comments,
-  trending,
-  saleItem,
-  reviews = [],
+  videoId,
+  areCommentsEnabled,
+  initialComments,
+  initialNextCursor,
+  isViewerSignedIn,
+  commentCount,
   className = "",
-}: CommentsProps) {
-  const hasReviews = Boolean(saleItem);
-  const [tab, setTab] = useState<Tab>("comments");
-  const [sort, setSort] = useState<Sort>("top");
+}: {
+  readonly videoId: string;
+  readonly areCommentsEnabled: boolean;
+  readonly initialComments: VideoComment[];
+  readonly initialNextCursor: string | null;
+  readonly isViewerSignedIn: boolean;
+  readonly commentCount: number;
+  readonly className?: string;
+}) {
+  const hasReviews = PLACEHOLDER_SALE_ITEM !== undefined;
+  const [tab, setTab] = useState<CommentsTab>("comments");
 
   return (
     <section className={`rounded-xl border border-[#E5E7E7] bg-background ${className}`}>
-      {/* Header */}
-      {hasReviews && saleItem ? (
+      {hasReviews && PLACEHOLDER_SALE_ITEM !== undefined ? (
         <>
           {/* Attached item */}
           <div className="flex flex-row items-center gap-3 px-4 py-3">
@@ -48,59 +69,54 @@ export default function Comments({
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[11px] font-medium">{saleItem.name}</p>
+              <p className="truncate text-[11px] font-medium">{PLACEHOLDER_SALE_ITEM.name}</p>
               <p className="text-[11px] text-[#1DBDC5]">
-                Price: {saleItem.price} | Sold: {saleItem.sold}
+                Price: {PLACEHOLDER_SALE_ITEM.price} | Sold: {PLACEHOLDER_SALE_ITEM.sold}
               </p>
             </div>
           </div>
           {/* Tabs */}
           <div className="flex flex-row border-b border-[#DAE4E5]">
             <TabButton active={tab === "comments"} onClick={() => setTab("comments")}>
-              {count} Comments
+              {formatCompactCountLabel(commentCount)} Comments
             </TabButton>
             <TabButton active={tab === "reviews"} onClick={() => setTab("reviews")}>
-              {reviews.length} Reviews
+              {PLACEHOLDER_REVIEWS.length} Reviews
             </TabButton>
           </div>
         </>
       ) : (
         <>
-          {trending && (
+          {PLACEHOLDER_TRENDING_SEARCH !== undefined && (
             <div className="px-4 py-3">
               <p className="text-sm font-medium">Everyone is searching for:</p>
-              <p className="text-sm text-[#1DBDC5]">{trending}</p>
+              <p className="text-sm text-[#1DBDC5]">{PLACEHOLDER_TRENDING_SEARCH}</p>
             </div>
           )}
           <div className="border-b-2 border-[#1DBDC5] px-4 pt-1 pb-3 text-center">
-            <h2 className="text-base font-medium">{count} Comments</h2>
+            <h2 className="text-base font-medium">
+              {formatCompactCountLabel(commentCount)} Comments
+            </h2>
           </div>
         </>
       )}
 
-      {/* Sort pills */}
-      <div className="flex flex-row items-center gap-2 px-4 py-3">
-        <SortPill active={sort === "top"} onClick={() => setSort("top")} showCheck>
-          Top
-        </SortPill>
-        <SortPill active={sort === "new"} onClick={() => setSort("new")}>
-          New
-        </SortPill>
-      </div>
-
-      {/* Body */}
+      {/*
+        NO SORT PILLS. The old Top/New pair set local state and never re-sorted anything, and
+        `GET /videos/:id/comments` takes no `sort` parameter — the backend fixes newest-first
+        for the thread and oldest-first for replies. A control that cannot do what it says is
+        worse than no control.
+      */}
       {tab === "reviews" ? (
-        <ul className="px-4 pb-2">
-          {reviews.map((review) => (
-            <ReviewItem key={review.id} review={review} />
-          ))}
-        </ul>
+        <p className="px-4 py-6 text-sm text-[#6F7979]">No reviews yet.</p>
       ) : (
-        <ul className="px-4 pb-2">
-          {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} />
-          ))}
-        </ul>
+        <VideoCommentThread
+          videoId={videoId}
+          areCommentsEnabled={areCommentsEnabled}
+          initialComments={initialComments}
+          initialNextCursor={initialNextCursor}
+          isViewerSignedIn={isViewerSignedIn}
+        />
       )}
     </section>
   );
@@ -119,329 +135,12 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`-mb-px flex-1 cursor-pointer border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
-        active ? "border-[#00696E] text-[#191C1C]" : "border-transparent text-[#3F4949]"
+      aria-pressed={active}
+      className={`flex-1 cursor-pointer px-4 py-3 text-sm font-medium transition-colors ${
+        active ? "border-b-2 border-[#1DBDC5] text-foreground" : "text-[#6F7979]"
       }`}
     >
       {children}
     </button>
-  );
-}
-
-function SortPill({
-  active,
-  onClick,
-  showCheck = false,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  showCheck?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex cursor-pointer flex-row items-center gap-1.5 rounded-lg border px-4 py-1.5 text-sm font-medium transition-colors ${
-        active ? "border-[#CCE8E9] bg-[#CCE8E9] text-[#041F21]" : "border-[#6F7979] text-[#3F4949]"
-      }`}
-    >
-      {active && showCheck && (
-        <svg viewBox="0 -960 960 960" width={18} height={18} className="fill-[#041F21]">
-          <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z" />
-        </svg>
-      )}
-      {children}
-    </button>
-  );
-}
-
-function Avatar({ src }: { src: string }) {
-  return (
-    <div className="size-8 shrink-0">
-      <Image
-        src={src}
-        width={32}
-        height={32}
-        alt="profile image"
-        className="size-8 rounded-full object-cover"
-      />
-    </div>
-  );
-}
-
-function Stars({ rating }: { rating: number }) {
-  return (
-    <div className="flex flex-row items-center gap-0.5" aria-label={`${rating} out of 5 stars`}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <svg
-          key={i}
-          viewBox="0 -960 960 960"
-          width={20}
-          height={20}
-          className={i < rating ? "fill-[#00696E]" : "fill-[#E0E3E3]"}
-        >
-          <path d="M480-269 314-169q-11 7-23 6t-21-8q-9-7-14-17.5t-2-23.5l44-189-147-127q-10-9-12.5-20.5T140-571q4-11 12-18t22-9l194-17 75-178q5-12 15.5-18t21.5-6q11 0 21.5 6t15.5 18l75 178 194 17q14 2 22 9t12 18q4 11 1.5 22.5T809-528L662-401l44 189q3 13-2 23.5T690-171q-9 7-21 8t-23-6L480-269Z" />
-        </svg>
-      ))}
-    </div>
-  );
-}
-
-function ActionButton({
-  icon,
-  label,
-  ariaLabel,
-}: {
-  icon: string;
-  label?: string;
-  ariaLabel: string;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={ariaLabel}
-      className="flex cursor-pointer flex-row items-center gap-1.5 text-[11px] text-foreground hover:text-[#6F7979]"
-    >
-      <Image src={icon} width={14} height={14} alt="" />
-      {label}
-    </button>
-  );
-}
-
-function CommentItem({ comment }: { comment: Comment }) {
-  const [expanded, setExpanded] = useState(false);
-  const replyList = comment.replyList ?? [];
-  const replyCount = replyList.length > 0 ? String(replyList.length) : comment.replies;
-  const hasReplies = replyCount !== "0";
-
-  return (
-    <li className="flex flex-row gap-3 py-3">
-      <Avatar src={comment.profileSrc} />
-      <div className="min-w-0 flex-1">
-        <span className="text-[11px] font-medium text-foreground">{comment.author}</span>
-        <p className="mt-1 text-xs leading-snug font-medium">{comment.text}</p>
-        <p className="mt-1 text-[11px] font-medium text-foreground">
-          {comment.postedAt} · {comment.location}
-        </p>
-        <div className="mt-2 flex flex-row items-center gap-5">
-          <ActionButton
-            icon="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            label={comment.likes}
-            ariaLabel="like comment"
-          />
-          <ActionButton
-            icon="/icons/heart_broken_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            ariaLabel="dislike comment"
-          />
-          <ActionButton
-            icon="/icons/reply_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            ariaLabel="reply to comment"
-          />
-          <ActionButton
-            icon="/icons/share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            ariaLabel="share comment"
-          />
-        </div>
-
-        {expanded && replyList.length > 0 && (
-          <ul className="mt-2 space-y-1">
-            {replyList.map((reply) => (
-              <ReplyItem key={reply.id} reply={reply} />
-            ))}
-          </ul>
-        )}
-
-        {hasReplies && (
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            aria-expanded={expanded}
-            className="mt-2 flex cursor-pointer flex-row items-center gap-2 text-xs text-[#6F7979] hover:text-foreground"
-          >
-            <span className="h-px w-6 bg-[#D5DBDB]" />
-            {expanded ? "Collapse" : `Expand ${replyCount} replies`}
-            <Image
-              src={
-                expanded
-                  ? "/icons/keyboard_control_key_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  : "/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              }
-              width={16}
-              height={16}
-              alt=""
-            />
-          </button>
-        )}
-      </div>
-    </li>
-  );
-}
-
-function ReplyItem({ reply }: { reply: Reply }) {
-  return (
-    <li className="flex flex-row gap-2 py-2">
-      <div className="size-7 shrink-0">
-        <Image
-          src={reply.profileSrc}
-          width={28}
-          height={28}
-          alt="profile image"
-          className="size-7 rounded-full object-cover"
-        />
-      </div>
-      <div className="min-w-0 flex-1">
-        <span className="flex flex-row flex-wrap items-center gap-1 text-[11px] font-medium text-foreground">
-          {reply.author}
-          {reply.replyingTo && (
-            <span className="flex flex-row items-center gap-1 text-[#6F7979]">
-              <Image
-                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                width={12}
-                height={12}
-                alt=""
-              />
-              {reply.replyingTo}
-            </span>
-          )}
-        </span>
-        <p className="mt-1 text-xs leading-snug font-medium">{reply.text}</p>
-        <p className="mt-1 text-[11px] font-medium text-foreground">
-          {reply.postedAt} · {reply.location}
-        </p>
-        <div className="mt-2 flex flex-row items-center gap-5">
-          <ActionButton
-            icon="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            label={reply.likes}
-            ariaLabel="like reply"
-          />
-          <ActionButton
-            icon="/icons/heart_broken_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            ariaLabel="dislike reply"
-          />
-          <ActionButton
-            icon="/icons/reply_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            ariaLabel="reply"
-          />
-        </div>
-      </div>
-    </li>
-  );
-}
-
-function ReviewItem({ review }: { review: Review }) {
-  const [expanded, setExpanded] = useState(false);
-  const replyList = review.replyList ?? [];
-  const hasReplies = replyList.length > 0;
-
-  return (
-    <li className="flex flex-row gap-3 py-3">
-      <Avatar src={review.profileSrc} />
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-row items-start justify-between gap-2">
-          <span className="text-[11px] font-medium text-foreground">{review.author}</span>
-          <Image
-            src="/icons/more_vert_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            width={14}
-            height={14}
-            alt="more options"
-            className="shrink-0 cursor-pointer"
-          />
-        </div>
-        <p className="mt-1 text-xs font-medium text-[#A9ACAC]">{review.variant}</p>
-        <div className="mt-1.5">
-          <Stars rating={review.rating} />
-        </div>
-        <p className="mt-1.5 text-xs leading-snug font-medium">{review.text}</p>
-        <button
-          type="button"
-          className="mt-0.5 block w-full cursor-pointer text-right text-xs font-medium text-[#2A76FD]"
-        >
-          more
-        </button>
-        {review.images.length > 0 && (
-          <>
-            <div className="mt-2 grid w-max grid-cols-3 gap-1">
-              {review.images.map((imageUrl) => (
-                <Image
-                  key={imageUrl}
-                  src={imageUrl}
-                  width={72}
-                  height={72}
-                  alt="review photo"
-                  className="size-18 rounded-[3px] object-cover"
-                />
-              ))}
-            </div>
-            <button
-              type="button"
-              className="mt-0.5 block w-full cursor-pointer text-right text-xs font-medium text-[#2A76FD]"
-            >
-              more
-            </button>
-          </>
-        )}
-        <p className="mt-2 text-[11px] font-medium text-foreground">
-          {review.postedAt} • {review.location}
-        </p>
-        <div className="mt-2 flex flex-row items-center gap-5">
-          <ActionButton
-            icon="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            label={review.likes}
-            ariaLabel="like review"
-          />
-          <ActionButton
-            icon="/icons/heart_broken_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            ariaLabel="dislike review"
-          />
-          <ActionButton
-            icon="/icons/share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            ariaLabel="share review"
-          />
-          {review.verified && (
-            <div className="flex flex-row items-center gap-1.5 text-[11px] font-medium text-[#6F7979]">
-              Verified Purchase
-              <Image
-                src="/icons/check_circle_24dp_6F7979_FILL1_wght400_GRAD0_opsz24.svg"
-                width={16}
-                height={16}
-                alt=""
-              />
-            </div>
-          )}
-        </div>
-
-        {expanded && hasReplies && (
-          <ul className="mt-2 space-y-1">
-            {replyList.map((reply) => (
-              <ReplyItem key={reply.id} reply={reply} />
-            ))}
-          </ul>
-        )}
-
-        {hasReplies && (
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            aria-expanded={expanded}
-            className="mt-2 flex cursor-pointer flex-row items-center gap-2 text-xs text-[#6F7979] hover:text-foreground"
-          >
-            <span className="h-px w-6 bg-[#D5DBDB]" />
-            {expanded ? "Collapse" : `Expand ${replyList.length} replies`}
-            <Image
-              src={
-                expanded
-                  ? "/icons/keyboard_control_key_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  : "/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              }
-              width={16}
-              height={16}
-              alt=""
-            />
-          </button>
-        )}
-      </div>
-    </li>
   );
 }

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { StudioVideoVisibility, UploadDraft } from "@/state/studio-videos-context";
+import type { StudioVideoVisibility, UploadDraft } from "@/lib/videos/studio-view";
 
 // Step 4 — visibility. Qatoto adds a fourth tier (Investor-only, optionally
 // NDA-gated) beyond YouTube's private/unlisted/public. NDA acceptance and
@@ -28,7 +28,7 @@ const VISIBILITY_OPTIONS: Array<{
     description: "Everyone can watch this video.",
   },
   {
-    value: "investor-only",
+    value: "investor_only",
     label: "Investor-only",
     description: "A private pitch visible to selected investors only.",
   },
@@ -93,7 +93,7 @@ export default function VisibilityStep({ draft, onDraftChange }: VisibilityStepP
           })}
         </div>
 
-        {draft.visibility === "investor-only" && (
+        {draft.visibility === "investor_only" && (
           <div className="flex flex-col gap-2 rounded-xl bg-secondary/50 p-4">
             <button
               type="button"

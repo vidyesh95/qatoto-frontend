@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { VideoChapter } from "@/state/studio-videos-context";
+import type { VideoChapter } from "@/lib/videos/studio-view";
 
 // Manual chapters editor (no AI auto-detect). Rules mirror YouTube's and are
 // surfaced as inline hints only for the UI phase — the backend re-validates on

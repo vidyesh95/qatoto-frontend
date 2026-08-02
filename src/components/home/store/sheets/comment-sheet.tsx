@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 import Image from "next/image";
 
-import Comments from "@/components/home/watch/comments";
+import ProductCommentThread from "@/components/home/store/sheets/product-comment-thread";
 
 import type { Comment, Review, SaleItem } from "@/types/video";
 
@@ -172,7 +172,7 @@ export default function CommentSheet({ onClose }: { onClose: () => void }) {
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <Comments
+          <ProductCommentThread
             count="1.1k"
             comments={MOCK_COMMENTS}
             saleItem={SALE_ITEM}

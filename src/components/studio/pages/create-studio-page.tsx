@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import UploadVideoModal from "@/components/studio/upload/upload-modal";
 import { extractYoutubeVideoId } from "@/lib/youtube";
 
@@ -23,7 +23,6 @@ export default function CreateStudioPage() {
   const [activeUpload, setActiveUpload] = useState<ActiveUpload>({ kind: "none" });
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [youtubeUrlInput, setYoutubeUrlInput] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const trimmedYoutubeUrl = youtubeUrlInput.trim();
   const isYoutubeUrlValid = extractYoutubeVideoId(trimmedYoutubeUrl) !== null;
@@ -56,15 +55,6 @@ export default function CreateStudioPage() {
     const dragLeaveTarget = event.relatedTarget;
     if (dragLeaveTarget instanceof Node && event.currentTarget.contains(dragLeaveTarget)) return;
     setIsDraggingOver(false);
-  }
-
-  function handleSelectFilesClick() {
-    fileInputRef.current?.click();
-  }
-
-  function handleFileInputChange(event: React.ChangeEvent<HTMLInputElement>) {
-    addVideoFiles(event.target.files);
-    event.target.value = "";
   }
 
   function handleRemoveFileClick(fileIndexToRemove: number) {
@@ -179,30 +169,21 @@ export default function CreateStudioPage() {
             height={48}
           />
         </span>
+        {/*
+          THE DROPZONE IS `inert` AND SAYS SO NOW.
+          It was already disabled — self-hosting is deferred (STUDIO_BACKEND Appendix A) and no
+          file-upload route exists; `/videos/:id/thumbnail` is the only multipart endpoint on the
+          platform. What it did not do was explain itself: a greyed-out "Drag and drop video files
+          to upload" reads as a bug, and anything that did get through would reach a wizard whose
+          Save can only 422, because `POST /videos` requires a `youtubeUrl`.
+        */}
         <p className="text-lg font-medium text-foreground">
-          {isDraggingOver ? "Drop files to upload" : "Drag and drop video files to upload"}
+          Direct video hosting isn&rsquo;t available yet
         </p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="video/*"
-          multiple
-          onChange={handleFileInputChange}
-          className="hidden"
-        />
-        <button
-          type="button"
-          onClick={handleSelectFilesClick}
-          className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium transition-opacity hover:opacity-90"
-        >
-          <Image
-            src="/icons/upload_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-            alt=""
-            width={20}
-            height={20}
-          />
-          Select files
-        </button>
+        <p className="max-w-md px-6 text-center text-sm text-muted-foreground">
+          Paste a YouTube link above instead. Uploading files here will come back when Qatoto hosts
+          video itself.
+        </p>
       </div>
 
       {/* Selected files */}

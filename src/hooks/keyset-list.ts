@@ -1,7 +1,12 @@
 "use client";
 
 // TRANSPORT: client-query — one React Query `useInfiniteQuery` shared by every keyset
-// list on the R&D surface.
+// list in the app: the R&D surface, and the watch page's comment thread.
+//
+// KEYSET ONLY. It is NOT the hook for `GET /feed/videos`, which is offset-paginated with a
+// pinned `rankSeed` and has its own hook in `src/hooks/feed/queries.ts`. The difference is
+// not cosmetic: a keyset token is opaque and server-issued, whereas a feed page number is
+// arithmetic the client does, and the seed is a fourth thing that must survive across pages.
 //
 // SEEDED FROM THE SERVER, NEVER RE-FETCHED. The page bodies these islands sit inside are
 // server components that already read page one with the caller's cookie. Passing that page

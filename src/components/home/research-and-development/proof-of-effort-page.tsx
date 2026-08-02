@@ -13,7 +13,7 @@ import ProofOfEffortTabs from "@/components/home/research-and-development/sectio
 import { RndErrorPanel } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import SliceLedgerTab from "@/components/home/research-and-development/sections/slice-ledger-tab";
 import VerificationPipelineTab from "@/components/home/research-and-development/sections/verification-pipeline-tab";
-import { readEnumParam, type RawSearchParams } from "@/lib/rnd/filter-href";
+import { readEnumParam, type RawSearchParams } from "@/lib/filter-href";
 import {
   getPieBake,
   getProofOfEffortSummary,
@@ -35,7 +35,7 @@ import {
   toMemberScopedItemViewState,
   toMemberScopedListViewState,
   toMemberScopedSequenceListViewState,
-} from "@/lib/rnd/view-state";
+} from "@/lib/view-state";
 import { callerRequestOptions } from "@/lib/server-http";
 
 const LEDGER_PAGE_LIMIT = 50;

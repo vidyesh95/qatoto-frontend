@@ -26,7 +26,7 @@ import {
 } from "@/lib/rnd/funding.api";
 import { getResearchProjectDetail, listProjectOpenRoles } from "@/lib/rnd/projects.api";
 import { getProjectLaunchReadiness } from "@/lib/rnd/suppliers.api";
-import { toMemberScopedItemViewState, toMemberScopedListViewState } from "@/lib/rnd/view-state";
+import { toMemberScopedItemViewState, toMemberScopedListViewState } from "@/lib/view-state";
 import { callerRequestOptions } from "@/lib/server-http";
 
 const DAILY_LOGS_PAGE_LIMIT = 30;

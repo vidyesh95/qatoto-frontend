@@ -34,7 +34,7 @@ import {
   formatMoneyFromCents,
   formatSignedEquityFromBasisPoints,
 } from "@/lib/rnd/format";
-import { newIdempotencyKey } from "@/lib/rnd/idempotency";
+import { newIdempotencyKey } from "@/lib/idempotency";
 
 const LINE_KIND_LABELS: Record<CompensationPeriodLineKind, string> = {
   cash_retainer: "Cash · retainer",

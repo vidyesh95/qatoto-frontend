@@ -46,10 +46,36 @@ const NETWORK_ERROR: ApiError = {
   message: "Network error. Please try again.",
 };
 
-const PARSE_ERROR: ApiError = {
-  code: "PARSE",
-  message: "Client-side contract validation failed.",
-};
+/**
+ * A contract break, WITH the evidence.
+ *
+ * THIS USED TO BE A FROZEN CONSTANT AND THAT COST REAL DEBUGGING TIME. `safeParse` hands back
+ * `error.issues` naming the exact failing path — `data.0.title`, `pagination.total` — and the
+ * previous version dropped it on the floor at seven call sites. When one field of one row in a
+ * 24-row page mismatched, the whole page failed and the UI said "please try again", with nothing
+ * in any console anywhere. There was no way to find out which field.
+ *
+ * THE FULL ISSUE LIST IS LOGGED SERVER-SIDE ONLY. On the server it lands in the terminal running
+ * `pnpm dev`, which is where whoever can fix it is looking. Printing it in the browser would ship
+ * our schema's shape to every visitor for no benefit — they cannot act on it.
+ *
+ * The paths also ride on `fieldErrors` so a caller that wants to surface them in development can,
+ * without re-parsing.
+ */
+function toParseError(path: string, error: z.ZodError): ApiError {
+  const issuePaths = error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`);
+
+  if (typeof window === "undefined") {
+    // eslint-disable-next-line no-console -- the only way a contract break is visible at all
+    console.error(`[http] contract mismatch on ${path}`, issuePaths);
+  }
+
+  return {
+    code: "PARSE",
+    message: "Client-side contract validation failed.",
+    fieldErrors: { contract: issuePaths },
+  };
+}
 
 /**
  * Extra per-call transport options. `headers` exists so a server component can
@@ -63,6 +89,22 @@ export interface RequestOptions {
    * Query owns freshness there.
    */
   readonly cache?: RequestCache;
+  /**
+   * Let this request outlive the page that started it.
+   *
+   * ONE CALLER, AND IT IS NOT OPTIONAL THERE: the watch-progress beacon's final flush on
+   * `visibilitychange` / `pagehide`. Without it the browser cancels the request as the document
+   * tears down, and since backgrounding a tab is the COMMON way a video session ends, most
+   * watch time on the platform would simply never be reported.
+   *
+   * `navigator.sendBeacon` is the usual answer and is silently broken for us: the API is
+   * cross-origin, an `application/json` body is not CORS-safelisted, and `sendBeacon` cannot
+   * issue the required preflight. It returns `true` and the request never arrives.
+   *
+   * Browsers cap keepalive bodies at 64 kB across all in-flight keepalive requests, which is
+   * ample for a three-field beacon and a reason not to reach for this elsewhere.
+   */
+  readonly keepalive?: boolean;
 }
 
 /**
@@ -116,6 +158,7 @@ async function fetchEnvelope(
       credentials: "include",
       headers: { ...init.headers, ...options.headers },
       ...(options.cache === undefined ? {} : { cache: options.cache }),
+      ...(options.keepalive === undefined ? {} : { keepalive: options.keepalive }),
     });
   } catch {
     return { success: false, error: NETWORK_ERROR };
@@ -138,7 +181,37 @@ export async function getJson<T>(
   if (!envelopeResult.success) return envelopeResult;
 
   const parsed = dataSchema.safeParse(envelopeResult.data.data);
-  if (!parsed.success) return { success: false, error: PARSE_ERROR };
+  if (!parsed.success) return { success: false, error: toParseError(path, parsed.error) };
+
+  return { success: true, data: parsed.data };
+}
+
+/**
+ * GET with a Zod schema over the WHOLE envelope, not over `data`.
+ *
+ * `getJson` above hands the schema `envelope.data` and discards every sibling key, which is
+ * right for the routes that carry nothing else. `GET /feed/videos` carries THREE top-level
+ * siblings — `data`, `pagination` and `rankSeed` — and `rankSeed` is what pins a viewer's
+ * ranking across pages. Reading it through `getPaginated` would drop it silently and page 2
+ * would reshuffle against a freshly minted seed, showing the same video twice.
+ *
+ * Pass a `.strip()` schema: `status`, `statusCode` and `message` are on every envelope and
+ * no caller wants them.
+ */
+export async function getEnvelope<T>(
+  path: string,
+  envelopeSchema: z.ZodType<T>,
+  options?: RequestOptions,
+): Promise<ActionResponse<T>> {
+  const envelopeResult = await fetchEnvelope(
+    path,
+    { method: "GET", headers: { Accept: "application/json" } },
+    options,
+  );
+  if (!envelopeResult.success) return envelopeResult;
+
+  const parsed = envelopeSchema.safeParse(envelopeResult.data);
+  if (!parsed.success) return { success: false, error: toParseError(path, parsed.error) };
 
   return { success: true, data: parsed.data };
 }
@@ -168,7 +241,7 @@ export async function sendJson<T>(
   if (!envelopeResult.success) return envelopeResult;
 
   const parsed = dataSchema.safeParse(envelopeResult.data.data);
-  if (!parsed.success) return { success: false, error: PARSE_ERROR };
+  if (!parsed.success) return { success: false, error: toParseError(path, parsed.error) };
 
   return { success: true, data: parsed.data };
 }
@@ -189,7 +262,7 @@ export async function sendForm<T>(
   if (!envelopeResult.success) return envelopeResult;
 
   const parsed = dataSchema.safeParse(envelopeResult.data.data);
-  if (!parsed.success) return { success: false, error: PARSE_ERROR };
+  if (!parsed.success) return { success: false, error: toParseError(path, parsed.error) };
 
   return { success: true, data: parsed.data };
 }
@@ -214,8 +287,9 @@ export async function getPaginated<T>(
 
   const rowsParsed = rowSchema.array().safeParse(envelopeResult.data.data);
   const paginationParsed = paginationSchema.safeParse(envelopeResult.data.pagination);
-  if (!rowsParsed.success || !paginationParsed.success) {
-    return { success: false, error: PARSE_ERROR };
+  if (!rowsParsed.success) return { success: false, error: toParseError(path, rowsParsed.error) };
+  if (!paginationParsed.success) {
+    return { success: false, error: toParseError(`${path} (pagination)`, paginationParsed.error) };
   }
 
   return { success: true, data: { rows: rowsParsed.data, pagination: paginationParsed.data } };
@@ -293,7 +367,7 @@ export async function getCursorSiblingList<TRow>(
   if (!envelopeResult.success) return envelopeResult;
 
   const rowsParsed = rowSchema.array().safeParse(envelopeResult.data.data);
-  if (!rowsParsed.success) return { success: false, error: PARSE_ERROR };
+  if (!rowsParsed.success) return { success: false, error: toParseError(path, rowsParsed.error) };
 
   return {
     success: true,
@@ -323,7 +397,7 @@ export async function getSequenceSiblingList<TRow>(
   if (!envelopeResult.success) return envelopeResult;
 
   const rowsParsed = rowSchema.array().safeParse(envelopeResult.data.data);
-  if (!rowsParsed.success) return { success: false, error: PARSE_ERROR };
+  if (!rowsParsed.success) return { success: false, error: toParseError(path, rowsParsed.error) };
 
   return {
     success: true,
@@ -396,4 +470,17 @@ export function unwrap<T>(result: ActionResponse<T>): T {
 /** True when the backend refused for want of a session. */
 export function isUnauthorized(error: ApiError): boolean {
   return error.code === "401";
+}
+
+/**
+ * True when the backend refused a caller that IS signed in.
+ *
+ * Distinct from `isUnauthorized` because the fix is different, and offering the wrong one is
+ * a dead end for the user. `requireIdentifiedUser` answers 403 to an anonymous-session
+ * account — better-auth's `anonymous()` mints real sessions, so these callers have a cookie
+ * and a userId and would sail past a 401 check. Their affordance is "finish signing up",
+ * not "sign in". Engagement writes and the R&D write surface both sit behind it.
+ */
+export function isForbidden(error: ApiError): boolean {
+  return error.code === "403";
 }

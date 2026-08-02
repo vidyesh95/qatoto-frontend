@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import ResearchProgramPage from "@/components/home/research-and-development/research-program-page";
 import { getResearchProgram, listResearchProgramSlugs } from "@/lib/rnd/research-programs.api";
-import { withSentinelValues } from "@/lib/rnd/static-params";
+import { withSentinelValues } from "@/lib/static-params";
 
 /**
  * Prerender every published slug — a dynamic route needs this under `cacheComponents`.

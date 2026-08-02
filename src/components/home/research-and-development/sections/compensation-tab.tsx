@@ -27,7 +27,7 @@ import type {
   ProjectCompensation,
 } from "@/lib/rnd/compensation.schemas";
 import type { ProjectTeamMember } from "@/lib/rnd/projects.schemas";
-import type { MemberScopedItemViewState, MemberScopedListViewState } from "@/lib/rnd/view-state";
+import type { MemberScopedItemViewState, MemberScopedListViewState } from "@/lib/view-state";
 
 const ENGAGEMENT_KIND_LABELS: Record<EngagementKind, string> = {
   employee: "Employee",

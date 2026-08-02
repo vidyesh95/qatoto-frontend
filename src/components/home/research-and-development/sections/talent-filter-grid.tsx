@@ -8,11 +8,7 @@ import FilterChipRow, {
   type FilterChipOption,
 } from "@/components/home/research-and-development/sections/filter-chip-row";
 import TalentProfileCard from "@/components/home/research-and-development/cards/talent-profile-card";
-import {
-  buildFilterHref,
-  toggleMultiParamPatch,
-  type RawSearchParams,
-} from "@/lib/rnd/filter-href";
+import { buildFilterHref, toggleMultiParamPatch, type RawSearchParams } from "@/lib/filter-href";
 import { ROLE_COMMITMENT_LABELS, TALENT_AVAILABILITY_LABELS } from "@/lib/rnd/labels";
 import {
   TALENT_AVAILABILITIES,

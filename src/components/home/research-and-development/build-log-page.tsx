@@ -12,7 +12,7 @@ import RndStatusPanel, {
   RndSignInRequiredPanel,
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import { listDailyLogFeed, listDailyLogStreakLeaderboard } from "@/lib/rnd/daily-logs.api";
-import { rowsOrEmpty, toCursorListViewState } from "@/lib/rnd/view-state";
+import { rowsOrEmpty, toCursorListViewState } from "@/lib/view-state";
 import { callerRequestOptions } from "@/lib/server-http";
 
 const DAILY_LOG_FEED_PAGE_LIMIT = 30;

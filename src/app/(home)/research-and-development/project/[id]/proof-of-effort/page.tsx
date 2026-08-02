@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import ProofOfEffortPage from "@/components/home/research-and-development/proof-of-effort-page";
 import { getResearchProjectDetail, listResearchProjectSlugs } from "@/lib/rnd/projects.api";
-import { withSentinelValues } from "@/lib/rnd/static-params";
+import { withSentinelValues } from "@/lib/static-params";
 
 /**
  * Prerender every published slug — a dynamic route needs this under `cacheComponents`.
@@ -11,7 +11,7 @@ import { withSentinelValues } from "@/lib/rnd/static-params";
  * this route 404'd while six fictional ones resolved. It now uses the same
  * `GET /research-projects/slugs` read as the project detail route, so the two agree.
  *
- * A FAILED OR EMPTY READ YIELDS THE SENTINEL PARAM (`@/lib/rnd/static-params`): an
+ * A FAILED OR EMPTY READ YIELDS THE SENTINEL PARAM (`@/lib/static-params`): an
  * unreachable backend must not fail the build, and `cacheComponents` refuses an empty list.
  */
 export async function generateStaticParams() {

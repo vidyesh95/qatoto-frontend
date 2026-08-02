@@ -1,6 +1,9 @@
+// TRANSPORT: props-only — the shared video card. Renders what it is handed; fetches nothing.
+
 import Image from "next/image";
 import Link from "next/link";
 
+import RelativeTime from "@/components/home/shared/relative-time";
 import type { VideoCardProps } from "@/types/video";
 
 export default function VideoCard({
@@ -10,6 +13,7 @@ export default function VideoCard({
   channelName,
   views,
   postedAt,
+  publishedAt,
   verified = false,
   hoverBg = "group-hover:bg-gray-100",
   isChannelLive = false,
@@ -96,7 +100,16 @@ export default function VideoCard({
               height={4}
               alt="separator"
             />
-            <span className="text-xs text-[#6F7979]">{postedAt}</span>
+            {/*
+              A feed-sourced card carries an ISO `publishedAt` and an empty `postedAt`, and the
+              relative label is computed in the browser by <RelativeTime>. The mock surfaces
+              still hand-author `postedAt`. Whichever one is present renders; never both.
+            */}
+            {publishedAt == null ? (
+              <span className="text-xs text-[#6F7979]">{postedAt}</span>
+            ) : (
+              <RelativeTime isoInstant={publishedAt} className="text-xs text-[#6F7979]" />
+            )}
           </div>
         </div>
         <Image

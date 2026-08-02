@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import SupplierDetailPage from "@/components/home/research-and-development/supplier-detail-page";
-import { withSentinelValues } from "@/lib/rnd/static-params";
+import { withSentinelValues } from "@/lib/static-params";
 import { getSupplier, listSuppliers } from "@/lib/rnd/suppliers.api";
 
 const PRERENDERED_SUPPLIER_LIMIT = 50;
@@ -13,7 +13,7 @@ const PRERENDERED_SUPPLIER_LIMIT = 50;
  * There is no `GET /supplier-slugs`, so the params come off the directory read itself.
  * Anything past the bound renders on demand. A FAILED OR EMPTY READ YIELDS THE SENTINEL
  * PARAM rather than an empty list: `cacheComponents` fails the build on an empty one, and
- * an unreachable backend must not fail the build (`@/lib/rnd/static-params`).
+ * an unreachable backend must not fail the build (`@/lib/static-params`).
  */
 export async function generateStaticParams() {
   const suppliersResult = await listSuppliers({ limit: PRERENDERED_SUPPLIER_LIMIT });

@@ -2,7 +2,8 @@
 //
 // Filter chips are LINKS that rewrite the query string, and the server component reads
 // `searchParams` and passes them to the API as query params. That is what "server-side
-// filtering" means here (§13): the backend filters in SQL, and the URL is the state.
+// filtering" means here (R&D_STRUCTURE §13, HOME_STRUCTURE §4): the backend filters in SQL,
+// and the URL is the state.
 //
 // This replaces the old pattern of holding the selection in `useState` and running
 // `.filter()` over an in-memory array, which breaks two ways against a real feed:

@@ -16,7 +16,7 @@ import {
   readSingleParam,
   toggleMultiParamPatch,
   type RawSearchParams,
-} from "@/lib/rnd/filter-href";
+} from "@/lib/filter-href";
 import { SUPPLIER_VERIFICATION_STATE_LABELS } from "@/lib/rnd/labels";
 import {
   SUPPLIER_VERIFICATION_STATES,

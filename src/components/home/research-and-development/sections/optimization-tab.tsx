@@ -18,7 +18,7 @@ import type {
   OptimizationSuggestion,
   OptimizationSuggestionStatus,
 } from "@/lib/rnd/proof-of-effort.schemas";
-import type { MemberScopedListViewState } from "@/lib/rnd/view-state";
+import type { MemberScopedListViewState } from "@/lib/view-state";
 
 const SUGGESTION_STATUS_LABELS: Record<OptimizationSuggestionStatus, string> = {
   open: "Open",

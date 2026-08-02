@@ -15,7 +15,7 @@ import {
   useUploadPhysicalReceiptMutation,
 } from "@/hooks/rnd/proof-of-effort";
 import { ApiRequestError } from "@/lib/http";
-import { newIdempotencyKey } from "@/lib/rnd/idempotency";
+import { newIdempotencyKey } from "@/lib/idempotency";
 import {
   EFFORT_CLAIM_SOURCE_KINDS,
   EffortClaimSourceKindSchema,

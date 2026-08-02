@@ -10,7 +10,7 @@ import {
 } from "@/components/home/research-and-development/sections/mutation-feedback";
 import { useRaiseDisputeMutation } from "@/hooks/rnd/proof-of-effort";
 import { ApiRequestError } from "@/lib/http";
-import { newIdempotencyKey } from "@/lib/rnd/idempotency";
+import { newIdempotencyKey } from "@/lib/idempotency";
 
 /**
  * Contest an allocation before its window closes.

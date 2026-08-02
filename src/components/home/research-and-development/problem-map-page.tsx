@@ -13,8 +13,8 @@ import RndStatusPanel, {
 import ReportProblemSheet from "@/components/home/research-and-development/sheets/report-problem-sheet";
 import { listResearchCategories } from "@/lib/rnd/catalog.api";
 import { listDiscoveryRegions, listProblemClusters } from "@/lib/rnd/discovery.api";
-import { buildFilterHref, readSingleParam, type RawSearchParams } from "@/lib/rnd/filter-href";
-import { rowsOrEmpty, toListViewState } from "@/lib/rnd/view-state";
+import { buildFilterHref, readSingleParam, type RawSearchParams } from "@/lib/filter-href";
+import { rowsOrEmpty, toListViewState } from "@/lib/view-state";
 import { callerRequestOptions, hasCallerSession } from "@/lib/server-http";
 
 // The map shows pins, not a feed. A page is bounded because a deep offset on a public

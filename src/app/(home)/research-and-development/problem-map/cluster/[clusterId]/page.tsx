@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import ClusterDetailPage from "@/components/home/research-and-development/cluster-detail-page";
 import { getProblemCluster, listProblemClusters } from "@/lib/rnd/discovery.api";
-import { withSentinelValues } from "@/lib/rnd/static-params";
+import { withSentinelValues } from "@/lib/static-params";
 
 const PRERENDERED_CLUSTER_LIMIT = 50;
 
@@ -15,7 +15,7 @@ const PRERENDERED_CLUSTER_LIMIT = 50;
  * same bound the map uses. Anything outside that page renders on demand, which is the
  * correct outcome for a long tail nobody has linked to yet. A FAILED OR EMPTY READ YIELDS
  * THE SENTINEL PARAM rather than an empty list, which `cacheComponents` refuses
- * (`@/lib/rnd/static-params`).
+ * (`@/lib/static-params`).
  */
 export async function generateStaticParams() {
   const clustersResult = await listProblemClusters({

@@ -7,6 +7,12 @@
 // server but before the response reaches the client. Without a key that retry writes a
 // second row and the member is credited, or paid, twice.
 //
+// COMMENT CREATE USES THE SAME KEY IN A DIFFERENT PLACE. `POST /videos/:videoId/comments`
+// reads an `Idempotency-Key` HTTP HEADER (8..200 chars) rather than a body field — that
+// route goes through `src/middleware/idempotency.ts` in the backend, which the R&D writes
+// do not. A UUID is 36 characters and satisfies the bound. Same value, same discipline,
+// different envelope; do not "harmonise" one into the other, they are read by different code.
+//
 // THE KEY IS GENERATED ONCE PER ATTEMPT, NOT PER REQUEST. Call this when the user starts
 // filling the form, hold it in the component, and send the SAME value on every retry of
 // that attempt — a key regenerated inside the retry defeats the entire mechanism. A new

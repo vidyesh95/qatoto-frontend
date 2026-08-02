@@ -27,7 +27,7 @@ import type {
   MemberScopedItemViewState,
   MemberScopedListViewState,
   MemberScopedSequenceListViewState,
-} from "@/lib/rnd/view-state";
+} from "@/lib/view-state";
 
 const SLICE_SEGMENT_COLORS = ["#00696E", "#1DBDC5", "#4A6363", "#7DA0A2", "#B4D2D4"];
 

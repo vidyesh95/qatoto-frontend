@@ -3,9 +3,9 @@
 // TRANSPORT: client-query — seeded with the first page proof-of-effort-page already read on
 // the server, then advances GET …/audit-trail by `?fromSequence=` through `useKeysetList`.
 
-import LoadMoreControl from "@/components/home/research-and-development/sections/load-more-control";
+import LoadMoreControl from "@/components/home/shared/load-more-control";
 import { rndKeys } from "@/hooks/rnd/keys";
-import { toSequenceKeysetPage, useKeysetList } from "@/hooks/rnd/keyset-list";
+import { toSequenceKeysetPage, useKeysetList } from "@/hooks/keyset-list";
 import { formatIsoInstant, shortenHashForDisplay } from "@/lib/rnd/format";
 import { listAuditTrail } from "@/lib/rnd/proof-of-effort.api";
 import type { AuditEntry } from "@/lib/rnd/proof-of-effort.schemas";

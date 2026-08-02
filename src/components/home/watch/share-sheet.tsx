@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 import StatPill from "@/components/home/watch/stat-pill";
+import type { ShareChannel } from "@/lib/feed/schemas";
 
 /** A secondary action shown as a circular icon + label in the sheet body. */
 type ShareAction = {
@@ -12,6 +13,15 @@ type ShareAction = {
   label: string;
 };
 
+/**
+ * TRANSPORT: mock — none of these three has a backend route.
+ *
+ * Download, Report and Not Interested are presentational stubs. There is no download endpoint
+ * (the bytes are on youtube.com), no content-reporting flow — comment moderation is a
+ * deliberate v1 gap, HOME_BACKEND §8.4 — and no "not interested" signal in the ranker's inputs.
+ * They are kept because removing them would leave a share sheet with one control in it; see
+ * docs/HOME_STRUCTURE.md §10.
+ */
 const SHARE_ACTIONS: ShareAction[] = [
   { icon: "download", label: "Download" },
   { icon: "report", label: "Report" },
@@ -21,6 +31,13 @@ const SHARE_ACTIONS: ShareAction[] = [
 type ShareSheetProps = {
   /** Called when the sheet should close — backdrop click, Escape, or the X. */
   onClose: () => void;
+  /**
+   * Records the share against the video, once the user actually shares.
+   *
+   * Optional so the sheet still renders on surfaces with no video id. The channel is a
+   * `video_share_channel` pgEnum label and must byte-match: `copy_link`, not `copy-link`.
+   */
+  onShared?: (channel: ShareChannel) => void;
 };
 
 /**
@@ -29,7 +46,7 @@ type ShareSheetProps = {
  * desktop. The actions here are presentational stubs — the only one wired up
  * is "Copy Link", which copies the current page URL to the clipboard.
  */
-export function ShareSheet({ onClose }: ShareSheetProps) {
+export function ShareSheet({ onClose, onShared }: ShareSheetProps) {
   const [copied, setCopied] = useState(false);
   // Reference to the panel, used to detect outside clicks on desktop where
   // there is no full-screen backdrop to catch them.
@@ -66,9 +83,13 @@ export function ShareSheet({ onClose }: ShareSheetProps) {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
+      // Recorded only AFTER the copy succeeds. A share that never made it to the clipboard is
+      // not a share, and `videoStats.shareCount` feeds the ranker's engagement rate — the one
+      // place an over-eager count is not a cosmetic problem.
+      onShared?.("copy_link");
     } catch {
-      // Clipboard can be blocked (insecure context, denied permission); the
-      // backend owns no state here, so a failed copy is a silent no-op.
+      // Clipboard can be blocked (insecure context, denied permission); nothing is recorded,
+      // so a failed copy is a silent no-op.
     }
   };
 

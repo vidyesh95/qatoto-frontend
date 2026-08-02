@@ -17,10 +17,7 @@ import type {
   Dispute,
   DisputeStatus,
 } from "@/lib/rnd/proof-of-effort.schemas";
-import type {
-  MemberScopedCursorListViewState,
-  MemberScopedListViewState,
-} from "@/lib/rnd/view-state";
+import type { MemberScopedCursorListViewState, MemberScopedListViewState } from "@/lib/view-state";
 
 const PROPOSAL_STATUS_LABELS: Record<AllocationProposalStatus, string> = {
   open: "Window open",

@@ -15,10 +15,10 @@ import TeamsFormingRail from "@/components/home/research-and-development/section
 import { listOpenRoles } from "@/lib/rnd/catalog.api";
 import type { ListOpenRolesFilter } from "@/lib/rnd/catalog.schemas";
 import { listDiscoverySkills, listTalentProfiles } from "@/lib/rnd/discovery.api";
-import { readEnumParam, readSingleParam, type RawSearchParams } from "@/lib/rnd/filter-href";
+import { readEnumParam, readSingleParam, type RawSearchParams } from "@/lib/filter-href";
 import { listResearchProjects } from "@/lib/rnd/projects.api";
 import { ROLE_COMMITMENTS } from "@/lib/rnd/shared.schemas";
-import { rowsOrEmpty, toListViewState } from "@/lib/rnd/view-state";
+import { rowsOrEmpty, toListViewState } from "@/lib/view-state";
 import { callerRequestOptions } from "@/lib/server-http";
 
 const OPEN_ROLES_PAGE_LIMIT = 36;

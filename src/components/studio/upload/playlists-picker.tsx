@@ -1,38 +1,47 @@
 "use client";
 
+// TRANSPORT: client-query — `GET /playlists/mine` through `useMyPlaylistsQuery`.
+//
+// SELECTION IS BY ID, NOT TITLE. The mock keyed both the selection and the React `key` on
+// `playlist.title`, so two playlists with the same name were one row that toggled together.
+// Titles are not unique and were never meant to be.
+//
+// Search stays CLIENT-SIDE, deliberately: this is one creator's own playlist list, capped at
+// 100 by the request below, so filtering it in the browser is a substring match over a short
+// array rather than heavy work pushed onto the client (CLAUDE.md thin-client rule).
+
 import Image from "next/image";
 import { useState } from "react";
-import { useStudioVideos } from "@/state/studio-videos-context";
 
-// Playlist picker overlay (layered above the upload modal). Multi-select over
-// the creator's playlists with client-side search — fine for a short mock
-// list; heavy search moves to the backend later.
+import { useMyPlaylistsQuery } from "@/hooks/playlists";
+
 type PlaylistsPickerProps = {
-  selectedPlaylistTitles: string[];
-  onSelectedPlaylistTitlesChange: (playlistTitles: string[]) => void;
+  selectedPlaylistIds: string[];
+  onSelectedPlaylistIdsChange: (playlistIds: string[]) => void;
   onRequestCreatePlaylist: () => void;
   onDone: () => void;
 };
 
 export default function PlaylistsPicker({
-  selectedPlaylistTitles,
-  onSelectedPlaylistTitlesChange,
+  selectedPlaylistIds,
+  onSelectedPlaylistIdsChange,
   onRequestCreatePlaylist,
   onDone,
 }: PlaylistsPickerProps) {
-  const { playlists } = useStudioVideos();
+  const playlistsQuery = useMyPlaylistsQuery({ limit: 100 });
+  const playlists = playlistsQuery.data?.rows ?? [];
   const [searchQuery, setSearchQuery] = useState("");
 
   const matchingPlaylists = playlists.filter((playlist) =>
     playlist.title.toLowerCase().includes(searchQuery.trim().toLowerCase()),
   );
 
-  function handlePlaylistToggle(playlistTitle: string) {
-    const isAlreadySelected = selectedPlaylistTitles.includes(playlistTitle);
-    onSelectedPlaylistTitlesChange(
+  function handlePlaylistToggle(playlistId: string) {
+    const isAlreadySelected = selectedPlaylistIds.includes(playlistId);
+    onSelectedPlaylistIdsChange(
       isAlreadySelected
-        ? selectedPlaylistTitles.filter((selectedTitle) => selectedTitle !== playlistTitle)
-        : [...selectedPlaylistTitles, playlistTitle],
+        ? selectedPlaylistIds.filter((selectedId) => selectedId !== playlistId)
+        : [...selectedPlaylistIds, playlistId],
     );
   }
 
@@ -45,7 +54,9 @@ export default function PlaylistsPicker({
         className="fixed inset-0 z-60 cursor-default bg-black/40"
       />
       <div className="fixed inset-x-4 top-1/2 z-70 mx-auto flex max-h-[70dvh] w-auto max-w-sm -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-black/10 bg-background shadow-lg">
-        {playlists.length === 0 ? (
+        {playlistsQuery.isPending ? (
+          <p className="p-8 text-center text-sm text-muted-foreground">Loading your playlists…</p>
+        ) : playlists.length === 0 ? (
           <div className="flex flex-col items-center gap-4 p-8 text-center">
             <p className="text-sm text-muted-foreground">Please create a playlist</p>
             <button
@@ -87,12 +98,12 @@ export default function PlaylistsPicker({
                 </li>
               ) : (
                 matchingPlaylists.map((playlist) => {
-                  const isSelected = selectedPlaylistTitles.includes(playlist.title);
+                  const isSelected = selectedPlaylistIds.includes(playlist.id);
                   return (
-                    <li key={playlist.title}>
+                    <li key={playlist.id}>
                       <button
                         type="button"
-                        onClick={() => handlePlaylistToggle(playlist.title)}
+                        onClick={() => handlePlaylistToggle(playlist.id)}
                         className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted"
                       >
                         <span
