@@ -5,6 +5,7 @@
 import Image from "next/image";
 import { useState } from "react";
 
+import { SlideImagePicker } from "@/components/admin/promotions/slide-image-picker";
 import {
   MutationErrorNotice,
   MutationSuccessNotice,
@@ -22,28 +23,12 @@ import { ApiRequestError } from "@/lib/http";
 import type { AdminPromotionalSlide, PromotionalDestinationKind } from "@/lib/promo/schemas";
 
 /**
- * What the OS file picker may offer, mirroring ALLOWED_INPUT_FORMATS in the backend's
- * `src/lib/image.ts`. Without it the picker offers files the server will refuse, and the
- * admin only finds out after an upload round trip.
+ * MAX_PROMOTIONAL_SLIDES in the backend's `promotions.service.ts`.
  *
- * BOTH MIME TYPES AND EXTENSIONS: some pickers filter on UTI/extension rather than MIME, and
- * macOS Finder in particular greys files out when only MIME types are listed.
- *
- * `image/heic` IS DELIBERATELY ABSENT. The server cannot decode HEVC-coded HEIC — libheif is
- * built with the AV1 decoder only — and on iOS an accept list with no HEIC entry makes Safari
- * hand over a transcoded JPEG instead. Omitting it is the fix, not an oversight.
+ * Mirrored so a full carousel disables the submit rather than spending a 5 MB upload on a
+ * `PROMOTIONAL_SLIDE_LIMIT_REACHED`. The server still enforces it — this is the fast path.
  */
-const ACCEPTED_SLIDE_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/avif",
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".webp",
-  ".avif",
-].join(",");
+const MAX_PROMOTIONAL_SLIDES = 12;
 
 /**
  * The list has a `restricted` variant the other admin queues do not need.
@@ -184,6 +169,7 @@ export default function PromotionalSlideAdminPage() {
       {canManagePromotionalSlides && (
         <CreateSlideForm
           isSubmitting={createSlide.isPending}
+          slideCount={slidesQuery.data?.length ?? 0}
           onCreate={(input) => {
             createSlide.mutate(input);
           }}
@@ -257,9 +243,11 @@ export default function PromotionalSlideAdminPage() {
  */
 function CreateSlideForm({
   isSubmitting,
+  slideCount,
   onCreate,
 }: {
   isSubmitting: boolean;
+  slideCount: number;
   onCreate: (input: {
     imageFile: File;
     altText: string;
@@ -276,6 +264,7 @@ function CreateSlideForm({
   const [isActive, setIsActive] = useState(true);
 
   const isInternal = destinationKind === "internal_path";
+  const isCarouselFull = slideCount >= MAX_PROMOTIONAL_SLIDES;
 
   return (
     <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
@@ -284,8 +273,10 @@ function CreateSlideForm({
         className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
-          if (!imageFile) return;
+          if (!imageFile || isCarouselFull) return;
           onCreate({ imageFile, altText, destinationKind, destinationValue, isActive });
+          // Clearing `imageFile` is what resets the picker — it holds no file of its own once
+          // one has passed, so `reset()` below has nothing of the image left to clear.
           setImageFile(null);
           setAltText("");
           setDestinationValue("");
@@ -293,22 +284,17 @@ function CreateSlideForm({
         }}
       >
         <div className="space-y-1">
+          {/* `htmlFor` still points at a real input; the picker hides it rather than dropping
+              it, so clicking the label opens the OS dialog exactly as before. */}
           <label htmlFor="promotional-slide-image" className="block text-sm font-medium">
             Image
           </label>
-          <input
-            id="promotional-slide-image"
-            type="file"
-            accept={ACCEPTED_SLIDE_IMAGE_TYPES}
-            required
-            className="block w-full text-sm"
-            onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
+          <SlideImagePicker
+            inputId="promotional-slide-image"
+            isDisabled={isSubmitting || isCarouselFull}
+            selectedFile={imageFile}
+            onFileSelected={setImageFile}
           />
-          <p className="text-xs text-muted-foreground">
-            JPEG, PNG, WebP or AVIF, up to 5 MB. Re-encoded server-side. iPhone photos saved as HEIC
-            aren&apos;t supported — set Settings → Camera → Formats → Most Compatible, or export as
-            JPEG.
-          </p>
         </div>
 
         <div className="space-y-1">
@@ -378,13 +364,20 @@ function CreateSlideForm({
           Show on the home page straight away
         </label>
 
-        <button
-          type="submit"
-          disabled={isSubmitting || !imageFile}
-          className="cursor-pointer rounded-full bg-foreground px-4 py-2 text-sm text-background disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isSubmitting ? "Adding…" : "Add slide"}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="submit"
+            disabled={isSubmitting || !imageFile || isCarouselFull}
+            className="cursor-pointer rounded-full bg-foreground px-4 py-2 text-sm text-background disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSubmitting ? "Adding…" : "Add slide"}
+          </button>
+          <p className="text-xs text-muted-foreground">
+            {isCarouselFull
+              ? `The carousel holds ${String(MAX_PROMOTIONAL_SLIDES)} slides. Delete one to add another.`
+              : `${String(slideCount)} of ${String(MAX_PROMOTIONAL_SLIDES)} slides used.`}
+          </p>
+        </div>
       </form>
     </section>
   );
@@ -445,16 +438,29 @@ function SlideRow({
   const [draftDestinationValue, setDraftDestinationValue] = useState(slide.destinationValue);
   // Two-step inline confirm. `window.confirm` is not available — oxlint sets no-alert: error.
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  /**
+   * Replacing is TWO STEPS now, and the second one is the point.
+   *
+   * The old control fired the mutation from the file input's `change` event, so the first
+   * time an admin saw the new image was after it had already replaced the live one. A
+   * mis-click was an upload. Picking now only stages the file; the confirm sends it.
+   */
+  const [isReplacingImage, setIsReplacingImage] = useState(false);
+  const [replacementImageFile, setReplacementImageFile] = useState<File | null>(null);
 
   return (
     <li className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
       <div className="flex flex-wrap items-start gap-4">
+        {/* `object-contain` on a filled box, NOT `object-cover`: the home carousel letterboxes
+            slides (`promo-carousel.tsx`), so a cropped thumbnail here would show framing the
+            visitor never gets. `aspect-video` is also what keeps next/image from warning that
+            one dimension was CSS-modified and the other was not. */}
         <Image
           src={slide.imageUrl}
           width={160}
           height={90}
           alt=""
-          className={`aspect-video w-40 rounded-lg object-cover transition-opacity ${
+          className={`aspect-video w-40 rounded-lg bg-muted object-contain transition-opacity ${
             replaceImage.isPending ? "opacity-40" : ""
           }`}
         />
@@ -538,25 +544,21 @@ function SlideRow({
 
         {/* Its own control, separate from Edit — so it is never ambiguous whether a save is
             about to touch the image. */}
-        <label
-          aria-disabled={isMutating}
-          className={`rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs ${
-            isMutating ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-          }`}
+        <button
+          type="button"
+          disabled={isMutating}
+          onClick={() => {
+            setIsReplacingImage((wasReplacing) => !wasReplacing);
+            setReplacementImageFile(null);
+          }}
+          className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {replaceImage.isPending ? "Replacing…" : "Replace image"}
-          <input
-            type="file"
-            accept={ACCEPTED_SLIDE_IMAGE_TYPES}
-            className="hidden"
-            disabled={isMutating}
-            onChange={(event) => {
-              const selectedFile = event.target.files?.[0];
-              if (selectedFile) replaceImage.mutate({ slideId: slide.id, imageFile: selectedFile });
-              event.target.value = "";
-            }}
-          />
-        </label>
+          {replaceImage.isPending
+            ? "Replacing…"
+            : isReplacingImage
+              ? "Cancel replace"
+              : "Replace image"}
+        </button>
 
         {isConfirmingDelete ? (
           <span className="flex items-center gap-2 text-xs">
@@ -587,6 +589,53 @@ function SlideRow({
           </button>
         )}
       </div>
+
+      {isReplacingImage && (
+        <div className="space-y-3 border-t border-[#CAC4D0]/40 pt-3">
+          <p className="text-sm font-medium">New image</p>
+          <SlideImagePicker
+            inputId={`replace-slide-image-${slide.id}`}
+            isDisabled={isMutating}
+            selectedFile={replacementImageFile}
+            onFileSelected={setReplacementImageFile}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={isMutating || replacementImageFile === null}
+              onClick={() => {
+                if (replacementImageFile === null) return;
+                replaceImage.mutate(
+                  { slideId: slide.id, imageFile: replacementImageFile },
+                  {
+                    // Closing on SUCCESS ONLY. A failed replace leaves the panel open with
+                    // the file still staged, so the admin retries rather than re-picking —
+                    // and the row's own error notice sits directly beneath it.
+                    onSuccess: () => {
+                      setIsReplacingImage(false);
+                      setReplacementImageFile(null);
+                    },
+                  },
+                );
+              }}
+              className="cursor-pointer rounded-full bg-foreground px-4 py-1.5 text-xs text-background disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {replaceImage.isPending ? "Replacing…" : "Replace image"}
+            </button>
+            <button
+              type="button"
+              disabled={isMutating}
+              onClick={() => {
+                setIsReplacingImage(false);
+                setReplacementImageFile(null);
+              }}
+              className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/*
         THE ROW'S OWN VERDICT, six inches from the button that caused it. Same components and
