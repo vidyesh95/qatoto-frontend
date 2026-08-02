@@ -454,7 +454,7 @@ function SlideRow({
           width={160}
           height={90}
           alt=""
-          className={`h-auto w-40 rounded-lg object-cover transition-opacity ${
+          className={`aspect-video w-40 rounded-lg object-cover transition-opacity ${
             replaceImage.isPending ? "opacity-40" : ""
           }`}
         />
