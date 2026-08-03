@@ -203,6 +203,38 @@ export const FeedVideoPageSchema = z
   .strip();
 export type FeedVideoPage = z.infer<typeof FeedVideoPageSchema>;
 
+/**
+ * One page of `GET /feed/search`.
+ *
+ * THE ITEM SCHEMA IS SHARED WITH THE FEED, and that is a statement about the backend, not a
+ * convenience: `searchVideos` selects through the same `feedSelectClause`, so a search result
+ * IS a feed card — same `viewerState`, same `categories`, same counters. Duplicating the item
+ * schema would let the two drift apart while both kept parsing.
+ *
+ * NO `rankSeed` HERE, and its absence is the contract. The feed's seed pins an exploration
+ * term across pages; search has no exploration term because relevance is deterministic, so
+ * this envelope has exactly two top-level keys and is read with `getPaginated`.
+ */
+export const SearchVideoPageSchema = z
+  .object({
+    data: z.array(FeedVideoSchema),
+    pagination: PaginationMetaSchema,
+  })
+  .strip();
+export type SearchVideoPage = z.infer<typeof SearchVideoPageSchema>;
+
+/**
+ * Server-side filter for `GET /feed/search`.
+ *
+ * `query` is REQUIRED — the backend's schema is `.min(1)` after trimming, so an empty search
+ * is a 422 rather than "everything". A caller with an empty box must not call at all.
+ */
+export interface SearchVideosFilter {
+  readonly query: string;
+  readonly page?: number;
+  readonly limit?: number;
+}
+
 /** Server-side filter for `GET /feed/videos`. Every key is a `.strict()` query param. */
 export interface ListFeedVideosFilter {
   readonly mode?: FeedMode;

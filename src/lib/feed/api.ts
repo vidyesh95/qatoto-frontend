@@ -19,6 +19,7 @@ import {
   getCursorSiblingList,
   getEnvelope,
   getJson,
+  getPaginated,
   sendJson,
   type ActionResponse,
   type RequestOptions,
@@ -28,6 +29,8 @@ import {
   ContentCategorySchema,
   DeletedVideoCommentSchema,
   FeedVideoPageSchema,
+  FeedVideoSchema,
+  PaginationMetaSchema,
   LikeToggleResultSchema,
   SaveToggleResultSchema,
   ShareResultSchema,
@@ -42,6 +45,8 @@ import {
   type ListFeedVideosFilter,
   type PlaybackErrorCode,
   type SaveToggleResult,
+  type SearchVideoPage,
+  type SearchVideosFilter,
   type ShareChannel,
   type ShareResult,
   type SubscribeToggleResult,
@@ -94,6 +99,32 @@ export function listFeedVideos(
     FeedVideoPageSchema,
     options,
   );
+}
+
+/**
+ * `GET /feed/search` — relevance search over the public catalogue.
+ *
+ * `getPaginated`, NOT `getEnvelope`. The feed route needs the whole envelope because
+ * `rankSeed` is a third top-level sibling; this route has no seed to preserve, so the
+ * ordinary two-key paginated read is exactly right.
+ *
+ * NEVER CALL THIS WITH AN EMPTY `query`. The backend trims and requires at least one
+ * character, so a blank box that calls anyway turns into a 422 error panel where the correct
+ * UI is a prompt to type something.
+ */
+export async function searchVideos(
+  filter: SearchVideosFilter,
+  options?: RequestOptions,
+): Promise<ActionResponse<SearchVideoPage>> {
+  const result = await getPaginated(
+    `/feed/search${buildQueryString({ ...filter })}`,
+    FeedVideoSchema,
+    PaginationMetaSchema,
+    options,
+  );
+  if (!result.success) return result;
+
+  return { success: true, data: { data: result.data.rows, pagination: result.data.pagination } };
 }
 
 /**

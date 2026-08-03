@@ -21,9 +21,16 @@ import {
   listFeedCategories,
   listFeedVideos,
   listVideoComments,
+  searchVideos,
   type ListVideoCommentsFilter,
 } from "@/lib/feed/api";
-import type { ContentCategory, FeedVideo, FeedVideoPage, VideoComment } from "@/lib/feed/schemas";
+import type {
+  ContentCategory,
+  FeedVideo,
+  FeedVideoPage,
+  SearchVideoPage,
+  VideoComment,
+} from "@/lib/feed/schemas";
 import { unwrap, type ApiRequestError } from "@/lib/http";
 import { toCursorKeysetPage, useKeysetList, type KeysetListResult } from "@/hooks/keyset-list";
 
@@ -137,6 +144,65 @@ export function useFeedVideosInfiniteQuery({
     loadMoreErrorMessage: query.error === null ? null : query.error.message,
     loadNextPage: () => {
       void query.fetchNextPage();
+    },
+  };
+}
+
+/**
+ * Accumulates search pages on top of the server-rendered first page.
+ *
+ * SHAPED LIKE `useFeedVideosInfiniteQuery` AND DELIBERATELY NOT SHARING IT. The one thing
+ * that hook exists to do — pin a `rankSeed` in a ref and echo it on every later page — has no
+ * counterpart here, because relevance ordering is deterministic and needs nothing pinned.
+ * Folding search into it would mean a hook whose seed is sometimes meaningful and sometimes a
+ * dead field, which is how a "why is page 2 reshuffled" bug gets written.
+ *
+ * The query key is the query TEXT: typing a new search is a new list, not a new page.
+ */
+export function useSearchVideosInfiniteQuery({
+  query,
+  initialPage,
+  limit,
+}: {
+  readonly query: string;
+  readonly initialPage: SearchVideoPage;
+  readonly limit: number;
+}): FeedVideosInfiniteResult {
+  const seededData: InfiniteData<SearchVideoPage, number> = {
+    pages: [initialPage],
+    pageParams: [initialPage.pagination.page],
+  };
+
+  const searchQuery = useInfiniteQuery<
+    SearchVideoPage,
+    ApiRequestError,
+    InfiniteData<SearchVideoPage, number>,
+    QueryKey,
+    number
+  >({
+    queryKey: feedKeys.search(query),
+    queryFn: async ({ pageParam }) => unwrap(await searchVideos({ query, page: pageParam, limit })),
+    initialPageParam: initialPage.pagination.page,
+    getNextPageParam: (lastPage) =>
+      // Both clauses, for the same reason the feed needs both: `total` is counted under the
+      // same predicate as the page, so `totalPages` can promise a page that comes back empty,
+      // and stopping only on an empty page never terminates a well-behaved list early.
+      lastPage.data.length === 0 || lastPage.pagination.page >= lastPage.pagination.totalPages
+        ? undefined
+        : lastPage.pagination.page + 1,
+    initialData: seededData,
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
+  return {
+    videos: searchQuery.data.pages.flatMap((page) => page.data),
+    hasNextPage: searchQuery.hasNextPage,
+    isFetchingNextPage: searchQuery.isFetchingNextPage,
+    loadMoreErrorMessage: searchQuery.error === null ? null : searchQuery.error.message,
+    loadNextPage: () => {
+      void searchQuery.fetchNextPage();
     },
   };
 }

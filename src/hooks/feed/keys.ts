@@ -37,6 +37,13 @@ export const feedKeys = {
   videos: (filter: FeedVideoListFilter) =>
     ["feed", "videos", filter.mode, filter.categorySlug] as const,
 
+  // --- Search ---
+  // The query text IS the identity of the list — two different searches are two different
+  // results, not two pages of one. Same rule as `videos(filter)` above: server filters belong
+  // in the key, and nothing else does.
+  searchRoot: () => ["feed", "search"] as const,
+  search: (query: string) => ["feed", "search", query] as const,
+
   // --- Watch ---
   watch: (videoId: string) => ["feed", "watch", videoId] as const,
 
