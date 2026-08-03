@@ -36,7 +36,7 @@ import {
   useReplaceVideoThumbnailMutation,
   useUpdateVideoMutation,
 } from "@/hooks/videos";
-import { ApiRequestError } from "@/lib/http";
+import { ApiRequestError, isForbidden, isUnauthorized } from "@/lib/http";
 import { describePublishRefusal } from "@/lib/videos/publish-refusal";
 import {
   createEmptyUploadDraft,
@@ -81,7 +81,7 @@ type UploadSource = { kind: "file"; videoFile: File } | { kind: "youtube"; youtu
  * caller needs the second one to decide whether to close, and needs the id to publish.
  */
 type SaveOutcome =
-  | { readonly kind: "create_failed" }
+  | { readonly kind: "create_failed"; readonly error?: unknown }
   | { readonly kind: "saved_with_problem"; readonly videoId: string }
   | { readonly kind: "saved"; readonly videoId: string };
 
@@ -172,7 +172,7 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
       }
     } catch (error) {
       setSaveErrorMessage(describeSaveError(error));
-      return { kind: "create_failed" };
+      return { kind: "create_failed", error };
     }
 
     const chapterInput = toChapterInput(draftToSave.chapters);
@@ -286,8 +286,15 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
     }
     // The draft path closes on ANY outcome that produced a row — a chapter list that failed
     // validation must not trap the creator in a modal they are trying to dismiss.
+    // Auth failures (401/403) also close the modal so unauthenticated users are not soft-locked.
     const outcome = await saveDraft({ asPrivateDraft: true });
-    if (outcome.kind !== "create_failed") onClose();
+    if (
+      outcome.kind !== "create_failed" ||
+      (outcome.error instanceof ApiRequestError &&
+        (isUnauthorized(outcome.error.apiError) || isForbidden(outcome.error.apiError)))
+    ) {
+      onClose();
+    }
   }
 
   // Escape needs the latest callback without re-subscribing on every keystroke.
