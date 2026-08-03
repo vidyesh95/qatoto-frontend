@@ -136,7 +136,12 @@ export const FeedVideoSchema = z
     thumbnailUrl: z.string().nullable(),
     // ISO 8601, NEVER a pre-formatted label. Formatting it during a server render would
     // freeze the string into the `cacheComponents` cache entry — see `relative-time.tsx`.
-    publishedAt: z.string().nullable(),
+    //
+    // `z.iso.datetime()`, not `z.string()`. This route once served the Postgres text form
+    // `'2026-08-02 17:36:54.105'` — no `T`, no zone — which `Date.parse` reads as LOCAL
+    // time, so every "posted X ago" was off by the viewer's UTC offset. A loose `z.string()`
+    // accepted it silently and rendered the wrong hour. This fails at the boundary instead.
+    publishedAt: z.iso.datetime().nullable(),
     // Null until the nightly median job has >= 5 independent samples. Absence is not zero:
     // render nothing rather than "0:00".
     durationSeconds: z.number().nullable(),
@@ -231,7 +236,7 @@ export const WatchPayloadSchema = z
     title: z.string(),
     description: z.string().nullable(),
     thumbnailUrl: z.string().nullable(),
-    publishedAt: z.string().nullable(),
+    publishedAt: z.iso.datetime().nullable(),
     durationSeconds: z.number().nullable(),
     videoType: VideoTypeSchema,
     areCommentsEnabled: z.boolean(),
@@ -296,8 +301,8 @@ export const VideoCommentSchema = z
       .nullable(),
     likeCount: z.number(),
     replyCount: z.number(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
     viewerState: z.object({ hasLiked: z.boolean() }).strip(),
   })
   .strip();
@@ -308,7 +313,7 @@ export const UpdatedVideoCommentSchema = z
   .object({
     commentId: z.string(),
     body: z.string(),
-    updatedAt: z.string(),
+    updatedAt: z.iso.datetime(),
   })
   .strip();
 export type UpdatedVideoComment = z.infer<typeof UpdatedVideoCommentSchema>;

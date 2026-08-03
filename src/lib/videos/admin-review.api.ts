@@ -51,15 +51,18 @@ export const ReviewQueueRowSchema = z
     seasonLabel: z.string().nullable(),
     episodeNumber: z.number().nullable(),
     episodeTitle: z.string().nullable(),
-    premiereDate: z.string().nullable(),
+    premiereDate: z.iso.datetime().nullable(),
     // What the creator DECLARED about the episode — the schedule, the dub and the age rating are
     // the things a reviewer is being asked to sign off on.
+    //
+    // The two schedule fields are `text` columns — a weekday name and a clock time — so they
+    // stay `z.string()`. Only the instants above and below are `z.iso.datetime()`.
     releaseScheduleDay: z.string().nullable(),
     releaseScheduleTime: z.string().nullable(),
     audioMode: z.enum(["subbed", "dubbed"]).nullable(),
     audioLanguage: z.string().nullable(),
     ageRating: z.string().nullable(),
-    submittedAt: z.string(),
+    submittedAt: z.iso.datetime(),
   })
   .strip();
 export type ReviewQueueRow = z.infer<typeof ReviewQueueRowSchema>;
@@ -75,8 +78,8 @@ export const ReviewDecisionSchema = z
     videoId: z.string(),
     reviewStatus: ContentReviewStatusSchema,
     publishStatus: VideoPublishStatusSchema,
-    publishedAt: z.string().nullable(),
-    releasedAt: z.string().nullable(),
+    publishedAt: z.iso.datetime().nullable(),
+    releasedAt: z.iso.datetime().nullable(),
     rejectionReason: z.string().nullable(),
   })
   .strip();

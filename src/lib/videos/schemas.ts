@@ -126,13 +126,15 @@ export const AnimeEpisodeSchema = z
     episodeNumber: z.number(),
     episodeTitle: z.string(),
     isPremium: z.boolean(),
+    // NOT instants, and NOT `z.iso.datetime()`. Both are `text` columns: a weekday name and
+    // a clock time. `premiereDate` and `releasedAt` below ARE `timestamp` columns.
     releaseScheduleDay: z.string().nullable(),
     releaseScheduleTime: z.string().nullable(),
-    premiereDate: z.string().nullable(),
+    premiereDate: z.iso.datetime().nullable(),
     audioMode: z.enum(ANIME_AUDIO_MODES).nullable(),
     audioLanguage: z.string().nullable(),
     ageRating: z.string().nullable(),
-    releasedAt: z.string().nullable(),
+    releasedAt: z.iso.datetime().nullable(),
   })
   .strip();
 export type AnimeEpisode = z.infer<typeof AnimeEpisodeSchema>;
@@ -192,9 +194,9 @@ export const PublicVideoSchema = z
 
     visibility: VideoVisibilitySchema,
     isNdaRequired: z.boolean(),
-    scheduledPublishAt: z.string().nullable(),
+    scheduledPublishAt: z.iso.datetime().nullable(),
     publishStatus: VideoPublishStatusSchema,
-    publishedAt: z.string().nullable(),
+    publishedAt: z.iso.datetime().nullable(),
     reviewStatus: ContentReviewStatusSchema,
     rejectionReason: z.string().nullable(),
 
@@ -209,6 +211,8 @@ export const PublicVideoSchema = z
     commentModeration: z.string().nullable(),
     commentSortOrder: z.string().nullable(),
     shortsRemixing: z.enum(SHORTS_REMIX_MODES),
+    // DELIBERATELY NOT `z.iso.datetime()` — a DATE column, so `"YYYY-MM-DD"`. See the note
+    // at the top of this block; `datetime()` would reject every value it ever holds.
     recordingDate: z.string().nullable(),
     recordingLocation: z.string().nullable(),
     // LEGACY free-text column, read-only and scheduled for removal. `categories` replaced it;
@@ -227,8 +231,8 @@ export const PublicVideoSchema = z
     animeEpisode: AnimeEpisodeSchema.nullable(),
 
     derivedStatus: StudioVideoStatusSchema,
-    createdAt: z.string(),
-    updatedAt: z.string(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
   })
   .strip();
 export type PublicVideo = z.infer<typeof PublicVideoSchema>;
@@ -267,10 +271,10 @@ export const VideoListRowSchema = z
     publishStatus: VideoPublishStatusSchema,
     reviewStatus: ContentReviewStatusSchema,
     rejectionReason: z.string().nullable(),
-    scheduledPublishAt: z.string().nullable(),
+    scheduledPublishAt: z.iso.datetime().nullable(),
     derivedStatus: StudioVideoStatusSchema,
-    createdAt: z.string(),
-    updatedAt: z.string(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
   })
   .strip();
 export type VideoListRow = z.infer<typeof VideoListRowSchema>;

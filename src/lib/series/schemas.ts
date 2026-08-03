@@ -34,11 +34,11 @@ export const AnimeEpisodeSummarySchema = z
     episodeNumber: z.number(),
     episodeTitle: z.string(),
     isPremium: z.boolean(),
-    premiereDate: z.string().nullable(),
+    premiereDate: z.iso.datetime().nullable(),
     audioMode: z.enum(ANIME_AUDIO_MODES).nullable(),
     audioLanguage: z.string().nullable(),
     ageRating: z.string().nullable(),
-    releasedAt: z.string().nullable(),
+    releasedAt: z.iso.datetime().nullable(),
   })
   .strip();
 export type AnimeEpisodeSummary = z.infer<typeof AnimeEpisodeSummarySchema>;
@@ -62,8 +62,8 @@ export const PublicSeriesSchema = z
     genreTags: z.array(z.string()),
     status: AnimeSeriesStatusSchema,
     seasons: z.array(AnimeSeasonSummarySchema),
-    createdAt: z.string(),
-    updatedAt: z.string(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
   })
   .strip();
 export type PublicSeries = z.infer<typeof PublicSeriesSchema>;
@@ -78,7 +78,7 @@ export const SeriesListRowSchema = z
     genreTags: z.array(z.string()),
     seasonCount: z.number(),
     episodeCount: z.number(),
-    updatedAt: z.string(),
+    updatedAt: z.iso.datetime(),
   })
   .strip();
 export type SeriesListRow = z.infer<typeof SeriesListRowSchema>;

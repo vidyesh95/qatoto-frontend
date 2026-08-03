@@ -40,6 +40,7 @@ would otherwise re-derive from the old text.
 | 6   | "the feed mapper always sets `isChannelLive` false"                                    | The **backend sends the literal `false`** on the wire                                                                                                                               | `feed.service.ts:528`                       |
 | 7   | `isChannelLive` read by `watch-content`, `anime/favorite-page`, `anime/genre-page`     | Only `watch-content.tsx` and the (now deleted) `all-content.tsx` ever set it. Neither anime page mentions it                                                                        | grep                                        |
 | 8   | One list envelope                                                                      | **Three**: `ApiResponse` (categories), `PaginatedResponse & { rankSeed }` (feed videos, **offset**), `ApiResponse & { nextCursor }` (comments, **keyset**)                          | `types/index.ts:6-33`                       |
+| 9   | `publishedAt` is ISO on every route                                                    | `/feed/videos` served the **Postgres text form** `'2026-08-02 17:36:54.105'` — no `T`, no zone — while `/feed/watch/:id` served proper ISO for the **same column**. Now fixed       | `feed.service.ts`, `lib/sql-time.ts`        |
 
 Two further traps with no previous counterpart, both now guarded in code:
 
@@ -49,6 +50,34 @@ Two further traps with no previous counterpart, both now guarded in code:
   (`src/hooks/feed/queries.ts`).
 - **202 responses omit `data` entirely** — key absent, not `null`. The beacon and playback-error
   schemas are `z.undefined()`; a `z.object({})` there fails every call.
+
+### Why row 9 happened — `db.execute<T>` is a CLAIM, not a parse instruction
+
+Worth the space, because the mechanism is not obvious and there is more than one site.
+
+`drizzle-orm/node-postgres/session.js` builds **every** prepared query with its own
+`types.getTypeParser`, which returns `(val) => val` for TIMESTAMP, TIMESTAMPTZ, DATE and INTERVAL.
+That override wins over `pgTypes.setTypeParser`, so the global UTC parser registered in the
+backend's `src/db/index.ts` **never reaches a drizzle query** — its doc comment claimed otherwise
+for months.
+
+The query BUILDER is unharmed: drizzle re-parses with the column's own codec
+(`PgTimestamp.mapFromDriver` appends `'+0000'`), which is the same UTC convention. `db.execute` has
+no column to map to, so nothing recovers, and the raw string is handed on under whatever `Date`
+annotation the call site wrote. `/feed/videos` reads through `db.execute`; `/feed/watch/:id` reads
+through the builder. Same column, two formats.
+
+What the wrong format cost: with no `T` and no zone, `Date.parse` reads the string as **local**
+time, so every "posted X ago" on the homepage was off by the viewer's UTC offset (−5.5 h on the
+machine that found it), and `<time dateTime="2026-08-02 17:36:54.105">` is not a valid `datetime`
+attribute either.
+
+The fix is `utcDateFromRow` in the backend's `src/lib/sql-time.ts` — the read-side twin of the
+`utcTimestamp` write-side helper that was already there for the same class of bug. **Two sites
+needed it**, not one: `feed.service.ts` (`FeedRow.published_at`) and `middleware/rate-limit-store.ts`
+(`expires_at`, returned as `resetTime`, which `express-rate-limit` reads as a `Date`). Prefer the
+query builder wherever the choice exists — `latestSnapshotAsOf` in `feed.service.ts` documents that
+call and is the model to copy.
 
 ---
 
@@ -159,6 +188,31 @@ one row of a 24-row page failed the whole page, and nothing anywhere named the f
 - The `mode=watched` sign-in prompt is gated on the mode. An expired cookie on `mode=all` used to
   produce a message about a mode the reader never selected.
 
+**Wire timestamps on this surface are `z.iso.datetime()`, not `z.string()`.** A loose `z.string()`
+is exactly what let §0 row 9 render: it accepted `'2026-08-02 17:36:54.105'` silently, and the
+5.5-hour error surfaced as a plausible-looking label rather than as a failure. A `PARSE` panel
+naming `data.0.publishedAt` in the dev terminal is the outcome we want from a malformed instant —
+it is loud, and it is fixable in the minute it appears.
+
+Applied to `src/lib/{feed,videos,series,playlists}/schemas.ts` and
+`src/lib/videos/admin-review.api.ts`. **Three fields are deliberately still `z.string()`** because
+they are not instants and `datetime()` would reject every value they hold:
+
+| Field                 | Column    | Shape          |
+| --------------------- | --------- | -------------- |
+| `recordingDate`       | `date(…)` | `"YYYY-MM-DD"` |
+| `releaseScheduleDay`  | `text(…)` | a weekday name |
+| `releaseScheduleTime` | `text(…)` | a clock time   |
+
+**Not swept:** `src/lib/rnd/**` and `src/lib/products/**` hold ~20 more `z.string()` timestamps on
+routes nobody has probed. Tightening those blind risks turning a working surface into a `PARSE`
+panel over a format that was never checked. That is a separate pass, and it should probe each route
+first — the same order this one followed.
+
+> **The order is load-bearing.** Tighten the frontend schema BEFORE the backend emits the right
+> format and the homepage becomes a full-page error, because `toParseError` fails the **whole**
+> payload — one bad field on one of 24 rows takes the page. Backend first, always.
+
 ### 2.5 Remote image hosts — `next.config.ts`
 
 `next/image` **throws** on a host not in `images.remotePatterns`. It is not a soft failure; it is
@@ -200,6 +254,13 @@ disagrees on hydrate. The bug is invisible in development, where nothing is cach
 
 `VideoCardProps.postedAt` survives for the mock surfaces that hand-author it; feed cards pass `""`
 and set `publishedAt`. `formatViewCountLabel` has no such problem and runs anywhere.
+
+**Why this component could not catch §0 row 9.** `formatRelativeTimeLabel` returns `""` on a `NaN`
+parse and the component then renders `null`. That is right for its job — one unreadable timestamp
+should not take out a card — but it means a malformed instant degrades to a blank space, invisible,
+with no console line and no failing render. And a _shifted_ instant is worse still: it parses fine
+and prints a confident, wrong number. Neither is detectable here. That is the whole argument for
+catching it at the schema boundary instead (§2.4), where it fails loudly and names the field.
 
 ---
 
@@ -560,14 +621,27 @@ done
 > curl -s 'localhost:8000/feed/videos?limit=24' | jq '{n:(.data|length), total:.pagination.total}'
 > ```
 >
-> **`n` > 0 means everything is working and you are simply signed in as the creator.** Open `/` in
-> an incognito window.
+> **`n` > 0 while signed-in shows nothing means you are the only creator in the catalog.** That
+> used to be a blank homepage. It no longer is — read on.
 >
-> `feed.service.ts:424-426` adds `v.creator_id <> viewerUserId` for every SIGNED-IN viewer, on
-> every mode, at every relaxation stage — a creator is never shown their own videos, because
-> otherwise the highest-affinity creator for any creator is themselves. Anonymous viewers have no
-> such exclusion. This is correct behaviour and it is the single most confusing thing on the
-> surface.
+> `feed.service.ts` adds `v.creator_id <> viewerUserId` for every SIGNED-IN viewer, on every mode,
+> because otherwise the highest-affinity creator for any creator is themselves. Anonymous viewers
+> have no such exclusion. This is correct behaviour and it is the single most confusing thing on
+> the surface.
+>
+> **It is now the LAST rung of the relaxation ladder rather than an absolute.** When the page is
+> under-filled and nothing else can fill it, stage 3 drops the self-exclusion and a solo creator
+> sees their own catalogue instead of an empty grid. So:
+>
+> - **Seeing your own videos on `/` means the ladder reached stage 3** — i.e. the catalogue could
+>   not fill a page any other way. It is a signal about the catalogue, not a bug.
+> - **Not seeing them means it did not need to**, which is the normal, healthy path and what
+>   happens at any real catalogue size.
+>
+> The stage is in the structured log and NEVER in the response body — look for
+> `relaxationStage: 3, relaxationReason: "creator self-exclusion dropped"` in the backend terminal
+> for that request. If you see stage 3 on a catalogue that should be large, the relaxation is
+> masking a different filter problem; work the checklist below rather than trusting the page.
 >
 > If `n` is 0, this SQL says which condition excluded it:
 >

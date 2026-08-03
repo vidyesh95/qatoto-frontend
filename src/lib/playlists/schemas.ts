@@ -42,8 +42,8 @@ export const PublicPlaylistSchema = z
     language: z.string().nullable(),
     videos: z.array(PlaylistVideoSchema),
     videoCount: z.number(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
   })
   .strip();
 export type PublicPlaylist = z.infer<typeof PublicPlaylistSchema>;
@@ -55,7 +55,7 @@ export const PlaylistListRowSchema = z
     title: z.string(),
     visibility: PlaylistVisibilitySchema,
     videoCount: z.number(),
-    updatedAt: z.string(),
+    updatedAt: z.iso.datetime(),
   })
   .strip();
 export type PlaylistListRow = z.infer<typeof PlaylistListRowSchema>;
