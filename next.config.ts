@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+// Fallback to local Express port (e.g., http://localhost:8000) when running `pn dev`
+const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
@@ -7,6 +10,15 @@ const nextConfig: NextConfig = {
   // reactCompiler: true,
   experimental: {
     turbopackFileSystemCacheForDev: true,
+  },
+  // this is used to proxy api requests to the backend
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${NEXT_PUBLIC_API_URL}/api/:path*`,
+      },
+    ];
   },
   images: {
     // Every remote image host the backend can hand us. `next/image` THROWS on an unlisted
