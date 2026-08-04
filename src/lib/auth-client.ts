@@ -12,7 +12,12 @@ import {
 // asks the backend via useSession(). baseURL is the API origin; cookies ride
 // along automatically on its own calls.
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
+  // baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
+  // if backend URL isn't available, use window.location.origin
+  // This is used to proxy api requests to the backend
+  baseURL: typeof window !== "undefined"
+      ? `${window.location.origin}/api/auth`
+      : `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/auth`,
   plugins: [
     passkeyClient(),
     emailOTPClient(),
