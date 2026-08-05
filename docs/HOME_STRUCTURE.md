@@ -233,7 +233,7 @@ and stores whatever oEmbed returned, verbatim. YouTube serves `i.ytimg.com` toda
 ### 2.6 `splitFeedPage` — why the boundary is a named function
 
 Recommended and Explore are **one backend stream** (backend §0 Rule 3). The split is ours, and it
-lives in one place so `videos.slice(0, 12)` in one component and `videos.slice(12)` in another
+lives in one place so `videos.slice(0, 8)` in one component and `videos.slice(8)` in another
 cannot disagree the first time anyone changes the page size.
 
 ---

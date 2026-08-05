@@ -30,13 +30,13 @@ export default function ExploreSection({
 }) {
   const feed = useFeedVideosInfiniteQuery({ filter, initialPage, limit });
 
-  // The accumulated list still contains page one IN FULL, including the twelve rows the
+  // The accumulated list still contains page one IN FULL, including the eight rows the
   // Recommended grid rendered above. Slicing here rather than seeding the hook with a trimmed
   // page is deliberate: the hook must page against what the server actually returned, and a
-  // seed missing twelve rows would make its `pagination` describe a page that never existed.
+  // seed missing eight rows would make its `pagination` describe a page that never existed.
   const exploreVideos = feed.videos.slice(RECOMMENDED_SLICE_LENGTH);
 
-  // Page one had 12 or fewer rows AND there is nothing after it. Not an error and not worth a
+  // Page one had 8 or fewer rows AND there is nothing after it. Not an error and not worth a
   // panel — Recommended above already said what there is.
   if (exploreVideos.length === 0 && !feed.hasNextPage) return null;
 
