@@ -204,6 +204,18 @@ export const ResearchProjectDetailSchema = z
   .strip();
 export type ResearchProjectDetail = z.infer<typeof ResearchProjectDetailSchema>;
 
+/**
+ * `POST /research-projects/:projectSlug/cover` — the cover write returns ONLY the new
+ * URL. It is not a full project detail (backend `setProjectCover` → `{ coverImageUrl }`).
+ * Parsing it as `ResearchProjectDetailSchema` fails every field.
+ */
+export const ProjectCoverUploadResultSchema = z
+  .object({
+    coverImageUrl: z.string(),
+  })
+  .strip();
+export type ProjectCoverUploadResult = z.infer<typeof ProjectCoverUploadResultSchema>;
+
 // --- Applications and invites (§11j.2) ----------------------------------------
 
 export const PROJECT_APPLICATION_KINDS = ["role_application", "open_application"] as const;

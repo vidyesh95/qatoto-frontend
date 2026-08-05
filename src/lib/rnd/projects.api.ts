@@ -20,6 +20,7 @@ import {
   MyApplicationSchema,
   MyInviteSchema,
   ProjectApplicationSchema,
+  ProjectCoverUploadResultSchema,
   ProjectInviteSchema,
   ProjectTeamMemberSchema,
   ResearchProjectDetailSchema,
@@ -29,6 +30,7 @@ import {
   type MyApplication,
   type MyInvite,
   type ProjectApplication,
+  type ProjectCoverUploadResult,
   type ProjectInvite,
   type ProjectTeamMember,
   type ResearchProjectDetail,
@@ -164,14 +166,14 @@ export function uploadProjectCover(
   projectSlug: string,
   coverFile: File,
   options?: RequestOptions,
-): Promise<ActionResponse<ResearchProjectDetail>> {
+): Promise<ActionResponse<ProjectCoverUploadResult>> {
   const formData = new FormData();
   formData.append("cover", coverFile);
   return sendForm(
     `/research-projects/${projectSlug}/cover`,
     "POST",
     formData,
-    ResearchProjectDetailSchema,
+    ProjectCoverUploadResultSchema,
     options,
   );
 }
