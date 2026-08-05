@@ -13,11 +13,10 @@
 >   domain; videos attach product ids via `PUT /videos/:videoId/products`).
 > - [BACKEND_STRUCTURE.md](BACKEND_STRUCTURE.md) — auth & identity (same voice, same layering).
 >
-> **Not this doc:** the buyer-facing **`/store` browse surface** (catalog home, category pages,
-> product detail, rails, checkout) will be specced separately in
-> [STORE_BACKEND_STRUCTURE.md](STORE_BACKEND_STRUCTURE.md) once that route is planned. That file
-> currently holds a duplicate of this seller-listing spec from an earlier naming mix-up — treat
-> **this** file as authoritative for `/products/*` seller CRUD.
+> **Not this doc:** the buyer-facing **`/store` commerce surface** (catalog, providers, RFQs,
+> quotes, checkout, orders, and connector services) is specified separately in
+> [STORE_BACKEND_STRUCTURE.md](STORE_BACKEND_STRUCTURE.md). Treat **this** file as authoritative
+> for `/products/*` seller CRUD.
 >
 > **Goal:** let a signed-in seller create, upload images for, price (single + B2B tiered), edit,
 > publish/unpublish, and delete a product listing — with the backend as the only source of truth.
@@ -90,21 +89,21 @@ and sends them on create/update (see [STUDIO_PRODUCTS_STRUCTURE.md](STUDIO_PRODU
 
 ### Field mapping (form → contract)
 
-| Frontend form field (state var)        | Backend field                 | Notes                                                  |
-| -------------------------------------- | ----------------------------- | ------------------------------------------------------ |
-| `productTitle`                         | `title`                       | 1–200 chars (mirrors `PRODUCT_TITLE_MAX_LENGTH = 200`) |
-| `brandName`                            | `brand`                       | nullable                                               |
-| `selectedCategory` (8 labels)          | `category` (enum)             | UI labels → stored slugs (see §4)                      |
-| `selectedCondition`                    | `condition` (enum)            | `new` \| `refurbished` \| `used`, default `new`        |
-| `selectedImageFiles` (`File[]`, ≤ 9)   | `product_image` rows          | two-phase upload; first = main (`position 0`)          |
-| `productDescription`                   | `description`                 | nullable                                               |
-| `keyFeatures` (`string[]`)             | `keyFeatures` (`text[]`)      | short ordered bullets, count-capped                    |
-| `priceInDollars` `"129.99"`            | `priceInCents` (int)          | client sends **cents**; backend authoritative, `≥ 0`   |
-| `compareAtPriceInDollars`              | `compareAtPriceInCents` (int) | nullable                                               |
-| `stockQuantity`                        | `stockQuantity` (int)         | `≥ 0`, default `0`                                     |
-| `skuCode`                              | `sku`                         | nullable; `UNIQUE(sellerId, sku)`                      |
-| Save Draft / Publish Listing           | `status` (enum)               | `draft` \| `active`; publish gated server-side         |
-| `pricingTiers` (optional tier rows)    | `product_pricing_tier` rows   | sent on create/update; PATCH replaces the full set       |
+| Frontend form field (state var)      | Backend field                 | Notes                                                  |
+| ------------------------------------ | ----------------------------- | ------------------------------------------------------ |
+| `productTitle`                       | `title`                       | 1–200 chars (mirrors `PRODUCT_TITLE_MAX_LENGTH = 200`) |
+| `brandName`                          | `brand`                       | nullable                                               |
+| `selectedCategory` (8 labels)        | `category` (enum)             | UI labels → stored slugs (see §4)                      |
+| `selectedCondition`                  | `condition` (enum)            | `new` \| `refurbished` \| `used`, default `new`        |
+| `selectedImageFiles` (`File[]`, ≤ 9) | `product_image` rows          | two-phase upload; first = main (`position 0`)          |
+| `productDescription`                 | `description`                 | nullable                                               |
+| `keyFeatures` (`string[]`)           | `keyFeatures` (`text[]`)      | short ordered bullets, count-capped                    |
+| `priceInDollars` `"129.99"`          | `priceInCents` (int)          | client sends **cents**; backend authoritative, `≥ 0`   |
+| `compareAtPriceInDollars`            | `compareAtPriceInCents` (int) | nullable                                               |
+| `stockQuantity`                      | `stockQuantity` (int)         | `≥ 0`, default `0`                                     |
+| `skuCode`                            | `sku`                         | nullable; `UNIQUE(sellerId, sku)`                      |
+| Save Draft / Publish Listing         | `status` (enum)               | `draft` \| `active`; publish gated server-side         |
+| `pricingTiers` (optional tier rows)  | `product_pricing_tier` rows   | sent on create/update; PATCH replaces the full set     |
 
 **Money contract:** the form's price inputs are dollar strings (`type="number" step="0.01"`).
 The thin client converts to integer cents at submit (`Math.round(dollars * 100)`) and sends
