@@ -22,7 +22,7 @@ export const PRODUCT_CONDITION_SLUGS = ["new", "refurbished", "used"] as const;
 export const PRODUCT_STATUSES = ["draft", "active"] as const;
 
 /**
- * Wizard display labels ↔ stored slugs (STORE_BACKEND_STRUCTURE.md §4). Order is
+ * Wizard display labels ↔ stored slugs (STUDIO_PRODUCTS_BACKEND_STRUCTURE.md §4). Order is
  * load-bearing: it matches the `PRODUCT_CATEGORIES` label array in the wizard.
  */
 export const CATEGORY_LABELS = [
