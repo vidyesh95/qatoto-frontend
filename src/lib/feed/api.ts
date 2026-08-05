@@ -83,8 +83,8 @@ export function listFeedCategories(
  * seed on page 2, reshuffling the exploration term and serving a video the viewer already
  * scrolled past. `getEnvelope` parses the whole body instead.
  *
- * Recommended, Explore and Spotlight are all THIS route: Spotlight is `mode: "trending",
- * limit: 3`, and the Recommended/Explore split is ours (`slice-feed-page.ts`).
+ * Recommended and Explore are THIS route (the Recommended/Explore split is ours —
+ * `slice-feed-page.ts`). Spotlight is a separate curated read: `GET /spotlight/videos`.
  *
  * Pagination is OFFSET, not keyset — a cursor needs a stable sort key and rank is recomputed
  * per request, so a keyset over it would silently reshuffle. Offset plus a pinned seed gives

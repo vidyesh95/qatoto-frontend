@@ -61,9 +61,9 @@ export function readFeedSelection(searchParams: RawSearchParams): FeedSelection 
 /**
  * True when the page should render the four default sections rather than one filtered grid.
  *
- * Spotlight means "the three trending videos" and has no meaning inside a category filter, and
- * a "Recommended" heading over a `recently_uploaded` list is a lie about what the user asked
- * for — so any active facet collapses the page to a single grid (HOME_STRUCTURE §5.1).
+ * Spotlight is the admin-curated three-video rail and has no meaning inside a category filter,
+ * and a "Recommended" heading over a `recently_uploaded` list is a lie about what the user
+ * asked for — so any active facet collapses the page to a single grid (HOME_STRUCTURE §5.1).
  */
 export function isDefaultFeedSelection(selection: FeedSelection): boolean {
   return selection.mode === "all" && selection.categorySlug === undefined;

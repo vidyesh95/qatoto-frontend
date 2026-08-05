@@ -222,6 +222,26 @@ public read is `GET /promotions/slides` and every write is `/promotions/admin/sl
 
 Verified by `pnpm db:smoke-promotional-slides` (14 behaviours, cleans up after itself).
 
+### 4.8 Spotlight — ✅ built (`/admin/spotlight`)
+
+The three-video rail below the category tiles on the home page. Backed by
+`feed_spotlight_slot` and the `/spotlight` router; the public read is `GET /spotlight/videos`
+and the only write is `PUT /spotlight/admin/slots` (whole-set replace).
+
+| Piece        | Notes                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------- |
+| Pick videos  | Search the catalogue (`GET /feed/search`); assign Left / Center / Right                        |
+| Save         | Sends the ordered `videoIds` array (0..3). Empty clears the rail and hides it on the home page |
+| Clear a slot | Local draft until Save; gaps close on save (sparse positions are not on the wire)              |
+
+**Not negotiable:**
+
+- **`manage_promotions` is the gate** — same front-page placement blast radius as the carousel.
+  No second capability for the same staff act.
+- **Only feed-eligible videos** — unpublished / unverified / non-ready ids are a 422, not a
+  silent store-then-drop.
+- **Nothing is optimistic** — the draft re-seeds from the server after Save.
+
 ---
 
 ## 5. Suggested route map

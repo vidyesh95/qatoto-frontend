@@ -2,11 +2,11 @@
 //
 // ONE GRID INSTEAD OF FOUR SECTIONS, not four filtered sections.
 //
-// Spotlight means "the three trending videos" and has no meaning inside a category filter; a
-// "Recommended for you" heading over a `recently_uploaded` list is a lie about what the reader
-// asked for; and the tile grid is a way IN to a filter, not something to show once you are
-// already inside one. So when any chip is active the page collapses to a single titled grid
-// (HOME_STRUCTURE §5.1).
+// Spotlight is the admin-curated three-video rail and has no meaning inside a category filter;
+// a "Recommended for you" heading over a `recently_uploaded` list is a lie about what the
+// reader asked for; and the tile grid is a way IN to a filter, not something to show once you
+// are already inside one. So when any chip is active the page collapses to a single titled
+// grid (HOME_STRUCTURE §5.1).
 
 "use client";
 

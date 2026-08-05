@@ -307,12 +307,12 @@ src/app/(home)/page.tsx                                (server, searchParams UNA
    ├─ <Suspense> promo-carousel-section.tsx  server-fetch
    └─ <Suspense> feed-shell.tsx              server-fetch   ← awaits searchParams HERE
       │                                        • GET /feed/categories
-      │                                        • GET /feed/videos?mode=trending&limit=3
+      │                                        • GET /spotlight/videos
       │                                        • GET /feed/videos?limit=24&…
       ├─ filter.tsx                          client-query   categories as initialData
       ├─ recommended-section.tsx             props-only     slice 0–11 → LCP
       ├─ category-tiles-section.tsx          props-only     isTile && imageUrl !== null
-      ├─ spotlight-section.tsx               props-only     trending 1–3
+      ├─ spotlight-section.tsx               props-only     admin-curated 0–3
       ├─ explore-section.tsx                 client-query   page-1 tail, then infinite
       └─ filtered-feed.tsx                   client-query   replaces the four when filtered
 ```
@@ -325,13 +325,14 @@ never holds back the video grid.
 
 ### 5.1 One grid when a chip is active
 
-Spotlight means "the three trending videos" and has no meaning inside a category filter; a
-"Recommended for you" heading over a `recently_uploaded` list is a lie about what was asked for;
-and the tile grid is a way IN to a filter, not something to show once you are inside one. So any
-active facet collapses the page to a single titled grid.
+Spotlight is the admin-curated three-video rail (`GET /spotlight/videos`, set at
+`/admin/spotlight`) and has no meaning inside a category filter; a "Recommended for you"
+heading over a `recently_uploaded` list is a lie about what was asked for; and the tile grid is
+a way IN to a filter, not something to show once you are inside one. So any active facet
+collapses the page to a single titled grid.
 
-`feed-shell` also **skips the trending read entirely** when a filter is active — paying for a
-ranking nobody will see is the kind of waste that only shows up under load.
+`feed-shell` also **skips the Spotlight read entirely** when a filter is active — paying for a
+curated fetch nobody will see is the kind of waste that only shows up under load.
 
 ### 5.2 Per-section state, Pattern 1
 

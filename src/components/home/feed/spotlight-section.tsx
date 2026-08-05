@@ -1,17 +1,14 @@
 // TRANSPORT: props-only — rows come from `feed-shell`'s server read. Fetches nothing.
 //
-// The three trending videos. Backed by `GET /feed/videos?mode=trending&limit=3` — the SAME
-// route as the rest of the feed, not a second endpoint. One ranking contract, one cache story,
-// one place a ranking bug can live (HOME_BACKEND §0 Rule 3).
-//
-// Trending is recomputed HOURLY on the backend, unlike the nightly quality scores. A
-// "trending" rail rebuilt once a day is a lie about what the word means.
+// The three admin-curated Spotlight videos. Backed by `GET /spotlight/videos` — a separate
+// curated route, not `GET /feed/videos?mode=trending`. Admins set the ordered set at
+// `/admin/spotlight` (`PUT /spotlight/admin/slots`).
 
 import SectionDivider from "@/components/home/feed/section-divider";
 import SpotlightVideoCards, {
   type SpotlightVideoCardsProps,
 } from "@/components/home/feed/spotlight-video-cards";
-import type { FeedVideo } from "@/lib/feed/schemas";
+import type { PublicSpotlightVideo } from "@/lib/spotlight/schemas";
 
 /**
  * Slot order for the expanding-tile layout, which needs to know which tile is the middle one.
@@ -26,8 +23,12 @@ const SPOTLIGHT_POSITIONS: readonly SpotlightVideoCardsProps["position"][] = [
 /** The same placeholder the feed mapper uses for a row with no thumbnail. */
 const PLACEHOLDER_THUMBNAIL_SRC = "/dummy/spotlight_image01.avif";
 
-export default function SpotlightSection({ videos }: { readonly videos: FeedVideo[] }) {
-  // Nothing trending yet is a young catalogue, not a failure — and an empty bordered panel
+export default function SpotlightSection({
+  videos,
+}: {
+  readonly videos: readonly PublicSpotlightVideo[];
+}) {
+  // Nothing curated yet is an operator choice, not a failure — and an empty bordered panel
   // where a full-bleed image rail belongs looks more broken than the absence does.
   if (videos.length === 0) return null;
 

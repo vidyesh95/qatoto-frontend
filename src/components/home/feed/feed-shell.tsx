@@ -1,10 +1,10 @@
 // TRANSPORT: server-fetch — three parallel reads with the caller's cookie forwarded, then the
 // whole feed rendered from them. The only fetching component on the homepage below the promo.
 //
-// ONE REQUEST FOR THREE SECTIONS. Recommended, Explore and the filtered grid all come out of a
-// single `GET /feed/videos` page — the split is `splitFeedPage`, not a second call. Spotlight
-// is the same route with `mode=trending&limit=3`. Adding a request per section would triple
-// the ranking work on the hottest read on the platform for no new information.
+// ONE REQUEST FOR THE RANKED GRID. Recommended, Explore and the filtered grid all come out of
+// a single `GET /feed/videos` page — the split is `splitFeedPage`, not a second call.
+// Spotlight is a SEPARATE curated read (`GET /spotlight/videos`), set by admins — not
+// `mode=trending&limit=3`.
 //
 // EACH READ IS LIFTED INTO ITS OWN VIEW STATE so one failure does not blank the others: a
 // `/feed/categories` outage must still leave a working video grid, and a feed outage must
@@ -28,11 +28,11 @@ import { splitFeedPage } from "@/lib/feed/slice-feed-page";
 import type { RawSearchParams } from "@/lib/filter-href";
 import { isUnauthorized, type ActionResponse } from "@/lib/http";
 import { callerRequestOptions } from "@/lib/server-http";
+import { listActiveSpotlightVideos } from "@/lib/spotlight/api";
+import type { PublicSpotlightVideo } from "@/lib/spotlight/schemas";
 
 /** The backend's own default, restated so the seed and every later page agree on it. */
 const FEED_PAGE_LIMIT = 24;
-/** Spotlight is literally trending ranks 1..3. */
-const SPOTLIGHT_LIMIT = 3;
 
 /**
  * The feed page as the view renders it.
@@ -90,16 +90,13 @@ export default async function FeedShell({
   const [categoriesResult, spotlightResult, feedResult] = await Promise.all([
     listFeedCategories(requestOptions),
     // Skipped entirely when a filter is active — Spotlight does not render there, and paying
-    // for a trending rank nobody will see is the kind of waste that only shows up under load.
+    // for a curated read nobody will see is the kind of waste that only shows up under load.
+    // `no-store`: an admin publishing a change must not wait out a cache entry.
     isDefaultView
-      ? listFeedVideos({ mode: "trending", limit: SPOTLIGHT_LIMIT }, requestOptions)
-      : Promise.resolve<ActionResponse<FeedVideoPage>>({
+      ? listActiveSpotlightVideos({ cache: "no-store" })
+      : Promise.resolve<ActionResponse<PublicSpotlightVideo[]>>({
           success: true,
-          data: {
-            data: [],
-            pagination: { page: 1, limit: SPOTLIGHT_LIMIT, total: 0, totalPages: 0 },
-            rankSeed: "0".repeat(32),
-          },
+          data: [],
         }),
     listFeedVideos({ ...feedFilter, limit: FEED_PAGE_LIMIT }, requestOptions),
   ]);
@@ -118,7 +115,7 @@ export default async function FeedShell({
   const categories: ContentCategory[] = categoriesResult.success ? categoriesResult.data : [];
   const didCategoriesFail = !categoriesResult.success;
   const feedState = toFeedPageViewState(feedResult, selection.mode);
-  const spotlightVideos = spotlightResult.success ? spotlightResult.data.data : [];
+  const spotlightVideos = spotlightResult.success ? spotlightResult.data : [];
 
   const chipRow = (
     <>

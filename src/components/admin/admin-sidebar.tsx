@@ -55,6 +55,13 @@ const ADMIN_NAVIGATION_ITEMS: AdminNavItem[] = [
     inactiveIcon: "/icons/slideshow_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    // Desktop only, same tradeoff as Promotions — video search + three slots is a desk job.
+    href: "/admin/spotlight",
+    label: "Spotlight",
+    activeIcon: "/icons/featured_video_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/featured_video_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     href: "/admin/staff",
     label: "Staff",
     activeIcon: "/icons/group_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
