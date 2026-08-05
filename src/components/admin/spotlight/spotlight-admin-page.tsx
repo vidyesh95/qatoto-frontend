@@ -101,14 +101,16 @@ export default function SpotlightAdminPage() {
   const [searchText, setSearchText] = useState("");
   const [didSaveSucceed, setDidSaveSucceed] = useState(false);
 
-  // Seed the draft once from the server list. Re-seed after a successful save via the
-  // invalidation → fresh query path below.
+  // Seed the draft ONCE when the admin list first arrives. Do not key off
+  // `replaceSlots.isSuccess` — that flag stays true after a save and, combined with
+  // setDraftSlots always producing a new array, re-enters forever (Maximum update depth).
+  // After Save, apply the mutation result directly in onSuccess instead.
+  const serverSlots = slotsQuery.data;
   useEffect(() => {
-    if (listState.status !== "ready") return;
-    if (hasSeededDraft && !replaceSlots.isSuccess) return;
-    setDraftSlots(slotsToDraft(listState.slots));
+    if (serverSlots === undefined || hasSeededDraft) return;
+    setDraftSlots(slotsToDraft(serverSlots));
     setHasSeededDraft(true);
-  }, [listState, hasSeededDraft, replaceSlots.isSuccess]);
+  }, [serverSlots, hasSeededDraft]);
 
   const trimmedSearch = searchText.trim();
   const searchQuery = useQuery({
@@ -160,9 +162,10 @@ export default function SpotlightAdminPage() {
     replaceSlots.mutate(
       { videoIds },
       {
-        onSuccess: () => {
+        onSuccess: (slots) => {
           setDidSaveSucceed(true);
-          setHasSeededDraft(false);
+          setDraftSlots(slotsToDraft(slots));
+          setHasSeededDraft(true);
         },
       },
     );
