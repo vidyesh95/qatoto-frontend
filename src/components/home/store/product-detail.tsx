@@ -28,6 +28,10 @@ import {
   MOCK_PRODUCT_HERO_IMAGES,
   MOCK_PRODUCT_PRICING_TIERS,
 } from "@/mocks/store-mocks";
+import {
+  MOCK_PRODUCT_SELLER_DISPLAY_NAME,
+  MOCK_PRODUCT_SELLER_SLUG,
+} from "@/mocks/store-organization-mocks";
 
 // Product detail (chair) view. UI-only mock — static data baked in, no fetch.
 // Mirrors the Figma spec: image + 360 banner, color picker, price tiers,
@@ -129,11 +133,15 @@ export default function ProductDetail({ slug }: { slug: string }) {
 
             {/* Brand + title + rating */}
             <div className="space-y-1 px-4 pt-2 lg:order-1 lg:px-6">
+              {/* The seller, not the brand line. This used to read "Louis Vuitton
+                  Living Room Chairs" and point at a category slug, which made the one
+                  link a buyer uses to vet a supplier go somewhere else entirely. Once
+                  the PDP is wired this becomes `product.seller.slug`. */}
               <Link
-                href="/store/stacking-chair"
+                href={`/store/organizations/${MOCK_PRODUCT_SELLER_SLUG}`}
                 className="text-xs font-medium tracking-wide text-[#2A76FD]"
               >
-                Louis Vuitton Living Room Chairs
+                {MOCK_PRODUCT_SELLER_DISPLAY_NAME}
               </Link>
               <h1 className="text-sm font-medium tracking-tight">
                 Louis Vuitton Folding Metal Living Room Chair (Finish Color - Red, Pre-assembled)
