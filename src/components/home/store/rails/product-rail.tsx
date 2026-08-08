@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — renders the rail it is handed, no network.
 import SectionHeader from "@/components/home/store/sections/section-header";
 import ProductCard from "@/components/home/store/cards/product-card";
 import type { ProductRail as ProductRailData } from "@/types/store";

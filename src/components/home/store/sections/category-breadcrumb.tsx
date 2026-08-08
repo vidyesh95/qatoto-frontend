@@ -1,3 +1,4 @@
+// TRANSPORT: mock — a hardcoded three-crumb trail. See `catalog-breadcrumb.tsx` for the honest version.
 import Link from "next/link";
 
 // Breadcrumb category trail at the top of the product page. UI-only mock —

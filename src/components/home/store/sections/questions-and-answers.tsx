@@ -1,3 +1,4 @@
+// TRANSPORT: mock — three hardcoded answered questions; ask/answer/like reach nothing.
 import Image from "next/image";
 
 // "Questions and answers" block on the product page. Shows answered buyer

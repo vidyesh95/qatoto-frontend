@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — renders the tiers it is handed; the stepper is local UX only.
 "use client";
 
 import { useState } from "react";

@@ -1,5 +1,3 @@
-"use client";
-
 // TRANSPORT: props-only — derives from a prop, no network.
 //
 // Whether a certificate's validity window has closed. This is the ONE thing on the
@@ -15,6 +13,7 @@
 // So the pill resolves after mount. Until then it renders nothing — the validity dates
 // themselves are server-rendered and always visible, so no information is withheld, and
 // a missing pill is never mistaken for a claim of validity.
+"use client";
 
 import { useEffect, useState } from "react";
 

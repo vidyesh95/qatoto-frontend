@@ -1,18 +1,24 @@
+// TRANSPORT: mock — the five tabs of spec rows are local. NOTHING here reaches a backend yet.
+//
+// "All product details": horizontally scrollable tabs, each rendering spec label/value rows.
+//
+// Wire-able from `GET /store/products/:productSlug` → `specifications[]`, which carries
+// `{key, value, group, position}`. The tabs ARE the groups: `group` is free text on purpose
+// (the useful groupings for a chair and for a transformer share nothing), and `null` means
+// ungrouped, which is every pre-Phase-8 row. So the tab list is derived from the distinct
+// groups present, not hardcoded — and a product with one group gets one tab rather than five
+// empty ones. `brand`, `modelNumber`, `countryOfOriginCode`, `condition` and `unitOfMeasure`
+// are first-class fields on the projection rather than spec rows.
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import Image from "next/image";
 
+import StoreSheet from "@/components/home/store/shared/store-sheet";
+
 // Fraction of the visible tab-row width to advance per chevron click.
 const TAB_SCROLL_FRACTION = 0.6;
-
-// "All product details" bottom sheet for the product page (UI-only phase, no
-// fetch). Horizontally scrollable tabs (Features & Specs, Item details,
-// Measurements, Additional details, Packaging & delivery), each rendering a list of spec label/value
-// rows. Static mock copy for now — real specs come from the backend later; the
-// client only renders them. Bottom sheet on mobile, centered modal on desktop —
-// mirrors TradeProtectionSheet.
 
 type SpecRow = { label: string; value: string };
 type SpecTab = { id: string; label: string; rows: SpecRow[] };
@@ -172,148 +178,107 @@ export default function ProductDetailsSheet({ onClose }: { onClose: () => void }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (keyEvent: KeyboardEvent) => {
-      if (keyEvent.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [onClose]);
-
   const activeTab = SPEC_TABS.find((tab) => tab.id === activeTabId) ?? SPEC_TABS[0];
 
   return (
-    <>
-      <button
-        type="button"
-        aria-label="Close product details"
-        onClick={onClose}
-        className="fixed inset-0 z-55 bg-black/40"
-      />
+    // `isFixedHeight` is what keeps this sheet from resizing as the buyer moves between tabs:
+    // the panels run from three rows to twenty-eight, and a content-sized sheet would grow and
+    // shrink under the cursor mid-comparison.
+    <StoreSheet title="Product details" onClose={onClose} isFixedHeight>
+      {/* Tabs — horizontally scrollable pill row with chevron arrows that appear only when
+          there is hidden content in that direction.
 
-      <div
-        aria-label="All product details"
-        className="fixed inset-x-0 bottom-0 z-60 flex h-[80dvh] flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:h-[80dvh] sm:max-h-160 sm:w-md sm:rounded-2xl sm:border sm:border-black/10"
-      >
-        {/* Drag handle — mobile affordance only. */}
-        <div className="flex justify-center pt-3 sm:hidden">
-          <span className="h-1.5 w-10 rounded-full bg-black/15" />
-        </div>
-
-        <header className="flex shrink-0 items-center gap-2 px-4 py-3">
-          <h2 className="flex-1 text-base font-medium">Product details</h2>
+          `sticky` rather than a second slot on the shell: the tab row has to stay put while the
+          panel below it scrolls, and one caller needing a pinned sub-header is not worth a prop
+          every other sheet would have to read past. The z-index sits above the rows and below
+          the chevron overlays, which are children of this same wrapper. */}
+      <div className="relative sticky top-0 z-10 shrink-0 bg-background">
+        {canScrollBackward && (
           <button
             type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
+            tabIndex={-1}
+            aria-hidden="true"
+            onClick={() => scrollTabsByOnePage(-1)}
+            title="Scroll tabs left"
+            className="absolute top-0 bottom-3 left-0 z-10 flex cursor-pointer items-center bg-linear-to-r from-background via-background to-transparent pr-10 pl-4"
           >
             <Image
-              src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt=""
+              src="/icons/chevron_backward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
               width={24}
               height={24}
+              alt="Navigate tabs back"
             />
           </button>
-        </header>
+        )}
 
-        {/* Tabs — horizontally scrollable pill row with chevron arrows that
-            appear only when there is hidden content in that direction. */}
-        <div className="relative shrink-0">
-          {canScrollBackward && (
-            <button
-              type="button"
-              tabIndex={-1}
-              aria-hidden="true"
-              onClick={() => scrollTabsByOnePage(-1)}
-              title="Scroll tabs left"
-              className="absolute top-0 bottom-3 left-0 z-10 flex cursor-pointer items-center bg-linear-to-r from-background via-background to-transparent pr-10 pl-4"
-            >
-              <Image
-                src="/icons/chevron_backward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                width={24}
-                height={24}
-                alt="Navigate tabs back"
-              />
-            </button>
-          )}
-
-          <div
-            ref={tabsScrollContainerRef}
-            role="toolbar"
-            tabIndex={-1}
-            aria-label="Product detail sections"
-            aria-orientation="horizontal"
-            onKeyDown={handleTabsKeyDown}
-            className="flex scrollbar-none gap-2 overflow-x-auto px-4 pb-3"
-          >
-            {SPEC_TABS.map((tab, tabIndex) => {
-              const isActive = tab.id === activeTabId;
-              return (
-                <button
-                  key={tab.id}
-                  ref={(node) => {
-                    tabButtonRefs.current[tabIndex] = node;
-                  }}
-                  type="button"
-                  aria-pressed={isActive}
-                  tabIndex={tabIndex === focusedTabIndex ? 0 : -1}
-                  onClick={() => {
-                    setActiveTabId(tab.id);
-                    setFocusedTabIndex(tabIndex);
-                  }}
-                  className={`shrink-0 cursor-pointer rounded-lg border px-4 py-2 text-sm whitespace-nowrap transition-colors ${
-                    isActive
-                      ? "border-[#2A76FD] bg-[#D6E3FF]/40 font-medium text-[#191C1C]"
-                      : "border-[#CAC4D0] text-[#6F7979]"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {canScrollForward && (
-            <button
-              type="button"
-              tabIndex={-1}
-              aria-hidden="true"
-              onClick={() => scrollTabsByOnePage(1)}
-              title="Scroll tabs right"
-              className="absolute top-0 right-0 bottom-3 z-10 flex cursor-pointer items-center bg-linear-to-l from-background via-background to-transparent pr-4 pl-10"
-            >
-              <Image
-                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                width={24}
-                height={24}
-                alt="Navigate tabs forward"
-              />
-            </button>
-          )}
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(20px+env(safe-area-inset-bottom))]">
-          <dl>
-            {activeTab.rows.map((row) => (
-              <div
-                key={row.label}
-                className="flex gap-4 border-b border-[#CAC4D0]/60 py-3 last:border-b-0"
+        <div
+          ref={tabsScrollContainerRef}
+          role="toolbar"
+          tabIndex={-1}
+          aria-label="Product detail sections"
+          aria-orientation="horizontal"
+          onKeyDown={handleTabsKeyDown}
+          className="flex scrollbar-none gap-2 overflow-x-auto px-4 pb-3"
+        >
+          {SPEC_TABS.map((tab, tabIndex) => {
+            const isActive = tab.id === activeTabId;
+            return (
+              <button
+                key={tab.id}
+                ref={(node) => {
+                  tabButtonRefs.current[tabIndex] = node;
+                }}
+                type="button"
+                aria-pressed={isActive}
+                tabIndex={tabIndex === focusedTabIndex ? 0 : -1}
+                onClick={() => {
+                  setActiveTabId(tab.id);
+                  setFocusedTabIndex(tabIndex);
+                }}
+                className={`shrink-0 cursor-pointer rounded-lg border px-4 py-2 text-sm whitespace-nowrap transition-colors ${
+                  isActive
+                    ? "border-[#2A76FD] bg-[#D6E3FF]/40 font-medium text-[#191C1C]"
+                    : "border-[#CAC4D0] text-[#6F7979]"
+                }`}
               >
-                <dt className="w-2/5 shrink-0 text-sm font-medium text-[#6F7979]">{row.label}</dt>
-                <dd className="flex-1 text-sm text-[#191C1C]">{row.value}</dd>
-              </div>
-            ))}
-          </dl>
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
+
+        {canScrollForward && (
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-hidden="true"
+            onClick={() => scrollTabsByOnePage(1)}
+            title="Scroll tabs right"
+            className="absolute top-0 right-0 bottom-3 z-10 flex cursor-pointer items-center bg-linear-to-l from-background via-background to-transparent pr-4 pl-10"
+          >
+            <Image
+              src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+              width={24}
+              height={24}
+              alt="Navigate tabs forward"
+            />
+          </button>
+        )}
       </div>
-    </>
+
+      <div className="px-4 pb-5">
+        <dl>
+          {activeTab.rows.map((row) => (
+            <div
+              key={row.label}
+              className="flex gap-4 border-b border-[#CAC4D0]/60 py-3 last:border-b-0"
+            >
+              <dt className="w-2/5 shrink-0 text-sm font-medium text-[#6F7979]">{row.label}</dt>
+              <dd className="flex-1 text-sm text-[#191C1C]">{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </StoreSheet>
   );
 }

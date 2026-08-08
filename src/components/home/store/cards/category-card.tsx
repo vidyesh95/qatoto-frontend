@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — renders one category tile it is handed, no network.
 import Image from "next/image";
 import Link from "next/link";
 import type { StoreCategory } from "@/types/store";

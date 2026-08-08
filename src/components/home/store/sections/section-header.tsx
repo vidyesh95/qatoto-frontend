@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — a title and a link, no network.
 import Image from "next/image";
 import Link from "next/link";
 

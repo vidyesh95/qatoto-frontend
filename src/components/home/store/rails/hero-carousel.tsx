@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — client island for rotation only; renders the slides it is handed.
 "use client";
 
 import Image from "next/image";

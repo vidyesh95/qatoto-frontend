@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — renders one message it is handed, no network.
 import Image from "next/image";
 
 import type { ChatMessage } from "@/components/home/store/sheets/manufacturer-chat-sheet/chat-message";

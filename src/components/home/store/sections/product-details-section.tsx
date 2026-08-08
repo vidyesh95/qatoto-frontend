@@ -1,3 +1,4 @@
+// TRANSPORT: mock — hardcoded "in the box" and key features.
 "use client";
 
 import { useState } from "react";

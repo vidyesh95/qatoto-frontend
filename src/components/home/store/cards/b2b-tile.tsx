@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — renders one link tile it is handed, no network.
 import Image from "next/image";
 import Link from "next/link";
 import type { B2BLink } from "@/types/store";

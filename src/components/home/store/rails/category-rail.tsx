@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — renders the categories it is handed, no network.
 import SectionHeader from "@/components/home/store/sections/section-header";
 import CategoryCard from "@/components/home/store/cards/category-card";
 import type { StoreCategory } from "@/types/store";

@@ -1,3 +1,4 @@
+// TRANSPORT: server-fetch — awaits `getPathway`, via the LEGACY `src/lib/store.ts`.
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";

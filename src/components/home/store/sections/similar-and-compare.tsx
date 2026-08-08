@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — two buttons that open sheets; holds no data itself.
 "use client";
 
 import { useState } from "react";

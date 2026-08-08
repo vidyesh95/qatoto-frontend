@@ -1,3 +1,5 @@
+// TRANSPORT: server-fetch — awaits `getStoreHome`. NOTE the legacy getter: `src/lib/store.ts`
+// reads an unset `QATOTO_STORE_API_URL` and silently falls back to mocks.
 import { getStoreHome } from "@/lib/store";
 import HeroCarousel from "@/components/home/store/rails/hero-carousel";
 import CategoryRail from "@/components/home/store/rails/category-rail";

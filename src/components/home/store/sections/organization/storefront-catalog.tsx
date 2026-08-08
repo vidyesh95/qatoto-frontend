@@ -11,100 +11,13 @@
 //    infer that from the number alone, and guessing wrong produces a 422 at add time,
 //    which is why the backend ships the flag.
 
-import Image from "next/image";
 import Link from "next/link";
 
-import type { StoreProductCard } from "@/lib/store/organizations.schemas";
-import {
-  formatCentsLabel,
-  SAMPLE_POLICY_LABELS,
-  STOCK_STATE_LABELS,
-} from "@/lib/store/organizations.schemas";
+import CatalogProductCard from "@/components/home/store/cards/catalog-product-card";
 import StorefrontSection from "@/components/home/store/sections/organization/storefront-section";
+import type { StoreProductCard } from "@/lib/store/organizations.schemas";
 
 const FEATURED_PRODUCT_COUNT = 4;
-
-function formatLeadTimeLabel(product: StoreProductCard): string | null {
-  if (product.leadTimeMinDays === null && product.leadTimeMaxDays === null) return null;
-  if (product.leadTimeMinDays !== null && product.leadTimeMaxDays !== null) {
-    return `Ships in ${product.leadTimeMinDays}–${product.leadTimeMaxDays} days`;
-  }
-  const knownLeadTime = product.leadTimeMinDays ?? product.leadTimeMaxDays;
-  return `Ships in about ${knownLeadTime} days`;
-}
-
-function CatalogProductCard({ product }: { product: StoreProductCard }) {
-  const leadTimeLabel = formatLeadTimeLabel(product);
-
-  return (
-    <Link
-      href={`/store/product/${product.publicSlug}`}
-      className="group flex flex-col rounded-xl outline -outline-offset-1 outline-[#E0E3E3] transition-colors hover:outline-[#2A76FD]"
-    >
-      <div className="relative aspect-square w-full overflow-hidden rounded-t-xl bg-[#F5F5F5]">
-        {product.mainImageUrl && (
-          <Image
-            src={product.mainImageUrl}
-            fill
-            sizes="(min-width: 1024px) 264px, 45vw"
-            alt={product.title}
-            className="object-cover transition duration-300 group-hover:scale-105"
-          />
-        )}
-        {product.stockState !== "in_stock" && (
-          <span className="absolute top-2 left-2 rounded bg-white/90 px-2 py-0.5 text-[11px] leading-4 font-medium tracking-[0.5px] text-[#4A6364]">
-            {STOCK_STATE_LABELS[product.stockState]}
-          </span>
-        )}
-      </div>
-
-      <div className="flex flex-1 flex-col gap-1 px-2.5 py-2">
-        <p className="line-clamp-2 text-sm leading-5 font-medium text-[#191C1C]">{product.title}</p>
-
-        <div className="flex flex-wrap items-baseline gap-x-1.5">
-          {product.hasVariants && (
-            <span className="text-[11px] leading-4 text-[#6F7979]">From</span>
-          )}
-          <span className="text-sm leading-5 font-medium text-[#191C1C]">
-            {formatCentsLabel(product.priceInCents, product.currency)}
-          </span>
-          {product.compareAtPriceInCents !== null && (
-            <span className="text-[11px] leading-4 text-[#6F7979] line-through">
-              {formatCentsLabel(product.compareAtPriceInCents, product.currency)}
-            </span>
-          )}
-        </div>
-
-        {product.minimumOrderQuantity !== null && (
-          <p className="text-[11px] leading-4 text-[#6F7979]">
-            Minimum order {product.minimumOrderQuantity.toLocaleString("en-US")} units
-          </p>
-        )}
-
-        {leadTimeLabel && <p className="text-[11px] leading-4 text-[#6F7979]">{leadTimeLabel}</p>}
-
-        <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
-          {product.reviewMetrics.averageRating !== null && (
-            <span className="inline-flex items-center gap-0.5 rounded-sm bg-[#4A6364] px-1 py-0.5 text-[11px] leading-4 font-medium text-white">
-              {product.reviewMetrics.averageRating.toFixed(1)}
-              <span aria-hidden>★</span>
-            </span>
-          )}
-          {product.samplePolicy !== "unavailable" && (
-            <span className="rounded bg-[#F2F4F4] px-1.5 py-0.5 text-[11px] leading-4 font-medium tracking-[0.4px] text-[#00696E]">
-              {SAMPLE_POLICY_LABELS[product.samplePolicy]}
-            </span>
-          )}
-          {product.variantCount > 0 && (
-            <span className="text-[11px] leading-4 text-[#6F7979]">
-              {product.variantCount} options
-            </span>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}
 
 export default function StorefrontCatalog({
   products,

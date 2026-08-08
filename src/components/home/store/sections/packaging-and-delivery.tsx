@@ -1,3 +1,4 @@
+// TRANSPORT: mock — hardcoded spec rows and lead-time bands.
 import Image from "next/image";
 
 // "Packaging and delivery" block on the product page. Collapsed by default

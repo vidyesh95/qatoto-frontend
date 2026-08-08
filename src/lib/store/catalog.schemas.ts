@@ -1,0 +1,220 @@
+// TRANSPORT: props-only — schemas and display maps, no network of their own.
+//
+// Client contract for the public catalog: `GET /store/categories`,
+// `GET /store/categories/:slug` and `GET /store/search`.
+//
+// Every field below is TRANSCRIBED from the backend projection, not designed here:
+// `StoreCategoryProjection` / `StoreCategoryFacets` in `store-catalog.service.ts:42,196`
+// and `StoreSearchHit` in `store-search.service.ts:107`. `.strip()` throughout, so a
+// backend minor release that adds a field is ignored rather than fatal.
+//
+// TWO THINGS THIS FILE REFUSES TO MODEL, AND THE REASONS MATTER:
+//
+//  1. THERE IS NO ANCESTOR TRAIL. `getCategoryBySlug` returns `{ category, children }`
+//     and nothing above the current node, so a breadcrumb can only be inferred from the
+//     visitor's own URL. That inference is fenced in `catalog-breadcrumb.tsx`, which
+//     refuses to render a trail whose last segment disagrees with the resolved category —
+//     otherwise `/store/categories/nonsense/chairs` prints a hierarchy that does not
+//     exist. A real `ancestors[]` is a ~15-line backend addition and is filed as an ask.
+//  2. THE FILTER SET IS THE BACKEND'S QUERY SCHEMA, VERBATIM. `SearchQuerySchema`
+//     (`store.controller.ts:43`) is `.strict()`, so an extra param is a **422**, not a
+//     silently ignored value. STORE_STRUCTURE §7.3 lists eleven filters; six exist. Price
+//     range, lead time, condition and verification state are recorded as backend asks and
+//     are NOT chips — a control that 422s is worse than a missing one.
+
+import { z } from "zod";
+
+import { StoreProductCardSchema } from "@/lib/store/organizations.schemas";
+import { CursorPageSchema, cursorPageOf, PROVIDER_KINDS } from "@/lib/store/shared.schemas";
+
+// --- Categories -------------------------------------------------------------
+
+/**
+ * One node of the category tree.
+ *
+ * `parentCategoryId` is an ID and not a slug, so it cannot be turned into a link without
+ * a second read — which is exactly why the ancestor trail has to come from the server.
+ * `siblingOrder` is the server's ordering; never re-sort a fetched page client-side.
+ */
+export const StoreCategorySchema = z
+  .object({
+    id: z.string(),
+    slug: z.string(),
+    name: z.string(),
+    parentCategoryId: z.string().nullable(),
+    siblingOrder: z.number().int(),
+    imageUrl: z.string().nullable(),
+  })
+  .strip();
+
+export const StoreCategoryListSchema = z.object({ items: z.array(StoreCategorySchema) }).strip();
+
+/**
+ * A facet bucket: the value as the backend spells it, plus how many rows carry it.
+ *
+ * The count is the honest denominator for the chip label. A chip whose count the search
+ * cannot actually filter on is not shipped — see the header note.
+ */
+export const StoreFacetBucketSchema = z
+  .object({
+    value: z.string(),
+    count: z.number().int(),
+  })
+  .strip();
+
+/**
+ * The four facets `getCategoryFacets` computes.
+ *
+ * `priceRangesInCents` is a single bucket describing the whole category, not a histogram:
+ * min, max and how many listings are priced at all. Both ends are nullable because a
+ * category whose every listing is quote-only has no price range — that is an absence, and
+ * rendering it as `$0` would advertise free goods.
+ */
+export const StoreCategoryFacetsSchema = z
+  .object({
+    sellerCountryCodes: z.array(StoreFacetBucketSchema),
+    stockStates: z.array(StoreFacetBucketSchema),
+    samplePolicies: z.array(StoreFacetBucketSchema),
+    priceRangesInCents: z
+      .object({
+        minInCents: z.number().int().nullable(),
+        maxInCents: z.number().int().nullable(),
+        count: z.number().int(),
+      })
+      .strip(),
+  })
+  .strip();
+
+/**
+ * `GET /store/categories/:slug`.
+ *
+ * Note the shape: a paginated PRODUCT GRID with facets, plus the node's children. The
+ * mock this replaces rendered three rails of four products per category, which was an
+ * artifact of having no backend — a rail is a curated strip and a category is a filtered
+ * result set, and the two are not the same control.
+ */
+export const StoreCategoryDetailSchema = z
+  .object({
+    category: StoreCategorySchema,
+    children: z.array(StoreCategorySchema),
+    facets: StoreCategoryFacetsSchema,
+    products: z
+      .object({
+        items: z.array(StoreProductCardSchema),
+        page: CursorPageSchema,
+      })
+      .strip(),
+  })
+  .strip();
+
+// --- Search -----------------------------------------------------------------
+
+/**
+ * What a search document can be. Two kinds, and `organization` is NOT among them.
+ *
+ * A seller organization is not indexed, so there is no supplier directory browse — the
+ * store's own "Factories worldwide" tile has nothing behind it. Filed as a backend ask;
+ * do not fake it by searching products and grouping by seller, which would rank sellers
+ * by whichever of their listings happened to match.
+ */
+export const SEARCH_DOCUMENT_KINDS = ["product", "provider_offering"] as const;
+
+export type SearchDocumentKind = (typeof SEARCH_DOCUMENT_KINDS)[number];
+
+/**
+ * `relevance` and `discovery` are SEPARATE sorts, never blended.
+ *
+ * The backend is explicit that relevance never reads the ranking score and discovery
+ * never reads `ts_rank_cd`. A combined sort would be a third, explicitly named option or
+ * it is not offered — so this tuple has exactly two members and no default beyond the
+ * backend's own.
+ */
+export const SEARCH_SORTS = ["relevance", "discovery"] as const;
+
+export type SearchSort = (typeof SEARCH_SORTS)[number];
+
+/**
+ * One search hit, product or offering, in ONE row shape.
+ *
+ * The flat shape is the backend's: a search document is denormalized on purpose so one
+ * index serves both entities. Consequences the UI must respect rather than paper over —
+ * `priceInCents` and `currency` are BOTH nullable and travel together (a quote-only
+ * offering has neither, and a price without its currency is unrenderable), `categorySlug`
+ * is null on an offering, and `providerKind` is null on a product. Branch on
+ * `documentKind`; never test a nullable field to guess which kind you have.
+ *
+ * `relevanceScore` is diagnostic only. Do not render it, do not sort by it client-side —
+ * the server already ordered the page, and re-sorting a keyset page breaks the cursor.
+ */
+export const StoreSearchHitSchema = z
+  .object({
+    documentKind: z.enum(SEARCH_DOCUMENT_KINDS),
+    entityId: z.string(),
+    publicSlug: z.string(),
+    title: z.string(),
+    summary: z.string().nullable(),
+    organizationSlug: z.string(),
+    organizationDisplayName: z.string(),
+    organizationCountryCode: z.string(),
+    categorySlug: z.string().nullable(),
+    providerKind: z.enum(PROVIDER_KINDS).nullable(),
+    priceInCents: z.number().int().nullable(),
+    currency: z.string().nullable(),
+    minimumOrderQuantity: z.number().int().nullable(),
+    relevanceScore: z.number().nullable(),
+  })
+  .strip();
+
+export const StoreSearchPageSchema = cursorPageOf(StoreSearchHitSchema);
+
+// --- Filter inputs ----------------------------------------------------------
+
+/**
+ * The search filter, matching `SearchQuerySchema` key for key.
+ *
+ * camelCase keys because the backend's query keys are camelCase and its enum VALUES are
+ * snake_case — two different casings in one URL, on purpose, and neither is a mistake to
+ * be corrected. Adding a key here that the backend does not accept turns a chip into a
+ * 422.
+ */
+export interface StoreSearchFilter {
+  readonly query?: string;
+  readonly category?: string;
+  readonly sellerCountryCode?: string;
+  readonly providerKind?: string;
+  readonly documentKind?: SearchDocumentKind;
+  readonly minOrderQuantityMax?: number;
+  readonly sort?: SearchSort;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+/** `GET /store/categories/:slug` takes only a page window — the facets are not yet inputs. */
+export interface CategoryDetailFilter {
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+/** `GET /store/categories` — root level when `parentCategoryId` is omitted. */
+export interface CategoryListFilter {
+  readonly parentCategoryId?: string;
+}
+
+export type StoreCategory = z.infer<typeof StoreCategorySchema>;
+export type StoreCategoryFacets = z.infer<typeof StoreCategoryFacetsSchema>;
+export type StoreFacetBucket = z.infer<typeof StoreFacetBucketSchema>;
+export type StoreCategoryDetail = z.infer<typeof StoreCategoryDetailSchema>;
+export type StoreSearchHit = z.infer<typeof StoreSearchHitSchema>;
+export type StoreSearchPage = z.infer<typeof StoreSearchPageSchema>;
+
+// --- Display maps -----------------------------------------------------------
+
+export const SEARCH_DOCUMENT_KIND_LABELS: Record<SearchDocumentKind, string> = {
+  product: "Products",
+  provider_offering: "Services",
+};
+
+export const SEARCH_SORT_LABELS: Record<SearchSort, string> = {
+  relevance: "Best match",
+  discovery: "Trending",
+};

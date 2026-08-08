@@ -1,3 +1,4 @@
+// TRANSPORT: mock — the store link is real; "Chat now" opens the mock chat sheet.
 "use client";
 
 import { useState } from "react";

@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — renders a rating string it is handed, no network.
 // Compact dark rating pill (e.g. "4.8 ★").
 export default function RatingBadge({ value }: { value: string }) {
   return (

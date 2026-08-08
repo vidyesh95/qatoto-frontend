@@ -1,16 +1,36 @@
+// TRANSPORT: mock — the addresses live in the caller's `useState` and evaporate on unmount.
+//
+// Two views: a list of saved addresses, and a form to add or edit one.
+//
+// WIRE-ABLE, WITH ONE DECISION ATTACHED. The routes exist —
+// `GET/POST/PATCH /commerce/organizations/:organizationId/addresses` with a `delivery` address
+// kind, and a server-owned cap of TEN per kind, not the five below. But addresses belong to an
+// ORGANIZATION, not a user: there is no user-scoped address table anywhere, because §4.11 derives
+// order parties and thread participants from organization memberships.
+//
+// That collides with `commerce_organization.tradeState`, which starts `pending` and only a staff
+// decision makes `active` — so a brand-new buyer's first saved address would sit behind human
+// verification. §14 settled it: a pending organization is AUTO-PROVISIONED on the first buyer
+// action that needs one, with the caller as `owner`, and trust gates stay where they earn
+// something (checkout confirm, RFQ broadcast) rather than in front of one tap.
+//
+// The form is also thinner than the wire. The backend takes normalized
+// country/region/locality/postal plus ENCRYPTED street lines, recipient name and phone; this form
+// collects a name, a pincode and one free-text line, and has no country field at all — which
+// cannot address an international delivery. `label: HOME | WORK | OTHER` is a personal-address
+// idiom with no wire equivalent; the wire's `addressKind` is
+// `billing | registered | warehouse | pickup | return | delivery`.
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import Image from "next/image";
 
+import StoreSheet from "@/components/home/store/shared/store-sheet";
 import type { Address, AddressLabel } from "@/types/store";
 
-// Address management bottom sheet for the product page (UI-only phase, no fetch).
-// Two modes: a list of saved addresses (select one, edit, or add) and a form
-// (add a new address or edit an existing one). Backed by parent state — when
-// the backend phase starts these callbacks call the Express API instead.
-
+// Five here, ten on the server. Not a bug worth carrying forward — the client cap exists only to
+// disable the add button, and the server's is the one that decides.
 export const MAX_SAVED_ADDRESSES = 5;
 
 const ADDRESS_LABELS: AddressLabel[] = ["HOME", "WORK", "OTHER"];
@@ -209,127 +229,82 @@ export default function AddressSheet({
   onSaveAddress: (values: Omit<Address, "id">, editingId: string | null) => void;
   onClose: () => void;
 }) {
-  const panelRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<SheetMode>({ view: "list" });
-
-  useEffect(() => {
-    const handleKeyDown = (keyEvent: KeyboardEvent) => {
-      if (keyEvent.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [onClose]);
 
   const isAtAddressLimit = addresses.length >= MAX_SAVED_ADDRESSES;
   const isFormView = mode.view === "form";
 
+  const sheetTitle =
+    mode.view === "form"
+      ? mode.editing
+        ? "Edit address"
+        : "Add new address"
+      : "Select delivery address";
+
   return (
-    <>
-      <button
-        type="button"
-        aria-label="Close addresses"
-        onClick={onClose}
-        className="fixed inset-0 z-55 bg-black/40"
-      />
-
-      <div
-        ref={panelRef}
-        aria-label="Delivery addresses"
-        className="fixed inset-x-0 bottom-0 z-60 flex max-h-[85dvh] flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:h-max sm:max-h-[80dvh] sm:w-md sm:rounded-2xl sm:border sm:border-black/10"
-      >
-        {/* Drag handle — mobile affordance only. */}
-        <div className="flex justify-center pt-3 sm:hidden">
-          <span className="h-1.5 w-10 rounded-full bg-black/15" />
-        </div>
-
-        <header className="flex shrink-0 flex-row items-center gap-2 px-4 py-3">
-          {isFormView && (
-            <button
-              type="button"
-              onClick={() => setMode({ view: "list" })}
-              aria-label="Back to address list"
-              className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={24}
-                height={24}
-              />
-            </button>
-          )}
-          <h2 className="flex-1 text-base font-medium">
-            {mode.view === "form"
-              ? mode.editing
-                ? "Edit address"
-                : "Add new address"
-              : "Select delivery address"}
-          </h2>
+    <StoreSheet
+      title={sheetTitle}
+      onClose={onClose}
+      leadingAction={
+        isFormView ? (
           <button
             type="button"
-            onClick={onClose}
-            aria-label="Close"
+            onClick={() => setMode({ view: "list" })}
+            aria-label="Back to address list"
             className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
           >
             <Image
-              src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+              src="/icons/arrow_back_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
               alt=""
               width={24}
               height={24}
             />
           </button>
-        </header>
+        ) : undefined
+      }
+    >
+      <div>
+        {mode.view === "list" ? (
+          <div className="flex flex-col gap-3 px-4 pb-6">
+            {addresses.map((address) => (
+              <AddressRadio
+                key={address.id}
+                address={address}
+                isSelected={address.id === selectedAddressId}
+                onSelect={() => {
+                  onSelectAddress(address.id);
+                  onClose();
+                }}
+                onEdit={() => setMode({ view: "form", editing: address })}
+              />
+            ))}
 
-        <div className="min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
-          {mode.view === "list" ? (
-            <div className="flex flex-col gap-3 px-4 pb-6">
-              {addresses.map((address) => (
-                <AddressRadio
-                  key={address.id}
-                  address={address}
-                  isSelected={address.id === selectedAddressId}
-                  onSelect={() => {
-                    onSelectAddress(address.id);
-                    onClose();
-                  }}
-                  onEdit={() => setMode({ view: "form", editing: address })}
-                />
-              ))}
+            <button
+              type="button"
+              disabled={isAtAddressLimit}
+              onClick={() => setMode({ view: "form", editing: null })}
+              className="rounded-full border border-dashed border-[#6F7979] px-4 py-2.5 text-sm font-medium text-[#00696E] disabled:opacity-40"
+            >
+              + Add new address
+            </button>
 
-              <button
-                type="button"
-                disabled={isAtAddressLimit}
-                onClick={() => setMode({ view: "form", editing: null })}
-                className="rounded-full border border-dashed border-[#6F7979] px-4 py-2.5 text-sm font-medium text-[#00696E] disabled:opacity-40"
-              >
-                + Add new address
-              </button>
-
-              <p className="text-center text-[11px] text-[#6F7979]">
-                {isAtAddressLimit
-                  ? `You can save up to ${MAX_SAVED_ADDRESSES} addresses.`
-                  : `${addresses.length} of ${MAX_SAVED_ADDRESSES} addresses saved.`}
-              </p>
-            </div>
-          ) : (
-            <AddressForm
-              initial={mode.editing}
-              onCancel={() => setMode({ view: "list" })}
-              onSubmit={(values) => {
-                onSaveAddress(values, mode.editing?.id ?? null);
-                setMode({ view: "list" });
-              }}
-            />
-          )}
-        </div>
+            <p className="text-center text-[11px] text-[#6F7979]">
+              {isAtAddressLimit
+                ? `You can save up to ${MAX_SAVED_ADDRESSES} addresses.`
+                : `${addresses.length} of ${MAX_SAVED_ADDRESSES} addresses saved.`}
+            </p>
+          </div>
+        ) : (
+          <AddressForm
+            initial={mode.editing}
+            onCancel={() => setMode({ view: "list" })}
+            onSubmit={(values) => {
+              onSaveAddress(values, mode.editing?.id ?? null);
+              setMode({ view: "list" });
+            }}
+          />
+        )}
       </div>
-    </>
+    </StoreSheet>
   );
 }

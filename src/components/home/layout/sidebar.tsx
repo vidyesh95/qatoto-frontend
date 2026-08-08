@@ -24,6 +24,23 @@ const ICON_PATHS = {
     active: "/icons/local_mall_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  // `static` because the only filled `search` asset is tinted teal (`00696E`), and using it
+  // as the active state would make one entry the wrong colour rather than the right weight.
+  storeSearch: {
+    static: "/icons/search_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  category: {
+    active: "/icons/category_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/category_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  package: {
+    active: "/icons/package_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/package_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  requestQuote: {
+    active: "/icons/request_quote_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/request_quote_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   science: {
     active: "/icons/science_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/science_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
@@ -96,6 +113,12 @@ const ROUTES = {
   home: "/",
   anime: "/anime",
   store: "/store",
+  storeSearch: "/store/search",
+  storeCategories: "/store/categories",
+  storeProviders: "/store/providers",
+  storePathways: "/store/pathways",
+  storeRfqs: "/store/rfqs",
+  serviceEngagements: "/service-engagements",
   researchAndDevelopment: "/research-and-development",
   problemMap: "/research-and-development/problem-map",
   knowledgeHub: "/research-and-development/knowledge-hub",
@@ -336,6 +359,29 @@ const NAVIGATION_CONFIG: NavSection[] = [
       { path: ROUTES.talent, label: "Talent", iconKey: "group" },
       { path: ROUTES.funding, label: "Funding", iconKey: "paid" },
       { path: ROUTES.projectImmortal, label: "PROJECT IMMORTAL", iconKey: "selfImprovement" },
+    ],
+    hasDivider: true,
+  },
+  {
+    // The store's own sub-section, modelled on "Research and Development" above.
+    //
+    // It did not exist: the store had ONE top-level entry, and its buyer surfaces were
+    // scattered through "Personalisation" beside Wishlist and Library. Search, categories,
+    // the provider directory and the RFQ queues are not personalisation — they are the
+    // store's navigation, and a buyer looking for them under a heading about their own
+    // preferences will not find them. Cart and Orders stay where they are: those genuinely
+    // are the visitor's own things.
+    title: "Store",
+    items: [
+      { path: ROUTES.storeSearch, label: "Search the store", iconKey: "storeSearch" },
+      { path: ROUTES.storeCategories, label: "Categories", iconKey: "category" },
+      { path: ROUTES.storePathways, label: "Pathways", iconKey: "package" },
+      { path: ROUTES.storeProviders, label: "Trade services", iconKey: "localShipping" },
+      // ADDED LATE, and their absence was a real gap: `/store/rfqs` shipped with no way to reach it by
+      // clicking, which is the definition of unreviewable. The section comment above already claimed the RFQ
+      // queues lived here.
+      { path: ROUTES.storeRfqs, label: "Your requests", iconKey: "requestQuote" },
+      { path: ROUTES.serviceEngagements, label: "Service engagements", iconKey: "localShipping" },
     ],
     hasDivider: true,
   },

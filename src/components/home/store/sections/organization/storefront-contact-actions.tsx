@@ -1,5 +1,3 @@
-"use client";
-
 // TRANSPORT: mock — opens the mock chat sheet. NOTHING here reaches a backend.
 //
 // The contact rail. Deliberately the only "use client" component on this page: the
@@ -10,6 +8,7 @@
 // this rail is wired it should render whatever affordance the backend hands it
 // (`contactAffordance`: chat / ask_question / sign_in) rather than deciding for itself
 // and putting a button in front of a wall.
+"use client";
 
 import { useState } from "react";
 

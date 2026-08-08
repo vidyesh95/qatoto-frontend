@@ -1,3 +1,6 @@
+// TRANSPORT: server-fetch — awaits `getCategory`, via the LEGACY `src/lib/store.ts`. Superseded by
+// `catalog-category-page.tsx`, which parses `GET /store/categories/:slug` properly; this body still
+// serves the retired `/store/[...slug]` shape and goes away with it.
 import { notFound } from "next/navigation";
 import { getCategory, getStoreHome } from "@/lib/store";
 import HeroCarousel from "@/components/home/store/rails/hero-carousel";

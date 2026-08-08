@@ -1,13 +1,21 @@
+// TRANSPORT: mock — the six products below are local. NOTHING here reaches a backend yet.
+//
+// Wire-able now, and the endpoint exists: `GET /store/products/:productSlug/companions` returns
+// relation-graph companions grouped by `relationKind`, each carrying a full product card and a
+// `sourceKind`. Two rules come with it and neither is optional:
+//
+//   `sourceKind` GATES THE LANGUAGE. `seller_declared` is a CLAIM — a seller saying its bolt
+//   fits a given bicycle — and may drive discovery but must never render as verified
+//   compatibility. Only `moderator_curated` earns confirmatory wording. Fitment is a safety
+//   claim in every category where it matters, so "compatible" is not a synonym for "related".
+//
+//   THE ROWS ARE PRODUCT CARDS, so this grid should render `CatalogProductCard` rather than the
+//   bespoke tile below — which has no id, no href, and a price as a display string.
 "use client";
-
-import { useEffect } from "react";
 
 import Image from "next/image";
 
-// "View similar" bottom sheet for the product page (UI-only phase, no fetch).
-// Shows products close to the one being viewed as a two-column grid. What counts
-// as "similar" is ranked by the backend later (heavy work, never the client's);
-// here it's static mock data with the same chrome as the other product sheets.
+import StoreSheet from "@/components/home/store/shared/store-sheet";
 
 type SimilarProduct = {
   name: string;
@@ -56,84 +64,35 @@ const SIMILAR_PRODUCTS: SimilarProduct[] = [
 ];
 
 export default function SimilarProductsSheet({ onClose }: { onClose: () => void }) {
-  useEffect(() => {
-    const handleKeyDown = (keyEvent: KeyboardEvent) => {
-      if (keyEvent.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [onClose]);
-
   return (
-    <>
-      <button
-        type="button"
-        aria-label="Close similar products"
-        onClick={onClose}
-        className="fixed inset-0 z-55 bg-black/40"
-      />
+    <StoreSheet title="Similar products" onClose={onClose}>
+      <p className="px-4 pb-2 text-xs text-[#6F7979]">
+        Other chairs buyers compared with this one.
+      </p>
 
-      <div
-        aria-label="Similar products"
-        className="fixed inset-x-0 bottom-0 z-60 flex max-h-[85dvh] flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:h-max sm:max-h-[80dvh] sm:w-md sm:rounded-2xl sm:border sm:border-black/10"
-      >
-        {/* Drag handle — mobile affordance only. */}
-        <div className="flex justify-center pt-3 sm:hidden">
-          <span className="h-1.5 w-10 rounded-full bg-black/15" />
-        </div>
-
-        <header className="flex shrink-0 items-center gap-2 px-4 py-3">
-          <h2 className="flex-1 text-base font-medium">Similar products</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
-          >
-            <Image
-              src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt=""
-              width={24}
-              height={24}
-            />
+      <div className="grid grid-cols-2 gap-3 px-4 pb-4">
+        {SIMILAR_PRODUCTS.map((product) => (
+          <button key={product.name} type="button" className="flex flex-col text-left">
+            <div className="relative aspect-3/4 w-full overflow-hidden rounded-xl bg-[#F5F5F5]">
+              <Image
+                src={product.imageSrc}
+                fill
+                sizes="(min-width: 640px) 220px, 45vw"
+                alt={product.name}
+                className="object-cover"
+              />
+            </div>
+            <p className="mt-1.5 truncate text-sm font-medium text-[#191C1C]">{product.name}</p>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-[#191C1C]">{product.price}</span>
+              <span className="inline-flex items-center gap-0.5 text-xs text-[#4A6364]">
+                {product.rating}
+                <span aria-hidden>★</span>
+              </span>
+            </div>
           </button>
-        </header>
-
-        <p className="shrink-0 px-4 pb-2 text-xs text-[#6F7979]">
-          Other chairs buyers compared with this one.
-        </p>
-
-        <div className="grid min-h-0 flex-1 grid-cols-2 gap-3 overflow-y-auto px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
-          {SIMILAR_PRODUCTS.map((product) => (
-            <button key={product.name} type="button" className="flex flex-col text-left">
-              <div className="relative aspect-3/4 w-full overflow-hidden rounded-xl bg-[#F5F5F5]">
-                <Image
-                  src={product.imageSrc}
-                  fill
-                  sizes="(min-width: 640px) 220px, 45vw"
-                  alt={product.name}
-                  className="object-cover"
-                />
-              </div>
-              <p className="mt-1.5 truncate text-sm font-medium text-[#191C1C]">{product.name}</p>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-[#191C1C]">{product.price}</span>
-                <span className="inline-flex items-center gap-0.5 text-xs text-[#4A6364]">
-                  {product.rating}
-                  <span aria-hidden>★</span>
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
+        ))}
       </div>
-    </>
+    </StoreSheet>
   );
 }

@@ -1,3 +1,4 @@
+// TRANSPORT: mock — two addresses in `useState` that evaporate on unmount.
 "use client";
 
 import { useState } from "react";

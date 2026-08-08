@@ -21,10 +21,31 @@ trade-service connectors.
 > authoring surface. Authenticated buyer procurement remains in the `(home)` shell; seller and
 > service-provider work queues belong in `(studio)`.
 >
-> **Status:** the store is a high-fidelity **mock prototype**. It has six app-route files, 53 store
-> components, 37 mock category slugs, five pathways, and one static product detail page. No buyer
-> catalog contract is safely parsed; cart, orders, logistics, inquiry, chat, reviews, delivery, and
-> trade protection are mock or placeholder UI.
+> **Status:** the store is a high-fidelity **mock prototype with one wired slice**. It has seven
+> app-route files, **67** store components, 37 mock category slugs, five pathways, and one static
+> product detail page. Cart, orders, logistics, inquiry, chat, reviews, delivery and trade protection
+> are mock or placeholder UI.
+>
+> **The one exception, and it is the reference implementation for everything else:** the organization
+> storefront (`/store/organizations/[organizationSlug]`) is server-fetched and **safely parsed** —
+> `src/lib/store/organizations.schemas.ts` takes `unknown` through `.strip()` schemas with the wire
+> enums verbatim, and `organization-storefront.tsx` plus its fourteen `sections/organization/*`
+> children carry real `TRANSPORT:` banners. Copy that file's shape when wiring the catalog; do not
+> invent a second discipline.
+>
+> **What still stands between the store and the backend, measured rather than assumed:**
+>
+> - `src/lib/store.ts` reads `QATOTO_STORE_API_URL`, which is **unset**, so all nine of its getters
+>   fall through to mocks on every request. The seller surface reads a _different_ variable,
+>   `NEXT_PUBLIC_API_URL` (`src/lib/api.ts:2`). §5.1's instruction to retire the former is the
+>   first task, because until it is done no wiring can be observed at all.
+> - Eight of nine getters go through `storeFetch<T>`, which annotates `res.json()` as `T` — a type
+>   assertion in disguise, and a Pattern 2 violation. Only `getOrganizationStorefront` uses
+>   `storeFetchUnknown` + Zod.
+> - The backend it should be talking to is **fully built**: `docs/STORE_BACKEND_STRUCTURE.md` Phases
+>   0–14 ship 18 public `/store/*` reads, ~110 `/commerce/*` routes and 14 `/products/*` routes,
+>   verified against the backend source. The store is not blocked on the backend; it is unwired.
+>   Appendix A23–A27 there records the only five real gaps found from this side.
 
 ---
 
@@ -272,30 +293,41 @@ There is no Next.js API route or Server Action for commerce business logic.
 Every network payload starts as `unknown` and is parsed by a Zod `.strip()` schema. Types are
 inferred from schemas; `src/types/store.ts` is removed after all imports migrate.
 
+**Do not copy the illustration that used to sit here — it named fields the backend does not send.**
+`StoreProductCardSchema` already exists, shipped, in `src/lib/store/organizations.schemas.ts:186`,
+and it matches `StoreProductCardProjection` in the backend's `store-catalog.service.ts:73`
+field-for-field: `mainImageUrl` (not `imageUrl`), `priceInCents` + `compareAtPriceInCents` (not
+`minimumUnitPriceInCents`), `minimumOrderQuantity` **nullable**, plus `brand`, `stockState`,
+`hasVariants`, `variantCount`, `condition`, `samplePolicy`, `leadTimeMinDays`, `leadTimeMaxDays`,
+`seller: StoreSellerSummarySchema`, `category`, `reviewMetrics`. `currency` carries no `.length(3)`
+because the backend does not constrain it there and a stricter client schema rejects a payload the
+server considers valid.
+
+**Extend that file; do not write a second card schema.** The general rule it demonstrates:
+
 ```ts
-const StoreProductCardSchema = z
+const ExampleSchema = z
     .object({
         id: z.string(),
-        publicSlug: z.string(),
-        title: z.string(),
-        imageUrl: z.string().url().nullable(),
-        currency: z.string().length(3),
-        minimumUnitPriceInCents: z.number().int().nonnegative(),
-        minimumOrderQuantity: z.number().int().positive(),
-        seller: StorefrontSummarySchema,
+        countInteger: z.number().int().nonnegative(),
+        nullableValue: z.string().nullable(),
     })
-    .strip();
+    .strip(); // ignore unknown fields — forward-compatible with backend additions
 ```
 
-The API layer returns tagged values:
+The API layer returns tagged values, and the tag is the one this codebase already uses everywhere
+else — `ActionResponse<T>` with `data`, per `CLAUDE.md` Pattern 3. An earlier draft of this document
+specified a `StoreReadResult<TValue>` with `value` instead; that shape exists nowhere in the
+codebase and would have made the store the only surface with its own result type.
 
 ```ts
-type StoreReadResult<TValue> =
-    { success: true; value: TValue } | { success: false; error: { code: string; message: string } };
+type ActionResponse<T> =
+    { success: true; data: T } | { success: false; error: { code: string; message: string } };
 ```
 
 No wired getter falls back to mocks. A contract failure renders an explicit error state and remains
-observable.
+observable. `src/lib/store.ts` currently violates this in all nine getters and is the first thing
+Phase 0 deletes.
 
 ### 5.3 Public reads versus client-query islands
 
@@ -556,27 +588,41 @@ one shipment arrived.
 
 ## 12. Mock-removal map
 
-| Mock/source                      | Migration                                  | Delete when                           |
-| -------------------------------- | ------------------------------------------ | ------------------------------------- |
-| `src/lib/store.ts` generic fetch | Split into parsed `src/lib/store/*.api.ts` | all callers migrated                  |
-| `src/types/store.ts`             | Zod-inferred schema types                  | no imports remain                     |
-| `src/mocks/store-mocks.ts`       | Backend seed/curation data where real      | no production fallback remains        |
-| Static product body              | `fetchStoreProductBySlug` + parsed props   | PDP reads real product                |
-| Inline product colors/tiers      | Product variant/tier response              | no `MOCK_PRODUCT_*` imports           |
-| Static breadcrumb                | Product category trail                     | category contract wired               |
-| Local addresses                  | Organization address query/mutations       | address sheets use backend            |
-| Mock manufacturer storefront     | Organization route/projection              | storefront page wired                 |
-| Mock manufacturer chat           | Commerce threads/messages                  | resource-scoped messaging wired       |
-| Video comment/review types       | Store review/Q&A schemas                   | no cross-domain imports               |
-| Mock compare/similar             | Search/recommendation endpoints            | sheets receive parsed candidates      |
-| Static delivery                  | Connector quote/engagement                 | honest empty/estimate states wired    |
-| Static trade protection          | Eligibility/payment/dispute contract       | legal/payment phase shipped           |
-| Inert buy buttons                | RFQ/cart/checkout controls                 | each action reaches real API          |
-| Cart/order/logistics headings    | Full pages                                 | corresponding phase ships             |
-| Mock video product picker        | Seller product query                       | only real owned active IDs selectable |
+| Mock/source                      | Migration                                              | Delete when                            |
+| -------------------------------- | ------------------------------------------------------ | -------------------------------------- |
+| `src/lib/store.ts` generic fetch | Split into parsed `src/lib/store/*.api.ts`             | all callers migrated                   |
+| `src/types/store.ts`             | Zod-inferred schema types                              | no imports remain                      |
+| `src/mocks/store-mocks.ts`       | Backend seed/curation data where real                  | no production fallback remains         |
+| Static product body              | `GET /store/products/:productSlug` + parsed props      | PDP reads real product                 |
+| Inline product colors/tiers      | `variants[]` + `pricingTiers[]` on the product read    | no `MOCK_PRODUCT_*` imports            |
+| `TIER_UPPER_QUANTITY_LIMITS`     | Derive the upper bound from the next tier's MOQ        | `price-chart.tsx` reads no constant    |
+| `mockPathwayBannerForSlug`       | `cardImageUrl` / `heroImageUrl` on the pathway read    | pathway art comes from the server      |
+| `hoverBg` Tailwind classes       | The `accent` semantic token, mapped client-side        | no class string crosses the wire       |
+| Static breadcrumb                | `categoryTrail[]` on the product read                  | category contract wired                |
+| Local addresses                  | Organization address query/mutations (`delivery` kind) | address sheets use backend             |
+| Mock manufacturer storefront     | Organization route/projection                          | ✅ **done** — storefront page is wired |
+| Mock manufacturer chat           | Product inquiry → thread → messages                    | resource-scoped messaging wired        |
+| Video comment/review types       | Store review/Q&A schemas                               | no cross-domain imports                |
+| Mock compare/similar             | `GET /store/products/:productSlug/companions`          | sheets receive parsed candidates       |
+| Static delivery                  | `GET /store/products/:productSlug/delivery-estimate`   | honest empty/estimate states wired     |
+| Mock video product picker        | Seller product query                                   | only real owned active IDs selectable  |
+| Inert buy buttons                | RFQ/cart/checkout controls                             | each action reaches real API           |
+| Cart/order/logistics headings    | Full pages                                             | corresponding phase ships              |
+| Legacy `category` enum in Studio | `categoryId` from `commerce_category`                  | wizard submits an id, not a slug       |
 
 Mocks may remain temporarily in Storybook/design fixtures outside production data paths. A network
 failure must never activate them.
+
+### 12.1 Three rows that are decisions, not migrations
+
+These do not wait on a phase, and reading them as backlog is the mistake this subsection exists to
+prevent. Each is settled in `STORE_BACKEND_STRUCTURE.md` §14 or Appendix A.
+
+| Mock/source                                                           | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sections/trade-protection.tsx` + `sheets/trade-protection-sheet.tsx` | **Delete or keep hidden — never wire.** §14 decided Qatoto is **not a custodian and never holds funds**; the default rail is direct settlement with no protection. "Funds are only released once the order is confirmed" and "full refund — no back-and-forth" are false statements about this platform. The honest replacement is the settlement surface: `GET /commerce/settlement/escrow-providers` and the negotiated `settlement-agreements` routes, which say two parties agreed on a licensed third party — a different and true claim. |
+| `sheets/comment-sheet.tsx` + `sheets/product-comment-thread.tsx`      | **Delete.** A10 is closed, not deferred. Also drop `commentCount` from `sections/engagement-bar.tsx` — the backend deliberately omits it from `engagement` and a hardcoded zero is the exact failure A13 exists to prevent. `questionCount` is the real number next to it.                                                                                                                                                                                                                                                                     |
+| "Online revenue US $2.4M+" in the company block                       | **Consented, tier-gated, and not yet built.** §14 decided the figure may be published, but only on an explicit seller consent record the seller may withdraw — Alibaba's shape. Until the backend ships the consent column and its own wire member, the line renders nothing; it must never be derived client-side from anything.                                                                                                                                                                                                              |
 
 ---
 
@@ -607,6 +653,30 @@ rg -n '^// TRANSPORT: mock' src/components/home/store src/components/studio/comm
 ```
 
 The final command must print nothing before the surface is called fully wired.
+
+**Measured state, so this section is a target and not a claim.** Of the 67 files under
+`src/components/home/store/`, **16 carry a banner and 51 do not** — the unbannered set is the entire
+pre-storefront store UI (`store-page.tsx`, `category-page.tsx`, `product-detail.tsx`,
+`pathway-detail.tsx`, all of `cards/`, all of `rails/`, all of `sections/` except
+`sections/organization/`, and all of `sheets/` except one). Those files say "UI-only mock" in prose
+instead, which the audit command cannot see. The tally today:
+
+| Banner         | Count |
+| -------------- | ----- |
+| `server-fetch` | 1     |
+| `client-query` | 0     |
+| `props-only`   | 14    |
+| `mock`         | 2     |
+
+The mock grep prints two files: `sections/organization/storefront-contact-actions.tsx` and
+`sheets/product-comment-thread.tsx`. Banner the remaining 51 as part of Phase 0 — a prose comment is
+not a banner, and an unbannered file is indistinguishable from an unreviewed one.
+
+Two of the bannered files are **not** pending work and should not be read as such:
+`sheets/product-comment-thread.tsx` and `sheets/comment-sheet.tsx` implement product comments, which
+`STORE_BACKEND_STRUCTURE.md` A10 **decided will never be built** — reviews, Q&A and private
+inquiries each require standing, and a free-floating comment would be the only public text surface
+on a listing with none. Delete both rather than leave them implying a phase.
 
 ---
 

@@ -393,27 +393,20 @@ export const SAMPLE_POLICY_LABELS: Record<ProductSamplePolicy, string> = {
 };
 
 // --- Formatters -------------------------------------------------------------
+//
+// MOVED to `@/lib/store/format.ts` and re-exported here.
+//
+// They were defined in this file while the storefront was the only wired store surface.
+// Eighteen surfaces need them now, and importing a formatter FROM A SCHEMA FILE teaches
+// everyone to put formatters in schema files. The re-export keeps the fourteen
+// `sections/organization/*` files importing from where they already do — a rename across
+// them would be a diff with no behavior in it.
+//
+// New code should import from `@/lib/store/format.ts` directly.
 
-export function formatPercentageLabel(rate: number): string {
-  return `${(rate * 100).toFixed(1)}%`;
-}
-
-// Money crosses the wire as integer cents and is formatted only at the edge — the
-// division happens here and nowhere else, so no arithmetic is ever done on the result.
-export function formatCentsLabel(amountInCents: number, currency: string): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(amountInCents / 100);
-}
-
-export function formatSquareMetresLabel(squareMetres: number): string {
-  return `${squareMetres.toLocaleString("en-US")} m²`;
-}
-
-export function countryLabelFromCode(countryCode: string): string {
-  const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
-  return displayNames.of(countryCode.toUpperCase()) ?? countryCode;
-}
+export {
+  countryLabelFromCode,
+  formatCentsLabel,
+  formatPercentageLabel,
+  formatSquareMetresLabel,
+} from "@/lib/store/format";

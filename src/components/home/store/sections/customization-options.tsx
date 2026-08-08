@@ -1,3 +1,4 @@
+// TRANSPORT: mock — four hardcoded option tiles.
 "use client";
 
 import { useState } from "react";

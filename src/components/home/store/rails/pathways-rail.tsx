@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — renders the pathways it is handed, no network.
 import SectionHeader from "@/components/home/store/sections/section-header";
 import PathwayCard from "@/components/home/store/cards/pathway-card";
 import type { Pathway } from "@/types/store";

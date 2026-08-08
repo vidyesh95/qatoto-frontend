@@ -1,3 +1,4 @@
+// TRANSPORT: mock — picked files append local bubbles. There is no upload route to send them to.
 "use client";
 
 import Image from "next/image";

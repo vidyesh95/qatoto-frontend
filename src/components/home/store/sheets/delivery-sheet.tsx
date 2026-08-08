@@ -1,17 +1,37 @@
+// TRANSPORT: mock — every price and duration below is local, and the client sums them.
+//
+// A per-leg mode picker: international + inland, cheapest by default, with express modes
+// selectable per leg, or hand the whole route to an external agent.
+//
+// THIS SHEET IS FURTHER FROM ITS BACKEND THAN ANY OTHER IN THE STORE, and the gap is a decision
+// rather than an oversight. What exists is `GET /store/products/:productSlug/delivery-estimate`
+// plus `deliveryEstimates` on `checkout/prepare`, assembled from declared provider coverage
+// against the product's package geometry. It returns per-currency RANGES with the offerings each
+// was derived from, and it deliberately returns:
+//
+//   NO DELIVERY DATE. An estimate is not a booking, and a date the platform cannot keep is a
+//   promise it has no business making. Amazon can print one because it owns the network.
+//   AN EMPTY ARRAY FOR AN UNCOVERED LANE — never a zero. "We do not know" and "it is free" are
+//   different answers, and `sections/delivery-cost.tsx` currently renders the second one.
+//   `shippingInCents: 0` STAYS ZERO on every total. Nothing is charged for freight, so nothing
+//   appears in a total; billing from an advertised range with no booking behind it would put an
+//   invented number into an immutable order.
+//
+// So the leg-by-leg prices below have no source: rating a lane needs a RATE-CARD TABLE
+// (origin/destination, mode, weight and volume breaks, validity, source forwarder) that the
+// backend does not have. That table is now funded — see §14 — and until it lands the honest
+// freight path is RFQ → service offering → quote, not this picker.
+//
+// Two things to fix on the way in, both visible here: the client SUMS `priceUsd` floats across
+// legs, and money must be integer cents beside its own currency with the total computed server
+// side; and `priceUsd` bakes a currency into a field name, so a EUR lane cannot be expressed.
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import Image from "next/image";
 
-// Delivery options bottom sheet for the product page (UI-only phase, no fetch).
-// The route is split into legs (international + inland). For each leg the user
-// picks a transport mode — cheapest by default (ocean + rail), with faster
-// express modes (air + truck) selectable per leg. Alternatively the user can
-// hand the whole route to an external delivery agent (marketplace style).
-//
-// Cost and duration are MOCK numbers here. When the backend phase starts these
-// come from the API by distance + chosen mode; the client never owns the price.
+import StoreSheet from "@/components/home/store/shared/store-sheet";
 
 type TransportMode = {
   id: string;
@@ -146,27 +166,11 @@ function ModeOption({
   );
 }
 
-// Bottom sheet on mobile, centered modal on desktop — mirrors AddressSheet.
 export default function DeliverySheet({ onClose }: { onClose: () => void }) {
   const [selection, setSelection] = useState<DeliverySelection>({
     kind: "route",
     modeIdByLegId: Object.fromEntries(DELIVERY_LEGS.map((leg) => [leg.id, leg.defaultModeId])),
   });
-
-  useEffect(() => {
-    const handleKeyDown = (keyEvent: KeyboardEvent) => {
-      if (keyEvent.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [onClose]);
 
   const selectLegMode = (legId: string, modeId: string) => {
     setSelection((previous) => {
@@ -200,112 +204,11 @@ export default function DeliverySheet({ onClose }: { onClose: () => void }) {
         );
 
   return (
-    <>
-      <button
-        type="button"
-        aria-label="Close delivery options"
-        onClick={onClose}
-        className="fixed inset-0 z-55 bg-black/40"
-      />
-
-      <div
-        aria-label="Delivery options"
-        className="fixed inset-x-0 bottom-0 z-60 flex max-h-[85dvh] flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:h-max sm:max-h-[80dvh] sm:w-md sm:rounded-2xl sm:border sm:border-black/10"
-      >
-        {/* Drag handle — mobile affordance only. */}
-        <div className="flex justify-center pt-3 sm:hidden">
-          <span className="h-1.5 w-10 rounded-full bg-black/15" />
-        </div>
-
-        <header className="flex shrink-0 items-center gap-2 px-4 py-3">
-          <h2 className="flex-1 text-base font-medium">Delivery options</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
-          >
-            <Image
-              src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt=""
-              width={24}
-              height={24}
-            />
-          </button>
-        </header>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(96px+env(safe-area-inset-bottom))]">
-          {/* Map placeholder — real route map renders here in the backend phase. */}
-          <div className="relative grid h-40 place-items-center overflow-hidden rounded-xl bg-[#D9D9D9]">
-            <Image
-              src="/icons/location_on_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              width={32}
-              height={32}
-              alt=""
-              className="opacity-60"
-            />
-            <span className="absolute bottom-2 left-3 text-[11px] text-[#6F7979]">
-              Route map preview
-            </span>
-          </div>
-
-          {/* Per-leg mode pickers. */}
-          <div className="mt-4 flex flex-col gap-4">
-            {DELIVERY_LEGS.map((leg) => {
-              const selectedModeId =
-                selection.kind === "route" ? selection.modeIdByLegId[leg.id] : leg.defaultModeId;
-              return (
-                <div key={leg.id}>
-                  <p className="text-xs font-medium text-[#191C1C]">{leg.title}</p>
-                  <p className="mb-2 text-[11px] text-[#6F7979]">{leg.route}</p>
-                  <div className="flex gap-2">
-                    {leg.modes.map((mode) => (
-                      <ModeOption
-                        key={mode.id}
-                        mode={mode}
-                        isSelected={selection.kind === "route" && selectedModeId === mode.id}
-                        onSelect={() => selectLegMode(leg.id, mode.id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* External delivery agents — marketplace alternative to the self-built route. */}
-          <div className="mt-5">
-            <p className="mb-2 text-xs font-medium text-[#191C1C]">Or use a delivery agent</p>
-            <div className="flex flex-col gap-2">
-              {EXTERNAL_AGENTS.map((agent) => {
-                const isSelected = selection.kind === "agent" && selection.agentId === agent.id;
-                return (
-                  <button
-                    key={agent.id}
-                    type="button"
-                    onClick={() => setSelection({ kind: "agent", agentId: agent.id })}
-                    aria-pressed={isSelected}
-                    className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left ${
-                      isSelected ? "border-[#00696E] bg-[#00696E]/5" : "border-[#CAC4D0]/60"
-                    }`}
-                  >
-                    <Image src={`/icons/${agent.iconFileName}`} width={22} height={22} alt="" />
-                    <span className="flex-1">
-                      <span className="block text-xs font-medium text-[#191C1C]">{agent.name}</span>
-                      <span className="block text-[11px] text-[#6F7979]">
-                        {agent.note} · {agent.durationDays} days
-                      </span>
-                    </span>
-                    <span className="text-xs font-medium text-[#191C1C]">${agent.priceUsd}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Sticky footer — running estimate + confirm. */}
-        <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 border-t border-[#CAC4D0]/60 bg-background px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
+    <StoreSheet
+      title="Delivery options"
+      onClose={onClose}
+      footer={
+        <div className="flex items-center gap-3">
           <div className="flex-1 text-xs">
             <p className="font-medium text-[#191C1C]">Estimated ${estimatedPriceUsd}</p>
             <p className="text-[#6F7979]">about {estimatedDays} days</p>
@@ -318,7 +221,77 @@ export default function DeliverySheet({ onClose }: { onClose: () => void }) {
             Confirm
           </button>
         </div>
+      }
+    >
+      <div className="px-4 pb-2">
+        {/* Map placeholder — real route map renders here in the backend phase. */}
+        <div className="relative grid h-40 place-items-center overflow-hidden rounded-xl bg-[#D9D9D9]">
+          <Image
+            src="/icons/location_on_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            width={32}
+            height={32}
+            alt=""
+            className="opacity-60"
+          />
+          <span className="absolute bottom-2 left-3 text-[11px] text-[#6F7979]">
+            Route map preview
+          </span>
+        </div>
+
+        {/* Per-leg mode pickers. */}
+        <div className="mt-4 flex flex-col gap-4">
+          {DELIVERY_LEGS.map((leg) => {
+            const selectedModeId =
+              selection.kind === "route" ? selection.modeIdByLegId[leg.id] : leg.defaultModeId;
+            return (
+              <div key={leg.id}>
+                <p className="text-xs font-medium text-[#191C1C]">{leg.title}</p>
+                <p className="mb-2 text-[11px] text-[#6F7979]">{leg.route}</p>
+                <div className="flex gap-2">
+                  {leg.modes.map((mode) => (
+                    <ModeOption
+                      key={mode.id}
+                      mode={mode}
+                      isSelected={selection.kind === "route" && selectedModeId === mode.id}
+                      onSelect={() => selectLegMode(leg.id, mode.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* External delivery agents — marketplace alternative to the self-built route. */}
+        <div className="mt-5">
+          <p className="mb-2 text-xs font-medium text-[#191C1C]">Or use a delivery agent</p>
+          <div className="flex flex-col gap-2">
+            {EXTERNAL_AGENTS.map((agent) => {
+              const isSelected = selection.kind === "agent" && selection.agentId === agent.id;
+              return (
+                <button
+                  key={agent.id}
+                  type="button"
+                  onClick={() => setSelection({ kind: "agent", agentId: agent.id })}
+                  aria-pressed={isSelected}
+                  className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left ${
+                    isSelected ? "border-[#00696E] bg-[#00696E]/5" : "border-[#CAC4D0]/60"
+                  }`}
+                >
+                  <Image src={`/icons/${agent.iconFileName}`} width={22} height={22} alt="" />
+                  <span className="flex-1">
+                    <span className="block text-xs font-medium text-[#191C1C]">{agent.name}</span>
+                    <span className="block text-[11px] text-[#6F7979]">
+                      {agent.note} · {agent.durationDays} days
+                    </span>
+                  </span>
+                  <span className="text-xs font-medium text-[#191C1C]">${agent.priceUsd}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
-    </>
+    </StoreSheet>
   );
 }

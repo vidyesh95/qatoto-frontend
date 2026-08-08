@@ -1,3 +1,6 @@
+// TRANSPORT: mock — messages live in `useState` and the send button has no handler.
+// The long note above the component explains what exists on the backend and why this is
+// the one store sheet that keeps its own shell.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,11 +14,38 @@ import {
 } from "@/components/home/store/sheets/manufacturer-chat-sheet/chat-message";
 import MessageBubble from "@/components/home/store/sheets/manufacturer-chat-sheet/message-bubble";
 
-// Manufacturer chat bottom sheet (UI-only phase, no fetch, no send). Buyers and
-// manufacturers exchange messages here and share image/video catalogs and PDFs;
-// Qatoto also uses this thread to verify and mediate disputes, hence the trust
-// banner at the top. The real thread, file uploads, identity, and dispute state
-// are all backend-owned later — this is static mock chrome only.
+// Buyers and manufacturers exchange messages here and share image/video catalogs and PDFs.
+//
+// THE ONLY STORE SHEET THAT KEEPS ITS OWN SHELL, and the reason is the header. `StoreSheet` takes
+// a `title: string` and renders it as an `<h2>`; a conversation's header is a PARTICIPANT — avatar,
+// name, verification state — plus a composer footer and a 90dvh panel so the message list has room.
+// Expressing that would mean three more optional props on the shared shell used by exactly one
+// caller, at which point the shell stops being a shell. Nine sheets share it; this one does not.
+//
+// TWO THINGS WERE REMOVED FROM THIS HEADER RATHER THAN CARRIED FORWARD.
+//
+// It printed "Chat evidence #1523645" under the seller's name, which asserts that Qatoto keeps a
+// numbered evidence record of the conversation and mediates from it. No such record exists:
+// disputes are order-scoped (`POST /commerce/orders/:orderId/disputes`) and there is no
+// participant-facing dispute read at all, let alone a chat-evidence id. A case number is exactly
+// the kind of claim a buyer would cite later.
+//
+// It also described itself as a "trust banner". A thread between two organizations is not a trust
+// signal, and the verified tick beside the name means one specific thing — the seller organization
+// passed verification — not that the conversation is supervised.
+//
+// WIRE PATH, once this is built: `POST /commerce/products/:productId/inquiries` returns the
+// inquiry AND its thread, then `GET`/`POST /commerce/threads/:threadId/messages`. Note
+// `POST /commerce/threads` accepts only `rfq | quote`, and widening it to `product` would have
+// been a cross-tenant leak — the thread's unique index is `(resourceKind, resourceId)`, so a
+// thread keyed on the product id would be ONE THREAD PER PRODUCT ACROSS ALL BUYERS, handing every
+// buyer every other buyer's negotiation. The inquiry row is the resource the thread points at.
+//
+// Attachments have no route yet: `POST /commerce/threads/:threadId/messages` takes ids of
+// documents that are ALREADY authorized, and the only upload paths are verification evidence and
+// customization assets. There is no first-party video ingest anywhere in the codebase either, so a
+// message video follows the review-media shape — an external id under a supply CHECK — or it does
+// not ship.
 export default function ManufacturerChatSheet({ onClose }: { onClose: () => void }) {
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
@@ -74,7 +104,7 @@ export default function ManufacturerChatSheet({ onClose }: { onClose: () => void
                 className="shrink-0"
               />
             </p>
-            <p className="text-[11px] text-[#6F7979]">Chat evidence #1523645</p>
+            <p className="text-[11px] text-[#6F7979]">Verified seller organization</p>
           </div>
           <button
             type="button"

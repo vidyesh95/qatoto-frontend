@@ -1,3 +1,4 @@
+// TRANSPORT: mock — hardcoded reviews, sub-scores and counts; the filter chips sort nothing.
 import Image from "next/image";
 import Link from "next/link";
 

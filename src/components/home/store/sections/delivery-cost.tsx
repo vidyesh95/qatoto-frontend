@@ -1,3 +1,4 @@
+// TRANSPORT: mock — "Free Delivery" and a date range, both hardcoded. Neither is knowable.
 "use client";
 
 import { useState } from "react";

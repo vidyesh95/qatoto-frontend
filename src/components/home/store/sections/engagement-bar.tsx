@@ -1,15 +1,37 @@
+// TRANSPORT: mock — the counts and the toggles are local. NOTHING here reaches a backend yet.
+//
+// THE COMMENT PILL IS GONE, AND IT IS NOT COMING BACK. Product comments were decided against
+// rather than deferred (STORE_BACKEND_STRUCTURE.md A10): a listing already has reviews, which
+// require a completed order, Q&A, which requires a seller relationship or a verified purchase,
+// and private inquiries, which require an authenticated buyer organization. A free-floating
+// comment would have been the only public text surface on a listing with no standing
+// requirement behind it, which is exactly what Q&A was shaped to avoid becoming. Neither
+// reference market disagrees — Amazon removed customer comments from product pages in 2020.
+//
+// So `commentCount` has no table and never will, and the backend deliberately omits it from
+// `engagement` for that reason. A hardcoded "1.1k" beside three real counters is the failure
+// mode the whole appendix exists to prevent: a number that looks wired and can never be.
+// `questionCount` is the honest figure next to these, and it belongs on the Q&A section.
+//
+// What IS wired-able here, when this file becomes `client-query`:
+//   PUT/DELETE /store/products/:productSlug/save        → the favourite toggle
+//   PUT/DELETE /store/products/:productSlug/bookmark    → the bookmark toggle
+//   POST       /store/products/:productSlug/share       → the share counter
+// with `engagement.viewer` supplying the initial pressed state. Note `viewer` is `null` for an
+// anonymous caller and NOT `{hasSaved: false}` — "not saved" and "we do not know who you are"
+// are different facts, and only the second one may render as an unfilled icon with no promise
+// attached to it.
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
+
+import Image from "next/image";
 
 import { ShareSheet } from "@/components/home/watch/share-sheet";
 
-import CommentSheet from "@/components/home/store/sheets/comment-sheet";
-
-// Engagement row for the product page. favorite / bookmark are self-toggling
-// pills (icon swaps FILL0 → FILL1 while selected); comment opens a comment
-// sheet and share opens a share sheet — both reuse the watch-screen shells.
+// favorite / bookmark are self-toggling pills (the icon swaps FILL0 → FILL1 while selected);
+// share opens the watch-screen sheet. The counts are strings because they are placeholders —
+// the wire carries integers and the client formats them, never the reverse.
 const TOGGLE_PILLS = [
   { icon: "favorite", count: "3.7k" },
   { icon: "bookmark", count: "414" },
@@ -35,19 +57,9 @@ function PillIcon({ icon, filled }: { icon: string; filled: boolean }) {
 export default function EngagementBar() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [shareOpen, setShareOpen] = useState(false);
-  const [commentsOpen, setCommentsOpen] = useState(false);
 
   return (
     <div className="flex gap-4 p-4 lg:px-6">
-      {/* Comment — opens the comment sheet; icon stays unfilled. */}
-      <span className="relative flex flex-1">
-        <button type="button" onClick={() => setCommentsOpen(true)} className={PILL_CLASS}>
-          <PillIcon icon="comment" filled={false} />
-          <span className="[text-shadow:0_1px_2px_rgb(0_0_0/0.25)]">1.1k</span>
-        </button>
-        {commentsOpen && <CommentSheet onClose={() => setCommentsOpen(false)} />}
-      </span>
-
       {TOGGLE_PILLS.map((pill) => {
         const isSelected = selected[pill.icon] ?? false;
         return (

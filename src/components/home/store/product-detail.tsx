@@ -1,3 +1,4 @@
+// TRANSPORT: mock — `void slug`: one hardcoded product regardless of route. NOTHING here reaches a backend.
 import Image from "next/image";
 import Link from "next/link";
 
@@ -21,7 +22,6 @@ import RatingsAndReviews from "@/components/home/store/sections/ratings-and-revi
 import SamplePrice from "@/components/home/store/sections/sample-price";
 import SimilarAndCompare from "@/components/home/store/sections/similar-and-compare";
 import StoreAndChatActions from "@/components/home/store/sections/store-and-chat-actions";
-import TradeProtection from "@/components/home/store/sections/trade-protection";
 import {
   MOCK_CATEGORY_RAILS,
   MOCK_PRODUCT_COLORS,
@@ -176,8 +176,18 @@ export default function ProductDetail({ slug }: { slug: string }) {
           {/* Packaging and delivery — collapsed spec rows + nested lead time */}
           <PackagingAndDelivery />
 
-          {/* Trade protection — tap opens the sheet explaining each guarantee */}
-          <TradeProtection />
+          {/* NO TRADE-PROTECTION BLOCK, DELIBERATELY. It used to sit here and rendered four
+              finished guarantees — "Buyer protection", "Secure payment", "Return policy",
+              "Refund for no delivery". Every one of them is false: §14 decided Qatoto is NOT a
+              custodian and never holds funds, so the default rail is direct settlement with no
+              protection at all, and escrow is a term the two parties negotiate themselves
+              through a licensed third party. Deleted rather than hidden — a comment-out is an
+              invitation to un-comment, and this copy is a claim about money.
+
+              The honest replacement, when the surface is wired, is the settlement one:
+              `GET /commerce/settlement/escrow-providers` plus the negotiated
+              `settlement-agreements` routes. "These two parties agreed on an escrow provider"
+              is a different and TRUE statement; do not paraphrase it back into a badge. */}
 
           {/* Desktop inline CTAs — replace the fixed bottom bar at lg+ */}
           <div className="hidden gap-2 px-6 py-3 lg:flex">

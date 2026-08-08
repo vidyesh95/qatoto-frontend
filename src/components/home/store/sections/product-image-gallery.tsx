@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — renders the images it is handed, no network.
 "use client";
 
 import Image from "next/image";

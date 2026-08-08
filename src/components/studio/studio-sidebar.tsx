@@ -106,6 +106,10 @@ const STUDIO_ROUTES = {
   feedback: "/studio/feedback",
   orders: "/studio/orders",
   logistics: "/studio/logistics",
+  // `/studio/rfqs` and `/studio/quotes` shipped without sidebar entries, so a provider had no way to reach
+  // their own quote queue by clicking. `/studio/services` is new and is where a draft listing is visible.
+  providerRfqs: "/studio/rfqs",
+  services: "/studio/services",
   support: "/studio/support",
   earn: "/studio/earn",
   comments: "/studio/comments",
@@ -319,6 +323,8 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
     title: "Commerce and operations",
     items: [
       { path: STUDIO_ROUTES.orders, label: "Orders", iconKey: "orders" },
+      { path: STUDIO_ROUTES.providerRfqs, label: "Requests to quote", iconKey: "requestQuote" },
+      { path: STUDIO_ROUTES.services, label: "Services", iconKey: "package" },
       { path: STUDIO_ROUTES.logistics, label: "Logistics", iconKey: "localShipping" },
       { path: STUDIO_ROUTES.support, label: "Support", iconKey: "supportAgent" },
       { path: STUDIO_ROUTES.earn, label: "Earn", iconKey: "paid" },

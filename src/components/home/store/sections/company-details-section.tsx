@@ -1,3 +1,4 @@
+// TRANSPORT: mock — reads the shared mock seller record.
 "use client";
 
 import { useState } from "react";

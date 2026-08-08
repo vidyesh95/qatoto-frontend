@@ -1,3 +1,4 @@
+// TRANSPORT: mock — three CTAs with no handlers. Send inquiry / Add to cart / Buy now all reach nothing.
 // The three buy CTAs — rendered twice on the PDP: in the mobile/tablet fixed
 // bottom bar and inline at the end of the desktop buy column. Keep classes
 // identical between the two render sites.

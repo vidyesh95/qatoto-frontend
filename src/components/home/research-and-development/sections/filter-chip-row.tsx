@@ -1,61 +1,10 @@
-// TRANSPORT: props-only — presentational server component. Fetches nothing, holds no
-// state: each chip is a Link that rewrites the query string, and the server component
-// above re-reads searchParams and re-queries the backend.
+// TRANSPORT: props-only — re-export only.
 //
-// This is what makes filtering server-side (§13). It also means a filtered view is
-// shareable and survives back-navigation, which a useState selection never did — and it
-// is why these rows are NOT client islands.
-import Link from "next/link";
+// MOVED to `@/components/home/shared/filter-chip-row`, because the store's search and
+// category pages need the same control and nothing about it was ever R&D-specific. This
+// path stays so the six R&D call sites keep importing from where they already do — renaming
+// them would be a diff with no behavior in it.
+//
+// New code should import from `@/components/home/shared/filter-chip-row` directly.
 
-const FILTER_CHIP_CLASS =
-  "shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors";
-
-export interface FilterChipOption {
-  /** The chip's label. */
-  readonly label: string;
-  /** Where clicking it goes — build with `buildFilterHref`. */
-  readonly href: string;
-  readonly isSelected: boolean;
-}
-
-/**
- * One horizontally scrolling row of filter chips.
- *
- * `scroll={false}` on every chip: re-querying a filter should not yank the viewport to
- * the top of the document, because the chips the visitor is using are usually below it.
- */
-export default function FilterChipRow({
-  options,
-  ariaLabel,
-}: {
-  options: FilterChipOption[];
-  ariaLabel: string;
-}) {
-  // A `nav` rather than a `div role="group"`: these chips are links that change the URL,
-  // so a screen reader should announce them as a set of destinations. The label is what
-  // distinguishes one filter row from the next when several are stacked.
-  //
-  // `items-center` is load-bearing, not cosmetic. A row placed beside a taller flex
-  // sibling (the problem map's "Report a problem" trigger) inherits that sibling's 36px
-  // line height, and without it every chip stretches to fill — `rounded-full` clamps to
-  // an 18px radius and the pill reads as a lozenge.
-  return (
-    <nav className="flex items-center gap-2 overflow-x-auto" aria-label={ariaLabel}>
-      {options.map((option) => (
-        <Link
-          key={option.href + option.label}
-          href={option.href}
-          scroll={false}
-          aria-current={option.isSelected ? "true" : undefined}
-          className={`${FILTER_CHIP_CLASS} ${
-            option.isSelected
-              ? "bg-[#00696E] text-white"
-              : "bg-muted text-foreground hover:bg-muted/70"
-          }`}
-        >
-          {option.label}
-        </Link>
-      ))}
-    </nav>
-  );
-}
+export { default, type FilterChipOption } from "@/components/home/shared/filter-chip-row";

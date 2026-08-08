@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — renders the links it is handed, no network.
 import SectionHeader from "@/components/home/store/sections/section-header";
 import B2BTile from "@/components/home/store/cards/b2b-tile";
 import type { B2BLink } from "@/types/store";

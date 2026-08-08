@@ -1,13 +1,20 @@
+// TRANSPORT: mock — the five products are local and the selection is never sent.
+//
+// "Add to Compare". The buyer ticks products to put side by side; the footer "Compare" button is
+// the bottom option, and it now lives in `StoreSheet`'s `footer` slot rather than an absolutely
+// positioned overlay — which is what the old `pb-[calc(80px+env(safe-area-inset-bottom))]` on the
+// scroll region was reserving space for.
+//
+// Wire-able candidates from `GET /store/products/:productSlug/companions`. There is NO compare
+// endpoint: the backend aligns nothing, so a real comparison table means fetching each product's
+// `specifications[]` and aligning on `key` — which is why Alibaba's compare tray caps at four.
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import Image from "next/image";
 
-// "Add to Compare" bottom sheet for the product page (UI-only phase, no fetch).
-// Buyer ticks the products to put side by side; the footer "Compare" button is
-// the bottom option. Selection lives in local state purely for UX feedback —
-// nothing is sent. The current product is pre-selected and locked in.
+import StoreSheet from "@/components/home/store/shared/store-sheet";
 
 type CompareProduct = {
   id: string;
@@ -55,21 +62,6 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
   const [products, setProducts] = useState<CompareProduct[]>(COMPARE_PRODUCTS);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>(["raspberry-red"]);
 
-  useEffect(() => {
-    const handleKeyDown = (keyEvent: KeyboardEvent) => {
-      if (keyEvent.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [onClose]);
-
   const toggleProduct = (productId: string) =>
     setSelectedProductIds((previous) =>
       previous.includes(productId)
@@ -90,129 +82,11 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
   const hasSelection = selectedProductIds.length > 0;
 
   return (
-    <>
-      <button
-        type="button"
-        aria-label="Close compare products"
-        onClick={onClose}
-        className="fixed inset-0 z-55 bg-black/40"
-      />
-
-      <div
-        aria-label="Add to compare"
-        className="fixed inset-x-0 bottom-0 z-60 flex max-h-[85dvh] flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:h-max sm:max-h-[80dvh] sm:w-md sm:rounded-2xl sm:border sm:border-black/10"
-      >
-        {/* Drag handle — mobile affordance only. */}
-        <div className="flex justify-center pt-3 sm:hidden">
-          <span className="h-1.5 w-10 rounded-full bg-black/15" />
-        </div>
-
-        <header className="flex shrink-0 items-center gap-2 px-4 py-3">
-          <h2 className="flex-1 text-base font-medium">Add to Compare</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
-          >
-            <Image
-              src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt=""
-              width={24}
-              height={24}
-            />
-          </button>
-        </header>
-
-        <div className="flex shrink-0 items-center gap-2 px-4 pb-2">
-          <p className="flex-1 text-xs text-[#6F7979]">
-            Pick at least two products to compare them side by side.
-          </p>
-          <button
-            type="button"
-            onClick={clearAll}
-            aria-hidden={!hasSelection}
-            tabIndex={hasSelection ? 0 : -1}
-            className={`shrink-0 cursor-pointer text-xs font-medium text-[#00696E] ${
-              hasSelection ? "" : "invisible"
-            }`}
-          >
-            Clear all
-          </button>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(80px+env(safe-area-inset-bottom))]">
-          <ul className="flex flex-col gap-2">
-            {products.map((product) => {
-              const isSelected = selectedProductIds.includes(product.id);
-              const isCurrent = product.isCurrent ?? false;
-              return (
-                <li
-                  key={product.id}
-                  className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${
-                    isSelected ? "border-[#00696E] bg-[#00696E]/5" : "border-[#E0E3E3]"
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => toggleProduct(product.id)}
-                    aria-pressed={isSelected}
-                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
-                  >
-                    <div className="relative size-14 shrink-0 overflow-hidden rounded bg-[#F5F5F5]">
-                      <Image
-                        src={product.imageSrc}
-                        fill
-                        sizes="56px"
-                        alt={product.name}
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-[#191C1C]">{product.name}</p>
-                      <p className="text-sm text-[#191C1C]">{product.price}</p>
-                      {isCurrent && (
-                        <p className="text-[11px] font-medium text-[#00696E]">This product</p>
-                      )}
-                    </div>
-                    <span
-                      className={`grid size-6 shrink-0 place-items-center rounded border ${
-                        isSelected ? "border-[#00696E] bg-[#00696E]" : "border-[#6F7979]"
-                      }`}
-                    >
-                      {isSelected && (
-                        <Image
-                          src="/icons/check_18dp_FFFFFF_FILL1_wght400_GRAD0_opsz20.svg"
-                          width={16}
-                          height={16}
-                          alt=""
-                        />
-                      )}
-                    </span>
-                  </button>
-
-                  {/* Per-item delete — always visible, removes the product from the list. */}
-                  <button
-                    type="button"
-                    onClick={() => removeProduct(product.id)}
-                    aria-label={`Remove ${product.name} from compare`}
-                    className="shrink-0 cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
-                  >
-                    <Image
-                      src="/icons/delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                      width={18}
-                      height={18}
-                      alt=""
-                    />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        {/* Sticky footer — Compare is the bottom option. */}
-        <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 border-t border-[#CAC4D0]/60 bg-background px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
+    <StoreSheet
+      title="Add to Compare"
+      onClose={onClose}
+      footer={
+        <div className="flex items-center gap-3">
           <p className="flex-1 text-xs text-[#6F7979]">{selectedProductIds.length} selected</p>
           <button
             type="button"
@@ -223,7 +97,94 @@ export default function CompareProductsSheet({ onClose }: { onClose: () => void 
             Compare
           </button>
         </div>
+      }
+    >
+      <div className="flex items-center gap-2 px-4 pb-2">
+        <p className="flex-1 text-xs text-[#6F7979]">
+          Pick at least two products to compare them side by side.
+        </p>
+        <button
+          type="button"
+          onClick={clearAll}
+          aria-hidden={!hasSelection}
+          tabIndex={hasSelection ? 0 : -1}
+          className={`shrink-0 cursor-pointer text-xs font-medium text-[#00696E] ${
+            hasSelection ? "" : "invisible"
+          }`}
+        >
+          Clear all
+        </button>
       </div>
-    </>
+
+      <div className="px-4 pb-2">
+        <ul className="flex flex-col gap-2">
+          {products.map((product) => {
+            const isSelected = selectedProductIds.includes(product.id);
+            const isCurrent = product.isCurrent ?? false;
+            return (
+              <li
+                key={product.id}
+                className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${
+                  isSelected ? "border-[#00696E] bg-[#00696E]/5" : "border-[#E0E3E3]"
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleProduct(product.id)}
+                  aria-pressed={isSelected}
+                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
+                >
+                  <div className="relative size-14 shrink-0 overflow-hidden rounded bg-[#F5F5F5]">
+                    <Image
+                      src={product.imageSrc}
+                      fill
+                      sizes="56px"
+                      alt={product.name}
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-[#191C1C]">{product.name}</p>
+                    <p className="text-sm text-[#191C1C]">{product.price}</p>
+                    {isCurrent && (
+                      <p className="text-[11px] font-medium text-[#00696E]">This product</p>
+                    )}
+                  </div>
+                  <span
+                    className={`grid size-6 shrink-0 place-items-center rounded border ${
+                      isSelected ? "border-[#00696E] bg-[#00696E]" : "border-[#6F7979]"
+                    }`}
+                  >
+                    {isSelected && (
+                      <Image
+                        src="/icons/check_18dp_FFFFFF_FILL1_wght400_GRAD0_opsz20.svg"
+                        width={16}
+                        height={16}
+                        alt=""
+                      />
+                    )}
+                  </span>
+                </button>
+
+                {/* Per-item delete — always visible, removes the product from the list. */}
+                <button
+                  type="button"
+                  onClick={() => removeProduct(product.id)}
+                  aria-label={`Remove ${product.name} from compare`}
+                  className="shrink-0 cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
+                >
+                  <Image
+                    src="/icons/delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                    width={18}
+                    height={18}
+                    alt=""
+                  />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </StoreSheet>
   );
 }

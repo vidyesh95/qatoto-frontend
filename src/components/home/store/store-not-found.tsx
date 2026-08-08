@@ -1,3 +1,4 @@
+// TRANSPORT: props-only — static copy, no network.
 import Link from "next/link";
 
 // Scoped not-found for the store route tree. Catches notFound() calls from
