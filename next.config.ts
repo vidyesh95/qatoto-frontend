@@ -7,9 +7,19 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   cacheComponents: true,
-  // reactCompiler: true,
+  // Turbopack's filesystem cache for BOTH `next dev` and `next build` is ON BY DEFAULT as of
+  // 16.3 (`experimental.turbopackFileSystemCacheForDev` / `...ForBuild`, see
+  // node_modules/next/dist/server/config-shared.js). Setting them here would be a no-op —
+  // do not "re-add" them thinking the cache is off.
   experimental: {
-    turbopackFileSystemCacheForDev: true,
+    // Runs the React Compiler inside Turbopack (Rust) instead of shelling out to Babel, which
+    // avoids generating and reparsing code. Next REFUSES TO START without both `reactCompiler:
+    // true` above and Turbopack — see the two throws in next/dist/server/config.js. We have no
+    // Babel config of our own, so this is the full-gain path.
+    //
+    // EXPERIMENTAL. If a component starts misbehaving in a way that smells like bad memoization,
+    // drop this flag first to fall back to the Babel compiler before hunting the component.
+    turbopackRustReactCompiler: true,
   },
   // this is used to proxy api requests to the backend
   async rewrites() {
