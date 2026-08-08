@@ -12,13 +12,14 @@ import {
   type SaveProgress,
 } from "@/hooks/products";
 import {
-  CATEGORY_LABEL_TO_SLUG,
-  CATEGORY_LABELS,
+  ListingCategoryPicker,
+  type ListingCategoryChoice,
+} from "@/components/studio/listing/listing-category-picker";
+import {
   centsToDollarString,
   CONDITION_LABEL_TO_SLUG,
   CONDITION_LABELS,
   dollarsToCents,
-  SLUG_TO_CATEGORY_LABEL,
   SLUG_TO_CONDITION_LABEL,
   type CreateProductInput,
 } from "@/lib/products/schemas";
@@ -33,7 +34,6 @@ const LISTING_STEPS = [
 
 type ListingStepId = (typeof LISTING_STEPS)[number]["id"];
 
-const PRODUCT_CATEGORIES = CATEGORY_LABELS;
 const PRODUCT_CONDITIONS = CONDITION_LABELS;
 
 const PRODUCT_TITLE_MAX_LENGTH = 200;
@@ -72,7 +72,14 @@ export default function CreateListingPage({ productId }: { productId?: string })
   // Step 1 — product identity
   const [productTitle, setProductTitle] = useState("");
   const [brandName, setBrandName] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  /**
+   * Either a chosen category or a pending request for one. Null until the seller picks.
+   *
+   * The old `selectedCategory` held a DISPLAY LABEL and was mapped back to a hardcoded slug
+   * at submit time. That taxonomy no longer exists; a listing now carries a `categoryId`
+   * read from the store's own tree, or a `categoryRequestId` while it waits in Misc.
+   */
+  const [categoryChoice, setCategoryChoice] = useState<ListingCategoryChoice | null>(null);
   const [selectedCondition, setSelectedCondition] = useState<string>(PRODUCT_CONDITIONS[0]);
 
   // Step 2 — images
@@ -110,7 +117,21 @@ export default function CreateListingPage({ productId }: { productId?: string })
     const product = productQuery.data;
     setProductTitle(product.title);
     setBrandName(product.brand ?? "");
-    setSelectedCategory(SLUG_TO_CATEGORY_LABEL[product.category] ?? "");
+    // A listing still awaiting a verdict hydrates as its REQUEST, not as Misc: Misc is where
+    // it is parked, never a category its owner chose, and showing it as chosen would invite
+    // the seller to "confirm" a placement that was never theirs.
+    setCategoryChoice(
+      product.pendingCategoryRequestId === null
+        ? // The label is left empty rather than guessed: the read returns the category ID,
+          // not its name, and inventing one here would put a wrong word in the review step.
+          // The picker fills it in as soon as the seller touches the control.
+          { kind: "category", categoryId: product.categoryId, displayLabel: "" }
+        : {
+            kind: "request",
+            categoryRequestId: product.pendingCategoryRequestId,
+            displayLabel: "Awaiting review",
+          },
+    );
     setSelectedCondition(SLUG_TO_CONDITION_LABEL[product.condition] ?? PRODUCT_CONDITIONS[0]);
     setProductDescription(product.description ?? "");
     setKeyFeatures(product.keyFeatures);
@@ -246,8 +267,9 @@ export default function CreateListingPage({ productId }: { productId?: string })
     const title = productTitle.trim();
     if (title.length === 0) return { error: "Product title is required." };
 
-    const categorySlug = CATEGORY_LABEL_TO_SLUG[selectedCategory];
-    if (!categorySlug) return { error: "Select a category." };
+    if (categoryChoice === null) {
+      return { error: "Select a category, or request the one you need." };
+    }
 
     const priceInCents = dollarsToCents(priceInDollars);
     if (priceInCents === null) return { error: "Enter a valid price." };
@@ -279,7 +301,12 @@ export default function CreateListingPage({ productId }: { productId?: string })
     return {
       title,
       brand: brandName.trim() || undefined,
-      category: categorySlug,
+      // EXACTLY ONE of the two. The backend's create schema refuses both together rather
+      // than picking which the seller meant, so spreading the chosen arm is what keeps the
+      // two spellings from ever travelling in the same body.
+      ...(categoryChoice.kind === "category"
+        ? { categoryId: categoryChoice.categoryId }
+        : { categoryRequestId: categoryChoice.categoryRequestId }),
       condition: CONDITION_LABEL_TO_SLUG[selectedCondition] ?? "new",
       description: productDescription.trim() || undefined,
       keyFeatures,
@@ -426,35 +453,15 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="product-category" className="text-sm font-medium text-foreground">
-                  Category
-                </label>
-                <div className="relative">
-                  <select
-                    id="product-category"
-                    value={selectedCategory}
-                    onChange={(event) => setSelectedCategory(event.target.value)}
-                    className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
-                  >
-                    <option value="" disabled>
-                      Select a category
-                    </option>
-                    {PRODUCT_CATEGORIES.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                  <Image
-                    src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                    alt=""
-                    width={20}
-                    height={20}
-                    className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2"
-                  />
-                </div>
-              </div>
+              {/* The picker owns its own reads — it walks the real category tree a level at
+                  a time, because the backend accepts only an ACTIVE LEAF. It also carries
+                  the "my category isn't listed" path, which is a request rather than a
+                  blocker: the listing publishes into Misc and moves when it is approved. */}
+              <ListingCategoryPicker
+                value={categoryChoice}
+                isDisabled={isSaving}
+                onChange={setCategoryChoice}
+              />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -868,7 +875,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
               rows={[
                 { label: "Title", value: productTitle },
                 { label: "Brand", value: brandName },
-                { label: "Category", value: selectedCategory },
+                { label: "Category", value: categoryChoice?.displayLabel ?? "" },
                 { label: "Condition", value: selectedCondition },
               ]}
             />

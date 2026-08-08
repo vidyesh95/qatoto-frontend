@@ -5,7 +5,7 @@
 import Image from "next/image";
 import { useState } from "react";
 
-import { SlideImagePicker } from "@/components/admin/promotions/slide-image-picker";
+import { AdminImagePicker } from "@/components/admin/shared/admin-image-picker";
 import {
   MutationErrorNotice,
   MutationSuccessNotice,
@@ -289,7 +289,7 @@ function CreateSlideForm({
           <label htmlFor="promotional-slide-image" className="block text-sm font-medium">
             Image
           </label>
-          <SlideImagePicker
+          <AdminImagePicker
             inputId="promotional-slide-image"
             isDisabled={isSubmitting || isCarouselFull}
             selectedFile={imageFile}
@@ -593,7 +593,7 @@ function SlideRow({
       {isReplacingImage && (
         <div className="space-y-3 border-t border-[#CAC4D0]/40 pt-3">
           <p className="text-sm font-medium">New image</p>
-          <SlideImagePicker
+          <AdminImagePicker
             inputId={`replace-slide-image-${slide.id}`}
             isDisabled={isMutating}
             selectedFile={replacementImageFile}

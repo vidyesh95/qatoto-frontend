@@ -198,6 +198,15 @@ export interface CategoryDetailFilter {
 /** `GET /store/categories` — root level when `parentCategoryId` is omitted. */
 export interface CategoryListFilter {
   readonly parentCategoryId?: string;
+  /**
+   * How many to return, in the server's `siblingOrder`. The home rail passes 8; the
+   * category index passes nothing and gets the level.
+   *
+   * NOT a client-side slice. Sending this is what lets the admin's arrangement decide
+   * which categories reach the rail — trimming a fetched array here would mean the rail
+   * and the admin screen could disagree about the order and neither would be wrong.
+   */
+  readonly limit?: number;
 }
 
 export type StoreCategory = z.infer<typeof StoreCategorySchema>;

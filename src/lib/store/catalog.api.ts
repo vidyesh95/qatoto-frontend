@@ -2,9 +2,9 @@
 // component. `RequestOptions` is threaded anyway so a client island can call one later
 // without the signature changing.
 //
-// MOCK-BACKED: every read below resolves a fixture. To wire one, swap `resolveMockRead`
-// for `getJson` and drop the fixture argument for `options` — the path, the schema and the
-// return type are already final, so nothing above this file changes.
+// WIRED. Every read below calls the Express backend. The fixtures these used to resolve
+// are gone from this file; the path, the schema and the return type never changed, which
+// is what the previous header promised and is why nothing above this file moved.
 //
 // `src/lib/store.ts` is the OLD path and is NOT a model for this file. Its getters return
 // `T | null` and silently substitute mocks when a fetch fails, which makes "the backend is
@@ -23,18 +23,16 @@ import {
   type StoreSearchFilter,
   type StoreSearchPage,
 } from "@/lib/store/catalog.schemas";
-import { resolveMockDetail, resolveMockRead } from "@/lib/store/mock-transport";
-import {
-  MOCK_CATEGORY_DETAILS_BY_SLUG,
-  MOCK_ROOT_CATEGORY_LIST,
-  MOCK_SEARCH_PAGE,
-} from "@/mocks/store/catalog-mocks";
 
 /**
  * Active categories: roots when `parentCategoryId` is omitted, one level of children when
  * it is given.
  *
- * Unpaginated — the tree is bounded and staff-authored. Ordering is the server's
+ * `limit` is applied IN SQL, not here. The store home rail asks for eight, and asking the
+ * server for eight is what makes the admin's `siblingOrder` decide which eight — fetching
+ * the tree and slicing it in the browser would turn that arrangement into a suggestion.
+ *
+ * Otherwise unpaginated: the tree is bounded and staff-authored. Ordering is the server's
  * `siblingOrder`; never re-sort the result.
  */
 export function listStoreCategories(
@@ -42,8 +40,7 @@ export function listStoreCategories(
   options?: RequestOptions,
 ): Promise<ActionResponse<{ items: StoreCategory[] }>> {
   const path = `/store/categories${buildQueryString({ ...filter })}`;
-  return resolveMockRead(path, StoreCategoryListSchema, options, MOCK_ROOT_CATEGORY_LIST);
-  // return getJson(path, StoreCategoryListSchema, options);
+  return getJson(path, StoreCategoryListSchema, options);
 }
 
 /**
@@ -63,14 +60,7 @@ export function getStoreCategory(
   options?: RequestOptions,
 ): Promise<ActionResponse<StoreCategoryDetail>> {
   const path = `/store/categories/${categorySlug}${buildQueryString({ ...filter })}`;
-  return resolveMockDetail(
-    path,
-    StoreCategoryDetailSchema,
-    options,
-    MOCK_CATEGORY_DETAILS_BY_SLUG,
-    categorySlug,
-  );
-  // return getJson(path, StoreCategoryDetailSchema, options);
+  return getJson(path, StoreCategoryDetailSchema, options);
 }
 
 /**
@@ -89,11 +79,5 @@ export function searchStore(
   options?: RequestOptions,
 ): Promise<ActionResponse<StoreSearchPage>> {
   const path = `/store/search${buildQueryString({ ...filter })}`;
-  return resolveMockRead(path, StoreSearchPageSchema, options, MOCK_SEARCH_PAGE);
-  // return getJson(path, StoreSearchPageSchema, options);
+  return getJson(path, StoreSearchPageSchema, options);
 }
-
-// `getJson` is imported for the wiring lines above, which are the point of this file
-// existing in this shape. Referenced here so the import is not dropped as unused while
-// every read is still mock-backed.
-void getJson;

@@ -50,16 +50,8 @@ const HERO_SLIDES: HeroSlide[] = [
   },
 ];
 
-const ROOT_CATEGORY_SLUGS = [
-  "clothes",
-  "furniture",
-  "accessories",
-  "beauty",
-  "shoes",
-  "bags",
-  "machinery",
-  "jewelry",
-];
+// The root slug list that used to live here is gone with `MOCK_STORE_HOME.rootCategories`:
+// the home rail reads the real, admin-arranged taxonomy from the backend now.
 
 // Flat slug -> node map. Catch-all route looks up the last segment here, so
 // every slug is globally unique. Empty `childrenSlugs` marks a leaf.
@@ -2031,10 +2023,7 @@ const MOCK_B2B_LINKS: B2BLink[] = BUSINESS_TOOLS.map(({ id, label, iconSrc, href
 
 export const MOCK_STORE_HOME: StoreHome = {
   hero: HERO_SLIDES,
-  rootCategories: ROOT_CATEGORY_SLUGS.map((slug, i) => ({
-    ...MOCK_CATEGORIES[slug],
-    hoverBg: hoverAt(i),
-  })),
+  // No `rootCategories`: the home rail reads the real taxonomy now. See `StoreHome`.
   pathways: MOCK_PATHWAYS.map((p, i) => ({ ...p, hoverBg: hoverAt(i) })),
   b2bLinks: MOCK_B2B_LINKS,
   rails: MOCK_RAILS,

@@ -66,20 +66,14 @@ function renderCategoryIndex(viewState: CategoryIndexViewState) {
           <p className="px-4 pb-4 text-sm leading-5 text-[#6F7979] lg:px-6">
             Every category on Qatoto. Drill in to filter by seller country, stock and sample policy.
           </p>
-          {/* The card component links to `/store/<slug>`, which the legacy catch-all now
-              redirects into `/store/categories/<slug>`. Batch A keeps that indirection on
-              purpose: one place changes when the catch-all is finally deleted. */}
+          {/* The card takes the wire shape directly now, and links straight to
+              `/store/categories/<slug>`. The adapter object that used to be built here
+              existed only to satisfy the legacy `StoreCategory` type, and it was also
+              where the placeholder path was chosen — a file that did not exist. Both
+              concerns moved into the card, which is the one place that renders a tile. */}
           <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 lg:grid-cols-4 lg:px-6">
             {viewState.categories.map((category) => (
-              <CategoryCard
-                key={category.id}
-                category={{
-                  slug: category.slug,
-                  name: category.name,
-                  imageSrc: category.imageUrl ?? "/images/store/categories/placeholder.svg",
-                  childrenSlugs: [],
-                }}
-              />
+              <CategoryCard key={category.id} category={category} />
             ))}
           </div>
           <p className="px-4 pt-6 text-xs leading-4 text-[#6F7979] lg:px-6">

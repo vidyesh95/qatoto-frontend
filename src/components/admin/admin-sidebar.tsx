@@ -47,6 +47,20 @@ const ADMIN_NAVIGATION_ITEMS: AdminNavItem[] = [
     inactiveIcon: "/icons/category_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    // A DIFFERENT TAXONOMY FROM "Categories" ABOVE, which is R&D's `research_category` and
+    // `research_paper_category` under `moderate_taxonomy`. This one is the store's browse
+    // tree under `moderate_commerce` — separate tables, separate capability, separate job.
+    //
+    // Desktop only, same tradeoff as Promotions below: the mobile bar would go from six tabs
+    // to seven, and arranging a category grid means picking image files.
+    href: "/admin/store-categories",
+    label: "Store categories",
+    // `local_mall`, not `storefront`: only a teal FILL0 storefront is committed, and the nav
+    // needs a black FILL0/FILL1 pair like every other item here.
+    activeIcon: "/icons/local_mall_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     // Desktop only, deliberately not added to admin-mobile-bottom-nav: that bar would go
     // from six tabs to seven, and managing a carousel means picking image files.
     href: "/admin/promotions",

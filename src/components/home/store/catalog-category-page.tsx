@@ -125,16 +125,11 @@ function ChildCategoryGrid({
         Browse within {categoryName}
       </h2>
       <div className="grid grid-cols-3 gap-3 px-4 sm:grid-cols-4 lg:grid-cols-6 lg:px-6">
+        {/* The card takes the wire shape directly. The adapter object built here used to
+            pick a placeholder path that did not exist in `public/`; both concerns now live
+            in the card, which is the one place a tile is rendered. */}
         {childCategories.map((childCategory) => (
-          <CategoryCard
-            key={childCategory.id}
-            category={{
-              slug: childCategory.slug,
-              name: childCategory.name,
-              imageSrc: childCategory.imageUrl ?? "/images/store/categories/placeholder.svg",
-              childrenSlugs: [],
-            }}
-          />
+          <CategoryCard key={childCategory.id} category={childCategory} />
         ))}
       </div>
     </section>

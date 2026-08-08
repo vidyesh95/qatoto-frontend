@@ -68,7 +68,12 @@ export type ProductRail = {
 
 export type StoreHome = {
   hero: HeroSlide[];
-  rootCategories: StoreCategory[];
+  /**
+   * `rootCategories` IS GONE FROM THIS SHAPE. The store home's category rail now reads
+   * `GET /store/categories?limit=8` through `catalog.api.ts` and renders the real,
+   * admin-arranged taxonomy. Leaving a mock copy here would be a second answer to "what are
+   * the categories", and the one nobody was looking at would be the one that drifted.
+   */
   pathways: Pathway[];
   b2bLinks: B2BLink[];
   rails: ProductRail[];

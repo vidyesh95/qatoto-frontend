@@ -1,5 +1,13 @@
 // TRANSPORT: props-only — this component fetches nothing and mutates nothing. It hands a
 // validated `File` up to its parent, which owns the mutation.
+//
+// SHARED ACROSS THE ADMIN CONSOLE, not per-domain. It began as
+// `promotions/slide-image-picker.tsx` and moved here when store categories needed the same
+// control. The duplication warning in `upload-organization-media.ts` is about ROUTE
+// CONTRACTS — field name, size cap, error copy — which stay per-route on the server. This is
+// a file input, a decode and a preview; none of that is a contract, and the candidate/report
+// state machine below is subtle enough that a second copy would be a second thing to get
+// wrong. What genuinely differs per surface (the preview's aspect ratio) is a prop.
 "use client";
 
 import Image from "next/image";
@@ -17,12 +25,7 @@ import { useEffect, useRef, useState } from "react";
  * built with the AV1 decoder only — and on iOS an accept list with no HEIC entry makes Safari
  * hand over a transcoded JPEG instead. Omitting it is the fix, not an oversight.
  */
-const ACCEPTED_SLIDE_IMAGE_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/avif",
-] as const;
+const ACCEPTED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"] as const;
 
 /**
  * The `accept` attribute value: the MIME types above plus their extensions.
@@ -31,8 +34,8 @@ const ACCEPTED_SLIDE_IMAGE_MIME_TYPES = [
  * dragged file never consults at all, so the extensions belong here while the JS check
  * belongs to the MIME array — one is a filter, the other is the actual gate.
  */
-const ACCEPTED_SLIDE_IMAGE_TYPES = [
-  ...ACCEPTED_SLIDE_IMAGE_MIME_TYPES,
+const ACCEPTED_IMAGE_TYPES = [
+  ...ACCEPTED_IMAGE_MIME_TYPES,
   ".jpg",
   ".jpeg",
   ".png",
@@ -41,11 +44,11 @@ const ACCEPTED_SLIDE_IMAGE_TYPES = [
 ].join(",");
 
 /** `limits.fileSize` in the backend's `upload-promotional-slide-image` middleware. */
-const MAX_SLIDE_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 /** MIN_DIMENSION_PX / MAX_DIMENSION_PX in the backend's `src/lib/image.ts`. */
-const MIN_SLIDE_DIMENSION_PX = 64;
-const MAX_SLIDE_DIMENSION_PX = 8192;
+const MIN_IMAGE_DIMENSION_PX = 64;
+const MAX_IMAGE_DIMENSION_PX = 8192;
 
 /** The drag-active accent already used by the studio listing dropzone. */
 const DRAG_ACTIVE_BORDER_CLASS = "border-[#1DBDC5] bg-muted/40";
@@ -57,14 +60,14 @@ const DRAG_ACTIVE_BORDER_CLASS = "border-[#1DBDC5] bg-muted/40";
  * `isChecking` boolean beside an `error?` string would permit "checking and already rejected"
  * at once. There is exactly one status at a time and the render switch is exhaustive.
  */
-type SlideImagePickState =
+type ImagePickState =
   | { status: "empty" }
   | { status: "checking"; previewUrl: string }
   | { status: "rejected"; message: string }
   | { status: "ready"; previewUrl: string; widthPx: number; heightPx: number };
 
 /** Failure is a value, not an exception — the caller branches on `success`. */
-type SlideImageCheckResult =
+type ImageCheckResult =
   | { success: true; widthPx: number; heightPx: number }
   | { success: false; message: string };
 
@@ -82,10 +85,8 @@ function formatMegabytes(byteCount: number): string {
  * ORDER IS CHEAPEST-FIRST: a string compare, then a number compare, then a decode. The decode
  * is last because it is the only step that costs real work.
  */
-async function checkSlideImageFile(file: File): Promise<SlideImageCheckResult> {
-  const isAcceptedMimeType = (ACCEPTED_SLIDE_IMAGE_MIME_TYPES as readonly string[]).includes(
-    file.type,
-  );
+async function checkImageFile(file: File): Promise<ImageCheckResult> {
+  const isAcceptedMimeType = (ACCEPTED_IMAGE_MIME_TYPES as readonly string[]).includes(file.type);
   if (!isAcceptedMimeType) {
     return {
       success: false,
@@ -93,7 +94,7 @@ async function checkSlideImageFile(file: File): Promise<SlideImageCheckResult> {
     };
   }
 
-  if (file.size > MAX_SLIDE_IMAGE_BYTES) {
+  if (file.size > MAX_IMAGE_BYTES) {
     return {
       success: false,
       message: `That image is ${formatMegabytes(file.size)}. The limit is 5 MB.`,
@@ -122,17 +123,17 @@ async function checkSlideImageFile(file: File): Promise<SlideImageCheckResult> {
   // ~268 MB of RGBA.
   decodedBitmap.close();
 
-  if (widthPx < MIN_SLIDE_DIMENSION_PX || heightPx < MIN_SLIDE_DIMENSION_PX) {
+  if (widthPx < MIN_IMAGE_DIMENSION_PX || heightPx < MIN_IMAGE_DIMENSION_PX) {
     return {
       success: false,
-      message: `That image is ${String(widthPx)} × ${String(heightPx)}. Both sides must be at least ${String(MIN_SLIDE_DIMENSION_PX)} pixels.`,
+      message: `That image is ${String(widthPx)} × ${String(heightPx)}. Both sides must be at least ${String(MIN_IMAGE_DIMENSION_PX)} pixels.`,
     };
   }
 
-  if (widthPx > MAX_SLIDE_DIMENSION_PX || heightPx > MAX_SLIDE_DIMENSION_PX) {
+  if (widthPx > MAX_IMAGE_DIMENSION_PX || heightPx > MAX_IMAGE_DIMENSION_PX) {
     return {
       success: false,
-      message: `That image is ${String(widthPx)} × ${String(heightPx)}. Neither side may exceed ${String(MAX_SLIDE_DIMENSION_PX)} pixels.`,
+      message: `That image is ${String(widthPx)} × ${String(heightPx)}. Neither side may exceed ${String(MAX_IMAGE_DIMENSION_PX)} pixels.`,
     };
   }
 
@@ -150,24 +151,31 @@ async function checkSlideImageFile(file: File): Promise<SlideImageCheckResult> {
  * carousel does. A preview that cropped to fill would show framing the visitor never gets,
  * which is worse than no preview — it would be confidently wrong.
  */
-export function SlideImagePicker({
+export function AdminImagePicker({
   inputId,
   isDisabled,
   selectedFile,
   onFileSelected,
+  previewAspectClassName = "aspect-video",
 }: {
-  /** Must be unique per instance — one lives in the create form, one per slide row. */
+  /** Must be unique per instance — one lives in the create form, one per row. */
   inputId: string;
   isDisabled: boolean;
   /** The parent's copy: the last file that PASSED, or null. Never a rejected one. */
   selectedFile: File | null;
   onFileSelected: (file: File | null) => void;
+  /**
+   * The preview box's shape, matching where the image will actually be rendered — a
+   * full-bleed carousel slide is 16:9, a category tile is square. Getting this wrong is the
+   * one way a preview can be confidently misleading, which is why it is not defaulted away.
+   */
+  previewAspectClassName?: string;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   /** What the admin last chose, verdict not yet known. The parent never sees this one. */
   const [candidateFile, setCandidateFile] = useState<File | null>(null);
-  const [pickState, setPickState] = useState<SlideImagePickState>({ status: "empty" });
+  const [pickState, setPickState] = useState<ImagePickState>({ status: "empty" });
 
   /**
    * The parent is told about a file only once it PASSES, and this split is load-bearing.
@@ -213,7 +221,7 @@ export function SlideImagePicker({
 
     let isStale = false;
     async function runCheck(file: File) {
-      const checkResult = await checkSlideImageFile(file);
+      const checkResult = await checkImageFile(file);
       if (isStale) return;
       if (checkResult.success) {
         setPickState({
@@ -292,7 +300,7 @@ export function SlideImagePicker({
         ref={fileInputRef}
         id={inputId}
         type="file"
-        accept={ACCEPTED_SLIDE_IMAGE_TYPES}
+        accept={ACCEPTED_IMAGE_TYPES}
         disabled={isDisabled}
         className="hidden"
         onChange={(event) => {
@@ -384,7 +392,9 @@ export function SlideImagePicker({
   ) {
     return (
       <div className="space-y-2">
-        <div className="aspect-video w-full max-w-md overflow-hidden rounded-xl border border-[#CAC4D0]/60 bg-muted">
+        <div
+          className={`${previewAspectClassName} w-full max-w-md overflow-hidden rounded-xl border border-[#CAC4D0]/60 bg-muted`}
+        >
           {/* A plain <img>: `next/image` routes through the optimizer, which cannot fetch a
               blob: URL. Same reason the studio listing previews use one. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}

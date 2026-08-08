@@ -7,41 +7,20 @@ import { z } from "zod";
  * keeps the client forward-compatible with backend minor additions.
  */
 
-export const PRODUCT_CATEGORY_SLUGS = [
-  "electronics",
-  "fashion",
-  "home_kitchen",
-  "anime_collectibles",
-  "digital_goods",
-  "books_media",
-  "sports_outdoors",
-  "beauty_personal_care",
-] as const;
+/**
+ * THERE IS NO CATEGORY ENUM HERE ANY MORE.
+ *
+ * `PRODUCT_CATEGORY_SLUGS` and its two label maps used to live at the top of this file and
+ * named the eight roots migration 0098 RETIRED. The taxonomy is now `commerce_category` rows
+ * the store admin owns — it grows from a screen, which no enum can do — so a listing carries
+ * a `categoryId` read from `GET /store/categories`, not a value hardcoded in a wizard.
+ *
+ * Keeping the old tuple "for the labels" would have left a second vocabulary that silently
+ * disagreed with the database, which is exactly the bug this change exists to close.
+ */
 
 export const PRODUCT_CONDITION_SLUGS = ["new", "refurbished", "used"] as const;
 export const PRODUCT_STATUSES = ["draft", "active"] as const;
-
-/**
- * Wizard display labels ↔ stored slugs (STUDIO_PRODUCTS_BACKEND_STRUCTURE.md §4). Order is
- * load-bearing: it matches the `PRODUCT_CATEGORIES` label array in the wizard.
- */
-export const CATEGORY_LABELS = [
-  "Electronics",
-  "Fashion",
-  "Home & Kitchen",
-  "Anime & Collectibles",
-  "Digital Goods",
-  "Books & Media",
-  "Sports & Outdoors",
-  "Beauty & Personal Care",
-] as const;
-
-export const CATEGORY_LABEL_TO_SLUG: Record<string, (typeof PRODUCT_CATEGORY_SLUGS)[number]> =
-  Object.fromEntries(CATEGORY_LABELS.map((label, index) => [label, PRODUCT_CATEGORY_SLUGS[index]]));
-
-export const SLUG_TO_CATEGORY_LABEL: Record<string, string> = Object.fromEntries(
-  PRODUCT_CATEGORY_SLUGS.map((slug, index) => [slug, CATEGORY_LABELS[index]]),
-);
 
 export const CONDITION_LABELS = ["New", "Refurbished", "Used"] as const;
 
@@ -81,7 +60,19 @@ export const PublicProductSchema = z
     id: z.string(),
     title: z.string(),
     brand: z.string().nullable(),
-    category: z.string(),
+    /**
+     * The LEGACY enum value, and null for every listing created since 0098. Kept on the
+     * wire so old clients still parse; `categoryId` is the authoritative field and the only
+     * one this app reads.
+     */
+    category: z.string().nullable(),
+    categoryId: z.string(),
+    /**
+     * Set while this listing sits in Misc awaiting a verdict on a requested category. A
+     * non-null value is why the studio says "waiting for review" instead of presenting Misc
+     * as a category the seller chose.
+     */
+    pendingCategoryRequestId: z.string().nullable(),
     condition: z.enum(PRODUCT_CONDITION_SLUGS),
     description: z.string().nullable(),
     priceInCents: z.number(),
@@ -126,7 +117,18 @@ export type ProductListRow = z.infer<typeof ProductListRowSchema>;
 export interface CreateProductInput {
   title: string;
   brand?: string;
-  category: (typeof PRODUCT_CATEGORY_SLUGS)[number];
+  /**
+   * The category this listing belongs to. Mutually exclusive with `categoryRequestId` —
+   * the backend's create schema refuses both together rather than choosing which one the
+   * seller meant, because the two answers differ: one publishes into a category, the other
+   * parks the listing in Misc pending a verdict.
+   */
+  categoryId?: string;
+  /**
+   * The seller's pending request for a category that does not exist yet. Create only; a
+   * PATCH names a real category, and the backend's update schema omits this key entirely.
+   */
+  categoryRequestId?: string;
   condition: (typeof PRODUCT_CONDITION_SLUGS)[number];
   description?: string;
   keyFeatures: string[];
