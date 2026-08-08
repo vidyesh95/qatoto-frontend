@@ -43,9 +43,14 @@ const MOCK_PRICED_PRODUCTS: Readonly<Record<string, MockPricedProduct>> = {
     stockState: "in_stock",
     requiresVariant: true,
     availableQuantity: 900,
+    // All four of the PDP's colours, because the PDP now writes against this product and an id
+    // missing here prices fine but comes back with `variantName: null` — a cart line with no colour
+    // on a product sold by colour.
     variantNamesById: {
       var_folding_chair_red: "Raspberry red",
+      var_folding_chair_purple: "Royal purple",
       var_folding_chair_blue: "Sea blue",
+      var_folding_chair_black: "Charcoal black",
     },
   },
   prd_office_chair: {

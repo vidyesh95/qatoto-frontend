@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useSidebar } from "@/state/sidebar-context";
 import { useSession } from "@/lib/auth-client";
 import AccountMenu from "@/components/home/account/menus/account-menu";
+import CartNavButton from "@/components/home/layout/cart-nav-button";
 
 const ANIME_SUBPAGES: Record<string, string> = {
   "/anime/genre": "Genre",
@@ -229,18 +230,9 @@ export default function Navbar() {
                   height={24}
                 />
               </button>
-              <button
-                type={"button"}
-                aria-label="Cart"
-                className={"cursor-pointer rounded-full border border-primary bg-white p-1.75"}
-              >
-                <Image
-                  src={"/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-                  alt={"Cart"}
-                  width={24}
-                  height={24}
-                />
-              </button>
+              {/* Owns its own cart query so the request only exists for a signed-in visitor — see
+                  the header of `cart-nav-button.tsx`. */}
+              <CartNavButton />
               <div className="relative">
                 <button
                   type="button"

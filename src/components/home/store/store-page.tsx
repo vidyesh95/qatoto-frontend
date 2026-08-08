@@ -4,7 +4,7 @@ import { getStoreHome } from "@/lib/store";
 import HeroCarousel from "@/components/home/store/rails/hero-carousel";
 import CategoryRail from "@/components/home/store/rails/category-rail";
 import PathwaysRail from "@/components/home/store/rails/pathways-rail";
-import B2BRail from "@/components/home/store/rails/b2b-rail";
+import BusinessToolsRail from "@/components/home/store/rails/business-tools-rail";
 import ProductRail from "@/components/home/store/rails/product-rail";
 
 // Store landing page body. Server component — data comes from the cached
@@ -17,7 +17,9 @@ export default async function StorePage() {
       <HeroCarousel slides={hero} />
       <CategoryRail categories={rootCategories} />
       <PathwaysRail pathways={pathways} />
-      <B2BRail links={b2bLinks} />
+      {/* `b2bLinks` keeps its wire name — it is a field on the legacy `StoreHome` getter. The
+          component that renders it does not have to. */}
+      <BusinessToolsRail links={b2bLinks} />
       {rails.map((rail) => (
         <ProductRail key={rail.id} rail={rail} />
       ))}

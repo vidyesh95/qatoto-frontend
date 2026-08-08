@@ -82,9 +82,16 @@ trade-service connectors.
 ⏳ /studio/logistics
 ```
 
-Links already presented but not implemented include `/store/categories`, `/store/pathways`,
-`/store/feed/*`, `/store/rfq`, `/store/logistics`, `/store/factories`, and several product URLs.
-“Send inquiry,” “Add to cart,” and “Buy now” have no handlers.
+Links already presented but not implemented include `/store/pathways`, `/store/feed/*`, and
+several product URLs. “Send inquiry,” “Add to cart,” and “Buy now” have no handlers.
+
+The "For your Business" rail's six destinations all resolve as of the business-tools batch.
+`/store/rfq` and `/store/logistics` were never built and are not going to be: the tiles now point at
+`/store/rfqs` and `/store/providers`, which already existed under those names. `/store/factories`,
+`/store/forum` and `/store/find-cofounder` are new mock-backed surfaces (§7.6), and `/store/business`
+is the rail's own index. Every href lives in `src/lib/store/business-tools.ts` — one manifest feeding
+both the rail tiles and the index page, because the four dead links existed precisely because nothing
+corroborated a hand-written array in `store-mocks.ts`.
 
 ### 1.2 Current data path
 
@@ -388,8 +395,15 @@ The existing visual order remains a useful shell:
 1. `HeroCarousel`
 2. `CategoryRail`
 3. `PathwaysRail`
-4. provider/service shortcut rail (rename `B2BRail` when its contract is concrete)
+4. `BusinessToolsRail` — six business-tool shortcuts, see-all at `/store/business`
 5. product rails
+
+`B2BRail` was renamed to `BusinessToolsRail` (and `B2BTile` to `BusinessToolTile`) once its contract
+became concrete, which is what this line used to ask for. The contract is
+`src/lib/store/business-tools.ts`: six `BusinessTool` entries, each an id, label, one-line
+description, icon and href. The rail renders labels only; the description is the `/store/business`
+index card's field. `StoreHome.b2bLinks` keeps its wire name — renaming a field on the legacy getter
+would be a contract change for a cosmetic gain.
 
 `StoreHomeSchema` parses semantic accent tokens, public links, and eligible cards. The API never
 sends Tailwind classes such as `group-hover:bg-yellow-100`.
@@ -424,6 +438,47 @@ Filters live in URL query keys and are executed by the backend:
 Filter controls build links or replace search params. They never filter a fetched page in memory.
 Changing a filter clears the cursor. The UI displays backend facet counts and does not invent
 counts from visible cards.
+
+### 7.6 Business tools
+
+The "For your Business" rail's six destinations. Three of them are existing surfaces reached under
+their real names (`/store/business` index, `/store/rfqs`, `/store/providers`); three are new and
+**mock-backed**, written against proposed contracts because none of them has a backend —
+`STORE_BACKEND_STRUCTURE.md` A25 records `business-forum` and `find-cofounder` as "not commerce and
+[with] no backend anywhere", and the factories gap as a filed ask.
+
+| Surface             | Routes                                                         | Contract                            | Fixtures                          |
+| ------------------- | -------------------------------------------------------------- | ----------------------------------- | --------------------------------- |
+| Factories worldwide | `/store/factories`, `/[factorySlug]`, `/[factorySlug]/inquire` | `factories.schemas.ts` / `.api.ts`  | `mocks/store/factories-mocks.ts`  |
+| Business forum      | `/store/forum`, `/[threadSlug]`, `/new`                        | `forum.schemas.ts` / `.api.ts`      | `mocks/store/forum-mocks.ts`      |
+| Find a cofounder    | `/store/find-cofounder`, `/[profileSlug]`, `/new`              | `cofounders.schemas.ts` / `.api.ts` | `mocks/store/cofounders-mocks.ts` |
+
+Each follows §6's shape exactly — `unknown` → Zod `.strip()` → `ActionResponse` → a discriminated
+view state with an exhaustive `switch`; server-side filtering through the URL; `resolveMockRead` /
+`resolveMockDetail` standing in for one line that becomes `getJson`.
+
+**Three copy rules are load-bearing on these surfaces and are enforced in the schema headers, not
+only in components.**
+
+1. **A factory's `verificationState` is about the organization, never a capability.** "Documents
+   reviewed" and "Site audited" are the only claims; there is no per-capability approval on the wire
+   and no bare tick anywhere. A card names its certifications and cannot say whether they are
+   current — validity windows are on the detail read only.
+2. **A forum thread is created `pending_review`, not `open`.** A10 closed public listing comments
+   for want of a standing requirement, and a free-floating text box inherits that problem exactly.
+   Moderation is what lets the forum exist without reopening the argument, so the composer says
+   "queued for review" and means it. This is a decision, not a placeholder.
+3. **A cofounder profile is not an offer, its capital range is unverified, and nothing here is
+   equity.** `capitalRange` is what a person typed about themselves — no copy may say committed,
+   funded, raised, escrowed or available, and the word "declares" is in the row rather than in a
+   tooltip. `equityExpectationBasisPoints` is an ask to negotiate from, rendered as "hoping for" and
+   never as a holding. There is no contact affordance on a profile because no such write exists;
+   the gap is stated in a sentence rather than mocked up as a button that reaches nothing.
+
+Two writes answer with a **draft** (factory inquiry, cofounder profile) and one with
+**`pending_review`** (forum thread). None of the three sends, publishes or notifies anybody, every
+success screen says so, and all three mint an `Idempotency-Key` once per attempt via
+`useAttemptIdempotencyKey`.
 
 ---
 
@@ -588,27 +643,30 @@ one shipment arrived.
 
 ## 12. Mock-removal map
 
-| Mock/source                      | Migration                                              | Delete when                            |
-| -------------------------------- | ------------------------------------------------------ | -------------------------------------- |
-| `src/lib/store.ts` generic fetch | Split into parsed `src/lib/store/*.api.ts`             | all callers migrated                   |
-| `src/types/store.ts`             | Zod-inferred schema types                              | no imports remain                      |
-| `src/mocks/store-mocks.ts`       | Backend seed/curation data where real                  | no production fallback remains         |
-| Static product body              | `GET /store/products/:productSlug` + parsed props      | PDP reads real product                 |
-| Inline product colors/tiers      | `variants[]` + `pricingTiers[]` on the product read    | no `MOCK_PRODUCT_*` imports            |
-| `TIER_UPPER_QUANTITY_LIMITS`     | Derive the upper bound from the next tier's MOQ        | `price-chart.tsx` reads no constant    |
-| `mockPathwayBannerForSlug`       | `cardImageUrl` / `heroImageUrl` on the pathway read    | pathway art comes from the server      |
-| `hoverBg` Tailwind classes       | The `accent` semantic token, mapped client-side        | no class string crosses the wire       |
-| Static breadcrumb                | `categoryTrail[]` on the product read                  | category contract wired                |
-| Local addresses                  | Organization address query/mutations (`delivery` kind) | address sheets use backend             |
-| Mock manufacturer storefront     | Organization route/projection                          | ✅ **done** — storefront page is wired |
-| Mock manufacturer chat           | Product inquiry → thread → messages                    | resource-scoped messaging wired        |
-| Video comment/review types       | Store review/Q&A schemas                               | no cross-domain imports                |
-| Mock compare/similar             | `GET /store/products/:productSlug/companions`          | sheets receive parsed candidates       |
-| Static delivery                  | `GET /store/products/:productSlug/delivery-estimate`   | honest empty/estimate states wired     |
-| Mock video product picker        | Seller product query                                   | only real owned active IDs selectable  |
-| Inert buy buttons                | RFQ/cart/checkout controls                             | each action reaches real API           |
-| Cart/order/logistics headings    | Full pages                                             | corresponding phase ships              |
-| Legacy `category` enum in Studio | `categoryId` from `commerce_category`                  | wizard submits an id, not a slug       |
+| Mock/source                           | Migration                                                                                     | Delete when                                   |
+| ------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `src/lib/store.ts` generic fetch      | Split into parsed `src/lib/store/*.api.ts`                                                    | all callers migrated                          |
+| `src/types/store.ts`                  | Zod-inferred schema types                                                                     | no imports remain                             |
+| `src/mocks/store-mocks.ts`            | Backend seed/curation data where real                                                         | no production fallback remains                |
+| Static product body                   | `GET /store/products/:productSlug` + parsed props                                             | PDP reads real product                        |
+| Inline product colors/tiers           | `variants[]` + `pricingTiers[]` on the product read                                           | no `MOCK_PRODUCT_*` imports                   |
+| `TIER_UPPER_QUANTITY_LIMITS`          | Derive the upper bound from the next tier's MOQ                                               | `price-chart.tsx` reads no constant           |
+| `mockPathwayBannerForSlug`            | `cardImageUrl` / `heroImageUrl` on the pathway read                                           | pathway art comes from the server             |
+| `hoverBg` Tailwind classes            | The `accent` semantic token, mapped client-side                                               | no class string crosses the wire              |
+| Static breadcrumb                     | `categoryTrail[]` on the product read                                                         | category contract wired                       |
+| Local addresses                       | Organization address query/mutations (`delivery` kind)                                        | address sheets use backend                    |
+| Mock manufacturer storefront          | Organization route/projection                                                                 | ✅ **done** — storefront page is wired        |
+| Mock manufacturer chat                | Product inquiry → thread → messages                                                           | resource-scoped messaging wired               |
+| Video comment/review types            | Store review/Q&A schemas                                                                      | no cross-domain imports                       |
+| Mock compare/similar                  | `GET /store/products/:productSlug/companions`                                                 | sheets receive parsed candidates              |
+| Static delivery                       | `GET /store/products/:productSlug/delivery-estimate`                                          | honest empty/estimate states wired            |
+| Mock video product picker             | Seller product query                                                                          | only real owned active IDs selectable         |
+| Inert buy buttons                     | RFQ/cart/checkout controls                                                                    | each action reaches real API                  |
+| Cart/order/logistics headings         | Full pages                                                                                    | corresponding phase ships                     |
+| Legacy `category` enum in Studio      | `categoryId` from `commerce_category`                                                         | wizard submits an id, not a slug              |
+| `src/mocks/store/factories-mocks.ts`  | `GET /store/factories` + `/store/factories/:slug`, `POST /commerce/factories/:slug/inquiries` | `factories.api.ts` uses `getJson`/`sendJson`  |
+| `src/mocks/store/forum-mocks.ts`      | `GET /store/forum/threads` + `/threads/:slug`, `POST /commerce/forum/threads`                 | `forum.api.ts` uses `getJson`/`sendJson`      |
+| `src/mocks/store/cofounders-mocks.ts` | `GET /store/cofounder-profiles` + `/:slug`, `POST /commerce/cofounder-profiles`               | `cofounders.api.ts` uses `getJson`/`sendJson` |
 
 Mocks may remain temporarily in Storybook/design fixtures outside production data paths. A network
 failure must never activate them.

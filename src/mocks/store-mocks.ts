@@ -3,6 +3,7 @@
 // unset or the upstream call fails. Display data only — the Express backend is
 // the source of truth and must re-derive anything trusted.
 
+import { BUSINESS_TOOLS } from "@/lib/store/business-tools";
 import type {
   B2BLink,
   HeroSlide,
@@ -2009,44 +2010,24 @@ export const MOCK_PATHWAYS: Pathway[] = [
   },
 ];
 
-const MOCK_B2B_LINKS: B2BLink[] = [
-  {
-    id: "all-categories",
-    label: "All Categories",
-    iconSrc: "/icons/category_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    href: "/store/categories",
-  },
-  {
-    id: "request-for-quotation",
-    label: "Request for Quotation",
-    iconSrc: "/icons/request_quote_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    href: "/store/rfq",
-  },
-  {
-    id: "logistic-services",
-    label: "Logistic Services",
-    iconSrc: "/icons/directions_boat_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    href: "/store/logistics",
-  },
-  {
-    id: "factories-worldwide",
-    label: "Factories Worldwide",
-    iconSrc: "/icons/factory_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    href: "/store/factories",
-  },
-  {
-    id: "business-forum",
-    label: "Business Forum",
-    iconSrc: "/icons/forum_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    href: "/store/forum",
-  },
-  {
-    id: "find-cofounder",
-    label: "Find Cofounder",
-    iconSrc: "/icons/group_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    href: "/store/find-cofounder",
-  },
-];
+/**
+ * The "For your Business" tiles, PROJECTED FROM THE MANIFEST rather than written out here.
+ *
+ * This array used to hold six hand-written hrefs, four of which pointed at routes that do not
+ * exist. `src/lib/store/business-tools.ts` is now the single source of truth for where a business
+ * tool lives, and `/store/business` renders the same list — so a tile and its index card cannot
+ * drift apart.
+ *
+ * `description` is dropped on the way through: it is index-page copy, and `B2BLink` is a wire type
+ * on `StoreHome`. Widening the wire to carry a sentence only the index renders would be a contract
+ * change for nothing.
+ */
+const MOCK_B2B_LINKS: B2BLink[] = BUSINESS_TOOLS.map(({ id, label, iconSrc, href }) => ({
+  id,
+  label,
+  iconSrc,
+  href,
+}));
 
 export const MOCK_STORE_HOME: StoreHome = {
   hero: HERO_SLIDES,
@@ -2067,11 +2048,39 @@ export const MOCK_PRODUCT_HERO_IMAGES = [
   "/dummy/chair_raspberry_red03.avif",
 ];
 
+/**
+ * The id the PDP's buy actions write against.
+ *
+ * IT IS A KEY IN THE MOCK CART'S CATALOGUE (`src/mocks/store/cart-mocks.ts`), deliberately. The PDP
+ * is still one hardcoded chair, so "Add to cart" would otherwise mutate a product the cart has never
+ * heard of and every line would come back `PRODUCT_NOT_FOUND` — a wired button that only ever
+ * demonstrates its error branch. Both constants disappear when the PDP reads a real product.
+ */
+export const MOCK_PRODUCT_ID = "prd_folding_chair";
+
+/** Matches `minimumOrderQuantity` on that catalogue entry. Below it the mock refuses the line. */
+export const MOCK_PRODUCT_MINIMUM_ORDER_QUANTITY = 50;
+
+// `variantId` mirrors `variantNamesById` on the same catalogue entry, which declares
+// `requiresVariant: true` — a line naming no variant is refused with `VARIANT_REQUIRED`.
 export const MOCK_PRODUCT_COLORS = [
-  { name: "Raspberry red", src: "/dummy/chair_raspberry_red.avif", selected: true },
-  { name: "Royal purple", src: "/dummy/chair_royal_purple.avif" },
-  { name: "Sea blue", src: "/dummy/chair_sea_blue.avif" },
-  { name: "Charcoal black", src: "/dummy/chair_charcoal_black.avif" },
+  {
+    name: "Raspberry red",
+    src: "/dummy/chair_raspberry_red.avif",
+    variantId: "var_folding_chair_red",
+    selected: true,
+  },
+  {
+    name: "Royal purple",
+    src: "/dummy/chair_royal_purple.avif",
+    variantId: "var_folding_chair_purple",
+  },
+  { name: "Sea blue", src: "/dummy/chair_sea_blue.avif", variantId: "var_folding_chair_blue" },
+  {
+    name: "Charcoal black",
+    src: "/dummy/chair_charcoal_black.avif",
+    variantId: "var_folding_chair_black",
+  },
 ];
 
 // Price + customization will come from the backend API. For the UI phase this

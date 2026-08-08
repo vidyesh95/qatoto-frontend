@@ -49,11 +49,36 @@ import { storeKeys } from "@/hooks/store/keys";
  * of any browse cache — a cached cart is a cached price, and this is the one surface where showing a
  * stale one has a consequence.
  */
-export function useCartQuery() {
+export function useCartQuery({ isEnabled = true }: { isEnabled?: boolean } = {}) {
   return useQuery({
     queryKey: storeKeys.cart(),
     queryFn: () => getCart(),
     staleTime: 0,
+    // `isEnabled` exists for the PRODUCT PAGE, which is public: without it, every anonymous visitor
+    // to a product would fire a cart read that can only ever come back 401. The cart page does not
+    // pass it — that route is already behind a session and the 401 there is the signal it renders.
+    enabled: isEnabled,
+  });
+}
+
+/**
+ * The same cart, for the navbar badge, at a badge's freshness.
+ *
+ * SAME `storeKeys.cart()` KEY, longer `staleTime`, and sharing the key is the entire point: every
+ * mutation writes the authoritative cart into that key through `useCartWriter`, so the badge follows
+ * an add or a stepper press with NO request of its own.
+ *
+ * The `staleTime` differs because the two observers want different things. The cart page shows PRICES
+ * and must refetch on mount; a count in a navbar mounted on every page of the `(home)` group does not
+ * justify a request per navigation. React Query resolves `staleTime` per observer, so landing on
+ * `/cart` still forces the fresh read that `useCartQuery` asks for — this hook cannot make that page
+ * stale.
+ */
+export function useCartBadgeQuery() {
+  return useQuery({
+    queryKey: storeKeys.cart(),
+    queryFn: () => getCart(),
+    staleTime: 60_000,
   });
 }
 

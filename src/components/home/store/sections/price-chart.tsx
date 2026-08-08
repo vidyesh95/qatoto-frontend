@@ -1,4 +1,4 @@
-// TRANSPORT: props-only — renders the tiers it is handed; the stepper is local UX only.
+// TRANSPORT: props-only — renders the tiers it is handed; the stepper writes to shared client state.
 "use client";
 
 import { useState } from "react";
@@ -6,6 +6,7 @@ import { useState } from "react";
 import Image from "next/image";
 
 import PriceChartSheet from "@/components/home/store/sheets/price-chart-sheet";
+import { useProductQuantity } from "@/components/home/store/sections/product-quantity-context";
 import type { ProductPricingTier } from "@/types/store";
 
 // Price chart block on the product page. Shows a compact tier preview; tapping
@@ -21,15 +22,15 @@ const TIER_UPPER_QUANTITY_LIMITS = [49, 499, Number.POSITIVE_INFINITY];
 export default function PriceChart({ pricingTiers }: { pricingTiers: ProductPricingTier[] }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  // Kept as a string so the field can be empty mid-edit; the parsed number
-  // below (floored at 1) is what drives the tier highlight and helper price.
-  const [quantityInputValue, setQuantityInputValue] = useState("1");
-  const quantity = Math.max(1, Number.parseInt(quantityInputValue, 10) || 1);
+  // The quantity is SHARED, not local. The buy actions send it, and they render outside this
+  // component — see `product-quantity-context.tsx` for why that cannot be a prop.
+  const { quantity, quantityInputValue, setQuantityInputValue, minimumOrderQuantity } =
+    useProductQuantity();
 
   const activeTierIndex = TIER_UPPER_QUANTITY_LIMITS.findIndex((limit) => quantity <= limit);
 
   const handleDecreaseQuantityClick = () =>
-    setQuantityInputValue(String(Math.max(1, quantity - 1)));
+    setQuantityInputValue(String(Math.max(minimumOrderQuantity, quantity - 1)));
   const handleIncreaseQuantityClick = () => setQuantityInputValue(String(quantity + 1));
 
   const handleQuantityInputChange = (changeEvent: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,7 +99,9 @@ export default function PriceChart({ pricingTiers }: { pricingTiers: ProductPric
           <button
             type="button"
             onClick={handleDecreaseQuantityClick}
-            disabled={quantity <= 1}
+            // Floored at the seller's minimum order quantity, not at 1: below it the server refuses
+            // the line outright, so offering the value would be offering a refusal.
+            disabled={quantity <= minimumOrderQuantity}
             aria-label="Decrease quantity"
             className="grid size-8 place-items-center rounded-full text-base text-[#00696E] outline -outline-offset-1 outline-[#6F7979] disabled:opacity-40"
           >

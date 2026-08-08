@@ -2082,8 +2082,36 @@ missing.
 public-eligibility rule products use; the missing filter keys on `SearchQuerySchema`, camelCase and
 `.strict()` as the others are; and `ancestors[]` on the category read.
 
-**Frontend today:** no search page exists at all. Two of the six B2B tiles
-(`business-forum`, `find-cofounder`) are not commerce and have no backend anywhere.
+**Frontend today:** `/store/search` exists. All six business-tool tiles now resolve, and the three
+that had no backend are built as **mock-backed surfaces written against a proposed contract** — so
+what follows is a request with a shape, not a wish. Each frontend api function is already in its
+final signature and swaps `resolveMockRead` for `getJson` in one line when the route lands.
+
+| Frontend surface        | Reads it is written against                                                                                                                            | Write                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| `/store/factories`      | `GET /store/factories` (cursor page; `capabilityKind`, `countryCode`, `certification`, `maxMinimumOrderQuantity`), `GET /store/factories/:factorySlug` | `POST /commerce/factories/:factorySlug/inquiries` → `draft` |
+| `/store/forum`          | `GET /store/forum/threads` (`board`, `threadState`), `GET /store/forum/threads/:threadSlug`                                                            | `POST /commerce/forum/threads` → `pending_review`           |
+| `/store/find-cofounder` | `GET /store/cofounder-profiles` (`contributionKind`, `commitmentLevel`, `countryCode`), `GET /store/cofounder-profiles/:profileSlug`                   | `POST /commerce/cofounder-profiles` → `draft`               |
+
+The full contracts are `src/lib/store/{factories,forum,cofounders}.schemas.ts` in the frontend repo,
+including the enum tuples each one proposes as `pgEnum` labels.
+
+**`/store/factories` is this entry's gap, restated as a route.** It is deliberately NOT a projection
+over `store_search_document`: a manufacturer's capacity, production lines, certification validity
+windows and sample policy are not searchable-document fields, and the temptation this entry already
+forbids — searching products and grouping by seller — would rank a manufacturer by whichever of its
+listings matched a keyword. Whether it arrives as the `organization` document kind proposed above
+plus a detail read, or as its own route pair, is the backend's call; the frontend needs the two
+reads and the shapes above either way.
+
+**Three things the backend must preserve, because the frontend copy already commits to them.**
+Factory verification is organization-level and says what was checked ("documents reviewed" / "site
+audited"), never a per-capability approval — the same distinction A13 draws for providers. A forum
+thread is created `pending_review` and is invisible until moderated, which is what keeps a public
+text surface consistent with A10's closure rather than reopening it. And a cofounder profile's
+capital range is self-reported: nothing verifies it, no copy calls it committed or available, and
+`equityExpectationBasisPoints` is an ask rather than a holding — this platform has no money rail
+(§14) and no surface here may imply one.
 
 **Rule:** a filter and its facet are one concept and ship together. Publishing a count the caller
 cannot act on is worse than publishing neither.

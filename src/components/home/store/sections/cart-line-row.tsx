@@ -13,6 +13,7 @@
 // `lineTotalInCents` arrive null together and `pricingError` says why — and "only 3 left" is something
 // the buyer can act on, whereas `$0.00` is a lie about the price of a thing they cannot have.
 
+import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import { useRemoveCartItem, useSetCartItem } from "@/hooks/store/cart";
 import type { CommerceCartItem } from "@/lib/store/cart.schemas";
 import { formatCentsLabel, formatCountLabel } from "@/lib/store/format";
@@ -164,9 +165,8 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
         {isMutating && <span className="text-[11px] leading-4 text-[#6F7979]">Updating…</span>}
       </div>
 
-      {/* A refused write is a VALUE, not a throw, so it surfaces here rather than vanishing. The
-          server's own message is shown — on a `409` it names the actual conflict, which a generic
-          "something went wrong" would discard. */}
+      {/* Two notices, one per mutation — see `shared/mutation-notice.tsx` for why a refusal renders
+          the server's own sentence rather than a house error string. */}
       <MutationNotice
         result={setCartItem.data}
         fallbackMessage="Couldn't update that line."
@@ -178,25 +178,5 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
         hasThrown={removeCartItem.isError}
       />
     </div>
-  );
-}
-
-function MutationNotice({
-  result,
-  fallbackMessage,
-  hasThrown,
-}: {
-  result: { readonly success: boolean; readonly error?: { readonly message: string } } | undefined;
-  fallbackMessage: string;
-  hasThrown: boolean;
-}) {
-  if (hasThrown) {
-    return <p className="mt-1 text-xs leading-4 text-destructive">{fallbackMessage}</p>;
-  }
-  if (result === undefined || result.success) return null;
-  return (
-    <p className="mt-1 text-xs leading-4 text-destructive">
-      {result.error?.message ?? fallbackMessage}
-    </p>
   );
 }
