@@ -1,5 +1,7 @@
 "use client";
 
+// TRANSPORT: mock
+
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import Image from "next/image";
@@ -7,12 +9,17 @@ import Image from "next/image";
 // Fraction of the visible tab-row width to advance per chevron click.
 const TAB_SCROLL_FRACTION = 0.6;
 
-// "All product details" bottom sheet for the product page (UI-only phase, no
-// fetch). Horizontally scrollable tabs (Features & Specs, Item details,
-// Measurements, Additional details, Packaging & delivery), each rendering a list of spec label/value
-// rows. Static mock copy for now — real specs come from the backend later; the
-// client only renders them. Bottom sheet on mobile, centered modal on desktop —
+// "All product details" bottom sheet for the product page. Horizontally scrollable tabs
+// (Features & Specs, Item details, Measurements, Additional details, Packaging & delivery), each
+// rendering a list of spec label/value rows. Bottom sheet on mobile, centered modal on desktop —
 // mirrors TradeProtectionSheet.
+//
+// WHY THIS IS STILL MOCK WHEN THE PDP ALREADY SHOWS REAL SPECIFICATIONS:
+// `/store/products/:productSlug` returns `specifications` as a FLAT `{key, value, position}[]` with
+// no grouping field, so there is nothing on the wire to drive these five tabs. The real rows render
+// unGrouped in `ProductSpecifications` on the page itself; this sheet keeps the grouped design
+// alive until `commerce_product_specification` gains a `group` column (STORE_STRUCTURE §5.6).
+// When it does, delete SPEC_TABS and feed the same structure from the response.
 
 type SpecRow = { label: string; value: string };
 type SpecTab = { id: string; label: string; rows: SpecRow[] };

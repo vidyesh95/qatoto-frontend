@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import PathwayDetail from "@/components/home/store/pathway-detail";
-import { getPathwaySlugs, prettifySlugForDisplay } from "@/lib/store";
+import { withSentinelValues } from "@/lib/static-params";
+import { prettifySlugForDisplay } from "@/lib/store/shared.schemas";
 
-export async function generateStaticParams() {
-  const slugs = await getPathwaySlugs();
-  return slugs.map((id) => ({ id }));
+export function generateStaticParams() {
+  return withSentinelValues([]).map((id) => ({ id }));
 }
 
 export async function generateMetadata({
@@ -13,7 +13,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  return { title: `${prettifySlugForDisplay(id)} · Pathway` };
+  return { title: `${prettifySlugForDisplay(id)} · Store` };
 }
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {

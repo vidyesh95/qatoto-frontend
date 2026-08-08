@@ -1,3 +1,5 @@
+// TRANSPORT: mock
+
 import Image from "next/image";
 
 // Product highlights — collapsible cards. UI-only mock, static data baked in.

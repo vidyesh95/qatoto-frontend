@@ -1,27 +1,49 @@
+// TRANSPORT: props-only
+
 import Image from "next/image";
 import Link from "next/link";
-import type { StoreCategory } from "@/types/store";
+import type { StoreCategory } from "@/lib/store/catalog.schemas";
+import { hoverTintForIndex } from "@/lib/store/tiles";
 
-// A single category tile: square image + name. Tapping drills into the
-// catch-all category route, which decides whether to show sub-categories or
-// products based on the node's children.
-export default function CategoryCard({ category }: { category: StoreCategory }) {
+export default function CategoryCard({
+  category,
+  accentIndex,
+  trailPrefix = [],
+  layout = "rail",
+}: {
+  category: StoreCategory;
+  accentIndex: number;
+  /** Parent slug segments for nested category URLs. */
+  trailPrefix?: readonly string[];
+  /** `grid` fills its cell; `rail` is a fixed-width tile for a horizontal strip. */
+  layout?: "rail" | "grid";
+}) {
+  const hrefSegments = [...trailPrefix, category.slug];
+  const href = `/store/category/${hrefSegments.join("/")}`;
+  const layoutClass =
+    layout === "grid"
+      ? "group relative flex w-full flex-col items-center gap-1"
+      : "group relative flex w-28 shrink-0 flex-col sm:w-32";
+
   return (
-    <Link
-      href={`/store/${category.slug}`}
-      className="group relative flex flex-col items-center gap-1"
-    >
+    <Link href={href} className={layoutClass}>
       <div
-        className={`pointer-events-none absolute inset-0 -z-10 -m-2 rounded-2xl transition-colors ${category.hoverBg ?? "group-hover:bg-gray-100"}`}
+        className={`pointer-events-none absolute inset-0 -z-10 -m-2 rounded-2xl transition-colors ${hoverTintForIndex(accentIndex)}`}
       />
-      <Image
-        src={category.imageSrc}
-        width={159}
-        height={159}
-        alt={category.name}
-        className="aspect-square w-full rounded-xl object-cover"
-      />
-      <p className="text-center text-xs font-medium xl:text-sm">{category.name}</p>
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted">
+        {category.imageUrl ? (
+          <Image
+            src={category.imageUrl}
+            fill
+            sizes="(min-width: 1280px) 159px, 128px"
+            alt={category.name}
+            className="object-cover transition duration-300 group-hover:scale-105"
+          />
+        ) : null}
+      </div>
+      <p className="mt-1.5 truncate px-0.5 text-center text-xs font-medium xl:text-sm">
+        {category.name}
+      </p>
     </Link>
   );
 }

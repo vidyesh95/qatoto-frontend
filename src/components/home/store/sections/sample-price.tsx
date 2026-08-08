@@ -1,3 +1,5 @@
+// TRANSPORT: mock
+
 // Sample price row under the price chart. Lets a buyer order one unit at the
 // sample rate before committing to a bulk order. UI-only mock — the sample
 // price comes from the backend later, and "Get sample" starts that flow.

@@ -1,16 +1,35 @@
+// TRANSPORT: props-only
+
 import SectionHeader from "@/components/home/store/sections/section-header";
 import ProductCard from "@/components/home/store/cards/product-card";
-import type { ProductRail as ProductRailData } from "@/types/store";
+import type { StoreProductTile } from "@/lib/store/tiles";
 
-// Reusable horizontally scrolling product feed. One instance per feed
-// (What's New, Popular, For You, Trending, Best Sellers, …).
-export default function ProductRail({ rail }: { rail: ProductRailData }) {
+/**
+ * A horizontally scrolling product feed.
+ *
+ * Takes tiles rather than a rail object so both real and mock callers can use it: the PDP's
+ * recommendation rails and a category page's named rails are mock, while a caller with parsed
+ * catalog data maps through `toProductTiles` first.
+ *
+ * `seeAllHref` is optional — omit it when the destination page does not exist.
+ */
+export default function ProductRail({
+  title,
+  tiles,
+  seeAllHref,
+}: {
+  title: string;
+  tiles: readonly StoreProductTile[];
+  seeAllHref?: string;
+}) {
+  if (tiles.length === 0) return null;
+
   return (
     <section className="space-y-1">
-      <SectionHeader title={rail.title} href={rail.href} />
+      <SectionHeader title={title} href={seeAllHref} />
       <div className="flex gap-3 overflow-x-auto px-4 pt-2 pb-2 lg:px-6">
-        {rail.products.map((product) => (
-          <ProductCard key={`${rail.id}-${product.id}`} product={product} />
+        {tiles.map((tile) => (
+          <ProductCard key={tile.id} tile={tile} />
         ))}
       </div>
     </section>

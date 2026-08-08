@@ -1,5 +1,7 @@
 "use client";
 
+// TRANSPORT: props-only
+
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 

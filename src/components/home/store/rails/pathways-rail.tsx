@@ -1,15 +1,19 @@
-import SectionHeader from "@/components/home/store/sections/section-header";
-import PathwayCard from "@/components/home/store/cards/pathway-card";
-import type { Pathway } from "@/types/store";
+// TRANSPORT: props-only
 
-// "Pathways for you" — horizontally scrolling rail of guided looks/sets.
-export default function PathwaysRail({ pathways }: { pathways: Pathway[] }) {
+import type { StorePathway } from "@/lib/store/catalog.schemas";
+import PathwayCard from "@/components/home/store/cards/pathway-card";
+import SectionHeader from "@/components/home/store/sections/section-header";
+
+export default function PathwaysRail({ pathways }: { pathways: StorePathway[] }) {
+  if (pathways.length === 0) return null;
+
   return (
-    <section className="space-y-1">
-      <SectionHeader title="Pathways for you" href="/store/pathways" />
-      <div className="flex gap-3 overflow-x-auto px-4 pt-2 pb-2 lg:px-6">
-        {pathways.map((pathway) => (
-          <PathwayCard key={pathway.slug} pathway={pathway} />
+    <section className="space-y-3">
+      {/* No "see all" — /store/pathways is backend-ready with no page yet (§3.1). */}
+      <SectionHeader title="Pathways for you" />
+      <div className="flex items-stretch gap-3 overflow-x-auto px-4 pb-1 lg:px-6">
+        {pathways.map((pathway, pathwayIndex) => (
+          <PathwayCard key={pathway.id} pathway={pathway} accentIndex={pathwayIndex} />
         ))}
       </div>
     </section>

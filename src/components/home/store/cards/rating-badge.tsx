@@ -1,3 +1,5 @@
+// TRANSPORT: props-only
+
 // Compact dark rating pill (e.g. "4.8 ★").
 export default function RatingBadge({ value }: { value: string }) {
   return (

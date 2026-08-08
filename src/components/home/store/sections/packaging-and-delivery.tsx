@@ -1,3 +1,5 @@
+// TRANSPORT: mock
+
 import Image from "next/image";
 
 // "Packaging and delivery" block on the product page. Collapsed by default

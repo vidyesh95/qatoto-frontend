@@ -29,21 +29,21 @@ The frontend doc for the **seller-facing product listing** surface in Creator St
 
 ## 1. What exists today
 
-| Piece | Location | State |
-| ----- | -------- | ----- |
-| My Products route | [studio/products/page.tsx](src/app/(studio)/studio/products/page.tsx) | ✅ thin shell → `ProductsPage` |
-| Create / edit route | [studio/products/create/page.tsx](src/app/(studio)/studio/products/create/page.tsx) | ✅ `Suspense` + `CreateListingRoute` (`?id=` edit mode) |
-| My Products body | [products-page.tsx](src/components/studio/pages/products-page.tsx) | ✅ `useMyProductsQuery` + delete |
-| Create wizard | [create-listing-page.tsx](src/components/studio/pages/create-listing-page.tsx) | ✅ 5-step wizard; create + edit |
-| Edit route helper | [create-listing-route.tsx](src/components/studio/pages/create-listing-route.tsx) | ✅ reads `?id=` search param |
-| Zod schemas + money helpers | [src/lib/products/schemas.ts](src/lib/products/schemas.ts) | ✅ response parse + label↔slug maps |
-| API functions | [src/lib/products/api.ts](src/lib/products/api.ts) | ✅ one fn per `/products` route (no reorder yet) |
-| React Query hooks | [src/hooks/products.ts](src/hooks/products.ts) | ✅ mine/detail queries + create/update/delete mutations |
-| Studio chrome | [src/app/(studio)/layout.tsx](src/app/(studio)/layout.tsx) | ✅ `QueryProvider` + sidebar |
-| Sidebar nav | [studio-sidebar.tsx](src/components/studio/studio-sidebar.tsx) | ✅ "My Products" → `/studio/products` |
-| Create menu | [create-menu.tsx](src/components/studio/create-menu.tsx) | ✅ "Create store listing" link |
-| Video product picker | [store-products-picker.tsx](src/components/studio/upload/store-products-picker.tsx) | 🧪 **mock** — hardcoded product ids |
-| Buyer store types | [src/types/store.ts](src/types/store.ts) | ◐ display shapes for **`/store`** browse — separate surface |
+| Piece                       | Location                                                                              | State                                                       |
+| --------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| My Products route           | [studio/products/page.tsx](<src/app/(studio)/studio/products/page.tsx>)               | ✅ thin shell → `ProductsPage`                              |
+| Create / edit route         | [studio/products/create/page.tsx](<src/app/(studio)/studio/products/create/page.tsx>) | ✅ `Suspense` + `CreateListingRoute` (`?id=` edit mode)     |
+| My Products body            | [products-page.tsx](src/components/studio/pages/products-page.tsx)                    | ✅ `useMyProductsQuery` + delete                            |
+| Create wizard               | [create-listing-page.tsx](src/components/studio/pages/create-listing-page.tsx)        | ✅ 5-step wizard; create + edit                             |
+| Edit route helper           | [create-listing-route.tsx](src/components/studio/pages/create-listing-route.tsx)      | ✅ reads `?id=` search param                                |
+| Zod schemas + money helpers | [src/lib/products/schemas.ts](src/lib/products/schemas.ts)                            | ✅ response parse + label↔slug maps                         |
+| API functions               | [src/lib/products/api.ts](src/lib/products/api.ts)                                    | ✅ one fn per `/products` route (no reorder yet)            |
+| React Query hooks           | [src/hooks/products.ts](src/hooks/products.ts)                                        | ✅ mine/detail queries + create/update/delete mutations     |
+| Studio chrome               | [src/app/(studio)/layout.tsx](<src/app/(studio)/layout.tsx>)                          | ✅ `QueryProvider` + sidebar                                |
+| Sidebar nav                 | [studio-sidebar.tsx](src/components/studio/studio-sidebar.tsx)                        | ✅ "My Products" → `/studio/products`                       |
+| Create menu                 | [create-menu.tsx](src/components/studio/create-menu.tsx)                              | ✅ "Create store listing" link                              |
+| Video product picker        | [store-products-picker.tsx](src/components/studio/upload/store-products-picker.tsx)   | 🧪 **mock** — hardcoded product ids                         |
+| Buyer store types           | [src/types/store.ts](src/types/store.ts)                                              | ◐ display shapes for **`/store`** browse — separate surface |
 
 **Not built on this surface:** `loading.tsx` / `error.tsx` under `studio/products/`, `TRANSPORT:`
 banners on the products page files (see §10), list pagination UI, unpublish action, image reorder
@@ -74,11 +74,11 @@ flowchart LR
   VID --> VAPI["PUT /videos/:id/products"]
 ```
 
-| Surface | URL prefix | Who | This doc? |
-| ------- | ---------- | --- | --------- |
-| **Studio products** | `/studio/products` | Signed-in **seller** | ✅ yes |
-| **Store browse** | `/store`, `/store/product/[id]` | **Buyer** | ❌ future store docs |
-| **Video attach** | upload modal step 2 | Creator linking own listings | ◐ picker still mock |
+| Surface             | URL prefix                      | Who                          | This doc?            |
+| ------------------- | ------------------------------- | ---------------------------- | -------------------- |
+| **Studio products** | `/studio/products`              | Signed-in **seller**         | ✅ yes               |
+| **Store browse**    | `/store`, `/store/product/[id]` | **Buyer**                    | ❌ future store docs |
+| **Video attach**    | upload modal step 2             | Creator linking own listings | ◐ picker still mock  |
 
 The seller never "publishes to studio" — they publish a **`product` row** (`status: active`) that
 will eventually appear on `/store` once buyer read routes exist.
@@ -151,42 +151,42 @@ flowchart LR
 
 ### Step 1 — Product Identity
 
-| Field | State var | Wire field | Notes |
-| ----- | --------- | ---------- | ----- |
-| Product title | `productTitle` | `title` | required; max 200 (`PRODUCT_TITLE_MAX_LENGTH`) |
-| Brand | `brandName` | `brand` | optional |
-| Category | `selectedCategory` (label) | `category` (slug) | 8 labels via `CATEGORY_LABEL_TO_SLUG` |
-| Condition | `selectedCondition` | `condition` | New / Refurbished / Used |
+| Field         | State var                  | Wire field        | Notes                                          |
+| ------------- | -------------------------- | ----------------- | ---------------------------------------------- |
+| Product title | `productTitle`             | `title`           | required; max 200 (`PRODUCT_TITLE_MAX_LENGTH`) |
+| Brand         | `brandName`                | `brand`           | optional                                       |
+| Category      | `selectedCategory` (label) | `category` (slug) | 8 labels via `CATEGORY_LABEL_TO_SLUG`          |
+| Condition     | `selectedCondition`        | `condition`       | New / Refurbished / Used                       |
 
 ### Step 2 — Images & Media
 
-| Field | State | API | Notes |
-| ----- | ----- | --- | ----- |
-| New files | `selectedImageFiles` | `POST …/images` × N | max 9 total with existing |
-| Existing (edit) | `existingImages` | — | from `GET /products/:id` |
-| Removed (edit) | `removedImageIds` | `DELETE …/images/:id` | queued on save |
-| Main image | first position | server `position 0` | upload order = position; reorder API unused |
+| Field           | State                | API                   | Notes                                       |
+| --------------- | -------------------- | --------------------- | ------------------------------------------- |
+| New files       | `selectedImageFiles` | `POST …/images` × N   | max 9 total with existing                   |
+| Existing (edit) | `existingImages`     | —                     | from `GET /products/:id`                    |
+| Removed (edit)  | `removedImageIds`    | `DELETE …/images/:id` | queued on save                              |
+| Main image      | first position       | server `position 0`   | upload order = position; reorder API unused |
 
 Drag-and-drop + file picker; object-URL previews for new files; Cloudinary URLs for existing.
 
 ### Step 3 — Description
 
-| Field | State var | Wire field |
-| ----- | --------- | ---------- |
-| Description | `productDescription` | `description` |
-| Key features | `keyFeatures[]` | `keyFeatures` |
+| Field        | State var            | Wire field    |
+| ------------ | -------------------- | ------------- |
+| Description  | `productDescription` | `description` |
+| Key features | `keyFeatures[]`      | `keyFeatures` |
 
 Features added one at a time via draft input + Add button.
 
 ### Step 4 — Pricing & Inventory
 
-| Field | State var | Wire field | Notes |
-| ----- | --------- | ---------- | ----- |
-| Price | `priceInDollars` | `priceInCents` | `dollarsToCents()` at submit |
-| Compare-at | `compareAtPriceInDollars` | `compareAtPriceInCents` | optional "was" price |
-| Stock | `stockQuantity` | `stockQuantity` | integer ≥ 0 |
-| SKU | `skuCode` | `sku` | optional; unique per seller |
-| Bulk tiers | `pricingTiers[]` | `pricingTiers` | optional B2B ladder |
+| Field      | State var                 | Wire field              | Notes                        |
+| ---------- | ------------------------- | ----------------------- | ---------------------------- |
+| Price      | `priceInDollars`          | `priceInCents`          | `dollarsToCents()` at submit |
+| Compare-at | `compareAtPriceInDollars` | `compareAtPriceInCents` | optional "was" price         |
+| Stock      | `stockQuantity`           | `stockQuantity`         | integer ≥ 0                  |
+| SKU        | `skuCode`                 | `sku`                   | optional; unique per seller  |
+| Bulk tiers | `pricingTiers[]`          | `pricingTiers`          | optional B2B ladder          |
 
 Each tier row: unit price (dollars) + minimum order quantity. Blank rows skipped. Server replaces
 the full tier set on PATCH when tiers are sent.
@@ -218,15 +218,15 @@ draft save redirects immediately).
 
 Minimal table (not a full data-grid):
 
-| Column | Source | Notes |
-| ------ | ------ | ----- |
-| Title | `ProductListRow.title` | truncated |
-| SKU | `sku ?? "—"` | |
-| Status badge | `status` | Active (primary) / Draft (muted) |
-| Price | `centsToPriceLabel(priceInCents)` | never stored as string |
-| Stock | `stockQuantity` | "{n} in stock" |
-| Edit | link | `/studio/products/create?id=` |
-| Delete | inline confirm | `useDeleteProductMutation` |
+| Column       | Source                            | Notes                            |
+| ------------ | --------------------------------- | -------------------------------- |
+| Title        | `ProductListRow.title`            | truncated                        |
+| SKU          | `sku ?? "—"`                      |                                  |
+| Status badge | `status`                          | Active (primary) / Draft (muted) |
+| Price        | `centsToPriceLabel(priceInCents)` | never stored as string           |
+| Stock        | `stockQuantity`                   | "{n} in stock"                   |
+| Edit         | link                              | `/studio/products/create?id=`    |
+| Delete       | inline confirm                    | `useDeleteProductMutation`       |
 
 **States:** loading panel · error + retry · empty + CTA · success list.
 
@@ -250,17 +250,17 @@ Minimal table (not a full data-grid):
 
 ### API ([api.ts](src/lib/products/api.ts))
 
-| Function | Route |
-| -------- | ----- |
-| `createProduct` | `POST /products` |
-| `getMyProducts` | `GET /products/mine?page&limit` |
-| `getProduct` | `GET /products/:id` |
-| `updateProduct` | `PATCH /products/:id` |
-| `deleteProduct` | `DELETE /products/:id` |
+| Function             | Route                                   |
+| -------------------- | --------------------------------------- |
+| `createProduct`      | `POST /products`                        |
+| `getMyProducts`      | `GET /products/mine?page&limit`         |
+| `getProduct`         | `GET /products/:id`                     |
+| `updateProduct`      | `PATCH /products/:id`                   |
+| `deleteProduct`      | `DELETE /products/:id`                  |
 | `uploadProductImage` | `POST /products/:id/images` (multipart) |
-| `deleteProductImage` | `DELETE /products/:id/images/:imageId` |
-| `publishProduct` | `POST /products/:id/publish` |
-| `unpublishProduct` | `POST /products/:id/unpublish` |
+| `deleteProductImage` | `DELETE /products/:id/images/:imageId`  |
+| `publishProduct`     | `POST /products/:id/publish`            |
+| `unpublishProduct`   | `POST /products/:id/unpublish`          |
 
 **Not wrapped yet:** `PATCH /products/:id/images/reorder`.
 
@@ -317,16 +317,16 @@ hold buyer UI shapes and mock rails. Wiring `/store` to **public catalog read ro
 
 ## 9. Remaining work (ordered)
 
-| # | Item | Effort | Notes |
-| - | ---- | ------ | ----- |
-| 1 | Wire **store-products-picker** to real listings | small | unblocks video shoppable cards |
-| 2 | **Pagination** on My Products | small | page state + controls; backend ready |
-| 3 | **List thumbnails** | small–medium | extend `ProductListRow` or secondary fetch |
-| 4 | **Unpublish** hook + list/edit action | small | `unpublishProduct` already in api.ts |
-| 5 | **Image reorder** UI + api wrapper | medium | `PATCH …/images/reorder` |
-| 6 | `loading.tsx` for both routes | tiny | match other studio routes |
-| 7 | `TRANSPORT:` banners on products files | tiny | `client-query` on page components |
-| 8 | Split wizard into step components | optional | maintainability only |
+| #   | Item                                            | Effort       | Notes                                      |
+| --- | ----------------------------------------------- | ------------ | ------------------------------------------ |
+| 1   | Wire **store-products-picker** to real listings | small        | unblocks video shoppable cards             |
+| 2   | **Pagination** on My Products                   | small        | page state + controls; backend ready       |
+| 3   | **List thumbnails**                             | small–medium | extend `ProductListRow` or secondary fetch |
+| 4   | **Unpublish** hook + list/edit action           | small        | `unpublishProduct` already in api.ts       |
+| 5   | **Image reorder** UI + api wrapper              | medium       | `PATCH …/images/reorder`                   |
+| 6   | `loading.tsx` for both routes                   | tiny         | match other studio routes                  |
+| 7   | `TRANSPORT:` banners on products files          | tiny         | `client-query` on page components          |
+| 8   | Split wizard into step components               | optional     | maintainability only                       |
 
 ---
 
@@ -335,11 +335,11 @@ hold buyer UI shapes and mock rails. Wiring `/store` to **public catalog read ro
 Studio video components use a first-line `TRANSPORT:` banner (`server-fetch` · `client-query` ·
 `props-only` · `mock`). Products pages **do not yet** carry banners — when added:
 
-| File | Value |
-| ---- | ----- |
-| `products-page.tsx` | `client-query` |
-| `create-listing-page.tsx` | `client-query` |
-| `create-listing-route.tsx` | `props-only` (search param bridge) |
+| File                        | Value                              |
+| --------------------------- | ---------------------------------- |
+| `products-page.tsx`         | `client-query`                     |
+| `create-listing-page.tsx`   | `client-query`                     |
+| `create-listing-route.tsx`  | `props-only` (search param bridge) |
 | `store-products-picker.tsx` | `mock` → `client-query` after §9.1 |
 
 Audit:
@@ -387,10 +387,10 @@ Negative: publish without images → `422 INCOMPLETE_FOR_PUBLISH`; duplicate SKU
 
 ## 13. Out of scope (other docs)
 
-| Topic | Doc |
-| ----- | --- |
-| Seller `/products/*` API detail | [STUDIO_PRODUCTS_BACKEND_STRUCTURE.md](STUDIO_PRODUCTS_BACKEND_STRUCTURE.md) |
-| Video upload + attach contract | [STUDIO_BACKEND_STRUCTURE.md](STUDIO_BACKEND_STRUCTURE.md) |
+| Topic                            | Doc                                                                           |
+| -------------------------------- | ----------------------------------------------------------------------------- |
+| Seller `/products/*` API detail  | [STUDIO_PRODUCTS_BACKEND_STRUCTURE.md](STUDIO_PRODUCTS_BACKEND_STRUCTURE.md)  |
+| Video upload + attach contract   | [STUDIO_BACKEND_STRUCTURE.md](STUDIO_BACKEND_STRUCTURE.md)                    |
 | Buyer `/store` browse + checkout | future store structure docs (placeholder in STORE_BACKEND_STRUCTURE.md today) |
-| Orders, payments, escrow | [ESCROW_LEDGER_STRUCTURE.md](ESCROW_LEDGER_STRUCTURE.md) |
-| R&D pipeline handoff | [R_AND_D_STRUCTURE.md](R_AND_D_STRUCTURE.md) §4c |
+| Orders, payments, escrow         | [ESCROW_LEDGER_STRUCTURE.md](ESCROW_LEDGER_STRUCTURE.md)                      |
+| R&D pipeline handoff             | [R_AND_D_STRUCTURE.md](R_AND_D_STRUCTURE.md) §4c                              |

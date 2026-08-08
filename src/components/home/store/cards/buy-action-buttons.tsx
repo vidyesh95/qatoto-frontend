@@ -1,24 +1,29 @@
-// The three buy CTAs — rendered twice on the PDP: in the mobile/tablet fixed
-// bottom bar and inline at the end of the desktop buy column. Keep classes
-// identical between the two render sites.
+// TRANSPORT: mock — cart / RFQ / checkout mutations land in later phases.
+
 export default function BuyActionButtons() {
   return (
     <>
       <button
         type="button"
-        className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
+        disabled
+        title="RFQ is not available yet"
+        className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] disabled:opacity-50"
       >
         Send inquiry
       </button>
       <button
         type="button"
-        className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
+        disabled
+        title="Cart is not available yet"
+        className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] disabled:opacity-50"
       >
         Add to cart
       </button>
       <button
         type="button"
-        className="flex-1 rounded-full bg-[#00696E] px-4 py-1.5 text-xs font-medium text-white"
+        disabled
+        title="Checkout is not available yet"
+        className="flex-1 rounded-full bg-[#00696E] px-4 py-1.5 text-xs font-medium text-white disabled:opacity-50"
       >
         Buy now
       </button>

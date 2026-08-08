@@ -1,5 +1,7 @@
 "use client";
 
+// TRANSPORT: mock
+
 import { useEffect, useRef } from "react";
 
 import Image from "next/image";

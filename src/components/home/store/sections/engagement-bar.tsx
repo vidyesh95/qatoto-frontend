@@ -1,5 +1,7 @@
 "use client";
 
+// TRANSPORT: mock
+
 import Image from "next/image";
 import { useState } from "react";
 

@@ -1,3 +1,5 @@
+// TRANSPORT: props-only
+
 import Link from "next/link";
 
 // Scoped not-found for the store route tree. Catches notFound() calls from

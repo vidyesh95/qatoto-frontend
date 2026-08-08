@@ -20,6 +20,23 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Legacy `/store/{category…}` URLs → explicit `/store/category/{…}` (STORE_STRUCTURE §3).
+  // Excludes reserved store segments so search/product/pathway routes are untouched.
+  async redirects() {
+    return [
+      {
+        source: "/store/:first((?!search|categories|category|product|organizations|pathway)[^/]+)",
+        destination: "/store/category/:first",
+        permanent: true,
+      },
+      {
+        source:
+          "/store/:first((?!search|categories|category|product|organizations|pathway)[^/]+)/:rest*",
+        destination: "/store/category/:first/:rest*",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     // Every remote image host the backend can hand us. `next/image` THROWS on an unlisted
     // host — it is not a soft failure, it is a runtime error that takes the whole page down.

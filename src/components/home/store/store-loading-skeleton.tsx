@@ -1,3 +1,5 @@
+// TRANSPORT: props-only
+
 // Minimal route-segment loading placeholder shared by every store route
 // (landing, category, pathway, product). Pure pulsing blocks approximating a
 // hero banner plus a few product rails — no props, no data, no logic (UI +

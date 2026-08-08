@@ -1,3 +1,5 @@
+// TRANSPORT: mock
+
 import Image from "next/image";
 
 // "Questions and answers" block on the product page. Shows answered buyer

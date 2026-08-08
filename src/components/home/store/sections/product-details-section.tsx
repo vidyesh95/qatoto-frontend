@@ -1,27 +1,33 @@
 "use client";
 
+// TRANSPORT: mock — "In the box" is local copy; description and key features are real props.
+
 import { useState } from "react";
 
 import Image from "next/image";
 
 import ProductDetailsSheet from "@/components/home/store/sheets/product-details-sheet";
 
-// "Product details" block on the product page. Collapsible header, an "In the
-// box" + "Key Features" summary, then an "All product details" row that opens
-// the tabbed spec sheet. UI-only mock — real specs come from the backend later.
-
+/**
+ * The "Product details" block on the PDP.
+ *
+ * `description` and `keyFeatures` are the SERVER's — `product.description` and
+ * `product.keyFeatures` off the public projection. Only "In the box" is still local copy: the
+ * backend has no pack-contents field, and a specification row is the likeliest home for it.
+ *
+ * The "All product details" row opens the grouped spec sheet, which stays mock until the backend
+ * can group specifications (see that file).
+ */
 const IN_THE_BOX =
   "1 × Folding chair (pre-assembled), 4 × floor glides, cleaning cloth, warranty card.";
 
-const KEY_FEATURES = [
-  "Powder-coated steel frame, anti-rust finish",
-  "Folds flat to 5 cm — stacks up to 12 high",
-  "Weight capacity 150 kg, tested to EN 16139",
-  "Non-marking floor glides, indoor/outdoor",
-  "Pre-assembled — no tools required",
-];
-
-export default function ProductDetailsSection() {
+export default function ProductDetailsSection({
+  description,
+  keyFeatures,
+}: {
+  description: string | null;
+  keyFeatures: readonly string[];
+}) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   return (
@@ -39,6 +45,17 @@ export default function ProductDetailsSection() {
         </summary>
 
         <div className="flex flex-col gap-4 px-4 pb-2 lg:px-6">
+          {description ? (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm leading-5 font-medium tracking-[0.1px] text-[#191C1C]">
+                Description
+              </p>
+              <p className="text-xs leading-4 tracking-[0.4px] whitespace-pre-wrap text-[#191C1C]">
+                {description}
+              </p>
+            </div>
+          ) : null}
+
           <div className="flex flex-col gap-1">
             <p className="text-sm leading-5 font-medium tracking-[0.1px] text-[#191C1C]">
               In the box
@@ -46,16 +63,18 @@ export default function ProductDetailsSection() {
             <p className="text-xs leading-4 tracking-[0.4px] text-[#191C1C]">{IN_THE_BOX}</p>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <p className="text-sm leading-5 font-medium tracking-[0.1px] text-[#191C1C]">
-              Key Features
-            </p>
-            {KEY_FEATURES.map((feature) => (
-              <p key={feature} className="text-xs leading-4 tracking-[0.4px] text-[#191C1C]">
-                {feature}
+          {keyFeatures.length > 0 ? (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm leading-5 font-medium tracking-[0.1px] text-[#191C1C]">
+                Key Features
               </p>
-            ))}
-          </div>
+              {keyFeatures.map((feature) => (
+                <p key={feature} className="text-xs leading-4 tracking-[0.4px] text-[#191C1C]">
+                  {feature}
+                </p>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="px-4 lg:px-6">
