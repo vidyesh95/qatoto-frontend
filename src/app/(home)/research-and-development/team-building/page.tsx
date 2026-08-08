@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import TeamBuildingPage from "@/components/home/research-and-development/team-building-page";
 
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Team Building · R&D",
   description: "Every open role across Qatoto R&D projects — trade your skills for a stake",

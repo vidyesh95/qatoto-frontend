@@ -3,6 +3,10 @@ import type { Metadata } from "next";
 import SeriesDetailPage from "@/components/studio/series/series-detail-page";
 import { withSentinelValues } from "@/lib/static-params";
 
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 /**
  * A dynamic route needs `generateStaticParams` under `cacheComponents`, and an EMPTY one fails
  * the build with `EmptyGenerateStaticParamsError`.

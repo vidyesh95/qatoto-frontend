@@ -7,6 +7,10 @@ import QueryProvider from "@/components/providers/query-provider";
 import { AdminAuditLogProvider } from "@/state/admin-audit-log-context";
 import { SidebarProvider } from "@/state/sidebar-context";
 
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 interface Props {
   children: React.ReactNode;
 }

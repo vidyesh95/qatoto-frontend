@@ -4,6 +4,10 @@ import ClusterDetailPage from "@/components/home/research-and-development/cluste
 import { getProblemCluster, listProblemClusters } from "@/lib/rnd/discovery.api";
 import { withSentinelValues } from "@/lib/static-params";
 
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 const PRERENDERED_CLUSTER_LIMIT = 50;
 
 /**

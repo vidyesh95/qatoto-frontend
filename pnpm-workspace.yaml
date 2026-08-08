@@ -2,12 +2,6 @@ allowBuilds:
   msgpackr-extract: true
   sharp: true
   unrs-resolver: true
-# Supply-chain hardening: wait 7 days before installing a freshly published version
-# (malware is usually caught & unpublished within hours), refuse trust downgrades between
-# resolutions, and block transitive deps from non-registry (git:/file:/tarball) sources.
-# minimumReleaseAge: 10080
-# trustPolicy: no-downgrade
-# blockExoticSubdeps: true
 minimumReleaseAgeExclude:
   - "@oxfmt/binding-android-arm-eabi@0.51.0 || 0.52.0"
   - "@oxfmt/binding-android-arm64@0.51.0 || 0.52.0"
@@ -93,9 +87,10 @@ minimumReleaseAgeExclude:
   - "@typescript/typescript-win32-arm64@7.0.2"
   - "@typescript/typescript-win32-x64@7.0.2"
   - typescript@7.0.2
+  - eslint@10.8.1
 overrides:
-  "@types/react": 19.2.17
-  "@types/react-dom": 19.2.3
+  "@types/react": 19.2.18
+  "@types/react-dom": 19.2.4
 peerDependencyRules:
   allowedVersions:
-    tsconfck@*>typescript: "^5.0.0 || ^6.0.0"
+    tsconfck@*>typescript: ^5.0.0 || ^6.0.0

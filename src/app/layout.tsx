@@ -4,6 +4,10 @@ import { Geist, Geist_Mono, Roboto_Serif } from "next/font/google";
 // eslint-disable-next-line import/no-unassigned-import -- global stylesheet has no exports to bind
 import "./globals.css";
 
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 const geistSans = Geist({
   variable: "--font-sans",
   subsets: ["latin"],

@@ -4,6 +4,10 @@ import WorkshopPage from "@/components/home/research-and-development/workshop-pa
 import { getResearchProjectDetail, listResearchProjectSlugs } from "@/lib/rnd/projects.api";
 import { withSentinelValues } from "@/lib/static-params";
 
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 /**
  * Prerender every published slug — a dynamic route needs this under `cacheComponents`.
  * A failed read returns `[]` so an unreachable backend does not fail the build; those
