@@ -5,16 +5,28 @@
 // EVERY FIXTURE IS EXPLICITLY ANNOTATED, never `satisfies`. `resolveMockRead` then parses each one
 // through the real schema at runtime, which catches what types cannot.
 //
-// THESE ARE INVENTED PEOPLE. Not a single name, figure or venture here belongs to anybody real, and
-// none of the capital ranges is an offer of anything. That has to be true of a fixture set on this
-// surface in a way it does not for a fixture set of factories: a plausible person with a plausible
-// nine-figure range is exactly the thing somebody screenshots.
+// THESE ARE INVENTED PEOPLE. Not a single name or venture here belongs to anybody real. That has
+// to be true of a fixture set on this surface in a way it does not for a fixture set of factories:
+// a plausible person with a plausible nine-figure range is exactly the thing somebody screenshots.
+//
+// EVERY `capitalRange` AND EVERY `equityExpectationBasisPoints` IN THIS FILE IS `null`, AND THAT
+// IS THE CONTRACT RATHER THAN A THIN FIXTURE SET. Phase 19 shipped this surface WITHOUT those
+// columns: `community_cofounder_profile` has no `capital_range_*`, no `currency` and no
+// `equity_expectation_basis_points`, because §14's legal question — whether publishing what a
+// person will invest, beside a contact affordance, is close to facilitating a securities
+// solicitation — is open per market. Both fields stay on the wire, nullable, and serve `null`
+// unconditionally.
+//
+// So a fixture carrying a figure would model a response the backend CANNOT PRODUCE, which is the
+// same rule that keeps `pending_review` out of the forum's public list fixtures. These rows used
+// to carry ranges; they were nulled when the backend shipped, not thinned out. If §14 lands, the
+// columns arrive in one additive migration and the figures come back here with it.
 //
 // WHAT THIS SET COVERS, chosen so the branches that would otherwise ship unseen are reachable:
 //
-//   · a profile with NO capital range (`null`) beside ones that state a range — the pair that proves
-//     "did not say" does not render as zero;
-//   · a profile with NO equity expectation (`null`), for the same reason;
+//   · every profile with NO capital range and NO equity expectation, which is what the surface
+//     actually serves — the renderer must show an absence, never a zero, and `null` is "they did
+//     not say" rather than "they will put in nothing";
 //   · all three engagement states, including `not_looking`, which stays in the directory and offers
 //     no contact affordance;
 //   · both identity states, so "Identity not checked" is seen rather than assumed;
@@ -26,7 +38,9 @@ import type {
   CofounderDirectoryPage,
   CofounderProfileCard,
   CofounderProfileDetail,
+  CofounderProfileStateChange,
   CreatedCofounderProfile,
+  OwnCofounderProfile,
 } from "@/lib/store/cofounders.schemas";
 
 // --- Cards ------------------------------------------------------------------
@@ -43,12 +57,8 @@ const NADIA_OKONKWO: CofounderProfileCard = {
   commitmentLevel: "part_time",
   engagementState: "open_to_intros",
   identityState: "identity_verified",
-  capitalRange: {
-    minimumInCents: 5_000_000_00,
-    maximumInCents: 25_000_000_00,
-    currency: "USD",
-  },
-  equityExpectationBasisPoints: 1200,
+  capitalRange: null,
+  equityExpectationBasisPoints: null,
   sectors: ["Cold chain", "Agriculture", "Logistics"],
 };
 
@@ -87,7 +97,7 @@ const TOMASZ_WIERZBICKI: CofounderProfileCard = {
   engagementState: "open_to_intros",
   identityState: "unverified",
   capitalRange: null,
-  equityExpectationBasisPoints: 2500,
+  equityExpectationBasisPoints: null,
   sectors: ["Industrial", "Injection moulding"],
 };
 
@@ -104,7 +114,7 @@ const RAFAEL_SANTOS: CofounderProfileCard = {
   engagementState: "in_conversation",
   identityState: "identity_verified",
   capitalRange: null,
-  equityExpectationBasisPoints: 800,
+  equityExpectationBasisPoints: null,
   sectors: ["Trade compliance", "Import/export"],
 };
 
@@ -120,12 +130,8 @@ const SOFIA_LINDQVIST: CofounderProfileCard = {
   commitmentLevel: "advisory",
   engagementState: "not_looking",
   identityState: "identity_verified",
-  capitalRange: {
-    minimumInCents: 2_500_000_00,
-    maximumInCents: 10_000_000_00,
-    currency: "EUR",
-  },
-  equityExpectationBasisPoints: 500,
+  capitalRange: null,
+  equityExpectationBasisPoints: null,
   sectors: ["Consumer hardware", "Packaging"],
 };
 
@@ -140,12 +146,8 @@ const AMARA_DIALLO: CofounderProfileCard = {
   commitmentLevel: "full_time",
   engagementState: "open_to_intros",
   identityState: "unverified",
-  capitalRange: {
-    minimumInCents: 150_000_00,
-    maximumInCents: 400_000_00,
-    currency: "USD",
-  },
-  equityExpectationBasisPoints: 4000,
+  capitalRange: null,
+  equityExpectationBasisPoints: null,
   sectors: ["Textiles", "Retail"],
 };
 
@@ -293,7 +295,7 @@ export const MOCK_COFOUNDER_DETAILS_BY_SLUG: Readonly<Record<string, CofounderPr
 // --- Write response ---------------------------------------------------------
 
 /**
- * What the mocked `POST /commerce/cofounder-profiles` answers with.
+ * What the mocked `POST /community/cofounder-profiles` answers with.
  *
  * `state: "draft"` — creating a profile does not publish it and does not make anybody discoverable.
  * A fixed row rather than an echo, so the success screen cannot link to a slug that resolves to
@@ -305,4 +307,72 @@ export const MOCK_CREATED_COFOUNDER_PROFILE: CreatedCofounderProfile = {
   state: "draft",
   headline: "Your profile",
   createdAt: "2026-08-08T09:26:00.000Z",
+};
+
+// --- The owner's own profile ------------------------------------------------
+
+/**
+ * `GET /community/cofounder-profiles/mine`.
+ *
+ * `state: "draft"` WITH A `moderationNote` — the rejected case, which is the one worth modelling
+ * because it is the only state where the owner has something to act on. A cofounder profile
+ * returns to `draft` when a moderator rejects it, unlike a forum thread, which stays
+ * `pending_review`: nobody edits a posted question, everybody edits their own profile.
+ *
+ * `publishedAt` IS `null` HERE AND STAYS NULL until a moderator publishes. A renderer that treats
+ * a non-null `publishedAt` as "this was live once" is right; treating `null` as "brand new" is
+ * not — this profile has been submitted and turned down.
+ */
+export const MOCK_OWN_COFOUNDER_PROFILE: OwnCofounderProfile = {
+  profile: {
+    id: "cfp_own_viewer",
+    slug: "your-draft-profile",
+    displayName: "Priya Raman",
+    headline: "Operator who has run a factory floor, looking for the person with the product",
+    countryCode: "IN",
+    avatarUrl: null,
+    contributionKinds: ["operations", "expertise"],
+    commitmentLevel: "full_time",
+    engagementState: "open_to_intros",
+    identityState: "identity_verified",
+    // `null` because there is no column, not because this person declined to answer. See header.
+    capitalRange: null,
+    equityExpectationBasisPoints: null,
+    sectors: ["Consumer hardware", "Contract manufacturing"],
+  },
+  state: "draft",
+  bio: "Eleven years in production management, the last four running a 200-person plant making small appliances. I have hired, fired, retooled a line mid-quarter and shipped through two port strikes.\n\nWhat I do not have is a product I believe in. That is the half I am looking for.",
+  lookingFor:
+    "Somebody with a product and demand who does not want to learn manufacturing the expensive way.",
+  priorVentures: [
+    {
+      id: "ven_own_plantworks",
+      name: "Plantworks Appliances",
+      roleLabel: "Head of production",
+      yearsActiveLabel: "2022–present",
+      outcomeSummary: null,
+    },
+  ],
+  languages: ["English", "Tamil", "Hindi"],
+  moderationNote:
+    "The headline reads as an advertisement for a service rather than a description of a person. Rewrite it in the first person about what you have done, and resubmit — everything else is fine.",
+  publishedAt: null,
+  updatedAt: "2026-08-06T14:12:00.000Z",
+  createdAt: "2026-08-03T09:40:00.000Z",
+};
+
+/**
+ * What `submit`, `withdraw` and the engagement-state patch answer with.
+ *
+ * ONE FIXTURE FOR THREE ROUTES, which is honest about how little a mock can say here: the wire
+ * shape is identical and only the values differ per route. This is also the limit of the mock
+ * transport — the state does not actually advance on a click, because every call re-resolves the
+ * same constant.
+ */
+export const MOCK_COFOUNDER_PROFILE_STATE_CHANGE: CofounderProfileStateChange = {
+  id: "cfp_own_viewer",
+  slug: "your-draft-profile",
+  state: "pending_review",
+  engagementState: "open_to_intros",
+  updatedAt: "2026-08-09T12:30:00.000Z",
 };

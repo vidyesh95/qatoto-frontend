@@ -16,19 +16,31 @@
 //   · a thread with ZERO replies, which is the row a reply-count renderer gets wrong;
 //   · a reply with `helpfulCount: 0`, which must render as a real zero rather than being hidden.
 //
-// NO `pending_review` THREAD IS IN ANY LIST FIXTURE, deliberately. Public reads filter that state
-// out, so a fixture containing one would model a backend bug. It appears only in
-// `MOCK_CREATED_FORUM_THREAD`, which is what the composer actually receives.
+// NO `pending_review` THREAD IS IN ANY PUBLIC LIST FIXTURE, deliberately. Those reads filter that
+// state out, so a fixture containing one would model a backend bug. It appears in exactly two
+// places, both of which are the author's own view: `MOCK_CREATED_FORUM_THREAD`, which is what the
+// composer receives, and `MOCK_OWN_FORUM_THREAD_PAGE`, which is `/mine`.
+//
+// `viewer` IS UNIFORM WITHIN ONE THREAD'S REPLIES, and that is not laziness. It is per-READER, not
+// per-reply: one response is read by one person, so either they are signed in and every reply
+// carries an object, or they are not and every reply carries `null`. HS-code and tooling model a
+// signed-in reader; MOQ and letter-of-credit model an anonymous one. A fixture mixing the two
+// inside one thread would describe a response the backend cannot produce.
 //
 // Timestamps are fixed strings. A computed "now" makes "how old is this thread" a question with a
 // different answer every day.
 
 import type {
+  CreatedCommunityReport,
+  CreatedForumReply,
   CreatedForumThread,
   ForumReply,
+  ForumReplyHelpfulState,
+  ForumThreadAnswerState,
   ForumThreadCard,
   ForumThreadDetail,
   ForumThreadListPage,
+  OwnForumThreadListPage,
 } from "@/lib/store/forum.schemas";
 
 // --- Thread cards -----------------------------------------------------------
@@ -165,6 +177,8 @@ const HS_CODE_REPLIES: readonly ForumReply[] = [
     body: "Under DAP the seller carries the risk to the named place but duty is normally the buyer's — check whether your PO says DAP or DDP, because people write DAP and mean DDP constantly. On the reclassification itself: the binding ruling is the destination authority's, not your supplier's opinion. If you disagree, you file a protest within the window, which is usually 30 to 90 days and starts from the entry date rather than from when you noticed.",
     createdAt: "2026-07-28T10:04:00.000Z",
     helpfulCount: 31,
+    visibilityState: "visible",
+    viewer: { hasMarkedHelpful: true },
   },
   {
     id: "rep_hs_code_operator",
@@ -173,6 +187,8 @@ const HS_CODE_REPLIES: readonly ForumReply[] = [
     body: "Had the same jump on a heater element. What settled it for us was asking the supplier for the ruling reference they were relying on. They did not have one — it was just what they had always shipped under.",
     createdAt: "2026-07-28T15:47:00.000Z",
     helpfulCount: 12,
+    visibilityState: "visible",
+    viewer: { hasMarkedHelpful: false },
   },
   {
     id: "rep_hs_code_followup",
@@ -183,6 +199,8 @@ const HS_CODE_REPLIES: readonly ForumReply[] = [
     // A GENUINE ZERO. It must render as 0, not disappear — an author's own follow-up rarely collects
     // votes, and hiding the count would make the field look absent rather than unremarkable.
     helpfulCount: 0,
+    visibilityState: "visible",
+    viewer: { hasMarkedHelpful: false },
   },
 ];
 
@@ -194,6 +212,8 @@ const MOQ_REPLIES: readonly ForumReply[] = [
     body: "From the factory side: the MOQ is real for a new tool and soft for an existing one. If we already run the mould, a short run costs us a changeover and nothing else. Ask whether anything close to your part is already in production.",
     createdAt: "2026-08-02T02:15:00.000Z",
     helpfulCount: 44,
+    visibilityState: "visible",
+    viewer: null,
   },
   {
     id: "rep_moq_pay_setup",
@@ -202,6 +222,8 @@ const MOQ_REPLIES: readonly ForumReply[] = [
     body: "That matches what I got yesterday — one factory offered half the MOQ if we paid the setup charge separately rather than amortised.",
     createdAt: "2026-08-04T08:41:00.000Z",
     helpfulCount: 7,
+    visibilityState: "visible",
+    viewer: null,
   },
 ];
 
@@ -213,6 +235,8 @@ const TOOLING_REPLIES: readonly ForumReply[] = [
     body: "Paying for a tool buys you the tool only if the agreement says so. Absent a clause, most jurisdictions treat the mould as the manufacturer's property and your payment as a contribution to setup. The clause you want names ownership, a right of removal on notice, and who pays for maintenance — the third one is what people forget, and a mould nobody maintains is worthless by the time you move it.",
     createdAt: "2026-07-14T17:30:00.000Z",
     helpfulCount: 58,
+    visibilityState: "visible",
+    viewer: { hasMarkedHelpful: true },
   },
   {
     id: "rep_tooling_practical",
@@ -221,6 +245,8 @@ const TOOLING_REPLIES: readonly ForumReply[] = [
     body: "Adding the removal clause to the next contract. Also learned the mould has a shot count and ours is most of the way through it, which changes the argument entirely.",
     createdAt: "2026-07-15T09:12:00.000Z",
     helpfulCount: 9,
+    visibilityState: "visible",
+    viewer: { hasMarkedHelpful: false },
   },
 ];
 
@@ -232,6 +258,8 @@ const LC_REPLIES: readonly ForumReply[] = [
     body: "An LC protects both sides and costs both sides. On a first order under about 50k the bank charges and the document discipline usually cost more than the risk they cover, which is why 30/70 against a B/L copy became the default — the copy is worthless without the original, so the supplier keeps control of the goods until you pay. Above that figure the maths flips.",
     createdAt: "2026-06-11T08:20:00.000Z",
     helpfulCount: 76,
+    visibilityState: "visible",
+    viewer: null,
   },
 ];
 
@@ -245,6 +273,7 @@ const HS_CODE_DETAIL: ForumThreadDetail = {
     items: [...HS_CODE_REPLIES],
     page: { nextCursor: null, hasMore: false },
   },
+  viewer: { isThreadAuthor: true },
 };
 
 const MOQ_DETAIL: ForumThreadDetail = {
@@ -255,6 +284,7 @@ const MOQ_DETAIL: ForumThreadDetail = {
     items: [...MOQ_REPLIES],
     page: { nextCursor: null, hasMore: false },
   },
+  viewer: null,
 };
 
 /** Zero replies. The empty reply list is a real state and renders as one. */
@@ -266,6 +296,7 @@ const GOTS_DETAIL: ForumThreadDetail = {
     items: [],
     page: { nextCursor: null, hasMore: false },
   },
+  viewer: null,
 };
 
 const TOOLING_DETAIL: ForumThreadDetail = {
@@ -276,6 +307,7 @@ const TOOLING_DETAIL: ForumThreadDetail = {
     items: [...TOOLING_REPLIES],
     page: { nextCursor: null, hasMore: false },
   },
+  viewer: { isThreadAuthor: false },
 };
 
 const LC_DETAIL: ForumThreadDetail = {
@@ -286,6 +318,7 @@ const LC_DETAIL: ForumThreadDetail = {
     items: [...LC_REPLIES],
     page: { nextCursor: null, hasMore: false },
   },
+  viewer: null,
 };
 
 const RFQ_RESPONSE_DETAIL: ForumThreadDetail = {
@@ -301,10 +334,27 @@ const RFQ_RESPONSE_DETAIL: ForumThreadDetail = {
         body: "A range is fine. A range spanning an order of magnitude is not — 500 to 50,000 means you have not decided, and quoting it costs us the same effort as a real request. Naming a target price helps every time: it tells us in one line whether to bother.",
         createdAt: "2026-08-01T13:58:00.000Z",
         helpfulCount: 22,
+        visibilityState: "visible",
+        viewer: { hasMarkedHelpful: false },
+      },
+      {
+        // THE HIDDEN REPLY. It keeps its place in the thread rather than vanishing, because a
+        // conversation with a silent hole in it reads as though the answer above was never
+        // challenged. `body` still arrives — the renderer is what withholds it, and a reviewer
+        // who cannot see the text cannot check that the renderer does.
+        id: "rep_rfq_removed",
+        authorDisplayName: "Removed by a moderator",
+        authorOrganizationName: null,
+        body: "Cheap sourcing agent, WhatsApp me, we do all categories, best price guaranteed.",
+        createdAt: "2026-08-01T19:02:00.000Z",
+        helpfulCount: 0,
+        visibilityState: "hidden",
+        viewer: { hasMarkedHelpful: false },
       },
     ],
     page: { nextCursor: null, hasMore: false },
   },
+  viewer: { isThreadAuthor: false },
 };
 
 export const MOCK_FORUM_THREAD_DETAILS_BY_SLUG: Readonly<Record<string, ForumThreadDetail>> = {
@@ -319,7 +369,7 @@ export const MOCK_FORUM_THREAD_DETAILS_BY_SLUG: Readonly<Record<string, ForumThr
 // --- Write response ---------------------------------------------------------
 
 /**
- * What the mocked `POST /commerce/forum/threads` answers with.
+ * What the mocked `POST /community/forum/threads` answers with.
  *
  * `state: "pending_review"` IS THE ENTIRE POINT OF THIS FIXTURE. A thread does not publish on
  * submit — see the header of `forum.schemas.ts` for why moderation is the design rather than a
@@ -333,4 +383,120 @@ export const MOCK_CREATED_FORUM_THREAD: CreatedForumThread = {
   title: "Your question",
   state: "pending_review",
   createdAt: "2026-08-08T09:20:00.000Z",
+};
+
+/** What the mocked `POST /community/forum/threads/:threadId/replies` answers with. */
+export const MOCK_CREATED_FORUM_REPLY: CreatedForumReply = {
+  id: "rep_01JQZ8W7K3B2N5DF",
+  threadId: "thr_moq_negotiation",
+  body: "Your reply",
+  createdAt: "2026-08-09T11:05:00.000Z",
+};
+
+/**
+ * What the accept/unaccept pair answers with.
+ *
+ * `state: "answered"` IS DERIVED FROM `acceptedReplyId`, never set independently. This fixture
+ * carries both so a renderer that reads one and ignores the other is visibly wrong.
+ */
+export const MOCK_FORUM_THREAD_ANSWER_STATE: ForumThreadAnswerState = {
+  threadId: "thr_moq_negotiation",
+  acceptedReplyId: "rep_moq_trial",
+  state: "answered",
+};
+
+/**
+ * What `PUT|DELETE …/helpful` answers with.
+ *
+ * `viewer` HERE IS NOT NULLABLE, unlike the one on a reply in a public read: only a signed-in
+ * reader can reach this route at all, so there is no anonymous case to model. A count and one
+ * boolean — no score, no downvote, nothing negative anywhere on the wire.
+ */
+export const MOCK_FORUM_REPLY_HELPFUL_STATE: ForumReplyHelpfulState = {
+  replyId: "rep_moq_trial",
+  helpfulCount: 45,
+  viewer: { hasMarkedHelpful: true },
+};
+
+/** What the mocked `POST /community/reports` answers with. */
+export const MOCK_CREATED_COMMUNITY_REPORT: CreatedCommunityReport = {
+  id: "crep_01JQZA1C6P8H4RTV",
+  state: "open",
+  createdAt: "2026-08-09T11:41:00.000Z",
+};
+
+// --- The author's own threads -----------------------------------------------
+
+/**
+ * `GET /community/forum/threads/mine`.
+ *
+ * THE ONLY FIXTURE IN THIS FILE THAT CONTAINS `pending_review` ROWS, and it contains TWO of them
+ * on purpose, because they are different situations that the wire tells apart only by a
+ * timestamp:
+ *
+ *   · `moderatedAt: null` — still queued, nobody has looked;
+ *   · `moderatedAt` set, with a note — REJECTED, and staying `pending_review` is what keeps it out
+ *     of every public read while leaving it readable here.
+ *
+ * A UI that collapses those two into "waiting for review" tells somebody their thread is coming
+ * when it never will. `describeOwnForumThreadState` in `forum.schemas.ts` is the one place that
+ * pairing is turned into words.
+ */
+export const MOCK_OWN_FORUM_THREAD_PAGE: OwnForumThreadListPage = {
+  items: [
+    {
+      id: "thr_moq_negotiation",
+      slug: "getting-a-factory-below-its-stated-moq",
+      board: "sourcing",
+      title: "Getting a factory below its stated MOQ — what actually works?",
+      excerpt:
+        "Every quote comes back at 5,000 minimum and we need 1,200 for a first run. Willing to pay more per unit.",
+      state: "open",
+      replyCount: 4,
+      acceptedReplyId: null,
+      moderatedAt: "2026-08-01T09:00:00.000Z",
+      moderationNote: null,
+      lastActivityAt: "2026-08-04T08:41:00.000Z",
+      createdAt: "2026-07-31T16:20:00.000Z",
+    },
+    {
+      // STILL QUEUED. Nobody has looked at it yet.
+      id: "thr_pending_incoterms",
+      slug: "fca-versus-fob-for-a-first-container",
+      board: "logistics_and_customs",
+      title: "FCA or FOB for a first container out of Ningbo?",
+      excerpt:
+        "Forwarder says FCA, supplier quoted FOB and will not budge. Trying to understand what I actually lose by agreeing.",
+      state: "pending_review",
+      replyCount: 0,
+      acceptedReplyId: null,
+      moderatedAt: null,
+      moderationNote: null,
+      lastActivityAt: "2026-08-09T07:15:00.000Z",
+      createdAt: "2026-08-09T07:15:00.000Z",
+    },
+    {
+      // REJECTED, and still `pending_review`. The note is the only thing that says so.
+      id: "thr_rejected_supplier_name",
+      slug: "is-this-supplier-a-scam",
+      board: "sourcing",
+      title: "Is this supplier a scam? Naming them below",
+      excerpt:
+        "Paid a deposit six weeks ago and they have stopped answering. Company name and bank details in the post.",
+      state: "pending_review",
+      replyCount: 0,
+      acceptedReplyId: null,
+      moderatedAt: "2026-08-06T13:40:00.000Z",
+      moderationNote:
+        "We cannot carry an accusation against a named company with bank details attached — there is no process here for the other side to answer it. Repost describing what happened without identifying them, or open a dispute on the order if one exists.",
+      lastActivityAt: "2026-08-05T20:02:00.000Z",
+      createdAt: "2026-08-05T20:02:00.000Z",
+    },
+  ],
+  page: { nextCursor: null, hasMore: false },
+};
+
+export const MOCK_OWN_FORUM_THREAD_PAGE_EMPTY: OwnForumThreadListPage = {
+  items: [],
+  page: { nextCursor: null, hasMore: false },
 };

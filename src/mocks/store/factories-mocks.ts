@@ -227,6 +227,7 @@ const HANGZHOU_DETAIL: FactoryDetail = {
   certificationRecords: [
     {
       certification: "iso_9001",
+      standardName: "ISO 9001:2015 Quality management systems",
       certificateNumber: "CN-Q-118342",
       issuingBody: "SGS",
       validFrom: "2024-03-11",
@@ -236,10 +237,31 @@ const HANGZHOU_DETAIL: FactoryDetail = {
       // LAPSED. `validUntil` is in the past relative to every other date in this fixture set, so the
       // renderer's "expired" branch is reachable without editing anything.
       certification: "iso_14001",
+      standardName: "ISO 14001:2015 Environmental management systems",
       certificateNumber: "CN-E-90455",
       issuingBody: "TÜV Rheinland",
       validFrom: "2022-01-20",
       validUntil: "2025-01-19",
+    },
+  ],
+  // TWO APPROVED CERTIFICATES OUTSIDE THE CLOSED EIGHT, which is the branch `.strip()` used to
+  // discard silently. A factory holds standards no enum will finish enumerating, and refusing to
+  // show one somebody paid an auditor for is the failure this array exists to prevent.
+  otherCertifications: [
+    {
+      standardName: "IATF 16949:2016 Automotive quality management",
+      certificateNumber: "CN-A-44120",
+      issuingBody: "Bureau Veritas",
+      validFrom: "2025-04-02",
+      validUntil: "2028-04-01",
+    },
+    {
+      standardName: "UL 94 flammability listing",
+      certificateNumber: "E-338917",
+      issuingBody: "UL Solutions",
+      validFrom: "2024-09-16",
+      // No expiry recorded here either — the same three-way render as the closed-set records.
+      validUntil: null,
     },
   ],
   sites: [
@@ -284,6 +306,7 @@ const COIMBATORE_DETAIL: FactoryDetail = {
   certificationRecords: [
     {
       certification: "gots",
+      standardName: "Global Organic Textile Standard 6.0",
       certificateNumber: "IN-GOTS-77120",
       issuingBody: "Control Union",
       validFrom: "2025-06-01",
@@ -291,6 +314,7 @@ const COIMBATORE_DETAIL: FactoryDetail = {
     },
     {
       certification: "sedex_smeta",
+      standardName: "Sedex SMETA 4-Pillar",
       certificateNumber: null,
       issuingBody: "Sedex",
       validFrom: "2025-11-04",
@@ -300,12 +324,15 @@ const COIMBATORE_DETAIL: FactoryDetail = {
     },
     {
       certification: "iso_9001",
+      standardName: "ISO 9001:2015 Quality management systems",
       certificateNumber: "IN-Q-40218",
       issuingBody: "BSI",
       validFrom: "2024-09-15",
       validUntil: "2027-09-14",
     },
   ],
+  // Empty is a fact, not a gap: this factory holds nothing outside the closed eight.
+  otherCertifications: [],
   sites: [
     {
       id: "site_cb_main",
@@ -349,6 +376,7 @@ const IZMIR_DETAIL: FactoryDetail = {
   certificationRecords: [
     {
       certification: "fda_registered",
+      standardName: "US FDA Establishment Registration",
       certificateNumber: "FDA-18829301",
       issuingBody: "US FDA",
       validFrom: "2025-04-22",
@@ -356,6 +384,7 @@ const IZMIR_DETAIL: FactoryDetail = {
     },
     {
       certification: "iso_9001",
+      standardName: "ISO 9001:2015 Quality management systems",
       certificateNumber: "TR-Q-5512",
       issuingBody: "TSE",
       validFrom: "2024-08-08",
@@ -363,12 +392,14 @@ const IZMIR_DETAIL: FactoryDetail = {
     },
     {
       certification: "ce_marking",
+      standardName: "CE marking — EU Declaration of Conformity",
       certificateNumber: null,
       issuingBody: null,
       validFrom: null,
       validUntil: null,
     },
   ],
+  otherCertifications: [],
   sites: [
     {
       id: "site_iz_main",
@@ -404,6 +435,7 @@ const BAC_NINH_DETAIL: FactoryDetail = {
   certificationRecords: [
     {
       certification: "iso_9001",
+      standardName: "ISO 9001:2015 Quality management systems",
       certificateNumber: "VN-Q-2201",
       issuingBody: "Bureau Veritas",
       validFrom: "2025-02-10",
@@ -411,10 +443,20 @@ const BAC_NINH_DETAIL: FactoryDetail = {
     },
     {
       certification: "bsci",
+      standardName: "amfori BSCI Code of Conduct",
       certificateNumber: null,
       issuingBody: "amfori",
       validFrom: "2025-10-01",
       validUntil: "2026-09-30",
+    },
+  ],
+  otherCertifications: [
+    {
+      standardName: "BRCGS Packaging Materials Issue 6",
+      certificateNumber: "PL-BRC-20881",
+      issuingBody: "SGS",
+      validFrom: "2025-02-10",
+      validUntil: "2026-02-09",
     },
   ],
   sites: [
@@ -458,6 +500,7 @@ const MONTERREY_DETAIL: FactoryDetail = {
   certificationRecords: [
     {
       certification: "iso_9001",
+      standardName: "ISO 9001:2015 Quality management systems",
       certificateNumber: "MX-Q-7781",
       issuingBody: "NSF",
       validFrom: "2023-05-30",
@@ -466,6 +509,7 @@ const MONTERREY_DETAIL: FactoryDetail = {
       validUntil: "2026-05-29",
     },
   ],
+  otherCertifications: [],
   sites: [
     {
       id: "site_mty_main",

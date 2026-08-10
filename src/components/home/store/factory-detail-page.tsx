@@ -29,6 +29,7 @@ import {
   FACTORY_CERTIFICATION_LABELS,
   FACTORY_VERIFICATION_LABELS,
   type FactoryCertificationRecord,
+  type FactoryOtherCertification,
   type FactoryDetail,
   type FactoryProductionLine,
   type FactorySamplePolicy,
@@ -153,6 +154,24 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
               This factory is not taking new inquiries.
             </p>
           )}
+
+          {/* Shown regardless of `acceptingInquiries`: a buyer with an open conversation still
+              needs to reach it after the factory closes its inbox. */}
+          <Link
+            href="/store/factory-inquiries"
+            className="rounded-full bg-background px-4 py-2 text-sm font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] transition-colors hover:bg-muted"
+          >
+            Your inquiries
+          </Link>
+
+          {/* The seller's own way in. The route reads the same public projection this page does,
+              which is why it takes the slug rather than an organization id — see §6.6. */}
+          <Link
+            href={`/studio/factory-profile?factorySlug=${encodeURIComponent(factory.slug)}`}
+            className="text-xs leading-4 text-[#6F7979] hover:underline"
+          >
+            Is this your factory? Edit its profile
+          </Link>
         </div>
       </header>
 
@@ -186,13 +205,18 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
             absentLabel="Never audited by Qatoto"
           />
           <Fact
-            label="Ships to"
+            // "HAS SHIPPED TO", NOT "SHIPS TO", because this list is DERIVED and not declared:
+            // the backend computes it from delivery-address countries on completed orders, so the
+            // factory cannot edit it and it describes what happened rather than what is offered.
+            // A13's rule forces the distinction — a derived stat and a declared stat must not read
+            // the same, and everything else in this block is declared.
+            label="Has shipped to"
             value={
               detail.exportMarkets.length === 0
                 ? null
                 : detail.exportMarkets.map(countryLabelFromCode).join(", ")
             }
-            absentLabel="No export markets recorded"
+            absentLabel="No completed orders shipped abroad yet"
           />
         </dl>
       </FactSection>
@@ -229,8 +253,43 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
         </FactSection>
       )}
 
+      {detail.otherCertifications.length > 0 && (
+        <FactSection title="Other certificates">
+          {/* THE STANDARDS THE FILTER CANNOT SEE. `certification` is a closed eight-value enum so
+              the filter chips are buildable and two spellings of one standard cannot sit side by
+              side — but a factory holds standards no enum will finish enumerating, and dropping
+              them would mean silently refusing to show a valid certificate somebody paid an
+              auditor for. These are read, never matched. */}
+          <p className="pb-3 text-xs leading-4 text-[#6F7979]">
+            Held by this factory but outside the set you can filter on. Same rules — check the
+            dates, Qatoto records these rather than issuing them.
+          </p>
+          <ul className="space-y-2">
+            {detail.otherCertifications.map((otherCertification) => (
+              <li
+                key={`${otherCertification.standardName}-${otherCertification.validFrom ?? "na"}`}
+              >
+                <OtherCertificationRow otherCertification={otherCertification} />
+              </li>
+            ))}
+          </ul>
+        </FactSection>
+      )}
+
       {detail.sites.length > 0 && (
         <FactSection title="Sites">
+          {/*
+            BOTH AREA FIGURES ARE PUBLISHED AND NEITHER IS RECONCILED (§16.3). The organization-wide
+            floor area and these per-site figures are separately seller-declared, and when they
+            disagree the read shows both rather than summing or preferring one — a platform that
+            silently picked a winner would be asserting something neither party said. This line is
+            what stops a reader assuming the per-site numbers add up to the headline one.
+          */}
+          <p className="pb-3 text-xs leading-4 text-[#6F7979]">
+            Stated by the factory, site by site. The organization-wide floor area above is a
+            separate figure it also stated; the two need not add up, and Qatoto does not reconcile
+            them.
+          </p>
           <ul className="space-y-3">
             {detail.sites.map((site) => (
               <li key={site.id}>
@@ -319,8 +378,17 @@ function CertificationRow({
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[#CAC4D0]/60 px-4 py-2.5">
       <span className="text-sm leading-5 font-medium text-[#191C1C]">
+        {/* THE LABEL, NOT `standardName`. The enum's short label is what the filter chip says, so
+            the row a buyer landed on from a chip must read the same. `standardName` is what the
+            paper says — longer, usually carrying a revision year — and it goes below. */}
         {FACTORY_CERTIFICATION_LABELS[certificationRecord.certification]}
       </span>
+
+      {/* Only when it adds something. Repeating "ISO 9001" under "ISO 9001" is noise. */}
+      {certificationRecord.standardName !==
+        FACTORY_CERTIFICATION_LABELS[certificationRecord.certification] && (
+        <span className="text-xs leading-4 text-[#6F7979]">{certificationRecord.standardName}</span>
+      )}
 
       {certificationRecord.issuingBody !== null && (
         <span className="text-xs leading-4 text-[#6F7979]">
@@ -345,6 +413,53 @@ function CertificationRow({
 
       {/* Only a record WITH an end date can lapse. Rendering the pill for a null `validUntil` would
           ask a client component to decide something the data does not contain. */}
+      {validUntil !== null && <CertificationValidityPill validUntil={validUntil} />}
+    </div>
+  );
+}
+
+/**
+ * A certificate whose standard is outside the closed eight.
+ *
+ * SAME EXPIRY DISCIPLINE, DIFFERENT HEADLINE. There is no enum label to lead with, so
+ * `standardName` is the name — it is the only name this certificate has on the wire. Everything
+ * else reads identically to `CertificationRow`, deliberately: a buyer should not have to work out
+ * that one of these lists is second class, because it is not. It is only unfilterable.
+ */
+function OtherCertificationRow({
+  otherCertification,
+}: {
+  otherCertification: FactoryOtherCertification;
+}) {
+  const { validFrom, validUntil } = otherCertification;
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[#CAC4D0]/60 px-4 py-2.5">
+      <span className="text-sm leading-5 font-medium text-[#191C1C]">
+        {otherCertification.standardName}
+      </span>
+
+      {otherCertification.issuingBody !== null && (
+        <span className="text-xs leading-4 text-[#6F7979]">
+          issued by {otherCertification.issuingBody}
+        </span>
+      )}
+
+      {otherCertification.certificateNumber !== null && (
+        <span className="text-xs leading-4 text-[#6F7979]">
+          no. {otherCertification.certificateNumber}
+        </span>
+      )}
+
+      <span className="text-xs leading-4 text-[#6F7979]">
+        {validUntil === null
+          ? // NOT "valid indefinitely" — nobody recorded an end date, that is all this says.
+            validFrom === null
+            ? "No validity dates recorded"
+            : `From ${formatIsoDateLabel(validFrom)} · no expiry recorded`
+          : `${validFrom === null ? "Until" : `${formatIsoDateLabel(validFrom)} –`} ${formatIsoDateLabel(validUntil)}`}
+      </span>
+
       {validUntil !== null && <CertificationValidityPill validUntil={validUntil} />}
     </div>
   );

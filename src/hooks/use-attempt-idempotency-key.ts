@@ -35,3 +35,38 @@ export function useAttemptIdempotencyKey(): () => string {
     return keyRef.current;
   };
 }
+
+/**
+ * The same thing for a form that is used MORE THAN ONCE without unmounting.
+ *
+ * WHY THIS EXISTS AS A SECOND HOOK RATHER THAN A FLAG. Every original caller of
+ * `useAttemptIdempotencyKey` is one-shot — create an RFQ, create a listing, create a profile — and
+ * then navigates away, so one key per mount is exactly right and rotating it would be a bug. The
+ * forum reply box is not one-shot: the same mounted component posts a second, different reply
+ * minutes later, and reusing the first key there means the backend dedupes the second reply into
+ * silence. The author sees their answer vanish and posts it again.
+ *
+ * So the rule is unchanged and only the lifetime differs: ONE KEY PER ATTEMPT, held across every
+ * retry of that attempt, rotated ONLY after the server has confirmed a success. Never rotate on
+ * failure — a network error is precisely when the retry must carry the original key.
+ */
+export function useResettableAttemptIdempotencyKey(): {
+  readonly getIdempotencyKey: () => string;
+  readonly resetIdempotencyKey: () => void;
+} {
+  const keyRef = useRef<string | null>(null);
+
+  return {
+    // STILL A GETTER, AND STILL LAZY, for the reason in the file header: minting during render
+    // runs during the server prerender, and `cacheComponents` refuses a non-deterministic value
+    // produced there. Returning the string directly would put `crypto.randomUUID()` back in the
+    // render path and fail the build.
+    getIdempotencyKey: () => {
+      if (keyRef.current === null) keyRef.current = newIdempotencyKey();
+      return keyRef.current;
+    },
+    resetIdempotencyKey: () => {
+      keyRef.current = null;
+    },
+  };
+}

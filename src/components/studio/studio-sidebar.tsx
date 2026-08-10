@@ -47,6 +47,10 @@ const ICON_PATHS = {
     active: "/icons/request_quote_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/request_quote_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  factory: {
+    active: "/icons/factory_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/factory_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   rateReview: {
     static: "/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
@@ -110,6 +114,11 @@ const STUDIO_ROUTES = {
   // their own quote queue by clicking. `/studio/services` is new and is where a draft listing is visible.
   providerRfqs: "/studio/rfqs",
   services: "/studio/services",
+  // The manufacturer's own two surfaces. `factoryInquiries` is the RECEIVED queue — the buyer's
+  // side of the same rows is `/store/factory-inquiries`, the split `/store/rfqs` and
+  // `/studio/rfqs` already use. `factoryProfile` needs a `?factorySlug=`, so it is reached from
+  // the directory listing rather than from here.
+  factoryInquiries: "/studio/factory-inquiries",
   support: "/studio/support",
   earn: "/studio/earn",
   comments: "/studio/comments",
@@ -325,6 +334,11 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
       { path: STUDIO_ROUTES.orders, label: "Orders", iconKey: "orders" },
       { path: STUDIO_ROUTES.providerRfqs, label: "Requests to quote", iconKey: "requestQuote" },
       { path: STUDIO_ROUTES.services, label: "Services", iconKey: "package" },
+      {
+        path: STUDIO_ROUTES.factoryInquiries,
+        label: "Manufacturing inquiries",
+        iconKey: "factory",
+      },
       { path: STUDIO_ROUTES.logistics, label: "Logistics", iconKey: "localShipping" },
       { path: STUDIO_ROUTES.support, label: "Support", iconKey: "supportAgent" },
       { path: STUDIO_ROUTES.earn, label: "Earn", iconKey: "paid" },

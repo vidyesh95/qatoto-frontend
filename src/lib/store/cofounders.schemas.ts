@@ -1,10 +1,31 @@
 // TRANSPORT: props-only — schemas and display maps, no network of their own.
 //
-// Client contract for cofounder matching: `GET /store/cofounder-profiles`,
-// `GET /store/cofounder-profiles/:profileSlug` and `POST /commerce/cofounder-profiles`.
+// Client contract for cofounder matching: the two public reads under `/store/cofounder-profiles`,
+// and the eight writes under `/community/*`. `STORE_BACKEND_STRUCTURE.md` §6.7 and §18.
 //
-// NO BACKEND EXISTS. A25 lists `find-cofounder` alongside `business-forum` as "not commerce and has
-// no backend anywhere". This is a proposed contract.
+// THE BACKEND SHIPPED THIS (Phase 19, migrations `0104`–`0105`) AND IT SHIPPED THE LIFECYCLE THIS
+// FILE FORGOT. As originally specified, `POST` answered `draft`, the public reads returned only
+// `published`, and there was no submit route, no `/mine` read and no withdraw — §18.3's finding is
+// that a user created a profile nobody could ever see, including themselves. All seven missing
+// routes are below. `cofounders.api.ts` is still mock-backed.
+//
+// THE WRITE PATH MOVED FROM `/commerce` TO `/community` (§1.1), for the same reason the forum's
+// did: a cofounder profile is not a commerce object, no organization is required to have one, and
+// nothing on this surface may be read as a commercial fact about a party.
+//
+// AND THE ONE THING THE BACKEND DID NOT BUILD, which changes what this file may send:
+//
+//   THERE IS NO CAPITAL OR EQUITY COLUMN. `community_cofounder_profile` has no
+//   `capital_range_*`, no `currency` and no `equity_expectation_basis_points`, because §14's legal
+//   decision is open — publishing what a person will invest, beside a contact affordance, is close
+//   to facilitating a securities solicitation and how close is a per-market answer. Phase 19
+//   shipped everything else rather than waiting.
+//
+//   So `capitalRange` and `equityExpectationBasisPoints` STAY ON THE READ SCHEMAS, nullable, and
+//   serve `null` today. They are ABSENT FROM EVERY WRITE INPUT, because the create schema is
+//   `.strict()` and answers 422 rather than accepting and discarding a figure — silently dropping
+//   a number somebody typed about themselves would let them believe it was recorded. Do not add
+//   them back to a form.
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // THREE RULES THAT ARE NOT NEGOTIABLE ON THIS SURFACE, and every one of them is about a sentence the
@@ -24,6 +45,13 @@
 //  3. THIS IS NOT EQUITY. Nothing on this surface mints, holds, transfers or records a stake.
 //     `equityExpectationBasisPoints` IS AN ASK — the number someone hopes to negotiate towards — and
 //     is rendered as an expectation, never as an allocation or a holding.
+//
+//  4. `identity_verified` MEANS ONLY THAT THIS PERSON IS WHO THEY SAY THEY ARE. The backend derives
+//     it from the same `requireIdentifiedUser` predicate the category-request write already runs
+//     behind — one definition of "identified" on this platform, extracted rather than duplicated
+//     (§18.4). It says nothing about their capital, their track record or their reach, none of
+//     which anybody checked, which is why the tuple has two values and not a ladder: a third rung
+//     would be read as verifying the claims.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { z } from "zod";
@@ -193,21 +221,27 @@ export interface ListCofounderProfilesFilter {
   readonly cursor?: string;
 }
 
-// --- Write body: POST /commerce/cofounder-profiles --------------------------
+// --- Write body: POST /community/cofounder-profiles -------------------------
 
 /**
  * Your own profile.
  *
  * THE VIEWER POSTS ABOUT THEMSELVES, NOT ABOUT SOMEBODY ELSE. There is no route by which one person
  * lists another, deliberately: a directory of people who did not consent to being in it is a
- * different product with a different legal shape.
+ * different product with a different legal shape. No route on this surface takes a `:userId` for
+ * the same reason — `/mine` is the only addressing an owner gets.
  *
- * The capital range is BOTH-OR-NEITHER — the pair is refused half-filled, the same way a service
- * offering's indicative price range is. Optional fields are `?: T` and a blank one is omitted; `0`
- * for a blank capital minimum would publish an offer of nothing, and `0` basis points would publish
- * an expectation of no stake, which nobody means.
+ * NO CAPITAL AND NO EQUITY FIELD, AND THAT IS NOT AN OVERSIGHT. The four that used to be here —
+ * `capitalRangeMinInCents`, `capitalRangeMaxInCents`, `currency`, `equityExpectationBasisPoints` —
+ * have no column behind them (§14, and the file header). The backend's create schema is
+ * `.strict()` and answers **422** for any of them, which fails the whole write rather than
+ * discarding the number. Adding a capital input back to a form breaks profile creation outright.
  *
- * Requires an `Idempotency-Key`. A retry without one is a duplicate profile of the same person.
+ * Optional fields are `?: T` and a blank one is OMITTED, never sent as `null`, `""` or `0`.
+ *
+ * Requires an `Idempotency-Key`. A retry without one is a duplicate profile of the same person —
+ * and `userId` is unique server-side, so the retry fails rather than duplicating, which is worse
+ * to explain than to prevent.
  */
 export interface CreateCofounderProfileInput {
   readonly headline: string;
@@ -215,16 +249,12 @@ export interface CreateCofounderProfileInput {
   readonly countryCode: string;
   readonly contributionKinds: readonly CofounderContributionKind[];
   readonly commitmentLevel: CofounderCommitmentLevel;
-  readonly capitalRangeMinInCents?: number;
-  readonly capitalRangeMaxInCents?: number;
-  readonly currency?: string;
-  readonly equityExpectationBasisPoints?: number;
   readonly lookingFor?: string;
   readonly sectors?: readonly string[];
 }
 
 /**
- * What `POST /commerce/cofounder-profiles` answers with: `201` and the raw row.
+ * What `POST /community/cofounder-profiles` answers with: `201` and the raw row.
  *
  * `state` COMES BACK `draft`. Creating is not publishing — the profile is visible to nobody, and the
  * success screen must not say "live", "listed" or "you are now discoverable".
@@ -239,6 +269,134 @@ export const CreatedCofounderProfileSchema = z
   })
   .strip();
 
+// --- The owner's own profile ------------------------------------------------
+//
+// `GET|PATCH /community/cofounder-profiles/mine`, `…/mine/submit`, `…/mine/withdraw`,
+// `…/mine/engagement-state` (§6.7, §18.3).
+//
+// THE LIFECYCLE THE ORIGINAL CONTRACT OMITTED. Without these a `draft` is a write into a hole:
+// public reads return `published` only, so its author could never read back what they wrote.
+
+/**
+ * The viewer's own profile, in any state.
+ *
+ * A SUPERSET OF THE CARD, not a different shape — `profile` is the same object the directory
+ * projects, so a preview of "how this will look" needs no second renderer. What is added is the
+ * things only the owner may see: the state, the moderator's note and the timestamps.
+ *
+ * `capitalRange` AND `equityExpectationBasisPoints` ARE ON `profile` AND SERVE `null`. The owner
+ * cannot set them either — see the file header. Render the absence; do not offer a field.
+ */
+export const OwnCofounderProfileSchema = z
+  .object({
+    profile: CofounderProfileCardSchema,
+    state: z.enum(COFOUNDER_PROFILE_STATES),
+    bio: z.string(),
+    lookingFor: z.string(),
+    priorVentures: z.array(CofounderPriorVentureSchema),
+    languages: z.array(z.string()),
+    /**
+     * Why a moderator rejected it, or `null`.
+     *
+     * A REJECTED PROFILE RETURNS TO `draft` so its owner can fix it and submit again — unlike a
+     * forum thread, which stays `pending_review` because nobody edits a posted question. The note
+     * is what makes the difference actionable.
+     */
+    moderationNote: z.string().nullable(),
+    publishedAt: IsoDateTimeSchema.nullable(),
+    updatedAt: IsoDateTimeSchema,
+    createdAt: IsoDateTimeSchema,
+  })
+  .strip();
+
+/**
+ * `PATCH /community/cofounder-profiles/mine` — edit while `draft` or `withdrawn`.
+ *
+ * NOT VALID WHILE `published` OR `pending_review`, and that is deliberate rather than an
+ * oversight: everything here is content a moderator approved, so changing it after approval must
+ * go back through `submit`. The one exception is the engagement state, which has its own route
+ * below precisely because it is the edit a published profile may make.
+ *
+ * Every field optional — this is a patch — and still no capital or equity field (see the header).
+ */
+export interface UpdateCofounderProfileInput {
+  readonly headline?: string;
+  readonly bio?: string;
+  readonly countryCode?: string;
+  readonly contributionKinds?: readonly CofounderContributionKind[];
+  readonly commitmentLevel?: CofounderCommitmentLevel;
+  readonly lookingFor?: string;
+  readonly sectors?: readonly string[];
+}
+
+/**
+ * `PATCH /community/cofounder-profiles/mine/engagement-state`.
+ *
+ * ITS OWN ROUTE, NOT A FIELD ON THE PATCH ABOVE. It is the one edit a `published` profile may make
+ * without re-entering moderation: "I am mid-conversation" is a fact about availability, not
+ * content somebody approved.
+ *
+ * Moving to `not_looking` DOES NOT REMOVE THE PROFILE from the directory. A profile is also a
+ * record, and hiding it makes a person who is mid-conversation look as though they had left. The
+ * row says so and offers no contact affordance.
+ */
+export interface UpdateCofounderEngagementStateInput {
+  readonly engagementState: CofounderEngagementState;
+}
+
+/** What `submit`, `withdraw` and the engagement-state patch all answer with. */
+export const CofounderProfileStateChangeSchema = z
+  .object({
+    id: z.string(),
+    slug: z.string(),
+    state: z.enum(COFOUNDER_PROFILE_STATES),
+    engagementState: z.enum(COFOUNDER_ENGAGEMENT_STATES),
+    updatedAt: IsoDateTimeSchema,
+  })
+  .strip();
+
+// --- Moderation, gated by `moderate_content` --------------------------------
+//
+// `GET /community/admin/cofounder-profiles`,
+// `POST /community/admin/cofounder-profiles/:profileId/moderate` (§6.7).
+
+export const AdminCofounderProfileSchema = z
+  .object({
+    id: z.string(),
+    slug: z.string(),
+    displayName: z.string(),
+    headline: z.string(),
+    bio: z.string(),
+    lookingFor: z.string(),
+    countryCode: z.string(),
+    state: z.enum(COFOUNDER_PROFILE_STATES),
+    identityState: z.enum(COFOUNDER_IDENTITY_STATES),
+    contributionKinds: z.array(z.enum(COFOUNDER_CONTRIBUTION_KINDS)),
+    commitmentLevel: z.enum(COFOUNDER_COMMITMENT_LEVELS),
+    sectors: z.array(z.string()),
+    priorVentures: z.array(CofounderPriorVentureSchema),
+    submittedAt: IsoDateTimeSchema,
+  })
+  .strip();
+
+export const AdminCofounderProfileQueuePageSchema = cursorPageOf(AdminCofounderProfileSchema);
+
+export interface ListAdminCofounderProfilesFilter {
+  readonly state?: CofounderProfileState;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+/**
+ * `POST /community/admin/cofounder-profiles/:profileId/moderate`.
+ *
+ * A discriminated union, `note` required only on `reject`. Rejecting returns the profile to
+ * `draft` with the note attached, so its owner can act on it rather than guess.
+ */
+export type ModerateCofounderProfileInput =
+  | { readonly decision: "publish" }
+  | { readonly decision: "reject"; readonly note: string };
+
 // --- Inferred types ---------------------------------------------------------
 
 export type CofounderCapitalRange = z.infer<typeof CofounderCapitalRangeSchema>;
@@ -247,6 +405,10 @@ export type CofounderDirectoryPage = z.infer<typeof CofounderDirectoryPageSchema
 export type CofounderPriorVenture = z.infer<typeof CofounderPriorVentureSchema>;
 export type CofounderProfileDetail = z.infer<typeof CofounderProfileDetailSchema>;
 export type CreatedCofounderProfile = z.infer<typeof CreatedCofounderProfileSchema>;
+export type OwnCofounderProfile = z.infer<typeof OwnCofounderProfileSchema>;
+export type CofounderProfileStateChange = z.infer<typeof CofounderProfileStateChangeSchema>;
+export type AdminCofounderProfile = z.infer<typeof AdminCofounderProfileSchema>;
+export type AdminCofounderProfileQueuePage = z.infer<typeof AdminCofounderProfileQueuePageSchema>;
 
 // --- Display maps -----------------------------------------------------------
 

@@ -9,9 +9,10 @@
 //     break the conversation — most accepted answers are replies to something, and reading them
 //     first makes the thread incoherent. So it appears at the top as a summary and again in order,
 //     marked in both places.
-//  2. THERE IS NO REPLY BOX. Posting a reply is a write this surface does not have, and a disabled
-//     textarea is a promise the backend cannot keep. The absence is stated in one line rather than
-//     mocked up.
+//  2. THE CONVERSATION IS A CLIENT ISLAND AND THIS FILE IS NOT. Replying, endorsing, accepting an
+//     answer and reporting are all session-scoped writes, so they live in
+//     `forum/forum-thread-conversation.tsx`. The question itself stays a server render, because it
+//     is public text a signed-out visitor should get without shipping a mutation bundle to read it.
 //  3. A 404 IS A 404. A thread awaiting moderation answers 404 to everyone but its author, so this
 //     page must never render "awaiting moderation" from a failed read — that would tell a stranger
 //     the thread exists.
@@ -19,8 +20,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import ForumThreadConversation from "@/components/home/store/forum/forum-thread-conversation";
 import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
-import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
+import { formatIsoInstantLabel } from "@/lib/store/format";
 import {
   FORUM_BOARD_LABELS,
   type ForumReply,
@@ -63,10 +65,15 @@ function renderForumThread(viewState: ForumThreadViewState) {
 
 function ForumThreadBody({ detail }: { detail: ForumThreadDetail }) {
   const { thread, replies } = detail;
+  // A HIDDEN REPLY IS NEVER PINNED, even if it is the accepted one. Moderation and acceptance are
+  // independent acts and can disagree — a moderator hides an answer the author had already
+  // marked — and the pinned card is the one place a hidden body would be reproduced in full.
   const acceptedReply =
     thread.acceptedReplyId === null
       ? null
-      : (replies.items.find((reply) => reply.id === thread.acceptedReplyId) ?? null);
+      : (replies.items.find(
+          (reply) => reply.id === thread.acceptedReplyId && reply.visibilityState === "visible",
+        ) ?? null);
 
   return (
     <article className="mx-auto w-full max-w-3xl">
@@ -115,38 +122,20 @@ function ForumThreadBody({ detail }: { detail: ForumThreadDetail }) {
         </section>
       )}
 
-      <section className="px-4 pt-6 lg:px-6" aria-label="Replies">
-        <h2 className="pb-2 text-sm font-medium tracking-wide text-[#191C1C]">
-          {replies.items.length === 0
-            ? "No replies yet"
-            : `${formatCountLabel(thread.replyCount)} ${thread.replyCount === 1 ? "reply" : "replies"}`}
-        </h2>
-
-        {replies.items.length === 0 ? (
-          <p className="text-sm leading-5 text-[#6F7979]">
-            Nobody has answered this one. It is still open.
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {replies.items.map((reply) => (
-              <li key={reply.id}>
-                {/* The accepted reply appears here too, in sequence — see the file header. */}
-                <ReplyCard reply={reply} isAccepted={reply.id === thread.acceptedReplyId} />
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {/* NOT a disabled textarea. Replying is a write that does not exist, and a form that cannot
-            submit is a worse answer than a sentence saying so. */}
-        <p className="mt-6 rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
-          Replying is not available yet. You can start your own thread from the forum index.
-        </p>
-      </section>
+      {/* Replies, and every control over them, from here down. */}
+      <ForumThreadConversation detail={detail} />
     </article>
   );
 }
 
+/**
+ * The pinned copy of the accepted answer, rendered on the server.
+ *
+ * READ-ONLY ON PURPOSE. The interactive copy of this reply is in the conversation island below,
+ * in its place in the sequence — pinning it here is a summary, and putting an endorse button in
+ * two places for one reply would let a reader press the same toggle twice and watch it fight
+ * itself.
+ */
 function ReplyCard({ reply, isAccepted }: { reply: ForumReply; isAccepted: boolean }) {
   return (
     <div
@@ -163,10 +152,6 @@ function ReplyCard({ reply, isAccepted }: { reply: ForumReply; isAccepted: boole
         {formatIsoInstantLabel(reply.createdAt)}
       </p>
       <p className="mt-1.5 text-sm leading-6 whitespace-pre-line text-[#191C1C]">{reply.body}</p>
-      <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
-        {/* Zero renders as zero. There is no downvote on this surface — see `ForumReplySchema`. */}
-        {formatCountLabel(reply.helpfulCount)} found this helpful
-      </p>
     </div>
   );
 }

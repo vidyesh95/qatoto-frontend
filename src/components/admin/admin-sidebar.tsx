@@ -61,6 +61,31 @@ const ADMIN_NAVIGATION_ITEMS: AdminNavItem[] = [
     inactiveIcon: "/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    // COMMUNITY, NOT COMMERCE (§1.1). Forum threads, their replies, community reports and
+    // cofounder profiles are one shift under `moderate_content` — the same moderator works
+    // the off-topic thread, the report that named it and the profile that arrived after.
+    // Separate from "Store categories" above, which is `moderate_commerce`: §17.4 refuses to
+    // merge the two queues because a counterfeit-listing shift and an off-topic-thread shift
+    // are not the same job, and merging creates the coupling capabilities exist to prevent.
+    //
+    // Desktop only, same tradeoff as Store categories and Promotions.
+    href: "/admin/community",
+    label: "Community",
+    activeIcon: "/icons/forum_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/forum_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
+    // The record behind a factory's `site_audited` state, under `moderate_commerce`. It is a
+    // commerce fact about a seller, which is why it does not sit under Community above.
+    //
+    // `fact_check`, not `verified`: only a teal FILL1 verified icon is committed, and the nav
+    // needs a black FILL0/FILL1 pair like every other item here.
+    href: "/admin/site-audits",
+    label: "Site audits",
+    activeIcon: "/icons/fact_check_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/fact_check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     // Desktop only, deliberately not added to admin-mobile-bottom-nav: that bar would go
     // from six tabs to seven, and managing a carousel means picking image files.
     href: "/admin/promotions",

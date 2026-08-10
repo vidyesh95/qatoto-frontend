@@ -145,6 +145,14 @@ export default async function CofounderDirectoryPage({
         >
           List yourself
         </Link>
+        {/* The only route to a profile that is not `published` — this directory returns published
+            rows only, so a draft, a submitted profile and a rejected one are all invisible here. */}
+        <Link
+          href="/store/find-cofounder/mine"
+          className="shrink-0 rounded-full bg-background px-4 py-2 text-sm font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] transition-colors hover:bg-muted"
+        >
+          Your profile
+        </Link>
       </div>
 
       <div className="space-y-2 px-4 pt-3 lg:px-6">

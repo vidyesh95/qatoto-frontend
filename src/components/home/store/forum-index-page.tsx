@@ -98,6 +98,14 @@ export default async function ForumIndexPage({ searchParams }: { searchParams: R
         >
           Ask a question
         </Link>
+        {/* The only route to a thread still in review — it appears in no list on this page, by
+            design, so an author who has just posted has nowhere else to look. */}
+        <Link
+          href="/store/forum/mine"
+          className="shrink-0 rounded-full bg-background px-4 py-2 text-sm font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979] transition-colors hover:bg-muted"
+        >
+          Your threads
+        </Link>
       </div>
 
       <div className="px-4 pt-3 lg:px-6">
