@@ -37,6 +37,7 @@ import {
   StoreProductCardSchema,
 } from "@/lib/store/organizations.schemas";
 import { StoreCategorySchema } from "@/lib/store/catalog.schemas";
+import { FreightLanePlanSchema } from "@/lib/store/freight.schemas";
 import { PRODUCT_RELATION_KINDS } from "@/lib/store/merchandising.schemas";
 import { cursorPageOf, IsoDateTimeSchema } from "@/lib/store/shared.schemas";
 
@@ -306,7 +307,22 @@ export const ProductDeliveryEstimateSchema = z
  * and converting without an FX quote would invent a rate.
  */
 export const ProductDeliveryEstimatePageSchema = z
-  .object({ estimates: z.array(ProductDeliveryEstimateSchema) })
+  .object({
+    estimates: z.array(ProductDeliveryEstimateSchema),
+    /**
+     * §19's rate-card projection, ADDED ALONGSIDE `estimates` AND NEVER IN PLACE OF IT. The two
+     * answer different questions from different data: `estimates` is derived from declared provider
+     * COVERAGE and gives a per-currency range; `lanePlan` is derived from purchased RATE CARDS and
+     * gives per-leg options a buyer can actually choose between. A16's projection is unchanged, byte
+     * for byte, which is why this is a sibling rather than a replacement.
+     *
+     * NULLABLE, AND THE DOC IS WRONG ABOUT THIS. §19.5 says never-null on a 200; `planFreightJourney`
+     * returns `FreightLanePlan | null` when the seller's origin country is unresolved
+     * (`commerce-freight-journey.service.ts:416`). Code wins — a non-nullable parse here would fail
+     * the whole page for a seller who never published a dispatch country, which is common.
+     */
+    lanePlan: FreightLanePlanSchema.nullable(),
+  })
   .strip();
 
 // --- Reviews ----------------------------------------------------------------

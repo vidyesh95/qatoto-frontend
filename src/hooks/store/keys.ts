@@ -63,6 +63,16 @@ export const storeKeys = {
   orderList: (which: "buyer" | "provider") => ["store", "orders", "list", which] as const,
   order: (orderId: string) => ["store", "orders", orderId] as const,
   orderFulfillment: (orderId: string) => ["store", "orders", orderId, "fulfillment"] as const,
+  /**
+   * THE MODE IS PART OF THE KEY, not a detail of the request.
+   *
+   * Every mode rates a different lane and returns a different window, and the no-mode answer —
+   * `freight: unknown / mode_not_selected` with the covered modes listed — is a distinct, cacheable
+   * result rather than a loading state. Keying only on the order id would let a buyer's air quote
+   * overwrite the sea one in the cache and make the mode picker look broken.
+   */
+  orderArrivalWindow: (orderId: string, mode: string | null) =>
+    ["store", "orders", orderId, "arrival-window", mode] as const,
 
   engagementList: () => ["store", "engagements", "list"] as const,
   engagement: (engagementId: string) => ["store", "engagements", engagementId] as const,

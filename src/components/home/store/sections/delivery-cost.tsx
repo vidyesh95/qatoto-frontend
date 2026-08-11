@@ -29,14 +29,27 @@ import { useProductDeliveryEstimateQuery } from "@/hooks/store/products";
 import { COUNTRY_OPTIONS } from "@/components/home/account/menus/location-menu";
 import { formatCentsRangeLabel, formatLeadTimeRangeLabel } from "@/lib/store/format";
 import type { ProductDeliveryEstimate } from "@/lib/store/products.schemas";
+import type { FreightLanePlan } from "@/lib/store/freight.schemas";
 
-/** What the row can be showing. A missing destination is a prompt, not an error. */
+/**
+ * What the row can be showing. A missing destination is a prompt, not an error.
+ *
+ * `uncovered` AND `ready` BOTH CARRY THE LANE PLAN, and that is the change §19.7 asked for. The two
+ * halves of this payload answer different questions from different data — `estimates` comes from
+ * declared provider COVERAGE, `lanePlan` from purchased RATE CARDS — so "no coverage-based estimate"
+ * says nothing about whether a rate card exists, and vice versa. Attaching the plan only to the
+ * priced branch would hide the sheet exactly when it has the most to say.
+ */
 type DeliveryEstimateViewState =
   | { status: "no_destination" }
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "uncovered" }
-  | { status: "ready"; estimates: readonly ProductDeliveryEstimate[] };
+  | { status: "uncovered"; lanePlan: FreightLanePlan | null }
+  | {
+      status: "ready";
+      estimates: readonly ProductDeliveryEstimate[];
+      lanePlan: FreightLanePlan | null;
+    };
 
 export default function DeliveryCost({ productSlug }: { readonly productSlug: string }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -60,8 +73,19 @@ export default function DeliveryCost({ productSlug }: { readonly productSlug: st
           : !result.success
             ? { status: "error", message: result.error.message }
             : result.data.estimates.length === 0
-              ? { status: "uncovered" }
-              : { status: "ready", estimates: result.data.estimates };
+              ? { status: "uncovered", lanePlan: result.data.lanePlan }
+              : {
+                  status: "ready",
+                  estimates: result.data.estimates,
+                  lanePlan: result.data.lanePlan,
+                };
+
+  // THE SHEET OPENS FROM EVERY RESOLVED STATE, NOT JUST THE PRICED ONE. It used to be reachable only
+  // from `ready`, which is backwards now: with no rate cards loaded — today's state on every lane —
+  // `uncovered` is where the buyer most needs to see WHICH leg is uncovered, why, and which
+  // forwarders sell the route anyway.
+  const isSheetReachable = viewState.status === "ready" || viewState.status === "uncovered";
+  const lanePlanForSheet = isSheetReachable ? viewState.lanePlan : null;
 
   return (
     <>
@@ -88,13 +112,15 @@ export default function DeliveryCost({ productSlug }: { readonly productSlug: st
 
         <div className="mt-1.5">{renderEstimate(viewState)}</div>
 
-        {viewState.status === "ready" && (
+        {isSheetReachable && (
           <button
             type="button"
             onClick={() => setIsSheetOpen(true)}
             className="mt-1 flex w-full cursor-pointer items-center gap-2 text-left text-xs text-[#00696E]"
           >
-            <span className="flex-1">See how this was worked out</span>
+            <span className="flex-1">
+              {viewState.status === "ready" ? "See how this was worked out" : "See the route"}
+            </span>
             <Image
               src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
               width={20}
@@ -105,7 +131,9 @@ export default function DeliveryCost({ productSlug }: { readonly productSlug: st
         )}
       </div>
 
-      {isSheetOpen && <DeliverySheet onClose={() => setIsSheetOpen(false)} />}
+      {isSheetOpen && (
+        <DeliverySheet lanePlan={lanePlanForSheet} onClose={() => setIsSheetOpen(false)} />
+      )}
     </>
   );
 }

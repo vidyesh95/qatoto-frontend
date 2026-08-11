@@ -26,6 +26,7 @@ import DefinitionList, {
 } from "@/components/commerce/shared/definition-list";
 import ProviderKindBadge from "@/components/commerce/shared/provider-kind-badge";
 import OrderDeliveryAddressReveal from "@/components/commerce/sections/order-delivery-address-reveal";
+import OrderArrivalWindowPanel from "@/components/commerce/sections/order-arrival-window-panel";
 import OrderFulfillmentPanel from "@/components/commerce/sections/order-fulfillment-panel";
 import StatusPanel from "@/components/home/shared/status-panel";
 import OrderCancelControl from "@/components/commerce/sections/order-cancel-control";
@@ -192,7 +193,16 @@ function OrderBody({
             id: "fulfillment",
             label: "Fulfilment",
             panel: (
-              <div className="px-4 pb-4 lg:px-6">
+              <div className="flex flex-col gap-4 px-4 pb-4 lg:px-6">
+                {/*
+                  ABOVE the fulfillment panel, and that order is deliberate. This answers "when will
+                  it get here", which is what a buyer opens this tab for; the panel below answers
+                  "what has happened so far", which matters once something is moving. Today, with no
+                  rate cards loaded, the window is null on every order and its content is the NAMED
+                  ABSENCE — which of manufacturing, freight and customs is unresolved, and who can
+                  clear it. That is still the more useful of the two.
+                */}
+                <OrderArrivalWindowPanel orderId={order.id} />
                 <OrderFulfillmentPanel orderId={order.id} relation={relation} />
               </div>
             ),

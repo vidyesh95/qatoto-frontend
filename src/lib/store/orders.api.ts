@@ -1,9 +1,23 @@
 // TRANSPORT: client-query — orders and engagements are session-scoped, so they are read from client
 // islands rather than server components. `RequestOptions` is threaded so a server read could be added.
 //
-// PARTIALLY MOCK-BACKED: `listViewerOrganizationIds` is WIRED. Every other call still resolves a
-// fixture. To wire one, swap `resolveMockRead` for `getJson`, or the mock write for the `sendJson`
-// line beside it, and drop the fixture argument.
+// PARTIALLY MOCK-BACKED. The ONE-ORDER surface is WIRED — `listViewerOrganizationIds`, `getOrder`,
+// `getOrderFulfillment`, `getOrderArrivalWindow` and `cancelOrder`. The two LISTS, the
+// delivery-address reveal and the service engagements still resolve fixtures. To wire one, swap
+// `resolveMockRead` for `getJson`, or the mock write for the `sendJson` line beside it, and drop the
+// fixture argument.
+//
+// THE ARRIVAL WINDOW FORCED THE DETAIL READS. `getOrderArrivalWindow` hits the real backend, and a
+// real read keyed by an id that only exists in `orders-mocks.ts` answers 404 forever — so mounting
+// the window on a fixture-fed order page would have shipped a panel that could only ever render its
+// error branch.
+//
+// AND `getOrder` FORCED `cancelOrder`. Once the detail page reads a real order, a cancel that resolves
+// a fixture keyed by mock ids answers 404 for every order the page can actually show. A mock write
+// beside a wired read is worse than either — it turns a working button into a broken one.
+//
+// The lists stay mocked deliberately: `OrderListPageSchema` is cursor-paged and its fixtures have
+// never been checked against a live response, so wiring them is its own piece of work, not a swap.
 
 import {
   buildQueryString,
@@ -22,6 +36,11 @@ import {
   type ServiceEngagementListPage,
   type TransitionServiceEngagementInput,
 } from "@/lib/store/fulfillment.schemas";
+import {
+  OrderArrivalWindowResponseSchema,
+  type ArrivalWindowFilter,
+  type ArrivalWindowProjection,
+} from "@/lib/store/arrival-window.schemas";
 import { resolveMockDetail, resolveMockRead } from "@/lib/store/mock-transport";
 import {
   MyOrganizationListSchema,
@@ -38,8 +57,6 @@ import {
   MOCK_ENGAGEMENTS_BY_ID,
   MOCK_ENGAGEMENT_LIST,
   MOCK_ORDER_DELIVERY_ADDRESS,
-  MOCK_ORDER_DETAILS_BY_ID,
-  MOCK_ORDER_FULFILLMENTS_BY_ID,
   MOCK_PROVIDER_ORDER_LIST,
 } from "@/mocks/store/orders-mocks";
 
@@ -102,9 +119,36 @@ export function getOrder(
   orderId: string,
   options?: RequestOptions,
 ): Promise<ActionResponse<OrderDetail>> {
-  const path = `/commerce/orders/${orderId}`;
-  return resolveMockDetail(path, OrderDetailSchema, options, MOCK_ORDER_DETAILS_BY_ID, orderId);
-  // return getJson(path, OrderDetailSchema, options);
+  const path = `/commerce/orders/${encodeURIComponent(orderId)}`;
+  return getJson(path, OrderDetailSchema, options);
+}
+
+/**
+ * When this order should arrive, or which component stops anyone knowing.
+ *
+ * TWO THINGS ABOUT THIS ROUTE THAT ARE NOT OBVIOUS FROM ITS PATH.
+ *
+ * It carries `requireActiveCommerceOrganization`, unlike the order read beside it — so a signed-in
+ * buyer without an active organization gets a 403 here while `getOrder` succeeds. That is an answer,
+ * not a flake, and must not be retried.
+ *
+ * And the payload DOUBLE-NESTS: the envelope's `data` is `{ arrivalWindow: … }` whose projection has
+ * its own `arrivalWindow` field holding the date pair. `OrderArrivalWindowResponseSchema` peels the
+ * outer layer, so callers reach the dates at `.arrivalWindow`.
+ *
+ * `mode` IS OMITTED UNTIL THE BUYER PICKS ONE. The server never chooses a transport mode — with no
+ * `mode` it answers `freight: unknown / mode_not_selected` and lists `availableModes`, which is the
+ * choice to render. Defaulting to the cheapest here would commit a buyer to five weeks at sea.
+ */
+export function getOrderArrivalWindow(
+  orderId: string,
+  filter: ArrivalWindowFilter = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<ArrivalWindowProjection>> {
+  const path = `/commerce/orders/${encodeURIComponent(orderId)}/arrival-window${buildQueryString({ ...filter })}`;
+  return getJson(path, OrderArrivalWindowResponseSchema, options).then((result) =>
+    result.success ? { success: true, data: result.data.arrivalWindow } : result,
+  );
 }
 
 /**
@@ -119,15 +163,8 @@ export function getOrderFulfillment(
   orderId: string,
   options?: RequestOptions,
 ): Promise<ActionResponse<OrderFulfillment>> {
-  const path = `/commerce/orders/${orderId}/fulfillment`;
-  return resolveMockDetail(
-    path,
-    OrderFulfillmentSchema,
-    options,
-    MOCK_ORDER_FULFILLMENTS_BY_ID,
-    orderId,
-  );
-  // return getJson(path, OrderFulfillmentSchema, options);
+  const path = `/commerce/orders/${encodeURIComponent(orderId)}/fulfillment`;
+  return getJson(path, OrderFulfillmentSchema, options);
 }
 
 /**
@@ -166,12 +203,8 @@ export function cancelOrder(
   orderId: string,
   options?: RequestOptions,
 ): Promise<ActionResponse<OrderDetail>> {
-  const path = `/commerce/orders/${orderId}/cancel`;
-  // The mock returns the order unchanged: a state transition needs the mutable-fixture treatment the
-  // cart got, and inventing a `cancelled` order here would let the page claim a cancellation the
-  // server never performed. Better a visible no-op than a fabricated success.
-  return resolveMockDetail(path, OrderDetailSchema, options, MOCK_ORDER_DETAILS_BY_ID, orderId);
-  // return sendJson(path, "POST", undefined, OrderDetailSchema, options);
+  const path = `/commerce/orders/${encodeURIComponent(orderId)}/cancel`;
+  return sendJson(path, "POST", undefined, OrderDetailSchema, options);
 }
 
 /** Buyer- or provider-scoped engagements, depending on which side the caller is. */

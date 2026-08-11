@@ -1,297 +1,413 @@
-// TRANSPORT: mock — every price and duration below is local, and the client sums them.
+// TRANSPORT: props-only — renders the lane plan `delivery-cost.tsx` already fetched.
 //
-// A per-leg mode picker: international + inland, cheapest by default, with express modes
-// selectable per leg, or hand the whole route to an external agent.
+// THIS SHEET WAS THE LAST FULLY-MOCK FILE ON THE STORE PRODUCT SURFACE, and it was the worst one.
 //
-// THIS SHEET IS FURTHER FROM ITS BACKEND THAN ANY OTHER IN THE STORE, and the gap is a decision
-// rather than an oversight. What exists is `GET /store/products/:productSlug/delivery-estimate`
-// plus `deliveryEstimates` on `checkout/prepare`, assembled from declared provider coverage
-// against the product's package geometry. It returns per-currency RANGES with the offerings each
-// was derived from, and it deliberately returns:
+// This header deliberately avoids spelling the old mock marker, because the repo's check for it
+// greps prose as readily as banners — a file narrating its own history would report itself unwired
+// forever, and the check is only worth keeping if it stays honest.
 //
-//   NO DELIVERY DATE. An estimate is not a booking, and a date the platform cannot keep is a
-//   promise it has no business making. Amazon can print one because it owns the network.
-//   AN EMPTY ARRAY FOR AN UNCOVERED LANE — never a zero. "We do not know" and "it is free" are
-//   different answers, and `sections/delivery-cost.tsx` currently renders the second one.
-//   `shippingInCents: 0` STAYS ZERO on every total. Nothing is charged for freight, so nothing
-//   appears in a total; billing from an advertised range with no booking behind it would put an
-//   invented number into an immutable order.
+// It hardcoded
+// two legs ("Shanghai port → Mumbai port"), invented prices for them, SUMMED `priceUsd` FLOATS IN THE
+// BROWSER, baked a currency into a field name so a EUR lane could not be expressed, and — the part
+// that actually mattered — NAMED TWO REAL FORWARDERS, Sinotrans and DHL, AGAINST FABRICATED RATES.
 //
-// So the leg-by-leg prices below have no source: rating a lane needs a RATE-CARD TABLE
-// (origin/destination, mode, weight and volume breaks, validity, source forwarder) that the
-// backend does not have. That table is now funded — see §14 — and until it lands the honest
-// freight path is RFQ → service offering → quote, not this picker.
+// All of it is replaced by `lanePlan`, which arrives on the delivery-estimate call the row above
+// already makes. No new request.
 //
-// Two things to fix on the way in, both visible here: the client SUMS `priceUsd` floats across
-// legs, and money must be integer cents beside its own currency with the total computed server
-// side; and `priceUsd` bakes a currency into a field name, so a EUR lane cannot be expressed.
+// THE RATE TABLES SHIP EMPTY, DELIBERATELY, WITH NO SEED (A36). So today EVERY lane is uncovered, and
+// this sheet's ordinary state is `options: []` with named reasons — not a priced picker. That
+// inverts how it has to be built: the named-absence path is the product, and the priced path is the
+// rare one. A blank panel here is the failure mode, not an acceptable default.
+//
+// FOUR RULES, EACH ONE A THING THE MOCK GOT WRONG:
+//
+//  1. EVERY PRICE RENDERS THROUGH `providerQuote` — the forwarder's name, its expiry and "subject to
+//     re-measurement" sit in the same visual unit as the number. Qatoto sells no freight, so a price
+//     detached from the forwarder who quoted it would read as the platform's own.
+//  2. NOTHING IS SUMMED. `journeys[].totalInCents` and its transit range come from the server
+//     already composed. The client adds nothing up, and where the server composed no journey there
+//     is no total to show — not a zero.
+//  3. NOTHING IS AUTO-SELECTED. The mock defaulted to "cheapest" per leg. "No mode chosen yet" is a
+//     real state, and picking for the buyer commits them to five weeks at sea to save $40.
+//  4. THE CHARGEABLE-WEIGHT BASIS TRAVELS WITH ITS PRICE. A buyer whose 20 kg of cushions bills as
+//     3,000 kg reads a correct volumetric charge as an error unless told which weight won.
 "use client";
 
 import { useState } from "react";
 
 import Image from "next/image";
+import Link from "next/link";
 
 import StoreSheet from "@/components/home/store/shared/store-sheet";
+import { formatCentsLabel, countryLabelFromCode } from "@/lib/store/format";
+import { FREIGHT_TRANSPORT_MODE_ICONS, FREIGHT_TRANSPORT_MODE_LABELS } from "@/lib/store/labels";
+import {
+  CHARGEABLE_WEIGHT_BASIS_LABELS,
+  describeUnpriceableReason,
+  FREIGHT_LEG_KIND_LABELS,
+  FREIGHT_UNAVAILABLE_REASON_LABELS,
+  type FreightLanePlan,
+  type FreightLegPlan,
+  type FreightOption,
+  type QuotableFreightProvider,
+} from "@/lib/store/freight.schemas";
 
-type TransportMode = {
-  id: string;
-  name: string;
-  iconFileName: string;
-  priceUsd: number;
-  durationDays: number;
-  tier: "economy" | "express";
-};
+/**
+ * Which mode the buyer has picked for each leg, keyed by leg sequence.
+ *
+ * ABSENT MEANS UNCHOSEN, and there is no default entry. A `Record` pre-filled with each leg's
+ * cheapest option would make "not yet decided" unrepresentable, which is the state every leg starts
+ * in and most legs stay in.
+ */
+type ModeSelectionByLegSequence = Readonly<Record<number, string>>;
 
-type DeliveryLeg = {
-  id: string;
-  title: string;
-  route: string;
-  modes: TransportMode[];
-  defaultModeId: string;
-};
+export default function DeliverySheet({
+  lanePlan,
+  onClose,
+}: {
+  /** `null` when the seller's dispatch country is unresolved — the plan could not be built at all. */
+  readonly lanePlan: FreightLanePlan | null;
+  readonly onClose: () => void;
+}) {
+  const [selectedModeByLegSequence, setSelectedModeByLegSequence] =
+    useState<ModeSelectionByLegSequence>({});
 
-type ExternalAgent = {
-  id: string;
-  name: string;
-  iconFileName: string;
-  priceUsd: number;
-  durationDays: number;
-  note: string;
-};
+  if (lanePlan === null) {
+    return (
+      <StoreSheet title="How this ships" onClose={onClose}>
+        <div className="px-4 pb-6">
+          <p className="text-sm leading-5 text-[#6F7979]">
+            This seller hasn&apos;t published a dispatch country, so the route can&apos;t be worked
+            out. Shipping has to be arranged with the seller directly.
+          </p>
+        </div>
+      </StoreSheet>
+    );
+  }
 
-const DELIVERY_LEGS: DeliveryLeg[] = [
-  {
-    id: "international",
-    title: "International leg",
-    route: "Shanghai port → Mumbai port",
-    defaultModeId: "ocean",
-    modes: [
-      {
-        id: "ocean",
-        name: "Ocean freight",
-        iconFileName: "directions_boat_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-        priceUsd: 120,
-        durationDays: 22,
-        tier: "economy",
-      },
-      {
-        id: "air",
-        name: "Air freight",
-        iconFileName: "flight_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-        priceUsd: 480,
-        durationDays: 4,
-        tier: "express",
-      },
-    ],
-  },
-  {
-    id: "inland",
-    title: "Inland leg",
-    route: "Mumbai port → your address",
-    defaultModeId: "rail",
-    modes: [
-      {
-        id: "rail",
-        name: "Railroad",
-        iconFileName: "train_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-        priceUsd: 30,
-        durationDays: 5,
-        tier: "economy",
-      },
-      {
-        id: "truck",
-        name: "Truck",
-        iconFileName: "local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-        priceUsd: 70,
-        durationDays: 2,
-        tier: "express",
-      },
-    ],
-  },
-];
+  const { journeys, legs, unpriceableReasons, quotableProviders } = lanePlan;
 
-const EXTERNAL_AGENTS: ExternalAgent[] = [
-  {
-    id: "sinotrans",
-    name: "Sinotrans Logistics",
-    iconFileName: "support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    priceUsd: 135,
-    durationDays: 20,
-    note: "Door-to-door, customs handled",
-  },
-  {
-    id: "dhl",
-    name: "DHL Global Forwarding",
-    iconFileName: "support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    priceUsd: 520,
-    durationDays: 5,
-    note: "Express, tracked end to end",
-  },
-];
+  return (
+    <StoreSheet title="How this ships" onClose={onClose}>
+      <div className="flex flex-col gap-5 px-4 pb-6">
+        <RouteSummary lanePlan={lanePlan} />
 
-// Selection is either a per-leg self-built route or a single external agent.
-type DeliverySelection =
-  | { kind: "route"; modeIdByLegId: Record<string, string> }
-  | { kind: "agent"; agentId: string };
+        {/* THE PRICED PATH, and today the rare one. Totals are the server's, never a reduce. */}
+        {journeys.length > 0 && (
+          <section className="flex flex-col gap-2">
+            <h3 className="text-sm font-medium text-[#191C1C]">Priced end to end</h3>
+            {journeys.map((journey) => (
+              <div
+                key={`${journey.currency}-${journey.primaryMode}`}
+                className="flex flex-col gap-1 rounded-lg border border-[#CAC4D0]/60 p-3"
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-xs font-medium text-[#191C1C]">
+                    {FREIGHT_TRANSPORT_MODE_LABELS[journey.primaryMode]}
+                  </span>
+                  <span className="text-sm font-medium text-[#191C1C]">
+                    {formatCentsLabel(journey.totalInCents, journey.currency)}
+                  </span>
+                </div>
+                <span className="text-[11px] leading-4 text-[#6F7979]">
+                  {journey.transitDaysMin}–{journey.transitDaysMax} days in transit, across{" "}
+                  {journey.legSelections.length} leg
+                  {journey.legSelections.length === 1 ? "" : "s"}
+                </span>
+                {/* Per leg, because two forwarders' divisors legitimately disagree on one journey. */}
+                <ul className="mt-1 flex flex-col gap-0.5">
+                  {journey.legSelections.map((legSelection) => (
+                    <li
+                      key={legSelection.legSequence}
+                      className="text-[11px] leading-4 text-[#6F7979]"
+                    >
+                      Leg {legSelection.legSequence}:{" "}
+                      {FREIGHT_TRANSPORT_MODE_LABELS[legSelection.mode]} ·{" "}
+                      {formatCentsLabel(legSelection.priceInCents, journey.currency)} ·{" "}
+                      {legSelection.sourceForwarderName} ·{" "}
+                      {CHARGEABLE_WEIGHT_BASIS_LABELS[legSelection.chargeableWeightBasis]} (
+                      {formatGramsLabel(legSelection.chargeableWeightGrams)})
+                    </li>
+                  ))}
+                </ul>
+                <ExpiryNote validUntil={journey.validUntil} />
+              </div>
+            ))}
+          </section>
+        )}
 
-function findMode(leg: DeliveryLeg, modeId: string): TransportMode {
-  return leg.modes.find((mode) => mode.id === modeId) ?? leg.modes[0];
+        {/* WHY NOTHING PRICED END TO END. Named, never defaulted. */}
+        {unpriceableReasons.length > 0 && (
+          <section className="flex flex-col gap-1.5 rounded-lg bg-[#F5F5F5] p-3">
+            <h3 className="text-sm font-medium text-[#191C1C]">
+              No end-to-end price for this route
+            </h3>
+            <ul className="flex flex-col gap-1">
+              {unpriceableReasons.map((reason) => (
+                <li
+                  key={
+                    reason.kind === "leg_uncovered"
+                      ? `${reason.kind}-${reason.legSequence}`
+                      : reason.kind
+                  }
+                  className="text-xs leading-4 text-[#6F7979]"
+                >
+                  {describeUnpriceableReason(reason)}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section className="flex flex-col gap-3">
+          <h3 className="text-sm font-medium text-[#191C1C]">
+            {legs.length === 1 ? "The route" : "The route, leg by leg"}
+          </h3>
+          {legs.map((leg) => (
+            <LegPanel
+              key={leg.sequence}
+              leg={leg}
+              selectedRateCardId={selectedModeByLegSequence[leg.sequence] ?? null}
+              onSelectOption={(rateCardId) =>
+                setSelectedModeByLegSequence((previous) => ({
+                  ...previous,
+                  [leg.sequence]: rateCardId,
+                }))
+              }
+            />
+          ))}
+        </section>
+
+        <QuotableProviders providers={quotableProviders} />
+
+        <p className="text-[11px] leading-4 text-[#6F7979]">
+          Qatoto doesn&apos;t sell freight. Every price above is a named forwarder&apos;s, and you
+          contract with them directly. No delivery date is implied.
+        </p>
+      </div>
+    </StoreSheet>
+  );
 }
 
+/** Where this is going, and what is being moved. Both come from the server; neither is guessed. */
+function RouteSummary({ lanePlan }: { readonly lanePlan: FreightLanePlan }) {
+  const { origin, destination, consignment } = lanePlan;
+
+  return (
+    <section className="flex flex-col gap-1 rounded-lg border border-[#CAC4D0]/60 p-3">
+      <span className="text-xs font-medium text-[#191C1C]">
+        {/* Localities are LABELS. They render; they select no rate card. */}
+        {formatPlaceLabel(origin.countryCode, origin.locality)} →{" "}
+        {formatPlaceLabel(destination.countryCode, destination.locality)}
+      </span>
+      {consignment.hasIncompletePackageData ? (
+        <span className="text-[11px] leading-4 text-[#6F7979]">
+          This seller hasn&apos;t published full package dimensions, so this consignment can&apos;t
+          be measured for freight.
+        </span>
+      ) : (
+        <span className="text-[11px] leading-4 text-[#6F7979]">
+          {consignment.packageCount === null
+            ? "Package count not declared"
+            : `${consignment.packageCount} package${consignment.packageCount === 1 ? "" : "s"}`}
+          {consignment.billableWeightGrams !== null &&
+            ` · ${formatGramsLabel(consignment.billableWeightGrams)}`}
+          {consignment.volumeCubicCm !== null &&
+            ` · ${consignment.volumeCubicCm.toLocaleString()} cm³`}
+        </span>
+      )}
+    </section>
+  );
+}
+
+/**
+ * One leg, with the modes a buyer could pick for it.
+ *
+ * `options: []` IS THE ORDINARY CASE TODAY and gets the same visual weight as a priced list — the
+ * reasons are the content, not an error banner under it.
+ */
+function LegPanel({
+  leg,
+  selectedRateCardId,
+  onSelectOption,
+}: {
+  readonly leg: FreightLegPlan;
+  readonly selectedRateCardId: string | null;
+  readonly onSelectOption: (rateCardId: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-[#CAC4D0]/60 p-3">
+      <div className="flex flex-col gap-0.5">
+        <span className="text-xs font-medium text-[#191C1C]">
+          {FREIGHT_LEG_KIND_LABELS[leg.kind]}
+        </span>
+        <span className="text-[11px] leading-4 text-[#6F7979]">
+          {formatPlaceLabel(leg.originCountryCode, leg.originLocality)} →{" "}
+          {formatPlaceLabel(leg.destinationCountryCode, leg.destinationLocality)}
+        </span>
+      </div>
+
+      {leg.options.length > 0 ? (
+        <>
+          <ul className="flex flex-col gap-2">
+            {leg.options.map((option) => (
+              <li key={option.rateCardId}>
+                <ModeOption
+                  option={option}
+                  isSelected={option.rateCardId === selectedRateCardId}
+                  onSelect={() => onSelectOption(option.rateCardId)}
+                />
+              </li>
+            ))}
+          </ul>
+          {selectedRateCardId === null && (
+            <p className="text-[11px] leading-4 text-[#6F7979]">No mode chosen for this leg yet.</p>
+          )}
+        </>
+      ) : (
+        <ul className="flex flex-col gap-1">
+          {leg.unavailableReasons.map((reason) => (
+            <li key={reason} className="text-xs leading-4 text-[#6F7979]">
+              {FREIGHT_UNAVAILABLE_REASON_LABELS[reason]}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * One mode on one leg.
+ *
+ * THE PRICE IS REACHED THROUGH `providerQuote` AND RENDERS WITH IT. The forwarder's name, the
+ * expiry and the re-measurement caveat are in the same box as the number, because a rate shown
+ * without its author reads as Qatoto's own — which it is not, structurally (§19.9b).
+ */
 function ModeOption({
-  mode,
+  option,
   isSelected,
   onSelect,
 }: {
-  mode: TransportMode;
-  isSelected: boolean;
-  onSelect: () => void;
+  readonly option: FreightOption;
+  readonly isSelected: boolean;
+  readonly onSelect: () => void;
 }) {
+  const { providerQuote } = option;
+
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-pressed={isSelected}
-      className={`flex flex-1 items-center gap-2 rounded-lg border px-3 py-2.5 text-left ${
+      className={`flex w-full flex-col gap-1 rounded-lg border px-3 py-2.5 text-left ${
         isSelected ? "border-[#00696E] bg-[#00696E]/5" : "border-[#CAC4D0]/60"
       }`}
     >
-      <Image src={`/icons/${mode.iconFileName}`} width={20} height={20} alt="" />
-      <span className="flex-1">
-        <span className="block text-xs font-medium text-[#191C1C]">{mode.name}</span>
-        <span className="block text-[11px] text-[#6F7979]">{mode.durationDays} days</span>
+      <span className="flex items-center gap-2">
+        <Image
+          src={`/icons/${FREIGHT_TRANSPORT_MODE_ICONS[option.mode]}`}
+          width={20}
+          height={20}
+          alt=""
+        />
+        <span className="flex-1">
+          <span className="block text-xs font-medium text-[#191C1C]">
+            {FREIGHT_TRANSPORT_MODE_LABELS[option.mode]}
+          </span>
+          <span className="block text-[11px] text-[#6F7979]">
+            {option.transitDaysMin}–{option.transitDaysMax} days
+          </span>
+        </span>
+        <span className="text-xs font-medium text-[#191C1C]">
+          {formatCentsLabel(providerQuote.priceInCents, providerQuote.currency)}
+        </span>
       </span>
-      <span className="text-xs font-medium text-[#191C1C]">${mode.priceUsd}</span>
+      <span className="block text-[11px] leading-4 text-[#6F7979]">
+        {providerQuote.sourceForwarderName} ·{" "}
+        {CHARGEABLE_WEIGHT_BASIS_LABELS[option.chargeableWeightBasis]} (
+        {formatGramsLabel(option.chargeableWeightGrams)})
+      </span>
+      <span className="block text-[11px] leading-4 text-[#6F7979]">
+        Subject to re-measurement at pickup.
+        <ExpiryNote validUntil={providerQuote.validUntil} isInline />
+      </span>
     </button>
   );
 }
 
-export default function DeliverySheet({ onClose }: { onClose: () => void }) {
-  const [selection, setSelection] = useState<DeliverySelection>({
-    kind: "route",
-    modeIdByLegId: Object.fromEntries(DELIVERY_LEGS.map((leg) => [leg.id, leg.defaultModeId])),
+/**
+ * The way forward when nothing priced.
+ *
+ * PRESENT EVEN WHEN NOTHING PRICED, which is the point — this is where the mock's fabricated
+ * "external agents" block should always have pointed. These forwarders really do sell this lane;
+ * what does not exist is a published rate card for this consignment.
+ */
+function QuotableProviders({
+  providers,
+}: {
+  readonly providers: readonly QuotableFreightProvider[];
+}) {
+  if (providers.length === 0) return null;
+
+  // One forwarder may sell several modes on the same lane; the buyer is asking the ORGANIZATION.
+  const providerIdsSeen = new Set<string>();
+  const uniqueProviders = providers.filter((provider) => {
+    if (providerIdsSeen.has(provider.providerOrganizationId)) return false;
+    providerIdsSeen.add(provider.providerOrganizationId);
+    return true;
   });
 
-  const selectLegMode = (legId: string, modeId: string) => {
-    setSelection((previous) => {
-      const modeIdByLegId =
-        previous.kind === "route"
-          ? previous.modeIdByLegId
-          : Object.fromEntries(DELIVERY_LEGS.map((leg) => [leg.id, leg.defaultModeId]));
-      return { kind: "route", modeIdByLegId: { ...modeIdByLegId, [legId]: modeId } };
-    });
-  };
-
-  const selectedAgent =
-    selection.kind === "agent"
-      ? EXTERNAL_AGENTS.find((agent) => agent.id === selection.agentId)
-      : undefined;
-
-  const estimatedPriceUsd =
-    selection.kind === "agent"
-      ? (selectedAgent?.priceUsd ?? 0)
-      : DELIVERY_LEGS.reduce(
-          (sum, leg) => sum + findMode(leg, selection.modeIdByLegId[leg.id]).priceUsd,
-          0,
-        );
-
-  const estimatedDays =
-    selection.kind === "agent"
-      ? (selectedAgent?.durationDays ?? 0)
-      : DELIVERY_LEGS.reduce(
-          (sum, leg) => sum + findMode(leg, selection.modeIdByLegId[leg.id]).durationDays,
-          0,
-        );
-
   return (
-    <StoreSheet
-      title="Delivery options"
-      onClose={onClose}
-      footer={
-        <div className="flex items-center gap-3">
-          <div className="flex-1 text-xs">
-            <p className="font-medium text-[#191C1C]">Estimated ${estimatedPriceUsd}</p>
-            <p className="text-[#6F7979]">about {estimatedDays} days</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full bg-[#00696E] px-6 py-2 text-sm font-medium text-white"
-          >
-            Confirm
-          </button>
-        </div>
-      }
-    >
-      <div className="px-4 pb-2">
-        {/* Map placeholder — real route map renders here in the backend phase. */}
-        <div className="relative grid h-40 place-items-center overflow-hidden rounded-xl bg-[#D9D9D9]">
-          <Image
-            src="/icons/location_on_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            width={32}
-            height={32}
-            alt=""
-            className="opacity-60"
-          />
-          <span className="absolute bottom-2 left-3 text-[11px] text-[#6F7979]">
-            Route map preview
-          </span>
-        </div>
-
-        {/* Per-leg mode pickers. */}
-        <div className="mt-4 flex flex-col gap-4">
-          {DELIVERY_LEGS.map((leg) => {
-            const selectedModeId =
-              selection.kind === "route" ? selection.modeIdByLegId[leg.id] : leg.defaultModeId;
-            return (
-              <div key={leg.id}>
-                <p className="text-xs font-medium text-[#191C1C]">{leg.title}</p>
-                <p className="mb-2 text-[11px] text-[#6F7979]">{leg.route}</p>
-                <div className="flex gap-2">
-                  {leg.modes.map((mode) => (
-                    <ModeOption
-                      key={mode.id}
-                      mode={mode}
-                      isSelected={selection.kind === "route" && selectedModeId === mode.id}
-                      onSelect={() => selectLegMode(leg.id, mode.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* External delivery agents — marketplace alternative to the self-built route. */}
-        <div className="mt-5">
-          <p className="mb-2 text-xs font-medium text-[#191C1C]">Or use a delivery agent</p>
-          <div className="flex flex-col gap-2">
-            {EXTERNAL_AGENTS.map((agent) => {
-              const isSelected = selection.kind === "agent" && selection.agentId === agent.id;
-              return (
-                <button
-                  key={agent.id}
-                  type="button"
-                  onClick={() => setSelection({ kind: "agent", agentId: agent.id })}
-                  aria-pressed={isSelected}
-                  className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left ${
-                    isSelected ? "border-[#00696E] bg-[#00696E]/5" : "border-[#CAC4D0]/60"
-                  }`}
-                >
-                  <Image src={`/icons/${agent.iconFileName}`} width={22} height={22} alt="" />
-                  <span className="flex-1">
-                    <span className="block text-xs font-medium text-[#191C1C]">{agent.name}</span>
-                    <span className="block text-[11px] text-[#6F7979]">
-                      {agent.note} · {agent.durationDays} days
-                    </span>
-                  </span>
-                  <span className="text-xs font-medium text-[#191C1C]">${agent.priceUsd}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </StoreSheet>
+    <section className="flex flex-col gap-2">
+      <h3 className="text-sm font-medium text-[#191C1C]">Forwarders who sell this route</h3>
+      <ul className="flex flex-col gap-1">
+        {uniqueProviders.map((provider) => (
+          <li key={provider.providerOrganizationId} className="text-xs leading-4 text-[#191C1C]">
+            {provider.sourceForwarderName}
+          </li>
+        ))}
+      </ul>
+      <Link href="/store/rfqs/new" className="flex items-center gap-2 text-xs text-[#00696E]">
+        <span className="flex-1">Ask them for a quote</span>
+        <Image
+          src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+          width={20}
+          height={20}
+          alt=""
+        />
+      </Link>
+    </section>
   );
+}
+
+/** An expired card is not a price (§19.6). `null` is "no announced end", not "never expires". */
+function ExpiryNote({
+  validUntil,
+  isInline = false,
+}: {
+  readonly validUntil: string | null;
+  readonly isInline?: boolean;
+}) {
+  if (validUntil === null) return null;
+  const text = ` Quoted rate valid until ${formatIsoDayLabel(validUntil)}.`;
+  if (isInline) return <>{text}</>;
+  return <span className="text-[11px] leading-4 text-[#6F7979]">{text.trim()}</span>;
+}
+
+/** `locality` is a LABEL — it renders beside the country and selects no rate card. */
+function formatPlaceLabel(countryCode: string, locality: string | null): string {
+  const countryLabel = countryLabelFromCode(countryCode);
+  return locality === null ? countryLabel : `${locality}, ${countryLabel}`;
+}
+
+/** Grams on the wire; kilograms are what a buyer reads a freight weight in. */
+function formatGramsLabel(grams: number): string {
+  return `${(grams / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} kg`;
+}
+
+function formatIsoDayLabel(isoInstant: string): string {
+  const parsed = new Date(isoInstant);
+  if (Number.isNaN(parsed.getTime())) return isoInstant;
+  return parsed.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }

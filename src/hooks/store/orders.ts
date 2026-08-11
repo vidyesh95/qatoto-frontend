@@ -21,6 +21,7 @@ import {
 
 import type { ActionResponse } from "@/lib/http";
 import { storeKeys } from "@/hooks/store/keys";
+import type { FreightMode } from "@/lib/store/freight.schemas";
 import type {
   ServiceEngagement,
   TransitionServiceEngagementInput,
@@ -28,6 +29,7 @@ import type {
 import {
   cancelOrder,
   getOrder,
+  getOrderArrivalWindow,
   getOrderDeliveryAddress,
   getOrderFulfillment,
   getServiceEngagement,
@@ -78,6 +80,26 @@ export function useOrderFulfillmentQuery(orderId: string) {
   return useQuery({
     queryKey: storeKeys.orderFulfillment(orderId),
     queryFn: () => getOrderFulfillment(orderId),
+  });
+}
+
+/**
+ * When this order should arrive, for the mode the buyer has chosen — or for none yet.
+ *
+ * `mode: null` IS A REAL REQUEST, NOT A DISABLED ONE. With no mode the server answers
+ * `freight: unknown / mode_not_selected` and lists the modes it does cover, which is exactly the
+ * choice the panel renders. Gating the query on a mode would leave the buyer looking at a spinner
+ * instead of the picker that clears it.
+ *
+ * `retry: false` because this route carries `requireActiveCommerceOrganization` on top of `requireAuth`
+ * — a signed-in buyer with no active organization gets a 403 here, and a 403 is an answer.
+ */
+export function useOrderArrivalWindowQuery(orderId: string, mode: FreightMode | null) {
+  return useQuery({
+    queryKey: storeKeys.orderArrivalWindow(orderId, mode),
+    queryFn: () => getOrderArrivalWindow(orderId, mode === null ? {} : { mode }),
+    enabled: orderId.length > 0,
+    retry: false,
   });
 }
 
