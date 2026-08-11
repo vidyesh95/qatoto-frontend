@@ -19,15 +19,19 @@ import Link from "next/link";
 
 import AddressSheet from "@/components/home/store/sheets/address-sheet";
 import { useOrganizationAddressesQuery, useViewerOrganizationId } from "@/hooks/store/addresses";
-import { useSession } from "@/lib/auth-client";
+import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 import { formatAddressLines, type OrganizationAddress } from "@/lib/store/addresses.schemas";
 
-export default function DeliverTo() {
+export default function DeliverTo({
+  isViewerSignedIn,
+}: {
+  /** What the SERVER saw. Seeds the first render so it matches the HTML — see `useViewerSignedIn`. */
+  readonly isViewerSignedIn: boolean;
+}) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
-  const { data: session, isPending: isSessionPending } = useSession();
-  const isSignedIn = session !== null && session !== undefined;
+  const isSignedIn = useViewerSignedIn(isViewerSignedIn);
 
   const organizationId = useViewerOrganizationId();
   const addressesQuery = useOrganizationAddressesQuery(isSignedIn ? organizationId : null);
@@ -44,7 +48,7 @@ export default function DeliverTo() {
     deliveryAddresses[0] ??
     null;
 
-  if (!isSessionPending && !isSignedIn) {
+  if (!isSignedIn) {
     return (
       <div className="px-4 py-2 text-xs leading-4 text-[#6F7979] lg:px-6">
         <Link href="/sign-in" className="font-medium text-[#00696E]">

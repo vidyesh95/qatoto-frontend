@@ -11,6 +11,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { hasCallerSession } from "@/lib/server-http";
 import { getOrganizationStorefront } from "@/lib/store/organizations.api";
 import type { OrganizationStorefrontView } from "@/lib/store/organizations.schemas";
 import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
@@ -37,7 +38,14 @@ export default async function OrganizationStorefront({
 }: {
   organizationSlug: string;
 }) {
-  const result = await getOrganizationStorefront(organizationSlug);
+  // THIS READ IS ANONYMOUS AND STAYS ANONYMOUS — the storefront projection is the same for everyone,
+  // so no session is threaded into it. The cookie is read only to seed the contact control's first
+  // render, which is what stops it painting a "Chat now" button at a visitor who has no session and
+  // then swapping it for a sign-in link. That swap crosses element types, which React cannot patch.
+  const [result, isViewerSignedIn] = await Promise.all([
+    getOrganizationStorefront(organizationSlug),
+    hasCallerSession(),
+  ]);
 
   // A 404 is the route's answer, not the page's. The backend answers 404 for "no such storefront"
   // AND for "not visible to you" with one code — never render a permission hint from one.
@@ -55,7 +63,9 @@ export default async function OrganizationStorefront({
         </div>
       );
     case "ready":
-      return <StorefrontBody storefront={viewState.storefront} />;
+      return (
+        <StorefrontBody storefront={viewState.storefront} isViewerSignedIn={isViewerSignedIn} />
+      );
     default: {
       const exhaustiveCheck: never = viewState;
       return exhaustiveCheck;
@@ -63,7 +73,14 @@ export default async function OrganizationStorefront({
   }
 }
 
-function StorefrontBody({ storefront }: { storefront: OrganizationStorefrontView }) {
+function StorefrontBody({
+  storefront,
+  isViewerSignedIn,
+}: {
+  storefront: OrganizationStorefrontView;
+  // A fact about the READER, kept beside the storefront payload rather than folded into it.
+  isViewerSignedIn: boolean;
+}) {
   const declaredProfile = storefront.declaredProfile;
   const frontendOnlyProfile = storefront.frontendOnlyProfile;
 
@@ -76,7 +93,10 @@ function StorefrontBody({ storefront }: { storefront: OrganizationStorefrontView
     <div className="mx-auto w-full max-w-md pb-24 md:max-w-2xl md:pb-12 lg:max-w-6xl">
       <StorefrontHero storefront={storefront} />
 
-      <StorefrontContactActions sellerDisplayName={storefront.displayName} />
+      <StorefrontContactActions
+        sellerDisplayName={storefront.displayName}
+        isViewerSignedIn={isViewerSignedIn}
+      />
 
       <StorefrontDivider />
 

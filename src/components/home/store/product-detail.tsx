@@ -49,7 +49,7 @@ import SimilarAndCompare from "@/components/home/store/sections/similar-and-comp
 import StoreAndChatActions from "@/components/home/store/sections/store-and-chat-actions";
 import VariantPicker from "@/components/home/store/sections/variant-picker";
 import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
-import { callerRequestOptions } from "@/lib/server-http";
+import { callerRequestOptions, hasCallerSession } from "@/lib/server-http";
 import { getOrganizationStorefront } from "@/lib/store/organizations.api";
 import type { OrganizationStorefrontView } from "@/lib/store/organizations.schemas";
 import {
@@ -88,7 +88,14 @@ function Icon({ src, size = 24, className }: { src: string; size?: number; class
 }
 
 export default async function ProductDetail({ slug }: { slug: string }) {
-  const requestOptions = await callerRequestOptions();
+  // BOTH READ THE SAME COOKIE JAR, so resolving the boolean here is free — this component is already
+  // cookie-dynamic. `isViewerSignedIn` is threaded into the client islands below so their FIRST
+  // render matches this HTML; without it they hydrate against a session atom the navbar has often
+  // already resolved, and React throws the subtree away. See `useViewerSignedIn`.
+  const [requestOptions, isViewerSignedIn] = await Promise.all([
+    callerRequestOptions(),
+    hasCallerSession(),
+  ]);
   const productResult = await getStoreProduct(slug, requestOptions);
 
   // A 404 is the route's answer, not the page's. The backend answers 404 for "no such product" AND
@@ -122,10 +129,13 @@ export default async function ProductDetail({ slug }: { slug: string }) {
     questionsPage: questionsResult.success ? questionsResult.data : null,
   };
 
-  return renderProductDetail(viewState);
+  return renderProductDetail(viewState, isViewerSignedIn);
 }
 
-function renderProductDetail(viewState: ProductDetailViewState) {
+// `isViewerSignedIn` rides alongside the view state rather than inside it: it is a fact about the
+// READER, not about the product, and folding a viewer fact into a payload union is how the two start
+// disagreeing. See `useViewerSignedIn` for why the islands need it at all.
+function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn: boolean) {
   switch (viewState.status) {
     case "error":
       return (
@@ -220,11 +230,12 @@ function renderProductDetail(viewState: ProductDetailViewState) {
                   samplePriceInCents={product.samplePriceInCents}
                   currency={product.currency}
                   hasVariants={product.hasVariants}
+                  isViewerSignedIn={isViewerSignedIn}
                 />
 
                 <CustomizationOptions options={product.customizationOptions} />
 
-                <DeliverTo />
+                <DeliverTo isViewerSignedIn={isViewerSignedIn} />
 
                 <DeliveryCost productSlug={product.publicSlug} />
 
@@ -237,7 +248,11 @@ function renderProductDetail(viewState: ProductDetailViewState) {
 
                 {/* Desktop inline CTAs — replace the fixed bottom bar at lg+ */}
                 <div className="hidden px-6 py-3 lg:block">
-                  <BuyActionButtons productId={product.id} hasVariants={product.hasVariants} />
+                  <BuyActionButtons
+                    productId={product.id}
+                    hasVariants={product.hasVariants}
+                    isViewerSignedIn={isViewerSignedIn}
+                  />
                 </div>
               </div>
             </div>
@@ -285,7 +300,11 @@ function renderProductDetail(viewState: ProductDetailViewState) {
                 height); on md+ there is no bottom nav so it drops to 0. Hidden at lg+ where the buy
                 column shows the CTAs inline. */}
             <div className="fixed inset-x-0 bottom-[calc(80px+env(safe-area-inset-bottom))] z-20 mx-auto max-w-md bg-white px-4 py-2 md:bottom-0 lg:hidden">
-              <BuyActionButtons productId={product.id} hasVariants={product.hasVariants} />
+              <BuyActionButtons
+                productId={product.id}
+                hasVariants={product.hasVariants}
+                isViewerSignedIn={isViewerSignedIn}
+              />
             </div>
           </div>
         </ProductSelectionProvider>

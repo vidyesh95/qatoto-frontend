@@ -20,21 +20,30 @@ import Image from "next/image";
 import Link from "next/link";
 
 import ManufacturerChatSheet from "@/components/home/store/sheets/manufacturer-chat-sheet";
-import { useSession } from "@/lib/auth-client";
+import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 
 export default function StorefrontContactActions({
   sellerDisplayName,
+  isViewerSignedIn,
 }: {
   readonly sellerDisplayName: string;
+  /**
+   * What the SERVER saw. Seeds the first render so it matches the HTML — see `useViewerSignedIn`.
+   *
+   * THIS ONE WAS THE WORST OF THE SEVEN. The branch below swaps a `<button>` for an `<a>`, and React
+   * cannot patch an element-type mismatch — it throws the subtree away. It also defaulted to the
+   * SIGNED-IN control while the session was pending, so an anonymous visitor was shown "Chat now"
+   * and then had it replaced. Painting a control that can only 401 is worse than painting none.
+   */
+  readonly isViewerSignedIn: boolean;
 }) {
   const [isChatSheetOpen, setIsChatSheetOpen] = useState(false);
-  const { data: session, isPending: isSessionPending } = useSession();
-  const isSignedIn = session !== null && session !== undefined;
+  const isSignedIn = useViewerSignedIn(isViewerSignedIn);
 
   return (
     <>
       <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row lg:px-6">
-        {isSignedIn || isSessionPending ? (
+        {isSignedIn ? (
           <button
             type="button"
             onClick={() => setIsChatSheetOpen(true)}

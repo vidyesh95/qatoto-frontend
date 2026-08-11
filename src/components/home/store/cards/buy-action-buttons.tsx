@@ -27,12 +27,14 @@ import Link from "next/link";
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import { useProductSelection } from "@/components/home/store/sections/product-selection-context";
 import { useCartQuery, useSetCartItem } from "@/hooks/store/cart";
-import { useSession } from "@/lib/auth-client";
+import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 import type { CommerceCart } from "@/lib/store/cart.schemas";
 import { formatCountLabel } from "@/lib/store/format";
 
 interface BuyActionButtonsProps {
   readonly productId: string;
+  /** What the SERVER saw. Seeds the first render so it matches the HTML — see `useViewerSignedIn`. */
+  readonly isViewerSignedIn: boolean;
   /**
    * Whether this product requires a variant before it can be added.
    *
@@ -57,7 +59,11 @@ function findBulkCartLine(cart: CommerceCart, productId: string, variantId: stri
   );
 }
 
-export default function BuyActionButtons({ productId, hasVariants }: BuyActionButtonsProps) {
+export default function BuyActionButtons({
+  productId,
+  hasVariants,
+  isViewerSignedIn,
+}: BuyActionButtonsProps) {
   // The quantity the buyer set on the price chart's stepper and the variant they picked, not
   // constants — both controls are visible on the page, and an add that ignored either would put
   // something different in the cart than the one the buyer is looking at.
@@ -71,8 +77,7 @@ export default function BuyActionButtons({ productId, hasVariants }: BuyActionBu
 
   // THE PRODUCT PAGE IS PUBLIC, so the cart read is gated on the session. Without the gate every
   // anonymous visitor to a product fires a read that can only come back 401.
-  const { data: session, isPending: isSessionPending } = useSession();
-  const isSignedIn = session !== null && session !== undefined;
+  const isSignedIn = useViewerSignedIn(isViewerSignedIn);
 
   // `useCartQuery`, not the navbar's badge hook: this one refetches on mount, and a stale quantity is
   // what the addition would be computed from.
@@ -84,14 +89,14 @@ export default function BuyActionButtons({ productId, hasVariants }: BuyActionBu
 
   // Two ways to land here: the session says signed out, or the cart read itself answered 401.
   const isSignInRequired =
-    !isSessionPending &&
-    (!isSignedIn ||
-      (cartResult !== undefined && !cartResult.success && cartResult.error.code === "401"));
+    !isSignedIn ||
+    (cartResult !== undefined && !cartResult.success && cartResult.error.code === "401");
 
   // A DISABLED QUERY STAYS `isPending` FOREVER, so "still loading" cannot be read off the query alone
   // — a signed-out visitor would sit at a permanent pending state and never be told why the button is
-  // dead. Loading means the session is resolving, or a query that actually ran has not answered yet.
-  const isCartLoading = isSessionPending || (isSignedIn && cartQuery.isPending);
+  // dead. Loading now means only "a query that actually ran has not answered yet": the session no
+  // longer contributes an unknown, because `isViewerSignedIn` seeds it from the server render.
+  const isCartLoading = isSignedIn && cartQuery.isPending;
 
   const canAddToCart = cart !== null && !setCartItem.isPending && !isVariantMissing;
 

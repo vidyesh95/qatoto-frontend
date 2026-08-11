@@ -27,7 +27,7 @@ import Link from "next/link";
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import { useProductSelection } from "@/components/home/store/sections/product-selection-context";
 import { useCartQuery, useSetCartItem } from "@/hooks/store/cart";
-import { useSession } from "@/lib/auth-client";
+import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 import { formatCentsLabel } from "@/lib/store/format";
 import type { PRODUCT_SAMPLE_POLICIES } from "@/lib/store/organizations.schemas";
 
@@ -39,16 +39,18 @@ export default function SamplePrice({
   samplePriceInCents,
   currency,
   hasVariants,
+  isViewerSignedIn,
 }: {
   readonly productId: string;
   readonly samplePolicy: SamplePolicy;
   readonly samplePriceInCents: number | null;
   readonly currency: string;
   readonly hasVariants: boolean;
+  /** What the SERVER saw. Seeds the first render so it matches the HTML — see `useViewerSignedIn`. */
+  readonly isViewerSignedIn: boolean;
 }) {
   const { selectedVariantId } = useProductSelection();
-  const { data: session, isPending: isSessionPending } = useSession();
-  const isSignedIn = session !== null && session !== undefined;
+  const isSignedIn = useViewerSignedIn(isViewerSignedIn);
   const cartQuery = useCartQuery({ isEnabled: isSignedIn });
   const setCartItem = useSetCartItem();
 
@@ -58,8 +60,7 @@ export default function SamplePrice({
   const cartResult = cartQuery.data;
   const cart = cartResult !== undefined && cartResult.success ? cartResult.data : null;
   const isVariantMissing = hasVariants && selectedVariantId === null;
-  const canOrderSample =
-    cart !== null && !setCartItem.isPending && !isVariantMissing && !isSessionPending;
+  const canOrderSample = cart !== null && !setCartItem.isPending && !isVariantMissing;
 
   // A sample is ONE unit. Not the minimum order quantity — that is the bulk term, and a "sample"
   // of 50 sets is not a sample.
@@ -103,7 +104,7 @@ export default function SamplePrice({
         </button>
       </div>
 
-      {!isSessionPending && !isSignedIn && (
+      {!isSignedIn && (
         <p className="mt-1 text-xs leading-4 text-[#6F7979]">
           <Link href="/sign-in" className="font-medium text-[#00696E]">
             Sign in
