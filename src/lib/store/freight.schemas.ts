@@ -288,14 +288,28 @@ export const FREIGHT_LEG_KIND_LABELS: Record<FreightLegPlan["kind"], string> = {
 /**
  * Why nothing could be priced end to end.
  *
- * Takes the reason rather than a key so `leg_uncovered` can name its leg — the sequence is the only
- * thing that tells a buyer whether the gap is the sea crossing or the last mile, and those are two
- * very different pieces of news.
+ * TAKES THE LEGS SO IT CAN NAME ONE, and that is not a convenience. `legSequence` is ZERO-INDEXED on
+ * the wire, so rendering it raw shows a buyer "Leg 0" — an array index, which is a developer's
+ * number and not a fact about their shipment. Which leg is uncovered is the whole content of this
+ * message: "the international leg has no rate" and "the inland leg has no rate" are very different
+ * pieces of news, and only the leg's KIND carries that.
+ *
+ * Falls back to a one-based ordinal if the sequence matches no leg, because a wrong-looking number
+ * is still better than dropping the only locating detail in the sentence.
  */
-export function describeUnpriceableReason(reason: JourneyUnpriceableReason): string {
+export function describeUnpriceableReason(
+  reason: JourneyUnpriceableReason,
+  legs: readonly FreightLegPlan[],
+): string {
   switch (reason.kind) {
-    case "leg_uncovered":
-      return `Leg ${reason.legSequence} has no published rate, so no end-to-end price can be worked out.`;
+    case "leg_uncovered": {
+      const namedLeg = legs.find((leg) => leg.sequence === reason.legSequence);
+      const legLabel =
+        namedLeg === undefined
+          ? `Leg ${reason.legSequence + 1}`
+          : `The ${FREIGHT_LEG_KIND_LABELS[namedLeg.kind].toLowerCase()}`;
+      return `${legLabel} has no published rate, so no end-to-end price can be worked out.`;
+    }
     case "no_common_currency_across_legs":
       // Never converted, and never silently: converting without an FX quote would invent a rate.
       return "The legs of this route are priced in different currencies, and Qatoto does not convert between them.";

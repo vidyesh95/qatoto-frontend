@@ -1,15 +1,13 @@
 // TRANSPORT: props-only — renders the lane plan `delivery-cost.tsx` already fetched.
 //
-// THIS SHEET WAS THE LAST FULLY-MOCK FILE ON THE STORE PRODUCT SURFACE, and it was the worst one.
+// THIS SHEET WAS THE LAST FULLY-MOCK FILE ON THE STORE PRODUCT SURFACE, and it was the worst one. It
+// hardcoded two legs ("Shanghai port → Mumbai port"), invented prices for them, SUMMED `priceUsd`
+// FLOATS IN THE BROWSER, baked a currency into a field name so a EUR lane could not be expressed,
+// and — the part that actually mattered — NAMED TWO REAL FORWARDERS, Sinotrans and DHL, AGAINST
+// FABRICATED RATES.
 //
-// This header deliberately avoids spelling the old mock marker, because the repo's check for it
-// greps prose as readily as banners — a file narrating its own history would report itself unwired
-// forever, and the check is only worth keeping if it stays honest.
-//
-// It hardcoded
-// two legs ("Shanghai port → Mumbai port"), invented prices for them, SUMMED `priceUsd` FLOATS IN THE
-// BROWSER, baked a currency into a field name so a EUR lane could not be expressed, and — the part
-// that actually mattered — NAMED TWO REAL FORWARDERS, Sinotrans and DHL, AGAINST FABRICATED RATES.
+// (This header deliberately avoids spelling the old mock marker: the repo's check for it greps prose
+// as readily as banners, so a file narrating its own history would report itself unwired forever.)
 //
 // All of it is replaced by `lanePlan`, which arrives on the delivery-estimate call the row above
 // already makes. No new request.
@@ -121,7 +119,9 @@ export default function DeliverySheet({
                       key={legSelection.legSequence}
                       className="text-[11px] leading-4 text-[#6F7979]"
                     >
-                      Leg {legSelection.legSequence}:{" "}
+                      {/* Named by KIND, never by `legSequence` — that is zero-indexed on the wire,
+                          and "Leg 0" shows a buyer an array index. */}
+                      {legLabelForSequence(legs, legSelection.legSequence)}:{" "}
                       {FREIGHT_TRANSPORT_MODE_LABELS[legSelection.mode]} ·{" "}
                       {formatCentsLabel(legSelection.priceInCents, journey.currency)} ·{" "}
                       {legSelection.sourceForwarderName} ·{" "}
@@ -152,7 +152,7 @@ export default function DeliverySheet({
                   }
                   className="text-xs leading-4 text-[#6F7979]"
                 >
-                  {describeUnpriceableReason(reason)}
+                  {describeUnpriceableReason(reason, legs)}
                 </li>
               ))}
             </ul>
@@ -393,6 +393,19 @@ function ExpiryNote({
   const text = ` Quoted rate valid until ${formatIsoDayLabel(validUntil)}.`;
   if (isInline) return <>{text}</>;
   return <span className="text-[11px] leading-4 text-[#6F7979]">{text.trim()}</span>;
+}
+
+/**
+ * A leg's name for a buyer.
+ *
+ * `legSequence` IS ZERO-INDEXED ON THE WIRE. Rendering it raw put "Leg 0" in front of buyers, which
+ * is an array index rather than a fact about their shipment. The kind is what actually locates the
+ * gap — the sea crossing or the last mile — so that is what is shown, with a one-based ordinal only
+ * as a fallback when no leg matches.
+ */
+function legLabelForSequence(legs: readonly FreightLegPlan[], legSequence: number): string {
+  const namedLeg = legs.find((leg) => leg.sequence === legSequence);
+  return namedLeg === undefined ? `Leg ${legSequence + 1}` : FREIGHT_LEG_KIND_LABELS[namedLeg.kind];
 }
 
 /** `locality` is a LABEL — it renders beside the country and selects no rate card. */
