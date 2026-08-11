@@ -55,6 +55,56 @@ export const ProductPricingTierSchema = z
   })
   .strip();
 
+/**
+ * WHAT A LISTING STILL NEEDS BEFORE IT CAN BE PUBLISHED.
+ *
+ * The backend computes this with `projectListingCompleteness`, and the SAME projection feeds both
+ * `PublicProduct.listingCompleteness` and the 422 behind the publish button
+ * (`products.service.ts:261`, exposed at `:408`). One function, two consumers — so the checklist
+ * the seller reads on the form cannot disagree with the refusal the button gets. Recomputing any
+ * part of it here would reintroduce exactly the disagreement that design closed.
+ */
+export const LISTING_REQUIREMENT_KEYS = [
+  "title",
+  "price",
+  "images",
+  "samplePrice",
+  "shippingFacts",
+] as const;
+
+/**
+ * `not_applicable` IS A REAL STATE AND NOT A SYNONYM FOR SATISFIED. `samplePrice` is
+ * `not_applicable` whenever `samplePolicy` is `unavailable` — which is the column default — so most
+ * listings carry four applicable requirements, not five. Rendering it as satisfied would tell a
+ * seller they answered a question nobody asked; rendering it as missing would block publish on one.
+ */
+export const LISTING_REQUIREMENT_STATES = ["satisfied", "missing", "not_applicable"] as const;
+
+export const ListingRequirementSchema = z
+  .object({
+    key: z.enum(LISTING_REQUIREMENT_KEYS),
+    state: z.enum(LISTING_REQUIREMENT_STATES),
+    /**
+     * The exact field tokens to fill in — the same vocabulary `INCOMPLETE_FOR_PUBLISH.missing`
+     * carries. Empty unless `state` is `missing`. Not typed as an enum: it is a wire vocabulary the
+     * backend may extend, and a narrow enum here would fail the parse on an addition rather than
+     * fall through to the raw token.
+     */
+    missingFields: z.array(z.string()),
+  })
+  .strip();
+
+export const ListingCompletenessSchema = z
+  .object({
+    requirements: z.array(ListingRequirementSchema),
+    requirementCount: z.number().int(),
+    /** Requirements that apply to THIS listing — the denominator of `isComplete`. */
+    applicableRequirementCount: z.number().int(),
+    satisfiedRequirementCount: z.number().int(),
+    isComplete: z.boolean(),
+  })
+  .strip();
+
 export const PublicProductSchema = z
   .object({
     id: z.string(),
@@ -85,6 +135,23 @@ export const PublicProductSchema = z
     publishedAt: z.string().nullable(),
     images: z.array(ProductImageSchema),
     pricingTiers: z.array(ProductPricingTierSchema),
+    /**
+     * THE FIVE SHIPPING FACTS (§19.9a). Nullable, and there is no migration, because nobody can
+     * invent a box size for a listing that already exists — a pre-Phase-20 listing keeps selling
+     * and is refused on its next edit instead.
+     *
+     * NAMED UNITS, NEVER A FORMATTED STRING. Freight rates on chargeable weight, which is
+     * `max(actual, volumetric)`, and volumetric needs L x W x H MULTIPLIED BY the package count.
+     * That is why all five are required and not just the three dimensions: without
+     * `unitsPerPackage` the rater skips the line entirely, and without `packageGrossWeightGrams`
+     * it contributes zero weight. A gate on three would look done and would not be.
+     */
+    packageLengthMm: z.number().int().nullable(),
+    packageWidthMm: z.number().int().nullable(),
+    packageHeightMm: z.number().int().nullable(),
+    packageGrossWeightGrams: z.number().int().nullable(),
+    unitsPerPackage: z.number().int().nullable(),
+    listingCompleteness: ListingCompletenessSchema,
   })
   .strip();
 
@@ -111,6 +178,9 @@ export const PaginationMetaSchema = z
 export type ProductImage = z.infer<typeof ProductImageSchema>;
 export type PublicProduct = z.infer<typeof PublicProductSchema>;
 export type ProductListRow = z.infer<typeof ProductListRowSchema>;
+export type ListingRequirementKey = (typeof LISTING_REQUIREMENT_KEYS)[number];
+export type ListingRequirement = z.infer<typeof ListingRequirementSchema>;
+export type ListingCompleteness = z.infer<typeof ListingCompletenessSchema>;
 
 // --- Request DTOs -----------------------------------------------------------
 
@@ -137,7 +207,26 @@ export interface CreateProductInput {
   stockQuantity: number;
   sku?: string;
   pricingTiers: { unitPriceInCents: number; minimumOrderQuantity: number }[];
+  /**
+   * OPTIONAL ON THE WAY IN, REQUIRED TO PUBLISH. Drafting stays free — the backend's create and
+   * update schemas mark all five `.optional()` and the gate runs at publish, so a seller can save
+   * a half-written listing without measuring a box first.
+   *
+   * The three dimensions are ALL-OR-NOTHING: the backend refuses a partial set with a 422 on
+   * `packageLengthMm` ("Package length, width and height must be provided together"), because a
+   * half-measured package produces a volume nobody can defend.
+   */
+  packageLengthMm?: number;
+  packageWidthMm?: number;
+  packageHeightMm?: number;
+  packageGrossWeightGrams?: number;
+  unitsPerPackage?: number;
 }
+
+/** The backend's own bounds (`products.controller.ts:84-88`), mirrored so the form can refuse early. */
+export const PACKAGE_DIMENSION_MM_MAX = 50_000;
+export const PACKAGE_GROSS_WEIGHT_GRAMS_MAX = 50_000_000;
+export const UNITS_PER_PACKAGE_MAX = 1_000_000;
 
 export type UpdateProductInput = Partial<CreateProductInput>;
 

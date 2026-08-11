@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
-  ApiRequestError,
   useCreateListingMutation,
   useProductQuery,
   useUpdateListingMutation,
@@ -20,9 +19,19 @@ import {
   CONDITION_LABEL_TO_SLUG,
   CONDITION_LABELS,
   dollarsToCents,
+  PACKAGE_DIMENSION_MM_MAX,
+  PACKAGE_GROSS_WEIGHT_GRAMS_MAX,
   SLUG_TO_CONDITION_LABEL,
+  UNITS_PER_PACKAGE_MAX,
   type CreateProductInput,
+  type ListingCompleteness,
 } from "@/lib/products/schemas";
+import {
+  describeProductPublishBlock,
+  describeProductPublishRefusal,
+  LISTING_REQUIREMENT_LABELS,
+  type ProductPublishRefusal,
+} from "@/lib/products/publish-refusal";
 
 const LISTING_STEPS = [
   { id: "identity", label: "Product Identity" },
@@ -102,12 +111,40 @@ export default function CreateListingPage({ productId }: { productId?: string })
   const [skuCode, setSkuCode] = useState("");
   const [pricingTiers, setPricingTiers] = useState<PricingTierDraft[]>([]);
 
+  // Step 4 — the five shipping facts (§19.9a). HELD AS TYPED STRINGS IN THEIR OWN UNIT, never as a
+  // formatted "52 × 46 × 12 cm" this file would then have to parse back. The unit is in the label
+  // and in the field name, and the conversion to an integer happens once, in `collectListingInput`.
+  const [packageLengthMm, setPackageLengthMm] = useState("");
+  const [packageWidthMm, setPackageWidthMm] = useState("");
+  const [packageHeightMm, setPackageHeightMm] = useState("");
+  const [packageGrossWeightGrams, setPackageGrossWeightGrams] = useState("");
+  const [unitsPerPackage, setUnitsPerPackage] = useState("");
+
   const currentStep = LISTING_STEPS[currentStepIndex];
   const isLastStep = currentStepIndex === LISTING_STEPS.length - 1;
 
   const imageCount = existingImages.length + selectedImageFiles.length;
-  const mutationErrorMessage = readMutationError(createMutation.error ?? updateMutation.error);
-  const errorMessage = localError ?? mutationErrorMessage;
+
+  // THE REFUSAL IS CLASSIFIED, NOT FLATTENED TO ITS FIRST SENTENCE. `readMutationError` used to read
+  // `apiError.message` alone, which discarded `errors.missing` — the only thing on the wire that
+  // says WHICH field is empty — and turned a five-field refusal into "This listing is not complete
+  // enough to publish." with no destination.
+  const mutationError = createMutation.error ?? updateMutation.error;
+  const publishRefusal =
+    mutationError === null || mutationError === undefined
+      ? null
+      : describeProductPublishRefusal(mutationError);
+
+  /**
+   * Why publish is refused BEFORE the request, read off the server's own projection.
+   *
+   * ONLY IN EDIT MODE, because `listingCompleteness` is a property of a row that exists. A listing
+   * being created has no server-side verdict yet, so the button stays live and the 422 — which now
+   * names its fields — is what teaches. Guessing a verdict here would be the second opinion
+   * `describeProductPublishBlock` exists to avoid.
+   */
+  const publishBlockReason =
+    productQuery.data === undefined ? null : describeProductPublishBlock(productQuery.data);
 
   // Prefill the form once from the loaded product (edit mode).
   const hasPrefilledRef = useRef(false);
@@ -143,6 +180,15 @@ export default function CreateListingPage({ productId }: { productId?: string })
     );
     setStockQuantity(String(product.stockQuantity));
     setSkuCode(product.sku ?? "");
+    // `null` means NEVER MEASURED, and hydrates as an empty control rather than a zero. A zero here
+    // would be a declared measurement of nothing, which is the one answer no seller meant to give.
+    setPackageLengthMm(product.packageLengthMm === null ? "" : String(product.packageLengthMm));
+    setPackageWidthMm(product.packageWidthMm === null ? "" : String(product.packageWidthMm));
+    setPackageHeightMm(product.packageHeightMm === null ? "" : String(product.packageHeightMm));
+    setPackageGrossWeightGrams(
+      product.packageGrossWeightGrams === null ? "" : String(product.packageGrossWeightGrams),
+    );
+    setUnitsPerPackage(product.unitsPerPackage === null ? "" : String(product.unitsPerPackage));
     setExistingImages(
       product.images
         .toSorted((first, second) => first.position - second.position)
@@ -298,6 +344,15 @@ export default function CreateListingPage({ productId }: { productId?: string })
       tiers.push({ unitPriceInCents, minimumOrderQuantity });
     }
 
+    const packaging = collectPackagingFacts({
+      packageLengthMm,
+      packageWidthMm,
+      packageHeightMm,
+      packageGrossWeightGrams,
+      unitsPerPackage,
+    });
+    if ("error" in packaging) return packaging;
+
     return {
       title,
       brand: brandName.trim() || undefined,
@@ -315,6 +370,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
       stockQuantity: resolvedStock,
       sku: skuCode.trim() || undefined,
       pricingTiers: tiers,
+      ...packaging.facts,
     };
   }
 
@@ -860,6 +916,63 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 </ul>
               )}
             </div>
+
+            {/*
+              THE FIVE SHIPPING FACTS. Required to publish, not to draft — so they sit beside the
+              price rather than behind a gate, and a seller can save and come back with a tape
+              measure.
+
+              WHY ALL FIVE AND NOT JUST THE BOX. Freight bills on chargeable weight, which is
+              `max(actual, volumetric)`, and volumetric is L x W x H multiplied by the PACKAGE COUNT.
+              Without `unitsPerPackage` the rater skips the line; without a gross weight it
+              contributes no weight at all. Three fields would look like enough and would price
+              nothing.
+            */}
+            <fieldset className="mt-6 flex flex-col gap-3 rounded-xl border border-border p-4">
+              <legend className="px-1 text-sm font-medium text-foreground">
+                Packaging & shipping
+              </legend>
+              <p className="text-xs leading-4 text-muted-foreground">
+                Required before this listing can be published — freight is rated on the size and
+                weight of the shipped package, not the product. Enter the dimensions of one package
+                and how many units it holds.
+              </p>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <PackagingInput
+                  fieldKey="packageLengthMm"
+                  value={packageLengthMm}
+                  onValueChange={setPackageLengthMm}
+                />
+                <PackagingInput
+                  fieldKey="packageWidthMm"
+                  value={packageWidthMm}
+                  onValueChange={setPackageWidthMm}
+                />
+                <PackagingInput
+                  fieldKey="packageHeightMm"
+                  value={packageHeightMm}
+                  onValueChange={setPackageHeightMm}
+                />
+              </div>
+              <p className="text-xs leading-4 text-muted-foreground">
+                Length, width and height go in together or not at all — a half-measured box has no
+                volume anyone can rate.
+              </p>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <PackagingInput
+                  fieldKey="packageGrossWeightGrams"
+                  value={packageGrossWeightGrams}
+                  onValueChange={setPackageGrossWeightGrams}
+                />
+                <PackagingInput
+                  fieldKey="unitsPerPackage"
+                  value={unitsPerPackage}
+                  onValueChange={setUnitsPerPackage}
+                />
+              </div>
+            </fieldset>
           </StepCard>
         );
 
@@ -921,6 +1034,32 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 },
               ]}
             />
+            <ReviewSection
+              title="Packaging & Shipping"
+              onEditClick={() => setCurrentStepIndex(3)}
+              rows={[
+                {
+                  label: "Package size",
+                  // Blank when incomplete, NEVER a partial "300 × — × 120". `ReviewSection` renders
+                  // an empty value as the missing thing it is.
+                  value:
+                    packageLengthMm && packageWidthMm && packageHeightMm
+                      ? `${packageLengthMm} × ${packageWidthMm} × ${packageHeightMm} mm`
+                      : "",
+                },
+                {
+                  label: "Gross weight",
+                  value: packageGrossWeightGrams ? `${packageGrossWeightGrams} g` : "",
+                },
+                { label: "Units per package", value: unitsPerPackage },
+              ]}
+            />
+            {productQuery.data !== undefined && (
+              <ListingCompletenessChecklist
+                completeness={productQuery.data.listingCompleteness}
+                onEditClick={setCurrentStepIndex}
+              />
+            )}
           </StepCard>
         );
 
@@ -1010,10 +1149,16 @@ export default function CreateListingPage({ productId }: { productId?: string })
 
       <div className="mt-6">{renderCurrentStep(currentStep.id)}</div>
 
-      {errorMessage && isLastStep && (
-        <p className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-500">
-          {errorMessage}
+      {isLastStep && localError !== null && (
+        <p
+          role="alert"
+          className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-500"
+        >
+          {localError}
         </p>
+      )}
+      {isLastStep && localError === null && publishRefusal !== null && (
+        <PublishRefusalNotice refusal={publishRefusal} />
       )}
       {isSaving && (
         <p className="mt-4 text-sm text-muted-foreground">{describeProgress(saveProgress)}</p>
@@ -1044,7 +1189,8 @@ export default function CreateListingPage({ productId }: { productId?: string })
             <button
               type="button"
               onClick={() => handleSave(true)}
-              disabled={isSaving}
+              disabled={isSaving || publishBlockReason !== null}
+              title={publishBlockReason ?? undefined}
               className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Image
@@ -1070,11 +1216,230 @@ export default function CreateListingPage({ productId }: { productId?: string })
   );
 }
 
-/** Read a human message off a mutation error (backend envelope when present). */
-function readMutationError(error: unknown): string | null {
-  if (!error) return null;
-  if (error instanceof ApiRequestError) return error.apiError.message;
-  return "Something went wrong. Please try again.";
+/**
+ * A refused publish, rendered as what it is.
+ *
+ * THREE VARIANTS BECAUSE THEY NEED THREE DIFFERENT THINGS FROM THE SELLER: `incomplete` names empty
+ * fields to go and fill, `invalid` carries per-field schema complaints whose generic headline says
+ * nothing on its own, and `failed` is a sentence to read. Collapsing them into one paragraph is what
+ * this file did before, and it is why publishing looked broken rather than incomplete.
+ */
+function PublishRefusalNotice({ refusal }: { refusal: ProductPublishRefusal }) {
+  const containerClassName =
+    "mt-4 space-y-1 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-500";
+
+  switch (refusal.kind) {
+    case "incomplete":
+      return (
+        <p role="alert" className={containerClassName}>
+          {refusal.message}
+        </p>
+      );
+    case "invalid":
+      return (
+        <div role="alert" className={containerClassName}>
+          <p>{refusal.message}</p>
+          <ul className="space-y-0.5 text-xs">
+            {refusal.fieldMessages.map((fieldMessage) => (
+              <li key={fieldMessage.field}>
+                {/* `form` is the reserved key an object-level `.strict()` refusal arrives under —
+                    it is not a field, so it is not labelled as one. */}
+                {fieldMessage.field !== "form" && (
+                  <span className="font-medium">{fieldMessage.field}: </span>
+                )}
+                {fieldMessage.messages.join(" ")}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    case "failed":
+      return (
+        <p role="alert" className={containerClassName}>
+          {refusal.message}
+        </p>
+      );
+    default: {
+      const exhaustiveCheck: never = refusal;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+/**
+ * The server's own publish checklist, shown on the review step.
+ *
+ * READ, NEVER RECOMPUTED. `projectListingCompleteness` produces this and the 422 behind the button
+ * from one call, so what is ticked here is exactly what the backend will accept. A locally derived
+ * checklist is how a form ends up disagreeing with its own submit.
+ *
+ * Edit mode only — a listing being created has no row to project from yet.
+ */
+function ListingCompletenessChecklist({
+  completeness,
+  onEditClick,
+}: {
+  completeness: ListingCompleteness;
+  onEditClick: (stepIndex: number) => void;
+}) {
+  /** Which wizard step fixes each requirement. */
+  const stepIndexByRequirementKey: Record<string, number> = {
+    title: 0,
+    images: 1,
+    price: 3,
+    samplePrice: 3,
+    shippingFacts: 3,
+  };
+
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-border p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="text-sm font-medium text-foreground">Ready to publish</h3>
+        <span className="text-xs text-muted-foreground">
+          {completeness.satisfiedRequirementCount} of {completeness.applicableRequirementCount} done
+        </span>
+      </div>
+      <ul className="flex flex-col gap-1.5">
+        {completeness.requirements.map((requirement) => {
+          // `not_applicable` is NOT a synonym for satisfied and is not shown as a tick: sample price
+          // does not apply unless samples are sold, and ticking it claims the seller answered a
+          // question that was never put to them.
+          if (requirement.state === "not_applicable") return null;
+          const isSatisfied = requirement.state === "satisfied";
+          return (
+            <li key={requirement.key} className="flex items-center gap-2 text-sm">
+              <span
+                aria-hidden
+                className={`flex size-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                  isSatisfied ? "bg-primary text-background" : "border border-red-500/60"
+                }`}
+              >
+                {isSatisfied ? "✓" : ""}
+              </span>
+              <span className={isSatisfied ? "text-muted-foreground" : "text-foreground"}>
+                {LISTING_REQUIREMENT_LABELS[requirement.key]}
+              </span>
+              {!isSatisfied && (
+                <button
+                  type="button"
+                  onClick={() => onEditClick(stepIndexByRequirementKey[requirement.key] ?? 0)}
+                  className="cursor-pointer text-xs text-[#1DBDC5] underline-offset-2 hover:underline"
+                >
+                  Add
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/** One typed packaging control: its label, its unit, and the bound the backend enforces. */
+const PACKAGING_FIELDS = [
+  { key: "packageLengthMm", label: "Length", unit: "mm", max: PACKAGE_DIMENSION_MM_MAX },
+  { key: "packageWidthMm", label: "Width", unit: "mm", max: PACKAGE_DIMENSION_MM_MAX },
+  { key: "packageHeightMm", label: "Height", unit: "mm", max: PACKAGE_DIMENSION_MM_MAX },
+  {
+    key: "packageGrossWeightGrams",
+    label: "Gross weight",
+    unit: "g",
+    max: PACKAGE_GROSS_WEIGHT_GRAMS_MAX,
+  },
+  { key: "unitsPerPackage", label: "Units per package", unit: "", max: UNITS_PER_PACKAGE_MAX },
+] as const;
+
+type PackagingFieldKey = (typeof PACKAGING_FIELDS)[number]["key"];
+
+type PackagingFacts = Partial<Record<PackagingFieldKey, number>>;
+
+/**
+ * Parse the five shipping facts, or refuse.
+ *
+ * BLANK IS OMITTED, NOT ZERO. All five are optional on the wire so drafting stays free, and the
+ * difference between "not measured" and "measured as zero" is the whole point of §19.6's refusal to
+ * default anything.
+ *
+ * THE THREE DIMENSIONS ARE ALL-OR-NOTHING, mirroring the backend's `packageDimensionsComplete`
+ * refinement. Mirrored rather than left to the 422 because the seller is looking at the three boxes
+ * as they type: catching it here points at the empty one, while the round trip returns a refusal
+ * whose path is `packageLengthMm` even when width is the one they skipped.
+ */
+function collectPackagingFacts(
+  typedValues: Record<PackagingFieldKey, string>,
+): { facts: PackagingFacts } | { error: string } {
+  const facts: PackagingFacts = {};
+
+  for (const field of PACKAGING_FIELDS) {
+    const typedValue = typedValues[field.key].trim();
+    if (typedValue.length === 0) continue;
+
+    const parsed = Number.parseInt(typedValue, 10);
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > field.max) {
+      return {
+        error: `${field.label} must be a whole number between 1 and ${field.max.toLocaleString()}${
+          field.unit === "" ? "" : ` ${field.unit}`
+        }.`,
+      };
+    }
+    facts[field.key] = parsed;
+  }
+
+  const declaredDimensionCount = [
+    facts.packageLengthMm,
+    facts.packageWidthMm,
+    facts.packageHeightMm,
+  ].filter((dimension) => dimension !== undefined).length;
+
+  if (declaredDimensionCount !== 0 && declaredDimensionCount !== 3) {
+    return {
+      error: "Package length, width and height must be provided together, or all left blank.",
+    };
+  }
+
+  return { facts };
+}
+
+/**
+ * One packaging number, with its unit in the label rather than baked into the value.
+ *
+ * `type="number"` with `step="1"` because every one of these is an integer on the wire — millimetres
+ * and grams, not centimetres and kilograms. Offering a decimal control for a field the backend
+ * parses with `z.number().int()` invites a 422 for a perfectly reasonable "1.5".
+ */
+function PackagingInput({
+  fieldKey,
+  value,
+  onValueChange,
+}: {
+  fieldKey: PackagingFieldKey;
+  value: string;
+  onValueChange: (nextValue: string) => void;
+}) {
+  const field =
+    PACKAGING_FIELDS.find((candidate) => candidate.key === fieldKey) ?? PACKAGING_FIELDS[0];
+  const inputId = `listing-${field.key}`;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={inputId} className="text-xs font-medium text-muted-foreground">
+        {field.label}
+        {field.unit !== "" && <span className="text-muted-foreground"> ({field.unit})</span>}
+      </label>
+      <input
+        id={inputId}
+        type="number"
+        min="1"
+        step="1"
+        max={field.max}
+        value={value}
+        onChange={(event) => onValueChange(event.target.value)}
+        placeholder={field.key === "unitsPerPackage" ? "e.g. 24" : "0"}
+        className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+      />
+    </div>
+  );
 }
 
 /** One-line progress label for the multi-step save. */
