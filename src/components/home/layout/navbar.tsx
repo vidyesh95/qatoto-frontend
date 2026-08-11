@@ -3,11 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import type { ReactNode } from "react";
 import { useSidebar } from "@/state/sidebar-context";
-import { useSession } from "@/lib/auth-client";
-import AccountMenu from "@/components/home/account/menus/account-menu";
-import CartNavButton from "@/components/home/layout/cart-nav-button";
 
 const ANIME_SUBPAGES: Record<string, string> = {
   "/anime/genre": "Genre",
@@ -76,14 +73,21 @@ function getSubHeader(pathname: string): SubHeader | null {
   return null;
 }
 
-export default function Navbar() {
+export default function Navbar({
+  accountSlot,
+}: {
+  /**
+   * The per-viewer half of the bar, handed in by the layout as a `<Suspense>`-wrapped server
+   * component. It arrives as a NODE rather than being rendered here because this component is
+   * `"use client"` and cannot create a server element itself — and because the cookie read behind it
+   * must stay inside its own boundary, or the whole route group goes dynamic.
+   */
+  accountSlot: ReactNode;
+}) {
   const { toggleSidebar } = useSidebar();
   const router = useRouter();
   const pathname = usePathname();
   const sub = getSubHeader(pathname);
-  const { data: session } = useSession();
-  const isAuthenticated = !!session;
-  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
   return (
     <nav className="sticky top-0 z-50 bg-background">
@@ -216,56 +220,7 @@ export default function Navbar() {
               height={24}
             />
           </Link>
-          {isAuthenticated ? (
-            <>
-              <button
-                type={"button"}
-                aria-label="Notifications"
-                className={"cursor-pointer rounded-full border border-primary bg-white p-1.75"}
-              >
-                <Image
-                  src={"/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-                  alt={"Notifications"}
-                  width={24}
-                  height={24}
-                />
-              </button>
-              {/* Owns its own cart query so the request only exists for a signed-in visitor — see
-                  the header of `cart-nav-button.tsx`. */}
-              <CartNavButton />
-              <div className="relative">
-                <button
-                  type="button"
-                  aria-label="Account"
-                  aria-haspopup="menu"
-                  onClick={() => setIsAccountMenuOpen((v) => !v)}
-                  className="flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-primary"
-                >
-                  <Image
-                    src={session?.user.image ?? "/dummy/profile_photo_girl.avif"}
-                    alt={"Account"}
-                    width={39}
-                    height={39}
-                    className="rounded-full"
-                  />
-                </button>
-                {isAccountMenuOpen && <AccountMenu onClose={() => setIsAccountMenuOpen(false)} />}
-              </div>
-            </>
-          ) : (
-            <Link
-              href={"/sign-in"}
-              className="flex gap-2 rounded-full border border-primary bg-white px-2 py-1.75 text-[#1DBDC5]"
-            >
-              <Image
-                src={"/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-                alt={"Signin"}
-                width={24}
-                height={24}
-              />
-              Sign in
-            </Link>
-          )}
+          {accountSlot}
         </div>
       </div>
     </nav>

@@ -1,5 +1,7 @@
 import React, { Suspense } from "react";
 import AdminNavbar from "@/components/admin/admin-navbar";
+import AdminNavbarAccountCluster from "@/components/admin/admin-navbar-account-cluster";
+import AdminNavbarAccountSlot from "@/components/admin/admin-navbar-account-slot";
 import AdminSidebar from "@/components/admin/admin-sidebar";
 import AdminMobileBottomNav from "@/components/admin/admin-mobile-bottom-nav";
 import AdminStaffGate from "@/components/admin/admin-staff-gate";
@@ -33,7 +35,15 @@ const AdminLayout = ({ children }: Props) => {
     <QueryProvider>
       <AdminAuditLogProvider>
         <SidebarProvider>
-          <AdminNavbar />
+          <AdminNavbar
+            accountSlot={
+              // Signed-out cluster as the fallback — correct as-is for an anonymous viewer, so only a
+              // signed-in one sees it swap. Same containment as AdminStaffGate below.
+              <Suspense fallback={<AdminNavbarAccountCluster isViewerSignedIn={false} />}>
+                <AdminNavbarAccountSlot />
+              </Suspense>
+            }
+          />
           <div className="flex">
             <AdminSidebar />
             <main className="min-w-0 flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">

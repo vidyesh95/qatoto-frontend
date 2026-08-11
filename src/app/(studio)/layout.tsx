@@ -1,6 +1,8 @@
-import React from "react";
+import React, { Suspense } from "react";
 import QueryProvider from "@/components/providers/query-provider";
 import StudioNavbar from "@/components/studio/studio-navbar";
+import StudioNavbarAccountCluster from "@/components/studio/studio-navbar-account-cluster";
+import StudioNavbarAccountSlot from "@/components/studio/studio-navbar-account-slot";
 import StudioSidebar from "@/components/studio/studio-sidebar";
 import { SidebarProvider } from "@/state/sidebar-context";
 
@@ -19,7 +21,15 @@ const StudioLayout = ({ children }: Props) => {
   return (
     <QueryProvider>
       <SidebarProvider>
-        <StudioNavbar />
+        <StudioNavbar
+          accountSlot={
+            // Signed-out cluster as the fallback: it is what ships in the prerendered HTML and is
+            // already correct for an anonymous viewer, so only a signed-in one sees it swap.
+            <Suspense fallback={<StudioNavbarAccountCluster isViewerSignedIn={false} />}>
+              <StudioNavbarAccountSlot />
+            </Suspense>
+          }
+        />
         <div className="flex">
           <StudioSidebar />
           <main className="min-w-0 flex-1">{children}</main>
