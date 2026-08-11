@@ -9,15 +9,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { B2BLink } from "@/types/store";
 
-export default function BusinessToolTile({ link }: { link: B2BLink }) {
+import type { BusinessTool } from "@/lib/store/business-tools";
+
+export default function BusinessToolTile({ tool }: { tool: BusinessTool }) {
   return (
-    <Link href={link.href} className="group flex w-40 shrink-0 flex-col items-center gap-1">
+    <Link href={tool.href} className="group flex w-40 shrink-0 flex-col items-center gap-1">
       <div className="flex aspect-video w-full items-center justify-center rounded-xl bg-blue-100 transition group-hover:bg-blue-200">
-        <Image src={link.iconSrc} width={28} height={28} alt="" />
+        <Image src={tool.iconSrc} width={28} height={28} alt="" />
       </div>
-      <span className="text-center text-xs font-medium">{link.label}</span>
+      <span className="text-center text-xs font-medium">{tool.label}</span>
     </Link>
   );
 }

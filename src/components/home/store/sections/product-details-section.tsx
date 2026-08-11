@@ -1,29 +1,34 @@
-// TRANSPORT: mock — hardcoded "in the box" and key features.
+// TRANSPORT: props-only — renders server-owned values, no network.
 "use client";
+
+// "Product details" block: a collapsible header, the description and key features, then an "All
+// product details" row that opens the tabbed spec sheet.
+//
+// "IN THE BOX" IS GONE, AND ITS ABSENCE IS THE POINT. The mock rendered a hardcoded box-contents
+// paragraph; there is no `boxContents` column and no field for it on the projection. A seller who
+// wants to state it does so as a specification row or in the description, both of which render
+// below. Inventing a heading for data that does not exist is how a field nobody can fill ends up
+// looking broken on every product.
 
 import { useState } from "react";
 
 import Image from "next/image";
 
 import ProductDetailsSheet from "@/components/home/store/sheets/product-details-sheet";
+import type { StoreProductDetail } from "@/lib/store/products.schemas";
 
-// "Product details" block on the product page. Collapsible header, an "In the
-// box" + "Key Features" summary, then an "All product details" row that opens
-// the tabbed spec sheet. UI-only mock — real specs come from the backend later.
-
-const IN_THE_BOX =
-  "1 × Folding chair (pre-assembled), 4 × floor glides, cleaning cloth, warranty card.";
-
-const KEY_FEATURES = [
-  "Powder-coated steel frame, anti-rust finish",
-  "Folds flat to 5 cm — stacks up to 12 high",
-  "Weight capacity 150 kg, tested to EN 16139",
-  "Non-marking floor glides, indoor/outdoor",
-  "Pre-assembled — no tools required",
-];
-
-export default function ProductDetailsSection() {
+export default function ProductDetailsSection({
+  product,
+}: {
+  readonly product: StoreProductDetail;
+}) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  const hasDescription = product.description !== null && product.description.trim().length > 0;
+  const hasKeyFeatures = product.keyFeatures.length > 0;
+  const hasSpecifications = product.specifications.length > 0;
+
+  if (!hasDescription && !hasKeyFeatures && !hasSpecifications) return null;
 
   return (
     <>
@@ -40,23 +45,29 @@ export default function ProductDetailsSection() {
         </summary>
 
         <div className="flex flex-col gap-4 px-4 pb-2 lg:px-6">
-          <div className="flex flex-col gap-1">
-            <p className="text-sm leading-5 font-medium tracking-[0.1px] text-[#191C1C]">
-              In the box
-            </p>
-            <p className="text-xs leading-4 tracking-[0.4px] text-[#191C1C]">{IN_THE_BOX}</p>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <p className="text-sm leading-5 font-medium tracking-[0.1px] text-[#191C1C]">
-              Key Features
-            </p>
-            {KEY_FEATURES.map((feature) => (
-              <p key={feature} className="text-xs leading-4 tracking-[0.4px] text-[#191C1C]">
-                {feature}
+          {hasDescription && (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm leading-5 font-medium tracking-[0.1px] text-[#191C1C]">
+                About this product
               </p>
-            ))}
-          </div>
+              <p className="text-xs leading-4 tracking-[0.4px] whitespace-pre-line text-[#191C1C]">
+                {product.description}
+              </p>
+            </div>
+          )}
+
+          {hasKeyFeatures && (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm leading-5 font-medium tracking-[0.1px] text-[#191C1C]">
+                Key features
+              </p>
+              {product.keyFeatures.map((keyFeature) => (
+                <p key={keyFeature} className="text-xs leading-4 tracking-[0.4px] text-[#191C1C]">
+                  {keyFeature}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="px-4 lg:px-6">
@@ -84,7 +95,9 @@ export default function ProductDetailsSection() {
         </div>
       </details>
 
-      {isSheetOpen && <ProductDetailsSheet onClose={() => setIsSheetOpen(false)} />}
+      {isSheetOpen && (
+        <ProductDetailsSheet product={product} onClose={() => setIsSheetOpen(false)} />
+      )}
     </>
   );
 }

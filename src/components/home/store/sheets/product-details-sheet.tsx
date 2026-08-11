@@ -1,94 +1,104 @@
-// TRANSPORT: mock — the five tabs of spec rows are local. NOTHING here reaches a backend yet.
+// TRANSPORT: props-only — renders the specifications it was handed, no network.
 //
 // "All product details": horizontally scrollable tabs, each rendering spec label/value rows.
 //
-// Wire-able from `GET /store/products/:productSlug` → `specifications[]`, which carries
-// `{key, value, group, position}`. The tabs ARE the groups: `group` is free text on purpose
-// (the useful groupings for a chair and for a transformer share nothing), and `null` means
-// ungrouped, which is every pre-Phase-8 row. So the tab list is derived from the distinct
-// groups present, not hardcoded — and a product with one group gets one tab rather than five
-// empty ones. `brand`, `modelNumber`, `countryOfOriginCode`, `condition` and `unitOfMeasure`
-// are first-class fields on the projection rather than spec rows.
+// THE TABS ARE THE SPEC GROUPS, DERIVED — NOT A HARDCODED FIVE. `specifications[]` carries
+// `{key, value, group, position}` and `group` is FREE TEXT on purpose: the useful groupings for a
+// chair and for a transformer share nothing, so the backend lets the seller name them. `null` means
+// ungrouped, which is every pre-Phase-8 row, and those collect under one "Specifications" tab.
+//
+// A product with one group therefore gets ONE tab rather than five empty ones, which is what the
+// mock's fixed tab list produced for every product that was not the demo chair.
+//
+// `brand`, `modelNumber`, `countryOfOriginCode`, `condition` and `unitOfMeasure` are FIRST-CLASS
+// FIELDS on the projection rather than spec rows, so they are assembled into their own leading tab
+// here instead of being hunted for among the seller's free-text keys.
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import Image from "next/image";
 
 import StoreSheet from "@/components/home/store/shared/store-sheet";
+import { countryLabelFromCode } from "@/lib/store/format";
+import { PRODUCT_CONDITION_LABELS, type StoreProductDetail } from "@/lib/store/products.schemas";
 
 // Fraction of the visible tab-row width to advance per chevron click.
 const TAB_SCROLL_FRACTION = 0.6;
 
-type SpecRow = { label: string; value: string };
-type SpecTab = { id: string; label: string; rows: SpecRow[] };
+type SpecRow = { readonly label: string; readonly value: string };
+type SpecTab = { readonly id: string; readonly label: string; readonly rows: readonly SpecRow[] };
 
-const SPEC_TABS: SpecTab[] = [
-  {
-    id: "features-and-specs",
-    label: "Features & Specs",
-    rows: [
-      { label: "Frame Material", value: "Powder-coated cold-rolled steel" },
-      { label: "Finish", value: "Anti-rust matte coating" },
-      { label: "Weight Capacity", value: "150 kg" },
-      { label: "Folded Thickness", value: "5 cm" },
-      { label: "Max Stack Height", value: "12 chairs" },
-      { label: "Floor Glides", value: "Non-marking, indoor/outdoor" },
-      { label: "Assembly", value: "Pre-assembled, no tools" },
-      { label: "Tested Standard", value: "EN 16139" },
-    ],
-  },
-  {
-    id: "item-details",
-    label: "Item details",
-    rows: [
-      { label: "Brand Name", value: "Louis Vuitton" },
-      { label: "Model Name", value: "Folding Metal Living Room Chair" },
-      {
-        label: "Box Contents",
-        value: "1 × Folding chair, 4 × floor glides, cleaning cloth, warranty card",
-      },
-      { label: "Manufacturer", value: "Guangdong Puda Electrical Appliance Co., Ltd" },
-      { label: "Model Number", value: "LV-FMC-RED-01" },
-      { label: "Item Type Name", value: "Folding Living Room Chair" },
-      { label: "Country of Origin", value: "China" },
-    ],
-  },
-  {
-    id: "measurements",
-    label: "Measurements",
-    rows: [
-      { label: "Item Dimensions D × W × H", value: "52D × 46W × 81H Centimeters" },
-      { label: "Seat Height", value: "45 Centimeters" },
-      { label: "Folded Dimensions", value: "5 × 46 × 90 Centimeters" },
-      { label: "Item Weight", value: "4.2 Kilograms" },
-    ],
-  },
-  {
-    id: "additional-details",
-    label: "Additional details",
-    rows: [
-      { label: "Colour", value: "Raspberry Red" },
-      { label: "Style", value: "Modern Folding" },
-      { label: "Warranty", value: "1 Year Manufacturer Warranty" },
-    ],
-  },
-  {
-    id: "packaging-and-delivery",
-    label: "Packaging & delivery",
-    rows: [
-      { label: "Selling Units", value: "Single item" },
-      { label: "Single Package Size", value: "52 x 46 x 12 cm" },
-      { label: "Single Gross Weight", value: "4.8 kg" },
-      { label: "Lead Time (1 - 49 sets)", value: "15 days" },
-      { label: "Lead Time (50 - 499 sets)", value: "30 days" },
-      { label: "Lead Time (>= 500 sets)", value: "To be negotiated" },
-    ],
-  },
-];
+/** The ungrouped bucket. Named rather than left blank so the tab has something to say. */
+const UNGROUPED_TAB_LABEL = "Specifications";
 
-export default function ProductDetailsSheet({ onClose }: { onClose: () => void }) {
-  const [activeTabId, setActiveTabId] = useState(SPEC_TABS[0].id);
+/**
+ * The projection's own first-class fields, as a tab.
+ *
+ * Each is omitted when null rather than rendered as a dash — "the seller did not state a model
+ * number" and "the model number is —" are different claims.
+ */
+function buildItemDetailsTab(product: StoreProductDetail): SpecTab | null {
+  const rows: SpecRow[] = [];
+  if (product.brand !== null) rows.push({ label: "Brand", value: product.brand });
+  if (product.modelNumber !== null) {
+    rows.push({ label: "Model number", value: product.modelNumber });
+  }
+  rows.push({ label: "Condition", value: PRODUCT_CONDITION_LABELS[product.condition] });
+  if (product.countryOfOriginCode !== null) {
+    rows.push({
+      label: "Country of origin",
+      value: countryLabelFromCode(product.countryOfOriginCode),
+    });
+  }
+  if (product.unitOfMeasure !== null) {
+    rows.push({ label: "Unit of measure", value: product.unitOfMeasure });
+  }
+  rows.push({ label: "Sold by", value: product.seller.displayName });
+  return rows.length === 0 ? null : { id: "item-details", label: "Item details", rows };
+}
+
+/**
+ * Distinct `group` values, in the order the server's `position` puts them.
+ *
+ * Insertion order into the Map IS the tab order, which keeps the seller's own arrangement rather
+ * than alphabetising it into something they did not choose.
+ */
+function buildSpecificationTabs(
+  specifications: StoreProductDetail["specifications"],
+): readonly SpecTab[] {
+  const rowsByGroup = new Map<string, SpecRow[]>();
+  for (const specification of specifications.toSorted(
+    (left, right) => left.position - right.position,
+  )) {
+    const groupLabel = specification.group ?? UNGROUPED_TAB_LABEL;
+    const groupRows = rowsByGroup.get(groupLabel) ?? [];
+    groupRows.push({ label: specification.key, value: specification.value });
+    rowsByGroup.set(groupLabel, groupRows);
+  }
+  return [...rowsByGroup.entries()].map(([groupLabel, rows]) => ({
+    id: `group-${groupLabel}`,
+    label: groupLabel,
+    rows,
+  }));
+}
+
+export default function ProductDetailsSheet({
+  product,
+  onClose,
+}: {
+  readonly product: StoreProductDetail;
+  readonly onClose: () => void;
+}) {
+  const specTabs = useMemo<readonly SpecTab[]>(() => {
+    const itemDetailsTab = buildItemDetailsTab(product);
+    return [
+      ...(itemDetailsTab === null ? [] : [itemDetailsTab]),
+      ...buildSpecificationTabs(product.specifications),
+    ];
+  }, [product]);
+
+  const [activeTabId, setActiveTabId] = useState(specTabs[0]?.id ?? "");
 
   // Horizontally-scrollable tab row plus the chevron buttons that appear only
   // when there is hidden content in that direction (mirrors feed/filter.tsx).
@@ -108,13 +118,16 @@ export default function ProductDetailsSheet({ onClose }: { onClose: () => void }
 
   // Moves the roving focus to the tab at `index` (clamped to the valid range),
   // makes it the single Tab stop, and scrolls it into view.
-  const moveFocusToTab = useCallback((index: number) => {
-    const clampedIndex = Math.max(0, Math.min(index, SPEC_TABS.length - 1));
-    setFocusedTabIndex(clampedIndex);
-    const tab = tabButtonRefs.current[clampedIndex];
-    tab?.focus();
-    tab?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, []);
+  const moveFocusToTab = useCallback(
+    (index: number) => {
+      const clampedIndex = Math.max(0, Math.min(index, specTabs.length - 1));
+      setFocusedTabIndex(clampedIndex);
+      const tab = tabButtonRefs.current[clampedIndex];
+      tab?.focus();
+      tab?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    },
+    [specTabs.length],
+  );
 
   // Left/Right move focus between tabs, Home/End jump to the ends. Activation
   // (selecting a tab) stays on the native button's Enter/Space → onClick.
@@ -134,7 +147,7 @@ export default function ProductDetailsSheet({ onClose }: { onClose: () => void }
         break;
       case "End":
         keyEvent.preventDefault();
-        moveFocusToTab(SPEC_TABS.length - 1);
+        moveFocusToTab(specTabs.length - 1);
         break;
     }
   };
@@ -178,7 +191,7 @@ export default function ProductDetailsSheet({ onClose }: { onClose: () => void }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const activeTab = SPEC_TABS.find((tab) => tab.id === activeTabId) ?? SPEC_TABS[0];
+  const activeTab = specTabs.find((tab) => tab.id === activeTabId) ?? specTabs[0] ?? null;
 
   return (
     // `isFixedHeight` is what keeps this sheet from resizing as the buyer moves between tabs:
@@ -220,7 +233,7 @@ export default function ProductDetailsSheet({ onClose }: { onClose: () => void }
           onKeyDown={handleTabsKeyDown}
           className="flex scrollbar-none gap-2 overflow-x-auto px-4 pb-3"
         >
-          {SPEC_TABS.map((tab, tabIndex) => {
+          {specTabs.map((tab, tabIndex) => {
             const isActive = tab.id === activeTabId;
             return (
               <button
@@ -268,7 +281,7 @@ export default function ProductDetailsSheet({ onClose }: { onClose: () => void }
 
       <div className="px-4 pb-5">
         <dl>
-          {activeTab.rows.map((row) => (
+          {(activeTab?.rows ?? []).map((row) => (
             <div
               key={row.label}
               className="flex gap-4 border-b border-[#CAC4D0]/60 py-3 last:border-b-0"

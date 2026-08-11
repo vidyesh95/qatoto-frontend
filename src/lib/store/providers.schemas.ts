@@ -292,7 +292,9 @@ export const PublicServiceOfferingSchema = z
  * not an ignored param. They are a backend ask, not a frontend build.
  */
 export interface ListProvidersFilter {
-  readonly providerKind?: string;
+  // Typed as the enum, not `string`: the backend parses it with `z.enum(...)` under `.strict()`, so
+  // a misspelled kind is a 422 that kills the whole read rather than an ignored parameter.
+  readonly providerKind?: ProviderKind;
   readonly limit?: number;
   readonly cursor?: string;
 }

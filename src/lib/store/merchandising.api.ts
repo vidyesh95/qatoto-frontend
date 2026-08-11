@@ -1,16 +1,19 @@
-// TRANSPORT: server-fetch — all three reads are public and awaited by server components.
+// TRANSPORT: server-fetch — all four reads are public and awaited by server components.
 //
-// MOCK-BACKED: every read below resolves a fixture. To wire one, swap `resolveMockRead` for
-// `getJson` and drop the fixture argument for `options`.
+// PARTIALLY MOCK-BACKED: `getStoreHome` is WIRED. The three pathway/rail reads below still resolve
+// a fixture. To wire one, swap `resolveMockRead` for `getJson` and drop the fixture argument for
+// `options`.
 
 import { buildQueryString, getJson, type ActionResponse, type RequestOptions } from "@/lib/http";
 import {
+  StoreHomeSchema,
   StorePathwayIndexPageSchema,
   StorePathwaySetSchema,
   StoreRailPageSchema,
   type PathwayIndexFilter,
   type PathwaySetFilter,
   type RailPageFilter,
+  type StoreHome,
   type StorePathwayIndexPage,
   type StorePathwaySet,
   type StoreRailPage,
@@ -21,6 +24,20 @@ import {
   MOCK_PATHWAY_SETS_BY_SLUG,
   MOCK_RAIL_PAGES_BY_SLUG,
 } from "@/mocks/store/merchandising-mocks";
+
+/**
+ * `GET /store/home` — hero slides, root categories, pathways, provider shortcuts and rails.
+ *
+ * WIRED. This replaces the legacy `getStoreHome` in `src/lib/store.ts`, which read a second env
+ * var (`QATOTO_STORE_API_URL`) and fell back to a mock fixture when it was unset — so an
+ * unconfigured deploy rendered fabricated merchandising and said nothing about it.
+ *
+ * A 503 here is real and specific: the home read fans out to the provider directory, and the
+ * backend answers 503 rather than serving a home page with a silently empty shortcut rail.
+ */
+export function getStoreHome(options?: RequestOptions): Promise<ActionResponse<StoreHome>> {
+  return getJson("/store/home", StoreHomeSchema, options);
+}
 
 /**
  * Active pathways, cursor-paginated over `(title, id)`.

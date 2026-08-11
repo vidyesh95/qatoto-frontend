@@ -238,10 +238,11 @@ export const StoreOrganizationStorefrontSchema = z
   })
   .strip();
 
-// The response envelope every store controller returns.
-export const StorefrontEnvelopeSchema = z
-  .object({ data: StoreOrganizationStorefrontSchema })
-  .strip();
+// `StorefrontEnvelopeSchema` is GONE. It parsed the `{ data: … }` wrapper because the legacy
+// `src/lib/store.ts` fetched with a bare `fetch` and got the whole envelope back. Every read now
+// goes through `getJson`, which unwraps `envelope.data` once, centrally, and hands the payload to
+// the schema — so a per-domain envelope schema is a second unwrapping that would silently never
+// match.
 
 export type OrganizationMedia = z.infer<typeof OrganizationMediaSchema>;
 export type OrganizationSiteAccess = z.infer<typeof OrganizationSiteAccessSchema>;

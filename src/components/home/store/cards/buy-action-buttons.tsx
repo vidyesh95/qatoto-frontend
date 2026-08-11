@@ -25,7 +25,7 @@
 import Link from "next/link";
 
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
-import { useProductQuantity } from "@/components/home/store/sections/product-quantity-context";
+import { useProductSelection } from "@/components/home/store/sections/product-selection-context";
 import { useCartQuery, useSetCartItem } from "@/hooks/store/cart";
 import { useSession } from "@/lib/auth-client";
 import type { CommerceCart } from "@/lib/store/cart.schemas";
@@ -33,8 +33,13 @@ import { formatCountLabel } from "@/lib/store/format";
 
 interface BuyActionButtonsProps {
   readonly productId: string;
-  /** Null only for a product with no active variants; `prd_folding_chair` refuses that. */
-  readonly variantId: string | null;
+  /**
+   * Whether this product requires a variant before it can be added.
+   *
+   * Straight off `product.hasVariants`. When it is true and nothing is selected the server answers
+   * `VARIANT_REQUIRED`, so the button is disabled with a reason rather than firing a refusal.
+   */
+  readonly hasVariants: boolean;
 }
 
 /**
@@ -52,11 +57,17 @@ function findBulkCartLine(cart: CommerceCart, productId: string, variantId: stri
   );
 }
 
-export default function BuyActionButtons({ productId, variantId }: BuyActionButtonsProps) {
-  // The quantity the buyer set on the price chart's stepper, not a constant — the field is visible on
-  // the page and an add that ignored it would put a different number in the cart than the one the
-  // buyer is looking at.
-  const { quantity } = useProductQuantity();
+export default function BuyActionButtons({ productId, hasVariants }: BuyActionButtonsProps) {
+  // The quantity the buyer set on the price chart's stepper and the variant they picked, not
+  // constants — both controls are visible on the page, and an add that ignored either would put
+  // something different in the cart than the one the buyer is looking at.
+  const { quantity, selectedVariantId } = useProductSelection();
+  const variantId = selectedVariantId;
+
+  // The one client-side gate here, and it is a refusal the server would issue anyway: a product
+  // that declares variants cannot be added without one. Declining to offer a known-refused request
+  // is not the client enforcing a rule.
+  const isVariantMissing = hasVariants && variantId === null;
 
   // THE PRODUCT PAGE IS PUBLIC, so the cart read is gated on the session. Without the gate every
   // anonymous visitor to a product fires a read that can only come back 401.
@@ -82,7 +93,7 @@ export default function BuyActionButtons({ productId, variantId }: BuyActionButt
   // dead. Loading means the session is resolving, or a query that actually ran has not answered yet.
   const isCartLoading = isSessionPending || (isSignedIn && cartQuery.isPending);
 
-  const canAddToCart = cart !== null && !setCartItem.isPending;
+  const canAddToCart = cart !== null && !setCartItem.isPending && !isVariantMissing;
 
   const handleAddToCartClick = () => {
     if (cart === null) return;
@@ -139,6 +150,10 @@ export default function BuyActionButtons({ productId, variantId }: BuyActionButt
 
       {/* Why the button is disabled, when it is disabled for a reason the buyer can act on. A
           disabled control with no explanation reads as a broken page. */}
+      {isVariantMissing && (
+        <p className="mt-1 text-xs leading-4 text-[#6F7979]">Choose an option to continue.</p>
+      )}
+
       {cart === null && !isCartLoading && (
         <p className="mt-1 text-xs leading-4 text-[#6F7979]">
           {isSignInRequired ? (

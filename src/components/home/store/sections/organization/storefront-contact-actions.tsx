@@ -1,45 +1,65 @@
-// TRANSPORT: mock — opens the mock chat sheet. NOTHING here reaches a backend.
+// TRANSPORT: props-only — one piece of client state; the quote link is a real route.
 //
-// The contact rail. Deliberately the only "use client" component on this page: the
-// storefront is a read surface and everything else renders on the server.
+// The contact rail. Deliberately the only "use client" component on this page: the storefront is a
+// read surface and everything else renders on the server.
 //
-// Sending an enquiry is a backend decision, not a client one — whether a visitor may
-// open a thread depends on an active buyer organization, which the server derives. When
-// this rail is wired it should render whatever affordance the backend hands it
-// (`contactAffordance`: chat / ask_question / sign_in) rather than deciding for itself
-// and putting a button in front of a wall.
+// NO `contactAffordance` HERE, AND THAT IS NOT AN OVERSIGHT. The product read carries one because
+// the server derives it per caller; `GET /store/organizations/:slug` does not, so this rail has no
+// server verdict to follow. It uses the session only as a UX hint — the honest kind, since a
+// signed-out visitor cannot open a thread under any circumstances — and never as authorization.
+//
+// "REQUEST A QUOTE" NOW GOES TO THE RFQ COMPOSER. It used to open the CHAT sheet, which is a
+// different act entirely: an RFQ is a published requirement that providers and sellers quote
+// against, with its own draft, invitations and quote thread. Sending a buyer to a chat window when
+// they asked to source something is the wrong surface, and it was reachable from every storefront.
 "use client";
 
 import { useState } from "react";
 
 import Image from "next/image";
+import Link from "next/link";
 
 import ManufacturerChatSheet from "@/components/home/store/sheets/manufacturer-chat-sheet";
+import { useSession } from "@/lib/auth-client";
 
-export default function StorefrontContactActions() {
+export default function StorefrontContactActions({
+  sellerDisplayName,
+}: {
+  readonly sellerDisplayName: string;
+}) {
   const [isChatSheetOpen, setIsChatSheetOpen] = useState(false);
+  const { data: session, isPending: isSessionPending } = useSession();
+  const isSignedIn = session !== null && session !== undefined;
 
   return (
     <>
       <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row lg:px-6">
-        <button
-          type="button"
-          onClick={() => setIsChatSheetOpen(true)}
-          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium tracking-[0.1px] text-white"
-        >
-          <Image
-            src="/icons/chat_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
-            width={18}
-            height={18}
-            alt=""
-          />
-          Chat now
-        </button>
+        {isSignedIn || isSessionPending ? (
+          <button
+            type="button"
+            onClick={() => setIsChatSheetOpen(true)}
+            className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium tracking-[0.1px] text-white"
+          >
+            <Image
+              src="/icons/chat_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
+              width={18}
+              height={18}
+              alt=""
+            />
+            Chat now
+          </button>
+        ) : (
+          <Link
+            href="/sign-in"
+            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium tracking-[0.1px] text-white"
+          >
+            Sign in to contact this seller
+          </Link>
+        )}
 
-        <button
-          type="button"
-          onClick={() => setIsChatSheetOpen(true)}
-          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full py-2.5 pr-6 pl-4 text-sm font-medium tracking-[0.1px] text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
+        <Link
+          href="/store/rfqs/new"
+          className="flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 pr-6 pl-4 text-sm font-medium tracking-[0.1px] text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
         >
           <Image
             src="/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -48,10 +68,15 @@ export default function StorefrontContactActions() {
             alt=""
           />
           Request a quote
-        </button>
+        </Link>
       </div>
 
-      {isChatSheetOpen && <ManufacturerChatSheet onClose={() => setIsChatSheetOpen(false)} />}
+      {isChatSheetOpen && (
+        <ManufacturerChatSheet
+          sellerDisplayName={sellerDisplayName}
+          onClose={() => setIsChatSheetOpen(false)}
+        />
+      )}
     </>
   );
 }

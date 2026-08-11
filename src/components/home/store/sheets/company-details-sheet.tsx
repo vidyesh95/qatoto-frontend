@@ -1,4 +1,4 @@
-// TRANSPORT: mock — reads the shared mock seller record. NOTHING here reaches a backend yet.
+// TRANSPORT: props-only — renders the storefront the page fetched, no network.
 //
 // Full company details. Reads the same seller record the storefront page renders — founding,
 // location, factory photos, freight access, visit policy, ownership, business type — so the sheet
@@ -10,10 +10,10 @@
 // `siteAccess`; inventing a crossed-out row turns a set of claims into a scorecard the seller
 // never filled in.
 //
-// Wire-able from `GET /store/organizations/:slug` → `declaredProfile`, whose shape the mock
-// already matches. The PDP will need a SECOND fetch for it: the product read's `seller` is thin
-// (id, slug, displayName, countryCode, logoUrl, summary) and carries neither the declared profile
-// nor the measured metrics.
+// Fed by `GET /store/organizations/:slug` → `declaredProfile`. The PDP makes that as a SECOND
+// fetch alongside the product: the product read's `seller` is thin (id, slug, displayName,
+// countryCode, logoUrl, summary) and carries neither the declared profile nor the measured
+// metrics, so a page that wants either has to ask for the storefront.
 "use client";
 
 import Image from "next/image";
@@ -29,22 +29,22 @@ import {
   SITE_ACCESS_MODE_ICONS,
   SITE_ACCESS_MODE_LABELS,
   VISIT_POLICY_LABELS,
+  type OrganizationStorefrontView,
 } from "@/lib/store/organizations.schemas";
-import {
-  MOCK_PRODUCT_SELLER_SLUG,
-  MOCK_PRODUCT_SELLER_STOREFRONT,
-} from "@/mocks/store-organization-mocks";
-
-const STOREFRONT = MOCK_PRODUCT_SELLER_STOREFRONT;
-const DECLARED_PROFILE = STOREFRONT.declaredProfile;
 
 type FactSpec = {
-  iconFileName: string;
-  label: string;
-  value: string;
+  readonly iconFileName: string;
+  readonly label: string;
+  readonly value: string;
 };
 
-function buildOverviewFacts(): FactSpec[] {
+/**
+ * Built per storefront rather than at module scope. The sheet used to read a module-level mock, so
+ * these could be constants; against a real read the seller changes with the page.
+ */
+function buildOverviewFacts(storefront: OrganizationStorefrontView): FactSpec[] {
+  const DECLARED_PROFILE = storefront.declaredProfile;
+  const STOREFRONT = storefront;
   const facts: FactSpec[] = [];
   if (!DECLARED_PROFILE) return facts;
 
@@ -80,13 +80,22 @@ function buildOverviewFacts(): FactSpec[] {
   return facts;
 }
 
-const OVERVIEW_FACTS = buildOverviewFacts();
-const FACTORY_PHOTOS = DECLARED_PROFILE?.media ?? [];
-const SITE_ACCESS = DECLARED_PROFILE?.siteAccess ?? [];
-const STAKEHOLDERS = DECLARED_PROFILE?.stakeholders ?? [];
-const VISIT_POLICY = DECLARED_PROFILE?.visitPolicy ?? null;
+export default function CompanyDetailsSheet({
+  storefront,
+  onClose,
+}: {
+  readonly storefront: OrganizationStorefrontView;
+  readonly onClose: () => void;
+}) {
+  const STOREFRONT = storefront;
+  const DECLARED_PROFILE = storefront.declaredProfile;
 
-export default function CompanyDetailsSheet({ onClose }: { onClose: () => void }) {
+  const OVERVIEW_FACTS = buildOverviewFacts(storefront);
+  const FACTORY_PHOTOS = DECLARED_PROFILE?.media ?? [];
+  const SITE_ACCESS = DECLARED_PROFILE?.siteAccess ?? [];
+  const STAKEHOLDERS = DECLARED_PROFILE?.stakeholders ?? [];
+  const VISIT_POLICY = DECLARED_PROFILE?.visitPolicy ?? null;
+
   return (
     <StoreSheet title="Company details" onClose={onClose}>
       <p className="px-4 pb-2 text-base font-medium text-[#191C1C]">{STOREFRONT.displayName}</p>
@@ -172,7 +181,7 @@ export default function CompanyDetailsSheet({ onClose }: { onClose: () => void }
               <p className="flex-1 text-xs leading-5 text-[#191C1C]">
                 {VISIT_POLICY_LABELS[VISIT_POLICY]}.{" "}
                 <Link
-                  href={`/store/organizations/${MOCK_PRODUCT_SELLER_SLUG}`}
+                  href={`/store/organizations/${storefront.slug}`}
                   onClick={onClose}
                   className="font-medium text-[#2A76FD]"
                 >
@@ -205,7 +214,7 @@ export default function CompanyDetailsSheet({ onClose }: { onClose: () => void }
         </ul>
 
         <Link
-          href={`/store/organizations/${MOCK_PRODUCT_SELLER_SLUG}`}
+          href={`/store/organizations/${storefront.slug}`}
           onClick={onClose}
           className="mt-5 flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-medium tracking-[0.1px] text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
         >

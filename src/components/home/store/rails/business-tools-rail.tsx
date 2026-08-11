@@ -1,27 +1,27 @@
-// TRANSPORT: props-only — renders the links it is handed, no network.
+// TRANSPORT: props-only — renders the store's own navigation manifest, no network.
 //
 // "For your Business" — the store's six business tools, as a scrolling row of tiles.
 //
-// RENAMED FROM `B2BRail`, which STORE_STRUCTURE.md §7.1 asked for "when its contract is concrete".
-// It is concrete now: the six destinations live in `src/lib/store/business-tools.ts`, four of them
-// resolve to routes that were built alongside this rename, and the "see all" below has a page of
-// its own for the first time.
+// IT TAKES NO PROPS, AND THAT IS THE FIX. The links used to arrive as `b2bLinks` on the legacy
+// `getStoreHome` payload, which made them look like merchandising data a backend served. They are
+// not: `GET /store/home` has no such member and never had one. They are the store's own information
+// architecture, they live in `src/lib/store/business-tools.ts`, and threading them through a fetch
+// meant an unreachable backend could empty the store's own navigation.
 //
-// THE `href` HERE USED TO BE `/store/categories`, which is the PRODUCT category index. A see-all on
-// a business-tools rail landing in the product catalogue is the kind of wrong that typechecks — the
-// destination is a real page, just not this rail's.
+// One manifest feeds BOTH this rail and the `/store/business` index, so a tile and its index card
+// cannot disagree about where a tool lives.
 
-import SectionHeader from "@/components/home/store/sections/section-header";
 import BusinessToolTile from "@/components/home/store/cards/business-tool-tile";
-import type { B2BLink } from "@/types/store";
+import SectionHeader from "@/components/home/store/sections/section-header";
+import { BUSINESS_TOOLS } from "@/lib/store/business-tools";
 
-export default function BusinessToolsRail({ links }: { links: B2BLink[] }) {
+export default function BusinessToolsRail() {
   return (
     <section className="space-y-3">
       <SectionHeader title="For your Business" href="/store/business" />
       <div className="flex gap-3 overflow-x-auto px-4 pb-1 lg:px-6">
-        {links.map((link) => (
-          <BusinessToolTile key={link.id} link={link} />
+        {BUSINESS_TOOLS.map((tool) => (
+          <BusinessToolTile key={tool.id} tool={tool} />
         ))}
       </div>
     </section>

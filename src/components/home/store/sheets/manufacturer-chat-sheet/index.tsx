@@ -1,4 +1,6 @@
-// TRANSPORT: mock — messages live in `useState` and the send button has no handler.
+// TRANSPORT: mock — messages live in `useState` and NOTHING IS SENT. The sheet says so, in the UI,
+// rather than only in this comment: a composer that looks live and posts nowhere is worse than one
+// that admits it, because the buyer walks away believing the seller has been contacted.
 // The long note above the component explains what exists on the backend and why this is
 // the one store sheet that keeps its own shell.
 "use client";
@@ -46,7 +48,13 @@ import MessageBubble from "@/components/home/store/sheets/manufacturer-chat-shee
 // customization assets. There is no first-party video ingest anywhere in the codebase either, so a
 // message video follows the review-media shape — an external id under a supply CHECK — or it does
 // not ship.
-export default function ManufacturerChatSheet({ onClose }: { onClose: () => void }) {
+export default function ManufacturerChatSheet({
+  sellerDisplayName,
+  onClose,
+}: {
+  readonly sellerDisplayName: string;
+  readonly onClose: () => void;
+}) {
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
 
@@ -95,7 +103,7 @@ export default function ManufacturerChatSheet({ onClose }: { onClose: () => void
           </span>
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-1 text-sm font-medium text-[#191C1C]">
-              <span className="truncate">Guangdong Puda Electrical</span>
+              <span className="truncate">{sellerDisplayName}</span>
               <Image
                 src="/icons/verified_24dp_00696E_FILL1_wght400_GRAD0_opsz24.svg"
                 width={14}
@@ -134,6 +142,14 @@ export default function ManufacturerChatSheet({ onClose }: { onClose: () => void
             <MessageBubble key={message.id} message={message} />
           ))}
         </div>
+
+        {/* SAID IN THE UI, NOT ONLY IN A COMMENT. The composer below looks live and posts nowhere;
+            a buyer who types into it and walks away believing the seller was contacted is the
+            failure this banner exists to prevent. It goes when the thread routes are wired. */}
+        <p className="mx-4 mb-2 shrink-0 rounded-lg bg-[#FFF8E1] px-3 py-2 text-[11px] leading-4 text-[#6F4E00]">
+          Messaging is not connected yet — nothing sent from here reaches the seller. Use “Send
+          inquiry” on the product, or the seller’s storefront, to make contact.
+        </p>
 
         {/* Composer — relative anchor so the attachment menu floats above it
             with a transparent surround, keeping the chat visible behind. */}

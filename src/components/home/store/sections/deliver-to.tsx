@@ -1,86 +1,97 @@
-// TRANSPORT: mock — two addresses in `useState` that evaporate on unmount.
+// TRANSPORT: client-query — reads the organization's saved delivery addresses.
+//
+// The "Deliver to" row. Shows the selected saved address and opens the sheet to change it.
+//
+// THE ADDRESSES ARE THE ORGANIZATION'S, FETCHED. This used to hold two hardcoded personal
+// addresses in `useState` that evaporated on unmount — fabricated, PII-shaped data on a page that
+// otherwise renders a real seller's real terms. They belong to a buyer ORGANIZATION, which is
+// auto-provisioned on the first action that needs one, so a signed-in visitor has somewhere to save
+// one without filling in a company form first.
+//
+// A SIGNED-OUT VISITOR SEES THE PROMPT, NOT AN EMPTY ROW. The read is gated on the session, because
+// without one it can only come back 401 — and an anonymous visitor firing an authenticated request
+// on every product view is a request that exists to fail.
 "use client";
 
 import { useState } from "react";
 
-import AddressSheet, { MAX_SAVED_ADDRESSES } from "@/components/home/store/sheets/address-sheet";
+import Link from "next/link";
 
-import type { Address } from "@/types/store";
-
-// "Deliver to" row on the product page. UI-only mock — these addresses will come
-// from the backend API later (the client never owns address truth). For now the
-// list lives in local state so the Change sheet can select / add / edit.
-
-const MOCK_ADDRESSES: Address[] = [
-  {
-    id: "address-1",
-    recipientName: "Vidyesh Bipin Churi",
-    pincode: "401301",
-    label: "HOME",
-    fullAddress:
-      "1457, Vinay house, Agashi-Crossnaka, near cross naka bus stop, Virar west, Tal: Vasai, Dist: Palghar",
-  },
-  {
-    id: "address-2",
-    recipientName: "Vidyesh Churi",
-    pincode: "400001",
-    label: "WORK",
-    fullAddress: "12th floor, Maker Chambers, Nariman Point, Mumbai, Dist: Mumbai City",
-  },
-];
+import AddressSheet from "@/components/home/store/sheets/address-sheet";
+import { useOrganizationAddressesQuery, useViewerOrganizationId } from "@/hooks/store/addresses";
+import { useSession } from "@/lib/auth-client";
+import { formatAddressLines, type OrganizationAddress } from "@/lib/store/addresses.schemas";
 
 export default function DeliverTo() {
-  const [addresses, setAddresses] = useState<Address[]>(MOCK_ADDRESSES);
-  const [selectedAddressId, setSelectedAddressId] = useState<string>(MOCK_ADDRESSES[0].id);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
-  const selectedAddress =
-    addresses.find((address) => address.id === selectedAddressId) ?? addresses[0];
+  const { data: session, isPending: isSessionPending } = useSession();
+  const isSignedIn = session !== null && session !== undefined;
 
-  const handleSaveAddress = (values: Omit<Address, "id">, editingId: string | null) => {
-    if (editingId) {
-      setAddresses((previous) =>
-        previous.map((address) => (address.id === editingId ? { ...address, ...values } : address)),
-      );
-      return;
-    }
+  const organizationId = useViewerOrganizationId();
+  const addressesQuery = useOrganizationAddressesQuery(isSignedIn ? organizationId : null);
 
-    if (addresses.length >= MAX_SAVED_ADDRESSES) return;
+  const result = addressesQuery.data;
+  const allAddresses = result !== undefined && result.success ? result.data : [];
+  // Only delivery addresses belong on this row. The other kinds are the seller's own operations —
+  // where goods ship from, where returns go — and are not places a buyer's order can be sent.
+  const deliveryAddresses = allAddresses.filter((address) => address.addressKind === "delivery");
 
-    const newAddressId = `address-${addresses.length + 1}-${values.pincode}`;
-    setAddresses((previous) => [...previous, { id: newAddressId, ...values }]);
-    setSelectedAddressId(newAddressId);
-  };
+  const selectedAddress: OrganizationAddress | null =
+    deliveryAddresses.find((address) => address.id === selectedAddressId) ??
+    deliveryAddresses.find((address) => address.isDefault) ??
+    deliveryAddresses[0] ??
+    null;
+
+  if (!isSessionPending && !isSignedIn) {
+    return (
+      <div className="px-4 py-2 text-xs leading-4 text-[#6F7979] lg:px-6">
+        <Link href="/sign-in" className="font-medium text-[#00696E]">
+          Sign in
+        </Link>{" "}
+        to use a saved delivery address.
+      </div>
+    );
+  }
 
   return (
     <>
-      <div className="flex items-center gap-2 px-4 py-2 lg:px-6">
-        <div className="flex-1 text-xs">
-          <p className="flex items-center gap-0.75">
-            <span className="text-[#191C1C]">Deliver to:</span>
-            <span className="flex-1 truncate text-black">{selectedAddress.recipientName}</span>
-            <span className="text-black">,{selectedAddress.pincode}</span>
-            <span className="rounded bg-[#D6E3FF] p-1 leading-4 text-[#191C1C]">
-              {selectedAddress.label}
-            </span>
-          </p>
-          <p className="mt-0.5 text-black">{selectedAddress.fullAddress}</p>
+      <div className="flex items-start gap-2 px-4 py-2 lg:px-6">
+        <div className="min-w-0 flex-1">
+          {selectedAddress === null ? (
+            <p className="text-sm text-[#191C1C]">
+              {addressesQuery.isPending ? "Loading addresses…" : "No delivery address saved"}
+            </p>
+          ) : (
+            <>
+              <p className="truncate text-sm text-[#191C1C]">
+                Deliver to:{" "}
+                <span className="font-medium">
+                  {selectedAddress.recipientName ?? selectedAddress.label ?? "Saved address"}
+                </span>
+              </p>
+              <p className="truncate text-xs leading-4 text-[#6F7979]">
+                {formatAddressLines(selectedAddress)}
+              </p>
+            </>
+          )}
         </div>
         <button
           type="button"
           onClick={() => setIsSheetOpen(true)}
-          className="cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E]"
+          className="shrink-0 text-xs font-medium text-[#00696E]"
         >
-          Change
+          {selectedAddress === null ? "Add" : "Change"}
         </button>
       </div>
 
       {isSheetOpen && (
         <AddressSheet
-          addresses={addresses}
-          selectedAddressId={selectedAddressId}
+          organizationId={organizationId}
+          addresses={deliveryAddresses}
+          selectedAddressId={selectedAddress?.id ?? null}
           onSelectAddress={setSelectedAddressId}
-          onSaveAddress={handleSaveAddress}
           onClose={() => setIsSheetOpen(false)}
         />
       )}

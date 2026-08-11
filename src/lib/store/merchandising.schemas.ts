@@ -35,7 +35,12 @@ import {
   StoreSellerSummarySchema,
 } from "@/lib/store/organizations.schemas";
 import { PublicOfferingCardSchema, PublicProviderCardSchema } from "@/lib/store/providers.schemas";
-import { AccentTokenSchema, cursorPageOf, RAIL_STRATEGIES } from "@/lib/store/shared.schemas";
+import {
+  AccentTokenSchema,
+  cursorPageOf,
+  MERCHANDISING_ENTITY_KINDS,
+  RAIL_STRATEGIES,
+} from "@/lib/store/shared.schemas";
 
 // --- Pricing failure, as it reaches a slot ----------------------------------
 
@@ -295,6 +300,84 @@ export const StoreRailPageSchema = z
   })
   .strip();
 
+// --- Store home ---------------------------------------------------------------
+
+/**
+ * One hero slide, from `store_hero_slide`.
+ *
+ * `linkTargetKind` and `linkTargetSlug` are ALL-OR-NOTHING on the wire — the table carries a CHECK
+ * that either all three link columns are null or all three are set, so a slide either points
+ * somewhere or is decoration. Build the href from the pair; never synthesise one from the title.
+ *
+ * `linkTargetId` is deliberately absent: the id addresses nothing the client can route to, and the
+ * slug is what every store URL is keyed on.
+ */
+export const StoreHeroSlideSchema = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    subtitle: z.string().nullable(),
+    accent: AccentTokenSchema,
+    imageUrl: z.string().nullable(),
+    linkTargetKind: z.enum(MERCHANDISING_ENTITY_KINDS).nullable(),
+    linkTargetSlug: z.string().nullable(),
+  })
+  .strip();
+
+/**
+ * A pathway as the HOME page carries it — the index card WITHOUT `slotCount`.
+ *
+ * A separate schema rather than `StorePathwayCardSchema.partial()`: the home projection selects
+ * seven columns and the index read computes an eighth, so parsing home rows against the index shape
+ * would fail every time. Two reads, two shapes, and the difference is real.
+ */
+export const StoreHomePathwayCardSchema = z
+  .object({
+    id: z.string(),
+    slug: z.string(),
+    title: z.string(),
+    summary: z.string().nullable(),
+    accent: AccentTokenSchema,
+    cardImageUrl: z.string().nullable(),
+    isAnchored: z.boolean(),
+  })
+  .strip();
+
+/**
+ * A rail on the home page. NO `id` and NO `page` envelope — the home read returns the first twelve
+ * items of each rail and nothing more. Paging one open means navigating to `/store/rails/:slug`,
+ * which is the read that carries a cursor.
+ */
+export const StoreHomeRailSchema = z
+  .object({
+    slug: z.string(),
+    title: z.string(),
+    strategy: z.string(),
+    items: z.array(MerchandisingItemSchema),
+  })
+  .strip();
+
+/**
+ * `GET /store/home`.
+ *
+ * `categories` arrives here already, so the home page does NOT need a second
+ * `listStoreCategories` call — one read, one answer. `providerShortcuts` is the connector
+ * directory's first eight entries and has no counterpart in the legacy shape at all.
+ *
+ * There is no `b2bLinks` member and there never was one on the backend: the business-tools rail is
+ * a static frontend manifest (`src/lib/store/business-tools.ts`), not merchandising data, and
+ * pretending it came from the wire is what the legacy getter did.
+ */
+export const StoreHomeSchema = z
+  .object({
+    heroSlides: z.array(StoreHeroSlideSchema),
+    categories: z.array(StoreCategorySchema),
+    pathways: z.array(StoreHomePathwayCardSchema),
+    providerShortcuts: z.array(PublicProviderCardSchema),
+    rails: z.array(StoreHomeRailSchema),
+  })
+  .strip();
+
 // --- Filter inputs ----------------------------------------------------------
 
 export interface PathwayIndexFilter {
@@ -320,6 +403,10 @@ export type StorePathwayCurrencyTotal = z.infer<typeof StorePathwayCurrencyTotal
 export type StorePathwaySet = z.infer<typeof StorePathwaySetSchema>;
 export type MerchandisingItem = z.infer<typeof MerchandisingItemSchema>;
 export type StoreRailPage = z.infer<typeof StoreRailPageSchema>;
+export type StoreHeroSlide = z.infer<typeof StoreHeroSlideSchema>;
+export type StoreHomePathwayCard = z.infer<typeof StoreHomePathwayCardSchema>;
+export type StoreHomeRail = z.infer<typeof StoreHomeRailSchema>;
+export type StoreHome = z.infer<typeof StoreHomeSchema>;
 export type CommercePricingErrorValue = z.infer<typeof CommercePricingErrorSchema>;
 
 // --- Display maps -----------------------------------------------------------

@@ -45,14 +45,22 @@ import { cursorPageOf, IsoDateTimeSchema, PROVIDER_KINDS } from "@/lib/store/sha
 export type OrderViewerRelation = "buyer" | "counterparty" | "both" | "neither";
 
 /**
- * The organization ids the caller belongs to, as this client consumes them.
+ * `GET /commerce/organizations/mine`, parsed down to the ONE field its callers use.
  *
- * `GET /commerce/organizations/mine` returns `{organization, membership}[]`; the pages only need the
- * ids, and reducing to them HERE rather than passing the whole shape around is deliberate — a page
+ * THIS SCHEMA USED TO BE `z.array(z.string())` AND THE ROUTE HAS NEVER RETURNED THAT. The real
+ * response is `{ organization, membership }[]`, so the parse failed on every call — and it failed
+ * CLOSED, producing a `PARSE` result the order pages rendered as "you belong to no organizations"
+ * rather than as an error. A buyer would have been told an order was not theirs. Recorded as a
+ * confirmed drift in the backend doc's A35.
+ *
+ * Only `organization.id` is parsed, and `.strip()` discards the rest deliberately: the pages need
+ * ids, and reducing to them HERE rather than passing the whole shape around is the point — a page
  * holding full organization rows starts rendering a name it did not fetch for that purpose, and a
  * membership `role` in a component is one step from a client-side permission check.
  */
-export const OrganizationIdListSchema = z.array(z.string());
+export const MyOrganizationListSchema = z.array(
+  z.object({ organization: z.object({ id: z.string() }).strip() }).strip(),
+);
 
 export function deriveOrderViewerRelation(
   order: { readonly buyerOrganizationId: string; readonly counterpartyOrganizationId: string },

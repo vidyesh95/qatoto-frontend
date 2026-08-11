@@ -1,204 +1,174 @@
-// TRANSPORT: mock — three hardcoded answered questions; ask/answer/like reach nothing.
+// TRANSPORT: client-query — the first page is seeded from the server; opening a question fetches.
+//
+// Q&A IS THE PUBLIC TEXT SURFACE THIS LISTING HAS, and it is deliberately the only one. Product
+// comments were decided against rather than deferred (backend A10) precisely because every other
+// channel here requires standing: an answer needs a seller relationship or a verified purchase, a
+// review needs a completed order, a private inquiry needs a buyer organization. A free-floating
+// comment would have been the one public surface with no standing requirement behind it.
+//
+// EACH QUESTION EMBEDS AT MOST ONE ANSWER — the seller's first. The rest are a separate paginated
+// route, because a cursor over a computed preference rank is how pagination starts skipping rows.
+// So opening a question is a real fetch, not a client-side expand.
+//
+// `authorKind` IS DERIVED BY THE SERVER, never sent. "Seller" and "Verified buyer" are claims about
+// standing, and a client that could assert either would make the badge meaningless.
+"use client";
+
+import { useState } from "react";
+
 import Image from "next/image";
+import Link from "next/link";
 
-// "Questions and answers" block on the product page. Shows answered buyer
-// questions with engagement, plus a search/ask entry point. UI-only mock —
-// the real Q&A list comes from the backend later.
+import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
+import { useProductQuestionsQuery, useQuestionAnswersQuery } from "@/hooks/store/products";
+import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
+import {
+  PRODUCT_ANSWER_AUTHOR_KIND_LABELS,
+  type ProductAnswer,
+  type ProductQuestion,
+  type ProductQuestionListPage,
+} from "@/lib/store/products.schemas";
 
-const ANSWERED_QUESTIONS = [
-  {
-    question: "Is this comfortable for office work?",
-    answer: "It prevents back pain and also well furnished nice product",
-    askedAgo: "12 months ago",
-    location: "Central African Republic",
-    likeCount: "8.8m",
-    username: "@ikun",
-  },
-  {
-    question: "Does it stack with older models?",
-    answer: "It prevents back pain and also well furnished nice product",
-    askedAgo: "12 months ago",
-    location: "Central African Republic",
-    likeCount: "8.8m",
-    username: "@ikun",
-  },
-  {
-    question: "What is the seat height?",
-    answer: "It prevents back pain and also well furnished nice product",
-    askedAgo: "12 months ago",
-    location: "Central African Republic",
-    likeCount: "8.8m",
-    username: "@ikun",
-  },
-];
+export default function QuestionsAndAnswers({
+  productSlug,
+  initialPage,
+  contactAffordance,
+}: {
+  readonly productSlug: string;
+  readonly initialPage: ProductQuestionListPage | null;
+  /** The server's own verdict on what this caller may do. Never inferred here. */
+  readonly contactAffordance: "chat" | "ask_question" | "sign_in";
+}) {
+  const questionsQuery = useProductQuestionsQuery(productSlug, initialPage);
+  const result = questionsQuery.data;
 
-export default function QuestionsAndAnswers() {
   return (
-    <details className="group flex flex-col py-2" open>
-      <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-2 [&::-webkit-details-marker]:hidden">
-        <h2 className="text-sm tracking-[0.25px] text-[#191C1C]">Questions and answers</h2>
+    <details open className="group/section border-t border-[#CAC4D0]/60 px-4 py-2 lg:px-6">
+      <summary className="flex cursor-pointer list-none items-center gap-2 py-2 [&::-webkit-details-marker]:hidden">
+        <h2 className="flex-1 text-sm tracking-[0.25px] text-[#191C1C]">Questions and answers</h2>
         <Image
-          src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
+          src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
           width={24}
           height={24}
           alt=""
-          className="transition-transform group-open:rotate-90"
+          className="transition-transform group-open/section:rotate-180"
         />
       </summary>
 
-      <div className="px-4 py-2">
-        <button
-          type="button"
-          className="flex w-full items-center justify-center gap-2 overflow-hidden rounded-full py-2.5 pr-6 pl-4 outline -outline-offset-1 outline-[#6F7979]"
-        >
-          <Image
-            src="/icons/search_24dp_00696E_FILL1_wght400_GRAD0_opsz24.svg"
-            width={18}
-            height={18}
-            alt=""
-          />
-          <span className="text-sm font-medium tracking-[0.1px] text-[#00696E]">
-            Search or ask question
-          </span>
-        </button>
-      </div>
+      <div className="py-2">
+        {/* WHICH CONTROL APPEARS IS THE SERVER'S DECISION. A signed-out visitor gets a sign-in
+            link rather than a form that would 401, and the middle rung — signed in, no buyer
+            organization — is exactly who Q&A was built to admit. */}
+        {contactAffordance === "sign_in" ? (
+          <p className="pb-3 text-xs leading-4 text-[#6F7979]">
+            <Link href="/sign-in" className="font-medium text-[#00696E]">
+              Sign in
+            </Link>{" "}
+            to ask this seller a question.
+          </p>
+        ) : (
+          <p className="pb-3 text-xs leading-4 text-[#6F7979]">
+            Questions are answered by the seller or by buyers who have purchased this product.
+          </p>
+        )}
 
-      <div className="flex flex-col">
-        {ANSWERED_QUESTIONS.map((entry, entryIndex) => (
-          <div key={entryIndex} className="flex flex-col gap-1 px-4 py-2">
-            {/* Question */}
-            <div className="flex items-start gap-2">
-              <div className="flex flex-1 items-start">
-                <span className="text-xs font-medium tracking-[0.5px] text-[#191C1C]">Q:</span>
-                <details className="group/q flex flex-1 flex-col">
-                  <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                    <span className="line-clamp-1 text-xs font-medium tracking-[0.5px] text-[#191C1C] group-open/q:line-clamp-none">
-                      {entry.question}
-                    </span>
-                    <span className="block text-right text-xs font-medium tracking-[0.5px] text-[#2A76FD] group-open/q:hidden">
-                      more
-                    </span>
-                  </summary>
-                  <span className="block text-right text-xs font-medium tracking-[0.5px] text-[#2A76FD]">
-                    less
-                  </span>
-                </details>
-              </div>
-              <Image
-                src="/icons/more_vert_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                width={14}
-                height={14}
-                alt=""
-              />
-            </div>
-
-            {/* Answer */}
-            <div className="flex items-start gap-2">
-              <div className="flex flex-1 items-start">
-                <span className="text-xs tracking-[0.4px] text-[#191C1C]">A:</span>
-                <details className="group/a flex flex-1 flex-col">
-                  <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                    <span className="line-clamp-1 text-xs tracking-[0.4px] text-[#191C1C] group-open/a:line-clamp-none">
-                      {entry.answer}
-                    </span>
-                    <span className="block text-right text-xs font-medium tracking-[0.5px] text-[#2A76FD] group-open/a:hidden">
-                      more
-                    </span>
-                  </summary>
-                  <span className="block text-right text-xs font-medium tracking-[0.5px] text-[#2A76FD]">
-                    less
-                  </span>
-                </details>
-              </div>
-              <Image
-                src="/icons/flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                width={14}
-                height={14}
-                alt=""
-              />
-            </div>
-
-            {/* Meta */}
-            <div className="flex items-center gap-0.5 text-[11px] font-medium tracking-[0.5px] text-[#6F7979]">
-              <span>{entry.askedAgo}</span>
-              <span>•</span>
-              <span>{entry.location}</span>
-            </div>
-
-            {/* Engagement */}
-            <div className="flex items-center gap-4">
-              <div className="flex w-16 items-center">
-                <div className="flex flex-1 items-center gap-0.5">
-                  <Image
-                    src="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                    width={14}
-                    height={14}
-                    alt=""
-                  />
-                  <span className="flex-1 text-[11px] font-medium tracking-[0.5px] text-[#6F7979]">
-                    {entry.likeCount}
-                  </span>
-                </div>
-                <Image
-                  src="/icons/heart_broken_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  width={14}
-                  height={14}
-                  alt=""
-                />
-              </div>
-              <Image
-                src="/icons/share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                width={14}
-                height={14}
-                alt=""
-              />
-            </div>
-
-            <span className="text-[11px] font-medium tracking-[0.5px] text-black">
-              {entry.username}
-            </span>
-
-            {/* Verified purchase */}
-            <div className="flex items-center gap-2">
-              <span className="h-px w-6 bg-[#CAC4D0]" />
-              <span className="text-[11px] font-medium tracking-[0.5px] text-[#6F7979]">
-                Verified Purchase
-              </span>
-              <Image
-                src="/icons/verified_24dp_00696E_FILL1_wght400_GRAD0_opsz24.svg"
-                width={14}
-                height={14}
-                alt=""
-              />
-            </div>
-
-            <button
-              type="button"
-              className="text-left text-[11px] font-medium tracking-[0.5px] text-[#2A76FD]"
-            >
-              Read other answers
-            </button>
-          </div>
-        ))}
-      </div>
-
-      <div className="px-4">
-        <div className="h-px w-full bg-[#CAC4D0]" />
-      </div>
-
-      <div className="flex items-center justify-between px-4 py-2">
-        <span className="text-sm tracking-[0.25px] text-[#191C1C]">All questions and answers</span>
-        <Image
-          src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-          width={24}
-          height={24}
-          alt=""
-        />
-      </div>
-
-      <div className="px-4">
-        <div className="h-px w-full bg-[#CAC4D0]" />
+        {result === undefined ? (
+          <p className="text-xs text-[#6F7979]">Loading questions…</p>
+        ) : !result.success ? (
+          <StoreErrorPanel message={result.error.message} />
+        ) : result.data.items.length === 0 ? (
+          <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+            No questions about this product yet.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {result.data.items.map((question) => (
+              <li key={question.id}>
+                <QuestionRow productSlug={productSlug} question={question} />
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </details>
+  );
+}
+
+function QuestionRow({
+  productSlug,
+  question,
+}: {
+  readonly productSlug: string;
+  readonly question: ProductQuestion;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Only fetched once the buyer opens it — see the header note on why the rest of the answers are
+  // their own route.
+  const answersQuery = useQuestionAnswersQuery(productSlug, question.id, isExpanded);
+  const answersResult = answersQuery.data;
+
+  // One more answer exists than the preview shows.
+  const hasMoreAnswers = question.answerCount > (question.topAnswer === null ? 0 : 1);
+
+  return (
+    <article className="border-b border-[#CAC4D0]/60 pb-3">
+      <p className="text-sm leading-5 font-medium text-[#191C1C]">Q. {question.bodyText}</p>
+      <p className="pt-0.5 text-[11px] leading-4 text-[#6F7979]">
+        {question.askedBy?.name ?? "A buyer"} · {formatIsoInstantLabel(question.createdAt)}
+      </p>
+
+      {question.topAnswer === null ? (
+        <p className="pt-1 text-xs leading-4 text-[#6F7979]">Not answered yet.</p>
+      ) : (
+        <AnswerBlock answer={question.topAnswer} />
+      )}
+
+      {hasMoreAnswers && !isExpanded && (
+        <button
+          type="button"
+          onClick={() => setIsExpanded(true)}
+          className="pt-1 text-xs font-medium text-[#2A76FD]"
+        >
+          Read {question.answerCount - 1} more{" "}
+          {question.answerCount - 1 === 1 ? "answer" : "answers"}
+        </button>
+      )}
+
+      {isExpanded && (
+        <div className="pt-1">
+          {answersResult === undefined ? (
+            <p className="text-xs text-[#6F7979]">Loading answers…</p>
+          ) : !answersResult.success ? (
+            <p className="text-xs text-[#8C1D18]">{answersResult.error.message}</p>
+          ) : (
+            <ul>
+              {answersResult.data.items
+                .filter((answer) => answer.id !== question.topAnswer?.id)
+                .map((answer) => (
+                  <li key={answer.id}>
+                    <AnswerBlock answer={answer} />
+                  </li>
+                ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function AnswerBlock({ answer }: { readonly answer: ProductAnswer }) {
+  return (
+    <div className="pt-1.5">
+      <p className="text-xs leading-4 whitespace-pre-line text-[#191C1C]">A. {answer.bodyText}</p>
+      <p className="pt-0.5 text-[11px] leading-4 text-[#6F7979]">
+        <span className="font-medium text-[#00696E]">
+          {PRODUCT_ANSWER_AUTHOR_KIND_LABELS[answer.authorKind]}
+        </span>
+        {answer.author !== null && <span> · {answer.author.displayName}</span>}
+        <span> · {formatCountLabel(answer.helpfulCount)} found this helpful</span>
+      </p>
+    </div>
   );
 }

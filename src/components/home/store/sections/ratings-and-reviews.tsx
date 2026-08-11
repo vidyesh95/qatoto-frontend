@@ -1,285 +1,299 @@
-// TRANSPORT: mock — hardcoded reviews, sub-scores and counts; the filter chips sort nothing.
+// TRANSPORT: client-query — the first page is seeded from the server; sorting and filtering refetch.
+//
+// THE SORT AND FILTER CHIPS ARE SERVER READS, NOT A CLIENT RE-SLICE. Re-slicing the page already in
+// hand would make every chip lie about anything past the first twelve rows. So a chip changes the
+// query key and a new request goes out.
+//
+// `summary` IS COMPUTED OVER EVERY VISIBLE REVIEW IN SCOPE, never over the filtered subset. That is
+// what keeps the chips' own counts from renumbering as you click them and leaving no way back to
+// the full picture — the histogram a buyer filters BY must not be the histogram the filter changed.
+//
+// `viewer` IS NULL FOR A CALLER WITH NO ACTIVE ORGANIZATION, and not `{hasVotedHelpful: false}`.
+// The vote table is keyed on the organization, so null is also the honest answer about what the
+// caller MAY do — the helpful control renders unpressable rather than un-pressed.
+//
+// A REVIEW REQUIRES A COMPLETED ORDER. "Rate product" is not a control this page can offer on its
+// own: writing one needs a `completionId` from `GET /commerce/completions`, which is a
+// buyer-scoped read. Verified purchase is structural here rather than a badge.
+"use client";
+
+import { useState } from "react";
+
 import Image from "next/image";
-import Link from "next/link";
 
-const VIDEOS = [
-  "/dummy/thumbnail_image01.avif",
-  "/dummy/thumbnail_image02.avif",
-  "/dummy/thumbnail_image03.avif",
-];
+import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
+import { useProductReviewsQuery } from "@/hooks/store/products";
+import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
+import {
+  REVIEW_SORTS,
+  REVIEW_SORT_LABELS,
+  type ReviewListFilter,
+  type ReviewSort,
+  type StoreReview,
+  type StoreReviewListPage,
+} from "@/lib/store/products.schemas";
 
-const PHOTOS = [
-  "/dummy/review_image01.avif",
-  "/dummy/review_image02.avif",
-  "/dummy/review_image03.avif",
-  "/dummy/chair_raspberry_red.avif",
-  "/dummy/chair_royal_purple.avif",
-  "/dummy/chair_sea_blue.avif",
-  "/dummy/chair_charcoal_black.avif",
-  "/dummy/chair_raspberry_red02.avif",
-];
+const RATING_VALUES = [5, 4, 3, 2, 1] as const;
 
-const REVIEWS = [
-  {
-    handle: "@ikun",
-    avatar: "/dummy/profile_image_01.avif",
-    product: "Cement flower pot with Safety manual and gray mold 1pc",
-    rating: 3,
-    body: "Cement flower pot 🤣 too heavy, No one wants",
-    images: [
-      "/dummy/review_image01.avif",
-      "/dummy/review_image02.avif",
-      "/dummy/review_image03.avif",
-    ],
-    helpful: "8.8m",
-    date: "12 months ago",
-    country: "Central African Republic",
-  },
-  {
-    handle: "@ikun",
-    avatar: "/dummy/profile_image_02.avif",
-    product: "Cement flower pot with Safety manual and brown mold 1pc",
-    rating: 3,
-    body: "Cement flower pot 🤣 too heavy, No one wants",
-    images: [
-      "/dummy/chair_raspberry_red.avif",
-      "/dummy/chair_sea_blue.avif",
-      "/dummy/chair_royal_purple.avif",
-    ],
-    helpful: "8.8m",
-    date: "12 months ago",
-    country: "Central African Republic",
-  },
-  {
-    handle: "@ikun",
-    avatar: "/dummy/profile_image_03.avif",
-    product: "Cement flower pot with Safety manual and gray mold 1pc",
-    rating: 3,
-    body: "Cement flower pot 🤣 too heavy, No one wants",
-    images: [
-      "/dummy/chair_charcoal_black.avif",
-      "/dummy/review_image02.avif",
-      "/dummy/chair_raspberry_red02.avif",
-    ],
-    helpful: "8.8m",
-    date: "12 months ago",
-    country: "Central African Republic",
-  },
-];
+export default function RatingsAndReviews({
+  productSlug,
+  initialPage,
+}: {
+  readonly productSlug: string;
+  readonly initialPage: StoreReviewListPage | null;
+}) {
+  const [sort, setSort] = useState<ReviewSort>("recent");
+  const [rating, setRating] = useState<number | null>(null);
+  const [hasMediaOnly, setHasMediaOnly] = useState(false);
 
-const REVIEW_SUB_SCORES = [
-  { label: "Service", score: 4.9 },
-  { label: "Shipping", score: 4.7 },
-  { label: "Quality", score: 4.8 },
-];
+  const filter: ReviewListFilter = {
+    ...(sort === "recent" ? {} : { sort }),
+    ...(rating === null ? {} : { rating }),
+    ...(hasMediaOnly ? { hasMedia: true } : {}),
+  };
 
-// Filter/sort chips are display-only for the UI phase (same precedent as the
-// handler-less "Rate product" button); the first chip renders as active.
-const REVIEW_FILTER_CHIPS = ["All", "With photos (128)", "Rating ▾", "Sort by ▾"];
+  const reviewsQuery = useProductReviewsQuery(productSlug, filter, initialPage);
+  const result = reviewsQuery.data;
 
-const CHEVRON = "/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg";
+  if (result === undefined) {
+    return (
+      <section className="border-t border-[#CAC4D0]/60 px-4 py-4 lg:px-6">
+        <h2 className="text-sm tracking-[0.25px] text-[#191C1C]">Ratings and reviews</h2>
+        <p className="pt-2 text-xs text-[#6F7979]">Loading reviews…</p>
+      </section>
+    );
+  }
 
-function Stars({ rating }: { rating: number }) {
+  if (!result.success) {
+    return (
+      <section className="border-t border-[#CAC4D0]/60 px-4 py-4 lg:px-6">
+        <h2 className="pb-2 text-sm tracking-[0.25px] text-[#191C1C]">Ratings and reviews</h2>
+        <StoreErrorPanel message={result.error.message} />
+      </section>
+    );
+  }
+
+  const { summary, items } = result.data;
+
+  // No reviews AT ALL is different from no reviews matching a filter, and only the first is a
+  // statement about the product.
+  const hasAnyReviews = summary.reviewCount > 0;
+  const hasActiveFilter = rating !== null || hasMediaOnly;
+
   return (
-    <span aria-label={`${rating} out of 5`} className="text-xl leading-none text-[#00696E]">
-      {"★".repeat(rating)}
-      <span className="text-[#E0E3E3]">{"★".repeat(5 - rating)}</span>
-    </span>
-  );
-}
+    <section className="border-t border-[#CAC4D0]/60 px-4 py-4 lg:px-6">
+      <h2 className="pb-3 text-sm tracking-[0.25px] text-[#191C1C]">Ratings and reviews</h2>
 
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <div className="flex items-center justify-between px-4 py-2 lg:px-6">
-      <span className="text-sm text-[#191C1C]">{title}</span>
-      <Image src={CHEVRON} width={20} height={20} alt="" className="opacity-70" />
-    </div>
-  );
-}
-
-function ThumbStrip({ images, alt }: { images: string[]; alt: string }) {
-  return (
-    <div className="flex gap-2 overflow-x-auto px-4 pb-1 lg:px-6">
-      {images.map((image) => (
-        <div
-          key={image}
-          className="relative size-18 shrink-0 overflow-hidden rounded border border-[#E0E3E3] bg-[#F5F5F5]"
-        >
-          <Image src={image} fill sizes="72px" alt={alt} className="object-cover" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export default function RatingsAndReviews() {
-  return (
-    <div className="border-t border-[#CAC4D0]/60 py-2">
-      {/* Header + rate button */}
-      <div className="flex items-center justify-between px-4 py-2 lg:px-6">
-        <h2 className="text-sm text-[#191C1C]">Ratings and reviews</h2>
-        <Image src={CHEVRON} width={20} height={20} alt="" className="opacity-70" />
-      </div>
-      <div className="px-4 py-2 lg:px-6">
-        <button
-          type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-[#6F7979] py-2.5 text-sm font-medium text-[#00696E]"
-        >
-          <Image
-            src="/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            width={18}
-            height={18}
-            alt=""
-          />
-          Rate product
-        </button>
-      </div>
-
-      {/* Rating summary — overall score plus per-dimension sub-scores */}
-      <div className="flex items-center gap-4 px-4 py-2 lg:px-6">
-        <div className="flex flex-col gap-1">
-          <span className="text-4xl font-medium text-[#191C1C]">4.8</span>
-          <Stars rating={5} />
-          <span className="text-xs font-medium text-[#6F7979]">
-            26,692 Ratings &amp; 2,432 Reviews
-          </span>
-        </div>
-        <div className="flex flex-1 flex-col gap-2">
-          {REVIEW_SUB_SCORES.map((subScore) => (
-            <div key={subScore.label} className="flex items-center gap-2">
-              <span className="w-14 text-xs text-[#6F7979]">{subScore.label}</span>
-              <span className="h-1 flex-1 overflow-hidden rounded-full bg-[#E0E3E3]">
-                <span
-                  className="block h-full rounded-full bg-[#00696E]"
-                  style={{ width: `${(subScore.score / 5) * 100}%` }}
-                />
-              </span>
-              <span className="text-xs font-medium text-[#191C1C]">{subScore.score}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Videos */}
-      <div className="py-2">
-        <SectionHeader title="Videos" />
-        <ThumbStrip images={VIDEOS} alt="Review video thumbnail" />
-      </div>
-
-      {/* Photos */}
-      <div className="py-2">
-        <SectionHeader title="Photos" />
-        <ThumbStrip images={PHOTOS} alt="Review photo" />
-      </div>
-
-      {/* Filter/sort chips */}
-      <div className="flex gap-2 overflow-x-auto px-4 py-2 lg:px-6">
-        {REVIEW_FILTER_CHIPS.map((chip, chipIndex) => (
-          <button
-            key={chip}
-            type="button"
-            aria-pressed={chipIndex === 0}
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs whitespace-nowrap ${
-              chipIndex === 0
-                ? "border-[#2A76FD] bg-[#D6E3FF]/40 font-medium text-[#191C1C]"
-                : "border-[#CAC4D0] text-[#6F7979]"
-            }`}
-          >
-            {chip}
-          </button>
-        ))}
-      </div>
-
-      {/* Reviews */}
-      {REVIEWS.map((review, reviewIndex) => (
-        <div key={reviewIndex} className="py-4">
-          <div className="flex gap-2 px-4 lg:px-6">
-            <div className="relative size-8 shrink-0 overflow-hidden rounded-full bg-[#F5F5F5]">
-              <Image src={review.avatar} fill sizes="32px" alt="" className="object-cover" />
-            </div>
-            <div className="flex-1">
-              <p className="text-[11px] font-medium text-black">{review.handle}</p>
-              <p className="text-xs font-medium text-[#A9ACAC]">{review.product}</p>
-              <Stars rating={review.rating} />
-              <p className="mt-1 text-xs font-medium text-black">{review.body}</p>
-              <p className="text-right text-xs font-medium text-[#2A76FD]">more</p>
-
-              {/* Review image grid */}
-              <div className="mt-1 flex gap-1">
-                {review.images.map((image) => (
-                  <div
-                    key={image}
-                    className="relative size-18 overflow-hidden rounded-[3px] bg-[#F5F5F5]"
-                  >
-                    <Image src={image} fill sizes="72px" alt="" className="object-cover" />
-                  </div>
-                ))}
-              </div>
-
-              <p className="mt-1 flex gap-1 text-[11px] font-medium text-black">
-                <span>{review.date}</span>
-                <span>•</span>
-                <span>{review.country}</span>
+      {!hasAnyReviews ? (
+        <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+          No reviews yet. Reviews can only be left by a buyer whose order completed, so this is a
+          new listing rather than an unpopular one.
+        </p>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-start gap-6 pb-3">
+            <div>
+              <p className="text-3xl leading-9 font-medium text-[#191C1C]">
+                {summary.averageRating === null ? "—" : summary.averageRating.toFixed(1)}
               </p>
-
-              {/* Actions */}
-              <div className="mt-1 flex items-center gap-4 text-[11px] font-medium text-black">
-                <span className="flex items-center gap-1">
-                  <Image
-                    src="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                    width={14}
-                    height={14}
-                    alt=""
-                  />
-                  {review.helpful}
-                </span>
-                <Image
-                  src="/icons/reply_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  width={14}
-                  height={14}
-                  alt="Reply"
-                />
-                <Image
-                  src="/icons/share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  width={14}
-                  height={14}
-                  alt="Share"
-                />
-              </div>
+              <p className="text-xs leading-4 text-[#6F7979]">
+                {formatCountLabel(summary.reviewCount)}{" "}
+                {summary.reviewCount === 1 ? "review" : "reviews"}
+              </p>
             </div>
-            <Image
-              src="/icons/more_vert_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              width={14}
-              height={14}
-              alt="More"
-              className="shrink-0"
-            />
+
+            <ul className="min-w-40 flex-1 space-y-1">
+              {RATING_VALUES.map((ratingValue) => {
+                const count = summary.ratingHistogram[`rating${ratingValue}`];
+                const sharePercentage =
+                  summary.reviewCount === 0 ? 0 : (count / summary.reviewCount) * 100;
+                return (
+                  <li key={ratingValue} className="flex items-center gap-2">
+                    <span className="w-3 text-[11px] text-[#6F7979]">{ratingValue}</span>
+                    <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E0E3E3]">
+                      <span
+                        className="block h-full rounded-full bg-[#00696E]"
+                        style={{ width: `${sharePercentage}%` }}
+                      />
+                    </span>
+                    <span className="w-8 text-right text-[11px] text-[#6F7979]">{count}</span>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
 
-          {/* Verified purchase */}
-          <div className="mt-4 flex items-center justify-center gap-2 px-14 text-[11px] font-medium text-[#6F7979]">
-            <span className="h-px w-6 bg-[#CAC4D0]" />
-            Verified Purchase
-            <Image
-              src="/icons/verified_24dp_00696E_FILL1_wght400_GRAD0_opsz24.svg"
-              width={14}
-              height={14}
-              alt=""
-            />
-          </div>
-        </div>
-      ))}
+          {/* Sub-scores, each with its own sample size. A null average is "not enough ratings on
+              this dimension yet", never a zero. */}
+          <ul className="flex flex-wrap gap-4 pb-3">
+            {(
+              [
+                ["Service", summary.scoreAverages.service],
+                ["Shipping", summary.scoreAverages.shipping],
+                ["Quality", summary.scoreAverages.quality],
+              ] as const
+            ).map(([label, score]) => (
+              <li key={label} className="text-xs leading-4 text-[#6F7979]">
+                {label}:{" "}
+                <span className="font-medium text-[#191C1C]">
+                  {score.average === null ? "Not rated yet" : score.average.toFixed(1)}
+                </span>
+                {score.count > 0 && <span> ({score.count})</span>}
+              </li>
+            ))}
+          </ul>
 
-      {/* Footer link */}
-      <div className="border-t border-[#CAC4D0]/60">
-        <Link
-          href="#"
-          className="flex items-center justify-between px-4 py-3 text-sm text-[#191C1C] lg:px-6"
-        >
-          All ratings and reviews
-          <Image src={CHEVRON} width={20} height={20} alt="" className="opacity-70" />
-        </Link>
+          {/* Every chip below drives a QUERY PARAMETER. */}
+          <div className="flex flex-wrap gap-2 pb-3">
+            {REVIEW_SORTS.map((sortOption) => (
+              <button
+                key={sortOption}
+                type="button"
+                aria-pressed={sort === sortOption}
+                onClick={() => setSort(sortOption)}
+                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                  sort === sortOption
+                    ? "border-[#00696E] bg-[#00696E]/10 font-medium text-[#00696E]"
+                    : "border-[#CAC4D0] text-[#6F7979]"
+                }`}
+              >
+                {REVIEW_SORT_LABELS[sortOption]}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-2 pb-3">
+            {RATING_VALUES.map((ratingValue) => (
+              <button
+                key={ratingValue}
+                type="button"
+                aria-pressed={rating === ratingValue}
+                onClick={() => setRating(rating === ratingValue ? null : ratingValue)}
+                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                  rating === ratingValue
+                    ? "border-[#00696E] bg-[#00696E]/10 font-medium text-[#00696E]"
+                    : "border-[#CAC4D0] text-[#6F7979]"
+                }`}
+              >
+                {ratingValue} star
+              </button>
+            ))}
+            {summary.reviewsWithMediaCount > 0 && (
+              <button
+                type="button"
+                aria-pressed={hasMediaOnly}
+                onClick={() => setHasMediaOnly(!hasMediaOnly)}
+                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                  hasMediaOnly
+                    ? "border-[#00696E] bg-[#00696E]/10 font-medium text-[#00696E]"
+                    : "border-[#CAC4D0] text-[#6F7979]"
+                }`}
+              >
+                With photos ({summary.reviewsWithMediaCount})
+              </button>
+            )}
+          </div>
+
+          {items.length === 0 ? (
+            <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
+              {hasActiveFilter ? "No reviews match those filters." : "No reviews on this page."}
+            </p>
+          ) : (
+            <ul className="space-y-4">
+              {items.map((review) => (
+                <li key={review.id}>
+                  <ReviewCard review={review} />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* MORE PAGES EXIST AND THIS SECTION DOES NOT PAGE THEM. Said rather than hidden: a
+              buyer who has read twelve reviews needs to know the thirteenth exists. The cursor
+              belongs to the reviews route, and following it here would grow the product page into
+              an unbounded list. */}
+          {result.data.page.hasMore && (
+            <p className="pt-3 text-xs leading-4 text-[#6F7979]">
+              Showing the first {items.length} of {formatCountLabel(summary.reviewCount)} reviews.
+            </p>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function ReviewCard({ review }: { readonly review: StoreReview }) {
+  const photos = review.media.filter((media) => media.mediaKind === "photo");
+  const videos = review.media.filter((media) => media.mediaKind === "youtube_video");
+
+  return (
+    <article className="border-b border-[#CAC4D0]/60 pb-4">
+      <div className="flex items-center gap-2 pb-1">
+        <span className="rounded bg-[#00696E] px-1.5 py-0.5 text-[11px] font-medium text-white">
+          {review.rating.toFixed(1)}
+        </span>
+        {/* A null reviewer is an organization that is not publicly visible. Its identity is not
+            disclosed by the act of leaving a review. */}
+        <span className="text-xs font-medium text-[#191C1C]">
+          {review.reviewer?.displayName ?? "Verified buyer"}
+        </span>
+        <span className="text-[11px] text-[#6F7979]">
+          {formatIsoInstantLabel(review.createdAt)}
+        </span>
       </div>
-    </div>
+
+      <p className="text-sm leading-5 whitespace-pre-line text-[#191C1C]">{review.body}</p>
+
+      {photos.length > 0 && (
+        <ul className="flex gap-2 pt-2">
+          {photos.map((photo) => (
+            <li key={photo.id} className="relative size-16 overflow-hidden rounded bg-[#F5F5F5]">
+              {photo.url !== null && (
+                <Image src={photo.url} fill sizes="64px" alt="" className="object-cover" />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Review video is a YOUTUBE ID. There is no first-party video ingest anywhere in this
+          domain, so this links out rather than pretending to host anything. */}
+      {videos.length > 0 && (
+        <ul className="flex flex-wrap gap-3 pt-2">
+          {videos.map((video) => (
+            <li key={video.id}>
+              {video.youtubeVideoId !== null && (
+                <a
+                  href={`https://www.youtube.com/watch?v=${video.youtubeVideoId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-medium text-[#2A76FD]"
+                >
+                  Watch buyer video
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex items-center gap-3 pt-2">
+        <span className="text-[11px] text-[#6F7979]">
+          {formatCountLabel(review.helpfulCount)} found this helpful
+        </span>
+      </div>
+
+      {review.reply !== null && (
+        <div className="mt-2 rounded-lg bg-[#F2F4F4] px-3 py-2">
+          <p className="text-[11px] font-medium text-[#191C1C]">
+            {review.reply.responder?.displayName ?? "Seller"} replied
+          </p>
+          <p className="text-xs leading-4 whitespace-pre-line text-[#191C1C]">
+            {review.reply.body}
+          </p>
+        </div>
+      )}
+    </article>
   );
 }

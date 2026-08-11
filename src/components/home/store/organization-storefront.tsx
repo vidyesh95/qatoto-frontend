@@ -1,5 +1,5 @@
-// TRANSPORT: server-fetch — the route fetches via `getOrganizationStorefront` and hands
-// the parsed storefront down. Nothing below re-fetches.
+// TRANSPORT: server-fetch — awaits `getOrganizationStorefront` and branches on the result.
+// Nothing below re-fetches.
 //
 // The seller storefront: who this company is, what the platform has measured about it,
 // what it says about itself, and what it sells.
@@ -9,8 +9,11 @@
 // catalog closes. A page that opened with the seller's own prose would be a brochure.
 
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
+import { getOrganizationStorefront } from "@/lib/store/organizations.api";
 import type { OrganizationStorefrontView } from "@/lib/store/organizations.schemas";
+import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
 import StorefrontCapabilities from "@/components/home/store/sections/organization/storefront-capabilities";
 import StorefrontCatalog from "@/components/home/store/sections/organization/storefront-catalog";
 import StorefrontCertifications from "@/components/home/store/sections/organization/storefront-certifications";
@@ -25,11 +28,42 @@ import StorefrontSiteAccess from "@/components/home/store/sections/organization/
 import StorefrontStakeholders from "@/components/home/store/sections/organization/storefront-stakeholders";
 import { StorefrontDivider } from "@/components/home/store/sections/organization/storefront-section";
 
-export default function OrganizationStorefront({
-  storefront,
+type StorefrontViewState =
+  | { status: "error"; message: string }
+  | { status: "ready"; storefront: OrganizationStorefrontView };
+
+export default async function OrganizationStorefront({
+  organizationSlug,
 }: {
-  storefront: OrganizationStorefrontView;
+  organizationSlug: string;
 }) {
+  const result = await getOrganizationStorefront(organizationSlug);
+
+  // A 404 is the route's answer, not the page's. The backend answers 404 for "no such storefront"
+  // AND for "not visible to you" with one code — never render a permission hint from one.
+  if (!result.success && result.error.code === "404") notFound();
+
+  const viewState: StorefrontViewState = result.success
+    ? { status: "ready", storefront: result.data }
+    : { status: "error", message: result.error.message };
+
+  switch (viewState.status) {
+    case "error":
+      return (
+        <div className="mx-auto w-full max-w-md px-4 pt-6 pb-24 md:max-w-2xl lg:max-w-6xl lg:px-6">
+          <StoreErrorPanel message={viewState.message} />
+        </div>
+      );
+    case "ready":
+      return <StorefrontBody storefront={viewState.storefront} />;
+    default: {
+      const exhaustiveCheck: never = viewState;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+function StorefrontBody({ storefront }: { storefront: OrganizationStorefrontView }) {
   const declaredProfile = storefront.declaredProfile;
   const frontendOnlyProfile = storefront.frontendOnlyProfile;
 
@@ -42,7 +76,7 @@ export default function OrganizationStorefront({
     <div className="mx-auto w-full max-w-md pb-24 md:max-w-2xl md:pb-12 lg:max-w-6xl">
       <StorefrontHero storefront={storefront} />
 
-      <StorefrontContactActions />
+      <StorefrontContactActions sellerDisplayName={storefront.displayName} />
 
       <StorefrontDivider />
 

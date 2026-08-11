@@ -1,4 +1,4 @@
-// TRANSPORT: mock — reads the shared mock seller record. NOTHING here reaches a backend yet.
+// TRANSPORT: props-only — renders the declared profile it was handed, no network.
 //
 // Capabilities and certifications. Reads the same seller record the storefront page renders, so
 // the two cannot disagree — it used to hold its own hardcoded list.
@@ -8,23 +8,32 @@
 // the platform has adjudicated is a certification with an `approvedAt`, and that is the only
 // thing carrying the verified mark.
 //
-// Wire-able from `GET /store/organizations/:slug` → `declaredProfile.capabilities` /
-// `.certifications`, which is the shape the mock already has. Lapsing stays a render-time
-// `validUntil < today` comparison — there is no `expired` field on the wire and a stored one
-// would be wrong between nightly ticks.
+// Fed by `GET /store/organizations/:slug` → `declaredProfile.capabilities` / `.certifications`.
+// Lapsing stays a render-time `validUntil < today` comparison — there is no `expired` field on the
+// wire and a stored one would be wrong between nightly ticks.
 "use client";
 
 import Image from "next/image";
 
 import StoreSheet from "@/components/home/store/shared/store-sheet";
-import { CAPABILITY_KIND_ICONS, CAPABILITY_KIND_LABELS } from "@/lib/store/organizations.schemas";
-import { MOCK_PRODUCT_SELLER_STOREFRONT } from "@/mocks/store-organization-mocks";
+import {
+  CAPABILITY_KIND_ICONS,
+  CAPABILITY_KIND_LABELS,
+  type SellerDeclaredProfile,
+} from "@/lib/store/organizations.schemas";
 
-const DECLARED_PROFILE = MOCK_PRODUCT_SELLER_STOREFRONT.declaredProfile;
-const PRODUCTION_CAPABILITIES = DECLARED_PROFILE?.capabilities ?? [];
-const CERTIFICATIONS = DECLARED_PROFILE?.certifications ?? [];
+export default function VerifiedCapabilitiesSheet({
+  declaredProfile,
+  onClose,
+}: {
+  /** `null` when this seller has never described itself — a different fact from describing itself
+   * and leaving the lists empty, which is why the empty state below distinguishes them. */
+  readonly declaredProfile: SellerDeclaredProfile | null;
+  readonly onClose: () => void;
+}) {
+  const productionCapabilities = declaredProfile?.capabilities ?? [];
+  const certifications = declaredProfile?.certifications ?? [];
 
-export default function VerifiedCapabilitiesSheet({ onClose }: { onClose: () => void }) {
   return (
     <StoreSheet title="Capabilities and certifications" onClose={onClose}>
       <p className="px-4 pb-2 text-xs text-[#6F7979]">
@@ -32,8 +41,15 @@ export default function VerifiedCapabilitiesSheet({ onClose }: { onClose: () => 
       </p>
 
       <div className="px-4 pb-5">
+        {productionCapabilities.length === 0 && (
+          <p className="rounded-lg bg-[#F2F4F4] px-3 py-3 text-xs leading-4 text-[#6F7979]">
+            {declaredProfile === null
+              ? "This seller has not published a company profile yet."
+              : "This seller has not listed any production capabilities."}
+          </p>
+        )}
         <ul className="flex flex-col gap-4">
-          {PRODUCTION_CAPABILITIES.map((capability) => (
+          {productionCapabilities.map((capability) => (
             <li key={capability.id} className="flex gap-3">
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#D6E3FF]">
                 <Image
@@ -64,8 +80,13 @@ export default function VerifiedCapabilitiesSheet({ onClose }: { onClose: () => 
           />
           <p className="text-sm font-medium text-[#191C1C]">Certifications</p>
         </div>
+        {certifications.length === 0 && (
+          <p className="rounded-lg bg-[#F2F4F4] px-3 py-3 text-xs leading-4 text-[#6F7979]">
+            No certificates submitted.
+          </p>
+        )}
         <ul className="flex flex-col gap-2">
-          {CERTIFICATIONS.map((certification) => (
+          {certifications.map((certification) => (
             <li
               key={certification.id}
               className="flex items-center gap-2 rounded-lg bg-[#F2F4F4] px-3 py-2"

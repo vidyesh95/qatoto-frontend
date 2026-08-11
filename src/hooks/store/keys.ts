@@ -42,6 +42,18 @@ export const storeKeys = {
   viewerOrganizations: () => ["store", "organizations", "mine"] as const,
 
   /**
+   * An organization's saved addresses.
+   *
+   * Keyed by the organization id BECAUSE THE ROUTE IS — this is the one place an id belongs in a
+   * key on this surface, since it addresses the resource rather than asserting a permission. The
+   * id itself came from the server (`/organizations/mine`), never from client storage.
+   *
+   * The rows carry decrypted PII, so this entry must not be persisted anywhere.
+   */
+  organizationAddresses: (organizationId: string) =>
+    ["store", "organizations", organizationId, "addresses"] as const,
+
+  /**
    * An order list, keyed by WHICH ENDPOINT it came from.
    *
    * `"buyer"` and `"provider"` are two different reads with two different authorizations — not one read
@@ -90,6 +102,54 @@ export const storeKeys = {
    * for the same reason `cart` has none: the active organization is server-derived.
    */
   providerOfferingsMine: () => ["store", "provider", "offerings", "mine"] as const,
+
+  /**
+   * A product's engagement counters plus the caller's own save/bookmark state.
+   *
+   * Keyed by SLUG, because that is what every engagement route is addressed by, and the product
+   * page has the slug before it has the id.
+   *
+   * The server component already rendered this object with the page; the client entry exists so a
+   * toggle has somewhere authoritative to write the server's response back to. That is also why
+   * nothing here is optimistic — see `useProductEngagement`.
+   */
+  productEngagement: (productSlug: string) =>
+    ["store", "products", productSlug, "engagement"] as const,
+
+  /**
+   * One page of a product's reviews, keyed by the FILTER as well as the slug.
+   *
+   * The filter is in the key because sorting and rating filters are SERVER reads: two filters are
+   * two different answers, and sharing one entry would show the previous filter's rows while the
+   * new one loads.
+   */
+  productReviews: (productSlug: string, filterKey: string) =>
+    ["store", "products", productSlug, "reviews", filterKey] as const,
+
+  productQuestions: (productSlug: string) =>
+    ["store", "products", productSlug, "questions"] as const,
+  productQuestionAnswers: (productSlug: string, questionId: string) =>
+    ["store", "products", productSlug, "questions", questionId, "answers"] as const,
+
+  /**
+   * An indicative delivery estimate, keyed by destination AND quantity.
+   *
+   * Both change the answer — a heavier consignment prices from a different weight break — so
+   * neither may be dropped from the key.
+   */
+  productDeliveryEstimate: (
+    productSlug: string,
+    destinationCountryCode: string,
+    quantity: number,
+  ) =>
+    [
+      "store",
+      "products",
+      productSlug,
+      "delivery-estimate",
+      destinationCountryCode,
+      quantity,
+    ] as const,
 
   // NO KEY FOR THE DELIVERY-ADDRESS REVEAL, deliberately. It is a mutation, and caching decrypted PII
   // under an order id is how it ends up in a devtools panel and a persisted cache. See

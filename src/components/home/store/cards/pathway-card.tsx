@@ -1,32 +1,53 @@
 // TRANSPORT: props-only — renders one pathway tile it is handed, no network.
+//
+// The rail card for a guided set. `/store/pathways/<slug>`, PLURAL — this used to link at
+// `/store/pathway/<slug>`, which has been redirect-only since the plural route shipped, so every
+// tap took a visible meta-refresh pause before landing on the same page.
+//
+// `slotCount` is deliberately absent: `GET /store/home` selects seven pathway columns and does not
+// compute the eighth, so this card says how the set was BUILT rather than how big it is. The
+// `/store/pathways` index card, which reads a projection that does carry the count, shows it.
+
 import Image from "next/image";
 import Link from "next/link";
-import type { Pathway } from "@/types/store";
 
-// Portrait card for the "Pathways for you" rail. Tapping opens the pathway
-// detail page where the user buys the whole look or individual items from it.
-export default function PathwayCard({ pathway }: { pathway: Pathway }) {
+import { accentSurfaceClass } from "@/lib/store/labels";
+import type { StoreHomePathwayCard } from "@/lib/store/merchandising.schemas";
+
+export default function PathwayCard({ pathway }: { pathway: StoreHomePathwayCard }) {
   return (
     <Link
-      href={`/store/pathway/${pathway.slug}`}
-      className="group relative flex w-44 shrink-0 flex-col sm:w-52"
+      href={`/store/pathways/${pathway.slug}`}
+      className="group flex w-44 shrink-0 flex-col overflow-hidden rounded-xl border border-[#CAC4D0]/60 transition-colors hover:border-[#2A76FD] sm:w-52"
     >
       <div
-        className={`pointer-events-none absolute inset-0 -z-10 -m-2 rounded-2xl transition-colors ${pathway.hoverBg ?? "group-hover:bg-gray-100"}`}
-      />
-      <div className="relative aspect-3/4 w-full overflow-hidden rounded-xl">
-        <Image
-          src={pathway.imageSrc}
-          fill
-          sizes="(min-width: 640px) 208px, 176px"
-          alt={pathway.title}
-          className="object-cover transition duration-300 group-hover:scale-105"
-        />
+        className={`relative aspect-video w-full overflow-hidden ${accentSurfaceClass(pathway.accent)}`}
+      >
+        {pathway.cardImageUrl !== null && (
+          <Image
+            src={pathway.cardImageUrl}
+            fill
+            sizes="(min-width: 640px) 208px, 176px"
+            alt={pathway.title}
+            className="object-cover transition duration-300 group-hover:scale-105"
+          />
+        )}
       </div>
-      <div className="mt-1.5 px-0.5">
-        <p className="truncate text-sm font-semibold">{pathway.title}</p>
-        {pathway.subtitle && (
-          <p className="truncate text-xs text-foreground/60">{pathway.subtitle}</p>
+
+      <div className="flex flex-1 flex-col gap-1 px-3 py-2.5">
+        {/* One model, two shapes. An anchored set's slots were RESOLVED from the relation graph
+            against one product rather than typed by a merchandiser, and saying so tells the buyer
+            why these pieces are here. */}
+        {pathway.isAnchored && (
+          <span className="w-fit rounded bg-[#F2F4F4] px-1.5 py-0.5 text-[11px] leading-4 font-medium text-[#00696E]">
+            Built around one product
+          </span>
+        )}
+
+        <p className="text-sm leading-5 font-medium text-[#191C1C]">{pathway.title}</p>
+
+        {pathway.summary !== null && (
+          <p className="line-clamp-2 text-xs leading-4 text-[#6F7979]">{pathway.summary}</p>
         )}
       </div>
     </Link>

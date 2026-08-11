@@ -21,13 +21,12 @@ import type {
   OrderSummary,
 } from "@/lib/store/orders.schemas";
 
-/**
- * The organizations the mock caller belongs to.
- *
- * Stands in for `GET /commerce/organizations/mine`. The caller is a BUYER at `org_buyer_mock` and a
- * SELLER at `org_puda`, which is what lets the same `order-detail.tsx` be seen from both sides.
- */
-export const MOCK_VIEWER_ORGANIZATION_IDS: readonly string[] = ["org_buyer_mock", "org_puda"];
+// `MOCK_VIEWER_ORGANIZATION_IDS` is GONE: `listViewerOrganizationIds` reads
+// `GET /commerce/organizations/mine` for real now. The fixture claimed the caller was a buyer at
+// `org_buyer_mock` and a seller at `org_puda`, which is what let one `order-detail.tsx` be viewed
+// from both sides — against the real route a caller is whichever organizations it actually belongs
+// to, and the order fixtures below are keyed on ids no real membership will match. Those are the
+// next things to wire.
 
 const BUYER_LEGAL_NAME = "Kuberhunt Procurement Pvt Ltd";
 const PUDA_LEGAL_NAME = "Guangdong Puda Electrical Appliance Co., Ltd";

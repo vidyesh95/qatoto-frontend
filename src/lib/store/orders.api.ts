@@ -1,8 +1,9 @@
 // TRANSPORT: client-query — orders and engagements are session-scoped, so they are read from client
 // islands rather than server components. `RequestOptions` is threaded so a server read could be added.
 //
-// MOCK-BACKED: every call resolves a fixture. To wire one, swap `resolveMockRead` for `getJson`, or the
-// mock write for the `sendJson` line beside it, and drop the fixture argument.
+// PARTIALLY MOCK-BACKED: `listViewerOrganizationIds` is WIRED. Every other call still resolves a
+// fixture. To wire one, swap `resolveMockRead` for `getJson`, or the mock write for the `sendJson`
+// line beside it, and drop the fixture argument.
 
 import {
   buildQueryString,
@@ -23,10 +24,10 @@ import {
 } from "@/lib/store/fulfillment.schemas";
 import { resolveMockDetail, resolveMockRead } from "@/lib/store/mock-transport";
 import {
+  MyOrganizationListSchema,
   OrderDeliveryAddressSchema,
   OrderDetailSchema,
   OrderListPageSchema,
-  OrganizationIdListSchema,
   type ListOrdersFilter,
   type OrderDeliveryAddress,
   type OrderDetail,
@@ -40,7 +41,6 @@ import {
   MOCK_ORDER_DETAILS_BY_ID,
   MOCK_ORDER_FULFILLMENTS_BY_ID,
   MOCK_PROVIDER_ORDER_LIST,
-  MOCK_VIEWER_ORGANIZATION_IDS,
 } from "@/mocks/store/orders-mocks";
 
 /**
@@ -53,14 +53,15 @@ import {
  * It is a SERVER read, not a client assertion. The client never decides which organization it is — it
  * asks, compares, and then only decides what to OFFER. Every action is re-authorized server-side.
  */
-export function listViewerOrganizationIds(
+export async function listViewerOrganizationIds(
   options?: RequestOptions,
 ): Promise<ActionResponse<readonly string[]>> {
   const path = "/commerce/organizations/mine";
-  return resolveMockRead(path, OrganizationIdListSchema, options, MOCK_VIEWER_ORGANIZATION_IDS);
-  // Wiring note: the real read returns `{organization, membership}[]`, so this becomes
-  // `getJson(path, MyOrganizationListSchema, options)` and the caller maps to ids — the mapping
-  // belongs above this line, not in the schema.
+  const result = await getJson(path, MyOrganizationListSchema, options);
+  if (!result.success) return result;
+  // The mapping lives here rather than in the schema: the schema's job is to describe what the
+  // backend sends, and `{organization, membership}[]` is what it sends.
+  return { success: true, data: result.data.map((row) => row.organization.id) };
 }
 
 /** Buyer-scoped orders. A different endpoint from the provider queue, with different rows. */
