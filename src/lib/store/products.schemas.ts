@@ -38,6 +38,7 @@ import {
 } from "@/lib/store/organizations.schemas";
 import { StoreCategorySchema } from "@/lib/store/catalog.schemas";
 import { FreightLanePlanSchema } from "@/lib/store/freight.schemas";
+import { DeliveryEstimateBasisSchema, DeliveryEstimateSchema } from "@/lib/store/cart.schemas";
 import { PRODUCT_RELATION_KINDS } from "@/lib/store/merchandising.schemas";
 import { cursorPageOf, IsoDateTimeSchema } from "@/lib/store/shared.schemas";
 
@@ -264,41 +265,25 @@ export const ProductCompanionsSchema = z
 
 // --- Delivery estimate ------------------------------------------------------
 
-export const ProductDeliveryEstimateBasisSchema = z
-  .object({
-    originCountryCode: z.string().nullable(),
-    destinationCountryCode: z.string(),
-    billableWeightGrams: z.number().int().nullable(),
-    packageCount: z.number().int().nullable(),
-    // The honest half: a seller who never declared package geometry produces an estimate with no
-    // weight behind it, and the buyer should be able to tell that from one backed by real numbers.
-    hasIncompletePackageData: z.boolean(),
-  })
-  .strip();
-
-export const ProductDeliveryEstimateSchema = z
-  .object({
-    currency: z.string(),
-    estimatedMinInCents: z.number().int(),
-    estimatedMaxInCents: z.number().int(),
-    // DAYS, NEVER A DATE. Qatoto owns no shipping network, so a date it cannot keep is a promise it
-    // has no business making. See §19 for what an arrival WINDOW would take.
-    leadTimeMinDays: z.number().int().nullable(),
-    leadTimeMaxDays: z.number().int().nullable(),
-    basis: ProductDeliveryEstimateBasisSchema,
-    derivedFrom: z.array(
-      z
-        .object({
-          offeringId: z.string(),
-          offeringSlug: z.string(),
-          providerOrganizationSlug: z.string(),
-          providerDisplayName: z.string(),
-          providerKind: z.string(),
-        })
-        .strip(),
-    ),
-  })
-  .strip();
+// THE THREE DELIVERY-ESTIMATE SHAPES LIVE IN `cart.schemas.ts` AND ARE IMPORTED HERE.
+//
+// This file used to declare its own byte-identical copies — `ProductDeliveryEstimateBasisSchema`,
+// `ProductDeliveryEstimateSchema` and an INLINE `derivedFrom` row — beside the ones the checkout
+// prepare read already had. Four shapes, two files, one wire contract.
+//
+// It is the same projection on both routes: `GET /store/products/:slug/delivery-estimate` and the
+// `deliveryEstimates` block on `POST /commerce/checkout/prepare` are built by the same service. Two
+// copies means two places to update when a field is added, and the one that gets missed fails a
+// parse on whichever surface nobody was looking at.
+//
+// `cart.schemas.ts` OWNS THEM because the checkout copy carried the named
+// `DeliveryEstimateSourceOfferingSchema` rather than an inline object, and because nothing in
+// `cart.schemas.ts` imports this file — so the dependency runs one way and cannot cycle.
+//
+// The `Product…` names survive as aliases: they read correctly at the product-page call sites and
+// renaming forty references buys nothing.
+export const ProductDeliveryEstimateBasisSchema = DeliveryEstimateBasisSchema;
+export const ProductDeliveryEstimateSchema = DeliveryEstimateSchema;
 
 /**
  * `estimates: []` MEANS NO PROVIDER COVERS THIS ROUTE. It does not mean free.

@@ -28,6 +28,8 @@ import ProviderKindBadge from "@/components/commerce/shared/provider-kind-badge"
 import OrderDeliveryAddressReveal from "@/components/commerce/sections/order-delivery-address-reveal";
 import OrderArrivalWindowPanel from "@/components/commerce/sections/order-arrival-window-panel";
 import OrderFulfillmentPanel from "@/components/commerce/sections/order-fulfillment-panel";
+import OrderPaymentPanel from "@/components/commerce/sections/order-payment-panel";
+import SettlementAttestationPanel from "@/components/commerce/sections/settlement-attestation-panel";
 import StatusPanel from "@/components/home/shared/status-panel";
 import OrderCancelControl from "@/components/commerce/sections/order-cancel-control";
 import TabStrip from "@/components/home/shared/tab-strip";
@@ -171,10 +173,35 @@ function OrderBody({
               <div className="space-y-4 px-4 pb-4 lg:px-6">
                 <DefinitionList items={commercialTerms} />
                 <OrderMoneyBreakdown order={order} />
+                {/* BUYER-SIDE ONLY, because `POST …/payment-intents` carries
+                    `requireActiveBuyerCommerceOrganization` — a seller pressing it would get a 403.
+                    The panel still READS the intent and the refunds for whoever can see the order,
+                    so a seller is not shown a pay button; they are simply not shown this block.
+                    Showing it read-only to the seller is the obvious next step and wants its own
+                    decision about what a seller should learn from a buyer's payment state. */}
+                {isBuyerSide && (
+                  <OrderPaymentPanel orderId={order.id} paymentIntentId={order.paymentIntentId} />
+                )}
                 {/* Only a counterparty can reveal the address, and only past `confirmed`. The control
                     itself explains what pressing it does — see its own file. */}
                 {isCounterpartySide && (
                   <OrderDeliveryAddressReveal orderId={order.id} orderState={order.state} />
+                )}
+                {/* BOTH SIDES, AND ONLY ON THE OFFLINE RAIL. The buyer records `payment_sent` and
+                    the seller `payment_received` — the server derives which from the order, so
+                    neither can claim the other's half. Gated on the rail rather than left to the
+                    panel's own `isAttestable` so that a processor or escrow order does not spend a
+                    request to be told there is nothing to record. */}
+                {order.settlementRail === "direct_offline" && (
+                  <SettlementAttestationPanel
+                    orderId={order.id}
+                    /* WHICH CLAIM THIS VIEWER OWNS. The server derives the kind from the order and
+                       ignores anything the client says, so this is purely so the panel labels the
+                       right half and does not offer a form for a claim already made. `both` — an
+                       organization trading with itself — resolves to the buyer's half, matching the
+                       server's own tie-break in `resolveAttestationKind`. */
+                    viewerAttestationKind={isBuyerSide ? "payment_sent" : "payment_received"}
+                  />
                 )}
                 {/* BOTH SIDES, because the service accepts the buyer OR the counterparty. This used to be a
                     buyer-only line of copy pointing at a cancel control on the orders list that did not

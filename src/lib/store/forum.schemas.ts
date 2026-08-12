@@ -171,14 +171,12 @@ export const ForumReplySchema = z
      * reputational act, and this surface has no appeal process to put behind it.
      */
     helpfulCount: z.number().int(),
-    /**
-     * Whether a moderator has hidden this reply.
-     *
-     * A HIDDEN REPLY STILL OCCUPIES ITS PLACE IN THE THREAD rather than vanishing, because a
-     * conversation with a silent hole in it reads as though the answer above it was never
-     * challenged. Render the removal, not the text.
-     */
-    visibilityState: z.enum(FORUM_REPLY_VISIBILITY_STATES),
+    // NO `visibilityState`, AND THAT IS THE BACKEND'S DECISION RATHER THAN AN OMISSION HERE.
+    // This schema used to require one so the thread could render a "removed by a moderator"
+    // tombstone in place. The read filters `state = 'visible'` and its own comment says why —
+    // "a hidden reply leaves the public read entirely; it is not shown as a tombstone" — so the
+    // field would have been the constant `"visible"` on every row that ever arrived, which is
+    // exactly the fabricated-signal shape A13 exists to refuse.
     /**
      * This reader's own vote, or `null` when there is no reader to have one.
      *
@@ -189,7 +187,9 @@ export const ForumReplySchema = z
      */
     viewer: z
       .object({
-        hasMarkedHelpful: z.boolean(),
+        // `hasVotedHelpful` IS THE WIRE'S SPELLING. This said `hasMarkedHelpful`, which nothing
+        // ever sent — one spelling per concept, and the backend owns which one.
+        hasVotedHelpful: z.boolean(),
       })
       .strip()
       .nullable(),
@@ -270,16 +270,10 @@ export interface CreateForumThreadInput {
  * `state` COMES BACK `pending_review`. See the file header for why that is the design and not a
  * placeholder. The success screen must not say "posted", "live" or "published".
  */
-export const CreatedForumThreadSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    board: z.enum(FORUM_BOARDS),
-    title: z.string(),
-    state: z.enum(FORUM_THREAD_STATES),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+// IT ANSWERS THE CARD, not a raw row. `createForumThread` returns `ForumThreadCardProjection`,
+// which carries `lastActivityAt` and NO `createdAt` — so the `createdAt` this schema used to
+// require was never on the wire and the create would have failed its parse on the first live post.
+export const CreatedForumThreadSchema = ForumThreadCardSchema;
 
 // --- Replies, answers and endorsements --------------------------------------
 //
@@ -301,14 +295,10 @@ export interface CreateForumReplyInput {
   readonly body: string;
 }
 
-export const CreatedForumReplySchema = z
-  .object({
-    id: z.string(),
-    threadId: z.string(),
-    body: z.string(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+// NO `threadId` ON THE WIRE. The route is already thread-scoped — the id is in the path the caller
+// just posted to — so the reply projection does not repeat it, and requiring it here failed the
+// parse. The caller knows the thread it wrote to.
+export const CreatedForumReplySchema = ForumReplySchema;
 
 /**
  * `POST …/accepted-reply` — the thread author marks the answer. `DELETE` unmarks it.
@@ -326,13 +316,10 @@ export interface AcceptForumReplyInput {
  * The same object answers `DELETE`, with `acceptedReplyId` back to `null` and `state` back to
  * `open`. `null` STILL DOES NOT MEAN "nobody helped" — it means nobody pressed the button.
  */
-export const ForumThreadAnswerStateSchema = z
-  .object({
-    threadId: z.string(),
-    acceptedReplyId: z.string().nullable(),
-    state: z.enum(FORUM_THREAD_STATES),
-  })
-  .strip();
+// THE WHOLE CARD COMES BACK, keyed `id` and not `threadId`. Both halves of the pair answer with
+// `ForumThreadCardProjection`, which already carries `acceptedReplyId` and the derived `state` —
+// the two fields this schema was built to read — plus `replyCount` and `lastActivityAt`.
+export const ForumThreadAnswerStateSchema = ForumThreadCardSchema;
 
 /**
  * What `PUT|DELETE …/helpful` answers with.
@@ -346,12 +333,15 @@ export const ForumThreadAnswerStateSchema = z
 export const ForumReplyHelpfulStateSchema = z
   .object({
     replyId: z.string(),
+    /**
+     * FLAT, NOT NESTED UNDER `viewer`.
+     *
+     * The read's per-reply `viewer` object is nullable because an anonymous reader has no vote to
+     * report. This is the answer to a WRITE, which only a signed-in caller can make, so there is no
+     * null case and no object to wrap it in — the caller is by construction the viewer.
+     */
+    isHelpful: z.boolean(),
     helpfulCount: z.number().int(),
-    viewer: z
-      .object({
-        hasMarkedHelpful: z.boolean(),
-      })
-      .strip(),
   })
   .strip();
 
@@ -382,8 +372,14 @@ export const OwnForumThreadSchema = z
      * state the wire does not carry.
      */
     moderatedAt: IsoDateTimeSchema.nullable(),
-    /** The moderator's reason. Required on a rejection, so non-null whenever one happened. */
-    moderationNote: z.string().nullable(),
+    /**
+     * The moderator's reason. Required on a rejection, so non-null whenever one happened.
+     *
+     * `decisionReason` IS THE WIRE'S SPELLING — this said `moderationNote`, which nothing sends.
+     * The column, the projection and the moderation body all say `decisionReason`; one spelling per
+     * concept, and the backend owns which one.
+     */
+    decisionReason: z.string().nullable(),
     lastActivityAt: IsoDateTimeSchema,
     createdAt: IsoDateTimeSchema,
   })
@@ -406,16 +402,21 @@ export interface CreateCommunityReportInput {
   readonly targetKind: CommunityReportTargetKind;
   readonly targetId: string;
   readonly reason: CommunityReportReason;
-  readonly note?: string;
+  /**
+   * `detailText` IS THE WIRE'S SPELLING. This was `note`, which the `.strict()` body refuses —
+   * one 422 for the unrecognized key, and the prose lost with it.
+   */
+  readonly detailText?: string;
 }
 
-export const CreatedCommunityReportSchema = z
-  .object({
-    id: z.string(),
-    state: z.enum(COMMUNITY_REPORT_STATES),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+// IT ANSWERS `{ reportId }` AND NOTHING ELSE.
+//
+// This required `id`, `state` and `createdAt`; the service returns a single id, so all three were
+// absent and the report write would have failed its parse. That is the right shape for the route —
+// a reporter is told their claim was filed, and the queue it lands in is a moderator's read, not
+// theirs. Do not restore `state` here: it would invite copy that tells a reporter their report is
+// "open", which is a promise about somebody else's workload.
+export const CreatedCommunityReportSchema = z.object({ reportId: z.string() }).strip();
 
 // --- Moderation, gated by `moderate_content` --------------------------------
 //
@@ -438,13 +439,26 @@ export const AdminForumThreadSchema = z
     /** Null is a real distinction: an individual poster, not a missing join. */
     authorOrganizationName: z.string().nullable(),
     replyCount: z.number().int(),
-    /** How many open reports point at this thread. Zero is common and is not a verdict. */
-    openReportCount: z.number().int(),
+    // NO `openReportCount`. Nothing sends one, and a count join for a field whose own comment said
+    // "zero is common and is not a verdict" is a query per row for a number nobody acts on. The
+    // report queue is its own surface with its own capability.
     createdAt: IsoDateTimeSchema,
+    excerpt: z.string(),
+    acceptedReplyId: z.string().nullable(),
+    lastActivityAt: IsoDateTimeSchema,
   })
   .strip();
 
 export const AdminForumThreadQueuePageSchema = cursorPageOf(AdminForumThreadSchema);
+
+// A MODERATION DECISION ANSWERS ONE ROW, NOT THE QUEUE.
+//
+// `moderateForumThread` returns the thread it just acted on; `moderateForumReply` returns
+// `{ replyId, state }`. Both used to be parsed as a whole queue page, so every decision failed its
+// parse — and a moderator pressing publish saw an error on a write that had already succeeded.
+//
+// Re-reading the queue after a decision is the caller's job, and `useMutation`'s `onSuccess` is
+// where that belongs.
 
 /** The queue read's filter. `state` is the only key, and it is optional. */
 export interface ListAdminForumThreadsFilter {
@@ -457,17 +471,23 @@ export interface ListAdminForumThreadsFilter {
  * `POST /community/admin/forum/threads/:threadId/moderate`.
  *
  * A DISCRIMINATED UNION, MIRRORING THE DECISION RATHER THAN FLATTENING IT — the same shape the
- * category verdict takes. `note` is required on `reject` and exists nowhere else: a rejection the
+ * category verdict takes. `reasonNote` is REQUIRED ON EVERY ARM — including `publish` — and it is
+ * spelled `reasonNote`, not `note`. Both facts were wrong here and each was its own 422 against the
+ * `.strict()` body.
+ *
+ * Requiring it on an approval is stricter than the DB CHECK, deliberately: the queue's own decision
+ * log is what a second moderator reads before reversing a colleague, and "approved" with no note
+ * tells them nothing. The old shape said a rejection the
  * author cannot read the reason for is one they will simply repost.
  *
  * `publish` MOVES A THREAD TO `open`, NOT TO `answered`. `reject` LEAVES IT `pending_review` and
  * stamps the note — see the file header.
  */
 export type ModerateForumThreadInput =
-  | { readonly decision: "publish" }
-  | { readonly decision: "reject"; readonly note: string }
-  | { readonly decision: "lock"; readonly note?: string }
-  | { readonly decision: "unlock" };
+  | { readonly decision: "publish"; readonly reasonNote: string }
+  | { readonly decision: "reject"; readonly reasonNote: string }
+  | { readonly decision: "lock"; readonly reasonNote: string }
+  | { readonly decision: "unlock"; readonly reasonNote: string };
 
 /**
  * `POST /community/admin/forum/replies/:replyId/moderate`.
@@ -475,29 +495,52 @@ export type ModerateForumThreadInput =
  * `hidden` AND `restored`, NOT `delete`. The reply keeps its place in the thread either way.
  */
 export type ModerateForumReplyInput =
-  | { readonly decision: "hidden"; readonly note: string }
-  | { readonly decision: "restored" };
+  | { readonly decision: "hidden"; readonly reasonNote: string }
+  | { readonly decision: "restored"; readonly reasonNote: string };
 
+/**
+ * A report as the queue shows it.
+ *
+ * FIVE FIELDS WERE REMOVED BECAUSE NOTHING SENDS THEM. `CommunityContentReportProjection` is
+ * `{ id, targetKind, targetId, reason, detailText, status, createdAt, resolvedAt }` — so
+ * `threadSlug`, `threadTitle` and `reporterDisplayName` were never on the wire, and `note` and
+ * `state` were the wrong spellings of `detailText` and `status`.
+ *
+ * WHAT THAT COSTS, STATED RATHER THAN HIDDEN: the queue can name WHAT was reported and why, and it
+ * cannot link to the thread or name the reporter. `targetId` plus `targetKind` is enough to fetch
+ * the target, which is the moderator's next click either way. Naming the reporter is a separate
+ * decision with its own risk — a moderator who can see who reported whom is a moderator who can be
+ * lobbied — and it should be made deliberately rather than by adding a field to a schema.
+ */
 export const CommunityContentReportSchema = z
   .object({
     id: z.string(),
     targetKind: z.enum(COMMUNITY_REPORT_TARGET_KINDS),
     targetId: z.string(),
-    /** The thread the report leads to — a reply report carries its parent so the queue can link. */
-    threadSlug: z.string(),
-    threadTitle: z.string(),
     reason: z.enum(COMMUNITY_REPORT_REASONS),
-    note: z.string().nullable(),
-    state: z.enum(COMMUNITY_REPORT_STATES),
-    reporterDisplayName: z.string(),
+    detailText: z.string().nullable(),
+    status: z.enum(COMMUNITY_REPORT_STATES),
     createdAt: IsoDateTimeSchema,
+    resolvedAt: IsoDateTimeSchema.nullable(),
   })
   .strip();
 
 export const CommunityContentReportQueuePageSchema = cursorPageOf(CommunityContentReportSchema);
 
+/** What moderating a REPLY answers with: the id and its new visibility, not the thread. */
+export const ModerateForumReplyResultSchema = z
+  .object({
+    replyId: z.string(),
+    state: z.enum(FORUM_REPLY_VISIBILITY_STATES),
+  })
+  .strip();
+
+/** What dismissing a report answers with: the id it acted on, and nothing else. */
+export const DismissedCommunityReportSchema = z.object({ reportId: z.string() }).strip();
+
 export interface ListCommunityContentReportsFilter {
-  readonly state?: CommunityReportState;
+  /** `status` IS THE WIRE'S SPELLING — `state` was a 422 that killed the whole read. */
+  readonly status?: CommunityReportState;
   readonly limit?: number;
   readonly cursor?: string;
 }
@@ -599,3 +642,7 @@ export function describeOwnForumThreadState(thread: OwnForumThread): string {
   }
   return thread.moderatedAt === null ? "Waiting for review" : "Not published";
 }
+
+export type ModerateForumReplyResult = z.infer<typeof ModerateForumReplyResultSchema>;
+
+export type DismissedCommunityReport = z.infer<typeof DismissedCommunityReportSchema>;

@@ -146,7 +146,7 @@ function renderOwnProfile(viewState: OwnProfileViewState) {
 
 function OwnProfileBody({ profile }: { profile: OwnCofounderProfile }) {
   const isEditable = profile.state === "draft" || profile.state === "withdrawn";
-  const wasRejected = profile.state === "draft" && profile.moderationNote !== null;
+  const wasRejected = profile.state === "draft" && profile.decisionReason !== null;
 
   return (
     <article>
@@ -167,12 +167,12 @@ function OwnProfileBody({ profile }: { profile: OwnCofounderProfile }) {
         {COFOUNDER_COMMITMENT_LABELS[profile.profile.commitmentLevel]}
       </p>
 
-      {wasRejected && profile.moderationNote !== null && (
+      {wasRejected && profile.decisionReason !== null && (
         <div className="mt-3 rounded-lg bg-[#E0E3E3] px-3 py-2">
           <p className="text-xs leading-4 font-medium text-[#191C1C]">
             A moderator sent this back. Here is why:
           </p>
-          <p className="mt-1 text-xs leading-4 text-[#4A6364]">{profile.moderationNote}</p>
+          <p className="mt-1 text-xs leading-4 text-[#4A6364]">{profile.decisionReason}</p>
         </div>
       )}
 

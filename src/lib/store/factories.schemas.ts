@@ -436,8 +436,10 @@ export const FactoryInquirySchema = z
 
 export const FactoryInquiryListPageSchema = cursorPageOf(FactoryInquirySchema);
 
-/** `GET /commerce/factories/inquiries/:inquiryId` — the same row, unwrapped from a page. */
-export const FactoryInquiryDetailSchema = z.object({ inquiry: FactoryInquirySchema }).strip();
+// `FactoryInquiryDetailSchema` IS GONE. It wrapped the row as `{ inquiry }`, and the four routes it
+// covered — detail, send, answer, close — all answer `data: <the row>` directly. The wrapper existed
+// only in the fixture, so every one of those calls would have parsed nothing on its first live
+// request. They use `FactoryInquirySchema` now.
 
 /**
  * The query `/mine` and `/received` send.
@@ -451,15 +453,15 @@ export interface ListFactoryInquiriesFilter {
   readonly cursor?: string;
 }
 
-/**
- * `POST …/inquiries/:inquiryId/close` — either party, from any state but `closed`.
- *
- * The reason is optional because a buyer who simply changed their mind owes nobody an explanation,
- * and a required field there would collect fiction.
- */
-export interface CloseFactoryInquiryInput {
-  readonly reason?: string;
-}
+// `CloseFactoryInquiryInput` IS GONE, AND SO IS THE REASON IT CARRIED.
+//
+// `POST …/inquiries/:inquiryId/close` takes NO BODY: its route registers no body parser, its
+// controller never reads one, and `commerce_manufacturing_inquiry` has no column to store a reason.
+// So the optional `reason` this interface declared was collected from the user and dropped in
+// transit — which is worse than not asking, and is the same rule `cancelOrder` already documents.
+//
+// If a close reason is ever wanted it is a column, a body schema and a projection field, not a
+// property on a client type.
 
 // --- Seller-side profile writes ---------------------------------------------
 //
@@ -509,29 +511,41 @@ export interface ReplaceFactorySitesInput {
  */
 export interface UpdateFactoryTermsInput {
   readonly offersSamples: boolean;
-  readonly sampleLeadTimeDays?: number;
-  readonly sampleFeeInCents?: number;
-  readonly currency: string;
-  readonly minimumOrderQuantity?: number;
-  readonly minimumOrderQuantityUnitLabel?: string;
-  readonly minimumLeadTimeDays?: number;
-  readonly maximumLeadTimeDays?: number;
+  /**
+   * EVERY NULLABLE FIELD HERE IS REQUIRED-AND-NULLABLE, NOT OPTIONAL, and that is the backend's
+   * shape rather than a preference. `ReplaceFactoryTermsSchema` declares them `.nullable()` with no
+   * `.optional()`, so an omitted key is a **422** and the only way to say "unstated" is an explicit
+   * `null`.
+   *
+   * It is the right shape for this form. `sampleFeeInCents: null` means the fee is unstated and
+   * `0` means samples are free — a buyer who reads the first as the second finds out at invoice
+   * time — and omission would collapse the two. §19.3's dwell scope takes explicit nulls for the
+   * identical reason.
+   */
+  readonly sampleLeadTimeDays: number | null;
+  readonly sampleFeeInCents: number | null;
+  /**
+   * `sampleCurrency`, NOT `currency`.
+   *
+   * The body is `.strict()`, so the old `currency` spelling was refused twice over: once as an
+   * unrecognized key and once as a missing required one. Uppercase ISO 4217; a lowercase code is a
+   * 422 rather than something the server folds.
+   */
+  readonly sampleCurrency: string;
+  /** Both-or-neither with its unit label — 500 pieces and 500 cartons are different businesses. */
+  readonly minimumOrderQuantity: number | null;
+  readonly minimumOrderQuantityUnitLabel: string | null;
+  readonly minimumLeadTimeDays: number | null;
+  readonly maximumLeadTimeDays: number | null;
   /** The inbox switch. `false` means the directory row shows the factory is not taking inquiries. */
   readonly acceptingInquiries: boolean;
 }
 
-/** What the three PUTs answer with — the stored terms, read back. */
-export const FactoryTermsSchema = z
-  .object({
-    organizationId: z.string(),
-    samplePolicy: FactorySamplePolicySchema,
-    minimumOrderQuantity: z.number().int().nullable(),
-    minimumOrderQuantityUnitLabel: z.string().nullable(),
-    minimumLeadTimeDays: z.number().int().nullable(),
-    maximumLeadTimeDays: z.number().int().nullable(),
-    acceptingInquiries: z.boolean(),
-  })
-  .strip();
+// `FactoryTermsSchema` IS GONE. `PUT …/factory-terms` answers the WHOLE declared profile —
+// `SellerDeclaredProfileProjection`, passed through by the controller — not a flat terms object.
+// So `organizationId` was never on the wire, and the MOQ pair lives nested under `orderBounds`.
+// The call parses `SellerDeclaredProfileSchema` from `organizations.schemas.ts` instead, which is
+// the same shape the storefront read already uses.
 
 export const FactoryProductionLineListSchema = z
   .object({ productionLines: z.array(FactoryProductionLineSchema) })
@@ -569,19 +583,26 @@ export const FactorySiteAuditSchema = z
     auditedAt: IsoDateSchema,
     auditorName: z.string(),
     scopeSummary: z.string(),
-    /** Ids from `FactorySite`. Empty means the audit covered the organization, not a named site. */
-    coveredSiteIds: z.array(z.string()),
-    /** Names the accountable human. NOT NULL on the backend, so never null here. */
-    auditEntryId: z.string(),
+    /**
+     * Ids from `FactorySite`. Empty means the audit covered the organization, not a named site.
+     *
+     * `siteIds` IS THE WIRE'S SPELLING, on the row AND in the create body — this said
+     * `coveredSiteIds` in both places, so the read failed to parse and the write was a 422.
+     */
+    siteIds: z.array(z.string()),
+    // NO `auditEntryId`. Its comment claimed it was "NOT NULL on the backend"; `projectSiteAudit`
+    // never emits it at all, so requiring it failed every audit row. The accountable human is
+    // `auditorName`, which is on the row and is what the console renders.
     withdrawnAt: IsoDateTimeSchema.nullable(),
     /** Required by the withdraw route, so it is present whenever `withdrawnAt` is. */
-    withdrawnReason: z.string().nullable(),
+    withdrawalReason: z.string().nullable(),
     createdAt: IsoDateTimeSchema,
   })
   .strip();
 
+/** `GET …/site-audits`. The wrapper key is `siteAudits` — `audits` was never on the wire. */
 export const FactorySiteAuditListSchema = z
-  .object({ audits: z.array(FactorySiteAuditSchema) })
+  .object({ siteAudits: z.array(FactorySiteAuditSchema) })
   .strip();
 
 /** `POST …/site-audits`. Requires an `Idempotency-Key` — a retry without one audits twice. */
@@ -589,7 +610,9 @@ export interface RecordSiteAuditInput {
   readonly auditedAt: string;
   readonly auditorName: string;
   readonly scopeSummary: string;
-  readonly coveredSiteIds?: readonly string[];
+  /** `siteIds`, not `coveredSiteIds` — the body is `.strict()` and refused the old spelling. */
+  readonly siteIds?: readonly string[];
+  readonly auditorOrganizationName?: string;
 }
 
 /**
@@ -616,7 +639,6 @@ export type FactoryDetail = z.infer<typeof FactoryDetailSchema>;
 export type CreatedFactoryInquiry = z.infer<typeof CreatedFactoryInquirySchema>;
 export type FactoryInquiry = z.infer<typeof FactoryInquirySchema>;
 export type FactoryInquiryListPage = z.infer<typeof FactoryInquiryListPageSchema>;
-export type FactoryTerms = z.infer<typeof FactoryTermsSchema>;
 export type FactorySiteAudit = z.infer<typeof FactorySiteAuditSchema>;
 
 // --- Display maps -----------------------------------------------------------

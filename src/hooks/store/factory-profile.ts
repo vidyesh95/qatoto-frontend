@@ -22,11 +22,11 @@ import {
 import type {
   FactoryProductionLine,
   FactorySite,
-  FactoryTerms,
   ReplaceFactorySitesInput,
   ReplaceProductionLinesInput,
   UpdateFactoryTermsInput,
 } from "@/lib/store/factories.schemas";
+import type { SellerDeclaredProfile } from "@/lib/store/organizations.schemas";
 
 export const factoryProfileKeys = {
   all: ["factory-profile"] as const,
@@ -86,7 +86,7 @@ export function useReplaceFactorySitesMutation(): UseMutationResult<
  * every field it renders, including the ones the seller did not touch.
  */
 export function useUpdateFactoryTermsMutation(): UseMutationResult<
-  ActionResponse<FactoryTerms>,
+  ActionResponse<SellerDeclaredProfile>,
   Error,
   { readonly organizationId: string; readonly input: UpdateFactoryTermsInput }
 > {

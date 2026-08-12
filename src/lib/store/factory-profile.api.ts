@@ -2,10 +2,19 @@
 // server component on this surface: an organization's own draft profile is session-scoped, so
 // nothing about it belongs in a cached render.
 //
-// MOCK-BACKED: every call resolves a fixture. The endpoints exist —
-// `STORE_BACKEND_STRUCTURE.md` §6.6 records Phase 17 as shipped — so wiring is one edit per
-// function: swap `resolveMockRead` for `getJson` (or the write for `sendJson`) and drop the fixture
-// argument for `options`.
+// WIRED. `src/mocks/store/factory-profile-mocks.ts` is deleted rather than kept as a fallback.
+//
+// `factory-terms` CARRIED THREE DRIFTS AND EVERY ONE OF THEM WOULD HAVE 422'd OR FAILED TO PARSE:
+//
+//  1. THE CURRENCY KEY IS `sampleCurrency`, not `currency`. The body is `.strict()`, so the old
+//     spelling was two refusals at once — an unrecognized key AND a missing required one.
+//  2. ITS NULLABLE FIELDS ARE REQUIRED, NOT OPTIONAL. The backend declares them `.nullable()`
+//     without `.optional()`, so an omitted `sampleLeadTimeDays` is a 422 and the only way to say
+//     "unstated" is an explicit `null`. That is deliberate on a form whose whole subject is the
+//     difference between unstated and zero — see §19.3's identical rule for dwell scope.
+//  3. IT ANSWERS THE WHOLE DECLARED PROFILE, not a flat terms object. The service returns
+//     `SellerDeclaredProfileProjection` and the controller passes it through, so `organizationId`
+//     was never on the wire and the MOQ pair lives nested under `orderBounds`.
 //
 // ALL THREE WRITES ARE WHOLE-OBJECT PUTs, NOT PATCHES, and the two list ones mean it literally:
 // the body IS the new list, an omitted row is a deletion, and array order is the stored order.
@@ -29,20 +38,16 @@ import { getJson, sendJson, type ActionResponse, type RequestOptions } from "@/l
 import {
   FactoryProductionLineListSchema,
   FactorySiteListSchema,
-  FactoryTermsSchema,
   type FactoryProductionLine,
   type FactorySite,
-  type FactoryTerms,
   type ReplaceFactorySitesInput,
   type ReplaceProductionLinesInput,
   type UpdateFactoryTermsInput,
 } from "@/lib/store/factories.schemas";
-import { resolveMockRead } from "@/lib/store/mock-transport";
 import {
-  MOCK_FACTORY_PRODUCTION_LINE_LIST,
-  MOCK_FACTORY_SITE_LIST,
-  MOCK_FACTORY_TERMS,
-} from "@/mocks/store/factory-profile-mocks";
+  SellerDeclaredProfileSchema,
+  type SellerDeclaredProfile,
+} from "@/lib/store/organizations.schemas";
 
 /**
  * `PUT /commerce/organizations/:organizationId/production-lines`.
@@ -57,14 +62,7 @@ export function replaceFactoryProductionLines(
   options?: RequestOptions,
 ): Promise<ActionResponse<{ productionLines: FactoryProductionLine[] }>> {
   const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/production-lines`;
-  void input;
-  return resolveMockRead(
-    path,
-    FactoryProductionLineListSchema,
-    options,
-    MOCK_FACTORY_PRODUCTION_LINE_LIST,
-  );
-  // return sendJson(path, "PUT", input, FactoryProductionLineListSchema, options);
+  return sendJson(path, "PUT", input, FactoryProductionLineListSchema, options);
 }
 
 /**
@@ -80,9 +78,7 @@ export function replaceFactorySites(
   options?: RequestOptions,
 ): Promise<ActionResponse<{ sites: FactorySite[] }>> {
   const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/sites`;
-  void input;
-  return resolveMockRead(path, FactorySiteListSchema, options, MOCK_FACTORY_SITE_LIST);
-  // return sendJson(path, "PUT", input, FactorySiteListSchema, options);
+  return sendJson(path, "PUT", input, FactorySiteListSchema, options);
 }
 
 /**
@@ -96,11 +92,9 @@ export function updateFactoryTerms(
   organizationId: string,
   input: UpdateFactoryTermsInput,
   options?: RequestOptions,
-): Promise<ActionResponse<FactoryTerms>> {
+): Promise<ActionResponse<SellerDeclaredProfile>> {
   const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/factory-terms`;
-  void input;
-  return resolveMockRead(path, FactoryTermsSchema, options, MOCK_FACTORY_TERMS);
-  // return sendJson(path, "PUT", input, FactoryTermsSchema, options);
+  return sendJson(path, "PUT", input, SellerDeclaredProfileSchema, options);
 }
 
 // Imported for the wiring lines above; referenced so they survive while every call is mock-backed.

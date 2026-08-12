@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
 
-// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+import WishlistPage from "@/components/home/store/wishlist-page";
+
+// Permanently dynamic: the wishlist is session-scoped and never reaches a server render, so there
+// is no Cache Components refactor to do here.
 export const instant = false;
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Wishlist",
-  description: "Wishlist page for Qatoto",
+  description: "Products you have saved on Qatoto",
 };
 
-export default function Wishlist() {
-  return <h1>Wishlist</h1>;
+/**
+ * WAS AN `<h1>` STUB, AND THE REASON WAS A MISSING BACKEND READ.
+ *
+ * The save and bookmark toggles have worked since Phase 13, but nothing listed what they produced —
+ * there was no `GET /commerce/saved-products`. That route was added for this page.
+ */
+export default function WishlistRoute() {
+  return <WishlistPage />;
 }

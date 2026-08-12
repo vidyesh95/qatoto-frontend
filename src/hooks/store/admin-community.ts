@@ -31,6 +31,7 @@ import type {
   AdminCofounderProfileQueuePage,
   ListAdminCofounderProfilesFilter,
   ModerateCofounderProfileInput,
+  CofounderProfileCard,
 } from "@/lib/store/cofounders.schemas";
 import type {
   AdminForumThreadQueuePage,
@@ -40,6 +41,9 @@ import type {
   ListCommunityContentReportsFilter,
   ModerateForumReplyInput,
   ModerateForumThreadInput,
+  AdminForumThread,
+  DismissedCommunityReport,
+  ModerateForumReplyResult,
 } from "@/lib/store/forum.schemas";
 
 export const communityModerationKeys = {
@@ -74,7 +78,7 @@ export function useAdminForumThreadsQuery(
  * has to say that, because a moderator who believes they deleted something will be surprised later.
  */
 export function useModerateForumThreadMutation(): UseMutationResult<
-  ActionResponse<AdminForumThreadQueuePage>,
+  ActionResponse<AdminForumThread>,
   Error,
   { readonly threadId: string; readonly input: ModerateForumThreadInput }
 > {
@@ -90,7 +94,7 @@ export function useModerateForumThreadMutation(): UseMutationResult<
 
 /** Hide a reply or restore it. Never a delete — the reply keeps its place in the thread. */
 export function useModerateForumReplyMutation(): UseMutationResult<
-  ActionResponse<AdminForumThreadQueuePage>,
+  ActionResponse<ModerateForumReplyResult>,
   Error,
   { readonly replyId: string; readonly input: ModerateForumReplyInput }
 > {
@@ -111,7 +115,7 @@ export function useCommunityContentReportsQuery(
   filter: ListCommunityContentReportsFilter = {},
 ) {
   return useQuery<ActionResponse<CommunityContentReportQueuePage>>({
-    queryKey: communityModerationKeys.contentReports(filter.state),
+    queryKey: communityModerationKeys.contentReports(filter.status),
     queryFn: () => listCommunityContentReports(filter),
     enabled: isEnabled,
     retry: false,
@@ -126,7 +130,7 @@ export function useCommunityContentReportsQuery(
  * same act as removing the text. Two calls keep the audit trail able to say which one happened.
  */
 export function useDismissCommunityContentReportMutation(): UseMutationResult<
-  ActionResponse<CommunityContentReportQueuePage>,
+  ActionResponse<DismissedCommunityReport>,
   Error,
   { readonly reportId: string; readonly input: DismissCommunityContentReportInput }
 > {
@@ -162,7 +166,7 @@ export function useAdminCofounderProfilesQuery(
  * simply not one this board will carry.
  */
 export function useModerateCofounderProfileMutation(): UseMutationResult<
-  ActionResponse<AdminCofounderProfileQueuePage>,
+  ActionResponse<CofounderProfileCard>,
   Error,
   { readonly profileId: string; readonly input: ModerateCofounderProfileInput }
 > {

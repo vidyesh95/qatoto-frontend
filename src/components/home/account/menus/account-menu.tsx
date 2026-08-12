@@ -296,6 +296,35 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 Orders and returns
               </span>
             </Link>
+            {/* Both of these had a page and no way in. `/messages` is the A38 inbox — before it,
+                a conversation was reachable only in the session that opened it — and `/disputes` is
+                what makes `/disputes/[disputeId]` reachable at all. */}
+            <Link
+              href="/messages"
+              onClick={onClose}
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
+            >
+              <Image
+                src="/icons/forum_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="Your conversations"
+                width={24}
+                height={24}
+              />
+              <span className="text-sm font-medium text-secondary-foreground">Messages</span>
+            </Link>
+            <Link
+              href="/disputes"
+              onClick={onClose}
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
+            >
+              <Image
+                src="/icons/flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt="Your disputes"
+                width={24}
+                height={24}
+              />
+              <span className="text-sm font-medium text-secondary-foreground">Disputes</span>
+            </Link>
             <button
               type="button"
               onClick={() => setView("settings")}

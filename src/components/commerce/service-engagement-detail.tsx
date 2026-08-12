@@ -223,7 +223,7 @@ export default function ServiceEngagementDetail({ engagementId }: { engagementId
                     transitionEngagement.mutate({
                       engagementId: engagement.id,
                       orderId: engagement.orderId,
-                      input: { target },
+                      input: { targetState: target },
                     })
                   }
                   disabled={transitionEngagement.isPending}

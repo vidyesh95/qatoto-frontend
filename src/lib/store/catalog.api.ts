@@ -22,6 +22,9 @@ import {
   type StoreCategoryDetail,
   type StoreSearchFilter,
   type StoreSearchPage,
+  StoreProductCardPageSchema,
+  type ListSavedProductsFilter,
+  type StoreProductCardPage,
 } from "@/lib/store/catalog.schemas";
 
 /**
@@ -80,4 +83,29 @@ export function searchStore(
 ): Promise<ActionResponse<StoreSearchPage>> {
   const path = `/store/search${buildQueryString({ ...filter })}`;
   return getJson(path, StoreSearchPageSchema, options);
+}
+
+/**
+ * The caller's own saved and bookmarked listings — `GET /commerce/saved-products` (A11).
+ *
+ * THIS ROUTE WAS BUILT FOR `/wishlist` AND DID NOT EXIST BEFORE. The save and bookmark toggles have
+ * shipped since Phase 13 and nothing ever listed what they produced: a buyer could mark two hundred
+ * products and had no route that would tell them which. The per-product counters were readable; the
+ * set was not readable at all.
+ *
+ * `kind` OMITTED MEANS BOTH. Save and bookmark are independent toggles with independent counters, so
+ * a caller who names neither is asking for everything they have marked, and a product marked both
+ * ways appears once.
+ *
+ * A PAGE CAN COME BACK SHORTER THAN ITS LIMIT, and that is correct rather than a bug. The rows are
+ * resolved through `resolveEligibleProductCardsByIds`, which drops anything no longer eligible —
+ * unpublished, hidden by a moderator, or belonging to an organization that stopped trading. A
+ * wishlist is not a licence to keep rendering a listing the store has withdrawn.
+ */
+export function listSavedProducts(
+  filter: ListSavedProductsFilter = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<StoreProductCardPage>> {
+  const path = `/commerce/saved-products${buildQueryString({ ...filter })}`;
+  return getJson(path, StoreProductCardPageSchema, options);
 }

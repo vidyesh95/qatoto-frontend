@@ -274,15 +274,8 @@ function ForumThreadCard({ thread }: { thread: AdminForumThread }) {
       <h3 className="mt-1 text-sm font-medium text-foreground">{thread.title}</h3>
       <p className="mt-1 text-sm leading-6 whitespace-pre-line text-foreground">{thread.body}</p>
 
-      <p className="mt-2 text-xs text-muted-foreground">
-        {/* Zero is the common case and is not a verdict in either direction. */}
-        {thread.openReportCount === 0
-          ? "No reports against this."
-          : `${String(thread.openReportCount)} open report${thread.openReportCount === 1 ? "" : "s"} against this.`}
-      </p>
-
       <label className="mt-3 block text-xs text-muted-foreground">
-        Reason — required to reject, and the author reads it
+        Reason — required on EVERY decision, and the author reads it on a rejection
         <textarea
           className={NOTE_FIELD_CLASS}
           rows={2}
@@ -295,9 +288,15 @@ function ForumThreadCard({ thread }: { thread: AdminForumThread }) {
         <button
           type="button"
           className={PRIMARY_BUTTON_CLASS}
-          disabled={moderateThread.isPending}
+          // REQUIRED ON EVERY ARM, publish included. The queue's decision log is what a second
+          // moderator reads before reversing a colleague, and "approved" with no note tells them
+          // nothing — so the backend demands one and this button waits for it.
+          disabled={!isNoteFilled || moderateThread.isPending}
           onClick={() =>
-            moderateThread.mutate({ threadId: thread.id, input: { decision: "publish" } })
+            moderateThread.mutate({
+              threadId: thread.id,
+              input: { decision: "publish", reasonNote: note.trim() },
+            })
           }
         >
           Publish
@@ -311,7 +310,7 @@ function ForumThreadCard({ thread }: { thread: AdminForumThread }) {
           onClick={() =>
             moderateThread.mutate({
               threadId: thread.id,
-              input: { decision: "reject", note: note.trim() },
+              input: { decision: "reject", reasonNote: note.trim() },
             })
           }
         >
@@ -324,7 +323,7 @@ function ForumThreadCard({ thread }: { thread: AdminForumThread }) {
           onClick={() =>
             moderateThread.mutate({
               threadId: thread.id,
-              input: isNoteFilled ? { decision: "lock", note: note.trim() } : { decision: "lock" },
+              input: { decision: "lock", reasonNote: note.trim() },
             })
           }
         >
@@ -335,7 +334,10 @@ function ForumThreadCard({ thread }: { thread: AdminForumThread }) {
           className={QUIET_BUTTON_CLASS}
           disabled={moderateThread.isPending}
           onClick={() =>
-            moderateThread.mutate({ threadId: thread.id, input: { decision: "unlock" } })
+            moderateThread.mutate({
+              threadId: thread.id,
+              input: { decision: "unlock", reasonNote: note.trim() },
+            })
           }
         >
           Unlock
@@ -406,21 +408,22 @@ function ContentReportCard({ report }: { report: CommunityContentReport }) {
         {COMMUNITY_REPORT_TARGET_LABELS[report.targetKind]}
         {" · "}
         {COMMUNITY_REPORT_REASON_LABELS[report.reason]}
-        {" · reported by "}
-        {report.reporterDisplayName}
         {" · "}
         {formatIsoInstantLabel(report.createdAt)}
       </p>
 
-      <h3 className="mt-1 text-sm font-medium text-foreground">
-        {/* A reply report carries its parent thread, so the queue always has somewhere to point. */}
-        <a href={`/store/forum/${report.threadSlug}`} className="hover:underline">
-          {report.threadTitle}
-        </a>
-      </h3>
+      {/* THE REPORTER IS NOT NAMED, AND THE TARGET IS NOT LINKED, because the projection carries
+          neither. `CommunityContentReportProjection` is the report row itself — id, target, reason,
+          detail, status, timestamps — with no join to the thread and no reporter identity.
 
-      {report.note !== null && (
-        <p className="mt-1 text-sm leading-5 text-muted-foreground">{report.note}</p>
+          Both absences are defensible rather than merely current. Naming a reporter to the
+          moderator deciding their claim is a lobbying surface, and it is a decision somebody should
+          make deliberately. The link is the smaller loss: `targetKind` plus `targetId` is enough to
+          fetch the target, which is the moderator's next click either way. */}
+      <h3 className="mt-1 font-mono text-xs break-all text-foreground">{report.targetId}</h3>
+
+      {report.detailText !== null && (
+        <p className="mt-1 text-sm leading-5 text-muted-foreground">{report.detailText}</p>
       )}
 
       <label className="mt-3 block text-xs text-muted-foreground">
@@ -454,7 +457,7 @@ function ContentReportCard({ report }: { report: CommunityContentReport }) {
               onClick={() =>
                 moderateReply.mutate({
                   replyId: report.targetId,
-                  input: { decision: "hidden", note: note.trim() },
+                  input: { decision: "hidden", reasonNote: note.trim() },
                 })
               }
             >
@@ -467,7 +470,7 @@ function ContentReportCard({ report }: { report: CommunityContentReport }) {
               onClick={() =>
                 moderateReply.mutate({
                   replyId: report.targetId,
-                  input: { decision: "restored" },
+                  input: { decision: "restored", reasonNote: note.trim() },
                 })
               }
             >
@@ -583,9 +586,14 @@ function CofounderProfileCard({ profile }: { profile: AdminCofounderProfile }) {
         <button
           type="button"
           className={PRIMARY_BUTTON_CLASS}
-          disabled={moderateProfile.isPending}
+          // The note is required on BOTH arms — the backend demands one on a publish too, so a
+          // second moderator reversing this decision can read why it was made.
+          disabled={note.trim().length === 0 || moderateProfile.isPending}
           onClick={() =>
-            moderateProfile.mutate({ profileId: profile.id, input: { decision: "publish" } })
+            moderateProfile.mutate({
+              profileId: profile.id,
+              input: { decision: "publish", reasonNote: note.trim() },
+            })
           }
         >
           Publish
@@ -597,7 +605,7 @@ function CofounderProfileCard({ profile }: { profile: AdminCofounderProfile }) {
           onClick={() =>
             moderateProfile.mutate({
               profileId: profile.id,
-              input: { decision: "reject", note: note.trim() },
+              input: { decision: "reject", reasonNote: note.trim() },
             })
           }
         >

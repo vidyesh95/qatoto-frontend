@@ -44,23 +44,16 @@ import { cursorPageOf, IsoDateTimeSchema, PROVIDER_KINDS } from "@/lib/store/sha
  */
 export type OrderViewerRelation = "buyer" | "counterparty" | "both" | "neither";
 
-/**
- * `GET /commerce/organizations/mine`, parsed down to the ONE field its callers use.
- *
- * THIS SCHEMA USED TO BE `z.array(z.string())` AND THE ROUTE HAS NEVER RETURNED THAT. The real
- * response is `{ organization, membership }[]`, so the parse failed on every call — and it failed
- * CLOSED, producing a `PARSE` result the order pages rendered as "you belong to no organizations"
- * rather than as an error. A buyer would have been told an order was not theirs. Recorded as a
- * confirmed drift in the backend doc's A35.
- *
- * Only `organization.id` is parsed, and `.strip()` discards the rest deliberately: the pages need
- * ids, and reducing to them HERE rather than passing the whole shape around is the point — a page
- * holding full organization rows starts rendering a name it did not fetch for that purpose, and a
- * membership `role` in a component is one step from a client-side permission check.
- */
-export const MyOrganizationListSchema = z.array(
-  z.object({ organization: z.object({ id: z.string() }).strip() }).strip(),
-);
+// `MyOrganizationListSchema` USED TO LIVE HERE, parsed down to `organization.id` alone. It moved
+// to `organizations.schemas.ts` as `MyCommerceOrganizationListSchema` and widened to the whole
+// `{ organization, membership }` projection, because the checkout now needs `tradeState`,
+// `countryCode` and `provisioningOrigin` off the same read — a `pending` shell cannot confirm a
+// checkout and the buyer has to be told why (A37).
+//
+// The narrowing did not disappear, it moved UP: `listViewerOrganizationIds` in `orders.api.ts`
+// reduces that list to ids for the order pages, so nothing here holds an organization row it did
+// not need. The original reason for narrowing stands — a membership `role` in a component is one
+// step from a client-side permission check.
 
 export function deriveOrderViewerRelation(
   order: { readonly buyerOrganizationId: string; readonly counterpartyOrganizationId: string },
@@ -75,6 +68,27 @@ export function deriveOrderViewerRelation(
 }
 
 // --- Order list -------------------------------------------------------------
+
+/**
+ * A38. The payment intent this order can still be paid THROUGH, or null.
+ *
+ * ON BOTH PROJECTIONS, and it is what makes paying an order survive a page reload. Before it,
+ * `POST /commerce/orders/:orderId/payment-intents` minted an id and
+ * `GET /commerce/payments/:paymentIntentId` consumed one, with nothing in between: a buyer who
+ * navigated away from checkout could no longer pay their own order.
+ *
+ * IT IS NOT A "HAS BEEN PAID" FLAG, and reading it as one is the mistake this comment exists to
+ * prevent. The backend's `PAYABLE_PAYMENT_INTENT_STATES` includes `settled`, `refunded`,
+ * `partially_refunded` and `disputed` alongside the in-flight ones — it mirrors
+ * `commerce_payment_intent_active_order_uidx`, which is what guarantees at most one such row per
+ * order. So a non-null id means "this is the intent to look at", and only the INTENT's own state
+ * says what happened. Fetch it before rendering any verdict.
+ *
+ * `null` means either nothing has been created yet or every attempt reached a terminal failure
+ * (`failed`, `cancelled`). The backend deliberately does not distinguish those, because the
+ * client's next move is the same for both: create one.
+ */
+const PaymentIntentIdSchema = z.string().nullable();
 
 export const OrderSummarySchema = z
   .object({
@@ -93,6 +107,7 @@ export const OrderSummarySchema = z
     createdAt: IsoDateTimeSchema,
     settlementRail: z.enum(SETTLEMENT_RAILS),
     hasEscrowProtection: z.boolean(),
+    paymentIntentId: PaymentIntentIdSchema,
   })
   .strip();
 
@@ -175,6 +190,7 @@ export const OrderDetailSchema = z
     completionIds: z.array(z.string()),
     settlementRail: z.enum(SETTLEMENT_RAILS),
     hasEscrowProtection: z.boolean(),
+    paymentIntentId: PaymentIntentIdSchema,
   })
   .strip();
 
@@ -207,6 +223,18 @@ export const OrderDeliveryAddressSchema = z
 
 // --- Filter inputs ----------------------------------------------------------
 
+/**
+ * `GET /commerce/orders` and `GET /commerce/provider/orders`.
+ *
+ * `state` IS APPLIED IN SQL, AND IT WAS ABSENT UNTIL PHASE 25. The note that used to sit here was
+ * correct at the time and worth preserving as history: the backend's `ListQuerySchema` was
+ * `.strict()` over `{ limit, cursor }` alone, so `?state=confirmed` was a **422 naming the key** —
+ * and filtering the fetched page client-side instead would silently short-page every result. The
+ * conclusion drawn then still holds and is what got acted on: a filter the server cannot apply is
+ * a backend change, not a client workaround. Phase 25 made that change.
+ *
+ * OMITTING IT MEANS EVERY STATE, not a default.
+ */
 export interface ListOrdersFilter {
   readonly state?: OrderState;
   readonly limit?: number;

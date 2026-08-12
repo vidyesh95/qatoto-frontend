@@ -1,11 +1,8 @@
 // TRANSPORT: client-query — orders and engagements are session-scoped, so they are read from client
 // islands rather than server components. `RequestOptions` is threaded so a server read could be added.
 //
-// PARTIALLY MOCK-BACKED. The ONE-ORDER surface is WIRED — `listViewerOrganizationIds`, `getOrder`,
-// `getOrderFulfillment`, `getOrderArrivalWindow` and `cancelOrder`. The two LISTS, the
-// delivery-address reveal and the service engagements still resolve fixtures. To wire one, swap
-// `resolveMockRead` for `getJson`, or the mock write for the `sendJson` line beside it, and drop the
-// fixture argument.
+// FULLY WIRED. Every call in this file reaches the Express backend, engagements included, and
+// `src/mocks/store/orders-mocks.ts` is deleted.
 //
 // THE ARRIVAL WINDOW FORCED THE DETAIL READS. `getOrderArrivalWindow` hits the real backend, and a
 // real read keyed by an id that only exists in `orders-mocks.ts` answers 404 forever — so mounting
@@ -16,8 +13,13 @@
 // a fixture keyed by mock ids answers 404 for every order the page can actually show. A mock write
 // beside a wired read is worse than either — it turns a working button into a broken one.
 //
-// The lists stay mocked deliberately: `OrderListPageSchema` is cursor-paged and its fixtures have
-// never been checked against a live response, so wiring them is its own piece of work, not a swap.
+// THE SAME ARGUMENT IS WHY THE LISTS AND THE ADDRESS REVEAL ARE NOW WIRED TOO. Every id the order
+// page resolves comes from a list, so a fixture list beside a real detail read produced a page whose
+// every link 404'd; and the reveal is keyed by an order id the list supplies.
+//
+// THE ENGAGEMENT TRANSITION CARRIED A BODY THE ROUTE REFUSES. It sent `{ target }`; the schema is
+// `.strict()` over `{ targetState, note? }`, so every transition was two refusals at once — an
+// unrecognized key and a missing required one — and the engagement never moved.
 
 import {
   buildQueryString,
@@ -41,9 +43,7 @@ import {
   type ArrivalWindowFilter,
   type ArrivalWindowProjection,
 } from "@/lib/store/arrival-window.schemas";
-import { resolveMockDetail, resolveMockRead } from "@/lib/store/mock-transport";
 import {
-  MyOrganizationListSchema,
   OrderDeliveryAddressSchema,
   OrderDetailSchema,
   OrderListPageSchema,
@@ -52,43 +52,33 @@ import {
   type OrderDetail,
   type OrderListPage,
 } from "@/lib/store/orders.schemas";
-import {
-  MOCK_BUYER_ORDER_LIST,
-  MOCK_ENGAGEMENTS_BY_ID,
-  MOCK_ENGAGEMENT_LIST,
-  MOCK_ORDER_DELIVERY_ADDRESS,
-  MOCK_PROVIDER_ORDER_LIST,
-} from "@/mocks/store/orders-mocks";
+
+// `listViewerOrganizationIds` USED TO LIVE HERE and has moved UP rather than away. It was a
+// one-line narrowing of `GET /commerce/organizations/mine` down to `organization.id`, wrapping a
+// route that now has a first-class reader in `organizations.api.ts`. Two api functions over one
+// route meant two React Query entries under one key with two different `queryFn`s — whichever
+// mounted first decided what the cache held, and the other read it as the wrong shape.
+//
+// The narrowing itself is unchanged and still load-bearing: an order page holding a membership
+// `role` it did not fetch for that purpose is one step from a client-side permission check. It now
+// happens in `useViewerOrganizationsQuery`'s `select`, which is where a projection over a shared
+// cache entry belongs.
 
 /**
- * The organization ids the caller belongs to.
+ * Buyer-scoped orders. A different endpoint from the provider queue, with different rows.
  *
- * Stands in for `GET /commerce/organizations/mine`, and it exists in this module because the ORDER
- * PAGES need it: `GET /commerce/orders/:orderId` returns the same projection to buyer and counterparty
- * and does not say which the caller is, so the relation is derived by comparing ids.
+ * `requireActiveBuyerCommerceOrganization`, which is STRICTER than the cart beside it: a caller
+ * whose only workspace is an auto-provisioned `pending` shell can fill a cart and cannot read this,
+ * and the 403 is the answer rather than a flake. See `useWorkspaceReadiness`.
  *
- * It is a SERVER read, not a client assertion. The client never decides which organization it is — it
- * asks, compares, and then only decides what to OFFER. Every action is re-authorized server-side.
+ * Cursor-paged. `limit` is 1..50 and there is no `state` filter — see `ListOrdersFilter`.
  */
-export async function listViewerOrganizationIds(
-  options?: RequestOptions,
-): Promise<ActionResponse<readonly string[]>> {
-  const path = "/commerce/organizations/mine";
-  const result = await getJson(path, MyOrganizationListSchema, options);
-  if (!result.success) return result;
-  // The mapping lives here rather than in the schema: the schema's job is to describe what the
-  // backend sends, and `{organization, membership}[]` is what it sends.
-  return { success: true, data: result.data.map((row) => row.organization.id) };
-}
-
-/** Buyer-scoped orders. A different endpoint from the provider queue, with different rows. */
 export function listBuyerOrders(
   filter: ListOrdersFilter = {},
   options?: RequestOptions,
 ): Promise<ActionResponse<OrderListPage>> {
   const path = `/commerce/orders${buildQueryString({ ...filter })}`;
-  return resolveMockRead(path, OrderListPageSchema, options, MOCK_BUYER_ORDER_LIST);
-  // return getJson(path, OrderListPageSchema, options);
+  return getJson(path, OrderListPageSchema, options);
 }
 
 /**
@@ -103,8 +93,7 @@ export function listProviderOrders(
   options?: RequestOptions,
 ): Promise<ActionResponse<OrderListPage>> {
   const path = `/commerce/provider/orders${buildQueryString({ ...filter })}`;
-  return resolveMockRead(path, OrderListPageSchema, options, MOCK_PROVIDER_ORDER_LIST);
-  // return getJson(path, OrderListPageSchema, options);
+  return getJson(path, OrderListPageSchema, options);
 }
 
 /**
@@ -174,14 +163,18 @@ export function getOrderFulfillment(
  * So this must never be called on mount, on hover, or speculatively — it is the only route in this
  * backend that hands one organization another's PII, and the audit trail is the reason it was chosen
  * over a seller-openable snapshot. Call it from an explicit control that says what it does.
+ *
+ * IT CARRIES ITS OWN, TIGHTER LIMITER (`commerceAddressRevealLimiter`), harder than any other order
+ * read. A `429` here is therefore a NORMAL ANSWER on a surface somebody is clicking repeatedly, not
+ * a failure: render it as "you have opened this too many times, try again shortly" and never retry
+ * it automatically. An automatic retry would spend the remaining allowance and log more PII reads.
  */
 export function getOrderDeliveryAddress(
   orderId: string,
   options?: RequestOptions,
 ): Promise<ActionResponse<OrderDeliveryAddress>> {
-  const path = `/commerce/orders/${orderId}/delivery-address`;
-  return resolveMockRead(path, OrderDeliveryAddressSchema, options, MOCK_ORDER_DELIVERY_ADDRESS);
-  // return getJson(path, OrderDeliveryAddressSchema, options);
+  const path = `/commerce/orders/${encodeURIComponent(orderId)}/delivery-address`;
+  return getJson(path, OrderDeliveryAddressSchema, options);
 }
 
 /**
@@ -213,8 +206,7 @@ export function listServiceEngagements(
   options?: RequestOptions,
 ): Promise<ActionResponse<ServiceEngagementListPage>> {
   const path = `/commerce/service-engagements${buildQueryString({ ...filter })}`;
-  return resolveMockRead(path, ServiceEngagementListPageSchema, options, MOCK_ENGAGEMENT_LIST);
-  // return getJson(path, ServiceEngagementListPageSchema, options);
+  return getJson(path, ServiceEngagementListPageSchema, options);
 }
 
 export function getServiceEngagement(
@@ -222,14 +214,7 @@ export function getServiceEngagement(
   options?: RequestOptions,
 ): Promise<ActionResponse<ServiceEngagement>> {
   const path = `/commerce/service-engagements/${engagementId}`;
-  return resolveMockDetail(
-    path,
-    ServiceEngagementSchema,
-    options,
-    MOCK_ENGAGEMENTS_BY_ID,
-    engagementId,
-  );
-  // return getJson(path, ServiceEngagementSchema, options);
+  return getJson(path, ServiceEngagementSchema, options);
 }
 
 /**
@@ -248,19 +233,9 @@ export function transitionServiceEngagement(
   options?: RequestOptions,
 ): Promise<ActionResponse<ServiceEngagement>> {
   const path = `/commerce/service-engagements/${engagementId}/transitions`;
-  void input;
-  // Same reasoning as `cancelOrder`: returning the engagement unchanged is honest, and synthesising the
-  // target state would claim a transition the server never made.
-  return resolveMockDetail(
-    path,
-    ServiceEngagementSchema,
-    options,
-    MOCK_ENGAGEMENTS_BY_ID,
-    engagementId,
-  );
-  // return sendJson(path, "POST", input, ServiceEngagementSchema, options);
+  return sendJson(path, "POST", input, ServiceEngagementSchema, options);
 }
 
-// Imported for the wiring lines above; referenced so they survive while reads are mock-backed.
-void getJson;
-void sendJson;
+// `void getJson` IS GONE — every read in this module now calls it for real. `sendJson` is still
+// referenced below only by `cancelOrder`, and the three engagement calls keep their commented
+// wiring lines, so this file no longer needs an unused-import guard.

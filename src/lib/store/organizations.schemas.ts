@@ -15,6 +15,8 @@
 
 import { z } from "zod";
 
+import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
+
 // --- Wire enums -------------------------------------------------------------
 // Postgres `pgEnum` labels, sent verbatim in both directions. These are DATA, not
 // identifiers — do not "correct" them to kebab-case (CLAUDE.md wire-casing rule).
@@ -60,11 +62,203 @@ export const PRODUCT_SAMPLE_POLICIES = ["unavailable", "paid", "refundable"] as 
 
 export const PRODUCT_CONDITIONS = ["new", "refurbished", "used"] as const;
 
+export const ORGANIZATION_TRADE_STATES = ["pending", "active", "suspended", "closed"] as const;
+
+/**
+ * A37. Which of two very different rows a `pending` organization is.
+ *
+ * `auto_provisioned` is a shell the SERVER minted on the caller's first cart tap, holding no
+ * claim anybody made. `self_declared` is an organization somebody described — and declaring a
+ * country is the write that flips one into the other, because that write **is** the act of
+ * asking to be reviewed. A moderation queue that could not tell them apart would drown in
+ * shells.
+ */
+export const ORGANIZATION_PROVISIONING_ORIGINS = ["self_declared", "auto_provisioned"] as const;
+
+export const ORGANIZATION_TYPES = [
+  "company",
+  "sole_proprietor",
+  "cooperative",
+  "government",
+  "nonprofit",
+] as const;
+
+export const ORGANIZATION_VISIBILITIES = ["private", "public"] as const;
+
+export const ORGANIZATION_MEMBER_ROLES = [
+  "owner",
+  "administrator",
+  "buyer",
+  "seller",
+  "provider_operator",
+  "finance",
+  "support",
+  "viewer",
+] as const;
+
+export const ORGANIZATION_MEMBER_STATES = ["invited", "active", "suspended", "left"] as const;
+
 export type SellerBusinessType = (typeof SELLER_BUSINESS_TYPES)[number];
 export type OrganizationMediaKind = (typeof ORGANIZATION_MEDIA_KINDS)[number];
 export type SiteAccessMode = (typeof SITE_ACCESS_MODES)[number];
 export type OrganizationCapabilityKind = (typeof ORGANIZATION_CAPABILITY_KINDS)[number];
 export type VisitPolicy = (typeof VISIT_POLICIES)[number];
+export type OrganizationTradeState = (typeof ORGANIZATION_TRADE_STATES)[number];
+export type OrganizationProvisioningOrigin = (typeof ORGANIZATION_PROVISIONING_ORIGINS)[number];
+export type OrganizationMemberRole = (typeof ORGANIZATION_MEMBER_ROLES)[number];
+
+// --- The caller's own commerce workspace ------------------------------------
+//
+// `GET /commerce/organizations/mine` — the ONE read that sees an organization the caller
+// belongs to rather than one the public browses, and the only place `countryCode` is nullable.
+//
+// WHY THE NULL IS HERE AND NOWHERE ELSE. Phase 21 made `commerce_organization.country_code`
+// nullable so an auto-provisioned shell can exist without the platform inventing a country it
+// was never told (A37). `commerce_organization_country_pending_ck` confines that absence to
+// `pending` rows, and every PUBLIC read — catalog, search, storefront, provider directory —
+// filters `trade_state = 'active'` before projecting, so none of them can observe it. Their
+// wire contracts are correspondingly non-null and the backend refuses to widen them
+// (`commerce-organization-country.ts`). So `StoreSellerSummarySchema` and
+// `StoreOrganizationStorefrontSchema` below keep `countryCode: z.string()` and that is
+// correct — do not "fix" them to match this one.
+
+/**
+ * One organization the caller is an active member of.
+ *
+ * `countryCode` NULL is an unanswered question, never a blank field and never a default. Read
+ * it beside `provisioningOrigin` — together they say whether this is a shell the server minted
+ * or a company somebody described that has not named its country yet.
+ */
+export const MyCommerceOrganizationSchema = z
+  .object({
+    id: z.string(),
+    slug: z.string(),
+    legalName: z.string(),
+    displayName: z.string(),
+    summary: z.string().nullable(),
+    organizationType: z.enum(ORGANIZATION_TYPES),
+    tradeState: z.enum(ORGANIZATION_TRADE_STATES),
+    visibility: z.enum(ORGANIZATION_VISIBILITIES),
+    countryCode: z.string().nullable(),
+    provisioningOrigin: z.enum(ORGANIZATION_PROVISIONING_ORIGINS),
+    logoUrl: z.string().nullable(),
+    websiteUrl: z.string().nullable(),
+    createdAt: IsoDateTimeSchema,
+    updatedAt: IsoDateTimeSchema,
+  })
+  .strip();
+
+/**
+ * The row `GET /commerce/organizations/mine` returns — the organization AND the caller's
+ * membership in it.
+ *
+ * The membership `role` is here because the read returns it, and for no other reason. It must
+ * not become a client-side permission check: every route re-authorizes, and a `seller` role in
+ * a component is one step from a UI that decides what the server is allowed to do. Use it to
+ * decide what to OFFER, never what to allow.
+ */
+export const MyCommerceOrganizationMembershipSchema = z
+  .object({
+    organization: MyCommerceOrganizationSchema,
+    membership: z
+      .object({
+        id: z.string(),
+        role: z.enum(ORGANIZATION_MEMBER_ROLES),
+        state: z.enum(ORGANIZATION_MEMBER_STATES),
+      })
+      .strip(),
+  })
+  .strip();
+
+export const MyCommerceOrganizationListSchema = z.array(MyCommerceOrganizationMembershipSchema);
+
+export type MyCommerceOrganization = z.infer<typeof MyCommerceOrganizationSchema>;
+export type MyCommerceOrganizationMembership = z.infer<
+  typeof MyCommerceOrganizationMembershipSchema
+>;
+
+/**
+ * `PATCH /commerce/organizations/:organizationId`.
+ *
+ * `.strict()` on the backend and at least one key required, so an empty patch is a 422 rather
+ * than a no-op. Four of the five fields are ordinary profile edits; `countryCode` is not — see
+ * `updateCommerceOrganization` in the api module for what sending it means.
+ *
+ * `countryCode` IS NOT NULLABLE HERE even though the column is. A shell may never have declared
+ * one; an organization that has may not un-declare it, because the row may already be trading
+ * and the CHECK would refuse the write anyway.
+ */
+export interface UpdateCommerceOrganizationInput {
+  readonly displayName?: string;
+  readonly summary?: string | null;
+  readonly websiteUrl?: string | null;
+  readonly visibility?: (typeof ORGANIZATION_VISIBILITIES)[number];
+  readonly countryCode?: string;
+}
+
+/**
+ * How far the caller's buyer workspace is from being able to CONFIRM a checkout.
+ *
+ * WHY THIS EXISTS AT ALL. A37 made the buyer path start working for a brand-new account: the first
+ * cart call mints a `pending` workspace, and the cart, `checkout/prepare`, RFQ drafting and
+ * messaging all run on it. `checkout/confirm` does NOT — it keeps
+ * `requireActiveBuyerCommerceOrganization`, because §14's rule is that a cart is a draft and an
+ * order is not. So a buyer can fill a cart, price it, reserve stock, and then be refused with a
+ * `403` at the last step, with nothing on the screen saying why or what to do.
+ *
+ * This is what the checkout renders instead of that silence.
+ *
+ * IT DECIDES WHAT TO OFFER, NEVER WHAT IS ALLOWED. `ready` does not mean the confirm will succeed —
+ * the server re-authorizes every request and may refuse for reasons this read cannot see. It means
+ * there is nothing useful to say in advance, so say nothing.
+ */
+export type BuyerWorkspaceReadiness =
+  /** The read has not answered, or answered `401`. Render nothing rather than guessing. */
+  | { status: "unknown" }
+  /** At least one active membership. Nothing to prompt for. */
+  | { status: "ready" }
+  /** A `pending` workspace with no country yet — the one state the buyer can act on themselves. */
+  | { status: "country_required"; organization: MyCommerceOrganization }
+  /** A `pending` workspace that has declared a country. Now it is a moderator's decision. */
+  | { status: "awaiting_review"; organization: MyCommerceOrganization }
+  /** Every membership is `suspended` or `closed`. Not something a form fixes. */
+  | { status: "blocked"; organizations: readonly MyCommerceOrganization[] }
+  /** Signed in, belongs to nothing. The first cart write mints the shell — this read does not. */
+  | { status: "none" };
+
+/**
+ * Reads the readiness off `GET /commerce/organizations/mine`.
+ *
+ * `country_required` IS PREFERRED OVER `awaiting_review` when the caller has several pending rows,
+ * because one of those states has an action behind it and the other does not — showing the buyer
+ * the waiting message while a form would have unblocked them is the worse of the two mistakes.
+ *
+ * WHICH ORGANIZATION IS NAMED IS A DISPLAY CHOICE, NOT A CLAIM about which one the server will use.
+ * `requireProvisionedBuyerCommerceWorkspace` resolves the workspace from the session pointer and
+ * the caller's buyer-capable memberships, and the client cannot and must not reproduce that. The
+ * list arrives ordered `(displayName, id)` server-side, so picking the first match is at least
+ * stable across reloads. In the case this was built for — a shell the server just minted — there is
+ * exactly one row and the question does not arise.
+ */
+export function deriveBuyerWorkspaceReadiness(
+  memberships: readonly MyCommerceOrganizationMembership[],
+): BuyerWorkspaceReadiness {
+  if (memberships.length === 0) return { status: "none" };
+
+  const organizations = memberships.map((membership) => membership.organization);
+  if (organizations.some((organization) => organization.tradeState === "active")) {
+    return { status: "ready" };
+  }
+
+  const pending = organizations.filter((organization) => organization.tradeState === "pending");
+  const undeclared = pending.find((organization) => organization.countryCode === null);
+  if (undeclared !== undefined) return { status: "country_required", organization: undeclared };
+
+  const declared = pending[0];
+  if (declared !== undefined) return { status: "awaiting_review", organization: declared };
+
+  return { status: "blocked", organizations };
+}
 
 // --- Declared profile — what the seller says about itself --------------------
 

@@ -1,6 +1,17 @@
 // TRANSPORT: client-query — every call here is made from the admin console island.
 //
-// MOCK-BACKED: every call resolves a fixture. The endpoints exist —
+// WIRED. `src/mocks/store/community-moderation-mocks.ts` is deleted.
+//
+// EVERY DECISION ANSWERS ONE ROW, NOT THE QUEUE. All four writes here parsed a whole
+// `{ items, page }` page, and none of them returns one: the two thread/profile moderations answer
+// the row they acted on, the reply moderation answers `{ replyId, state }`, and the report dismissal
+// answers `{ reportId }`. So every decision failed its parse — a moderator pressing publish saw an
+// error on a write that had already succeeded, which is the worst possible shape for a console whose
+// whole job is deciding things.
+//
+// Re-reading the queue afterwards is the HOOK's job, and `onSuccess` is where that lives.
+//
+// LEGACY NOTE — the endpoints exist —
 // `STORE_BACKEND_STRUCTURE.md` §6.7 records Phases 18–19 as shipped — so wiring is one edit per
 // function: swap `resolveMockRead` for `getJson` (or the write for `sendJson`) and drop the fixture
 // argument for `options`.
@@ -27,14 +38,22 @@ import {
 } from "@/lib/http";
 import {
   AdminCofounderProfileQueuePageSchema,
+  CofounderProfileCardSchema,
   type AdminCofounderProfileQueuePage,
+  type CofounderProfileCard,
   type ListAdminCofounderProfilesFilter,
   type ModerateCofounderProfileInput,
 } from "@/lib/store/cofounders.schemas";
 import {
   AdminForumThreadQueuePageSchema,
+  AdminForumThreadSchema,
+  ModerateForumReplyResultSchema,
   CommunityContentReportQueuePageSchema,
+  DismissedCommunityReportSchema,
+  type AdminForumThread,
   type AdminForumThreadQueuePage,
+  type DismissedCommunityReport,
+  type ModerateForumReplyResult,
   type CommunityContentReportQueuePage,
   type DismissCommunityContentReportInput,
   type ListAdminForumThreadsFilter,
@@ -42,12 +61,6 @@ import {
   type ModerateForumReplyInput,
   type ModerateForumThreadInput,
 } from "@/lib/store/forum.schemas";
-import { resolveMockRead } from "@/lib/store/mock-transport";
-import {
-  MOCK_ADMIN_COFOUNDER_QUEUE_PAGE,
-  MOCK_ADMIN_FORUM_THREAD_QUEUE_PAGE,
-  MOCK_COMMUNITY_CONTENT_REPORT_QUEUE_PAGE,
-} from "@/mocks/store/community-moderation-mocks";
 
 // --- Forum threads -----------------------------------------------------------
 
@@ -57,13 +70,7 @@ export function listAdminForumThreads(
   options?: RequestOptions,
 ): Promise<ActionResponse<AdminForumThreadQueuePage>> {
   const path = `/community/admin/forum/threads${buildQueryString({ ...filter })}`;
-  return resolveMockRead(
-    path,
-    AdminForumThreadQueuePageSchema,
-    options,
-    MOCK_ADMIN_FORUM_THREAD_QUEUE_PAGE,
-  );
-  // return getJson(path, AdminForumThreadQueuePageSchema, options);
+  return getJson(path, AdminForumThreadQueuePageSchema, options);
 }
 
 /**
@@ -78,16 +85,9 @@ export function moderateForumThread(
   threadId: string,
   input: ModerateForumThreadInput,
   options?: RequestOptions,
-): Promise<ActionResponse<AdminForumThreadQueuePage>> {
+): Promise<ActionResponse<AdminForumThread>> {
   const path = `/community/admin/forum/threads/${encodeURIComponent(threadId)}/moderate`;
-  void input;
-  return resolveMockRead(
-    path,
-    AdminForumThreadQueuePageSchema,
-    options,
-    MOCK_ADMIN_FORUM_THREAD_QUEUE_PAGE,
-  );
-  // return sendJson(path, "POST", input, AdminForumThreadQueuePageSchema, options);
+  return sendJson(path, "POST", input, AdminForumThreadSchema, options);
 }
 
 /**
@@ -100,16 +100,9 @@ export function moderateForumReply(
   replyId: string,
   input: ModerateForumReplyInput,
   options?: RequestOptions,
-): Promise<ActionResponse<AdminForumThreadQueuePage>> {
+): Promise<ActionResponse<ModerateForumReplyResult>> {
   const path = `/community/admin/forum/replies/${encodeURIComponent(replyId)}/moderate`;
-  void input;
-  return resolveMockRead(
-    path,
-    AdminForumThreadQueuePageSchema,
-    options,
-    MOCK_ADMIN_FORUM_THREAD_QUEUE_PAGE,
-  );
-  // return sendJson(path, "POST", input, AdminForumThreadQueuePageSchema, options);
+  return sendJson(path, "POST", input, ModerateForumReplyResultSchema, options);
 }
 
 // --- Content reports ---------------------------------------------------------
@@ -120,13 +113,7 @@ export function listCommunityContentReports(
   options?: RequestOptions,
 ): Promise<ActionResponse<CommunityContentReportQueuePage>> {
   const path = `/community/admin/content-reports${buildQueryString({ ...filter })}`;
-  return resolveMockRead(
-    path,
-    CommunityContentReportQueuePageSchema,
-    options,
-    MOCK_COMMUNITY_CONTENT_REPORT_QUEUE_PAGE,
-  );
-  // return getJson(path, CommunityContentReportQueuePageSchema, options);
+  return getJson(path, CommunityContentReportQueuePageSchema, options);
 }
 
 /**
@@ -141,16 +128,9 @@ export function dismissCommunityContentReport(
   reportId: string,
   input: DismissCommunityContentReportInput,
   options?: RequestOptions,
-): Promise<ActionResponse<CommunityContentReportQueuePage>> {
+): Promise<ActionResponse<DismissedCommunityReport>> {
   const path = `/community/admin/content-reports/${encodeURIComponent(reportId)}/decisions`;
-  void input;
-  return resolveMockRead(
-    path,
-    CommunityContentReportQueuePageSchema,
-    options,
-    MOCK_COMMUNITY_CONTENT_REPORT_QUEUE_PAGE,
-  );
-  // return sendJson(path, "POST", input, CommunityContentReportQueuePageSchema, options);
+  return sendJson(path, "POST", input, DismissedCommunityReportSchema, options);
 }
 
 // --- Cofounder profiles ------------------------------------------------------
@@ -161,13 +141,7 @@ export function listAdminCofounderProfiles(
   options?: RequestOptions,
 ): Promise<ActionResponse<AdminCofounderProfileQueuePage>> {
   const path = `/community/admin/cofounder-profiles${buildQueryString({ ...filter })}`;
-  return resolveMockRead(
-    path,
-    AdminCofounderProfileQueuePageSchema,
-    options,
-    MOCK_ADMIN_COFOUNDER_QUEUE_PAGE,
-  );
-  // return getJson(path, AdminCofounderProfileQueuePageSchema, options);
+  return getJson(path, AdminCofounderProfileQueuePageSchema, options);
 }
 
 /**
@@ -183,18 +157,7 @@ export function moderateCofounderProfile(
   profileId: string,
   input: ModerateCofounderProfileInput,
   options?: RequestOptions,
-): Promise<ActionResponse<AdminCofounderProfileQueuePage>> {
+): Promise<ActionResponse<CofounderProfileCard>> {
   const path = `/community/admin/cofounder-profiles/${encodeURIComponent(profileId)}/moderate`;
-  void input;
-  return resolveMockRead(
-    path,
-    AdminCofounderProfileQueuePageSchema,
-    options,
-    MOCK_ADMIN_COFOUNDER_QUEUE_PAGE,
-  );
-  // return sendJson(path, "POST", input, AdminCofounderProfileQueuePageSchema, options);
+  return sendJson(path, "POST", input, CofounderProfileCardSchema, options);
 }
-
-// Imported for the wiring lines above; referenced so they survive while every call is mock-backed.
-void getJson;
-void sendJson;

@@ -71,9 +71,11 @@ function ForumThreadBody({ detail }: { detail: ForumThreadDetail }) {
   const acceptedReply =
     thread.acceptedReplyId === null
       ? null
-      : (replies.items.find(
-          (reply) => reply.id === thread.acceptedReplyId && reply.visibilityState === "visible",
-        ) ?? null);
+      : // NO VISIBILITY CHECK — the read already made it. `getForumThread` filters
+        // `state = 'visible'`, so a hidden reply is absent from `replies.items` entirely rather than
+        // present-and-flagged, and an accepted reply a moderator has since hidden simply does not
+        // resolve here. The `?? null` is what that looks like.
+        (replies.items.find((reply) => reply.id === thread.acceptedReplyId) ?? null);
 
   return (
     <article className="mx-auto w-full max-w-3xl">

@@ -36,30 +36,66 @@ import {
   listBuyerOrders,
   listProviderOrders,
   listServiceEngagements,
-  listViewerOrganizationIds,
   transitionServiceEngagement,
 } from "@/lib/store/orders.api";
-import type { OrderDeliveryAddress, OrderDetail } from "@/lib/store/orders.schemas";
+import { listMyCommerceOrganizations } from "@/lib/store/organizations.api";
+import type { MyCommerceOrganizationMembership } from "@/lib/store/organizations.schemas";
+import type {
+  ListOrdersFilter,
+  OrderDeliveryAddress,
+  OrderDetail,
+} from "@/lib/store/orders.schemas";
 
 /**
- * Which organizations the caller belongs to.
+ * Narrows the membership list to the ids the order pages compare against.
  *
- * Cached for the session with a long `staleTime`: membership changes are rare and a staff decision, and
- * refetching it on every order page would be a request per navigation for data that does not move.
+ * MODULE-LEVEL, not an inline arrow, so its identity is stable and React Query can memoise the
+ * projection instead of recomputing it on every render.
+ *
+ * It returns an `ActionResponse` rather than a bare array so a failed read stays legible to the
+ * caller. Collapsing a failure to `[]` here would tell an order page the caller belongs to no
+ * organization — which renders as `neither`, and a buyer would be shown their own order as somebody
+ * else's. That is the exact failure A35 recorded when this route's schema was wrong.
+ */
+function selectViewerOrganizationIds(
+  result: ActionResponse<MyCommerceOrganizationMembership[]>,
+): ActionResponse<readonly string[]> {
+  if (!result.success) return result;
+  return { success: true, data: result.data.map((row) => row.organization.id) };
+}
+
+/**
+ * Which organizations the caller belongs to, as ids.
+ *
+ * SHARES ITS CACHE ENTRY with `useMyCommerceOrganizationsQuery` and
+ * `useBuyerWorkspaceReadinessQuery` in `./organizations` — one route, one `queryFn`, one key, three
+ * `select`s. They must keep the same `queryFn` and `staleTime`: two hooks writing different shapes
+ * under `storeKeys.viewerOrganizations()` would each read the other's value as its own.
+ *
+ * Cached for five minutes because membership changes are rare and a staff decision; refetching on
+ * every order page would be a request per navigation for data that does not move.
  */
 export function useViewerOrganizationsQuery() {
   return useQuery({
     queryKey: storeKeys.viewerOrganizations(),
-    queryFn: () => listViewerOrganizationIds(),
+    queryFn: () => listMyCommerceOrganizations(),
+    select: selectViewerOrganizationIds,
     staleTime: 5 * 60 * 1000,
   });
 }
 
-/** `which` picks the ENDPOINT, not a filter — see `orders.api.ts` for why they are two reads. */
-export function useOrderListQuery(which: "buyer" | "provider") {
+/**
+ * `which` picks the ENDPOINT, not a filter — see `orders.api.ts` for why they are two reads.
+ *
+ * `filter.state` IS A SERVER-SIDE NARROWING and is part of the key, because it changes the answer.
+ * Two calls with different states are two different lists and must not share a cache entry — the
+ * dispatch queue on `/sales` asks for `confirmed` while the full list beside it asks for
+ * everything, and one entry would let each overwrite the other.
+ */
+export function useOrderListQuery(which: "buyer" | "provider", filter: ListOrdersFilter = {}) {
   return useQuery({
-    queryKey: storeKeys.orderList(which),
-    queryFn: () => (which === "buyer" ? listBuyerOrders() : listProviderOrders()),
+    queryKey: storeKeys.orderList(which, filter.state),
+    queryFn: () => (which === "buyer" ? listBuyerOrders(filter) : listProviderOrders(filter)),
   });
 }
 

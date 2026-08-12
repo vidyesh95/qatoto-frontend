@@ -1,8 +1,12 @@
 // TRANSPORT: server-fetch — all four reads are public and awaited by server components.
 //
-// PARTIALLY MOCK-BACKED: `getStoreHome` is WIRED. The three pathway/rail reads below still resolve
-// a fixture. To wire one, swap `resolveMockRead` for `getJson` and drop the fixture argument for
-// `options`.
+// WIRED. All four read the Express backend; `src/mocks/store/merchandising-mocks.ts` is deleted
+// rather than kept as a fallback, because a silent fallback on a merchandising surface fabricates
+// which products the platform is promoting.
+//
+// THE THREE PATHWAY/RAIL READS SHARE ONE QUERY SHAPE — `CursorPageQuerySchema`, `.strict()` over
+// `limit` and `cursor` alone. Their filter types carry exactly those two keys, so there is no third
+// key any of them could send that would not be a 422.
 
 import { buildQueryString, getJson, type ActionResponse, type RequestOptions } from "@/lib/http";
 import {
@@ -18,12 +22,6 @@ import {
   type StorePathwaySet,
   type StoreRailPage,
 } from "@/lib/store/merchandising.schemas";
-import { resolveMockDetail, resolveMockRead } from "@/lib/store/mock-transport";
-import {
-  MOCK_PATHWAY_INDEX_PAGE,
-  MOCK_PATHWAY_SETS_BY_SLUG,
-  MOCK_RAIL_PAGES_BY_SLUG,
-} from "@/mocks/store/merchandising-mocks";
 
 /**
  * `GET /store/home` — hero slides, root categories, pathways, provider shortcuts and rails.
@@ -49,8 +47,7 @@ export function listStorePathways(
   options?: RequestOptions,
 ): Promise<ActionResponse<StorePathwayIndexPage>> {
   const path = `/store/pathways${buildQueryString({ ...filter })}`;
-  return resolveMockRead(path, StorePathwayIndexPageSchema, options, MOCK_PATHWAY_INDEX_PAGE);
-  // return getJson(path, StorePathwayIndexPageSchema, options);
+  return getJson(path, StorePathwayIndexPageSchema, options);
 }
 
 /**
@@ -66,15 +63,8 @@ export function getStorePathway(
   filter: PathwaySetFilter = {},
   options?: RequestOptions,
 ): Promise<ActionResponse<StorePathwaySet>> {
-  const path = `/store/pathways/${pathwaySlug}${buildQueryString({ ...filter })}`;
-  return resolveMockDetail(
-    path,
-    StorePathwaySetSchema,
-    options,
-    MOCK_PATHWAY_SETS_BY_SLUG,
-    pathwaySlug,
-  );
-  // return getJson(path, StorePathwaySetSchema, options);
+  const path = `/store/pathways/${encodeURIComponent(pathwaySlug)}${buildQueryString({ ...filter })}`;
+  return getJson(path, StorePathwaySetSchema, options);
 }
 
 /**
@@ -89,9 +79,8 @@ export function getStoreRail(
   filter: RailPageFilter = {},
   options?: RequestOptions,
 ): Promise<ActionResponse<StoreRailPage>> {
-  const path = `/store/rails/${railSlug}${buildQueryString({ ...filter })}`;
-  return resolveMockDetail(path, StoreRailPageSchema, options, MOCK_RAIL_PAGES_BY_SLUG, railSlug);
-  // return getJson(path, StoreRailPageSchema, options);
+  const path = `/store/rails/${encodeURIComponent(railSlug)}${buildQueryString({ ...filter })}`;
+  return getJson(path, StoreRailPageSchema, options);
 }
 
 // Imported for the wiring lines above; referenced so it is not dropped while reads are mock-backed.

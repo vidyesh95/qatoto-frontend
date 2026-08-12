@@ -19,7 +19,9 @@
 //  1. AN AUDIT IS NEVER DERIVED FROM A DOCUMENT REVIEW. There is no control here that promotes a
 //     `documents_reviewed` organization, and there must never be one — letting a paper review
 //     carry the weight of a visit is the precise collapse the three-state enum exists to prevent.
-//  2. EVERY ROW NAMES AN ACCOUNTABLE HUMAN. `auditEntryId` is NOT NULL on the backend, so no audit
+//  2. EVERY ROW NAMES AN ACCOUNTABLE HUMAN — `auditorName`, which is on the projection. This used
+//     to render `auditEntryId` and claim it was "NOT NULL on the backend"; the projection never
+//     emitted it, so the field existed only in the fixture. The accountable human
 //     exists that nobody can be asked about.
 //  3. A WITHDRAWAL NEEDS A REASON. Retracting an audit removes a claim a buyer may have chosen
 //     this factory on, and a retraction nobody has to justify is one nobody can review.
@@ -92,8 +94,8 @@ export default function SiteAuditAdminPage() {
     const result = auditsQuery.data;
     if (result === undefined) return { status: "loading" };
     if (!result.success) return { status: "error", message: result.error.message };
-    if (result.data.audits.length === 0) return { status: "empty" };
-    return { status: "ready", audits: result.data.audits };
+    if (result.data.siteAudits.length === 0) return { status: "empty" };
+    return { status: "ready", audits: result.data.siteAudits };
   })();
 
   return (
@@ -219,11 +221,11 @@ function AuditCard({ audit }: { audit: FactorySiteAudit }) {
 
       <p className="mt-2 text-xs text-muted-foreground">
         {/* Empty means the audit covered the organization, not a named site. Not a missing join. */}
-        {audit.coveredSiteIds.length === 0
+        {audit.siteIds.length === 0
           ? "Recorded against the organization rather than named sites."
-          : `Sites covered: ${audit.coveredSiteIds.join(", ")}`}
+          : `Sites covered: ${audit.siteIds.join(", ")}`}
         {" · entry "}
-        {audit.auditEntryId}
+        {audit.auditorName}
       </p>
 
       {isWithdrawn ? (
@@ -232,7 +234,7 @@ function AuditCard({ audit }: { audit: FactorySiteAudit }) {
             Withdrawn {audit.withdrawnAt === null ? "" : formatIsoInstantLabel(audit.withdrawnAt)}
           </p>
           {/* The reason is required by the route, so it is present whenever `withdrawnAt` is. */}
-          <p className="mt-1 text-xs leading-4 text-muted-foreground">{audit.withdrawnReason}</p>
+          <p className="mt-1 text-xs leading-4 text-muted-foreground">{audit.withdrawalReason}</p>
         </div>
       ) : (
         <div className="mt-3">
@@ -274,7 +276,7 @@ function RecordAuditForm({ organizationId }: { organizationId: string }) {
   const [auditedAt, setAuditedAt] = useState("");
   const [auditorName, setAuditorName] = useState("");
   const [scopeSummary, setScopeSummary] = useState("");
-  const [coveredSiteIdsInput, setCoveredSiteIdsInput] = useState("");
+  const [siteIdsInput, setCoveredSiteIdsInput] = useState("");
   const recordAudit = useRecordSiteAuditMutation();
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
 
@@ -290,7 +292,7 @@ function RecordAuditForm({ organizationId }: { organizationId: string }) {
       onSubmit={(event) => {
         event.preventDefault();
         if (!isSubmittable) return;
-        const coveredSiteIds = coveredSiteIdsInput
+        const siteIds = siteIdsInput
           .split(",")
           .map((siteId) => siteId.trim())
           .filter((siteId) => siteId.length > 0);
@@ -300,7 +302,7 @@ function RecordAuditForm({ organizationId }: { organizationId: string }) {
           scopeSummary: scopeSummary.trim(),
           // Omitted when nobody named a site — an empty array and an absent field both mean
           // "against the organization", and omitting is the one this codebase sends.
-          ...(coveredSiteIds.length === 0 ? {} : { coveredSiteIds }),
+          ...(siteIds.length === 0 ? {} : { siteIds }),
         };
         recordAudit.mutate(
           { organizationId, input, idempotencyKey: getIdempotencyKey() },
@@ -360,7 +362,7 @@ function RecordAuditForm({ organizationId }: { organizationId: string }) {
         Site ids covered, comma separated — leave blank for the whole organization
         <input
           className={FIELD_CLASS}
-          value={coveredSiteIdsInput}
+          value={siteIdsInput}
           onChange={(event) => setCoveredSiteIdsInput(event.target.value)}
         />
       </label>

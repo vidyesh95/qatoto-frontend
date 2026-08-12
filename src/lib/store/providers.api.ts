@@ -1,6 +1,9 @@
 // TRANSPORT: server-fetch — all three reads are public and awaited by server components.
 //
-// MOCK-BACKED: every read below resolves a fixture. To wire one, swap `resolveMockRead` for
+// WIRED: every call below reaches the Express backend. `src/mocks/store/providers-mocks.ts` is
+// deleted rather than kept as a fallback.
+//
+// LEGACY NOTE, kept because it is the one thing to know before touching the directory filter:
 // `getJson` and drop the fixture argument for `options`.
 
 import {
@@ -10,7 +13,6 @@ import {
   type ActionResponse,
   type RequestOptions,
 } from "@/lib/http";
-import { resolveMockDetail, resolveMockRead } from "@/lib/store/mock-transport";
 import {
   CreatedServiceOfferingSchema,
   MyServiceOfferingListSchema,
@@ -24,13 +26,6 @@ import {
   type PublicProviderDetail,
   type PublicServiceOffering,
 } from "@/lib/store/providers.schemas";
-import {
-  MOCK_CREATED_SERVICE_OFFERING,
-  MOCK_MY_SERVICE_OFFERINGS,
-  MOCK_PROVIDER_DETAILS_BY_SLUG,
-  MOCK_PROVIDER_DIRECTORY_PAGE,
-  MOCK_SERVICE_OFFERINGS_BY_SLUG,
-} from "@/mocks/store/providers-mocks";
 
 /**
  * The connector directory.
@@ -47,8 +42,7 @@ export function listStoreProviders(
   options?: RequestOptions,
 ): Promise<ActionResponse<ProviderDirectoryPage>> {
   const path = `/store/providers${buildQueryString({ ...filter })}`;
-  return resolveMockRead(path, ProviderDirectoryPageSchema, options, MOCK_PROVIDER_DIRECTORY_PAGE);
-  // return getJson(path, ProviderDirectoryPageSchema, options);
+  return getJson(path, ProviderDirectoryPageSchema, options);
 }
 
 /**
@@ -63,15 +57,8 @@ export function getStoreProvider(
   organizationSlug: string,
   options?: RequestOptions,
 ): Promise<ActionResponse<PublicProviderDetail>> {
-  const path = `/store/providers/${organizationSlug}`;
-  return resolveMockDetail(
-    path,
-    PublicProviderDetailSchema,
-    options,
-    MOCK_PROVIDER_DETAILS_BY_SLUG,
-    organizationSlug,
-  );
-  // return getJson(path, PublicProviderDetailSchema, options);
+  const path = `/store/providers/${encodeURIComponent(organizationSlug)}`;
+  return getJson(path, PublicProviderDetailSchema, options);
 }
 
 /**
@@ -89,20 +76,9 @@ export function getStoreServiceOffering(
   offeringSlug: string,
   options?: RequestOptions,
 ): Promise<ActionResponse<PublicServiceOffering>> {
-  const path = `/store/services/${offeringSlug}`;
-  return resolveMockDetail(
-    path,
-    PublicServiceOfferingSchema,
-    options,
-    MOCK_SERVICE_OFFERINGS_BY_SLUG,
-    offeringSlug,
-  );
-  // return getJson(path, PublicServiceOfferingSchema, options);
+  const path = `/store/services/${encodeURIComponent(offeringSlug)}`;
+  return getJson(path, PublicServiceOfferingSchema, options);
 }
-
-// Imported for the wiring lines above; referenced so it is not dropped as unused while every read
-// is still mock-backed.
-void getJson;
 
 /**
  * Every offering the caller's organization owns, DRAFTS INCLUDED.
@@ -114,9 +90,7 @@ void getJson;
 export function listMyServiceOfferings(
   options?: RequestOptions,
 ): Promise<ActionResponse<readonly CreatedServiceOffering[]>> {
-  const path = "/commerce/providers/offerings/mine";
-  return resolveMockRead(path, MyServiceOfferingListSchema, options, MOCK_MY_SERVICE_OFFERINGS);
-  // return getJson(path, MyServiceOfferingListSchema, options);
+  return getJson("/commerce/providers/offerings/mine", MyServiceOfferingListSchema, options);
 }
 
 // --- Writes ----------------------------------------------------------------
@@ -146,19 +120,11 @@ export function createServiceOffering(
   input: CreateServiceOfferingInput,
   options?: RequestOptions,
 ): Promise<ActionResponse<CreatedServiceOffering>> {
-  const path = "/commerce/providers/offerings";
-  void input;
-  // Answers with a FIXED draft row rather than echoing the input. Echoing would let the success screen
-  // show a slug that does not resolve, and the first click on "open your draft" would 404.
-  return resolveMockRead(
-    path,
+  return sendJson(
+    "/commerce/providers/offerings",
+    "POST",
+    input,
     CreatedServiceOfferingSchema,
     options,
-    MOCK_CREATED_SERVICE_OFFERING,
   );
-  // return sendJson(path, "POST", input, CreatedServiceOfferingSchema, options);
 }
-
-// Imported for the wiring lines above; referenced so they survive while reads are mock-backed.
-void getJson;
-void sendJson;

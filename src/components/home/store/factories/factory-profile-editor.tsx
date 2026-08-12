@@ -485,34 +485,40 @@ function TermsForm({ organizationId, detail }: { organizationId: string; detail:
         event.preventDefault();
         if (!isSubmittable) return;
 
+        /**
+         * EVERY FIELD IS SENT, AND UNSTATED IS AN EXPLICIT `null`.
+         *
+         * This block used to OMIT the fields the seller left blank. `ReplaceFactoryTermsSchema`
+         * declares them `.nullable()` without `.optional()`, so an omitted key is a 422 and this
+         * form could never have saved once against the real route.
+         *
+         * The three-way sample-fee answer survives the change intact, which is the thing worth
+         * protecting here: `unstated` is `null`, `free` is a deliberate `0`, and `priced` is the
+         * number. Collapsing the first two would tell a buyer a sample is free when nobody said so.
+         */
         const input: UpdateFactoryTermsInput = {
           offersSamples,
-          currency: currency.trim().toUpperCase(),
+          sampleCurrency: currency.trim().toUpperCase(),
           acceptingInquiries,
-          ...(toOptionalInteger(sampleLeadTimeDays) === undefined
-            ? {}
-            : { sampleLeadTimeDays: toOptionalInteger(sampleLeadTimeDays) }),
-          // THE THREE-WAY ANSWER, and the only place `0` is sent deliberately. `unstated` OMITS
-          // the field; `free` sends an explicit `0`; `priced` sends the number.
-          ...(sampleFeeChoice === "unstated"
-            ? {}
-            : sampleFeeChoice === "free"
-              ? { sampleFeeInCents: 0 }
-              : toOptionalInteger(sampleFeeInCents) === undefined
-                ? {}
-                : { sampleFeeInCents: toOptionalInteger(sampleFeeInCents) }),
-          ...(hasQuantity && hasQuantityUnit
-            ? {
-                minimumOrderQuantity: toOptionalInteger(minimumOrderQuantity),
-                minimumOrderQuantityUnitLabel: toOptionalText(minimumOrderQuantityUnitLabel),
-              }
-            : {}),
-          ...(toOptionalInteger(minimumLeadTimeDays) === undefined
-            ? {}
-            : { minimumLeadTimeDays: toOptionalInteger(minimumLeadTimeDays) }),
-          ...(toOptionalInteger(maximumLeadTimeDays) === undefined
-            ? {}
-            : { maximumLeadTimeDays: toOptionalInteger(maximumLeadTimeDays) }),
+          sampleLeadTimeDays: toOptionalInteger(sampleLeadTimeDays) ?? null,
+          sampleFeeInCents:
+            sampleFeeChoice === "unstated"
+              ? null
+              : sampleFeeChoice === "free"
+                ? 0
+                : (toOptionalInteger(sampleFeeInCents) ?? null),
+          // Both-or-neither, enforced before the request by `isSubmittable` and again by the
+          // server's own refine. Half-filled never leaves this component.
+          minimumOrderQuantity:
+            hasQuantity && hasQuantityUnit
+              ? (toOptionalInteger(minimumOrderQuantity) ?? null)
+              : null,
+          minimumOrderQuantityUnitLabel:
+            hasQuantity && hasQuantityUnit
+              ? (toOptionalText(minimumOrderQuantityUnitLabel) ?? null)
+              : null,
+          minimumLeadTimeDays: toOptionalInteger(minimumLeadTimeDays) ?? null,
+          maximumLeadTimeDays: toOptionalInteger(maximumLeadTimeDays) ?? null,
         };
         updateTerms.mutate({ organizationId, input });
       }}

@@ -1,95 +1,90 @@
-# TODO — wire the store frontend to the Phase 20 backend
+# TODO — the store frontend is wired
 
-Written 2026-08-10, updated 2026-08-11. **Phases A and B are DONE and committed.** What is left is
-Phase C, plus the carry-over at the bottom.
+Written 2026-08-10, rewritten 2026-08-12. **Every store api module reads and writes the real
+backend.** `src/mocks/store/` no longer exists and neither does `src/lib/store/mock-transport.ts`.
 
 ---
 
 ## Where things stand
 
-`pnpm fmt && pnpm exec tsc --noEmit && pnpm lint && pnpm fmt:check && pnpm build` is **clean**, and
-both uncalled-wrapper audits are **silent**. Mock component files under `src/components/home/store/`
-went 4 → 3 (`dispute-detail.tsx` and the two `manufacturer-chat-sheet` files).
+```bash
+pnpm fmt && pnpm exec tsc --noEmit && pnpm lint && pnpm fmt:check && pnpm build
+```
 
-**Phase A shipped** (`a492ff4`). The five shipping facts are on `PublicProduct` (nullable) and
-`CreateProductInput` (optional), `listingCompleteness` is parsed, the studio wizard has a packaging
-fieldset in named units on the pricing step plus a server-derived checklist on review, and
-`src/lib/products/publish-refusal.ts` classifies the 422 instead of flattening it to its first
-sentence. `MutationNotice` renders `fieldErrors` including the reserved `form` key.
+Clean. Both uncalled-wrapper audits silent. Backend: `tsc` + `oxlint` clean, **2030/2030** unit
+tests, **71/71** phase 17–19 smoke checks.
 
-**Phase B shipped** (`d9b7903`). `src/lib/store/freight.schemas.ts` and
-`src/lib/store/arrival-window.schemas.ts` transcribe the Phase 20 types; `delivery-sheet.tsx` is
-rebuilt on `lanePlan`; `delivery-cost.tsx` opens it from the uncovered state too; and
-`src/components/commerce/sections/order-arrival-window-panel.tsx` renders the window beside its
-three components in the order page's Fulfilment tab.
+**`rg -l "TRANSPORT: mock" src/` returns five files, all VIDEO-domain** — `watch/comments.tsx`,
+`watch/share-sheet.tsx`, `watch/watch-content.tsx`, `studio/series/series-editor-modal.tsx`,
+`lib/videos/studio-view.ts`. The store surface has none.
 
-**Beyond the agreed scope, three things were wired** because Phase B forced them —
-`getOrder`, `getOrderFulfillment` and `cancelOrder`. A real arrival-window read keyed by a fixture
-order id answers 404 forever, and a mock write beside a wired read turns a working button into a
-broken one. `MOCK_ORDER_DETAILS_BY_ID` and `MOCK_ORDER_FULFILLMENTS_BY_ID` were deleted rather than
-left as fixtures nothing resolves.
-
-**Not yet done: the end-to-end pass against a running backend.** Every static check is green, but no
-screen in Phases A or B has been exercised against live data. The six scenarios are at the bottom.
+| Pass                | What shipped                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Phase A (`a492ff4`) | The five shipping facts, `listingCompleteness`, the packaging fieldset, `publish-refusal.ts`                              |
+| Phase B (`d9b7903`) | `freight.schemas.ts`, `arrival-window.schemas.ts`, `delivery-sheet.tsx` on `lanePlan`                                     |
+| Buyer path          | Cart, checkout, order lists, address reveal, the whole payment surface. Verified end to end                               |
+| Store wiring        | 11 mock modules swapped, 35 contract drifts fixed, 6 backend gaps closed, 3 stale-banner surfaces rebuilt, 6 routes built |
+| Phase 25 — earnings | `GET /commerce/provider/earnings`, the settlement-attestation pair, `?state=` on the order lists, migration `0119`        |
 
 ---
 
-## The one fact that still shapes everything
+## What the backend gained
 
-**The rate tables ship empty, deliberately, with no seed** (A36). Today _every lane is uncovered_.
+Additive, no migrations. Each was found by a frontend read that could not work.
 
-So the priced path is the rare one and **the named-absence path is the product**. Phases A and B were
-built that way; Phase C's console is what would ever change it.
+| Added                                                                                                 | Why it had to exist                                                                                                                                            |
+| ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /commerce/saved-products`                                                                        | The save/bookmark toggles shipped in Phase 13 and **nothing ever listed what they produced**. `/wishlist` is built on it                                       |
+| `state` on both RFQ lists, `board`+`threadState` on own-forum-threads, `state` on service engagements | Five reads that 422'd on a filter their UI already sent                                                                                                        |
+| `viewer.isThreadAuthor` on the forum thread                                                           | Accept-answer was unreachable — the payload carries `authorDisplayName`, deliberately not an id, so the client had nothing to compare a session against        |
+| `moderatedAt` + `decisionReason` + `createdAt` on own-forum-threads                                   | A rejected author saw "pending" with no reason. The only rational response to that is to post it again                                                         |
+| `body` + `createdAt` on the forum moderation queue                                                    | A `pending_review` thread is 404 on **every** public read, so publish/reject was being decided on a 240-character excerpt with the full text reachable nowhere |
+| `bio`/`lookingFor`/`state`/`priorVentures`/`submittedAt` on the cofounder queue                       | Same problem on a person's profile                                                                                                                             |
+| `buyerDisplayName` on manufacturing inquiries                                                         | The received queue was a wall of UUIDs                                                                                                                         |
+| `standardName` on coded factory certifications                                                        | Any factory with one failed its whole page                                                                                                                     |
+
+**Deliberately REFUSED, with the reason written into the schema:**
+
+- **`state` on the two moderation queues.** The frontend's own component comment argues against its
+  own filter type: _"filtering on state alone would show every rejection this console has ever made,
+  forever."_ A reject leaves the thread `pending_review` with a note, so the queue would never empty.
+- **`visibilityState` on forum replies.** The read filters `state = 'visible'` — "a hidden reply
+  leaves the public read entirely; it is not shown as a tombstone" — so the field would be a
+  constant. The frontend's tombstone branch was deleted instead.
+- **The seven `/store/providers` filters.** The directory has exactly one filter UI (kind chips).
+  Seven query keys for a UI nobody built is unverified code.
 
 ---
 
-## Phase C — Admin freight console, plus the two missing read routes
+## The five drift patterns
 
-The six admin routes are all **writes** (`POST`/`PATCH`). There is no GET/list for rate cards or
-dwell estimates. All six live under `/commerce/admin/…` and carry
-`requireAuth → commerceFreightRateWriteLimiter → compactBody → idempotency({ required: true, scope: "user" })`.
-`moderate_commerce` is checked **in-service**, not by route middleware, so a 403 is a normal answer
-rather than a routing failure.
+0 MISSING endpoints. 24 MATCH. **35 DRIFT**, every one of which would have failed on its first live
+call.
 
-- [ ] Write **§19.10** into `docs/STORE_BACKEND_STRUCTURE.md` specifying the two absent reads:
-      `GET /commerce/admin/freight-rate-cards` (filter by lane/mode/provider/state, cursor-paged)
-      and `GET /commerce/admin/customs-dwell-estimates`. Say why: **POST supersedes silently**, so a
-      console that cannot list current coverage invites an admin to replace a live card without
-      knowing it existed. Add a §6.8 row per A35's rule. **§19.10 is a free slot** — the section list
-      ends at 19.9b, so there is nothing to overwrite.
-- [ ] `src/lib/store/admin-freight.api.ts` + `.schemas.ts`, mirroring `admin-categories.api.ts`.
-      **Reuse `FREIGHT_MODES` from `src/lib/store/freight.schemas.ts`** — it is already the correct
-      four-member tuple.
-- [ ] `/admin/freight` under `src/app/(admin)/admin/`, following the `store-categories` precedent
-      (thin `page.tsx` with `export const instant = false`, all the markup in
-      `src/components/admin/freight/`). Until §19.10 ships, the list view renders an explicit
-      **"no read route yet"** state — not a fake empty list.
-- [ ] Forms must encode the append-only rule, because `.strict()` will 422 otherwise:
-    - Create takes the card **and its 1..20 bands in one submit** (`breaks` is required on create —
-      a two-call create leaves a window where the incumbent is closed and the successor prices
-      nothing).
-    - PATCH is a discriminated union: `{ intent: "shorten_window", validUntil }` or
-      `{ intent: "withdraw", reasonNote }` (`reasonNote` required, 1..1000). Lane, mode, currency,
-      `validFrom`, `sourceForwarderName` and price are **absent from the edit form entirely**.
-    - Dwell create sends **explicit `null`**, never omission, for `originCountryCode` and
-      `commodityScopeCategoryId` — omission would silently broaden the claim. It also refuses
-      `origin === destination`: a domestic lane has no customs leg.
-    - `volumetricDivisorCm3PerKg` required, 100–20000, **must not be pre-filled** — it varies by
-      forwarder. Show conventions as guidance (ocean W/M 1000, road ~3000, air 5000–6000).
-    - Bands carry no `position` in the body; array order is authoring order. `unitPriceInCents` is
-      `min(1)` — a zero unit price is §19.6's forbidden zero — and is **cents per kilogram of
-      chargeable weight**, not per shipment.
-- [ ] Idempotency-Key on all six writes — but **`useResettableAttemptIdempotencyKey()`, NOT
-      `useAttemptIdempotencyKey()`**. This is a correction to the original plan. The one-shot hook is
-      right for composers that navigate away after a single submit; an admin console posts a SECOND
-      rate card without unmounting, and a key that never rotates makes the backend dedupe that second
-      card into silence. Rotate only after a confirmed success, never on failure.
-- [ ] `409 COMMERCE_FREIGHT_RATE_CARD_IN_FORCE` is **not retryable** — a live card's bands are
-      frozen. **The backend's own message already reads "…its bands are frozen. Post a new card to
-      correct it."**, so render `message` rather than authoring that guidance client-side. There is
-      exactly one `..._IN_FORCE` code, not several. The other 409s are
-      `COMMERCE_FREIGHT_RATE_CARD_NOT_ACTIVE`, `COMMERCE_CUSTOMS_DWELL_OVERLAPS` and
-      `COMMERCE_CUSTOMS_DWELL_ALREADY_CLOSED`.
+| Pattern                                                     | Example                                                                                                                            |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| A filter the query schema does not accept                   | 7 reads, each a 422 that killed the whole page                                                                                     |
+| Body field renamed against `.strict()`                      | `note`→`reasonNote` ×5, `target`→`targetState`, `currency`→`sampleCurrency`, `coveredSiteIds`→`siteIds`                            |
+| Controller returns one object, frontend parses a page       | all four admin moderation writes                                                                                                   |
+| Bare projection vs wrapper key                              | `{inquiry}`, `{audits}` vs `siteAudits`                                                                                            |
+| **Schema transcribed from the SERVICE, not the CONTROLLER** | `acceptQuote` returns an **Order**; decline/withdraw return a quote **shell**; five cofounder writes return a nested owned profile |
+
+**The rule this pass exists to write down: for a wire shape the authority is the CONTROLLER.** The
+payment-intent bug in the buyer-path pass was the first instance; it repeated ten more times here.
+Several routes DO pass a service value through verbatim, which is what makes the assumption feel
+safe.
+
+---
+
+## Three "this endpoint does not exist" banners were stale
+
+Two of them rendered an apology to the user for a gap that closed in Phase 15/21.
+
+- `dispute-detail.tsx` → `GET /commerce/disputes/:disputeId` (A28) + `POST …/notes` (A40)
+- `logistics-overview.tsx` → `GET /commerce/provider/shipments` (A29)
+- `catalog-breadcrumb.tsx`'s `TODO(backend)` for `ancestors[]` → shipped with A25
+
+**Check a claim like that against the routes file before believing it.**
 
 ---
 
@@ -97,30 +92,37 @@ rather than a routing failure.
 
 - `unknown` → Zod `.strip()` → tagged `ActionResponse<T>` → discriminated-union view state →
   exhaustive `switch` with `const exhaustiveCheck: never`. No `as`, no `any`.
+- **The wire shape is the CONTROLLER's response**, not the service's return type.
 - **A price renders only through `providerQuote`.** Qatoto sells no freight.
 - **Never sum legs, components or currencies.** The server returns the totals.
 - **A missing component is named** — never defaulted, averaged or extrapolated.
 - **Never render a zero or a date** where the server returned an absence.
-- **Do not filter options by card `state` client-side** — the server's read predicate is
-  window-based, so a live option may legitimately come from a `superseded` card.
-- **Do not order bands by `position`** — floors define the ladder; `position` is authoring order.
-- Enum values snake_case **verbatim**. Note `chargeableWeightBasis`, `FreightRatingUnavailableReason`
-  and `JourneyUnpriceableReason` are **TypeScript-only unions computed at read time** — there is no
-  pgEnum behind them, so transcribe from the service source, not from `schema.ts`.
-- Update the `TRANSPORT:` banner on line 1 of every file touched — and do not spell the mock marker
-  in prose, or the repo's own `rg` check reports the file as unwired forever.
+- **A `202` is not a result.** Payment intents, refunds, document upload, customization assets.
+- **An idempotency key is minted once per attempt, in component state**, and rotates only after a
+  confirmed success — never on failure, which is the retry it exists to make safe.
+- **A missing `Idempotency-Key` is a 400, not a 422.**
+- Enum values snake_case **verbatim** — except `commerce_incoterm`, which is UPPERCASE.
+- Update the `TRANSPORT:` banner on line 1 of every file touched.
 - **No tests** unless explicitly asked (CLAUDE.md).
 
 ---
 
 ## Verification
 
+Backend needs **both** processes. Without the worker, payments accept and never settle with an
+EMPTY `last_error` — indistinguishable from A41's old bug:
+
 ```bash
-pnpm fmt && pnpm exec tsc --noEmit && pnpm lint && pnpm fmt:check && pnpm build
+cd ../../backend/qatoto-backend
+pnpm dev          # the API
+pnpm dev:worker   # pg-boss — DISPATCHES THE PAYMENT OUTBOX
+pnpm db:seed-store-demo   # store-demo-{buyer,seller,staff}@example.invalid / store-demo-password-2026
 ```
 
-Uncalled-wrapper audit — must stay silent (note `--no-filename`; without it `rg` prefixes every hook
-name with its path and the loop reports all of them as uncalled):
+**`max_connections = 20`** on the free-tier Aiven instance, so two processes is the ceiling. A green
+`/health` proves nothing — it touches no database.
+
+Audits (note `--no-filename`; without it every hook reports as uncalled):
 
 ```bash
 for h in $(rg --no-filename -o 'export function (use\w+)' -r '$1' src/hooks/store/ | sort -u); do
@@ -129,77 +131,151 @@ for f in $(rg --no-filename -o 'export (?:async )?function (\w+)' -r '$1' src/li
   rg -q "\b$f\b" src/hooks src/components src/app || echo "UNCALLED-API $f"; done
 ```
 
-### End to end, backend running — NOT YET DONE for Phases A and B
+**The audit is not bookkeeping — it caught three surfaces that existed and were unreachable**
+(`/disputes/[id]` had no link, there was no thread inbox, `useMyCommerceOrganizationsQuery` had no
+caller). That is the same failure A38 spent nine backend routes fixing.
 
-1. Publish a draft with packaging missing → button disabled naming the missing fields (edit mode) or
-   a 422 that names them (create mode); fill the five → publish succeeds.
-2. Enter two of three dimensions → refused before the request, naming the all-or-nothing rule.
-3. Delivery sheet with empty rate tables (today's state) → named reasons + `quotableProviders`
-   linking to an RFQ. Never blank, never `$0`, never a date. **Opens from the uncovered state too.**
-4. Order page → components rendered beside the window; no `?mode=` ⇒ `mode_not_selected` with the
-   covered modes offered as buttons.
-5. Load a card through the admin console (Phase C), re-open the sheet → per-mode options each showing
-   the forwarder, `validUntil`, "subject to re-measurement", and the chargeable-weight basis.
-6. PATCH a live card's bands (Phase C) → `409 …_IN_FORCE` rendered as the backend's own sentence.
-7. Force a `.strict()` refusal (send an unknown key) → `MutationNotice` shows `errors.form`
-   unlabelled, and the wizard's `invalid` refusal shows the per-field entries.
+### Live — RUN AND PASSING, 2026-08-12
 
-Scenario 3 is the one to check first — with no rate cards loaded it is the only path that exists.
+Every schema parsed against a live payload through the real `src/lib/store/*.schemas.ts`. Throwaway
+harnesses did it and were deleted.
 
----
+| Surface                               | Checks | Notes                                                                                     |
+| ------------------------------------- | ------ | ----------------------------------------------------------------------------------------- |
+| Buyer path                            | 18     | cart → prepare → confirm → pay → `settled` → `confirmed`; fresh-account pending workspace |
+| merchandising / providers / factories | 15     |                                                                                           |
+| forum                                 | 8      | all five drifting write responses                                                         |
+| cofounders                            | 6      | plus the create body proven separately (no `displayName` → 422)                           |
+| procurement                           | 9      | RFQ create/open/close, quote comparison, engagements                                      |
+| admin                                 | 5      | as the staff account                                                                      |
+| disputes / shipments / messaging      | 10     | note write grew the timeline 1→2; `createOrGet` returned the same thread id twice         |
+| the four routes                       | 7      | as the seller: 20 provider orders, 10 dispatchable                                        |
 
-## Does it behave like Alibaba?
+**Not exercised, named rather than claimed:**
 
-§19.9 did this comparison; it holds up against the shipped code. **Mostly yes, stricter in four
-places.**
-
-Matches: no delivery date until a rated option is selected; per-mode options carrying a price _and_ a
-transit range; the buyer picks the mode and the server never does; tiered manufacturing lead time; a
-weight-band ladder with per-unit rate and minimum charge; provenance and expiry on every quoted
-number; a refusal that offers an RFQ route rather than a blank.
-
-| Deliberately stricter                                                 | Alibaba                                                               | Cost                                                                                                                                             |
-| --------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Below the smallest band yields **no option** (`below_smallest_break`) | Applies the band's minimum charge                                     | A 5 kg parcel against a 45 kg-floor card shows an uncovered lane where Alibaba shows a price                                                     |
-| **Currencies never converted** (`no_common_currency_across_legs`)     | Converts and shows the rate                                           | A USD ocean card + a EUR inland card is unpriceable, though both are real prices                                                                 |
-| An uncovered inland leg makes the **whole journey** unpriceable       | Sells the international leg port-to-port, because it models Incoterms | **Largest practical divergence.** On most lanes no forwarder sells a domestic card in the destination country, so a good ocean rate goes unshown |
-| **Customs dwell exposed as its own component**                        | Bundles it, or sells DDP                                              | None — _more_ transparent than Alibaba, and intended                                                                                             |
-
-Three of the four are correct for a marketplace that is not a principal. The third is a genuine
-product problem rather than a purity win, and §19.9 agrees: "the fix is an Incoterm concept, not a
-rate table." Nothing in the shipped client works around it — faking a port-to-port render would be
-the client deciding an Incoterm.
+- **`standardName`** — the seed creates 7 uncoded and 0 coded factory certifications, so the one
+  field added for it has never met a live payload.
+- **The delivery-address 429.** The seeded checkout sends no `deliveryAddressId`, so the reveal 404s
+  before the limiter is in play.
+- **The browser.** Everything above is the transport contract asserted over HTTP. No screen has been
+  watched rendering.
 
 ---
 
-## Decisions for Vidyesh, separate from the code
+## What the backend still cannot do
 
-- **The uncovered-inland-leg rule.** Until it is settled, most real lanes will show nothing _even
-  after_ rate data is bought. Worth deciding before spending on cards.
+### Impossible by decision — the mocks are deleted, not scheduled
+
+Public product comment threads (A10 — Q&A, reviews and inquiries already cover it, so `commentCount`
+can never exist), trade-protection guarantee copy (A20/§14 — claims custody Qatoto does not have),
+author-deleted reviews (A38 — removal goes through a moderator).
+
+### Blocked on a §14 LEGAL decision, not on engineering
+
+- **Cofounder capital range / equity ask.** Publishing what a person will invest beside a contact
+  affordance is close to a securities solicitation, and how close is a per-market answer. The columns
+  deliberately do not exist and `verify-store-phase-19-constraints` asserts their **absence** by
+  name. The create body 422s on them today — verified.
+- **"Online revenue" on a seller profile.** §14 decided it is publishable **only on explicit
+  consent**. Needs a consent column, a withdrawal path, and a third wire member.
+  **NOT THE SAME THING AS PHASE 25's `/sales` PANEL, and the distinction is worth keeping straight
+  because the two look alike.** §14 governs PUBLISHING a seller's takings to strangers on a public
+  storefront; the earnings read is self-scoped and authenticated, and a seller reading their own
+  books needs no consent to see them. Nothing in Phase 25 touches the storefront, and no
+  `consentedDisclosures` member or `revenue_disclosure_consented_at` column was added.
+
+### Real gaps with a written spec
+
+| Gap                                                 | What it needs                                                                                                                                                                                                                                                                                                                          |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Seller cost of goods, and therefore margin**      | SHIPPED IN PHASE 25: revenue. Margin is what is left. Nothing records what a seller PAID — no cost column, no purchase record, no expense table — so it needs a table, a write route, and A13's declared-vs-measured split, since a self-entered cost is a DECLARED stat sitting beside measured revenue. Specified below, not started |
+| **Message attachments**                             | An upload path returning an authorized document id. The message body takes `encryptedDocumentIds` of ALREADY-authorized documents, and the only multipart routes are verification evidence and customization assets                                                                                                                    |
+| **Liked / watch later / subscriptions**             | No routes mounted at all. `/library` ships playlists and names the rest                                                                                                                                                                                                                                                                |
+| **Multi-axis variants**                             | `commerce_product_variant_option{variantId, optionName, optionValue, position}`. A26 defers it deliberately — building axes early migrates every row that reaches an immutable order-line snapshot, for a UI nothing has asked for                                                                                                     |
+| **Port-to-port pricing on an uncovered inland leg** | Incoterm **semantics**. Phase 23 shipped the vocabulary only; nothing branches on the value                                                                                                                                                                                                                                            |
+| **Provider directory filters**                      | Six more query keys, and the UI to go with them                                                                                                                                                                                                                                                                                        |
+| **An organization-level conversation**              | There is no thread kind for it, and there should not be: the thread's unique index is `(resourceKind, resourceId)`, so a thread keyed on an organization would be ONE THREAD PER SELLER shared by every buyer. The storefront's "Chat now" was removed for this reason                                                                 |
+
+### Works, empty until data is bought
+
+`delivery-sheet.tsx`. The routes, tables and rating service all exist; the rate tables ship **empty
+by design** (A36). Every lane answers `no_active_rate_card` until a forwarder lane list is purchased.
+`shippingInCents` is permanently `0`.
+
+---
+
+## Phase 25 — what a seller has been paid
+
+`/sales` shipped with a panel explaining its own absence: "nothing on this platform reports a
+seller's takings". That was true of the ROUTES and **false of the DATA**. The hash-chained
+double-entry journal, the payment intents with `counterpartyOrganizationId` and `settledAt` on the
+row, and the refund table had all existed since Phase 14 — and `deriveCommerceJournalBalances` sat
+in `commerce-journal.service.ts` with **no caller and no test**. The gap was one route.
+
+**Built, no schema change beyond one index:**
+
+| Added                                                         | Why                                                                                                                                  |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /commerce/provider/earnings`                             | Six concurrent aggregates, self-scoped, `Cache-Control: no-store`. No `organizationId` key — the `.strict()` schema 422s it          |
+| `GET\|POST /commerce/orders/:orderId/settlement-attestations` | `commerce_settlement_attestation` had **no writer anywhere in `src/`** since Phase 14. Dead schema, now wired                        |
+| `state` on both order lists                                   | The dispatch queue was a client-side filter over one page, defended only by the absence of a server filter                           |
+| Migration `0119`                                              | `commerce_payment_intent_counterparty_idx`, partial on `settled_at IS NOT NULL`. The table had a buyer index and none for the seller |
+
+**Three rules this surface is built on, each from the code rather than taste:**
+
+- **No grand total, anywhere, ever.** `commerce_journal_account_memorandum_ck` exists "so no future
+  balance report can sum memo value and real money into one number". Observed, escrow-released and
+  self-attested are three kinds of fact; a hero figure spanning them is a regression, not a feature.
+- **The rail filter on the journal query is load-bearing.** `direct_processor` posts
+  `settlement_released_memo` exactly as escrow does, so without
+  `settlementRail = 'external_escrow'` every processor payment counts twice and revenue silently
+  doubles. `smoke-store-phase-25` asserts this by name.
+- **An attestation is a claim, not an observation.** It posts nothing to the journal, and the
+  earnings read keeps it in `selfReported`. The kind is derived from the actor's side of the order,
+  never from the body — a buyer must not be able to record that the seller was paid.
+
+**Verified live, 2026-08-12:** `pnpm db:smoke-store-phase-25` — **14/14**, including a real
+processor payment landing in `processorSettled` while `escrowReleased` held flat, and an offline
+order moving from `uncounted` into `selfReported` on attestation with a 409 on the second attempt.
+All four frontend schemas parsed against real payloads.
+
+---
+
+## Not started
+
+**Phase D — cost of goods, and therefore margin.** The half of "profit and loss" that Phase 25 could
+not build, because the input does not exist anywhere in this backend. It needs a per-order-line cost
+a seller enters, its write route, and — the part that is not mechanical — **A13's declared-vs-measured
+split**: a self-entered cost is a DECLARED stat sitting directly beside platform-MEASURED revenue,
+and the wire has to make that visible or a seller will read an unverified number as a verified one.
+Until it exists, `/sales` says margin is not shown and why, rather than relabelling revenue.
+
+**Phase C — the admin freight console.** Unblocked since §19.10: both reads exist and `bandsEditable`
+rides on the shared projection, so the console does not derive it. §19.11 is the operator sequence
+and is not optional reading — a card authored the obvious way can never have its bands edited, and a
+card with no band at `minBillableWeightGrams: 0` reports every small consignment as an uncovered lane.
+
+Also unused: **A39's search facets** (five dimensions, drill-down blind to their own filter),
+**A40's incoterm enum** on the quote form and `commerce_review_media_state`, and
+**`POST /commerce/orders/:orderId/refunds`** (needs a control that can render `409 OVER_REFUND`,
+whose balance rides in the envelope's `data`, which the shared transport drops).
+
+**`checkout/prepare`'s `arrivalWindows`** is sent and `.strip()`ped: the window is always null at
+prepare time and only `missingComponents` is meaningful, so rendering it needs a panel that names
+components without printing a date.
+
+---
+
+## Decisions for Vidyesh
+
+- **The uncovered-inland-leg rule.** Until settled, most real lanes show nothing _even after_ rate
+  data is bought. Worth deciding before spending on cards.
 - **Below-smallest-band yields no option.** One reviewable row per card
-  (`minBillableWeightGrams: 0`) closes it — a data decision, not code.
-
----
-
-## Deferred — named so it is not lost
-
-- The **10** remaining `resolveMockRead` api modules: cart, rfqs, quotes, providers, factories,
-  forum, cofounders, factory-profile, admin-community, admin-site-audits. `orders.api.ts` is now
-  PARTIAL — the one-order surface is wired, the two **lists**, the delivery-address reveal and the
-  service engagements are not. The lists are their own piece of work rather than a swap:
-  `OrderListPageSchema` is cursor-paged and its fixtures have never been checked against a live
-  response.
-- `checkout/prepare`'s `arrivalWindows` — blocked on `cart.api.ts`. Note the backend builds it with
-  `projectPrepareArrivalWindow`, where the window is **always null** and only `missingComponents` is
-  meaningful; the components are what let a checkout sheet say "ships in 15–25 days · 24–34 days at
-  sea · 3–10 days clearance" without printing a date.
-- `dispute-detail.tsx` — its banner says the endpoint does not exist; **it does** (A28,
-  `GET /commerce/disputes/:disputeId`).
-- `catalog-breadcrumb.tsx` — its TODO asks for category `ancestors[]`; **that shipped**.
-- The messaging domain (`manufacturer-chat-sheet`) — still the largest unbuilt surface.
-- Duplicate delivery-estimate schemas in `products.schemas.ts` and `cart.schemas.ts` — four
-  identical shapes in two places; consolidate when cart is wired.
-- **`ShipmentLegSchema.mode` in `fulfillment.schemas.ts` is over-wide.** It parses with the
-  five-member `FREIGHT_TRANSPORT_MODES`, but the column is `commerce_shipment_leg_mode`, which has
-  four. Harmless today — `multimodal` simply never arrives — but it is a second vocabulary that
-  disagrees with the database, which is the class of bug the wire-casing rule exists to prevent.
+  (`minBillableWeightGrams: 0`) closes it — a data decision. §19.11 documents it as step 4.
+- **Should `POST /commerce/admin/freight-rate-cards` refuse a silent supersede?** §19.10's list route
+  exists now, so an operator can see the incumbent and `supersedesRateCardId` becomes expressible.
+- **Naming the reporter in the moderation queue.** `CommunityContentReportProjection` carries no
+  reporter identity and the queue does not show one. A moderator who can see who reported whom is a
+  moderator who can be lobbied — worth deciding deliberately rather than by adding a schema field.
+- **The Postgres ceiling.** `max_connections = 20`, and API + worker + a seed script is most of it.
+  Either the per-process pool comes down or the plan goes up before anyone trusts a local run.

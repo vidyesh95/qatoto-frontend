@@ -18,14 +18,13 @@ export const metadata: Metadata = {
 };
 
 /**
- * BLOCKED ON A BACKEND READ THAT DOES NOT EXIST.
+ * ONE DISPUTE, FOR ITS PARTICIPANTS.
  *
- * `commerce-trust.routes.ts` exposes `POST /commerce/orders/:orderId/disputes` for participants and then only
- * admin routes — `GET /commerce/admin/disputes` and `POST /commerce/admin/disputes/:disputeId/decisions`. A
- * buyer or provider can raise a dispute and has no route to read it back.
+ * THIS COMMENT USED TO SAY THE READ DID NOT EXIST. `GET /commerce/disputes/:disputeId` shipped with
+ * A28 in Phase 15 and gained `POST …/notes` with A40 in Phase 23; the claim was simply never
+ * revisited, and the page rendered an apology to a user looking for a dispute they had raised.
  *
- * The route exists rather than 404ing because a raised dispute produces this URL, and a page that explains the
- * gap is more useful than a not-found. See the component for why nothing is faked here.
+ * Reachable from `/disputes`, which lists what the caller's organization is a party to.
  */
 export default async function DisputeRoute({ params }: { params: Promise<{ disputeId: string }> }) {
   const { disputeId } = await params;

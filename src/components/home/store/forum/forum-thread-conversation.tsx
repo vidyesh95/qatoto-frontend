@@ -133,16 +133,10 @@ function ReplyCard({
   isAccepted: boolean;
   isThreadAuthor: boolean;
 }) {
-  if (reply.visibilityState === "hidden") {
-    return (
-      <div className="rounded-xl border border-dashed border-[#CAC4D0]/60 px-4 py-3">
-        {/* The removal is rendered, not the text. The reply keeps its place — see rule 5. */}
-        <p className="text-xs leading-4 text-[#6F7979]">
-          A moderator removed this reply. It stays here so the thread still reads in order.
-        </p>
-      </div>
-    );
-  }
+  // NO HIDDEN-REPLY BRANCH, and its removal is the backend's decision rather than a simplification
+  // here. `getForumThread` filters `state = 'visible'`, so a moderated reply never reaches this
+  // component at all — "a hidden reply leaves the public read entirely; it is not shown as a
+  // tombstone". The branch that used to live here read a `visibilityState` nothing sent.
 
   return (
     <div
@@ -182,7 +176,7 @@ function ReplyCard({
  */
 function HelpfulControl({ reply }: { reply: ForumReply }) {
   const setHelpful = useSetForumReplyHelpful();
-  const hasMarkedHelpful = reply.viewer?.hasMarkedHelpful ?? false;
+  const hasMarkedHelpful = reply.viewer?.hasVotedHelpful ?? false;
 
   const countLabel = `${formatCountLabel(reply.helpfulCount)} found this helpful`;
 

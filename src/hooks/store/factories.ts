@@ -32,7 +32,6 @@ import {
   sendFactoryInquiry,
 } from "@/lib/store/factories.api";
 import type {
-  CloseFactoryInquiryInput,
   CreatedFactoryInquiry,
   CreateFactoryInquiryInput,
   FactoryInquiry,
@@ -75,7 +74,7 @@ export function useReceivedFactoryInquiriesQuery(filter: ListFactoryInquiriesFil
 
 /** One inquiry, for whichever party the viewer turns out to be. */
 export function useFactoryInquiryQuery(inquiryId: string, isEnabled = true) {
-  return useQuery<ActionResponse<{ inquiry: FactoryInquiry }>>({
+  return useQuery<ActionResponse<FactoryInquiry>>({
     queryKey: factoryInquiryKeys.detail(inquiryId),
     queryFn: () => getFactoryInquiry(inquiryId),
     enabled: isEnabled && inquiryId.length > 0,
@@ -122,7 +121,7 @@ export function useCreateFactoryInquiry(): UseMutationResult<
  * can open a second thread on a single inquiry.
  */
 export function useSendFactoryInquiry(): UseMutationResult<
-  ActionResponse<{ inquiry: FactoryInquiry }>,
+  ActionResponse<FactoryInquiry>,
   Error,
   { readonly inquiryId: string; readonly idempotencyKey: string }
 > {
@@ -145,7 +144,7 @@ export function useSendFactoryInquiry(): UseMutationResult<
  * to by pressing it.
  */
 export function useAnswerFactoryInquiry(): UseMutationResult<
-  ActionResponse<{ inquiry: FactoryInquiry }>,
+  ActionResponse<FactoryInquiry>,
   Error,
   { readonly inquiryId: string }
 > {
@@ -159,15 +158,23 @@ export function useAnswerFactoryInquiry(): UseMutationResult<
   });
 }
 
-/** Either party closes it, from any state but `closed`. The reason is optional. */
+/**
+ * Either party closes it, from any state but `closed`.
+ *
+ * NO REASON, AND THE ABSENCE IS THE CONTRACT. This used to take a `CloseFactoryInquiryInput` with
+ * an optional `reason`; the route registers no body parser, the controller never reads one, and
+ * `commerce_manufacturing_inquiry` has no column to hold it — so the explanation was discarded in
+ * transit. `useCancelOrder` documents the same rule: a field that collects a reason and drops it is
+ * worse than not asking.
+ */
 export function useCloseFactoryInquiry(): UseMutationResult<
-  ActionResponse<{ inquiry: FactoryInquiry }>,
+  ActionResponse<FactoryInquiry>,
   Error,
-  { readonly inquiryId: string; readonly input?: CloseFactoryInquiryInput }
+  { readonly inquiryId: string }
 > {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ inquiryId, input }) => closeFactoryInquiry(inquiryId, input ?? {}),
+    mutationFn: ({ inquiryId }) => closeFactoryInquiry(inquiryId),
     onSuccess: (result) => {
       if (!result.success) return;
       void queryClient.invalidateQueries({ queryKey: factoryInquiryKeys.all });

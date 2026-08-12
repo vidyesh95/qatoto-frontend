@@ -60,7 +60,8 @@ export const storeKeys = {
    * with a filter — so they must not share a cache entry. The same order can legitimately appear in
    * both when an organization sells to itself, and one key would make each overwrite the other.
    */
-  orderList: (which: "buyer" | "provider") => ["store", "orders", "list", which] as const,
+  orderList: (which: "buyer" | "provider", state?: string) =>
+    ["store", "orders", "list", which, state] as const,
   order: (orderId: string) => ["store", "orders", orderId] as const,
   orderFulfillment: (orderId: string) => ["store", "orders", orderId, "fulfillment"] as const,
   /**
@@ -73,6 +74,83 @@ export const storeKeys = {
    */
   orderArrivalWindow: (orderId: string, mode: string | null) =>
     ["store", "orders", orderId, "arrival-window", mode] as const,
+
+  /**
+   * One payment intent, keyed by ITS OWN id rather than the order's.
+   *
+   * An order can have several intents over its life — a failed attempt is terminal and the next
+   * payment is a new row — so keying on the order would let a dead attempt's final state sit in the
+   * cache under the live one's name, on the one screen where that reads as "you already paid".
+   *
+   * The id itself comes from `order.paymentIntentId` (A38), which is the server's answer to which
+   * intent is the live one.
+   */
+  paymentIntent: (paymentIntentId: string) => ["store", "payments", paymentIntentId] as const,
+
+  /**
+   * Refunds against one order.
+   *
+   * Keyed by ORDER because that is the filter this read is always made with — the order page's
+   * refund history. An unfiltered organization-wide refund inbox would be a different list and would
+   * want its own key rather than sharing this one.
+   */
+  orderRefunds: (orderId: string) => ["store", "orders", orderId, "refunds"] as const,
+
+  /**
+   * One dispute and its timeline.
+   *
+   * The note write answers the whole timeline, so this entry is WRITTEN rather than invalidated —
+   * see `useAddDisputeNote`. That only works because one key holds the whole object.
+   */
+  dispute: (disputeId: string) => ["store", "disputes", disputeId] as const,
+  disputeList: (state: string | undefined) => ["store", "disputes", "list", state] as const,
+
+  /** The cross-order shipment queue. `which` is the ENDPOINT, so the two must not share an entry. */
+  shipmentQueue: (which: "buyer" | "provider", state: string | undefined) =>
+    ["store", "shipments", which, state] as const,
+
+  /**
+   * What this organization has been paid, over one window.
+   *
+   * NO ORGANIZATION ID IN THE KEY, following this file's own rule: the route is not addressed by
+   * one. The server resolves the seller from the session's active organization, so switching
+   * organizations changes the answer for the same key — which is correct, because switching
+   * organizations invalidates every commerce entry in this cache anyway.
+   *
+   * BOTH BOUNDS ARE IN THE KEY because both change the server's answer, and `undefined` is a
+   * distinct and meaningful value here: no window at all is the lifetime figure, which is a
+   * different response from any bounded one.
+   */
+  providerEarnings: (from: string | undefined, to: string | undefined) =>
+    ["store", "provider", "earnings", from, to] as const,
+
+  /**
+   * Both parties' settlement attestations on one order.
+   *
+   * The write answers the whole list, so this entry is WRITTEN rather than invalidated — the same
+   * shape `dispute` uses, and it works for the same reason: one key holds the whole object.
+   */
+  orderSettlementAttestations: (orderId: string) =>
+    ["store", "orders", orderId, "settlement-attestations"] as const,
+
+  /**
+   * The thread inbox and one thread's messages.
+   *
+   * `threadInboxRoot` exists so a write can clear every filtered variant at once — a new message
+   * moves a thread's preview and its position regardless of which `resourceKind` filter is showing.
+   */
+  threadInboxRoot: () => ["store", "threads", "inbox"] as const,
+  threadInbox: (resourceKind: string | undefined) =>
+    ["store", "threads", "inbox", resourceKind] as const,
+  threadMessages: (threadId: string) => ["store", "threads", threadId, "messages"] as const,
+
+  /**
+   * The caller's saved / bookmarked listings.
+   *
+   * Keyed by `kind` because absent means BOTH — a different list from either single kind, not a
+   * default to one.
+   */
+  savedProducts: (kind: string | undefined) => ["store", "saved-products", kind] as const,
 
   engagementList: () => ["store", "engagements", "list"] as const,
   engagement: (engagementId: string) => ["store", "engagements", engagementId] as const,

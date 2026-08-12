@@ -87,7 +87,7 @@ export default function FactoryInquiryDetailPage({
       // which ids exist.
       return { status: "error", message: result.error.message };
     }
-    return { status: "ready", inquiry: result.data.inquiry };
+    return { status: "ready", inquiry: result.data };
   })();
 
   return (

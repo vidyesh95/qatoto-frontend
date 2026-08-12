@@ -4,42 +4,25 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-// Store products picker overlay — attach the creator's own listings so they
-// render as shoppable cards on the watch page. Client only picks product ids
-// for display; the backend re-validates ownership, price, and inventory.
-export type MockStoreProduct = {
-  id: string;
-  title: string;
-  priceLabel: string;
-};
+import { useMyProductsQuery } from "@/hooks/products";
+import { centsToPriceLabel } from "@/lib/products/schemas";
 
-/**
- * TRANSPORT: mock — three hardcoded products. NOTHING here reaches a backend.
- *
- * `GET /products` is real and `attachedProductIds` IS sent on video create/update, so the ids
- * this picker produces do go to the server — but they are ids of products that do not exist,
- * which the backend rejects with a 422 ("You can only attach products you own"). Wiring the
- * picker to the real `/products` list is the fix; until then the control is a layout study.
- *
- * Listed in docs/HOME_STRUCTURE.md §10. Banner added because the §11 grep claim — that
- * `TRANSPORT: mock` returns exactly the files §10 names — was previously true only because this
- * one was unmarked.
- */
-export const MOCK_STORE_PRODUCTS: MockStoreProduct[] = [
-  {
-    id: "product-headphones",
-    title: "Wireless Noise-Cancelling Headphones",
-    priceLabel: "$129.99",
-  },
-  {
-    id: "product-anime-figure",
-    title: "Anime Collectible Figure — Limited Edition",
-    priceLabel: "$89.00",
-  },
-  { id: "product-camera-kit", title: "4K Streaming Camera Kit", priceLabel: "$349.00" },
-  { id: "product-desk-lamp", title: "Creator Desk Lamp with Ring Light", priceLabel: "$54.50" },
-  { id: "product-brush-pack", title: "Digital Art Brush Pack (Download)", priceLabel: "$19.00" },
-];
+// TRANSPORT: client-query — reads GET /products/mine.
+//
+// Store products picker overlay — attach the creator's own listings so they render as shoppable
+// cards on the watch page. The client only picks ids; the backend re-validates ownership, price and
+// inventory on every attach.
+//
+// IT USED TO OFFER FIVE HARDCODED PRODUCTS AND THAT WAS ACTIVELY BROKEN, not merely unwired.
+// `attachedProductIds` IS sent on video create and update, so the ids this control produced reached
+// the server — ids of products nobody owns, which the backend refuses with a 422 ("You can only
+// attach products you own"). A creator who used the picker could not save their video at all.
+//
+// THE SEARCH IS CLIENT-SIDE, DELIBERATELY, and this is the rare case where that is right rather
+// than the short-page bug §0 warns about: `GET /products/mine` is the creator's OWN listing set,
+// offset-paginated, and this reads one page of 100. It is a filter over a set the user is expected
+// to recognise, not a narrowing of a large corpus. If a creator ever has more than 100 listings the
+// honest fix is a server-side `?query=` on that route, not a second page fetched here.
 
 type StoreProductsPickerProps = {
   attachedProductIds: string[];
@@ -53,8 +36,11 @@ export default function StoreProductsPicker({
   onDone,
 }: StoreProductsPickerProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  // One page of 100 — see the header for why the search over it is client-side.
+  const myProductsQuery = useMyProductsQuery(1);
 
-  const matchingProducts = MOCK_STORE_PRODUCTS.filter((product) =>
+  const ownProducts = myProductsQuery.data?.rows ?? [];
+  const matchingProducts = ownProducts.filter((product) =>
     product.title.toLowerCase().includes(searchQuery.trim().toLowerCase()),
   );
 
@@ -76,7 +62,9 @@ export default function StoreProductsPicker({
         className="fixed inset-0 z-60 cursor-default bg-black/40"
       />
       <div className="fixed inset-x-4 top-1/2 z-70 mx-auto flex max-h-[70dvh] w-auto max-w-md -translate-y-1/2 flex-col rounded-2xl border border-black/10 bg-background shadow-lg">
-        {MOCK_STORE_PRODUCTS.length === 0 ? (
+        {myProductsQuery.isPending ? (
+          <p className="p-8 text-center text-sm text-muted-foreground">Loading your listings…</p>
+        ) : ownProducts.length === 0 ? (
           <div className="flex flex-col items-center gap-4 p-8 text-center">
             <p className="text-sm text-muted-foreground">No products yet</p>
             <Link
@@ -151,7 +139,7 @@ export default function StoreProductsPicker({
                           {product.title}
                         </span>
                         <span className="shrink-0 text-sm text-muted-foreground">
-                          {product.priceLabel}
+                          {centsToPriceLabel(product.priceInCents)}
                         </span>
                       </button>
                     </li>

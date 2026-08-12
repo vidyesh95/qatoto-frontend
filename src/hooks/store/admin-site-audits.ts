@@ -32,7 +32,7 @@ export const siteAuditKeys = {
 
 /** Every audit on one organization, withdrawn ones included. */
 export function useOrganizationSiteAuditsQuery(organizationId: string, isEnabled: boolean) {
-  return useQuery<ActionResponse<{ audits: FactorySiteAudit[] }>>({
+  return useQuery<ActionResponse<{ siteAudits: FactorySiteAudit[] }>>({
     queryKey: siteAuditKeys.forOrganization(organizationId),
     queryFn: () => listOrganizationSiteAudits(organizationId),
     enabled: isEnabled && organizationId.length > 0,
@@ -48,7 +48,7 @@ export function useOrganizationSiteAuditsQuery(organizationId: string, isEnabled
  * kept.
  */
 export function useRecordSiteAuditMutation(): UseMutationResult<
-  ActionResponse<{ audits: FactorySiteAudit[] }>,
+  ActionResponse<FactorySiteAudit>,
   Error,
   {
     readonly organizationId: string;
@@ -76,7 +76,7 @@ export function useRecordSiteAuditMutation(): UseMutationResult<
  * a retraction nobody has to justify is one nobody can review.
  */
 export function useWithdrawSiteAuditMutation(): UseMutationResult<
-  ActionResponse<{ audits: FactorySiteAudit[] }>,
+  ActionResponse<FactorySiteAudit>,
   Error,
   { readonly auditId: string; readonly input: WithdrawSiteAuditInput }
 > {

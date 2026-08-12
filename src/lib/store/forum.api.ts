@@ -1,16 +1,8 @@
 // TRANSPORT: server-fetch — the two public reads are awaited by server components. Everything
 // below the `Writes` divider is NOT: it is session-scoped and called from `"use client"` islands.
 //
-// MOCK-BACKED: every call resolves a fixture. The endpoints exist —
-// `STORE_BACKEND_STRUCTURE.md` §6.7 records Phase 18 as shipped — so wiring is one edit per
-// function: swap `resolveMockRead` for `getJson` (or the write for `sendJson`) and drop the fixture
-// argument for `options`.
+// WIRED. `src/mocks/store/forum-mocks.ts` is deleted.
 //
-// THE READS ARE ON `/store` AND THE WRITES ARE ON `/community`, and that split is deliberate
-// rather than historical (§1.1). `/store` is the prefix a signed-out visitor browses, so the two
-// public reads mount there; the writes belong to the community context, which shares none of
-// commerce's nouns — no organization is required to post, nothing is priced, nothing is ordered.
-// The path a route sits at is a mount point, not a claim about what the row is.
 
 import {
   buildQueryString,
@@ -42,17 +34,6 @@ import {
   type ListForumThreadsFilter,
   type OwnForumThreadListPage,
 } from "@/lib/store/forum.schemas";
-import { resolveMockDetail, resolveMockRead } from "@/lib/store/mock-transport";
-import {
-  MOCK_CREATED_COMMUNITY_REPORT,
-  MOCK_CREATED_FORUM_REPLY,
-  MOCK_CREATED_FORUM_THREAD,
-  MOCK_FORUM_REPLY_HELPFUL_STATE,
-  MOCK_FORUM_THREAD_ANSWER_STATE,
-  MOCK_FORUM_THREAD_DETAILS_BY_SLUG,
-  MOCK_FORUM_THREAD_LIST_PAGE,
-  MOCK_OWN_FORUM_THREAD_PAGE,
-} from "@/mocks/store/forum-mocks";
 
 /**
  * The thread list — `GET /store/forum/threads`.
@@ -67,8 +48,7 @@ export function listForumThreads(
   options?: RequestOptions,
 ): Promise<ActionResponse<ForumThreadListPage>> {
   const path = `/store/forum/threads${buildQueryString({ ...filter })}`;
-  return resolveMockRead(path, ForumThreadListPageSchema, options, MOCK_FORUM_THREAD_LIST_PAGE);
-  // return getJson(path, ForumThreadListPageSchema, options);
+  return getJson(path, ForumThreadListPageSchema, options);
 }
 
 /**
@@ -83,14 +63,7 @@ export function getForumThread(
   options?: RequestOptions,
 ): Promise<ActionResponse<ForumThreadDetail>> {
   const path = `/store/forum/threads/${threadSlug}`;
-  return resolveMockDetail(
-    path,
-    ForumThreadDetailSchema,
-    options,
-    MOCK_FORUM_THREAD_DETAILS_BY_SLUG,
-    threadSlug,
-  );
-  // return getJson(path, ForumThreadDetailSchema, options);
+  return getJson(path, ForumThreadDetailSchema, options);
 }
 
 // --- Writes ------------------------------------------------------------------
@@ -114,8 +87,7 @@ export function createForumThread(
   void input;
   // A FIXED row rather than an echo. An echoed slug would let the success screen offer a link to a
   // thread nobody can read — which, for a thread in moderation, is every reader including its author.
-  return resolveMockRead(path, CreatedForumThreadSchema, options, MOCK_CREATED_FORUM_THREAD);
-  // return sendJson(path, "POST", input, CreatedForumThreadSchema, options);
+  return sendJson(path, "POST", input, CreatedForumThreadSchema, options);
 }
 
 /**
@@ -135,8 +107,7 @@ export function createForumReply(
 ): Promise<ActionResponse<CreatedForumReply>> {
   const path = `/community/forum/threads/${encodeURIComponent(threadId)}/replies`;
   void input;
-  return resolveMockRead(path, CreatedForumReplySchema, options, MOCK_CREATED_FORUM_REPLY);
-  // return sendJson(path, "POST", input, CreatedForumReplySchema, options);
+  return sendJson(path, "POST", input, CreatedForumReplySchema, options);
 }
 
 /**
@@ -153,13 +124,7 @@ export function acceptForumReply(
 ): Promise<ActionResponse<ForumThreadAnswerState>> {
   const path = `/community/forum/threads/${encodeURIComponent(threadId)}/accepted-reply`;
   void input;
-  return resolveMockRead(
-    path,
-    ForumThreadAnswerStateSchema,
-    options,
-    MOCK_FORUM_THREAD_ANSWER_STATE,
-  );
-  // return sendJson(path, "POST", input, ForumThreadAnswerStateSchema, options);
+  return sendJson(path, "POST", input, ForumThreadAnswerStateSchema, options);
 }
 
 /**
@@ -173,13 +138,7 @@ export function clearForumAcceptedReply(
   options?: RequestOptions,
 ): Promise<ActionResponse<ForumThreadAnswerState>> {
   const path = `/community/forum/threads/${encodeURIComponent(threadId)}/accepted-reply`;
-  return resolveMockRead(
-    path,
-    ForumThreadAnswerStateSchema,
-    options,
-    MOCK_FORUM_THREAD_ANSWER_STATE,
-  );
-  // return sendJson(path, "DELETE", {}, ForumThreadAnswerStateSchema, options);
+  return sendJson(path, "DELETE", undefined, ForumThreadAnswerStateSchema, options);
 }
 
 /**
@@ -193,13 +152,7 @@ export function markForumReplyHelpful(
   options?: RequestOptions,
 ): Promise<ActionResponse<ForumReplyHelpfulState>> {
   const path = `/community/forum/replies/${encodeURIComponent(replyId)}/helpful`;
-  return resolveMockRead(
-    path,
-    ForumReplyHelpfulStateSchema,
-    options,
-    MOCK_FORUM_REPLY_HELPFUL_STATE,
-  );
-  // return sendJson(path, "PUT", {}, ForumReplyHelpfulStateSchema, options);
+  return sendJson(path, "PUT", undefined, ForumReplyHelpfulStateSchema, options);
 }
 
 /**
@@ -214,13 +167,7 @@ export function clearForumReplyHelpful(
   options?: RequestOptions,
 ): Promise<ActionResponse<ForumReplyHelpfulState>> {
   const path = `/community/forum/replies/${encodeURIComponent(replyId)}/helpful`;
-  return resolveMockRead(
-    path,
-    ForumReplyHelpfulStateSchema,
-    options,
-    MOCK_FORUM_REPLY_HELPFUL_STATE,
-  );
-  // return sendJson(path, "DELETE", {}, ForumReplyHelpfulStateSchema, options);
+  return sendJson(path, "DELETE", undefined, ForumReplyHelpfulStateSchema, options);
 }
 
 /**
@@ -235,8 +182,7 @@ export function listOwnForumThreads(
   options?: RequestOptions,
 ): Promise<ActionResponse<OwnForumThreadListPage>> {
   const path = `/community/forum/threads/mine${buildQueryString({ ...filter })}`;
-  return resolveMockRead(path, OwnForumThreadListPageSchema, options, MOCK_OWN_FORUM_THREAD_PAGE);
-  // return getJson(path, OwnForumThreadListPageSchema, options);
+  return getJson(path, OwnForumThreadListPageSchema, options);
 }
 
 /**
@@ -250,17 +196,5 @@ export function createCommunityReport(
   input: CreateCommunityReportInput,
   options?: RequestOptions,
 ): Promise<ActionResponse<CreatedCommunityReport>> {
-  const path = "/community/reports";
-  void input;
-  return resolveMockRead(
-    path,
-    CreatedCommunityReportSchema,
-    options,
-    MOCK_CREATED_COMMUNITY_REPORT,
-  );
-  // return sendJson(path, "POST", input, CreatedCommunityReportSchema, options);
+  return sendJson("/community/reports", "POST", input, CreatedCommunityReportSchema, options);
 }
-
-// Imported for the wiring lines above; referenced so they survive while every call is mock-backed.
-void getJson;
-void sendJson;

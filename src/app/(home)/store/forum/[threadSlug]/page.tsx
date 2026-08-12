@@ -2,22 +2,24 @@ import type { Metadata } from "next";
 
 import ForumThreadPage from "@/components/home/store/forum-thread-page";
 import { withSentinelValues } from "@/lib/static-params";
-import { getForumThread } from "@/lib/store/forum.api";
+import { getForumThread, listForumThreads } from "@/lib/store/forum.api";
 import { prettifySlugForDisplay } from "@/lib/store";
-import { MOCK_FEATURED_FORUM_THREAD_SLUGS } from "@/mocks/store/forum-mocks";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 export const instant = false;
 
 /**
- * `withSentinelValues` because `cacheComponents` fails the build on an empty
- * `generateStaticParams`, and the sentinel slug takes the same `notFound()` path a typo does.
+ * Prerender the threads the live list read returns, capped at 24.
+ *
+ * A failed read yields `[]`, and `withSentinelValues` turns that into the one unresolvable param
+ * `cacheComponents` needs instead of the empty array it refuses. No session is forwarded: the
+ * prerender list is the anonymous answer, which is also the only one a public read gives.
  */
-export function generateStaticParams() {
-  return withSentinelValues([...MOCK_FEATURED_FORUM_THREAD_SLUGS]).map((threadSlug) => ({
-    threadSlug,
-  }));
+export async function generateStaticParams() {
+  const result = await listForumThreads({ limit: 24 });
+  const slugs = result.success ? result.data.items.map((thread) => thread.slug) : [];
+  return withSentinelValues(slugs).map((threadSlug) => ({ threadSlug }));
 }
 
 export async function generateMetadata({

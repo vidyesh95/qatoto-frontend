@@ -264,6 +264,7 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
             {storefront !== null && <CompanyDetailsSection storefront={storefront} />}
 
             <StoreAndChatActions
+              productId={product.id}
               sellerSlug={product.seller.slug}
               sellerDisplayName={product.seller.displayName}
               contactAffordance={product.contactAffordance}

@@ -131,14 +131,23 @@ export function useRemoveCartItem(): UseMutationResult<
  * Not a preview: the reservation is real and expires, so this must be triggered by an explicit buyer
  * action and never on mount or a timer. Re-preparing in a loop would hold stock against other buyers
  * for as long as the tab is open.
+ *
+ * `idempotencyKey` IS A PARAMETER HERE TOO, for the same reason it is on confirm and for a reason
+ * that is easier to miss: prepare RESERVES, so a retry without a key takes the stock twice and the
+ * second hold expires on its own schedule with nobody watching it. The route carries
+ * `idempotency({ required: true })`, so a call without the header is a **400** before any cart is
+ * read — which is not a field error and must not be rendered as one.
  */
 export function usePrepareCheckout(): UseMutationResult<
   ActionResponse<CheckoutPrepare>,
   Error,
-  { readonly deliveryAddressId?: string }
+  { readonly idempotencyKey: string; readonly deliveryAddressId?: string }
 > {
   return useMutation({
-    mutationFn: (input) => prepareCheckout(input),
+    mutationFn: ({ idempotencyKey, deliveryAddressId }) =>
+      prepareCheckout(deliveryAddressId === undefined ? {} : { deliveryAddressId }, {
+        headers: { "Idempotency-Key": idempotencyKey },
+      }),
   });
 }
 
@@ -171,11 +180,11 @@ export function useConfirmCheckout(): UseMutationResult<
         {
           prepareId: prepare.prepareId,
           ...(deliveryAddressId === undefined ? {} : { deliveryAddressId }),
-          // `settlementAgreements` omitted: the DEFAULT rail is `direct_offline`, where nobody holds
-          // the funds. Naming an agreement is an explicit act both parties negotiated first, and this
-          // surface does not have one to name.
+          // `settlementAgreements` omitted, which lands the orders on `direct_processor` — the
+          // processor settles buyer straight to seller and nobody holds the funds in between.
+          // Naming an agreement is an explicit act both parties negotiated first, and this surface
+          // does not have one to name.
         },
-        prepare,
         { headers: { "Idempotency-Key": idempotencyKey } },
       ),
     onSuccess: (result) => {

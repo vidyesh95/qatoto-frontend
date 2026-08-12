@@ -12,14 +12,24 @@
 // different act entirely: an RFQ is a published requirement that providers and sellers quote
 // against, with its own draft, invitations and quote thread. Sending a buyer to a chat window when
 // they asked to source something is the wrong surface, and it was reachable from every storefront.
+//
+// AND "CHAT NOW" IS GONE FROM THIS RAIL, because a storefront has no product to talk about.
+//
+// Messaging is opened by `POST /commerce/products/:productId/inquiries`, which creates the inquiry
+// AND its 1:1 thread. There is no organization-level equivalent and there should not be one:
+// `commerce_thread_resource_kind` is rfq, quote, order, service_engagement, dispute,
+// product_inquiry, manufacturing_inquiry, and the thread's unique index is
+// `(resourceKind, resourceId)` — so a thread keyed on an organization would be ONE THREAD PER
+// SELLER shared by every buyer who ever wrote to them.
+//
+// So the two honest doors from a storefront are a product page (per-product chat) and an RFQ
+// (a published requirement). Both are offered below. A button that opened a conversation the
+// backend cannot key is the thing this rail used to do.
 "use client";
-
-import { useState } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
 
-import ManufacturerChatSheet from "@/components/home/store/sheets/manufacturer-chat-sheet";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 
 export default function StorefrontContactActions({
@@ -37,27 +47,12 @@ export default function StorefrontContactActions({
    */
   readonly isViewerSignedIn: boolean;
 }) {
-  const [isChatSheetOpen, setIsChatSheetOpen] = useState(false);
   const isSignedIn = useViewerSignedIn(isViewerSignedIn);
 
   return (
     <>
       <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row lg:px-6">
-        {isSignedIn ? (
-          <button
-            type="button"
-            onClick={() => setIsChatSheetOpen(true)}
-            className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium tracking-[0.1px] text-white"
-          >
-            <Image
-              src="/icons/chat_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
-              width={18}
-              height={18}
-              alt=""
-            />
-            Chat now
-          </button>
-        ) : (
+        {!isSignedIn && (
           <Link
             href="/sign-in"
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#00696E] py-2.5 pr-6 pl-4 text-sm font-medium tracking-[0.1px] text-white"
@@ -80,11 +75,11 @@ export default function StorefrontContactActions({
         </Link>
       </div>
 
-      {isChatSheetOpen && (
-        <ManufacturerChatSheet
-          sellerDisplayName={sellerDisplayName}
-          onClose={() => setIsChatSheetOpen(false)}
-        />
+      {isSignedIn && (
+        <p className="px-4 pb-3 text-xs leading-4 text-muted-foreground lg:px-6">
+          To message {sellerDisplayName} about something specific, open one of their products — a
+          conversation is opened against a product so both sides know what it is about.
+        </p>
       )}
     </>
   );

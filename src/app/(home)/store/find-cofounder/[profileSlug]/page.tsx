@@ -2,22 +2,24 @@ import type { Metadata } from "next";
 
 import CofounderProfilePage from "@/components/home/store/cofounder-profile-page";
 import { withSentinelValues } from "@/lib/static-params";
-import { getCofounderProfile } from "@/lib/store/cofounders.api";
+import { getCofounderProfile, listCofounderProfiles } from "@/lib/store/cofounders.api";
 import { prettifySlugForDisplay } from "@/lib/store";
-import { MOCK_FEATURED_COFOUNDER_SLUGS } from "@/mocks/store/cofounders-mocks";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 export const instant = false;
 
 /**
- * `withSentinelValues` because `cacheComponents` fails the build on an empty
- * `generateStaticParams`, and the sentinel slug takes the same `notFound()` path a typo does.
+ * Prerender the published profiles the live directory returns, capped at 24.
+ *
+ * A failed read yields `[]`, which `withSentinelValues` turns into the one unresolvable param
+ * `cacheComponents` needs. No session travels: the directory is public and its anonymous answer is
+ * the only one every visitor shares.
  */
-export function generateStaticParams() {
-  return withSentinelValues([...MOCK_FEATURED_COFOUNDER_SLUGS]).map((profileSlug) => ({
-    profileSlug,
-  }));
+export async function generateStaticParams() {
+  const result = await listCofounderProfiles({ limit: 24 });
+  const slugs = result.success ? result.data.items.map((profile) => profile.slug) : [];
+  return withSentinelValues(slugs).map((profileSlug) => ({ profileSlug }));
 }
 
 export async function generateMetadata({

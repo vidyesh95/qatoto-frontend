@@ -371,3 +371,28 @@ export function isQuoteWithdrawable(status: QuoteStatus): boolean {
 export function formatFixedPointRateLabel(rateFixedPoint: number, rateScale: number): string {
   return (rateFixedPoint / 10 ** rateScale).toFixed(rateScale);
 }
+
+/**
+ * What `decline` and `withdraw` answer with — the quote SHELL, not the detail.
+ *
+ * `QuoteShellProjection` is six fields: the identity, the new `status`, and the revision number. It
+ * carries no `latestRevision`, no `acceptedRevisionNumber` and none of the five lifecycle
+ * timestamps, so parsing these two responses as a `QuoteDetail` failed on seven required fields at
+ * once.
+ *
+ * It is the right shape for the answer. Declining a quote changes exactly one thing, and returning
+ * the whole priced detail would invite a screen to re-render terms nobody is offering any more.
+ * Callers that need the detail back re-read it.
+ */
+export const QuoteShellSchema = z
+  .object({
+    id: z.string(),
+    rfqId: z.string(),
+    providerOrganizationId: z.string(),
+    status: z.enum(QUOTE_STATUSES),
+    latestRevisionNumber: z.number().int(),
+    createdAt: IsoDateTimeSchema,
+  })
+  .strip();
+
+export type QuoteShell = z.infer<typeof QuoteShellSchema>;

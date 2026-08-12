@@ -4,7 +4,8 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import type { UploadDraft } from "@/lib/videos/studio-view";
 import ChaptersEditor from "../chapters-editor";
-import { MOCK_STORE_PRODUCTS } from "../store-products-picker";
+import { useMyProductsQuery } from "@/hooks/products";
+import { centsToPriceLabel } from "@/lib/products/schemas";
 
 // Step 2 — video elements. Qatoto's thesis rows (pitch / funding / recruit /
 // team) come first; YouTube-carryover rows sit below them.
@@ -32,7 +33,12 @@ export default function VideoElementsStep({
   const [newTeamMemberText, setNewTeamMemberText] = useState("");
   const [newMilestoneText, setNewMilestoneText] = useState("");
 
-  const attachedProducts = MOCK_STORE_PRODUCTS.filter((product) =>
+  // RESOLVED FROM THE CREATOR'S OWN LISTINGS, not a fixture. An id the draft carries that is no
+  // longer in the list — deleted since it was attached — simply does not resolve to a chip, and the
+  // backend refuses it on save anyway. Rendering a chip for it from stale local state would tell the
+  // creator a product is attached that cannot be.
+  const myProductsQuery = useMyProductsQuery(1);
+  const attachedProducts = (myProductsQuery.data?.rows ?? []).filter((product) =>
     draft.attachedProductIds.includes(product.id),
   );
 
@@ -108,7 +114,7 @@ export default function VideoElementsStep({
               {attachedProducts.map((product) => (
                 <RemovableChip
                   key={product.id}
-                  label={`${product.title} · ${product.priceLabel}`}
+                  label={`${product.title} · ${centsToPriceLabel(product.priceInCents)}`}
                   onRemove={() => handleRemoveAttachedProductClick(product.id)}
                 />
               ))}

@@ -227,3 +227,20 @@ export const SEARCH_SORT_LABELS: Record<SearchSort, string> = {
   relevance: "Best match",
   discovery: "Trending",
 };
+
+/**
+ * A cursor page of product cards, as `GET /commerce/saved-products` answers it.
+ *
+ * The row is the SAME `StoreProductCardSchema` every browse surface uses — one vocabulary for a
+ * product card, so a wishlist row and a search row cannot drift apart.
+ */
+export const StoreProductCardPageSchema = cursorPageOf(StoreProductCardSchema);
+
+export type StoreProductCardPage = z.infer<typeof StoreProductCardPageSchema>;
+
+/** `GET /commerce/saved-products`. `kind` omitted means BOTH saved and bookmarked. */
+export interface ListSavedProductsFilter {
+  readonly kind?: "saved" | "bookmarked";
+  readonly limit?: number;
+  readonly cursor?: string;
+}

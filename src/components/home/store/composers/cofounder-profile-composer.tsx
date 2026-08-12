@@ -72,6 +72,7 @@ const COMPOSER_STEPS = [
 ] as const;
 
 interface CofounderProfileDraft {
+  displayName: string;
   headline: string;
   bio: string;
   countryCode: string;
@@ -82,6 +83,7 @@ interface CofounderProfileDraft {
 }
 
 const EMPTY_DRAFT: CofounderProfileDraft = {
+  displayName: "",
   headline: "",
   bio: "",
   countryCode: "",
@@ -197,6 +199,17 @@ export default function CofounderProfileComposer() {
       case "you":
         return (
           <div className="space-y-3">
+            {/* REQUIRED BY THE WIRE, and it is not the account name. `WriteCofounderProfileSchema`
+                demands `displayName`; a profile is a listing somebody chooses to publish under,
+                which is not automatically the name on their account. */}
+            <TextField
+              label="Your name, as it appears on the listing"
+              hint="How founders will see you in the directory."
+              value={draft.displayName}
+              onValueChange={(displayName) => applyDraftPatch({ displayName })}
+              placeholder="Priya Raman"
+              maxLength={120}
+            />
             <TextField
               label="One line about you"
               hint="What a founder gets by working with you. Specific beats impressive."
@@ -310,11 +323,23 @@ export default function CofounderProfileComposer() {
 function buildCreateCofounderProfileInput(
   draft: CofounderProfileDraft,
 ): CreateCofounderProfileInput | null {
+  const displayName = toOptionalText(draft.displayName);
   const headline = toOptionalText(draft.headline);
   const bio = toOptionalText(draft.bio);
   const countryCode = toOptionalCountryCode(draft.countryCode);
+  // REQUIRED ON THE WIRE — `min(8)` — not optional. It was spread conditionally here, so a draft
+  // that left it blank produced a body the `.strict()` schema refused.
+  const lookingFor = toOptionalText(draft.lookingFor);
 
-  if (headline === undefined || bio === undefined || countryCode === undefined) return null;
+  if (
+    displayName === undefined ||
+    headline === undefined ||
+    bio === undefined ||
+    countryCode === undefined ||
+    lookingFor === undefined
+  ) {
+    return null;
+  }
   if (draft.contributionKinds.length === 0) return null;
 
   // NOTHING ABOUT CAPITAL OR EQUITY IS ASSEMBLED HERE, and the omission is load-bearing rather than
@@ -323,21 +348,24 @@ function buildCreateCofounderProfileInput(
   // being removed from `CreateCofounderProfileInput` without a compiler error — and then 422 at
   // runtime against the backend's `.strict()` schema, taking the whole write with it.
   return {
+    displayName,
     headline,
     bio,
     countryCode,
     contributionKinds: draft.contributionKinds,
     commitmentLevel: draft.commitmentLevel,
-    ...(toOptionalText(draft.lookingFor) === undefined
-      ? {}
-      : { lookingFor: toOptionalText(draft.lookingFor) }),
+    lookingFor,
     ...(draft.sectors.length === 0 ? {} : { sectors: draft.sectors }),
   };
 }
 
 function collectMissingRequirements(draft: CofounderProfileDraft): string[] {
   const missing: string[] = [];
+  if (toOptionalText(draft.displayName) === undefined) missing.push("Your name for the listing.");
   if (toOptionalText(draft.headline) === undefined) missing.push("A one-line description of you.");
+  if (toOptionalText(draft.lookingFor) === undefined) {
+    missing.push("What you are looking for, in at least a sentence.");
+  }
   if (toOptionalText(draft.bio) === undefined) missing.push("The longer version.");
   if (toOptionalCountryCode(draft.countryCode) === undefined) {
     missing.push("A two-letter country code.");

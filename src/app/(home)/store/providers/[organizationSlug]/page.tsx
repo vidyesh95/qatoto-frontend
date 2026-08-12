@@ -2,22 +2,32 @@ import type { Metadata } from "next";
 
 import ProviderDetailPage from "@/components/home/store/provider-detail-page";
 import { withSentinelValues } from "@/lib/static-params";
-import { getStoreProvider } from "@/lib/store/providers.api";
+import { getStoreProvider, listStoreProviders } from "@/lib/store/providers.api";
 import { prettifySlugForDisplay } from "@/lib/store";
-import { MOCK_FEATURED_PROVIDER_SLUGS } from "@/mocks/store/providers-mocks";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 export const instant = false;
 
 /**
- * `withSentinelValues` because `cacheComponents` fails the build on an empty
- * `generateStaticParams`, and the sentinel slug takes the same `notFound()` path a typo does.
+ * Prerender the slugs the live list read returns, capped at 24.
+ *
+ * IT USED TO PRERENDER A FIXTURE ARRAY, which was the only honest option while the read was
+ * mocked and is the wrong one now: those slugs resolve to nothing, so every prerendered page was a
+ * `notFound()` and no real page was prerendered at all.
+ *
+ * A FAILED READ YIELDS `[]`, deliberately — an unreachable backend must not fail the build, and
+ * `withSentinelValues` turns the empty list into one unresolvable param rather than the empty array
+ * `cacheComponents` refuses. Those params then render on demand, and the sentinel takes the same
+ * `notFound()` path a typo does.
+ *
+ * NO SESSION IS FORWARDED. The prerender list is shared by every visitor, so it must be the
+ * anonymous answer.
  */
-export function generateStaticParams() {
-  return withSentinelValues([...MOCK_FEATURED_PROVIDER_SLUGS]).map((organizationSlug) => ({
-    organizationSlug,
-  }));
+export async function generateStaticParams() {
+  const result = await listStoreProviders({ limit: 24 });
+  const slugs = result.success ? result.data.items.map((item) => item.slug) : [];
+  return withSentinelValues(slugs).map((organizationSlug) => ({ organizationSlug }));
 }
 
 export async function generateMetadata({

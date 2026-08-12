@@ -2,11 +2,20 @@
 // below the `Writes` divider is NOT: the inquiry lifecycle is session-scoped and called from
 // `"use client"` islands.
 //
-// MOCK-BACKED: every call resolves a fixture. The endpoints DO exist now —
-// `STORE_BACKEND_STRUCTURE.md` §6.6 records Phase 17 as shipped — so wiring is one edit per
-// function: swap `resolveMockRead` for `getJson` (or the write for `sendJson`) and drop the fixture
-// argument for `options`. Same argument order, same return type: nothing above this layer changes,
-// because nothing above it ever knew.
+// WIRED. `src/mocks/store/factories-mocks.ts` is deleted rather than kept as a fallback.
+//
+// THREE DRIFTS WERE FIXED IN THE SAME EDIT, because each would have failed on the first live call:
+//
+//  1. THE INQUIRY DETAIL AND LIFECYCLE ROUTES ANSWER A BARE ROW, not `{ inquiry }`. The controller
+//     returns `data: result.value`, so the wrapper `FactoryInquiryDetailSchema` described did not
+//     exist on the wire and every one of the four calls parsed nothing.
+//  2. `close` TAKES NO BODY. Its route registers no body parser and the controller never reads one,
+//     so the `reason` this module used to accept was discarded in transit — a field that collects
+//     an explanation and drops it. `commerce_manufacturing_inquiry` has no column for one either.
+//     `cancelOrder` documents the same rule for the same reason.
+//  3. `buyerDisplayName` and `standardName` were MISSING FROM THE BACKEND and were added there
+//     rather than dropped here: without the first, the received queue is a wall of UUIDs; without
+//     the second, any factory with a coded certification failed its whole page.
 
 import {
   buildQueryString,
@@ -19,9 +28,8 @@ import {
   CreatedFactoryInquirySchema,
   FactoryDetailSchema,
   FactoryDirectoryPageSchema,
-  FactoryInquiryDetailSchema,
+  FactoryInquirySchema,
   FactoryInquiryListPageSchema,
-  type CloseFactoryInquiryInput,
   type CreatedFactoryInquiry,
   type CreateFactoryInquiryInput,
   type FactoryDetail,
@@ -31,17 +39,6 @@ import {
   type ListFactoriesFilter,
   type ListFactoryInquiriesFilter,
 } from "@/lib/store/factories.schemas";
-import { resolveMockDetail, resolveMockRead } from "@/lib/store/mock-transport";
-import {
-  MOCK_FACTORY_INQUIRIES_BY_ID,
-  MOCK_OWN_FACTORY_INQUIRY_PAGE,
-  MOCK_RECEIVED_FACTORY_INQUIRY_PAGE,
-} from "@/mocks/store/factory-inquiries-mocks";
-import {
-  MOCK_CREATED_FACTORY_INQUIRY,
-  MOCK_FACTORY_DETAILS_BY_SLUG,
-  MOCK_FACTORY_DIRECTORY_PAGE,
-} from "@/mocks/store/factories-mocks";
 
 /**
  * The manufacturer directory — `GET /store/factories`.
@@ -56,8 +53,7 @@ export function listStoreFactories(
   options?: RequestOptions,
 ): Promise<ActionResponse<FactoryDirectoryPage>> {
   const path = `/store/factories${buildQueryString({ ...filter })}`;
-  return resolveMockRead(path, FactoryDirectoryPageSchema, options, MOCK_FACTORY_DIRECTORY_PAGE);
-  // return getJson(path, FactoryDirectoryPageSchema, options);
+  return getJson(path, FactoryDirectoryPageSchema, options);
 }
 
 /**
@@ -72,14 +68,7 @@ export function getStoreFactory(
   options?: RequestOptions,
 ): Promise<ActionResponse<FactoryDetail>> {
   const path = `/store/factories/${factorySlug}`;
-  return resolveMockDetail(
-    path,
-    FactoryDetailSchema,
-    options,
-    MOCK_FACTORY_DETAILS_BY_SLUG,
-    factorySlug,
-  );
-  // return getJson(path, FactoryDetailSchema, options);
+  return getJson(path, FactoryDetailSchema, options);
 }
 
 // --- Writes ------------------------------------------------------------------
@@ -104,8 +93,7 @@ export function createFactoryInquiry(
   void input;
   // A FIXED row rather than an echo of the input — see the fixture's own comment. An echoed
   // reference could name an inquiry that does not resolve, and the first click would 404.
-  return resolveMockRead(path, CreatedFactoryInquirySchema, options, MOCK_CREATED_FACTORY_INQUIRY);
-  // return sendJson(path, "POST", input, CreatedFactoryInquirySchema, options);
+  return sendJson(path, "POST", input, CreatedFactoryInquirySchema, options);
 }
 
 // --- The inquiry lifecycle ---------------------------------------------------
@@ -129,13 +117,7 @@ export function listOwnFactoryInquiries(
   options?: RequestOptions,
 ): Promise<ActionResponse<FactoryInquiryListPage>> {
   const path = `/commerce/factories/inquiries/mine${buildQueryString({ ...filter })}`;
-  return resolveMockRead(
-    path,
-    FactoryInquiryListPageSchema,
-    options,
-    MOCK_OWN_FACTORY_INQUIRY_PAGE,
-  );
-  // return getJson(path, FactoryInquiryListPageSchema, options);
+  return getJson(path, FactoryInquiryListPageSchema, options);
 }
 
 /**
@@ -150,13 +132,7 @@ export function listReceivedFactoryInquiries(
   options?: RequestOptions,
 ): Promise<ActionResponse<FactoryInquiryListPage>> {
   const path = `/commerce/factories/inquiries/received${buildQueryString({ ...filter })}`;
-  return resolveMockRead(
-    path,
-    FactoryInquiryListPageSchema,
-    options,
-    MOCK_RECEIVED_FACTORY_INQUIRY_PAGE,
-  );
-  // return getJson(path, FactoryInquiryListPageSchema, options);
+  return getJson(path, FactoryInquiryListPageSchema, options);
 }
 
 /**
@@ -169,16 +145,9 @@ export function listReceivedFactoryInquiries(
 export function getFactoryInquiry(
   inquiryId: string,
   options?: RequestOptions,
-): Promise<ActionResponse<{ inquiry: FactoryInquiry }>> {
+): Promise<ActionResponse<FactoryInquiry>> {
   const path = `/commerce/factories/inquiries/${encodeURIComponent(inquiryId)}`;
-  return resolveMockDetail(
-    path,
-    FactoryInquiryDetailSchema,
-    options,
-    MOCK_FACTORY_INQUIRIES_BY_ID,
-    inquiryId,
-  );
-  // return getJson(path, FactoryInquiryDetailSchema, options);
+  return getJson(path, FactoryInquirySchema, options);
 }
 
 /**
@@ -192,16 +161,9 @@ export function getFactoryInquiry(
 export function sendFactoryInquiry(
   inquiryId: string,
   options?: RequestOptions,
-): Promise<ActionResponse<{ inquiry: FactoryInquiry }>> {
+): Promise<ActionResponse<FactoryInquiry>> {
   const path = `/commerce/factories/inquiries/${encodeURIComponent(inquiryId)}/send`;
-  return resolveMockDetail(
-    path,
-    FactoryInquiryDetailSchema,
-    options,
-    MOCK_FACTORY_INQUIRIES_BY_ID,
-    inquiryId,
-  );
-  // return sendJson(path, "POST", {}, FactoryInquiryDetailSchema, options);
+  return sendJson(path, "POST", undefined, FactoryInquirySchema, options);
 }
 
 /**
@@ -214,36 +176,16 @@ export function sendFactoryInquiry(
 export function answerFactoryInquiry(
   inquiryId: string,
   options?: RequestOptions,
-): Promise<ActionResponse<{ inquiry: FactoryInquiry }>> {
+): Promise<ActionResponse<FactoryInquiry>> {
   const path = `/commerce/factories/inquiries/${encodeURIComponent(inquiryId)}/answer`;
-  return resolveMockDetail(
-    path,
-    FactoryInquiryDetailSchema,
-    options,
-    MOCK_FACTORY_INQUIRIES_BY_ID,
-    inquiryId,
-  );
-  // return sendJson(path, "POST", {}, FactoryInquiryDetailSchema, options);
+  return sendJson(path, "POST", undefined, FactoryInquirySchema, options);
 }
 
 /** `POST …/:inquiryId/close` — either party, from any state but `closed`. */
 export function closeFactoryInquiry(
   inquiryId: string,
-  input: CloseFactoryInquiryInput = {},
   options?: RequestOptions,
-): Promise<ActionResponse<{ inquiry: FactoryInquiry }>> {
+): Promise<ActionResponse<FactoryInquiry>> {
   const path = `/commerce/factories/inquiries/${encodeURIComponent(inquiryId)}/close`;
-  void input;
-  return resolveMockDetail(
-    path,
-    FactoryInquiryDetailSchema,
-    options,
-    MOCK_FACTORY_INQUIRIES_BY_ID,
-    inquiryId,
-  );
-  // return sendJson(path, "POST", input, FactoryInquiryDetailSchema, options);
+  return sendJson(path, "POST", undefined, FactoryInquirySchema, options);
 }
-
-// Imported for the wiring lines above; referenced so they survive while every call is mock-backed.
-void getJson;
-void sendJson;

@@ -1,6 +1,18 @@
 // TRANSPORT: client-query — quotes are session-scoped and read from client islands.
 //
-// MOCK-BACKED: every call resolves a fixture. To wire one, swap `resolveMockRead` for `getJson`, or the
+// WIRED. `src/mocks/store/quotes-mocks.ts` is deleted.
+//
+// THREE WRITES ANSWERED SOMETHING OTHER THAN A QUOTE, and all three parsed nothing:
+//
+//  1. `accept` RETURNS AN **ORDER**. Accepting a revision is what creates the order from that
+//     snapshot, so the answer is the thing that now exists. It parsed `QuoteDetailSchema`, which
+//     shares almost no fields with an order — on the one write where a wrong shape costs most.
+//  2. `decline` and `withdraw` RETURN THE QUOTE **SHELL** — six fields, no `latestRevision` and
+//     none of the five lifecycle timestamps `QuoteDetailSchema` requires.
+//
+// All three also require an `Idempotency-Key`, which only `accept`'s docstring mentioned.
+//
+// LEGACY NOTE — to wire a call, swap `resolveMockRead` for `getJson`, or the
 // mock write for the `sendJson` line beside it, and drop the fixture argument.
 //
 // THERE IS NO QUOTE-SCOPED COMPARISON ENDPOINT, and that shaped the routes rather than being worked
@@ -10,19 +22,16 @@
 // quote's `rfqId` first and renders the same body. See `compareQuotesForQuote` below.
 
 import { getJson, sendJson, type ActionResponse, type RequestOptions } from "@/lib/http";
-import { resolveMockDetail, resolveMockRead } from "@/lib/store/mock-transport";
+import { CommerceOrderSchema, type CommerceOrder } from "@/lib/store/cart.schemas";
 import {
   QuoteComparisonListSchema,
   QuoteDetailSchema,
+  QuoteShellSchema,
+  type QuoteShell,
   type AcceptQuoteInput,
   type QuoteComparisonItem,
   type QuoteDetail,
 } from "@/lib/store/quotes.schemas";
-import {
-  MOCK_QUOTE_COMPARISONS_BY_RFQ_ID,
-  MOCK_QUOTE_DETAILS_BY_ID,
-  MOCK_RFQ_ID_BY_QUOTE_ID,
-} from "@/mocks/store/quotes-mocks";
 
 /**
  * One quote, with its latest revision.
@@ -37,8 +46,7 @@ export function getQuote(
   options?: RequestOptions,
 ): Promise<ActionResponse<QuoteDetail>> {
   const path = `/commerce/quotes/${quoteId}`;
-  return resolveMockDetail(path, QuoteDetailSchema, options, MOCK_QUOTE_DETAILS_BY_ID, quoteId);
-  // return getJson(path, QuoteDetailSchema, options);
+  return getJson(path, QuoteDetailSchema, options);
 }
 
 /**
@@ -58,18 +66,10 @@ export async function compareQuotesForRfq(
   rfqId: string,
   options?: RequestOptions,
 ): Promise<ActionResponse<readonly QuoteComparisonItem[]>> {
-  const path = `/commerce/rfqs/${rfqId}/quotes`;
-  const comparison = MOCK_QUOTE_COMPARISONS_BY_RFQ_ID[rfqId];
-  if (comparison === undefined) {
-    return { success: false, error: { code: "404", message: "Not found." } };
-  }
+  const path = `/commerce/rfqs/${encodeURIComponent(rfqId)}/quotes`;
   // The wire shape is `{ items }`, so the schema parses an object and the array is unwrapped HERE rather
-  // than in every caller — nothing downstream should know the envelope had a wrapper. The fixture is
-  // stored as a bare array and wrapped on the way in, so it stays readable as a list of quotes.
-  const parsed = await resolveMockRead(path, QuoteComparisonListSchema, options, {
-    items: comparison,
-  });
-  // const parsed = await getJson(path, QuoteComparisonListSchema, options);
+  // than in every caller — nothing downstream should know the envelope had a wrapper.
+  const parsed = await getJson(path, QuoteComparisonListSchema, options);
   if (!parsed.success) return parsed;
   return { success: true, data: parsed.data.items };
 }
@@ -88,11 +88,13 @@ export async function compareQuotesForQuote(
 ): Promise<
   ActionResponse<{ readonly rfqId: string; readonly quotes: readonly QuoteComparisonItem[] }>
 > {
-  const rfqId = MOCK_RFQ_ID_BY_QUOTE_ID[quoteId];
-  if (rfqId === undefined) {
-    return { success: false, error: { code: "404", message: "Not found." } };
-  }
-  // Wired, this is `await getQuote(quoteId)` then `.rfqId` — the quote read is the only way to learn it.
+  // The quote read is the only way to learn the RFQ id — there is no `rfqId` on the URL and no
+  // route that maps one to the other. Its 404 is also this function's 404, which is correct: a
+  // quote the caller cannot read is not a comparison they may see.
+  const quote = await getQuote(quoteId, options);
+  if (!quote.success) return quote;
+  const rfqId = quote.data.rfqId;
+
   const comparison = await compareQuotesForRfq(rfqId, options);
   if (!comparison.success) return comparison;
   return { success: true, data: { rfqId, quotes: comparison.data } };
@@ -117,35 +119,34 @@ export function acceptQuote(
   quoteId: string,
   input: AcceptQuoteInput,
   options?: RequestOptions,
-): Promise<ActionResponse<QuoteDetail>> {
-  const path = `/commerce/quotes/${quoteId}/accept`;
-  void input;
-  // Returns the quote unchanged. Synthesising `status: "accepted"` would claim an acceptance the server
-  // never validated — and acceptance is the moment an order becomes immutable, so a fabricated one is the
-  // worst possible mock.
-  return resolveMockDetail(path, QuoteDetailSchema, options, MOCK_QUOTE_DETAILS_BY_ID, quoteId);
-  // return sendJson(path, "POST", input, QuoteDetailSchema, options);
+): Promise<ActionResponse<CommerceOrder>> {
+  /**
+   * IT ANSWERS AN **ORDER**, NOT A QUOTE, and that is the whole point of the call.
+   *
+   * `acceptQuote` returns `OrderProjection` — accepting a revision is what CREATES the order from
+   * that snapshot, so the useful answer is the thing that now exists rather than the thing that
+   * was accepted. This used to parse `QuoteDetailSchema`, which shares almost no fields with an
+   * order, so every accept would have failed its parse on the one write where that matters most.
+   *
+   * The caller navigates to the order. Re-read the quote if its new `status` is wanted.
+   */
+  const path = `/commerce/quotes/${encodeURIComponent(quoteId)}/accept`;
+  return sendJson(path, "POST", input, CommerceOrderSchema, options);
 }
 
 export function declineQuote(
   quoteId: string,
   options?: RequestOptions,
-): Promise<ActionResponse<QuoteDetail>> {
-  const path = `/commerce/quotes/${quoteId}/decline`;
-  return resolveMockDetail(path, QuoteDetailSchema, options, MOCK_QUOTE_DETAILS_BY_ID, quoteId);
-  // return sendJson(path, "POST", undefined, QuoteDetailSchema, options);
+): Promise<ActionResponse<QuoteShell>> {
+  const path = `/commerce/quotes/${encodeURIComponent(quoteId)}/decline`;
+  return sendJson(path, "POST", undefined, QuoteShellSchema, options);
 }
 
 /** A provider withdraws before the buyer acts. After acceptance it is refused — the order exists. */
 export function withdrawQuote(
   quoteId: string,
   options?: RequestOptions,
-): Promise<ActionResponse<QuoteDetail>> {
-  const path = `/commerce/quotes/${quoteId}/withdraw`;
-  return resolveMockDetail(path, QuoteDetailSchema, options, MOCK_QUOTE_DETAILS_BY_ID, quoteId);
-  // return sendJson(path, "POST", undefined, QuoteDetailSchema, options);
+): Promise<ActionResponse<QuoteShell>> {
+  const path = `/commerce/quotes/${encodeURIComponent(quoteId)}/withdraw`;
+  return sendJson(path, "POST", undefined, QuoteShellSchema, options);
 }
-
-// Imported for the wiring lines above; referenced so they survive while reads are mock-backed.
-void getJson;
-void sendJson;

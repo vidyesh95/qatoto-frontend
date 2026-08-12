@@ -206,6 +206,12 @@ export const CheckoutPrepareSchema = z
     // phone are encrypted and reach a seller only through the audited decrypt route, after confirm.
     deliveryAddressSnapshot: z.string().nullable(),
     deliveryEstimates: z.array(SellerDeliveryEstimateSchema),
+    // `arrivalWindows` IS SENT AND IS NOT PARSED HERE YET. `.strip()` drops it, deliberately rather
+    // than accidentally: the backend builds it with `projectPrepareArrivalWindow`, where the window
+    // itself is ALWAYS null at prepare time and only `missingComponents` carries meaning. Rendering
+    // it needs a checkout panel that names components — "ships in 15–25 days · 24–34 days at sea ·
+    // 3–10 days clearance" — without ever printing a date, which is its own piece of work. Adding
+    // the field with nothing reading it would be an unverified shape.
   })
   .strip();
 
@@ -227,12 +233,23 @@ export const ORDER_STATES = [
 export type OrderState = (typeof ORDER_STATES)[number];
 
 /**
- * How an order settles.
+ * How an order settles. FOUR VALUES, AND WHICH ONE YOU GET DEPENDS ON HOW THE ORDER WAS MADE.
  *
- * `direct_offline` IS THE DEFAULT and means Qatoto observes nothing: the parties settle by T/T, L/C
- * or whatever they arranged, and the buyer carries the counterparty risk. `external_escrow` requires
- * a mutual agreement and a licensed third party. `internal_custody` exists in the enum and Qatoto
- * does not operate it — §14 decided the platform is not a custodian.
+ * `direct_processor` is what a DIRECT CHECKOUT produces, always, unless the buyer names an accepted
+ * escrow agreement. `commerce-checkout.service.ts` passes `hasProcessorPayment: true` for this path
+ * unconditionally, so the processor settles buyer straight to seller and the money never rests
+ * anywhere Qatoto can see.
+ *
+ * `direct_offline` belongs to QUOTE-ORIGINATED orders, settled by T/T, L/C or whatever the parties
+ * arranged and recorded as a party attestation. Nothing on the checkout page can produce it. This
+ * comment used to call it "the default", which was wrong in the one place it mattered: only
+ * `direct_processor` and `internal_custody` can take a payment intent at all, so a reader who
+ * believed a checkout produced `direct_offline` would have gone looking for a wire-transfer UI
+ * instead of the pay control.
+ *
+ * `external_escrow` requires a mutual agreement and a licensed third party. `internal_custody` is
+ * FROZEN — §14 retired it and decided the platform is not a custodian — and its branch survives only
+ * so a replayed webhook for a pre-Phase-14 order posts what that order's rail permits.
  */
 export const SETTLEMENT_RAILS = [
   "internal_custody",

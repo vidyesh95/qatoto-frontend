@@ -27,7 +27,8 @@ import {
   getQuote,
   withdrawQuote,
 } from "@/lib/store/quotes.api";
-import type { QuoteDetail } from "@/lib/store/quotes.schemas";
+import type { CommerceOrder } from "@/lib/store/cart.schemas";
+import type { QuoteShell } from "@/lib/store/quotes.schemas";
 
 export function useQuoteQuery(quoteId: string) {
   return useQuery({
@@ -66,7 +67,7 @@ export function useQuoteComparisonByQuoteQuery(quoteId: string) {
  * RFQ: awarding it is the server's business and the RFQ read will say so on its own next fetch.
  */
 export function useAcceptQuote(): UseMutationResult<
-  ActionResponse<QuoteDetail>,
+  ActionResponse<CommerceOrder>,
   Error,
   {
     readonly quoteId: string;
@@ -95,7 +96,7 @@ export function useAcceptQuote(): UseMutationResult<
 }
 
 export function useDeclineQuote(): UseMutationResult<
-  ActionResponse<QuoteDetail>,
+  ActionResponse<QuoteShell>,
   Error,
   { readonly quoteId: string }
 > {
@@ -110,7 +111,7 @@ export function useDeclineQuote(): UseMutationResult<
 }
 
 export function useWithdrawQuote(): UseMutationResult<
-  ActionResponse<QuoteDetail>,
+  ActionResponse<QuoteShell>,
   Error,
   { readonly quoteId: string }
 > {

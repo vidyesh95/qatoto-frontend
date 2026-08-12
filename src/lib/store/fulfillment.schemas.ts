@@ -20,13 +20,10 @@
 
 import { z } from "zod";
 
+import { FreightModeSchema } from "@/lib/store/freight.schemas";
+
 import { ORDER_STATES } from "@/lib/store/cart.schemas";
-import {
-  cursorPageOf,
-  FREIGHT_TRANSPORT_MODES,
-  IsoDateTimeSchema,
-  PROVIDER_KINDS,
-} from "@/lib/store/shared.schemas";
+import { cursorPageOf, IsoDateTimeSchema, PROVIDER_KINDS } from "@/lib/store/shared.schemas";
 
 // --- Enums ------------------------------------------------------------------
 
@@ -92,7 +89,20 @@ export const ShipmentLegSchema = z
     id: z.string(),
     shipmentId: z.string(),
     sequence: z.number().int(),
-    mode: z.enum(FREIGHT_TRANSPORT_MODES),
+    /**
+     * FOUR MEMBERS, NOT FIVE.
+     *
+     * The column is `commerce_shipment_leg_mode` — `air | sea | land | rail`. This parsed with
+     * `FREIGHT_TRANSPORT_MODES`, which is `freight_transport_mode`'s FIVE and includes
+     * `multimodal`; a leg can never carry that, so the schema admitted a value the database
+     * forbids.
+     *
+     * Harmless in practice — `multimodal` simply never arrives — and fixed anyway, because a second
+     * vocabulary that disagrees with the database is the exact class of bug the wire-casing rule
+     * exists to prevent. `FREIGHT_MODES` is already the correct tuple and `admin-freight` will want
+     * the same one.
+     */
+    mode: FreightModeSchema,
     state: z.string(),
     version: z.number().int(),
     originCountryCode: z.string().nullable(),
@@ -211,6 +221,13 @@ export const OrderFulfillmentSchema = z
 
 export interface ListServiceEngagementsFilter {
   readonly state?: ServiceEngagementState;
+  /**
+   * WHICH SIDE OF THE ENGAGEMENT TO LIST — the caller's own role, not a filter on the rows.
+   *
+   * Omitted means both sides, which is what an organization that buys and provides wants. It was
+   * missing here entirely, so the two studio queues could not be told apart.
+   */
+  readonly role?: "buyer" | "provider";
   readonly limit?: number;
   readonly cursor?: string;
 }
@@ -231,7 +248,16 @@ export type ServiceEngagementTransitionTarget =
   | "cancelled";
 
 export interface TransitionServiceEngagementInput {
-  readonly target: ServiceEngagementTransitionTarget;
+  /**
+   * `targetState`, NOT `target`.
+   *
+   * The body is `.strict()`, so the old spelling was refused twice over — once for the
+   * unrecognized key and once for the missing required one — and the transition never happened.
+   * The enum members themselves were always right; only the key was wrong.
+   */
+  readonly targetState: ServiceEngagementTransitionTarget;
+  /** Optional, and it lands on the engagement's event trail rather than being discarded. */
+  readonly note?: string;
 }
 
 export type ShipmentLeg = z.infer<typeof ShipmentLegSchema>;

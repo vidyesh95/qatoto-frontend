@@ -15,22 +15,35 @@
 //     and reused for every retry of that attempt.
 //  3. CONFIRM PRODUCES ONE ORDER PER COUNTERPARTY. Not one order. The screen after confirm therefore
 //     lists orders, plural, because that is what the buyer now has.
-//  4. THE DEFAULT RAIL IS `direct_offline`, WHERE NOBODY HOLDS THE MONEY, and this page says so
-//     before the buyer confirms rather than after. §14 decided Qatoto is not a custodian; a checkout
-//     that stays silent about that is implying the opposite.
+//  4. NOBODY HOLDS THE MONEY, and this page says so before the buyer confirms rather than after.
+//     §14 decided Qatoto is not a custodian; a checkout that stays silent about that is implying
+//     the opposite. The rail a direct checkout actually lands on is `direct_processor` — the
+//     processor settles buyer straight to seller and the funds never rest anywhere Qatoto can see.
+//     (This rule USED TO SAY `direct_offline`, which was wrong: `confirmCheckout` passes
+//     `hasProcessorPayment: true` unconditionally, so a direct checkout is only ever
+//     `direct_processor`, or `external_escrow` when the buyer names an accepted agreement.
+//     `direct_offline` belongs to quote-originated orders settled by wire, which never come through
+//     this page. The rendered rail below has always come off the server's own response, so only the
+//     comment was wrong — but it would have sent the next reader looking for a wire-transfer UI.)
 //  5. `pending_payment` IS NOT PAID. The confirmation says the orders exist and nothing has been
-//     paid, because the state literally says so.
+//     paid, because the state literally says so. Paying happens on the order page, which is where
+//     the payment intent and its polling live.
 //
 // One thing deliberately absent: an address picker. Addresses belong to an ORGANIZATION and the
 // backend caps them per kind, but `commerce_organization.tradeState` starts `pending`, so a new
-// buyer's first address sits behind staff verification until the auto-provisioning §14 decided is
-// built. Sending no `deliveryAddressId` is the honest state until then, and the copy says what is
-// missing rather than showing an empty select.
+// buyer's first address sits behind staff verification. Sending no `deliveryAddressId` is the
+// honest state until then, and the copy says what is missing rather than showing an empty select.
+//
+// `BuyerWorkspaceNotice` IS THE OTHER HALF OF THAT SAME FACT. A37's auto-provisioning ships now, so
+// a new buyer HAS a workspace — a `pending` one, which this page's prepare accepts and its confirm
+// refuses. The notice says which of those the buyer is looking at and offers the one step they can
+// take about it.
 
 import { useState } from "react";
 
 import Link from "next/link";
 
+import BuyerWorkspaceNotice from "@/components/home/store/sections/buyer-workspace-notice";
 import StatusPanel from "@/components/home/shared/status-panel";
 import { useCartQuery, useConfirmCheckout, usePrepareCheckout } from "@/hooks/store/cart";
 import { newIdempotencyKey } from "@/lib/idempotency";
@@ -57,12 +70,30 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState<CheckoutStep>({ status: "review" });
 
+  /**
+   * PREPARE HAS ITS OWN KEY, and it is a different key from the confirm's.
+   *
+   * The route requires one — a prepare reserves stock, so a retry without a key holds it twice —
+   * and the two attempts are two different acts: reserving is not ordering, and one key covering
+   * both would make a retried confirm dedupe against the reservation that preceded it.
+   *
+   * `useState(newIdempotencyKey)` passes the function UNCALLED so it runs once per mount rather
+   * than once per render. Calling it at page top level would also break the build under
+   * `cacheComponents`, where `crypto.randomUUID()` runs during prerender.
+   *
+   * It ROTATES ONLY AFTER A CONFIRMED SUCCESS. A buyer who edits the cart and reserves again is
+   * making a genuinely new reservation and needs a new key; a buyer retrying a timed-out prepare
+   * needs the same one, which is what a rotation on failure would destroy.
+   */
+  const [prepareIdempotencyKey, setPrepareIdempotencyKey] = useState(newIdempotencyKey);
+
   const handlePrepareClick = () => {
     prepareCheckout.mutate(
-      {},
+      { idempotencyKey: prepareIdempotencyKey },
       {
         onSuccess: (result) => {
           if (!result.success) return;
+          setPrepareIdempotencyKey(newIdempotencyKey());
           // THE KEY IS MINTED HERE, ONCE, as the attempt begins — and it lives in state so every
           // retry of this confirm carries the same one. Minting it inside the confirm handler would
           // give each press a new key, which is exactly the duplicate-order bug idempotency exists
@@ -196,7 +227,12 @@ function ReviewStep({
   const prepareResult = prepareCheckout.data;
 
   return (
-    <div className="px-4 pt-4 lg:px-6">
+    <div className="space-y-3 px-4 pt-4 lg:px-6">
+      {/* ABOVE the reserve button, not beside the confirm one. Prepare succeeds on a pending
+          workspace and confirm does not, so a buyer told only at the confirm step would have
+          already taken stock off the shelf to learn it. */}
+      <BuyerWorkspaceNotice />
+
       <div className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3">
         <p className="text-sm leading-5 text-[#191C1C]">
           {formatCountLabel(cartResult.data.items.length)}{" "}

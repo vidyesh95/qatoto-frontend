@@ -244,14 +244,31 @@ export interface ListCofounderProfilesFilter {
  * to explain than to prevent.
  */
 export interface CreateCofounderProfileInput {
+  /**
+   * REQUIRED, and it was missing entirely — every create would have been a 422.
+   *
+   * The person's own name on the directory card. It is not derived from the account: a member's
+   * account name is an identity fact and this is a listing they are choosing to publish under.
+   */
+  readonly displayName: string;
   readonly headline: string;
   readonly bio: string;
   readonly countryCode: string;
   readonly contributionKinds: readonly CofounderContributionKind[];
   readonly commitmentLevel: CofounderCommitmentLevel;
-  readonly lookingFor?: string;
+  /** REQUIRED on the wire — `min(8)`. It was optional here, which is a second 422. */
+  readonly lookingFor: string;
   readonly sectors?: readonly string[];
+  readonly languages?: readonly string[];
+  readonly avatarUrl?: string | null;
 }
+
+// NO `capitalRange` AND NO `equityExpectationBasisPoints`, AND THEIR ABSENCE IS LOAD-BEARING.
+// §14 has not decided whether Qatoto may publish what a person will invest beside a contact
+// affordance — it is close to a securities solicitation and how close is a per-market legal
+// answer. So the columns deliberately do not exist, `verify-store-phase-19-constraints` asserts
+// their ABSENCE as its first check, and the create body is `.strict()`: sending either is a 422
+// rather than a value quietly discarded. Do not add them here before that decision lands.
 
 /**
  * What `POST /community/cofounder-profiles` answers with: `201` and the raw row.
@@ -259,15 +276,12 @@ export interface CreateCofounderProfileInput {
  * `state` COMES BACK `draft`. Creating is not publishing — the profile is visible to nobody, and the
  * success screen must not say "live", "listed" or "you are now discoverable".
  */
-export const CreatedCofounderProfileSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    state: z.enum(COFOUNDER_PROFILE_STATES),
-    headline: z.string(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+// THE LIFECYCLE WRITES ALL ANSWER THE OWNED PROFILE, and it is NESTED.
+//
+// `create`, `PATCH /mine`, `submit`, `withdraw` and the engagement-state route every one return
+// `OwnedCofounderProfileProjection` — `{ profile: <card>, bio, lookingFor, priorVentures,
+// languages, publishedAt, state, decisionReason, createdAt }`. The flat `id`/`slug`/`headline`
+// these schemas used to require live under `profile`, so none of the five parsed.
 
 // --- The owner's own profile ------------------------------------------------
 //
@@ -302,9 +316,10 @@ export const OwnCofounderProfileSchema = z
      * forum thread, which stays `pending_review` because nobody edits a posted question. The note
      * is what makes the difference actionable.
      */
-    moderationNote: z.string().nullable(),
+    decisionReason: z.string().nullable(),
     publishedAt: IsoDateTimeSchema.nullable(),
-    updatedAt: IsoDateTimeSchema,
+    // NO `updatedAt`. `OwnedCofounderProfileProjection` does not carry one, and requiring it failed
+    // every read and every one of the four lifecycle writes.
     createdAt: IsoDateTimeSchema,
   })
   .strip();
@@ -345,15 +360,19 @@ export interface UpdateCofounderEngagementStateInput {
 }
 
 /** What `submit`, `withdraw` and the engagement-state patch all answer with. */
-export const CofounderProfileStateChangeSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    state: z.enum(COFOUNDER_PROFILE_STATES),
-    engagementState: z.enum(COFOUNDER_ENGAGEMENT_STATES),
-    updatedAt: IsoDateTimeSchema,
-  })
-  .strip();
+// SUBMIT, WITHDRAW AND THE ENGAGEMENT-STATE ROUTE ALL ANSWER THE OWNED PROFILE.
+//
+// This described a flat `{id, slug, state, engagementState, updatedAt}` summary. All three routes
+// return `OwnedCofounderProfileProjection` instead, where `id`, `slug` and `engagementState` live
+// under `profile` and `updatedAt` does not exist at all — so none of the three parsed. Returning
+// the whole profile is also the better shape: a state change that answers with the full row means
+// the page after it cannot disagree with the page before.
+export const CofounderProfileStateChangeSchema = OwnCofounderProfileSchema;
+
+// `POST /community/cofounder-profiles` answers the same owned projection as everything else in the
+// lifecycle. It comes back `state: "draft"` — creating is not publishing, the profile is visible to
+// nobody, and the success screen must not say "live", "listed" or "you are now discoverable".
+export const CreatedCofounderProfileSchema = OwnCofounderProfileSchema;
 
 // --- Moderation, gated by `moderate_content` --------------------------------
 //
@@ -393,9 +412,16 @@ export interface ListAdminCofounderProfilesFilter {
  * A discriminated union, `note` required only on `reject`. Rejecting returns the profile to
  * `draft` with the note attached, so its owner can act on it rather than guess.
  */
+/**
+ * `reasonNote`, REQUIRED ON BOTH ARMS. This was `note` and optional on `publish` — two 422s against
+ * a `.strict()` body that demands `{ decision, reasonNote }`.
+ *
+ * A rejection sends the profile back to `draft` so its owner can fix and resubmit, which is why the
+ * note matters more here than on a forum thread: it is the instruction, not just the record.
+ */
 export type ModerateCofounderProfileInput =
-  | { readonly decision: "publish" }
-  | { readonly decision: "reject"; readonly note: string };
+  | { readonly decision: "publish"; readonly reasonNote: string }
+  | { readonly decision: "reject"; readonly reasonNote: string };
 
 // --- Inferred types ---------------------------------------------------------
 

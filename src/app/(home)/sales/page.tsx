@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
 
-// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+import SalesPage from "@/components/commerce/sales-page";
+
+// Permanently dynamic: session-scoped and behind a seller organization.
 export const instant = false;
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Sales",
-  description: "Sales page for Qatoto",
+  description: "Orders you have received on Qatoto",
 };
 
-export default function Sales() {
-  return <h1>Sales</h1>;
+/**
+ * WAS AN `<h1>` STUB. Now the seller's order and dispatch queue.
+ *
+ * PROFIT AND LOSS ARE ABSENT AND THE PAGE SAYS SO. No route in this backend reports a seller's
+ * takings; summing the orders on one page would count unpaid ones, ignore refunds and fees, and
+ * cover only what loaded. That is a number a seller would act on, so it is not shown.
+ */
+export default function SalesRoute() {
+  return <SalesPage />;
 }

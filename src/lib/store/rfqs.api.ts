@@ -1,6 +1,14 @@
 // TRANSPORT: client-query — RFQs are session-scoped and read from client islands.
 //
-// MOCK-BACKED: every call resolves a fixture. To wire one, swap `resolveMockRead` for `getJson`, or the
+// WIRED. `src/mocks/store/rfqs-mocks.ts` is deleted.
+//
+// `state` IS A REAL FILTER NOW. Both list routes took `{ limit, cursor }` only, so the `state` this
+// module has always sent was a 422 that killed the whole read; the backend's `ListQuerySchema`
+// gained the key rather than the filter being dropped here, because a buyer's RFQ page is organised
+// by state and a provider's queue only wants what is still open.
+//
+// `open` AND `close` REQUIRE AN `Idempotency-Key`, which this module's docstrings did not say.
+// LEGACY NOTE — to wire a call, swap `resolveMockRead` for `getJson`, or the
 // mock write for the `sendJson` line beside it, and drop the fixture argument.
 
 import {
@@ -10,7 +18,6 @@ import {
   type ActionResponse,
   type RequestOptions,
 } from "@/lib/http";
-import { resolveMockDetail, resolveMockRead } from "@/lib/store/mock-transport";
 import {
   RfqDetailSchema,
   RfqListPageSchema,
@@ -19,11 +26,6 @@ import {
   type RfqDetail,
   type RfqListPage,
 } from "@/lib/store/rfqs.schemas";
-import {
-  MOCK_BUYER_RFQ_LIST,
-  MOCK_PROVIDER_RFQ_LIST,
-  MOCK_RFQ_DETAILS_BY_ID,
-} from "@/mocks/store/rfqs-mocks";
 
 /** The buyer's own RFQs, drafts included. */
 export function listBuyerRfqs(
@@ -31,8 +33,7 @@ export function listBuyerRfqs(
   options?: RequestOptions,
 ): Promise<ActionResponse<RfqListPage>> {
   const path = `/commerce/rfqs/mine${buildQueryString({ ...filter })}`;
-  return resolveMockRead(path, RfqListPageSchema, options, MOCK_BUYER_RFQ_LIST);
-  // return getJson(path, RfqListPageSchema, options);
+  return getJson(path, RfqListPageSchema, options);
 }
 
 /**
@@ -47,8 +48,7 @@ export function listProviderRfqs(
   options?: RequestOptions,
 ): Promise<ActionResponse<RfqListPage>> {
   const path = `/commerce/provider/rfqs${buildQueryString({ ...filter })}`;
-  return resolveMockRead(path, RfqListPageSchema, options, MOCK_PROVIDER_RFQ_LIST);
-  // return getJson(path, RfqListPageSchema, options);
+  return getJson(path, RfqListPageSchema, options);
 }
 
 /**
@@ -66,8 +66,7 @@ export function getRfq(
   options?: RequestOptions,
 ): Promise<ActionResponse<RfqDetail>> {
   const path = `/commerce/rfqs/${rfqId}`;
-  return resolveMockDetail(path, RfqDetailSchema, options, MOCK_RFQ_DETAILS_BY_ID, rfqId);
-  // return getJson(path, RfqDetailSchema, options);
+  return getJson(path, RfqDetailSchema, options);
 }
 
 /**
@@ -85,8 +84,7 @@ export function openRfq(
   const path = `/commerce/rfqs/${rfqId}/open`;
   // Returns the RFQ unchanged: synthesising `state: "open"` here would claim a transition the server
   // never validated, and the validation IS the operation.
-  return resolveMockDetail(path, RfqDetailSchema, options, MOCK_RFQ_DETAILS_BY_ID, rfqId);
-  // return sendJson(path, "POST", undefined, RfqDetailSchema, options);
+  return sendJson(path, "POST", undefined, RfqDetailSchema, options);
 }
 
 /** Closes an open RFQ to new quotes. Existing quotes stay valid until they expire. */
@@ -95,8 +93,7 @@ export function closeRfq(
   options?: RequestOptions,
 ): Promise<ActionResponse<RfqDetail>> {
   const path = `/commerce/rfqs/${rfqId}/close`;
-  return resolveMockDetail(path, RfqDetailSchema, options, MOCK_RFQ_DETAILS_BY_ID, rfqId);
-  // return sendJson(path, "POST", undefined, RfqDetailSchema, options);
+  return sendJson(path, "POST", undefined, RfqDetailSchema, options);
 }
 
 /**
@@ -117,12 +114,10 @@ export function createDraftRfq(
   options?: RequestOptions,
 ): Promise<ActionResponse<RfqDetail>> {
   const path = "/commerce/rfqs";
-  void input;
   // Returns an EXISTING draft fixture. It does NOT echo the input back as a new RFQ: a mock that returned
   // the submitted body would let the composer's success screen show a draft that does not exist, and the
   // first click on it would 404. `rfq_mock_2` is the draft in the fixture set.
-  return resolveMockDetail(path, RfqDetailSchema, options, MOCK_RFQ_DETAILS_BY_ID, "rfq_mock_2");
-  // return sendJson(path, "POST", input, RfqDetailSchema, options);
+  return sendJson(path, "POST", input, RfqDetailSchema, options);
 }
 
 // Imported for the wiring lines above; referenced so they survive while reads are mock-backed.

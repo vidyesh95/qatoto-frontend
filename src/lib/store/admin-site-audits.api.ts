@@ -1,6 +1,12 @@
 // TRANSPORT: client-query — every call here is made from the admin console island.
 //
-// MOCK-BACKED: every call resolves a fixture. The endpoints exist —
+// WIRED. `src/mocks/store/factory-profile-mocks.ts` is deleted with this module.
+//
+// THE LIST WRAPS AND THE TWO WRITES DO NOT. `GET …/site-audits` answers `{ siteAudits: [...] }` —
+// note the key, which this module called `audits` — while `record` and `withdraw` each answer a
+// SINGLE BARE audit row. All three were parsed as `{ audits: [...] }`, so none of them worked.
+//
+// LEGACY NOTE — the endpoints exist —
 // `STORE_BACKEND_STRUCTURE.md` §6.6 records Phase 17 as shipped — so wiring is one edit per
 // function: swap `resolveMockRead` for `getJson` (or the write for `sendJson`) and drop the fixture
 // argument for `options`.
@@ -28,21 +34,19 @@
 import { getJson, sendJson, type ActionResponse, type RequestOptions } from "@/lib/http";
 import {
   FactorySiteAuditListSchema,
+  FactorySiteAuditSchema,
   type FactorySiteAudit,
   type RecordSiteAuditInput,
   type WithdrawSiteAuditInput,
 } from "@/lib/store/factories.schemas";
-import { resolveMockRead } from "@/lib/store/mock-transport";
-import { MOCK_FACTORY_SITE_AUDIT_LIST } from "@/mocks/store/factory-profile-mocks";
 
 /** `GET /commerce/admin/organizations/:organizationId/site-audits` — every audit, withdrawn ones included. */
 export function listOrganizationSiteAudits(
   organizationId: string,
   options?: RequestOptions,
-): Promise<ActionResponse<{ audits: FactorySiteAudit[] }>> {
+): Promise<ActionResponse<{ siteAudits: FactorySiteAudit[] }>> {
   const path = `/commerce/admin/organizations/${encodeURIComponent(organizationId)}/site-audits`;
-  return resolveMockRead(path, FactorySiteAuditListSchema, options, MOCK_FACTORY_SITE_AUDIT_LIST);
-  // return getJson(path, FactorySiteAuditListSchema, options);
+  return getJson(path, FactorySiteAuditListSchema, options);
 }
 
 /**
@@ -55,11 +59,9 @@ export function recordOrganizationSiteAudit(
   organizationId: string,
   input: RecordSiteAuditInput,
   options?: RequestOptions,
-): Promise<ActionResponse<{ audits: FactorySiteAudit[] }>> {
+): Promise<ActionResponse<FactorySiteAudit>> {
   const path = `/commerce/admin/organizations/${encodeURIComponent(organizationId)}/site-audits`;
-  void input;
-  return resolveMockRead(path, FactorySiteAuditListSchema, options, MOCK_FACTORY_SITE_AUDIT_LIST);
-  // return sendJson(path, "POST", input, FactorySiteAuditListSchema, options);
+  return sendJson(path, "POST", input, FactorySiteAuditSchema, options);
 }
 
 /**
@@ -72,13 +74,7 @@ export function withdrawOrganizationSiteAudit(
   auditId: string,
   input: WithdrawSiteAuditInput,
   options?: RequestOptions,
-): Promise<ActionResponse<{ audits: FactorySiteAudit[] }>> {
+): Promise<ActionResponse<FactorySiteAudit>> {
   const path = `/commerce/admin/site-audits/${encodeURIComponent(auditId)}/withdraw`;
-  void input;
-  return resolveMockRead(path, FactorySiteAuditListSchema, options, MOCK_FACTORY_SITE_AUDIT_LIST);
-  // return sendJson(path, "POST", input, FactorySiteAuditListSchema, options);
+  return sendJson(path, "POST", input, FactorySiteAuditSchema, options);
 }
-
-// Imported for the wiring lines above; referenced so they survive while every call is mock-backed.
-void getJson;
-void sendJson;

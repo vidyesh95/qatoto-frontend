@@ -30,18 +30,36 @@ import Image from "next/image";
 import Link from "next/link";
 
 import ManufacturerChatSheet from "@/components/home/store/sheets/manufacturer-chat-sheet";
+import { useViewerOrganizationsQuery } from "@/hooks/store/orders";
 import type { ProductContactAffordance } from "@/lib/store/products.schemas";
 
 export default function StoreAndChatActions({
+  productId,
   sellerSlug,
   sellerDisplayName,
   contactAffordance,
 }: {
+  /** The inquiry route is product-scoped — there is no organization-level thread kind. */
+  readonly productId: string;
   readonly sellerSlug: string;
   readonly sellerDisplayName: string;
   readonly contactAffordance: ProductContactAffordance;
 }) {
   const [isChatOpen, setIsChatOpen] = useState(false);
+
+  /**
+   * Which organization the reader is, so their own messages can be aligned.
+   *
+   * `null` until the read answers, and every message then renders as the other side's — the safe
+   * default, because attributing the seller's words to the buyer is worse than flat layout for a
+   * moment. It is a DISPLAY decision only; the server decides who may post.
+   */
+  const viewerOrganizationsQuery = useViewerOrganizationsQuery();
+  const viewerOrganizationsResult = viewerOrganizationsQuery.data;
+  const viewerOrganizationId =
+    viewerOrganizationsResult?.success === true
+      ? (viewerOrganizationsResult.data[0] ?? null)
+      : null;
 
   return (
     <>
@@ -64,7 +82,9 @@ export default function StoreAndChatActions({
 
       {isChatOpen && (
         <ManufacturerChatSheet
+          productId={productId}
           sellerDisplayName={sellerDisplayName}
+          viewerOrganizationId={viewerOrganizationId}
           onClose={() => setIsChatOpen(false)}
         />
       )}
