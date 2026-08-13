@@ -145,12 +145,18 @@ export const storeKeys = {
   threadMessages: (threadId: string) => ["store", "threads", threadId, "messages"] as const,
 
   /**
-   * The caller's saved / bookmarked listings.
+   * The caller's wishlist — bookmarked listings.
    *
-   * Keyed by `kind` because absent means BOTH — a different list from either single kind, not a
-   * default to one.
+   * NOT KEYED BY KIND ANY MORE. It used to be, because an absent `kind` meant BOTH; the backend's
+   * migration 0120 removed that parameter along with the idea that a like belongs in a list. One
+   * list, one key.
+   *
+   * No `*Root` twin either, unlike `threadInbox` above — that pair exists because the inbox has
+   * filtered variants to clear at once, and this has exactly one shape. A bookmark write
+   * invalidates this key directly. A LIKE MUST NOT — a like changes a public counter and no list,
+   * so invalidating here on a like would refetch the wishlist to prove nothing changed.
    */
-  savedProducts: (kind: string | undefined) => ["store", "saved-products", kind] as const,
+  bookmarkedProducts: () => ["store", "bookmarked-products"] as const,
 
   engagementList: () => ["store", "engagements", "list"] as const,
   engagement: (engagementId: string) => ["store", "engagements", engagementId] as const,

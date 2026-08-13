@@ -238,9 +238,18 @@ export const StoreProductCardPageSchema = cursorPageOf(StoreProductCardSchema);
 
 export type StoreProductCardPage = z.infer<typeof StoreProductCardPageSchema>;
 
-/** `GET /commerce/saved-products`. `kind` omitted means BOTH saved and bookmarked. */
-export interface ListSavedProductsFilter {
-  readonly kind?: "saved" | "bookmarked";
+/**
+ * `GET /commerce/bookmarked-products` — the caller's wishlist.
+ *
+ * THERE IS NO `kind`, AND THAT IS THE CONTRACT, not an omission. The route took one until the
+ * backend's migration 0120, and its absence meant BOTH kinds — which is how a heart tap ended up
+ * filing a product in the wishlist. A like is a public counter that is never listed back to the
+ * person who made it, so `bookmarked` is the only list there is and there is nothing to select.
+ *
+ * The backend's query schema is `.strict()`, so sending `kind` anyway is a 422 rather than a
+ * quietly different list.
+ */
+export interface ListBookmarkedProductsFilter {
   readonly limit?: number;
   readonly cursor?: string;
 }

@@ -182,9 +182,14 @@ export const ProductCustomizationOptionSchema = z
   })
   .strip();
 
-/** A11. What the CALLER has done to this product. `null` for anyone without an organization. */
+/**
+ * A11. What the CALLER has done to this product. `null` for a signed-out visitor.
+ *
+ * TWO INDEPENDENT FACTS, NOT ONE. A like is a public reaction; a bookmark is the buyer's wishlist.
+ * A product can be both, neither, or either.
+ */
 export const ProductViewerEngagementSchema = z
-  .object({ hasSaved: z.boolean(), hasBookmarked: z.boolean() })
+  .object({ hasLiked: z.boolean(), hasBookmarked: z.boolean() })
   .strip();
 
 /**
@@ -196,7 +201,9 @@ export const ProductViewerEngagementSchema = z
  */
 export const ProductEngagementSchema = z
   .object({
-    savedCount: z.number().int(),
+    /** The public like count — what the heart shows. Lists nowhere. */
+    likeCount: z.number().int(),
+    /** How many buyers hold this in a wishlist. */
     bookmarkedCount: z.number().int(),
     shareCount: z.number().int(),
     questionCount: z.number().int(),

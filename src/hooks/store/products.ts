@@ -12,7 +12,7 @@
 // small numbers on a public page and a counter that flickers back teaches a buyer that none of the
 // numbers are to be trusted.
 //
-// NO IDEMPOTENCY KEY ON ANY OF THESE. Save and bookmark are `PUT`/`DELETE` of a boolean and are
+// NO IDEMPOTENCY KEY ON ANY OF THESE. Like and bookmark are `PUT`/`DELETE` of a boolean and are
 // idempotent by verb; a key would be ceremony around an operation already safe to repeat. That is
 // the same rule the backend applies to review and answer helpful votes.
 
@@ -31,10 +31,10 @@ import {
   listStoreProductQuestions,
   listStoreProductReviews,
   listStoreQuestionAnswers,
-  saveStoreProduct,
+  likeStoreProduct,
   shareStoreProduct,
   unbookmarkStoreProduct,
-  unsaveStoreProduct,
+  unlikeStoreProduct,
 } from "@/lib/store/products.api";
 import type {
   ProductAnswerListPage,
@@ -92,25 +92,45 @@ function useEngagementWriter(productSlug: string) {
   };
 }
 
-export function useToggleProductSaved(
+/**
+ * The like toggle — a public counter, and DELIBERATELY NOT a wishlist write.
+ *
+ * It invalidates nothing. A like moves `likeCount` on this one product and changes no list
+ * anywhere, so the counter write above is the entire cache effect. The asymmetry with the bookmark
+ * hook below is the point of the whole feature, not an oversight to tidy up.
+ */
+export function useToggleProductLiked(
   productSlug: string,
-): UseMutationResult<ActionResponse<ProductEngagement>, Error, { readonly isSaved: boolean }> {
+): UseMutationResult<ActionResponse<ProductEngagement>, Error, { readonly isLiked: boolean }> {
   const writeEngagement = useEngagementWriter(productSlug);
   return useMutation({
-    mutationFn: ({ isSaved }) =>
-      isSaved ? unsaveStoreProduct(productSlug) : saveStoreProduct(productSlug),
+    mutationFn: ({ isLiked }) =>
+      isLiked ? unlikeStoreProduct(productSlug) : likeStoreProduct(productSlug),
     onSuccess: writeEngagement,
   });
 }
 
+/**
+ * The bookmark toggle — this one DOES change a list, so it invalidates the wishlist.
+ *
+ * Without the invalidation `/wishlist` shows a stale set until something else refetches it. That
+ * was survivable while `useBookmarkedProductsQuery` had no `staleTime` and refetched on mount, but
+ * relying on that is relying on an accident: the moment anyone sets a `staleTime` there, a buyer
+ * bookmarks a product, opens their wishlist and does not find it.
+ */
 export function useToggleProductBookmarked(
   productSlug: string,
 ): UseMutationResult<ActionResponse<ProductEngagement>, Error, { readonly isBookmarked: boolean }> {
+  const queryClient = useQueryClient();
   const writeEngagement = useEngagementWriter(productSlug);
   return useMutation({
     mutationFn: ({ isBookmarked }) =>
       isBookmarked ? unbookmarkStoreProduct(productSlug) : bookmarkStoreProduct(productSlug),
-    onSuccess: writeEngagement,
+    onSuccess: (result) => {
+      writeEngagement(result);
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.bookmarkedProducts() });
+    },
   });
 }
 

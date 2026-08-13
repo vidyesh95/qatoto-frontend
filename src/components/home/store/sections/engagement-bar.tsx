@@ -9,7 +9,17 @@
 // customer comments from product pages in 2020. So `commentCount` has no table and never will, and
 // the backend deliberately omits it from `engagement`.
 //
-// `viewer` IS NULL FOR AN ANONYMOUS CALLER AND NOT `{hasSaved: false}`. "Not saved" and "we do not
+// THE HEART AND THE BOOKMARK DO DIFFERENT THINGS, and the only place a buyer can learn that is
+// here. The heart is a LIKE — a public number telling everyone how many people reacted to this
+// listing, and it puts the product in no list at all. The bookmark is the WISHLIST, and it is the
+// only one of the two that `/wishlist` will ever show. They were the same gesture under two icons
+// until the backend's migration 0120.
+//
+// Which is why both buttons carry an `aria-label` naming what they do. Before the split they were
+// two icons above two bare numbers, and a screen reader announced two anonymous pressable digits —
+// survivable when the two meant the same thing, misleading now that they do not.
+//
+// `viewer` IS NULL FOR AN ANONYMOUS CALLER AND NOT `{hasLiked: false}`. "Not liked" and "we do not
 // know who you are" are different facts. A null viewer renders an unfilled icon with `aria-pressed`
 // ABSENT rather than `false` — the control makes no claim about a state it has not been told, and
 // pressing it sends the buyer to sign in rather than firing a 401.
@@ -28,7 +38,7 @@ import {
   useProductEngagement,
   useRecordProductShare,
   useToggleProductBookmarked,
-  useToggleProductSaved,
+  useToggleProductLiked,
 } from "@/hooks/store/products";
 import { formatCountLabel } from "@/lib/store/format";
 import type { ProductEngagement } from "@/lib/store/products.schemas";
@@ -60,13 +70,14 @@ export default function EngagementBar({
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
 
   const { data: engagement } = useProductEngagement(productSlug, initialEngagement);
-  const toggleSaved = useToggleProductSaved(productSlug);
+  const toggleLiked = useToggleProductLiked(productSlug);
   const toggleBookmarked = useToggleProductBookmarked(productSlug);
   const recordShare = useRecordProductShare(productSlug);
 
   // Null means "we do not know who you are", which is what makes the toggles unavailable rather
-  // than off. It is also the honest answer about what the caller MAY do: these are keyed on the
-  // organization, so a visitor without one cannot save at all.
+  // than off. These are keyed on the USER and not the organization — a signed-in visitor with no
+  // commerce organization can both like and bookmark, because an org-keyed row would put a single
+  // tap behind staff trade-state verification (A11).
   const viewer = engagement.viewer;
   const isViewerKnown = viewer !== null;
 
@@ -80,24 +91,32 @@ export default function EngagementBar({
   return (
     <div className="p-4 lg:px-6">
       <div className="flex gap-4">
+        {/* The LIKE. A public reaction — it changes a number everyone sees and no list. */}
         <button
           type="button"
-          {...(isViewerKnown ? { "aria-pressed": viewer.hasSaved } : {})}
-          disabled={!isViewerKnown || toggleSaved.isPending}
+          aria-label={isViewerKnown && viewer.hasLiked ? "Remove your like" : "Like this product"}
+          {...(isViewerKnown ? { "aria-pressed": viewer.hasLiked } : {})}
+          disabled={!isViewerKnown || toggleLiked.isPending}
           onClick={() => {
             if (!isViewerKnown) return;
-            toggleSaved.mutate({ isSaved: viewer.hasSaved });
+            toggleLiked.mutate({ isLiked: viewer.hasLiked });
           }}
           className={PILL_CLASS}
         >
-          <PillIcon icon="favorite" filled={isViewerKnown && viewer.hasSaved} />
+          <PillIcon icon="favorite" filled={isViewerKnown && viewer.hasLiked} />
           <span className="[text-shadow:0_1px_2px_rgb(0_0_0/0.25)]">
-            {formatCountLabel(engagement.savedCount)}
+            {formatCountLabel(engagement.likeCount)}
           </span>
         </button>
 
+        {/* The BOOKMARK. This one, and only this one, puts the product in `/wishlist`. */}
         <button
           type="button"
+          aria-label={
+            isViewerKnown && viewer.hasBookmarked
+              ? "Remove from your wishlist"
+              : "Save to your wishlist"
+          }
           {...(isViewerKnown ? { "aria-pressed": viewer.hasBookmarked } : {})}
           disabled={!isViewerKnown || toggleBookmarked.isPending}
           onClick={() => {
@@ -130,7 +149,7 @@ export default function EngagementBar({
           <Link href="/sign-in" className="font-medium text-[#00696E]">
             Sign in
           </Link>{" "}
-          to save or bookmark this product.
+          to like this product or save it to your wishlist.
         </p>
       )}
     </div>

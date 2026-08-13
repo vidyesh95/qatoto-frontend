@@ -261,7 +261,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
-                src="/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                src="/icons/bookmark_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                 alt="Your wishlist"
                 width={24}
                 height={24}

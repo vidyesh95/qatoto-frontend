@@ -9,14 +9,15 @@ export const instant = false;
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
   title: "Wishlist",
-  description: "Products you have saved on Qatoto",
+  description: "Products you have bookmarked on Qatoto",
 };
 
 /**
  * WAS AN `<h1>` STUB, AND THE REASON WAS A MISSING BACKEND READ.
  *
- * The save and bookmark toggles have worked since Phase 13, but nothing listed what they produced —
- * there was no `GET /commerce/saved-products`. That route was added for this page.
+ * The bookmark toggle has worked since Phase 13, but nothing listed what it produced — there was no
+ * `GET /commerce/bookmarked-products`. That route was added for this page. It lists bookmarks and
+ * not likes: a like is a public counter on a listing, not a private list.
  */
 export default function WishlistRoute() {
   return <WishlistPage />;

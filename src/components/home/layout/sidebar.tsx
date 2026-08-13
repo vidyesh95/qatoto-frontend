@@ -79,6 +79,10 @@ const ICON_PATHS = {
     active: "/icons/favorite_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  bookmark: {
+    active: "/icons/bookmark_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/bookmark_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   shoppingCart: {
     active: "/icons/shopping_cart_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/shopping_cart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
@@ -390,7 +394,9 @@ const NAVIGATION_CONFIG: NavSection[] = [
     items: [
       { path: ROUTES.library, label: "Library", iconKey: "videoLibrary" },
       { path: ROUTES.history, label: "History", iconKey: "history" },
-      { path: ROUTES.wishlist, label: "Wishlist", iconKey: "favorite" },
+      // A BOOKMARK, NOT A HEART. The heart is the public like on a listing and files nothing;
+      // the bookmark is what this page lists. A heart here would advertise the wrong control.
+      { path: ROUTES.wishlist, label: "Wishlist", iconKey: "bookmark" },
       { path: ROUTES.cart, label: "Cart", iconKey: "shoppingCart" },
       { path: ROUTES.ordersAndReturns, label: "Orders and returns", iconKey: "localShipping" },
       { path: ROUTES.listings, label: "Listings", iconKey: "slideshow" },

@@ -137,31 +137,44 @@ export function getStoreProductDeliveryEstimate(
 
 // --- Engagement writes ------------------------------------------------------
 //
-// NO IDEMPOTENCY KEY ON ANY OF THESE. Save and bookmark are `PUT`/`DELETE` of a boolean and are
+// NO IDEMPOTENCY KEY ON ANY OF THESE. Like and bookmark are `PUT`/`DELETE` of a boolean and are
 // idempotent by verb — a key would be ceremony around an operation that is already safe to repeat.
 // Share and the view beacon are counters the server dedupes itself.
 //
 // All four answer the refreshed `engagement` object, so the caller writes the server's own count
 // into cache rather than incrementing locally. Nothing here is optimistic: these are small numbers
 // and a toggle that flickers back teaches a buyer the counts are not to be trusted.
+//
+// LIKE AND BOOKMARK ARE NOT INTERCHANGEABLE, whatever the symmetry of these four functions
+// suggests. A like moves a public counter and changes no list. A bookmark IS the wishlist and is
+// the only thing `listBookmarkedProducts` returns — which is why only the bookmark hooks
+// invalidate that query.
 
-/** Saves the product for the caller's organization. Idempotent. */
-export function saveStoreProduct(
+/**
+ * Likes the product for the calling USER — a public reaction. Idempotent.
+ *
+ * This does NOT put the product in the buyer's wishlist. It was `saveStoreProduct` against
+ * `/save` until the backend's migration 0120, and that name is exactly why the two kept being
+ * confused for one another.
+ */
+export function likeStoreProduct(
   productSlug: string,
   options?: RequestOptions,
 ): Promise<ActionResponse<ProductEngagement>> {
-  const path = `/store/products/${encodeURIComponent(productSlug)}/save`;
+  const path = `/store/products/${encodeURIComponent(productSlug)}/like`;
   return sendJson(path, "PUT", undefined, ProductEngagementSchema, options);
 }
 
-export function unsaveStoreProduct(
+/** Withdraws the caller's like. Idempotent — clearing twice is not an error. */
+export function unlikeStoreProduct(
   productSlug: string,
   options?: RequestOptions,
 ): Promise<ActionResponse<ProductEngagement>> {
-  const path = `/store/products/${encodeURIComponent(productSlug)}/save`;
+  const path = `/store/products/${encodeURIComponent(productSlug)}/like`;
   return sendJson(path, "DELETE", undefined, ProductEngagementSchema, options);
 }
 
+/** Puts the product in the caller's wishlist — the ONE gesture `/wishlist` lists. Idempotent. */
 export function bookmarkStoreProduct(
   productSlug: string,
   options?: RequestOptions,
@@ -170,6 +183,7 @@ export function bookmarkStoreProduct(
   return sendJson(path, "PUT", undefined, ProductEngagementSchema, options);
 }
 
+/** Removes the product from the caller's wishlist. Idempotent. */
 export function unbookmarkStoreProduct(
   productSlug: string,
   options?: RequestOptions,
