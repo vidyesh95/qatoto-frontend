@@ -143,8 +143,8 @@ Fourteen page routes built, each with a `loading.tsx`.
 🧪 /research-and-development/project/[id]                project detail (5 tabs)         — phase 2
 🧪 /research-and-development/project/[id]/workshop       Virtual Workshop                — phase 3
 🧪 /research-and-development/project/[id]/proof-of-effort Slicing Pie ledger (6 tabs)    — phase 4, §5b
-🔌 /research-and-development/problem-map                 Civic Pulse map                 — stage 02
-🔌 /research-and-development/knowledge-hub               market intelligence             — stage 01
+🔌 /research-and-development/problem-map                 Civic Pulse map                 — stage 01
+🔌 /research-and-development/knowledge-hub               market intelligence             — stage 02
 🔌 /research-and-development/talent                      people trading skills for equity
 🔌 /research-and-development/funding                     investor deal-flow view
 🚫 /research-and-development/projects/project-immortal   moonshot research program — §4b, §18
@@ -219,12 +219,22 @@ The six `href`s in `PIPELINE_STAGES` — every one of them now a route, none an 
 
 | #   | Stage                | Was                  | Now                                          |
 | --- | -------------------- | -------------------- | -------------------------------------------- |
-| 01  | Market Research      | `/knowledge-hub`     | unchanged                                    |
-| 02  | Problem Mapping      | `/problem-map`       | unchanged                                    |
+| 01  | Problem Mapping      | `/problem-map`       | unchanged                                    |
+| 02  | Market Research      | `/knowledge-hub`     | unchanged                                    |
 | 03  | Team Building        | `#open-roles`        | ✅ `/research-and-development/team-building` |
 | 04  | Build & Daily Logs   | `#featured-projects` | ✅ `/research-and-development/build-log`     |
 | 05  | Funding & Governance | `#featured-projects` | ✅ `/research-and-development/governance`    |
 | 06  | Go-to-Market         | `/store`             | ✅ `/research-and-development/go-to-market`  |
+
+**Problem Mapping is stage 01 and Market Research is stage 02**, which reverses the order these
+two shipped in. The dependency runs problem → market and only that way: the knowledge hub's
+demand leaderboard (`demand_signal_snapshot`) is a nightly `GROUP BY` over
+`problem_cluster ⋈ problem_submission` computed by the backend's `recompute-demand-signals`
+job, while nothing anywhere derives a problem score from market data. File no problem reports
+and the leaderboard half of the knowledge hub renders empty. §2's mermaid already drew this
+arrow correctly (`PM --> KH`) — it was this table and the strip that disagreed with it. Note
+that the `project_stage` pgEnum keeps `market_research` before `problem_validation`: that enum
+is a per-project lifecycle position whose declaration order implies no rank, not this pipeline.
 
 Stage 05's blurb no longer mentions escrow — it reads commitments and month-end statements, because
 **escrow left this surface**. The same rewrite landed on `pipeline-hero.tsx` ("fund every milestone

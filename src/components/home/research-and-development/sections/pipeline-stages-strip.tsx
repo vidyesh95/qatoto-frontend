@@ -12,19 +12,23 @@ type PipelineStage = {
 };
 
 const PIPELINE_STAGES: PipelineStage[] = [
+  // Problem mapping leads the pipeline because market research depends on it, not the
+  // other way round: the knowledge hub's demand leaderboard is a nightly GROUP BY over
+  // problem clusters and submissions (backend recompute-demand-signals). With no problem
+  // reports filed there is no demand signal to research.
   {
     stepNumber: "01",
-    title: "Market Research",
-    blurb: "See where demand is highest before anything gets built.",
-    iconSrc: "/icons/analytics_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    href: "/research-and-development/knowledge-hub",
-  },
-  {
-    stepNumber: "02",
     title: "Problem Mapping",
     blurb: "Real gaps reported from the ground, scored by opportunity.",
     iconSrc: "/icons/flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
     href: "/research-and-development/problem-map",
+  },
+  {
+    stepNumber: "02",
+    title: "Market Research",
+    blurb: "See where demand is highest before anything gets built.",
+    iconSrc: "/icons/analytics_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    href: "/research-and-development/knowledge-hub",
   },
   {
     stepNumber: "03",
