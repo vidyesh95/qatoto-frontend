@@ -72,14 +72,19 @@ const PLACEHOLDER_IS_PREMIUM = false;
 
 export default function WatchContent({
   video,
-  initialComments = [],
+  initialComments = null,
   initialCommentsNextCursor = null,
   recommendedVideos = [],
   isViewerSignedIn,
   startTimeSeconds,
 }: {
   readonly video: WatchPayload | null;
-  readonly initialComments?: VideoComment[];
+  /**
+   * Page one of the thread, or NULL when the server had none — a failed read, or a caller with
+   * no video at all. Null makes the island fetch page one itself; an empty array would claim,
+   * permanently, that nobody has commented.
+   */
+  readonly initialComments?: VideoComment[] | null;
   readonly initialCommentsNextCursor?: string | null;
   readonly recommendedVideos?: FeedVideo[];
   readonly isViewerSignedIn: boolean;

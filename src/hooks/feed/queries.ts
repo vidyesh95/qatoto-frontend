@@ -213,23 +213,32 @@ export function useSearchVideosInfiniteQuery({
  *
  * `parentCommentId` is part of the query key: the top-level thread and one comment's replies
  * are different lists in different sort orders served by the same route.
+ *
+ * `serverRenderedFirstPage` is NULLABLE, and null is not the same as an empty page. Only the
+ * top-level thread of a successful watch-page render has a server page; a comment's replies are
+ * read when the reader expands them, and a failed server read produced nothing. Both pass null
+ * so the browser fetches page one — see the banner in `@/hooks/keyset-list`.
  */
 export function useVideoCommentsList({
   videoId,
   parentCommentId,
-  initialRows,
-  initialNextCursor,
+  serverRenderedFirstPage,
   limit,
 }: {
   readonly videoId: string;
   readonly parentCommentId?: string;
-  readonly initialRows: VideoComment[];
-  readonly initialNextCursor: string | null;
+  readonly serverRenderedFirstPage: {
+    readonly rows: VideoComment[];
+    readonly nextCursor: string | null;
+  } | null;
   readonly limit: number;
 }): KeysetListResult<VideoComment> {
   return useKeysetList<VideoComment>({
     queryKey: feedKeys.comments(videoId, parentCommentId),
-    initialPage: { rows: initialRows, nextToken: initialNextCursor },
+    initialPage:
+      serverRenderedFirstPage === null
+        ? null
+        : { rows: serverRenderedFirstPage.rows, nextToken: serverRenderedFirstPage.nextCursor },
     fetchPage: (token) => {
       const filter: ListVideoCommentsFilter = {
         limit,

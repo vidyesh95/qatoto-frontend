@@ -45,7 +45,8 @@ export default function Comments({
 }: {
   readonly videoId: string;
   readonly areCommentsEnabled: boolean;
-  readonly initialComments: VideoComment[];
+  /** Null when the server-side read failed; the island then fetches page one itself. */
+  readonly initialComments: VideoComment[] | null;
   readonly initialNextCursor: string | null;
   readonly isViewerSignedIn: boolean;
   readonly commentCount: number;

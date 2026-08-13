@@ -75,9 +75,17 @@ export default async function WatchPage({ searchParams }: { searchParams: WatchS
   );
 }
 
-/** A failed comment read degrades to an empty thread; it must not blank the video. */
+/**
+ * A failed comment read degrades to NO SEED; it must not blank the video, and it must not
+ * pretend the thread is empty either.
+ *
+ * It used to answer `{ rows: [], nextCursor: null }`, which the client cannot tell apart from a
+ * video nobody has commented on — and since the keyset hook pins a seeded page with
+ * `staleTime: Infinity`, that fabricated page was permanent. Handing the island `null` instead
+ * makes it fetch page one in the browser, where a transient backend failure gets a second chance.
+ */
 function toCommentsPage(
   result: ActionResponse<{ rows: VideoComment[]; nextCursor: string | null }>,
-): { rows: VideoComment[]; nextCursor: string | null } {
-  return result.success ? result.data : { rows: [], nextCursor: null };
+): { rows: VideoComment[] | null; nextCursor: string | null } {
+  return result.success ? result.data : { rows: null, nextCursor: null };
 }

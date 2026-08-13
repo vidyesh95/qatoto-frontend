@@ -3,8 +3,10 @@
 // TRANSPORT: client-query — the real comment thread. Reads `GET /videos/:id/comments` (keyset)
 // and writes create / edit / delete / like.
 //
-// SEEDED FROM THE SERVER: page one arrives with the watch page render, so opening a video costs
-// no extra request for its comments.
+// SEEDED FROM THE SERVER WHEN THE SERVER GOT A PAGE: page one arrives with the watch page render,
+// so opening a video costs no extra request for its comments. When that read FAILED the seed is
+// `null`, not an empty page — a fabricated empty page is indistinguishable from "nobody has
+// commented" and, pinned by `staleTime: Infinity`, would never be corrected.
 //
 // THREE THINGS THE BACKEND DOES THAT THE UI MUST NOT PAPER OVER:
 //
@@ -52,14 +54,15 @@ export default function VideoCommentThread({
 }: {
   readonly videoId: string;
   readonly areCommentsEnabled: boolean;
-  readonly initialComments: VideoComment[];
+  /** Null when the server-side read failed — the client then fetches page one itself. */
+  readonly initialComments: VideoComment[] | null;
   readonly initialNextCursor: string | null;
   readonly isViewerSignedIn: boolean;
 }) {
   const thread = useVideoCommentsList({
     videoId,
-    initialRows: initialComments,
-    initialNextCursor,
+    serverRenderedFirstPage:
+      initialComments === null ? null : { rows: initialComments, nextCursor: initialNextCursor },
     limit: COMMENTS_PAGE_LIMIT,
   });
 
@@ -77,7 +80,13 @@ export default function VideoCommentThread({
         <p className="px-4 py-3 text-xs text-[#6F7979]">Sign in to leave a comment.</p>
       )}
 
-      {thread.rows.length === 0 ? (
+      {thread.isLoadingFirstPage ? (
+        <p className="px-4 py-6 text-sm text-[#6F7979]">Loading comments…</p>
+      ) : thread.firstPageErrorMessage !== null ? (
+        <p role="alert" className="px-4 py-6 text-sm text-red-700">
+          {thread.firstPageErrorMessage}
+        </p>
+      ) : thread.rows.length === 0 ? (
         <p className="px-4 py-6 text-sm text-[#6F7979]">No comments yet. Be the first.</p>
       ) : (
         <ul className="px-4 pb-2">
@@ -380,9 +389,16 @@ function CommentItem({
 /**
  * One comment's replies.
  *
- * FETCHED ONLY ON EXPAND, and seeded empty. Replies are their own keyset list — the backend
- * serves them OLDEST-first while the top-level thread is newest-first — so they cannot be
- * sliced out of the parent page and there is nothing to seed from the server render.
+ * FETCHED ON EXPAND, NEVER SEEDED. Replies are their own keyset list — the backend serves them
+ * OLDEST-first while the top-level thread is newest-first — so they cannot be sliced out of the
+ * parent page and there is nothing to seed from the server render. The seed is therefore `null`,
+ * which is what makes this list issue its own first request.
+ *
+ * IT USED TO PASS AN EMPTY PAGE, and that was the bug: an empty seed is data as far as React
+ * Query is concerned, so with `staleTime: Infinity` the list never fetched. A reply posted while
+ * the thread was collapsed rendered as "No replies yet." — the mutation's `invalidateQueries`
+ * had already run against a query that was not mounted yet — and only a SECOND reply, arriving
+ * once this component was mounted and active, refetched and revealed both.
  *
  * `parentCommentId` is part of the query key, so two expanded threads never share a cache entry.
  */
@@ -396,14 +412,19 @@ function ReplyThread({
   const replies = useVideoCommentsList({
     videoId,
     parentCommentId,
-    initialRows: [],
-    initialNextCursor: null,
+    serverRenderedFirstPage: null,
     limit: REPLIES_PAGE_LIMIT,
   });
 
   return (
     <div className="mt-2 border-l border-[#D5DBDB] pl-3">
-      {replies.rows.length === 0 ? (
+      {replies.isLoadingFirstPage ? (
+        <p className="py-2 text-[11px] text-[#6F7979]">Loading replies…</p>
+      ) : replies.firstPageErrorMessage !== null ? (
+        <p role="alert" className="py-2 text-[11px] text-red-700">
+          {replies.firstPageErrorMessage}
+        </p>
+      ) : replies.rows.length === 0 ? (
         <p className="py-2 text-[11px] text-[#6F7979]">No replies yet.</p>
       ) : (
         <ul>
