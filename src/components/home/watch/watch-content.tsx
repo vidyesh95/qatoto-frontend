@@ -251,6 +251,12 @@ export default function WatchContent({
                   <VideoCard
                     key={recommendedVideo.videoId}
                     {...toVideoCardProps(recommendedVideo)}
+                    /*
+                      This rail is a fixed `lg:w-100` (400px) column that stacks to full width
+                      below `lg` — not the quarter-viewport grid `VideoCard` assumes. Without
+                      the override every card here fetches a grid-sized image it never uses.
+                    */
+                    thumbnailSizes="(min-width: 1024px) 400px, 100vw"
                   />
                 ))}
               </div>

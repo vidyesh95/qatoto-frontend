@@ -6,6 +6,21 @@ import Link from "next/link";
 import RelativeTime from "@/components/home/shared/relative-time";
 import type { VideoCardProps } from "@/types/video";
 
+/**
+ * Widths the thumbnail actually occupies in the feed and search grids, which are
+ * `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`.
+ *
+ * WITHOUT THIS the srcset is derived from `width={256}` alone while `w-full` stretches the
+ * image to the column, so a ~380px slot can be filled by a 256w file. It matters most for a
+ * custom Cloudinary thumbnail, which is stored at up to 1280px and has real detail to lose;
+ * a YouTube `hqdefault` is only 480px wide, so there is nothing sharper to ask for.
+ *
+ * A surface whose cards are NOT a quarter-viewer-width grid — the watch rail — must pass its
+ * own, or it over-fetches on every card.
+ */
+const GRID_THUMBNAIL_SIZES =
+  "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw";
+
 export default function VideoCard({
   thumbnailSrc,
   profileSrc,
@@ -20,6 +35,7 @@ export default function VideoCard({
   href,
   channelHref,
   isPriority = false,
+  thumbnailSizes = GRID_THUMBNAIL_SIZES,
 }: VideoCardProps) {
   const isLive = isChannelLive;
 
@@ -54,13 +70,27 @@ export default function VideoCard({
       {/* Stretched overlay link — covers the whole card, navigates to the video.
           Interactive children (channel, more options) sit above it via z-10. */}
       {href && <Link href={href} aria-label={title} className="absolute inset-0 z-0 rounded-xl" />}
+      {/*
+        `object-cover` IS LOAD-BEARING — neither thumbnail source is guaranteed 16:9, and the
+        CSS default for an <img> is `object-fit: fill`, which squashes rather than crops.
+
+        A YouTube-sourced row stores oEmbed's `thumbnail_url` verbatim, and oEmbed answers
+        `hqdefault.jpg` — 480×360, a 4:3 frame with BLACK BARS BAKED INTO THE JPEG. The
+        content sits in an exactly-centred 480×270, so cropping 4:3 to 16:9 removes precisely
+        the bars and loses no picture.
+
+        A custom thumbnail is re-encoded by the backend with sharp `fit: "inside"` — downscale
+        only, never a crop — so the creator's own aspect ratio survives onto the wire and a
+        tall upload arrives tall.
+      */}
       <Image
         src={thumbnailSrc}
-        width={246}
-        height={138}
+        width={256}
+        height={144}
         alt="thumbnail"
         priority={isPriority}
-        className="aspect-video h-auto w-full rounded-xl"
+        sizes={thumbnailSizes}
+        className="aspect-video h-auto w-full rounded-xl object-cover"
       />
       <div className="flex flex-row items-start gap-2 pt-2">
         {channelHref ? (

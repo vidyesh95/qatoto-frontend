@@ -225,8 +225,12 @@ export default function ThumbnailPicker({
               next/image to fetch through its optimizer, and the same escape hatch is used by
               `slide-image-picker.tsx` and `profile-photo-panel.tsx`.
 
-              LETTERBOXED, not cropped: the server re-encodes without cropping, so a preview
-              that filled the box would show framing the viewer never gets.
+              CENTRE-CROPPED, not letterboxed, mirroring `object-cover` on the card in
+              `home/shared/video-card.tsx`. The server re-encodes with sharp `fit: "inside"`
+              and never crops, so a non-16:9 upload reaches the feed at its own aspect and the
+              CARD is what crops it. Showing the whole frame here would promise the creator
+              edges no viewer ever sees — this way they find out which ones they lose before
+              they save, not after.
             */
             <Image
               src={previewUrl}
@@ -234,7 +238,7 @@ export default function ThumbnailPicker({
               width={160}
               height={90}
               unoptimized={pickState.status === "ready"}
-              className="size-full object-contain"
+              className="size-full object-cover"
             />
           )}
         </div>
@@ -275,8 +279,8 @@ export default function ThumbnailPicker({
           {pickState.status === "idle" && (
             <p className="max-w-72 text-xs text-muted-foreground">
               {currentThumbnailUrl === null || currentThumbnailUrl === undefined
-                ? "YouTube's thumbnail is used unless you upload your own. JPEG, PNG, WebP or AVIF, up to 5 MB."
-                : "Upload a new image to replace this one. JPEG, PNG, WebP or AVIF, up to 5 MB."}
+                ? "YouTube's thumbnail is used unless you upload your own. JPEG, PNG, WebP or AVIF, up to 5 MB. Images are centre-cropped to 16:9."
+                : "Upload a new image to replace this one. JPEG, PNG, WebP or AVIF, up to 5 MB. Images are centre-cropped to 16:9."}
             </p>
           )}
         </div>

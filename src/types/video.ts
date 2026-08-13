@@ -112,4 +112,14 @@ export type VideoCardProps = {
   channelHref?: string;
   /** Eager-load the thumbnail when the card is above the fold (LCP candidate). */
   isPriority?: boolean;
+  /**
+   * The `sizes` hint for the thumbnail, describing how wide the card renders at each
+   * breakpoint.
+   *
+   * DEFAULTS TO THE FEED/SEARCH GRID and should be left alone on those surfaces. Pass an
+   * override only where cards are laid out differently — the watch page's right-hand rail is
+   * a narrow single column, and the grid default would have it fetch a quarter-viewport image
+   * for every card in the rail.
+   */
+  thumbnailSizes?: string;
 };
