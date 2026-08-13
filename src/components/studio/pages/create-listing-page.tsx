@@ -27,6 +27,12 @@ import {
   type ListingCompleteness,
 } from "@/lib/products/schemas";
 import {
+  PRODUCT_SAMPLE_POLICIES,
+  ProductSamplePolicySchema,
+  SAMPLE_POLICY_LABELS,
+  type ProductSamplePolicy,
+} from "@/lib/store/organizations.schemas";
+import {
   describeProductPublishBlock,
   describeProductPublishRefusal,
   LISTING_REQUIREMENT_LABELS,
@@ -111,6 +117,15 @@ export default function CreateListingPage({ productId }: { productId?: string })
   const [skuCode, setSkuCode] = useState("");
   const [pricingTiers, setPricingTiers] = useState<PricingTierDraft[]>([]);
 
+  // Step 4 — the three sample facts (A17). Three controls because they answer three questions:
+  // whether a sample can be had, what it costs, and how many one order may hold. The cap is not
+  // decoration — a sample skips the tier ladder and the minimum order quantity, so an uncapped
+  // "sample" line is a bulk order at sample pricing, and on a refundable listing it mints a credit
+  // the size of the whole line.
+  const [samplePolicy, setSamplePolicy] = useState<ProductSamplePolicy>("unavailable");
+  const [samplePriceInDollars, setSamplePriceInDollars] = useState("");
+  const [maximumSampleQuantity, setMaximumSampleQuantity] = useState("1");
+
   // Step 4 — the five shipping facts (§19.9a). HELD AS TYPED STRINGS IN THEIR OWN UNIT, never as a
   // formatted "52 × 46 × 12 cm" this file would then have to parse back. The unit is in the label
   // and in the field name, and the conversion to an integer happens once, in `collectListingInput`.
@@ -180,6 +195,13 @@ export default function CreateListingPage({ productId }: { productId?: string })
     );
     setStockQuantity(String(product.stockQuantity));
     setSkuCode(product.sku ?? "");
+    setSamplePolicy(product.samplePolicy);
+    // NULL IS UNSTATED, NOT FREE — it hydrates as an empty control, the same rule the shipping
+    // facts follow below. A zero here would be a declared price of nothing.
+    setSamplePriceInDollars(
+      product.samplePriceInCents === null ? "" : centsToDollarString(product.samplePriceInCents),
+    );
+    setMaximumSampleQuantity(String(product.maximumSampleQuantity));
     // `null` means NEVER MEASURED, and hydrates as an empty control rather than a zero. A zero here
     // would be a declared measurement of nothing, which is the one answer no seller meant to give.
     setPackageLengthMm(product.packageLengthMm === null ? "" : String(product.packageLengthMm));
@@ -344,6 +366,34 @@ export default function CreateListingPage({ productId }: { productId?: string })
       tiers.push({ unitPriceInCents, minimumOrderQuantity });
     }
 
+    /**
+     * A17. The three sample facts, collected as ONE arm per policy rather than three independent
+     * fields, because the backend refuses the halfway states: `paid`/`refundable` without a price,
+     * and `unavailable` WITH one. Sending a leftover price beside `unavailable` is the mistake that
+     * looks harmless in the form and 422s at save.
+     */
+    const samplePriceInCents = dollarsToCents(samplePriceInDollars);
+    if (samplePolicy !== "unavailable" && samplePriceInCents === null) {
+      return { error: "A paid or refundable sample needs a sample price." };
+    }
+    const parsedMaximumSampleQuantity = Number.parseInt(maximumSampleQuantity, 10);
+    if (
+      samplePolicy !== "unavailable" &&
+      (!Number.isFinite(parsedMaximumSampleQuantity) ||
+        parsedMaximumSampleQuantity < 1 ||
+        parsedMaximumSampleQuantity > 20)
+    ) {
+      return { error: "Samples per order must be a whole number between 1 and 20." };
+    }
+    const sampleFacts =
+      samplePolicy === "unavailable"
+        ? { samplePolicy: "unavailable" as const }
+        : {
+            samplePolicy,
+            samplePriceInCents: samplePriceInCents ?? undefined,
+            maximumSampleQuantity: parsedMaximumSampleQuantity,
+          };
+
     const packaging = collectPackagingFacts({
       packageLengthMm,
       packageWidthMm,
@@ -370,6 +420,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
       stockQuantity: resolvedStock,
       sku: skuCode.trim() || undefined,
       pricingTiers: tiers,
+      ...sampleFacts,
       ...packaging.facts,
     };
   }
@@ -918,6 +969,107 @@ export default function CreateListingPage({ productId }: { productId?: string })
             </div>
 
             {/*
+              SAMPLES (A17). Beside the price rather than in a step of their own, because a sample
+              price is a price — and because `samplePrice` is one of the listing-completeness
+              requirements this step already owns, which until now no control on this form could
+              satisfy.
+
+              THREE FIELDS, NOT ONE. The policy says whether a sample can be had and whether its
+              price comes back against a later bulk order; the price says what it costs; the cap
+              says how many one order may hold. The cap is the load-bearing one: a sample skips the
+              tier ladder AND the minimum order quantity, so without a ceiling a large "sample"
+              line is a bulk order at sample pricing — and on a refundable listing it mints a
+              credit worth the whole line, spendable against the next order.
+            */}
+            <fieldset className="mt-6 flex flex-col gap-3 rounded-xl border border-border p-4">
+              <legend className="px-1 text-sm font-medium text-foreground">Samples</legend>
+              <p className="text-xs leading-4 text-muted-foreground">
+                Buyers often order one unit to check quality before committing to a bulk order.
+                Refundable means the sample price comes back as credit against their first bulk
+                order with you.
+              </p>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="sample-policy" className="text-sm font-medium text-foreground">
+                  Sample policy
+                </label>
+                <select
+                  id="sample-policy"
+                  value={samplePolicy}
+                  onChange={(event) => {
+                    // Parsed, not asserted, the same way the category admin narrows its state
+                    // select. The three options are all this control renders, but proving it here
+                    // is what keeps a future fourth `<option>` from shipping a 422 instead of a
+                    // compile error.
+                    const parsedPolicy = ProductSamplePolicySchema.safeParse(event.target.value);
+                    if (!parsedPolicy.success) return;
+                    setSamplePolicy(parsedPolicy.data);
+                  }}
+                  className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+                >
+                  {PRODUCT_SAMPLE_POLICIES.map((policy) => (
+                    <option key={policy} value={policy}>
+                      {SAMPLE_POLICY_LABELS[policy]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Hidden rather than disabled when no sample is offered: `unavailable` with a price
+                  beside it is a shape the backend refuses, so the form must not present it as a
+                  combination the seller could fill in. */}
+              {samplePolicy !== "unavailable" && (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="sample-price" className="text-sm font-medium text-foreground">
+                      Sample price
+                    </label>
+                    <div className="flex h-12 items-center rounded-lg border border-border px-3 focus-within:border-[#1DBDC5]">
+                      <span className="mr-2 text-sm text-muted-foreground">$</span>
+                      <input
+                        id="sample-price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={samplePriceInDollars}
+                        onChange={(event) => setSamplePriceInDollars(event.target.value)}
+                        placeholder="0.00"
+                        className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Per unit, and usually above your bulk price — one piece costs you more to make
+                      and ship than five hundred.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label
+                      htmlFor="maximum-sample-quantity"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      Samples per order
+                    </label>
+                    <input
+                      id="maximum-sample-quantity"
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={maximumSampleQuantity}
+                      onChange={(event) => setMaximumSampleQuantity(event.target.value)}
+                      placeholder="1"
+                      className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      The most a buyer can take at the sample price in one order. 1 to 20 — leave it
+                      at 1 unless you ship a sample pack.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </fieldset>
+
+            {/*
               THE FIVE SHIPPING FACTS. Required to publish, not to draft — so they sit beside the
               price rather than behind a gate, and a seller can save and come back with a tape
               measure.
@@ -1031,6 +1183,18 @@ export default function CreateListingPage({ productId }: { productId?: string })
                     pricingTiers.length > 0
                       ? `${pricingTiers.length} tier${pricingTiers.length === 1 ? "" : "s"}`
                       : "",
+                },
+                {
+                  label: "Samples",
+                  // One row rather than three: the price and the cap only mean anything once a
+                  // policy offers a sample at all, so an `unavailable` listing reads as the single
+                  // fact it is instead of two blanks the seller would take for missing input.
+                  value:
+                    samplePolicy === "unavailable"
+                      ? SAMPLE_POLICY_LABELS.unavailable
+                      : `${SAMPLE_POLICY_LABELS[samplePolicy]}${
+                          samplePriceInDollars ? ` · $${samplePriceInDollars} each` : ""
+                        } · max ${maximumSampleQuantity || "1"} per order`,
                 },
               ]}
             />

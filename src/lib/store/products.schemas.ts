@@ -223,6 +223,9 @@ export const StoreProductDetailSchema = StoreProductCardSchema.extend({
   // NULL IS NOT FREE. `samplePolicy` says whether a sample can be had at all; this says what it
   // costs, and an unstated price renders as unstated.
   samplePriceInCents: z.number().int().nullable(),
+  // A17. How many samples one line may hold. Never null — the column defaults to 1, and a seller
+  // who never thinks about it gets the ordinary case rather than an unbounded one.
+  maximumSampleQuantity: z.number().int(),
   packaging: ProductPackagingSchema,
   /** Shared gallery. Variant-scoped media lives on the variant, not here. */
   images: z.array(ProductMediaSchema),

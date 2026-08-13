@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { PRODUCT_SAMPLE_POLICIES } from "@/lib/store/organizations.schemas";
+
 /**
  * Client-side contract for the store product-listing API. Data truth lives in the
  * Express backend (`/products/*`); these Zod schemas parse untrusted response
@@ -136,6 +138,20 @@ export const PublicProductSchema = z
     images: z.array(ProductImageSchema),
     pricingTiers: z.array(ProductPricingTierSchema),
     /**
+     * A17. THE THREE SAMPLE FACTS, which answer three different questions and must not be
+     * collapsed. `samplePolicy` says whether a sample can be had at all and whether its price
+     * comes back against a later bulk order; `samplePriceInCents` says what it costs, and NULL
+     * IS NOT FREE — it is unstated; `maximumSampleQuantity` says how many one line may hold, and
+     * is never null because the column defaults to 1.
+     *
+     * The cap is what keeps the sample bypass honest: a sample skips the tier ladder and the
+     * minimum order quantity, so without a ceiling a large "sample" line is a bulk order at
+     * sample pricing, and on a refundable listing it mints a credit the size of the whole line.
+     */
+    samplePolicy: z.enum(PRODUCT_SAMPLE_POLICIES),
+    samplePriceInCents: z.number().int().nullable(),
+    maximumSampleQuantity: z.number().int(),
+    /**
      * THE FIVE SHIPPING FACTS (§19.9a). Nullable, and there is no migration, because nobody can
      * invent a box size for a listing that already exists — a pre-Phase-20 listing keeps selling
      * and is refused on its next edit instead.
@@ -207,6 +223,15 @@ export interface CreateProductInput {
   stockQuantity: number;
   sku?: string;
   pricingTiers: { unitPriceInCents: number; minimumOrderQuantity: number }[];
+  /**
+   * A17. Both-or-neither in practice, and the backend enforces it: `paid` and `refundable` are
+   * refused without a `samplePriceInCents`, and `unavailable` is refused WITH one. Sending the
+   * price alongside `unavailable` is the mistake that reads as harmless and 422s.
+   */
+  samplePolicy?: (typeof PRODUCT_SAMPLE_POLICIES)[number];
+  samplePriceInCents?: number;
+  /** Omitted means 1, which is the ordinary case — never "no ceiling". Capped at 20 server-side. */
+  maximumSampleQuantity?: number;
   /**
    * OPTIONAL ON THE WAY IN, REQUIRED TO PUBLISH. Drafting stays free — the backend's create and
    * update schemas mark all five `.optional()` and the gate runs at publish, so a seller can save

@@ -67,6 +67,12 @@ export const CommercePricingErrorSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("VARIANT_NOT_FOUND") }).strip(),
   z.object({ type: z.literal("VARIANT_NOT_PURCHASABLE") }).strip(),
   z.object({ type: z.literal("SAMPLE_NOT_AVAILABLE") }).strip(),
+  z
+    .object({
+      type: z.literal("ABOVE_MAXIMUM_SAMPLE_QUANTITY"),
+      maximumSampleQuantity: z.number().int(),
+    })
+    .strip(),
 ]);
 
 // --- Pathway index ----------------------------------------------------------
@@ -464,6 +470,8 @@ export function pricingErrorLabel(pricingError: CommercePricingErrorValue): stri
       return "The chosen variant has been retired.";
     case "SAMPLE_NOT_AVAILABLE":
       return "This seller does not offer a sample of this item.";
+    case "ABOVE_MAXIMUM_SAMPLE_QUANTITY":
+      return `This seller sells at most ${pricingError.maximumSampleQuantity} as a sample. Order more as a regular purchase.`;
     default: {
       const exhaustiveCheck: never = pricingError;
       return exhaustiveCheck;

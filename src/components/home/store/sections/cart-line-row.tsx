@@ -31,8 +31,21 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
   // enforces this; the stepper only avoids sending a value it already knows will be refused.
   const minimumQuantity = item.isSample ? 1 : (item.minimumOrderQuantity ?? 1);
 
+  // And the ceiling, which only a sample line has. A bulk line has a floor it may walk up from —
+  // that is what a tier ladder is for — while a sample is bounded above because the bypass of the
+  // ladder and the MOQ only holds while the line stays small.
+  //
+  // FAILS CLOSED ON NULL. A sample line that did not price reports no ceiling, and an unknown
+  // ceiling is not an absent one: on a refundable listing the quantity is what sizes the credit,
+  // so the stepper refuses to raise it rather than guessing the seller allows more.
+  const maximumQuantity = item.isSample ? item.maximumSampleQuantity : null;
+  const isAtMaximumQuantity =
+    item.isSample && (maximumQuantity === null || item.quantity >= maximumQuantity);
+
   const submitQuantity = (quantity: number) => {
     if (quantity < minimumQuantity) return;
+    if (maximumQuantity !== null && quantity > maximumQuantity) return;
+    if (item.isSample && maximumQuantity === null && quantity > item.quantity) return;
     setCartItem.mutate({
       productId: item.productId,
       input: {
@@ -117,7 +130,7 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
           <button
             type="button"
             onClick={() => submitQuantity(item.quantity + 1)}
-            disabled={isMutating}
+            disabled={isMutating || isAtMaximumQuantity}
             aria-label={`Increase quantity of ${item.title}`}
             className="grid size-8 cursor-pointer place-items-center rounded-full outline -outline-offset-1 outline-[#6F7979] disabled:opacity-40"
           >
@@ -127,6 +140,15 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
           {item.minimumOrderQuantity !== null && !item.isSample && (
             <span className="text-[11px] leading-4 text-[#6F7979]">
               min {formatCountLabel(item.minimumOrderQuantity)}
+            </span>
+          )}
+
+          {/* The sample line's mirror image of the `min` hint. Rendered only when the ceiling is
+              known — a line that did not price has its stepper disabled and its reason above, and
+              a `max` with no number beside it would read as a bug rather than as caution. */}
+          {item.isSample && maximumQuantity !== null && (
+            <span className="text-[11px] leading-4 text-[#6F7979]">
+              max {formatCountLabel(maximumQuantity)}
             </span>
           )}
         </div>
@@ -151,9 +173,14 @@ export default function CartLineRow({ item }: { item: CommerceCartItem }) {
           onClick={() =>
             removeCartItem.mutate({
               productId: item.productId,
-              // Naming the variant removes THIS line. Omitting it would remove every line for the
-              // product, including a sample the buyer meant to keep.
-              input: item.variantId === null ? {} : { variantId: item.variantId },
+              // BOTH halves of the line's identity, for the same reason the quantity write sends
+              // both: variant alone does not name a line. A sample line and a bulk line of one
+              // product share a product id and a variant id, so omitting `isSample` removed the
+              // pair — which is exactly the pair samples exist to let a buyer hold.
+              input: {
+                ...(item.variantId === null ? {} : { variantId: item.variantId }),
+                isSample: item.isSample,
+              },
             })
           }
           disabled={isMutating}

@@ -60,6 +60,10 @@ export const CommerceCartItemSchema = z
     lineTotalInCents: z.number().int().nullable(),
     isMadeToOrder: z.boolean().nullable(),
     minimumOrderQuantity: z.number().int().nullable(),
+    // A17. The ceiling on a sample line. Null on every bulk line — a bulk line has a floor, not a
+    // ceiling — and null on a sample line that failed to price, which is why the stepper must
+    // treat null as "cannot raise" rather than "no limit".
+    maximumSampleQuantity: z.number().int().nullable(),
     stockState: z.enum(STORE_STOCK_STATES).optional(),
     pricingError: CommercePricingErrorSchema.optional(),
   })
@@ -334,9 +338,18 @@ export interface SetCartItemInput {
   readonly customizations?: readonly CustomizationSelectionInput[];
 }
 
-/** `DELETE /commerce/cart/items/:productId`. Naming a variant removes that line; omitting one removes every line for the product. */
+/**
+ * `DELETE /commerce/cart/items/:productId`. Naming a variant removes that line; omitting one
+ * removes every line for the product.
+ *
+ * `isSample` narrows the same way and is what keeps a sample line and a bulk line of one product
+ * independently removable — omit it and BOTH go, which is what the Remove control used to do.
+ * Serialised as the STRING "true"/"false" by `buildQueryString`; the backend parses an enum
+ * rather than coercing, because `Boolean("false")` is `true`.
+ */
 export interface RemoveCartItemInput {
   readonly variantId?: string;
+  readonly isSample?: boolean;
 }
 
 export interface PrepareCheckoutInput {

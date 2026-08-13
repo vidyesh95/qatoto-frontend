@@ -60,6 +60,12 @@ export const STORE_STOCK_STATES = [
 
 export const PRODUCT_SAMPLE_POLICIES = ["unavailable", "paid", "refundable"] as const;
 
+/**
+ * The tuple as a parser, so a `<select>` in the studio can NARROW its string value instead of
+ * asserting it — the same shape `CommerceCategoryStateSchema` gives the category admin.
+ */
+export const ProductSamplePolicySchema = z.enum(PRODUCT_SAMPLE_POLICIES);
+
 export const PRODUCT_CONDITIONS = ["new", "refurbished", "used"] as const;
 
 export const ORGANIZATION_TRADE_STATES = ["pending", "active", "suspended", "closed"] as const;

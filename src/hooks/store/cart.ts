@@ -23,8 +23,10 @@ import {
   useQuery,
   useQueryClient,
   type UseMutationResult,
+  type UseQueryResult,
 } from "@tanstack/react-query";
 
+import { useIsHydrated } from "@/hooks/use-is-hydrated";
 import type { ActionResponse } from "@/lib/http";
 import {
   confirmCheckout,
@@ -43,14 +45,50 @@ import type {
 import { storeKeys } from "@/hooks/store/keys";
 
 /**
+ * What a component may know about the cart read.
+ *
+ * Narrower than React Query's result on purpose — every member has to survive the hydration mask
+ * below, and a field that is passed through unmasked is a field that can disagree with the HTML.
+ */
+export interface CartQueryView {
+  readonly data: ActionResponse<CommerceCart> | undefined;
+  readonly isPending: boolean;
+  readonly isError: boolean;
+}
+
+/**
+ * THE CART AS THE SERVER RENDERED IT, UNTIL HYDRATION IS DONE.
+ *
+ * `storeKeys.cart()` is SHARED WITH THE NAVBAR BADGE, and the navbar hydrates first: its Suspense
+ * boundary awaits a cookie read while a product page awaits five backend round trips. So the badge
+ * has already fired `GET /commerce/cart` and often has the answer by the time a page island
+ * hydrates — an island that read it live would render a cart the streamed HTML does not contain,
+ * and React would throw away the subtree. Same failure as the session atom in
+ * `use-viewer-signed-in.ts`, arriving through the query cache instead.
+ *
+ * ALL THREE FIELDS MOVE TOGETHER. Masking `data` alone leaves `isPending: false` beside an absent
+ * cart, which is the "couldn't reach your cart" branch — the mismatch moved one line down rather
+ * than fixed. `{ isPending: true }` is precisely what the server rendered.
+ */
+function useHydrationStableCart(
+  cartQuery: UseQueryResult<ActionResponse<CommerceCart>>,
+): CartQueryView {
+  const isHydrated = useIsHydrated();
+
+  if (!isHydrated) return { data: undefined, isPending: true, isError: false };
+
+  return { data: cartQuery.data, isPending: cartQuery.isPending, isError: cartQuery.isError };
+}
+
+/**
  * The cart.
  *
  * `staleTime: 0` on purpose. Prices and stock shown during checkout must always be fresh regardless
  * of any browse cache — a cached cart is a cached price, and this is the one surface where showing a
  * stale one has a consequence.
  */
-export function useCartQuery({ isEnabled = true }: { isEnabled?: boolean } = {}) {
-  return useQuery({
+export function useCartQuery({ isEnabled = true }: { isEnabled?: boolean } = {}): CartQueryView {
+  const cartQuery = useQuery({
     queryKey: storeKeys.cart(),
     queryFn: () => getCart(),
     staleTime: 0,
@@ -59,6 +97,8 @@ export function useCartQuery({ isEnabled = true }: { isEnabled?: boolean } = {})
     // pass it — that route is already behind a session and the 401 there is the signal it renders.
     enabled: isEnabled,
   });
+
+  return useHydrationStableCart(cartQuery);
 }
 
 /**
@@ -73,13 +113,19 @@ export function useCartQuery({ isEnabled = true }: { isEnabled?: boolean } = {})
  * justify a request per navigation. React Query resolves `staleTime` per observer, so landing on
  * `/cart` still forces the fresh read that `useCartQuery` asks for — this hook cannot make that page
  * stale.
+ *
+ * Masked by `useHydrationStableCart` as well. It costs nothing here — the badge is absent while the
+ * query is pending either way — and it stops a future reshuffle of what hydrates first from
+ * reintroducing the mismatch through this hook instead.
  */
-export function useCartBadgeQuery() {
-  return useQuery({
+export function useCartBadgeQuery(): CartQueryView {
+  const cartQuery = useQuery({
     queryKey: storeKeys.cart(),
     queryFn: () => getCart(),
     staleTime: 60_000,
   });
+
+  return useHydrationStableCart(cartQuery);
 }
 
 /** Writes an authoritative cart into the cache, replacing whatever was there. */
