@@ -17,6 +17,7 @@
 // `branchId`/`parentBranchId`/`siblingOrder` off every row, with no generic parameter.
 
 import Link from "next/link";
+import { ROADMAP_AUDIENCES } from "@/lib/roadmap/site-capabilities";
 import {
   ROADMAP_REFERENCE_DESTINATIONS,
   SITE_ROADMAP_MILESTONES,
@@ -119,15 +120,129 @@ export default function Roadmap() {
             </span>
           </h1>
           <p className="mx-auto mt-8 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-            Ten stages, in the order you meet them — from making an account to shipping a product
-            and selling it. Every node is a real page. Follow the trunk, or jump straight to the
-            stage you need.
+            What Qatoto is for, what you can do here, and where each of those things lives. Then ten
+            stages in the order you meet them — from making an account to shipping a product and
+            selling it. Every node is a real page.
           </p>
+        </div>
+      </section>
+
+      <section id="what-this-is" className="mx-auto max-w-6xl scroll-mt-24 px-6 pb-24">
+        <div className="grid gap-12 md:grid-cols-[1fr_1.3fr] md:items-start">
+          <div>
+            <span className="rounded-full bg-primary/40 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
+              What this is
+            </span>
+            <h2 className="mt-6 font-serif text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+              One pipeline, from a problem to a product on a shelf.
+            </h2>
+          </div>
+          <div className="space-y-5 text-base leading-relaxed text-muted-foreground sm:text-lg">
+            <p>
+              Qatoto takes an idea from the person who had it to a product someone can buy, without
+              that person needing capital, a network or a team they already know. A problem gets
+              posted, people apply to work on it, the build happens in the open with a daily log,
+              backers commit against work they can watch, and the finished thing goes to market
+              through the Store — manufacturing, listing, orders and returns included.
+            </p>
+            <p>
+              Contribution is logged rather than negotiated, so the equity split is argued from a
+              ledger. Progress is posted daily, so trust is evidence rather than a deck.
+            </p>
+            <p>
+              The video feed, the anime hub and the Store are not a second product bolted on — they
+              are how an idea gets found, how a team gets an audience, and how the finished unit
+              gets sold.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="what-you-can-do" className="mx-auto max-w-6xl scroll-mt-24 px-6 pb-24">
+        <div className="mx-auto max-w-3xl text-center">
+          <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs font-medium tracking-[0.2em] text-foreground uppercase">
+            What you can do
+          </span>
+          <h2 className="mt-6 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
+            Eight reasons to be here.
+          </h2>
+          <p className="mt-5 text-lg text-muted-foreground">
+            Find yourself in one of these. Every capability names the page it actually lives on —
+            and where a surface is still a placeholder, it says so instead of linking you into one.
+          </p>
+        </div>
+
+        <div className="mt-14 space-y-12">
+          {ROADMAP_AUDIENCES.map((audience) => (
+            <section
+              key={audience.id}
+              id={audience.id}
+              className="scroll-mt-24 md:grid md:grid-cols-[1fr_1.6fr] md:items-start md:gap-10"
+            >
+              <div className="md:sticky md:top-24">
+                <h3 className="font-serif text-2xl font-semibold tracking-tight sm:text-3xl">
+                  {audience.headline}
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  {audience.summary}
+                </p>
+              </div>
+
+              <ul className="mt-6 grid gap-3 md:mt-0">
+                {audience.capabilities.map((capability) => (
+                  <li
+                    key={capability.action}
+                    className={`${CARD_BASE_CLASS_NAME} border-border bg-card`}
+                  >
+                    <p className="text-base font-semibold tracking-tight">{capability.action}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {capability.summary}
+                    </p>
+                    {capability.routes.length > 0 && (
+                      <ul className="mt-4 flex flex-wrap gap-2">
+                        {capability.routes.map((route) => (
+                          <li key={route.href}>
+                            <Link
+                              href={route.href}
+                              className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium transition hover:bg-muted"
+                            >
+                              {route.label}
+                              <span className="font-mono text-xs text-muted-foreground">
+                                {route.href}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
         </div>
       </section>
 
       <nav aria-label="Roadmap stages" className="mx-auto max-w-6xl px-6 pb-16">
         <ul className="flex flex-wrap justify-center gap-2">
+          <li>
+            <a
+              href="#what-this-is"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium transition hover:bg-muted"
+            >
+              <span className="font-mono text-xs text-muted-foreground">·</span>
+              What it is
+            </a>
+          </li>
+          <li>
+            <a
+              href="#what-you-can-do"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium transition hover:bg-muted"
+            >
+              <span className="font-mono text-xs text-muted-foreground">·</span>
+              What you can do
+            </a>
+          </li>
           {SITE_ROADMAP_MILESTONES.map((milestone) => (
             <li key={milestone.id}>
               <a
