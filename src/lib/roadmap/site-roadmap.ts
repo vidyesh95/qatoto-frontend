@@ -181,10 +181,10 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Your playlists, likes and bookmarks.",
       },
       {
-        kind: "planned",
+        kind: "route",
         label: "History",
-        pathPattern: "/history",
-        summary: "Everything you have watched.",
+        href: "/history",
+        summary: "Everything you have watched, kept for 90 days.",
       },
     ],
   },

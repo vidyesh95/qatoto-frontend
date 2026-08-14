@@ -26,11 +26,14 @@ import {
 } from "@/lib/http";
 import {
   AcknowledgedSchema,
+  ClearWatchHistoryResultSchema,
   ContentCategorySchema,
   DeletedVideoCommentSchema,
   FeedVideoPageSchema,
   FeedVideoSchema,
+  HideFromWatchHistoryResultSchema,
   PaginationMetaSchema,
+  RestoreToWatchHistoryResultSchema,
   LikeToggleResultSchema,
   SaveToggleResultSchema,
   ShareResultSchema,
@@ -38,10 +41,13 @@ import {
   UpdatedVideoCommentSchema,
   VideoCommentSchema,
   WatchPayloadSchema,
+  type ClearWatchHistoryResult,
   type ContentCategory,
   type FeedSource,
   type FeedVideoPage,
+  type HideFromWatchHistoryResult,
   type LikeToggleResult,
+  type RestoreToWatchHistoryResult,
   type ListFeedVideosFilter,
   type PlaybackErrorCode,
   type SaveToggleResult,
@@ -465,4 +471,66 @@ export function unlikeVideoComment(
     LikeToggleResultSchema,
     options,
   );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Writes — watch history                                                       */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * THE WRITE HALF OF `?mode=watched`, ON ITS OWN PREFIX.
+ *
+ * `/watch-history`, not `/videos/...`, because the collection belongs to the viewer rather than
+ * to a video — and because the backend's `/videos` prefix is owned first by the studio router,
+ * so a single-segment route there is permanently shadowed.
+ *
+ * ALL THREE ARE A SOFT HIDE, NOT A DELETE. The backend stamps a `hidden_from_history_at`
+ * column, because the (video, fingerprint, day) unique key on the session row IS its
+ * view-count anti-replay: deleting the row would let one viewer remove-and-re-watch the same
+ * video to increment `viewCount` repeatedly. Nothing about that is visible from here, but it is
+ * why `DELETE` does not mean gone and why a re-watch brings a removed video back on its own.
+ *
+ * All three are idempotent against that nullable column, so none carries an idempotency key.
+ * All three require a FULL account — 403, not 401, for an anonymous session.
+ */
+
+/** `DELETE /watch-history/videos/:videoId` — remove one video. `200` even if it matched nothing. */
+export function hideVideoFromWatchHistory(
+  videoId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<HideFromWatchHistoryResult>> {
+  return sendJson(
+    `/watch-history/videos/${encodeURIComponent(videoId)}`,
+    "DELETE",
+    undefined,
+    HideFromWatchHistoryResultSchema,
+    options,
+  );
+}
+
+/**
+ * `PUT /watch-history/videos/:videoId` — Undo.
+ *
+ * `restoredSessionCount: 0` IS A REAL ANSWER AND MUST BE RESPECTED: the rows can age past the
+ * backend's 90-day prune between the hide and the undo, in which case the card is gone for good
+ * and the UI must not put it back.
+ */
+export function restoreVideoToWatchHistory(
+  videoId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<RestoreToWatchHistoryResult>> {
+  return sendJson(
+    `/watch-history/videos/${encodeURIComponent(videoId)}`,
+    "PUT",
+    undefined,
+    RestoreToWatchHistoryResultSchema,
+    options,
+  );
+}
+
+/** `DELETE /watch-history` — clear everything. NOT reversible; there is no undo route for it. */
+export function clearWatchHistory(
+  options?: RequestOptions,
+): Promise<ActionResponse<ClearWatchHistoryResult>> {
+  return sendJson("/watch-history", "DELETE", undefined, ClearWatchHistoryResultSchema, options);
 }

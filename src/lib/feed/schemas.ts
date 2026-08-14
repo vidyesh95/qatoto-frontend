@@ -172,6 +172,20 @@ export const FeedVideoSchema = z
     // The literal, not a boolean. No stream domain exists (HOME_BACKEND §5.3), so the backend
     // sends `false` and the type says a `true` would be a contract violation, not a live show.
     isChannelLive: z.literal(false),
+    // PRESENT ONLY ON `?mode=watched` — when this viewer last started watching, as
+    // `max(first_beacon_at)` over their un-hidden counted sessions.
+    //
+    // `.optional()`, NOT `.nullable()`, and the difference is a claim about the viewer.
+    // Absent means the question was never asked, which is every other mode; `null` would mean
+    // "never watched", which no other mode looks up. `/history` is the only reader.
+    //
+    // It is the SAME expression the backend sorts this mode by. `<HistoryList>` groups the
+    // rows into date headers in one pass over that order, so a value disagreeing with the sort
+    // key would make a date group end and then reappear further down the page.
+    //
+    // `z.iso.datetime()` for the reason `publishedAt` states above: this API has served the
+    // bare Postgres text form before, and `Date.parse` reads that as LOCAL time.
+    watchedAt: z.iso.datetime().optional(),
   })
   .strip();
 export type FeedVideo = z.infer<typeof FeedVideoSchema>;
@@ -386,6 +400,27 @@ export type SubscribeToggleResult = z.infer<typeof SubscribeToggleResultSchema>;
 
 export const ShareResultSchema = z.object({ shareCount: z.number() }).strip();
 export type ShareResult = z.infer<typeof ShareResultSchema>;
+
+/*
+ * The three `/watch-history` writes each answer a count of SESSION ROWS, not videos.
+ *
+ * One video watched across three UTC days is three rows and ONE card, so these numbers are
+ * only ever useful as "did anything change" — never render one as a video count. They are
+ * separate schemas rather than one shared `{ count }` because the field names are the only
+ * thing distinguishing three otherwise identical responses in a network log.
+ */
+export const HideFromWatchHistoryResultSchema = z
+  .object({ hiddenSessionCount: z.number() })
+  .strip();
+export type HideFromWatchHistoryResult = z.infer<typeof HideFromWatchHistoryResultSchema>;
+
+export const RestoreToWatchHistoryResultSchema = z
+  .object({ restoredSessionCount: z.number() })
+  .strip();
+export type RestoreToWatchHistoryResult = z.infer<typeof RestoreToWatchHistoryResultSchema>;
+
+export const ClearWatchHistoryResultSchema = z.object({ clearedSessionCount: z.number() }).strip();
+export type ClearWatchHistoryResult = z.infer<typeof ClearWatchHistoryResultSchema>;
 
 /**
  * The 202 routes — view-beacon and playback-error — answer with NO `data` key at all.

@@ -21,9 +21,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { feedKeys } from "@/hooks/feed/keys";
 import {
+  clearWatchHistory,
   createVideoComment,
   deleteVideoComment,
+  hideVideoFromWatchHistory,
   likeVideo,
+  restoreVideoToWatchHistory,
   likeVideoComment,
   recordVideoShare,
   saveVideo,
@@ -189,6 +192,63 @@ export function useDeleteVideoCommentMutation(videoId: string) {
     mutationFn: async (commentId: string) => unwrap(await deleteVideoComment(commentId)),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: feedKeys.commentsRoot(videoId) });
+    },
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Watch history — pending, never optimistic                                    */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * PENDING, NOT OPTIMISTIC, AND THE REASON IS UNDO RATHER THAN CAUTION.
+ *
+ * A like that flips early and rolls back has cost the viewer a glance. A removal that flips
+ * early offers an Undo control for a removal that never happened — and Undo is a SECOND server
+ * call, which would then answer `restoredSessionCount: 0` and leave the card in a state neither
+ * the page nor the server can explain. So the card waits for the server, and only then does the
+ * "Removed — Undo" row replace it.
+ *
+ * NONE OF THESE INVALIDATE THE HISTORY LIST. `feedKeys.videos({ mode: "watched" })` is an
+ * infinite query seeded from the server with `staleTime: Infinity`; invalidating it refetches
+ * page one and DISCARDS every page the reader scrolled through. `<HistoryList>` tracks removed
+ * ids in component state and filters its render instead — the cost is that `pagination.total`
+ * drifts by the number removed until the next full load, which is a stale count rather than a
+ * lost scroll position.
+ */
+
+/** Removes one video from the viewer's history. Server-truthful; the caller renders after. */
+export function useHideFromWatchHistoryMutation() {
+  return useMutation({
+    mutationFn: async (videoId: string) => unwrap(await hideVideoFromWatchHistory(videoId)),
+  });
+}
+
+/**
+ * Undo for the above.
+ *
+ * The caller MUST branch on `restoredSessionCount`: zero means the session rows aged past the
+ * backend's 90-day prune between the removal and the undo, so the card is gone for good and
+ * putting it back would be a lie the next reload corrects.
+ */
+export function useRestoreToWatchHistoryMutation() {
+  return useMutation({
+    mutationFn: async (videoId: string) => unwrap(await restoreVideoToWatchHistory(videoId)),
+  });
+}
+
+/**
+ * Clears the whole history.
+ *
+ * THIS ONE DOES INVALIDATE, and it is the exception that proves the rule above: there is no
+ * scroll position worth preserving through an operation whose entire result is an empty list.
+ */
+export function useClearWatchHistoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => unwrap(await clearWatchHistory()),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: feedKeys.videosRoot() });
     },
   });
 }
