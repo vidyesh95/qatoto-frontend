@@ -152,6 +152,7 @@ const ROUTES = {
   creator: "/creator",
   careers: "/careers",
   developers: "/developers",
+  roadmap: "/roadmap",
   termsAndConditions: "/terms-and-conditions",
   privacyPolicy: "/privacy-policy",
   vulnerabilityDisclosurePolicy: "/vulnerability-disclosure-policy",
@@ -425,6 +426,7 @@ const FOOTER_LINKS_ROW1 = [
   { path: ROUTES.creator, label: "Creator" },
   { path: ROUTES.careers, label: "Careers" },
   { path: ROUTES.developers, label: "Developers" },
+  { path: ROUTES.roadmap, label: "Roadmap" },
 ] as const;
 
 const FOOTER_LINKS_ROW2 = [

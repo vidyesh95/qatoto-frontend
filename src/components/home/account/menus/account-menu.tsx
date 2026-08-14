@@ -36,6 +36,7 @@ const INFORMATION_LINKS = [
   { label: "Creator", href: "/creator" },
   { label: "Careers", href: "/careers" },
   { label: "Developers", href: "/developers" },
+  { label: "Roadmap", href: "/roadmap" },
 ] as const;
 
 /** Legal/policy pages, shown as the final divider section of the menu. */
