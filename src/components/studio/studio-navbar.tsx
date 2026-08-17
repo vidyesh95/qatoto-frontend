@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
+import NotificationBell from "@/components/home/layout/notification-bell";
 import { useSidebar } from "@/state/sidebar-context";
 
 // Top bar for the Creator Studio hub. Mirrors the main Navbar's layout but
@@ -101,18 +102,10 @@ export default function StudioNavbar({ accountSlot }: { accountSlot: ReactNode }
               height={24}
             />
           </Link>
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="cursor-pointer rounded-full border border-primary bg-white p-1.75"
-          >
-            <Image
-              src="/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt="Notifications"
-              width={24}
-              height={24}
-            />
-          </button>
+          {/* NO `isViewerSignedIn` TO PASS HERE, and that is the case the prop's default exists
+          for: this bell sits in the navbar itself rather than inside `accountSlot`, so unlike the
+          (home) and (admin) clusters it renders for anyone. It gates itself. */}
+          <NotificationBell />
           {accountSlot}
         </div>
       </div>

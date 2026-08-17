@@ -20,6 +20,7 @@ import { useState } from "react";
 
 import AccountMenu from "@/components/home/account/menus/account-menu";
 import CartNavButton from "@/components/home/layout/cart-nav-button";
+import NotificationBell from "@/components/home/layout/notification-bell";
 import { useSession } from "@/lib/auth-client";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 
@@ -46,18 +47,10 @@ export default function NavbarAccountCluster({
     <>
       {isAuthenticated ? (
         <>
-          <button
-            type={"button"}
-            aria-label="Notifications"
-            className={"cursor-pointer rounded-full border border-primary bg-white p-1.75"}
-          >
-            <Image
-              src={"/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-              alt={"Notifications"}
-              width={24}
-              height={24}
-            />
-          </button>
+          {/* Owns its own count query and its own signed-out gate, for the same reason the cart
+          button does. The server's answer is threaded down so the badge does not wait on the
+          session atom. */}
+          <NotificationBell isViewerSignedIn={isViewerSignedIn} />
           {/* Owns its own cart query so the request only exists for a signed-in visitor — see
           the header of `cart-nav-button.tsx`. */}
           <CartNavButton />

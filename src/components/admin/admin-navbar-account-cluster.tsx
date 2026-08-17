@@ -10,6 +10,7 @@ import Image from "next/image";
 import { useState } from "react";
 
 import AccountMenu from "@/components/home/account/menus/account-menu";
+import NotificationBell from "@/components/home/layout/notification-bell";
 import { useSession } from "@/lib/auth-client";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 
@@ -27,18 +28,9 @@ export default function AdminNavbarAccountCluster({
     <>
       {isAuthenticated ? (
         <>
-          <button
-            type={"button"}
-            aria-label="Notifications"
-            className={"cursor-pointer rounded-full border border-primary bg-white p-1.75"}
-          >
-            <Image
-              src={"/icons/notifications_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-              alt={"Notifications"}
-              width={24}
-              height={24}
-            />
-          </button>
+          {/* The same inbox as the other two surfaces: the read is caller-scoped with no project
+          filter, so a staff member's notifications are the notifications they already have. */}
+          <NotificationBell isViewerSignedIn={isViewerSignedIn} />
           <div className="relative">
             <button
               type="button"
