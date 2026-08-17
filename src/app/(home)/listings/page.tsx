@@ -1,12 +1,11 @@
 import { redirect } from "next/navigation";
 
-import type { Metadata } from "next";
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-  title: "Listings",
-  description: "Your product listings on Qatoto",
-};
+// No `metadata` export, matching the other four redirects: a redirect renders no document, so
+// any title it produced would be for a page nobody sees.
 
 /**
  * WAS AN `<h1>` STUB. NOW A REDIRECT, AND THAT IS THE FEATURE RATHER THAN A REFUSAL TO BUILD IT.
