@@ -142,7 +142,6 @@ const ROUTES = {
   advertiseWithUs: "/advertise-with-us",
   yourAccount: "/your-account",
   customerService: "/customer-service",
-  signOut: "/sign-out",
   about: "/about",
   press: "/press",
   blogs: "/blogs",
@@ -407,11 +406,16 @@ const NAVIGATION_CONFIG: NavSection[] = [
     hasDivider: true,
   },
   {
+    // NO "SIGN OUT" ROW HERE, DELIBERATELY. Every entry in this file is a DESTINATION, and
+    // sign-out is an action — the one irreversible thing in a list of places. It lives in the
+    // account menu (`account/menus/account-menu.tsx`), which is also the only surface that
+    // carries it everywhere: that menu is mounted by the (home), (studio) AND (admin) navbars,
+    // while this sidebar is (home)-only. A second sign-out affordance here would be a second
+    // implementation to keep in step, reachable from a third of the app.
     title: "Help and settings",
     items: [
       { path: ROUTES.yourAccount, label: "Your account", iconKey: "accountCircle" },
       { path: ROUTES.customerService, label: "Customer service", iconKey: "supportAgent" },
-      { path: ROUTES.signOut, label: "Sign out", iconKey: "logout" },
     ],
     hasDivider: true,
   },

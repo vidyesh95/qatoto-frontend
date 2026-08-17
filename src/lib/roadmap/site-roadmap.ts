@@ -110,12 +110,10 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         pathPattern: "/settings",
         summary: "Appearance, language, notifications, privacy.",
       },
-      {
-        kind: "planned",
-        label: "Sign out",
-        pathPattern: "/sign-out",
-        summary: "Ends the session on this device.",
-      },
+      // NO "Sign out" NODE. It was here as a `planned` route and is now neither planned nor a
+      // route: sign-out is a control in the account menu, not a surface, so a map of surfaces
+      // is the wrong place to promise it. See the "Help and settings" comment in
+      // `components/home/layout/sidebar.tsx` for why it lives only in that menu.
     ],
   },
   {

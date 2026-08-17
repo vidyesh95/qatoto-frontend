@@ -15,7 +15,6 @@ export const SIDEBAR_ROUTES = {
   "Advertise with us": "/advertise-with-us",
   "Your account": "/your-account",
   "Customer service": "/customer-service",
-  "Sign out": "/sign-out",
 } as const;
 
 export type SidebarLabel = keyof typeof SIDEBAR_ROUTES;
