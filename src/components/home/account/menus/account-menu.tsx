@@ -4,17 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { signOut, useSession } from "@/lib/auth-client";
-import {
-  AppearancePanel,
-  THEME_SUMMARY,
-  type Theme,
-} from "@/components/home/account/menus/appearance-menu";
+import { AppearancePanel, THEME_SUMMARY } from "@/components/home/account/menus/appearance-menu";
 import { LanguagePanel } from "@/components/home/account/menus/language-menu";
-import {
-  countryName,
-  DEFAULT_COUNTRY_CODE,
-  LocationPanel,
-} from "@/components/home/account/menus/location-menu";
+import { countryName, LocationPanel } from "@/components/home/account/menus/location-menu";
+import { useBrowserPreferences } from "@/state/browser-preferences-context";
 import { ChildPanel } from "@/components/home/account/menus/child-menu";
 import { IncognitoPanel } from "@/components/home/account/menus/incognito-menu";
 import { AiAssistPanel } from "@/components/home/account/menus/ai-assist-menu";
@@ -74,14 +67,14 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   // Signed-in user's name + avatar come from the Better Auth session (get-session).
   const { data: session } = useSession();
 
-  // Which panel is showing, and the browser-local appearance preference.
+  // Which panel is showing.
   const [view, setView] = useState<MenuView>("main");
-  const [theme, setTheme] = useState<Theme>("device");
-  const [childMode, setChildMode] = useState(false);
-  const [incognitoMode, setIncognitoMode] = useState(false);
-  const [aiAssistMode, setAiAssistMode] = useState(false);
-  const [language, setLanguage] = useState("English");
-  const [location, setLocation] = useState(DEFAULT_COUNTRY_CODE);
+
+  // THE SIX PREFERENCES ARE NOT LOCAL STATE ANY MORE. They were, and closing this dropdown threw
+  // every one of them away — which stopped being merely untidy the moment `/settings` shipped as a
+  // page editing the same six. They now live in `localStorage` behind the context, so a theme
+  // chosen here is the theme `/settings` shows, and both survive a reload.
+  const { preferences, setPreference } = useBrowserPreferences();
 
   // Close the menu whenever the user presses down anywhere outside the panel.
   useEffect(() => {
@@ -121,25 +114,41 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
       className="fixed top-15 right-14 left-1 z-50 max-h-[calc(100dvh-9rem)] w-auto overflow-y-auto rounded-lg border border-black/10 bg-background shadow-lg sm:absolute sm:top-12 sm:right-2 sm:left-auto sm:max-h-[calc(100dvh-4rem)] sm:w-95"
     >
       {view === "appearance" ? (
-        <AppearancePanel selected={theme} onSelect={setTheme} onBack={() => setView("main")} />
+        <AppearancePanel
+          selected={preferences.theme}
+          onSelect={(theme) => setPreference("theme", theme)}
+          onBack={() => setView("main")}
+        />
       ) : view === "child" ? (
-        <ChildPanel selected={childMode} onSelect={setChildMode} onBack={() => setView("main")} />
+        <ChildPanel
+          selected={preferences.isChildModeOn}
+          onSelect={(isChildModeOn) => setPreference("isChildModeOn", isChildModeOn)}
+          onBack={() => setView("main")}
+        />
       ) : view === "incognito" ? (
         <IncognitoPanel
-          selected={incognitoMode}
-          onSelect={setIncognitoMode}
+          selected={preferences.isIncognitoModeOn}
+          onSelect={(isIncognitoModeOn) => setPreference("isIncognitoModeOn", isIncognitoModeOn)}
           onBack={() => setView("main")}
         />
       ) : view === "ai-assist" ? (
         <AiAssistPanel
-          selected={aiAssistMode}
-          onSelect={setAiAssistMode}
+          selected={preferences.isAiAssistModeOn}
+          onSelect={(isAiAssistModeOn) => setPreference("isAiAssistModeOn", isAiAssistModeOn)}
           onBack={() => setView("main")}
         />
       ) : view === "language" ? (
-        <LanguagePanel selected={language} onSelect={setLanguage} onBack={() => setView("main")} />
+        <LanguagePanel
+          selected={preferences.language}
+          onSelect={(language) => setPreference("language", language)}
+          onBack={() => setView("main")}
+        />
       ) : view === "location" ? (
-        <LocationPanel selected={location} onSelect={setLocation} onBack={() => setView("main")} />
+        <LocationPanel
+          selected={preferences.countryCode}
+          onSelect={(countryCode) => setPreference("countryCode", countryCode)}
+          onBack={() => setView("main")}
+        />
       ) : view === "settings" ? (
         <SettingsPanel onBack={() => setView("main")} onSignOut={handleSignOut} />
       ) : view === "switch-account" ? (
@@ -387,7 +396,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               />
               <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
                 <span className="shrink-0">Appearance:</span>
-                <span className="truncate">{THEME_SUMMARY[theme]}</span>
+                <span className="truncate">{THEME_SUMMARY[preferences.theme]}</span>
               </span>
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -409,7 +418,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               />
               <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
                 <span className="shrink-0">Language:</span>
-                <span className="truncate">{language}</span>
+                <span className="truncate">{preferences.language}</span>
               </span>
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -431,7 +440,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               />
               <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
                 <span className="shrink-0">Child mode:</span>
-                <span className="truncate">{childMode ? "On" : "Off"}</span>
+                <span className="truncate">{preferences.isChildModeOn ? "On" : "Off"}</span>
               </span>
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -453,7 +462,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               />
               <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
                 <span className="shrink-0">Incognito mode:</span>
-                <span className="truncate">{incognitoMode ? "On" : "Off"}</span>
+                <span className="truncate">{preferences.isIncognitoModeOn ? "On" : "Off"}</span>
               </span>
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -475,7 +484,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               />
               <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
                 <span className="shrink-0">AI assist mode:</span>
-                <span className="truncate">{aiAssistMode ? "On" : "Off"}</span>
+                <span className="truncate">{preferences.isAiAssistModeOn ? "On" : "Off"}</span>
               </span>
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
@@ -497,7 +506,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               />
               <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
                 <span className="shrink-0">Location:</span>
-                <span className="truncate">{countryName(location)}</span>
+                <span className="truncate">{countryName(preferences.countryCode)}</span>
               </span>
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"

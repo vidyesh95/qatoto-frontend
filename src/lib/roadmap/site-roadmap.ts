@@ -99,16 +99,16 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Reset link, for the password route only.",
       },
       {
-        kind: "planned",
+        kind: "route",
         label: "Your account",
-        pathPattern: "/your-account",
-        summary: "Profile, identity and verification level.",
+        href: "/your-account",
+        summary: "Your name, handle, phone, password, passkeys and linked providers.",
       },
       {
-        kind: "planned",
+        kind: "route",
         label: "Settings",
-        pathPattern: "/settings",
-        summary: "Appearance, language, notifications, privacy.",
+        href: "/settings",
+        summary: "Appearance, language, browse location and the three modes — this browser only.",
       },
       // NO "Sign out" NODE. It was here as a `planned` route and is now neither planned nor a
       // route: sign-out is a control in the account menu, not a surface, so a map of surfaces

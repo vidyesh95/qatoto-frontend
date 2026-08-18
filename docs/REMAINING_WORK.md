@@ -30,7 +30,7 @@ prerendered route in `(home)` from `◐ (Partial Prerender)` into `ƒ (Dynamic)`
 
 ---
 
-## 2. Seventeen routes are stubs that render a bare `<h1>`
+## 2. Sixteen routes are stubs that render a bare `<h1>`
 
 `rg -l "return <h1>" src/app` finds them. All are marked `kind: "planned"` in
 `src/lib/roadmap/site-roadmap.ts`, so the public roadmap is honest about them — they are
@@ -38,13 +38,19 @@ unbuilt, not broken.
 
 - **Twelve under `(studio)`**: analytics, comments, subtitles, copyright, customize, earn,
   funding, pitches, team, learn, support, feedback
-- **Five under `(home)`**: `/your-account`, `/settings`, `/customer-service`,
-  `/advertise-with-us`, `/report-history`, `/policies-and-safety`
+- **Four under `(home)`**: `/customer-service`, `/advertise-with-us`, `/report-history`,
+  `/policies-and-safety`
 
-`/your-account` and `/settings` are the cheap two: all 8 profile panels and 7 preference panels
-already exist and are already wired (`PATCH /users/me`, `/users/me/handle`, `/users/me/photo`,
-`GET /users/me/linked-accounts`, better-auth passkeys) — they are just trapped inside the 360px
-account dropdown. Those routes need a host, not a feature.
+**`/your-account` and `/settings` are DONE** — they were the cheap two named here, and the
+entry said why: all 8 identity panels and the 6 preference panels already existed and were
+already wired (`PATCH /users/me`, `/users/me/handle`, `/users/me/photo`,
+`GET /users/me/linked-accounts`, better-auth passkeys, phone and multi-session), just trapped
+inside the 360px account dropdown. They needed a host, not a feature, and they now have one:
+seventeen routes across two nested trees, plus the preference persistence the dropdown never
+had. See `todo.md` for the two follow-up parts.
+
+Note the count: this heading said "Seventeen" and then listed six routes under a bullet
+labelled "Five", so the real number before that work was **eighteen**. It is sixteen now.
 
 ---
 

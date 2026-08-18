@@ -127,8 +127,14 @@ export const COUNTRY_OPTIONS: Country[] = [
   { code: "ZW", name: "Zimbabwe" },
 ];
 
-/** Default browse market when the user has not chosen one. */
-export const DEFAULT_COUNTRY_CODE = "US";
+/**
+ * Default browse market when the user has not chosen one.
+ *
+ * DEFINED IN `@/lib/browser-preferences` and re-exported here so it stays beside the country list
+ * it indexes into. It has to be defined there because the root layout — a server component — reads
+ * the preference defaults, and this file is `"use client"`.
+ */
+export { DEFAULT_COUNTRY_CODE } from "@/lib/browser-preferences";
 
 /** Lookup of display name by country code. */
 const COUNTRY_NAME_BY_CODE: Record<string, string> = Object.fromEntries(

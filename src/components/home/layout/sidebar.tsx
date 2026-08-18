@@ -103,6 +103,10 @@ const ICON_PATHS = {
     active: "/icons/account_circle_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  settings: {
+    active: "/icons/settings_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   supportAgent: {
     static: "/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
@@ -141,6 +145,7 @@ const ROUTES = {
   sales: "/sales",
   advertiseWithUs: "/advertise-with-us",
   yourAccount: "/your-account",
+  settings: "/settings",
   customerService: "/customer-service",
   about: "/about",
   press: "/press",
@@ -415,6 +420,11 @@ const NAVIGATION_CONFIG: NavSection[] = [
     title: "Help and settings",
     items: [
       { path: ROUTES.yourAccount, label: "Your account", iconKey: "accountCircle" },
+      // ADDED WITH THE ROUTE. `/settings` had no entry point anywhere in the app — not this
+      // sidebar, not the navbar, not the mobile nav. The account dropdown reaches the same six
+      // preference panels, but a dropdown is not a link, so the page was unreachable by anything
+      // except typing the URL.
+      { path: ROUTES.settings, label: "Settings", iconKey: "settings" },
       { path: ROUTES.customerService, label: "Customer service", iconKey: "supportAgent" },
     ],
     hasDivider: true,

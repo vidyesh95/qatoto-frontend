@@ -10,10 +10,11 @@
 // TWO RULES KEEP THE PAGE HONEST, and both are why this is authored rather than generated:
 //
 //  1. A `href` here must be a route that WORKS. The roadmap marks a set of routes `kind: "planned"`
-//     — they resolve but render a placeholder heading (`/settings`, `/your-account`, and thirteen
-//     `/studio/*` stubs including analytics, earn and payouts). Linking one of those from a
-//     capability row would be the page promising a feature the app does not have. Where a capability
-//     genuinely lives on a stub, it is said in `summary` prose with no chip.
+//     — they resolve but render a placeholder heading (thirteen `/studio/*` stubs including
+//     analytics, earn and payouts). Linking one of those from a capability row would be the page
+//     promising a feature the app does not have. Where a capability genuinely lives on a stub, it
+//     is said in `summary` prose with no chip. (`/settings` and `/your-account` were on that list
+//     until they were built — both are real routes now and may be linked.)
 //
 //  2. A capability on a dynamic segment (`/…/project/[id]/proof-of-effort`) carries NO chip. There
 //     is no URL to link, so `summary` says how it is reached instead.

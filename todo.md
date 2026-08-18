@@ -279,3 +279,88 @@ components without printing a date.
   moderator who can be lobbied — worth deciding deliberately rather than by adding a schema field.
 - **The Postgres ceiling.** `max_connections = 20`, and API + worker + a seed script is most of it.
   Either the per-process pool comes down or the plan goes up before anyone trusts a local run.
+
+---
+
+# `/your-account` and `/settings` — Part 1 shipped, Parts 2–3 are open
+
+Written 2026-08-18. `docs/REMAINING_WORK.md` §2 called these two "the cheap two" — a host, not a
+feature. Part 1 built the host.
+
+## What shipped
+
+**Seventeen routes across two nested trees**, the first nested layouts in `(home)`:
+
+- `/your-account` + nine sub-routes — `full-name`, `profile-photo`, `handle`, `phone-number`,
+  `password`, `passkeys`, `google`, `github`, `switch-account`. `ƒ (Dynamic)`; each awaits
+  `hasCallerSession()` and seeds `useViewerSignedIn`, so the sign-in gate never mismatches on
+  hydration.
+- `/settings` + six sub-routes — `appearance`, `language`, `location`, `child-mode`,
+  `incognito-mode`, `ai-assist-mode`. `◐ (Partial Prerender)` and **deliberately not gated**: these
+  six are device preferences with no server counterpart, so requiring an account to pick a theme
+  would be a gate protecting nothing.
+
+**`/settings/password` is one URL, two panels** — whether it is "set" or "change" is
+`accountsByProvider.has("credential")`, not something a URL can know.
+
+**Preferences persist, device-only.** `src/lib/browser-preferences.ts` +
+`src/state/browser-preferences-context.tsx`: one `localStorage` key, parsed with a `.partial()`
+Zod schema so a blob from an older build cannot wipe the preferences it does carry. The account
+dropdown reads the same context, so the two surfaces cannot disagree. No server sync — the backend
+has no preferences endpoint and is not getting one for these.
+
+**The theme is applied.** `THEME_BOOTSTRAP_SCRIPT` is a blocking inline `<script>` in the root
+`<head>` that puts `.dark` on `<html>` before first paint. `globals.css` had a complete 32-token
+`.dark` palette that **nothing had ever applied** — it was dead CSS.
+
+**One read got the house treatment.** `GET /users/me/linked-accounts` had an inline Zod schema and a
+hand-rolled `useEffect` inside `menus/settings-menu.tsx`; four surfaces now need it, so it moved to
+`src/lib/account/linked-accounts.{api,schemas}.ts` + `src/hooks/account/`.
+
+**Entrances.** `SettingsPanel`'s "Your account" row was inert — no `onClick`, nowhere to go — and is
+a link now. The sidebar gained a Settings row: `/settings` had **no entry point anywhere in the
+app**, not the sidebar, not the navbar, not the mobile nav.
+
+## Part 2 — `panels/*.tsx` at page width
+
+The eight identity panels still render the 360px dropdown layout inside a `max-w-3xl` column, and
+still draw their own sticky back-header with the arrow. That header is why neither route layout
+carries an `<h1>` — two stacked headers is the visible tell that this part has not happened.
+
+**Use Tailwind v4 `@container` queries, not a `variant` prop.** The dropdown and the page render the
+same component, so a prop means a branch that can drift and a second layout nobody looks at. A
+container query makes the dropdown's 360px container keep today's stacked layout and the page's wide
+container get side-by-side fields and a card, from one source. Verify at 360px afterwards — the
+dropdown is the regression that matters.
+
+## Part 3 — `menus/*.tsx` at page width
+
+Same technique for the six preference panels, plus lifting the `<h1>` out of the panels and into
+`your-account/layout.tsx` and `settings/layout.tsx` once they no longer draw their own header.
+
+## Dark mode's outstanding debt — found by shipping it, not fixed
+
+**Every `_000000_` icon is a solid black glyph and does not follow the palette.** Nineteen of them on
+`/settings` alone, app-wide in every navbar, sidebar and list. In light mode this is invisible; in
+dark mode they are dark-on-dark. `src/app/globals.css` now paints `body` from the tokens (it never
+did — the page was white by browser default and inherited `color` was pure black, which is what made
+this obvious), but no CSS can fix the icons: they are raster-flat SVGs with a baked fill.
+
+Three ways out, none of them a line of code in the two route trees:
+
+1. `.dark img[src*="_000000_"] { filter: invert(1); }` — one rule, and the `_000000_` in the filename
+   genuinely means "black fill", so it is more targeted than it looks. **It is wrong wherever a black
+   icon sits on a surface that is light in dark mode** (the white "Sign in" pill, the search field),
+   and there are enough hardcoded-hex surfaces left that this needs an audit, not a guess.
+2. Swap the assets for `currentColor` SVGs rendered inline. Correct, and the largest change.
+3. Ship `_FFFFFF_` counterparts and pick per theme. Doubles the asset count.
+
+Also unfixed, and smaller: the hardcoded Material-3 hexes (`text-[#041F21]`, `bg-[#00696E]`,
+`text-[#1DBDC5]`) do not follow the tokens either. `shared/status-panel.tsx`'s header already
+documents that split as a deliberate two-vocabulary situation.
+
+## The count in `REMAINING_WORK.md` §2 was wrong
+
+It read "Seventeen routes are stubs", then listed six routes under a bullet labelled "Five". The real
+number was eighteen. It is **sixteen** now — twelve `(studio)` stubs and four under `(home)`
+(`/customer-service`, `/advertise-with-us`, `/report-history`, `/policies-and-safety`).

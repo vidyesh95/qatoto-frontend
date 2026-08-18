@@ -149,6 +149,24 @@
   --animate-live-image: live-image 0.8s ease-in-out infinite;
 }
 
+/*
+ * THE PAGE ITSELF HAS TO FOLLOW THE PALETTE, and until the theme could actually be switched
+ * nothing revealed that it did not. `:root` and `.dark` below define all 32 tokens, but no rule
+ * ever painted `body` with them — the page was white because that is the browser default, and
+ * `color` was the initial black. Every component that says `bg-background` / `text-foreground`
+ * flipped correctly the moment `.dark` landed on `<html>`; the surface behind them did not, and
+ * any text inheriting `color` stayed black on a dark ground.
+ *
+ * In light mode this changes the page from pure white to `--background` (oklch 0.9761), which is
+ * the ground the navbar and sidebar have always drawn themselves against.
+ */
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}
+
 @keyframes live-ring {
   0%,
   100% {

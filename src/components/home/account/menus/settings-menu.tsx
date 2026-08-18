@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { z } from "zod";
+import Link from "next/link";
+import { useState } from "react";
 import { useSession } from "@/lib/auth-client";
-import { API_BASE_URL } from "@/lib/api";
+import { useLinkedAccountsQuery } from "@/hooks/account/linked-accounts";
 import { FullNamePanel } from "@/components/home/account/panels/full-name-panel";
 import { ProfilePhotoPanel } from "@/components/home/account/panels/profile-photo-panel";
 import { HandlePanel } from "@/components/home/account/panels/handle-panel";
@@ -23,6 +23,8 @@ type SettingsItem = {
   subtitle?: string;
   /** Icon path under `public/icons` (or `public/...` for brand marks). */
   icon: string;
+  /** A destination, for a row that is a route rather than a sub-panel. */
+  href?: string;
   /** Optional click handler; omitted rows are inert nav stubs for now. */
   onClick?: () => void;
   /** Right-aligned status chip (e.g. "Connected") for already-linked actions. */
@@ -30,19 +32,6 @@ type SettingsItem = {
   /** When true, the row is shown but not actionable. */
   disabled?: boolean;
 };
-
-/** Backend contract for GET /users/me/linked-accounts (untrusted — parsed, not asserted). */
-const LinkedAccountsResponseSchema = z
-  .object({
-    data: z.array(z.object({ providerId: z.string(), email: z.string().nullable() }).strip()),
-  })
-  .strip();
-
-/** Which providers are linked and the email each is linked as — drives the chips + subtitles. */
-type LinkedAccountsState =
-  | { status: "loading" }
-  | { status: "ready"; accountsByProvider: Map<string, string | null> }
-  | { status: "error" };
 
 type SettingsPanelProps = {
   /** Invoked by the header back button. */
@@ -79,39 +68,13 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
   >("list");
 
   // Which providers are linked, so the list can show "Connected" chips and hide
-  // "Set email address" once a credential exists. Re-fetched whenever the list is
-  // shown — including after returning from a sub-panel that just linked something.
-  const [linkedAccountsState, setLinkedAccountsState] = useState<LinkedAccountsState>({
-    status: "loading",
-  });
-
-  useEffect(() => {
-    if (view !== "list") return undefined;
-    let isActive = true;
-    void (async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/users/me/linked-accounts`, {
-          credentials: "include",
-        });
-        const rawBody: unknown = await response.json();
-        if (!isActive) return;
-        const parsed = LinkedAccountsResponseSchema.safeParse(rawBody);
-        if (!response.ok || !parsed.success) {
-          setLinkedAccountsState({ status: "error" });
-          return;
-        }
-        const accountsByProvider = new Map(
-          parsed.data.data.map((linkedAccount) => [linkedAccount.providerId, linkedAccount.email]),
-        );
-        setLinkedAccountsState({ status: "ready", accountsByProvider });
-      } catch {
-        if (isActive) setLinkedAccountsState({ status: "error" });
-      }
-    })();
-    return () => {
-      isActive = false;
-    };
-  }, [view]);
+  // "Set email address" once a credential exists.
+  //
+  // WAS A HAND-ROLLED `useEffect` + an inline Zod schema, refetching on every return to the list.
+  // It moved to React Query when `/your-account` and its three provider-dependent sub-routes
+  // started asking the same question: one cache entry, one request between them, and no way for the
+  // dropdown and the page to disagree about whether a password is set.
+  const linkedAccountsQuery = useLinkedAccountsQuery();
 
   if (view === "full-name") {
     return (
@@ -146,8 +109,12 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     );
   }
 
+  // Null while the read is in flight or has failed — "we do not know yet", never "not linked".
+  const linkedAccountsResult = linkedAccountsQuery.data;
   const accountsByProvider =
-    linkedAccountsState.status === "ready" ? linkedAccountsState.accountsByProvider : null;
+    linkedAccountsResult?.success === true
+      ? new Map(linkedAccountsResult.data.map((account) => [account.providerId, account.email]))
+      : null;
   const googleEmail = accountsByProvider?.get("google") ?? null;
   const githubEmail = accountsByProvider?.get("github") ?? null;
   const credentialEmail = accountsByProvider?.get("credential") ?? null;
@@ -179,12 +146,15 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
   const isGoogleLinked = accountsByProvider?.has("google") ?? false;
   const isGithubLinked = accountsByProvider?.has("github") ?? false;
   const hasCredential = accountsByProvider?.has("credential") ?? false;
-  const isLinkedAccountsReady = linkedAccountsState.status === "ready";
+  const isLinkedAccountsReady = accountsByProvider !== null;
 
   const items: SettingsItem[] = [
     {
+      // WAS INERT — a row with no `onClick` and nowhere to go, because the route it names rendered
+      // a bare `<h1>`. It is a link now, and that page is where these rows live at full size.
       label: "Your account",
       icon: "/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      href: "/your-account",
     },
     {
       label: "Switch account",
@@ -299,34 +269,52 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       <ul>
         {items.map((item) => (
           <li key={item.label}>
-            <button
-              type="button"
-              onClick={item.onClick}
-              disabled={item.disabled}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
-            >
-              <Image src={item.icon} alt="" width={24} height={24} className="size-6 shrink-0" />
-              <span className="flex flex-1 flex-col text-left">
-                <span className="text-sm font-medium text-secondary-foreground">{item.label}</span>
-                {item.subtitle ? (
-                  <span className="text-xs text-muted-foreground">{item.subtitle}</span>
-                ) : null}
-              </span>
-              {item.badge ? (
-                <span className="flex shrink-0 flex-row items-center gap-1 text-xs font-medium text-[#00696E]">
-                  <Image
-                    src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                    alt=""
-                    width={16}
-                    height={16}
-                  />
-                  {item.badge}
-                </span>
-              ) : null}
-            </button>
+            {item.href ? (
+              <Link
+                href={item.href}
+                className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
+              >
+                <SettingsItemBody item={item} />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={item.onClick}
+                disabled={item.disabled}
+                className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
+              >
+                <SettingsItemBody item={item} />
+              </button>
+            )}
           </li>
         ))}
       </ul>
     </div>
+  );
+}
+
+/** The row's contents, shared by the `<Link>` and `<button>` shells above. */
+function SettingsItemBody({ item }: { item: SettingsItem }) {
+  return (
+    <>
+      <Image src={item.icon} alt="" width={24} height={24} className="size-6 shrink-0" />
+      <span className="flex flex-1 flex-col text-left">
+        <span className="text-sm font-medium text-secondary-foreground">{item.label}</span>
+        {item.subtitle ? (
+          <span className="text-xs text-muted-foreground">{item.subtitle}</span>
+        ) : null}
+      </span>
+      {item.badge ? (
+        <span className="flex shrink-0 flex-row items-center gap-1 text-xs font-medium text-[#00696E]">
+          <Image
+            src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt=""
+            width={16}
+            height={16}
+          />
+          {item.badge}
+        </span>
+      ) : null}
+    </>
   );
 }
