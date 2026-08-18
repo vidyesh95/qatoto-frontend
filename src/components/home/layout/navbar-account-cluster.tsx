@@ -21,7 +21,7 @@ import { useState } from "react";
 import AccountMenu from "@/components/home/account/menus/account-menu";
 import CartNavButton from "@/components/home/layout/cart-nav-button";
 import NotificationBell from "@/components/home/layout/notification-bell";
-import { useSession } from "@/lib/auth-client";
+import { useViewerAvatarUrl } from "@/hooks/use-viewer-avatar-url";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 
 export default function NavbarAccountCluster({
@@ -37,9 +37,10 @@ export default function NavbarAccountCluster({
    */
   readonly isViewerSignedIn: boolean;
 }) {
-  // The avatar needs the session object itself, not just the boolean, so this reads both. The
-  // boolean decides WHICH cluster; the session fills it in once it lands.
-  const { data: session } = useSession();
+  // Two separately hydration-aligned reads of the same session: the boolean decides WHICH cluster,
+  // the URL fills the avatar in once the live session lands. Neither may touch `useSession` raw —
+  // `use-viewer-avatar-url.ts` explains what a raw read did to the `<img src>` here.
+  const viewerAvatarUrl = useViewerAvatarUrl();
   const isAuthenticated = useViewerSignedIn(isViewerSignedIn);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
@@ -63,7 +64,7 @@ export default function NavbarAccountCluster({
               className="flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-primary"
             >
               <Image
-                src={session?.user.image ?? "/dummy/profile_photo_girl.avif"}
+                src={viewerAvatarUrl}
                 alt={"Account"}
                 width={39}
                 height={39}

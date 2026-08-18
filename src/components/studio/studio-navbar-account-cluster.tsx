@@ -12,7 +12,7 @@ import { useState } from "react";
 
 import AccountMenu from "@/components/home/account/menus/account-menu";
 import CreateMenu from "@/components/studio/create-menu";
-import { useSession } from "@/lib/auth-client";
+import { useViewerAvatarUrl } from "@/hooks/use-viewer-avatar-url";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 
 export default function StudioNavbarAccountCluster({
@@ -21,7 +21,7 @@ export default function StudioNavbarAccountCluster({
   /** What the SERVER saw. Also the Suspense fallback's value — see `studio-navbar-account-slot.tsx`. */
   readonly isViewerSignedIn: boolean;
 }) {
-  const { data: session } = useSession();
+  const viewerAvatarUrl = useViewerAvatarUrl();
   const isAuthenticated = useViewerSignedIn(isViewerSignedIn);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
@@ -57,7 +57,7 @@ export default function StudioNavbarAccountCluster({
             className="flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-primary"
           >
             <Image
-              src={session?.user.image ?? "/dummy/profile_photo_girl.avif"}
+              src={viewerAvatarUrl}
               alt="Account"
               width={39}
               height={39}

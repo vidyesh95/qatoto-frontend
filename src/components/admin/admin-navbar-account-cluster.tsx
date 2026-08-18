@@ -11,7 +11,7 @@ import { useState } from "react";
 
 import AccountMenu from "@/components/home/account/menus/account-menu";
 import NotificationBell from "@/components/home/layout/notification-bell";
-import { useSession } from "@/lib/auth-client";
+import { useViewerAvatarUrl } from "@/hooks/use-viewer-avatar-url";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 
 export default function AdminNavbarAccountCluster({
@@ -20,7 +20,7 @@ export default function AdminNavbarAccountCluster({
   /** What the SERVER saw. Also the Suspense fallback's value — see `admin-navbar-account-slot.tsx`. */
   readonly isViewerSignedIn: boolean;
 }) {
-  const { data: session } = useSession();
+  const viewerAvatarUrl = useViewerAvatarUrl();
   const isAuthenticated = useViewerSignedIn(isViewerSignedIn);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
@@ -40,7 +40,7 @@ export default function AdminNavbarAccountCluster({
               className="flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-primary"
             >
               <Image
-                src={session?.user.image ?? "/dummy/profile_photo_girl.avif"}
+                src={viewerAvatarUrl}
                 alt={"Account"}
                 width={39}
                 height={39}
