@@ -101,8 +101,13 @@ export function computeBarChartScale(input: {
   const groupWidthUnits = Math.max(1, nominalBandWidthUnits - categoryGapUnits);
   const barWidthUnits = Math.max(1, Math.floor(groupWidthUnits / seriesCount));
 
-  const valueTicks = Array.from({ length: VALUE_TICK_INTERVAL_COUNT + 1 }, (_unused, tickIndex) =>
-    Math.round((domainMaxValue * tickIndex) / VALUE_TICK_INTERVAL_COUNT),
+  // FEWER INTERVALS THAN THE DEFAULT WHEN THE DOMAIN IS TINY. Four intervals over a domain of 1
+  // rounds to `[0, 0, 1, 1, 1]` — an axis that reads "0 0 1 1 1", five gridlines stacked on three
+  // positions, and duplicate React keys downstream. Capping the interval count at the domain keeps
+  // every tick a distinct integer, which is what makes the sequence strictly increasing.
+  const tickIntervalCount = Math.min(VALUE_TICK_INTERVAL_COUNT, Math.max(1, domainMaxValue));
+  const valueTicks = Array.from({ length: tickIntervalCount + 1 }, (_unused, tickIndex) =>
+    Math.round((domainMaxValue * tickIndex) / tickIntervalCount),
   );
 
   return {

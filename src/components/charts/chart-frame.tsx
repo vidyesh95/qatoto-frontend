@@ -101,8 +101,10 @@ export function ChartFrame({
     <figure className="space-y-2">
       <div className="grid grid-cols-[auto_1fr] gap-x-2">
         <div className="flex flex-col justify-between py-0 text-right text-[10px] leading-none text-muted-foreground">
-          {descendingValueTicks.map((tickValue) => (
-            <span key={tickValue}>{formatValue(tickValue)}</span>
+          {descendingValueTicks.map((tickValue, tickIndex) => (
+            // Keyed on the POSITION, not the value: the tick list is a fixed-length ladder whose
+            // entries are positional, and a value key collides the moment two ticks round together.
+            <span key={`tick-${String(tickIndex)}`}>{formatValue(tickValue)}</span>
           ))}
         </div>
 
@@ -113,7 +115,7 @@ export function ChartFrame({
             preserveAspectRatio="none"
             className="h-full w-full overflow-visible"
           >
-            {scale.valueTicks.map((tickValue) => {
+            {scale.valueTicks.map((tickValue, tickIndex) => {
               // Computed here rather than through `scale.heightUnits`, which floors a non-zero
               // value to a visible sliver — correct for a bar, wrong for a gridline.
               const tickHeightUnits = Math.round(
@@ -122,7 +124,7 @@ export function ChartFrame({
               const tickY = scale.plotHeightUnits - tickHeightUnits;
               return (
                 <line
-                  key={tickValue}
+                  key={`gridline-${String(tickIndex)}`}
                   x1={0}
                   x2={PLOT_WIDTH_UNITS}
                   y1={tickY}
