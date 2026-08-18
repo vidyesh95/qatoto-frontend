@@ -4,12 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { signOut, useSession } from "@/lib/auth-client";
-import { AppearancePanel, THEME_SUMMARY } from "@/components/home/account/menus/appearance-menu";
 import { LanguagePanel } from "@/components/home/account/menus/language-menu";
 import { countryName, LocationPanel } from "@/components/home/account/menus/location-menu";
 import { useBrowserPreferences } from "@/state/browser-preferences-context";
-import { ChildPanel } from "@/components/home/account/menus/child-menu";
-import { IncognitoPanel } from "@/components/home/account/menus/incognito-menu";
 import { AiAssistPanel } from "@/components/home/account/menus/ai-assist-menu";
 import { SettingsPanel } from "@/components/home/account/menus/settings-menu";
 import { SwitchAccountPanel } from "@/components/home/account/menus/switch-account-menu";
@@ -42,16 +39,7 @@ const LEGAL_LINKS = [
 ] as const;
 
 /** Which panel of the account menu is currently visible. */
-type MenuView =
-  | "main"
-  | "appearance"
-  | "child"
-  | "incognito"
-  | "ai-assist"
-  | "language"
-  | "location"
-  | "settings"
-  | "switch-account";
+type MenuView = "main" | "ai-assist" | "language" | "location" | "settings" | "switch-account";
 
 /**
  * Dropdown panel showing the signed-in user's profile, rewards, and account
@@ -113,25 +101,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
       ref={menuPanelRef}
       className="fixed top-15 right-14 left-1 z-50 max-h-[calc(100dvh-9rem)] w-auto overflow-y-auto rounded-lg border border-black/10 bg-background shadow-lg sm:absolute sm:top-12 sm:right-2 sm:left-auto sm:max-h-[calc(100dvh-4rem)] sm:w-95"
     >
-      {view === "appearance" ? (
-        <AppearancePanel
-          selected={preferences.theme}
-          onSelect={(theme) => setPreference("theme", theme)}
-          onBack={() => setView("main")}
-        />
-      ) : view === "child" ? (
-        <ChildPanel
-          selected={preferences.isChildModeOn}
-          onSelect={(isChildModeOn) => setPreference("isChildModeOn", isChildModeOn)}
-          onBack={() => setView("main")}
-        />
-      ) : view === "incognito" ? (
-        <IncognitoPanel
-          selected={preferences.isIncognitoModeOn}
-          onSelect={(isIncognitoModeOn) => setPreference("isIncognitoModeOn", isIncognitoModeOn)}
-          onBack={() => setView("main")}
-        />
-      ) : view === "ai-assist" ? (
+      {view === "ai-assist" ? (
         <AiAssistPanel
           selected={preferences.isAiAssistModeOn}
           onSelect={(isAiAssistModeOn) => setPreference("isAiAssistModeOn", isAiAssistModeOn)}
@@ -385,28 +355,6 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <hr className="mx-4" />
             <button
               type="button"
-              onClick={() => setView("appearance")}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/dark_mode_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Appearance"
-                width={24}
-                height={24}
-              />
-              <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
-                <span className="shrink-0">Appearance:</span>
-                <span className="truncate">{THEME_SUMMARY[preferences.theme]}</span>
-              </span>
-              <Image
-                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                alt="Change device theme"
-                width={24}
-                height={24}
-              />
-            </button>
-            <button
-              type="button"
               onClick={() => setView("language")}
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
@@ -423,50 +371,6 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
               <Image
                 src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
                 alt="Change language"
-                width={24}
-                height={24}
-              />
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("child")}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/child_care_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Child Mode"
-                width={24}
-                height={24}
-              />
-              <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
-                <span className="shrink-0">Child mode:</span>
-                <span className="truncate">{preferences.isChildModeOn ? "On" : "Off"}</span>
-              </span>
-              <Image
-                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                alt="Change Child Mode"
-                width={24}
-                height={24}
-              />
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("incognito")}
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/account_circle_off_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Incognito Mode"
-                width={24}
-                height={24}
-              />
-              <span className="flex min-w-0 flex-1 gap-1 text-sm font-medium text-secondary-foreground">
-                <span className="shrink-0">Incognito mode:</span>
-                <span className="truncate">{preferences.isIncognitoModeOn ? "On" : "Off"}</span>
-              </span>
-              <Image
-                src="/icons/chevron_forward_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg"
-                alt="Change Incognito Mode"
                 width={24}
                 height={24}
               />

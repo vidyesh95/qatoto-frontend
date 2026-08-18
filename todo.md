@@ -295,9 +295,9 @@ feature. Part 1 built the host.
   `password`, `passkeys`, `google`, `github`, `switch-account`. `ƒ (Dynamic)`; each awaits
   `hasCallerSession()` and seeds `useViewerSignedIn`, so the sign-in gate never mismatches on
   hydration.
-- `/settings` + six sub-routes — `appearance`, `language`, `location`, `child-mode`,
-  `incognito-mode`, `ai-assist-mode`. `◐ (Partial Prerender)` and **deliberately not gated**: these
-  six are device preferences with no server counterpart, so requiring an account to pick a theme
+- `/settings` + three sub-routes — `language`, `location`, `ai-assist-mode`. `◐ (Partial
+Prerender)` and **deliberately not gated**: these are device preferences with no server
+  counterpart, so requiring an account to pick a browse country
   would be a gate protecting nothing.
 
 **`/settings/password` is one URL, two panels** — whether it is "set" or "change" is
@@ -338,26 +338,34 @@ dropdown is the regression that matters.
 Same technique for the six preference panels, plus lifting the `<h1>` out of the panels and into
 `your-account/layout.tsx` and `settings/layout.tsx` once they no longer draw their own header.
 
-## Dark mode's outstanding debt — found by shipping it, not fixed
+## Dark mode was REMOVED, and the icon debt with it
 
-**Every `_000000_` icon is a solid black glyph and does not follow the palette.** Nineteen of them on
-`/settings` alone, app-wide in every navbar, sidebar and list. In light mode this is invisible; in
-dark mode they are dark-on-dark. `src/app/globals.css` now paints `body` from the tokens (it never
-did — the page was white by browser default and inherited `color` was pure black, which is what made
-this obvious), but no CSS can fix the icons: they are raster-flat SVGs with a baked fill.
+Written 2026-08-18, later the same day. Appearance, Child mode and Incognito mode were deleted —
+they are not going to be implemented, and a settings row that changes nothing is worse than no row.
 
-Three ways out, none of them a line of code in the two route trees:
+**Appearance was the only writer of `.dark`**, so removing it made the app light-only. Gone with it:
+`THEME_BOOTSTRAP_SCRIPT`, `applyThemeToDocument`, `resolveIsDarkTheme`, the `theme` preference, the
+`prefers-color-scheme` subscription in the provider, `suppressHydrationWarning` on `<html>`, and the
+32-token `.dark` block in `globals.css`.
 
-1. `.dark img[src*="_000000_"] { filter: invert(1); }` — one rule, and the `_000000_` in the filename
-   genuinely means "black fill", so it is more targeted than it looks. **It is wrong wherever a black
-   icon sits on a surface that is light in dark mode** (the white "Sign in" pill, the search field),
-   and there are enough hardcoded-hex surfaces left that this needs an audit, not a guess.
-2. Swap the assets for `currentColor` SVGs rendered inline. Correct, and the largest change.
-3. Ship `_FFFFFF_` counterparts and pick per theme. Doubles the asset count.
+**That cancels the icon work outright.** The 177 `_000000_` glyphs are black on a light ground and
+always were, which is correct in a light-only app. No `<MaterialIcon>`, no `<ThemedIcon>`, no 134
+white twin assets, no `filter: invert()`. Two attempts at this were built and discarded; do not
+start a third unless dark mode comes back.
 
-Also unfixed, and smaller: the hardcoded Material-3 hexes (`text-[#041F21]`, `bg-[#00696E]`,
-`text-[#1DBDC5]`) do not follow the tokens either. `shared/status-panel.tsx`'s header already
-documents that split as a deliberate two-vocabulary situation.
+**Kept:** the `body` rule in `globals.css`. It was added during the dark-mode work but is not a
+dark-mode rule — it paints the page from `--background` / `--foreground` rather than leaving the UA
+default white with initial-black inherited text.
+
+**No storage migration was needed, and the storage self-heals.** `StoredBrowserPreferencesSchema` is
+`.partial().strip()`, so a returning visitor's six-key blob parses fine and the three dead keys are
+ignored — then dropped entirely by the next `setPreference` write. Verified against a seeded legacy
+blob carrying `theme: "dark"`: the page rendered light, `isAiAssistModeOn` survived, and one toggle
+rewrote storage as `{"language","countryCode","isAiAssistModeOn"}`.
+
+**Still true and unaffected:** the 2,030 hardcoded hex classes across 283 files. They stop being a
+dark-mode problem and are now just two colour vocabularies coexisting, which is what
+`home/shared/status-panel.tsx` already argues is deliberate.
 
 ## The count in `REMAINING_WORK.md` §2 was wrong
 

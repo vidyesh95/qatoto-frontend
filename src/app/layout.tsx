@@ -3,7 +3,6 @@ import Script from "next/script";
 import { Geist, Geist_Mono, Roboto_Serif } from "next/font/google";
 // eslint-disable-next-line import/no-unassigned-import -- global stylesheet has no exports to bind
 import "./globals.css";
-import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/browser-preferences";
 import { BrowserPreferencesProvider } from "@/state/browser-preferences-context";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
@@ -72,17 +71,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // `suppressHydrationWarning` because the bootstrap script below writes `<html class="dark">`
-    // before React hydrates, so the class attribute the client sees is deliberately not the one
-    // the server sent. It suppresses the warning on THIS element only, not on its subtree.
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
-        {/* THE THEME, APPLIED BEFORE THE FIRST PAINT. It is a raw inline <script>, not <Script>:
-            `beforeInteractive` still loads asynchronously relative to the initial paint, and any
-            React-driven answer arrives an effect too late — either way the visitor sees a white
-            flash before a dark page. This one blocks parsing for a few hundred bytes and there is
-            no flash. See `THEME_BOOTSTRAP_SCRIPT` for what it does and why it is duplicated. */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
         {process.env.NODE_ENV === "development" && (
           <Script
             src="//unpkg.com/react-grab/dist/index.global.js"
@@ -101,9 +91,9 @@ export default function RootLayout({
             strategy="beforeInteractive"
           />
         )} */}
-        {/* App-wide, not `(home)`-wide: the theme has to be right on the sign-in page and the
-            marketing pages too, and none of those are inside that group. Wrapping `{children}` in a
-            client provider leaves the children themselves server components. */}
+        {/* App-wide, not `(home)`-wide: the account dropdown that edits these preferences is
+            mounted by the (home), (studio) AND (admin) navbars. Wrapping `{children}` in a client
+            provider leaves the children themselves server components. */}
         <BrowserPreferencesProvider>{children}</BrowserPreferencesProvider>
       </body>
     </html>

@@ -108,7 +108,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         kind: "route",
         label: "Settings",
         href: "/settings",
-        summary: "Appearance, language, browse location and the three modes — this browser only.",
+        summary: "Language, browse location and AI assist mode — this browser only.",
       },
       // NO "Sign out" NODE. It was here as a `planned` route and is now neither planned nor a
       // route: sign-out is a control in the account menu, not a surface, so a map of surfaces
