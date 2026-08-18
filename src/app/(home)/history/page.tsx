@@ -9,6 +9,8 @@ export const instant = false;
 export const metadata: Metadata = {
   title: "History",
   description: "Videos you've watched on Qatoto",
+  // NOINDEX: signed-in only. A crawler gets the sign-in wall, which indexes as a soft 404.
+  robots: { index: false, follow: false },
 };
 
 /**

@@ -446,3 +446,87 @@ one. **Fixing this is a backend task**, not a frontend one.
 No redirects were added — they were reachable only from the sidebar and the dropdown, both of
 which were changed in the same commit. Add `redirects()` in `next.config.ts` if bookmarked
 URLs turn out to matter.
+
+---
+
+# Crawl policy: `robots.txt` and the noindex fence shipped — `sitemap.ts` is NOT written
+
+Written 2026-08-18. This started as "should the account panel go back to being a page, for
+crawlers?" It should not — `/your-account` and `/settings` both carried
+`robots: { index: false, follow: false }` and `/your-account` sat behind a sign-in guard, so
+neither was ever indexable. Deleting them cost nothing. But the question was worth asking,
+because the app had **no `robots.txt` and no sitemap at all**, and 27 private pages were
+inviting the crawler in.
+
+## What shipped
+
+**`src/lib/site.ts`** — `SITE_URL` / `SITE_TITLE` / `SITE_DESCRIPTION` were module-locals in
+`app/layout.tsx` and unexported. Three files need the origin now, so they moved.
+
+**`src/app/robots.ts`** — 25 disallowed prefixes, `Host`, and **deliberately no `sitemap:`
+line** (see below).
+
+**The noindex fence**, which was the actual hole. 27 auth-gated pages carried no `robots`
+directive; being auth-gated is what made that bad, since a crawler reaching one gets a sign-in
+wall and Google files that as a soft 404.
+
+- `(studio)/layout.tsx` and `(admin)/layout.tsx` — one `metadata` export each, covering 42
+  pages. Next merges metadata per-field down the segment chain, so the 13 pages that already
+  set `robots` keep theirs.
+- **`(auth)/layout.tsx` is NEW.** That group had no layout, and none of its four pages exports
+  metadata at all — `/sign-in`, `/sign-up`, `/sign-in-with-password` and `/forgot-password`
+  were fully indexable. The layout renders `{children}` and nothing else; it is a metadata
+  carrier, not chrome.
+- Nine `(home)` routes individually (`/cart`, `/history`, `/orders-and-returns`, and six R&D
+  ones). `(home)` holds public routes too, so it gets no group-wide rule.
+- **The four public stubs** — `/customer-service`, `/advertise-with-us`, `/report-history`,
+  `/policies-and-safety`. Each renders a bare `<h1>`. Their noindex comment says REMOVE THIS
+  LINE when the page gets content: it is about the current state, not a policy about the route.
+
+`noindex` and `Disallow` are not interchangeable and the order matters. A `Disallow` stops the
+crawl, so the `noindex` is never read and anything already indexed stays listed without a
+snippet. The meta tag removes the URL from results; `robots.txt` only saves crawl budget.
+
+## NOT built: `src/app/sitemap.ts`
+
+Nothing announces the ~43 static public pages or the 16 dynamic families — including the whole
+product catalogue. `robots.ts` therefore has no `sitemap:` line, because pointing at a URL that
+404s is a Search Console error rather than a harmless placeholder. **Add that line in the same
+change that creates the file.**
+
+Everything needed to write it is in the plan at
+`~/.claude/plans/in-account-menu-on-deep-lampson.md` Part 4. The five constraints that will
+otherwise bite, in order of how quietly they fail:
+
+1. **`"use cache"` cannot go in a Route Handler body** (Next 16 docs, `route-handlers.md:144`) —
+   extract every remote read to a helper. The failure is silent: an uncached fetch does not break
+   the build, it degrades `sitemap.ts` to request-time, re-fetched per crawler hit.
+2. **Never `new Date()`** — a non-deterministic op stops prerendering, and a fabricated
+   `lastModified` is a lie. Most store list projections carry no timestamp; omit the field.
+3. **Never `src/lib/server-http.ts`** — `callerRequestOptions()` calls `cookies()`.
+4. **Filter `"__none__"`** — `withSentinelValues` would otherwise publish
+   `/store/rails/__none__`.
+5. **Guard the CMS fallback** — with `QATOTO_CMS_URL` unset, `getBlogs()` serves four hardcoded
+   mocks, and the sitemap would publish them as real URLs.
+
+Three route comments claim products/organizations/offerings are unenumerable. **They are out of
+date.** `GET /store/search` is public and cursor-paged, `hit.publicSlug` is the slug for both
+`product` and `provider_offering`, and `hit.organizationSlug` on those same hits yields every
+storefront that lists anything — so no new backend endpoint is needed. Pass `documentKind`
+explicitly: the backend also indexes `organization`, which is absent from the frontend's
+`SEARCH_DOCUMENT_KINDS`, and one such row fails Zod for the whole page.
+
+`/research-and-development/talent/[handle]` stays out on purpose — both reads are `requireAuth`,
+and bulk-indexing profiles of real people is a privacy decision, not an oversight.
+
+## Also found, not built
+
+- **No JSON-LD anywhere** — zero `ld+json` in `src/`, despite product, blog, press and org pages
+  being natural `Product` / `Article` / `Organization` candidates.
+- **No `alternates.canonical` anywhere** — matters most for `/store/[...slug]` (33 legacy URLs,
+  redirecting) and the `/compare` routes, whose comments already name a canonical target.
+- **Rich metadata on 3 of 137 files** — root layout, `/blogs/[slug]`, `/press/[slug]`.
+  `/store/product/[id]` is title + description only: no OG image, no price, no availability.
+- No store list projection carries a timestamp, so a sitemap cannot signal when a product
+  changed. Adding `updatedAt` to the store card schemas would improve recrawl behaviour.
+- `manifest.json` omits `start_url` and `description`.

@@ -8,6 +8,9 @@ import { withSentinelValues } from "@/lib/static-params";
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 export const instant = false;
 
+/** Shared by both `generateMetadata` branches below — see the note there. */
+const NOINDEX = { index: false, follow: false } as const;
+
 /**
  * Prerender every published slug — a dynamic route needs this under `cacheComponents`.
  * A failed read returns `[]` so an unreachable backend does not fail the build; those
@@ -26,8 +29,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const detailResult = await getResearchProjectDetail(id);
-  if (!detailResult.success) return { title: "Workshop · R&D" };
-  return { title: `${detailResult.data.name} Workshop · R&D` };
+  // NOINDEX ON BOTH BRANCHES: the workshop is member-scoped, so a crawler gets the sign-in
+  // wall and Google files it as a soft 404. The title still resolves for anyone who is in.
+  if (!detailResult.success) return { title: "Workshop · R&D", robots: NOINDEX };
+  return { title: `${detailResult.data.name} Workshop · R&D`, robots: NOINDEX };
 }
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {

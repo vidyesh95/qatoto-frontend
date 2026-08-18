@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, Roboto_Serif } from "next/font/google";
 // eslint-disable-next-line import/no-unassigned-import -- global stylesheet has no exports to bind
 import "./globals.css";
 import { BrowserPreferencesProvider } from "@/state/browser-preferences-context";
+import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
@@ -26,11 +27,6 @@ const robotoSerif = Roboto_Serif({
   subsets: ["latin"],
   display: "swap",
 });
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://qatoto.com";
-const SITE_TITLE = "Qatoto : Product Research, Development & Support";
-const SITE_DESCRIPTION =
-  "Qatoto is a B2B platform for product research, development, and support — from idea to funded, market-ready product.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

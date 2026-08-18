@@ -8,6 +8,8 @@ export const instant = false;
 export const metadata: Metadata = {
   title: "Talent · R&D",
   description: "Browse people trading skills for equity on Qatoto R&D projects",
+  // NOINDEX: signed-in only. A crawler gets the sign-in wall, which indexes as a soft 404.
+  robots: { index: false, follow: false },
 };
 
 // `searchParams` carries the filter state (commitment / availability / skill), which the

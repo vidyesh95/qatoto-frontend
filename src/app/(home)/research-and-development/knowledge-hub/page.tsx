@@ -8,6 +8,8 @@ export const instant = false;
 export const metadata: Metadata = {
   title: "Knowledge Hub · R&D",
   description: "Market intelligence on where demand is highest for Qatoto R&D projects",
+  // NOINDEX: signed-in only. A crawler gets the sign-in wall, which indexes as a soft 404.
+  robots: { index: false, follow: false },
 };
 
 export default function KnowledgeHub() {

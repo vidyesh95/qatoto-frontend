@@ -9,6 +9,8 @@ export const instant = false;
 export const metadata: Metadata = {
   title: "Your applications & invites · R&D",
   description: "What you applied to on Qatoto, and who invited you",
+  // NOINDEX: signed-in only. A crawler gets the sign-in wall, which indexes as a soft 404.
+  robots: { index: false, follow: false },
 };
 
 // A static route: the page body is a client island that reads both `/mine` endpoints

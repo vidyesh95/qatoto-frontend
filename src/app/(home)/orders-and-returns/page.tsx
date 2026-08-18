@@ -9,6 +9,8 @@ export const instant = false;
 export const metadata: Metadata = {
   title: "Orders and returns",
   description: "Orders you have placed on Qatoto",
+  // NOINDEX: signed-in only. A crawler gets the sign-in wall, which indexes as a soft 404.
+  robots: { index: false, follow: false },
 };
 
 export default function OrdersAndReturns() {

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import React, { Suspense } from "react";
 import AdminNavbar from "@/components/admin/admin-navbar";
 import AdminNavbarAccountCluster from "@/components/admin/admin-navbar-account-cluster";
@@ -12,6 +13,23 @@ import { SidebarProvider } from "@/state/sidebar-context";
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 export const instant = false;
+
+/**
+ * NOINDEX FOR THE WHOLE GROUP, in one place rather than 10 page files.
+ *
+ * Next merges metadata down the segment chain per-field, so every page under this layout
+ * inherits `robots` unless it declares its own — which the 2 pages that already set it do.
+ *
+ * This is the staff admin console: the review queue, the audit trail, the staff roster. A
+ * crawler reaching one gets `AdminAccessDenied` from `AdminStaffGate`, and an access-denied
+ * page is exactly what Google files as a thin or soft-404 result.
+ *
+ * THE META TAG AND THE `Disallow` ARE NOT INTERCHANGEABLE. This says "do not list it";
+ * `src/app/robots.ts` says "do not spend crawl budget here". A `Disallow` alone would be worse
+ * than nothing — it stops the crawl, so the noindex is never read, and any URL already in the
+ * index stays listed without a snippet.
+ */
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 interface Props {
   children: React.ReactNode;

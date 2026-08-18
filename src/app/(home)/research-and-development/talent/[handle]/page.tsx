@@ -10,6 +10,8 @@ export const instant = false;
 export const metadata: Metadata = {
   title: "Profile · Talent · R&D",
   description: "A contributor's published Qatoto profile",
+  // NOINDEX: signed-in only. A crawler gets the sign-in wall, which indexes as a soft 404.
+  robots: { index: false, follow: false },
 };
 
 /**
