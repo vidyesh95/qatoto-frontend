@@ -4,9 +4,9 @@
 //
 // Language, browse country and AI assist mode were `useState` in
 // `components/home/account/menus/account-menu.tsx` until this file existed, which meant closing the
-// account dropdown discarded every one of them. That was survivable for a dropdown and is not
-// survivable for `/settings`: a settings page that forgets what you set the moment you navigate is
-// worse than no settings page.
+// account dropdown discarded every one of them. A preference the user picked and the app forgot the
+// moment the panel closed is worse than no preference at all — it looks like a control and behaves
+// like a decoration.
 //
 // THERE WERE SIX. Appearance, child mode and incognito mode were removed rather than left as
 // controls promising behaviour the product is not going to have. Appearance took the whole theme

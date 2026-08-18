@@ -3,9 +3,9 @@
 // TRANSPORT: props-only — the store behind it is `window.localStorage`, never the network.
 //
 // The second piece of cross-component client state in this app, beside `sidebar-context.tsx`. It
-// exists because the SAME three preferences are edited from two places — the account dropdown and
-// `/settings` — and a preference set in one that is not true in the other is a bug a user can see
-// in about four seconds.
+// exists because the three preferences must outlive the dropdown that edits them: they are set in a
+// panel that closes, and a value discarded on close is a control that does nothing. The store is
+// shared rather than local so any future reader sees the same value the dropdown last wrote.
 //
 // WHY THE SERVER RENDER IS ALWAYS THE DEFAULTS. `localStorage` does not exist during SSR, so the
 // HTML can only ever contain `DEFAULT_BROWSER_PREFERENCES`; reading storage in a `useState`

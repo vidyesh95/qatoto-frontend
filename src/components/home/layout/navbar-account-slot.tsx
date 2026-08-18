@@ -3,7 +3,7 @@
 // THE COOKIE READ IS CONTAINED HERE, AND THAT CONTAINMENT IS THE WHOLE DESIGN.
 //
 // `(home)`, `(studio)` and `(admin)` routes genuinely prerender — the build emits `○ /cart`,
-// `○ /wishlist`, `○ /your-account`. Awaiting `hasCallerSession()` in the LAYOUT would read cookies
+// `○ /wishlist`, `○ /library`. Awaiting `hasCallerSession()` in the LAYOUT would read cookies
 // above every one of them and make the entire group dynamic. `(admin)/layout.tsx` already states
 // this rule about `AdminStaffGate` ("THE GATE IS A CHILD, NOT THIS COMPONENT"), and this follows it:
 // the layout stays synchronous and merely constructs the element, while only this subtree suspends.

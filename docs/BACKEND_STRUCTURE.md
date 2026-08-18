@@ -942,7 +942,7 @@ await authClient.multiSession.setActive({ sessionToken });
 await authClient.multiSession.revoke({ sessionToken });
 
 // Link another provider onto the signed-in account (§5a linking rules)
-await authClient.linkSocial({ provider: "github", callbackURL: "/settings" });
+await authClient.linkSocial({ provider: "github", callbackURL: window.location.href });
 
 // Change password while signed in (Better Auth built-in)
 await fetch("http://localhost:8000/api/auth/change-password", {

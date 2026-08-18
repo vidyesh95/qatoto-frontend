@@ -13,7 +13,7 @@
 // their address is `user.email`. Never fabricate one: a null here means the provider never told us,
 // not that there is no address (CLAUDE.md — never fabricate a value the server returned as null).
 //
-// THIS SCHEMA WAS DEFINED INLINE IN `menus/settings-menu.tsx` until four route surfaces needed it.
+// THIS SCHEMA WAS DEFINED INLINE IN `menus/settings-menu.tsx` until several surfaces needed it.
 
 import { z } from "zod";
 

@@ -43,7 +43,7 @@ Note `package.json` script is `fmt`, but `CONTRIBUTING.md` references `pnpm run 
 The App Router is organized into four parenthesized **route groups** — these do not appear in URLs, they exist only to scope layouts:
 
 - `(auth)` — sign-in, sign-up, forgot-password, sign-in-with-password. No shared chrome.
-- `(home)` — the main app shell. `(home)/layout.tsx` wraps children in `SidebarProvider` + `Navbar` + `Sidebar`. All top-level product surfaces (`/ai`, `/anime`, `/cart`, `/create`, `/library`, `/store`, `/settings`, `/history`, `/your-videos`, `/your-account`, `/your-sales`, etc.) live here and inherit that chrome.
+- `(home)` — the main app shell. `(home)/layout.tsx` wraps children in `SidebarProvider` + `Navbar` + `Sidebar`. All top-level product surfaces (`/anime`, `/cart`, `/library`, `/store`, `/history`, `/listings`, `/sales`, `/research-and-development`, etc.) live here and inherit that chrome.
 - `(disclaimers)` — legal/policy pages with their own layout.
 - `(information)` — marketing pages (about, blogs, careers, contact-us, creator, developers, how-qatoto-works, press). Blogs and press have `[slug]` dynamic routes.
 

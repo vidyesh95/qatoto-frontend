@@ -372,3 +372,77 @@ dark-mode problem and are now just two colour vocabularies coexisting, which is 
 It read "Seventeen routes are stubs", then listed six routes under a bullet labelled "Five". The real
 number was eighteen. It is **sixteen** now — twelve `(studio)` stubs and four under `(home)`
 (`/customer-service`, `/advertise-with-us`, `/report-history`, `/policies-and-safety`).
+
+---
+
+# `/your-account` and `/settings` are DELETED — the account menu owns them
+
+Written 2026-08-18, later still. **This cancels Parts 2–3 above.** Do not start the
+`@container` rewrite; the pages those parts were widening no longer exist.
+
+## What was removed
+
+- `src/app/(home)/your-account/**` (11 files) and `src/app/(home)/settings/**` (5 files) —
+  the seventeen routes Part 1 shipped.
+- `src/components/home/account/pages/**` (5 files) — `your-account-index`,
+  `your-account-panel`, `settings-index`, `settings-preference` and `account-route-guard`
+  existed only to host those routes.
+- The sidebar's "Your account" and "Settings" rows, their `ROUTES` entries and their two
+  now-unused `ICON_PATHS` keys.
+- Both `kind: "route"` nodes from `src/lib/roadmap/site-roadmap.ts`.
+
+## Why, given Part 1 built them on purpose
+
+Part 1's premise was that eight identity panels and three preference panels were "trapped
+inside the 360px account dropdown" and needed a host. What it actually produced was a
+**second list of the same rows** — `pages/your-account-index.tsx` was `menus/settings-menu.tsx`'s
+action list with `setView` swapped for `href`, maintained in parallel, plus a third entry
+point in the sidebar. Three surfaces, one job.
+
+The dropdown was never the problem; the row shape was. "Set handle" is an imperative that
+buries the current value in a subtitle, which is the wrong way round for somebody who came to
+**read** their account.
+
+## What replaced them
+
+`src/components/home/account/menus/your-account-menu.tsx` — a sub-panel of the Settings panel,
+reached the same way as Language or Location. Label on the left, **value on the right**, one
+row per fact: full name, profile photo, handle, email (+ Verified), phone number, password,
+passkeys, Google, GitHub, member-since, account ID with a copy button. Rows that have an
+editor open it; Email, Member since and Account ID do not pretend to.
+
+Two things it does deliberately:
+
+- **It owns no editors.** `onOpenEditor` hands the choice to `menus/settings-menu.tsx`, which
+  already hosts all ten. `SettingsView` became a discriminated union carrying
+  `returnTo: "list" | "your-account"` so back from an editor lands on the list it was opened
+  from — the one piece of state the two-list arrangement actually needs.
+- **Null is not "no".** Provider, password and passkey rows read "Checking…" until their query
+  lands, never "Not linked".
+
+New: `src/hooks/account/passkeys.ts` (`usePasskeysQuery` over the Better Auth SDK, for the
+count) and `accountKeys.passkeys()`. `panels/passkeys-panel.tsx` keeps its own `useState` list
+— it owns add/rename/delete and rewiring it is separate work.
+
+## The preference context survives the deletion
+
+`browser-preferences.ts` + `browser-preferences-context.tsx` were justified in Part 1 by "two
+surfaces edit the same three preferences". One surface does now — but the justification was
+always weaker than the real one: the dropdown **closes**, and a preference discarded on close
+is a control that does nothing. The comments in both files were rewritten to say that instead.
+
+## Known-dead row, kept
+
+**Phone number will read "Not set" for everybody.** `session.user.phoneNumber` and
+`phoneNumberVerified` are declared client-side in `lib/auth-client.ts` via
+`inferAdditionalFields`, and the backend has no `phoneNumber()` plugin and no `phone_number`
+column — `rg phoneNumber qatoto-backend/src` returns nothing. The field type-checks and is
+`undefined` at runtime, so `PhoneNumberPanel`'s OTP calls hit a route that does not exist.
+The row and the panel both predate this change and both stay; the value shown is the honest
+one. **Fixing this is a backend task**, not a frontend one.
+
+## `/your-account` and `/settings` now 404
+
+No redirects were added — they were reachable only from the sidebar and the dropdown, both of
+which were changed in the same commit. Add `redirects()` in `next.config.ts` if bookmarked
+URLs turn out to matter.

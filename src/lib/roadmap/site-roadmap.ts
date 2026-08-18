@@ -98,22 +98,12 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         href: "/forgot-password",
         summary: "Reset link, for the password route only.",
       },
-      {
-        kind: "route",
-        label: "Your account",
-        href: "/your-account",
-        summary: "Your name, handle, phone, password, passkeys and linked providers.",
-      },
-      {
-        kind: "route",
-        label: "Settings",
-        href: "/settings",
-        summary: "Language, browse location and AI assist mode — this browser only.",
-      },
-      // NO "Sign out" NODE. It was here as a `planned` route and is now neither planned nor a
-      // route: sign-out is a control in the account menu, not a surface, so a map of surfaces
-      // is the wrong place to promise it. See the "Help and settings" comment in
-      // `components/home/layout/sidebar.tsx` for why it lives only in that menu.
+      // NO "Your account", "Settings" OR "Sign out" NODE. All three were here as routes and are
+      // now none: `/your-account` and `/settings` were page trees rendering near-copies of panels
+      // the account menu already carried, and they were deleted rather than kept in step. Like
+      // sign-out, what remains is a control in that menu, not a surface — and a map of surfaces is
+      // the wrong place to promise a control. See the "Help and settings" comment in
+      // `components/home/layout/sidebar.tsx` for why they live only in that menu.
     ],
   },
   {

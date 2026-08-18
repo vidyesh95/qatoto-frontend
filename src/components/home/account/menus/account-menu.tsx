@@ -58,10 +58,10 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   // Which panel is showing.
   const [view, setView] = useState<MenuView>("main");
 
-  // THE SIX PREFERENCES ARE NOT LOCAL STATE ANY MORE. They were, and closing this dropdown threw
-  // every one of them away — which stopped being merely untidy the moment `/settings` shipped as a
-  // page editing the same six. They now live in `localStorage` behind the context, so a theme
-  // chosen here is the theme `/settings` shows, and both survive a reload.
+  // THE PREFERENCES ARE NOT LOCAL STATE ANY MORE. They were, and closing this dropdown threw every
+  // one of them away — a language picked here was gone the next time the panel opened. They live in
+  // `localStorage` behind the context now, so a choice made here survives both the close and a
+  // reload.
   const { preferences, setPreference } = useBrowserPreferences();
 
   // Close the menu whenever the user presses down anywhere outside the panel.

@@ -1,10 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 import { useSession } from "@/lib/auth-client";
-import { useLinkedAccountsQuery } from "@/hooks/account/linked-accounts";
+import {
+  useInvalidateLinkedAccounts,
+  useLinkedAccountsQuery,
+} from "@/hooks/account/linked-accounts";
 import { FullNamePanel } from "@/components/home/account/panels/full-name-panel";
 import { ProfilePhotoPanel } from "@/components/home/account/panels/profile-photo-panel";
 import { HandlePanel } from "@/components/home/account/panels/handle-panel";
@@ -14,6 +16,10 @@ import { ChangePasswordPanel } from "@/components/home/account/panels/change-pas
 import { PasskeysPanel } from "@/components/home/account/panels/passkeys-panel";
 import { PhoneNumberPanel } from "@/components/home/account/panels/phone-number-panel";
 import { SwitchAccountPanel } from "@/components/home/account/menus/switch-account-menu";
+import {
+  type AccountEditor,
+  YourAccountPanel,
+} from "@/components/home/account/menus/your-account-menu";
 
 /** One actionable row in the settings list. */
 type SettingsItem = {
@@ -23,8 +29,6 @@ type SettingsItem = {
   subtitle?: string;
   /** Icon path under `public/icons` (or `public/...` for brand marks). */
   icon: string;
-  /** A destination, for a row that is a route rather than a sub-panel. */
-  href?: string;
   /** Optional click handler; omitted rows are inert nav stubs for now. */
   onClick?: () => void;
   /** Right-aligned status chip (e.g. "Connected") for already-linked actions. */
@@ -32,6 +36,19 @@ type SettingsItem = {
   /** When true, the row is shown but not actionable. */
   disabled?: boolean;
 };
+
+/**
+ * What this panel is showing.
+ *
+ * THE `returnTo` IS THE WHOLE POINT of this being a union rather than the flat string it used to
+ * be. An editor is now reachable from two lists — this one and the "Your account" detail panel —
+ * and a back button that always went to `"list"` would drop somebody who opened Handle from the
+ * detail panel onto a different list than the one they left (CLAUDE.md Pattern 1).
+ */
+type SettingsView =
+  | { kind: "list" }
+  | { kind: "your-account" }
+  | { kind: "editor"; editor: AccountEditor; returnTo: "list" | "your-account" };
 
 type SettingsPanelProps = {
   /** Invoked by the header back button. */
@@ -43,7 +60,7 @@ type SettingsPanelProps = {
 /**
  * Presentational "Settings" panel: header, a profile card (avatar, portrait,
  * handle), and the account-action list. Swapped into the account menu like the
- * Appearance / Location / Language panels.
+ * Location / Language panels.
  *
  * Nothing here is a trust boundary — every action that mutates account state
  * must be re-validated and authorized by the Express backend.
@@ -52,61 +69,106 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
   const { data: session } = useSession();
   const avatarSrc = session?.user.image ?? "/dummy/profile_photo_girl.avif";
 
-  // Which view of the settings panel is showing: the action list, or a sub-editor.
-  const [view, setView] = useState<
-    | "list"
-    | "full-name"
-    | "profile-photo"
-    | "handle"
-    | "phone-number"
-    | "link-google"
-    | "link-github"
-    | "email-credential"
-    | "change-password"
-    | "passkeys"
-    | "switch-account"
-  >("list");
+  const [view, setView] = useState<SettingsView>({ kind: "list" });
 
   // Which providers are linked, so the list can show "Connected" chips and hide
   // "Set email address" once a credential exists.
   //
   // WAS A HAND-ROLLED `useEffect` + an inline Zod schema, refetching on every return to the list.
-  // It moved to React Query when `/your-account` and its three provider-dependent sub-routes
-  // started asking the same question: one cache entry, one request between them, and no way for the
-  // dropdown and the page to disagree about whether a password is set.
+  // It moved to React Query when the "Your account" detail panel started asking the same question:
+  // one cache entry, one request between them, and no way for the two lists to disagree about
+  // whether a password is set.
   const linkedAccountsQuery = useLinkedAccountsQuery();
 
-  if (view === "full-name") {
-    return (
-      <FullNamePanel initialFullName={session?.user.name ?? ""} onBack={() => setView("list")} />
-    );
-  }
+  // Leaving an editor is also the moment the provider list has to be re-read: the visitor may have
+  // just set a password or unlinked GitHub, and those writes go through the Better Auth SDK, so
+  // nothing in the query cache knows they happened. The query observer lives on this component and
+  // never unmounts while an editor is open, so without this the list still says "Set email address"
+  // on an account that now has one.
+  const invalidateLinkedAccounts = useInvalidateLinkedAccounts();
 
-  if (view === "profile-photo") {
+  /** Open an editor, remembering which list to come back to. */
+  const openEditorFrom = (returnTo: "list" | "your-account") => (editor: AccountEditor) =>
+    setView({ kind: "editor", editor, returnTo });
+
+  const openEditorFromList = openEditorFrom("list");
+
+  if (view.kind === "your-account") {
     return (
-      <ProfilePhotoPanel
-        currentPhotoUrl={avatarSrc}
-        hasExistingPhoto={Boolean(session?.user.image)}
-        onBack={() => setView("list")}
+      <YourAccountPanel
+        onBack={() => setView({ kind: "list" })}
+        onOpenEditor={openEditorFrom("your-account")}
       />
     );
   }
 
-  if (view === "handle") {
-    return <HandlePanel onBack={() => setView("list")} />;
-  }
+  if (view.kind === "editor") {
+    const handleEditorBack = () => {
+      void invalidateLinkedAccounts();
+      setView({ kind: view.returnTo });
+    };
 
-  if (view === "switch-account") {
-    return <SwitchAccountPanel onBack={() => setView("list")} onSignOutAll={onSignOut} />;
-  }
+    switch (view.editor) {
+      case "full-name":
+        return (
+          <FullNamePanel initialFullName={session?.user.name ?? ""} onBack={handleEditorBack} />
+        );
 
-  if (view === "phone-number") {
-    return (
-      <PhoneNumberPanel
-        initialPhoneNumber={session?.user.phoneNumber ?? ""}
-        onBack={() => setView("list")}
-      />
-    );
+      case "profile-photo":
+        return (
+          <ProfilePhotoPanel
+            currentPhotoUrl={avatarSrc}
+            hasExistingPhoto={Boolean(session?.user.image)}
+            onBack={handleEditorBack}
+          />
+        );
+
+      case "handle":
+        return <HandlePanel onBack={handleEditorBack} />;
+
+      case "phone-number":
+        return (
+          <PhoneNumberPanel
+            initialPhoneNumber={session?.user.phoneNumber ?? ""}
+            onBack={handleEditorBack}
+          />
+        );
+
+      case "passkeys":
+        return <PasskeysPanel onBack={handleEditorBack} />;
+
+      case "switch-account":
+        return <SwitchAccountPanel onBack={handleEditorBack} onSignOutAll={onSignOut} />;
+
+      case "email-credential":
+        return <EmailCredentialPanel onBack={handleEditorBack} />;
+
+      case "change-password":
+        return <ChangePasswordPanel onBack={handleEditorBack} />;
+
+      case "link-google":
+      case "link-github": {
+        const provider = view.editor === "link-google" ? "google" : "github";
+        const linkedAccountsResult = linkedAccountsQuery.data;
+        const linkedEmail =
+          linkedAccountsResult?.success === true
+            ? (linkedAccountsResult.data.find((account) => account.providerId === provider)
+                ?.email ?? null)
+            : null;
+        return (
+          <SocialLinkPanel
+            provider={provider}
+            linkedEmail={linkedEmail}
+            onBack={handleEditorBack}
+          />
+        );
+      }
+
+      default: {
+        const exhaustiveCheck: never = view.editor;
+        return exhaustiveCheck;
+      }
+    }
   }
 
   // Null while the read is in flight or has failed — "we do not know yet", never "not linked".
@@ -119,30 +181,6 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
   const githubEmail = accountsByProvider?.get("github") ?? null;
   const credentialEmail = accountsByProvider?.get("credential") ?? null;
 
-  if (view === "link-google") {
-    return (
-      <SocialLinkPanel provider="google" linkedEmail={googleEmail} onBack={() => setView("list")} />
-    );
-  }
-
-  if (view === "link-github") {
-    return (
-      <SocialLinkPanel provider="github" linkedEmail={githubEmail} onBack={() => setView("list")} />
-    );
-  }
-
-  if (view === "email-credential") {
-    return <EmailCredentialPanel onBack={() => setView("list")} />;
-  }
-
-  if (view === "change-password") {
-    return <ChangePasswordPanel onBack={() => setView("list")} />;
-  }
-
-  if (view === "passkeys") {
-    return <PasskeysPanel onBack={() => setView("list")} />;
-  }
-
   const isGoogleLinked = accountsByProvider?.has("google") ?? false;
   const isGithubLinked = accountsByProvider?.has("github") ?? false;
   const hasCredential = accountsByProvider?.has("credential") ?? false;
@@ -150,16 +188,17 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
 
   const items: SettingsItem[] = [
     {
-      // WAS INERT — a row with no `onClick` and nowhere to go, because the route it names rendered
-      // a bare `<h1>`. It is a link now, and that page is where these rows live at full size.
+      // WAS A `<Link href="/your-account">` — the one row in this list that left the dropdown, for
+      // a page that rendered a near-copy of this same list. It is a sub-panel now, and it reads
+      // rather than commands: label on the left, current value on the right.
       label: "Your account",
       icon: "/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-      href: "/your-account",
+      onClick: () => setView({ kind: "your-account" }),
     },
     {
       label: "Switch account",
       icon: "/icons/switch_account_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-      onClick: () => setView("switch-account"),
+      onClick: () => openEditorFromList("switch-account"),
     },
     {
       label: "Sign out",
@@ -169,55 +208,55 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
     {
       label: "Set or change password",
       icon: "/icons/lock_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-      onClick: () => setView(hasCredential ? "change-password" : "email-credential"),
+      onClick: () => openEditorFromList(hasCredential ? "change-password" : "email-credential"),
       disabled: !isLinkedAccountsReady,
     },
     {
       label: "Passkeys",
       icon: "/icons/passkey_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-      onClick: () => setView("passkeys"),
+      onClick: () => openEditorFromList("passkeys"),
     },
     {
       label: "Set handle",
       icon: "/icons/alternate_email_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-      onClick: () => setView("handle"),
+      onClick: () => openEditorFromList("handle"),
     },
     {
       label: session?.user.phoneNumberVerified ? "Phone number verified" : "Set phone number",
       subtitle: session?.user.phoneNumber ?? undefined,
       icon: "/icons/add_call_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-      onClick: () => setView("phone-number"),
+      onClick: () => openEditorFromList("phone-number"),
       badge: session?.user.phoneNumberVerified ? "Verified" : undefined,
     },
     {
       label: "Set full name",
       icon: "/icons/id_card_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-      onClick: () => setView("full-name"),
+      onClick: () => openEditorFromList("full-name"),
     },
     {
       label: "Set profile photo",
       icon: "/icons/add_photo_alternate_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-      onClick: () => setView("profile-photo"),
+      onClick: () => openEditorFromList("profile-photo"),
     },
     {
       label: "Link Google account",
       subtitle: googleEmail ?? undefined,
       icon: "/icons/google_logo_tint.svg",
-      onClick: () => setView("link-google"),
+      onClick: () => openEditorFromList("link-google"),
       badge: isGoogleLinked ? "Connected" : undefined,
     },
     {
       label: "Link Github account",
       subtitle: githubEmail ?? undefined,
       icon: "/icons/github_logo_light.svg",
-      onClick: () => setView("link-github"),
+      onClick: () => openEditorFromList("link-github"),
       badge: isGithubLinked ? "Connected" : undefined,
     },
     {
       label: hasCredential ? "Email & password enabled" : "Set email address",
       subtitle: credentialEmail ?? undefined,
       icon: "/icons/mail_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-      onClick: () => setView("email-credential"),
+      onClick: () => openEditorFromList("email-credential"),
       badge: hasCredential ? "Connected" : undefined,
     },
     { label: "Time watched", icon: "/icons/bar_chart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
@@ -269,23 +308,14 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       <ul>
         {items.map((item) => (
           <li key={item.label}>
-            {item.href ? (
-              <Link
-                href={item.href}
-                className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-              >
-                <SettingsItemBody item={item} />
-              </Link>
-            ) : (
-              <button
-                type="button"
-                onClick={item.onClick}
-                disabled={item.disabled}
-                className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
-              >
-                <SettingsItemBody item={item} />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={item.onClick}
+              disabled={item.disabled}
+              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted disabled:cursor-default disabled:hover:bg-transparent"
+            >
+              <SettingsItemBody item={item} />
+            </button>
           </li>
         ))}
       </ul>
@@ -293,7 +323,7 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
   );
 }
 
-/** The row's contents, shared by the `<Link>` and `<button>` shells above. */
+/** The row's contents. */
 function SettingsItemBody({ item }: { item: SettingsItem }) {
   return (
     <>

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { Passkey } from "@better-auth/passkey/client";
 import { authClient } from "@/lib/auth-client";
+import { useInvalidatePasskeys } from "@/hooks/account/passkeys";
 
 /**
  * Manages the WebAuthn passkeys on the signed-in account: list, create,
@@ -54,6 +55,9 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
   const [renameDraftName, setRenameDraftName] = useState("");
   // Bumped after every successful mutation to refetch the list.
   const [listRefreshCount, setListRefreshCount] = useState(0);
+  // The "Your account" panel shows a passkey COUNT from a cached query this panel does not read.
+  // Without this, adding a passkey here and going back leaves that row saying the old number.
+  const invalidatePasskeys = useInvalidatePasskeys();
   // Assume support until the effect below can check; avoids SSR window access.
   const [isWebAuthnSupported, setIsWebAuthnSupported] = useState(true);
 
@@ -105,6 +109,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
     }
     setMutationState({ status: "idle" });
     setListRefreshCount((refreshCount) => refreshCount + 1);
+    void invalidatePasskeys();
   }
 
   async function handleConfirmDelete(passkeyId: string) {
@@ -119,6 +124,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
     }
     setMutationState({ status: "idle" });
     setListRefreshCount((refreshCount) => refreshCount + 1);
+    void invalidatePasskeys();
   }
 
   function handleStartRename(targetPasskey: Passkey) {
@@ -142,6 +148,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
     }
     setMutationState({ status: "idle" });
     setListRefreshCount((refreshCount) => refreshCount + 1);
+    void invalidatePasskeys();
   }
 
   const isMutationInFlight =

@@ -12,11 +12,12 @@ import { listLinkedAccounts } from "@/lib/account/linked-accounts.api";
  *
  * `retry: false` — a 401 here is an answer about the session, not a flake.
  *
- * THE REASON THIS IS A QUERY AND NOT FOUR `useEffect`s: four surfaces ask the same question
- * (`/your-account`, `/your-account/password`, `/your-account/google`, `/your-account/github`) and
- * the answer decides which UI they render — whether the password row says "Set" or "Change",
- * whether a provider shows "Connected". Under one cache entry, walking between them costs one
- * request; under four hand-rolled effects it costs four, and they can disagree mid-navigation.
+ * THE REASON THIS IS A QUERY AND NOT A `useEffect` PER PANEL: several surfaces ask the same
+ * question — the Settings list, the "Your account" detail panel, and the password and provider
+ * editors behind both — and the answer decides which UI they render: whether the password row says
+ * "Set" or "Change", whether a provider shows "Connected". Under one cache entry, walking between
+ * them costs one request; under a hand-rolled effect each it costs one apiece, and they can
+ * disagree mid-navigation.
  */
 export function useLinkedAccountsQuery() {
   return useQuery({

@@ -13,8 +13,9 @@
 //     — they resolve but render a placeholder heading (thirteen `/studio/*` stubs including
 //     analytics, earn and payouts). Linking one of those from a capability row would be the page
 //     promising a feature the app does not have. Where a capability genuinely lives on a stub, it
-//     is said in `summary` prose with no chip. (`/settings` and `/your-account` were on that list
-//     until they were built — both are real routes now and may be linked.)
+//     is said in `summary` prose with no chip. (`/settings` and `/your-account` were on that list,
+//     then were built, and are now deleted — the account menu owns those panels and there is no URL
+//     to link. Neither has ever been referenced here.)
 //
 //  2. A capability on a dynamic segment (`/…/project/[id]/proof-of-effort`) carries NO chip. There
 //     is no URL to link, so `summary` says how it is reached instead.

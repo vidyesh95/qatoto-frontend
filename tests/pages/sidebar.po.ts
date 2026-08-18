@@ -13,7 +13,6 @@ export const SIDEBAR_ROUTES = {
   "Orders and returns": "/orders-and-returns",
   "Your sales": "/your-sales",
   "Advertise with us": "/advertise-with-us",
-  "Your account": "/your-account",
   "Customer service": "/customer-service",
 } as const;
 

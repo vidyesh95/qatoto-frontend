@@ -99,14 +99,6 @@ const ICON_PATHS = {
     active: "/icons/featured_video_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/featured_video_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
-  accountCircle: {
-    active: "/icons/account_circle_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    inactive: "/icons/account_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-  },
-  settings: {
-    active: "/icons/settings_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    inactive: "/icons/settings_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-  },
   supportAgent: {
     static: "/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
@@ -144,8 +136,6 @@ const ROUTES = {
   listings: "/listings",
   sales: "/sales",
   advertiseWithUs: "/advertise-with-us",
-  yourAccount: "/your-account",
-  settings: "/settings",
   customerService: "/customer-service",
   about: "/about",
   press: "/press",
@@ -419,12 +409,10 @@ const NAVIGATION_CONFIG: NavSection[] = [
     // implementation to keep in step, reachable from a third of the app.
     title: "Help and settings",
     items: [
-      { path: ROUTES.yourAccount, label: "Your account", iconKey: "accountCircle" },
-      // ADDED WITH THE ROUTE. `/settings` had no entry point anywhere in the app — not this
-      // sidebar, not the navbar, not the mobile nav. The account dropdown reaches the same six
-      // preference panels, but a dropdown is not a link, so the page was unreachable by anything
-      // except typing the URL.
-      { path: ROUTES.settings, label: "Settings", iconKey: "settings" },
+      // NO "YOUR ACCOUNT" AND NO "SETTINGS" ROW EITHER, for the same reason as sign-out above:
+      // both are panels in the account menu, not destinations. They were rows here pointing at
+      // `/your-account` and `/settings`, two page trees that rendered near-copies of what that
+      // menu already carried; the routes are gone and the menu is the one place they live.
       { path: ROUTES.customerService, label: "Customer service", iconKey: "supportAgent" },
     ],
     hasDivider: true,

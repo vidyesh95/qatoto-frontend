@@ -41,13 +41,15 @@ unbuilt, not broken.
 - **Four under `(home)`**: `/customer-service`, `/advertise-with-us`, `/report-history`,
   `/policies-and-safety`
 
-**`/your-account` and `/settings` are DONE** — they were the cheap two named here, and the
-entry said why: all 8 identity panels and the 6 preference panels already existed and were
-already wired (`PATCH /users/me`, `/users/me/handle`, `/users/me/photo`,
-`GET /users/me/linked-accounts`, better-auth passkeys, phone and multi-session), just trapped
-inside the 360px account dropdown. They needed a host, not a feature, and they now have one:
-seventeen routes across two nested trees, plus the preference persistence the dropdown never
-had. See `todo.md` for the two follow-up parts.
+**`/your-account` and `/settings` are GONE, and are not coming back** — they were the cheap
+two named here, they were built as seventeen routes across two nested trees, and they were then
+deleted. The entry's premise was wrong: the 8 identity panels and 3 preference panels were not
+"trapped" in the 360px account dropdown, they were already the dropdown's contents, so the two
+route trees became a second list of the same rows maintained in parallel. What replaced them is
+a sub-panel of that dropdown — `components/home/account/menus/your-account-menu.tsx` — which
+reads the account rather than commanding it: label on the left, current value on the right.
+The preference persistence Part 1 added survives. See `todo.md` for the full reversal, including
+why the Phone number row is permanently "Not set" until the backend grows a phone column.
 
 Note the count: this heading said "Seventeen" and then listed six routes under a bullet
 labelled "Five", so the real number before that work was **eighteen**. It is sixteen now.
