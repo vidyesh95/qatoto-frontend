@@ -530,3 +530,116 @@ and bulk-indexing profiles of real people is a privacy decision, not an oversigh
 - No store list projection carries a timestamp, so a sitemap cannot signal when a product
   changed. Adding `updatedAt` to the store card schemas would improve recrawl behaviour.
 - `manifest.json` omits `start_url` and `description`.
+
+---
+
+## Data & privacy — Part 1 shipped, Parts 2 and 3 are open
+
+Written 2026-08-18. The settings row `Your data in app account` was an inert stub: a full-width
+`<button>` with no `onClick`, sitting under a privacy policy that promises access, correction and
+deletion by email. It is now `Your data & privacy` → `account/panels/data-and-privacy-panel.tsx`,
+with `account/panels/delete-account-panel.tsx` behind it. `Time watched` was removed for the same
+defect, and `SettingsItem.onClick` is now **required**, so the type stops the next dead row.
+
+**Every control in there is real, existing, or an explicit request.** The backend has no deletion
+and no export endpoint, so access/export/deletion open a prefilled draft to `PRIVACY_CONTACT_EMAIL`
+(`lib/privacy-request.ts`). Nothing claims a write that did not happen — the terminal state says
+"your request is not sent yet".
+
+### Blocking, before this is worth anything
+
+**Is `privacy@qatoto.com` real and monitored?** Every request control routes there and the privacy
+policy has always named it. An unread mailbox makes the panel a more elaborate dead stub and leaves
+the policy an unfulfilled promise. If the address is wrong, it is one constant in `lib/site.ts`.
+
+### Part 2 — the privacy policy is missing every GDPR Art. 13 mandatory item
+
+`disclaimers/privacy-policy.tsx` names no controller entity or address, no lawful basis, no
+retention period, no enumerated data-subject rights, no supervisory-authority complaint route, no
+international-transfer basis, and never says "cookie" — while `account/menus/location-menu.tsx`
+offers 108 countries including every EU/EEA member.
+
+Cookies are essential-only today (the auth session cookie and `qatoto.browser-preferences`; the only
+`<Script>` in `app/layout.tsx` is dev-gated), so a disclosure section closes this cheaply — but a
+consent banner becomes required the moment any analytics script lands. Also fix
+`disclaimers/terms-and-conditions.tsx`, whose governing-law clause is circular: "the laws of the
+country in which Qatoto operates".
+
+### Part 3 — backend, so the request rows become endpoints
+
+In `qatoto-backend`. The FK graph already decided the shape (cascade rule **R2**,
+`src/db/schema/rnd.ts`): 55 tables hold `restrict` FKs into `user` and ~66 are protected by
+`BEFORE UPDATE OR DELETE` triggers, so account deletion is an **anonymization** flow, not a delete.
+
+- `user.deactivatedAt` + `user.anonymizedAt` — there is no lifecycle column at all today, so an
+  account has exactly two states: exists, or row gone.
+- `POST /users/me/deletion-request`, `POST /users/me/deletion-request/cancel`, and a scheduled
+  anonymization job at grace expiry (the frontend copy commits to **30 days**, cancellable).
+- `GET /users/me/export` — Art. 15/20. Nothing like it exists; the nearest route is the founders'
+  payroll CSV export, which is not a subject access request.
+- A scrub routine over `name` / `email` / `image` / `handle` / `locationLabel`, plus revocation of
+  every `session`, `account` and `passkey` row, plus a decision on `session.ipAddress` /
+  `session.userAgent` and the `viewerFingerprint` tables.
+- Better Auth's `deleteUser` plugin stays **off** — it would attempt exactly the hard delete the
+  triggers exist to prevent.
+
+**Verify this first, it may invalidate the whole design:** `projectAuditEntry.actorNameSnapshot`
+(`src/db/schema/rnd.ts`) sits _inside_ a chain hash and can never be edited. If real names are
+written there today, anonymization and the hash chain are mutually exclusive, and the write path has
+to become pseudonymous before any deletion feature ships.
+
+---
+
+## Watch time & platform metrics — backend shipped, frontend is open
+
+Written 2026-08-18. `Time watched` was deleted from `settings-menu.tsx` earlier the same day
+because there was no endpoint to point it at. There is one now.
+
+**Backend (`qatoto-backend`), all of it landed and `pnpm gate` green at 2030/2030:**
+
+- Three tables in `src/db/schema/home.ts` — `user_activity_hour` (per user × UTC date × hour,
+  written by `recordViewBeacon` as beacons arrive, 90-day retention), `user_watch_daily`
+  (per user × date, 25 months) and `platform_activity_hour_daily` (24 rows a day, no user id).
+- `rollup-user-watch-activity`, cron `40 4 * * *` — **fifteen minutes before the prune at `55 4`,
+  and that ordering is the correctness argument.**
+- `GET /users/me/watch-time` — four totals, a 30-day series, a 24-bucket histogram, optional
+  `?timeZone=`. Returns **`null`, never `0`**, for an account with no rows.
+- `GET /admin/metrics/{active-users,watch-time,activity-hours,retention-cohorts,users}` behind a
+  new `view_platform_metrics` capability, `admin` only. `/users` returns named accounts and is the
+  only READ in the platform audit chain.
+- Full write-up: `docs/HOME_BACKEND_STRUCTURE.md` §3.3a.
+
+### Blocked on one manual step
+
+**`pnpm db:generate` has to be run by a human in a TTY.** drizzle-kit prompts a
+create-vs-rename question and cannot be answered non-interactively — and it prompts on a CLEAN
+tree too, so there is pre-existing snapshot drift to resolve while you are in there. Until the
+migration exists and `pnpm db:migrate` has run, the three tables do not exist and every endpoint
+above 500s. Then `pnpm db:verify-watch-metrics-constraints` proves the bounds and, more
+importantly, that the composite PKs landed: without them the beacon's `ON CONFLICT DO UPDATE`
+inserts instead of adding, and watch time silently multiplies by the beacon count.
+
+### Frontend work
+
+- **`Time watched` row returns** to `settings-menu.tsx`, opening a `WatchTimePanel` beside the
+  other `account/panels/*`. Copy must state that **signed-out watching is not counted** — the
+  beacon only writes the hour counter for a session with a viewer id — and must render `null` as
+  "nothing recorded yet", never as `0` (`formatScorePoints`, `src/lib/rnd/format.ts`).
+- **`/admin/metrics` page**, gated with the `useOwnStaffContextQuery()` capability pattern from
+  `staff-role-page.tsx`. Add it to `ADMIN_NAVIGATION_ITEMS` in `admin-sidebar.tsx` **desktop-only**
+  — the mobile bottom nav is capped at six tabs.
+- **This is the first chart in the repo.** No chart library is installed. The only precedent for
+  coordinate math is `research-branch-map.tsx` + `branch-tree-layout.ts`, inline SVG with integer
+  per-mille units. Start with the 24-bucket histogram, which is 24 rects and needs no layout engine.
+- `formatDurationLabel` (`src/lib/feed/format.ts`) and `formatEffortFromMinutes`
+  (`src/lib/rnd/format.ts`) are what a `formatWatchTimeLabel` should be built from.
+- **The activity-hours axis is UTC.** There is no per-user time zone on the platform, so the admin
+  histogram cannot be localised and the surface has to say which zone it is showing.
+
+### Disclosure debt this creates
+
+`data-and-privacy-panel.tsx` claims to mirror what is held, and its own header says the policy wins
+if the two disagree. It and `privacy-policy.tsx` must gain these three records and their retention
+windows. The anonymization spec above must delete `user_activity_hour` and `user_watch_daily`
+outright — behavioural, no legal-retention argument, not covered by the Art. 17(3) exemptions that
+keep the ledger.

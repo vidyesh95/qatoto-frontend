@@ -35,7 +35,8 @@ export type AccountEditor =
   | "email-credential"
   | "change-password"
   | "passkeys"
-  | "switch-account";
+  | "switch-account"
+  | "delete-account";
 
 /**
  * One row of the detail list.

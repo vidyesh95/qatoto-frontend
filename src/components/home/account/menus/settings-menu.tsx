@@ -1,3 +1,5 @@
+// TRANSPORT: client-query — the Better Auth session and `GET /users/me/linked-accounts`, which
+// together decide which rows this list shows. Every write belongs to the editor it opens.
 "use client";
 
 import Image from "next/image";
@@ -16,6 +18,9 @@ import { ChangePasswordPanel } from "@/components/home/account/panels/change-pas
 import { PasskeysPanel } from "@/components/home/account/panels/passkeys-panel";
 import { PhoneNumberPanel } from "@/components/home/account/panels/phone-number-panel";
 import { SwitchAccountPanel } from "@/components/home/account/menus/switch-account-menu";
+import { DataAndPrivacyPanel } from "@/components/home/account/panels/data-and-privacy-panel";
+import { DeleteAccountPanel } from "@/components/home/account/panels/delete-account-panel";
+import { WatchTimePanel } from "@/components/home/account/panels/watch-time-panel";
 import {
   type AccountEditor,
   YourAccountPanel,
@@ -29,8 +34,12 @@ type SettingsItem = {
   subtitle?: string;
   /** Icon path under `public/icons` (or `public/...` for brand marks). */
   icon: string;
-  /** Optional click handler; omitted rows are inert nav stubs for now. */
-  onClick?: () => void;
+  /**
+   * What the row does. REQUIRED, and it was optional until the last two rows without one were
+   * dealt with — an optional handler is what let this list ship a full-width button that swallowed
+   * the click, and the type is now the thing that stops the next one (CLAUDE.md Pattern 1).
+   */
+  onClick: () => void;
   /** Right-aligned status chip (e.g. "Connected") for already-linked actions. */
   badge?: string;
   /** When true, the row is shown but not actionable. */
@@ -48,7 +57,19 @@ type SettingsItem = {
 type SettingsView =
   | { kind: "list" }
   | { kind: "your-account" }
-  | { kind: "editor"; editor: AccountEditor; returnTo: "list" | "your-account" };
+  // A THIRD LIST, NOT AN EDITOR. Like "Your account", the data & privacy panel is a page of its own
+  // that ALSO opens editors this component hosts — so it has to be somewhere `returnTo` can point,
+  // and `AccountEditor` is reserved for the leaves. "Delete account" is a leaf and lives there.
+  | { kind: "data-and-privacy" }
+  // A LEAF THAT IS NOT AN EDITOR. It reads and never writes, so it opens nothing and needs no
+  // `returnTo` — but it is not an `AccountEditor` either, because that union is what the editor
+  // switch below is exhaustive over and every member of it is a form.
+  | { kind: "watch-time" }
+  | {
+      kind: "editor";
+      editor: AccountEditor;
+      returnTo: "list" | "your-account" | "data-and-privacy";
+    };
 
 type SettingsPanelProps = {
   /** Invoked by the header back button. */
@@ -88,8 +109,9 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
   const invalidateLinkedAccounts = useInvalidateLinkedAccounts();
 
   /** Open an editor, remembering which list to come back to. */
-  const openEditorFrom = (returnTo: "list" | "your-account") => (editor: AccountEditor) =>
-    setView({ kind: "editor", editor, returnTo });
+  const openEditorFrom =
+    (returnTo: "list" | "your-account" | "data-and-privacy") => (editor: AccountEditor) =>
+      setView({ kind: "editor", editor, returnTo });
 
   const openEditorFromList = openEditorFrom("list");
 
@@ -100,6 +122,19 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
         onOpenEditor={openEditorFrom("your-account")}
       />
     );
+  }
+
+  if (view.kind === "data-and-privacy") {
+    return (
+      <DataAndPrivacyPanel
+        onBack={() => setView({ kind: "list" })}
+        onOpenEditor={openEditorFrom("data-and-privacy")}
+      />
+    );
+  }
+
+  if (view.kind === "watch-time") {
+    return <WatchTimePanel onBack={() => setView({ kind: "list" })} />;
   }
 
   if (view.kind === "editor") {
@@ -139,6 +174,9 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
 
       case "switch-account":
         return <SwitchAccountPanel onBack={handleEditorBack} onSignOutAll={onSignOut} />;
+
+      case "delete-account":
+        return <DeleteAccountPanel onBack={handleEditorBack} />;
 
       case "email-credential":
         return <EmailCredentialPanel onBack={handleEditorBack} />;
@@ -259,10 +297,27 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       onClick: () => openEditorFromList("email-credential"),
       badge: hasCredential ? "Connected" : undefined,
     },
-    { label: "Time watched", icon: "/icons/bar_chart_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" },
     {
-      label: "Your data in app account",
+      // BACK, AND WITH AN ENDPOINT THIS TIME. This row was deleted on 2026-08-18 with the same
+      // defect as the one below — a full-width button with no `onClick` — because there was no
+      // watch-time endpoint to point it at. `GET /users/me/watch-time` exists now. It only reads.
+      label: "Time watched",
+      icon: "/icons/history_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      onClick: () => setView({ kind: "watch-time" }),
+    },
+    {
+      // WAS THE ONE INERT ROW IN THIS LIST, labelled "Your data in app account" with no `onClick`,
+      // and therefore a full-width button that did nothing. It mattered more than the usual dead
+      // stub: `disclaimers/privacy-policy.tsx` tells people that access, correction and deletion
+      // happen by email, so a row named after their data that swallowed the click read as a control
+      // the product does not have.
+      //
+      // "Time watched" sat beside it with the same defect and was removed rather than relabelled —
+      // at the time there was no watch-time endpoint to point it at, and one dead row next to a
+      // fixed one is worse than either alone. It is the row above now.
+      label: "Your data & privacy",
       icon: "/icons/storage_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      onClick: () => setView({ kind: "data-and-privacy" }),
     },
   ];
 

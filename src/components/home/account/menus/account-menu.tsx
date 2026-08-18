@@ -1,3 +1,5 @@
+// TRANSPORT: client-query — the Better Auth session and sign-out, through `lib/auth-client.ts`.
+// The panels it swaps between own their own reads; the three preference panels read `localStorage`.
 "use client";
 
 import Image from "next/image";

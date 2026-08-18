@@ -121,3 +121,23 @@ export function writeStoredBrowserPreferences(preferences: BrowserPreferences): 
     // Storage disabled or over quota. The preference still applies for this page's lifetime.
   }
 }
+
+/**
+ * Removes the stored blob entirely.
+ *
+ * THE ONLY ERASURE THIS APP CAN PERFORM WITHOUT THE BACKEND, and the "Your data & privacy" panel's
+ * one real control. A failed removal is silent for the same reason a failed write is: storage the
+ * browser refuses to hand over holds nothing this build could have written.
+ *
+ * Callers must also reset their in-memory copy — see `clearPreferences` in
+ * `state/browser-preferences-context.tsx`. Clearing storage alone leaves the open dropdown showing
+ * values that no longer exist anywhere.
+ */
+export function clearStoredBrowserPreferences(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(BROWSER_PREFERENCES_STORAGE_KEY);
+  } catch {
+    // Storage disabled or unreachable. Nothing was persisted for this build to remove.
+  }
+}

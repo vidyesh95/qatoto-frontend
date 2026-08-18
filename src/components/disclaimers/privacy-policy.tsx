@@ -1,3 +1,5 @@
+import { PRIVACY_CONTACT_EMAIL } from "@/lib/site";
+
 export default function PrivacyPolicy() {
   return (
     <main>
@@ -19,6 +21,23 @@ export default function PrivacyPolicy() {
             name, email address, profile picture, and other personal information. We also collect
             information about your use of the site, such as the videos you upload and view, the
             comments you make, and the interactions you have with other users.
+          </dd>
+        </div>
+        <div>
+          {/* ADDED WITH THE WATCH-TIME SURFACE. Three rollup tables record how long and at what hour
+              each signed-in account watches, and this document is the one with legal weight — the
+              in-app inventory at Settings &rarr; Your data &amp; privacy mirrors it, not the other
+              way round. The windows below are the retention periods the platform actually prunes
+              on. This does NOT close the wider Art. 13 gaps in this policy (controller identity,
+              lawful basis, enumerated rights); those remain outstanding. */}
+          <dt>Watch Activity and How Long We Keep It</dt>
+          <dd>
+            When you are signed in, we record how long you watch and which hour of which day you
+            watched, so that we can show you your own watch time and understand when the platform is
+            busy. We keep the hour-by-hour record for 90 days and the per-day totals for about 25
+            months, after which they are deleted. We also keep an hour-by-hour total for the whole
+            platform, which carries no account identifier and cannot be traced back to you. Watching
+            while signed out is not recorded in any of these.
           </dd>
         </div>
         <div>
@@ -67,8 +86,9 @@ export default function PrivacyPolicy() {
           <dt>Contact Us</dt>
           <dd>
             If you have questions or concerns about this policy, or if you would like to access,
-            update, or delete your personal information, please contact us by email at
-            privacy@qatoto.com.
+            update, or delete your personal information, please contact us by email at{" "}
+            {PRIVACY_CONTACT_EMAIL}. You can also start an access, export, or deletion request from
+            Settings → Your data &amp; privacy in your account.
           </dd>
         </div>
       </dl>

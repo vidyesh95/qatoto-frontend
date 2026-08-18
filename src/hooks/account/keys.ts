@@ -22,4 +22,13 @@ export const accountKeys = {
    * user, and a key that named one would serve the previous person's passkeys after a switch.
    */
   passkeys: () => ["account", "passkeys"] as const,
+
+  /**
+   * The signed-in viewer's own watch time, keyed on the zone the totals were cut in.
+   *
+   * THE ZONE IS IN THE KEY because it changes the answer: `today` and every day boundary in the
+   * series move with it, so two zones are two different responses and must not share a cache
+   * entry. No user id, for the reason the two keys above state — the session is the user.
+   */
+  watchTime: (timeZone: string) => ["account", "watch-time", timeZone] as const,
 };

@@ -20,6 +20,7 @@
 import { createContext, use, useCallback, useEffect, useState, type ReactNode } from "react";
 
 import {
+  clearStoredBrowserPreferences,
   DEFAULT_BROWSER_PREFERENCES,
   readStoredBrowserPreferences,
   writeStoredBrowserPreferences,
@@ -33,6 +34,8 @@ interface BrowserPreferencesContextValue {
     key: PreferenceKey,
     value: BrowserPreferences[PreferenceKey],
   ) => void;
+  /** Erases the stored blob and returns every preference to its default, for this browser. */
+  readonly clearPreferences: () => void;
 }
 
 const BrowserPreferencesContext = createContext<BrowserPreferencesContextValue | undefined>(
@@ -64,8 +67,17 @@ export function BrowserPreferencesProvider({ children }: { children: ReactNode }
     [],
   );
 
+  // THE STORAGE REMOVAL AND THE STATE RESET ARE ONE ACTION, not two a caller could get half of.
+  // "Your data & privacy" offers this as an erasure; leaving the adopted values in memory would
+  // mean the panels still show a country the device no longer remembers, and the next
+  // `setPreference` would write that stale value straight back into the key just removed.
+  const clearPreferences = useCallback(() => {
+    clearStoredBrowserPreferences();
+    setPreferences(DEFAULT_BROWSER_PREFERENCES);
+  }, []);
+
   return (
-    <BrowserPreferencesContext.Provider value={{ preferences, setPreference }}>
+    <BrowserPreferencesContext.Provider value={{ preferences, setPreference, clearPreferences }}>
       {children}
     </BrowserPreferencesContext.Provider>
   );

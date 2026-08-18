@@ -88,3 +88,46 @@ export function formatSubscriberCountLabel(subscriberCount: number): string {
   const noun = safeCount === 1 ? "subscriber" : "subscribers";
   return `${formatCompactCountLabel(safeCount)} ${noun}`;
 }
+
+/** A minute, in seconds — the unit the watch labels round to. */
+const SECONDS_PER_MINUTE = 60;
+const SECONDS_PER_HOUR = 3600;
+
+/**
+ * Watch time as the account panel renders it: `"3 hrs 12 min"`, `"41 min"`, `"0 min"`.
+ *
+ * `null` IS "NOTHING RECORDED YET" AND ZERO IS "0 min", and the two must never collapse into one
+ * string. `GET /users/me/watch-time` returns `null` — never `0` — for an account with no rows at
+ * all, because zero would claim we watched someone watch nothing. This is `formatScorePoints`'
+ * rule (`src/lib/rnd/format.ts`) applied to seconds.
+ *
+ * ROUNDS TO THE MINUTE rather than borrowing `formatDurationLabel`'s `h:mm:ss`. That shape is a
+ * video's runtime, where a second is a meaningful unit; a month of watching is not read that way,
+ * and the wording follows `formatEffortFromMinutes` for the same reason it does.
+ *
+ * A sub-minute total floors to "0 min" rather than "less than a minute": the caller that cares
+ * about the distinction is the one rendering `null`, and it already has it.
+ */
+export function formatWatchTimeLabel(watchedSeconds: number | null): string {
+  if (watchedSeconds === null) return "Nothing recorded yet";
+  if (!Number.isFinite(watchedSeconds) || watchedSeconds <= 0) return "0 min";
+
+  const totalSeconds = Math.trunc(watchedSeconds);
+  const wholeHours = Math.trunc(totalSeconds / SECONDS_PER_HOUR);
+  const remainingMinutes = Math.trunc((totalSeconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
+
+  if (wholeHours === 0) return `${remainingMinutes} min`;
+  return remainingMinutes === 0 ? `${wholeHours} hrs` : `${wholeHours} hrs ${remainingMinutes} min`;
+}
+
+/** The same value with no unit noise, for a chart axis tick: `"3h"`, `"41m"`, `"0"`. */
+export function formatWatchTimeAxisTick(watchedSeconds: number): string {
+  if (!Number.isFinite(watchedSeconds) || watchedSeconds <= 0) return "0";
+  if (watchedSeconds >= SECONDS_PER_HOUR) {
+    const tenthsOfAnHour = Math.trunc((watchedSeconds * 10) / SECONDS_PER_HOUR);
+    const wholeHours = Math.trunc(tenthsOfAnHour / 10);
+    const remainder = tenthsOfAnHour % 10;
+    return remainder === 0 ? `${wholeHours}h` : `${wholeHours}.${remainder}h`;
+  }
+  return `${Math.max(1, Math.trunc(watchedSeconds / SECONDS_PER_MINUTE))}m`;
+}
