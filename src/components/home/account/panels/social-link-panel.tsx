@@ -78,7 +78,7 @@ function readLinkErrorFromUrl(provider: SocialProvider): string | null {
 
   const providerLabel = PROVIDER_LABEL[provider];
   switch (errorCode) {
-    case "email_doesn't_match":
+    case "email_does_not_match":
       return `That ${providerLabel} account's email doesn't match your account email.`;
     case "account_already_linked_to_different_user":
       return `That ${providerLabel} account is already linked to a different user.`;
@@ -165,7 +165,7 @@ export function SocialLinkPanel({ provider, linkedEmail, onBack }: SocialLinkPan
 
   async function handleConfirmUnlink(accountId: string) {
     setLinkState({ status: "unlinking" });
-    const { error } = await authClient.unlinkAccount({ providerId: provider, accountId });
+    const { error } = await authClient.unlinkAccount({ accountId });
     if (error) {
       setLinkState({
         status: "error",
