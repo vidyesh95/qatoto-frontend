@@ -38,6 +38,9 @@ export async function generateMetadata({
   return {
     title: `${supplierResult.data.name} · Manufacturing partners`,
     description: supplierResult.data.summary ?? undefined,
+    alternates: {
+      canonical: `/research-and-development/go-to-market/supplier/${supplierSlug}`,
+    },
   };
 }
 

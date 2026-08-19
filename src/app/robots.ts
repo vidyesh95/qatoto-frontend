@@ -71,11 +71,10 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: [...PRIVATE_PATH_PREFIXES],
     },
-    // NO `sitemap:` LINE YET, AND ITS ABSENCE IS THE POINT. `src/app/sitemap.ts` is not written
-    // (see `todo.md`), and a `robots.txt` advertising a sitemap that 404s is a Search Console
-    // error rather than a harmless placeholder. Add
-    //     sitemap: `${SITE_URL}/sitemap.xml`,
-    // in the same change that creates the file, not before.
+    // `src/app/sitemap.ts` EXISTS NOW, which is the only condition under which this line may be
+    // here: a `robots.txt` advertising a sitemap that 404s is a Search Console error rather than a
+    // harmless placeholder. If that file is ever removed, remove this line in the same change.
+    sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,
   };
 }

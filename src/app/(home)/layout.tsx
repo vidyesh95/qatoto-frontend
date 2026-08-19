@@ -11,6 +11,7 @@ import Navbar from "@/components/home/layout/navbar";
 import NavbarAccountCluster from "@/components/home/layout/navbar-account-cluster";
 import NavbarAccountSlot from "@/components/home/layout/navbar-account-slot";
 import Sidebar from "@/components/home/layout/sidebar";
+import SidebarSlot from "@/components/home/layout/sidebar-slot";
 import MobileBottomNav from "@/components/home/layout/mobile-bottom-nav";
 import QueryProvider from "@/components/providers/query-provider";
 import { SidebarProvider } from "@/state/sidebar-context";
@@ -39,7 +40,13 @@ const Layout = ({ children }: Props) => {
           }
         />
         <div className="flex">
-          <Sidebar />
+          {/* Same shape and same reasoning as the navbar slot above: the fallback is the
+              SIGNED-OUT sidebar, not a skeleton. On a prerendered route it is what ships in the
+              static HTML and it is already right for an anonymous visitor, so nobody sees rows
+              disappear — a signed-in visitor gets their own rows streamed in instead. */}
+          <Suspense fallback={<Sidebar isViewerSignedIn={false} />}>
+            <SidebarSlot />
+          </Suspense>
           <main className="min-w-0 flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
             {children}
           </main>

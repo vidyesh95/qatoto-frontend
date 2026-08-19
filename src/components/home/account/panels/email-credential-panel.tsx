@@ -165,7 +165,7 @@ export function EmailCredentialPanel({ onBack }: EmailCredentialPanelProps) {
   // here (its row hides the button), and the backend re-checks both rules.
   async function handleUnlinkCredential(accountId: string) {
     setUnlinkState({ status: "unlinking" });
-    const { error } = await authClient.unlinkAccount({ providerId: "credential", accountId });
+    const { error } = await authClient.unlinkAccount({ accountId });
     if (error) {
       setUnlinkState({
         status: "error",

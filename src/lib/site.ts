@@ -39,5 +39,34 @@ export const SITE_DESCRIPTION =
  * the Express backend has no deletion or export endpoint yet — `PATCH /users/me`, `/users/me/photo`
  * and `/users/me/handle` are its whole write surface. Under GDPR Art. 12 a manual channel is a valid
  * way to answer a data-subject request; an unread inbox is not.
+ *
+ * IT WAS `privacy@qatoto.com` UNTIL 2026-08-19 AND THAT MAILBOX DOES NOT EXIST, which made every
+ * control routed through it a more elaborate dead stub than the inert button it replaced. It is the
+ * live support address now. If a dedicated privacy mailbox is ever created, change it here and both
+ * surfaces follow. Note that `security@`, `careers@` and `press@` are still hardcoded in four other
+ * files and have not been verified the same way — see `todo.md`.
  */
-export const PRIVACY_CONTACT_EMAIL = "privacy@qatoto.com";
+export const PRIVACY_CONTACT_EMAIL = "support@qatoto.com";
+
+// ─── Who Qatoto legally IS ────────────────────────────────────────────────────────────────────
+//
+// PLACEHOLDERS ON PURPOSE, AND THEY ARE MEANT TO LOOK LIKE ONES. The privacy policy and the terms
+// both have to name a controller, an address and a governing law — GDPR Art. 13(1)(a) requires the
+// first two, and a terms document whose governing-law clause reads "the country in which Qatoto
+// operates" (which is what it said until this change) decides nothing at all.
+//
+// The entity is not incorporated yet, so the documents carry the STRUCTURE now and the facts later.
+// Each value below is visibly unfilled rather than a plausible-looking guess: a reader must be able
+// to tell at a glance that this is pending, and a wrong-but-believable company name in a legal
+// document is worse than an obvious blank. Fill all four in one edit when incorporation completes,
+// and nothing else needs to change.
+
+export const LEGAL_ENTITY_NAME = "[TO BE CONFIRMED — legal entity not yet incorporated]";
+
+export const LEGAL_ENTITY_REGISTERED_ADDRESS = "[TO BE CONFIRMED — registered address]";
+
+/** The country or state whose law governs the terms. */
+export const GOVERNING_LAW_JURISDICTION = "[TO BE CONFIRMED — governing law]";
+
+/** Where disputes are heard, e.g. "the courts of <city>". */
+export const GOVERNING_LAW_COURTS = "[TO BE CONFIRMED — competent courts]";

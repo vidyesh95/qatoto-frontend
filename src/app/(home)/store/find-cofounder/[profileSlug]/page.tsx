@@ -43,6 +43,7 @@ export async function generateMetadata({
     description: result.success
       ? result.data.profile.headline
       : `${displayName} on the Qatoto cofounder directory`,
+    alternates: { canonical: `/store/find-cofounder/${profileSlug}` },
   };
 }
 

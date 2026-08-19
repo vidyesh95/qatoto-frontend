@@ -49,6 +49,9 @@ export async function generateMetadata({
   return {
     title: `${categoryName} · Store`,
     description: `Browse ${categoryName} listings from verified sellers on Qatoto`,
+    // THE WHOLE TRAIL, not the leaf. This is a catch-all, and the same category is addressable at
+    // several depths; the canonical is the path as walked, which is also what `sitemap.ts` emits.
+    alternates: { canonical: `/store/categories/${slug.join("/")}` },
   };
 }
 

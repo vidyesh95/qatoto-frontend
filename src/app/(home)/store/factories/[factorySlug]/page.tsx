@@ -46,6 +46,7 @@ export async function generateMetadata({
   return {
     title: `${displayName} · Factories worldwide`,
     description: `Capabilities, capacity, certifications and sample policy for ${displayName} on Qatoto`,
+    alternates: { canonical: `/store/factories/${factorySlug}` },
   };
 }
 

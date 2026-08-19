@@ -38,6 +38,7 @@ export async function generateMetadata({
     description: result.success
       ? result.data.thread.excerpt
       : "A question on the Qatoto business forum",
+    alternates: { canonical: `/store/forum/${threadSlug}` },
   };
 }
 

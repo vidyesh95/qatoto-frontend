@@ -39,6 +39,7 @@ export async function generateMetadata({
   return {
     title: `${title} · Store`,
     description: `${title} on the Qatoto B2B store`,
+    alternates: { canonical: `/store/rails/${railSlug}` },
   };
 }
 

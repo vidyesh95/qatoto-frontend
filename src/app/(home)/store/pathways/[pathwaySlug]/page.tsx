@@ -46,6 +46,7 @@ export async function generateMetadata({
     description: result.success
       ? (result.data.pathway.summary ?? `${title} — a sourcing set on Qatoto`)
       : "A sourcing set on Qatoto",
+    alternates: { canonical: `/store/pathways/${pathwaySlug}` },
   };
 }
 

@@ -47,13 +47,11 @@ export const MODE_CHIPS: readonly FeedChip[] = [
 export function buildFeedChips(categories: readonly ContentCategory[]): FeedChip[] {
   return [
     ...MODE_CHIPS,
-    ...categories.map(
-      (category): FeedChip => ({
-        kind: "topic",
-        categorySlug: category.slug,
-        label: category.label,
-      }),
-    ),
+    ...categories.map((category): FeedChip => ({
+      kind: "topic",
+      categorySlug: category.slug,
+      label: category.label,
+    })),
   ];
 }
 

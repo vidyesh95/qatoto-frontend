@@ -20,6 +20,11 @@ export const instant = false;
  * This used to prerender a fixture array of slugs that resolve to nothing, so every prerendered
  * page was a `notFound()`. One sentinel is the honest version of the same thing, and it is what
  * `cacheComponents` needs instead of the empty array it refuses.
+ *
+ * THE ROUND-TRIP ARGUMENT ABOVE IS ABOUT THE PROVIDER FAN-OUT, and there is a cheaper route that
+ * does not need it: `src/app/sitemap.ts` enumerates every offering through `GET /store/search` with
+ * `documentKind: "provider_offering"`, where `hit.publicSlug` is this segment. It is used for the
+ * sitemap and not here on purpose — announcing a URL is cheap, prerendering it is not.
  */
 export function generateStaticParams() {
   return withSentinelValues([]).map((offeringSlug) => ({ offeringSlug }));
@@ -41,6 +46,7 @@ export async function generateMetadata({
       ? (result.data.offering.summary ??
         `${title}, offered by ${result.data.provider.displayName} on Qatoto`)
       : `Trade service on Qatoto`,
+    alternates: { canonical: `/store/services/${offeringSlug}` },
   };
 }
 

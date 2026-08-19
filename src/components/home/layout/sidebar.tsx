@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ReactNode, memo, useMemo } from "react";
 import Image from "next/image";
 import { useSidebar } from "@/state/sidebar-context";
+import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 
 /* ---------- Icon paths (outside component to prevent re-allocation) ---------- */
 const ICON_PATHS = {
@@ -329,6 +330,15 @@ type NavItem = {
   label: string;
   iconKey: keyof typeof ICON_PATHS;
   isEmphasized?: boolean;
+  /**
+   * Hide this row from a visitor with no session.
+   *
+   * IT IS A DISPLAY RULE, NOT A GUARD. The row points at a route that authorizes itself and a
+   * backend that re-authorizes every request (CLAUDE.md, "the client is hostile"); hiding it
+   * stops the app OFFERING a signed-out visitor somebody else's cart, it does not protect
+   * anything. Marking a row here is therefore never a substitute for the route's own gate.
+   */
+  requiresSession?: true;
 };
 
 type NavSection = {
@@ -379,23 +389,47 @@ const NAVIGATION_CONFIG: NavSection[] = [
       // ADDED LATE, and their absence was a real gap: `/store/rfqs` shipped with no way to reach it by
       // clicking, which is the definition of unreviewable. The section comment above already claimed the RFQ
       // queues lived here.
-      { path: ROUTES.storeRfqs, label: "Your requests", iconKey: "requestQuote" },
-      { path: ROUTES.serviceEngagements, label: "Service engagements", iconKey: "localShipping" },
+      // GATED FOR THE SAME REASON AS "PERSONALISATION" BELOW, and they are the two rows in this
+      // section that are the viewer's own rather than the store's. `robots.ts` already lists both
+      // prefixes as private; a row labelled "Your requests" shown to somebody with no account is
+      // the same defect, one section higher.
+      {
+        path: ROUTES.storeRfqs,
+        label: "Your requests",
+        iconKey: "requestQuote",
+        requiresSession: true,
+      },
+      {
+        path: ROUTES.serviceEngagements,
+        label: "Service engagements",
+        iconKey: "localShipping",
+        requiresSession: true,
+      },
     ],
     hasDivider: true,
   },
   {
+    // EVERY ROW HERE EXCEPT THE LAST IS THE VIEWER'S OWN, so each is `requiresSession`. Before
+    // that flag existed this whole section rendered to anonymous visitors — the section is
+    // literally titled "Personalisation" and it was offering strangers a cart, an order history
+    // and a sales dashboard that could not be theirs. `advertise-with-us` is a public page and
+    // stays, which is why the section survives the filter rather than disappearing.
     title: "Personalisation",
     items: [
-      { path: ROUTES.library, label: "Library", iconKey: "videoLibrary" },
-      { path: ROUTES.history, label: "History", iconKey: "history" },
+      { path: ROUTES.library, label: "Library", iconKey: "videoLibrary", requiresSession: true },
+      { path: ROUTES.history, label: "History", iconKey: "history", requiresSession: true },
       // A BOOKMARK, NOT A HEART. The heart is the public like on a listing and files nothing;
       // the bookmark is what this page lists. A heart here would advertise the wrong control.
-      { path: ROUTES.wishlist, label: "Wishlist", iconKey: "bookmark" },
-      { path: ROUTES.cart, label: "Cart", iconKey: "shoppingCart" },
-      { path: ROUTES.ordersAndReturns, label: "Orders and returns", iconKey: "localShipping" },
-      { path: ROUTES.listings, label: "Listings", iconKey: "slideshow" },
-      { path: ROUTES.sales, label: "Sales", iconKey: "chartData" },
+      { path: ROUTES.wishlist, label: "Wishlist", iconKey: "bookmark", requiresSession: true },
+      { path: ROUTES.cart, label: "Cart", iconKey: "shoppingCart", requiresSession: true },
+      {
+        path: ROUTES.ordersAndReturns,
+        label: "Orders and returns",
+        iconKey: "localShipping",
+        requiresSession: true,
+      },
+      { path: ROUTES.listings, label: "Listings", iconKey: "slideshow", requiresSession: true },
+      { path: ROUTES.sales, label: "Sales", iconKey: "chartData", requiresSession: true },
       { path: ROUTES.advertiseWithUs, label: "Advertise with us", iconKey: "featuredVideo" },
     ],
     hasDivider: true,
@@ -449,31 +483,46 @@ const COLLAPSED_NAV_CONFIG: NavItem[] = [
 ];
 
 /* ---------- Main Component ---------- */
-export default function Sidebar() {
+/**
+ * @param isViewerSignedIn what the SERVER saw, from `hasCallerSession()` in `sidebar-slot.tsx`.
+ *   It seeds `useViewerSignedIn` so the first client render matches the HTML that shipped —
+ *   without it the session atom can resolve mid-hydration and React discards the whole subtree.
+ */
+export default function Sidebar({ isViewerSignedIn }: { isViewerSignedIn: boolean }) {
   const currentPathname = usePathname();
   const { isCollapsed } = useSidebar();
+  const isSignedIn = useViewerSignedIn(isViewerSignedIn);
 
   // Memoize rendered sections to prevent unnecessary re-renders
   const renderedSections = useMemo(() => {
-    return NAVIGATION_CONFIG.map((section, sectionIndex) => (
-      <SidebarSection key={sectionIndex} sectionTitle={section.title}>
-        {section.items.map((item) => {
-          const isActive = isRouteActive(currentPathname, item.path);
-          return (
-            <SidebarNavigationItem
-              key={item.path}
-              destinationPath={item.path}
-              linkText={item.label}
-              iconKey={item.iconKey}
-              isEmphasized={item.isEmphasized}
-              isActive={isActive}
-            />
-          );
-        })}
-        {section.hasDivider && <hr className="my-5 border-border" />}
-      </SidebarSection>
-    ));
-  }, [currentPathname]);
+    return NAVIGATION_CONFIG.map((section, sectionIndex) => {
+      const visibleItems = section.items.filter((item) => isSignedIn || !item.requiresSession);
+
+      // A section can empty out entirely — render nothing rather than a heading and a divider
+      // with no rows under them. None does today; the guard is here so adding one more
+      // `requiresSession` row cannot leave a floating title behind.
+      if (visibleItems.length === 0) return null;
+
+      return (
+        <SidebarSection key={sectionIndex} sectionTitle={section.title}>
+          {visibleItems.map((item) => {
+            const isActive = isRouteActive(currentPathname, item.path);
+            return (
+              <SidebarNavigationItem
+                key={item.path}
+                destinationPath={item.path}
+                linkText={item.label}
+                iconKey={item.iconKey}
+                isEmphasized={item.isEmphasized}
+                isActive={isActive}
+              />
+            );
+          })}
+          {section.hasDivider && <hr className="my-5 border-border" />}
+        </SidebarSection>
+      );
+    });
+  }, [currentPathname, isSignedIn]);
 
   // Collapsed view
   if (isCollapsed) {

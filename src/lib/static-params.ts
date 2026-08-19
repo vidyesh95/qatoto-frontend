@@ -20,7 +20,7 @@
  * string, and the double underscore makes an accidental match impossible rather than
  * merely unlikely.
  */
-const UNRESOLVABLE_PARAM_VALUE = "__none__";
+export const UNRESOLVABLE_PARAM_VALUE = "__none__";
 
 /**
  * The param values to prerender, or one sentinel when there are none.

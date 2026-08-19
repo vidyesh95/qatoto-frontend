@@ -1,3 +1,16 @@
+// THE GOVERNING-LAW CLAUSE USED TO DECIDE NOTHING. It read "the laws of the country in which Qatoto
+// operates" — circular, because which country that is was exactly the question. It now names the
+// jurisdiction and the courts from `lib/site.ts`, both of which render as visible "to be confirmed"
+// placeholders until the entity is incorporated. That is the intended state: a reader can see the
+// blank, which they could not before.
+//
+// STILL WRONG AND NOT FIXED HERE: this document calls itself "the Qatoto Video Sharing Site" and
+// says nothing about the store, the R&D surface, orders, payments or projects — the parts of the
+// platform that actually create legal obligations between people. Rewriting that is a change to what
+// the terms CLAIM, not to how they read, and it belongs in its own pass. See `todo.md`.
+
+import { GOVERNING_LAW_COURTS, GOVERNING_LAW_JURISDICTION } from "@/lib/site";
+
 export default function TermsAndConditions() {
   return (
     <main>
@@ -49,8 +62,10 @@ export default function TermsAndConditions() {
           reason.
         </li>
         <li>
-          Governing Law: This agreement will be governed by the laws of the country in which Qatoto
-          operates.
+          Governing Law: This agreement is governed by the laws of {GOVERNING_LAW_JURISDICTION}, and
+          you and Qatoto submit to the exclusive jurisdiction of {GOVERNING_LAW_COURTS} for any
+          dispute arising out of it. If the law of the country you live in gives you rights as a
+          consumer that cannot be taken away by an agreement, this clause does not take them away.
         </li>
         <li>
           Changes to the Agreement: Qatoto may modify these terms at any time, and such

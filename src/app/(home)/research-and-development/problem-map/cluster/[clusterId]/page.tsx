@@ -47,6 +47,7 @@ export async function generateMetadata({
   return {
     title: `${clusterResult.data.title} · Problem Map`,
     description: clusterResult.data.description ?? undefined,
+    alternates: { canonical: `/research-and-development/problem-map/cluster/${clusterId}` },
   };
 }
 

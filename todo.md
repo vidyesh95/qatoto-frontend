@@ -590,10 +590,19 @@ to become pseudonymous before any deletion feature ships.
 
 ---
 
-## Watch time & platform metrics — backend shipped, frontend is open
+## Watch time & platform metrics — backend AND frontend shipped
 
 Written 2026-08-18. `Time watched` was deleted from `settings-menu.tsx` earlier the same day
 because there was no endpoint to point it at. There is one now.
+
+**The "Frontend work" list below reads as open and is NOT — it was written in the same commit
+that built it** (`f5b3404`, with a chart-tick fix in `9c57576`). Every item landed:
+`account/panels/watch-time-panel.tsx` behind `settings-menu.tsx:304`, `/admin/metrics` gated on
+`view_platform_metrics`, the repo's first charts (`components/charts/` + `lib/charts/`),
+`lib/account/watch-time.api.ts`, `lib/admin/platform-metrics.api.ts`, and the disclosure debt
+closed in both `data-and-privacy-panel.tsx` and `privacy-policy.tsx`. It is kept below as the
+record of WHY each was built that way. The one thing still outstanding is the backend
+`pnpm db:generate` TTY step.
 
 **Backend (`qatoto-backend`), all of it landed and `pnpm gate` green at 2030/2030:**
 
@@ -643,3 +652,229 @@ if the two disagree. It and `privacy-policy.tsx` must gain these three records a
 windows. The anonymization spec above must delete `user_activity_hour` and `user_watch_daily`
 outright — behavioural, no legal-retention argument, not covered by the Art. 17(3) exemptions that
 keep the ledger.
+
+---
+
+# The audit loop was scoped to the store, and the R&D half is dirty
+
+Written 2026-08-19. `main` was audited end to end against this file. Two things were red on a
+CLEAN tree, and one of them is the reason to distrust "both audits silent" above.
+
+## `pnpm lint` was failing on committed code, and `tsc` was not
+
+`ee2cd8a` removed `providerId` from `authClient.unlinkAccount()` in
+`account/panels/social-link-panel.tsx` and **missed the identical second call site** in
+`account/panels/email-credential-panel.tsx`. Better Auth's `unlinkAccount` input type does not
+admit the property, so the call was a live runtime failure in "remove email & password" — not a
+lint nit.
+
+**`pnpm exec tsc --noEmit` exits 0 on it, and `pnpm build` does NOT** — `next build` runs its own
+type check and fails there with `TS2353`, so `main` could not be built at all. oxlint's type-aware
+rule catches it too. The standalone typecheck is the one tool of the four that misses it, which is
+worth knowing before trusting a fast `tsc`-only pre-commit gate. `src/lib/feed/chips.ts` was also
+unformatted, so `pnpm fmt:check` was red as well: three of the five gate commands were failing on a
+clean tree.
+
+## Seven R&D api wrappers have no caller, and the published loop cannot see them
+
+The API audit at the top of this file globs `src/lib/store/*.api.ts` **only**. The store half is
+clean; the R&D half has never been run by it. Widened, it reports:
+
+```bash
+for f in $(rg --no-filename -o 'export (?:async )?function (\w+)' -r '$1' \
+    src/lib/store/*.api.ts src/lib/rnd/*.api.ts src/lib/admin/*.api.ts src/lib/account/*.api.ts \
+    | sort -u); do
+  rg -q "\b$f\b" src/hooks src/components src/app || echo "UNCALLED-API $f"; done
+```
+
+`getProjectEquity`, `listEquitySnapshots`, `listRoundBackers`, `verifyStatementChain`,
+`getAuditHashInput`, `updateWorkshopChatMessage`, `deleteWorkshopChatMessage` — zero references
+anywhere outside their own `.api.ts`. The **hooks** audit is clean for `src/hooks/rnd/`, which is
+why this went unnoticed: no hook wraps them, so nothing shows up as an uncalled hook either.
+
+**Left in place deliberately, this pass.** Each implies a surface that was specified and not
+built — a project equity panel, an equity-snapshot history, a round-backers list, workshop chat
+message edit/delete, and a control that verifies the audit hash chain. Deleting them loses that
+signal; the rule "wire it or delete it, never leave it" still applies, and this note is the
+record that the clock is running. Use the widened loop above, not the store-only one.
+
+## Contact addresses: one was fictional
+
+`PRIVACY_CONTACT_EMAIL` was `privacy@qatoto.com`, which is not a mailbox. Every privacy control
+in the app is a `mailto:` because the backend has no deletion or export endpoint, so that made
+the whole surface a more elaborate dead stub. It is `support@qatoto.com` now, which is live.
+
+**Three more are hardcoded and unverified** — `security@qatoto.com` in
+`disclaimers/vulnerability-disclosure-policy.tsx` (×2), `careers@qatoto.com` in
+`information/careers.tsx` (×4) and `press@qatoto.com` in `information/press.tsx` and
+`press-detail.tsx`. None goes through `lib/site.ts`. A vulnerability disclosure policy naming an
+unread inbox is the worst of the three.
+
+## Both legal documents still call Qatoto a video sharing site
+
+`disclaimers/privacy-policy.tsx` opens "Qatoto is a video sharing platform" and
+`terms-and-conditions.tsx` calls itself "the Qatoto Video Sharing Site". Per `docs/PROJECT_IDEA.md`
+that is not what this platform is, and the store, R&D and commerce surfaces are absent from both
+documents' account of what data is collected and why. Rewriting that framing is its own pass — it
+changes what the documents CLAIM, not just how they read.
+
+---
+
+# The sidebar gates on a session now (`REMAINING_WORK.md` §1 is closed)
+
+Written 2026-08-19. `sidebar.tsx` contained no `useSession`, no `useViewerSignedIn` and no
+`hasCallerSession` in its whole length, so an anonymous visitor was shown nine rows that could not
+be theirs — Library, History, Wishlist, Cart, Orders and returns, Listings, Sales, and (one section
+up) Your requests and Service engagements. The section heading over most of them reads
+"Personalisation".
+
+**The shape is `navbar-account-slot.tsx`'s, copied deliberately.** New
+`layout/sidebar-slot.tsx` awaits `hasCallerSession()` and passes the boolean to `Sidebar`;
+`(home)/layout.tsx` renders it inside `<Suspense>` with `<Sidebar isViewerSignedIn={false} />` as
+the fallback, so the layout stays synchronous and only that subtree suspends. The fallback is the
+SIGNED-OUT sidebar rather than a skeleton, matching the navbar: it is already correct for an
+anonymous visitor, so nobody watches rows vanish.
+
+`Sidebar` runs the seed through `useViewerSignedIn`, so the first client render matches the HTML.
+Without that seed the Better Auth session atom can resolve mid-hydration and React discards the
+subtree — the bug that hook's header documents at length.
+
+**Rows are marked, not enumerated at the call site.** `NavItem` gained `requiresSession?: true` and
+the filter runs at render. A section that empties out renders nothing rather than a heading with no
+rows under it; none does today, because `Advertise with us` is public and keeps "Personalisation"
+alive.
+
+**It hides rows; it does not guard routes.** `hasCallerSession()` tests for the PRESENCE of an auth
+cookie and a stale or forged one passes it. Every route behind these rows still authorizes itself
+and the backend re-authorizes every request.
+
+**Verified**: `pnpm build` reports exactly two `ƒ (Dynamic)` routes, `/checkout` and
+`/studio/factory-profile`, both of which were dynamic before this change and both by their own
+declaration. Every other `(home)` route is still `○` or `◐`, which is the check that the cookie read
+stayed inside its boundary.
+
+Not touched, and each for a reason: `COLLAPSED_NAV_CONFIG` and `mobile-bottom-nav.tsx` list no
+private row; `Create` points at `/studio`, which gates itself; `Customer service` and
+`Advertise with us` are public stubs.
+
+---
+
+# The legal documents: Art. 13 closed, framing still wrong
+
+Written 2026-08-19. `disclaimers/privacy-policy.tsx` named no controller, no lawful basis, no
+enumerated rights, no supervisory-authority route and no international-transfer basis, and never
+used the word "cookie" — while `account/menus/location-menu.tsx` offers 108 browse countries
+including every EU/EEA member. Five sections were added, written from what the platform actually
+does rather than from a template: **Who we are**, **Why We Are Allowed to Use It**, **Where Your
+Information Goes**, **Cookies and Storage on Your Device**, **Your Rights** and **Complaints**.
+
+**Cookies are essential-only, and that is the ONLY reason there is no consent banner.** The auth
+session cookie and the single `qatoto.browser-preferences` `localStorage` key are the whole
+inventory; the only `<Script>` in `app/layout.tsx` is dev-gated. The policy says so in as many
+words. **The moment any analytics, advertising or embedded third-party script ships, prior consent
+becomes required and that section becomes false** — the banner is part of that change, not a
+follow-up to it. The same warning is a comment on line 14 of the file.
+
+**Four placeholder constants in `lib/site.ts`**, and they are meant to look unfilled:
+`LEGAL_ENTITY_NAME`, `LEGAL_ENTITY_REGISTERED_ADDRESS`, `GOVERNING_LAW_JURISDICTION`,
+`GOVERNING_LAW_COURTS`, each rendering as bracketed "TO BE CONFIRMED" text. The entity is not
+incorporated, so the documents carry the STRUCTURE now and the facts later — a visible blank beats a
+plausible-looking company name in a legal document. **Fill all four in one edit; nothing else
+changes.** `terms-and-conditions.tsx`'s governing-law clause used the last two to replace "the laws
+of the country in which Qatoto operates", which decided nothing because which country that is was
+the question.
+
+## Still wrong, deliberately not fixed here
+
+**Both documents describe a video sharing site.** The terms call themselves "the Qatoto Video
+Sharing Site" and say nothing about the store, the R&D surface, orders, payments, escrow, equity or
+projects — the parts of this platform that create actual obligations between people. The privacy
+policy's opening line was corrected, but its Sharing, Security and Changes sections are still
+generic. Rewriting that is a change to what the documents CLAIM, not to how they read, and it wants
+a decision from Vidyesh about what Qatoto is contracting to do before anyone writes it.
+
+**The response window is a promise with no rota behind it.** The policy commits to answering within
+one month (`PRIVACY_REQUEST_RESPONSE_WINDOW_LABEL`, Art. 12(3)) and every control is a `mailto:` to
+`support@qatoto.com`. That is a valid channel; it needs someone actually reading it.
+
+---
+
+# Crawl policy part 2: `sitemap.ts`, canonicals and JSON-LD all shipped
+
+Written 2026-08-19. The three items the crawl-policy section left open are built.
+
+## `src/app/sitemap.ts` + `src/lib/sitemap-sources.ts`
+
+The reads live in the second file because **Next 16 refuses `"use cache"` inside a Route Handler
+body**, and getting that wrong fails silently: an uncached read does not break the build, it
+degrades the sitemap to request-time and re-runs the entire crawl on every crawler hit. `sitemap.ts`
+assembles; it never fetches. Add new groups to `sitemap-sources.ts`.
+
+**37 static paths + 14 enumerated groups. Verified: 128 URLs, all 200, zero sentinels, zero private
+or stub or redirect-only routes, and byte-identical across two clean builds.** The route builds as
+`○ (Static)`.
+
+**`Promise.all` WAS THE FIRST VERSION AND IT WAS WRONG — this is the finding worth keeping.** Each
+group walks a paginated surface to exhaustion, so fourteen at once is dozens of concurrent requests
+against a backend whose Postgres allows twenty connections. Two consecutive builds produced
+DIFFERENT sitemaps — one dropped every factory and every provider, the next included them — and
+nothing errored, because a failed read contributes `[]` by design. That rule exists so an
+unreachable backend cannot fail the build; it is not a licence to lose a surface to load. The loop
+is sequential now, which costs seconds on a file generated once.
+
+The other constraints held as written: no `new Date()` anywhere (only 6 of 128 entries carry
+`lastModified`, from forum `lastActivityAt` and cluster `lastReportedAt` — the rest omit it because
+no list projection has a date); no `server-http.ts`; `UNRESOLVABLE_PARAM_VALUE` is exported from
+`static-params.ts` and filtered rather than retyped; and the CMS groups are skipped entirely when
+`QATOTO_CMS_URL` is unset, so a build with no CMS publishes no `/blogs/<mock-slug>`.
+
+**Products, offerings and storefronts ARE enumerable**, through `GET /store/search` with an explicit
+`documentKind` — omitting it lets an `organization` row into a page and fails Zod for the WHOLE
+page, silently dropping every product on it. `organizationSlug` rides on every hit, so storefronts
+come free. The three route comments claiming otherwise now say what is true of `generateStaticParams`
+and what is true of the sitemap.
+
+`robots.ts` gained its `sitemap:` line in the same change, which was the condition for adding it.
+
+## Canonicals — 16 public detail routes
+
+`alternates.canonical`, relative, resolved against the root layout's `metadataBase`. The catch-all
+category route emits the whole walked trail, not the leaf.
+
+**NOT added to the redirect-only `/store/[...slug]` route**, which the earlier plan proposed. That
+route renders no document — its own comment says any metadata it produced would be for a page nobody
+sees — and the two `/compare` routes are `noindex` and private, where a canonical decides nothing.
+The routes that needed it are the public ones a crawler can actually reach.
+
+## JSON-LD — `src/lib/structured-data.tsx`
+
+`Product` on `/store/product/[id]`, `Article` on `/blogs/[slug]` and `/press/[slug]`, `Organization`
+on `/store/organizations/[organizationSlug]` and on the root layout. `omitEmptyValues` drops any key
+whose value is absent, so the repo's own rule holds in a format machines trust:
+
+- **A "from" price publishes NO offer.** `hasVariants` means `priceInCents` is the cheapest variant
+  and a buyer must pick one before anything reaches a cart; publishing it as `Offer.price`
+  advertises a number no order can be placed at.
+- **`priceInCents` and `currency` travel together or not at all** — a price without its currency is
+  a different number, not a smaller fact.
+- **`made_to_order` maps to no `availability`.** schema.org's `PreOrder` and `BackOrder` both mean
+  "shipped later from a batch that exists"; made-to-order means nothing exists until the order does.
+- `<` is escaped to `<` on serialization — a `</script>` inside any backend string would
+  otherwise close the tag and turn a JSON island into an HTML injection point.
+
+Verified against the running build: the seeded product emits a full `Offer` with `InStock`, and the
+seeded storefront emits `name` + `url` only, because its `summary` and `logoUrl` are null — which is
+the omission rule working rather than a missing field.
+
+## Still open on this surface
+
+- **Rich metadata is still thin.** `/store/product/[id]` has title, description and canonical, but
+  no OG image and no per-page OG block; only the root layout, `/blogs/[slug]` and `/press/[slug]`
+  carry one.
+- **No list projection in the store carries a timestamp**, so the sitemap cannot tell a crawler when
+  a product changed. Adding `updatedAt` to the store card schemas would improve recrawl behaviour
+  and is a backend change.
+- `manifest.json` still omits `start_url` and `description`.
+- The six `/anime/*` routes stay out of the sitemap while they read `@/mocks/anime-mocks`.
+- `/research-and-development/talent/[handle]` stays out permanently — both reads are `requireAuth`
+  and bulk-indexing profiles of real people is a privacy decision, not an oversight.

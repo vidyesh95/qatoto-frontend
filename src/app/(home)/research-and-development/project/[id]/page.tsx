@@ -41,6 +41,7 @@ export async function generateMetadata({
   return {
     title: `${detailResult.data.name} · R&D`,
     description: detailResult.data.tagline,
+    alternates: { canonical: `/research-and-development/project/${id}` },
   };
 }
 
