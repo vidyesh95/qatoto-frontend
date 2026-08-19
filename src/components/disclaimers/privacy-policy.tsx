@@ -160,12 +160,18 @@ export default function PrivacyPolicy() {
             background, and a deletion takes effect the moment you confirm it — you then have thirty
             days to change your mind, and simply signing in again is all it takes. The remaining
             rights — correction, restriction, and objection — are made by writing to{" "}
-            {PRIVACY_CONTACT_EMAIL}, and we answer those within{" "}
-            {PRIVACY_REQUEST_RESPONSE_WINDOW_LABEL}. We may have to ask you to confirm who you are
-            first, so that we do not act on someone else's say-so about your account. Some records —
-            the ones we are required to keep, and the shared records of work done on a project with
-            other people — survive the deletion of an account, but they are kept without your name
-            attached to them.
+            {/* A REAL LINK, NOT PLAIN TEXT. These three rights have no endpoint, so the
+                mailbox IS the route — and rendering the only route as something you have to
+                select and copy is a worse answer than the panel gives for the two rights
+                that do have buttons. */}
+            <a href={`mailto:${PRIVACY_CONTACT_EMAIL}`} className="underline">
+              {PRIVACY_CONTACT_EMAIL}
+            </a>
+            , and we answer those within {PRIVACY_REQUEST_RESPONSE_WINDOW_LABEL}. We may have to ask
+            you to confirm who you are first, so that we do not act on someone else's say-so about
+            your account. Some records — the ones we are required to keep, and the shared records of
+            work done on a project with other people — survive the deletion of an account, but they
+            are kept without your name attached to them.
           </dd>
         </div>
         <div>

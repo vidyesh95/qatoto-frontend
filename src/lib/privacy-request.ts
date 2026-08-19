@@ -45,7 +45,15 @@ export const ACCOUNT_DELETION_GRACE_PERIOD_DAYS = 30;
 
 /** The requests this app can still raise on the account holder's behalf, by email. */
 export type PrivacyRequest = {
-  readonly kind: "data-export" | "account-deletion";
+  /**
+   * `other-right` IS THE ONE THIS FILE CLAIMED TO SERVE AND DID NOT.
+   *
+   * The header has always said job #1 is the residual rights — correction, restriction,
+   * objection — but the union only ever had the two kinds that later grew endpoints. So the
+   * three rights with NO endpoint were the three with no draft either, and the privacy
+   * policy pointed them at an address rendered as plain text.
+   */
+  readonly kind: "data-export" | "account-deletion" | "other-right";
   readonly accountId: string;
   readonly accountHandle: string;
   /**
@@ -67,37 +75,55 @@ export type PrivacyRequest = {
  */
 export function buildPrivacyRequestMailtoHref(request: PrivacyRequest): string {
   const subject =
-    request.kind === "data-export" ? "Data access request" : "Account deletion request";
+    request.kind === "data-export"
+      ? "Data access request"
+      : request.kind === "account-deletion"
+        ? "Account deletion request"
+        : "Data protection request";
 
   const identityLines = [`Account ID: ${request.accountId}`, `Handle: @${request.accountHandle}`];
   const noteLines = request.note === undefined ? [] : ["", request.note];
 
   const bodyLines =
-    request.kind === "data-export"
+    request.kind === "other-right"
       ? [
           "Hello,",
           "",
-          "I would like a copy of the personal data held about my Qatoto account.",
+          "I would like to exercise a data protection right over my Qatoto account.",
           "",
           ...identityLines,
           "",
-          "Please send it in a commonly used, machine-readable format.",
+          "Please treat this as a request to (delete as appropriate):",
+          "- correct information that is wrong or incomplete,",
+          "- restrict what you do with my information while a question about it is resolved,",
+          "- object to your use of my information where you rely on legitimate interests.",
           ...noteLines,
         ]
-      : [
-          "Hello,",
-          "",
-          "I would like my Qatoto account deactivated and my personal data anonymized.",
-          "",
-          ...identityLines,
-          "",
-          "I understand that:",
-          "- my account is deactivated as soon as this request is actioned,",
-          `- I have ${ACCOUNT_DELETION_GRACE_PERIOD_DAYS} days to cancel by signing in again,`,
-          "- after that my identity is erased and cannot be restored,",
-          "- records that are kept for legal reasons stay, without my name attached.",
-          ...noteLines,
-        ];
+      : request.kind === "data-export"
+        ? [
+            "Hello,",
+            "",
+            "I would like a copy of the personal data held about my Qatoto account.",
+            "",
+            ...identityLines,
+            "",
+            "Please send it in a commonly used, machine-readable format.",
+            ...noteLines,
+          ]
+        : [
+            "Hello,",
+            "",
+            "I would like my Qatoto account deactivated and my personal data anonymized.",
+            "",
+            ...identityLines,
+            "",
+            "I understand that:",
+            "- my account is deactivated as soon as this request is actioned,",
+            `- I have ${ACCOUNT_DELETION_GRACE_PERIOD_DAYS} days to cancel by signing in again,`,
+            "- after that my identity is erased and cannot be restored,",
+            "- records that are kept for legal reasons stay, without my name attached.",
+            ...noteLines,
+          ];
 
   return `mailto:${PRIVACY_CONTACT_EMAIL}?subject=${encodeURIComponent(
     subject,

@@ -17,8 +17,9 @@
 //   - real and remote    — calls an endpoint and reports exactly what the server said, including
 //                          that a 202 is a receipt and not a file.
 // The third kind used to be a `mailto:`, because the Express backend had no export and no deletion
-// endpoint. It has both now. `lib/privacy-request.ts` survives only as the residual-rights link in
-// the footer and as the fallback when one of those endpoints fails.
+// endpoint. It has both now. `lib/privacy-request.ts` survives as the "Your other rights" draft at
+// the bottom of this panel — correction, restriction and objection have no endpoint — and as the
+// fallback when one of the two that do have endpoints fails.
 //
 // THE INVENTORY IS AUTHORED PROSE, BUT IT IS NO LONGER UNFALSIFIABLE. The export below is a machine
 // answer to the same question, so a category named here that the download omits is a claim the
@@ -66,11 +67,18 @@ type ClearDeviceDataState = { readonly status: "idle" } | { readonly status: "cl
  * status refetched (which mints a new one for the same file), never a new export requested.
  */
 type DataExportView =
+  /** The query has not answered yet. NOT `idle` — an armed button here can double-POST. */
+  | { readonly status: "checking" }
+  /** The query answered, and the answer was a failure. NOT `idle`, and NOT silent. */
+  | { readonly status: "unreadable"; readonly error: ApiError }
   | { readonly status: "idle" }
   | { readonly status: "requesting" }
   | { readonly status: "building" }
   | { readonly status: "ready"; readonly downloadUrl: string }
+  /** The five-minute URL died. The archive is still there; refetching mints a new link. */
   | { readonly status: "link-expired" }
+  /** The seven-day archive died. Only a NEW export fixes this; refetching cannot. */
+  | { readonly status: "archive-expired" }
   | { readonly status: "failed"; readonly error: ApiError };
 
 type DataAndPrivacyPanelProps = {
@@ -171,50 +179,88 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
     status: "idle",
   });
 
-  const dataExportQuery = useDataExportQuery();
-  const dataExportMutation = useRequestDataExportMutation();
-
   const accountHandle = session?.user.handle ?? "";
   const accountId = session?.user.id ?? "";
   // Both requests identify the account by id. Without one, the mail draft would ask an operator to
   // guess which row a message refers to, which is how the wrong account gets erased.
   const isSessionReady = accountHandle.length > 0 && accountId.length > 0;
 
+  // Declared AFTER `isSessionReady`, because the query is gated on it — the render already
+  // waited for the session and the request had no business not doing the same.
+  const dataExportQuery = useDataExportQuery({ enabled: isSessionReady });
+  const dataExportMutation = useRequestDataExportMutation();
+
   /**
    * The export control's state, read off the server rather than tracked alongside it.
    *
-   * THE MUTATION IS ONLY CONSULTED WHILE IT IS IN FLIGHT. Once it settles, the query is the
-   * authority — guarding re-submission on `mutation.isPending` would go stale the moment
-   * the server disagreed, and here that means queueing a second full-table walk.
+   * ## THREE THINGS THAT ARE NOT `idle`, AND USED TO BE
+   *
+   * An earlier version collapsed "the query has not answered yet", "the query FAILED" and
+   * "there is genuinely no export" into one `idle` branch, which armed the button in all
+   * three. Each was its own bug:
+   *
+   *   1. On first paint the query is still resolving, so somebody with an export already
+   *      building saw "Download your data" and could press it — a second POST the server
+   *      answers 409.
+   *   2. `getJson` NEVER THROWS; it returns `{ success: false }`. So `query.isError` is
+   *      permanently false, a failed GET looked identical to "no export", and a blip
+   *      mid-build silently dropped the UI from "building" back to an armed button.
+   *   3. After a successful POST the mutation settles before the un-awaited
+   *      `invalidateQueries` resolves, so for one round trip the query still held the
+   *      pre-POST value and the button re-armed.
+   *
+   * ## AND THE MUTATION IS CONSULTED ONLY WHILE IT IS IN FLIGHT — NOW ACTUALLY TRUE
+   *
+   * `isError` is sticky forever on a settled mutation, so reading it here meant a single
+   * 409 painted a red box for the panel's whole lifetime, even once the poll came back
+   * `ready` with a live link. The mutation's failure is cleared by `reset()` the moment the
+   * query has a real answer, so the server always wins in the end.
    */
   function readDataExportView(): DataExportView {
     if (dataExportMutation.isPending) return { status: "requesting" };
 
-    if (dataExportMutation.isError) {
-      return {
-        status: "failed",
-        error:
-          dataExportMutation.error instanceof ApiRequestError
-            ? dataExportMutation.error.apiError
-            : { code: "NETWORK", message: "We could not reach the server. Please try again." },
-      };
-    }
-
     const result = dataExportQuery.data;
-    if (result === undefined || !result.success || result.data === null) return { status: "idle" };
+
+    // NOT `idle`: nothing is known yet, so the button must not be armed.
+    if (result === undefined) return { status: "checking" };
+
+    // NOT `idle` EITHER: the read failed, and saying "no export" would be a claim we cannot
+    // support. `getJson` folds failures into the value, which is why this is not `isError`.
+    if (!result.success) return { status: "unreadable", error: result.error };
+
+    if (result.data === null) {
+      // A genuine absence — and the one place a stale mutation error still deserves the
+      // screen, because there is no server state to contradict it.
+      if (dataExportMutation.isError) {
+        return {
+          status: "failed",
+          error:
+            dataExportMutation.error instanceof ApiRequestError
+              ? dataExportMutation.error.apiError
+              : { code: "NETWORK", message: "We could not reach the server. Please try again." },
+        };
+      }
+      return { status: "idle" };
+    }
 
     switch (result.data.state) {
       case "pending":
       case "running":
         return { status: "building" };
       case "ready":
-        // `downloadUrl` is null when the server declined to mint one — an archive past its
-        // retention, or storage refusing. Both read as "the link is gone", which is true.
+        // `downloadUrl` null means the server declined to mint one — storage refusing, or
+        // an archive already past its retention. Either way the LINK is what is missing.
         return result.data.downloadUrl === null
           ? { status: "link-expired" }
           : { status: "ready", downloadUrl: result.data.downloadUrl };
       case "expired":
-        return { status: "link-expired" };
+        /**
+         * THE ARCHIVE IS GONE, NOT JUST THE LINK — and collapsing this into `link-expired`
+         * made it a dead end. That view's only control refetches the status, which for a
+         * genuinely expired export returns `expired` again, forever. The fix is a new
+         * export, so this state gets its own branch and its own control.
+         */
+        return { status: "archive-expired" };
       case "failed":
         return {
           status: "failed",
@@ -225,6 +271,17 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
         return exhaustiveCheck;
       }
     }
+  }
+
+  /**
+   * Asks for an export, clearing any stale failure first.
+   *
+   * `reset()` IS WHAT STOPS A DEAD ERROR OUTLIVING ITS CAUSE. Without it a mutation that
+   * once failed keeps `isError` true for as long as the component lives.
+   */
+  function handleRequestExport() {
+    dataExportMutation.reset();
+    dataExportMutation.mutate();
   }
 
   function renderDataExportAction() {
@@ -244,11 +301,69 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
     const view = readDataExportView();
 
     switch (view.status) {
+      case "checking":
+        // The query has not answered. NOT an armed button: pressing one here is how a
+        // second full-table walk gets queued behind an export that is already building.
+        return (
+          <button
+            type="button"
+            disabled
+            className="flex cursor-not-allowed flex-row items-center gap-2 self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground opacity-50"
+          >
+            <DownloadIcon />
+            Checking…
+          </button>
+        );
+
+      case "unreadable":
+        // THE READ FAILED, AND SAYING NOTHING WOULD BE WORSE. Silently showing "Download
+        // your data" here is what made a blip mid-build look like no export existed.
+        return (
+          <div className="flex flex-col gap-2">
+            <div
+              role="alert"
+              className="flex flex-col gap-1 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+            >
+              <span>We could not check on your download. {view.error.message}</span>
+              <span className="text-xs opacity-70">Code {view.error.code}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => void dataExportQuery.refetch()}
+              className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+            >
+              Try again
+            </button>
+          </div>
+        );
+
+      case "archive-expired":
+        /**
+         * A NEW EXPORT, NOT A REFETCH. The seven-day archive is gone, so re-reading the
+         * status would return `expired` forever — which is what the old shared branch did.
+         */
+        return (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-muted-foreground">
+              Your last download has expired — we keep each file for seven days. You can ask for a
+              fresh one.
+            </p>
+            <button
+              type="button"
+              onClick={handleRequestExport}
+              className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+            >
+              <DownloadIcon />
+              Download your data
+            </button>
+          </div>
+        );
+
       case "idle":
         return (
           <button
             type="button"
-            onClick={() => dataExportMutation.mutate()}
+            onClick={handleRequestExport}
             className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
           >
             <DownloadIcon />
@@ -270,15 +385,27 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
 
       case "ready":
         return (
-          <a
-            href={view.downloadUrl}
-            download
-            rel="noopener"
-            className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-[#00696E] px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5"
-          >
-            <DownloadIcon />
-            Download your data
-          </a>
+          <div className="flex flex-col gap-2">
+            <a
+              href={view.downloadUrl}
+              download
+              rel="noopener"
+              className="flex cursor-pointer flex-row items-center gap-2 self-start rounded-full border border-[#00696E] px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5"
+            >
+              <DownloadIcon />
+              Download your data
+            </a>
+            {/* WITHOUT THIS THERE WAS NO WAY BACK TO A FRESH EXPORT. Once any archive was
+                `ready` the view never returned to `idle`, so somebody who changed their data
+                and wanted an up-to-date copy had no control at all. */}
+            <button
+              type="button"
+              onClick={handleRequestExport}
+              className="cursor-pointer self-start text-sm font-medium text-secondary-foreground underline"
+            >
+              Build a fresh copy
+            </button>
+          </div>
         );
 
       case "link-expired":
@@ -326,6 +453,16 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
               Ask {PRIVACY_CONTACT_EMAIL} for it instead — we answer within{" "}
               {PRIVACY_REQUEST_RESPONSE_WINDOW_LABEL}
             </a>
+            {/* A FAILED BUILD USED TO BE TERMINAL IN THE UI. The backend now frees the
+                request once its retries are exhausted, so asking again is a real option
+                rather than a button that would 409. */}
+            <button
+              type="button"
+              onClick={handleRequestExport}
+              className="cursor-pointer self-start text-sm font-medium text-secondary-foreground underline"
+            >
+              Try building it again
+            </button>
           </div>
         );
 
@@ -503,9 +640,38 @@ export function DataAndPrivacyPanel({ onBack, onOpenEditor }: DataAndPrivacyPane
           <Link href="/privacy-policy" className="underline">
             privacy policy
           </Link>{" "}
-          for how we use what we hold. For anything this panel does not cover, email{" "}
-          {PRIVACY_CONTACT_EMAIL}.
+          for how we use what we hold.
         </p>
+
+        {/* THE RESIDUAL RIGHTS, WITH SOMETHING TO CLICK.
+            Correction, restriction and objection have no endpoint and no plan for one, so
+            the mailbox is genuinely the route. This used to be the address as plain text —
+            which asked somebody exercising a statutory right to select and copy it — while
+            `privacy-request.ts` had a header claiming it served exactly this case and a
+            union that could not express it. */}
+        <section className="flex flex-col gap-2">
+          <h3 className="text-sm font-medium text-secondary-foreground">Your other rights</h3>
+          <p className="text-sm text-muted-foreground">
+            You can also ask us to correct something that is wrong, to pause what we do with your
+            information while a question about it is resolved, or to object to a particular use.
+            These are handled by a person, and we answer within{" "}
+            {PRIVACY_REQUEST_RESPONSE_WINDOW_LABEL}.
+          </p>
+          {isSessionReady ? (
+            <a
+              href={buildPrivacyRequestMailtoHref({
+                kind: "other-right",
+                accountId,
+                accountHandle,
+              })}
+              className="self-start text-sm font-medium text-[#00696E] underline"
+            >
+              Email {PRIVACY_CONTACT_EMAIL}
+            </a>
+          ) : (
+            <span className="text-sm text-muted-foreground">{PRIVACY_CONTACT_EMAIL}</span>
+          )}
+        </section>
       </div>
     </div>
   );

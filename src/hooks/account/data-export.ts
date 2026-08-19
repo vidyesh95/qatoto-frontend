@@ -27,10 +27,25 @@ import type { DataExportStatus } from "@/lib/account/data-export.schemas";
  * `failed` and `expired`. A failed fetch also stops it: hammering a route that just refused
  * spends the caller's status allowance re-reading the same refusal.
  */
-export function useDataExportQuery() {
+export function useDataExportQuery(options?: { readonly enabled?: boolean }) {
   return useQuery({
     queryKey: accountKeys.dataExport(),
     queryFn: () => getDataExportStatus(),
+    /**
+     * GATED ON THE SAME CONDITION THE PANEL RENDERS ON. Without it this fired while the
+     * panel was still showing "Checking your account…", so session-readiness governed the
+     * render but not the request.
+     */
+    enabled: options?.enabled ?? true,
+    /**
+     * DEAD CONFIGURATION, KEPT DELIBERATELY AND LABELLED.
+     *
+     * `getJson` folds failures into `{ success: false }` rather than throwing, so React
+     * Query never sees a rejection and never retries — this line changes nothing today. It
+     * stays because the moment somebody switches `queryFn` to `unwrap(...)` (as both
+     * mutations in this feature do) it becomes load-bearing, and a 401 here is an answer
+     * about the session rather than a flake worth repeating.
+     */
     retry: false,
     staleTime: 0,
     gcTime: 0,

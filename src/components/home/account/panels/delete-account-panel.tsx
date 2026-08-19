@@ -67,7 +67,12 @@ type DeleteAccountView =
   | { readonly status: "confirming"; readonly typedHandle: string }
   | { readonly status: "submitting"; readonly typedHandle: string }
   | { readonly status: "submit-failed"; readonly typedHandle: string; readonly error: ApiError }
-  | { readonly status: "deactivated"; readonly anonymizationScheduledAt: string };
+  | {
+      readonly status: "deactivated";
+      readonly anonymizationScheduledAt: string;
+      /** The server's own window, not the advertised constant. */
+      readonly gracePeriodDays: number;
+    };
 
 type DeleteAccountPanelProps = {
   /** Return to the data & privacy panel. */
@@ -124,6 +129,18 @@ export function DeleteAccountPanel({ onBack }: DeleteAccountPanelProps) {
   const deletionMutation = useRequestAccountDeletionMutation();
   const [view, setView] = useState<DeleteAccountView>({ status: "explaining" });
 
+  /**
+   * The window to PRINT, and where it comes from.
+   *
+   * Before a request exists there is no server value, so the advertised constant is the
+   * honest thing to show. Once one exists, `gracePeriodDays` is the number the server
+   * actually scheduled — and reading it is the whole reason the field is on the wire.
+   * `account-deletion.schemas.ts` documents it as the thing that stops copy and schedule
+   * drifting apart, and until now nothing read it.
+   */
+  const gracePeriodDays =
+    view.status === "deactivated" ? view.gracePeriodDays : ACCOUNT_DELETION_GRACE_PERIOD_DAYS;
+
   const accountHandle = session?.user.handle ?? "";
   const accountId = session?.user.id ?? "";
 
@@ -148,6 +165,7 @@ export function DeleteAccountPanel({ onBack }: DeleteAccountPanelProps) {
         setView({
           status: "deactivated",
           anonymizationScheduledAt: request.scheduledAnonymizationAt,
+          gracePeriodDays: request.gracePeriodDays,
         });
 
         // Makes the "preferences in this browser are cleared" line in the list below TRUE.
@@ -184,9 +202,8 @@ export function DeleteAccountPanel({ onBack }: DeleteAccountPanelProps) {
         return (
           <div className="flex flex-col gap-6 p-4">
             <p className="text-sm text-muted-foreground">
-              This signs you out on every device straight away and starts a{" "}
-              {ACCOUNT_DELETION_GRACE_PERIOD_DAYS}-day countdown. Read what happens before you
-              continue.
+              This signs you out on every device straight away and starts a {gracePeriodDays}-day
+              countdown. Read what happens before you continue.
             </p>
 
             <section className="flex flex-col gap-3">
@@ -201,7 +218,7 @@ export function DeleteAccountPanel({ onBack }: DeleteAccountPanelProps) {
                 />
                 <DeletionStage
                   stageNumber={2}
-                  title={`You have ${ACCOUNT_DELETION_GRACE_PERIOD_DAYS} days to change your mind`}
+                  title={`You have ${gracePeriodDays} days to change your mind`}
                   detail="Just sign in again at any point in that window. Your account comes back exactly as it was — there is nothing else to do, and no link to find."
                 />
                 <DeletionStage
