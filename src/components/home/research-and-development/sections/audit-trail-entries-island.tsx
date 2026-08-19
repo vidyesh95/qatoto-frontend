@@ -3,6 +3,9 @@
 // TRANSPORT: client-query — seeded with the first page proof-of-effort-page already read on
 // the server, then advances GET …/audit-trail by `?fromSequence=` through `useKeysetList`.
 
+import { useState } from "react";
+
+import AuditHashInputInspector from "@/components/home/research-and-development/sections/audit-hash-input-inspector";
 import LoadMoreControl from "@/components/home/shared/load-more-control";
 import { rndKeys } from "@/hooks/rnd/keys";
 import { toSequenceKeysetPage, useKeysetList } from "@/hooks/keyset-list";
@@ -25,6 +28,11 @@ const AUDIT_PAGE_LIMIT = 50;
  * THE SHORT HASH IS A RENDERING, exactly as in the tab that used to own this markup.
  * Nothing keys off it: a 24-bit prefix collides around 4,800 entries, and the full 64
  * characters are what the hash-input endpoint checks.
+ *
+ * AND IT IS NOW CHECKABLE. Each entry expands into `AuditHashInputInspector`, which fetches
+ * the exact bytes that were hashed and recomputes the digest IN THE BROWSER. The point is
+ * not to show the reader a longer hash — it is that they never have to take the server's
+ * word for the chain, which is the whole reason the hash-input endpoint exists.
  */
 export default function AuditTrailEntriesIsland({
   projectSlug,
@@ -35,6 +43,8 @@ export default function AuditTrailEntriesIsland({
   initialEntries: AuditEntry[];
   initialNextSequence: number | null;
 }) {
+  const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
+
   const entryList = useKeysetList<AuditEntry>({
     queryKey: rndKeys.auditTrail(projectSlug),
     initialPage: { rows: initialEntries, nextToken: initialNextSequence },
@@ -68,6 +78,18 @@ export default function AuditTrailEntriesIsland({
               {entry.previousEntryHash !== null &&
                 ` ← ${shortenHashForDisplay(entry.previousEntryHash)}`}
             </p>
+            <button
+              type="button"
+              onClick={() => setExpandedEntryId(expandedEntryId === entry.id ? null : entry.id)}
+              className="mt-1 cursor-pointer text-xs font-medium text-[#00696E] underline"
+            >
+              {expandedEntryId === entry.id ? "Hide the proof" : "Check this hash yourself"}
+            </button>
+            <AuditHashInputInspector
+              projectSlug={projectSlug}
+              entryId={entry.id}
+              isExpanded={expandedEntryId === entry.id}
+            />
           </li>
         ))}
       </ol>

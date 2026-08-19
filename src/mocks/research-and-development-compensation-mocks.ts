@@ -1,18 +1,17 @@
-// Cross-project governance rollup (§4c.3) — aggregates and an authored sample
-// statement, never a real member's row. Re-exported here so the governance stage
-// page imports one compensation-family composer.
+// The authored sample statement the /governance stage page walks through — never a real
+// member's row. Re-exported here so that page imports one compensation-family composer.
 //
-// THE SIX PER-PROJECT LEDGERS ARE GONE. `MOCK_PROJECT_COMPENSATION_LEDGERS` and
-// src/mocks/research-and-development/compensation/** were read by exactly one
-// component, the project detail page's Governance tab, which was deleted when that
-// page wired up: it rendered an escrow ledger the backend contract retired (nine
-// escrow routes now 404) off a project shape that no longer exists.
+// TWO FIXTURE SETS THAT USED TO LIVE BEHIND THIS BARREL ARE GONE.
+// `MOCK_PROJECT_COMPENSATION_LEDGERS` went when the project detail page's Governance tab was
+// deleted: it rendered an escrow ledger the backend contract retired, off a project shape that
+// no longer exists. `MOCK_GOVERNANCE_SUMMARY` went later, unimported — the real rollup ships
+// from `GET /governance/summary` and `governance-page.tsx` reads it.
 //
-// Per-project compensation statements are phase 5 and land against the shipped
-// `…/compensation-agreements` and `…/compensation-periods` reads, not against a
-// fixture. What survives here is only what the /governance stage page still renders.
+// Per-project compensation is no longer a fixture at all: `compensation-tab.tsx` +
+// `compensation-agreement-island.tsx` + `compensation-period-island.tsx` read the shipped
+// `…/compensation-agreements` and `…/compensation-periods`. What survives here is ONLY the
+// worked example, which is deliberate authored data and labelled as such on the page.
 export {
-  MOCK_GOVERNANCE_SUMMARY,
   SAMPLE_STATEMENT_MEMBER_LABELS,
   SAMPLE_STATEMENT_WALKTHROUGH,
 } from "@/mocks/research-and-development/governance-summary";

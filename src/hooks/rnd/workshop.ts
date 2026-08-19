@@ -23,6 +23,8 @@ import {
   renameWorkshopColumn,
   reorderWorkshopColumns,
   sendWorkshopChatMessage,
+  updateWorkshopChatMessage,
+  deleteWorkshopChatMessage,
   updateWorkshopFile,
   updateWorkshopTask,
   type WorkshopTaskInput,
@@ -174,6 +176,51 @@ export function useSendWorkshopChatMessageMutation(projectSlug: string) {
     mutationFn: async (bodyText: string) =>
       unwrap(await sendWorkshopChatMessage(projectSlug, { bodyText })),
     onSuccess: invalidateWorkshop,
+  });
+}
+
+/**
+ * Edit or withdraw one message.
+ *
+ * ONE HOOK WITH AN `action` DISCRIMINANT, matching `useWorkshopFileMutation` above: both
+ * verbs act on the same message, both invalidate the same key, and which of them is legal
+ * is the server's decision rather than this hook's.
+ *
+ * NOT OPTIMISTIC, for the same reason sending is not. Chat here is POLLED, not streamed, so
+ * an optimistically edited bubble would show the team a correction seconds before anyone
+ * could have received it — and an optimistic DELETE is worse, because it would show the
+ * author their message gone from a transcript everyone else can still read.
+ *
+ * THE REQUEST FIELD IS `bodyText` AND THE RESPONSE FIELD IS `messageText`. That asymmetry is
+ * already true of `sendWorkshopChatMessage`; the wrapper matches the wire, and this hook
+ * matches the wrapper. Do not "fix" it here.
+ *
+ * INVALIDATES THE WHOLE WORKSHOP KEY, not just the chat key: the transcript arrives inside
+ * the workshop snapshot the server parent reads, so invalidating chat alone would leave the
+ * edited bubble on screen.
+ */
+export function useWorkshopChatMessageMutation(projectSlug: string) {
+  const invalidateWorkshop = useWorkshopInvalidation(projectSlug);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: {
+      action: "update" | "delete";
+      messageId: string;
+      bodyText?: string;
+    }) => {
+      if (variables.action === "update") {
+        return unwrap(
+          await updateWorkshopChatMessage(projectSlug, variables.messageId, {
+            bodyText: variables.bodyText ?? "",
+          }),
+        );
+      }
+      return unwrap(await deleteWorkshopChatMessage(projectSlug, variables.messageId));
+    },
+    onSuccess: () => {
+      invalidateWorkshop();
+      void queryClient.invalidateQueries({ queryKey: rndKeys.workshopChat(projectSlug) });
+    },
   });
 }
 

@@ -3,6 +3,7 @@
 // GET …/funding-rounds and GET …/investor-confidence.
 import FundingManagementIsland from "@/components/home/research-and-development/sections/funding-management-island";
 import PledgeIsland from "@/components/home/research-and-development/sections/pledge-island";
+import RoundBackersIsland from "@/components/home/research-and-development/sections/round-backers-island";
 import RndStatusPanel, {
   RndErrorPanel,
   RndMembersOnlyPanel,
@@ -46,8 +47,9 @@ type FundingTabProps = {
  * render as an absence. A default would publish a finding nobody computed.
  *
  * The backer avatar stack was four `/dummy/*.avif` files presented as this round's
- * backers. `GET /funding-rounds/:roundId/backers` exists but is one request per round;
- * the count stays, the invented faces do not.
+ * backers. The count stayed and the invented faces did not. The honest list now exists:
+ * `RoundBackersIsland` reads `GET /funding-rounds/:roundId/backers`, and because that is
+ * one request per round it stays COLLAPSED until a reader asks for it.
  *
  * A pledge is a COMMITMENT. `raisedAmountInCents` sums committed pledges; Qatoto holds
  * no funds and charges nobody in this domain, so no copy here may imply a rail, a hold
@@ -175,6 +177,7 @@ export default function FundingTab({
         <p className="text-xs text-muted-foreground">
           A pledge is a commitment to the founder, not a charge. Qatoto holds no funds.
         </p>
+        <RoundBackersIsland roundId={openRound.id} backersCount={openRound.backersCount} />
         <PledgeIsland roundId={openRound.id} roundTitle={openRound.title} />
       </div>
     );

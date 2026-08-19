@@ -61,6 +61,19 @@ const ADMIN_NAVIGATION_ITEMS: AdminNavItem[] = [
     inactiveIcon: "/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    // The operations side of the store, not the taxonomy side: rate cards price a lane and
+    // customs estimates give it an arrival window. Same `moderate_commerce` capability as Store
+    // categories above, but that capability gates the READS here too, so an unheld viewer gets a
+    // banner instead of a read-only console.
+    //
+    // Desktop only, same tradeoff as Store categories and Promotions: the mobile bar would go from
+    // six tabs to seven, and authoring a weight ladder is a desk job either way.
+    href: "/admin/freight",
+    label: "Freight lanes",
+    activeIcon: "/icons/local_shipping_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     // COMMUNITY, NOT COMMERCE (§1.1). Forum threads, their replies, community reports and
     // cofounder profiles are one shift under `moderate_content` — the same moderator works
     // the off-topic thread, the report that named it and the profile that arrived after.

@@ -3,6 +3,7 @@
 // states from proof-of-effort-page, which read GET …/proof-of-effort, …/slice-ledger,
 // …/equity/open-role-projection and …/pie-bake. The ledger rows are a client-query island —
 // they page the rest of the ledger by `?fromSequence=`.
+import EquitySnapshotHistoryIsland from "@/components/home/research-and-development/sections/equity-snapshot-history-island";
 import PieBakePanel from "@/components/home/research-and-development/sections/pie-bake-panel";
 import RateLockPanel from "@/components/home/research-and-development/sections/rate-lock-panel";
 import RndStatusPanel, {
@@ -190,6 +191,8 @@ export default function SliceLedgerTab({
                 ? "This pie is baked — the percentages are final and no longer move."
                 : "This pie is dynamic — it is recomputed as verified effort lands."}
             </p>
+
+            <EquitySnapshotHistoryIsland projectSlug={projectSlug} />
           </div>
         );
       }

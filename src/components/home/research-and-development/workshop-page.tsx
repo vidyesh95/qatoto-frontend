@@ -97,6 +97,7 @@ export default async function WorkshopPage({ projectSlug }: { projectSlug: strin
           chatPanel={
             <div className="space-y-3">
               <WorkshopChat
+                projectSlug={projectSlug}
                 chatMessages={workshopResult.data.chatMessages}
                 teamMembers={project.team}
               />

@@ -24,8 +24,10 @@ import {
   castDisputeVote,
   deletePhysicalReceipt,
   dismissOptimizationSuggestion,
+  getAuditHashInput,
   getEffortClaim,
   lockFairMarketRate,
+  listEquitySnapshots,
   listMemberFairMarketRates,
   overrideVerificationStep,
   proposeFairMarketRate,
@@ -78,6 +80,47 @@ const IN_FLIGHT_VERIFICATION_STATUSES: readonly string[] = ["queued", "running"]
  * `query.state.data` each tick is the only version that terminates exactly when the
  * pipeline does.
  */
+/**
+ * The history of nightly recalculations, newest first.
+ *
+ * DISTINCT FROM THE SNAPSHOT EMBEDDED IN `getProofOfEffortSummary`, which is the cap table
+ * as it stands NOW and is what the page opens with. This is how it got there. The two are
+ * never rendered as alternatives to each other.
+ *
+ * LAZY: a member reading their own split does not need every historical recomputation, and
+ * a baked project can carry a long tail of them. The caller passes the slug only once the
+ * history is expanded.
+ */
+/**
+ * The exact RFC 8785 bytes behind one audit entry's hash.
+ *
+ * THE ANTI-THEATRE READ. A server answering "the chain is fine" proves nothing — it is
+ * grading its own homework. This returns the bytes it actually hashed, so the browser can
+ * recompute the digest itself and compare. That is the only reason the endpoint exists,
+ * and it is why the inspector re-hashes rather than rendering a tick.
+ *
+ * LAZY PER ENTRY: the chain pages 50 at a time and the bytes are large. One request per
+ * expanded entry, keyed by entry so each caches on its own.
+ */
+export function useAuditHashInputQuery(projectSlug: string, entryId: string, isExpanded: boolean) {
+  return useQuery({
+    queryKey: rndKeys.auditHashInput(projectSlug, entryId),
+    queryFn: async () => unwrap(await getAuditHashInput(projectSlug, entryId)),
+    enabled: isExpanded,
+  });
+}
+
+export function useEquitySnapshotsQuery(projectSlug: string | undefined) {
+  return useQuery({
+    queryKey: rndKeys.equitySnapshots(projectSlug ?? "none"),
+    queryFn: async () => {
+      if (!projectSlug) throw new Error("Missing project slug");
+      return unwrap(await listEquitySnapshots(projectSlug));
+    },
+    enabled: Boolean(projectSlug),
+  });
+}
+
 export function useEffortClaimQuery(projectSlug: string, claimId: string | undefined) {
   return useQuery({
     queryKey: rndKeys.claim(projectSlug, claimId ?? "none"),

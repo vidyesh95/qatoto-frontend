@@ -108,6 +108,21 @@ export function formatCountLabel(count: number): string {
   return count.toLocaleString("en-US");
 }
 
+/**
+ * Grams on the wire; kilograms are what a person reads a freight weight in.
+ *
+ * LIFTED OUT OF `delivery-sheet.tsx`, where it was module-local, because the admin band editor
+ * authors the same `minBillableWeightGrams` the buyer sheet renders. Two copies would let the
+ * operator's ladder and the buyer's quote disagree about what "5 kg" means.
+ *
+ * NOTE THE LOCALE ARGUMENT IS `undefined`, unlike the `"en-US"` its neighbours here pin. That is
+ * the behaviour the buyer sheet already shipped with, and this move deliberately does not change
+ * what a buyer sees; unifying the two is a separate decision about the whole file.
+ */
+export function formatGramsLabel(grams: number): string {
+  return `${(grams / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} kg`;
+}
+
 export function countryLabelFromCode(countryCode: string): string {
   const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
   return displayNames.of(countryCode.toUpperCase()) ?? countryCode;

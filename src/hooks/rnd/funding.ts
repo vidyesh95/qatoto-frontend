@@ -22,6 +22,7 @@ import {
   deleteMilestone,
   getPledgeOptions,
   listMyPledges,
+  listRoundBackers,
   openFundingRound,
   putMilestoneVariance,
   updateFundingRound,
@@ -46,6 +47,30 @@ export function usePledgeOptionsQuery(roundId: string | undefined) {
     queryFn: async () => {
       if (!roundId) throw new Error("Missing round id");
       return unwrap(await getPledgeOptions(roundId));
+    },
+    enabled: Boolean(roundId),
+  });
+}
+
+/**
+ * Everyone whose commitment still stands on one round.
+ *
+ * LAZY FOR THE SAME REASON `usePledgeOptionsQuery` IS, and the reason is written down in
+ * `funding-tab.tsx`: this is ONE REQUEST PER ROUND, so firing it for every card on a
+ * deal-flow page would spend a request per round for a list nobody opened. The caller
+ * passes the round id only once a reader expands the list.
+ *
+ * The list is shorter than `backersCount` whenever a commitment was withdrawn — the
+ * backend drops cancelled, failed and refunded pledges (`RoundBackerSchema`). That is a
+ * real difference between the two numbers, not a bug to paper over by rendering the
+ * count as the list length.
+ */
+export function useRoundBackersQuery(roundId: string | undefined) {
+  return useQuery({
+    queryKey: rndKeys.roundBackers(roundId ?? "none"),
+    queryFn: async () => {
+      if (!roundId) throw new Error("Missing round id");
+      return unwrap(await listRoundBackers(roundId));
     },
     enabled: Boolean(roundId),
   });

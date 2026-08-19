@@ -9,34 +9,51 @@ code and `git log` are the record of what was built and why. Nothing below is do
 
 **Blocked — nothing, as it turns out**
 
-1. ~~[`pnpm db:generate`](#1-pnpm-dbgenerate-needs-a-human-at-a-tty--stale-and-it-was-stale-when-written)~~ — **stale**; the
-   migration exists and the tables are live
+- **§1** ~~[`pnpm db:generate`](#1-pnpm-dbgenerate-needs-a-human-at-a-tty--stale-and-it-was-stale-when-written)~~ — **stale**; the
+  migration exists and the tables are live
 
-**Frontend**
+**Frontend** — items 4 and 7 shipped and were deleted; item 2 moved to _Waiting on the backend_,
+because it was never frontend work.
 
-2. [Five video-domain files still on `TRANSPORT: mock`](#2-the-video-domain-is-still-mocked)
-3. [Sixteen stub routes rendering a bare `<h1>`](#3-sixteen-stub-routes)
-4. [Phase C — the admin freight console](#4-phase-c--the-admin-freight-console)
-5. [Phase D — cost of goods, and therefore margin](#5-phase-d--cost-of-goods-and-therefore-margin)
-6. [Five backend capabilities with no UI at all](#6-backend-capability-with-no-ui)
-7. [Seven R&D api wrappers with no caller](#7-seven-rd-api-wrappers-have-no-caller)
-8. [SEO leftovers — OG images, `manifest.json`](#8-seo-leftovers)
-9. [Three things never exercised against live data or a browser](#9-never-exercised)
+> **The §N markers are the section numbers and they have gaps.** Numbers are NOT reindexed when an
+> item ships: they are anchors, and several sections cite `§19.10`/`§19.11` in the BACKEND contract,
+> which a renumber would silently turn into references to the wrong thing. This list is bulleted
+> rather than numbered for the same reason — markdown renumbers an ordered list sequentially, which
+> would print numbers that disagree with the headings below.
+
+- **§3** [Sixteen stub routes rendering a bare `<h1>`](#3-sixteen-stub-routes)
+- **§5** [Phase D — cost of goods, and therefore margin](#5-phase-d--cost-of-goods-and-therefore-margin)
+- **§6** [Five backend capabilities with no UI at all](#6-backend-capability-with-no-ui)
+- **§8** [SEO leftovers — OG images, `manifest.json`](#8-seo-leftovers)
+- **§9** [Three things never exercised against live data or a browser](#9-never-exercised)
 
 **Backend (`qatoto-backend`)**
 
-10. [Privacy Part 3 — SHIPPED, behind two default-off flags](#10-privacy-part-3--shipped-behind-two-default-off-flags)
-11. [`phone_number` column](#11-phone_number-column) — the panel calls a route that does not exist
-12. [`updatedAt` on the store card schemas](#12-updatedat-on-the-store-card-schemas)
-13. [Message attachments](#13-message-attachments)
-14. [Liked / watch later / subscriptions](#14-liked--watch-later--subscriptions)
-15. [Multi-axis variants](#15-multi-axis-variants)
-16. [Incoterm semantics](#16-incoterm-semantics)
-17. [Provider directory filters](#17-provider-directory-filters)
+- **§10** [Privacy Part 3 — SHIPPED, behind two default-off flags](#10-privacy-part-3--shipped-behind-two-default-off-flags)
+- **§11** [`phone_number` column](#11-phone_number-column) — the panel calls a route that does not exist
+- **§12** [`updatedAt` on the store card schemas](#12-updatedat-on-the-store-card-schemas)
+- **§13** [Message attachments](#13-message-attachments)
+- **§14** [Liked / watch later / subscriptions](#14-liked--watch-later--subscriptions)
+- **§15** [Multi-axis variants](#15-multi-axis-variants)
+- **§16** [Incoterm semantics](#16-incoterm-semantics)
+- **§17** [Provider directory filters](#17-provider-directory-filters)
+
+**Waiting on the backend, not on the frontend**
+
+- **§2** [The video domain's five `TRANSPORT: mock` banners](#2-the-video-domain-is-waiting-on-the-backend)
 
 **Waiting on money, not on code**
 
-18. [Freight rate data](#18-freight-rate-data) — every lane answers `no_active_rate_card` today
+- **§18** [Freight rate data](#18-freight-rate-data) — every lane answers `no_active_rate_card` today
+
+**[Cross-pillar seams](#cross-pillar-seams)** — R&D, Store and Studio hold separate copies of the
+same venture. Ordered; 19–21 are the narrow lap and need no new thinking.
+
+- **§19** ["Built in the open" on the product page](#19-built-in-the-open-on-the-product-page) — no migration
+- **§20** [`video.researchProjectId`](#20-videoresearchprojectid) — 1 migration + a membership check
+- **§21** [The venture reel and the venture badge](#21-the-venture-reel-and-the-venture-badge) — reads 20
+- **§22** [Daily-log YouTube: format CHECK and a deferred job](#22-daily-log-youtube-format-check-and-a-deferred-job)
+- **§23** [Apply from the watch page](#23-apply-from-the-watch-page) — a mount, not a build
 
 **[Decisions needed](#decisions-needed)** — the legal entity, four mailboxes, what Qatoto
 contracts to do, two §14 calls, four freight/moderation calls, the Postgres ceiling.
@@ -75,18 +92,6 @@ watch time silently multiplies by the beacon count.
 
 ## Frontend
 
-### 2. The video domain is still mocked
-
-`rg -l "TRANSPORT: mock" src/` returns exactly five files, all of them video:
-
-- `src/components/home/watch/comments.tsx`
-- `src/components/home/watch/share-sheet.tsx`
-- `src/components/home/watch/watch-content.tsx`
-- `src/components/studio/series/series-editor-modal.tsx`
-- `src/lib/videos/studio-view.ts`
-
-The store and R&D surfaces have none. That `rg` is the check that this item is finished.
-
 ### 3. Sixteen stub routes
 
 Each renders a bare `<h1>`. `rg -l "return <h1>" src/app` finds them, and all are `kind: "planned"`
@@ -99,17 +104,6 @@ in `src/lib/roadmap/site-roadmap.ts`, so the public roadmap is honest about them
 
 Each carries `robots: { index: false, follow: false }` with a comment saying REMOVE THIS LINE when
 the page gets content. That is about the current state, not a policy about the route.
-
-### 4. Phase C — the admin freight console
-
-Unblocked since §19.10: both reads exist and `bandsEditable` rides on the shared projection, so the
-console does not have to derive it. There is no freight UI anywhere under `src/app/(admin)/` or
-`src/components/admin/` today; rate cards are consumed read-only in the buyer surfaces
-(`home/store/sheets/delivery-sheet.tsx`, `home/store/sections/delivery-cost.tsx`).
-
-**§19.11 is the operator sequence and is not optional reading.** A card authored the obvious way
-can never have its bands edited, and a card with no band at `minBillableWeightGrams: 0` reports
-every small consignment as an uncovered lane.
 
 ### 5. Phase D — cost of goods, and therefore margin
 
@@ -134,18 +128,6 @@ Each of these exists on the wire and nothing in `src/` renders it:
 - **`checkout/prepare`'s `arrivalWindows`** — sent and `.strip()`ped today. The window is always
   null at prepare time and only `missingComponents` is meaningful, so rendering it needs a panel
   that names components without printing a date.
-
-### 7. Seven R&D api wrappers have no caller
-
-`getProjectEquity`, `listEquitySnapshots`, `listRoundBackers`, `verifyStatementChain`,
-`getAuditHashInput`, `updateWorkshopChatMessage`, `deleteWorkshopChatMessage` — zero references
-anywhere outside their own `.api.ts`. No hook wraps them either, which is why the hooks audit is
-clean and this went unnoticed.
-
-Each implies a surface that was specified and never built: a project equity panel, an
-equity-snapshot history, a round-backers list, workshop chat message edit/delete, and a control
-that verifies the audit hash chain. **Wire it or delete it** — an uncalled wrapper is unverified
-code. Use the widened loop under [Verification](#verification), not the store-only one.
 
 ### 8. SEO leftovers
 
@@ -251,6 +233,52 @@ Six more query keys, and the UI to go with them. The directory has exactly one f
 (kind chips), which is why the query keys were refused when they were first proposed — build the UI
 and the keys together or neither.
 
+### 2. The video domain is waiting on the backend
+
+**Re-filed out of "Frontend" — it was never frontend work.** `rg -l "TRANSPORT: mock" src/` still
+returns exactly five files, all video, and that grep is still the check that this is finished:
+
+- `src/components/home/watch/comments.tsx`
+- `src/components/home/watch/share-sheet.tsx`
+- `src/components/home/watch/watch-content.tsx`
+- `src/components/studio/series/series-editor-modal.tsx`
+- `src/lib/videos/studio-view.ts`
+
+**None of them imports a fixture.** Each holds an inline EMPTY placeholder — `[]`, `undefined`,
+`false` — so a real component shell survives with its layout intact, and each banner names a
+backend gap rather than an unfinished screen. The frontend api layer is already substantial and
+wired (`src/lib/feed/api.ts`, `src/lib/videos/api.ts`, `src/lib/series/api.ts`); there is no
+refactor here waiting to happen. Deleting a placeholder is a one-line change AFTER its field ships.
+
+**Needs a new backend capability — a table, a job or a model, not just a route:**
+
+- transcript (no ASR pipeline, no transcript table, no column on `video`)
+- `isPremium` (no entitlement model, no tier, no paywall anywhere)
+- product reviews (no table)
+- trending search terms (no aggregation)
+- download (structurally impossible — the bytes are on youtube.com)
+- the report flow (a deliberate v1 gap, HOME_BACKEND §8.4)
+- the "not interested" ranking signal
+
+**Needs only a modest backend change — the cheap subset, in value order:**
+
+1. **`seasons` on `GET /feed/watch/:videoId`.** The data already exists: `/series` has full
+   series/season/episode CRUD. But **every `/series` route is `requireAuth` and owner-scoped**, so
+   there is no public read — which is exactly why `PLACEHOLDER_SEASONS` cannot be filled. Add a
+   series reference to `WatchPayload`, or a public series read.
+2. **`POST /series/:seriesId/poster`.** Mechanical: copy the multer pattern from the one existing
+   studio upload route, `POST /videos/:videoId/thumbnail`. `posterUrl` is a plain URL today with no
+   route that can set it.
+3. **`attachedProducts` on the watch payload.** The join table exists and
+   `PUT /videos/:videoId/products` already writes it; it is simply not projected onto the public
+   read.
+4. **`attachedPitchId` on the `.strict()` `POST /videos` body**, plus a column. The document half is
+   bigger — it needs a storage route.
+
+**Separately: `/studio/analytics` is greenfield on BOTH sides.** It is one of the 16 stub routes
+below AND has zero backend routes — `VideoListRowSchema` carries no counters at all. It is not part
+of item 2, but it is the video-domain gap with the most product value.
+
 ### 18. Freight rate data
 
 `delivery-sheet.tsx` works. The routes, tables and rating service all exist, and the rate tables
@@ -258,6 +286,144 @@ ship **empty by design** (A36). Every lane answers `no_active_rate_card` and `sh
 permanently `0` until a forwarder lane list is purchased. Nothing to build — this is a buying
 decision, and [the uncovered-inland-leg rule](#decisions-needed) should be settled before the money
 is spent.
+
+---
+
+## Cross-pillar seams
+
+R&D, Store and Studio keep separate copies of the same venture. Four seams exist between them:
+one real and pointed only inward (`product.researchProjectId`), one real and healthy
+(`videoAttachedProduct`), one that is a fiction made of text columns (`videoMilestone`,
+`videoOpenRole`, `videoTeamMember`) and one duplicated pipeline (two YouTube verifications).
+
+The five items below are the surviving subset of a four-move proposal audited against the live
+schema on 2026-08-19. **Four moves from that proposal were dropped and should stay dropped** —
+see [why](#what-was-dropped-and-why) at the end of this section, because the reasoning is the
+part that will otherwise be re-derived wrong.
+
+Items 19–21 are the narrow lap: one venture, end to end, from a reported gap to a sold unit with
+its record attached. Ship them against **one** real venture and **one** real product before
+starting 22 or 23.
+
+### 19. "Built in the open" on the product page
+
+`store.product.researchProjectId` exists (`store.ts:2761-2784`), is partially indexed
+(`store.ts:2890`), and the frontend reads it on **zero** product surfaces.
+`StoreProductDetailSchema` (`src/lib/store/products.schemas.ts:217-250`) has no such field. Its
+only consumer today is the R&D-direction rail (`src/lib/rnd/suppliers.schemas.ts:98`
+`launchedProducts`), rendered on `/research-and-development/go-to-market`.
+
+The boundary comment on that column forbids a **write** crossing — "a research route that proxied
+a product create". It says nothing against reads, and this is the store's only differentiation a
+general marketplace cannot copy, because they do not have the record.
+
+**No migration.** Backend adds a venture projection to `GET /store/products/:slug`; frontend adds
+a block to `src/components/home/store/product-detail.tsx`, already `TRANSPORT: server-fetch` and
+already doing four parallel reads — this is a fifth.
+
+**The projection must be the public read, not the member read.** `project-detail.tsx` fires nine
+member-scoped child reads; a buyer gets none of them. Ship a narrow shape — venture name and
+slug, proof-chain summary counts, the milestone that shipped it, public roster names — carrying
+no `plannedPayoutInCents`, no slice numerator, no escrow state, no `investor_only` material. Diff
+the buyer JSON against `ProjectDetailSchema` before merging.
+
+### 20. `video.researchProjectId`
+
+One nullable column on `studio.video`, `restrict`, mirroring `product.researchProjectId` exactly.
+Null means unaffiliated content — anime, general creator uploads — so those surfaces are
+untouched. Precedent exists: `store.ts:23` and `platform.ts:17` both already import
+`researchProject`. `studio.ts` imports nothing from `rnd.ts` yet, so this is the first edge.
+
+**Who may set it is the whole problem.** `video.creatorId` is a plain `user`
+(`studio.ts:190-198`); venture identity is a `projectMember`. Without a server-side membership
+check at write, any user attaches their video to any venture. Same shape as `videoAttachedProduct`
+re-verifying `product.sellerId` (`studio.ts:511-512`): the client sends an id, the server
+verifies membership before accepting it. Test it by POSTing a project the caller is not a member
+of and expecting a 403, not a stored row.
+
+### 21. The venture reel and the venture badge
+
+Pure frontend, reads item 20. The venture page assembles its own film reel without the creator
+wiring anything up; the watch page gets a badge linking back to the venture. Renders the venture's
+public milestone list — **not** a per-label FK, see [what was dropped](#what-was-dropped-and-why).
+
+### 22. Daily-log YouTube: format CHECK and a deferred job
+
+Two real defects, neither requiring a cross-pillar FK.
+
+**`daily_log.youtube_video_id` has no format CHECK.** `studio.ts:424-428` has
+`youtube_video_id ~ '^[A-Za-z0-9_-]{11}$'` and its comment says that check "is what closes SSRF".
+`daily_log`'s only check is the source/id-presence pair (`rnd.ts:3183`). One migration.
+
+**Verification is inline and destructive.** `daily-logs.service.ts:624-631` calls oEmbed on the
+request path and, on failure, returns the error and creates no row — losing a member's
+submission to a YouTube blip. This is exactly the behaviour studio deliberately moved away from
+(`verify-youtube-video.ts:15-35`). Move daily logs onto the same pg-boss job, reusing
+`handleVerifyYoutubeVideo`'s compare-and-swap guard (`verify-youtube-video.ts:118-122`) so a
+re-PATCHed id is never marked verified on an old id's proof.
+
+Both sides already call the same `verifyYoutubeVideo` from `#src/lib/youtube.js` and share the
+same `YoutubeSourceError` triple. The duplication is the _delivery_ — deferred job vs inline —
+not two implementations.
+
+### 23. Apply from the watch page
+
+The write path exists and is verified end to end: `useApplyToProjectMutation`
+(`src/hooks/rnd/projects.ts:244`) → `createProjectApplication`
+(`src/lib/rnd/projects.api.ts:274`) → `POST /research-projects/:slug/applications`. The sheet
+itself, `sheets/apply-role-sheet.tsx`, is already a self-contained `client-query` island. It is
+mounted only from `OpenRoleCard`, on three R&D-only surfaces.
+
+Mounting it under the player turns the watch page from a poster into the recruiting surface. Add
+`videoOpenRole.openRoleId` (nullable → `projectOpenRole.id`, text kept as fallback so anime and
+unaffiliated videos are unaffected), and note the watch page renders a _projection_ of
+`projectOpenRole` — the real row carries `skills[]` + GIN, `commitment`, `status`,
+`slotsTotal`/`slotsFilledCount` and an `openRoleCompensation` child (`rnd.ts:625`, `:684`).
+
+Verify by applying from the watch page and finding the row in the existing applicant inbox at
+`/research-and-development/applications` with the right `openRoleId`.
+
+### What was dropped, and why
+
+**`dailyLog.videoId → studio.video` — dropped. It would break the equity chain.** Both sides
+state their delete semantics and they are opposites:
+
+```text
+studio.ts:190-198   creatorId → user.id, onDelete: CASCADE
+                    "a video bears no ledger, equity or audit weight, so it is a
+                     possession that dies with the account rather than a record
+                     that must outlive it"
+
+rnd.ts:3095-3100    authorMemberId → projectMember.id, onDelete: RESTRICT
+                    "this row is effort evidence and its author must stay
+                     resolvable forever"
+```
+
+`dailyLog` → `effortClaim` (unique, one claim per log, `rnd.ts:3966`) → `sliceLedgerEntry`. It is
+the input to the entire equity ledger. Putting it behind a row that cascade-dies with a user
+account puts equity evidence behind a possession — and a `restrict` on `dailyLog.videoId` does
+not fix it, it inverts it: the user→video cascade then fails and account deletion throws, which
+[the privacy surface](#10-privacy-part-3--shipped-behind-two-default-off-flags) just shipped.
+
+**`video.visibility: "team"` — dropped with it.** Not one enum value. `isSourceVerified` has three
+documented readers (`publishVideo`, content-review approve, feed candidate pool —
+`studio.ts:204-230`) and `video_gating_ck` (`studio.ts:432`) already refuses `investor_only` for
+youtube rows. A fourth visibility state needs all of them to agree, plus content review, plus
+feed exclusion.
+
+**`videoMilestone.milestoneId → rnd.milestone` — dropped.** `milestone` carries
+`plannedPayoutInCents` (`rnd.ts:6047`) and `escrowRelease` holds a notNull `milestoneId` with
+double-payout unique indexes (`rnd.ts:6157`, `:6183`). Pointing a watch-page roadmap label at
+that row makes a video label imply money. `studio.ts:50-57` is an explicit, itemised refusal of
+exactly this — read it before reopening the question.
+
+**`videoTeamMember.memberId → projectMember` — dropped as unnecessary.** `videoTeamMember` already
+has `linkedUserId` (nullable, `set null`, `studio.ts:587-604`) and the frontend renders nothing
+from it. Use the column that exists.
+
+**Feeding store sales and reviews into `demandSignalSnapshot`** stays out of this list entirely.
+It only produces signal once real ventures have shipped real products, which is what items 19–21
+are for.
 
 ---
 
@@ -331,7 +497,8 @@ A green `/health` proves nothing — it touches no database.
 
 The uncalled-wrapper audits. Note `--no-filename`, without which every name is prefixed by its path
 and the loop reports everything as uncalled — **and note the widened glob**, because the version
-that only globbed `src/lib/store/*.api.ts` is why item 7 above went unnoticed for so long:
+that only globbed `src/lib/store/*.api.ts` is why the seven R&D wrappers went unnoticed for so
+long:
 
 ```bash
 for h in $(rg --no-filename -o 'export function (use\w+)' -r '$1' src/hooks/ | sort -u); do
@@ -343,4 +510,14 @@ for f in $(rg --no-filename -o 'export (?:async )?function (\w+)' -r '$1' \
   rg -q "\b$f\b" src/hooks src/components src/app || echo "UNCALLED-API $f"; done
 ```
 
-The first is silent today. The second prints the seven names in item 7.
+**Both are silent today.** The second printed seven R&D names until those wrappers were wired
+(`listRoundBackers`, `listEquitySnapshots`, `verifyStatementChain`, `getAuditHashInput`,
+`updateWorkshopChatMessage`, `deleteWorkshopChatMessage`) or deleted as a duplicate
+(`getProjectEquity`). A name reappearing here is unverified code, not a style nit.
+
+Note the banner check uses `--files-without-match`; `rg -L` is `--follow` and silently reports
+the opposite of what it looks like it reports:
+
+```bash
+rg --files-without-match 'TRANSPORT:' src/components/home/research-and-development --glob '*.tsx'
+```

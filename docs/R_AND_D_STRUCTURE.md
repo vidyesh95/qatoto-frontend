@@ -518,10 +518,29 @@ bound to the mock project shape the detail page stopped reading, and its funding
 `escrowReleaseAmount` — a concept this contract retired, with nine backend routes now answering 404.
 Leaving it mounted would have printed fabricated escrow figures beside four wired tabs.
 
-`compensation-agreements-panel.tsx` and `compensation-statement-panel.tsx` are **still on disk and
-still built**; only their host tab and the six `MOCK_PROJECT_COMPENSATION_LEDGERS` fixtures are gone.
-Phase 5 remounts them against the shipped `…/compensation-agreements` and `…/compensation-periods`
-reads rather than a fixture. Everything below describes what that tab must render when it returns; the
+🗑️ **`compensation-statement-panel.tsx` was DELETED**, and the paragraph that used to stand here —
+"still on disk and still built, phase 5 remounts them" — was wrong about what phase 5 did. Phase 5
+did not remount the mock panel; it shipped `compensation-period-island.tsx` and
+`compensation-periods-island.tsx` against the real `…/compensation-periods` reads instead. The panel
+was the pre-integration draft of exactly that surface: it imported the mock types from
+`@/types/research-and-development`, every one of its four actions mutated `useState` and touched no
+network, and its own copy said "every figure here is a static mock this phase". The island covers
+finalize, countersign, supersede, the payment attestation and the member's confirmation, and exports
+server-side through `buildCompensationExportPath` — in BOTH formats now, since the helper always took
+`"csv" | "json"` and only CSV was ever offered.
+
+🗑️ **`compensation-agreements-panel.tsx` was DELETED TOO**, for the same reason and on the same
+evidence. It was mounted by nothing, both of its actions were `useState`, and — decisively — it was
+typed against a shape the backend has never sent: its status enum was
+`proposed|accepted|declined|superseded` where the wire is `proposed|active|superseded|withdrawn`,
+and its engagement kinds were `retainer|hourly|equity_only` where the wire is
+`employee|independent_contractor|unpaid_founder`. A panel that cannot parse a real response is a
+draft, not an unfinished feature.
+
+What replaced it is `compensation-tab.tsx` (which renders the agreements list off
+`…/compensation-agreements`) mounting `compensation-agreement-island.tsx` (propose / accept /
+decline / withdraw, role-gated, with real error and pending states). That does strictly more than
+the panel ever did — the panel had no propose and no withdraw at all. Everything below describes what that tab must render when it returns; the
 cross-project mechanics remain live at `/research-and-development/governance` (§4c.3) meanwhile.
 
 All money is integer cents formatted by `compensation-format.ts` (§11 wire format), never
@@ -567,12 +586,12 @@ ledger from `MOCK_PROJECT_PROOF_OF_EFFORT_LEDGERS` and the oversight fixture fro
 
 | #   | Section id     | Label        | Panel                        | Also carries                                                                              |
 | --- | -------------- | ------------ | ---------------------------- | ----------------------------------------------------------------------------------------- |
-| 1   | `slice-ledger` | Slice Ledger | `slice-ledger-tab`           | `member-slice-breakdown-card`, `rate-lock-panel` 🏝️ (§14.4), `pie-bake-panel` 🏝️ (§14.6)  |
+| 1   | `slice-ledger` | Slice Ledger | `slice-ledger-tab`           | `rate-lock-panel` 🏝️ (§14.4), `pie-bake-panel` 🏝️, `equity-snapshot-history-island` 🏝️    |
 | 2   | `verification` | Verification | `verification-pipeline-tab`  | `claim-verification-card`, `physical-work-receipt-card`, `verification-override-panel` 🏝️ |
 | 3   | `disputes`     | Disputes     | `dispute-window-tab`         | `dispute-window-entry-card` 🏝️, `dispute-case-card` 🏝️, `raise-dispute-sheet` 🏝️          |
 | 4   | `integrations` | Integrations | `integration-consent-tab` 🏝️ | connect / scope / revoke (§14.2)                                                          |
 | 5   | `optimization` | Optimization | `optimization-tab`           | —                                                                                         |
-| 6   | `audit-trail`  | Audit Trail  | `project-audit-trail-tab`    | `chain-verification-panel` 🏝️ (§14.6)                                                     |
+| 6   | `audit-trail`  | Audit Trail  | `project-audit-trail-tab`    | `audit-trail-entries-island` 🏝️ → `audit-hash-input-inspector` 🏝️ (§14.6)                 |
 
 Mechanism spec: [PROOF_OF_EFFORT_SPEC.md](PROOF_OF_EFFORT_SPEC.md) §3 (Slicing Pie math) and §4
 (verification pipeline, 24-hour dispute window, physical receipts). Backend §9 is **✅ shipped in
@@ -1417,13 +1436,15 @@ sections/
 ├── daily-logs-feed.tsx                         renders the wired page's logs; the member filter is gone (§18)
 ├── team-tab.tsx · funding-tab.tsx
 ├── compensation-format.ts                      cents/basis-points/minutes → labels, timezone-free
-├── compensation-agreements-panel.tsx       🏝️  propose / accept / decline (§14.3)
-├── compensation-statement-panel.tsx        🏝️  periods, lines, payments, finalize, export
+├── compensation-agreement-island.tsx       🏝️  propose / accept / decline / withdraw (§14.3)
 ├── verification-override-panel.tsx         🏝️  human review of an automated verdict (§14.1)
 ├── integration-consent-tab.tsx             🏝️  connect / scope / revoke (§14.2)
 ├── rate-lock-panel.tsx                     🏝️  propose / review / lock / history (§14.4)
 ├── pie-bake-panel.tsx                      🏝️  checklist + frozen cap table (§14.6)
-├── chain-verification-panel.tsx            🏝️  verify chain + hash-input inspector (§14.6)
+├── audit-hash-input-inspector.tsx          🏝️  per-entry RFC 8785 bytes, RE-HASHED IN THE BROWSER
+├── round-backers-island.tsx                🏝️  who backed a round; collapsed, one request per round
+├── equity-snapshot-history-island.tsx      🏝️  the nightly recalculations behind the current pie
+├── workshop-chat-message-island.tsx        🏝️  one message row; the author's own edit / delete
 ├── paper-moderation-queue.tsx              🏝️  formal-track review queue (§14.6)
 ├── problem-map-canvas.tsx                  🏝️  pins, selection, category filter, report list state
 ├── problem-report-list.tsx                     renders only inside that island; no directive

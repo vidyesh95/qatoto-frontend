@@ -185,6 +185,37 @@ flowchart TD
 | Orders / disputes | refunds, chargebacks (server-authorized)   |       |
 | Funding / pitches | review raises, verify claims               |       |
 
+### 4.5a Freight lanes — ✅ built (`/admin/freight`)
+
+Rate cards price a lane; customs dwell estimates give it an arrival window. A lane needs both, and
+until it has both the buyer's delivery sheet reports an absence. Eight backend routes under
+`/commerce/admin/{freight-rate-cards,customs-dwell-estimates}`, all `moderate_commerce`, all six
+writes idempotent. Body in `src/components/admin/freight/`.
+
+**The rate tables ship EMPTY by design (A36)**, so an empty console is the correct state, not a
+failed load — the copy says so, because a console that looks broken when it is merely unloaded
+sends someone debugging a working system.
+
+Three rules this console exists to enforce, each a way the backend silently produces a useless
+record if you build the obvious form:
+
+| Rule                                   | Why it is not a UI preference                                                                                                                                                                                                                                                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `validFrom` must be in the FUTURE      | It is optional on the wire and defaults to now. Bands are editable only while a card is staged (`active` **and** `validFrom > now`), and `validFrom` is in no PATCH schema — so a card authored with a blank start is frozen at the instant it exists, permanently, and the only remedy is withdraw-and-rewrite.                     |
+| `bandsEditable` is READ, never derived | The server computes it with the same predicate its 409 uses, against one `now` per request. Deriving it in the browser puts the deciding rule in two codebases and lets clock skew disagree.                                                                                                                                         |
+| Creating a card SUPERSEDES silently    | There is no `supersedesRateCardId` anywhere in the product. An active card on the same `(provider, origin, destination, mode, currency)` is closed in the same transaction, reported once as `supersededRateCardId` on the create response. The composer runs a pre-flight and makes the operator acknowledge the incumbent by name. |
+
+Plus one derived signal the server does not offer: a card with **no band at
+`minBillableWeightGrams: 0`** answers `below_smallest_break` for every small consignment, which
+reaches the buyer as an EMPTY options list — indistinguishable from a lane with no card at all. The
+console computes that from the nested `breaks[]` and labels it as derived.
+
+**What the backend cannot answer, and the console says so rather than faking:** no single-card read
+(so no deep links — one page, expandable rows), cursor pagination with no total and no previous
+cursor (load-more, and it never claims a count), no server-side "which cards are still editable"
+filter (that view filters within loaded rows and admits it), and no band delete (removal is a
+whole-ladder `PATCH`, and the set can never reach zero).
+
 ### 4.6 Platform — 🗄️ Drizzle Studio for now (not built)
 
 | Piece     | Notes                               | Keep? |
@@ -256,6 +287,7 @@ src/app/(admin)/admin/
   reports/                 # 4.4
   store/                   # 4.5
     orders/
+  freight/                 # 4.5a ✅ built — rate cards + customs dwell estimates
   audit/                   # 4.6
   settings/
 ```

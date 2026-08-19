@@ -1,110 +1,16 @@
-import type { CompensationPeriod, GovernanceSummary } from "@/types/research-and-development";
-
-// Cross-project governance rollup for the /research-and-development/governance
-// stage page (R_AND_D_STRUCTURE.md §4c.3, backend §11h). Static mock only.
-//
-// The whole shape of this file is a privacy decision, not a convenience. A
-// month-end statement line names a person and what they are owed; pay data is
-// personal data under the GDPR and specially sensitive in several member
-// states. So the cross-project surface publishes AGGREGATES AND MECHANICS,
-// NEVER PEOPLE — there is no member id, no user id, no name and no per-member
-// amount anywhere below. Per-member lines stay on the per-project governance
-// tab (§5.5), behind membership, together with the finalize / countersign /
-// record-payment / confirm / export actions.
-//
-// Counts are derived by hand from the six ledgers in
-// research-and-development-compensation-mocks.ts and the funding rounds in
-// research-and-development-mocks.ts. `committedFundingInCents` is the sum of
-// COMMITTED pledges across every round: no card is charged, no funds are held,
-// and no label rendered from it may imply a rail, a hold, a charge or a fee.
-export const MOCK_GOVERNANCE_SUMMARY: GovernanceSummary = {
-  rows: [
-    {
-      projectId: "solar-cold-storage",
-      projectName: "SolarChill Cold Storage",
-      openPeriodCount: 1,
-      finalizedPeriodCount: 2,
-      supersededPeriodCount: 1,
-      countersignedPeriodCount: 2,
-      committedFundingInCents: 145_000,
-      currency: "USD",
-      investorConfidencePoints: 78,
-    },
-    {
-      projectId: "modular-water-purification",
-      projectName: "ClearFlow Modular Purification",
-      openPeriodCount: 1,
-      finalizedPeriodCount: 1,
-      supersededPeriodCount: 0,
-      countersignedPeriodCount: 1,
-      committedFundingInCents: 490_000,
-      currency: "USD",
-      investorConfidencePoints: 64,
-    },
-    {
-      projectId: "agricultural-drone-kits",
-      projectName: "AgriFly Drone Kits",
-      openPeriodCount: 1,
-      finalizedPeriodCount: 1,
-      supersededPeriodCount: 0,
-      countersignedPeriodCount: 1,
-      committedFundingInCents: 1_240_000,
-      currency: "USD",
-      investorConfidencePoints: 71,
-    },
-    {
-      projectId: "prefab-housing-panels",
-      projectName: "Bayanihan Build Panels",
-      openPeriodCount: 1,
-      finalizedPeriodCount: 1,
-      supersededPeriodCount: 0,
-      // Finalized but never countersigned — a second admin has not signed it.
-      countersignedPeriodCount: 0,
-      committedFundingInCents: 10_300_000,
-      currency: "USD",
-      // The confidence job has never run for this project. Null, never 0 —
-      // a 0 would publish "no confidence" as a finding about the project
-      // rather than about the job.
-      investorConfidencePoints: null,
-    },
-    {
-      projectId: "e-waste-recycling-line",
-      projectName: "Sankofa Circuits Recovery",
-      openPeriodCount: 1,
-      finalizedPeriodCount: 1,
-      supersededPeriodCount: 0,
-      countersignedPeriodCount: 1,
-      committedFundingInCents: 22_250_000,
-      currency: "USD",
-      investorConfidencePoints: 76,
-    },
-    {
-      projectId: "medical-cold-chain-packaging",
-      projectName: "ThermaSure Med Packaging",
-      openPeriodCount: 1,
-      finalizedPeriodCount: 1,
-      supersededPeriodCount: 0,
-      countersignedPeriodCount: 1,
-      committedFundingInCents: 94_000_000,
-      currency: "USD",
-      investorConfidencePoints: 91,
-    },
-  ],
-  // Keys, not English sentences — the client owns the copy so the web, Android
-  // and iOS clients each render it in their own locale.
-  disclosureKeys: [
-    "platform_holds_no_funds",
-    "verification_never_reduces_cash",
-    "statement_is_gross_only",
-  ],
-  asOf: "2026-07-26T04:00:00Z",
-};
+import type { CompensationPeriod } from "@/types/research-and-development";
 
 // The worked example the governance page walks through. AUTHORED SAMPLE DATA,
 // deliberately: it is not lifted from any project's ledger, and the member
-// labels below are role descriptions rather than people, because publishing a
-// real member's cash figure on a public cross-project page is exactly what the
-// rollup above exists to avoid.
+// labels below are role descriptions rather than people. Publishing a real
+// member's cash figure on a public cross-project page is the thing this whole
+// surface is shaped to avoid — pay data is personal data under the GDPR and
+// specially sensitive in several member states, so /governance publishes
+// AGGREGATES AND MECHANICS, NEVER PEOPLE. Per-member lines stay on the
+// per-project compensation tab, behind membership.
+//
+// `MOCK_GOVERNANCE_SUMMARY` used to sit above this and was DELETED: the real
+// rollup ships from GET /governance/summary and nothing imported the fixture.
 //
 // It reuses the shipped CompensationPeriod shape so the same
 // compensation-format.ts helpers render it, and it shows one of each line kind:

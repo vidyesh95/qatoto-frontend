@@ -43,7 +43,6 @@ export const rndKeys = {
 
   // --- Proof of Effort -------------------------------------------------------
   proofOfEffort: (projectSlug: string) => ["rnd", "poe", projectSlug] as const,
-  equity: (projectSlug: string) => ["rnd", "poe", projectSlug, "equity"] as const,
   equitySnapshots: (projectSlug: string) => ["rnd", "poe", projectSlug, "snapshots"] as const,
   sliceLedger: (projectSlug: string) => ["rnd", "poe", projectSlug, "ledger"] as const,
   claims: (projectSlug: string, filter: ClaimListFilter) =>
@@ -63,6 +62,8 @@ export const rndKeys = {
   optimizationSuggestions: (projectSlug: string) =>
     ["rnd", "poe", projectSlug, "optimization"] as const,
   auditTrail: (projectSlug: string) => ["rnd", "poe", projectSlug, "audit"] as const,
+  auditHashInput: (projectSlug: string, entryId: string) =>
+    ["rnd", "poe", projectSlug, "audit", entryId, "hash-input"] as const,
   pieBake: (projectSlug: string) => ["rnd", "poe", projectSlug, "pie-bake"] as const,
 
   // --- Compensation ----------------------------------------------------------
@@ -74,11 +75,14 @@ export const rndKeys = {
     ["rnd", "compensation", projectSlug, "period", periodId] as const,
   projectCompensation: (projectSlug: string) =>
     ["rnd", "compensation", projectSlug, "summary"] as const,
+  compensationChainVerification: (projectSlug: string, periodId: string) =>
+    ["rnd", "compensation", projectSlug, "period", periodId, "verify"] as const,
 
   // --- Funding ---------------------------------------------------------------
   fundingRounds: (projectSlug: string) => ["rnd", "funding", projectSlug, "rounds"] as const,
   fundingRound: (roundId: string) => ["rnd", "funding", "round", roundId] as const,
   pledgeOptions: (roundId: string) => ["rnd", "funding", "round", roundId, "options"] as const,
+  roundBackers: (roundId: string) => ["rnd", "funding", "round", roundId, "backers"] as const,
   myPledges: () => ["rnd", "funding", "pledges", "mine"] as const,
   milestones: (projectSlug: string) => ["rnd", "funding", projectSlug, "milestones"] as const,
 

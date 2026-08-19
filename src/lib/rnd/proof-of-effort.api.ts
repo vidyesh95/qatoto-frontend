@@ -92,14 +92,6 @@ export function getProofOfEffortSummary(
   return getJson(projectPath(projectSlug, "/proof-of-effort"), ProofOfEffortSummarySchema, options);
 }
 
-/** The current cap table. Shares sum to exactly 10000 basis points unless degenerate. */
-export function getProjectEquity(
-  projectSlug: string,
-  options?: RequestOptions,
-): Promise<ActionResponse<EquitySnapshot | null>> {
-  return getJson(projectPath(projectSlug, "/equity"), EquitySnapshotSchema.nullable(), options);
-}
-
 /** The history of nightly recalculations, newest first. */
 export function listEquitySnapshots(
   projectSlug: string,

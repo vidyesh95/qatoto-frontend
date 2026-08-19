@@ -37,7 +37,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import StoreSheet from "@/components/home/store/shared/store-sheet";
-import { formatCentsLabel, countryLabelFromCode } from "@/lib/store/format";
+import { formatCentsLabel, countryLabelFromCode, formatGramsLabel } from "@/lib/store/format";
 import { FREIGHT_TRANSPORT_MODE_ICONS, FREIGHT_TRANSPORT_MODE_LABELS } from "@/lib/store/labels";
 import {
   CHARGEABLE_WEIGHT_BASIS_LABELS,
@@ -412,11 +412,6 @@ function legLabelForSequence(legs: readonly FreightLegPlan[], legSequence: numbe
 function formatPlaceLabel(countryCode: string, locality: string | null): string {
   const countryLabel = countryLabelFromCode(countryCode);
   return locality === null ? countryLabel : `${locality}, ${countryLabel}`;
-}
-
-/** Grams on the wire; kilograms are what a buyer reads a freight weight in. */
-function formatGramsLabel(grams: number): string {
-  return `${(grams / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} kg`;
 }
 
 function formatIsoDayLabel(isoInstant: string): string {

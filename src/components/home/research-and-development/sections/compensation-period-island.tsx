@@ -1,6 +1,7 @@
 // TRANSPORT: client-query — "use client" island. Reads GET …/compensation-periods/:periodId
-// on demand and writes /finalize, /countersign, /supersede, the payment attestation and
-// the member's confirmation. Needs QueryProvider, which (home)/layout.tsx mounts.
+// and GET …/compensation-periods/:periodId/verify on demand, and writes /finalize,
+// /countersign, /supersede, the payment attestation and the member's confirmation.
+// Needs QueryProvider, which (home)/layout.tsx mounts.
 "use client";
 
 import { useState } from "react";
@@ -11,6 +12,7 @@ import {
 } from "@/components/home/research-and-development/sections/mutation-feedback";
 import {
   useCompensationPeriodQuery,
+  useStatementChainVerificationQuery,
   useConfirmCompensationPaymentMutation,
   useCountersignCompensationPeriodMutation,
   useFinalizeCompensationPeriodMutation,
@@ -33,6 +35,7 @@ import {
   formatIsoInstant,
   formatMoneyFromCents,
   formatSignedEquityFromBasisPoints,
+  shortenHashForDisplay,
 } from "@/lib/rnd/format";
 import { newIdempotencyKey } from "@/lib/idempotency";
 
@@ -96,8 +99,14 @@ export default function CompensationPeriodIsland({
   const [referenceNote, setReferenceNote] = useState("");
   const [paymentIdempotencyKey] = useState(newIdempotencyKey);
   const [supersedeReason, setSupersedeReason] = useState("");
+  const [isChainVerificationRequested, setIsChainVerificationRequested] = useState(false);
 
   const periodQuery = useCompensationPeriodQuery(projectSlug, isOpen ? periodId : undefined);
+  const chainVerificationQuery = useStatementChainVerificationQuery(
+    projectSlug,
+    periodId,
+    isChainVerificationRequested,
+  );
   const finalizeMutation = useFinalizeCompensationPeriodMutation(projectSlug);
   const countersignMutation = useCountersignCompensationPeriodMutation(projectSlug);
   const supersedeMutation = useSupersedeCompensationPeriodMutation(projectSlug);
@@ -343,7 +352,35 @@ export default function CompensationPeriodIsland({
                 Export CSV for payroll
               </a>
             )}
+
+            {/*
+              BOTH FORMATS, because `buildCompensationExportPath` has always taken
+              `format: "csv" | "json"` and only CSV was ever offered. A payroll provider
+              wants the CSV; anything programmatic wants the JSON, and neither should be
+              rebuilt in the browser from the rendered labels — the export carries the raw
+              integers, not "$1,980".
+            */}
+            {isAdmin && periodStatus === "finalized" && (
+              <a
+                href={`${API_BASE_URL}${buildCompensationExportPath(projectSlug, periodId, "json")}`}
+                className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium"
+              >
+                Export JSON
+              </a>
+            )}
+
+            {isAdmin && periodStatus === "finalized" && !isChainVerificationRequested && (
+              <button
+                type="button"
+                onClick={() => setIsChainVerificationRequested(true)}
+                className="cursor-pointer rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium"
+              >
+                Verify the statement chain
+              </button>
+            )}
           </div>
+
+          {isChainVerificationRequested && renderChainVerification()}
 
           {isFounder && periodStatus === "finalized" && (
             <form
@@ -387,4 +424,60 @@ export default function CompensationPeriodIsland({
       {firstError !== undefined && <MutationErrorNotice error={firstError.apiError} />}
     </div>
   );
+
+  /**
+   * THE VERDICT IS THE STATUS CODE, NOT A FIELD.
+   *
+   * `StatementChainVerification` carries `periodsChecked`, the sequence bounds and the head
+   * hash — and NO boolean. A break arrives as `409 STATEMENT_CHAIN_BROKEN`. So the success
+   * branch reports what was re-walked and the failure branch prints the backend's own code
+   * and message; neither invents a verdict the wire did not carry.
+   *
+   * The failure branch is styled as an alarm on purpose. A broken statement chain means a
+   * finalized statement no longer agrees with its own hash, which is a claim about money
+   * that somebody can no longer prove — it is not a loading problem and reloading will not
+   * clear it.
+   */
+  function renderChainVerification() {
+    if (chainVerificationQuery.isPending) {
+      return <p className="text-xs text-muted-foreground">Re-walking the statement chain…</p>;
+    }
+
+    const verificationError =
+      chainVerificationQuery.error instanceof ApiRequestError
+        ? chainVerificationQuery.error.apiError
+        : null;
+
+    if (verificationError !== null) {
+      return (
+        <div className="space-y-1 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <p className="font-medium">The statement chain did not verify.</p>
+          <p className="text-xs">
+            {verificationError.code} · {verificationError.message}
+          </p>
+          <p className="text-xs">
+            This is not a display problem. Report it rather than retrying — a finalized statement is
+            never edited, so a break means something changed that should not have.
+          </p>
+        </div>
+      );
+    }
+
+    const verification = chainVerificationQuery.data;
+    if (verification === undefined) return null;
+
+    return (
+      <div className="space-y-1 rounded-2xl border border-[#00696E]/30 bg-[#00696E]/5 p-3 text-sm">
+        <p className="font-medium text-[#00696E]">
+          {verification.periodsChecked} statement
+          {verification.periodsChecked === 1 ? "" : "s"} re-walked, and every one checked out.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Sequences {verification.firstSequence ?? "—"} to {verification.lastSequence ?? "—"}
+          {verification.headStatementHash !== null &&
+            ` · head ${shortenHashForDisplay(verification.headStatementHash)}`}
+        </p>
+      </div>
+    );
+  }
 }

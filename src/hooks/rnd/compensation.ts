@@ -22,6 +22,7 @@ import {
   recordCompensationPayment,
   supersedeCompensationPeriod,
   withdrawCompensationAgreement,
+  verifyStatementChain,
   type ProposeAgreementInput,
   type RecordPaymentInput,
 } from "@/lib/rnd/compensation.api";
@@ -41,6 +42,37 @@ export function useCompensationPeriodQuery(projectSlug: string, periodId: string
       return unwrap(await getCompensationPeriod(projectSlug, periodId));
     },
     enabled: Boolean(periodId),
+  });
+}
+
+/**
+ * Re-walk the statement chain for one period.
+ *
+ * **THERE IS NO `isValid` TO RENDER, AND THAT IS THE CONTRACT.**
+ * `StatementChainVerificationSchema` is four facts about what was checked — `periodsChecked`,
+ * the sequence bounds and the head hash. A BREAK IS A `409 STATEMENT_CHAIN_BROKEN`, never a
+ * `200` carrying `valid: false`. So success renders the four facts and failure renders the
+ * backend's own code and message; a component must never synthesize a green badge out of the
+ * mere absence of an error.
+ *
+ * `retry: false` OVERRIDES THE CLIENT DEFAULT OF 1, for two independent reasons. A 409 here
+ * is a FINDING and re-asking cannot change it — it would only turn one honest alarm into two
+ * requests. And the route sits behind `chainVerifyLimiter`, so an automatic retry spends a
+ * member's allowance on a question already answered.
+ *
+ * ON DEMAND, NEVER ON MOUNT: `isRequested` comes from a button. Verifying every period a page
+ * lists would be a re-walk per period for a check nobody asked for.
+ */
+export function useStatementChainVerificationQuery(
+  projectSlug: string,
+  periodId: string,
+  isRequested: boolean,
+) {
+  return useQuery({
+    queryKey: rndKeys.compensationChainVerification(projectSlug, periodId),
+    queryFn: async () => unwrap(await verifyStatementChain(projectSlug, periodId)),
+    enabled: isRequested,
+    retry: false,
   });
 }
 
