@@ -31,4 +31,26 @@ export const accountKeys = {
    * entry. No user id, for the reason the two keys above state — the session is the user.
    */
   watchTime: (timeZone: string) => ["account", "watch-time", timeZone] as const,
+
+  /**
+   * The signed-in viewer's latest data export.
+   *
+   * NO REQUEST ID IN THE KEY, and that is a decision rather than an omission: there is one
+   * export per account and `GET /users/me/export` takes no id, so keying on the id a POST
+   * happened to return would strand the poll the moment the panel remounts or the tab
+   * reloads — the exact conditions a dropdown lives under.
+   *
+   * No user id either, for the reason the three keys above state.
+   */
+  dataExport: () => ["account", "data-export"] as const,
 };
+
+/**
+ * How often the panel re-asks while an archive is building.
+ *
+ * THREE SECONDS, NOT THE TWO `usePaymentIntentQuery` USES, and the difference is stated
+ * rather than left to drift: a payment outbox dispatch resolves in a round trip, while an
+ * export walks every table referencing one person and gzips the result. Polling faster
+ * would spend the caller's rate limit re-reading `pending`.
+ */
+export const DATA_EXPORT_POLL_INTERVAL_MS = 3_000;

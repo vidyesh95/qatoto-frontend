@@ -16,7 +16,23 @@ type PasskeySignInState =
   | { status: "authenticating" }
   | { status: "error"; message: string };
 
-export default function SignIn() {
+/**
+ * `hasJustDeletedAccount` renders the one thing a person who just closed their account
+ * needs to know, at the one moment they can act on it.
+ *
+ * IT PRINTS NO DATE, and that is a constraint rather than a choice: this page is signed
+ * out, so it has no authenticated source for the scheduled anonymization date. The email
+ * sent at deactivation carries it and is the authoritative copy.
+ *
+ * SIGNING IN IS THE WHOLE CANCEL. There is no link to click and no token to find — the
+ * backend clears the deactivation on any successful sign-in inside the window — so the copy
+ * says exactly that rather than promising a step that does not exist.
+ */
+export default function SignIn({
+  hasJustDeletedAccount = false,
+}: {
+  readonly hasJustDeletedAccount?: boolean;
+}) {
   const router = useRouter();
   const [passkeySignInState, setPasskeySignInState] = useState<PasskeySignInState>({
     status: "idle",
@@ -68,6 +84,12 @@ export default function SignIn() {
           />
         </Link>
         <h1 className="mx-5 text-3xl">Sign in</h1>
+        {hasJustDeletedAccount ? (
+          <output className="mx-5 block rounded-xl border border-black/10 bg-card p-3 text-sm text-secondary-foreground">
+            Your account is deactivated. Sign in again within 30 days and it comes back
+            automatically — there is nothing else to do. After that it cannot be restored.
+          </output>
+        ) : null}
       </header>
       <section className="space-y-4 p-4">
         <button

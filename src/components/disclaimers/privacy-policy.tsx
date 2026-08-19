@@ -151,13 +151,21 @@ export default function PrivacyPolicy() {
             to delete your account and erase your identity, or to restrict what we do with your
             information while a question about it is being resolved. You can object to us using your
             information where we rely on our legitimate interests, and you can withdraw any
-            permission you have given us. Most of these start from Settings → Your data &amp;
-            privacy in your account, and all of them can be made by writing to{" "}
-            {PRIVACY_CONTACT_EMAIL}. We will answer within {PRIVACY_REQUEST_RESPONSE_WINDOW_LABEL}.
-            We may have to ask you to confirm who you are first, so that we do not act on someone
-            else's say-so about your account. Some records — the ones we are required to keep, and
-            the shared records of work done on a project with other people — survive the deletion of
-            an account, but they are kept without your name attached to them.
+            permission you have given us.{" "}
+            <strong>
+              Getting a copy of your data and deleting your account are both self-serve and
+              immediate
+            </strong>{" "}
+            from Settings → Your data &amp; privacy: the download is prepared for you in the
+            background, and a deletion takes effect the moment you confirm it — you then have thirty
+            days to change your mind, and simply signing in again is all it takes. The remaining
+            rights — correction, restriction, and objection — are made by writing to{" "}
+            {PRIVACY_CONTACT_EMAIL}, and we answer those within{" "}
+            {PRIVACY_REQUEST_RESPONSE_WINDOW_LABEL}. We may have to ask you to confirm who you are
+            first, so that we do not act on someone else's say-so about your account. Some records —
+            the ones we are required to keep, and the shared records of work done on a project with
+            other people — survive the deletion of an account, but they are kept without your name
+            attached to them.
           </dd>
         </div>
         <div>

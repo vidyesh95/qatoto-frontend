@@ -7,10 +7,10 @@ code and `git log` are the record of what was built and why. Nothing below is do
 
 ## At a glance
 
-**Blocked — one manual step, and a whole surface 500s until it happens**
+**Blocked — nothing, as it turns out**
 
-1. [`pnpm db:generate` in `qatoto-backend`](#1-pnpm-dbgenerate-needs-a-human-at-a-tty) — needs a
-   human at a TTY
+1. ~~[`pnpm db:generate`](#1-pnpm-dbgenerate-needs-a-human-at-a-tty--stale-and-it-was-stale-when-written)~~ — **stale**; the
+   migration exists and the tables are live
 
 **Frontend**
 
@@ -25,7 +25,7 @@ code and `git log` are the record of what was built and why. Nothing below is do
 
 **Backend (`qatoto-backend`)**
 
-10. [Privacy Part 3 — deletion, export, anonymization](#10-privacy-part-3--deletion-export-anonymization)
+10. [Privacy Part 3 — SHIPPED, behind two default-off flags](#10-privacy-part-3--shipped-behind-two-default-off-flags)
 11. [`phone_number` column](#11-phone_number-column) — the panel calls a route that does not exist
 12. [`updatedAt` on the store card schemas](#12-updatedat-on-the-store-card-schemas)
 13. [Message attachments](#13-message-attachments)
@@ -45,20 +45,31 @@ contracts to do, two §14 calls, four freight/moderation calls, the Postgres cei
 
 ## Blocked
 
-### 1. `pnpm db:generate` needs a human at a TTY
+### 1. ~~`pnpm db:generate` needs a human at a TTY~~ — STALE, and it was stale when written
 
-The three watch-metrics tables are written in `src/db/schema/home.ts` and no migration exists for
-them. drizzle-kit prompts a create-vs-rename question that cannot be answered non-interactively —
-**and it prompts on a clean tree too**, so there is pre-existing snapshot drift to resolve while
-you are in there.
+**Checked against the live database on 2026-08-19: nothing here is true.**
+`drizzle/0124_home_watch_metrics.sql` exists, is journalled, and all three tables —
+`user_activity_hour`, `user_watch_daily`, `platform_activity_hour_daily` — are present in Postgres.
+`GET /users/me/watch-time` and the five `GET /admin/metrics/*` endpoints are not 500ing for the
+reason claimed here.
 
-Until it runs and `pnpm db:migrate` has followed it, the tables do not exist and
-`GET /users/me/watch-time` plus all five `GET /admin/metrics/*` endpoints 500. The frontend for
-both shipped and is waiting.
+**And `db:generate` is the wrong tool regardless.** Every migration since `0046` is hand-written:
+the snapshots in `drizzle/meta/` stop at `0054`, so drizzle-kit tries to recreate four phases of
+tables and prompts questions nobody can answer. The workflow that works, and that `0126` used:
 
-Then run `pnpm db:verify-watch-metrics-constraints`. It proves the bounds and, more importantly,
-that the **composite primary keys** landed: without them the view beacon's `ON CONFLICT DO UPDATE`
-inserts instead of adding, and watch time silently multiplies by the beacon count.
+```bash
+pnpm exec drizzle-kit export --sql     # canonical DDL, no database connection
+# extract the new statements by hand into drizzle/NNNN_name.sql, with --> statement-breakpoint
+# append an entry to drizzle/meta/_journal.json (it has NO trailing newline — keep it that way)
+pnpm db:migrate
+```
+
+Also: `.oxfmtrc.json` now ignores `drizzle`. Without that, `pnpm fmt` reformats the snapshot files
+and buries a hand-written migration in 5,000 lines of churn.
+
+Still worth doing: `pnpm db:verify-watch-metrics-constraints`, which proves the composite primary
+keys landed — without them the view beacon's `ON CONFLICT DO UPDATE` inserts instead of adding, and
+watch time silently multiplies by the beacon count.
 
 ---
 
@@ -157,33 +168,46 @@ code. Use the widened loop under [Verification](#verification), not the store-on
 
 ## Backend (`qatoto-backend`)
 
-### 10. Privacy Part 3 — deletion, export, anonymization
+### 10. Privacy Part 3 — SHIPPED, behind two default-off flags
 
-The FK graph already decided the shape (cascade rule **R2**, `src/db/schema/rnd.ts`): 55 tables
-hold `restrict` FKs into `user` and ~66 are protected by `BEFORE UPDATE OR DELETE` triggers, so
-account deletion is an **anonymization** flow, not a delete. Better Auth's `deleteUser` plugin
-stays **off** — it would attempt exactly the hard delete the triggers exist to prevent.
+Built and verified against the live database on 2026-08-19. `POST /users/me/deletion-request`
+deactivates immediately, revokes every session and schedules the anonymization 30 days out;
+**signing in is the cancel** (`databaseHooks.session.create.before` in the backend's
+`src/lib/auth.ts`), which is why there is no cancel endpoint and no pending-deletion UI — a
+signed-in session implies an active account. `POST|GET /users/me/export` builds a gzipped JSON
+archive into the private B2 bucket and hands back a 300-second presigned link. Both panels are
+wired; `lib/privacy-request.ts` survives only as the residual-rights link and the failure fallback.
 
-**Verify this first, it may invalidate the whole design:** `projectAuditEntry.actorNameSnapshot`
-sits _inside_ a chain hash and can never be edited. If real names are written there today,
-anonymization and the hash chain are mutually exclusive, and the write path has to become
-pseudonymous before any deletion feature ships.
+**Two things are still switched off**, and both are deliberate:
 
-Then:
+- `ACCOUNT_ANONYMIZATION_ENABLED` — default false. The job runs its full selection and logs the
+  per-table counts it would touch, writing nothing. **Flip it only after reading those counts on
+  real accounts.** This is the first irreversible scheduled job in the codebase.
+- `DATA_EXPORT_ENABLED` — default false, and it gates the ROUTE (503), not the job. Until it is
+  set, the panel renders the mailbox fallback.
 
-- `user.deactivatedAt` + `user.anonymizedAt` — there is no lifecycle column at all today, so an
-  account has exactly two states: exists, or row gone.
-- `POST /users/me/deletion-request`, `POST /users/me/deletion-request/cancel`, and a scheduled
-  anonymization job at grace expiry. **The shipped frontend copy commits to 30 days, cancellable.**
-- `GET /users/me/export` — Art. 15/20. Nothing like it exists.
-- A scrub over `name` / `email` / `image` / `handle` / `locationLabel`, revocation of every
-  `session`, `account` and `passkey` row, and a decision on `session.ipAddress` /
-  `session.userAgent` and the `viewerFingerprint` tables.
-- It must delete `user_activity_hour` and `user_watch_daily` outright — behavioural, no
-  legal-retention argument, not covered by the Art. 17(3) exemptions that keep the ledger.
+**The audit that keeps it honest**, and it must be run after ANY migration that adds a `user`
+reference — a table added next year is PII that survives an erasure, silently:
 
-The frontend controls are live and are all `mailto:` today, so every day this is unbuilt is a day
-somebody answers these by hand.
+```bash
+pnpm db:verify-anonymization-coverage   # 151 references, 0 missing, 0 stale
+pnpm db:smoke-privacy                   # dry run; add ACCOUNT_ANONYMIZATION_ENABLED=true to erase
+pnpm db:smoke-data-export               # real upload, real presigned download, real purge
+```
+
+The scrub is driven by ITERATING `src/modules/auth/privacy/anonymization-manifest.ts` — 31
+deletes, 43 null-outs, 77 documented retentions. Nothing re-states a table name, which is what
+stops the manifest being right while the job is wrong.
+
+**What is left:**
+
+- Neither flag has been flipped in production, so no real account has been erased or exported.
+- **No screen has been watched in a browser.** Both panels typecheck, lint, build and are wired,
+  and that is not the same thing as having seen the download button hand over a file.
+- `community_forum_reply` gets `'[removed]'` rather than a real tombstone — its `body` is NOT NULL
+  with a length CHECK and its `hidden` state needs a moderator id a job does not have. A proper
+  `removed` state is the follow-up.
+- `docs/BACKEND_STRUCTURE.md` still has no privacy section.
 
 ### 11. `phone_number` column
 
