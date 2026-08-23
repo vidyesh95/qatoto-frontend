@@ -114,6 +114,15 @@ export type VideoCardProps = {
    * `GET /feed/videos` already embeds `viewerState` on every row.
    */
   hasSaved?: boolean;
+  /**
+   * The creator's backend row id, for the kebab menu's "don't recommend channel".
+   *
+   * NOT INTERCHANGEABLE WITH `channelHref`. That prop is a PATH built from the creator's
+   * handle, and it is omitted entirely when a creator has none — a link to `/channel/null`
+   * being worse than no link. The mute route addresses the creator by id, so it needs this.
+   * Optional for the same reason `videoId` is: the anime mocks carry neither.
+   */
+  creatorId?: string;
   verified?: boolean;
   hoverBg?: string;
   isChannelLive?: boolean;

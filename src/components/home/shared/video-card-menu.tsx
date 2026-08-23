@@ -1,58 +1,73 @@
 "use client";
 
-// TRANSPORT: client-query — bookmark and share, wired to `/videos/:videoId/*`.
+// TRANSPORT: client-query — bookmark, share, not-interested, channel mute, save-to-playlist and
+// report, wired to `/videos/:videoId/*`, `/creators/:creatorId/mute` and `/playlists/*`.
+// Add-to-queue is the one row that talks to nothing, by design (see `queue-context.tsx`).
 //
 // A CLIENT ISLAND RATHER THAN A CLIENT CARD. `<VideoCard>` is a server component rendered by
 // eight surfaces, and `recommended-section.tsx` is a pure-server consumer that making the card
 // itself `"use client"` would drag into the bundle for the sake of one kebab.
 //
-// TWO OF THE EIGHT ITEMS ARE REAL. See INERT_MENU_ITEMS below for why the other six are not, and
-// why they are kept anyway.
+// SEVEN ROWS, ALL WIRED. Download is the eighth and is commented out rather than rendered —
+// see the block below for why that is a comment and not a deletion.
+//
+// THE TWO PREFERENCES CANNOT REMOVE THE CARD, and the copy is written around that. This
+// component renders INSIDE the card it would have to delete, and their mutations deliberately
+// do not invalidate the feed — an infinite query pinned at `staleTime: Infinity` would lose
+// every page the reader scrolled. So the row becomes "we won't recommend this — Undo" and the
+// card leaves on the next real load. The alternative, swapping the card for a tombstone the
+// way `/history` does, needs a client wrapper around every grid cell in three server
+// components; it is worth doing, and it is not this change.
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
+import ReportVideoSheet from "@/components/home/shared/report-video-sheet";
+import SaveToPlaylistSheet from "@/components/home/shared/save-to-playlist-sheet";
 import { ShareSheet } from "@/components/home/watch/share-sheet";
 import {
   describeEngagementError,
+  useCreatorMuteMutation,
+  useVideoNotInterestedMutation,
   useVideoSaveMutation,
   useVideoShareMutation,
 } from "@/hooks/feed/mutations";
+import { useQueue } from "@/state/queue-context";
 
-/** One row in the menu: a 24px Material Symbols icon and its label. */
-type MenuItem = {
-  /** Icon base name, resolved to its FILL0 black SVG in `public/icons/`. */
-  readonly icon: string;
-  readonly label: string;
-};
-
-/**
- * TRANSPORT: mock — none of these six has a backend route, and each is a different absence.
+/*
+ * THE ONE ROW THAT IS NOT HERE: DOWNLOAD.
  *
- * Add to queue      no queue exists, client or server — there is no player playlist to append to.
- * Save to playlist  `PUT /videos/:videoId/playlists` is real but OWNER-ONLY: the service's
- *                   `findUnownedVideoIds` answers 422 for any video the caller did not upload.
- *                   Playlists here group a creator's own uploads; they are not a viewer's saved
- *                   collection. Wiring it would work on your own cards and fail on every other
- *                   one in the feed, which is worse than an honest stub.
- * Download          the bytes are on youtube.com; there is no download route to call.
- * Not interested    no such signal is among the ranker's inputs, so the click would change
- * Don't recommend   nothing about what the feed shows next.
- * Report            no content-reporting flow — a deliberate v1 gap, HOME_BACKEND §8.4.
+ * It is commented out rather than rendered inert, and rather than deleted, because it is
+ * EARLY rather than impossible — and the difference decides which of the three it should be.
  *
- * They render as clickable buttons with NO handler — the same call `share-sheet.tsx` already
- * made for its own three. Not `disabled`, because a greyed row reads as "not available to you"
- * rather than "not built"; and no toast, because this repo has no toast layer. See
- * docs/HOME_STRUCTURE.md §10.
+ * Every video on the platform today is a YouTube link. The bytes sit on youtube.com, Qatoto
+ * never holds them and has no right to serve them, so a download control on one of these
+ * rows could only ever lie. Download becomes real when a creator's bytes are Qatoto's own —
+ * `videoSource: "hosted"` — which is STUDIO_BACKEND_STRUCTURE.md Appendix A, "Deferred:
+ * self-hosted video (Livepeer direct upload)", parked on cost and complexity and headed
+ * "⛔ DO NOT BUILD THIS NOW". Roughly a year out.
+ *
+ * The scaffolding for it already exists and is deliberately dormant: `videoSourceEnum`
+ * carries `"hosted"`, `storage_provider` / `video_asset_id` / `playback_id` / `playback_url`
+ * are columns written by nothing that the schema header calls "INTENTIONALLY DEAD … do not
+ * delete them", and `video-player.tsx` already branches to a `HostedVideoPlayer` no row
+ * reaches. This comment is the same kind of placeholder, one layer up.
+ *
+ * WHOEVER BUILDS APPENDIX A: restore the row, and gate it on the video's source. A hosted
+ * row may offer it; a youtube row must not, and "the button is hidden" is not the gate — the
+ * backend has to refuse it too.
+ *
+ *   { icon: "download", label: "Download", position: "before" },
+ *
+ * With it gone the menu is SEVEN rows, and that is the honest count. A Download that cannot
+ * work is worse than one that is visibly not here yet.
+ *
+ * `INERT_MENU_ITEMS` and its `InertMenuItem` renderer are gone with it — every remaining row
+ * is wired, so there is no longer a list of stubs to keep. This file has left the mock
+ * inventory in docs/HOME_STRUCTURE.md §10, and the banner that put it there is gone with the
+ * list. (The phrase §10's grep looks for is deliberately not written out here — spelling it
+ * would put this file straight back into the results it is documenting its absence from.)
  */
-const INERT_MENU_ITEMS: readonly (MenuItem & { readonly position: "before" | "after" })[] = [
-  { icon: "playlist_play", label: "Add to queue", position: "before" },
-  { icon: "playlist_add", label: "Save to playlist", position: "before" },
-  { icon: "download", label: "Download", position: "before" },
-  { icon: "heart_broken", label: "Not interested", position: "after" },
-  { icon: "account_circle_off", label: "Don't recommend channel", position: "after" },
-  { icon: "flag", label: "Report", position: "after" },
-];
 
 function iconSrc(iconBaseName: string, isFilled = false): string {
   return `/icons/${iconBaseName}_24dp_000000_FILL${isFilled ? 1 : 0}_wght400_GRAD0_opsz24.svg`;
@@ -75,23 +90,82 @@ type VideoCardMenuProps = {
   readonly shareUrl?: string;
   /** `viewerState.hasSaved` off the wire, so the first paint shows the right label. */
   readonly hasSaved?: boolean;
+  /**
+   * The creator's row id, for "don't recommend channel".
+   *
+   * NOT `channelHref`, which is a path and is omitted entirely for a creator with no handle.
+   * Absent on the anime surfaces, so the control branches on it exactly as the video ones do.
+   */
+  readonly creatorId?: string;
+  /** The channel's display name — mute confirmation copy, and the queue panel's subtitle. */
+  readonly channelName: string;
+  /** The card's thumbnail, carried into a queue entry so the panel needs no second fetch. */
+  readonly thumbnailSrc: string;
 };
+
+/**
+ * What the viewer has told the feed about this card, held here rather than on the wire.
+ *
+ * A DISCRIMINATED UNION, not two booleans plus a pending flag. The three states are mutually
+ * exclusive — the row is either offering the action, waiting on the server, or showing an
+ * Undo — and the bag-of-booleans version admits "hidden and still pending", which renders a
+ * confirmation and a spinner at once.
+ */
+type PreferenceState =
+  | { readonly status: "idle" }
+  | { readonly status: "saving" }
+  | { readonly status: "hidden" };
 
 export default function VideoCardMenu({
   videoId,
   title,
   shareUrl,
   hasSaved = false,
+  creatorId,
+  channelName,
+  thumbnailSrc,
 }: VideoCardMenuProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
+  const [isPlaylistSheetOpen, setIsPlaylistSheetOpen] = useState(false);
+  const [isReportSheetOpen, setIsReportSheetOpen] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(hasSaved);
+  const [videoPreference, setVideoPreference] = useState<PreferenceState>({ status: "idle" });
+  const [channelPreference, setChannelPreference] = useState<PreferenceState>({ status: "idle" });
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // `videoId ?? ""` keeps the hook call unconditional — the two controls it powers are inert
-  // when there is no id, so the mutation is never fired with the empty string.
+  // `videoId ?? ""` keeps the hook call unconditional — the controls it powers are inert when
+  // there is no id, so the mutation is never fired with the empty string.
   const saveVideoMutation = useVideoSaveMutation(videoId ?? "");
   const shareVideoMutation = useVideoShareMutation(videoId ?? "");
+  const notInterestedMutation = useVideoNotInterestedMutation(videoId ?? "");
+  const creatorMuteMutation = useCreatorMuteMutation(creatorId ?? "");
+
+  const { addToQueue, removeFromQueue, isQueued } = useQueue();
+  const isAlreadyQueued = videoId !== undefined && isQueued(videoId);
+
+  /**
+   * Add to queue — the one control here that talks to nothing.
+   *
+   * A TOGGLE, because the row is the only place this video's queue state is visible: with no
+   * "added" confirmation to show and no toast layer to show it in, a second tap that silently
+   * did nothing would be indistinguishable from a first tap that failed.
+   */
+  const handleQueueClick = () => {
+    if (videoId === undefined) return;
+    if (isAlreadyQueued) {
+      removeFromQueue(videoId);
+      return;
+    }
+    addToQueue({
+      videoId,
+      title,
+      thumbnailSrc,
+      channelName,
+      // The card's own link, so the panel navigates exactly where the card would have.
+      href: shareUrl ?? `/watch?v=${encodeURIComponent(videoId)}`,
+    });
+  };
 
   // Close on Escape or an outside press. Scroll is locked ONLY for the bottom-sheet viewport;
   // `share-sheet.tsx` locks unconditionally, which is wrong behind a desktop dropdown.
@@ -146,11 +220,50 @@ export default function VideoCardMenu({
     });
   };
 
-  const refusal =
-    saveVideoMutation.error === null ? null : describeEngagementError(saveVideoMutation.error);
+  /**
+   * "Not interested" and its Undo.
+   *
+   * NOT OPTIMISTIC. The row it lives in becomes an Undo control the moment it succeeds, and
+   * offering Undo for a write the server refused means a second call with nothing to reverse.
+   * So it goes to "saving", then to whatever the server actually said.
+   */
+  const handleNotInterestedClick = (shouldBeSet: boolean) => {
+    if (videoId === undefined) return;
+    setVideoPreference({ status: "saving" });
+    notInterestedMutation.mutate(shouldBeSet, {
+      onSuccess: (result) => {
+        setVideoPreference({ status: result.isNotInterested ? "hidden" : "idle" });
+      },
+      // Back to where it was, so the control the viewer pressed is the control they see.
+      onError: () => setVideoPreference({ status: shouldBeSet ? "idle" : "hidden" }),
+    });
+  };
 
-  const itemsBefore = INERT_MENU_ITEMS.filter((item) => item.position === "before");
-  const itemsAfter = INERT_MENU_ITEMS.filter((item) => item.position === "after");
+  /** "Don't recommend channel" and its Undo. Same shape, same reasoning. */
+  const handleChannelMuteClick = (shouldBeSet: boolean) => {
+    if (creatorId === undefined) return;
+    setChannelPreference({ status: "saving" });
+    creatorMuteMutation.mutate(shouldBeSet, {
+      onSuccess: (result) => {
+        setChannelPreference({ status: result.isMuted ? "hidden" : "idle" });
+      },
+      onError: () => setChannelPreference({ status: shouldBeSet ? "idle" : "hidden" }),
+    });
+  };
+
+  // FIRST ERROR WINS rather than a list. Only one control in this menu can be mid-flight at a
+  // time — the panel is small enough that the viewer sees what they pressed — and stacking
+  // four alerts under a 64px-wide menu would push the items off screen.
+  //
+  // A 403 does NOT mean the same thing for every mutation here. Bookmark 403s an anonymous
+  // session (`requireIdentifiedUser`); the two preference writes let anonymous sessions
+  // through, so their 403 is a domain refusal — muting your own channel. `describeEngagementError`
+  // labels both `full_account_required`, which is wrong for the second case, but it carries
+  // the backend's own message and that is the only part rendered.
+  const failedMutationError =
+    saveVideoMutation.error ?? notInterestedMutation.error ?? creatorMuteMutation.error ?? null;
+  const refusal =
+    failedMutationError === null ? null : describeEngagementError(failedMutationError);
 
   return (
     // `relative` with NO z-index on purpose: this must not become a stacking context, or the
@@ -175,7 +288,7 @@ export default function VideoCardMenu({
         <Image src={iconSrc("more_vert")} width={24} height={24} alt="" className="size-4" />
       </button>
 
-      {isMenuOpen && !isShareSheetOpen && (
+      {isMenuOpen && !isShareSheetOpen && !isPlaylistSheetOpen && !isReportSheetOpen && (
         <>
           {/* Backdrop — bottom-sheet viewport only; dims the page and dismisses on tap. */}
           <button
@@ -195,9 +308,44 @@ export default function VideoCardMenu({
               <span className="h-1.5 w-10 rounded-full bg-black/15" />
             </div>
 
-            {itemsBefore.map((item) => (
-              <InertMenuItem key={item.label} icon={item.icon} label={item.label} />
-            ))}
+            {/*
+              Add to queue — the one row backed by nothing on the server, on purpose. A queue
+              is what you mean to watch next, not a collection; see `queue-context.tsx`.
+            */}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={handleQueueClick}
+              className="flex w-full cursor-pointer flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
+            >
+              <Image
+                src={iconSrc("playlist_play")}
+                width={24}
+                height={24}
+                alt=""
+                className="shrink-0"
+              />
+              <span>{isAlreadyQueued ? "Remove from queue" : "Add to queue"}</span>
+            </button>
+
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                if (videoId === undefined) return;
+                setIsPlaylistSheetOpen(true);
+              }}
+              className="flex w-full cursor-pointer flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
+            >
+              <Image
+                src={iconSrc("playlist_add")}
+                width={24}
+                height={24}
+                alt=""
+                className="shrink-0"
+              />
+              <span>Save to playlist</span>
+            </button>
 
             <button
               type="button"
@@ -229,9 +377,47 @@ export default function VideoCardMenu({
               <span>Share</span>
             </button>
 
-            {itemsAfter.map((item) => (
-              <InertMenuItem key={item.label} icon={item.icon} label={item.label} />
-            ))}
+            {/*
+              THE TWO WIRED PREFERENCES. Each row REPLACES ITSELF with a confirmation and an
+              Undo rather than the card vanishing, and the copy is chosen to match what really
+              happened: this menu is a client island INSIDE the card, so it cannot remove its
+              own container, and the mutations deliberately do not invalidate the feed — that
+              would refetch page one and discard every page the reader scrolled. The card is
+              gone on the next real load. "We won't recommend this" is true now; "Removed"
+              would not be.
+            */}
+            <PreferenceMenuItem
+              state={videoPreference}
+              icon="heart_broken"
+              actionLabel="Not interested"
+              confirmationLabel="We won't recommend this"
+              isAvailable={videoId !== undefined}
+              onAction={() => handleNotInterestedClick(true)}
+              onUndo={() => handleNotInterestedClick(false)}
+            />
+
+            <PreferenceMenuItem
+              state={channelPreference}
+              icon="account_circle_off"
+              actionLabel="Don't recommend channel"
+              confirmationLabel={`We won't recommend ${channelName}`}
+              isAvailable={creatorId !== undefined}
+              onAction={() => handleChannelMuteClick(true)}
+              onUndo={() => handleChannelMuteClick(false)}
+            />
+
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                if (videoId === undefined) return;
+                setIsReportSheetOpen(true);
+              }}
+              className="flex w-full cursor-pointer flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
+            >
+              <Image src={iconSrc("flag")} width={24} height={24} alt="" className="shrink-0" />
+              <span>Report</span>
+            </button>
 
             {/*
               403 rather than 401 is the refusal that matters: a better-auth anonymous session
@@ -246,6 +432,27 @@ export default function VideoCardMenu({
             )}
           </div>
         </>
+      )}
+
+      {isReportSheetOpen && videoId !== undefined && (
+        <ReportVideoSheet
+          videoId={videoId}
+          title={title}
+          onClose={() => {
+            setIsReportSheetOpen(false);
+            setIsMenuOpen(false);
+          }}
+        />
+      )}
+
+      {isPlaylistSheetOpen && videoId !== undefined && (
+        <SaveToPlaylistSheet
+          videoId={videoId}
+          onClose={() => {
+            setIsPlaylistSheetOpen(false);
+            setIsMenuOpen(false);
+          }}
+        />
       )}
 
       {isShareSheetOpen && (
@@ -265,16 +472,82 @@ export default function VideoCardMenu({
   );
 }
 
-/** A menu row with no handler — see the INERT_MENU_ITEMS note above. */
-function InertMenuItem({ icon, label }: MenuItem) {
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      className="flex w-full cursor-pointer flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
-    >
-      <Image src={iconSrc(icon)} width={24} height={24} alt="" className="shrink-0" />
-      <span>{label}</span>
-    </button>
-  );
+/**
+ * One wired preference row, rendered from its state rather than from a pile of booleans.
+ *
+ * The `switch` is exhaustive with a `never` default, so a fourth state cannot be added to
+ * `PreferenceState` without this failing to compile — which is the point of the union.
+ *
+ * `isAvailable` is false on the anime surfaces, which build cards with neither a `videoId` nor
+ * a `creatorId`. It renders the row inert rather than hiding it, matching the four stubs
+ * around it: a menu that changes length depending on which page you opened it from is more
+ * confusing than one whose rows sometimes do nothing.
+ */
+function PreferenceMenuItem({
+  state,
+  icon,
+  actionLabel,
+  confirmationLabel,
+  isAvailable,
+  onAction,
+  onUndo,
+}: {
+  readonly state: PreferenceState;
+  readonly icon: string;
+  readonly actionLabel: string;
+  readonly confirmationLabel: string;
+  readonly isAvailable: boolean;
+  readonly onAction: () => void;
+  readonly onUndo: () => void;
+}) {
+  switch (state.status) {
+    case "idle":
+      return (
+        <button
+          type="button"
+          role="menuitem"
+          onClick={isAvailable ? onAction : undefined}
+          className="flex w-full cursor-pointer flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
+        >
+          <Image src={iconSrc(icon)} width={24} height={24} alt="" className="shrink-0" />
+          <span>{actionLabel}</span>
+        </button>
+      );
+
+    case "saving":
+      // Not a spinner. The row is one line of a 256px menu and these writes settle in one
+      // round trip; a spinner here reads as a stall where the verb reads as progress.
+      return (
+        <p className="flex flex-row items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground">
+          <Image
+            src={iconSrc(icon)}
+            width={24}
+            height={24}
+            alt=""
+            className="shrink-0 opacity-60"
+          />
+          <span>Saving…</span>
+        </p>
+      );
+
+    case "hidden":
+      return (
+        <div className="flex flex-row items-center gap-2 px-4 py-2.5 text-sm">
+          <span className="min-w-0 flex-1 text-muted-foreground">{confirmationLabel}</span>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={onUndo}
+            className="shrink-0 cursor-pointer rounded font-medium text-foreground underline hover:no-underline"
+          >
+            Undo
+          </button>
+        </div>
+      );
+
+    default: {
+      const exhaustiveCheck: never = state;
+      return exhaustiveCheck;
+    }
+  }
 }

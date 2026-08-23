@@ -25,6 +25,7 @@ const GRID_THUMBNAIL_SIZES =
 export default function VideoCard({
   videoId,
   hasSaved = false,
+  creatorId,
   thumbnailSrc,
   profileSrc,
   title,
@@ -154,6 +155,9 @@ export default function VideoCard({
           title={title}
           {...(href === undefined ? {} : { shareUrl: href })}
           hasSaved={hasSaved}
+          {...(creatorId === undefined ? {} : { creatorId })}
+          channelName={channelName}
+          thumbnailSrc={thumbnailSrc}
         />
       </div>
     </div>

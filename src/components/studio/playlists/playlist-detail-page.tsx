@@ -144,7 +144,8 @@ export default function PlaylistDetailPage({ playlistId }: { readonly playlistId
             re-sending the whole list to append one row.
           */}
           <p className="text-sm text-muted-foreground">
-            Add videos to a playlist from the upload flow&rsquo;s Playlists picker.
+            Add videos from the upload flow&rsquo;s Playlists picker, or from the menu on any video
+            card — a playlist can hold anyone&rsquo;s video, not only your own.
           </p>
         </div>
       ) : (

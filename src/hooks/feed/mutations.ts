@@ -2,7 +2,7 @@
 
 // TRANSPORT: client-query — React Query mutations over `@/lib/feed/api`.
 //
-// TWO CLASSES OF WRITE, AND THEY BEHAVE DIFFERENTLY ON PURPOSE:
+// THREE CLASSES OF WRITE, AND THEY BEHAVE DIFFERENTLY ON PURPOSE:
 //
 //   OPTIMISTIC   like, save, comment-like. Cheap, idempotent server-side (each has a per-user
 //                unique key), and visually instant. Rolling one back on failure costs nothing
@@ -13,9 +13,21 @@
 //                relationship; a share count is a ranking input the server may decline to move
 //                for an anonymous sharer. These wait for the server and render its answer.
 //
-// Every authed write is refused with 403 — not 401 — for a better-auth anonymous session.
+//   PREFERENCE   not-interested, creator mute, and the watch-history trio. Pending like the
+//                above, but for a different reason: each turns its own control into an UNDO,
+//                and an Undo offered for something the server never stored is a second call
+//                with nothing to reverse. They also refuse to invalidate the feed — see the
+//                block above the watch-history hooks for what that would cost.
+//
+// MOST authed writes are refused with 403 — not 401 — for a better-auth anonymous session.
 // Those callers hold a cookie and a userId, so a 401-only check lets them through and they
 // meet a silent no-op. `describeEngagementError` below is the one place that is decided.
+//
+// The PREFERENCE pair is the exception: the backend lets an anonymous session write both, so
+// a 403 from those two is a real domain refusal (self-mute) rather than the account wall.
+// `describeEngagementError` still classifies it as `full_account_required`, which is the wrong
+// LABEL for that one case but carries the backend's own message verbatim — and the message is
+// what every caller renders.
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -26,6 +38,8 @@ import {
   deleteVideoComment,
   hideVideoFromWatchHistory,
   likeVideo,
+  markVideoNotInterested,
+  muteCreator,
   restoreVideoToWatchHistory,
   likeVideoComment,
   recordVideoShare,
@@ -33,6 +47,8 @@ import {
   subscribeToCreator,
   unlikeVideo,
   unlikeVideoComment,
+  unmarkVideoNotInterested,
+  unmuteCreator,
   unsaveVideo,
   unsubscribeFromCreator,
   updateVideoComment,
@@ -113,6 +129,56 @@ export function useVideoSaveMutation(videoId: string) {
 export function useVideoShareMutation(videoId: string) {
   return useMutation({
     mutationFn: async (channel: ShareChannel) => unwrap(await recordVideoShare(videoId, channel)),
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Feed preferences — pending, never optimistic, never invalidating             */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * A THIRD CLASS OF WRITE, and it differs from both above.
+ *
+ * NOT OPTIMISTIC, for the reason the watch-history writes are not: the control these back
+ * turns into an UNDO once it succeeds, and an Undo offered for a preference the server never
+ * stored is a second call that answers "there was nothing to undo" — a state neither the menu
+ * nor the server can explain. They wait, then render what came back.
+ *
+ * NEITHER INVALIDATES THE FEED, and that is the same rule the watch-history block below
+ * states at length: `feedKeys.videos` is an infinite query seeded from the server and pinned
+ * at `staleTime: Infinity`, so invalidating it refetches page one and DISCARDS every page the
+ * reader scrolled through. The dismissed card stays on screen until the next real load, which
+ * is why the menu says "we won't recommend this" rather than "removed" — the copy has to
+ * describe what actually happened.
+ *
+ * REACHABLE WITHOUT A FULL ACCOUNT. These are the only engagement writes that are; see the
+ * header of `@/lib/feed/api`. A 403 here means self-mute, not the account wall — which is
+ * why the caller still runs it through `describeEngagementError` rather than assuming.
+ */
+
+/** "Not interested" — hides one video from this viewer's feed. `true` sets, `false` undoes. */
+export function useVideoNotInterestedMutation(videoId: string) {
+  return useMutation({
+    mutationFn: async (shouldBeSet: boolean) =>
+      unwrap(
+        await (shouldBeSet ? markVideoNotInterested(videoId) : unmarkVideoNotInterested(videoId)),
+      ),
+  });
+}
+
+/** "Don't recommend channel" — hides every video by one creator from this viewer's feed. */
+export function useCreatorMuteMutation(creatorId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (shouldBeSet: boolean) =>
+      unwrap(await (shouldBeSet ? muteCreator(creatorId) : unmuteCreator(creatorId))),
+    // The ONE invalidation in this block, and it is deliberately NOT the feed. The
+    // muted-creators list is a small unpaginated read with no scroll position to lose, and it
+    // is the only surface that can lift a mute — leaving it stale would show a channel as
+    // still muted right after the viewer unmuted it, on the very screen built to fix that.
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: feedKeys.mutedCreators() });
+    },
   });
 }
 

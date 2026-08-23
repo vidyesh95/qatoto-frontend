@@ -41,6 +41,17 @@ const ADMIN_NAVIGATION_ITEMS: AdminNavItem[] = [
     inactiveIcon: "/icons/reviews_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    // BESIDE "Review" AND NOT PART OF IT, though both are `moderate_content` and both are
+    // about video. Review is PRE-publication: an anime episode that has never been public,
+    // waiting for a verdict before anyone sees it. This is POST-publication: a live video a
+    // viewer objected to. The decisions differ ("may this go out" vs "should this come
+    // down"), and so does the cost of being wrong.
+    href: "/admin/reports",
+    label: "Video reports",
+    activeIcon: "/icons/flag_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     href: "/admin/categories",
     label: "Categories",
     activeIcon: "/icons/category_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",

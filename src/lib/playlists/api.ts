@@ -1,5 +1,10 @@
 // TRANSPORT: server-fetch + client-query — callable from both sides via the optional
-// `RequestOptions`. All `requireAuth`, all owner-scoped, every lookup failure a 404.
+// `RequestOptions`. All `requireAuth`, every lookup failure a 404.
+//
+// THE PLAYLIST IS OWNER-SCOPED; ITS CONTENTS ARE NOT. A playlist the caller does not own is
+// still a 404, but the VIDEOS in one may be anyone's — any publicly-servable video, plus the
+// owner's own unpublished drafts. That is what makes the card menu's "Save to playlist"
+// possible; before it, every id but your own uploads was refused.
 
 import {
   buildQueryString,
@@ -87,8 +92,9 @@ export function deletePlaylist(
  * `PUT /playlists/:playlistId/videos` — full replace, AND the only route that sets ORDER.
  *
  * Position comes from array index, so this is both "which videos" and "in what order".
- * `PUT /videos/:id/playlists` is the other direction and only appends. A video you do not own
- * is a 422 naming the offending ids, not a silent drop.
+ * `PUT /videos/:id/playlists` is the other direction and only appends. A video that is not
+ * available to add — private, unpublished, or no such id — is a 422 naming the offending ids,
+ * not a silent drop.
  */
 export function replacePlaylistVideos(
   playlistId: string,
@@ -99,6 +105,48 @@ export function replacePlaylistVideos(
     `/playlists/${encodeURIComponent(playlistId)}/videos`,
     "PUT",
     { videoIds },
+    PublicPlaylistSchema,
+    options,
+  );
+}
+
+/*
+ * The single-video pair — what a card menu uses.
+ *
+ * NOT `replacePlaylistVideos` WITH ONE MORE ID. That route sets membership AND order from the
+ * array it is given, so a menu would have to read the playlist, append, and send the whole
+ * thing back — three round trips instead of one, and it would clobber any reordering done in
+ * the studio meanwhile. These append and touch nothing else.
+ *
+ * Both answer the WHOLE playlist, so a picker settles its checked state and its count on the
+ * server's answer rather than guessing which of the two it just moved.
+ */
+
+/** `PUT /playlists/:playlistId/videos/:videoId` — append. Idempotent; a repeat is a no-op. */
+export function addVideoToPlaylist(
+  playlistId: string,
+  videoId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<PublicPlaylist>> {
+  return sendJson(
+    `/playlists/${encodeURIComponent(playlistId)}/videos/${encodeURIComponent(videoId)}`,
+    "PUT",
+    undefined,
+    PublicPlaylistSchema,
+    options,
+  );
+}
+
+/** `DELETE /playlists/:playlistId/videos/:videoId`. Removing what is not there succeeds. */
+export function removeVideoFromPlaylist(
+  playlistId: string,
+  videoId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<PublicPlaylist>> {
+  return sendJson(
+    `/playlists/${encodeURIComponent(playlistId)}/videos/${encodeURIComponent(videoId)}`,
+    "DELETE",
+    undefined,
     PublicPlaylistSchema,
     options,
   );

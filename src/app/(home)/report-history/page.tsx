@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
 
+import ReportHistoryPage from "@/components/home/report-history-page";
+
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 export const instant = false;
 
 export const metadata: Metadata = {
   title: "Report History",
-  description: "Report History page for Qatoto",
-  // NOINDEX WHILE THIS IS A STUB. The body is a bare `<h1>` — `kind: "planned"` in
-  // `src/lib/roadmap/site-roadmap.ts`, listed in `docs/REMAINING_WORK.md` §2. An empty page in
-  // the index outranks nothing and teaches the crawler the site is thin. REMOVE THIS LINE when
-  // the page gets content; it is not a policy about the route, only about its current state.
-  robots: { index: false, follow: false },
+  description: "Reports you have filed on Qatoto, and what came of them.",
+  // NO `robots: { index: false }` ANY MORE. It was here while the body was a bare `<h1>`,
+  // with its own note saying to remove it once the page got content — this is that. The page
+  // is per-viewer and behind a session, so a crawler sees the signed-out state and nothing
+  // else; there is no longer a thin page to keep out of the index.
 };
 
 export default function ReportHistory() {
-  return <h1>Report History</h1>;
+  return <ReportHistoryPage />;
 }

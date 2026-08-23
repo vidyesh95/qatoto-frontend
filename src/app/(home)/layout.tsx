@@ -14,6 +14,7 @@ import Sidebar from "@/components/home/layout/sidebar";
 import SidebarSlot from "@/components/home/layout/sidebar-slot";
 import MobileBottomNav from "@/components/home/layout/mobile-bottom-nav";
 import QueryProvider from "@/components/providers/query-provider";
+import { QueueProvider } from "@/state/queue-context";
 import { SidebarProvider } from "@/state/sidebar-context";
 
 interface Props {
@@ -27,31 +28,37 @@ interface Props {
 const Layout = ({ children }: Props) => {
   return (
     <QueryProvider>
+      {/* Inside SidebarProvider only for reading order; the two are unrelated. A client
+          provider here does NOT force `{children}` client — `app/layout.tsx` records that
+          rule for `BrowserPreferencesProvider`, which wraps the whole app for the same
+          reason. The queue holds no server state and never suspends. */}
       <SidebarProvider>
-        <Navbar
-          accountSlot={
-            // The fallback is the SIGNED-OUT cluster, not a spinner or a blank. On a prerendered
-            // route it is what ships in the static HTML, and for an anonymous visitor it is already
-            // the right answer — so they never see a swap, and a signed-in visitor gets their avatar
-            // streamed in rather than a hydration error.
-            <Suspense fallback={<NavbarAccountCluster isViewerSignedIn={false} />}>
-              <NavbarAccountSlot />
-            </Suspense>
-          }
-        />
-        <div className="flex">
-          {/* Same shape and same reasoning as the navbar slot above: the fallback is the
+        <QueueProvider>
+          <Navbar
+            accountSlot={
+              // The fallback is the SIGNED-OUT cluster, not a spinner or a blank. On a prerendered
+              // route it is what ships in the static HTML, and for an anonymous visitor it is already
+              // the right answer — so they never see a swap, and a signed-in visitor gets their avatar
+              // streamed in rather than a hydration error.
+              <Suspense fallback={<NavbarAccountCluster isViewerSignedIn={false} />}>
+                <NavbarAccountSlot />
+              </Suspense>
+            }
+          />
+          <div className="flex">
+            {/* Same shape and same reasoning as the navbar slot above: the fallback is the
               SIGNED-OUT sidebar, not a skeleton. On a prerendered route it is what ships in the
               static HTML and it is already right for an anonymous visitor, so nobody sees rows
               disappear — a signed-in visitor gets their own rows streamed in instead. */}
-          <Suspense fallback={<Sidebar isViewerSignedIn={false} />}>
-            <SidebarSlot />
-          </Suspense>
-          <main className="min-w-0 flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
-            {children}
-          </main>
-        </div>
-        <MobileBottomNav />
+            <Suspense fallback={<Sidebar isViewerSignedIn={false} />}>
+              <SidebarSlot />
+            </Suspense>
+            <main className="min-w-0 flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+              {children}
+            </main>
+          </div>
+          <MobileBottomNav />
+        </QueueProvider>
       </SidebarProvider>
     </QueryProvider>
   );

@@ -47,6 +47,12 @@ export const feedKeys = {
   // --- Watch ---
   watch: (videoId: string) => ["feed", "watch", videoId] as const,
 
+  // --- Feed preferences ---
+  // NO VIEWER ID IN THE KEY, even though the route is `/users/me/…` and the answer is
+  // per-viewer. The session cookie decides who "me" is, and the whole cache is torn down on
+  // sign-out — the same reason no other key here carries one.
+  mutedCreators: () => ["feed", "muted-creators"] as const,
+
   // --- Comments ---
   // `parentCommentId` is part of the identity: the top-level thread and one comment's replies
   // are different lists with different sort orders, served by the same route.

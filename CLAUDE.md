@@ -55,7 +55,19 @@ The App Router is organized into four parenthesized **route groups** — these d
 
 ### Shared state
 
-`src/state/sidebar-context.tsx` is the single piece of cross-component state — a client-only `SidebarProvider` exposing `{ isCollapsed, toggleSidebar }` via `useSidebar()`. Mounted by `(home)/layout.tsx` only, so `useSidebar` is **not** available outside the `(home)` group.
+`src/state/` holds **four** cross-component client contexts. This section used to claim there was one; that stopped being true some time ago and is corrected here rather than left to mislead:
+
+| Context                                                  | Mounted by          | Scope                                                                  |
+| -------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------- |
+| `sidebar-context.tsx` — `{ isCollapsed, toggleSidebar }` | `(home)/layout.tsx` | `(home)` only, so `useSidebar` is **not** available outside that group |
+| `browser-preferences-context.tsx`                        | `app/layout.tsx`    | App-wide. The **only** context that persists — see below               |
+| `queue-context.tsx` — the play queue                     | `(home)/layout.tsx` | `(home)` only. In-memory, dies with the tab                            |
+| `admin-audit-log-context.tsx`                            | `(admin)`           | Admin console only                                                     |
+
+Two rules that go with them:
+
+- **A client provider in a layout does NOT make `{children}` client.** `app/layout.tsx` records this for `BrowserPreferencesProvider`, and it is why these can be composed in a server layout.
+- **`browser-preferences-context` is the only one that may touch storage**, through `src/lib/browser-preferences.ts` and its single key `qatoto.browser-preferences`. That "one key" is a claim `privacy-policy.tsx` makes to readers and `data-and-privacy-panel.tsx` offers erasure of, so a second key makes both wrong. A new context that wants persistence folds into that blob or does without — the queue does without, deliberately.
 
 ### CMS layer
 

@@ -20,6 +20,7 @@ import { feedKeys, type FeedVideoListFilter } from "@/hooks/feed/keys";
 import {
   listFeedCategories,
   listFeedVideos,
+  listMutedCreators,
   listVideoComments,
   searchVideos,
   type ListVideoCommentsFilter,
@@ -28,6 +29,7 @@ import type {
   ContentCategory,
   FeedVideo,
   FeedVideoPage,
+  MutedCreator,
   SearchVideoPage,
   VideoComment,
 } from "@/lib/feed/schemas";
@@ -247,5 +249,27 @@ export function useVideoCommentsList({
       };
       return listVideoComments(videoId, filter).then(toCursorKeysetPage);
     },
+  });
+}
+
+/**
+ * The channels this viewer has hidden — `GET /users/me/muted-creators`.
+ *
+ * NOT SEEDED FROM THE SERVER, unlike every other hook in this file, because there is no server
+ * component that reads it: a mute is set from a client island in a card menu and lifted from a
+ * settings surface, neither of which the homepage render knows about.
+ *
+ * NO `staleTime` OVERRIDE. It falls to the provider's 30s default, which is right for a list
+ * whose only writer is `useCreatorMuteMutation` — and that hook invalidates this key directly,
+ * so the list is correct the moment it changes rather than 30 seconds later.
+ *
+ * 401 IS A REAL ANSWER HERE. This is one of the few reads on this surface that needs a
+ * session; a signed-out viewer has no muted list, not an empty one. Callers branch on the
+ * error rather than rendering "you have hidden no channels" at someone who cannot be asked.
+ */
+export function useMutedCreatorsQuery() {
+  return useQuery<readonly MutedCreator[], ApiRequestError>({
+    queryKey: feedKeys.mutedCreators(),
+    queryFn: async () => unwrap(await listMutedCreators()),
   });
 }

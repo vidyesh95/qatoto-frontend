@@ -8,9 +8,14 @@
 // is `?mode=watched`, which is 401 when signed out, because serving it off a rotating
 // fingerprint would hand one person's history to everyone behind the same NAT.
 //
-// EVERY WRITE except the two beacons requires a FULL account. `requireIdentifiedUser` answers
-// 403, not 401, to better-auth's anonymous sessions — those callers have a cookie and a
-// userId, so a 401-only check sails straight past them. Branch with `isForbidden`.
+// MOST WRITES REQUIRE A FULL ACCOUNT. `requireIdentifiedUser` answers 403, not 401, to
+// better-auth's anonymous sessions — those callers have a cookie and a userId, so a 401-only
+// check sails straight past them. Branch with `isForbidden`.
+//
+// FOUR WRITES DELIBERATELY DO NOT: `markVideoNotInterested`/`unmark…` and `muteCreator`/
+// `unmute…`. Neither moves a public counter and neither changes any feed but the caller's
+// own, so the backend runs them behind `requireAuth` alone with a tighter limiter instead.
+// A 403 from those four is a real refusal — self-mute — rather than the account wall.
 
 import { z } from "zod";
 
@@ -28,10 +33,13 @@ import {
   AcknowledgedSchema,
   ClearWatchHistoryResultSchema,
   ContentCategorySchema,
+  CreatorMuteResultSchema,
   DeletedVideoCommentSchema,
   FeedVideoPageSchema,
   FeedVideoSchema,
   HideFromWatchHistoryResultSchema,
+  MutedCreatorSchema,
+  NotInterestedResultSchema,
   PaginationMetaSchema,
   RestoreToWatchHistoryResultSchema,
   LikeToggleResultSchema,
@@ -43,10 +51,13 @@ import {
   WatchPayloadSchema,
   type ClearWatchHistoryResult,
   type ContentCategory,
+  type CreatorMuteResult,
   type FeedSource,
   type FeedVideoPage,
   type HideFromWatchHistoryResult,
   type LikeToggleResult,
+  type MutedCreator,
+  type NotInterestedResult,
   type RestoreToWatchHistoryResult,
   type ListFeedVideosFilter,
   type PlaybackErrorCode,
@@ -309,6 +320,86 @@ export function unsaveVideo(
     SaveToggleResultSchema,
     options,
   );
+}
+
+/*
+ * The two feed preferences.
+ *
+ * REACHABLE WITHOUT A FULL ACCOUNT, unlike like/save/subscribe above. The backend runs these
+ * behind `requireAuth` alone: neither moves a public counter and neither changes any feed but
+ * the caller's own, so an anonymous session — which carries a real user id — gets the same
+ * personalization everyone else does. Practically, that means a 403 from these two is a
+ * genuine refusal to surface, not the "finish setting up your account" wall the others hit.
+ */
+
+/** `PUT /videos/:videoId/not-interested` — keep this video out of my feed, permanently. */
+export function markVideoNotInterested(
+  videoId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<NotInterestedResult>> {
+  return sendJson(
+    `/videos/${encodeURIComponent(videoId)}/not-interested`,
+    "PUT",
+    undefined,
+    NotInterestedResultSchema,
+    options,
+  );
+}
+
+/** `DELETE /videos/:videoId/not-interested` — the Undo. */
+export function unmarkVideoNotInterested(
+  videoId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<NotInterestedResult>> {
+  return sendJson(
+    `/videos/${encodeURIComponent(videoId)}/not-interested`,
+    "DELETE",
+    undefined,
+    NotInterestedResultSchema,
+    options,
+  );
+}
+
+/** `PUT /creators/:creatorId/mute` — "don't recommend this channel". */
+export function muteCreator(
+  creatorId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<CreatorMuteResult>> {
+  return sendJson(
+    `/creators/${encodeURIComponent(creatorId)}/mute`,
+    "PUT",
+    undefined,
+    CreatorMuteResultSchema,
+    options,
+  );
+}
+
+/** `DELETE /creators/:creatorId/mute`. */
+export function unmuteCreator(
+  creatorId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<CreatorMuteResult>> {
+  return sendJson(
+    `/creators/${encodeURIComponent(creatorId)}/mute`,
+    "DELETE",
+    undefined,
+    CreatorMuteResultSchema,
+    options,
+  );
+}
+
+/**
+ * `GET /users/me/muted-creators` — the channels this viewer has hidden.
+ *
+ * THE ONLY WAY BACK. A muted creator's videos never reach the feed again, so the card
+ * carrying the undo control is exactly the card now hidden; without this list nothing could
+ * lift the mute. Unpaginated by design — the list is bounded by how many channels one person
+ * muted by hand.
+ */
+export function listMutedCreators(
+  options?: RequestOptions,
+): Promise<ActionResponse<readonly MutedCreator[]>> {
+  return getJson(`/users/me/muted-creators`, z.array(MutedCreatorSchema), options);
 }
 
 /**

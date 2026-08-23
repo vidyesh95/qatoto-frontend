@@ -38,8 +38,9 @@ unbuilt, not broken.
 
 - **Twelve under `(studio)`**: analytics, comments, subtitles, copyright, customize, earn,
   funding, pitches, team, learn, support, feedback
-- **Four under `(home)`**: `/customer-service`, `/advertise-with-us`, `/report-history`,
-  `/policies-and-safety`
+- **Three under `(home)`**: `/customer-service`, `/advertise-with-us`, `/policies-and-safety`
+  (`/report-history` shipped with video content reporting — it reads
+  `GET /users/me/video-reports`)
 
 **`/your-account` and `/settings` are GONE, and are not coming back** — they were the cheap
 two named here, they were built as seventeen routes across two nested trees, and they were then

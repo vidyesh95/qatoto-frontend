@@ -56,14 +56,25 @@ export const PlaylistListRowSchema = z
     visibility: PlaylistVisibilitySchema,
     videoCount: z.number(),
     updatedAt: z.iso.datetime(),
+    /**
+     * Whether this playlist already holds the video passed as `?videoId=`.
+     *
+     * `.optional()`, NOT `.nullable()` or a default, because the KEY IS ABSENT unless that
+     * parameter was sent — the backend drops it rather than answering `false`. Absence means
+     * "nobody asked"; `false` means "asked, and no". A picker that cannot tell those apart
+     * renders every checkbox unchecked on a plain list read. Same rule as `watchedAt`.
+     */
+    containsVideo: z.boolean().optional(),
   })
   .strip();
 export type PlaylistListRow = z.infer<typeof PlaylistListRowSchema>;
 
-/** Page and limit only — the query schema is `.strict()`. */
+/** The query schema is `.strict()`, so only these three keys exist. */
 export interface ListMyPlaylistsFilter {
   readonly page?: number;
   readonly limit?: number;
+  /** Ask each row whether it already contains this video — see `containsVideo`. */
+  readonly videoId?: string;
 }
 
 /** `POST /playlists`. Only `title` is required. */

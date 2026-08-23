@@ -935,9 +935,12 @@ export const ROADMAP_REFERENCE_DESTINATIONS: readonly RoadmapDestination[] = [
     summary: "Placement across the feed and store.",
   },
   {
-    kind: "planned",
+    // `route`, not `planned`, since video content reporting shipped: the page renders the
+    // caller's own reports from `GET /users/me/video-reports` rather than a placeholder
+    // heading, which is the whole distinction between those two kinds.
+    kind: "route",
     label: "Report history",
-    pathPattern: "/report-history",
+    href: "/report-history",
     summary: "Reports you filed, and what came of them.",
   },
   {

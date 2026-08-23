@@ -9,10 +9,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  addVideoToPlaylist,
   createPlaylist,
   deletePlaylist,
   getPlaylist,
   listMyPlaylists,
+  removeVideoFromPlaylist,
   replacePlaylistVideos,
   updatePlaylist,
 } from "@/lib/playlists/api";
@@ -27,8 +29,11 @@ import { unwrap } from "@/lib/http";
 export const playlistKeys = {
   all: ["playlists"] as const,
   listRoot: () => ["playlists", "list"] as const,
+  // `videoId` IS PART OF THE KEY. It changes the response — each row gains `containsVideo` —
+  // so it is a server filter, and server filters belong in the key. Without it the picker for
+  // one video would read the cached answer computed for another and render the wrong ticks.
   list: (filter: ListMyPlaylistsFilter) =>
-    ["playlists", "list", filter.page, filter.limit] as const,
+    ["playlists", "list", filter.page, filter.limit, filter.videoId] as const,
   detail: (playlistId: string) => ["playlists", "detail", playlistId] as const,
 };
 
@@ -90,6 +95,35 @@ export function useDeletePlaylistMutation() {
       queryClient.removeQueries({ queryKey: playlistKeys.detail(playlistId) });
       void queryClient.invalidateQueries({ queryKey: playlistKeys.listRoot() });
     },
+  });
+}
+
+/**
+ * Add or remove ONE video — what the card menu's picker calls per toggle.
+ *
+ * `shouldBeInPlaylist` rather than two hooks, so a row can flip either way through one
+ * mutation and one pending state. Both directions answer the whole playlist, which
+ * `adoptPlaylist` writes into the detail cache and which marks the list stale so
+ * `containsVideo` and `videoCount` are re-read rather than patched by hand.
+ *
+ * NOT OPTIMISTIC. The picker holds a checkbox, and a checkbox that ticks itself before the
+ * server agrees is one a viewer will close the sheet on — believing a video is saved that is
+ * not. One round trip is cheap enough to wait for.
+ */
+export function useTogglePlaylistVideoMutation() {
+  const adoptPlaylist = usePlaylistAdoption();
+  return useMutation({
+    mutationFn: async (variables: {
+      readonly playlistId: string;
+      readonly videoId: string;
+      readonly shouldBeInPlaylist: boolean;
+    }) =>
+      unwrap(
+        await (variables.shouldBeInPlaylist
+          ? addVideoToPlaylist(variables.playlistId, variables.videoId)
+          : removeVideoFromPlaylist(variables.playlistId, variables.videoId)),
+      ),
+    onSuccess: adoptPlaylist,
   });
 }
 

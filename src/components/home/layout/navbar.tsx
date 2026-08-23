@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import QueueButton from "@/components/home/layout/queue-button";
 import { useSidebar } from "@/state/sidebar-context";
 
 const ANIME_SUBPAGES: Record<string, string> = {
@@ -220,6 +221,8 @@ export default function Navbar({
               height={24}
             />
           </Link>
+          {/* Renders nothing until something is queued — see the component's header. */}
+          <QueueButton />
           {accountSlot}
         </div>
       </div>

@@ -402,6 +402,40 @@ export const ShareResultSchema = z.object({ shareCount: z.number() }).strip();
 export type ShareResult = z.infer<typeof ShareResultSchema>;
 
 /*
+ * The two feed preferences — "not interested" and "don't recommend channel".
+ *
+ * NOTE WHAT IS NOT HERE: a count. Every toggle above pairs its flag with the number it
+ * moved, because the caller renders that number. These two move nothing and the omission is
+ * deliberate on the backend — there is no "hidden by N people" column, because a public mute
+ * count is a stick handed to anyone wanting to demoralise a creator. A `z.number()` here
+ * would be a field the wire does not carry, and `.strip()` would leave it `undefined`.
+ */
+
+export const NotInterestedResultSchema = z.object({ isNotInterested: z.boolean() }).strip();
+export type NotInterestedResult = z.infer<typeof NotInterestedResultSchema>;
+
+export const CreatorMuteResultSchema = z.object({ isMuted: z.boolean() }).strip();
+export type CreatorMuteResult = z.infer<typeof CreatorMuteResultSchema>;
+
+/**
+ * One row of `GET /users/me/muted-creators`.
+ *
+ * `handle` and `imageUrl` are NULLABLE for the same reason they are on `FeedVideo.creator`:
+ * an account with neither is a real account. A caller must not build `/channel/${handle}`
+ * without branching — see `toVideoCardProps`, which omits the link rather than guessing.
+ */
+export const MutedCreatorSchema = z
+  .object({
+    id: z.string(),
+    handle: z.string().nullable(),
+    name: z.string(),
+    imageUrl: z.string().nullable(),
+    mutedAt: z.iso.datetime(),
+  })
+  .strip();
+export type MutedCreator = z.infer<typeof MutedCreatorSchema>;
+
+/*
  * The three `/watch-history` writes each answer a count of SESSION ROWS, not videos.
  *
  * One video watched across three UTC days is three rows and ONE card, so these numbers are
@@ -485,6 +519,10 @@ export function toVideoCardProps(
     // Read by the card's kebab menu so the bookmark row opens with the right label. Embedded on
     // every feed row already, and `false` by construction for an anonymous viewer.
     hasSaved: video.viewerState.hasSaved,
+    // Also for the kebab menu — "don't recommend channel" addresses the CREATOR, and
+    // `channelHref` cannot stand in for this: it is omitted entirely when a creator has no
+    // handle, and it is a path rather than an id.
+    creatorId: video.creator.id,
     isChannelLive: video.isChannelLive,
     href: `/watch?v=${encodeURIComponent(video.videoId)}`,
     ...(video.creator.handle === null
