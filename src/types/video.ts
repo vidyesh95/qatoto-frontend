@@ -105,6 +105,15 @@ export type VideoCardProps = {
    * client component precisely so the relative label is computed in the browser.
    */
   publishedAt?: string | null;
+  /**
+   * `viewerState.hasSaved` off the wire — whether this viewer has bookmarked the video.
+   *
+   * ONLY FOR THE CARD'S KEBAB MENU, which is why it is not rendered on the card face. Without
+   * it the menu opens saying "Save to bookmarks" over a video already bookmarked, and a wired
+   * control that lies on first paint is worse than no control. Costs no extra request:
+   * `GET /feed/videos` already embeds `viewerState` on every row.
+   */
+  hasSaved?: boolean;
   verified?: boolean;
   hoverBg?: string;
   isChannelLive?: boolean;

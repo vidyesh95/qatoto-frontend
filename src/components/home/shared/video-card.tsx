@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import RelativeTime from "@/components/home/shared/relative-time";
+import VideoCardMenu from "@/components/home/shared/video-card-menu";
 import type { VideoCardProps } from "@/types/video";
 
 /**
@@ -22,6 +23,8 @@ const GRID_THUMBNAIL_SIZES =
   "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw";
 
 export default function VideoCard({
+  videoId,
+  hasSaved = false,
   thumbnailSrc,
   profileSrc,
   title,
@@ -142,12 +145,15 @@ export default function VideoCard({
             )}
           </div>
         </div>
-        <Image
-          src={"/icons/more_vert_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"}
-          width={24}
-          height={24}
-          alt="More video options"
-          className="relative z-10 shrink-0 rounded-full p-1 hover:bg-black/20"
+        {/*
+          A CLIENT ISLAND, so this file stays a server component. The menu owns its own trigger
+          button — it must, because the trigger has to swallow the stretched link's click.
+        */}
+        <VideoCardMenu
+          {...(videoId === undefined ? {} : { videoId })}
+          title={title}
+          {...(href === undefined ? {} : { shareUrl: href })}
+          hasSaved={hasSaved}
         />
       </div>
     </div>

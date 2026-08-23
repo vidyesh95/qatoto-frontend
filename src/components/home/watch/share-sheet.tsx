@@ -32,6 +32,14 @@ type ShareSheetProps = {
   /** Called when the sheet should close — backdrop click, Escape, or the X. */
   onClose: () => void;
   /**
+   * The URL "Copy Link" puts on the clipboard.
+   *
+   * DEFAULTS TO THE CURRENT PAGE, which is right on the watch screen and WRONG anywhere the
+   * sheet is opened for a video the page is not about — a feed card's kebab would otherwise
+   * copy the feed's URL. Those callers pass the card's own `/watch?v=…`.
+   */
+  shareUrl?: string;
+  /**
    * Records the share against the video, once the user actually shares.
    *
    * Optional so the sheet still renders on surfaces with no video id. The channel is a
@@ -46,7 +54,7 @@ type ShareSheetProps = {
  * desktop. The actions here are presentational stubs — the only one wired up
  * is "Copy Link", which copies the current page URL to the clipboard.
  */
-export function ShareSheet({ onClose, onShared }: ShareSheetProps) {
+export function ShareSheet({ onClose, shareUrl, onShared }: ShareSheetProps) {
   const [copied, setCopied] = useState(false);
   // Reference to the panel, used to detect outside clicks on desktop where
   // there is no full-screen backdrop to catch them.
@@ -80,7 +88,13 @@ export function ShareSheet({ onClose, onShared }: ShareSheetProps) {
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      // Resolved against the origin: callers hand us a relative `/watch?v=…` off the card, and
+      // a path on someone's clipboard is not a link.
+      const linkToCopy =
+        shareUrl === undefined
+          ? window.location.href
+          : new URL(shareUrl, window.location.origin).href;
+      await navigator.clipboard.writeText(linkToCopy);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
       // Recorded only AFTER the copy succeeds. A share that never made it to the clipboard is

@@ -482,6 +482,9 @@ export function toVideoCardProps(
     views: formatViewCountLabel(video.stats.viewCount),
     postedAt: "",
     publishedAt: video.publishedAt,
+    // Read by the card's kebab menu so the bookmark row opens with the right label. Embedded on
+    // every feed row already, and `false` by construction for an anonymous viewer.
+    hasSaved: video.viewerState.hasSaved,
     isChannelLive: video.isChannelLive,
     href: `/watch?v=${encodeURIComponent(video.videoId)}`,
     ...(video.creator.handle === null
