@@ -458,6 +458,7 @@ export default function VideoCardMenu({
       {isShareSheetOpen && (
         <ShareSheet
           {...(shareUrl === undefined ? {} : { shareUrl })}
+          videoTitle={title}
           onClose={() => {
             setIsShareSheetOpen(false);
             setIsMenuOpen(false);

@@ -193,6 +193,7 @@ export default function WatchContent({
             videoId={video.videoId}
             initialViewerState={video.viewerState}
             initialStats={video.stats}
+            videoTitle={video.title}
             isCommentsOpen={isCommentsOpen}
             onToggleComments={() => setIsCommentsOpen((isOpen) => !isOpen)}
           />

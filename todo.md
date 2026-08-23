@@ -26,8 +26,8 @@ because it was never frontend work.
 - **§6** [Five backend capabilities with no UI at all](#6-backend-capability-with-no-ui)
 - **§8** [SEO leftovers — OG images, `manifest.json`](#8-seo-leftovers)
 - **§9** [Three things never exercised against live data or a browser](#9-never-exercised)
-- **§24** [Feed preferences — the reviewable do-not-recommend list](#24-feed-preferences--the-reviewable-do-not-recommend-list) —
-  Part 1 of 4 shipped; Part 3 (the panel) is next, Part 2 is backend and needs a migration
+- **§24** ~~[Feed preferences — the reviewable do-not-recommend list](#24-feed-preferences--the-reviewable-do-not-recommend-list)~~ —
+  **all four parts shipped**; kept only for the follow-ups it left behind
 
 **Backend (`qatoto-backend`)**
 
@@ -148,39 +148,38 @@ Each of these exists on the wire and nothing in `src/` renders it:
 - **The browser.** Every store contract above was asserted over HTTP. No screen has been watched
   rendering.
 
-### 24. Feed preferences — the reviewable do-not-recommend list
+### 24. Feed preferences — SHIPPED, all four parts
 
-**Part 1 of 4 shipped** (backend, `GET /users/me/not-interested-videos`). The three below are open.
-Full plan: `~/.claude/plans/i-want-youtube-like-precious-creek.md`.
+The problem: "Not interested" and "Don't recommend channel" both worked, but the Undo lived inside
+`VideoCardMenu`, which renders **inside the card it hides**. Scroll once and the choice was
+unrecoverable. Separately, both signals were a query-time `NOT EXISTS` that taught the ranker
+nothing.
 
-The problem it closes: "Not interested" and "Don't recommend channel" both work, but the Undo lives
-inside `VideoCardMenu`, which renders **inside the card it would have to hide**. Scroll once and the
-choice is unrecoverable. `useMutedCreatorsQuery` (`src/hooks/feed/queries.ts:270`) already wraps the
-channel-side list route and **has zero component callers** — an uncalled hook is unverified code by
-CLAUDE.md's own rule, and the audit in §Verification is what catches it.
+- **Part 1** — `GET /users/me/not-interested-videos`, keyset-paginated (`0130`).
+- **Part 2** — negative weight in `recompute-user-affinities` (`0131`). Needed a migration: both
+  affinity CHECKs asserted the three positive components summed to `affinity_points`, so a penalty
+  could not be subtracted. Rewritten to `… − negative = affinity_points`, penalty stored already
+  clamped, `score_algorithm_version` now written as 2.
+- **Part 3** — `feed-preferences-panel.tsx`, Settings → Feed preferences. `useMutedCreatorsQuery`
+  finally has a caller, so the uncalled-hook audit passes on it.
+- **Part 4** — the share sheet's three dead buttons replaced by the four real
+  `video_share_channel` targets; `docs/HOME_STRUCTURE.md` §7.1 added and §10's inventory corrected
+  to six placeholders across four files.
 
-- **Part 3 — the panel (frontend, do this next).** A `FeedPreferencesPanel` in
-  `src/components/home/account/panels/`, wired into `settings-menu.tsx` as
-  `{ kind: "feed-preferences" }` exactly as `watch-time` is, and placed directly above "Time
-  watched". Needs: `NotInterestedVideoSchema` + `listNotInterestedVideos` (via `getCursorSiblingList`
-  — Part 1 answers `nextCursor` as a **sibling** of `data`, not inside it), a `useInfiniteQuery`
-  hook, and a **new id-taking mutation** — `useVideoNotInterestedMutation(videoId)` and
-  `useCreatorMuteMutation(creatorId)` are built per-id and cannot serve a list where every row needs
-  its own Remove. Invalidate `feedKeys.mutedCreators()` / `feedKeys.notInterestedVideos()` and
-  **never the feed** — it is an infinite query at `staleTime: Infinity` and refetching discards
-  every scrolled page.
-- **Part 2 — negative weight into `recompute-user-affinities` (backend, riskiest).** The two signals
-  are a query-time `NOT EXISTS` and teach the ranker nothing, so the feed keeps serving near-
-  identical videos. **This needs a migration before any of it works:** both affinity snapshot tables
-  carry a CHECK enforcing `watch + completion + explicit = affinity_points`, so a penalty cannot be
-  subtracted — Postgres refuses the insert. Add `negative_signal_component_points`, rewrite the
-  CHECK, bump `scoreAlgorithmVersion` to 2. Dismissals drive both penalties; a **mute must damp the
-  creator only, never topics** — muting one anime channel is not a statement about anime.
-- **Part 4 — docs and one stale stub.** `docs/HOME_STRUCTURE.md` §7 never mentions either preference
-  and is already behind commit `3187649`; `:580` claims there is no "not interested" ranking signal,
-  which Part 2 falsifies. And `src/components/home/watch/share-sheet.tsx:17-28` still ships three
-  inert buttons including a dead **"Not Interested"** — it opens from `video-card-menu.tsx:459`, so a
-  card's kebab offers a fake copy of the control that same kebab wires for real.
+**What it deliberately left open**, in rough priority:
+
+- **No brand marks for X, WhatsApp or LinkedIn.** `public/icons` has `mail` and nothing else, so
+  three of the four share targets render the generic `share` glyph and are told apart by their
+  labels. Hand-writing trademarked logo paths from memory was the worse option. Drop real assets in.
+- **A topic penalty only lands where a snapshot row already exists**, because the job's `FROM` is
+  `video_view_session` — a category dismissed but never watched gets no damping. Widening it means
+  writing rows whose only evidence is negative, and since the ranker's `max(COALESCE(...))` treats a
+  stored 0 as _stronger_ suppression than an absent row, that is a real ranking change, not a
+  one-line fix.
+- **Un-muting takes up to one nightly cycle to stop damping.** The hard filter lifts instantly.
+- **The anonymous in-request affinity passes `dismissalCount: 0`** — a limitation, not a fact,
+  unlike the `likeCount: 0` beside it. That path is fingerprint-keyed; the preferences are
+  user-id-keyed. See backend §4.3b.
 
 ---
 

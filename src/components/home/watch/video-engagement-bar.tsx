@@ -30,6 +30,7 @@ export default function VideoEngagementBar({
   initialStats,
   isCommentsOpen,
   onToggleComments,
+  videoTitle,
 }: {
   readonly videoId: string;
   readonly initialViewerState: { readonly hasLiked: boolean; readonly hasSaved: boolean };
@@ -41,6 +42,8 @@ export default function VideoEngagementBar({
   };
   readonly isCommentsOpen: boolean;
   readonly onToggleComments: () => void;
+  /** The video's title, forwarded to the share sheet as the share text. */
+  readonly videoTitle: string;
 }) {
   const [hasLiked, setHasLiked] = useState(initialViewerState.hasLiked);
   const [likeCount, setLikeCount] = useState(initialStats.likeCount);
@@ -126,6 +129,7 @@ export default function VideoEngagementBar({
           />
           {isShareSheetOpen && (
             <ShareSheet
+              videoTitle={videoTitle}
               onClose={() => setIsShareSheetOpen(false)}
               onShared={(channel) => {
                 shareVideoMutation.mutate(channel, {

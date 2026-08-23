@@ -182,6 +182,48 @@ export function useCreatorMuteMutation(creatorId: string) {
   });
 }
 
+/** Which of the two preference lists a row belongs to. */
+export type FeedPreferenceKind = "video" | "creator";
+
+/**
+ * Lift one feed preference, given its kind and id — the settings panel's Remove control.
+ *
+ * WHY IT DOES NOT REUSE THE TWO HOOKS ABOVE. Both of those close over a SINGLE id at call
+ * time, which is right for a card menu that concerns exactly one video and one creator. A list
+ * has an id per row and does not know them until it renders, so reusing them would mean either
+ * a hook call inside a `map` — illegal — or a wrapper component per row whose only job is to
+ * hold a hook. Taking the id in `mutate` is what a list actually needs.
+ *
+ * REMOVE ONLY, never set. The panel is an undo surface; a control that could re-apply a
+ * preference from a list of preferences you are trying to clear is a footgun with no use case.
+ * That is why the variable is the id rather than a boolean.
+ *
+ * NOT OPTIMISTIC, matching the card menu: these settle on the server's answer. A row that
+ * vanished optimistically and then failed would have to reappear in a list the reader is
+ * actively working through, and they would have no way to tell it apart from one they had not
+ * reached yet.
+ *
+ * INVALIDATES ITS OWN LIST AND NOTHING ELSE — specifically NOT the feed. The feed is an
+ * infinite query pinned at `staleTime: Infinity`; refetching it would drop every page the
+ * reader has scrolled. The lifted preference reaches the feed on its next real load, which is
+ * why the panel's copy says what was removed rather than promising the video is back.
+ */
+export function useRemoveFeedPreferenceMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (target: { readonly kind: FeedPreferenceKind; readonly id: string }) =>
+      target.kind === "video"
+        ? unwrap(await unmarkVideoNotInterested(target.id))
+        : unwrap(await unmuteCreator(target.id)),
+    onSuccess: (_result, target) => {
+      void queryClient.invalidateQueries({
+        queryKey:
+          target.kind === "video" ? feedKeys.notInterestedVideos() : feedKeys.mutedCreators(),
+      });
+    },
+  });
+}
+
 /* -------------------------------------------------------------------------- */
 /* Subscribe — pending, never optimistic                                        */
 /* -------------------------------------------------------------------------- */

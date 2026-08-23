@@ -18,7 +18,7 @@ video stream the page splits into **Recommended** (top) and **Explore** (bottom,
 > `src/lib/videos.ts` — the two mock stores — are **deleted**, and with them `QATOTO_VIDEO_API_URL`
 > and `MOCK_VIDEOS`.
 >
-> **Seven placeholders across five files remain deliberately mock, each marked `TRANSPORT: mock`.**
+> **Six placeholders across four files remain deliberately mock, each marked `TRANSPORT: mock`.**
 > They are listed individually in §10. `grep -rn "TRANSPORT: mock" src/` returns those and only
 > those — that grep is the check, and unlike a table it cannot drift.
 
@@ -410,6 +410,41 @@ Three spellings of the same idea are **deliberately not unified**, because renam
 boundary would make the schema stop describing the wire: `viewerState.isSubscribedToCreator` on
 reads, `isSubscribed` on the toggle response, `hasLiked` / `hasSaved` on both.
 
+### 7.1 The two feed preferences, and where they can be undone
+
+"Not interested" and "Don't recommend channel" are the only two engagement writes reachable
+**without a full account** — the backend runs them behind `requireAuth` alone, so a 403 from either
+is a domain refusal (self-mute), not the account wall. `describeEngagementError`'s
+`full_account_required` label is wrong for exactly these two and carries the backend's own message
+verbatim, which is what to render.
+
+**The kebab's Undo is in-session only, and that is a property of where it lives.**
+`video-card-menu.tsx` renders _inside_ the card it just hid, and the mutations deliberately do not
+invalidate the feed — an infinite query at `staleTime: Infinity` would lose every scrolled page. So
+the row becomes "we won't recommend this — Undo" and the card leaves on the next real load. Once it
+does, that Undo is gone with it.
+
+**`feed-preferences-panel.tsx` is the durable undo surface** — Settings → Feed preferences, beside
+"Time watched". Two lists, two transports, and the asymmetry is the backend's:
+
+| List            | Route                                 | Shape                                            |
+| --------------- | ------------------------------------- | ------------------------------------------------ |
+| Hidden channels | `GET /users/me/muted-creators`        | unpaginated — muting is deliberate, tens at most |
+| Hidden videos   | `GET /users/me/not-interested-videos` | keyset via `useKeysetList`, "Show more"          |
+
+Removals are **not optimistic** and are per-row (a `Set` of pending keys, not a shared boolean, so
+two rows in flight cannot borrow each other's spinner). Each invalidates only its own list, never
+the feed — which is why the panel's copy says the item _can be recommended again from the next time
+your feed loads_ rather than claiming it is already back.
+
+`useNotInterestedVideosQuery` **cannot report a 401** — `useKeysetList` surfaces a message, not an
+`ApiRequestError`. The panel takes its signed-out state from `useMutedCreatorsQuery`, which is a
+plain `useQuery` answering the same session. Do not sniff the other one's error string.
+
+The ranker now learns from both signals as well (backend §4.3b): dismissals damp the categories and
+creator, a mute damps **the creator only**, and the ladder is deliberately shallow — one dismissal
+is ~2 points of 100.
+
 The comment thread's **sort pills are gone**. `GET /videos/:id/comments` takes no `sort` param —
 the backend fixes newest-first for the thread and oldest-first for replies — and the old pills set
 local state that sorted nothing.
@@ -567,7 +602,7 @@ rollout, not a bug.
 ## 10. The `TRANSPORT: mock` placeholders — a decision, not a regression
 
 The R&D surface holds an invariant that `grep -rn "TRANSPORT: mock" src/` returns nothing. **This
-surface deliberately breaks it.** Seven UI areas across five files have no backend counterpart and
+surface deliberately breaks it.** Six UI areas across four files have no backend counterpart and
 were kept rather than deleted; each carries an explicit banner naming the missing field and
 pointing here.
 
@@ -577,13 +612,28 @@ pointing here.
 | `home/watch/watch-content.tsx`          | `seasons`                                     | `videoType: "anime_episode"` is on the wire and `/series` is a real API, but the PUBLIC watch payload carries no series reference. Held empty, so an anime video renders without its episode grid rather than with a fabricated one                                                                           |
 | `home/watch/watch-content.tsx`          | `isPremium`                                   | No premium tier, no entitlement table, no paywall anywhere. Hard-gated to `false` so it can never render over a video the viewer is entitled to watch                                                                                                                                                         |
 | `home/watch/comments.tsx`               | `saleItem`, `reviews`, `trending`             | `/products` exists but nothing joins a product to a video, there is no product-review table, and no search-term aggregation. Held empty, so the Reviews tab collapses rather than showing invented reviews                                                                                                    |
-| `home/watch/share-sheet.tsx`            | Download / Report / Not Interested            | No download route (the bytes are on youtube.com), no reporting flow (comment moderation is a deliberate v1 gap, backend §8.4), no "not interested" ranking signal                                                                                                                                             |
 | `studio/series/series-editor-modal.tsx` | poster picker                                 | `posterUrl` is a plain URL on the wire; the only multipart route on the studio surface is the video thumbnail                                                                                                                                                                                                 |
 | `lib/videos/studio-view.ts`             | `attachedPitchTitle`, `attachedDocumentNames` | `POST /videos` has neither field and is `.strict()`, so sending either is a 422. **`PublicVideo` returns a read-only `documents` array but nothing writes it — there is no upload route.** A creator who fills these in loses the value on save; the honest fix is a backend field, not a frontend workaround |
 
 Every one of these is **empty or inert rather than fabricated**. Nothing on this surface invents a
 value the server could have returned; the placeholders keep a layout, not a lie. Delete one only
 when its field ships on the wire.
+
+> **ONE LEFT THIS LIST, and how it went is the point.** `home/watch/share-sheet.tsx` held
+> Download / Report / Not Interested, kept on the argument that removing them "would leave a share
+> sheet with one control in it". Two of the three had quietly stopped being merely inert: the sheet
+> opens from `video-card-menu.tsx`, whose kebab wires a **real** Report and a **real** Not
+> interested, so a card was offering both the working control and a fake copy beside it.
+>
+> The fix was not to delete three buttons and accept a one-control sheet. `video_share_channel`
+> already carried `x`, `whatsapp`, `linkedin` and `email` and **nothing rendered them** — four
+> channels wired end to end server-side with no UI, the same uncalled-code defect the
+> `useMutedCreatorsQuery` audit exists to catch. The stubs were replaced by those four real
+> targets. Download stays gone from here: it is a menu row when the bytes are ours, not a share
+> target.
+>
+> A placeholder that duplicates a shipped control is not a placeholder any more. Re-read this list
+> when the thing beside an entry gets built.
 
 ---
 

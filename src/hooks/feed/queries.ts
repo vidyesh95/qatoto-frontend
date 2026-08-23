@@ -21,6 +21,7 @@ import {
   listFeedCategories,
   listFeedVideos,
   listMutedCreators,
+  listNotInterestedVideos,
   listVideoComments,
   searchVideos,
   type ListVideoCommentsFilter,
@@ -30,6 +31,7 @@ import type {
   FeedVideo,
   FeedVideoPage,
   MutedCreator,
+  NotInterestedVideo,
   SearchVideoPage,
   VideoComment,
 } from "@/lib/feed/schemas";
@@ -271,5 +273,34 @@ export function useMutedCreatorsQuery() {
   return useQuery<readonly MutedCreator[], ApiRequestError>({
     queryKey: feedKeys.mutedCreators(),
     queryFn: async () => unwrap(await listMutedCreators()),
+  });
+}
+
+/**
+ * The videos this viewer dismissed — `GET /users/me/not-interested-videos`.
+ *
+ * KEYSET, so it goes through the shared `useKeysetList` rather than a plain `useQuery` like
+ * its muted-channel sibling above. That asymmetry is the backend's: muting is bounded by hand
+ * and unpaginated, dismissing is one tap and is not.
+ *
+ * `initialPage: null` because there is NO SERVER PAGE to seed from — this list is read by a
+ * dropdown panel, which no server component renders. Per that hook's banner, `null` is the
+ * correct way to say so; seeding an empty page instead would write an authoritative-looking
+ * "you have dismissed nothing" into the cache that, at `staleTime: Infinity`, would never
+ * refetch.
+ *
+ * IT CANNOT REPORT A 401, and callers must not try to infer one from
+ * `firstPageErrorMessage` — the shared hook surfaces a message, not an `ApiRequestError`.
+ * `useMutedCreatorsQuery` is the one that can, and the panel branches on that instead: one
+ * session, one signed-out check.
+ */
+export function useNotInterestedVideosQuery(): KeysetListResult<NotInterestedVideo> {
+  return useKeysetList<NotInterestedVideo>({
+    queryKey: feedKeys.notInterestedVideos(),
+    initialPage: null,
+    // The token is opaque and server-issued. The `typeof` guard is what the shared hook's
+    // concrete `KeysetToken` union requires of every caller — this read uses the string arm.
+    fetchPage: async (token) =>
+      toCursorKeysetPage(await listNotInterestedVideos(typeof token === "string" ? token : null)),
   });
 }

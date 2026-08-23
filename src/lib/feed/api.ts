@@ -40,6 +40,7 @@ import {
   HideFromWatchHistoryResultSchema,
   MutedCreatorSchema,
   NotInterestedResultSchema,
+  NotInterestedVideoSchema,
   PaginationMetaSchema,
   RestoreToWatchHistoryResultSchema,
   LikeToggleResultSchema,
@@ -58,6 +59,7 @@ import {
   type LikeToggleResult,
   type MutedCreator,
   type NotInterestedResult,
+  type NotInterestedVideo,
   type RestoreToWatchHistoryResult,
   type ListFeedVideosFilter,
   type PlaybackErrorCode,
@@ -400,6 +402,34 @@ export function listMutedCreators(
   options?: RequestOptions,
 ): Promise<ActionResponse<readonly MutedCreator[]>> {
   return getJson(`/users/me/muted-creators`, z.array(MutedCreatorSchema), options);
+}
+
+/**
+ * `GET /users/me/not-interested-videos` — the videos this viewer dismissed.
+ *
+ * THE OTHER HALF OF THE UNDO SURFACE, and the half that was impossible until the route
+ * shipped: "not interested" hides the card that carries its own Undo, so once the reader
+ * scrolls there was nothing anywhere that could take it back.
+ *
+ * PAGINATED, WHERE `listMutedCreators` DIRECTLY ABOVE IS NOT. Muting is a deliberate act
+ * against a whole channel and tops out in the tens; dismissing is one tap on one card and
+ * accumulates without bound. Same test, opposite answer.
+ *
+ * `nextCursor` rides as a SIBLING of `data`, not inside it, which is why this is
+ * `getCursorSiblingList` and not `getCursorPaginated`. Pass `null` for the first page and
+ * never construct a cursor — a fabricated one is a `422 CURSOR_MALFORMED` by design, rather
+ * than a silent restart that would show the reader duplicates.
+ */
+export function listNotInterestedVideos(
+  cursor: string | null,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: NotInterestedVideo[]; nextCursor: string | null }>> {
+  const queryString = buildQueryString({ cursor: cursor ?? undefined });
+  return getCursorSiblingList(
+    `/users/me/not-interested-videos${queryString}`,
+    NotInterestedVideoSchema,
+    options,
+  );
 }
 
 /**

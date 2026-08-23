@@ -52,6 +52,10 @@ export const feedKeys = {
   // per-viewer. The session cookie decides who "me" is, and the whole cache is torn down on
   // sign-out — the same reason no other key here carries one.
   mutedCreators: () => ["feed", "muted-creators"] as const,
+  // NO CURSOR, per the banner at the top of this file: `useKeysetList` holds the accumulated
+  // pages under this one key, and putting the cursor in would cut a fresh cache entry per page
+  // and reset the list on every "Show more".
+  notInterestedVideos: () => ["feed", "not-interested-videos"] as const,
 
   // --- Comments ---
   // `parentCommentId` is part of the identity: the top-level thread and one comment's replies

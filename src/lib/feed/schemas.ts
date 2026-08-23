@@ -435,6 +435,30 @@ export const MutedCreatorSchema = z
   .strip();
 export type MutedCreator = z.infer<typeof MutedCreatorSchema>;
 
+/**
+ * One row of `GET /users/me/not-interested-videos` — the other half of the undo surface.
+ *
+ * TWO NULLABLE FIELDS, and neither is an oversight. `thumbnailUrl` is nullable on the backend
+ * table (a video whose oEmbed lookup returned no image is a real video), and `creatorHandle`
+ * is nullable for exactly the reason `MutedCreator.handle` is. Branch on both rather than
+ * guessing: no `/channel/${handle}` without a handle, and a placeholder block rather than an
+ * `<Image src="">` where there is no thumbnail.
+ *
+ * NO `viewerState`, NO COUNTS. This is a row in an undo list, not a feed card — everything
+ * here exists so somebody can recognise the video they dismissed and take it back.
+ */
+export const NotInterestedVideoSchema = z
+  .object({
+    videoId: z.string(),
+    title: z.string(),
+    thumbnailUrl: z.string().nullable(),
+    creatorName: z.string(),
+    creatorHandle: z.string().nullable(),
+    dismissedAt: z.iso.datetime(),
+  })
+  .strip();
+export type NotInterestedVideo = z.infer<typeof NotInterestedVideoSchema>;
+
 /*
  * The three `/watch-history` writes each answer a count of SESSION ROWS, not videos.
  *

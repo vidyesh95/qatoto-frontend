@@ -21,6 +21,7 @@ import { SwitchAccountPanel } from "@/components/home/account/menus/switch-accou
 import { DataAndPrivacyPanel } from "@/components/home/account/panels/data-and-privacy-panel";
 import { DeleteAccountPanel } from "@/components/home/account/panels/delete-account-panel";
 import { WatchTimePanel } from "@/components/home/account/panels/watch-time-panel";
+import { FeedPreferencesPanel } from "@/components/home/account/panels/feed-preferences-panel";
 import {
   type AccountEditor,
   YourAccountPanel,
@@ -65,6 +66,10 @@ type SettingsView =
   // `returnTo` — but it is not an `AccountEditor` either, because that union is what the editor
   // switch below is exhaustive over and every member of it is a form.
   | { kind: "watch-time" }
+  // A FOURTH LIST-SHAPED LEAF, beside "watch-time" and for the same reason: it reads, it
+  // writes only through per-row controls it owns, and it opens no editor — so it needs no
+  // `returnTo` and does not belong in `AccountEditor`, every member of which is a form.
+  | { kind: "feed-preferences" }
   | {
       kind: "editor";
       editor: AccountEditor;
@@ -135,6 +140,10 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
 
   if (view.kind === "watch-time") {
     return <WatchTimePanel onBack={() => setView({ kind: "list" })} />;
+  }
+
+  if (view.kind === "feed-preferences") {
+    return <FeedPreferencesPanel onBack={() => setView({ kind: "list" })} />;
   }
 
   if (view.kind === "editor") {
@@ -296,6 +305,15 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       icon: "/icons/mail_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       onClick: () => openEditorFromList("email-credential"),
       badge: hasCredential ? "Connected" : undefined,
+    },
+    {
+      // THE UNDO SURFACE FOR THE TWO FEED PREFERENCES. It sits directly above "Time watched"
+      // so the three rows that show somebody their own data are together, and it is the only
+      // place either preference can be lifted once the card carrying the in-menu Undo has
+      // scrolled away.
+      label: "Feed preferences",
+      icon: "/icons/visibility_off_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+      onClick: () => setView({ kind: "feed-preferences" }),
     },
     {
       // BACK, AND WITH AN ENDPOINT THIS TIME. This row was deleted on 2026-08-18 with the same

@@ -6,26 +6,73 @@ import { useEffect, useRef, useState } from "react";
 import StatPill from "@/components/home/watch/stat-pill";
 import type { ShareChannel } from "@/lib/feed/schemas";
 
-/** A secondary action shown as a circular icon + label in the sheet body. */
-type ShareAction = {
+/** One real share destination, rendered as a circular icon + label in the sheet body. */
+type ShareTarget = {
+  /** `video_share_channel` pgEnum label, sent verbatim. `copy_link` has its own control. */
+  channel: Exclude<ShareChannel, "copy_link">;
   /** icon base name resolved to its FILL0 SVG variant */
   icon: string;
   label: string;
+  buildIntentUrl: (shareUrl: string, videoTitle: string) => string;
 };
 
 /**
- * TRANSPORT: mock — none of these three has a backend route.
+ * THE FOUR CHANNELS THE BACKEND ALREADY ACCEPTS.
  *
- * Download, Report and Not Interested are presentational stubs. There is no download endpoint
- * (the bytes are on youtube.com), no content-reporting flow — comment moderation is a
- * deliberate v1 gap, HOME_BACKEND §8.4 — and no "not interested" signal in the ranker's inputs.
- * They are kept because removing them would leave a share sheet with one control in it; see
- * docs/HOME_STRUCTURE.md §10.
+ * `video_share_channel` has carried `x`, `whatsapp`, `linkedin` and `email` since the share
+ * route shipped, and until now this sheet sent only `copy_link` — four values wired end to end
+ * server-side and rendered by nothing.
+ *
+ * WHAT USED TO BE HERE: three dead buttons labelled Download, Report and Not Interested, with
+ * no handlers. Two of the three had become actively misleading rather than merely inert — this
+ * sheet opens from `video-card-menu.tsx`, whose kebab wires a REAL "Not interested" and a REAL
+ * Report, so the card was offering both the working control and a fake copy of it. A share
+ * sheet shares; feedback and downloads belong to the menu that owns them.
+ *
+ * Download is not among these and is not coming back here. The bytes are on youtube.com — see
+ * the long note in `video-card-menu.tsx` for the conditions under which it becomes real, and
+ * it is a menu row when it does, not a share target.
+ *
+ * NO BRAND MARKS FOR THREE OF THE FOUR. `public/icons` has `mail` but no X, WhatsApp or
+ * LinkedIn glyph, so those fall back to the generic `share` icon and are told apart by their
+ * labels. Inventing the assets — or hand-writing trademarked logo paths from memory — would be
+ * worse than a plain glyph. Dropping real marks in is the obvious polish.
  */
-const SHARE_ACTIONS: ShareAction[] = [
-  { icon: "download", label: "Download" },
-  { icon: "report", label: "Report" },
-  { icon: "heart_broken", label: "Not Interested" },
+const SHARE_TARGETS: ShareTarget[] = [
+  {
+    channel: "whatsapp",
+    icon: "share",
+    label: "WhatsApp",
+    // wa.me takes ONE `text` field, so the title and the link are joined into it rather than
+    // passed separately. Without a title it is the bare link, never the string "undefined".
+    buildIntentUrl: (shareUrl, videoTitle) =>
+      `https://wa.me/?text=${encodeURIComponent(videoTitle === "" ? shareUrl : `${videoTitle} ${shareUrl}`)}`,
+  },
+  {
+    channel: "x",
+    icon: "share",
+    label: "X",
+    buildIntentUrl: (shareUrl, videoTitle) =>
+      `https://x.com/intent/tweet?url=${encodeURIComponent(shareUrl)}${
+        videoTitle === "" ? "" : `&text=${encodeURIComponent(videoTitle)}`
+      }`,
+  },
+  {
+    channel: "linkedin",
+    icon: "share",
+    label: "LinkedIn",
+    // LinkedIn takes the URL alone and reads the title off the page's own OG tags; passing a
+    // `title` parameter has been ignored for years and pretending otherwise would be cargo.
+    buildIntentUrl: (shareUrl) =>
+      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+  },
+  {
+    channel: "email",
+    icon: "mail",
+    label: "Email",
+    buildIntentUrl: (shareUrl, videoTitle) =>
+      `mailto:?subject=${encodeURIComponent(videoTitle === "" ? "A video on Qatoto" : videoTitle)}&body=${encodeURIComponent(shareUrl)}`,
+  },
 ];
 
 type ShareSheetProps = {
@@ -40,6 +87,13 @@ type ShareSheetProps = {
    */
   shareUrl?: string;
   /**
+   * The video's title, used as the share text on the targets that take one.
+   *
+   * OPTIONAL, and its absence must never surface. A missing title means the link travels on
+   * its own — it must never become the string "undefined" in somebody's WhatsApp message.
+   */
+  videoTitle?: string;
+  /**
    * Records the share against the video, once the user actually shares.
    *
    * Optional so the sheet still renders on surfaces with no video id. The channel is a
@@ -49,12 +103,15 @@ type ShareSheetProps = {
 };
 
 /**
- * Share surface for the watch screen. Renders as a bottom sheet on mobile
- * (slides up from the foot of the screen) and a centered modal dialog on
- * desktop. The actions here are presentational stubs — the only one wired up
- * is "Copy Link", which copies the current page URL to the clipboard.
+ * Share surface for the watch screen and for every feed card's kebab. Renders as a bottom
+ * sheet on mobile (slides up from the foot of the screen) and an anchored popover on desktop.
+ *
+ * EVERY CONTROL IN IT IS WIRED: Copy Link, plus the four `video_share_channel` targets. Each
+ * reports its own channel through `onShared`, which is what moves `videoStats.shareCount` —
+ * and that count feeds the ranker's engagement rate, so a control that recorded a share
+ * nobody made would be inflating a ranking input.
  */
-export function ShareSheet({ onClose, shareUrl, onShared }: ShareSheetProps) {
+export function ShareSheet({ onClose, shareUrl, videoTitle, onShared }: ShareSheetProps) {
   const [copied, setCopied] = useState(false);
   // Reference to the panel, used to detect outside clicks on desktop where
   // there is no full-screen backdrop to catch them.
@@ -86,14 +143,20 @@ export function ShareSheet({ onClose, shareUrl, onShared }: ShareSheetProps) {
     };
   }, [onClose]);
 
+  /**
+   * Resolved against the origin: callers hand us a relative `/watch?v=…` off the card, and a
+   * path is not a link once it leaves this tab — not on a clipboard, and not in a WhatsApp
+   * message.
+   *
+   * BROWSER-ONLY. It reads `window`, so it is called from handlers and from render on a
+   * `"use client"` component that never server-renders its body — never at module scope.
+   */
+  const resolveAbsoluteShareUrl = (): string =>
+    shareUrl === undefined ? window.location.href : new URL(shareUrl, window.location.origin).href;
+
   const handleCopyLink = async () => {
     try {
-      // Resolved against the origin: callers hand us a relative `/watch?v=…` off the card, and
-      // a path on someone's clipboard is not a link.
-      const linkToCopy =
-        shareUrl === undefined
-          ? window.location.href
-          : new URL(shareUrl, window.location.origin).href;
+      const linkToCopy = resolveAbsoluteShareUrl();
       await navigator.clipboard.writeText(linkToCopy);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
@@ -183,22 +246,39 @@ export function ShareSheet({ onClose, shareUrl, onShared }: ShareSheetProps) {
             </span>
           </button>
 
-          {SHARE_ACTIONS.map((action) => (
-            <button
-              key={action.label}
-              type="button"
+          {/*
+            REAL ANCHORS, NOT `window.open`. An anchor hands off to the target the way the
+            browser intends, survives popup blockers that would null out a scripted open, and
+            makes `mailto:` work without special-casing — `window.open` on a mailto returns
+            null even when the mail client did launch, which would suppress the record below.
+
+            WHEN THE SHARE IS RECORDED, and why this bar is lower than Copy Link's. Copying
+            records only after the clipboard write RESOLVES, because that is verifiable and a
+            failed copy put nothing anywhere. Handing off to WhatsApp is the observable event
+            here: whether the sender then hits send happens in another application and is not
+            knowable to us — no platform claims otherwise. So the handoff is the share.
+          */}
+          {SHARE_TARGETS.map((shareTarget) => (
+            <a
+              key={shareTarget.channel}
+              href={shareTarget.buildIntentUrl(resolveAbsoluteShareUrl(), videoTitle ?? "")}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => onShared?.(shareTarget.channel)}
               className="flex cursor-pointer flex-col items-center gap-2"
             >
               <span className="flex size-12 items-center justify-center rounded-full bg-muted">
                 <Image
-                  src={`/icons/${action.icon}_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg`}
+                  src={`/icons/${shareTarget.icon}_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg`}
                   alt=""
                   width={24}
                   height={24}
                 />
               </span>
-              <span className="text-center text-xs text-secondary-foreground">{action.label}</span>
-            </button>
+              <span className="text-center text-xs text-secondary-foreground">
+                {shareTarget.label}
+              </span>
+            </a>
           ))}
         </div>
       </div>
