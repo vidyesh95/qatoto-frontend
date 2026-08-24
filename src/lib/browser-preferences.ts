@@ -81,22 +81,12 @@ const StoredBrowserPreferencesSchema = z
   .strip();
 
 /**
- * Reads the stored preferences, merged over the defaults.
+ * Parses a raw localStorage value into preferences, merged over the defaults.
  *
- * Returns the defaults unchanged on the server, in a browser with storage disabled (Safari private
- * mode throws on access, it does not return null), on malformed JSON, and on a blob that fails the
- * schema. There is no error to surface: a preference that cannot be read is a preference that was
- * never set.
+ * Returns the defaults on null, malformed JSON, and a blob that fails the schema. There is no
+ * error to surface: a preference that cannot be read is a preference that was never set.
  */
-export function readStoredBrowserPreferences(): BrowserPreferences {
-  if (typeof window === "undefined") return DEFAULT_BROWSER_PREFERENCES;
-
-  let rawStoredValue: string | null;
-  try {
-    rawStoredValue = window.localStorage.getItem(BROWSER_PREFERENCES_STORAGE_KEY);
-  } catch {
-    return DEFAULT_BROWSER_PREFERENCES;
-  }
+function parseStoredBrowserPreferences(rawStoredValue: string | null): BrowserPreferences {
   if (rawStoredValue === null) return DEFAULT_BROWSER_PREFERENCES;
 
   let parsedJson: unknown;
@@ -112,14 +102,91 @@ export function readStoredBrowserPreferences(): BrowserPreferences {
   return { ...DEFAULT_BROWSER_PREFERENCES, ...parsed.data };
 }
 
+function readRawStoredBrowserPreferences(): string | null {
+  try {
+    return window.localStorage.getItem(BROWSER_PREFERENCES_STORAGE_KEY);
+  } catch {
+    // Safari private mode throws on access; treat that as "nothing stored".
+    return null;
+  }
+}
+
+/**
+ * Reads the stored preferences, merged over the defaults.
+ *
+ * Returns the defaults unchanged on the server, in a browser with storage disabled (Safari private
+ * mode throws on access, it does not return null), on malformed JSON, and on a blob that fails the
+ * schema. There is no error to surface: a preference that cannot be read is a preference that was
+ * never set.
+ */
+export function readStoredBrowserPreferences(): BrowserPreferences {
+  if (typeof window === "undefined") return DEFAULT_BROWSER_PREFERENCES;
+  return parseStoredBrowserPreferences(readRawStoredBrowserPreferences());
+}
+
+const preferencesChangeListeners = new Set<() => void>();
+
+/** `undefined` means the cache has never been filled, so a `null` storage value is distinguishable. */
+let cachedRawStoredValue: string | null | undefined;
+let cachedPreferencesSnapshot: BrowserPreferences = DEFAULT_BROWSER_PREFERENCES;
+
+function rememberPreferencesSnapshot(
+  rawStoredValue: string | null,
+  snapshot: BrowserPreferences,
+): BrowserPreferences {
+  cachedRawStoredValue = rawStoredValue;
+  cachedPreferencesSnapshot = snapshot;
+  return snapshot;
+}
+
+function notifyBrowserPreferencesListeners(): void {
+  for (const onStoreChange of preferencesChangeListeners) {
+    onStoreChange();
+  }
+}
+
+/**
+ * Cached snapshot for `useSyncExternalStore`.
+ *
+ * `parseStoredBrowserPreferences` allocates a new object every call. Returning a fresh object from
+ * `getSnapshot` when the store has not changed makes React retry forever, so the raw storage string
+ * is the cache key and the parsed object is reused until that string changes.
+ */
+export function getBrowserPreferencesSnapshot(): BrowserPreferences {
+  if (typeof window === "undefined") return DEFAULT_BROWSER_PREFERENCES;
+
+  const rawStoredValue = readRawStoredBrowserPreferences();
+  if (rawStoredValue === cachedRawStoredValue) return cachedPreferencesSnapshot;
+  return rememberPreferencesSnapshot(rawStoredValue, parseStoredBrowserPreferences(rawStoredValue));
+}
+
+/**
+ * Subscribes to this-tab writes and other-tab `storage` events.
+ *
+ * `storage` does not fire in the tab that wrote, so `writeStoredBrowserPreferences` /
+ * `clearStoredBrowserPreferences` notify the listener set themselves.
+ */
+export function subscribeToBrowserPreferences(onStoreChange: () => void): () => void {
+  preferencesChangeListeners.add(onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    preferencesChangeListeners.delete(onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+}
+
 /** Writes the whole object back. A failed write is silent for the same reason a failed read is. */
 export function writeStoredBrowserPreferences(preferences: BrowserPreferences): void {
   if (typeof window === "undefined") return;
+  const serializedPreferences = JSON.stringify(preferences);
   try {
-    window.localStorage.setItem(BROWSER_PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
+    window.localStorage.setItem(BROWSER_PREFERENCES_STORAGE_KEY, serializedPreferences);
+    rememberPreferencesSnapshot(serializedPreferences, preferences);
   } catch {
     // Storage disabled or over quota. The preference still applies for this page's lifetime.
+    rememberPreferencesSnapshot(cachedRawStoredValue ?? null, preferences);
   }
+  notifyBrowserPreferencesListeners();
 }
 
 /**
@@ -129,9 +196,8 @@ export function writeStoredBrowserPreferences(preferences: BrowserPreferences): 
  * one real control. A failed removal is silent for the same reason a failed write is: storage the
  * browser refuses to hand over holds nothing this build could have written.
  *
- * Callers must also reset their in-memory copy — see `clearPreferences` in
- * `state/browser-preferences-context.tsx`. Clearing storage alone leaves the open dropdown showing
- * values that no longer exist anywhere.
+ * Notifies the `useSyncExternalStore` subscribers in `browser-preferences-context.tsx` so the open
+ * dropdown cannot keep showing values that no longer exist anywhere.
  */
 export function clearStoredBrowserPreferences(): void {
   if (typeof window === "undefined") return;
@@ -140,4 +206,6 @@ export function clearStoredBrowserPreferences(): void {
   } catch {
     // Storage disabled or unreachable. Nothing was persisted for this build to remove.
   }
+  rememberPreferencesSnapshot(null, DEFAULT_BROWSER_PREFERENCES);
+  notifyBrowserPreferencesListeners();
 }

@@ -10,14 +10,14 @@
 // moment React hydrates. The bug is invisible in development, where nothing is cached long
 // enough to drift.
 //
-// So: the FIRST paint — server-rendered, cacheable, correct forever — is an ABSOLUTE date. An
-// effect then swaps in the relative label once we are in a browser and know what "now" is.
-// `suppressHydrationWarning` sits on that one text node, because the server and the first
-// client render agree there by construction and only the post-effect render differs.
+// So: the FIRST paint — server-rendered, cacheable, correct forever — is an ABSOLUTE date.
+// `useSyncExternalStore` then swaps in the relative label once we are in a browser and know
+// what "now" is. `suppressHydrationWarning` sits on that one text node, because the server and
+// the first client render agree there by construction and only the post-hydration render differs.
 //
 // Never compute relative time in a server component.
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 const SECONDS_PER_MINUTE = 60;
 const SECONDS_PER_HOUR = 3_600;
@@ -25,6 +25,9 @@ const SECONDS_PER_DAY = 86_400;
 const SECONDS_PER_WEEK = 604_800;
 const SECONDS_PER_MONTH = 2_592_000; // 30 days — a display approximation, not a calendar month
 const SECONDS_PER_YEAR = 31_536_000; // 365 days, same caveat
+
+/** No clock to tick — the label is computed once after hydration, the same as the old effect. */
+const subscribeToNothing = () => () => {};
 
 function toUnitLabel(count: number, unit: string): string {
   return `${count} ${unit}${count === 1 ? "" : "s"} ago`;
@@ -82,12 +85,11 @@ export default function RelativeTime({
   readonly className?: string;
 }) {
   const absoluteLabel = formatAbsoluteDateLabel(isoInstant);
-  const [label, setLabel] = useState(absoluteLabel);
-
-  useEffect(() => {
-    // Runs after hydration, so `Date.now()` is the reader's clock and never the build's.
-    setLabel(formatRelativeTimeLabel(isoInstant, Date.now()));
-  }, [isoInstant]);
+  const label = useSyncExternalStore(
+    subscribeToNothing,
+    () => formatRelativeTimeLabel(isoInstant, Date.now()),
+    () => absoluteLabel,
+  );
 
   if (absoluteLabel === "") return null;
 

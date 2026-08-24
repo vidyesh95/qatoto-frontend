@@ -10,27 +10,37 @@
 //   - Cache Components rejects `new Date()` during prerender, and rightly so: baking the
 //     build date into a static page would reintroduce exactly that staleness.
 //
-// So the pill resolves after mount. Until then it renders nothing — the validity dates
-// themselves are server-rendered and always visible, so no information is withheld, and
-// a missing pill is never mistaken for a claim of validity.
+// So the pill resolves after hydration via `useSyncExternalStore`. Until then it renders
+// nothing — the validity dates themselves are server-rendered and always visible, so no
+// information is withheld, and a missing pill is never mistaken for a claim of validity.
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+const subscribeToNothing = () => () => {};
+
+function isCertificationLapsedOnViewerCalendar(validUntil: string): boolean {
+  // The wire carries `YYYY-MM-DD`. Building today's key from local date parts keeps the
+  // comparison in the viewer's own day rather than UTC's, which can be a day ahead.
+  const now = new Date();
+  const todayIsoDate = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
+  return validUntil < todayIsoDate;
+}
+
+function getUnlapsedServerSnapshot(): boolean | null {
+  return null;
+}
 
 export default function CertificationValidityPill({ validUntil }: { validUntil: string }) {
-  const [isLapsed, setIsLapsed] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    // The wire carries `YYYY-MM-DD`. Building today's key from local date parts keeps the
-    // comparison in the viewer's own day rather than UTC's, which can be a day ahead.
-    const now = new Date();
-    const todayIsoDate = [
-      now.getFullYear(),
-      String(now.getMonth() + 1).padStart(2, "0"),
-      String(now.getDate()).padStart(2, "0"),
-    ].join("-");
-    setIsLapsed(validUntil < todayIsoDate);
-  }, [validUntil]);
+  const isLapsed = useSyncExternalStore(
+    subscribeToNothing,
+    () => isCertificationLapsedOnViewerCalendar(validUntil),
+    getUnlapsedServerSnapshot,
+  );
 
   if (isLapsed === null || !isLapsed) return null;
 

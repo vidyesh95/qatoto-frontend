@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { Passkey } from "@better-auth/passkey/client";
 import { authClient } from "@/lib/auth-client";
 import { useInvalidatePasskeys } from "@/hooks/account/passkeys";
+import { useIsWebAuthnSupported } from "@/hooks/use-is-web-authn-supported";
 
 /**
  * Manages the WebAuthn passkeys on the signed-in account: list, create,
@@ -53,21 +54,22 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
   });
   const [mutationState, setMutationState] = useState<PasskeyMutationState>({ status: "idle" });
   const [renameDraftName, setRenameDraftName] = useState("");
-  // Bumped after every successful mutation to refetch the list.
-  const [listRefreshCount, setListRefreshCount] = useState(0);
   // The "Your account" panel shows a passkey COUNT from a cached query this panel does not read.
   // Without this, adding a passkey here and going back leaves that row saying the old number.
   const invalidatePasskeys = useInvalidatePasskeys();
-  // Assume support until the effect below can check; avoids SSR window access.
-  const [isWebAuthnSupported, setIsWebAuthnSupported] = useState(true);
+  const isWebAuthnSupported = useIsWebAuthnSupported();
 
-  useEffect(() => {
-    if (typeof window.PublicKeyCredential === "undefined") setIsWebAuthnSupported(false);
-  }, []);
+  async function loadPasskeys() {
+    const { data: passkeys, error } = await authClient.passkey.listUserPasskeys();
+    if (error || !passkeys) {
+      setPasskeyListState({ status: "error" });
+      return;
+    }
+    setPasskeyListState({ status: "ready", passkeys });
+  }
 
   useEffect(() => {
     let isActive = true;
-    setPasskeyListState({ status: "loading" });
     void (async () => {
       const { data: passkeys, error } = await authClient.passkey.listUserPasskeys();
       if (!isActive) return;
@@ -80,7 +82,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
     return () => {
       isActive = false;
     };
-  }, [listRefreshCount]);
+  }, []);
 
   async function handleCreatePasskey() {
     setMutationState({ status: "registering" });
@@ -108,7 +110,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
       return;
     }
     setMutationState({ status: "idle" });
-    setListRefreshCount((refreshCount) => refreshCount + 1);
+    await loadPasskeys();
     void invalidatePasskeys();
   }
 
@@ -123,7 +125,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
       return;
     }
     setMutationState({ status: "idle" });
-    setListRefreshCount((refreshCount) => refreshCount + 1);
+    await loadPasskeys();
     void invalidatePasskeys();
   }
 
@@ -147,7 +149,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
       return;
     }
     setMutationState({ status: "idle" });
-    setListRefreshCount((refreshCount) => refreshCount + 1);
+    await loadPasskeys();
     void invalidatePasskeys();
   }
 
@@ -296,7 +298,7 @@ export function PasskeysPanel({ onBack }: PasskeysPanelProps) {
             <p className="text-sm text-red-600">Couldn't load your passkeys.</p>
             <button
               type="button"
-              onClick={() => setListRefreshCount((refreshCount) => refreshCount + 1)}
+              onClick={() => void loadPasskeys()}
               className="cursor-pointer self-start text-sm font-medium text-[#00696E]"
             >
               Try again

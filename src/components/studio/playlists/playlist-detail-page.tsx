@@ -14,7 +14,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { usePlaylistQuery, useReplacePlaylistVideosMutation } from "@/hooks/playlists";
 import { ApiRequestError } from "@/lib/http";
@@ -33,13 +33,16 @@ export default function PlaylistDetailPage({ playlistId }: { readonly playlistId
    * instantly and the write is the settled result.
    */
   const [orderedVideos, setOrderedVideos] = useState<PlaylistVideo[]>([]);
+  const [seededServerVideos, setSeededServerVideos] = useState<PlaylistVideo[] | undefined>(
+    undefined,
+  );
   const [writeErrorMessage, setWriteErrorMessage] = useState<string | null>(null);
 
   const serverVideos = playlistQuery.data?.videos;
-  useEffect(() => {
-    if (serverVideos === undefined) return;
+  if (serverVideos !== undefined && serverVideos !== seededServerVideos) {
+    setSeededServerVideos(serverVideos);
     setOrderedVideos([...serverVideos]);
-  }, [serverVideos]);
+  }
 
   function writeOrder(nextVideos: PlaylistVideo[]) {
     const previousVideos = orderedVideos;

@@ -5,7 +5,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   MutationErrorNotice,
@@ -106,11 +106,10 @@ export default function SpotlightAdminPage() {
   // setDraftSlots always producing a new array, re-enters forever (Maximum update depth).
   // After Save, apply the mutation result directly in onSuccess instead.
   const serverSlots = slotsQuery.data;
-  useEffect(() => {
-    if (serverSlots === undefined || hasSeededDraft) return;
+  if (serverSlots !== undefined && !hasSeededDraft) {
     setDraftSlots(slotsToDraft(serverSlots));
     setHasSeededDraft(true);
-  }, [serverSlots, hasSeededDraft]);
+  }
 
   const trimmedSearch = searchText.trim();
   const searchQuery = useQuery({

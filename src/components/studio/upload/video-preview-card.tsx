@@ -23,17 +23,23 @@ export default function VideoPreviewCard(props: VideoPreviewCardProps) {
   const sourceLabel = youtubeUrl ?? ("videoFile" in props ? props.videoFile.name : null);
   const fileName = sourceLabel ?? ("fileName" in props ? props.fileName : "");
 
+  const [trackedVideoFile, setTrackedVideoFile] = useState(videoFile);
   const [previewStage, setPreviewStage] = useState<PreviewStage>("processing");
   const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
+
+  if (videoFile !== trackedVideoFile) {
+    setTrackedVideoFile(videoFile);
+    setPreviewStage("processing");
+    setVideoObjectUrl(null);
+  }
 
   useEffect(() => {
     if (!videoFile) return undefined;
     const objectUrl = URL.createObjectURL(videoFile);
-    setVideoObjectUrl(objectUrl);
-    setPreviewStage("processing");
 
     const processingTimeoutId = setTimeout(() => {
       setPreviewStage("ready");
+      setVideoObjectUrl(objectUrl);
     }, FAKE_PROCESSING_DURATION_MS);
 
     return () => {

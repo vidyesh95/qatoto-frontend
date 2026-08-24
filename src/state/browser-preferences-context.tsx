@@ -8,21 +8,23 @@
 // shared rather than local so any future reader sees the same value the dropdown last wrote.
 //
 // WHY THE SERVER RENDER IS ALWAYS THE DEFAULTS. `localStorage` does not exist during SSR, so the
-// HTML can only ever contain `DEFAULT_BROWSER_PREFERENCES`; reading storage in a `useState`
-// initializer would make the hydration render disagree with that HTML and React would throw away
-// the subtree. So the stored values are ADOPTED IN AN EFFECT, one render later. That is a normal
-// state update, not a mismatch — `use-viewer-signed-in.ts` documents the class of bug this avoids.
+// HTML can only ever contain `DEFAULT_BROWSER_PREFERENCES`. `useSyncExternalStore` is what makes
+// that exact: React uses `getServerSnapshot` for both the SSR render and the hydration render, then
+// adopts the stored values on the render after. Reading storage in a `useState` initializer would
+// make the hydration render disagree with that HTML and React would throw away the subtree.
+// `use-viewer-signed-in.ts` documents the class of bug this avoids.
 //
 // NOTHING HERE TOUCHES THE DOCUMENT ANY MORE. This provider used to also drive the theme — apply
 // `.dark` to `<html>`, subscribe to `prefers-color-scheme` — and that went when Appearance did.
 // Every surviving preference is a value the UI reads, not a side effect.
 
-import { createContext, use, useCallback, useEffect, useState, type ReactNode } from "react";
+import { createContext, use, useCallback, useSyncExternalStore, type ReactNode } from "react";
 
 import {
   clearStoredBrowserPreferences,
   DEFAULT_BROWSER_PREFERENCES,
-  readStoredBrowserPreferences,
+  getBrowserPreferencesSnapshot,
+  subscribeToBrowserPreferences,
   writeStoredBrowserPreferences,
   type BrowserPreferences,
 } from "@/lib/browser-preferences";
@@ -42,38 +44,37 @@ const BrowserPreferencesContext = createContext<BrowserPreferencesContextValue |
   undefined,
 );
 
+function getServerBrowserPreferencesSnapshot(): BrowserPreferences {
+  return DEFAULT_BROWSER_PREFERENCES;
+}
+
 export function BrowserPreferencesProvider({ children }: { children: ReactNode }) {
-  const [preferences, setPreferences] = useState<BrowserPreferences>(DEFAULT_BROWSER_PREFERENCES);
+  const preferences = useSyncExternalStore(
+    subscribeToBrowserPreferences,
+    getBrowserPreferencesSnapshot,
+    getServerBrowserPreferencesSnapshot,
+  );
 
-  useEffect(() => {
-    setPreferences(readStoredBrowserPreferences());
-  }, []);
-
-  // Persisting happens HERE and not in an effect on `preferences`, deliberately. An effect would
-  // also fire on the adopt render above, writing the defaults back over storage in the window
-  // before the read landed — and on a slow first paint that window is real. A preference is only
+  // Persisting happens HERE and not by writing React state, deliberately. The store is
+  // localStorage; writing it and notifying subscribers is one action, so a preference is only
   // ever changed by a person clicking something, which is always after mount.
   const setPreference = useCallback(
     <PreferenceKey extends keyof BrowserPreferences>(
       key: PreferenceKey,
       value: BrowserPreferences[PreferenceKey],
     ) => {
-      setPreferences((currentPreferences) => {
-        const nextPreferences = { ...currentPreferences, [key]: value };
-        writeStoredBrowserPreferences(nextPreferences);
-        return nextPreferences;
-      });
+      const nextPreferences = { ...getBrowserPreferencesSnapshot(), [key]: value };
+      writeStoredBrowserPreferences(nextPreferences);
     },
     [],
   );
 
-  // THE STORAGE REMOVAL AND THE STATE RESET ARE ONE ACTION, not two a caller could get half of.
+  // THE STORAGE REMOVAL AND THE SNAPSHOT RESET ARE ONE ACTION, not two a caller could get half of.
   // "Your data & privacy" offers this as an erasure; leaving the adopted values in memory would
   // mean the panels still show a country the device no longer remembers, and the next
   // `setPreference` would write that stale value straight back into the key just removed.
   const clearPreferences = useCallback(() => {
     clearStoredBrowserPreferences();
-    setPreferences(DEFAULT_BROWSER_PREFERENCES);
   }, []);
 
   return (

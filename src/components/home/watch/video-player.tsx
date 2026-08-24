@@ -148,7 +148,9 @@ function YoutubeVideoPlayer({
   // The beacon controls are stable per videoId, but re-creating the PLAYER whenever they change
   // would tear down playback. Held in a ref so the mount effect depends only on the video.
   const beaconRef = useRef(beacon);
-  beaconRef.current = beacon;
+  useEffect(() => {
+    beaconRef.current = beacon;
+  }, [beacon]);
 
   const canReportProgress = videoId !== undefined && videoId !== "";
 

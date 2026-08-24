@@ -174,8 +174,12 @@ export function AdminImagePicker({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   /** What the admin last chose, verdict not yet known. The parent never sees this one. */
-  const [candidateFile, setCandidateFile] = useState<File | null>(null);
-  const [pickState, setPickState] = useState<ImagePickState>({ status: "empty" });
+  const [candidate, setCandidate] = useState<{ file: File; previewUrl: string } | null>(null);
+  const [checkOutcome, setCheckOutcome] = useState<
+    | { file: File; status: "ready"; widthPx: number; heightPx: number }
+    | { file: File; status: "rejected"; message: string }
+    | null
+  >(null);
 
   /**
    * The parent is told about a file only once it PASSES, and this split is load-bearing.
@@ -204,44 +208,56 @@ export function AdminImagePicker({
     onFileSelectedRef.current(file);
   }
 
+  const pickState: ImagePickState =
+    candidate === null
+      ? { status: "empty" }
+      : checkOutcome?.file === candidate.file && checkOutcome.status === "ready"
+        ? {
+            status: "ready",
+            previewUrl: candidate.previewUrl,
+            widthPx: checkOutcome.widthPx,
+            heightPx: checkOutcome.heightPx,
+          }
+        : checkOutcome?.file === candidate.file && checkOutcome.status === "rejected"
+          ? { status: "rejected", message: checkOutcome.message }
+          : { status: "checking", previewUrl: candidate.previewUrl };
+
   /**
-   * The object URL lives and dies with the candidate, and the check runs in the same effect.
+   * Decode and measure the candidate. Object URL is created in the pick handler; this
+   * effect only awaits the check and then records the verdict.
    *
    * `isStale` guards the async gap: pick A, pick B before A finishes decoding, and A's
    * verdict must not land on top of B's.
    */
   useEffect(() => {
-    if (candidateFile === null) {
-      setPickState({ status: "empty" });
-      return undefined;
-    }
+    if (candidate === null) return undefined;
 
-    const previewUrl = URL.createObjectURL(candidateFile);
-    setPickState({ status: "checking", previewUrl });
-
+    const fileToCheck = candidate.file;
+    const previewUrl = candidate.previewUrl;
     let isStale = false;
     async function runCheck(file: File) {
-      const checkResult = await checkImageFile(file);
+      const imageCheckResult = await checkImageFile(file);
       if (isStale) return;
-      if (checkResult.success) {
-        setPickState({
+      if (imageCheckResult.success) {
+        setCheckOutcome({
+          file,
           status: "ready",
-          previewUrl,
-          widthPx: checkResult.widthPx,
-          heightPx: checkResult.heightPx,
+          widthPx: imageCheckResult.widthPx,
+          heightPx: imageCheckResult.heightPx,
         });
-        reportFileToParent(file);
+        reportedFileRef.current = file;
+        onFileSelectedRef.current(file);
       } else {
-        setPickState({ status: "rejected", message: checkResult.message });
+        setCheckOutcome({ status: "rejected", file, message: imageCheckResult.message });
       }
     }
-    void runCheck(candidateFile);
+    void runCheck(fileToCheck);
 
     return () => {
       isStale = true;
       URL.revokeObjectURL(previewUrl);
     };
-  }, [candidateFile]);
+  }, [candidate]);
 
   /**
    * The parent clearing its file — after a successful submit — clears the preview too.
@@ -253,7 +269,8 @@ export function AdminImagePicker({
   useEffect(() => {
     if (selectedFile === null && reportedFileRef.current !== null) {
       reportedFileRef.current = null;
-      setCandidateFile(null);
+      setCandidate(null);
+      setCheckOutcome(null);
     }
   }, [selectedFile]);
 
@@ -261,13 +278,21 @@ export function AdminImagePicker({
     // ONE FILE. The backend's multer config sets `files: 1`; a multi-file drop that silently
     // uploaded the first one would be a coin flip over which slide the admin gets.
     const firstFile = incomingFiles?.[0] ?? null;
-    setCandidateFile(firstFile);
+    if (firstFile === null) {
+      setCandidate(null);
+      setCheckOutcome(null);
+      reportFileToParent(null);
+      return;
+    }
+    setCandidate({ file: firstFile, previewUrl: URL.createObjectURL(firstFile) });
+    setCheckOutcome(null);
     // A new pick invalidates whatever the parent was holding until this one passes.
     reportFileToParent(null);
   }
 
   function handleRemoveClick() {
-    setCandidateFile(null);
+    setCandidate(null);
+    setCheckOutcome(null);
     reportFileToParent(null);
   }
 
@@ -401,7 +426,7 @@ export function AdminImagePicker({
           <img src={previewUrl} alt="" className="size-full object-contain" />
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <span className="max-w-60 truncate">{candidateFile?.name}</span>
+          <span className="max-w-60 truncate">{candidate?.file.name}</span>
           {measured === null ? (
             <span>Checking…</span>
           ) : (
@@ -409,7 +434,7 @@ export function AdminImagePicker({
             // see by eye in a scaled-down preview.
             <span>
               {String(measured.widthPx)} × {String(measured.heightPx)}
-              {candidateFile ? ` · ${formatMegabytes(candidateFile.size)}` : ""}
+              {candidate ? ` · ${formatMegabytes(candidate.file.size)}` : ""}
             </span>
           )}
           <button

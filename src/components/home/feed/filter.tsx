@@ -79,34 +79,30 @@ export default function Filter({
   // Recomputes whether the chip row currently overflows in either direction.
   // Called on mount, on every scroll event, and whenever the container is
   // resized — so the chevrons appear/disappear in sync with the actual
-  // scroll position and available width.
-  const recalculateScrollAvailability = useCallback(() => {
-    const container = chipsScrollContainerRef.current;
-    if (!container) return;
-    const { scrollLeft, scrollWidth, clientWidth } = container;
-    setCanScrollBackward(scrollLeft > 0);
-    setCanScrollForward(scrollLeft + clientWidth < scrollWidth - 1);
-  }, []);
-
-  // Wires the scroll listener and ResizeObserver that keep the chevron
-  // visibility state up to date. Returns the matching cleanup so React tears
-  // them down on unmount.
-  //
-  // `chips.length` is a dependency because the chip row grows when the category
-  // query resolves, and a row that just gained twelve chips overflows when it
-  // did not a moment ago.
+  // scroll position and available width. `chipCount` re-runs this when the
+  // category query resolves and the row grows.
+  const chipCount = chips.length;
   useEffect(() => {
     const container = chipsScrollContainerRef.current;
-    if (!container) return undefined;
-    recalculateScrollAvailability();
-    container.addEventListener("scroll", recalculateScrollAvailability, { passive: true });
-    const resizeObserver = new ResizeObserver(recalculateScrollAvailability);
+    if (container === null) return undefined;
+
+    function recalculateScrollAvailability(scrollContainer: HTMLDivElement) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainer;
+      setCanScrollBackward(scrollLeft > 0);
+      setCanScrollForward(scrollLeft + clientWidth < scrollWidth - 1);
+    }
+
+    container.setAttribute("data-chip-count", String(chipCount));
+    recalculateScrollAvailability(container);
+    const handleScroll = () => recalculateScrollAvailability(container);
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    const resizeObserver = new ResizeObserver(() => recalculateScrollAvailability(container));
     resizeObserver.observe(container);
     return () => {
-      container.removeEventListener("scroll", recalculateScrollAvailability);
+      container.removeEventListener("scroll", handleScroll);
       resizeObserver.disconnect();
     };
-  }, [recalculateScrollAvailability, chips.length]);
+  }, [chipCount]);
 
   // Scrolls the chip row one "page" in the requested direction with a smooth
   // animation. Triggered by the back/forward chevron buttons.

@@ -85,9 +85,10 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
   // Reset scroll to the top whenever the visible panel changes, so opening a
   // sub-panel (or returning to main) always starts at the top rather than
   // inheriting the previous panel's scroll position.
-  useEffect(() => {
+  function handleViewChange(nextView: MenuView) {
+    setView(nextView);
     menuPanelRef.current?.scrollTo({ top: 0 });
-  }, [view]);
+  }
 
   // Sign the user out: end the Better Auth session (clears the httpOnly
   // cookie), close the menu, and navigate home with a full reload so any
@@ -107,24 +108,24 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
         <AiAssistPanel
           selected={preferences.isAiAssistModeOn}
           onSelect={(isAiAssistModeOn) => setPreference("isAiAssistModeOn", isAiAssistModeOn)}
-          onBack={() => setView("main")}
+          onBack={() => handleViewChange("main")}
         />
       ) : view === "language" ? (
         <LanguagePanel
           selected={preferences.language}
           onSelect={(language) => setPreference("language", language)}
-          onBack={() => setView("main")}
+          onBack={() => handleViewChange("main")}
         />
       ) : view === "location" ? (
         <LocationPanel
           selected={preferences.countryCode}
           onSelect={(countryCode) => setPreference("countryCode", countryCode)}
-          onBack={() => setView("main")}
+          onBack={() => handleViewChange("main")}
         />
       ) : view === "settings" ? (
-        <SettingsPanel onBack={() => setView("main")} onSignOut={handleSignOut} />
+        <SettingsPanel onBack={() => handleViewChange("main")} onSignOut={handleSignOut} />
       ) : view === "switch-account" ? (
-        <SwitchAccountPanel onBack={() => setView("main")} onSignOutAll={handleSignOut} />
+        <SwitchAccountPanel onBack={() => handleViewChange("main")} onSignOutAll={handleSignOut} />
       ) : (
         <div className="space-y-8">
           <div className="rounded-lg bg-secondary">
@@ -147,7 +148,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
                 <div className="flex shrink-0 flex-col items-end gap-4 p-4">
                   <button
                     type="button"
-                    onClick={() => setView("settings")}
+                    onClick={() => handleViewChange("settings")}
                     aria-label="Open settings"
                     className="cursor-pointer rounded-full"
                   >
@@ -309,7 +310,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </Link>
             <button
               type="button"
-              onClick={() => setView("settings")}
+              onClick={() => handleViewChange("settings")}
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
@@ -330,7 +331,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <button
               type="button"
-              onClick={() => setView("switch-account")}
+              onClick={() => handleViewChange("switch-account")}
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
@@ -357,7 +358,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             <hr className="mx-4" />
             <button
               type="button"
-              onClick={() => setView("language")}
+              onClick={() => handleViewChange("language")}
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
@@ -379,7 +380,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <button
               type="button"
-              onClick={() => setView("ai-assist")}
+              onClick={() => handleViewChange("ai-assist")}
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
@@ -401,7 +402,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </button>
             <button
               type="button"
-              onClick={() => setView("location")}
+              onClick={() => handleViewChange("location")}
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image

@@ -2,7 +2,7 @@
 // when one entry is expanded, then recomputes the digest locally.
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
 import { useAuditHashInputQuery } from "@/hooks/rnd/proof-of-effort";
@@ -31,12 +31,28 @@ import { ApiRequestError } from "@/lib/http";
 /** The one algorithm this client knows how to reproduce. Backend: `AUDIT_HASH_ALGORITHM_VERSION`. */
 const SUPPORTED_HASH_ALGORITHM_VERSION = "sha256-jcs-v1";
 
+const subscribeToNothing = () => () => {};
+
+function getWebCryptoDigestAvailabilitySnapshot(): boolean {
+  return typeof globalThis.crypto?.subtle?.digest === "function";
+}
+
+function getWebCryptoDigestAvailabilityServerSnapshot(): boolean {
+  return true;
+}
+
 type LocalDigestState =
   | { status: "idle" }
   | { status: "computing" }
   | { status: "unsupported_algorithm"; version: string }
   | { status: "unavailable"; reason: string }
   | { status: "computed"; digestHex: string; isDigestMatching: boolean };
+
+type ComputedDigest = {
+  canonicalBytes: string;
+  expectedEntryHash: string;
+  state: Extract<LocalDigestState, { status: "computed" } | { status: "unavailable" }>;
+};
 
 export default function AuditHashInputInspector({
   projectSlug,
@@ -48,40 +64,61 @@ export default function AuditHashInputInspector({
   isExpanded: boolean;
 }) {
   const hashInputQuery = useAuditHashInputQuery(projectSlug, entryId, isExpanded);
-  const [localDigestState, setLocalDigestState] = useState<LocalDigestState>({ status: "idle" });
+  const isWebCryptoDigestAvailable = useSyncExternalStore(
+    subscribeToNothing,
+    getWebCryptoDigestAvailabilitySnapshot,
+    getWebCryptoDigestAvailabilityServerSnapshot,
+  );
+  const [computedDigest, setComputedDigest] = useState<ComputedDigest | null>(null);
 
   const hashInput = hashInputQuery.data;
   const canonicalBytes = hashInput?.canonicalBytes;
   const expectedEntryHash = hashInput?.entryHash;
   const hashAlgorithmVersion = hashInput?.hashAlgorithmVersion;
 
-  useEffect(() => {
+  const localDigestState: LocalDigestState = deriveLocalDigestState();
+
+  function deriveLocalDigestState(): LocalDigestState {
     if (
       canonicalBytes === undefined ||
       expectedEntryHash === undefined ||
       hashAlgorithmVersion === undefined
     ) {
-      return undefined;
+      return { status: "idle" };
     }
-
     if (hashAlgorithmVersion !== SUPPORTED_HASH_ALGORITHM_VERSION) {
-      setLocalDigestState({ status: "unsupported_algorithm", version: hashAlgorithmVersion });
-      return undefined;
+      return { status: "unsupported_algorithm", version: hashAlgorithmVersion };
     }
-
     // `crypto.subtle` is absent outside a secure context. That is a limitation of where the
     // page is being read, not evidence about the entry, so it gets its own state rather
     // than collapsing into "does not match".
-    if (typeof globalThis.crypto?.subtle?.digest !== "function") {
-      setLocalDigestState({
+    if (!isWebCryptoDigestAvailable) {
+      return {
         status: "unavailable",
         reason: "This browser exposes no Web Crypto digest here (it needs a secure context).",
-      });
+      };
+    }
+    if (
+      computedDigest !== null &&
+      computedDigest.canonicalBytes === canonicalBytes &&
+      computedDigest.expectedEntryHash === expectedEntryHash
+    ) {
+      return computedDigest.state;
+    }
+    return { status: "computing" };
+  }
+
+  useEffect(() => {
+    if (
+      canonicalBytes === undefined ||
+      expectedEntryHash === undefined ||
+      hashAlgorithmVersion !== SUPPORTED_HASH_ALGORITHM_VERSION ||
+      !isWebCryptoDigestAvailable
+    ) {
       return undefined;
     }
 
     let isEffectCurrent = true;
-    setLocalDigestState({ status: "computing" });
 
     void (async () => {
       try {
@@ -93,16 +130,24 @@ export default function AuditHashInputInspector({
           .map((byteValue) => byteValue.toString(16).padStart(2, "0"))
           .join("");
         if (!isEffectCurrent) return;
-        setLocalDigestState({
-          status: "computed",
-          digestHex,
-          isDigestMatching: digestHex === expectedEntryHash,
+        setComputedDigest({
+          canonicalBytes,
+          expectedEntryHash,
+          state: {
+            status: "computed",
+            digestHex,
+            isDigestMatching: digestHex === expectedEntryHash,
+          },
         });
       } catch {
         if (!isEffectCurrent) return;
-        setLocalDigestState({
-          status: "unavailable",
-          reason: "The browser refused to compute the digest.",
+        setComputedDigest({
+          canonicalBytes,
+          expectedEntryHash,
+          state: {
+            status: "unavailable",
+            reason: "The browser refused to compute the digest.",
+          },
         });
       }
     })();
@@ -110,7 +155,7 @@ export default function AuditHashInputInspector({
     return () => {
       isEffectCurrent = false;
     };
-  }, [canonicalBytes, expectedEntryHash, hashAlgorithmVersion]);
+  }, [canonicalBytes, expectedEntryHash, hashAlgorithmVersion, isWebCryptoDigestAvailable]);
 
   if (!isExpanded) return null;
 

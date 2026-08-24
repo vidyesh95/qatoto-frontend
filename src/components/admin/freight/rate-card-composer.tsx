@@ -88,6 +88,7 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
   const [bandDrafts, setBandDrafts] = useState<WeightBandDraft[]>([newZeroFloorBandDraft()]);
   const [localError, setLocalError] = useState<string | null>(null);
   const [hasAcknowledgedSupersede, setHasAcknowledgedSupersede] = useState(false);
+  const [mountedAtMs] = useState(() => Date.now());
 
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
   const createMutation = useCreateFreightRateCardMutation();
@@ -114,7 +115,7 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
   const isValidFromInFuture =
     validFromInstant !== null &&
     !Number.isNaN(validFromInstant.getTime()) &&
-    validFromInstant.getTime() > Date.now();
+    validFromInstant.getTime() > mountedAtMs;
 
   const createResult = createMutation.data;
   const isSubmitBlocked =
@@ -123,7 +124,11 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
   function handleSubmit() {
     setLocalError(null);
 
-    if (!isValidFromInFuture) {
+    const isValidFromStillInFuture =
+      validFromInstant !== null &&
+      !Number.isNaN(validFromInstant.getTime()) &&
+      validFromInstant.getTime() > Date.now();
+    if (!isValidFromStillInFuture) {
       setLocalError(
         "Start the card in the future. A card that is already in force can never have its bands edited, and that cannot be undone.",
       );

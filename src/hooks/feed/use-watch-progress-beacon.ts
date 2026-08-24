@@ -68,7 +68,9 @@ export function useWatchProgressBeacon({
   // The reader is re-created on every render of the player component; holding it in a ref keeps
   // the interval and the unmount cleanup from closing over a stale one.
   const readProgressRef = useRef(readProgress);
-  readProgressRef.current = readProgress;
+  useEffect(() => {
+    readProgressRef.current = readProgress;
+  }, [readProgress]);
 
   // Sending the SAME playback-error code twice from one session tells the backend nothing new —
   // its threshold counts DISTINCT fingerprints, not reports — and would just spend the limiter.

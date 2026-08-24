@@ -97,13 +97,16 @@ export default function CreateListingPage({ productId }: { productId?: string })
   const [categoryChoice, setCategoryChoice] = useState<ListingCategoryChoice | null>(null);
   const [selectedCondition, setSelectedCondition] = useState<string>(PRODUCT_CONDITIONS[0]);
 
-  // Step 2 — images
-  const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
-  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  // Step 2 — images. Preview URLs are created in the pick/drop handlers and revoked on
+  // remove or unmount — never from an effect that then setState, which the compiler rejects.
+  const [selectedImagePreviews, setSelectedImagePreviews] = useState<
+    { file: File; previewUrl: string }[]
+  >([]);
   const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
   const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const selectedImagePreviewUrlsRef = useRef<string[]>([]);
 
   // Step 3 — description
   const [productDescription, setProductDescription] = useState("");
@@ -135,10 +138,13 @@ export default function CreateListingPage({ productId }: { productId?: string })
   const [packageGrossWeightGrams, setPackageGrossWeightGrams] = useState("");
   const [unitsPerPackage, setUnitsPerPackage] = useState("");
 
+  const [hasPrefilledFromProduct, setHasPrefilledFromProduct] = useState(false);
+
   const currentStep = LISTING_STEPS[currentStepIndex];
   const isLastStep = currentStepIndex === LISTING_STEPS.length - 1;
 
-  const imageCount = existingImages.length + selectedImageFiles.length;
+  const selectedImageFiles = selectedImagePreviews.map((preview) => preview.file);
+  const imageCount = existingImages.length + selectedImagePreviews.length;
 
   // THE REFUSAL IS CLASSIFIED, NOT FLATTENED TO ITS FIRST SENTENCE. `readMutationError` used to read
   // `apiError.message` alone, which discarded `errors.missing` — the only thing on the wire that
@@ -162,77 +168,92 @@ export default function CreateListingPage({ productId }: { productId?: string })
     productQuery.data === undefined ? null : describeProductPublishBlock(productQuery.data);
 
   // Prefill the form once from the loaded product (edit mode).
-  const hasPrefilledRef = useRef(false);
-  useEffect(() => {
-    if (!isEditMode || hasPrefilledRef.current || !productQuery.data) return;
-    hasPrefilledRef.current = true;
-    const product = productQuery.data;
-    setProductTitle(product.title);
-    setBrandName(product.brand ?? "");
+  const loadedProduct = productQuery.data;
+  if (isEditMode && !hasPrefilledFromProduct && loadedProduct !== undefined) {
+    setHasPrefilledFromProduct(true);
+    setProductTitle(loadedProduct.title);
+    setBrandName(loadedProduct.brand ?? "");
     // A listing still awaiting a verdict hydrates as its REQUEST, not as Misc: Misc is where
     // it is parked, never a category its owner chose, and showing it as chosen would invite
     // the seller to "confirm" a placement that was never theirs.
     setCategoryChoice(
-      product.pendingCategoryRequestId === null
+      loadedProduct.pendingCategoryRequestId === null
         ? // The label is left empty rather than guessed: the read returns the category ID,
           // not its name, and inventing one here would put a wrong word in the review step.
           // The picker fills it in as soon as the seller touches the control.
-          { kind: "category", categoryId: product.categoryId, displayLabel: "" }
+          { kind: "category", categoryId: loadedProduct.categoryId, displayLabel: "" }
         : {
             kind: "request",
-            categoryRequestId: product.pendingCategoryRequestId,
+            categoryRequestId: loadedProduct.pendingCategoryRequestId,
             displayLabel: "Awaiting review",
           },
     );
-    setSelectedCondition(SLUG_TO_CONDITION_LABEL[product.condition] ?? PRODUCT_CONDITIONS[0]);
-    setProductDescription(product.description ?? "");
-    setKeyFeatures(product.keyFeatures);
-    setPriceInDollars(centsToDollarString(product.priceInCents));
+    setSelectedCondition(SLUG_TO_CONDITION_LABEL[loadedProduct.condition] ?? PRODUCT_CONDITIONS[0]);
+    setProductDescription(loadedProduct.description ?? "");
+    setKeyFeatures(loadedProduct.keyFeatures);
+    setPriceInDollars(centsToDollarString(loadedProduct.priceInCents));
     setCompareAtPriceInDollars(
-      product.compareAtPriceInCents === null
+      loadedProduct.compareAtPriceInCents === null
         ? ""
-        : centsToDollarString(product.compareAtPriceInCents),
+        : centsToDollarString(loadedProduct.compareAtPriceInCents),
     );
-    setStockQuantity(String(product.stockQuantity));
-    setSkuCode(product.sku ?? "");
-    setSamplePolicy(product.samplePolicy);
+    setStockQuantity(String(loadedProduct.stockQuantity));
+    setSkuCode(loadedProduct.sku ?? "");
+    setSamplePolicy(loadedProduct.samplePolicy);
     // NULL IS UNSTATED, NOT FREE — it hydrates as an empty control, the same rule the shipping
     // facts follow below. A zero here would be a declared price of nothing.
     setSamplePriceInDollars(
-      product.samplePriceInCents === null ? "" : centsToDollarString(product.samplePriceInCents),
+      loadedProduct.samplePriceInCents === null
+        ? ""
+        : centsToDollarString(loadedProduct.samplePriceInCents),
     );
-    setMaximumSampleQuantity(String(product.maximumSampleQuantity));
+    setMaximumSampleQuantity(String(loadedProduct.maximumSampleQuantity));
     // `null` means NEVER MEASURED, and hydrates as an empty control rather than a zero. A zero here
     // would be a declared measurement of nothing, which is the one answer no seller meant to give.
-    setPackageLengthMm(product.packageLengthMm === null ? "" : String(product.packageLengthMm));
-    setPackageWidthMm(product.packageWidthMm === null ? "" : String(product.packageWidthMm));
-    setPackageHeightMm(product.packageHeightMm === null ? "" : String(product.packageHeightMm));
-    setPackageGrossWeightGrams(
-      product.packageGrossWeightGrams === null ? "" : String(product.packageGrossWeightGrams),
+    setPackageLengthMm(
+      loadedProduct.packageLengthMm === null ? "" : String(loadedProduct.packageLengthMm),
     );
-    setUnitsPerPackage(product.unitsPerPackage === null ? "" : String(product.unitsPerPackage));
+    setPackageWidthMm(
+      loadedProduct.packageWidthMm === null ? "" : String(loadedProduct.packageWidthMm),
+    );
+    setPackageHeightMm(
+      loadedProduct.packageHeightMm === null ? "" : String(loadedProduct.packageHeightMm),
+    );
+    setPackageGrossWeightGrams(
+      loadedProduct.packageGrossWeightGrams === null
+        ? ""
+        : String(loadedProduct.packageGrossWeightGrams),
+    );
+    setUnitsPerPackage(
+      loadedProduct.unitsPerPackage === null ? "" : String(loadedProduct.unitsPerPackage),
+    );
     setExistingImages(
-      product.images
+      loadedProduct.images
         .toSorted((first, second) => first.position - second.position)
         .map((image) => ({ id: image.id, url: image.url })),
     );
     setPricingTiers(
-      product.pricingTiers
+      loadedProduct.pricingTiers
         .toSorted((first, second) => first.position - second.position)
-        .map((tier) => ({
-          id: crypto.randomUUID(),
+        .map((tier, tierIndex) => ({
+          id: `hydrated-tier-${String(tierIndex)}`,
           unitPriceInDollars: centsToDollarString(tier.unitPriceInCents),
           minimumOrderQuantity: String(tier.minimumOrderQuantity),
         })),
     );
-  }, [isEditMode, productQuery.data]);
+  }
 
-  // Object-URL previews for newly selected files; revoked when the set changes.
   useEffect(() => {
-    const urls = selectedImageFiles.map((file) => URL.createObjectURL(file));
-    setImagePreviewUrls(urls);
-    return () => urls.forEach((url) => URL.revokeObjectURL(url));
-  }, [selectedImageFiles]);
+    selectedImagePreviewUrlsRef.current = selectedImagePreviews.map(
+      (preview) => preview.previewUrl,
+    );
+  }, [selectedImagePreviews]);
+
+  useEffect(() => {
+    return () => {
+      selectedImagePreviewUrlsRef.current.forEach((previewUrl) => URL.revokeObjectURL(previewUrl));
+    };
+  }, []);
 
   function handleGoToStepClick(stepIndex: number) {
     if (stepIndex < currentStepIndex) setCurrentStepIndex(stepIndex);
@@ -252,10 +273,16 @@ export default function CreateListingPage({ productId }: { productId?: string })
     if (!incomingFiles) return;
     const imageFiles = Array.from(incomingFiles).filter((file) => file.type.startsWith("image/"));
     if (imageFiles.length === 0) return;
-    const remainingSlots = MAX_PRODUCT_IMAGES - existingImages.length;
-    setSelectedImageFiles((previousFiles) =>
-      [...previousFiles, ...imageFiles].slice(0, Math.max(0, remainingSlots)),
+    const remainingSlots = Math.max(
+      0,
+      MAX_PRODUCT_IMAGES - existingImages.length - selectedImagePreviews.length,
     );
+    const filesToAdd = imageFiles.slice(0, remainingSlots);
+    if (filesToAdd.length === 0) return;
+    setSelectedImagePreviews((previousPreviews) => [
+      ...previousPreviews,
+      ...filesToAdd.map((file) => ({ file, previewUrl: URL.createObjectURL(file) })),
+    ]);
   }
 
   function handleImageDrop(event: React.DragEvent<HTMLDivElement>) {
@@ -286,9 +313,11 @@ export default function CreateListingPage({ productId }: { productId?: string })
   }
 
   function handleRemoveImageClick(imageIndexToRemove: number) {
-    setSelectedImageFiles((previousFiles) =>
-      previousFiles.filter((_, imageIndex) => imageIndex !== imageIndexToRemove),
-    );
+    setSelectedImagePreviews((previousPreviews) => {
+      const previewToRemove = previousPreviews[imageIndexToRemove];
+      if (previewToRemove) URL.revokeObjectURL(previewToRemove.previewUrl);
+      return previousPreviews.filter((_, imageIndex) => imageIndex !== imageIndexToRemove);
+    });
   }
 
   function handleRemoveExistingImage(imageId: string) {
@@ -671,9 +700,9 @@ export default function CreateListingPage({ productId }: { productId?: string })
                     <img src={image.url} alt="" className="size-full object-cover" />
                   </div>
                 ))}
-                {selectedImageFiles.map((imageFile, imageIndex) => (
+                {selectedImagePreviews.map((imagePreview, imageIndex) => (
                   <div
-                    key={`${imageFile.name}-${imageFile.size}-${imageIndex}`}
+                    key={`${imagePreview.file.name}-${imagePreview.file.size}-${imageIndex}`}
                     className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-border bg-secondary/30"
                   >
                     {existingImages.length === 0 && imageIndex === 0 && (
@@ -684,7 +713,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                     <button
                       type="button"
                       onClick={() => handleRemoveImageClick(imageIndex)}
-                      aria-label={`Remove ${imageFile.name}`}
+                      aria-label={`Remove ${imagePreview.file.name}`}
                       className="absolute top-1.5 right-1.5 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full bg-background transition-opacity hover:opacity-80"
                     >
                       <Image
@@ -694,21 +723,13 @@ export default function CreateListingPage({ productId }: { productId?: string })
                         height={14}
                       />
                     </button>
-                    {imagePreviewUrls[imageIndex] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={imagePreviewUrls[imageIndex]}
-                        alt={imageFile.name}
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      <Image
-                        src="/icons/image_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                        alt=""
-                        width={28}
-                        height={28}
-                      />
-                    )}
+                    {/* Object URL created when the file was picked; plain <img> for blob: URLs. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imagePreview.previewUrl}
+                      alt={imagePreview.file.name}
+                      className="size-full object-cover"
+                    />
                   </div>
                 ))}
               </div>

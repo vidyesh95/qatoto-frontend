@@ -2,7 +2,7 @@
 // GET /discovery/skills, writes PUT /discovery/talent/me and POST …/publish · /unpublish.
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
 import RndSheet from "@/components/home/research-and-development/sheets/rnd-sheet";
@@ -18,6 +18,7 @@ import {
   TALENT_AVAILABILITIES,
   TalentAvailabilitySchema,
   type TalentAvailability,
+  type TalentProfileMe,
 } from "@/lib/rnd/discovery.schemas";
 import { ROLE_COMMITMENT_LABELS } from "@/lib/rnd/labels";
 import {
@@ -71,6 +72,7 @@ export default function EditTalentProfileSheet() {
   const [commitment, setCommitment] = useState<RoleCommitment>("part_time");
   const [locationLabel, setLocationLabel] = useState("");
   const [skillSlugs, setSkillSlugs] = useState<string[]>([]);
+  const [seededProfile, setSeededProfile] = useState<TalentProfileMe | undefined>(undefined);
 
   const profileQuery = useMyTalentProfileQuery(isSheetOpen);
   const skillsQuery = useDiscoverySkillsQuery();
@@ -80,15 +82,15 @@ export default function EditTalentProfileSheet() {
   // Seed the form once the profile arrives. A profile that has never existed answers
   // 404, and the empty form IS the correct first-run state rather than an error.
   const loadedProfile = profileQuery.data;
-  useEffect(() => {
-    if (!loadedProfile) return;
+  if (loadedProfile !== undefined && loadedProfile !== seededProfile) {
+    setSeededProfile(loadedProfile);
     setHeadlineRole(loadedProfile.headlineRole);
     setBio(loadedProfile.bio ?? "");
     setAvailability(loadedProfile.availability);
     setCommitment(loadedProfile.commitment);
     setLocationLabel(loadedProfile.locationLabel ?? "");
     setSkillSlugs(loadedProfile.skills.map((skill) => skill.slug));
-  }, [loadedProfile]);
+  }
 
   const saveError = [saveMutation.error, unpublishMutation.error].find(
     (error): error is ApiRequestError => error instanceof ApiRequestError,

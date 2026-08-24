@@ -153,23 +153,33 @@ export default function ThumbnailPicker({
   const fileInputRef = useRef<HTMLInputElement>(null);
   /** What the creator last chose, verdict not yet known. The parent never sees this one. */
   const [candidateFile, setCandidateFile] = useState<File | null>(null);
-  const [pickState, setPickState] = useState<ThumbnailPickState>({ status: "idle" });
+  const [checkOutcome, setCheckOutcome] = useState<
+    | { file: File; status: "ready"; previewUrl: string }
+    | { file: File; status: "rejected"; message: string }
+    | null
+  >(null);
 
   // The parent is told about a file only once it PASSES. Holding the candidate here is what
   // lets "rejected" be a state the picker can stay in — clearing the parent's file to keep it
   // out of the submit would feed a `null` back down and wipe the message explaining why.
   const onFileSelectedRef = useRef(onFileSelected);
-  onFileSelectedRef.current = onFileSelected;
+  useEffect(() => {
+    onFileSelectedRef.current = onFileSelected;
+  }, [onFileSelected]);
+
+  const pickState: ThumbnailPickState =
+    candidateFile === null
+      ? { status: "idle" }
+      : checkOutcome?.file === candidateFile && checkOutcome.status === "ready"
+        ? { status: "ready", previewUrl: checkOutcome.previewUrl }
+        : checkOutcome?.file === candidateFile && checkOutcome.status === "rejected"
+          ? { status: "rejected", message: checkOutcome.message }
+          : { status: "checking" };
 
   useEffect(() => {
-    if (candidateFile === null) {
-      setPickState({ status: "idle" });
-      return undefined;
-    }
+    if (candidateFile === null) return undefined;
 
     let isCurrentCandidate = true;
-    const previewUrl = URL.createObjectURL(candidateFile);
-    setPickState({ status: "checking" });
 
     const runCheck = async () => {
       const result = await checkThumbnailFile(candidateFile);
@@ -177,20 +187,26 @@ export default function ThumbnailPicker({
       // a stale verdict would show the previous file's rejection under the new preview.
       if (!isCurrentCandidate) return;
       if (result.success) {
-        setPickState({ status: "ready", previewUrl });
+        const previewUrl = URL.createObjectURL(candidateFile);
+        setCheckOutcome({ file: candidateFile, status: "ready", previewUrl });
         onFileSelectedRef.current(candidateFile);
         return;
       }
-      setPickState({ status: "rejected", message: result.message });
+      setCheckOutcome({ file: candidateFile, status: "rejected", message: result.message });
       onFileSelectedRef.current(null);
     };
     void runCheck();
 
     return () => {
       isCurrentCandidate = false;
-      URL.revokeObjectURL(previewUrl);
     };
   }, [candidateFile]);
+
+  useEffect(() => {
+    if (checkOutcome?.status !== "ready") return undefined;
+    const previewUrl = checkOutcome.previewUrl;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [checkOutcome]);
 
   const youtubeThumbnailUrl = toYoutubeThumbnailUrl(youtubeUrl);
   // Precedence: the file being picked right now, then whatever is saved, then YouTube's own.
@@ -199,6 +215,7 @@ export default function ThumbnailPicker({
 
   function handleClearClick() {
     setCandidateFile(null);
+    setCheckOutcome(null);
     onFileSelectedRef.current(null);
     if (fileInputRef.current !== null) fileInputRef.current.value = "";
   }
@@ -250,7 +267,10 @@ export default function ThumbnailPicker({
             type="file"
             accept={ACCEPTED_THUMBNAIL_TYPES}
             disabled={isDisabled}
-            onChange={(event) => setCandidateFile(event.target.files?.[0] ?? null)}
+            onChange={(event) => {
+              setCandidateFile(event.target.files?.[0] ?? null);
+              setCheckOutcome(null);
+            }}
             className="text-xs text-muted-foreground file:mr-3 file:cursor-pointer file:rounded-full file:border file:border-border file:bg-transparent file:px-4 file:py-2 file:text-sm file:font-medium file:text-foreground"
           />
 

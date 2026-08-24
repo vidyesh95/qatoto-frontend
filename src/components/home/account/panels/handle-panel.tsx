@@ -90,6 +90,24 @@ function formatHandleDate(isoString: string): string {
   }).format(new Date(isoString));
 }
 
+function deriveImmediateAvailability(
+  metadataStatus: MetadataState["status"],
+  normalizedHandle: string,
+  currentHandle: string | null,
+): AvailabilityState | "needs_probe" {
+  if (metadataStatus !== "ready") return { status: "idle" };
+  if (normalizedHandle.length === 0) return { status: "idle" };
+  if (normalizedHandle === currentHandle) return { status: "current" };
+  if (!HANDLE_REGEX.test(normalizedHandle)) {
+    const reason =
+      normalizedHandle.length < 3 || normalizedHandle.length > 30
+        ? HANDLE_LENGTH_MESSAGE
+        : HANDLE_CHARSET_MESSAGE;
+    return { status: "invalid", reason };
+  }
+  return "needs_probe";
+}
+
 /** Panel bootstrap: current handle + rate-limit + revert metadata. */
 type MetadataState =
   | { status: "loading" }
@@ -129,12 +147,27 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
   const { refetch } = useSession();
   const [handle, setHandle] = useState("");
   const [metadataState, setMetadataState] = useState<MetadataState>({ status: "loading" });
-  const [availabilityState, setAvailabilityState] = useState<AvailabilityState>({ status: "idle" });
+  const [probedAvailability, setProbedAvailability] = useState<{
+    handle: string;
+    state: AvailabilityState;
+  } | null>(null);
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
 
   const normalizedHandle = normalizeHandle(handle);
   const currentHandle = metadataState.status === "ready" ? metadataState.handle : null;
   const isChangeLocked = metadataState.status === "ready" && metadataState.isChangeLocked;
+
+  const immediateAvailability: AvailabilityState | "needs_probe" = deriveImmediateAvailability(
+    metadataState.status,
+    normalizedHandle,
+    currentHandle,
+  );
+  const availabilityState: AvailabilityState =
+    immediateAvailability === "needs_probe"
+      ? probedAvailability?.handle === normalizedHandle
+        ? probedAvailability.state
+        : { status: "checking" }
+      : immediateAvailability;
 
   // Bootstrap: load the current handle + rate-limit metadata, prefill the field.
   useEffect(() => {
@@ -169,28 +202,11 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
 
   // Tier-1: debounced availability probe. The client regex gates obviously-bad
   // input so we never spam the backend; the request fires only after a 400ms
-  // pause and is cancelled if the user keeps typing.
+  // pause and is cancelled if the user keeps typing. Idle / current / invalid
+  // are derived above — this effect only talks to the network.
   useEffect(() => {
-    if (metadataState.status !== "ready") return undefined;
+    if (immediateAvailability !== "needs_probe") return undefined;
 
-    if (normalizedHandle.length === 0) {
-      setAvailabilityState({ status: "idle" });
-      return undefined;
-    }
-    if (normalizedHandle === currentHandle) {
-      setAvailabilityState({ status: "current" });
-      return undefined;
-    }
-    if (!HANDLE_REGEX.test(normalizedHandle)) {
-      const reason =
-        normalizedHandle.length < 3 || normalizedHandle.length > 30
-          ? HANDLE_LENGTH_MESSAGE
-          : HANDLE_CHARSET_MESSAGE;
-      setAvailabilityState({ status: "invalid", reason });
-      return undefined;
-    }
-
-    setAvailabilityState({ status: "checking" });
     const abortController = new AbortController();
     const debounceTimer = setTimeout(async () => {
       try {
@@ -199,37 +215,55 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
           { credentials: "include", signal: abortController.signal },
         );
         if (response.status === 429) {
-          setAvailabilityState({
-            status: "error",
-            message: "Checking too fast — try again in a moment.",
+          setProbedAvailability({
+            handle: normalizedHandle,
+            state: {
+              status: "error",
+              message: "Checking too fast — try again in a moment.",
+            },
           });
           return;
         }
         if (!response.ok) {
-          setAvailabilityState({ status: "error", message: "Couldn't check availability." });
+          setProbedAvailability({
+            handle: normalizedHandle,
+            state: { status: "error", message: "Couldn't check availability." },
+          });
           return;
         }
         const parsed = HandleAvailabilityEnvelopeSchema.safeParse(await response.json());
         if (!parsed.success) {
-          setAvailabilityState({ status: "error", message: "Couldn't check availability." });
+          setProbedAvailability({
+            handle: normalizedHandle,
+            state: { status: "error", message: "Couldn't check availability." },
+          });
           return;
         }
         const availability = parsed.data.data;
         switch (availability.status) {
           case "available":
-            setAvailabilityState({ status: "available" });
+            setProbedAvailability({ handle: normalizedHandle, state: { status: "available" } });
             return;
           case "taken":
-            setAvailabilityState({ status: "taken", suggestions: availability.suggestions });
+            setProbedAvailability({
+              handle: normalizedHandle,
+              state: { status: "taken", suggestions: availability.suggestions },
+            });
             return;
           case "revertable":
-            setAvailabilityState({ status: "revertable", expiresAt: availability.expiresAt });
+            setProbedAvailability({
+              handle: normalizedHandle,
+              state: { status: "revertable", expiresAt: availability.expiresAt },
+            });
             return;
           case "current":
-            setAvailabilityState({ status: "current" });
+            setProbedAvailability({ handle: normalizedHandle, state: { status: "current" } });
             return;
           case "invalid":
-            setAvailabilityState({ status: "invalid", reason: availability.reason });
+            setProbedAvailability({
+              handle: normalizedHandle,
+              state: { status: "invalid", reason: availability.reason },
+            });
             return;
           default: {
             const exhaustiveCheck: never = availability;
@@ -238,7 +272,10 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
         }
       } catch {
         if (abortController.signal.aborted) return;
-        setAvailabilityState({ status: "error", message: "Network error." });
+        setProbedAvailability({
+          handle: normalizedHandle,
+          state: { status: "error", message: "Network error." },
+        });
       }
     }, 400);
 
@@ -246,7 +283,7 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
       clearTimeout(debounceTimer);
       abortController.abort();
     };
-  }, [normalizedHandle, currentHandle, metadataState.status]);
+  }, [normalizedHandle, immediateAvailability]);
 
   const isSaveDisabled =
     saveState.status === "saving" ||

@@ -130,11 +130,10 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
   // Fills the form once the detail read lands. Guarded so a background refetch cannot throw
   // away edits the creator has made since.
   const editedVideo = editedVideoQuery.data;
-  useEffect(() => {
-    if (hasHydratedFromServer || editedVideo === undefined) return;
+  if (!hasHydratedFromServer && editedVideo !== undefined) {
     setDraft(toUploadDraft(editedVideo));
     setHasHydratedFromServer(true);
-  }, [hasHydratedFromServer, editedVideo]);
+  }
 
   function applyDraftPatch(draftPatch: Partial<UploadDraft>) {
     setDraft((previousDraft) => ({ ...previousDraft, ...draftPatch }));

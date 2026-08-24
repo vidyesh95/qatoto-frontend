@@ -281,10 +281,8 @@ export default function CreatableCombobox({
   const openQuery = comboboxState.status === "open" ? comboboxState.query : null;
 
   useEffect(() => {
-    if (highlightedRowIndex < 0) return;
+    if (highlightedRowIndex < 0 || openQuery === null) return;
     rowElementRefs.current[highlightedRowIndex]?.scrollIntoView({ block: "nearest" });
-    // openQuery stays in the deps so re-typing scrolls the new row 0 into view
-    // even when the index itself did not change.
   }, [highlightedRowIndex, openQuery]);
 
   useEffect(() => {

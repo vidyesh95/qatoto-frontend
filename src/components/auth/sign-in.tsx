@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useIsWebAuthnSupported } from "@/hooks/use-is-web-authn-supported";
 import { signIn } from "@/lib/auth-client";
 
 const handleGoogleSignIn = () =>
@@ -37,12 +38,7 @@ export default function SignIn({
   const [passkeySignInState, setPasskeySignInState] = useState<PasskeySignInState>({
     status: "idle",
   });
-  // Assume support until the effect below can check; avoids SSR window access.
-  const [isWebAuthnSupported, setIsWebAuthnSupported] = useState(true);
-
-  useEffect(() => {
-    if (typeof window.PublicKeyCredential === "undefined") setIsWebAuthnSupported(false);
-  }, []);
+  const isWebAuthnSupported = useIsWebAuthnSupported();
 
   // WebAuthn ceremony runs in the browser; success sets the session cookie (§5d /passkey/*).
   // autoFill:false → explicit modal prompt on click (autoFill is for conditional-UI autofill).
