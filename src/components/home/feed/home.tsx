@@ -12,8 +12,10 @@ export default function Home({
 }: {
   readonly searchParams: Promise<RawSearchParams>;
 }) {
+  // Layout already renders the page <main>. A second one nested here left
+  // prior store / R&D routes visible after client navigation.
   return (
-    <main>
+    <div className="relative bg-background">
       {/*
         TWO SEPARATE BOUNDARIES, NOT ONE AROUND BOTH, and not a route-level `loading.tsx`.
 
@@ -42,7 +44,7 @@ export default function Home({
       <Suspense fallback={<FeedShellFallback />}>
         <FeedShell searchParams={searchParams} />
       </Suspense>
-    </main>
+    </div>
   );
 }
 
