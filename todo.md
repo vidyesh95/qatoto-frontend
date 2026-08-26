@@ -35,7 +35,7 @@ because it was never frontend work.
 - **§11** [`phone_number` column](#11-phone_number-column) — the panel calls a route that does not exist
 - **§12** [`updatedAt` on the store card schemas](#12-updatedat-on-the-store-card-schemas)
 - **§13** [Message attachments](#13-message-attachments)
-- **§14** [Liked / watch later / subscriptions](#14-liked--watch-later--subscriptions)
+- **§14** [Liked / watch later / subscriptions](#14-liked--watch-later--subscriptions--backend-shipped-frontend-not-wired) — **backend shipped**; the three routes exist, `/library` is not wired to them
 - **§15** [Multi-axis variants](#15-multi-axis-variants)
 - **§16** [Incoterm semantics](#16-incoterm-semantics)
 - **§17** [Provider directory filters](#17-provider-directory-filters)
@@ -298,9 +298,36 @@ Needs an upload path returning an authorized document id. The message body takes
 `encryptedDocumentIds` of ALREADY-authorized documents, and the only multipart routes are
 verification evidence and customization assets.
 
-### 14. Liked / watch later / subscriptions
+### 14. Liked / watch later / subscriptions — BACKEND SHIPPED, frontend not wired
 
-No routes mounted at all. `/library` ships playlists and names the rest.
+~~No routes mounted at all.~~ **All three now exist**, session-gated and keyset-paginated:
+
+- `GET /users/me/liked-videos`
+- `GET /users/me/saved-videos`
+- `GET /users/me/subscriptions`
+
+`?limit=` (1..50, default 20) and `?cursor=`; a constructed cursor is a **422**, never a silent
+first page. Backend `HOME_BACKEND_STRUCTURE.md` §5.2d has the full contract. Migration `0137`
+added two indexes; `video_save` deliberately got none, because its existing viewer index already
+serves the read on a backward scan (proven with `EXPLAIN`, not asserted).
+
+Three behaviours the frontend has to render correctly rather than assume:
+
+- **The two video lists are public-gated.** A liked video the creator later makes private drops
+  out of the list while the like row survives — so the list length is NOT the number of things
+  the viewer liked, and there is no total anywhere to display beside it. Un-privating restores it.
+- **One row shape for liked and saved**, with `addedAt` rather than `likedAt`/`savedAt` — one card
+  component, two tabs. Carries `videoId, title, thumbnailUrl, durationSeconds (nullable),
+viewCount, creatorId, creatorName, creatorHandle (nullable), addedAt`.
+- **Subscriptions include creators with no videos and no `creator_stats` row**, at
+  `subscriberCount: 0`. Do not filter them — that would make the subscription unliftable from the
+  only surface that lists it.
+
+**What is left, and it is frontend-only:** `src/lib/library/schemas.ts` + `api.ts` (Zod `.strip()`
+→ tagged result, per Patterns 1–3), a `src/hooks/library.ts` with the three keyset queries, three
+tabs on `library-page.tsx`, and **deleting the "Not here yet" panel** — its claim that "there is no
+route that lists them" is now false, and a stale panel denying a shipped route is worse than the
+panel was useful.
 
 ### 15. Multi-axis variants
 
