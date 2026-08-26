@@ -20,8 +20,11 @@ import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * returns null instead because it describes a VIEWER's behaviour, which may simply never have
  * been observed.
  *
- * `publishedVideoCount` is COUNTED live server-side rather than read from the counter cache —
- * that cache is not decremented when a published video is deleted and has no reconciler.
+ * `publishedVideoCount` is READ FROM the `creator_stats` counter cache. It used to be counted
+ * live because that cache drifted: nothing decremented it on delete, on a published -> scheduled
+ * re-publish, or on the review reset an anime title edit triggers. All three write paths now
+ * decrement under a row lock, and `pnpm db:reconcile-creator-stats` repairs any row that drifted
+ * before they did.
  */
 export const CreatorSummarySchema = z
   .object({

@@ -14,7 +14,8 @@ import { centsToPriceLabel } from "@/lib/products/schemas";
 // THE VENTURE SELECT USED TO BE THREE HARDCODED STRINGS. `MOCK_PITCH_PROJECT_TITLES` fed a
 // control whose value was a project TITLE, which the wire had no field for — `attachedPitchId`
 // is not client-writable — so picking one did nothing at all. It now writes a real
-// `researchProjectId`, and the options come from `GET /research-projects/attachable`, which
+// `researchProjectSlug` (the server resolves it to an id and membership-checks it), and the
+// options come from `GET /research-projects/attachable`, which
 // answers with exactly the ventures the server will accept: active membership of an active
 // project. An option this list offers cannot be refused by the save.
 

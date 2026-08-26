@@ -17,6 +17,11 @@ import { listMyVideoComments } from "@/lib/videos/comment-inbox.api";
 export const creatorAnalyticsKeys = {
   summary: () => ["creator-analytics", "summary"] as const,
   videos: (page: number) => ["creator-analytics", "videos", page] as const,
+  /**
+   * The PREFIX every inbox page shares. Invalidating one cursor's key would leave the other
+   * pages stale, and a deleted comment has to disappear from whichever page it sat on.
+   */
+  commentInboxRoot: () => ["creator-analytics", "comments"] as const,
   commentInbox: (cursor: string | null) => ["creator-analytics", "comments", cursor] as const,
 };
 

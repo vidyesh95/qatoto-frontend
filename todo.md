@@ -474,6 +474,130 @@ real data — it was waiting for the first person to use the feature.
 
 ---
 
+## 26. Audit of §25 — five more counter doors, two ordering bugs, and the comments that lied
+
+§25 said the drift was fixed. It was fixed at **two** of five doors. An audit of that session's own
+work found the rest, plus a live parse failure on `/store/search` that predated it. All of the
+below is DONE unless the sub-heading says otherwise.
+
+### Live breakage — `/store/search` returned nothing
+
+`SEARCH_DOCUMENT_KINDS` was `["product", "provider_offering"]` and the backend indexes a third,
+`organization` (`store-search.service.ts:1353`). `items` parses as an array inside
+`StoreSearchPageSchema`, so ONE organization hit failed the WHOLE page. Verified against live: an
+unfiltered search returned 20 hits of which **9 were organizations** — every unfiltered search was a
+dead result set. The frontend comment asserting "a seller organization is not indexed, so there is
+no supplier directory browse" was the stale premise that made it wrong.
+
+Fixed: third enum member, third branch in `SearchHitRow` linking to
+`/store/organizations/{publicSlug}`, and the `documentKind` chip row iterates the same tuple so an
+Organizations filter fell out for free. All 20 hits parse now.
+
+### The three remaining counter doors
+
+`published_video_count` also drifted through:
+
+- **`publishVideo` moving `published` → `scheduled` with no decrement.** Reachable from public
+  routes: publish, PATCH a future `scheduledPublishAt`, publish again. Video goes dark and stays
+  counted.
+- **`updateVideo`'s review reset moving `published` → `draft` with no decrement.** An anime creator
+  hit this on **every title edit after approval**. There was no `creatorStats` write in
+  `updateVideo` at all.
+- **No row lock on read-then-write.** `loadOwnedVideoRow` was a plain SELECT outside the
+  transaction in publish, unpublish and delete. Double-click Delete and both requests read
+  `published`, one deletes, both decrement. `GREATEST(…, 0)` keeps it non-negative, which is not
+  the same as correct.
+
+All three fixed through one new helper, `lockOwnedVideoPublishState`, which takes `FOR UPDATE`
+inside the transaction and re-reads the status — every counter move is now decided from the locked
+row, never from the pre-transaction read. Proven with a 7-case harness including both
+double-click races. The reconciler reports clean.
+
+### Analytics listed drafts first
+
+`creator-analytics.service.ts` ordered `desc(video.publishedAt)`. **Postgres `DESC` defaults to
+NULLS FIRST**, and a draft has a null `publishedAt` — so a creator with 30 drafts opened
+`/studio/analytics` to a page of 20 all-zero rows. The comment on that line claimed drafts "sort
+last under `desc`". Now a raw `publishedAt DESC NULLS LAST` with `desc(video.id)` as the
+unique tiebreak, matching `problem-clusters.service.ts:498`. This repo writes the NULLS FIRST trap
+out in three files and still walked into it.
+
+### The reconciler could introduce the drift it removes
+
+`scripts/reconcile-creator-stats.ts`, three defects, all from §25's own session:
+
+- **`--fix` had no `WHERE`.** It rewrote every row from a statement snapshot, so a concurrent
+  `publishVideo` committing 5 → 6 mid-scan was overwritten back to 5. Now `SELECT … FOR UPDATE` on
+  the drifted rows inside one transaction, so the increment path blocks and applies on top.
+- **`::int` on a `bigint` sum** — `integer out of range` past 2^31 would take down the whole script,
+  including the `published_video_count` repair that has nothing to do with views.
+- **`total_view_count` was in the drift `WHERE`** while the module comment says it is EXPECTED to
+  differ after any delete. Every creator who ever deleted a video was reported forever. Reported
+  column now, not a predicate.
+
+### The scheduled-publish sweep, hardened
+
+`assertGatingSupported` was missing — `publishVideo` calls it as "the backstop re-check" and the
+sweep's own docstring promised the clock gets no weaker gate. Unreachable today because
+`video_gating_ck` covers it, but a stated-invariant hole. Also: no `LIMIT` and no `ORDER BY` against
+a 300 s expiry, so a backlog would expire mid-loop and dead-letter after `retryLimit: 3`. Now
+`ORDER BY scheduled_publish_at ASC, id ASC LIMIT 50`. Lock-skips are counted and logged separately —
+a sweep that skipped 200 locked rows used to log nothing.
+
+### The daily-log re-sweep — NEW
+
+Deferring YouTube verification changed the failure mode: before, a failed verify meant no row; after,
+the row survives with `video_verified_at` null. If the job dead-lettered — video deleted, private, or
+an outage outlasting the retry ladder — **nothing ever re-checked it**.
+`revalidate-youtube-embeds` filters `is_source_verified = true` on `video` and never touches
+`daily_log`; `updateDailyLog` refuses edits once submitted, so the member had no route to fix it.
+
+`resweep-unverified-daily-logs` is a tick-plus-job pair on `20 4 * * *` that re-enqueues the existing
+`verify-youtube-video` job on its `dailyLogId` arm — no new verification logic. **The 7-day age bound
+is the give-up policy and it is deliberate**: a genuinely deleted video will never verify, and
+retrying nightly forever is a queue that never drains. Past the window `isVideoVerified: false` is
+the honest permanent answer and the operator surface is `job_failure`. Proven both ways — an
+in-window row is re-enqueued, a 30-day-old one is not.
+
+### Comments that had gone false
+
+Small edits, but the difference between comments you can trust and comments you have to verify:
+
+- `analytics.schemas.ts` said `publishedVideoCount` is "COUNTED live server-side … that cache is not
+  decremented" — a preserved description of a REVERTED version. It reads the cache.
+- `studio-view.ts`'s `TRANSPORT: mock — NEITHER OF THE NEXT TWO IS EVER SENT` banner had drifted onto
+  `researchProjectSlug`, a live wire field. Scoped to `attachedDocumentNames`, which is still mock.
+- `video-elements-step.tsx` claimed it writes a `researchProjectId`; it writes a slug.
+- `schema/studio.ts` called applying to a video's open role "a future feature (§12)" thirteen lines
+  above the `openRoleId` docblock that describes it shipping.
+- **The eleven `§22` citations in backend code meant FRONTEND `todo.md` §22.** Every other `§N` in
+  those files points at a backend doc, so they read as a backend section that does not exist.
+  Replaced with self-contained wording or the real `Appendix B4`.
+- `commerce-trust.service.ts` and `STORE_BACKEND_STRUCTURE.md:3704` — "that job reads the `video`
+  table alone". Its payload is a union now and it branches to `daily_log`. The conclusion (it never
+  touches `commerce_review_media`) still holds; the premise did not.
+- `commerce-product-venture.service.ts` cited `store.ts:2762-2784`; the column is at `:2781`.
+
+Also wired: `useDeleteVideoCommentMutation` now invalidates `creatorAnalyticsKeys.commentInboxRoot`.
+The key factory was an exported-but-uncalled surface — deleting a comment from the watch page left
+it listed in `/studio/comments`.
+
+### NOT DONE — doc drift, recorded here because each needs its own decision
+
+None of these change behaviour; all of them mislead a reader.
+
+1. **Sections written in future tense about shipped work**: `HOME_BACKEND_STRUCTURE.md` §8.3,
+   `STUDIO_BACKEND_STRUCTURE.md` §9, §13 and §5.1. **§13 is the urgent one** — its verification
+   recipe tells a reader to expect a behaviour that no longer happens, so following it looks like
+   finding a bug.
+2. **Route and job tables missing this session's additions**: `GET /users/me/creator-summary`,
+   `/users/me/video-analytics`, `/users/me/video-comments`, `/research-projects/attachable`, the
+   product-venture read, and the two new jobs (`publish-scheduled-videos`,
+   `resweep-unverified-daily-logs`).
+3. **The frontend repo carries stale FORKS of four backend docs.** They are copies, not links, and
+   they have drifted. Decide whether to re-sync them or delete them and point at the backend repo —
+   a fork that nobody updates is worse than no copy.
+
 ## Cross-pillar seams
 
 R&D, Store and Studio keep separate copies of the same venture. Four seams exist between them:

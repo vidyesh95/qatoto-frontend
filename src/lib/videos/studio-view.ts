@@ -92,18 +92,6 @@ export type UploadDraft = {
   relatedVideoUrl: string;
   attachedProductIds: string[];
   hasFundingCallToAction: boolean;
-  /*
-   * TRANSPORT: mock — NEITHER OF THE NEXT TWO IS EVER SENT.
-   *
-   * `POST /videos` has no `attachedPitchId` and no document field; its schema is `.strict()`,
-   * so including either would be a hard 422 rather than an ignored key. `PublicVideo` does
-   * return a read-only `documents` array, but nothing writes it — there is no upload route.
-   *
-   * They stay on the draft so the two controls in `video-elements-step.tsx` keep working as a
-   * layout study, and `toCreateVideoInput` deliberately drops them. A creator who fills them in
-   * loses the value on save; that is a known gap, recorded in docs/HOME_STRUCTURE.md §10, and
-   * the honest fix is a backend field, not a frontend workaround.
-   */
   /**
    * The venture this video belongs to, as a SLUG. Null is unaffiliated content.
    *
@@ -112,6 +100,20 @@ export type UploadDraft = {
    * real wire field the server resolves and membership-checks.
    */
   researchProjectSlug: string | null;
+  /*
+   * TRANSPORT: mock — THIS ONE IS NEVER SENT. The field above it now is: the venture link
+   * became a real wire field, so the banner that used to cover "the next two" covers only
+   * this one.
+   *
+   * `POST /videos` has no document field and its schema is `.strict()`, so including one
+   * would be a hard 422 rather than an ignored key. `PublicVideo` does return a read-only
+   * `documents` array, but nothing writes it — there is no upload route.
+   *
+   * It stays on the draft so the control in `video-elements-step.tsx` keeps working as a
+   * layout study, and `toCreateVideoInput` deliberately drops it. A creator who fills it in
+   * loses the value on save; that is a known gap, recorded in docs/HOME_STRUCTURE.md §10, and
+   * the honest fix is a backend field, not a frontend workaround.
+   */
   attachedDocumentNames: string[];
   /**
    * Recruiting blurbs. Objects since the venture link landed: a blurb may point at a real

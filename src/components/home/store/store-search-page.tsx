@@ -416,6 +416,16 @@ function SearchHitRow({ hit }: { hit: StoreSearchHit }) {
           hit={hit}
         />
       );
+    case "organization":
+      return (
+        <SearchHitShell
+          // The seller storefront, the same route `CompanyDetailsSection` links to from a
+          // product page — a supplier hit and a supplier link should land in one place.
+          href={`/store/organizations/${hit.publicSlug}`}
+          badge={<span className="text-[#6F7979]">Supplier</span>}
+          hit={hit}
+        />
+      );
     default: {
       const exhaustiveCheck: never = hit.documentKind;
       return exhaustiveCheck;

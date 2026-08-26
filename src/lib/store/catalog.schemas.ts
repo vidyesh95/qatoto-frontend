@@ -110,14 +110,21 @@ export const StoreCategoryDetailSchema = z
 // --- Search -----------------------------------------------------------------
 
 /**
- * What a search document can be. Two kinds, and `organization` is NOT among them.
+ * What a search document can be. THREE kinds — and the third is why this comment was rewritten.
  *
- * A seller organization is not indexed, so there is no supplier directory browse — the
- * store's own "Factories worldwide" tile has nothing behind it. Filed as a backend ask;
- * do not fake it by searching products and grouping by seller, which would rank sellers
- * by whichever of their listings happened to match.
+ * This used to say "two kinds, and `organization` is NOT among them", on the premise that a
+ * seller organization was not indexed. That premise stopped being true when the backend added
+ * the `organization` document kind: `store-search.service.ts` indexes organizations, the route's
+ * query schema accepts the filter, and — the part that bit — the backend applies a `documentKind`
+ * predicate ONLY when the caller supplies one. So an unfiltered `/store/search` returns
+ * organization hits by default.
+ *
+ * THAT MISMATCH WAS A DEAD SEARCH PAGE, not a dropped row. `items` is parsed as an array inside
+ * `StoreSearchPageSchema`, so ONE unrecognised `documentKind` fails the whole page — and on live
+ * data 9 of the first 20 hits were organizations. A missing enum member is not a cosmetic gap
+ * when the value is already on the wire.
  */
-export const SEARCH_DOCUMENT_KINDS = ["product", "provider_offering"] as const;
+export const SEARCH_DOCUMENT_KINDS = ["product", "provider_offering", "organization"] as const;
 
 export type SearchDocumentKind = (typeof SEARCH_DOCUMENT_KINDS)[number];
 
@@ -295,6 +302,9 @@ export type StoreSearchPage = z.infer<typeof StoreSearchPageSchema>;
 export const SEARCH_DOCUMENT_KIND_LABELS: Record<SearchDocumentKind, string> = {
   product: "Products",
   provider_offering: "Services",
+  // "Suppliers" rather than "Organizations": the row is a seller a buyer might source from, and
+  // that is the word the rest of the store uses for them.
+  organization: "Suppliers",
 };
 
 export const SEARCH_SORT_LABELS: Record<SearchSort, string> = {

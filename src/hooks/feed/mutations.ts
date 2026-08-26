@@ -32,6 +32,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { feedKeys } from "@/hooks/feed/keys";
+import { creatorAnalyticsKeys } from "@/hooks/videos/creator-analytics";
 import {
   clearWatchHistory,
   createVideoComment,
@@ -293,6 +294,10 @@ export function useUpdateVideoCommentMutation(videoId: string) {
  * A TOMBSTONE. The row survives with `body: null` and `author: null` so its replies keep their
  * anchor, which is why this invalidates rather than removing the node from the list: dropping
  * it client-side would orphan replies the server still returns.
+ *
+ * INVALIDATES THE STUDIO INBOX TOO. `GET /users/me/video-comments` excludes tombstones, so a
+ * creator who deletes a comment from the watch page and then opens `/studio/comments` would
+ * otherwise still see it listed — the same row, from a cache the delete never touched.
  */
 export function useDeleteVideoCommentMutation(videoId: string) {
   const queryClient = useQueryClient();
@@ -300,6 +305,7 @@ export function useDeleteVideoCommentMutation(videoId: string) {
     mutationFn: async (commentId: string) => unwrap(await deleteVideoComment(commentId)),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: feedKeys.commentsRoot(videoId) });
+      void queryClient.invalidateQueries({ queryKey: creatorAnalyticsKeys.commentInboxRoot() });
     },
   });
 }
