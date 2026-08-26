@@ -32,9 +32,9 @@ because it was never frontend work.
 **Backend (`qatoto-backend`)**
 
 - **§10** [Privacy Part 3 — SHIPPED, behind two default-off flags](#10-privacy-part-3--shipped-behind-two-default-off-flags)
-- **§11** [`phone_number` column](#11-phone_number-column) — the panel calls a route that does not exist
-- **§12** [`updatedAt` on the store card schemas](#12-updatedat-on-the-store-card-schemas)
-- **§13** [Message attachments](#13-message-attachments)
+- **§11** [`phone_number` column](#11-phone_number-column--blocked-on-a-vendor-not-on-code) — **blocked**; needs an SMS vendor, not code
+- **§12** ~~[`updatedAt` on the store card schemas](#12-updatedat-on-the-store-card-schemas--shipped)~~ — **shipped**; `/sitemap.xml` went from 6 dated entries to 24
+- **§13** ~~[Message attachments](#13-message-attachments--stale-this-shipped-and-the-entry-never-caught-up)~~ — **stale**; `POST /commerce/documents` shipped and the message body already takes the ids
 - **§14** [Liked / watch later / subscriptions](#14-liked--watch-later--subscriptions--backend-shipped-frontend-not-wired) — **backend shipped**; the three routes exist, `/library` is not wired to them
 - **§15** [Multi-axis variants](#15-multi-axis-variants)
 - **§16** [Incoterm semantics](#16-incoterm-semantics)
@@ -42,7 +42,7 @@ because it was never frontend work.
 
 **Waiting on the backend, not on the frontend**
 
-- **§2** [The video domain's five `TRANSPORT: mock` banners](#2-the-video-domain-is-waiting-on-the-backend)
+- **§2** [The video domain's five `TRANSPORT: mock` banners](#2-the-video-domain-is-waiting-on-the-backend) — the **cheap subset shipped**; three banners can come down, the rest need a model that does not exist
 
 **Waiting on money, not on code**
 
@@ -278,25 +278,50 @@ stops the manifest being right while the job is wrong.
   `removed` state is the follow-up.
 - `docs/BACKEND_STRUCTURE.md` still has no privacy section.
 
-### 11. `phone_number` column
+### 11. `phone_number` column — BLOCKED ON A VENDOR, not on code
 
 `session.user.phoneNumber` and `phoneNumberVerified` are declared client-side in
 `src/lib/auth-client.ts` via `inferAdditionalFields`, and the backend has no `phoneNumber()` plugin
 and no column — `rg phoneNumber qatoto-backend/src` returns nothing. The fields type-check and are
 `undefined` at runtime, so `PhoneNumberPanel`'s OTP calls hit a route that does not exist and the
-row reads "Not set" for everybody. The value shown is the honest one; **fixing it is backend work.**
+row reads "Not set" for everybody. The value shown is the honest one.
 
-### 12. `updatedAt` on the store card schemas
+**Re-filed as blocked, alongside §18.** Better Auth's `phoneNumber()` plugin requires a `sendOTP`
+implementation, and there is no SMS provider anywhere in `src/config/index.ts` or `.env.example` —
+the only OTP delivery configured is Brevo, which is email. So this is a purchase before it is a
+migration, the same shape of blocker as a freight rate card, and writing the plugin first would
+leave a route that mints codes nobody receives.
 
-No store list projection carries a timestamp, so `src/app/sitemap.ts` cannot tell a crawler when a
-product changed — only forum threads and problem clusters emit `lastModified` at all (6 of 128
-entries). Adding it would improve recrawl behaviour across the whole catalogue.
+### 12. ~~`updatedAt` on the store card schemas~~ — SHIPPED
 
-### 13. Message attachments
+`StoreSearchHit` carries `updatedAt`, `StoreSearchHitSchema` parses it as `z.iso.datetime()`, and
+`getCatalogSitemapEntries` emits it as `lastModified` on `/store/product/:slug` and
+`/store/services/:slug`. **`/sitemap.xml` went from 6 dated entries to 24**, verified against the
+running dev server.
 
-Needs an upload path returning an authorized document id. The message body takes
-`encryptedDocumentIds` of ALREADY-authorized documents, and the only multipart routes are
-verification evidence and customization assets.
+It needed no migration: `store_search_document.updatedAt` already existed and is an honest content
+clock rather than a refresh stamp — the re-projection is enqueued after a product, offering or
+organization mutation and re-reads the authoritative row, so there is no nightly sweep moving every
+date at once.
+
+**Storefront entries stay undated, deliberately.** Their slugs are DERIVED from the product and
+offering hits, so the only date available is the newest of a storefront's listings — and a
+storefront changes for reasons no listing records. `sitemap.ts`'s header refuses a manufactured
+`lastModified`; dating by proxy is that, arrived at more slowly.
+
+### 13. ~~Message attachments~~ — STALE; this shipped and the entry never caught up
+
+**Checked against the routers, not the doc.** The upload path it asks for exists:
+`POST /commerce/documents` (`commerce-documents.routes.ts`) takes a multipart file behind
+`requireProvisionedBuyerCommerceWorkspace` and returns an authorized document id, with
+`GET /commerce/documents/:documentId` as its download half — the two were shipped together
+precisely so a composer could not attach a file nobody can open.
+
+The message side is wired too: `commerce-messages.schemas.ts:55` accepts `encryptedDocumentIds`
+(max 20), the service dedupes and stores them, and `listMessages` projects them back per message.
+
+Nothing to build. Left here as a heading rather than deleted, because the _claim_ is what was
+wrong and a reader who remembers this item should be able to find the correction.
 
 ### 14. Liked / watch later / subscriptions — BACKEND SHIPPED, frontend not wired
 
@@ -374,24 +399,33 @@ refactor here waiting to happen. Deleting a placeholder is a one-line change AFT
 - the report flow (a deliberate v1 gap, HOME_BACKEND §8.4)
 - the "not interested" ranking signal
 
-**Needs only a modest backend change — the cheap subset, in value order:**
+**The cheap subset — ALL THREE SHIPPED on the backend. The frontend banners are what is left.**
 
-1. **`seasons` on `GET /feed/watch/:videoId`.** The data already exists: `/series` has full
-   series/season/episode CRUD. But **every `/series` route is `requireAuth` and owner-scoped**, so
-   there is no public read — which is exactly why `PLACEHOLDER_SEASONS` cannot be filled. Add a
-   series reference to `WatchPayload`, or a public series read.
-2. **`POST /series/:seriesId/poster`.** Mechanical: copy the multer pattern from the one existing
-   studio upload route, `POST /videos/:videoId/thumbnail`. `posterUrl` is a plain URL today with no
-   route that can set it.
-3. **`attachedProducts` on the watch payload.** The join table exists and
-   `PUT /videos/:videoId/products` already writes it; it is simply not projected onto the public
-   read.
-4. **`attachedPitchId` on the `.strict()` `POST /videos` body**, plus a column. The document half is
-   bigger — it needs a storage route.
+1. ~~**`seasons` on `GET /feed/watch/:videoId`.**~~ **Shipped.** It needed a genuinely new public
+   read: all eleven `/series` routes are `requireAuth` and owner-scoped, correctly — `getSeries`
+   returns unreleased titles, premiere dates and the production schedule. `loadPublicSeasonsForVideo`
+   is that read, embedded in the payload rather than given its own route, because the watch page
+   does not learn the series id until the first read returns.
+   **Two rules the frontend has to honour:** `null` means "not an anime episode" and `[]` means "a
+   series with nothing public yet" — do not collapse them; and **only publicly-servable episodes are
+   listed, so episode numbers can have gaps.** `isPremium` is deliberately NOT on the wire — the
+   column exists, no entitlement model does, and a lock over a free episode is a claim we cannot back.
+2. ~~**`POST /series/:seriesId/poster`.**~~ **Shipped**, with `DELETE` beside it — `PATCH` cannot
+   clear the column because `posterUrl` is `HttpUrlSchema` and has no null to send. Multipart
+   `image`, 5 MB, sharp → avif at 1080px, `seriesPosterUploadLimiter`. The `PATCH` path stays:
+   removing it would strand every series already carrying a pasted third-party URL.
+3. ~~**`attachedProducts` on the watch payload.**~~ **Shipped.** Each entry is re-checked for public
+   eligibility at read time through the store's own `resolveEligibleProductCardsByIds`, so a seller
+   unpublishing a listing makes the list SHORTER rather than leaving a dead card — and the join row
+   survives, so re-publishing brings it straight back. Proven both directions against live data.
+4. **`attachedPitchId` on the `.strict()` `POST /videos` body**, plus a column — still open. The
+   document half is bigger; it needs a storage route.
 
-**Separately: `/studio/analytics` is greenfield on BOTH sides.** It is one of the 16 stub routes
-below AND has zero backend routes — `VideoListRowSchema` carries no counters at all. It is not part
-of item 2, but it is the video-domain gap with the most product value.
+**So `watch-content.tsx` and `series-editor-modal.tsx` can lose banners now.** `seasons` and the
+`saleItem` half of `comments.tsx` have real fields; `isPremium`, `transcript`, product reviews and
+trending search terms do not and stay marked. That is frontend work, not backend.
+
+**~~Separately: `/studio/analytics` is greenfield on BOTH sides.~~ Shipped** — see §25.
 
 ### 18. Freight rate data
 
