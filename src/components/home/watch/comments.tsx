@@ -1,35 +1,37 @@
 "use client";
 
-// TRANSPORT: client-query — the comments card. The thread itself is real
-// (`video-comment-thread.tsx`); this file is the shell around it.
+// The comments panel under the player, plus the products a creator attached to the video.
 //
-// WHAT CHANGED: this used to be 447 lines rendering a mock `Comment[]` with Top/New sort pills
-// that sorted nothing, like buttons with no `onClick` at all, and no composer anywhere. The
-// thread moved to `video-comment-thread.tsx` and is wired to `GET/POST /videos/:id/comments`.
+// ATTACHED PRODUCTS ARE REAL NOW. This file used to hold `PLACEHOLDER_SALE_ITEM`, a
+// `{ name, price, sold }` triple of pre-formatted strings marked `TRANSPORT: mock` because
+// nothing joined a product to a video on the public read. `video_attached_product` and
+// `PUT /videos/:videoId/products` had existed the whole time; the READ half shipped, so the
+// placeholder went with it.
 //
-// WHAT DID NOT: the attached-item header and the Reviews tab, which are marked
-// `TRANSPORT: mock` below.
+// THE REVIEWS TAB IS REAL TOO, and the claim that it could not be was stale rather than wrong at
+// the time. `GET /store/products/:productSlug/reviews` ships, `listStoreProductReviews` is
+// already in the store api layer, and `RatingsAndReviews` takes exactly
+// `{ productSlug, initialPage }` — so the tab mounts the store's own component against the
+// attached product instead of a mock `Review[]`. One review surface, not two.
+//
+// `trending` STAYS MOCK. "Everyone is searching for…" needs a search-term aggregation that does
+// not exist anywhere in the backend, and it is held `undefined` rather than invented.
 
-import Image from "next/image";
 import { useState } from "react";
 
+import CatalogProductCard from "@/components/home/store/cards/catalog-product-card";
+import RatingsAndReviews from "@/components/home/store/sections/ratings-and-reviews";
 import VideoCommentThread from "@/components/home/watch/video-comment-thread";
 import { formatCompactCountLabel } from "@/lib/feed/format";
-import type { VideoComment } from "@/lib/feed/schemas";
-import type { Review, SaleItem } from "@/types/video";
+import type { VideoComment, WatchPayload } from "@/lib/feed/schemas";
 
 /**
- * TRANSPORT: mock — `saleItem`, `reviews` and `trending` have no counterpart in
- * `GET /feed/watch/:videoId`.
+ * TRANSPORT: mock — `trending` has no counterpart in `GET /feed/watch/:videoId`.
  *
- * Attaching a store product to a video is a real product intent and a real backend gap: the
- * `/products` API exists, but nothing joins a product to a video and there is no product-review
- * table. `trending` ("everyone is searching for…") has no search-term aggregation behind it
- * either. All three are held empty so the tab bar collapses to the comments header rather than
- * showing a Reviews tab over invented reviews. Deliberate; docs/HOME_STRUCTURE.md §10.
+ * There is no search-term aggregation behind "everyone is searching for…" — no table, no job, no
+ * route. Held `undefined` so the block renders nothing rather than a fabricated phrase.
+ * Deliberate; docs/HOME_STRUCTURE.md §10.
  */
-const PLACEHOLDER_SALE_ITEM: SaleItem | undefined = undefined;
-const PLACEHOLDER_REVIEWS: Review[] = [];
 const PLACEHOLDER_TRENDING_SEARCH: string | undefined = undefined;
 
 type CommentsTab = "comments" | "reviews";
@@ -41,6 +43,7 @@ export default function Comments({
   initialNextCursor,
   isViewerSignedIn,
   commentCount,
+  attachedProducts,
   className = "",
 }: {
   readonly videoId: string;
@@ -50,39 +53,50 @@ export default function Comments({
   readonly initialNextCursor: string | null;
   readonly isViewerSignedIn: boolean;
   readonly commentCount: number;
+  /**
+   * What the creator attached, already filtered server-side to listings the public may see. A
+   * seller unpublishing a product makes this SHORTER — it never carries a dead card — so its
+   * length is not "how many the creator attached" and must not be labelled as such.
+   */
+  readonly attachedProducts: WatchPayload["attachedProducts"];
   readonly className?: string;
 }) {
-  const hasReviews = PLACEHOLDER_SALE_ITEM !== undefined;
+  // THE REVIEWS TAB FOLLOWS THE FIRST ATTACHED PRODUCT. Reviews belong to a product, not to a
+  // video, so a video with two attached products has two review sets and no honest way to merge
+  // them — the first is the one the creator ordered first. With none, there is no tab at all.
+  const reviewedProduct = attachedProducts[0]?.product ?? null;
   const [tab, setTab] = useState<CommentsTab>("comments");
 
   return (
     <section className={`rounded-xl border border-[#E5E7E7] bg-background ${className}`}>
-      {hasReviews && PLACEHOLDER_SALE_ITEM !== undefined ? (
+      {reviewedProduct !== null ? (
         <>
-          {/* Attached item */}
-          <div className="flex flex-row items-center gap-3 px-4 py-3">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-[2px] bg-[#00696E]">
-              <Image
-                src="/icons/shopping_cart_24dp_FFFFFF_FILL1_wght400_GRAD0_opsz24.svg"
-                width={16}
-                height={16}
-                alt=""
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[11px] font-medium">{PLACEHOLDER_SALE_ITEM.name}</p>
-              <p className="text-[11px] text-[#1DBDC5]">
-                Price: {PLACEHOLDER_SALE_ITEM.price} | Sold: {PLACEHOLDER_SALE_ITEM.sold}
-              </p>
-            </div>
+          {/*
+            THE STORE'S OWN CARD, not a bespoke row. `CatalogProductCard` is what every browse
+            surface renders and it already links to `/store/product/{slug}` — a second card here
+            would be a second place for a price to be formatted differently.
+
+            `pinnedAtSeconds` IS DELIBERATELY NOT RENDERED YET. It is on the wire and it means
+            "show this at 2:14", which is a player-timeline feature; printing it as text beside
+            the card would be a timestamp with nothing to click.
+          */}
+          <div className="grid grid-cols-2 gap-3 px-4 py-3 sm:grid-cols-3">
+            {attachedProducts.map((attachment) => (
+              <CatalogProductCard key={attachment.product.id} product={attachment.product} />
+            ))}
           </div>
           {/* Tabs */}
           <div className="flex flex-row border-b border-[#DAE4E5]">
             <TabButton active={tab === "comments"} onClick={() => setTab("comments")}>
               {formatCompactCountLabel(commentCount)} Comments
             </TabButton>
+            {/*
+              NO COUNT ON THIS TAB. The review total lives inside `RatingsAndReviews`'s own
+              summary, which the watch payload does not carry — a number here would either be
+              invented or require a second request to render a tab label.
+            */}
             <TabButton active={tab === "reviews"} onClick={() => setTab("reviews")}>
-              {PLACEHOLDER_REVIEWS.length} Reviews
+              Reviews
             </TabButton>
           </div>
         </>
@@ -108,8 +122,13 @@ export default function Comments({
         for the thread and oldest-first for replies. A control that cannot do what it says is
         worse than no control.
       */}
-      {tab === "reviews" ? (
-        <p className="px-4 py-6 text-sm text-[#6F7979]">No reviews yet.</p>
+      {tab === "reviews" && reviewedProduct !== null ? (
+        /*
+          `initialPage: null` — there IS no server-rendered first page here. This panel is a
+          client island and the tab is not even mounted until a reader opens it, so the component
+          fetches on mount, which is exactly what null means to it.
+        */
+        <RatingsAndReviews productSlug={reviewedProduct.publicSlug} initialPage={null} />
       ) : (
         <VideoCommentThread
           videoId={videoId}

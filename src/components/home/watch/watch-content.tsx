@@ -4,17 +4,21 @@
 // `watch-page.tsx` (server-fetch); every control below writes to the backend.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// FOUR THINGS ON THIS SCREEN HAVE NO BACKEND COUNTERPART AND ARE MARKED `TRANSPORT: mock`.
+// TWO THINGS ON THIS SCREEN HAVE NO BACKEND COUNTERPART AND ARE MARKED `TRANSPORT: mock`.
 //
-// `GET /feed/watch/:videoId` returns no `seasons`, `isPremium`, `transcript`, `saleItem` or
-// `reviews`. The UI for all of them was built against `src/lib/videos.ts`'s mock array, which
-// this change deletes. Rather than delete the components, the data is kept HERE as clearly
-// labelled placeholders — a product decision, recorded in docs/HOME_STRUCTURE.md §10.
+// It used to be four. `seasons` NOW SHIPS on `GET /feed/watch/:videoId` — the backend grew a
+// public series read to serve it — and the attached-product half moved to `comments.tsx` against
+// a real `attachedProducts` field. Both placeholders are gone, along with their banners.
+//
+// What is left is `transcript` and `isPremium`, and neither is a wiring gap: there is no ASR
+// pipeline and no transcript table, and there is no entitlement model, tier or paywall anywhere.
+// Each is held EMPTY rather than invented, so the component shells survive with their layout.
 //
 // This DELIBERATELY breaks the `grep -rn "TRANSPORT: mock" src/` -> nothing invariant that the
-// R&D surface holds. That grep now returns these blocks and only these blocks, and §10 lists
-// exactly them. If you are reading this while "fixing" a stray mock banner: this is not a
-// regression, it is the decision. Delete a placeholder only when its field ships on the wire.
+// R&D surface holds. That grep returns these blocks and only these blocks, and
+// docs/HOME_STRUCTURE.md §10 lists exactly them. If you are reading this while "fixing" a stray
+// mock banner: this is not a regression, it is the decision. Delete a placeholder only when its
+// field ships on the wire — which is exactly what happened to `seasons`.
 // ─────────────────────────────────────────────────────────────────────────────────────────
 
 import Image from "next/image";
@@ -37,8 +41,8 @@ import {
   type FeedVideo,
   type VideoComment,
   type WatchPayload,
+  type WatchSeasons,
 } from "@/lib/feed/schemas";
-import type { Episode, Season } from "@/types/video";
 
 /**
  * TRANSPORT: mock — `transcript` and `transcriptTitle` have no counterpart in
@@ -52,17 +56,6 @@ import type { Episode, Season } from "@/types/video";
  */
 const PLACEHOLDER_TRANSCRIPT_TITLE = "Transcript";
 const PLACEHOLDER_TRANSCRIPT: { time: string; text: string }[] = [];
-
-/**
- * TRANSPORT: mock — `seasons` has no counterpart in `GET /feed/watch/:videoId`.
- *
- * `videoType: "anime_episode"` exists on the wire, and the studio has a real `/series` +
- * seasons + episodes API — but the PUBLIC watch payload carries none of it, so the panel has
- * no source. Kept, empty, so the component and its layout survive until the watch payload
- * carries a series reference. An anime video therefore renders without its episode grid rather
- * than with a fabricated one. Deliberate; docs/HOME_STRUCTURE.md §10.
- */
-const PLACEHOLDER_SEASONS: Season[] = [];
 
 /**
  * TRANSPORT: mock — `isPremium` has no counterpart anywhere in the backend.
@@ -94,10 +87,11 @@ export default function WatchContent({
   readonly startTimeSeconds?: number;
 }) {
   const [isCommentsOpen, setIsCommentsOpen] = useState(true);
-  const [selectedEpisodeId, setSelectedEpisodeId] = useState<string>(
-    () => PLACEHOLDER_SEASONS[0]?.episodes[0]?.id ?? "",
-  );
-  const [activeSeason, setActiveSeason] = useState(0);
+  // WHICH SEASON TAB IS OPEN, and nothing else. There is no `selectedEpisodeId` any more: the
+  // episode being watched IS the current video, so selection is derived from `video.videoId`
+  // rather than stored. The old state was a leftover from the fake list, where clicking an
+  // episode could not navigate because the episode had no video behind it.
+  const [activeSeasonIndex, setActiveSeasonIndex] = useState(0);
 
   if (video === null) {
     return (
@@ -107,8 +101,10 @@ export default function WatchContent({
     );
   }
 
-  const selectedEpisode = findEpisode(PLACEHOLDER_SEASONS, selectedEpisodeId);
-  const showPremium = PLACEHOLDER_IS_PREMIUM || selectedEpisode?.isPremium === true;
+  // `PLACEHOLDER_IS_PREMIUM` ALONE. The per-episode half of this expression is gone with the
+  // fake list: the wire carries no `isPremium` on an episode, deliberately, because no
+  // entitlement model exists and a lock over a free episode is a claim nobody can back.
+  const showPremium = PLACEHOLDER_IS_PREMIUM;
 
   const chapterLabels = video.chapters.map((chapter) => ({
     title: chapter.title,
@@ -222,19 +218,23 @@ export default function WatchContent({
             onToggleComments={() => setIsCommentsOpen((isOpen) => !isOpen)}
           />
 
-          {/* Season + Episode grid — anime only, and empty until the payload carries seasons */}
-          {PLACEHOLDER_SEASONS.length > 0 && (
+          {/*
+            Season + Episode grid.
+
+            `null` HIDES IT; `[]` RENDERS IT EMPTY, and the two are different answers rather than
+            one absence. Null means this video is not an anime episode at all — every pitch and
+            demo on the platform. An empty array means a series whose episodes are not public
+            yet, which is a real state a creator can be in and which the picker should show as
+            such rather than pretend the series does not exist.
+          */}
+          {video.seasons !== null && (
             <>
               <hr className="border-[#CAC4D0]" />
               <AnimeSeasonPanel
-                seasons={PLACEHOLDER_SEASONS}
-                activeSeason={activeSeason}
-                selectedEpisodeId={selectedEpisodeId}
-                onSeasonChange={(seasonIndex) => {
-                  setActiveSeason(seasonIndex);
-                  setSelectedEpisodeId(PLACEHOLDER_SEASONS[seasonIndex]?.episodes[0]?.id ?? "");
-                }}
-                onEpisodeSelect={setSelectedEpisodeId}
+                seasons={video.seasons}
+                currentVideoId={video.videoId}
+                activeSeasonIndex={activeSeasonIndex}
+                onSeasonChange={setActiveSeasonIndex}
               />
             </>
           )}
@@ -247,6 +247,7 @@ export default function WatchContent({
               initialNextCursor={initialCommentsNextCursor}
               isViewerSignedIn={isViewerSignedIn}
               commentCount={video.stats.commentCount}
+              attachedProducts={video.attachedProducts}
             />
           )}
         </div>
@@ -293,14 +294,6 @@ export default function WatchContent({
   );
 }
 
-function findEpisode(seasons: Season[], episodeId: string): Episode | undefined {
-  for (const season of seasons) {
-    const matchingEpisode = season.episodes.find((episode) => episode.id === episodeId);
-    if (matchingEpisode) return matchingEpisode;
-  }
-  return undefined;
-}
-
 function PremiumBanner() {
   return (
     <div className="flex aspect-video w-full flex-col items-center justify-center gap-4 overflow-hidden rounded-xl bg-black p-6">
@@ -323,20 +316,35 @@ function PremiumBanner() {
   );
 }
 
+/**
+ * The season tabs and the episode grid.
+ *
+ * EVERY EPISODE IS A LINK, not a selection. The previous version stored a `selectedEpisodeId` in
+ * component state and changed nothing when you clicked — which was correct while the list was a
+ * fake with no videos behind it, and wrong the moment each row gained a real `videoId`. A picker
+ * that highlights episode 4 and keeps playing episode 3 is worse than one that does nothing.
+ *
+ * WHICH EPISODE IS "SELECTED" IS DERIVED, never stored: it is whichever row matches the video on
+ * screen. Storing it would let the highlight disagree with the player after a back-navigation.
+ *
+ * GAPS IN THE NUMBERING ARE REAL AND MUST SURVIVE. The server sends only episodes a stranger may
+ * watch, so 1, 2, 4 means episode 3 is not public — renumbering to 1, 2, 3 would invent a fact.
+ * The label therefore comes from `episodeNumber`, never from the array index.
+ *
+ * NO PREMIUM ICON. The wire carries no `isPremium` on an episode, deliberately.
+ */
 function AnimeSeasonPanel({
   seasons,
-  activeSeason,
-  selectedEpisodeId,
+  currentVideoId,
+  activeSeasonIndex,
   onSeasonChange,
-  onEpisodeSelect,
 }: {
-  seasons: Season[];
-  activeSeason: number;
-  selectedEpisodeId: string;
-  onSeasonChange: (seasonIndex: number) => void;
-  onEpisodeSelect: (episodeId: string) => void;
+  readonly seasons: WatchSeasons;
+  readonly currentVideoId: string;
+  readonly activeSeasonIndex: number;
+  readonly onSeasonChange: (seasonIndex: number) => void;
 }) {
-  const episodes = seasons[activeSeason]?.episodes ?? [];
+  const episodes = seasons[activeSeasonIndex]?.episodes ?? [];
 
   return (
     <section>
@@ -344,10 +352,10 @@ function AnimeSeasonPanel({
       <div className="border-b border-border">
         <div className="flex scrollbar-none overflow-x-auto px-2">
           {seasons.map((season, seasonIndex) => {
-            const isActive = activeSeason === seasonIndex;
+            const isActive = activeSeasonIndex === seasonIndex;
             return (
               <button
-                key={season.id}
+                key={season.seasonId}
                 type="button"
                 onClick={() => onSeasonChange(seasonIndex)}
                 aria-pressed={isActive}
@@ -356,7 +364,7 @@ function AnimeSeasonPanel({
                 }`}
               >
                 <span className="relative inline-block">
-                  {season.label}
+                  {season.seasonLabel}
                   {isActive && (
                     <span className="absolute inset-x-0 -bottom-3 h-0.75 rounded-t-full bg-[#00696E]" />
                   )}
@@ -367,33 +375,32 @@ function AnimeSeasonPanel({
         </div>
       </div>
       <h2 className="pt-4 pb-3 text-base font-medium">Episode</h2>
-      <div className="grid grid-cols-3 gap-3">
-        {episodes.map((episode) => {
-          const isSelected = episode.id === selectedEpisodeId;
-          return (
-            <button
-              key={episode.id}
-              type="button"
-              onClick={() => onEpisodeSelect(episode.id)}
-              className={`flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors ${
-                isSelected
-                  ? "bg-[#CCE8E9] text-[#041F21]"
-                  : "text-[#3F4949] ring-1 ring-[#6F7979] hover:bg-[#F1F3F3]"
-              }`}
-            >
-              {episode.label}
-              {episode.isPremium && (
-                <Image
-                  src={`/icons/diamond_24dp_000000_FILL${isSelected ? 1 : 0}_wght400_GRAD0_opsz24.svg`}
-                  width={14}
-                  height={14}
-                  alt="premium"
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {episodes.length === 0 ? (
+        // A SEASON WITH NO PUBLIC EPISODES IS A REAL STATE, not an error — the creator has
+        // created the season and released nothing in it yet.
+        <p className="text-sm text-[#6F7979]">No episodes released in this season yet.</p>
+      ) : (
+        <div className="grid grid-cols-3 gap-3">
+          {episodes.map((episode) => {
+            const isCurrent = episode.videoId === currentVideoId;
+            return (
+              <Link
+                key={episode.episodeId}
+                href={`/watch?v=${encodeURIComponent(episode.videoId)}`}
+                aria-current={isCurrent ? "true" : undefined}
+                title={episode.episodeTitle}
+                className={`flex h-8 items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors ${
+                  isCurrent
+                    ? "bg-[#CCE8E9] text-[#041F21]"
+                    : "text-[#3F4949] ring-1 ring-[#6F7979] hover:bg-[#F1F3F3]"
+                }`}
+              >
+                {episode.episodeNumber}
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }

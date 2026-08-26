@@ -12,11 +12,14 @@ import {
   useDeleteEpisodeMutation,
   useDeleteSeasonMutation,
   useDeleteSeriesMutation,
+  useRemoveSeriesPosterMutation,
+  useReplaceSeriesPosterMutation,
   useSeriesQuery,
   useUpdateEpisodeMutation,
   useUpdateSeasonMutation,
   useUpdateSeriesMutation,
 } from "@/hooks/series";
+import { ApiRequestError } from "@/lib/http";
 import type { AnimeEpisodeSummary, AnimeSeasonSummary } from "@/lib/series/schemas";
 
 // TRANSPORT: client-query — `GET /series/:seriesId`, plus season and episode mutations.
@@ -41,8 +44,18 @@ export default function SeriesDetailPage({ seriesId }: { seriesId: string }) {
   const createEpisodeMutation = useCreateEpisodeMutation();
   const updateEpisodeMutation = useUpdateEpisodeMutation();
   const deleteEpisodeMutation = useDeleteEpisodeMutation();
+  const replacePosterMutation = useReplaceSeriesPosterMutation();
+  const removePosterMutation = useRemoveSeriesPosterMutation();
 
   const [isEditSeriesModalOpen, setIsEditSeriesModalOpen] = useState(false);
+  /**
+   * ONE MESSAGE FOR BOTH POSTER MUTATIONS, held here rather than read off either mutation's
+   * `error`. The server's own sentence is what a creator needs — "The uploaded file is not a
+   * valid image", "Image must be at least 64x64 pixels", "Image uploads are not configured on
+   * this server" — and each is written once in the backend's mapper. Inventing copy at this call
+   * site would mean six sentences to keep in sync with the mapper that already has them.
+   */
+  const [posterErrorMessage, setPosterErrorMessage] = useState<string | null>(null);
   const [isDeleteSeriesPending, setIsDeleteSeriesPending] = useState(false);
   const [episodeEditorTarget, setEpisodeEditorTarget] = useState<{
     seasonId: string;
@@ -69,6 +82,21 @@ export default function SeriesDetailPage({ seriesId }: { seriesId: string }) {
         </div>
       </div>
     );
+  }
+
+  function handlePosterSelect(imageFile: File) {
+    setPosterErrorMessage(null);
+    replacePosterMutation.mutate(
+      { seriesId, imageFile },
+      { onError: (error) => setPosterErrorMessage(describePosterError(error)) },
+    );
+  }
+
+  function handlePosterRemove() {
+    setPosterErrorMessage(null);
+    removePosterMutation.mutate(seriesId, {
+      onError: (error) => setPosterErrorMessage(describePosterError(error)),
+    });
   }
 
   function handleSeriesMetadataSave(savedFields: {
@@ -279,6 +307,10 @@ export default function SeriesDetailPage({ seriesId }: { seriesId: string }) {
             updateSeriesMutation.error === null ? null : "Couldn't save those series details."
           }
           onCancel={() => setIsEditSeriesModalOpen(false)}
+          onPosterSelect={handlePosterSelect}
+          onPosterRemove={handlePosterRemove}
+          isPosterPending={replacePosterMutation.isPending || removePosterMutation.isPending}
+          posterErrorMessage={posterErrorMessage}
         />
       )}
 
@@ -476,4 +508,18 @@ function EpisodeRow({ episode, onEditClick, onRemove }: EpisodeRowProps) {
       </div>
     </li>
   );
+}
+
+/**
+ * The server's own sentence when there is one, a generic fallback when there is not.
+ *
+ * A 503 here means this DEPLOYMENT has no image credentials, not that the creator did anything
+ * wrong, and the backend's mapper already says so in those words. Anything that is not an
+ * `ApiRequestError` never reached the server at all — a dropped connection — and gets the retry
+ * sentence instead.
+ */
+function describePosterError(error: unknown): string {
+  return error instanceof ApiRequestError
+    ? error.apiError.message
+    : "Couldn't update the poster. Please try again.";
 }

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+
+import Image from "next/image";
 
 import type { PublicSeries } from "@/lib/series/schemas";
 
@@ -9,9 +11,15 @@ import type { PublicSeries } from "@/lib/series/schemas";
 // Create/edit modal for an anime series' metadata. Seasons and episodes are managed on the
 // series detail page, not here.
 //
-// TRANSPORT: mock — the poster control. `PublicSeries.posterUrl` is a plain URL on the wire and
-// there is NO upload route for it (the only multipart route on the studio surface is the video
-// thumbnail). The picker is a layout study; see docs/HOME_STRUCTURE.md §10.
+// THE POSTER CONTROL IS REAL NOW, and it is the one control here that does NOT wait for Save.
+// `POST`/`DELETE /series/:seriesId/poster` act on a row that already exists, so a picked file
+// uploads immediately and the modal shows the server's answer — unlike title, description and
+// genre tags, which this component only collects and hands to `onSave`.
+//
+// WHICH IS WHY IT IS EDIT-ONLY. A series being CREATED has no id to upload against, so the
+// control renders a note telling the creator to save first rather than a picker that would 404.
+// The alternative — holding the file in state and uploading after create — would mean a save
+// that half-succeeds, and there is no way to report that honestly in one button.
 const SERIES_GENRE_OPTIONS = [
   "Action",
   "Romance",
@@ -33,6 +41,15 @@ type SeriesEditorModalProps = {
   onCancel: () => void;
   isSavePending?: boolean;
   saveErrorMessage?: string | null;
+  /**
+   * The poster trio, and all three are optional together — a caller in CREATE mode has no series
+   * id to upload against and passes none of them, which is what makes the control render its
+   * "save first" note instead of a picker.
+   */
+  onPosterSelect?: (imageFile: File) => void;
+  onPosterRemove?: () => void;
+  isPosterPending?: boolean;
+  posterErrorMessage?: string | null;
 };
 
 export default function SeriesEditorModal({
@@ -41,7 +58,12 @@ export default function SeriesEditorModal({
   onCancel,
   isSavePending = false,
   saveErrorMessage = null,
+  onPosterSelect,
+  onPosterRemove,
+  isPosterPending = false,
+  posterErrorMessage = null,
 }: SeriesEditorModalProps) {
+  const posterInputRef = useRef<HTMLInputElement>(null);
   const [seriesTitle, setSeriesTitle] = useState(seriesToEdit?.title ?? "");
   const [seriesDescription, setSeriesDescription] = useState(seriesToEdit?.description ?? "");
   const [selectedGenreTags, setSelectedGenreTags] = useState<string[]>([
@@ -114,9 +136,83 @@ export default function SeriesEditorModal({
 
           <div className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-foreground">Poster</span>
-            <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-border">
-              <p className="text-sm text-muted-foreground">Poster upload coming soon</p>
-            </div>
+            {onPosterSelect === undefined ? (
+              <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-border px-4">
+                <p className="text-center text-sm text-muted-foreground">
+                  Save the series first, then add a poster.
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-start gap-3">
+                {/*
+                  PORTRAIT, 2:3 — the shape the server re-encodes to and the shape a catalogue
+                  tile renders. A square preview here would show the creator a crop that is not
+                  what the store will show.
+                */}
+                <div className="relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                  {seriesToEdit?.posterUrl != null && (
+                    <Image
+                      src={seriesToEdit.posterUrl}
+                      alt=""
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  <input
+                    ref={posterInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(event) => {
+                      const pickedFile = event.target.files?.[0];
+                      // CLEARED IMMEDIATELY, so picking the SAME file twice fires `change`
+                      // again. Without this a failed upload cannot be retried with the file
+                      // that failed, which is the one a creator reaches for first.
+                      event.target.value = "";
+                      if (pickedFile) onPosterSelect(pickedFile);
+                    }}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={isPosterPending}
+                      onClick={() => posterInputRef.current?.click()}
+                      className="cursor-pointer rounded-full border border-border px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isPosterPending
+                        ? "Uploading…"
+                        : seriesToEdit?.posterUrl == null
+                          ? "Upload poster"
+                          : "Replace poster"}
+                    </button>
+                    {seriesToEdit?.posterUrl != null && onPosterRemove !== undefined && (
+                      <button
+                        type="button"
+                        disabled={isPosterPending}
+                        onClick={onPosterRemove}
+                        className="cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  {/*
+                    THE LIMITS ARE STATED, NOT DISCOVERED. Every one is enforced server-side, and
+                    a creator finding out about the 5 MB cap from a 413 has already waited for the
+                    upload.
+                  */}
+                  <p className="text-xs text-muted-foreground">
+                    JPEG, PNG or WebP up to 5 MB, at least 64×64. Portrait works best.
+                  </p>
+                  {posterErrorMessage !== null && (
+                    <p className="text-xs text-destructive">{posterErrorMessage}</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">

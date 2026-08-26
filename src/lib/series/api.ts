@@ -1,13 +1,15 @@
 // TRANSPORT: server-fetch + client-query — callable from both sides via the optional
 // `RequestOptions`. All `requireAuth`, all owner-scoped, every lookup failure a 404.
 //
-// NO RATE LIMITER ON THIS ROUTER AT ALL — unlike `/videos`, which carries three. Not a licence
-// to loop: it means a runaway client here hits the database rather than a bucket.
+// ONE RATE LIMITER ON THIS ROUTER — `seriesPosterUploadLimiter`, on the poster pair at the foot
+// of this file. Every other route here is unlimited, unlike `/videos` which carries three. Not a
+// licence to loop: it means a runaway client on those hits the database rather than a bucket.
 
 import {
   buildQueryString,
   getJson,
   getPaginated,
+  sendForm,
   sendJson,
   type ActionResponse,
   type PaginationMeta,
@@ -81,6 +83,57 @@ export function deleteSeries(
     "DELETE",
     undefined,
     DeletedSchema,
+    options,
+  );
+}
+
+/* --- The poster ---------------------------------------------------------------------------- */
+
+/**
+ * `POST /series/:seriesId/poster` — multipart, field name `image`.
+ *
+ * 5 MB cap, image mime types only; the server re-encodes to AVIF at max 1080px (portrait, where
+ * a video thumbnail is landscape at 1280) and refuses anything under 64x64. Do NOT set
+ * Content-Type — the browser must add the multipart boundary.
+ *
+ * WHY IT EXISTS AT ALL. `posterUrl` has been a plain string on `PATCH /series/:id` since the
+ * catalog shipped, which meant the only way to have a poster was to host the image somewhere
+ * else and paste a link — a third-party URL on a public catalogue page, swappable or deletable
+ * by someone who does not work here. That PATCH field stays, because series already carrying a
+ * pasted URL would otherwise be stranded with no way to change it.
+ */
+export function replaceSeriesPoster(
+  seriesId: string,
+  imageFile: File,
+  options?: RequestOptions,
+): Promise<ActionResponse<PublicSeries>> {
+  const formData = new FormData();
+  formData.append("image", imageFile);
+  return sendForm(
+    `/series/${encodeURIComponent(seriesId)}/poster`,
+    "POST",
+    formData,
+    PublicSeriesSchema,
+    options,
+  );
+}
+
+/**
+ * `DELETE /series/:seriesId/poster` — takes the poster down and answers the refreshed series.
+ *
+ * NOT REPLACEABLE BY `updateSeries({ posterUrl: null })`. That field is a URL schema on the
+ * backend, so there is no null it will accept; without this route a poster could be changed
+ * forever and never removed.
+ */
+export function removeSeriesPoster(
+  seriesId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<PublicSeries>> {
+  return sendJson(
+    `/series/${encodeURIComponent(seriesId)}/poster`,
+    "DELETE",
+    undefined,
+    PublicSeriesSchema,
     options,
   );
 }

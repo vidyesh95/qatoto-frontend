@@ -348,11 +348,14 @@ viewCount, creatorId, creatorName, creatorHandle (nullable), addedAt`.
   `subscriberCount: 0`. Do not filter them — that would make the subscription unliftable from the
   only surface that lists it.
 
-**What is left, and it is frontend-only:** `src/lib/library/schemas.ts` + `api.ts` (Zod `.strip()`
-→ tagged result, per Patterns 1–3), a `src/hooks/library.ts` with the three keyset queries, three
-tabs on `library-page.tsx`, and **deleting the "Not here yet" panel** — its claim that "there is no
-route that lists them" is now false, and a stale panel denying a shipped route is worse than the
-panel was useful.
+**~~What is left, and it is frontend-only~~ — DONE.** `src/lib/library/{schemas,api}.ts`,
+`src/hooks/library.ts` (three `useKeysetList` queries), and four tabs on `library-page.tsx`:
+Playlists · Liked · Watch later · Subscriptions. The "Not here yet" panel is deleted.
+
+**No count is rendered beside Liked or Watch later**, per the rule above — the server drops rows
+whose video went private, so `rows.length` is not the number of things you liked.
+
+**Subscription rows link NOWHERE, and that is deliberate** — see §27.
 
 ### 15. Multi-axis variants
 
@@ -372,16 +375,15 @@ Six more query keys, and the UI to go with them. The directory has exactly one f
 (kind chips), which is why the query keys were refused when they were first proposed — build the UI
 and the keys together or neither.
 
-### 2. The video domain is waiting on the backend
+### 2. The video domain — the cheap subset is DONE on both sides; three banners remain
 
-**Re-filed out of "Frontend" — it was never frontend work.** `rg -l "TRANSPORT: mock" src/` still
-returns exactly five files, all video, and that grep is still the check that this is finished:
+`rg -l "TRANSPORT: mock" src/` now returns **three** files, down from five:
 
-- `src/components/home/watch/comments.tsx`
-- `src/components/home/watch/share-sheet.tsx`
-- `src/components/home/watch/watch-content.tsx`
-- `src/components/studio/series/series-editor-modal.tsx`
-- `src/lib/videos/studio-view.ts`
+- `src/components/home/watch/comments.tsx` — `trending` only
+- `src/components/home/watch/watch-content.tsx` — `transcript` and `isPremium` only
+- `src/lib/videos/studio-view.ts` — `attachedDocumentNames` only
+
+`series-editor-modal.tsx` and the `seasons`/`saleItem` halves came off: their fields ship now.
 
 **None of them imports a fixture.** Each holds an inline EMPTY placeholder — `[]`, `undefined`,
 `false` — so a real component shell survives with its layout intact, and each banner names a
@@ -421,9 +423,24 @@ refactor here waiting to happen. Deleting a placeholder is a one-line change AFT
 4. **`attachedPitchId` on the `.strict()` `POST /videos` body**, plus a column — still open. The
    document half is bigger; it needs a storage route.
 
-**So `watch-content.tsx` and `series-editor-modal.tsx` can lose banners now.** `seasons` and the
-`saleItem` half of `comments.tsx` have real fields; `isPremium`, `transcript`, product reviews and
-trending search terms do not and stay marked. That is frontend work, not backend.
+**The frontend caught up — all four are wired.**
+
+- **The season picker is live.** Every episode is a `<Link>` to `/watch?v={videoId}`; it used to be
+  local state that changed nothing, which was correct while the list was a fake with no videos
+  behind it. `null` hides the panel, `[]` renders an empty catalogue, and **gaps in the numbering
+  are preserved** — 1, 2, 4 means episode 3 is not public and renumbering would invent a fact.
+- **Attached products render `CatalogProductCard`**, the store's own card, linking to
+  `/store/product/{slug}`.
+- **The Reviews tab is real, and "product reviews (no table)" above was STALE.**
+  `GET /store/products/:productSlug/reviews` ships, `listStoreProductReviews` was already in the
+  api layer, and `RatingsAndReviews` takes `{ productSlug, initialPage }` — so the tab mounts the
+  store's own component. Verified in a browser: it renders the store's honest empty state,
+  "Reviews can only be left by a buyer whose order completed."
+- **The series poster picker uploads.** Edit-only: a series being created has no id to upload
+  against, so create mode says "Save the series first" rather than showing a picker that would 404.
+
+`isPremium`, `transcript` and trending search terms stay marked — each needs a table, a job or a
+model that does not exist.
 
 **~~Separately: `/studio/analytics` is greenfield on BOTH sides.~~ Shipped** — see §25.
 
@@ -658,6 +675,32 @@ None of these change behaviour; all of them mislead a reader.
 3. **The frontend repo carries stale FORKS of four backend docs.** They are copies, not links, and
    they have drifted. Decide whether to re-sync them or delete them and point at the backend repo —
    a fork that nobody updates is worse than no copy.
+
+## 27. `/channel/:handle` is linked from every feed card and DOES NOT EXIST
+
+Found while wiring §14's subscriptions tab. Not caused by this session's work, and worth its own
+item because it is live breakage on the most-rendered component in the product.
+
+`find src/app -type d -name "*channel*"` returns **nothing**. There is no channel route. And yet:
+
+- `VideoCard` renders the creator's avatar and name as ``<Link href={`/channel/${handle}`}>`` — so
+  **every card in every feed, on the home page and in the watch page's recommended rail, carries two
+  dead links.**
+- Confirmed in a browser: `http://localhost:3000/channel/user_vidyesh_2fd7` answers Next's 404 page.
+
+**`feed-preferences-panel.tsx` already reached the right conclusion** and renders `@handle` as plain
+text with a comment saying so — but only for the null-handle case; it never noticed the route was
+missing entirely. The new subscriptions tab follows the same shape for the same reason: a row you
+cannot click beats a row that 404s.
+
+**Two ways out, and it is a product call rather than a technical one:**
+
+1. **Build `/channel/[handle]`.** Some of the backend may already exist — `GET /feed/videos` takes a
+   `channel` feed source and `creator_stats` holds the counters a channel header needs. Check before
+   assuming this is greenfield.
+2. **Stop linking.** Render the creator's name as text in `VideoCard` until (1) ships.
+
+Doing neither is the current state, and it is the worst of the three.
 
 ## Cross-pillar seams
 

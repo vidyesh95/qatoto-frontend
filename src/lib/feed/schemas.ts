@@ -11,6 +11,7 @@ import { formatViewCountLabel } from "@/lib/feed/format";
 // The stage tuple is R&D's pgEnum labels; imported rather than restated so the two cannot drift.
 import { OpenRoleSchema } from "@/lib/rnd/catalog.schemas";
 import { ProjectStageSchema } from "@/lib/rnd/shared.schemas";
+import { StoreProductCardSchema } from "@/lib/store/organizations.schemas";
 import type { VideoCardProps } from "@/types/video";
 
 /* -------------------------------------------------------------------------- */
@@ -358,9 +359,80 @@ export const WatchPayloadSchema = z
         })
         .strip(),
     ),
+    /**
+     * The series this episode belongs to, or NULL when the video is not an anime episode.
+     *
+     * `null` AND `[]` MEAN DIFFERENT THINGS AND BOTH ARRIVE. Null is "not part of a series" —
+     * every pitch, demo and unaffiliated video on the platform, which is most of them. An empty
+     * array is a series none of whose episodes are public yet. Hide the picker for the first;
+     * render an empty catalogue for the second. `.nullable()` without `.optional()` because the
+     * server always sends the key.
+     *
+     * ONLY PUBLICLY-WATCHABLE EPISODES ARRIVE, so EPISODE NUMBERS CAN HAVE GAPS. An episode in
+     * review, hidden by a moderator, or with no video yet is omitted entirely rather than sent
+     * as an unclickable row — a picker that names next week's episode would be an oracle over a
+     * catalogue nobody has released. Never renumber the list to close a gap: 1, 2, 4 is the true
+     * answer and 1, 2, 3 would be a fabricated one.
+     *
+     * `videoId` IS NOT NULLABLE HERE even though the column is, precisely because of that
+     * filter — by the time a row reaches this schema its video exists and is watchable, which is
+     * what makes each entry a link.
+     *
+     * NO `isPremium`. The column exists on the backend; no entitlement model, tier or paywall
+     * does, so the server deliberately refuses to send it. Do not reintroduce a lock icon here
+     * from any other source — it would sit over an episode that plays for free.
+     */
+    seasons: z
+      .array(
+        z
+          .object({
+            seasonId: z.string(),
+            seasonLabel: z.string(),
+            position: z.number().int(),
+            episodes: z.array(
+              z
+                .object({
+                  episodeId: z.string(),
+                  videoId: z.string(),
+                  episodeNumber: z.number().int(),
+                  episodeTitle: z.string(),
+                  /** When it went live in /anime, which is on APPROVAL rather than on publish. */
+                  releasedAt: z.iso.datetime().nullable(),
+                })
+                .strip(),
+            ),
+          })
+          .strip(),
+      )
+      .nullable(),
+    /**
+     * The shoppable products under the player. `[]` rather than nullable, unlike `seasons` — every
+     * video CAN carry products, so "none" is an empty list rather than an absent capability.
+     *
+     * THE LIST IS RE-FILTERED SERVER-SIDE ON EVERY READ. A creator attaches a product and the
+     * seller can later unpublish it, delist the organization, or have the listing moderated down;
+     * none of that touches the attachment. The server drops those entries, so this list gets
+     * SHORTER rather than growing a dead card — and re-publishing brings the card straight back.
+     * It follows that the length here is not "how many products the creator attached".
+     *
+     * `StoreProductCardSchema` IS THE STORE'S OWN CARD, reused rather than re-declared, so a
+     * product under a video and the same product in a browse grid parse through one vocabulary
+     * and render through one component.
+     */
+    attachedProducts: z.array(
+      z
+        .object({
+          product: StoreProductCardSchema,
+          /** The second the creator pinned it to, or null for an unpinned attachment. */
+          pinnedAtSeconds: z.number().int().nullable(),
+        })
+        .strip(),
+    ),
   })
   .strip();
 export type WatchPayload = z.infer<typeof WatchPayloadSchema>;
+/** The seasons array with its `null` arm removed — what the picker renders once it is mounted. */
+export type WatchSeasons = NonNullable<WatchPayload["seasons"]>;
 
 /* -------------------------------------------------------------------------- */
 /* Comments                                                                     */

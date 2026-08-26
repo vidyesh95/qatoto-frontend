@@ -20,6 +20,8 @@ import {
   deleteSeries,
   getSeries,
   listMySeries,
+  removeSeriesPoster,
+  replaceSeriesPoster,
   updateEpisode,
   updateSeason,
   updateSeries,
@@ -89,6 +91,33 @@ export function useUpdateSeriesMutation() {
       readonly seriesId: string;
       readonly input: UpdateSeriesInput;
     }) => unwrap(await updateSeries(variables.seriesId, variables.input)),
+    onSuccess: adoptTree,
+  });
+}
+
+/**
+ * The poster pair. Both answer the refreshed series, so both adopt the tree exactly as the
+ * metadata mutations do — an upload that returned only a URL would leave the cached series
+ * showing the old poster until something else invalidated it.
+ *
+ * SEPARATE FROM `useUpdateSeriesMutation` on purpose, even though `PATCH /series/:id` also
+ * accepts a `posterUrl`. That field takes a URL STRING and cannot be nulled; these two own the
+ * bytes this platform stores. Routing an upload through the patch would mean the client
+ * inventing a URL it does not control.
+ */
+export function useReplaceSeriesPosterMutation() {
+  const adoptTree = useSeriesTreeAdoption();
+  return useMutation({
+    mutationFn: async (variables: { readonly seriesId: string; readonly imageFile: File }) =>
+      unwrap(await replaceSeriesPoster(variables.seriesId, variables.imageFile)),
+    onSuccess: adoptTree,
+  });
+}
+
+export function useRemoveSeriesPosterMutation() {
+  const adoptTree = useSeriesTreeAdoption();
+  return useMutation({
+    mutationFn: async (seriesId: string) => unwrap(await removeSeriesPoster(seriesId)),
     onSuccess: adoptTree,
   });
 }
