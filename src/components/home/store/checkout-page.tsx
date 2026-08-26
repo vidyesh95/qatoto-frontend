@@ -43,10 +43,17 @@ import { useState } from "react";
 
 import Link from "next/link";
 
+import {
+  ComponentRow,
+  CustomsLine,
+  FreightLine,
+  ManufacturingLine,
+} from "@/components/commerce/sections/arrival-window-component-lines";
 import BuyerWorkspaceNotice from "@/components/home/store/sections/buyer-workspace-notice";
 import StatusPanel from "@/components/home/shared/status-panel";
 import { useCartQuery, useConfirmCheckout, usePrepareCheckout } from "@/hooks/store/cart";
 import { newIdempotencyKey } from "@/lib/idempotency";
+import { ARRIVAL_WINDOW_COMPONENT_LABELS } from "@/lib/store/arrival-window.schemas";
 import type { CheckoutPrepare, ConfirmCheckout } from "@/lib/store/cart.schemas";
 import { SETTLEMENT_RAIL_LABELS } from "@/lib/store/cart.schemas";
 import { formatCentsLabel, formatCountLabel } from "@/lib/store/format";
@@ -363,6 +370,8 @@ function ReservedStep({
 
       <DeliveryEstimateSection prepare={prepare} />
 
+      <PrepareArrivalWindowSection prepare={prepare} />
+
       <section
         aria-label="How this settles"
         className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3"
@@ -411,6 +420,78 @@ function ReservedStep({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * What the journey is MADE OF, before there is a journey.
+ *
+ * THE ONE RULE ON THIS PANEL: it never prints a date. `arrivalWindow` is null at prepare time by
+ * construction — there is no order, so no clock has started — and the backend says so rather than
+ * approximating. What IS real here is the three components and, where one is unknown, its name.
+ *
+ * SO AN UNKNOWN COMPONENT IS RENDERED, NOT HIDDEN. "We cannot tell you when this arrives" is a
+ * different statement from silence, and the second reads as an omission. `missingComponents`
+ * exists precisely so the absence can be attributed — the manufacturing arm is in that list
+ * because a seller who declared no lead time would otherwise produce a null window with an empty
+ * reason, which is an unnamed absence.
+ *
+ * NO MODE PICKER, unlike the order panel. Choosing a freight mode re-prices an order, and there is
+ * no order yet; `mode_not_selected` is reported here as the reason it is.
+ */
+function PrepareArrivalWindowSection({ prepare }: { prepare: CheckoutPrepare }) {
+  if (prepare.arrivalWindows.length === 0) return null;
+
+  return (
+    <section
+      aria-label="What this journey is made of"
+      className="rounded-xl border border-[#CAC4D0]/60 px-4 py-3"
+    >
+      <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-[#6F7979] uppercase">
+        Journey breakdown
+      </p>
+
+      <ul className="mt-2 space-y-3">
+        {prepare.arrivalWindows.map((sellerWindow) => (
+          <li key={sellerWindow.sellerOrganizationId}>
+            <dl className="flex flex-col gap-2">
+              <ComponentRow name="manufacturing">
+                <ManufacturingLine
+                  component={sellerWindow.arrivalWindow.components.manufacturing}
+                />
+              </ComponentRow>
+              <ComponentRow name="freight">
+                {/* No `onSelectMode` — see the note above. */}
+                <FreightLine component={sellerWindow.arrivalWindow.components.freight} />
+              </ComponentRow>
+              <ComponentRow name="customs">
+                <CustomsLine component={sellerWindow.arrivalWindow.components.customs} />
+              </ComponentRow>
+            </dl>
+
+            {sellerWindow.arrivalWindow.missingComponents.length > 0 && (
+              <p className="mt-1.5 text-xs leading-4 text-[#6F7979]">
+                No arrival window can be given for this seller yet —{" "}
+                {sellerWindow.arrivalWindow.missingComponents
+                  .map((componentName) =>
+                    ARRIVAL_WINDOW_COMPONENT_LABELS[componentName].toLowerCase(),
+                  )
+                  .join(", ")}{" "}
+                {sellerWindow.arrivalWindow.missingComponents.length === 1 ? "is" : "are"} still
+                unknown.
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {/* The same closing rule as the freight panel above, for the same reason: the absence of a
+          date here is deliberate, and saying so stops it reading as a bug. */}
+      <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">
+        Durations only. Nothing above is a delivery date — the clock starts when the order is
+        confirmed, not when it is prepared.
+      </p>
+    </section>
   );
 }
 

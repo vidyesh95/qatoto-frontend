@@ -8,18 +8,21 @@
 // custody pair the `direct_processor` rail forbids. A41 made the postings rail-aware; these three
 // calls are what let a buyer use that.
 //
-// THREE ROUTES, AND `POST /commerce/orders/:orderId/refunds` IS DELIBERATELY ABSENT. It exists and
-// answers 202, but requesting a refund needs a control that can render `409 OVER_REFUND` — whose
-// remaining refundable balance rides in the envelope's `data`, which the shared transport does not
-// surface — and there is no such control on this surface yet. An api wrapper with no caller is
-// unverified code, which is exactly what the repo's uncalled-API audit exists to catch.
+// FOUR ROUTES NOW. `POST /commerce/orders/:orderId/refunds` used to be deliberately absent, and the
+// reason it was is worth keeping because it explains the shape of what replaced it: requesting a
+// refund needs a control that can render `409 OVER_REFUND`, whose remaining refundable balance
+// rides in the envelope's `data` — and the shared transport dropped `data` on every failure, so
+// the number was unreachable from anywhere in the app.
 //
-// WHAT THE 502/503 BRANCH COSTS US, stated rather than discovered later. Provider failures answer
-// `502 PROVIDER_REJECTED` / `503 PROVIDER_UNAVAILABLE` and put a machine-readable `reason` in
-// `data`. `readEnvelope` reads `message` and `errors` and drops `data` on a failure, so `reason`
-// does not reach the client. That is acceptable and not a gap to work around here: `reason` is
-// provider diagnostics, the `message` beside it is the user-facing sentence, and widening `ApiError`
-// for one route would change the error contract every surface in the app shares.
+// THAT HOLE IS CLOSED, ADDITIVELY. `ApiError` gained an optional `details?: unknown` and
+// `readEnvelope` passes the failure envelope's `data` through untouched. `unknown` rather than a
+// typed shape on purpose: `ApiError` is shared by every surface, and promoting one route's payload
+// into that contract is what the old note above was right to refuse. The caller parses it with Zod
+// at its own boundary — see `OverRefundDetailsSchema` in `payments.schemas.ts`.
+//
+// The same change incidentally carries `502 PROVIDER_REJECTED` / `503 PROVIDER_UNAVAILABLE`'s
+// machine-readable `reason`. Nothing reads it, and nothing should render it: `reason` is provider
+// diagnostics and the `message` beside it is the user-facing sentence.
 
 import {
   buildQueryString,
@@ -31,8 +34,11 @@ import {
 import {
   PaymentIntentSchema,
   RefundListPageSchema,
+  RefundSchema,
+  type CreateRefundInput,
   type ListRefundsFilter,
   type PaymentIntent,
+  type Refund,
   type RefundListPage,
 } from "@/lib/store/payments.schemas";
 
@@ -115,5 +121,36 @@ export function listRefunds(
     `/commerce/refunds${buildQueryString({ ...filter })}`,
     RefundListPageSchema,
     options,
+  );
+}
+
+/**
+ * Requests a refund against an order — `POST /commerce/orders/:orderId/refunds`.
+ *
+ * A `202` IS NOT A SETTLED REFUND. The row exists and the provider has been asked; whether the
+ * money moves is a later fact that arrives on `GET /commerce/refunds`. Copy on the control must say
+ * "requested", and the refund history beside it is where the verdict shows up.
+ *
+ * THE IDEMPOTENCY KEY IS REQUIRED — the route mounts `idempotency({ required: true, scope:
+ * "active_organization" })`, so a call without the header is refused before the service runs. It is
+ * a HEADER here, not a body field, the same envelope comment create uses. Mint it once per attempt
+ * and resend the SAME value on every retry: a key regenerated inside a retry refunds twice.
+ *
+ * OMITTING `amountInCents` REFUNDS THE WHOLE REMAINING BALANCE, which is the server's figure and
+ * not one to compute here. On `409 OVER_REFUND` the real remaining balance arrives in
+ * `error.details` — parse it with `OverRefundDetailsSchema` rather than reading the message.
+ */
+export function createRefund(
+  orderId: string,
+  input: CreateRefundInput,
+  idempotencyKey: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<Refund>> {
+  return sendJson(
+    `/commerce/orders/${encodeURIComponent(orderId)}/refunds`,
+    "POST",
+    input,
+    RefundSchema,
+    { ...options, headers: { ...options?.headers, "Idempotency-Key": idempotencyKey } },
   );
 }

@@ -30,17 +30,23 @@ prerendered route in `(home)` from `◐ (Partial Prerender)` into `ƒ (Dynamic)`
 
 ---
 
-## 2. Sixteen routes are stubs that render a bare `<h1>`
+## 2. ~~Sixteen routes are stubs that render a bare `<h1>`~~ — SHIPPED
 
-`rg -l "return <h1>" src/app` finds them. All are marked `kind: "planned"` in
-`src/lib/roadmap/site-roadmap.ts`, so the public roadmap is honest about them — they are
-unbuilt, not broken.
+`rg -l "return <h1>" src/app` now finds **nothing**. It was fifteen, not sixteen: this file
+already had the `(home)` count right at three, and `todo.md` did not.
 
-- **Twelve under `(studio)`**: analytics, comments, subtitles, copyright, customize, earn,
-  funding, pitches, team, learn, support, feedback
-- **Three under `(home)`**: `/customer-service`, `/advertise-with-us`, `/policies-and-safety`
-  (`/report-history` shipped with video content reporting — it reads
-  `GET /users/me/video-reports`)
+- **Three under `(home)`** — `/customer-service`, `/advertise-with-us`, `/policies-and-safety` —
+  are real pages now: authored content, `noindex` removed, `kind: "route"` on the roadmap, listed
+  in `sitemap.ts`, and `/policies-and-safety` added to the sidebar's footer so it is reachable at
+  all. None invents a capability the backend lacks; each is a directory or a hub over surfaces
+  that already work.
+- **Twelve under `(studio)`** render `studio-planned-page.tsx` — the roadmap summary verbatim,
+  what the page will do, and a link to the surface that does the job today WHERE ONE TRULY EXISTS.
+  Six have no such link and say so rather than inventing one.
+
+    **They stay `kind: "planned"`, and that is the point.** Ten of the twelve have no backend at
+    all, so explaining the absence well is not the same as filling it. A `route` on the roadmap is
+    a claim the capability exists.
 
 **`/your-account` and `/settings` are GONE, and are not coming back** — they were the cheap
 two named here, they were built as seventeen routes across two nested trees, and they were then

@@ -138,6 +138,7 @@ const ROUTES = {
   sales: "/sales",
   advertiseWithUs: "/advertise-with-us",
   customerService: "/customer-service",
+  policiesAndSafety: "/policies-and-safety",
   about: "/about",
   press: "/press",
   blogs: "/blogs",
@@ -471,6 +472,7 @@ const FOOTER_LINKS_ROW2 = [
   { path: ROUTES.copyrightPolicy, label: "Copyright Policy" },
   { path: ROUTES.communityGuidelines, label: "Community Guidelines" },
   { path: ROUTES.vulnerabilityDisclosurePolicy, label: "Vulnerability Disclosure Policy" },
+  { path: ROUTES.policiesAndSafety, label: "Policies and Safety" },
 ] as const;
 
 /* ---------- Collapsed Navigation Config ---------- */

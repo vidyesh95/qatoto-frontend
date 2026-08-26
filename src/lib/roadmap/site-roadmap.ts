@@ -923,15 +923,19 @@ export const ROADMAP_REFERENCE_DESTINATIONS: readonly RoadmapDestination[] = [
     summary: "How to reach us.",
   },
   {
-    kind: "planned",
+    // `route`, not `planned`: the body is a real page now rather than a placeholder heading, which
+    // is the whole distinction between those two kinds.
+    kind: "route",
     label: "Customer service",
-    pathPattern: "/customer-service",
+    href: "/customer-service",
     summary: "Help with an order or an account.",
   },
   {
-    kind: "planned",
+    // `route`, not `planned`: the body is a real page now rather than a placeholder heading, which
+    // is the whole distinction between those two kinds.
+    kind: "route",
     label: "Advertise with us",
-    pathPattern: "/advertise-with-us",
+    href: "/advertise-with-us",
     summary: "Placement across the feed and store.",
   },
   {
@@ -944,9 +948,11 @@ export const ROADMAP_REFERENCE_DESTINATIONS: readonly RoadmapDestination[] = [
     summary: "Reports you filed, and what came of them.",
   },
   {
-    kind: "planned",
+    // `route`, not `planned`: the body is a real page now rather than a placeholder heading, which
+    // is the whole distinction between those two kinds.
+    kind: "route",
     label: "Policies and safety",
-    pathPattern: "/policies-and-safety",
+    href: "/policies-and-safety",
     summary: "The safety centre.",
   },
   {

@@ -26,7 +26,13 @@ import {
 
 import { storeKeys } from "@/hooks/store/keys";
 import type { ActionResponse } from "@/lib/http";
-import { createPaymentIntent, getPaymentIntent, listRefunds } from "@/lib/store/payments.api";
+import type { CreateRefundInput, Refund } from "@/lib/store/payments.schemas";
+import {
+  createPaymentIntent,
+  createRefund,
+  getPaymentIntent,
+  listRefunds,
+} from "@/lib/store/payments.api";
 import { isPaymentIntentInFlight, type PaymentIntent } from "@/lib/store/payments.schemas";
 
 /**
@@ -114,6 +120,38 @@ export function useCreatePaymentIntent(): UseMutationResult<
       void queryClient.invalidateQueries({ queryKey: storeKeys.order(orderId) });
       void queryClient.invalidateQueries({ queryKey: storeKeys.orderList("buyer") });
       void queryClient.invalidateQueries({ queryKey: storeKeys.orderList("provider") });
+    },
+  });
+}
+
+/**
+ * Requests a refund against an order.
+ *
+ * NOTHING OPTIMISTIC, for the same reason the payment mutation above writes nothing: a `202` says a
+ * row exists and the provider has been asked, not that money moved. The refund history query is
+ * invalidated so the new row appears in whatever state the server actually gave it.
+ *
+ * THE ORDER IS INVALIDATED TOO. A refund moves `order.paymentState` to `partially_refunded` or
+ * `refunded`, and that transition belongs to the order read — writing it here would be the client
+ * asserting a state it did not observe.
+ *
+ * The key is minted in the component, never in this hook: a key minted here would be fresh on every
+ * call, and a retried refund with a fresh key refunds twice.
+ */
+export function useCreateRefund(): UseMutationResult<
+  ActionResponse<Refund>,
+  Error,
+  { readonly orderId: string; readonly input: CreateRefundInput; readonly idempotencyKey: string }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orderId, input, idempotencyKey }) =>
+      createRefund(orderId, input, idempotencyKey),
+    onSuccess: (result, { orderId }) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.orderRefunds(orderId) });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.order(orderId) });
     },
   });
 }

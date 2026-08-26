@@ -15,6 +15,22 @@ export interface ApiError {
   readonly message: string;
   /** 422 field errors, when the backend returned them. */
   readonly fieldErrors?: Readonly<Record<string, string[]>>;
+  /**
+   * The failure envelope's `data`, carried through UNPARSED.
+   *
+   * A few refusals are only actionable if you can read what came with them: `409 OVER_REFUND`
+   * ships the remaining refundable balance, and `502`/`503` on the payment rails ship a provider
+   * `reason`. Until now this branch copied `message` and `errors` and dropped `data` on the floor,
+   * so those numbers were unreachable from every caller in the app.
+   *
+   * `unknown`, NOT A TYPED SHAPE, and that is the whole design. `ApiError` is shared by every
+   * surface; giving it a `refundableInCents` would promote one route's payload into a global
+   * contract and invite the next route to add its own field beside it. The caller that knows what
+   * it asked for parses this with Zod at its own boundary — no `as`, no `any` (Pattern 2).
+   *
+   * Optional and read by nobody unless they opt in, so adding it changed no existing behaviour.
+   */
+  readonly details?: unknown;
 }
 
 /**
@@ -123,6 +139,10 @@ async function readEnvelope(response: Response): Promise<ActionResponse<ApiEnvel
         code: String(envelope.statusCode ?? response.status),
         message: envelope.message ?? "Something went wrong. Please try again.",
         fieldErrors: envelope.errors,
+        // Passed through untouched — see `ApiError.details`. Every one of the seven readers below
+        // early-returns this result unchanged on failure, so this is the single point where a
+        // refusal's payload either survives or is lost for the whole app.
+        details: envelope.data,
       },
     };
   }

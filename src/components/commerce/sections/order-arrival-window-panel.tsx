@@ -32,18 +32,18 @@ import { useState } from "react";
 
 import { useOrderArrivalWindowQuery } from "@/hooks/store/orders";
 import { formatIsoInstantLabel } from "@/lib/store/format";
-import { FREIGHT_TRANSPORT_MODE_LABELS } from "@/lib/store/labels";
 import {
   ARRIVAL_WINDOW_COMPONENT_LABELS,
-  CUSTOMS_DWELL_SCOPE_LABELS,
-  FREIGHT_UNKNOWN_REASON_LABELS,
   type ArrivalWindowProjection,
-  type CustomsComponent,
-  type FreightComponent,
-  type ManufacturingComponent,
 } from "@/lib/store/arrival-window.schemas";
-import { CHARGEABLE_WEIGHT_BASIS_LABELS, type FreightMode } from "@/lib/store/freight.schemas";
-import { formatCentsLabel } from "@/lib/store/format";
+import { type FreightMode } from "@/lib/store/freight.schemas";
+import {
+  ComponentRow,
+  CustomsLine,
+  FreightLine,
+  ManufacturingLine,
+  formatIsoDayLabel,
+} from "@/components/commerce/sections/arrival-window-component-lines";
 
 type ArrivalWindowViewState =
   | { status: "loading" }
@@ -184,175 +184,4 @@ function ClockNote({ projection }: { readonly projection: ArrivalWindowProjectio
       {formatIsoInstantLabel(projection.clockStartAt)} when the order was confirmed.
     </p>
   );
-}
-
-function ComponentRow({
-  name,
-  children,
-}: {
-  readonly name: keyof typeof ARRIVAL_WINDOW_COMPONENT_LABELS;
-  readonly children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-0.5 border-t border-border pt-2 first:border-t-0 first:pt-0">
-      <dt className="text-xs font-medium text-muted-foreground">
-        {ARRIVAL_WINDOW_COMPONENT_LABELS[name]}
-      </dt>
-      <dd className="text-sm text-foreground">{children}</dd>
-    </div>
-  );
-}
-
-function ManufacturingLine({ component }: { readonly component: ManufacturingComponent }) {
-  switch (component.status) {
-    case "known":
-      return (
-        <>
-          {/* `daysMin` is nullable INSIDE `known`: a seller may declare only a maximum, and `basis`
-              says which happened so this never guesses that a missing floor means "immediate". */}
-          {component.basis === "declared_range" && component.daysMin !== null
-            ? `${component.daysMin}–${component.daysMax} days`
-            : `up to ${component.daysMax} days`}
-          <span className="block text-xs text-muted-foreground">
-            Ready by {formatIsoDayLabel(component.endsAt)}
-          </span>
-        </>
-      );
-    case "not_applicable":
-      return <span className="text-muted-foreground">No physical goods on this order.</span>;
-    case "unknown":
-      return (
-        <span className="text-muted-foreground">
-          This seller hasn&apos;t declared a lead time for these goods.
-        </span>
-      );
-    default: {
-      const exhaustiveCheck: never = component;
-      return exhaustiveCheck;
-    }
-  }
-}
-
-/**
- * Freight, and the mode picker that clears its most common `unknown`.
- *
- * `mode_not_selected` IS OFFERED AS A CHOICE, NOT REPORTED AS A FAULT. It arrives with
- * `availableModes` precisely so the client can render the buttons, and it is the one entry here the
- * buyer can clear themselves in one click.
- */
-function FreightLine({
-  component,
-  selectedMode,
-  onSelectMode,
-}: {
-  readonly component: FreightComponent;
-  readonly selectedMode: FreightMode | null;
-  readonly onSelectMode: (mode: FreightMode) => void;
-}) {
-  switch (component.status) {
-    case "known":
-      return (
-        <>
-          {component.daysMin}–{component.daysMax} days by{" "}
-          {FREIGHT_TRANSPORT_MODE_LABELS[component.mode]}
-          <span className="block text-xs text-muted-foreground">
-            {/* The price is the forwarder's. Every leg names its own chargeable-weight basis,
-                because two forwarders' divisors legitimately disagree on one journey. */}
-            {formatCentsLabel(component.priceInCents, component.currency)}
-            {component.validUntil !== null &&
-              ` · rate valid until ${formatIsoDayLabel(component.validUntil)}`}
-          </span>
-          <ul className="mt-0.5 flex flex-col gap-0.5">
-            {component.legSelections.map((legSelection) => (
-              <li key={legSelection.legSequence} className="text-xs text-muted-foreground">
-                Leg {legSelection.legSequence}: {legSelection.sourceForwarderName} ·{" "}
-                {CHARGEABLE_WEIGHT_BASIS_LABELS[legSelection.chargeableWeightBasis]}
-              </li>
-            ))}
-          </ul>
-        </>
-      );
-    case "not_applicable":
-      return <span className="text-muted-foreground">No physical goods on this order.</span>;
-    case "unknown":
-      return (
-        <>
-          <span className="text-muted-foreground">
-            {FREIGHT_UNKNOWN_REASON_LABELS[component.reason]}
-          </span>
-          {component.availableModes.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap gap-2">
-              {component.availableModes.map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => onSelectMode(mode)}
-                  aria-pressed={mode === selectedMode}
-                  className={`cursor-pointer rounded-full border px-3 py-1 text-xs transition-colors ${
-                    mode === selectedMode
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border text-muted-foreground hover:bg-secondary/50"
-                  }`}
-                >
-                  {FREIGHT_TRANSPORT_MODE_LABELS[mode]}
-                </button>
-              ))}
-            </div>
-          )}
-        </>
-      );
-    default: {
-      const exhaustiveCheck: never = component;
-      return exhaustiveCheck;
-    }
-  }
-}
-
-/**
- * Customs dwell, as its own component.
- *
- * THE TWO `not_applicable` REASONS SAY DIFFERENT THINGS AND BOTH ARE SHOWN AS THEMSELVES.
- * `domestic_lane` means there is no customs step and the window closes over it; the `unknown` arm
- * beneath means nobody has bought dwell data for this lane, which is why it cannot.
- */
-function CustomsLine({ component }: { readonly component: CustomsComponent }) {
-  switch (component.status) {
-    case "known":
-      return (
-        <>
-          {component.clearanceDaysMin}–{component.clearanceDaysMax} days to clear
-          <span className="block text-xs text-muted-foreground">
-            {/* A weaker scope is a weaker claim, and says so rather than reading as precise. */}
-            {component.source} · {CUSTOMS_DWELL_SCOPE_LABELS[component.scope]}
-            {component.validUntil !== null &&
-              ` · valid until ${formatIsoDayLabel(component.validUntil)}`}
-          </span>
-        </>
-      );
-    case "not_applicable":
-      return (
-        <span className="text-muted-foreground">
-          {component.reason === "domestic_lane"
-            ? "Domestic route — no customs step."
-            : "No physical goods on this order."}
-        </span>
-      );
-    case "unknown":
-      return (
-        <span className="text-muted-foreground">
-          No clearance estimate has been published for this lane, so the arrival window can&apos;t
-          be closed.
-        </span>
-      );
-    default: {
-      const exhaustiveCheck: never = component;
-      return exhaustiveCheck;
-    }
-  }
-}
-
-function formatIsoDayLabel(isoInstant: string): string {
-  const parsed = new Date(isoInstant);
-  if (Number.isNaN(parsed.getTime())) return isoInstant;
-  return parsed.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }

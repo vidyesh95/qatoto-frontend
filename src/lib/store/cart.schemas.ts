@@ -25,6 +25,7 @@
 
 import { z } from "zod";
 
+import { ArrivalWindowProjectionSchema } from "@/lib/store/arrival-window.schemas";
 import { CommercePricingErrorSchema } from "@/lib/store/merchandising.schemas";
 import { STORE_STOCK_STATES } from "@/lib/store/organizations.schemas";
 import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
@@ -210,12 +211,27 @@ export const CheckoutPrepareSchema = z
     // phone are encrypted and reach a seller only through the audited decrypt route, after confirm.
     deliveryAddressSnapshot: z.string().nullable(),
     deliveryEstimates: z.array(SellerDeliveryEstimateSchema),
-    // `arrivalWindows` IS SENT AND IS NOT PARSED HERE YET. `.strip()` drops it, deliberately rather
-    // than accidentally: the backend builds it with `projectPrepareArrivalWindow`, where the window
-    // itself is ALWAYS null at prepare time and only `missingComponents` carries meaning. Rendering
-    // it needs a checkout panel that names components — "ships in 15–25 days · 24–34 days at sea ·
-    // 3–10 days clearance" — without ever printing a date, which is its own piece of work. Adding
-    // the field with nothing reading it would be an unverified shape.
+    /**
+     * PER-SELLER, like `deliveryEstimates` and for the same reason — each seller is its own order
+     * and its own journey.
+     *
+     * `arrivalWindow` INSIDE each entry is ALWAYS null here, by construction rather than by
+     * accident: there is no order at prepare time, so there is no clock to count from. What IS
+     * meaningful is `components` and `missingComponents`, which is what the checkout panel renders
+     * — "ships in 15–25 days · 24–34 days at sea · 3–10 days clearance", and the named absence
+     * where a component is unknown. NOTHING ON THIS SURFACE PRINTS A DATE.
+     *
+     * The row schema is R&D's own `ArrivalWindowProjectionSchema`, imported rather than restated:
+     * the order route parses the identical shape, and two copies would be two things to drift.
+     */
+    arrivalWindows: z.array(
+      z
+        .object({
+          sellerOrganizationId: z.string(),
+          arrivalWindow: ArrivalWindowProjectionSchema,
+        })
+        .strip(),
+    ),
   })
   .strip();
 

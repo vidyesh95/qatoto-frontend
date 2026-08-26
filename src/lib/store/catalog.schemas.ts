@@ -161,11 +161,74 @@ export const StoreSearchHitSchema = z
     priceInCents: z.number().int().nullable(),
     currency: z.string().nullable(),
     minimumOrderQuantity: z.number().int().nullable(),
+    /**
+     * The A25 columns the backend projects on every hit and this schema used to drop.
+     *
+     * They are what lets a row SHOW the thing a facet just filtered on — a buyer who clicked
+     * "Made to order · 11" should see which eleven. All nullable: an offering has no stock state
+     * and a product has no provider verification, so branch on `documentKind` rather than reading
+     * a null as a value.
+     */
+    stockState: z.string().nullable(),
+    samplePolicy: z.string().nullable(),
+    condition: z.string().nullable(),
+    providerVerificationState: z.string().nullable(),
+    leadTimeMaxDays: z.number().int().nullable(),
     relevanceScore: z.number().nullable(),
   })
   .strip();
 
-export const StoreSearchPageSchema = cursorPageOf(StoreSearchHitSchema);
+/**
+ * The NINE dimensions `/store/search` computes, against the FOUR `/store/categories/:slug` does.
+ *
+ * THE DIFFERENCE IS NOT COSMETIC — it is why these can be chips and the category ones cannot.
+ * A facet is only clickable if the route accepts it as a query key, and the category route accepts
+ * exactly `limit` and `cursor`. Search accepts all of them, so every bucket below is a filter a
+ * buyer can actually apply. (`catalog-facet-summary.tsx` says the same thing from the other side.)
+ *
+ * A BUCKET ABSENT IS NOT A BUCKET AT ZERO. The backend omits values no result carries rather than
+ * padding them, so "not listed" means "nothing here matches", and rendering a 0 chip would offer a
+ * click that returns an empty page.
+ *
+ * Bucket `value` stays a plain string. It is a `pgEnum` label the backend does not narrow — a facet
+ * vocabulary is whatever the rows contain — so the UI widens its label maps rather than asserting
+ * into an enum, which would be a claim about the network (Pattern 2) and would break the first time
+ * a new member is seeded.
+ */
+export const StoreSearchFacetsSchema = z
+  .object({
+    sellerCountryCodes: z.array(StoreFacetBucketSchema),
+    stockStates: z.array(StoreFacetBucketSchema),
+    samplePolicies: z.array(StoreFacetBucketSchema),
+    conditions: z.array(StoreFacetBucketSchema),
+    verificationStates: z.array(StoreFacetBucketSchema),
+    documentKinds: z.array(StoreFacetBucketSchema),
+    providerKinds: z.array(StoreFacetBucketSchema),
+    /**
+     * BUCKETED, not a min/max pair like price — the backend's own note says a scalar cannot be
+     * clicked. The values are day thresholds (7, 15, 30, 60, 90) and read as "within N days".
+     */
+    leadTimeMaxDays: z.array(StoreFacetBucketSchema),
+    priceRangesInCents: z
+      .object({
+        minInCents: z.number().int().nullable(),
+        maxInCents: z.number().int().nullable(),
+        count: z.number().int(),
+      })
+      .strip(),
+  })
+  .strip();
+export type StoreSearchFacets = z.infer<typeof StoreSearchFacetsSchema>;
+
+/**
+ * `GET /store/search`. `cursorPageOf` gives `items` + `page`; the facets ride alongside them.
+ *
+ * They were `.strip()`ped until now, which meant the drill-down could not see its own denominator:
+ * thirteen filters and no counts to choose between them.
+ */
+export const StoreSearchPageSchema = cursorPageOf(StoreSearchHitSchema).extend({
+  facets: StoreSearchFacetsSchema,
+});
 
 // --- Filter inputs ----------------------------------------------------------
 
@@ -184,6 +247,17 @@ export interface StoreSearchFilter {
   readonly providerKind?: string;
   readonly documentKind?: SearchDocumentKind;
   readonly minOrderQuantityMax?: number;
+  // --- The seven the backend has always accepted and this interface did not declare.
+  // Without them a facet is a number you can read and not a filter you can apply, which is the
+  // half of A39 that was missing. Enum VALUES stay snake_case; only the keys are camelCase.
+  readonly priceMinInCents?: number;
+  readonly priceMaxInCents?: number;
+  readonly stockState?: string;
+  readonly samplePolicy?: string;
+  readonly condition?: string;
+  readonly verificationState?: string;
+  /** A day threshold, not a range — matches the bucketed facet. */
+  readonly leadTimeMaxDays?: number;
   readonly sort?: SearchSort;
   readonly limit?: number;
   readonly cursor?: string;

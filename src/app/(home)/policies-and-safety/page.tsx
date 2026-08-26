@@ -1,19 +1,16 @@
 import type { Metadata } from "next";
 
+import PoliciesAndSafety from "@/components/home/policies-and-safety";
+
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
 export const instant = false;
 
 export const metadata: Metadata = {
   title: "Policies And Safety",
-  description: "Policies And Safety page for Qatoto",
-  // NOINDEX WHILE THIS IS A STUB. The body is a bare `<h1>` — `kind: "planned"` in
-  // `src/lib/roadmap/site-roadmap.ts`, listed in `docs/REMAINING_WORK.md` §2. An empty page in
-  // the index outranks nothing and teaches the crawler the site is thin. REMOVE THIS LINE when
-  // the page gets content; it is not a policy about the route, only about its current state.
-  robots: { index: false, follow: false },
+  description: "The rules, how reporting works, and what happens after you report.",
 };
 
-export default function PoliciesAndSafety() {
-  return <h1>Policies and Safety</h1>;
+export default function PoliciesAndSafetyPage() {
+  return <PoliciesAndSafety />;
 }

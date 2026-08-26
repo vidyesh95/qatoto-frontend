@@ -45,9 +45,12 @@ import {
   SEARCH_DOCUMENT_KINDS,
   SEARCH_SORT_LABELS,
   SEARCH_SORTS,
+  type StoreSearchFacets,
   type StoreSearchHit,
 } from "@/lib/store/catalog.schemas";
 import { countryLabelFromCode, formatCentsLabel, formatCountLabel } from "@/lib/store/format";
+import { SAMPLE_POLICY_LABELS, STOCK_STATE_LABELS } from "@/lib/store/organizations.schemas";
+import { PRODUCT_CONDITION_LABELS } from "@/lib/store/products.schemas";
 import { PROVIDER_KIND_ICONS, PROVIDER_KIND_LABELS } from "@/lib/store/labels";
 
 type SearchViewState =
@@ -61,6 +64,20 @@ export default async function StoreSearchPage({ searchParams }: { searchParams: 
   const sort = readEnumParam(searchParams, "sort", SEARCH_SORTS);
   const category = readSingleParam(searchParams, "category");
   const sellerCountryCode = readSingleParam(searchParams, "sellerCountryCode");
+  // The five facet dimensions that are plain enum values on the wire. Read as free strings and
+  // forwarded as-is: the backend's `.strict()` schema is the authority on what is valid, and
+  // narrowing here against a local tuple would silently drop a value it has just started serving.
+  const stockState = readSingleParam(searchParams, "stockState");
+  const samplePolicy = readSingleParam(searchParams, "samplePolicy");
+  const condition = readSingleParam(searchParams, "condition");
+  const verificationState = readSingleParam(searchParams, "verificationState");
+  const leadTimeMaxDaysParam = readSingleParam(searchParams, "leadTimeMaxDays");
+  // A day threshold, and a non-numeric one is DROPPED rather than forwarded — `?leadTimeMaxDays=soon`
+  // is a 422 from a `.strict()` schema, which turns a stale bookmark into a broken page.
+  const leadTimeMaxDays =
+    leadTimeMaxDaysParam !== undefined && /^\d+$/.test(leadTimeMaxDaysParam)
+      ? Number(leadTimeMaxDaysParam)
+      : undefined;
   const requestedCursor = readSingleParam(searchParams, "cursor");
 
   const result = await searchStore({
@@ -69,14 +86,28 @@ export default async function StoreSearchPage({ searchParams }: { searchParams: 
     sort,
     category,
     sellerCountryCode,
+    stockState,
+    samplePolicy,
+    condition,
+    verificationState,
+    leadTimeMaxDays,
     cursor: requestedCursor,
   });
 
   // The cursor is not a filter — it is a position. Counting it would tell a visitor on page
   // two that they have three filters applied when they have two.
-  const appliedFilterCount = [searchQuery, documentKind, sort, category, sellerCountryCode].filter(
-    (appliedValue) => appliedValue !== undefined,
-  ).length;
+  const appliedFilterCount = [
+    searchQuery,
+    documentKind,
+    sort,
+    category,
+    sellerCountryCode,
+    stockState,
+    samplePolicy,
+    condition,
+    verificationState,
+    leadTimeMaxDays,
+  ].filter((appliedValue) => appliedValue !== undefined).length;
 
   const viewState: SearchViewState = !result.success
     ? {
@@ -93,6 +124,11 @@ export default async function StoreSearchPage({ searchParams }: { searchParams: 
           hasMore: result.data.page.hasMore,
         };
 
+  // FACETS COME OFF THE RESULT, NOT THE VIEW STATE, and they survive an empty page on purpose:
+  // "0 results, and here is what the 12,000 that matched your query without this one filter look
+  // like" is the most useful moment a facet has.
+  const facets = result.success ? result.data.facets : null;
+
   return (
     <div className="pb-8">
       <header className="px-4 pt-4 lg:px-6">
@@ -104,19 +140,91 @@ export default async function StoreSearchPage({ searchParams }: { searchParams: 
         </p>
       </header>
 
-      <SearchFilters searchParams={searchParams} appliedFilterCount={appliedFilterCount} />
+      <SearchFilters
+        searchParams={searchParams}
+        appliedFilterCount={appliedFilterCount}
+        facets={facets}
+      />
 
       {renderSearchResults(viewState, searchParams)}
     </div>
   );
 }
 
+/**
+ * Reads an enum-valued facet bucket into display copy.
+ *
+ * WIDENS the label map rather than asserting the value into the enum. A bucket's `value` is a
+ * `pgEnum` label the backend types as a plain string — a facet vocabulary is whatever the rows
+ * contain — so an assertion here would be a claim about the network (Pattern 2) that breaks the
+ * first time a new member is seeded. Degrading to the raw value is the same forward-compatibility
+ * `.strip()` buys on the schema. Lifted from `catalog-facet-summary.tsx`, which says the same.
+ */
+function labelForFacetValue(
+  labelsByEnumValue: Readonly<Record<string, string>>,
+  facetValue: string,
+): string {
+  return labelsByEnumValue[facetValue] ?? facetValue;
+}
+
+/**
+ * One facet dimension as a chip row.
+ *
+ * THE COUNT IS ON THE CHIP, and that is the whole point of a facet: "Made to order · 11" tells a
+ * buyer whether the click is worth making. A chip without its count is just a filter.
+ *
+ * Returns null for a dimension with fewer than two buckets. One bucket is not a choice — every
+ * result already has that value, so offering it narrows nothing and only adds noise.
+ */
+function FacetChipRow({
+  searchParams,
+  queryKey,
+  ariaLabel,
+  buckets,
+  labelsByEnumValue,
+  formatValue,
+}: {
+  searchParams: RawSearchParams;
+  queryKey: string;
+  ariaLabel: string;
+  buckets: readonly { readonly value: string; readonly count: number }[];
+  labelsByEnumValue?: Readonly<Record<string, string>>;
+  formatValue?: (facetValue: string) => string;
+}) {
+  if (buckets.length < 2) return null;
+
+  const activeValue = readSingleParam(searchParams, queryKey);
+
+  const options: FilterChipOption[] = [
+    {
+      label: "Any",
+      // `undefined` REMOVES the key — that is how a chip clears itself.
+      href: buildFilterHref(searchParams, { [queryKey]: undefined }),
+      isSelected: activeValue === undefined,
+    },
+    ...buckets.map((bucket) => ({
+      label: `${
+        formatValue?.(bucket.value) ??
+        (labelsByEnumValue === undefined
+          ? bucket.value
+          : labelForFacetValue(labelsByEnumValue, bucket.value))
+      } · ${String(bucket.count)}`,
+      href: buildFilterHref(searchParams, { [queryKey]: bucket.value }),
+      isSelected: activeValue === bucket.value,
+    })),
+  ];
+
+  return <FilterChipRow options={options} ariaLabel={ariaLabel} />;
+}
+
 function SearchFilters({
   searchParams,
   appliedFilterCount,
+  facets,
 }: {
   searchParams: RawSearchParams;
   appliedFilterCount: number;
+  facets: StoreSearchFacets | null;
 }) {
   const activeDocumentKind = readEnumParam(searchParams, "documentKind", SEARCH_DOCUMENT_KINDS);
   const activeSort = readEnumParam(searchParams, "sort", SEARCH_SORTS);
@@ -147,6 +255,69 @@ function SearchFilters({
     <div className="space-y-2 px-4 pt-4 lg:px-6">
       <FilterChipRow options={documentKindOptions} ariaLabel="Filter by result type" />
       <FilterChipRow options={sortOptions} ariaLabel="Sort results" />
+
+      {/*
+        THE DRILL-DOWN CAN NOW SEE ITS OWN DENOMINATOR (A39). The backend computes each dimension
+        with that dimension's own filter OMITTED, so a count answers "how many would match if I
+        switched to this", not "how many match what I already chose" — which is what makes the
+        numbers worth reading while a filter is applied.
+
+        A dimension with no buckets, or only one, renders nothing at all. An absent bucket means no
+        result carries that value; a zero chip would offer a click that returns an empty page.
+      */}
+      {facets !== null && (
+        <>
+          <FacetChipRow
+            searchParams={searchParams}
+            queryKey="sellerCountryCode"
+            ariaLabel="Filter by seller country"
+            buckets={facets.sellerCountryCodes}
+            formatValue={countryLabelFromCode}
+          />
+          <FacetChipRow
+            searchParams={searchParams}
+            queryKey="stockState"
+            ariaLabel="Filter by availability"
+            buckets={facets.stockStates}
+            labelsByEnumValue={STOCK_STATE_LABELS}
+          />
+          <FacetChipRow
+            searchParams={searchParams}
+            queryKey="samplePolicy"
+            ariaLabel="Filter by sample policy"
+            buckets={facets.samplePolicies}
+            labelsByEnumValue={SAMPLE_POLICY_LABELS}
+          />
+          <FacetChipRow
+            searchParams={searchParams}
+            queryKey="condition"
+            ariaLabel="Filter by condition"
+            buckets={facets.conditions}
+            labelsByEnumValue={PRODUCT_CONDITION_LABELS}
+          />
+          <FacetChipRow
+            searchParams={searchParams}
+            queryKey="verificationState"
+            ariaLabel="Filter by verification"
+            buckets={facets.verificationStates}
+          />
+          <FacetChipRow
+            searchParams={searchParams}
+            queryKey="providerKind"
+            ariaLabel="Filter by provider kind"
+            buckets={facets.providerKinds}
+            labelsByEnumValue={PROVIDER_KIND_LABELS}
+          />
+          {/* Bucketed, not a range: the value is a day threshold and reads as "within N days". */}
+          <FacetChipRow
+            searchParams={searchParams}
+            queryKey="leadTimeMaxDays"
+            ariaLabel="Filter by lead time"
+            buckets={facets.leadTimeMaxDays}
+            formatValue={(days) => `within ${days} days`}
+          />
+        </>
+      )}
       {appliedFilterCount > 0 && (
         <Link
           href="/store/search"

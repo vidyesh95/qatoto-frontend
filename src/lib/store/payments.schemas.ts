@@ -153,6 +153,31 @@ export const RefundListPageSchema = cursorPageOf(RefundSchema);
 
 export type RefundListPage = z.infer<typeof RefundListPageSchema>;
 
+/**
+ * `POST /commerce/orders/:orderId/refunds`.
+ *
+ * Both fields optional, matching the backend's `.strict()` body. Omitting `amountInCents` refunds
+ * the whole remaining balance — the server's figure, which this client never computes.
+ */
+export interface CreateRefundInput {
+  readonly amountInCents?: number;
+  readonly reason?: string;
+}
+
+/**
+ * What rides in `error.details` on a `409 OVER_REFUND`.
+ *
+ * THE ONLY HONEST SOURCE OF THE REMAINING BALANCE. `RefundSchema` above says why: refunds are
+ * partial by default and an order can carry several, so summing them client-side to work out what
+ * is left is a race against every other refund in flight. The server holds the figure and hands it
+ * back on the refusal; this parses it.
+ *
+ * Parsed rather than asserted because `ApiError.details` is `unknown` by design — a failure to
+ * parse is a real possibility (a proxy rewrote the body, an older backend), and the caller falls
+ * back to the envelope's `message`, which is already a complete sentence.
+ */
+export const OverRefundDetailsSchema = z.object({ refundableInCents: z.number().int() }).strip();
+
 /** `GET /commerce/refunds`. `orderId` narrows an inbox to one order's history. */
 export interface ListRefundsFilter {
   readonly orderId?: string;

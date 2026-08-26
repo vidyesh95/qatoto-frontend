@@ -36,6 +36,7 @@ import { useState } from "react";
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import {
   useCreatePaymentIntent,
+  useCreateRefund,
   useOrderRefundsQuery,
   usePaymentIntentQuery,
 } from "@/hooks/store/payments";
@@ -43,6 +44,7 @@ import { newIdempotencyKey } from "@/lib/idempotency";
 import { formatCentsLabel, formatIsoInstantLabel } from "@/lib/store/format";
 import {
   isPaymentIntentInFlight,
+  OverRefundDetailsSchema,
   PAYMENT_INTENT_STATE_LABELS,
   REFUND_STATE_LABELS,
   type PaymentIntent,
@@ -118,6 +120,10 @@ export default function OrderPaymentPanel({
       <RefundHistory
         refunds={refundsQuery.data?.success === true ? refundsQuery.data.data.items : []}
       />
+
+      {/* The currency is the INTENT'S — the thing being refunded — and never a guess. Null until the
+          intent loads, in which case the balance line holds its tongue rather than inventing one. */}
+      <RequestRefundControl orderId={orderId} currency={intent?.currency ?? null} />
     </section>
   );
 }
@@ -241,6 +247,157 @@ function ResumedPayment({
  * Renders nothing when there are none: an empty "no refunds" block on the overwhelming majority of
  * orders is noise, and its absence is not ambiguous.
  */
+/**
+ * Ask for a refund.
+ *
+ * AN EMPTY AMOUNT MEANS "ALL OF IT", and that is the server's figure rather than one computed here.
+ * Refunds are partial by default and an order can carry several, so summing the history to work out
+ * what is left is a race against every refund still in flight — `payments.schemas.ts` says so on
+ * `RefundSchema` directly.
+ *
+ * THE `409` IS THE INTERESTING PATH, and it is the reason this control could not be built until now.
+ * Over-refunding answers with the real remaining balance in the envelope's `data`, which the shared
+ * transport dropped on every failure — so the refusal could say "too much" and never "too much,
+ * here is what is left". `ApiError.details` carries it now, and it is parsed rather than asserted:
+ * a proxy that rewrote the body, or an older backend, falls back to the message, which is already a
+ * complete sentence.
+ *
+ * A `202` IS NOT A SETTLED REFUND. The row exists and the provider has been asked; the verdict shows
+ * up in the history above. The copy says "requested".
+ */
+function RequestRefundControl({
+  orderId,
+  currency,
+}: {
+  readonly orderId: string;
+  readonly currency: string | null;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [amountInput, setAmountInput] = useState("");
+  const [reasonInput, setReasonInput] = useState("");
+  // ONCE PER ATTEMPT. A key regenerated inside a retry refunds twice — the whole mechanism is that
+  // the same value goes out on every send of one attempt.
+  const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
+
+  const createRefundMutation = useCreateRefund();
+  const result = createRefundMutation.data;
+
+  // The remaining balance, but only when the server just told us what it is.
+  const overRefundDetails =
+    result !== undefined && !result.success && result.error.code === "409"
+      ? OverRefundDetailsSchema.safeParse(result.error.details)
+      : null;
+
+  if (!isOpen) {
+    return (
+      <div className="border-t border-border pt-2">
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(true);
+          }}
+          className="cursor-pointer text-xs leading-4 text-primary underline"
+        >
+          Request a refund
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      className="space-y-2 border-t border-border pt-2"
+      onSubmit={(submitEvent) => {
+        submitEvent.preventDefault();
+        const trimmedAmount = amountInput.trim();
+        createRefundMutation.mutate({
+          orderId,
+          input: {
+            // Omitted entirely when blank — that is what asks for the whole remaining balance.
+            ...(trimmedAmount === "" ? {} : { amountInCents: Number(trimmedAmount) }),
+            ...(reasonInput.trim() === "" ? {} : { reason: reasonInput.trim() }),
+          },
+          idempotencyKey,
+        });
+      }}
+    >
+      <label className="flex flex-col gap-1">
+        <span className="text-xs leading-4 text-muted-foreground">Amount in cents</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={amountInput}
+          onChange={(changeEvent) => {
+            setAmountInput(changeEvent.target.value);
+          }}
+          placeholder="Leave blank to refund everything still refundable"
+          className="rounded-lg border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className="text-xs leading-4 text-muted-foreground">Reason (optional)</span>
+        <input
+          type="text"
+          value={reasonInput}
+          onChange={(changeEvent) => {
+            setReasonInput(changeEvent.target.value);
+          }}
+          className="rounded-lg border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+      </label>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="submit"
+          disabled={createRefundMutation.isPending}
+          className="cursor-pointer rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background disabled:opacity-50"
+        >
+          {createRefundMutation.isPending ? "Requesting…" : "Request refund"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(false);
+            createRefundMutation.reset();
+            // A NEW ATTEMPT GETS A NEW KEY. Closing the form ends this attempt; reusing the key
+            // afterwards would make a deliberate second refund a silent no-op replay of the first.
+            setIdempotencyKey(newIdempotencyKey());
+          }}
+          className="cursor-pointer text-xs leading-4 text-muted-foreground underline"
+        >
+          Cancel
+        </button>
+      </div>
+
+      {/* The refusal in the backend's own words, plus the figure when we have it. */}
+      {/* Rendered only when BOTH the server gave us the figure and we know what to denominate it
+          in. An amount without its currency is unrenderable, and picking one would be a fabrication
+          on a surface that is about money. */}
+      {overRefundDetails?.success === true && currency !== null && (
+        <p className="text-xs leading-4 text-muted-foreground">
+          {formatCentsLabel(overRefundDetails.data.refundableInCents, currency)} is still refundable
+          on this order.
+        </p>
+      )}
+
+      {result?.success === true && (
+        <p className="text-xs leading-4 text-muted-foreground">
+          Refund requested. It appears above once the provider answers — a 202 is not a settled
+          refund.
+        </p>
+      )}
+
+      <MutationNotice
+        result={result}
+        hasThrown={createRefundMutation.isError}
+        fallbackMessage="Couldn't reach the server. Nothing was refunded."
+      />
+    </form>
+  );
+}
+
 function RefundHistory({ refunds }: { refunds: readonly Refund[] }) {
   if (refunds.length === 0) return null;
 

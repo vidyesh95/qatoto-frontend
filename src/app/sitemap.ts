@@ -48,7 +48,11 @@ import {
  * - The six `/anime/*` routes are backed entirely by `@/mocks/anime-mocks` — real UI over
  *   fabricated content. They come back when they read real data.
  * - `/research-and-development/new` and `/programs/new` are wizard forms with nothing to index.
- * - The sixteen stub routes render a bare `<h1>` and already carry `noindex`.
+ * - The remaining stub routes render a bare `<h1>` and already carry `noindex`. There are twelve
+ *   now rather than sixteen: `/report-history` shipped with video content reporting, and
+ *   `/customer-service`, `/advertise-with-us` and `/policies-and-safety` gained real content and
+ *   are listed below. The twelve that are left are all under `(studio)`, which is noindexed as a
+ *   group in its layout.
  */
 const STATIC_PUBLIC_PATHS: readonly string[] = [
   "/",
@@ -63,6 +67,11 @@ const STATIC_PUBLIC_PATHS: readonly string[] = [
   "/how-qatoto-works",
   "/press",
   "/roadmap",
+
+  // (home) — informational pages that are not part of the app shell.
+  "/advertise-with-us",
+  "/customer-service",
+  "/policies-and-safety",
 
   // (disclaimers)
   "/community-guidelines",

@@ -21,9 +21,9 @@ because it was never frontend work.
 > rather than numbered for the same reason — markdown renumbers an ordered list sequentially, which
 > would print numbers that disagree with the headings below.
 
-- **§3** [Sixteen stub routes rendering a bare `<h1>`](#3-sixteen-stub-routes)
+- **§3** ~~[Sixteen stub routes rendering a bare `<h1>`](#3-sixteen-stub-routes)~~ — **shipped**; `rg "return <h1>" src/app` is empty
 - **§5** [Phase D — cost of goods, and therefore margin](#5-phase-d--cost-of-goods-and-therefore-margin)
-- **§6** [Five backend capabilities with no UI at all](#6-backend-capability-with-no-ui)
+- **§6** [Five backend capabilities with no UI at all](#6-backend-capability-with-no-ui) — **three shipped**; two need authoring flows that do not exist
 - **§8** [SEO leftovers — OG images, `manifest.json`](#8-seo-leftovers)
 - **§9** [Three things never exercised against live data or a browser](#9-never-exercised)
 - **§24** ~~[Feed preferences — the reviewable do-not-recommend list](#24-feed-preferences--the-reviewable-do-not-recommend-list)~~ —
@@ -94,18 +94,42 @@ watch time silently multiplies by the beacon count.
 
 ## Frontend
 
-### 3. Sixteen stub routes
+### 3. ~~Sixteen stub routes~~ — **SHIPPED, and it was never sixteen**
 
-Each renders a bare `<h1>`. `rg -l "return <h1>" src/app` finds them, and all are `kind: "planned"`
-in `src/lib/roadmap/site-roadmap.ts`, so the public roadmap is honest about them.
+`rg -l "return <h1>" src/app` now returns **nothing**.
 
-- **Twelve under `(studio)`** — analytics, comments, subtitles, copyright, customize, earn,
-  funding, pitches, team, learn, support, feedback
-- **Four under `(home)`** — `/customer-service`, `/advertise-with-us`, `/report-history`,
-  `/policies-and-safety`
+**The count was wrong in two directions.** `/report-history` had already shipped with video content
+reporting — it reads `GET /users/me/video-reports` and its `robots` block was removed at the time —
+so the `(home)` count was 3, not 4, and the total was 15. `docs/REMAINING_WORK.md` had this right;
+this file did not.
 
-Each carries `robots: { index: false, follow: false }` with a comment saying REMOVE THIS LINE when
-the page gets content. That is about the current state, not a policy about the route.
+**The three `(home)` pages are real pages now.** `/customer-service`, `/advertise-with-us` and
+`/policies-and-safety` follow the plain `(disclaimers)` pattern, carry authored content, have lost
+their `noindex`, are `kind: "route"` on the roadmap and are in `sitemap.ts`. `/policies-and-safety`
+was reachable from nowhere and is now in the sidebar's second footer row.
+
+None of them invents a capability: customer service is a DIRECTORY of surfaces that already work
+(there is no ticket API and a form here would collect messages nothing reads), advertise-with-us
+names no rate, format or mailbox (no placement API exists and the mailboxes are still an open
+decision below), and policies-and-safety is a hub over the five existing policy documents rather
+than a sixth one to keep in sync.
+
+**The twelve `(studio)` pages are honest placeholders, and they are STILL `kind: "planned"`.** This
+is the part worth not misreading later: ten of them have **no backend whatsoever** — `feedback`
+returns zero matches across the entire backend; `subtitles`, `copyright`, `customize`, `pitches`,
+`learn` and `support` likewise; `comments` has per-video primitives but not the cross-video
+moderation queue its roadmap line specifies; `team` means account-level collaborators, which do not
+exist. Building those ten is ten backend domains, not twelve screens.
+
+What shipped is `studio-planned-page.tsx`: the roadmap summary verbatim, what the page will do, and
+— where one truthfully exists — a link to the surface that does the job today. **Six of the twelve
+have no such link and say so out loud**, because a redirect that does not answer the need spends the
+reader's trust. The two with real backends (`earn`, `funding`) point at `/sales` and
+`/research-and-development` rather than rebuilding a second view of one endpoint.
+
+**Explaining an absence is not filling it.** The roadmap kinds stay `planned` deliberately — a
+`route` there is a claim the capability exists, and `site-capabilities.ts`'s `PROMISES A STUB`
+drift-grep is the machinery that enforces the difference.
 
 ### 5. Phase D — cost of goods, and therefore margin
 
@@ -118,18 +142,42 @@ wire has to make that visible or a seller will read an unverified number as a ve
 Until then `src/components/commerce/sections/seller-earnings-panel.tsx` says margin is not shown
 and why, rather than relabelling revenue.
 
-### 6. Backend capability with no UI
+### 6. Backend capability with no UI — **THREE SHIPPED, TWO ARE NOT WHAT THEY LOOK LIKE**
 
-Each of these exists on the wire and nothing in `src/` renders it:
+**Shipped:**
 
-- **A39's search facets** — five dimensions; the drill-down is blind to its own filter.
-- **A40's incoterm enum** on the quote form, and `commerce_review_media_state`.
-- **`POST /commerce/orders/:orderId/refunds`** — needs a control that can render
-  `409 OVER_REFUND`, whose remaining balance rides in the envelope's `data`. **The shared transport
-  drops that**, so this is a transport change as well as a UI one.
-- **`checkout/prepare`'s `arrivalWindows`** — sent and `.strip()`ped today. The window is always
-  null at prepare time and only `missingComponents` is meaningful, so rendering it needs a panel
-  that names components without printing a date.
+- **A39's search facets.** `/store/search` returned nine dimensions and `cursorPageOf`'s `.strip()`
+  dropped every one. Three gaps closed in `catalog.schemas.ts`: the facets themselves, the seven
+  filter keys the backend has always accepted and the interface never declared, and the five per-hit
+  A25 columns. They render as real chips WITH their counts — unlike the category page's read-only
+  summary, and the difference is not stylistic: a facet is clickable only if the route accepts it as
+  a query key, and `/store/categories/:slug` accepts `limit` and `cursor`. A dimension with fewer
+  than two buckets renders nothing, because one bucket is not a choice.
+- **`checkout/prepare`'s `arrivalWindows`.** Parsed and rendered. **It never prints a date** —
+  `arrivalWindow` is null at prepare time by construction, so the panel names components and, where
+  one is unknown, names the absence. The three component renderers were extracted to
+  `arrival-window-component-lines.tsx` and are now shared with the order panel rather than copied;
+  the mode picker is optional there, because re-pricing freight needs an order to re-price.
+- **`POST /commerce/orders/:orderId/refunds`**, including the transport change it needed.
+
+**The transport change, since it touches every surface.** `readEnvelope`'s failure branch copied
+`statusCode`, `message` and `errors` and dropped `data`, so `409 OVER_REFUND`'s remaining balance was
+unreachable from anywhere in the app. `ApiError` gained an optional **`details?: unknown`** and the
+branch passes `envelope.data` through. `unknown` rather than a typed shape on purpose: promoting one
+route's payload into a contract every surface shares is what the old note in `payments.api.ts` was
+right to refuse. The refund control parses it with Zod at its own boundary. Purely additive — no
+existing caller reads it.
+
+**Deferred, and NOT because they are low value — because neither is the small wiring job this
+section implies:**
+
+- **A40's incoterm on the quote form.** There is no quote form. No create/append wrapper, no
+  authoring composer, only read-only quote pages — so this is "build quote authoring", and the enum,
+  the routes and the read rendering are all already waiting for it.
+- **`commerce_review_media_state`.** Its three write routes have **zero** frontend wrappers, so the
+  author-facing surface that would render "your video is unavailable" does not exist either. Note
+  the public review read filters unavailable media out entirely and correctly carries no state, so
+  there is nothing to fix on the surface that does exist.
 
 ### 8. SEO leftovers
 
