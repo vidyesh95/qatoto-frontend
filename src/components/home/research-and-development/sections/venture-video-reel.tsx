@@ -41,7 +41,12 @@ function toReelCardProps(video: ProjectVideo): VideoCardProps {
     // server render freezes into the cache and then disagrees with the client on hydrate.
     postedAt: "",
     ...(video.publishedAt === null ? {} : { publishedAt: video.publishedAt }),
-    ...(video.creator.handle === null ? {} : { channelHref: `/@${video.creator.handle}` }),
+    // `/channel/{handle}`, matching `toVideoCardProps`. This used to build `/@{handle}` — a
+    // THIRD URL shape for a destination that did not exist at all, so neither this nor the feed's
+    // could have been right. One page now, one link shape.
+    ...(video.creator.handle === null
+      ? {}
+      : { channelHref: `/channel/${encodeURIComponent(video.creator.handle)}` }),
     href: `/watch?v=${encodeURIComponent(video.videoId)}`,
     thumbnailSizes: REEL_THUMBNAIL_SIZES,
   };

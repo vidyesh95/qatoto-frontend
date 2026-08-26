@@ -676,31 +676,48 @@ None of these change behaviour; all of them mislead a reader.
    they have drifted. Decide whether to re-sync them or delete them and point at the backend repo —
    a fork that nobody updates is worse than no copy.
 
-## 27. `/channel/:handle` is linked from every feed card and DOES NOT EXIST
+## 27. ~~`/channel/:handle` is linked from every feed card and DOES NOT EXIST~~ — FIXED
 
-Found while wiring §14's subscriptions tab. Not caused by this session's work, and worth its own
-item because it is live breakage on the most-rendered component in the product.
+The channel page ships. `/channel/[handle]` renders a creator's header — avatar, name, `@handle`,
+subscriber count, the same non-optimistic `FocusButton` the watch page uses — over a grid of their
+public videos, keyset-paginated. Verified in a browser against a real creator: the page renders,
+and **the cards inside it link back to channel pages**, which is the shape of the fix.
 
-`find src/app -type d -name "*channel*"` returns **nothing**. There is no channel route. And yet:
+**Both broken link forms are gone.** `toVideoCardProps` kept `/channel/{handle}` because it is now
+a real destination; `venture-video-reel.tsx`'s `/@{handle}` — a THIRD URL shape for a page that did
+not exist — became the same one.
 
-- `VideoCard` renders the creator's avatar and name as ``<Link href={`/channel/${handle}`}>`` — so
-  **every card in every feed, on the home page and in the watch page's recommended rail, carries two
-  dead links.**
-- Confirmed in a browser: `http://localhost:3000/channel/user_vidyesh_2fd7` answers Next's 404 page.
+**Backend:** `src/modules/home/channels/`, mounted at `/channels` (not on `creatorRouter`, which
+takes an **id** where these take a **handle**). Migration `0138` adds
+`video_creator_recent_idx (creator_id, published_at DESC, id DESC)`, partial on the same five
+status literals as `video_feed_candidate_idx` — `EXPLAIN` confirms an index scan with no Sort.
+Full contract in `HOME_BACKEND_STRUCTURE.md` §5.2e.
 
-**`feed-preferences-panel.tsx` already reached the right conclusion** and renders `@handle` as plain
-text with a comment saying so — but only for the null-handle case; it never noticed the route was
-missing entirely. The new subscriptions tab follows the same shape for the same reason: a row you
-cannot click beats a row that 404s.
+**No new video projection.** `feed.service.ts` now exports `publicVideoPredicate`,
+`feedSelectClause`, `toFeedVideoItem` and `FeedRow`, so a channel card and a home-feed card come
+off the same select clause and cannot drift apart.
 
-**Two ways out, and it is a product call rather than a technical one:**
+**It is a catalogue, not a feed** — no personalization, no already-watched exclusion, no recency
+window, and **no `creator_mute` / `video_not_interested` suppression**: arriving at a channel is an
+explicit request for that creator, the same call `GET /feed/search` makes.
 
-1. **Build `/channel/[handle]`.** Some of the backend may already exist — `GET /feed/videos` takes a
-   `channel` feed source and `creator_stats` holds the counters a channel header needs. Check before
-   assuming this is greenfield.
-2. **Stop linking.** Render the creator's name as text in `VideoCard` until (1) ships.
+Proven 9/9 against throwaway fixtures: newest-first order · a privated video leaves and returns ·
+a moderator-hidden one leaves · one-row keyset pages walk the catalogue with no skip or duplicate ·
+a constructed cursor is 422 · anonymous gets a real `false` · a subscriber gets `true` · an
+unclaimed handle 404s.
 
-Doing neither is the current state, and it is the worst of the three.
+### Left open, deliberately
+
+**The channel page is not in `sitemap.ts`**, and it is the most linked-to public page on the site.
+There is no public handle-enumeration read anywhere — `/handles/availability` answers about the
+CALLER's own handle and is `requireAuth` — so there is no list to build entries from, and
+`sitemap.ts` refuses invented entries as firmly as it refuses invented dates. Closing this needs a
+bounded public read (say, creators with at least one published video), which is a backend decision
+rather than a sitemap one.
+
+**No `generateMetadata`.** The page title is "Channel" rather than the creator's name, because
+titling it properly means a second fetch of a route the page already reads. Worth doing; not
+measured yet.
 
 ## Cross-pillar seams
 
