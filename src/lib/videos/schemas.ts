@@ -91,6 +91,8 @@ export const VideoOpenRoleSchema = z
     id: z.string(),
     roleTitle: z.string(),
     roleDescription: z.string().nullable(),
+    /** The real `projectOpenRole` behind this blurb, or null for plain text. */
+    openRoleId: z.string().nullable(),
     position: z.number(),
   })
   .strip();
@@ -191,6 +193,12 @@ export const PublicVideoSchema = z
     hasAgeRestriction: z.boolean(),
     relatedVideoUrl: z.string().nullable(),
     hasFundingCallToAction: z.boolean(),
+    /**
+     * The venture this video belongs to, as a SLUG — the server resolves the slug and stores
+     * the id, and the id never reaches a client. Null is unaffiliated content: anime and
+     * general creator uploads carry it forever.
+     */
+    researchProjectSlug: z.string().nullable(),
 
     visibility: VideoVisibilitySchema,
     isNdaRequired: z.boolean(),
@@ -368,8 +376,23 @@ export interface CreateVideoInput {
   /** MAX 3, enforced server-side. Ids from `GET /feed/categories`, never slugs. */
   readonly categoryIds?: string[];
   readonly attachedProductIds?: string[];
+  /**
+   * A venture SLUG, not an id — R&D exposes no ids and the server resolves it. `null`
+   * detaches on PATCH; omitting the key leaves the link alone. The server refuses a slug the
+   * caller is not an active member of, or whose project is not `active` (422).
+   */
+  readonly researchProjectSlug?: string | null;
   readonly milestones?: string[];
-  readonly openRoles?: string[];
+  /**
+   * OBJECTS, NOT STRINGS. A blurb may now name the real open role it advertises, and the
+   * server refuses an `openRoleId` that does not belong to this video's own venture.
+   * Omitting `openRoleId` keeps the old behaviour: text that points at nothing.
+   */
+  readonly openRoles?: {
+    readonly roleTitle: string;
+    readonly roleDescription?: string;
+    readonly openRoleId?: string;
+  }[];
   readonly teamMemberNames?: string[];
   readonly collaboratorEmails?: string[];
   readonly anime?: CreateAnimeEpisodeInput;

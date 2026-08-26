@@ -104,9 +104,27 @@ export type UploadDraft = {
    * loses the value on save; that is a known gap, recorded in docs/HOME_STRUCTURE.md §10, and
    * the honest fix is a backend field, not a frontend workaround.
    */
-  attachedPitchTitle: string;
+  /**
+   * The venture this video belongs to, as a SLUG. Null is unaffiliated content.
+   *
+   * REPLACED `attachedPitchTitle`, which was a display string chosen from three hardcoded
+   * mock titles and sent nowhere — `attachedPitchId` is not client-writable. This one is a
+   * real wire field the server resolves and membership-checks.
+   */
+  researchProjectSlug: string | null;
   attachedDocumentNames: string[];
-  openRoles: string[];
+  /**
+   * Recruiting blurbs. Objects since the venture link landed: a blurb may point at a real
+   * open role, which is what puts an Apply button under the video instead of a label.
+   *
+   * `openRoleId` is null for free text, which is still correct for anime and for any video
+   * with no venture — the server refuses an id in that case anyway.
+   */
+  openRoles: {
+    roleTitle: string;
+    roleDescription: string | null;
+    openRoleId: string | null;
+  }[];
   teamMemberNames: string[];
   milestones: string[];
   chapters: VideoChapter[];
@@ -155,7 +173,7 @@ export function createEmptyUploadDraft(): UploadDraft {
     relatedVideoUrl: "",
     attachedProductIds: [],
     hasFundingCallToAction: false,
-    attachedPitchTitle: "",
+    researchProjectSlug: null,
     attachedDocumentNames: [],
     openRoles: [],
     teamMemberNames: [],
@@ -340,8 +358,13 @@ export function toCreateVideoInput(draft: UploadDraft): CreateVideoInput {
       : { recordingLocation: draft.recordingLocation.trim() }),
     categoryIds: draft.categoryIds.slice(0, MAX_CATEGORIES_PER_VIDEO),
     attachedProductIds: draft.attachedProductIds,
+    researchProjectSlug: draft.researchProjectSlug,
     milestones: draft.milestones,
-    openRoles: draft.openRoles,
+    openRoles: draft.openRoles.map((openRole) => ({
+      roleTitle: openRole.roleTitle,
+      ...(openRole.roleDescription === null ? {} : { roleDescription: openRole.roleDescription }),
+      ...(openRole.openRoleId === null ? {} : { openRoleId: openRole.openRoleId }),
+    })),
     teamMemberNames: draft.teamMemberNames,
     collaboratorEmails: draft.collaboratorEmails,
     ...(draft.animeEpisodeDetails === null
@@ -426,7 +449,12 @@ export function toUploadDraft(video: PublicVideo): UploadDraft {
     relatedVideoUrl: video.relatedVideoUrl ?? "",
     attachedProductIds: video.attachedProducts.map((product) => product.productId),
     hasFundingCallToAction: video.hasFundingCallToAction,
-    openRoles: video.openRoles.map((role) => role.roleTitle),
+    researchProjectSlug: video.researchProjectSlug,
+    openRoles: video.openRoles.map((role) => ({
+      roleTitle: role.roleTitle,
+      roleDescription: role.roleDescription,
+      openRoleId: role.openRoleId,
+    })),
     teamMemberNames: video.teamMembers.map((member) => member.memberName),
     milestones: video.milestones.map((milestone) => milestone.label),
     chapters: video.chapters.map((chapter) => ({

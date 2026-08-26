@@ -23,6 +23,7 @@ import {
   ProjectCoverUploadResultSchema,
   ProjectInviteSchema,
   ProjectTeamMemberSchema,
+  ProjectVideoSchema,
   ResearchProjectDetailSchema,
   ResearchProjectListRowSchema,
   ResearchProjectSlugsSchema,
@@ -33,6 +34,7 @@ import {
   type ProjectCoverUploadResult,
   type ProjectInvite,
   type ProjectTeamMember,
+  type ProjectVideo,
   type ResearchProjectDetail,
   type ResearchProjectListRow,
 } from "@/lib/rnd/projects.schemas";
@@ -56,6 +58,27 @@ export function listResearchProjects(
 ): Promise<ActionResponse<{ rows: ResearchProjectListRow[]; pagination: PaginationMeta }>> {
   return getPaginated(
     `/research-projects${buildQueryString({ ...filter })}`,
+    ResearchProjectListRowSchema,
+    PaginationMetaSchema,
+    options,
+  );
+}
+
+/**
+ * The ventures this viewer may attach a video to — the studio's venture picker.
+ *
+ * NOT `listResearchProjects`, which is the public feed of every active project, and NOT
+ * `/mine`, which is founder-owned and includes drafts. This one mirrors the studio's write
+ * gate exactly: active membership of an `active` project. Offering anything wider would put
+ * options in the picker that `POST /videos` answers 422 to; offering anything narrower would
+ * hide ventures a contributor is entitled to link.
+ */
+export function listAttachableResearchProjects(
+  filter: { readonly page?: number; readonly limit?: number } = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: ResearchProjectListRow[]; pagination: PaginationMeta }>> {
+  return getPaginated(
+    `/research-projects/attachable${buildQueryString({ ...filter })}`,
     ResearchProjectListRowSchema,
     PaginationMetaSchema,
     options,
@@ -105,6 +128,28 @@ export function listProjectOpenRoles(
   options?: RequestOptions,
 ): Promise<ActionResponse<OpenRole[]>> {
   return getJson(`/research-projects/${projectSlug}/roles`, OpenRoleSchema.array(), options);
+}
+
+/**
+ * A venture's own film reel — every PUBLIC video that named this project.
+ *
+ * Public for a published project and member-only for a draft, through the same gate the
+ * roles routes use, so asking for a draft's videos cannot confirm the slug exists.
+ *
+ * Assembled by the videos themselves rather than curated: a creator links the video once in
+ * the studio and it appears here. Nothing on this page writes the list.
+ */
+export function listProjectVideos(
+  projectSlug: string,
+  filter: { readonly page?: number; readonly limit?: number } = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: ProjectVideo[]; pagination: PaginationMeta }>> {
+  return getPaginated(
+    `/research-projects/${projectSlug}/videos${buildQueryString({ ...filter })}`,
+    ProjectVideoSchema,
+    PaginationMetaSchema,
+    options,
+  );
 }
 
 // --- Writes: creating and publishing a project ---------------------------------

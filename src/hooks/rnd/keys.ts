@@ -30,6 +30,8 @@ export const rndKeys = {
   project: (projectSlug: string) => ["rnd", "project", projectSlug] as const,
   projectRoles: (projectSlug: string) => ["rnd", "project", projectSlug, "roles"] as const,
   projectTeam: (projectSlug: string) => ["rnd", "project", projectSlug, "team"] as const,
+  /** Ventures the viewer may attach a video to — the studio picker. Session-scoped. */
+  attachableProjects: () => ["rnd", "projects", "attachable"] as const,
   myApplications: (status: string | undefined) => ["rnd", "applications", "mine", status] as const,
   myInvites: (status: string | undefined) => ["rnd", "invites", "mine", status] as const,
   /** The FOUNDER's inbox, distinct from `myApplications` — different rows, different actor. */

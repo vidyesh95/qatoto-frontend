@@ -142,6 +142,32 @@ export type ProjectStats = z.infer<typeof ProjectStatsSchema>;
  * `coverImageUrl` is NULLABLE; the mock field it replaces (`coverImageSrc`) was not, so
  * every render site needs a fallback.
  */
+/**
+ * One video on a venture's reel — `GET /research-projects/:slug/videos`.
+ *
+ * NO `viewerState`. The feed's own video schema carries `hasLiked`/`hasSaved`/
+ * `isSubscribedToCreator`; this rail renders none of them, and shipping `false` to a
+ * signed-out visitor would be a negative the client has no basis for. A rail links.
+ */
+export const ProjectVideoSchema = z
+  .object({
+    videoId: z.string(),
+    title: z.string(),
+    thumbnailUrl: z.string().nullable(),
+    publishedAt: z.iso.datetime().nullable(),
+    /** NULL until the duration job has enough samples. An absence, never a zero. */
+    durationSeconds: z.number().int().nullable(),
+    creator: z
+      .object({
+        handle: z.string().nullable(),
+        name: z.string(),
+        imageUrl: z.string().nullable(),
+      })
+      .strip(),
+  })
+  .strip();
+export type ProjectVideo = z.infer<typeof ProjectVideoSchema>;
+
 export const ResearchProjectDetailSchema = z
   .object({
     slug: z.string(),

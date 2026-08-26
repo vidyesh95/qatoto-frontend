@@ -18,6 +18,7 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 
 import RelativeTime from "@/components/home/shared/relative-time";
@@ -26,6 +27,8 @@ import Comments from "@/components/home/watch/comments";
 import FocusButton from "@/components/home/watch/focus-button";
 import VideoDescription from "@/components/home/watch/video-description";
 import VideoEngagementBar from "@/components/home/watch/video-engagement-bar";
+import WatchOpenRoles from "@/components/home/watch/watch-open-roles";
+import { PROJECT_STAGE_LABELS } from "@/lib/rnd/labels";
 import VideoPlayer from "@/components/home/watch/video-player";
 import WatchInfoPanel from "@/components/home/watch/watch-info-panel";
 import { formatSubscriberCountLabel, formatViewCountLabel } from "@/lib/feed/format";
@@ -188,6 +191,27 @@ export default function WatchContent({
               isSubscribed={video.viewerState.isSubscribedToCreator}
             />
           </div>
+
+          {/*
+            BUILT IN THE OPEN. Present only when this video names an ACTIVE venture — the
+            backend nulls it for a draft one rather than 404ing the video, so absence here
+            means "no public venture", never "something went wrong". Identity and a link,
+            deliberately: no counts, no equity, nothing that reads as a claim.
+          */}
+          {video.builtInTheOpen !== null && (
+            <Link
+              href={`/research-and-development/project/${video.builtInTheOpen.projectSlug}`}
+              className="flex items-center gap-2 self-start rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs transition hover:bg-[#F4FBFA]"
+            >
+              <span className="text-[#6F7979]">Built in the open ·</span>
+              <span className="font-medium text-[#191C1C]">{video.builtInTheOpen.projectName}</span>
+              <span className="text-[#00696E]">
+                {PROJECT_STAGE_LABELS[video.builtInTheOpen.stage]}
+              </span>
+            </Link>
+          )}
+
+          <WatchOpenRoles openRoles={video.openRoles} />
 
           <VideoEngagementBar
             videoId={video.videoId}

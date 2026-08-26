@@ -131,6 +131,19 @@ export const DemandSignalSchema = z
     distinctReporterCount: z.number(),
     relatedProjectCount: z.number(),
     openRoleCount: z.number(),
+    /**
+     * The store's evidence for this cell (§22): units sold and visible reviews in the window,
+     * on listings the cell's ventures actually shipped.
+     *
+     * NOT part of `demandScorePoints`. The rank is unchanged by these; they are shown so a
+     * reader can weigh "somebody actually paid" alongside "somebody reported a problem", and
+     * the question of what they should be WORTH to the score is deliberately still open.
+     *
+     * A zero here is a real zero, not a null wearing a number: it means no completed order was
+     * attributed to this cell in the window.
+     */
+    soldUnitCount: z.number(),
+    productReviewCount: z.number(),
     asOf: z.string(),
   })
   .strip();

@@ -34,9 +34,19 @@ const EFFORT_VERIFICATION_STATUS_CLASSES: Record<EffortVerificationStatus, strin
  * `videoSource: "none"` is a first-class value, not a missing one: a member with no
  * video that day still logs, and a physical-work claim has no video by definition. So
  * the absence of a video renders as nothing, never as a broken thumbnail.
+ *
+ * A THIRD STATE EXISTS NOW, and it used to render as the second one by accident. Since §22,
+ * a log whose video could not be checked at write time is still SAVED — YouTube being down no
+ * longer throws a member's day away — and such a row has a real embed URL and a NULL thumbnail
+ * until the retry job succeeds. The old gate keyed on the thumbnail alone, so those logs
+ * showed no video at all, which reads as "they didn't record one". `isVideoVerified` is what
+ * separates "still checking" from "there is nothing here".
  */
 export default function DailyLogCard({ log }: { log: DailyLogView }) {
-  const hasVideo = log.videoSource !== "none" && log.videoThumbnailUrl !== null;
+  const hasVideo = log.videoSource !== "none";
+  const hasVideoThumbnail = hasVideo && log.videoThumbnailUrl !== null;
+  // A video we have not been able to check yet — not a missing one, and not a broken one.
+  const isVideoPendingCheck = hasVideo && !log.isVideoVerified && log.videoThumbnailUrl === null;
 
   return (
     <div className="space-y-2 rounded-2xl border border-[#CAC4D0]/60 p-4">
@@ -67,7 +77,14 @@ export default function DailyLogCard({ log }: { log: DailyLogView }) {
           </span>
         )}
       </div>
-      {hasVideo && log.videoThumbnailUrl && (
+      {isVideoPendingCheck && (
+        <p className="rounded-lg bg-[#F4FBFA] px-3 py-2 text-xs text-[#3F4948]">
+          Checking this video with YouTube. Your log is saved either way — the thumbnail appears
+          once the check succeeds.
+        </p>
+      )}
+
+      {hasVideoThumbnail && log.videoThumbnailUrl && (
         <div className="relative aspect-video w-full overflow-hidden rounded-xl">
           <Image
             src={log.videoThumbnailUrl}

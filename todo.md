@@ -52,10 +52,10 @@ because it was never frontend work.
 same venture. Ordered; 19–21 are the narrow lap and need no new thinking.
 
 - **§19** ~~["Built in the open" on the product page](#19-built-in-the-open-on-the-product-page)~~ — **shipped**, no migration
-- **§20** [`video.researchProjectId`](#20-videoresearchprojectid) — 1 migration + a membership check
-- **§21** [The venture reel and the venture badge](#21-the-venture-reel-and-the-venture-badge) — reads 20
-- **§22** [Daily-log YouTube: format CHECK and a deferred job](#22-daily-log-youtube-format-check-and-a-deferred-job)
-- **§23** [Apply from the watch page](#23-apply-from-the-watch-page) — a mount, not a build
+- **§20** ~~[`video.researchProjectId`](#20-videoresearchprojectid)~~ — **shipped**, migration `0132`
+- **§21** ~~[The venture reel and the venture badge](#21-the-venture-reel-and-the-venture-badge)~~ — **shipped**
+- **§22** ~~[Daily-log YouTube: format CHECK and a deferred job](#22-daily-log-youtube-format-check-and-a-deferred-job)~~ — **shipped**, migration `0134`
+- **§23** ~~[Apply from the watch page](#23-apply-from-the-watch-page)~~ — **shipped**, migration `0133`
 
 **[Decisions needed](#decisions-needed)** — the legal entity, four mailboxes, what Qatoto
 contracts to do, two §14 calls, four freight/moderation calls, the Postgres ceiling.
@@ -381,61 +381,121 @@ stats-present, stats-absent, draft-project and no-venture all render correctly. 
 `research_project_id` set in the shared database today** (0 of 17), so the block is invisible in
 practice until a real venture ships a real listing — which is what items 20–21 are for.
 
-### 20. `video.researchProjectId`
+### 20. ~~`video.researchProjectId`~~ — **SHIPPED**
 
-One nullable column on `studio.video`, `restrict`, mirroring `product.researchProjectId` exactly.
-Null means unaffiliated content — anime, general creator uploads — so those surfaces are
-untouched. Precedent exists: `store.ts:23` and `platform.ts:17` both already import
-`researchProject`. `studio.ts` imports nothing from `rnd.ts` yet, so this is the first edge.
+Migration `0132`. One nullable column on `studio.video`, `restrict`, mirroring
+`product.researchProjectId` exactly. Null is unaffiliated content — anime, general uploads —
+so those surfaces are untouched. First edge from `studio.ts` to `rnd.ts`.
 
-**Who may set it is the whole problem.** `video.creatorId` is a plain `user`
-(`studio.ts:190-198`); venture identity is a `projectMember`. Without a server-side membership
-check at write, any user attaches their video to any venture. Same shape as `videoAttachedProduct`
-re-verifying `product.sellerId` (`studio.ts:511-512`): the client sends an id, the server
-verifies membership before accepting it. Test it by POSTing a project the caller is not a member
-of and expecting a 403, not a stored row.
+**Who may set it, resolved.** The wire field is `researchProjectSlug`, NOT an id: every R&D
+read is slug-addressed and exposes no id, so a client has none to send. The service resolves
+the slug, then requires **active membership AND `researchProject.status = 'active'`** —
+`isActiveProjectMember` alone is not enough, because it returns true for a member of a DRAFT
+project, and attaching a public video to one would name an unpublished venture to anyone.
 
-### 21. The venture reel and the venture badge
+**It answers 422, not the 403 this section originally specified.** `studio-error-response.ts`
+reserves 403 for the platform-capability refusal alone, because that one is decided _before
+any id is read_. A membership refusal on a body-supplied id is an oracle for which project ids
+exist, which is exactly what that policy prevents — and every sibling check in the file
+(`PRODUCT_NOT_OWNED`, `PLAYLIST_NOT_OWNED`, `ANIME_SERIES_NOT_FOUND`) already answers 422 with
+the offending id. `RESEARCH_PROJECT_NOT_JOINABLE` follows them. Verified: a non-member gets 422
+and **no row**, and so does a member pointing at a draft.
 
-Pure frontend, reads item 20. The venture page assembles its own film reel without the creator
-wiring anything up; the watch page gets a badge linking back to the venture. Renders the venture's
-public milestone list — **not** a per-label FK, see [what was dropped](#what-was-dropped-and-why).
+**The studio's mock chips are gone with it.** `MOCK_PITCH_PROJECT_TITLES` fed a `<select>`
+whose value was a project TITLE, and `attachedPitchId` was never client-writable, so the
+control wrote nowhere. It is now backed by `GET /research-projects/attachable` — a new
+session-scoped read that mirrors the write gate exactly, so the picker cannot offer an option
+the save refuses, nor hide a venture a non-founder contributor may legitimately link.
 
-### 22. Daily-log YouTube: format CHECK and a deferred job
+### 21. ~~The venture reel and the venture badge~~ — **SHIPPED**
 
-Two real defects, neither requiring a cross-pillar FK.
+Pure reads over 20. `GET /research-projects/:projectSlug/videos` is new — there was no public
+"list videos by predicate" service at all, because the feed is ranking machinery with no id
+facet and search is full-text. It is shaped like `listActiveSpotlightVideos` and imports the
+exported `PUBLICLY_SERVABLE` rather than adding a fourth byte-identical raw-SQL copy of it.
+Draft projects reuse the roles routes' visibility gate, which was exported for the purpose
+rather than copied — three gates that must agree are three chances for one to drift.
 
-**`daily_log.youtube_video_id` has no format CHECK.** `studio.ts:424-428` has
-`youtube_video_id ~ '^[A-Za-z0-9_-]{11}$'` and its comment says that check "is what closes SSRF".
-`daily_log`'s only check is the source/id-presence pair (`rnd.ts:3183`). One migration.
+**A narrow projection, not `FeedVideoItem`.** That type carries `viewerState`, which needs
+per-viewer joins the rail renders nowhere; shipping `false` to a signed-out visitor is a
+negative the client has no basis for. The reel links, it does not toggle.
 
-**Verification is inline and destructive.** `daily-logs.service.ts:624-631` calls oEmbed on the
-request path and, on failure, returns the error and creates no row — losing a member's
-submission to a YouTube blip. This is exactly the behaviour studio deliberately moved away from
-(`verify-youtube-video.ts:15-35`). Move daily logs onto the same pg-boss job, reusing
-`handleVerifyYoutubeVideo`'s compare-and-swap guard (`verify-youtube-video.ts:118-122`) so a
-re-PATCHed id is never marked verified on an old id's proof.
+The watch-page badge is identity only — slug, name, stage. The venture's status term lives in
+the JOIN, not the WHERE, so a draft venture nulls the badge instead of 404ing a public video.
 
-Both sides already call the same `verifyYoutubeVideo` from `#src/lib/youtube.js` and share the
-same `YoutubeSourceError` triple. The duplication is the _delivery_ — deferred job vs inline —
-not two implementations.
+### 22. ~~Daily-log YouTube: format CHECK and a deferred job~~ — **SHIPPED**
 
-### 23. Apply from the watch page
+Migration `0134` adds `daily_log_youtube_id_format_ck`, byte-identical to the one `video` has
+carried since `0012`. Checked before writing it: every existing row already matched, so it
+validated with no backfill.
 
-The write path exists and is verified end to end: `useApplyToProjectMutation`
-(`src/hooks/rnd/projects.ts:244`) → `createProjectApplication`
-(`src/lib/rnd/projects.api.ts:274`) → `POST /research-projects/:slug/applications`. The sheet
-itself, `sheets/apply-role-sheet.tsx`, is already a self-contained `client-query` island. It is
-mounted only from `OpenRoleCard`, on three R&D-only surfaces.
+**Genuinely one queue, not two.** `VerifyYoutubeVideoPayloadSchema` became a **plain `z.union`**
+of `{ videoId }` and `{ dailyLogId }`, and the plainness is load-bearing: a rolling deploy
+guarantees old-shaped payloads are in flight, and a payload that fails its schema dead-letters
+on the FIRST attempt — a `discriminatedUnion` requiring a new key would have killed every
+studio verification mid-flight. The legacy shape is arm one, unchanged.
 
-Mounting it under the player turns the watch page from a poster into the recruiting surface. Add
-`videoOpenRole.openRoleId` (nullable → `projectOpenRole.id`, text kept as fallback so anime and
-unaffiliated videos are unaffected), and note the watch page renders a _projection_ of
-`projectOpenRole` — the real row carries `skills[]` + GIN, `commitment`, `status`,
-`slotsTotal`/`slotsFilledCount` and an `openRoleCompensation` child (`rnd.ts:625`, `:684`).
+`createDailyLog` now defers on `YOUTUBE_VERIFY_FAILED` only, copying the studio's asymmetry
+exactly: a malformed link and an unavailable video stay hard errors, because those are things
+the member must fix. It also became a transaction, so the enqueue rides the same connection —
+an enqueue after the commit can be lost silently, leaving a row nothing will ever verify.
+**The update path still hard-fails on all three**, or an outage could un-verify a live row.
 
-Verify by applying from the watch page and finding the row in the existing applicant inbox at
-`/research-and-development/applications` with the right `openRoleId`.
+**The frontend gained a third state it previously rendered as the second.** `daily-log-card`
+gated the video on the thumbnail alone, and a deferred row has a real embed URL with no
+thumbnail — so those logs showed no video at all, which reads as "they didn't record one".
+`isVideoVerified` separates "still checking" from "there is nothing here".
+
+### 23. ~~Apply from the watch page~~ — **SHIPPED**
+
+Migration `0133` adds `video_open_role.open_role_id`, nullable, `restrict`. `roleTitle` stays
+NOT NULL beside it as the fallback, so anime and unaffiliated videos are untouched.
+
+**The wire shape changed**: `openRoles` is now an array of objects
+(`{ roleTitle, roleDescription?, openRoleId? }`), not strings. That forced it out of
+`replaceSimpleChildSets`, whose whole property is that it writes label rows with no FK to
+validate — the same reason `videoCategory` was never in it. `roleDescription` is written for
+the first time; the column had existed since the table did with no endpoint writing it.
+
+Ids are re-verified with the apply gate's own `and(id, projectId)` predicate, so a role from
+another venture is indistinguishable from one that does not exist (422
+`OPEN_ROLE_NOT_IN_PROJECT`). A video with no venture may link no role at all.
+
+**One edge worth knowing:** a PATCH that moves or detaches the venture without resending
+`openRoles` nulls every surviving link, keeping the text. Each one was validated against the
+OLD venture, so after a real change none can still be valid — and the alternative is a watch
+page advertising another project's vacancy.
+
+The watch payload carries the whole `OpenRoleView`, not an id, which is why `ApplyRoleSheet`
+mounts unchanged: it needs `projectSlug` to post to and `skills` to render the chips the
+backend validates a subset against. A closed or full role renders its real state rather than
+disappearing. **No idempotency key is minted** — that endpoint takes none, and retry safety is
+two partial unique indexes plus a self-heal inside the create transaction.
+
+### Store sales in the demand radar — **SHIPPED, as evidence rather than score**
+
+Migration `0135`. `demand_signal_snapshot` gains `sold_unit_count` and `product_review_count`,
+both `DEFAULT 0 NOT NULL`, with the counts CHECK rewritten around them.
+
+**A second WRITER was impossible, so they became inputs to the one that exists.** Three
+blockers, all structural: `(as_of, rank)` is unique globally so two writers collide on rank;
+the store has no region and `region_id` is NOT NULL; and `commerce_category` has no mapping to
+`research_category` at all. The attribution path is the one the job already walks —
+`commerce_order_product_line` -> `product` -> `research_project` ->
+`problem_cluster_project_link` -> `problem_cluster` — because the CLUSTER carries both the
+region and the category.
+
+**They are recorded and displayed, NOT scored, and that was a deliberate stop.** Finding a sale
+15 or 20 points means taking them from the four component budgets, which are `demand-score.ts`'s
+editorial claim about what "demand" means — asserted at module load and covered by a test suite
+that checks each component directly. Re-weighting reranks every cell on the board; that is a
+product decision, not a side effect of teaching the job a new join. (It was attempted and
+reverted: it broke 62 tests, which is the contract saying so.) There is also a real argument the
+weight should be small or zero — this hub surfaces demand that is NOT YET SERVED, and a cell
+with heavy sales is being served, which the inverted scarcity component already docks it for.
+
+So the numbers reach the leaderboard as evidence a reader can weigh, `scoreAlgorithmVersion`
+stays 1, and every historical row stays comparable. **The weighting question is open.**
 
 ### What was dropped, and why
 
@@ -475,9 +535,11 @@ exactly this — read it before reopening the question.
 has `linkedUserId` (nullable, `set null`, `studio.ts:587-604`) and the frontend renders nothing
 from it. Use the column that exists.
 
-**Feeding store sales and reviews into `demandSignalSnapshot`** stays out of this list entirely.
-It only produces signal once real ventures have shipped real products, which is what items 19–21
-are for.
+**Feeding store sales and reviews into `demandSignalSnapshot`** SHIPPED, but only as recorded
+evidence — see the section above. The prediction here was half right: the numbers are all zero
+today because no product carries a `researchProjectId` yet, so the join finds nothing. What was
+wrong is the assumption that it needed items 19–21 first; the plumbing was buildable now, and
+the counts will start moving on their own the moment a venture ships a listing that sells.
 
 ---
 

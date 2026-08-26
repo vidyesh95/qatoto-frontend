@@ -5,15 +5,18 @@ import { useRef, useState } from "react";
 import type { UploadDraft } from "@/lib/videos/studio-view";
 import ChaptersEditor from "../chapters-editor";
 import { useMyProductsQuery } from "@/hooks/products";
+import { useAttachableProjectsQuery, useProjectOpenRolesQuery } from "@/hooks/rnd/projects";
 import { centsToPriceLabel } from "@/lib/products/schemas";
 
 // Step 2 — video elements. Qatoto's thesis rows (pitch / funding / recruit /
 // team) come first; YouTube-carryover rows sit below them.
-const MOCK_PITCH_PROJECT_TITLES = [
-  "Qatoto Analytics Suite — seed round",
-  "GreenGrid — pilot deployment",
-  "RoboPick v2 — series A",
-];
+//
+// THE VENTURE SELECT USED TO BE THREE HARDCODED STRINGS. `MOCK_PITCH_PROJECT_TITLES` fed a
+// control whose value was a project TITLE, which the wire had no field for — `attachedPitchId`
+// is not client-writable — so picking one did nothing at all. It now writes a real
+// `researchProjectId`, and the options come from `GET /research-projects/attachable`, which
+// answers with exactly the ventures the server will accept: active membership of an active
+// project. An option this list offers cannot be refused by the save.
 
 type VideoElementsStepProps = {
   draft: UploadDraft;
@@ -42,17 +45,56 @@ export default function VideoElementsStep({
     draft.attachedProductIds.includes(product.id),
   );
 
+  // Same discipline as the products above: the options are the server's answer to "what may
+  // this caller attach", so the picker cannot offer something the save will refuse.
+  const attachableProjectsQuery = useAttachableProjectsQuery();
+  const attachableProjects = attachableProjectsQuery.data?.rows ?? [];
+
+  // Only the CHOSEN venture's roles. Disabled until one is picked — the server refuses a role
+  // link on a video with no venture, so there is nothing honest to offer before then.
+  const ventureOpenRolesQuery = useProjectOpenRolesQuery(draft.researchProjectSlug);
+  const ventureOpenRoles = (ventureOpenRolesQuery.data ?? []).filter(
+    (role) => role.status === "open" && role.slotsFilledCount < role.slotsTotal,
+  );
+
   function handleRemoveAttachedProductClick(productId: string) {
     onDraftChange({
       attachedProductIds: draft.attachedProductIds.filter((attachedId) => attachedId !== productId),
     });
   }
 
+  // FREE TEXT — a blurb that points at nothing, which is still the right shape for a video
+  // with no venture. Deduped by title, as it always was.
   function handleAddOpenRoleClick() {
     const openRoleName = newOpenRoleText.trim();
-    if (openRoleName === "" || draft.openRoles.includes(openRoleName)) return;
-    onDraftChange({ openRoles: [...draft.openRoles, openRoleName] });
+    if (openRoleName === "" || draft.openRoles.some((role) => role.roleTitle === openRoleName)) {
+      return;
+    }
+    onDraftChange({
+      openRoles: [
+        ...draft.openRoles,
+        { roleTitle: openRoleName, roleDescription: null, openRoleId: null },
+      ],
+    });
     setNewOpenRoleText("");
+  }
+
+  // THE REAL THING — a blurb that names an actual `projectOpenRole`, which is what puts an
+  // Apply button under the video. Deduped by id so one role cannot be advertised twice.
+  function handleLinkOpenRole(openRoleId: string) {
+    const pickedRole = ventureOpenRoles.find((role) => role.id === openRoleId);
+    if (!pickedRole) return;
+    if (draft.openRoles.some((role) => role.openRoleId === openRoleId)) return;
+    onDraftChange({
+      openRoles: [
+        ...draft.openRoles,
+        {
+          roleTitle: pickedRole.roleTitle,
+          roleDescription: pickedRole.description,
+          openRoleId: pickedRole.id,
+        },
+      ],
+    });
   }
 
   function handleAddTeamMemberClick() {
@@ -127,20 +169,23 @@ export default function VideoElementsStep({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="upload-attached-pitch" className="text-sm font-medium text-foreground">
-            Pitch / project
+          <label htmlFor="upload-research-project" className="text-sm font-medium text-foreground">
+            Venture
           </label>
           <div className="relative sm:w-80">
             <select
-              id="upload-attached-pitch"
-              value={draft.attachedPitchTitle}
-              onChange={(event) => onDraftChange({ attachedPitchTitle: event.target.value })}
-              className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+              id="upload-research-project"
+              value={draft.researchProjectSlug ?? ""}
+              onChange={(event) =>
+                onDraftChange({ researchProjectSlug: event.target.value || null })
+              }
+              disabled={attachableProjectsQuery.isPending}
+              className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5] disabled:opacity-50"
             >
               <option value="">None</option>
-              {MOCK_PITCH_PROJECT_TITLES.map((pitchTitle) => (
-                <option key={pitchTitle} value={pitchTitle}>
-                  {pitchTitle}
+              {attachableProjects.map((project) => (
+                <option key={project.slug} value={project.slug}>
+                  {project.name}
                 </option>
               ))}
             </select>
@@ -153,7 +198,11 @@ export default function VideoElementsStep({
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Links this video to a project seeking funding or teammates.
+            {attachableProjectsQuery.isPending
+              ? "Loading your ventures…"
+              : attachableProjects.length === 0
+                ? "You are not on a published venture yet. Publish one to link videos to it."
+                : "Shows this video on the venture's page, and puts a link back to it under the player."}
           </p>
         </div>
 
@@ -166,18 +215,80 @@ export default function VideoElementsStep({
         <ChipListInput
           fieldId="upload-open-roles"
           label="Open roles"
-          helperText='Viewers see a "Join team" prompt and can apply to these roles.'
+          helperText={
+            draft.researchProjectSlug === null
+              ? "Plain text. Pick a venture above to link these to real roles viewers can apply to."
+              : "Plain text. Use the picker below to link a real role instead — that is what gets an Apply button."
+          }
           placeholder="e.g. Founding engineer"
           inputValue={newOpenRoleText}
           onInputValueChange={setNewOpenRoleText}
           onAddClick={handleAddOpenRoleClick}
-          chips={draft.openRoles}
-          onRemoveChip={(openRoleName) =>
+          chips={draft.openRoles.map((role) =>
+            role.openRoleId === null ? role.roleTitle : `${role.roleTitle} · linked`,
+          )}
+          onRemoveChip={(chipLabel) =>
             onDraftChange({
-              openRoles: draft.openRoles.filter((existingRole) => existingRole !== openRoleName),
+              openRoles: draft.openRoles.filter(
+                (existingRole) =>
+                  (existingRole.openRoleId === null
+                    ? existingRole.roleTitle
+                    : `${existingRole.roleTitle} · linked`) !== chipLabel,
+              ),
             })
           }
         />
+
+        {/*
+          THE PICKER THAT MAKES THE LABEL REAL. Only rendered once a venture is chosen, because
+          the server refuses an `openRoleId` on a video with no venture — offering one before
+          then would dangle an option the save rejects.
+
+          Adding from here copies the role's OWN title and description, so the blurb and the
+          role cannot disagree the moment one of them is edited.
+        */}
+        {draft.researchProjectSlug !== null && (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="upload-link-open-role" className="text-sm font-medium text-foreground">
+              Link a real role
+            </label>
+            <div className="relative sm:w-80">
+              <select
+                id="upload-link-open-role"
+                value=""
+                onChange={(event) => {
+                  if (event.target.value !== "") handleLinkOpenRole(event.target.value);
+                }}
+                disabled={ventureOpenRolesQuery.isPending || ventureOpenRoles.length === 0}
+                className="h-12 w-full cursor-pointer appearance-none rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5] disabled:opacity-50"
+              >
+                <option value="">
+                  {ventureOpenRolesQuery.isPending
+                    ? "Loading roles…"
+                    : ventureOpenRoles.length === 0
+                      ? "This venture has no open role"
+                      : "Choose a role to link"}
+                </option>
+                {ventureOpenRoles.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.roleTitle}
+                  </option>
+                ))}
+              </select>
+              <Image
+                src="/icons/keyboard_arrow_down_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt=""
+                width={20}
+                height={20}
+                className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              A linked role shows its real skills and remaining slots under the video, with an Apply
+              button wired to this venture&apos;s applicant inbox.
+            </p>
+          </div>
+        )}
 
         <ChipListInput
           fieldId="upload-team-members"

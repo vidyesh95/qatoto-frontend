@@ -8,6 +8,9 @@
 import { z } from "zod";
 
 import { formatViewCountLabel } from "@/lib/feed/format";
+// The stage tuple is R&D's pgEnum labels; imported rather than restated so the two cannot drift.
+import { OpenRoleSchema } from "@/lib/rnd/catalog.schemas";
+import { ProjectStageSchema } from "@/lib/rnd/shared.schemas";
 import type { VideoCardProps } from "@/types/video";
 
 /* -------------------------------------------------------------------------- */
@@ -314,6 +317,47 @@ export const WatchPayloadSchema = z
       })
       .strip(),
     isChannelLive: z.literal(false),
+    /**
+     * The venture behind this video, or null — the watch-page half of the R&D link.
+     *
+     * A BADGE, NOT A CARD: identity only, no counts and no equity. The store's product page
+     * carries proof numbers because a buyer is spending money; a viewer here is deciding
+     * whether to click through.
+     *
+     * Null covers three cases the client must NOT distinguish: no venture, a venture that is
+     * not `active`, and a row that is gone. A draft venture is never nameable from a public
+     * watch page, which is why the backend puts its status term in the JOIN and not the WHERE.
+     */
+    builtInTheOpen: z
+      .object({
+        projectSlug: z.string(),
+        projectName: z.string(),
+        stage: ProjectStageSchema,
+      })
+      .strip()
+      .nullable(),
+    /**
+     * What this video says it is hiring for.
+     *
+     * `roleTitle` is the creator's own text and is always there. `linkedRole` is the REAL
+     * open role behind it when one was picked — the same `OpenRoleSchema` the R&D surfaces
+     * parse, which is exactly why `ApplyRoleSheet` can be mounted here unchanged: it takes a
+     * whole `OpenRole` because it needs `projectSlug` to post to and `skills` to render the
+     * chips the backend validates a subset against.
+     *
+     * Null `linkedRole` means free text — anime, unaffiliated videos, and every blurb written
+     * before the link existed. Those render as a label with no apply control, which is what
+     * they have always been.
+     */
+    openRoles: z.array(
+      z
+        .object({
+          roleTitle: z.string(),
+          roleDescription: z.string().nullable(),
+          linkedRole: OpenRoleSchema.nullable(),
+        })
+        .strip(),
+    ),
   })
   .strip();
 export type WatchPayload = z.infer<typeof WatchPayloadSchema>;

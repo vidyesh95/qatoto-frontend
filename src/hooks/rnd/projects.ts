@@ -28,6 +28,8 @@ import {
   publishResearchProject,
   removeProjectMember,
   respondToProjectInvite,
+  listAttachableResearchProjects,
+  listProjectOpenRoles,
   setOpenRoleOpenState,
   setProjectStage,
   unpublishResearchProject,
@@ -145,6 +147,39 @@ export function useMyInvitesQuery(status?: string) {
   return useQuery({
     queryKey: rndKeys.myInvites(status),
     queryFn: async () => unwrap(await listMyInvites({ status })),
+  });
+}
+
+/**
+ * The ventures this viewer may link a video to.
+ *
+ * Session-scoped and therefore NOT prefetched on the server — the studio upload modal is a
+ * client island and this is the only place it is needed. The list mirrors the backend's
+ * write gate, so every option it renders is one `POST /videos` will accept.
+ */
+export function useAttachableProjectsQuery(isEnabled = true) {
+  return useQuery({
+    queryKey: rndKeys.attachableProjects(),
+    queryFn: async () => unwrap(await listAttachableResearchProjects({ limit: 50 })),
+    enabled: isEnabled,
+  });
+}
+
+/**
+ * One venture's open roles, for the studio's role picker.
+ *
+ * Public for a published project, so no session is needed — but it is only ever asked for a
+ * venture the caller just picked from `useAttachableProjectsQuery`, which is member-scoped.
+ * Disabled until a venture is chosen: there is no sensible list before then.
+ */
+export function useProjectOpenRolesQuery(projectSlug: string | null) {
+  return useQuery({
+    queryKey: rndKeys.projectRoles(projectSlug ?? "none"),
+    queryFn: async () => {
+      if (projectSlug === null) throw new Error("Missing project slug");
+      return unwrap(await listProjectOpenRoles(projectSlug));
+    },
+    enabled: projectSlug !== null,
   });
 }
 

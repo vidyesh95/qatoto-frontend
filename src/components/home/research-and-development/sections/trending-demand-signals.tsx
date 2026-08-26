@@ -58,6 +58,11 @@ export default function TrendingDemandSignals({ signals }: { signals: DemandSign
                 <th className="px-4 py-3 font-medium">Trend</th>
                 <th className="px-4 py-3 font-medium">Reporters</th>
                 <th className="px-4 py-3 font-medium">Related projects</th>
+                {/* THE STORE'S EVIDENCE, and the one column here that is not R&D talking to
+                    itself. It does NOT feed the demand score — the rank is computed without
+                    it — so it sits at the end as corroboration a reader can weigh, not as a
+                    component of the number to its left. */}
+                <th className="px-4 py-3 font-medium">Units sold</th>
               </tr>
             </thead>
             <tbody>
@@ -80,6 +85,15 @@ export default function TrendingDemandSignals({ signals }: { signals: DemandSign
                         the sybil signal, so the header says "Reporters". */}
                     <td className="px-4 py-3">{signal.distinctReporterCount}</td>
                     <td className="px-4 py-3">{signal.relatedProjectCount}</td>
+                    <td className="px-4 py-3">
+                      {signal.soldUnitCount}
+                      {signal.productReviewCount > 0 && (
+                        <span className="ml-1 text-xs text-muted-foreground">
+                          · {signal.productReviewCount} review
+                          {signal.productReviewCount === 1 ? "" : "s"}
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}

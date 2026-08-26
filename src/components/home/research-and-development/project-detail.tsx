@@ -13,6 +13,7 @@ import ProjectLaunchReadiness from "@/components/home/research-and-development/s
 import ProjectTabs from "@/components/home/research-and-development/sections/project-tabs";
 import { RndErrorPanel } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import TeamTab from "@/components/home/research-and-development/sections/team-tab";
+import VentureVideoReel from "@/components/home/research-and-development/sections/venture-video-reel";
 import {
   getProjectCompensation,
   listCompensationAgreements,
@@ -24,12 +25,18 @@ import {
   listProjectFundingRounds,
   listProjectMilestones,
 } from "@/lib/rnd/funding.api";
-import { getResearchProjectDetail, listProjectOpenRoles } from "@/lib/rnd/projects.api";
+import {
+  getResearchProjectDetail,
+  listProjectOpenRoles,
+  listProjectVideos,
+} from "@/lib/rnd/projects.api";
 import { getProjectLaunchReadiness } from "@/lib/rnd/suppliers.api";
 import { toMemberScopedItemViewState, toMemberScopedListViewState } from "@/lib/view-state";
 import { callerRequestOptions } from "@/lib/server-http";
 
 const DAILY_LOGS_PAGE_LIMIT = 30;
+// One rail's worth. The reel is a glance, not the venture's archive.
+const PROJECT_VIDEOS_LIMIT = 12;
 const COMPENSATION_PERIOD_LIMIT = 12;
 
 /**
@@ -71,6 +78,7 @@ export default async function ProjectDetail({ projectSlug }: { projectSlug: stri
     agreementsResult,
     periodsResult,
     compensationResult,
+    projectVideosResult,
   ] = await Promise.all([
     listProjectOpenRoles(projectSlug, requestOptions),
     listProjectMilestones(projectSlug, requestOptions),
@@ -81,6 +89,7 @@ export default async function ProjectDetail({ projectSlug }: { projectSlug: stri
     listCompensationAgreements(projectSlug, {}, requestOptions),
     listCompensationPeriods(projectSlug, { limit: COMPENSATION_PERIOD_LIMIT }, requestOptions),
     getProjectCompensation(projectSlug, requestOptions),
+    listProjectVideos(projectSlug, { limit: PROJECT_VIDEOS_LIMIT }, requestOptions),
   ]);
 
   return (
@@ -135,6 +144,17 @@ export default async function ProjectDetail({ projectSlug }: { projectSlug: stri
           </div>
         }
       />
+
+      {/*
+        THE VENTURE REEL, OUTSIDE THE TABS on purpose: the videos are about the venture as a
+        whole, not about its go-to-market step, and burying them in one tab would hide them
+        from everyone who never opens it.
+
+        RENDERED ONLY WHEN THE READ SUCCEEDED. On failure the section is omitted entirely
+        rather than passed an empty array — "no public video yet" is a claim about the
+        venture, and a failed request is not evidence for it.
+      */}
+      {projectVideosResult.success && <VentureVideoReel videos={projectVideosResult.data.rows} />}
     </div>
   );
 }

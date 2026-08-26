@@ -92,6 +92,14 @@ export const DailyLogViewSchema = z
     videoSource: DailyLogVideoSourceSchema,
     videoEmbedUrl: z.string().nullable(),
     videoThumbnailUrl: z.string().nullable(),
+    /**
+     * Whether YouTube has confirmed the linked video (§22). Derived server-side, never stored.
+     *
+     * FALSE WITH A `youtube` SOURCE IS NOT AN ERROR — it means verification is deferred and the
+     * job is retrying. The row is real and its embed URL is real; only the thumbnail is missing,
+     * because oEmbed has not answered. Without this the card cannot tell that from "no video".
+     */
+    isVideoVerified: z.boolean(),
     analysisStatus: DailyLogAnalysisStatusSchema,
     analysisFailureReason: z.string().nullable(),
     analysisCompletedAt: z.string().nullable(),
