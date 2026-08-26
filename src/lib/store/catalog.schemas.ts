@@ -182,6 +182,15 @@ export const StoreSearchHitSchema = z
     providerVerificationState: z.string().nullable(),
     leadTimeMaxDays: z.number().int().nullable(),
     relevanceScore: z.number().nullable(),
+    /**
+     * When the listing last changed. A REAL content clock, not a refresh stamp — the backend
+     * re-projects a search document only after the product, offering or organization behind it
+     * mutates, so this is safe to hand a crawler as `lastModified`.
+     *
+     * `z.iso.datetime()`, not `z.string()`: `sitemap.ts` puts this value straight into the XML,
+     * and a malformed date there is worse than an absent one.
+     */
+    updatedAt: z.iso.datetime(),
   })
   .strip();
 

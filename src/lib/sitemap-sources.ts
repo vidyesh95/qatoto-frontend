@@ -333,11 +333,27 @@ export async function getCatalogSitemapEntries(): Promise<SitemapEntry[]> {
     searchStore({ documentKind: "provider_offering", limit: CURSOR_PAGE_LIMIT, cursor }),
   );
 
+  // `lastModified` ON PRODUCT AND SERVICE PAGES, and this is the whole of §12's value. The
+  // search document's `updatedAt` moves when the listing itself changes — the backend enqueues
+  // a re-projection after a mutation and re-reads the authoritative row, rather than sweeping
+  // nightly — so it is a real content date rather than the manufactured one this file's header
+  // refuses. Before it, 6 of 128 entries carried a date and every product looked equally stale.
   const entries: SitemapEntry[] = [
-    ...productHits.map((hit) => ({ path: `/store/product/${hit.publicSlug}` })),
-    ...offeringHits.map((hit) => ({ path: `/store/services/${hit.publicSlug}` })),
+    ...productHits.map((hit) => ({
+      path: `/store/product/${hit.publicSlug}`,
+      lastModified: hit.updatedAt,
+    })),
+    ...offeringHits.map((hit) => ({
+      path: `/store/services/${hit.publicSlug}`,
+      lastModified: hit.updatedAt,
+    })),
   ];
 
+  // NO `lastModified` ON THE STOREFRONT PAGES, deliberately. These slugs are DERIVED from the
+  // hits above — a storefront has no search document of its own here — so the only date
+  // available is the newest of its listings, and a storefront changes for reasons no listing
+  // records (its profile, its verification state, its banner). Dating it by proxy would be the
+  // invented timestamp one paragraph up, arrived at more slowly.
   const organizationSlugs = new Set(
     [...productHits, ...offeringHits].map((hit) => hit.organizationSlug),
   );
