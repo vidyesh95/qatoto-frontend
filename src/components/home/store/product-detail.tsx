@@ -12,6 +12,13 @@
 //   companions         — the relation graph, for "view similar" and the compare tray.
 //   reviews, questions — seeded so those sections render with the document rather than flashing.
 //
+// "BUILT IN THE OPEN" IS A FIFTH FIELD, NOT A FIFTH READ, and the distinction is the whole design.
+// `product.researchProjectId` names the venture behind a listing, but every R&D read surface —
+// route, service view, Zod schema — is addressed by SLUG and exposes no `id`, and there is no by-id
+// project route anywhere. A client handed that raw UUID could not call R&D with it. So the backend
+// joins instead and sends `builtInTheOpen` inside the product itself: no round trip, no id on the
+// wire, and no new view-state variant, because the `"ready"` case already carries it.
+//
 // THE SESSION IS THREADED IN. This read is public but SESSION-AWARE: `attachOptionalUser` decides
 // whether `engagement.viewer` is state or `null`, and whether `contactAffordance` is `chat`,
 // `ask_question` or `sign_in`. Without `callerRequestOptions()` every signed-in buyer would get the
@@ -29,6 +36,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import BuyActionButtons from "@/components/home/store/cards/buy-action-buttons";
+import BuiltInTheOpen from "@/components/home/store/sections/built-in-the-open";
 import RatingBadge from "@/components/home/store/cards/rating-badge";
 import CategoryBreadcrumb from "@/components/home/store/sections/category-breadcrumb";
 import CompanyDetailsSection from "@/components/home/store/sections/company-details-section";
@@ -258,6 +266,8 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
             </div>
 
             <ProductDetailsSection product={product} />
+
+            {product.builtInTheOpen !== null && <BuiltInTheOpen venture={product.builtInTheOpen} />}
 
             <SimilarAndCompare product={product} companionGroups={companionGroups} />
 

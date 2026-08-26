@@ -40,6 +40,9 @@ import { StoreCategorySchema } from "@/lib/store/catalog.schemas";
 import { FreightLanePlanSchema } from "@/lib/store/freight.schemas";
 import { DeliveryEstimateBasisSchema, DeliveryEstimateSchema } from "@/lib/store/cart.schemas";
 import { PRODUCT_RELATION_KINDS } from "@/lib/store/merchandising.schemas";
+// The stage tuple is R&D's, and it is imported rather than restated: these are Postgres pgEnum
+// labels that must byte-match, and a second copy is a second thing to drift.
+import { ProjectStageSchema } from "@/lib/rnd/shared.schemas";
 import { cursorPageOf, IsoDateTimeSchema } from "@/lib/store/shared.schemas";
 
 // --- Wire enums -------------------------------------------------------------
@@ -214,6 +217,37 @@ export const ProductEngagementSchema = z
   })
   .strip();
 
+/**
+ * The venture that built this listing — the read side of `product.researchProjectId`, new on the
+ * detail projection (backend Appendix A42).
+ *
+ * ADDRESSED BY SLUG, AND THERE IS NO ID HERE ON PURPOSE. The store holds a `researchProjectId`
+ * UUID, but every R&D read surface is slug-addressed and exposes no `id` — `ResearchProjectDetail`
+ * has no top-level `id` field, and no by-id project route exists. A client handed the raw FK could
+ * not do anything with it. The backend joins instead and sends the slug, which is the only R&D
+ * identity a client can actually call.
+ *
+ * EVERY STAT IS NULLABLE AND MUST RENDER AS AN ABSENCE, `teamMemberCount` included even though its
+ * column is `notNull`. Two separate reasons stack: the effort total stays NULL until the R&D stats
+ * jobs have run, and the whole `project_stats` row is a REBUILDABLE CACHE that many active projects
+ * do not have yet, so the backend left-joins it rather than letting a missing cache erase the
+ * venture. `0` would assert "this venture has no verified effort" about a venture that is shipping
+ * — the same rule `launch-ready-projects-rail.tsx` follows. `statsComputedAt` is what lets the
+ * block say "as of" instead of implying a live number.
+ */
+export const ProductVentureProvenanceSchema = z
+  .object({
+    projectSlug: z.string(),
+    projectName: z.string(),
+    projectTagline: z.string(),
+    projectCoverImageUrl: z.string().nullable(),
+    stage: ProjectStageSchema,
+    verifiedEffortMinutesTotal: z.number().int().nullable(),
+    teamMemberCount: z.number().int().nullable(),
+    statsComputedAt: IsoDateTimeSchema.nullable(),
+  })
+  .strip();
+
 export const StoreProductDetailSchema = StoreProductCardSchema.extend({
   description: z.string().nullable(),
   keyFeatures: z.array(z.string()),
@@ -247,6 +281,12 @@ export const StoreProductDetailSchema = StoreProductCardSchema.extend({
   categoryTrail: z.array(StoreCategorySchema),
   engagement: ProductEngagementSchema,
   contactAffordance: z.enum(PRODUCT_CONTACT_AFFORDANCES),
+  /**
+   * `null` is the common case — most listings were not built in the open — AND covers a venture
+   * that is not `active`, which the backend refuses to name to a buyer. Detail-only: the card
+   * projection carries no venture, because a grid has nowhere to put one.
+   */
+  builtInTheOpen: ProductVentureProvenanceSchema.nullable(),
 }).strip();
 
 // --- Companions -------------------------------------------------------------
@@ -496,6 +536,7 @@ export type ProductVariant = z.infer<typeof ProductVariantSchema>;
 export type ProductHighlight = z.infer<typeof ProductHighlightSchema>;
 export type ProductCustomizationOption = z.infer<typeof ProductCustomizationOptionSchema>;
 export type ProductEngagement = z.infer<typeof ProductEngagementSchema>;
+export type ProductVentureProvenance = z.infer<typeof ProductVentureProvenanceSchema>;
 export type StoreProductDetail = z.infer<typeof StoreProductDetailSchema>;
 export type ProductCompanion = z.infer<typeof ProductCompanionSchema>;
 export type ProductCompanionGroup = z.infer<typeof ProductCompanionGroupSchema>;

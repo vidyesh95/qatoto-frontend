@@ -51,7 +51,7 @@ because it was never frontend work.
 **[Cross-pillar seams](#cross-pillar-seams)** — R&D, Store and Studio hold separate copies of the
 same venture. Ordered; 19–21 are the narrow lap and need no new thinking.
 
-- **§19** ["Built in the open" on the product page](#19-built-in-the-open-on-the-product-page) — no migration
+- **§19** ~~["Built in the open" on the product page](#19-built-in-the-open-on-the-product-page)~~ — **shipped**, no migration
 - **§20** [`video.researchProjectId`](#20-videoresearchprojectid) — 1 migration + a membership check
 - **§21** [The venture reel and the venture badge](#21-the-venture-reel-and-the-venture-badge) — reads 20
 - **§22** [Daily-log YouTube: format CHECK and a deferred job](#22-daily-log-youtube-format-check-and-a-deferred-job)
@@ -340,27 +340,46 @@ Items 19–21 are the narrow lap: one venture, end to end, from a reported gap t
 its record attached. Ship them against **one** real venture and **one** real product before
 starting 22 or 23.
 
-### 19. "Built in the open" on the product page
+### 19. ~~"Built in the open" on the product page~~ — **SHIPPED**
 
-`store.product.researchProjectId` exists (`store.ts:2761-2784`), is partially indexed
-(`store.ts:2890`), and the frontend reads it on **zero** product surfaces.
-`StoreProductDetailSchema` (`src/lib/store/products.schemas.ts:217-250`) has no such field. Its
-only consumer today is the R&D-direction rail (`src/lib/rnd/suppliers.schemas.ts:98`
-`launchedProducts`), rendered on `/research-and-development/go-to-market`.
+Backend Appendix A42 (no migration) + `sections/built-in-the-open.tsx`.
+`GET /store/products/:productSlug` now carries a nullable `builtInTheOpen`, and the product page
+renders it between `ProductDetailsSection` and `SimilarAndCompare`. Kept here rather than deleted,
+because three decisions inside it will otherwise be re-litigated.
 
-The boundary comment on that column forbids a **write** crossing — "a research route that proxied
-a product create". It says nothing against reads, and this is the store's only differentiation a
-general marketplace cannot copy, because they do not have the record.
+**It is a FIELD on the product read, not a fifth parallel fetch** — which is where the plan
+changed. Every R&D read surface is addressed by slug and exposes no `id`
+(`ResearchProjectDetailSchema` has no top-level `id`; there is no by-id project route), so a client
+holding the raw `researchProjectId` UUID could not call R&D with it at all. The backend joins
+instead and sends `projectSlug`. The FK is selected only to drive that join and is dropped before
+the response, the same discipline as `suppliers.service.ts:576`. No new view-state variant either:
+the `"ready"` case already carries it.
 
-**No migration.** Backend adds a venture projection to `GET /store/products/:slug`; frontend adds
-a block to `src/components/home/store/product-detail.tsx`, already `TRANSPORT: server-fetch` and
-already doing four parallel reads — this is a fifth.
+**No equity on a buy page.** In: slug, name, tagline, cover, stage, `verifiedEffortMinutesTotal`,
+`teamMemberCount`, `statsComputedAt`. Out: `allocatedEquityBasisPoints` — public on
+`/launch-ready-projects`, but that rail is contributor-facing, and beside a price an equity
+aggregate reads as a claim about the transaction. Also out: `pendingApplicationCount`
+(`project_stats` marks it founder-facing) and **the milestone this section originally asked for** —
+`listProjectMilestones` is member-scoped and 404s for a buyer, `milestone` rows carry
+`plannedPayoutInCents`, and there is no product→milestone link anyway, only the project FK, so
+"the milestone that shipped it" has no referent. Public roster names went with it: the counts say
+the same thing without naming people on a commerce surface.
 
-**The projection must be the public read, not the member read.** `project-detail.tsx` fires nine
-member-scoped child reads; a buyer gets none of them. Ship a narrow shape — venture name and
-slug, proof-chain summary counts, the milestone that shipped it, public roster names — carrying
-no `plannedPayoutInCents`, no slice numerator, no escrow state, no `investor_only` material. Diff
-the buyer JSON against `ProjectDetailSchema` before merging.
+**`project_stats` is LEFT-joined**, unlike the launch-ready rail, which inner-joins it. Found by
+checking the data: 15 of 41 active projects have no `project_stats` row, and an inner join made the
+whole block VANISH for those — telling a buyer nothing built this listing because a counter cache
+is missing. `teamMemberCount` is therefore nullable to the wire despite a `notNull` column, and a
+missing cache costs the counts, not the credit.
+
+**`status = 'active'` is a disclosure boundary.** A `draft` project 404s for non-members and an
+`archived` one was withdrawn; without that predicate the product page names an unpublished venture
+to anonymous buyers. Verified: a product linked to a draft project answers `builtInTheOpen: null`
+and leaks the slug nowhere in the payload.
+
+**Verified against live data**, by temporarily linking three dev-seed listings and reverting:
+stats-present, stats-absent, draft-project and no-venture all render correctly. **No product has
+`research_project_id` set in the shared database today** (0 of 17), so the block is invisible in
+practice until a real venture ships a real listing — which is what items 20–21 are for.
 
 ### 20. `video.researchProjectId`
 
