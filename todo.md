@@ -114,7 +114,11 @@ names no rate, format or mailbox (no placement API exists and the mailboxes are 
 decision below), and policies-and-safety is a hub over the five existing policy documents rather
 than a sixth one to keep in sync.
 
-**The twelve `(studio)` pages are honest placeholders, and they are STILL `kind: "planned"`.** This
+**Two of the twelve have since graduated.** `/studio/analytics` and `/studio/comments` are real
+pages now — they were the only two whose data already existed and simply had no reader. See the
+new §25 for what that surfaced.
+
+**The remaining ten `(studio)` pages are honest placeholders, and they are STILL `kind: "planned"`.** This
 is the part worth not misreading later: ten of them have **no backend whatsoever** — `feedback`
 returns zero matches across the entire backend; `subtitles`, `copyright`, `customize`, `pitches`,
 `learn` and `support` likewise; `comments` has per-video primitives but not the cross-video
@@ -369,6 +373,104 @@ ship **empty by design** (A36). Every lane answers `no_active_rate_card` and `sh
 permanently `0` until a forwarder lane list is purchased. Nothing to build — this is a buying
 decision, and [the uncovered-inland-leg rule](#decisions-needed) should be settled before the money
 is spent.
+
+---
+
+## 25. Creator analytics and the comment inbox — SHIPPED, and one bug they exposed
+
+Two Studio pages stopped being placeholders. Both were the same shape of gap: **the data existed
+and nothing read it.**
+
+- `GET /users/me/creator-summary` and `GET /users/me/video-analytics` —
+  `creator_stats.published_video_count` and `total_view_count` were written by three services and
+  selected NOWHERE in the codebase before this. `video_stats` carried every per-video counter live.
+  No new table, no new job.
+- `GET /users/me/video-comments` — the creator's inbox across all their videos. The authorization
+  was already correct: `deleteVideoComment` has always permitted the author OR the video's creator.
+  What was missing was a way to FIND the comment without opening each video's thread.
+
+**All three live under `/users/me/*` rather than `/videos/*`**, because `app.ts` mounts the videos
+router first and `GET /videos/:videoId` permanently shadows any two-segment `/videos/X`.
+`/me/video-reports` documents the same trap.
+
+**One migration, `0136`, and it is a correctness fix rather than a performance one.** The public
+thread's `video_comment_thread_idx` is partial on `parent_comment_id IS NULL`, so an inbox built on
+it would have silently omitted every REPLY — 6 of 9 rows on live data. The new index is
+non-partial. It is still a merge across the creator's videos, not a single range scan, because
+`video_comment` carries no `creator_id`; denormalising that would mean a write-path change plus a
+backfill, which is not worth it at tens of videos.
+
+### The bug this exposed — FIXED, and there were TWO of them
+
+`creator_stats.published_video_count` was maintained on publish and unpublish and nowhere else.
+Reading it for the first time turned up **two unmaintained paths, drifting in opposite directions**:
+
+- **`deleteVideo` removed a published video without decrementing.** Drifts UP, permanently, once
+  per published video a creator ever deleted.
+- **`content-review.service.ts` published an approved anime episode without incrementing.** Drifts
+  DOWN. Its own comment already called that path "the second door into publish" and gated it — it
+  simply did not MAINTAIN what publishing maintains.
+
+Because they pull opposite ways they could have cancelled out on one account, which is a good
+reminder that "the number looks plausible" is not evidence.
+
+**Both are fixed at the source**, and `scripts/reconcile-creator-stats.ts` (modelled on
+`reconcile-project-stats.ts`, wired as `pnpm db:reconcile-creator-stats`) repaired the one drifted
+row — 5 → 4 — and now reports clean platform-wide. Proven with real writes: publish twice → cache
+2, delete a published video → 1, delete a draft → still 1.
+
+**`total_view_count` is reported but never repaired**, deliberately. It is a LIFETIME counter and
+deleting a video does not un-happen its views, so summing over surviving videos would "repair" it
+to a smaller, wrong number. A mismatch there means the beacon transaction has a bug — investigate,
+do not overwrite. Same call `reconcile-project-stats` makes about `dailyLogStreakDays`.
+
+The summary reads the cache again now that it is correct. The live-count workaround is gone: a
+cache the page refuses to trust is a cache nobody ever fixes, and this read being its first
+consumer anywhere is exactly how the drift stayed invisible.
+
+### The scheduled-publish gap — FIXED
+
+Noticed while auditing the counter's writers: **nothing anywhere flipped a video from `scheduled`
+to `published`.** Two paths set it — `publishVideo` when a creator picks a future date, and
+`approveAnimeEpisode` when a moderator approves an episode with a later premiere date — and no job
+ever acted on either. Since `PUBLICLY_SERVABLE` requires `publish_status = 'published'`, a
+scheduled video was permanently invisible: in no feed, on no channel, reachable by no link. The
+scheduling UI worked; the schedule did not.
+
+`publish-scheduled-videos` is a tick-plus-job pair on a **one-minute** cron, modelled on
+`sweep-dispute-windows` beside it. A creator announces a publish time to an audience; missing it by
+up to an hour is a broken promise, and the sweep is one indexed range scan that finds nothing
+almost every time.
+
+**It re-runs the publish gates rather than trusting the schedule**, because time passes between
+scheduling and firing: a moderator can hide the video, an edit can send an episode back to review,
+a PATCH can clear `isMadeForKids`. `publishVideo` refuses all of those at the creator's request,
+and the clock does not get a weaker gate than the creator. A row that no longer qualifies is **left
+scheduled and logged**, not failed and not draughted — the condition is usually temporary, and
+silently draughting someone's video because a sweep caught it mid-review is worse than the delay.
+
+**It is the third door into publish, and it maintains what the other two maintain** —
+`publishedVideoCount` moves in the same transaction as the status. That is the whole lesson of the
+drift above.
+
+Three details worth keeping: `published_at` is set to the **announced** instant rather than the
+sweep's, so feed order matches what was promised rather than cron jitter; an embargoed anime
+episode gets its `released_at` filled in here, since approval deliberately leaves it null; and each
+row is taken `FOR UPDATE SKIP LOCKED` in its own transaction, so two sweeps cannot double-publish
+or double-count and one bad row cannot roll back the others.
+
+**Nothing was stranded.** No video anywhere was in `scheduled` state, so the bug had never bitten
+real data — it was waiting for the first person to use the feature.
+
+### Deliberately not built
+
+- **No time series.** Every rollup is keyed by VIEWER or is platform-wide and none can be narrowed
+  to a creator; the per-video snapshots that could back one are pruned at 14 days. A chart would
+  need a new creator-keyed table and a nightly job.
+- **No comment moderation state.** `video_comment` gains no columns. The schema records their
+  absence as deliberate, and the tombstone delete erases `body_text` to `''`, so a hold-and-approve
+  queue could not show what it was holding without changing that too.
+- `video.commentModeration` and `commentSortOrder` remain unbacked, as documented.
 
 ---
 

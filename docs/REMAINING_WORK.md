@@ -40,13 +40,20 @@ already had the `(home)` count right at three, and `todo.md` did not.
   in `sitemap.ts`, and `/policies-and-safety` added to the sidebar's footer so it is reachable at
   all. None invents a capability the backend lacks; each is a directory or a hub over surfaces
   that already work.
-- **Twelve under `(studio)`** render `studio-planned-page.tsx` — the roadmap summary verbatim,
-  what the page will do, and a link to the surface that does the job today WHERE ONE TRULY EXISTS.
-  Six have no such link and say so rather than inventing one.
+- **Ten under `(studio)`** render `studio-planned-page.tsx` — the roadmap summary verbatim, what
+  the page will do, and a link to the surface that does the job today WHERE ONE TRULY EXISTS. Six
+  have no such link and say so rather than inventing one.
 
-    **They stay `kind: "planned"`, and that is the point.** Ten of the twelve have no backend at
-    all, so explaining the absence well is not the same as filling it. A `route` on the roadmap is
-    a claim the capability exists.
+    **They stay `kind: "planned"`, and that is the point.** All ten have no backend at all, so
+    explaining the absence well is not the same as filling it. A `route` on the roadmap is a claim
+    the capability exists.
+
+- **Two graduated: `/studio/analytics` and `/studio/comments`.** They were the only two of the
+  twelve whose data already existed and simply had no reader — `creator_stats.total_view_count`
+  and `published_video_count` were maintained by three services and selected NOWHERE, and the
+  creator-may-delete-a-comment-on-their-own-video authorization had been correct all along with
+  no route to list those comments. Both are `kind: "route"` now. See `todo.md` §25, including the
+  two `published_video_count` drift sources they exposed — both fixed, with a reconciler.
 
 **`/your-account` and `/settings` are GONE, and are not coming back** — they were the cheap
 two named here, they were built as seventeen routes across two nested trees, and they were then

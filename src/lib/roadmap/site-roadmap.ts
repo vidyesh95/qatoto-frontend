@@ -779,16 +779,20 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Shipping profiles and carriers.",
       },
       {
-        kind: "planned",
+        // `route`, not `planned`: the page reads real data now. The other ten Studio entries stay
+        // `planned` — the data for those does not exist, and an honest placeholder is not a feature.
+        kind: "route",
         label: "Analytics",
-        pathPattern: "/studio/analytics",
-        summary: "Reach, retention and revenue in one view.",
+        href: "/studio/analytics",
+        summary: "Reach and engagement across your videos, counted on Qatoto.",
       },
       {
-        kind: "planned",
+        // `route`, not `planned`: the page reads real data now. The other ten Studio entries stay
+        // `planned` — the data for those does not exist, and an honest placeholder is not a feature.
+        kind: "route",
         label: "Comments",
-        pathPattern: "/studio/comments",
-        summary: "Moderate across every video at once.",
+        href: "/studio/comments",
+        summary: "Every comment on your videos, in one place.",
       },
       {
         kind: "planned",
