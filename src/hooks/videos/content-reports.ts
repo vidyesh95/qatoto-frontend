@@ -22,6 +22,7 @@ import {
   type VideoReportQueueRow,
 } from "@/lib/videos/admin-content-reports.api";
 import {
+  listMyVideoModerationNotices,
   listMyVideoReports,
   reportVideo,
   type MyVideoReport,
@@ -121,5 +122,18 @@ export function useRestoreVideoMutation() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: videoReportKeys.queueRoot() });
     },
+  });
+}
+
+/**
+ * Decisions staff have taken on the caller's own videos.
+ *
+ * `retry: false` — a 401 is an answer, not a flake.
+ */
+export function useMyVideoModerationNoticesQuery() {
+  return useQuery({
+    queryKey: ["video-moderation", "mine"] as const,
+    queryFn: async () => unwrap(await listMyVideoModerationNotices()),
+    retry: false,
   });
 }

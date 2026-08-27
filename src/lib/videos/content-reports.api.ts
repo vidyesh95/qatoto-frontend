@@ -107,3 +107,55 @@ export function listMyVideoReports(
 ): Promise<ActionResponse<readonly MyVideoReport[]>> {
   return getJson("/users/me/video-reports", z.array(MyVideoReportSchema), options);
 }
+
+/* -------------------------------------------------------------------------- */
+/* Moderation notices — what staff DECIDED about YOUR videos                    */
+/* -------------------------------------------------------------------------- */
+
+export const VIDEO_MODERATION_ACTION_KINDS = [
+  "content_hidden",
+  "content_restored",
+  "report_dismissed",
+] as const;
+export const VideoModerationActionKindSchema = z.enum(VIDEO_MODERATION_ACTION_KINDS);
+export type VideoModerationActionKind = z.infer<typeof VideoModerationActionKindSchema>;
+
+/**
+ * ⚠️ WHAT THIS ROW DOES NOT CARRY, and none of it is an oversight: the reporter, any count of
+ * reporters, the moderator, and the moderator's `reasonNote`. The queue hides reporter identity
+ * from MODERATORS on the stated ground that one who can see it can be lobbied — surfacing it to the
+ * person reported would be strictly worse. `reasonNote` is staff-facing free text inside a
+ * hash-chained audit record, not creator-facing copy.
+ *
+ * `reason` is NULLABLE because an action can be taken without a report behind it.
+ */
+export const VideoModerationNoticeSchema = z
+  .object({
+    videoId: z.string(),
+    videoTitle: z.string(),
+    actionKind: VideoModerationActionKindSchema,
+    reason: VideoReportReasonSchema.nullable(),
+    decidedAt: z.string(),
+  })
+  .strip();
+export type VideoModerationNotice = z.infer<typeof VideoModerationNoticeSchema>;
+
+/** Written for the person the action was taken AGAINST, so it says what happened to THEM. */
+export const VIDEO_MODERATION_ACTION_LABELS: Readonly<Record<VideoModerationActionKind, string>> = {
+  content_hidden: "Removed from Qatoto",
+  content_restored: "Restored",
+  report_dismissed: "Report dismissed — no action",
+};
+
+/**
+ * `GET /users/me/video-moderation` — decisions on the caller's own videos.
+ *
+ * DECIDED ACTIONS ONLY. A pending report is never shown, which is also how YouTube treats community
+ * flags: you learn when something is acted on, not when somebody clicks report. Showing a live one
+ * would tip somebody off mid-review and invite retaliation.
+ */
+export function listMyVideoModerationNotices(
+  options?: RequestOptions,
+): Promise<ActionResponse<VideoModerationNotice[]>> {
+  return getJson("/users/me/video-moderation", VideoModerationNoticeSchema.array(), options);
+}

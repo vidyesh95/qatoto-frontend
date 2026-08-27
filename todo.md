@@ -284,50 +284,53 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     rolling HOURLY top-200. "This week" and "this month" are not filters over it; they are a second
     snapshot cadence, or they are not offered.
 
-2. **The seven `planned` Studio routes that are left.** ⚠️ **DO NOT INHERIT A COST FROM THIS LINE
-   WITHOUT CHECKING IT** — it has now been wrong about three separate routes.
+2. **The six `planned` Studio routes that are left.** ⚠️ **DO NOT INHERIT A COST FROM THIS LINE
+   WITHOUT CHECKING IT** — it has now been wrong about four separate routes.
 
-    ~~`/studio/team`~~ **GRADUATED, but not into what it promised, and the difference matters.** The
-    old summary was "Who else can act on this account" — account-level DELEGATION. **That is still
-    unbuilt and is the one genuine Studio feature left**: no delegation primitive exists anywhere,
-    `video_collaborator` is per-video and `video_team_member` is a display-label list. Building it
-    means tables, a role model, invite/accept/revoke, an authorization layer every creator route
-    consults and an audit trail, because it changes who `req.user.id` effectively is.
+    ~~`/studio/copyright`~~ **GRADUATED, and it closed a defect rather than only filling a gap.**
+    ⚠️ **THE STUDIO WAS TELLING CREATORS SOMETHING FALSE.** `video.moderationVisibilityState`
+    reached no read a creator could see and `deriveStudioVideoStatus` had **no branch for it** — the
+    field appeared nowhere in `videos.service.ts` — so a video a moderator had HIDDEN still derived
+    as `published` for its own owner. Not silence about a takedown: a wrong answer, on the one screen
+    the person who could appeal would look at. Fixed with a `hidden-by-moderator` status checked
+    BEFORE the publish branches (the row really is still `publishStatus: "published"`, which is
+    exactly how it came to lie), fed from both the detail and the list selects so the two badges
+    cannot disagree. **Proved live**: hide → both badges flip → public gate 404s → restore.
 
-    What shipped instead is the **collaborator CREDIT handshake**, and it closed a real dead end:
-    `video_collaborator.status` had `invited | accepted | declined` from the day the table existed
-    and **no route could write anything but `invited`** — no accept, no decline, and no read by which
-    the person named could even learn about it. Two enum values were unreachable and a "collaborator"
-    was an email address somebody typed. Now: `GET /users/me/collaborations` (matched on the caller's
-    EMAIL, because `user_id` is null until answered — an id match returns nothing to exactly the
-    people who still owe an answer), `GET /users/me/collaborators` for the account-level roster that
-    did not exist, and `POST /videos/:videoId/collaborators/respond`.
-    - **⚠️ IT GRANTS NOTHING, AND THE PAGE AND ROADMAP BOTH SAY SO.** Nothing authorizes off this
-      table. Do not let it quietly become delegation.
-    - **⚠️ A BUG THIS EXPOSED, AND IT WOULD HAVE BEEN SILENT.** The per-video save deleted and
-      re-inserted every collaborator row, which was harmless while `invited` was the only reachable
-      status — and would have **erased somebody's acceptance on the creator's next unrelated save**
-      the moment accept shipped. Now only removed emails are deleted and survivors are left alone
-      (`onConflictDoNothing` on `video_collaborator_unq`). **Proved live**: accept → creator re-saves
-      → still `accepted`, still linked; and removing the email still deletes the row.
-    - **The respond route is the one `/videos/:videoId/*` write the video's OWNER may not make.** The
-      caller is a stranger to the video by definition; the predicate
-      `(videoId, invitedEmail = caller's email)` IS the authorization. Answering an invite you never
-      got is a plain 404, identical to an absent video, so it cannot enumerate who is invited to what.
-      **Verified.**
+    The page reads `GET /users/me/video-moderation` (new) beside `GET /users/me/video-reports`
+    (already shipped — the "yours against others" half was never missing).
+    - **⚠️ THREE THINGS IT WITHHOLDS, EACH DELIBERATELY.** The **reporter** — not a name, not a
+      count: the queue hides reporter identity from MODERATORS on the stated ground that one who can
+      see it can be lobbied, so showing it to the accused is strictly worse, and at this platform's
+      size a count alone is often an identity. **Open reports** — decisions only, which is also how
+      YouTube treats community flags: you hear when something is acted on, not when somebody clicks
+      report. **`reasonNote`** — staff-facing free text inside a hash-chained audit entry; the
+      report's `reason` ENUM is projected instead, which is what a YouTube strike notice tells you.
+      **Verified**: the response carries exactly five fields and a seeded note reading
+      `"reported by jane@x.com"` never left the server.
+    - **`report_dismissed` is shown too.** A creator told when their video is removed should be told
+      when a claim against it is thrown out; listing only punishments makes it a record of
+      accusations rather than outcomes.
 
     **⚠️ `/studio/subtitles` IS NOT A MISSING FEATURE. IT IS IMPOSSIBLE ON THIS ARCHITECTURE.** Every
     video is `videoSource: "youtube"` — 10 of 10 live — self-hosted video is explicitly deferred by
-    STUDIO §0 ("**must NOT be built now**"), and **Qatoto cannot inject captions into a YouTube
-    embed**. Captions live in that creator's own YouTube Studio. A caption table plus an upload would
-    build a store nothing can play. It belongs with `download` and `isPremium`. It comes back only if
-    self-hosted video does.
+    STUDIO §0 ("**must NOT be built now**"), and Qatoto cannot inject captions into a YouTube embed.
+    It belongs with `download` and `isPremium`, and returns only if self-hosted video does.
 
-    The three genuinely needing a new domain: `copyright` (`copyright` is a video-REPORT-REASON enum
-    member, not a claims table), `pitches` (`pitch` is a `video_type` enum member, not a table) and
-    `earn` (a money rail — escrow left this codebase, §7). `learn`, `support` and `feedback` are the
-    `/customer-service` shape and already do the right thing: each links to the surface that does part
-    of the job today rather than inventing a channel.
+    **`/studio/pitches` is blocked on a DEFINITION, not on code.** `pitch` is a `video_type` enum
+    member; "sent and received" implies sending a pitch TO someone and no such primitive exists. It
+    could mean pitch videos, R&D project applications, or investor outreach — three different
+    products. `commerce_thread`/`commerce_message` exist but are RFQ-scoped between organizations.
+    Building before that is decided picks the answer by accident.
+
+    **`/studio/support` is already correct** and should not be "built". There is no ticket API, and
+    `/customer-service` is a directory for exactly that reason — "an unanswered form is worse than an
+    honest signpost". A support inbox means a real ticket domain AND somebody to read it.
+
+    **Still genuinely needing a new domain: `earn`** (a money rail — escrow left this codebase, §7)
+    and **account-level delegation**, which is what `/studio/team`'s old summary promised and remains
+    the one substantial Studio feature unbuilt. `learn` and `feedback` are the `/customer-service`
+    shape and already signpost correctly.
 
 ---
 
