@@ -5,6 +5,7 @@ import { UNRESOLVABLE_PARAM_VALUE } from "@/lib/static-params";
 import {
   getBlogSitemapEntries,
   getCatalogSitemapEntries,
+  getChannelSitemapEntries,
   getCategorySitemapEntries,
   getCofounderProfileSitemapEntries,
   getFactorySitemapEntries,
@@ -117,10 +118,10 @@ function toSitemapUrl(entry: SitemapEntry): MetadataRoute.Sitemap[number] {
 }
 
 /**
- * The fourteen enumerations, run ONE AT A TIME.
+ * The fifteen enumerations, run ONE AT A TIME.
  *
  * `Promise.all` WAS TRIED AND IS WRONG HERE, measurably. Each of these walks a paginated surface to
- * exhaustion, so fourteen of them at once is dozens of concurrent requests against a backend whose
+ * exhaustion, so fifteen of them at once is dozens of concurrent requests against a backend whose
  * Postgres allows twenty connections in total. Two consecutive builds produced sitemaps with
  * different contents — one dropped every factory and every provider, the next included them — and
  * nothing failed: a read that errors contributes `[]` by design, so the sitemap simply came out
@@ -139,6 +140,7 @@ const SITEMAP_SOURCES: readonly (() => Promise<SitemapEntry[]>)[] = [
   getSupplierSitemapEntries,
   getFactorySitemapEntries,
   getCofounderProfileSitemapEntries,
+  getChannelSitemapEntries,
   getForumThreadSitemapEntries,
   getPathwaySitemapEntries,
   getProviderSitemapEntries,

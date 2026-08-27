@@ -69,3 +69,19 @@ export const ChannelProfileSchema = z
   .strip();
 
 export type ChannelProfile = z.infer<typeof ChannelProfileSchema>;
+
+/**
+ * One row of `GET /channels` — the opted-in public directory.
+ *
+ * DELIBERATELY THIN. Its only consumer is `sitemap.ts`, which needs a handle and nothing else; the
+ * name rides along so a future directory PAGE would not need a second route. Adding avatars, counts
+ * or bios here would put a per-creator join behind a read whose job is to be walked in full.
+ */
+export const ListedChannelSchema = z
+  .object({
+    handle: z.string(),
+    name: z.string(),
+  })
+  .strip();
+
+export type ListedChannel = z.infer<typeof ListedChannelSchema>;

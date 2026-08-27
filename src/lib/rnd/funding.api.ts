@@ -18,7 +18,9 @@ import {
   PledgeSchema,
   RoundBackerSchema,
   type FundingDeal,
+  MyFoundedFundingRoundSchema,
   type FundingRound,
+  type MyFoundedFundingRound,
   type InvestorConfidence,
   type ListFundingDealsFilter,
   type Milestone,
@@ -144,6 +146,26 @@ export function listMyPledges(
   options?: RequestOptions,
 ): Promise<ActionResponse<Pledge[]>> {
   return getJson(`/pledges/mine${buildQueryString({ ...filter })}`, PledgeSchema.array(), options);
+}
+
+/**
+ * `GET /funding-rounds/mine` — the cross-project view behind `/studio/funding`.
+ *
+ * NOT THE SAME AS `listProjectFundingRounds` ABOVE, which needs a slug and returns one project's
+ * rounds. This one spans every project the caller founds, which is the thing that did not exist
+ * and the reason a founder with three ventures raising at once had to open three project pages.
+ *
+ * Paginated server-side, like `listMyPledges` below it.
+ */
+export function listMyFoundedFundingRounds(
+  filter: { readonly page?: number; readonly limit?: number } = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<MyFoundedFundingRound[]>> {
+  return getJson(
+    `/funding-rounds/mine${buildQueryString({ ...filter })}`,
+    MyFoundedFundingRoundSchema.array(),
+    options,
+  );
 }
 
 /** Withdraw a commitment. It leaves the backer list and decrements the counters. */

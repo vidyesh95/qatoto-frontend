@@ -86,6 +86,8 @@ export const rndKeys = {
   pledgeOptions: (roundId: string) => ["rnd", "funding", "round", roundId, "options"] as const,
   roundBackers: (roundId: string) => ["rnd", "funding", "round", roundId, "backers"] as const,
   myPledges: () => ["rnd", "funding", "pledges", "mine"] as const,
+  /** `/studio/funding` — every round across every project the caller founds. */
+  myFoundedRounds: (page: number) => ["rnd", "funding", "rounds", "mine", page] as const,
   milestones: (projectSlug: string) => ["rnd", "funding", projectSlug, "milestones"] as const,
 
   // --- Workshop --------------------------------------------------------------

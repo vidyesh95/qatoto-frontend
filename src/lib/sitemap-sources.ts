@@ -23,6 +23,7 @@
 //    though it were the whole catalogue. These loops walk to the end — but a backend that returns a
 //    non-advancing cursor would otherwise spin forever, so each loop is bounded and says so.
 
+import { listChannels } from "@/lib/channels/api";
 import { getBlogs, getPressList } from "@/lib/cms";
 import { listStoreCategories, searchStore } from "@/lib/store/catalog.api";
 import { listCofounderProfiles } from "@/lib/store/cofounders.api";
@@ -224,6 +225,45 @@ export async function getCofounderProfileSitemapEntries(): Promise<SitemapEntry[
  * new reply genuinely has new content — and the list route never returns a `pending_review` thread,
  * so nothing unpublished can leak in through here.
  */
+/**
+ * Creator channels — the ones whose owners asked to be listed.
+ *
+ * WHY THIS EXISTS NOW AND NOT BEFORE. `/channel/:handle` has been public since it shipped, and it
+ * was in no sitemap for one reason: there was no public handle-enumeration read to build a list
+ * from. `GET /channels` is that read, and it answers the question building one raises — a directory
+ * of PEOPLE is not a directory of products, so it is **opt-in** and defaults off.
+ *
+ * ⚠️ EXPECT THIS TO BE EMPTY FOR A WHILE, AND THAT IS CORRECT RATHER THAN BROKEN. Nobody is listed
+ * until they tick the box in their channel profile, and the backend additionally requires at least
+ * one publicly-servable video — because an entry for a channel page with no videos is a soft 404,
+ * which this file's own header calls worse for the whole domain than never announcing it.
+ *
+ * NO `lastModified`. A channel's page changes when its videos do, and there is no timestamp on this
+ * read that tracks that. Inventing one would be a lie a crawler believes, which is the rule
+ * `sitemap.ts` states for every other surface here.
+ *
+ * IT DOES NOT USE `collectCursorPagedRows`. That helper expects the store's `{ items, page }` shape;
+ * the channels routes answer with `nextCursor` as a SIBLING of `data`, so the walk is written out
+ * rather than the shapes bent into each other.
+ */
+export async function getChannelSitemapEntries(): Promise<SitemapEntry[]> {
+  "use cache";
+  const entries: SitemapEntry[] = [];
+  let cursor: string | undefined = undefined;
+
+  for (let pageCount = 0; pageCount < MAX_PAGES_PER_SURFACE; pageCount += 1) {
+    const result = await listChannels({ limit: DIRECTORY_PAGE_LIMIT, cursor });
+    if (!result.success) break;
+
+    entries.push(...result.data.rows.map((channel) => ({ path: `/channel/${channel.handle}` })));
+
+    if (result.data.nextCursor === null) break;
+    cursor = result.data.nextCursor;
+  }
+
+  return entries;
+}
+
 export async function getForumThreadSitemapEntries(): Promise<SitemapEntry[]> {
   "use cache";
   const threads = await collectCursorPagedRows((cursor) =>

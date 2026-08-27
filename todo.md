@@ -118,12 +118,24 @@ than a sixth one to keep in sync.
 pages now — they were the only two whose data already existed and simply had no reader. See the
 new §25 for what that surfaced.
 
-**The remaining NINE `(studio)` pages are honest placeholders, and they are STILL `kind: "planned"`.**
-This is the part worth not misreading later: nine of them have **no backend whatsoever** — `feedback`
-returns zero matches across the entire backend; `subtitles`, `copyright`, `pitches`, `learn` and
-`support` likewise; `comments` has per-video primitives but not the cross-video moderation queue its
-roadmap line specifies; `team` means account-level collaborators, which do not exist. Building those
-nine is nine backend domains, not nine screens.
+**The remaining EIGHT `(studio)` pages are honest placeholders, and they are STILL `kind: "planned"`.**
+
+⚠️ **THE SENTENCE THAT USED TO BE HERE WAS WRONG, AND WRONG IN THE EXPENSIVE DIRECTION.** It read
+"nine of them have **no backend whatsoever** … building those nine is nine backend domains, not nine
+screens" — and the evidence it offered (`feedback`, `subtitles`, `copyright`, `pitches`, `learn`,
+`support`, `team`) **never named `funding` at all**. It was counted, not checked. The R&D funding
+domain is complete — `funding_round`, `funding_round_pledge`, milestones, and routes for create,
+open, close, patch, delete, pledge, cancel, backers and deals. What `/studio/funding` was missing was
+ONE READ: everything funding-related is scoped to a project, and nothing spanned a founder's
+projects. `GET /funding-rounds/mine` closed it and the page graduated.
+
+The honest breakdown of the eight that are left — **five genuinely need a new domain**: `subtitles`
+(no caption table; `captionCertification` is a text column on `video`), `copyright` (`copyright` is a
+video-REPORT-REASON enum member, not a claims table), `pitches` (`pitch` is a `video_type` enum
+member, not a table), `team` (account-level collaborators; the `video_collaborator` table that exists
+is per-video and already wired) and `earn` (a money rail — escrow left this codebase, §7). The other
+three — `learn`, `support`, `feedback` — are the `/customer-service` shape and have **not** been
+costed since that page shipped as authored content. Check before inheriting a number.
 
 **It was ten until `customize` graduated** — see §31. It is `kind: "route"` now, with
 `GET|PATCH /users/me/channel-profile` behind it, and it is the only one of the twelve that left this
@@ -1032,10 +1044,28 @@ gone stale in both directions.
       those. `loadChannelProfileOnce` in `src/lib/channels/server.ts` wraps it in React's `cache()`.
       Measured, not assumed: one page load makes ONE backend call with both the metadata and the page
       reading the profile.
-3. **The channel sitemap.** Blocked on one bounded public enumeration read;
-   `creator_stats.publishedVideoCount` makes "creators with at least one published video" a single
-   indexed query. It carries a real consent question — the cofounder directory already argues that
-   "a directory of people who did not consent to being in it" is a decision, not a default.
+3. ~~**The channel sitemap.**~~ **SHIPPED, OPT-IN.** Migration `0144` adds
+   `user.is_channel_listed` (default **false**), `GET|PATCH /users/me/channel-profile` carries it, a
+   checkbox in the shared `ChannelProfileEditor` sets it, and `GET /channels` is the public
+   cursor-paged enumeration `src/lib/sitemap-sources.ts` walks. Five things worth keeping:
+    - **Opt-in, and that was the decision rather than the default.** A directory of PEOPLE is not a
+      directory of products — the cofounder directory argued it first.
+    - **It governs DISCOVERABILITY, not visibility**, and the editor's copy has to say so. The
+      channel page is public either way and is already linked from every feed card.
+    - **⚠️ THE VIDEO TERM DOES NOT READ `creator_stats.published_video_count`.** It joins `video`
+      under `publicVideoPredicate()`. That column is a counter cache AND counts the wrong thing —
+      `publish_status = 'published'` regardless of visibility — so a creator whose videos are all
+      unlisted has a positive count and an empty channel page. Announcing that files a soft 404,
+      which `sitemap.ts`'s own header calls worse for the domain than never announcing it.
+      **Verified live both ways**: opted in with no public video → excluded; with one → listed.
+    - **⚠️ THE THIRD SCALAR THE ANONYMIZATION VERIFIER CANNOT SEE**, after `user.bio` and
+      `video_document`'s object keys. The scrub clears it explicitly and nothing structural would
+      turn red if that line went. `smoke-privacy.ts` now creates its probe with the flag ALREADY
+      TRUE — asserting `false` against a column that defaults `false` is a guard that can only pass.
+    - **⚠️ IT SHIPS WITH ZERO URLS.** 69 users have handles; only **2 creators have any public
+      video**, and nobody is opted in. The section fills itself as creators tick the box — nothing
+      here is fabricated — but it does not grow today, and the deliverable is the control.
+
 4. ~~**Provider directory filters.**~~ **SHIPPED, all eight keys plus facets.**
    `ProvidersQuerySchema` went from 3 keys to 11, `PublicProviderCard` gained `providerKinds`, and
    the response carries `facets` beside `items`/`page`. Four things worth keeping:
@@ -1097,9 +1127,30 @@ gone stale in both directions.
       is built for a paper TITLE, so an uploaded `deck.pdf` would have downloaded as `deck.pdf.pdf`.
       The filename-preserving `sanitizePrivateFileName` is used instead.
 
-7. **The nine `planned` Studio routes.** They are the entire `kind: "planned"` set on the roadmap and
-   each needs a whole backend domain, not a screen. `/studio/team` means ACCOUNT-level collaborators;
-   the per-video `video_collaborator` table that exists is a different thing and is already wired.
+7. ~~**One of the nine graduated: `/studio/funding`.**~~ **SHIPPED**, and it corrected a claim this
+   file had been repeating. §26 said the planned Studio routes "each need a whole backend domain,
+   not a screen" and that "nine of them have no backend whatsoever" — the evidence list it offered
+   never named `funding`. The R&D funding domain is **complete**; what was missing was ONE READ.
+   `listProjectFundingRounds` is per-project and `listMyPledges` is backer-side, so nothing spanned
+   a founder's projects and a founder with three ventures raising at once opened three pages.
+   `GET /funding-rounds/mine` closed it. Three decisions:
+    - **Founder-scoped, matching the WRITES.** `researchProject.founderUserId`, the same gate
+      `POST …/funding-rounds` uses. A read that showed maintainers rounds they cannot open or close
+      would be a looser rule wearing the same name. **Verified: a non-founder sees zero rows.**
+    - **⚠️ `/funding-rounds/mine` IS DECLARED BEFORE `/funding-rounds/:roundId`** or the literal is
+      captured as a round id and every founder gets a 404 instead of a failure.
+    - **It reads and does not write.** Open, close, edit and milestones stayed on the project's own
+      funding tab where they are already wired and already gated; each row links through. Two sets
+      of controls over one set of columns is two places to fix a bug and two chances for the money
+      copy to drift.
+8. **The eight `planned` Studio routes that are left.** ⚠️ **DO NOT INHERIT A COST FROM THIS LINE
+   WITHOUT CHECKING IT** — the version above it was wrong about `funding` for months. **Five
+   genuinely need a new domain**: `subtitles` (no caption table; `captionCertification` is a text
+   column on `video`), `copyright` (a video-REPORT-REASON enum member, not a claims table),
+   `pitches` (`pitch` is a `video_type` enum member, not a table), `team` (account-level
+   collaborators; the `video_collaborator` table is per-video and already wired) and `earn` (a money
+   rail — escrow left this codebase, §7). The other three — `learn`, `support`, `feedback` — are the
+   `/customer-service` shape and have not been costed since that page shipped as authored content.
 
 ### Corrections to this file, found by checking rather than reading
 

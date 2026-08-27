@@ -32,6 +32,17 @@ export const ChannelProfileDraftSchema = z
      * would not know there was one.
      */
     profileModerationState: z.enum(["visible", "hidden_by_moderator"]),
+    /**
+     * Whether this creator has asked to be listed in Qatoto's public sitemap.
+     *
+     * DISCOVERABILITY, NOT VISIBILITY, and the editor's copy has to say so. The channel page is
+     * public either way — every feed card links to it — and this only decides whether
+     * `GET /channels` announces the handle to a crawler. Copy implying that switching it off makes
+     * a channel private would be a promise the backend cannot keep.
+     *
+     * DEFAULTS FALSE server-side: a directory of PEOPLE is not a directory of products.
+     */
+    isChannelListed: z.boolean(),
   })
   .strip();
 
@@ -44,13 +55,16 @@ export type ChannelProfileDraft = z.infer<typeof ChannelProfileDraftSchema>;
  * backend, so the compiler is what stops a wrong field name and a runtime re-parse of an object we
  * just built would only re-check itself.
  *
- * BOTH KEYS ARE REQUIRED. `bio: null` clears the description and `links: []` clears the links —
- * omitting either would make "leave it alone" and "clear it" indistinguishable on the one write
- * that can do both.
+ * ALL THREE KEYS ARE REQUIRED. `bio: null` clears the description and `links: []` clears the links
+ * — omitting either would make "leave it alone" and "clear it" indistinguishable on the one write
+ * that can do both. `isChannelListed` is required for the same reason and one more: it is a CONSENT
+ * flag, and a body that can omit it is a body that can flip it by accident on a save that only
+ * meant to change a description.
  */
 export interface UpdateChannelProfileInput {
   readonly bio: string | null;
   readonly links: readonly { readonly label: string; readonly url: string }[];
+  readonly isChannelListed: boolean;
 }
 
 /** The description bounds the backend enforces, mirrored so the editor can say so before saving. */

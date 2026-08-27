@@ -73,6 +73,7 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
 
   const [bioDraft, setBioDraft] = useState<string | null>(null);
   const [linkRowsDraft, setLinkRowsDraft] = useState<LinkRowDraft[] | null>(null);
+  const [isChannelListedDraft, setIsChannelListedDraft] = useState<boolean | null>(null);
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
 
   // DERIVED FROM THE SERVER UNTIL THE FIRST EDIT, rather than seeded by an effect. `null` means
@@ -86,6 +87,10 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
       label: link.label,
       url: link.url,
     }));
+
+  // SAME `null`-MEANS-UNTOUCHED RULE as the two above, and it matters more here: a refetch landing
+  // between a click and a save must not silently put a consent flag back.
+  const isChannelListed = isChannelListedDraft ?? savedProfile?.isChannelListed ?? false;
 
   const linkErrors = validateLinkRows(linkRows);
   const trimmedBio = bio.trim();
@@ -125,6 +130,7 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
     setSaveState({ status: "saving" });
     try {
       await updateChannelProfileMutation.mutateAsync({
+        isChannelListed,
         // AN EMPTY DESCRIPTION IS `null`, NOT `""`. The column's CHECK refuses text shorter than 20
         // characters, so an empty string would be a 422 where the person meant "remove it".
         bio: trimmedBio === "" ? null : trimmedBio,
@@ -137,6 +143,7 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
       setSaveState({ status: "saved" });
       setBioDraft(null);
       setLinkRowsDraft(null);
+      setIsChannelListedDraft(null);
       onSaved?.();
     } catch (saveError) {
       setSaveState({
@@ -285,6 +292,52 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
             Add a link
           </button>
         )}
+      </section>
+
+      {/*
+        THE LISTING OPT-IN.
+        
+        ⚠️ THE COPY IS THE FEATURE. This flag governs DISCOVERABILITY, not visibility: the channel
+        page is public either way and is already linked from every feed card, so the only thing it
+        changes is whether `GET /channels` announces the handle to a search engine. Wording that
+        implies unchecking it makes the channel private would be a promise the backend cannot keep,
+        and a creator who believed it would think they had hidden something they had not.
+
+        IT DEFAULTS OFF, and it is a checkbox rather than a pre-ticked convenience because a
+        directory of PEOPLE is not a directory of products — the cofounder directory made the same
+        argument first.
+
+        IT SAVES WITH THE REST rather than on click. Every other field on this screen is saved by
+        the Save button; a toggle that wrote immediately would be the one control on the page whose
+        state disagreed with the button next to it.
+      */}
+      <section>
+        <div className="flex items-start gap-3">
+          <input
+            id="channel-listing-opt-in"
+            type="checkbox"
+            checked={isChannelListed}
+            onChange={(event) => {
+              setIsChannelListedDraft(event.target.checked);
+              setSaveState({ status: "idle" });
+            }}
+            aria-describedby="channel-listing-opt-in-help"
+            className="mt-0.5 size-4 cursor-pointer"
+          />
+          <div>
+            <label
+              htmlFor="channel-listing-opt-in"
+              className="block cursor-pointer text-sm font-medium text-foreground"
+            >
+              List this channel in Qatoto&apos;s sitemap
+            </label>
+            <p id="channel-listing-opt-in-help" className="text-xs text-muted-foreground">
+              Lets search engines find your channel page. It stays public either way — this only
+              controls whether Qatoto points crawlers at it. Channels with no published video are
+              never listed.
+            </p>
+          </div>
+        </div>
       </section>
 
       <section>

@@ -779,7 +779,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Shipping profiles and carriers.",
       },
       {
-        // `route`, not `planned`: the page reads real data now. The other nine Studio entries stay
+        // `route`, not `planned`: the page reads real data now. The other eight Studio entries stay
         // `planned` — the data for those does not exist, and an honest placeholder is not a feature.
         kind: "route",
         label: "Analytics",
@@ -787,7 +787,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Reach and engagement across your videos, counted on Qatoto.",
       },
       {
-        // `route`, not `planned`: the page reads real data now. The other nine Studio entries stay
+        // `route`, not `planned`: the page reads real data now. The other eight Studio entries stay
         // `planned` — the data for those does not exist, and an honest placeholder is not a feature.
         kind: "route",
         label: "Comments",
@@ -807,7 +807,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Claims against your work, and yours against others.",
       },
       {
-        // `route`, not `planned`: the page writes real columns now. The other nine Studio entries
+        // `route`, not `planned`: the page writes real columns now. The other eight Studio entries
         // stay `planned` — the data for those does not exist, and an honest placeholder is not a
         // feature.
         //
@@ -827,10 +827,13 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Monetisation and payouts.",
       },
       {
-        kind: "planned",
+        // `route`, not `planned`: the page reads real data now. `GET /funding-rounds/mine` is the
+        // cross-project view the placeholder promised and nothing provided — R&D's funding surface
+        // is PER PROJECT. The writes stayed there deliberately; this page reads and links through.
+        kind: "route",
         label: "Funding",
-        pathPattern: "/studio/funding",
-        summary: "Raise against a project from Studio.",
+        href: "/studio/funding",
+        summary: "Every round across the ventures you founded.",
       },
       {
         kind: "planned",

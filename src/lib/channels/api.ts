@@ -7,7 +7,12 @@ import {
   type ActionResponse,
   type RequestOptions,
 } from "@/lib/http";
-import { ChannelProfileSchema, type ChannelProfile } from "@/lib/channels/schemas";
+import {
+  ChannelProfileSchema,
+  ListedChannelSchema,
+  type ChannelProfile,
+  type ListedChannel,
+} from "@/lib/channels/schemas";
 import { FeedVideoSchema, type FeedVideo } from "@/lib/feed/schemas";
 
 /**
@@ -51,4 +56,25 @@ export function listChannelVideos(
     FeedVideoSchema,
     options,
   );
+}
+
+/**
+ * `GET /channels` — the channels whose owners asked to be listed.
+ *
+ * ⚠️ OPT-IN, AND THE ABSENCE OF A CREATOR HERE MEANS NOTHING ABOUT THEM. `is_channel_listed`
+ * defaults false and the backend also requires at least one publicly-servable video, so this list
+ * is a subset of the public channels rather than an index of them. Do not build a "browse creators"
+ * surface on it and call it complete — it would silently omit everybody who never opted in.
+ *
+ * `nextCursor` rides as a SIBLING of `data`, like `listChannelVideos` above.
+ */
+export function listChannels(
+  filter: { readonly limit?: number; readonly cursor?: string | null } = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: ListedChannel[]; nextCursor: string | null }>> {
+  const queryString = buildQueryString({
+    limit: filter.limit,
+    cursor: filter.cursor ?? undefined,
+  });
+  return getCursorSiblingList(`/channels${queryString}`, ListedChannelSchema, options);
 }

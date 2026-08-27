@@ -185,6 +185,22 @@ export const FundingRoundSchema = z
   .strip();
 export type FundingRound = z.infer<typeof FundingRoundSchema>;
 
+/**
+ * `GET /funding-rounds/mine` — every round across every project the caller FOUNDS.
+ *
+ * WHY IT EXTENDS RATHER THAN REDECLARES. It is the same row plus `projectName`, and the note on
+ * `FundingRoundSchema` above states the rule this follows: a project-scoped read already knows
+ * whose rounds these are, a CROSS-PROJECT one does not. A slug is a URL, not a label — rendering
+ * `solar-cold-storage` as a heading would be showing an address where a name belongs.
+ *
+ * FOUNDER-SCOPED, matching the round writes exactly. A maintainer sees nothing here, which is the
+ * same answer they get from `POST …/funding-rounds`.
+ */
+export const MyFoundedFundingRoundSchema = FundingRoundSchema.extend({
+  projectName: z.string(),
+});
+export type MyFoundedFundingRound = z.infer<typeof MyFoundedFundingRoundSchema>;
+
 export const MILESTONE_STATUSES = ["planned", "in_progress", "done", "cancelled"] as const;
 export const MilestoneStatusSchema = z.enum(MILESTONE_STATUSES);
 export type MilestoneStatus = z.infer<typeof MilestoneStatusSchema>;

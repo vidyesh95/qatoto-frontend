@@ -51,13 +51,19 @@ already had the `(home)` count right at three, and `todo.md` did not.
   in `sitemap.ts`, and `/policies-and-safety` added to the sidebar's footer so it is reachable at
   all. None invents a capability the backend lacks; each is a directory or a hub over surfaces
   that already work.
-- **Nine under `(studio)`** render `studio-planned-page.tsx` — the roadmap summary verbatim, what
+- **Eight under `(studio)`** render `studio-planned-page.tsx` — the roadmap summary verbatim, what
   the page will do, and a link to the surface that does the job today WHERE ONE TRULY EXISTS. Six
   have no such link and say so rather than inventing one.
 
-    **They stay `kind: "planned"`, and that is the point.** All nine have no backend at all, so
-    explaining the absence well is not the same as filling it. A `route` on the roadmap is a claim
-    the capability exists.
+    **They stay `kind: "planned"`, and that is the point.** Explaining an absence well is not the
+    same as filling it — a `route` on the roadmap is a claim the capability exists.
+
+    ⚠️ **THE OLD VERSION OF THIS LINE SAID "ALL NINE HAVE NO BACKEND AT ALL", AND THAT WAS WRONG
+    ABOUT `funding`.** The R&D funding domain is complete — rounds, pledges, backers, milestones,
+    open/close/edit — and what `/studio/funding` actually named was a missing cross-project READ,
+    not a missing domain. It graduated. Of the eight left, five genuinely need a new domain
+    (`subtitles`, `copyright`, `pitches`, `team`, `earn`); do not inherit "no backend at all" for
+    the other three without checking.
 
 - **Two graduated: `/studio/analytics` and `/studio/comments`.** They were the only two of the
   twelve whose data already existed and simply had no reader — `creator_stats.total_view_count`

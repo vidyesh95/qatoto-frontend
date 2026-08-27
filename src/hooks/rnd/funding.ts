@@ -21,6 +21,7 @@ import {
   deleteFundingRound,
   deleteMilestone,
   getPledgeOptions,
+  listMyFoundedFundingRounds,
   listMyPledges,
   listRoundBackers,
   openFundingRound,
@@ -80,6 +81,19 @@ export function useMyPledgesQuery() {
   return useQuery({
     queryKey: rndKeys.myPledges(),
     queryFn: async () => unwrap(await listMyPledges()),
+  });
+}
+
+/**
+ * `GET /funding-rounds/mine` — the cross-project rounds list behind `/studio/funding`.
+ *
+ * THE PAGE IS IN THE KEY, so paging refetches rather than serving page 1 from cache under a new
+ * page number. Server-side paging is the house rule; nothing here slices a fetched array.
+ */
+export function useMyFoundedFundingRoundsQuery(page: number) {
+  return useQuery({
+    queryKey: rndKeys.myFoundedRounds(page),
+    queryFn: async () => unwrap(await listMyFoundedFundingRounds({ page })),
   });
 }
 

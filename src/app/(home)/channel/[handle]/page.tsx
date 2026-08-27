@@ -10,23 +10,21 @@ import { withSentinelValues } from "@/lib/static-params";
 export const instant = false;
 
 /**
- * NOTHING REAL TO PRERENDER, and unlike `/talent/[handle]` that is a gap rather than a policy.
+ * NOTHING REAL TO PRERENDER, and that is now a DECISION rather than a gap.
  *
- * This page IS public — it is what every feed card links to, and a crawler should index it. But
- * there is no public handle-enumeration read anywhere on the backend to build a list from:
- * `/handles/availability` answers about the CALLER's own handle and is `requireAuth`. So the
- * route declares the sentinel `cacheComponents` requires (an empty `generateStaticParams` fails
- * the build) and renders every real handle on demand.
+ * This page IS public — it is what every feed card links to, and a crawler should index it. It used
+ * to be impossible to enumerate: there was no public handle read anywhere on the backend, since
+ * `/handles/availability` answers about the CALLER's own handle and is `requireAuth`.
  *
- * IT IS ALSO WHY THE CHANNEL PAGE IS NOT IN `sitemap.ts`. That file refuses invented entries as
- * firmly as it refuses invented dates, and a list of handles is exactly what it does not have.
- * Recorded in todo.md rather than papered over.
+ * ⚠️ THAT IS NO LONGER TRUE. `GET /channels` exists and returns the handles whose owners opted into
+ * being listed, and `sitemap.ts` walks it. The sentinel STAYS anyway: prerendering channels at build
+ * time freezes a page whose content changes every time its creator publishes, and the list is opt-in
+ * so it would prerender a subset while every other handle rendered on demand — two behaviours for
+ * one route, decided by somebody else's checkbox. Rendering all of them on demand is one behaviour.
  *
- * THE `generateMetadata` OBJECTION IS NOW REMOVED RATHER THAN ACCEPTED. It used to read: a second
- * fetch of a route the page already reads is not worth a title. That was true while the read went
- * out `cache: "no-store"` — which it does, because the profile carries the viewer's own
- * subscription state — since Next does not memoize those. `loadChannelProfileOnce` wraps it in
- * React's `cache()`, so the metadata and the page now share ONE round trip and the title is free.
+ * The two claims this comment used to make — "there is no public handle-enumeration read" and "it is
+ * also why the channel page is not in `sitemap.ts`" — are both retired. The page is in the sitemap
+ * when its creator asks to be.
  */
 export function generateStaticParams() {
   return withSentinelValues([]).map((handle) => ({ handle }));
