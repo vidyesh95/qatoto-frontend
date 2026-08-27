@@ -1,96 +1,18 @@
 # Remaining work — a register, not the inventory
 
-Things found while building something else, deliberately **not** fixed at the time, written
-here so they are not lost. Each entry names the file that proves it, so none of them has to be
-taken on trust.
+Things found while building something else, deliberately **not** fixed at the time, written here so
+they are not lost. Each entry names the file that proves it, so none has to be taken on trust.
 
-This is a short register. It is not a product roadmap — `src/lib/roadmap/site-roadmap.ts` is
-the map of surfaces, and `todo.md` is the store-wiring log.
+This is a short register — one entry short, at the moment, and that is the honest state rather than
+a sign the file needs padding. It is not a product roadmap: `src/lib/roadmap/site-roadmap.ts` is the
+map of surfaces, and `todo.md` is the open-work log.
 
----
-
-## 1. ~~The sidebar has no session gating at all~~ — STALE, this shipped
-
-**Checked against the file on 2026-08-27: none of the below is true any more.**
-`sidebar.tsx` imports `useViewerSignedIn`, takes an `isViewerSignedIn` prop describing what the
-SERVER saw, filters every section on a per-item `requiresSession` flag and suppresses a section
-whose items were all filtered out. `sidebar-slot.tsx` is the server wrapper that supplies the
-boolean — and its own header narrates fixing precisely the defect described here, so this entry
-outlived its fix by some margin. "Sign out" is not in the sidebar at all; a destination list holds
-no actions, and it lives in the account menu.
-
-The original text, kept because the REASONING below about not hoisting the cookie read is still
-correct and still worth following:
-
-> `src/components/home/layout/sidebar.tsx` contains no `useSession`, no `useViewerSignedIn` and
-> no `hasCallerSession` — the whole file, every section. So an anonymous visitor is shown
-> **Your account**, **Cart**, **Orders and returns**, **Listings**, **Sales** and **Wishlist**
-> as though they were theirs.
-
-**This is why "Sign out" rendering to signed-out visitors went unnoticed** for as long as that
-row existed: there was nothing anywhere in the file that could have hidden it.
-
-The fix already has a precedent to copy. `src/components/home/layout/navbar-account-slot.tsx`
-awaits `hasCallerSession()` in a small server wrapper and passes the boolean down, so only that
-subtree suspends and the layout stays synchronous — its header explains why the read must be
-contained rather than hoisted into `(home)/layout.tsx`. The sidebar needs the same shape, plus
-`useViewerSignedIn` on the client half so the first client render matches the server's.
-
-Note what the fix must **not** do: awaiting the cookie in the layout would turn every
-prerendered route in `(home)` from `◐ (Partial Prerender)` into `ƒ (Dynamic)`.
-
----
-
-## 2. ~~Sixteen routes are stubs that render a bare `<h1>`~~ — SHIPPED
-
-`rg -l "return <h1>" src/app` now finds **nothing**. It was fifteen, not sixteen: this file
-already had the `(home)` count right at three, and `todo.md` did not.
-
-- **Three under `(home)`** — `/customer-service`, `/advertise-with-us`, `/policies-and-safety` —
-  are real pages now: authored content, `noindex` removed, `kind: "route"` on the roadmap, listed
-  in `sitemap.ts`, and `/policies-and-safety` added to the sidebar's footer so it is reachable at
-  all. None invents a capability the backend lacks; each is a directory or a hub over surfaces
-  that already work.
-- **Eight under `(studio)`** render `studio-planned-page.tsx` — the roadmap summary verbatim, what
-  the page will do, and a link to the surface that does the job today WHERE ONE TRULY EXISTS. **Six
-  carry such a link; two do not** — `pitches` and `subtitles`, which have no partial home anywhere
-  and say so rather than inventing one.
-
-    ⚠️ **THIS LINE SAID "SIX HAVE NO SUCH LINK", AND HAD BEEN WRONG SINCE BEFORE `funding`
-    GRADUATED.** The real count was three-without, and the audit that found it also found
-    `/studio/learn` offering nothing while `/how-qatoto-works` covered half its brief — so it now
-    links there, claiming the half that is true. Counted by grepping `insteadFor` across the eight
-    pages rather than by reading the previous number, which is how the old one survived two edits.
-
-    **They stay `kind: "planned"`, and that is the point.** Explaining an absence well is not the
-    same as filling it — a `route` on the roadmap is a claim the capability exists.
-
-    ⚠️ **THE OLD VERSION OF THIS LINE SAID "ALL NINE HAVE NO BACKEND AT ALL", AND THAT WAS WRONG
-    ABOUT `funding`.** The R&D funding domain is complete — rounds, pledges, backers, milestones,
-    open/close/edit — and what `/studio/funding` actually named was a missing cross-project READ,
-    not a missing domain. It graduated. Of the eight left, five genuinely need a new domain
-    (`subtitles`, `copyright`, `pitches`, `team`, `earn`); do not inherit "no backend at all" for
-    the other three without checking.
-
-- **Two graduated: `/studio/analytics` and `/studio/comments`.** They were the only two of the
-  twelve whose data already existed and simply had no reader — `creator_stats.total_view_count`
-  and `published_video_count` were maintained by three services and selected NOWHERE, and the
-  creator-may-delete-a-comment-on-their-own-video authorization had been correct all along with
-  no route to list those comments. Both are `kind: "route"` now. See `todo.md` §25, including the
-  two `published_video_count` drift sources they exposed — both fixed, with a reconciler.
-
-**`/your-account` and `/settings` are GONE, and are not coming back** — they were the cheap
-two named here, they were built as seventeen routes across two nested trees, and they were then
-deleted. The entry's premise was wrong: the 8 identity panels and 3 preference panels were not
-"trapped" in the 360px account dropdown, they were already the dropdown's contents, so the two
-route trees became a second list of the same rows maintained in parallel. What replaced them is
-a sub-panel of that dropdown — `components/home/account/menus/your-account-menu.tsx` — which
-reads the account rather than commanding it: label on the left, current value on the right.
-The preference persistence Part 1 added survives. See `todo.md` for the full reversal, including
-why the Phone number row is permanently "Not set" until the backend grows a phone column.
-
-Note the count: this heading said "Seventeen" and then listed six routes under a bullet
-labelled "Five", so the real number before that work was **eighteen**. It is sixteen now.
+> **Pruned 2026-08-27.** §1 (sidebar session gating), §2 (sixteen stub routes) and §4 (the Playwright
+> sidebar fixture) all shipped or were fixed, so they are gone — this file is for what is REMAINING,
+> and an entry describing solved work is one a reader can act on wrongly. Nothing was deleted until
+> its reasoning was confirmed to survive elsewhere: §1's argument against hoisting the cookie read
+> into `(home)/layout.tsx` is in `sidebar-slot.tsx:4-5` verbatim, including the consequence that
+> matters ("would read cookies above every route in the group and turn all of them `ƒ (Dynamic)`").
 
 ---
 
@@ -114,27 +36,3 @@ Two backend behaviours worth knowing before writing another harness, both found 
 rather than by reading a doc: only **one live invite per person** is allowed (a second is a
 `409`), and `POST /notifications/read` is idempotent — re-marking the same id returns
 `markedCount: 0` rather than an error.
-
----
-
-## 4. ~~The Playwright sidebar page object has drifted~~ — FIXED
-
-`tests/pages/sidebar.po.ts`'s `SIDEBAR_ROUTES` listed four routes that do not exist: `/create`,
-`/ai`, `/your-videos`, `/your-sales`. Corrected against `NAVIGATION_CONFIG`: **`Create` → `/studio`**,
-**`Your sales` → `Sales` at `/sales`**, and **`AI` and `Your videos` removed** — the sidebar has
-never had an AI row, and a creator's own videos live under `/studio`.
-
-**A SECOND DRIFT WAS FOUND WHILE FIXING THE FIRST, and it was the larger one.** The spec's
-`primaryLabels` read `["Anime", "Store", "AI", "Library", "Cart"]`, and **three of those five could
-never pass**: `AI` does not exist, and `Library` and `Cart` are `requiresSession: true`, so
-`sidebar.tsx` filters them out entirely for the fresh context these tests run in. Every label in
-that list must be visible to a signed-out visitor; it now reads `["Anime", "Store", "R&D",
-"Advertise with us", "Customer service"]`. **The assertions themselves are unchanged** — only the
-label list moved, which is what the permission to touch this file covered.
-
-Session-gated entries stay in `SIDEBAR_ROUTES` with a marker comment, because the label → route
-mapping is still correct; what is not safe is putting one in a signed-out spec's label list.
-
-**The footer gap is closed too.** `FOOTER_ROUTES` was missing `Roadmap` and `Policies and Safety`;
-both are now in the map by explicit authorisation. **Fixture data only** — the spec's `footerLabels`
-list is untouched, so no new test runs; the map simply stops disagreeing with the sidebar it mirrors.
