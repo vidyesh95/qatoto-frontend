@@ -807,10 +807,18 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Claims against your work, and yours against others.",
       },
       {
-        kind: "planned",
+        // `route`, not `planned`: the page writes real columns now. The other nine Studio entries
+        // stay `planned` — the data for those does not exist, and an honest placeholder is not a
+        // feature.
+        //
+        // THE SUMMARY NARROWED WITH THE FLIP. It used to promise "Channel branding and layout",
+        // and what shipped is the description and the links — no banner, no layout control. A
+        // roadmap line that keeps describing the larger thing is how a `route` quietly becomes a
+        // claim again.
+        kind: "route",
         label: "Customise",
-        pathPattern: "/studio/customize",
-        summary: "Channel branding and layout.",
+        href: "/studio/customize",
+        summary: "Your channel description and links.",
       },
       {
         kind: "planned",

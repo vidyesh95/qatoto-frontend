@@ -52,6 +52,18 @@ const ADMIN_NAVIGATION_ITEMS: AdminNavItem[] = [
     inactiveIcon: "/icons/flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    // A THIRD `moderate_content` QUEUE, and separate from the two above for the same kind of
+    // reason they are separate from each other: the SUBJECT differs. Review decides whether a
+    // video may go out; Video reports decide whether a live video comes down; this decides
+    // whether a person's channel DESCRIPTION comes down. The lever here reaches the bio and
+    // links and nothing else — not their videos and not their account — so mixing it into the
+    // video queue would blur what a moderator is actually about to do.
+    href: "/admin/profile-reports",
+    label: "Profile reports",
+    activeIcon: "/icons/report_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/report_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     href: "/admin/categories",
     label: "Categories",
     activeIcon: "/icons/category_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",

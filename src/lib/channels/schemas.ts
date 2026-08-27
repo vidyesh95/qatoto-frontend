@@ -25,7 +25,28 @@ import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * and neither number describes anything the creator has withdrawn.
  *
  * `joinedAt` is `user.created_at`, public for the first time on this read.
+ *
+ * `bio` NULL AND `links` EMPTY MEAN TWO THINGS AT ONCE — unset, or hidden by a moderator — and the
+ * wire deliberately does not distinguish them. A page that said "this description was hidden" would
+ * hand a reporter a receipt and the subject a notification, neither of which this surface owes
+ * anyone. Render the absence, never the reason.
  */
+/**
+ * One external link a creator published.
+ *
+ * The backend refuses anything that is not `https://` with a CHECK constraint, so this schema does
+ * not re-validate the scheme — but the renderer still must not trust it blindly: it is user-supplied
+ * text on a public page, so the anchor carries `rel="noopener noreferrer nofollow ugc"`.
+ */
+export const ProfileLinkSchema = z
+  .object({
+    label: z.string(),
+    url: z.string(),
+  })
+  .strip();
+
+export type ProfileLink = z.infer<typeof ProfileLinkSchema>;
+
 export const ChannelProfileSchema = z
   .object({
     creatorId: z.string(),
@@ -33,6 +54,8 @@ export const ChannelProfileSchema = z
     name: z.string(),
     imageUrl: z.string().nullable(),
     subscriberCount: z.number().int(),
+    bio: z.string().nullable(),
+    links: z.array(ProfileLinkSchema),
     publicVideoCount: z.number().int(),
     publicViewCount: z.number().int(),
     joinedAt: IsoDateTimeSchema,

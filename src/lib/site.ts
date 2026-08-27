@@ -35,10 +35,14 @@ export const SITE_DESCRIPTION =
  * controls that actually send someone there. A policy promising one mailbox while the button opens
  * another is worse than having no button.
  *
- * THIS ADDRESS HAS TO BE REAL AND MONITORED. Every request control in this app is a mailto, because
- * the Express backend has no deletion or export endpoint yet — `PATCH /users/me`, `/users/me/photo`
- * and `/users/me/handle` are its whole write surface. Under GDPR Art. 12 a manual channel is a valid
- * way to answer a data-subject request; an unread inbox is not.
+ * THIS ADDRESS HAS TO BE REAL AND MONITORED. Under GDPR Art. 12 a manual channel is a valid way to
+ * answer a data-subject request; an unread inbox is not.
+ *
+ * THE CLAIM THAT USED TO SIT HERE — that the backend has no deletion or export endpoint and that
+ * `PATCH /users/me`, `/photo` and `/handle` are its whole write surface — IS NO LONGER TRUE on
+ * either count. `POST /users/me/deletion-request` and `POST|GET /users/me/export` both ship, and
+ * `/users/me/channel-profile` joined the write surface with the channel description. The mailbox is
+ * still the residual-rights channel and the fallback when a flag is off, which is why it stays.
  *
  * IT WAS `privacy@qatoto.com` UNTIL 2026-08-19 AND THAT MAILBOX DOES NOT EXIST, which made every
  * control routed through it a more elaborate dead stub than the inert button it replaced. It is the

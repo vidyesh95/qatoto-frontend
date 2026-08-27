@@ -18,6 +18,14 @@ export const accountKeys = {
   linkedAccounts: () => ["account", "linked-accounts"] as const,
 
   /**
+   * The signed-in creator's own channel description and links.
+   *
+   * Same no-user-id rule as its neighbours: the session is the user, and an id held here would
+   * serve the previous person's description after a switch.
+   */
+  channelProfile: () => ["account", "channel-profile"] as const,
+
+  /**
    * The signed-in user's WebAuthn passkeys. Same no-user-id rule as above — the session is the
    * user, and a key that named one would serve the previous person's passkeys after a switch.
    */

@@ -29,6 +29,7 @@ export type AccountEditor =
   | "full-name"
   | "profile-photo"
   | "handle"
+  | "channel-profile"
   | "phone-number"
   | "link-google"
   | "link-github"
@@ -132,6 +133,17 @@ export function YourAccountPanel({ onBack, onOpenEditor }: YourAccountPanelProps
       icon: "/icons/alternate_email_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       value: session?.user.handle ? `@${session.user.handle}` : "Not set",
       editor: "handle",
+    },
+    {
+      // NO VALUE READ FROM A QUERY HERE. Every other row above reads the SESSION, which already
+      // holds what it needs; the description and links live behind their own endpoint, and firing
+      // that read just to decide between "Set" and "Not set" would put a request on the critical
+      // path of opening this list. The editor itself is where the current text belongs.
+      kind: "editor",
+      label: "Channel profile",
+      icon: "/icons/link_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      value: "Description and links",
+      editor: "channel-profile",
     },
     {
       // STATIC ON PURPOSE. There is no endpoint that changes the address an account signs in with —

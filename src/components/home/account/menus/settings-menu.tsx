@@ -12,6 +12,7 @@ import {
 import { FullNamePanel } from "@/components/home/account/panels/full-name-panel";
 import { ProfilePhotoPanel } from "@/components/home/account/panels/profile-photo-panel";
 import { HandlePanel } from "@/components/home/account/panels/handle-panel";
+import { ChannelProfilePanel } from "@/components/home/account/panels/channel-profile-panel";
 import { SocialLinkPanel } from "@/components/home/account/panels/social-link-panel";
 import { EmailCredentialPanel } from "@/components/home/account/panels/email-credential-panel";
 import { ChangePasswordPanel } from "@/components/home/account/panels/change-password-panel";
@@ -170,6 +171,9 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       case "handle":
         return <HandlePanel onBack={handleEditorBack} />;
 
+      case "channel-profile":
+        return <ChannelProfilePanel onBack={handleEditorBack} />;
+
       case "phone-number":
         return (
           <PhoneNumberPanel
@@ -267,6 +271,11 @@ export function SettingsPanel({ onBack, onSignOut }: SettingsPanelProps) {
       label: "Set handle",
       icon: "/icons/alternate_email_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       onClick: () => openEditorFromList("handle"),
+    },
+    {
+      label: "Channel profile",
+      icon: "/icons/link_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      onClick: () => openEditorFromList("channel-profile"),
     },
     {
       label: session?.user.phoneNumberVerified ? "Phone number verified" : "Set phone number",

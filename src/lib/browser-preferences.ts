@@ -15,10 +15,11 @@
 // A stored blob from before that removal still carries the three dead keys; see the schema below
 // for why that is a non-event.
 //
-// THEY ARE STORED ON THE DEVICE AND SYNCED NOWHERE. The backend has no preferences endpoint and is
-// not getting one for these — `PATCH /users/me`, `/users/me/photo`, `/users/me/handle` and
-// `GET /users/me/linked-accounts` are the whole `/users` write surface. Each panel's own copy
-// already promises this ("Setting applies to this browser only").
+// THEY ARE STORED ON THE DEVICE AND SYNCED NOWHERE, and the backend is not getting an endpoint for
+// them. The list of `/users` writes that used to sit here has grown — deletion requests, exports and
+// `/users/me/channel-profile` have all joined it since — so naming it was always going to rot. What
+// has not changed is the reason: these three are device preferences, not account state, and each
+// panel's own copy already promises it ("Setting applies to this browser only").
 //
 // NEITHER OF THE THREE IS A TRUST BOUNDARY, and `countryCode` is the one worth saying twice:
 // CLAUDE.md names the browse-country selector as a DISPLAY PREFERENCE ONLY. The backend must never

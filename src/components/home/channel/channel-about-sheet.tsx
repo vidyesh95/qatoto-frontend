@@ -13,18 +13,22 @@
 // predicate that selects the videos on this page, so neither can contradict what is on screen.
 // Do not "simplify" them back to the cached figures.
 //
-// NO DESCRIPTION OR LINKS ROW YET, and their absence is a missing COLUMN rather than a missing
-// component: `user` carries no bio and there is no link table. They are the next part of this
-// work, and this file renders nothing in their place rather than an empty heading.
+// THE DESCRIPTION AND LINKS come from `user.bio` and `user_profile_link`, and both arrive already
+// gated: a moderator who hides a profile makes the backend send null and an empty array, so this
+// file needs no moderation branch of its own. It also cannot tell "unset" from "hidden", which is
+// deliberate — see `ChannelProfileDetails`.
 //
-// NO REPORT CONTROL YET EITHER. There is no user-level report anywhere on the backend — only
-// `video_content_report`, which targets a video. A button here would be a claim the capability
-// exists, which is the rule the ten planned Studio routes are held to.
+// THE REPORT CONTROL REPORTS THE PROFILE, NOT THE PERSON, and the distinction is the whole design.
+// Upholding one hides this channel's description and links; it does not touch the name, the videos
+// or the account. The sheet's copy says so, and its reasons are scoped to what that lever can
+// actually do.
 
 import { useState } from "react";
 
 import Image from "next/image";
 
+import ChannelProfileDetails from "@/components/home/channel/channel-profile-details";
+import ReportProfileSheet from "@/components/home/channel/report-profile-sheet";
 import ModalSheet from "@/components/home/shared/modal-sheet";
 import { ShareSheet } from "@/components/home/watch/share-sheet";
 import type { ChannelProfile } from "@/lib/channels/schemas";
@@ -80,12 +84,15 @@ export default function ChannelAboutSheet({
   readonly onClose: () => void;
 }) {
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
+  const [isReportSheetOpen, setIsReportSheetOpen] = useState(false);
   const channelFacts = buildChannelFacts(profile);
 
   return (
     <ModalSheet title={profile.name} onClose={onClose}>
       <div className="px-4 pb-5">
         <p className="pb-3 text-sm text-muted-foreground">@{profile.handle}</p>
+
+        <ChannelProfileDetails bio={profile.bio} links={profile.links} />
 
         <ul className="flex flex-col gap-3">
           {channelFacts.map((channelFact) => (
@@ -101,7 +108,7 @@ export default function ChannelAboutSheet({
           ))}
         </ul>
 
-        <div className="mt-5">
+        <div className="mt-5 flex flex-wrap gap-3">
           <button
             type="button"
             onClick={() => setIsShareSheetOpen(true)}
@@ -114,6 +121,22 @@ export default function ChannelAboutSheet({
               alt=""
             />
             Share channel
+          </button>
+          {/* Rendered for signed-out visitors too, like `FocusButton` on the page behind this: the
+              backend answers with its own refusal, which is what tells somebody why nothing
+              happened. Hiding it would just look broken. */}
+          <button
+            type="button"
+            onClick={() => setIsReportSheetOpen(true)}
+            className="flex cursor-pointer items-center gap-2 rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground outline -outline-offset-1 outline-border"
+          >
+            <Image
+              src="/icons/flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+              width={18}
+              height={18}
+              alt=""
+            />
+            Report profile
           </button>
         </div>
       </div>
@@ -132,6 +155,14 @@ export default function ChannelAboutSheet({
           onClose={() => setIsShareSheetOpen(false)}
           shareUrl={`/channel/${profile.handle}`}
           videoTitle={profile.name}
+        />
+      )}
+
+      {isReportSheetOpen && (
+        <ReportProfileSheet
+          reportedUserId={profile.creatorId}
+          displayName={profile.name}
+          onClose={() => setIsReportSheetOpen(false)}
         />
       )}
     </ModalSheet>
