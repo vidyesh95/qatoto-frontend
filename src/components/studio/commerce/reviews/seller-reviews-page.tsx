@@ -20,9 +20,13 @@
 //     organization rather than the filtered page, which is what stops the counts renumbering as the
 //     chips are clicked.
 //
-// THE CURSOR IS SORT-SCOPED. Its sort key is encoded into the cursor itself, so carrying one across
-// a change of sort is a 422 rather than a reset — which is why changing any filter here starts a new
-// read rather than paging the old one.
+// ⚠️ THE CURSOR IS SORT-SCOPED. Its sort key is encoded into the cursor ITSELF, so carrying one
+// across a change of sort is a **422**, not a silent reset. That is why `cursor` lives in state
+// beside `sort` and `isUnrepliedOnly` and every change of either CLEARS it — paging forward and
+// changing a filter are different actions and must never share a token.
+//
+// This page used to show the first page only and say so, because paging safely needs exactly that
+// reset. It pages now.
 
 import { useState } from "react";
 
@@ -35,11 +39,23 @@ import type { ReviewSort } from "@/lib/store/products.schemas";
 export default function SellerReviewsPage() {
   const [sort, setSort] = useState<ReviewSort>("recent");
   const [isUnrepliedOnly, setIsUnrepliedOnly] = useState(false);
+  /** Null is page one. Cleared by every filter change — see the header for why that is mandatory. */
+  const [cursor, setCursor] = useState<string | null>(null);
 
-  // No cursor is carried across a filter change — see the header. Each change is a fresh read.
+  function changeSort(nextSort: ReviewSort) {
+    setSort(nextSort);
+    setCursor(null);
+  }
+
+  function changeUnrepliedOnly(nextUnrepliedOnly: boolean) {
+    setIsUnrepliedOnly(nextUnrepliedOnly);
+    setCursor(null);
+  }
+
   const inboxQuery = useSellerReviewInboxQuery({
     sort,
     ...(isUnrepliedOnly ? { unreplied: true } : {}),
+    ...(cursor === null ? {} : { cursor }),
   });
 
   const page = inboxQuery.data?.success ? inboxQuery.data.data : null;
@@ -61,7 +77,7 @@ export default function SellerReviewsPage() {
               key={reviewSort}
               type="button"
               aria-pressed={sort === reviewSort}
-              onClick={() => setSort(reviewSort)}
+              onClick={() => changeSort(reviewSort)}
               className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                 sort === reviewSort
                   ? "bg-primary text-primary-foreground"
@@ -76,7 +92,7 @@ export default function SellerReviewsPage() {
           <input
             type="checkbox"
             checked={isUnrepliedOnly}
-            onChange={(changeEvent) => setIsUnrepliedOnly(changeEvent.target.checked)}
+            onChange={(changeEvent) => changeUnrepliedOnly(changeEvent.target.checked)}
             className="size-4 cursor-pointer accent-primary"
           />
           <span className="text-sm text-foreground">Only ones you have not answered</span>
@@ -137,11 +153,33 @@ export default function SellerReviewsPage() {
             </ul>
           )}
 
-          {page.page.hasMore && (
-            <p className="mt-4 text-xs text-muted-foreground">
-              Showing the first {page.items.length}. Narrow the filters to see further back — paging
-              deeper is not wired here yet.
-            </p>
+          {/*
+            FORWARD-ONLY, and that is the keyset's shape rather than a shortcut. A keyset cursor
+            points at one row; there is no "previous" token to hold without stacking them, and a
+            page-number control would need a COUNT this route does not return. "Start over" is the
+            honest way back, and it is exactly the reset every filter change performs.
+          */}
+          {(page.page.hasMore || cursor !== null) && (
+            <div className="mt-4 flex items-center gap-3">
+              {cursor !== null && (
+                <button
+                  type="button"
+                  onClick={() => setCursor(null)}
+                  className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs"
+                >
+                  Start over
+                </button>
+              )}
+              {page.page.hasMore && page.page.nextCursor !== null && (
+                <button
+                  type="button"
+                  onClick={() => setCursor(page.page.nextCursor)}
+                  className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs"
+                >
+                  Show older
+                </button>
+              )}
+            </div>
           )}
         </>
       )}

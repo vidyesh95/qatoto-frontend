@@ -28,6 +28,7 @@ import { useState } from "react";
 
 import Link from "next/link";
 
+import { API_BASE_URL } from "@/lib/api";
 import DefinitionList, {
   type DefinitionListItem,
 } from "@/components/commerce/shared/definition-list";
@@ -231,6 +232,7 @@ function QuoteBody({
               <div className="space-y-4 px-4 pb-4 lg:px-6">
                 <DefinitionList items={terms} />
                 {revision !== null && <MoneyBreakdown revision={revision} />}
+                {revision !== null && <RevisionDocuments revision={revision} />}
 
                 {isRelationPending && (
                   <p className="text-xs leading-4 text-muted-foreground">
@@ -614,4 +616,49 @@ function ProviderQuoteActions({
       )}
     </section>
   );
+}
+
+/**
+ * The documents the provider attached to THIS revision.
+ *
+ * ⚠️ THE HREF IS A PATH ON THIS API, NOT A LINK TO THE BYTES. `GET /commerce/documents/:documentId`
+ * decrypts and streams behind an access check it re-runs on every request; the object key never
+ * reaches a client and no URL here outlives the access it was issued under.
+ *
+ * ABSENT RATHER THAN AN EMPTY HEADING when there are none — a "Documents" heading over nothing
+ * reads as a load failure.
+ */
+function RevisionDocuments({ revision }: { revision: QuoteRevision }) {
+  if (revision.documents.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="text-sm leading-5 font-medium text-foreground">Documents</h3>
+      <ul className="flex flex-col gap-1">
+        {revision.documents.map((attachedDocument) => (
+          <li key={attachedDocument.documentId}>
+            <a
+              href={`${API_BASE_URL}/commerce/documents/${encodeURIComponent(attachedDocument.documentId)}`}
+              target="_blank"
+              rel="noopener"
+              className="text-sm leading-5 text-foreground underline"
+            >
+              {/* Names are encrypted at rest; null means undecryptable, never "unnamed". */}
+              {attachedDocument.fileName ?? "Untitled document"}
+            </a>
+            <span className="ml-2 text-xs leading-4 text-muted-foreground">
+              {formatDocumentSizeLabel(attachedDocument.fileByteSize)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** A size hint a reader can weigh before clicking, not a checksum. */
+function formatDocumentSizeLabel(byteSize: number): string {
+  if (byteSize < 1024) return `${String(byteSize)} B`;
+  if (byteSize < 1024 * 1024) return `${(byteSize / 1024).toFixed(0)} KB`;
+  return `${(byteSize / (1024 * 1024)).toFixed(1)} MB`;
 }

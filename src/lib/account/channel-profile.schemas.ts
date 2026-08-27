@@ -33,14 +33,18 @@ export const ChannelProfileDraftSchema = z
      */
     profileModerationState: z.enum(["visible", "hidden_by_moderator"]),
     /**
-     * Whether this creator has asked to be listed in Qatoto's public sitemap.
+     * Whether this creator's channel page is announced in Qatoto's public sitemap.
      *
      * DISCOVERABILITY, NOT VISIBILITY, and the editor's copy has to say so. The channel page is
      * public either way — every feed card links to it — and this only decides whether
      * `GET /channels` announces the handle to a crawler. Copy implying that switching it off makes
      * a channel private would be a promise the backend cannot keep.
      *
-     * DEFAULTS FALSE server-side: a directory of PEOPLE is not a directory of products.
+     * DEFAULTS TRUE server-side, so this control is an opt-OUT. It shipped as an opt-in and was
+     * reversed: indexing a page that is already public and already linked from every feed card
+     * reveals nothing new, and the opt-in produced zero listed channels because nobody ticks a box
+     * they are never shown. Keeping the control at all is stricter than YouTube, which indexes
+     * channel pages by default and offers no toggle.
      */
     isChannelListed: z.boolean(),
   })

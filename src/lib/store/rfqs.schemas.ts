@@ -463,10 +463,14 @@ export interface RfqServiceLineInput {
  * `desiredDeliveryStartsAt` AND `desiredDeliveryEndsAt` MUST BE SET TOGETHER or both omitted — the backend
  * `.refine()`s exactly that, so a half-filled window is a 422 rather than an open-ended one.
  *
- * NO `documentIds`. The field exists on the contract, but every id must already name a
- * `commerce_encrypted_document` row the buyer's organization owns, and there is no route by which a buyer
- * creates one. Sending an invented id is `DOCUMENT_NOT_OWNED`. So the composer offers no attachment step
- * and this type omits the field rather than exposing one that cannot be filled.
+ * `documentIds` IS HERE NOW. It always existed on the backend contract and this type used to omit it,
+ * on the correct reasoning at the time: every id must name a `commerce_encrypted_document` the buyer's
+ * organization owns, and there was no route by which a buyer created one. `POST /commerce/documents`
+ * closed that, so the field is fillable and the composer has an attachment step.
+ *
+ * ⚠️ EVERY ID MUST NAME AN `available` DOCUMENT. A freshly uploaded one is `pending_scan` and is
+ * refused with `DOCUMENT_NOT_OWNED` — which is why the upload answers 202 and why the picker offers
+ * only what `GET /commerce/documents` returns.
  *
  * Requires an `Idempotency-Key`.
  */
@@ -478,6 +482,8 @@ export interface CreateDraftRfqInput {
   readonly desiredDeliveryStartsAt?: string;
   readonly desiredDeliveryEndsAt?: string;
   readonly destinationAddressId?: string;
+  /** Ids of the buyer's own scanned trade attachments. At most 50. */
+  readonly documentIds?: readonly string[];
   readonly destinationCountryCode?: string;
   readonly destinationLocality?: string;
   readonly settlementCurrency: string;

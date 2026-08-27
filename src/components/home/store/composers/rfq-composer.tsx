@@ -18,14 +18,20 @@
 //     when this body is built, so there is no id to point at — `linkedProductLineSiblingOrder` is an index
 //     into this same request.
 //
-// THERE IS NO ATTACHMENT STEP, and that is a backend gap rather than a design choice. `documentIds` exists on
-// the contract, but every id must already name a `commerce_encrypted_document` row the buyer's organization
-// owns and there is no route by which a buyer creates one. An upload control here could only produce ids the
-// server answers `DOCUMENT_NOT_OWNED` to. Filed as a backend ask; the review step says it plainly.
+// THE ATTACHMENT STEP EXISTS NOW, and the comment that used to sit here — "there is no attachment step, and
+// that is a backend gap" — was true when written and stopped being true when `POST /commerce/documents`
+// shipped with encryption, scanning and an audit trail. `documentIds` was always on the contract; what was
+// missing was a route by which a buyer created a document to point at.
+//
+// ⚠️ AN UPLOAD IS NOT AN ATTACHMENT. That route answers 202: the file is stored `pending_scan` and only
+// becomes attachable once an async virus scan clears it. `TradeDocumentPicker` owns that rule — it lists
+// only scanned documents, so anything selectable here is something the save will accept.
 //
 // IDEMPOTENCY KEY MINTED ONCE, on mount, held in state. A fresh key per retry is a second draft RFQ.
 
 import { useState } from "react";
+
+import TradeDocumentPicker from "@/components/commerce/trade-document-picker";
 
 import Link from "next/link";
 
@@ -63,6 +69,7 @@ const COMPOSER_STEPS = [
   { id: "delivery", label: "Delivery" },
   { id: "goods", label: "Goods" },
   { id: "services", label: "Services" },
+  { id: "documents", label: "Documents" },
   { id: "review", label: "Review" },
 ] as const;
 
@@ -95,6 +102,8 @@ interface RfqComposerDraft {
   destinationLocality: string;
   goodsLines: GoodsLineDraft[];
   serviceLines: ServiceLineDraft[];
+  /** Ids of already-uploaded, already-SCANNED attachments. See the header on why that matters. */
+  attachedDocumentIds: string[];
 }
 
 const EMPTY_COMPOSER_DRAFT: RfqComposerDraft = {
@@ -111,6 +120,7 @@ const EMPTY_COMPOSER_DRAFT: RfqComposerDraft = {
   destinationLocality: "",
   goodsLines: [],
   serviceLines: [],
+  attachedDocumentIds: [],
 };
 
 const VISIBILITY_OPTIONS: readonly { readonly value: RfqVisibility; readonly label: string }[] = [
@@ -504,6 +514,22 @@ export default function RfqComposer() {
           </div>
         );
 
+      case "documents":
+        return (
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Attachments</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Drawings, specifications or certificates providers should quote against. Optional —
+                every invited provider who can see this RFQ can open them.
+              </p>
+            </div>
+            <TradeDocumentPicker
+              selectedDocumentIds={draft.attachedDocumentIds}
+              onSelectionChange={(attachedDocumentIds) => applyDraftPatch({ attachedDocumentIds })}
+            />
+          </div>
+        );
       case "review":
         return <ReviewStep draft={draft} input={input} />;
 
@@ -681,6 +707,10 @@ function buildCreateDraftRfqInput(draft: RfqComposerDraft): CreateDraftRfqInput 
     ...(destinationCountryCode === undefined ? {} : { destinationCountryCode }),
     ...(destinationLocality === undefined ? {} : { destinationLocality }),
     ...(hasCompleteDeliveryWindow ? { desiredDeliveryStartsAt, desiredDeliveryEndsAt } : {}),
+    // OMITTED WHEN EMPTY rather than sent as `[]`. The backend field is optional, and an empty
+    // array and an absent key mean the same thing to it — sending the array anyway would put a
+    // key on the wire that says nothing.
+    ...(draft.attachedDocumentIds.length === 0 ? {} : { documentIds: draft.attachedDocumentIds }),
   };
 }
 

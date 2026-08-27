@@ -1,140 +1,42 @@
-"use client";
+// TRANSPORT: props-only — authored copy. Fetches nothing, and there is nothing to fetch.
 
 import Image from "next/image";
-import { useState } from "react";
-import { authClient, useSession } from "@/lib/auth-client";
 
 /**
- * Sets and verifies the account's phone number via a one-time SMS code:
+ * Phone number — an honest placeholder, because the backend for it does not exist.
  *
- *   1. Enter number — authClient.phoneNumber.sendOtp({ phoneNumber })
- *   2. Enter the 6-digit code — authClient.phoneNumber.verify({ phoneNumber, code })
- *      → backend marks phoneNumberVerified and persists the number.
+ * ⚠️ THIS PANEL USED TO SHIP A WORKING-LOOKING OTP FLOW THAT COULD NOT WORK. It drove
+ * `authClient.phoneNumber.sendOtp()` and `.verify()`, both declared client-side through
+ * `inferAdditionalFields` in `auth-client.ts` — so they type-checked, and pressing "Send code" put a
+ * request on the wire. `POST /api/auth/phone-number/send-otp` answers **404**: the Express backend
+ * mounts no Better Auth `phoneNumber` plugin and `rg phoneNumber qatoto-backend/src` returns
+ * nothing. Anyone who opened this panel and pressed the button got an error for a feature that was
+ * never wired.
  *
- * Not a trust boundary — the Express backend (Better Auth phoneNumber plugin +
- * SMS provider) owns the code, re-validates the number, and is the only
- * authority that persists it. The client only drives the UI and submits input.
+ * IT IS BLOCKED ON A PURCHASE, NOT ON CODE. The plugin requires a `sendOTP` implementation, and
+ * there is no SMS provider in `src/config/index.ts` or `.env.example` — the only OTP delivery
+ * configured anywhere is Brevo, which is email. Writing the plugin first would leave a route that
+ * mints codes nobody receives, which is the same failure one layer down.
+ *
+ * WHY THE PANEL STAYS MOUNTED rather than being deleted from the settings menu: it marks where the
+ * feature will live, and its absence would tell a reader nothing. This is the shape
+ * `customer-service.tsx` uses for the missing ticket queue, and its reasoning applies unchanged —
+ * an unanswered form is worse than an honest signpost, because the person believes they have been
+ * heard.
+ *
+ * WHAT TO DO WHEN AN SMS PROVIDER IS BOUGHT: add the provider to config, mount the `phoneNumber`
+ * plugin with a real `sendOTP`, then restore the two-step flow. `git log` has the version that was
+ * removed; nothing about it was wrong except that nothing answered it.
  */
-
-/** What the set-phone flow is currently doing. */
-type PhoneNumberState =
-  | { status: "enter-number" }
-  | { status: "sending-code" }
-  | { status: "enter-number-error"; message: string }
-  | { status: "verify-code" }
-  | { status: "verifying" }
-  | { status: "verify-error"; message: string };
-
-type PhoneNumberPanelProps = {
-  /** Current phone number, prefilled into the field (from a prior edit). */
-  initialPhoneNumber: string;
-  /** Return to the settings action list. */
-  onBack: () => void;
-};
-
-const OTP_FIELD_IDS = ["otp-1", "otp-2", "otp-3", "otp-4", "otp-5", "otp-6"] as const;
-
-export function PhoneNumberPanel({ initialPhoneNumber, onBack }: PhoneNumberPanelProps) {
-  const { refetch } = useSession();
-  const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber);
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [phoneNumberState, setPhoneNumberState] = useState<PhoneNumberState>({
-    status: "enter-number",
-  });
-
-  const trimmedPhoneNumber = phoneNumber.trim();
-  const isCodeView =
-    phoneNumberState.status === "verify-code" ||
-    phoneNumberState.status === "verifying" ||
-    phoneNumberState.status === "verify-error";
-
-  async function handleSendCode(formEvent: React.FormEvent<HTMLFormElement>) {
-    formEvent.preventDefault();
-    if (trimmedPhoneNumber.length === 0) return;
-    setPhoneNumberState({ status: "sending-code" });
-
-    const { error } = await authClient.phoneNumber.sendOtp({ phoneNumber: trimmedPhoneNumber });
-    if (error) {
-      setPhoneNumberState({
-        status: "enter-number-error",
-        message: "Couldn't send the code. Check the number and try again.",
-      });
-      return;
-    }
-    setOtp(["", "", "", "", "", ""]);
-    setPhoneNumberState({ status: "verify-code" });
-  }
-
-  async function handleVerify(formEvent: React.FormEvent<HTMLFormElement>) {
-    formEvent.preventDefault();
-    const code = otp.join("");
-    if (code.length !== 6) return;
-    setPhoneNumberState({ status: "verifying" });
-
-    const { error } = await authClient.phoneNumber.verify({
-      phoneNumber: trimmedPhoneNumber,
-      code,
-    });
-    if (error) {
-      setPhoneNumberState({
-        status: "verify-error",
-        message: "Invalid or expired code. Please try again.",
-      });
-      return;
-    }
-
-    // Backend persisted + verified the number; pull a fresh session so the
-    // "Verified" chip shows on the settings list.
-    await refetch();
-    onBack();
-  }
-
-  async function handleResendCode() {
-    if (trimmedPhoneNumber.length === 0) return;
-    setPhoneNumberState({ status: "sending-code" });
-    const { error } = await authClient.phoneNumber.sendOtp({ phoneNumber: trimmedPhoneNumber });
-    if (error) {
-      setPhoneNumberState({
-        status: "verify-error",
-        message: "Couldn't resend the code. Please try again.",
-      });
-      return;
-    }
-    setPhoneNumberState({ status: "verify-code" });
-  }
-
-  function handleOtpChange(index: number, value: string) {
-    if (value.length > 1) {
-      // Paste: distribute digits across the inputs from this position.
-      const digits = value
-        .replace(/[^0-9]/g, "")
-        .split("")
-        .slice(0, 6);
-      const nextOtp = [...otp];
-      digits.forEach((digit, offset) => {
-        if (index + offset < 6) nextOtp[index + offset] = digit;
-      });
-      setOtp(nextOtp);
-      const nextIndex = Math.min(index + digits.length, 5);
-      document.getElementById(`phone-otp-${nextIndex}`)?.focus();
-      return;
-    }
-    if (!/^[0-9]?$/.test(value)) return;
-    const nextOtp = [...otp];
-    nextOtp[index] = value;
-    setOtp(nextOtp);
-    if (value && index < 5) document.getElementById(`phone-otp-${index + 1}`)?.focus();
-  }
-
-  function handleOtpKeyDown(index: number, keyEvent: React.KeyboardEvent<HTMLInputElement>) {
-    if (keyEvent.key === "Backspace" && !otp[index] && index > 0) {
-      document.getElementById(`phone-otp-${index - 1}`)?.focus();
-    }
-  }
-
-  function switchToEnterNumber() {
-    setPhoneNumberState({ status: "enter-number" });
-  }
+export function PhoneNumberPanel({
+  initialPhoneNumber,
+  onBack,
+}: {
+  /** The stored number, which is `undefined` for everybody — there is no column behind it. */
+  readonly initialPhoneNumber: string;
+  readonly onBack: () => void;
+}) {
+  const storedPhoneNumber = initialPhoneNumber.trim();
 
   return (
     <div>
@@ -152,99 +54,32 @@ export function PhoneNumberPanel({ initialPhoneNumber, onBack }: PhoneNumberPane
             height={24}
           />
         </button>
-        <h2 className="text-xl font-medium text-secondary-foreground">Set phone number</h2>
+        <h2 className="text-xl font-medium text-secondary-foreground">Phone number</h2>
       </header>
 
-      {!isCodeView ? (
-        <form onSubmit={handleSendCode} className="flex flex-col gap-6 p-4">
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-secondary-foreground">Phone number</span>
-            <input
-              type="tel"
-              inputMode="tel"
-              aria-label="Phone number"
-              autoComplete="tel"
-              value={phoneNumber}
-              onChange={(inputEvent) => {
-                setPhoneNumber(inputEvent.target.value);
-                if (phoneNumberState.status === "enter-number-error") {
-                  setPhoneNumberState({ status: "enter-number" });
-                }
-              }}
-              placeholder="+1 555 000 0000"
-              maxLength={20}
-              className="rounded-xl border border-black/10 bg-card px-4 py-3 text-base text-secondary-foreground outline-none focus:border-primary"
-            />
-            <span className="text-xs text-muted-foreground">
-              Include your country code. We&apos;ll text a 6-digit code to confirm it&apos;s yours.
-            </span>
-            {phoneNumberState.status === "enter-number-error" ? (
-              <span className="text-xs text-red-600">{phoneNumberState.message}</span>
-            ) : null}
-          </label>
-
-          <button
-            type="submit"
-            disabled={phoneNumberState.status === "sending-code" || trimmedPhoneNumber.length === 0}
-            className="cursor-pointer rounded-full bg-primary px-4 py-3 text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {phoneNumberState.status === "sending-code" ? "Sending…" : "Send code"}
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={handleVerify} className="flex flex-col gap-6 p-4">
-          <p className="text-sm text-muted-foreground">
-            Enter the 6-digit code we sent to{" "}
-            <span className="font-medium">{trimmedPhoneNumber}</span>.
+      <div className="flex flex-col gap-4 p-4">
+        <div>
+          <p className="text-sm font-medium text-secondary-foreground">Your phone number</p>
+          {/*
+            "Not set" for everybody, and that is the honest value rather than a fallback: there is
+            no `phone_number` column, so there is nothing that could be set.
+          */}
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {storedPhoneNumber === "" ? "Not set" : storedPhoneNumber}
           </p>
+        </div>
 
-          <div className="flex justify-center gap-3">
-            {OTP_FIELD_IDS.map((fieldId, index) => (
-              <input
-                key={fieldId}
-                type="text"
-                inputMode="numeric"
-                id={`phone-otp-${index}`}
-                aria-label={`Verification code digit ${index + 1}`}
-                maxLength={1}
-                value={otp[index]}
-                onChange={(inputEvent) => handleOtpChange(index, inputEvent.target.value)}
-                onKeyDown={(keyEvent) => handleOtpKeyDown(index, keyEvent)}
-                className="h-14 w-12 rounded-xl border border-black/10 bg-card text-center text-xl font-semibold text-secondary-foreground outline-none focus:border-primary"
-                required
-              />
-            ))}
-          </div>
-
-          {phoneNumberState.status === "verify-error" ? (
-            <span className="text-center text-xs text-red-600">{phoneNumberState.message}</span>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={phoneNumberState.status === "verifying" || otp.join("").length !== 6}
-            className="cursor-pointer rounded-full bg-primary px-4 py-3 text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {phoneNumberState.status === "verifying" ? "Verifying…" : "Verify"}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleResendCode}
-            className="cursor-pointer text-center text-sm font-medium text-[#00696E]"
-          >
-            Resend code
-          </button>
-
-          <button
-            type="button"
-            onClick={switchToEnterNumber}
-            className="cursor-pointer text-center text-sm font-medium text-secondary-foreground"
-          >
-            Change number
-          </button>
-        </form>
-      )}
+        <div className="rounded-xl border border-border px-4 py-3">
+          <p className="text-sm font-medium text-foreground">
+            Phone verification is not available yet
+          </p>
+          <p className="mt-1 text-xs leading-4 text-muted-foreground">
+            Qatoto cannot send SMS codes yet, so there is nothing to enter here. Your account is
+            secured by email, and by a passkey or password if you have set one. This page will do
+            something when text messaging is switched on.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

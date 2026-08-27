@@ -223,6 +223,28 @@ export const QuoteRevisionSchema = QuoteRevisionMoneySchema.extend({
   notes: z.string().nullable(),
   productLines: z.array(QuoteProductLineSchema),
   serviceLines: z.array(QuoteServiceLineSchema),
+  /**
+   * A30. Documents the provider attached to THIS revision.
+   *
+   * ⚠️ REVISION-SCOPED, so a superseded offer keeps the drawings it was judged on rather than
+   * inheriting whatever the provider attached later. `fileName` is NULLABLE because names are
+   * encrypted at rest and null means the stored name could not be decrypted — render a neutral
+   * label, never the id.
+   *
+   * NO URL. Downloading goes through `GET /commerce/documents/:documentId`, which re-checks access
+   * on every request; a link here would outlive the access it was issued under.
+   */
+  documents: z.array(
+    z
+      .object({
+        documentId: z.string(),
+        mediaType: z.string(),
+        fileByteSize: z.number().int(),
+        fileName: z.string().nullable(),
+        attachedAt: z.string(),
+      })
+      .strip(),
+  ),
 }).strip();
 
 export const QuoteDetailSchema = z

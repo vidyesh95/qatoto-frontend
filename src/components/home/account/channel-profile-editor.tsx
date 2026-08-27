@@ -295,17 +295,19 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
       </section>
 
       {/*
-        THE LISTING OPT-IN.
-        
+        THE LISTING OPT-OUT.
+
         ⚠️ THE COPY IS THE FEATURE. This flag governs DISCOVERABILITY, not visibility: the channel
         page is public either way and is already linked from every feed card, so the only thing it
         changes is whether `GET /channels` announces the handle to a search engine. Wording that
         implies unchecking it makes the channel private would be a promise the backend cannot keep,
-        and a creator who believed it would think they had hidden something they had not.
+        and a creator who believed it would think they had hidden something they had not. That is
+        why the help text says what it does rather than something shorter.
 
-        IT DEFAULTS OFF, and it is a checkbox rather than a pre-ticked convenience because a
-        directory of PEOPLE is not a directory of products — the cofounder directory made the same
-        argument first.
+        IT DEFAULTS ON since `0145`, so this is an opt-OUT. It shipped ticked-off and was reversed:
+        indexing a page that is already public reveals nothing new, and the opt-in produced zero
+        listed channels because nobody ticks a box they are never shown. Offering the control at all
+        is stricter than YouTube, which indexes channel pages by default with no toggle.
 
         IT SAVES WITH THE REST rather than on click. Every other field on this screen is saved by
         the Save button; a toggle that wrote immediately would be the one control on the page whose
@@ -332,9 +334,9 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
               List this channel in Qatoto&apos;s sitemap
             </label>
             <p id="channel-listing-opt-in-help" className="text-xs text-muted-foreground">
-              Lets search engines find your channel page. It stays public either way — this only
-              controls whether Qatoto points crawlers at it. Channels with no published video are
-              never listed.
+              On by default. Lets search engines find your channel page — it stays public either
+              way, and unticking this does not make it private, it only stops Qatoto pointing
+              crawlers at it. Channels with no published video are never listed.
             </p>
           </div>
         </div>

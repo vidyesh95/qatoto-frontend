@@ -17,13 +17,27 @@
 // than as a zero. A quote nobody has submitted has no price, which is not the same as being free.
 
 import Link from "next/link";
+import { useState } from "react";
 
 import { useProviderQuotesList } from "@/hooks/store/quotes";
 import { formatCentsLabel } from "@/lib/store/format";
-import { QUOTE_STATUS_LABELS } from "@/lib/store/quotes.schemas";
+import { QUOTE_STATUS_LABELS, QUOTE_STATUSES, type QuoteStatus } from "@/lib/store/quotes.schemas";
 
 export default function ProviderQuotesPage() {
-  const quotesList = useProviderQuotesList();
+  /**
+   * ⚠️ THE FILTER IS SERVER-SIDE, and that is the point rather than a detail.
+   * `GET /commerce/provider/quotes` has always accepted `?status=` and `listProviderQuotes` has
+   * always passed it — nothing set it, so this list was every bid a provider had ever authored with
+   * no way to narrow it. Filtering the fetched page in the browser would have been the wrong fix
+   * twice over: it short-pages a keyset list, and it makes "no submitted quotes" indistinguishable
+   * from "none on this page".
+   *
+   * Component state rather than the URL: this is a `(studio)` surface with no shareable-link
+   * requirement, and `useKeysetList` re-fetches from page one when the query key changes — which is
+   * also what resets the cursor, so a stale one cannot cross a filter change.
+   */
+  const [statusFilter, setStatusFilter] = useState<QuoteStatus | null>(null);
+  const quotesList = useProviderQuotesList(statusFilter === null ? {} : { status: statusFilter });
 
   if (quotesList.isLoadingFirstPage) {
     return <p className="text-sm text-muted-foreground">Loading your quotes…</p>;
@@ -48,9 +62,46 @@ export default function ProviderQuotesPage() {
         </p>
       </header>
 
+      {/*
+        EVERY STATUS IS OFFERED, not just the ones this provider currently has. The counts are not
+        known without a second read, and a chip that disappears when it would return nothing is a
+        chip a provider cannot use to confirm they have none — which is the question they are asking.
+      */}
+      <nav className="flex flex-wrap items-center gap-2 pb-4" aria-label="Filter quotes by status">
+        <button
+          type="button"
+          onClick={() => setStatusFilter(null)}
+          aria-current={statusFilter === null ? "true" : undefined}
+          className={`shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            statusFilter === null
+              ? "bg-foreground text-background"
+              : "bg-muted text-foreground hover:bg-muted/70"
+          }`}
+        >
+          All
+        </button>
+        {QUOTE_STATUSES.map((quoteStatus) => (
+          <button
+            key={quoteStatus}
+            type="button"
+            onClick={() => setStatusFilter(quoteStatus)}
+            aria-current={statusFilter === quoteStatus ? "true" : undefined}
+            className={`shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              statusFilter === quoteStatus
+                ? "bg-foreground text-background"
+                : "bg-muted text-foreground hover:bg-muted/70"
+            }`}
+          >
+            {QUOTE_STATUS_LABELS[quoteStatus]}
+          </button>
+        ))}
+      </nav>
+
       {quotesList.rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          You have not quoted anything yet.{" "}
+          {statusFilter === null
+            ? "You have not quoted anything yet. "
+            : `No ${QUOTE_STATUS_LABELS[statusFilter].toLowerCase()} quotes. `}
           <Link href="/studio/rfqs" className="font-medium text-primary underline">
             Requests waiting for a quote
           </Link>

@@ -35,15 +35,20 @@ a task (**Decisions needed**).
 
 `session.user.phoneNumber` and `phoneNumberVerified` are declared client-side in
 `src/lib/auth-client.ts` via `inferAdditionalFields`, and the backend has no `phoneNumber()` plugin
-and no column — `rg phoneNumber qatoto-backend/src` returns nothing. The fields type-check and are
-`undefined` at runtime, so `PhoneNumberPanel`'s OTP calls hit a route that does not exist and the
-row reads "Not set" for everybody. The value shown is the honest one.
+and no column — `rg phoneNumber qatoto-backend/src` returns nothing.
 
-**Re-filed as blocked, alongside §18.** Better Auth's `phoneNumber()` plugin requires a `sendOTP`
-implementation, and there is no SMS provider anywhere in `src/config/index.ts` or `.env.example` —
-the only OTP delivery configured is Brevo, which is email. So this is a purchase before it is a
-migration, the same shape of blocker as a freight rate card, and writing the plugin first would
-leave a route that mints codes nobody receives.
+⚠️ **THIS WAS A LIVE BREAK UNTIL 2026-08-27 AND IS NOW INERT.** The panel shipped a working-looking
+two-step OTP flow driving `authClient.phoneNumber.sendOtp()`, which type-checked and put a request
+on the wire: `POST /api/auth/phone-number/send-otp` answers **404**. Anyone who opened Settings →
+Phone number and pressed "Send code" got an error for a feature nothing implemented. The panel now
+renders read-only and says phone verification is not available yet — the `/customer-service` shape,
+on its stated ground that an unanswered form is worse than an honest signpost.
+
+**It is a purchase before it is a migration.** Better Auth's `phoneNumber()` plugin requires a
+`sendOTP` implementation and there is no SMS provider in `src/config/index.ts` or `.env.example` —
+the only OTP delivery configured is Brevo, which is email. Writing the plugin first would leave a
+route minting codes nobody receives, the same failure one layer down. `git log` has the removed
+flow; nothing about it was wrong except that nothing answered it.
 
 ### 18. Freight rate data
 
@@ -55,28 +60,31 @@ is spent.
 
 ---
 
-## The substantial one
+## Seller cost-of-goods and margin — DECIDED: NOT BUILDING IT
 
-### 5. Phase D — cost of goods, and therefore margin
+⚠️ **THIS WAS THIS FILE'S HEADLINE ITEM AND IS NOW CLOSED. Do not reopen it as an oversight.**
+`seller-earnings-panel.tsx` says profit and margin are not shown because Qatoto never records what a
+seller paid. That copy is correct and stays. Three reasons, in order of weight:
 
-Revenue shipped; margin is what is left, and the input does not exist anywhere in the backend — no
-cost column, no purchase record, no expense table. It needs a per-order-line cost the seller
-enters, its write route, and the part that is not mechanical: **A13's declared-vs-measured split**.
-A self-entered cost is a DECLARED stat sitting directly beside platform-MEASURED revenue, and the
-wire has to make that visible or a seller will read an unverified number as a verified one.
+1. **This codebase forbids the operation, in its own words, three times.**
+   `commerce-earnings.service.ts`: _"A client is free to render them together. It is not free to add
+   them."_ · `commissionOwed` _"sits in its own member and is never netted off"_ · _"there is
+   deliberately no grand total in this response, and adding one later would be a regression rather
+   than a feature."_ Margin is the most combined number available — a SELF-REPORTED cost subtracted
+   from PLATFORM-MEASURED revenue, across the exact A13 boundary
+   `commerce_journal_account_memorandum_ck` exists to hold. The same three sentences also rule out
+   the tempting middle path of a "net after platform deductions" figure: netting refunds is refused
+   because it _"would make a fully refunded order indistinguishable from one that never happened"_.
+2. **Alibaba and AliExpress both omit it; only Amazon has it.** Amazon sellers need a COGS input
+   because Amazon's own fee soup obscures take-home — Qatoto already shows `commissionOwed` as its
+   own line running the other way, so the platform-knowable half of that gap is already closed here.
+3. **Nobody would fill it in.** Per-order-line manual entry, no purchase record, no import, no ERP
+   hook. A margin computed over 12 of 47 orders is worse than no margin, which is what the panel
+   already says.
 
-Until then `src/components/commerce/sections/seller-earnings-panel.tsx` says margin is not shown
-and why, rather than relabelling revenue.
-
-**Why it is a domain and not a column**, because the obvious approach is wrong:
-
-- **The cost cannot live on `commerce_order_product_line`.** That row is an immutable commercial
-  snapshot — `titleSnapshot`, `specificationSnapshot`, `unitPriceInCents`, all frozen at confirm —
-  and a seller-entered cost is correctable after the fact. It needs its own table, which is exactly
-  what "no cost column, no purchase record, no expense table" means.
-- **The A13 split is the part that is not mechanical.** The provider surface already has the
-  vocabulary for declared-versus-measured; this needs the same discipline applied where the stakes
-  are a seller misreading their own books.
+**If this is ever revisited**, the constraint to design around first is that the cost cannot live on
+`commerce_order_product_line` — that row is an immutable commercial snapshot and a seller-entered
+cost is correctable.
 
 ---
 
@@ -138,15 +146,29 @@ Phase 23 shipped the vocabulary only; nothing branches on the value. Needed for 
 pricing on an uncovered inland leg. Note the casing: `commerce_incoterm` is UPPERCASE, unlike every
 other enum on the wire.
 
-### Procurement, left deliberately unbuilt
+### Procurement — all three SHIPPED
 
-- **Documents on a quote.** There is no route to attach one, the same gap the RFQ composer already
-  names. The review step says so and ships no control.
-- **`/studio/quotes` has no status filter UI.** The read accepts `?status=` and the wrapper passes
-  it; nothing sets it yet.
-- **`/studio/reviews` does not page.** The read is keyset and its cursor is SORT-SCOPED — carrying
-  one across a change of sort is a 422 — so paging needs a cursor that resets on every filter
-  change. The page says plainly that it shows the first page only rather than pretending otherwise.
+- ~~**Documents on a quote.**~~ **Both sides now.** `commerce_quote_revision_document` (`0146`) plus
+  `documentIds` on the revision-append body, and an attachment step in BOTH composers. The entry
+  said "there is no route to attach one" — **that was stale**: `POST /commerce/documents` had
+  shipped with encryption, virus scanning and audit entries, and the RFQ composer carried the same
+  stale "backend gap" banner. Fourth entry this session costed before its rail existed.
+    - **⚠️ KEYED ON THE REVISION, NOT THE QUOTE.** A revision is the immutable offer, so keying on the
+      quote would let a provider swap the spec sheet behind an offer a buyer had already read.
+      **Proved in a rolled-back transaction**: a document on revision A is invisible on revision B,
+      and a duplicate attach is a `23505`.
+    - **⚠️ AN UPLOAD IS NOT AN ATTACHMENT.** That route answers **202** — `pending_scan` until an async
+      virus scan clears it — and every attach path refuses anything not `available`. The picker lists
+      only scanned documents, so what it offers is what the save accepts. Verified: owner + available
+      → attachable; another organization → refused; still scanning → refused.
+- ~~**`/studio/quotes` status filter.**~~ **SHIPPED**, server-side. The read and the wrapper always
+  passed `?status=`; nothing set it. Filtering the fetched page would have short-paged a keyset list
+  and made "no submitted quotes" indistinguishable from "none on this page".
+- ~~**`/studio/reviews` paging.**~~ **SHIPPED, forward-only.** The cursor is SORT-SCOPED — its sort
+  key is inside the cursor, so carrying one across a sort change is a **422**, not a reset — so
+  `cursor` is cleared by every filter and sort change. Forward-only is the keyset's shape: there is
+  no "previous" token without stacking them, and a page-number control needs a COUNT this route does
+  not return. "Start over" is the honest way back.
 
 ### Moderation gaps recorded by decision, not oversight
 

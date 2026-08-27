@@ -60,6 +60,7 @@ import {
   toOptionalText,
 } from "@/components/commerce/composer/composer-input";
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
+import TradeDocumentPicker from "@/components/commerce/trade-document-picker";
 import QuoteServiceDetailFields, {
   EMPTY_QUOTE_SERVICE_DETAIL_DRAFT,
   buildQuoteServiceDetailInput,
@@ -96,6 +97,7 @@ const COMPOSER_STEPS = [
   { id: "goods", label: "Goods" },
   { id: "services", label: "Services" },
   { id: "terms", label: "Terms" },
+  { id: "documents", label: "Documents" },
   { id: "review", label: "Review" },
 ] as const;
 
@@ -180,6 +182,13 @@ interface QuoteDraft {
   notes: string;
   productLines: Record<string, ProductLineDraft>;
   serviceLines: Record<string, ServiceLineDraft>;
+  /**
+   * Ids of already-uploaded, already-SCANNED attachments riding on THIS revision.
+   *
+   * ⚠️ THEY BELONG TO THE REVISION, NOT THE QUOTE. A revision is the immutable offer, so a revised
+   * offer carries its own documents and the superseded one keeps what it was judged on.
+   */
+  attachedDocumentIds: string[];
 }
 
 function padTwoDigits(value: number): string {
@@ -249,6 +258,7 @@ function buildInitialDraft(rfq: RfqDetail): QuoteDraft {
     notes: "",
     productLines,
     serviceLines,
+    attachedDocumentIds: [],
   };
 }
 
@@ -387,6 +397,9 @@ function buildAppendQuoteRevisionInput(
     ...(paymentTerms === undefined ? {} : { paymentTerms }),
     ...(draft.incoterm === "" ? {} : { incoterm: draft.incoterm }),
     ...(notes === undefined ? {} : { notes }),
+    // Omitted when empty: the backend field is optional and an empty array says nothing it does not
+    // already assume.
+    ...(draft.attachedDocumentIds.length === 0 ? {} : { documentIds: draft.attachedDocumentIds }),
   };
 }
 
@@ -1231,11 +1244,35 @@ export default function QuoteComposer({ rfqId }: { rfqId: string }) {
                 </ul>
               </div>
             )}
-            {/* No document control: there is no route to attach a document to a quote. Saying so is
-                better than a picker that silently drops the file. */}
-            <p className="text-[11px] leading-4 text-muted-foreground">
-              Documents cannot be attached to a quote yet. Reference them in your notes.
-            </p>
+          </div>
+        );
+
+      case "documents":
+        return (
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Attachments</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Drawings, certificates or a full specification supporting this offer. The buyer can
+                open them alongside your prices.
+              </p>
+              {/*
+                ⚠️ THEY RIDE ON THIS REVISION. The comment that used to sit here said documents
+                could not be attached to a quote at all — true when written, and closed by
+                `commerce_quote_revision_document`. Saying which revision matters: revise the offer
+                and the superseded one keeps the documents it was judged on.
+              */}
+              <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                They attach to this revision. If you revise the quote, choose them again for the new
+                one — the buyer keeps seeing the old set against the old prices.
+              </p>
+            </div>
+            <TradeDocumentPicker
+              selectedDocumentIds={activeDraft?.attachedDocumentIds ?? []}
+              onSelectionChange={(attachedDocumentIds: string[]) =>
+                patchDraft({ attachedDocumentIds })
+              }
+            />
           </div>
         );
 
