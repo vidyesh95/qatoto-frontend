@@ -779,7 +779,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Shipping profiles and carriers.",
       },
       {
-        // `route`, not `planned`: the page reads real data now. The other eight Studio entries stay
+        // `route`, not `planned`: the page reads real data now. The other seven Studio entries stay
         // `planned` — the data for those does not exist, and an honest placeholder is not a feature.
         kind: "route",
         label: "Analytics",
@@ -787,7 +787,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Reach and engagement across your videos, counted on Qatoto.",
       },
       {
-        // `route`, not `planned`: the page reads real data now. The other eight Studio entries stay
+        // `route`, not `planned`: the page reads real data now. The other seven Studio entries stay
         // `planned` — the data for those does not exist, and an honest placeholder is not a feature.
         kind: "route",
         label: "Comments",
@@ -807,7 +807,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Claims against your work, and yours against others.",
       },
       {
-        // `route`, not `planned`: the page writes real columns now. The other eight Studio entries
+        // `route`, not `planned`: the page writes real columns now. The other seven Studio entries
         // stay `planned` — the data for those does not exist, and an honest placeholder is not a
         // feature.
         //
@@ -842,10 +842,16 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Pitches you sent and received.",
       },
       {
-        kind: "planned",
+        // `route`, not `planned` — but NOT for what the old summary promised, and the summary
+        // changed with it. It read "Who else can act on this account", which is account-level
+        // DELEGATION: roles, access, revocation. None of that exists. What shipped is the
+        // collaborator CREDIT handshake — an invite the named person can confirm or decline — and
+        // it grants nobody anything. Leaving the old wording over the new page would have been the
+        // one thing a roadmap must never do: claim a capability the platform lacks.
+        kind: "route",
         label: "Team",
-        pathPattern: "/studio/team",
-        summary: "Who else can act on this account.",
+        href: "/studio/team",
+        summary: "Collaborator credits on your videos. Credits grant no access.",
       },
       {
         kind: "planned",

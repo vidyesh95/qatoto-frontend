@@ -284,31 +284,50 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     rolling HOURLY top-200. "This week" and "this month" are not filters over it; they are a second
     snapshot cadence, or they are not offered.
 
-2. **The eight `planned` Studio routes that are left.** ⚠️ **DO NOT INHERIT A COST FROM THIS LINE
-   WITHOUT CHECKING IT** — the version above it was wrong about `funding` for months, and checking
-   again moved two more.
+2. **The seven `planned` Studio routes that are left.** ⚠️ **DO NOT INHERIT A COST FROM THIS LINE
+   WITHOUT CHECKING IT** — it has now been wrong about three separate routes.
 
-    **⚠️ `/studio/subtitles` IS NOT A MISSING FEATURE. IT IS IMPOSSIBLE ON THIS ARCHITECTURE**, and
-    it was miscounted as "needs a new backend domain" until 2026-08-27. Every video is
-    `videoSource: "youtube"` — 10 of 10 in the live database — self-hosted video (Livepeer) is
-    explicitly deferred by STUDIO §0 ("**must NOT be built now**"), and **Qatoto cannot inject
-    captions into a YouTube embed**. Captions for a YouTube-hosted video live in that creator's own
-    YouTube Studio. A caption table plus an upload would build a store nothing can play. It belongs
-    with `download` ("structurally impossible — the bytes are on youtube.com") and `isPremium`. It
-    comes back only if self-hosted video does.
+    ~~`/studio/team`~~ **GRADUATED, but not into what it promised, and the difference matters.** The
+    old summary was "Who else can act on this account" — account-level DELEGATION. **That is still
+    unbuilt and is the one genuine Studio feature left**: no delegation primitive exists anywhere,
+    `video_collaborator` is per-video and `video_team_member` is a display-label list. Building it
+    means tables, a role model, invite/accept/revoke, an authorization layer every creator route
+    consults and an audit trail, because it changes who `req.user.id` effectively is.
 
-    **`/studio/team` is the one genuine remaining feature**, and it is a whole domain rather than a
-    screen: **no account-level delegation primitive exists anywhere.** `video_collaborator` is
-    per-video (it carries a `videoId`) and `video_team_member` is a display-label list. It needs
-    tables, a role model, invite/accept/revoke, an authorization layer every creator route consults,
-    and an audit trail — because it changes who `req.user.id` effectively is on every one of them.
-    Security-sensitive, and realistically several sessions.
+    What shipped instead is the **collaborator CREDIT handshake**, and it closed a real dead end:
+    `video_collaborator.status` had `invited | accepted | declined` from the day the table existed
+    and **no route could write anything but `invited`** — no accept, no decline, and no read by which
+    the person named could even learn about it. Two enum values were unreachable and a "collaborator"
+    was an email address somebody typed. Now: `GET /users/me/collaborations` (matched on the caller's
+    EMAIL, because `user_id` is null until answered — an id match returns nothing to exactly the
+    people who still owe an answer), `GET /users/me/collaborators` for the account-level roster that
+    did not exist, and `POST /videos/:videoId/collaborators/respond`.
+    - **⚠️ IT GRANTS NOTHING, AND THE PAGE AND ROADMAP BOTH SAY SO.** Nothing authorizes off this
+      table. Do not let it quietly become delegation.
+    - **⚠️ A BUG THIS EXPOSED, AND IT WOULD HAVE BEEN SILENT.** The per-video save deleted and
+      re-inserted every collaborator row, which was harmless while `invited` was the only reachable
+      status — and would have **erased somebody's acceptance on the creator's next unrelated save**
+      the moment accept shipped. Now only removed emails are deleted and survivors are left alone
+      (`onConflictDoNothing` on `video_collaborator_unq`). **Proved live**: accept → creator re-saves
+      → still `accepted`, still linked; and removing the email still deletes the row.
+    - **The respond route is the one `/videos/:videoId/*` write the video's OWNER may not make.** The
+      caller is a stranger to the video by definition; the predicate
+      `(videoId, invitedEmail = caller's email)` IS the authorization. Answering an invite you never
+      got is a plain 404, identical to an absent video, so it cannot enumerate who is invited to what.
+      **Verified.**
 
-    The other three genuinely needing a new domain: `copyright` (`copyright` is a video-REPORT-REASON
-    enum member, not a claims table), `pitches` (`pitch` is a `video_type` enum member, not a table)
-    and `earn` (a money rail — escrow left this codebase, §7). `learn`, `support` and `feedback` are
-    the `/customer-service` shape and are already doing the right thing: each links to the surface
-    that does part of the job today rather than inventing a channel.
+    **⚠️ `/studio/subtitles` IS NOT A MISSING FEATURE. IT IS IMPOSSIBLE ON THIS ARCHITECTURE.** Every
+    video is `videoSource: "youtube"` — 10 of 10 live — self-hosted video is explicitly deferred by
+    STUDIO §0 ("**must NOT be built now**"), and **Qatoto cannot inject captions into a YouTube
+    embed**. Captions live in that creator's own YouTube Studio. A caption table plus an upload would
+    build a store nothing can play. It belongs with `download` and `isPremium`. It comes back only if
+    self-hosted video does.
+
+    The three genuinely needing a new domain: `copyright` (`copyright` is a video-REPORT-REASON enum
+    member, not a claims table), `pitches` (`pitch` is a `video_type` enum member, not a table) and
+    `earn` (a money rail — escrow left this codebase, §7). `learn`, `support` and `feedback` are the
+    `/customer-service` shape and already do the right thing: each links to the surface that does part
+    of the job today rather than inventing a channel.
 
 ---
 
