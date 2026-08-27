@@ -65,6 +65,30 @@ export function listResearchProjects(
 }
 
 /**
+ * `GET /research-projects/mine` — the caller's OWN ventures, drafts included.
+ *
+ * FOUNDER-SCOPED, filtered by session id and never by a parameter. That is exactly the gate
+ * `POST /research-projects/:slug/pitches` enforces, which is why the pitch composer picks
+ * from this and not from `listAttachableResearchProjects`: attachable is MEMBERSHIP-scoped,
+ * so it would offer a contributor ventures whose pitch route answers 404 for them.
+ */
+export function listMyResearchProjects(
+  filter: {
+    readonly status?: string;
+    readonly page?: number;
+    readonly limit?: number;
+  } = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: ResearchProjectListRow[]; pagination: PaginationMeta }>> {
+  return getPaginated(
+    `/research-projects/mine${buildQueryString({ ...filter })}`,
+    ResearchProjectListRowSchema,
+    PaginationMetaSchema,
+    options,
+  );
+}
+
+/**
  * The ventures this viewer may attach a video to — the studio's venture picker.
  *
  * NOT `listResearchProjects`, which is the public feed of every active project, and NOT

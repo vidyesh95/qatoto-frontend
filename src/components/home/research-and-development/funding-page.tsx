@@ -4,6 +4,8 @@
 // on each deal card.
 import FundingDealFilterGrid from "@/components/home/research-and-development/sections/funding-deal-filter-grid";
 import MyPledgesPanel from "@/components/home/research-and-development/sections/my-pledges-panel";
+import PitchReviewQueue from "@/components/home/research-and-development/sections/pitch-review-queue";
+import PublicPitchesRail from "@/components/home/research-and-development/sections/public-pitches-rail";
 import RndStatusPanel, {
   RndErrorPanel,
   RndSignInRequiredPanel,
@@ -60,6 +62,15 @@ export default async function FundingPage({
       </header>
       <MyPledgesPanel />
       {renderDeals()}
+      {/* §12. AFTER the deal grid, not before: an on-platform round with a real pledge
+          control is the stronger thing to lead with, and a pitch is a listing pointing
+          somewhere else. The rail's own read is PUBLIC, so it still renders for a
+          signed-out visitor who only sees a sign-in prompt above it. */}
+      <PublicPitchesRail />
+      {/* Moderator-only, and it renders NOTHING for anyone else — the read 403s and that
+          answer is the whole check. It sits here rather than on its own admin route because
+          this is the page a moderator already opens to see what is being raised. */}
+      <PitchReviewQueue />
     </div>
   );
 

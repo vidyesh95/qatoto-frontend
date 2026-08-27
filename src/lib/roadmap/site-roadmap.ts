@@ -839,10 +839,21 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Every round across the ventures you founded.",
       },
       {
-        kind: "planned",
+        // `route`, not `planned` — and NOT for what the old summary promised. It read
+        // "Pitches you sent and received", which implies sending a pitch TO a named person;
+        // there is no such primitive, and building one needs an investor entity, KYC and a
+        // securities answer. `todo.md` had this route down as blocked on a DEFINITION rather
+        // than on code, and it was right.
+        //
+        // What shipped is the Kickstarter/YC-demo-day reading: publish a venture to people who
+        // might fund it. The money is deliberately elsewhere — the pitch links out to a
+        // licensed third party — so this summary says "links out" rather than implying Qatoto
+        // takes funding, which it does not.
+        kind: "route",
         label: "Pitches",
-        pathPattern: "/studio/pitches",
-        summary: "Pitches you sent and received.",
+        href: "/studio/pitches",
+        summary:
+          "Publish a venture to people who might fund it. Funding links out; Qatoto holds no funds.",
       },
       {
         // `route`, not `planned` — but NOT for what the old summary promised, and the summary

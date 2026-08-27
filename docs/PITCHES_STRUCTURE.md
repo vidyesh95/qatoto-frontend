@@ -210,7 +210,7 @@ there if it grows past ~6 fields, but four fields and two URLs do not warrant st
 
 **Public surface** — pitch detail at `/research-and-development/pitches/[pitchSlug]`
 (`server-fetch`, `generateStaticParams` reconciled through `withSentinelValues` in
-`src/lib/rnd/static-params.ts` — **never empty**, or the build fails under `cacheComponents`).
+`src/lib/static-params.ts` — **never empty**, or the build fails under `cacheComponents`).
 Discovery goes on the **existing** `/research-and-development/funding` deal-flow page as a Pitches
 rail. **No new sidebar item; R&D stays at five** (R_AND_D §15.8, §15.13).
 
@@ -288,3 +288,79 @@ rewritten to what the page does.
 - [Wefunder vs Republic vs StartEngine volumes](https://angelinvestorsnetwork.com/market-analysis/wefunder-vs-republic-vs-startengine-for-raising-capital)
 - [AngelList — Data Room](https://www.angellist.com/blog/empowering-every-fund-with-free-data-rooms)
 - [Carta — startup fundraising cheatsheet](https://community.carta.com/c/corporations-updates/startup-fundraising-cheatsheet)
+
+---
+
+## 10. What the live run changed — read this before trusting §5 or §6
+
+Everything above was written before the surface met a real database. It was built, applied as
+migration `0148`, and driven end to end against the live backend on **2026-08-27**. Three things
+came back different, and this section is the correction rather than a changelog.
+
+### 10a. A one-sided outcome could never become public, and nothing said so
+
+**The bug the live run found, and it was a design hole rather than a typo.** `funder_user_id` is
+nullable because the schema note (correctly) assumes the funder is often a stranger to Qatoto. But
+a confirmation needs somebody to give it: with no account named, the row has ONE party, no second
+signature is possible, and only a confirmed outcome reaches the public page. So a founder could
+record funding, watch it sit there forever, and never learn why — while `confirmPitchOutcome`
+answered `NOT_A_PARTY`, a **404**, to both actual parties. The most misleading possible answer:
+"no such record" when the truth is "this record can never be confirmed".
+
+Three changes, all shipped:
+
+- A new error, `OUTCOME_HAS_NO_COUNTERPARTY` → **422** with a sentence that says exactly that.
+- A derived `isConfirmable` on `PitchOutcomeView`, false when `funder_user_id` is null.
+- `OutcomeAttestationNote` grew a **third state** — _private · nobody can confirm it_ — and the
+  confirm control is not offered on such a row.
+
+**The frontend copy was wrong too, and in the direction that mattered.** The composer said "A name
+is enough — the funder does not need a Qatoto account." True for storing the row, false for
+everything a founder wants from it. It now says a name alone keeps the record private, and offers
+the funder's account id as the thing that makes it publishable.
+
+### 10b. `compactBody` would have 413'd a legal pitch
+
+`json-body-budget.test.ts` measures the largest body each route's own schema can produce. A
+maximal pitch — 2000-character summary plus two 2048-character URLs, JSON-escaped — is ~25 KB
+against `compactBody`'s 16 KB. **Create and PATCH use `longFormBody`**, like the other two prose
+routes in the codebase. The test caught this, not a reviewer.
+
+### 10c. The project-scoped list route is gone
+
+`GET /research-projects/:projectSlug/pitches` was specced in §5 and built, then deleted with its
+controller, service function and frontend wrapper. `GET /pitches/mine` supersedes it entirely —
+cross-project, founder-scoped, already carrying each project's name. The `CLAUDE.md` hook audit
+is what surfaced it: an uncalled wrapper is unverified code, and inventing a control to justify
+one is the wrong repair.
+
+### 10d. Two smaller corrections
+
+- **`parseExternalUrl` was extracted to `src/lib/external-url.ts`** as `parseHttpsUrl`, and
+  `promotional-destination.ts` now delegates to it while keeping its own error vocabulary. That
+  file's header already argued against a third URL parser in this codebase; a copy in the pitches
+  module would have made a fourth.
+- **`pnpm db:migrate` could not apply `0148`.** Five earlier migrations (0042, 0047, 0049, 0052, 0147) have file hashes that no longer match `drizzle.__drizzle_migrations`, because this repo's
+  own documented workflow is to hand-write a header AFTER `db:generate` — often after applying.
+  drizzle-kit therefore reads those five as pending and dies re-running `0042`, **with the error
+  swallowed by its spinner**. `0148` was applied by hand in one transaction after being dry-run
+  against the live database and rolled back, and its ledger row was inserted with the hash of the
+  finished file. **This is a pre-existing repo condition, not a consequence of §12, and the next
+  migration will hit it again.**
+
+### 10e. What was proved live, and what it cost
+
+Draft → submit → 403 for a non-moderator → publish as a moderator → public page renders signed
+out → outcome recorded → refused on self-confirmation → countersigned by the other party → visible
+publicly. Both screens were watched rendering in a browser. Negative checks all refused
+server-side: `javascript:`, `http:`, `//evil.tld`, embedded credentials, a dotless host, and
+`status` in a create body (422 `Unrecognized key`, not a moderation bypass). Idempotency replay
+returned the first row rather than creating a second.
+
+**What the cleanup could not remove, and why that is correct.** The pitch, its two outcomes and
+the notification were deleted. The throwaway project could NOT be — `project_member_interval` is
+append-only and its trigger refuses DELETE (§4f) — so it was **archived** instead. The two test
+accounts could not be deleted either: `platform_audit_entry.actor_user_id` and
+`project_member.user_id` both `restrict`. And the `pitch_published` audit entry remains by design,
+because that chain is hash-linked and append-only. Every one of those refusals is the deletion
+policy working.

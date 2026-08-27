@@ -32,6 +32,8 @@ export const rndKeys = {
   projectTeam: (projectSlug: string) => ["rnd", "project", projectSlug, "team"] as const,
   /** Ventures the viewer may attach a video to — the studio picker. Session-scoped. */
   attachableProjects: () => ["rnd", "projects", "attachable"] as const,
+  /** FOUNDER-scoped, drafts included — the pitch composer's picker. Keyed by status. */
+  myProjects: (status: string | undefined) => ["rnd", "projects", "mine", status] as const,
   myApplications: (status: string | undefined) => ["rnd", "applications", "mine", status] as const,
   myInvites: (status: string | undefined) => ["rnd", "invites", "mine", status] as const,
   /** The FOUNDER's inbox, distinct from `myApplications` — different rows, different actor. */
@@ -89,6 +91,21 @@ export const rndKeys = {
   /** `/studio/funding` — every round across every project the caller founds. */
   myFoundedRounds: (page: number) => ["rnd", "funding", "rounds", "mine", page] as const,
   milestones: (projectSlug: string) => ["rnd", "funding", projectSlug, "milestones"] as const,
+
+  // --- §12 Pitches -----------------------------------------------------------
+  //
+  // Keyed on the SLUG for the public read and on nothing at all for the founder's own list,
+  // matching how each is addressed: a link carries a slug, and `/pitches/mine` is scoped by
+  // the session rather than by anything a key could name.
+  pitchesRoot: () => ["rnd", "pitches"] as const,
+  /** `/studio/pitches` — every pitch across every venture the caller founds. */
+  myPitches: (page: number, status: string | undefined) =>
+    ["rnd", "pitches", "mine", page, status] as const,
+  pitch: (pitchSlug: string) => ["rnd", "pitches", "detail", pitchSlug] as const,
+  projectPitches: (projectSlug: string) => ["rnd", "pitches", "project", projectSlug] as const,
+  publicPitches: (page: number, projectSlug: string | undefined) =>
+    ["rnd", "pitches", "public", page, projectSlug] as const,
+  pitchReviewQueue: (page: number) => ["rnd", "pitches", "review-queue", page] as const,
 
   // --- Workshop --------------------------------------------------------------
   workshop: (projectSlug: string) => ["rnd", "workshop", projectSlug] as const,

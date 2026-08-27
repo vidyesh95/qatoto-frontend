@@ -29,6 +29,7 @@ import {
   removeProjectMember,
   respondToProjectInvite,
   listAttachableResearchProjects,
+  listMyResearchProjects,
   listProjectOpenRoles,
   setOpenRoleOpenState,
   setProjectStage,
@@ -157,6 +158,20 @@ export function useMyInvitesQuery(status?: string) {
  * client island and this is the only place it is needed. The list mirrors the backend's
  * write gate, so every option it renders is one `POST /videos` will accept.
  */
+/**
+ * The caller's own ventures — the pitch composer's picker.
+ *
+ * FOUNDER-SCOPED, unlike `useAttachableProjectsQuery` beside it, and the difference matters:
+ * only a founder may open a pitch on a venture, so a membership-scoped picker would dangle
+ * options the server answers 404 to.
+ */
+export function useMyProjectsQuery(status: string | undefined) {
+  return useQuery({
+    queryKey: rndKeys.myProjects(status),
+    queryFn: async () => unwrap(await listMyResearchProjects({ status, limit: 100 })),
+  });
+}
+
 export function useAttachableProjectsQuery(isEnabled = true) {
   return useQuery({
     queryKey: rndKeys.attachableProjects(),
