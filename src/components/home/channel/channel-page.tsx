@@ -14,7 +14,8 @@ import Image from "next/image";
 import ChannelAboutOpener from "@/components/home/channel/channel-about-opener";
 import ChannelVideosGrid from "@/components/home/channel/channel-videos-grid";
 import FocusButton from "@/components/home/watch/focus-button";
-import { getChannel, listChannelVideos } from "@/lib/channels/api";
+import { listChannelVideos } from "@/lib/channels/api";
+import { loadChannelProfileOnce } from "@/lib/channels/server";
 import { formatSubscriberCountLabel } from "@/lib/feed/format";
 import { formatCountLabel } from "@/lib/store/format";
 import type { FeedVideo } from "@/lib/feed/schemas";
@@ -31,8 +32,12 @@ export default async function ChannelPage({ handle }: { readonly handle: string 
   // FETCHED TOGETHER, not waterfalled. The video read does not need the profile — it is keyed by
   // the same handle — so serialising them would add a full round trip for nothing. A video read
   // for a handle that turns out not to exist costs one wasted query, which is cheaper.
+  //
+  // `loadChannelProfileOnce` rather than `getChannel`: `generateMetadata` on the route above reads
+  // the same profile, and this read is `no-store` so Next's fetch memoization does not collapse
+  // them. Both go through React's `cache()` instead and the round trip happens once.
   const [profileResult, videosResult] = await Promise.all([
-    getChannel(handle, requestOptions),
+    loadChannelProfileOnce(handle),
     listChannelVideos(handle, { limit: CHANNEL_VIDEOS_PAGE_LIMIT }, requestOptions),
   ]);
 

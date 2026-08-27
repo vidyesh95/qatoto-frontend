@@ -31,6 +31,7 @@
 
 import { z } from "zod";
 
+import { StoreFacetBucketSchema } from "@/lib/store/catalog.schemas";
 import {
   OrganizationMeasuredMetricsSchema,
   SellerDeclaredProfileSchema,
@@ -110,10 +111,59 @@ export const PublicProviderCardSchema = z
         completedOrderCount: z.number().int(),
       })
       .strip(),
+    /**
+     * WHAT THIS ORGANIZATION ACTUALLY IS. A directory row used to carry no kind at all — the
+     * backend filtered on `commerce_provider_kind_link` and never projected it — so a buyer could
+     * narrow to customs brokers and read a page of cards that did not say "customs broker".
+     *
+     * ⚠️ `verificationState` HERE IS PER-KIND AND IS NOT THE ONE ABOVE. The card's own
+     * `verificationState` is PROFILE-level: "we checked this company exists". This one is
+     * "we approved them to operate as this kind". Rendering either as the other turns a company
+     * check into a licence. `PROVIDER_VERIFICATION_LABELS` says "Profile" in every string for the
+     * outer field; the per-kind field gets `PROVIDER_KIND_VERIFICATION_LABELS` below, which never
+     * says "profile".
+     */
+    providerKinds: z.array(
+      z
+        .object({
+          kind: z.enum(PROVIDER_KINDS),
+          verificationState: z.enum(PROVIDER_VERIFICATION_STATES),
+        })
+        .strip(),
+    ),
   })
   .strip();
 
-export const ProviderDirectoryPageSchema = cursorPageOf(PublicProviderCardSchema);
+/**
+ * What the directory can be narrowed to, and how many providers each choice would leave.
+ *
+ * SAME SHAPE `/store/search` RETURNS — `{ value, count }` — and the same three rules ride with it:
+ * a bucket absent is not a bucket at zero, the counts are of PROVIDERS rather than of matching rows
+ * (a forwarder with three sea offerings is one result under `transportMode=sea`), and they describe
+ * the UNFILTERED directory so that every alternative stays clickable after a filter is applied.
+ *
+ * `value` STAYS A PLAIN STRING, deliberately un-narrowed even where an enum exists. A facet
+ * vocabulary is whatever the rows contain; asserting into an enum breaks the first time the backend
+ * seeds a new member.
+ *
+ * ONLY FOUR DIMENSIONS ARE FACETED. `jurisdiction`, `standard` and `storageType` are free-text
+ * arrays a provider types, so a chip row over them would be one provider's spellings rather than a
+ * vocabulary; `acceptingRequests` is a boolean and needs no count to be legible.
+ */
+export const ProviderDirectoryFacetsSchema = z
+  .object({
+    providerKinds: z.array(StoreFacetBucketSchema),
+    transportModes: z.array(StoreFacetBucketSchema),
+    originCountryCodes: z.array(StoreFacetBucketSchema),
+    destinationCountryCodes: z.array(StoreFacetBucketSchema),
+  })
+  .strip();
+
+// `.extend`, not a bare `cursorPageOf` — that helper is `.strip()`, so a `facets` key added to the
+// response would be silently discarded rather than surfacing as a parse failure.
+export const ProviderDirectoryPageSchema = cursorPageOf(PublicProviderCardSchema).extend({
+  facets: ProviderDirectoryFacetsSchema,
+});
 
 // --- Offerings --------------------------------------------------------------
 
@@ -283,24 +333,47 @@ export const PublicServiceOfferingSchema = z
 // --- Filter inputs ----------------------------------------------------------
 
 /**
- * `ProvidersQuerySchema` accepts THREE keys and that is the whole filter surface:
- * `providerKind`, `limit`, `cursor`.
+ * `ProvidersQuerySchema` accepts ELEVEN keys: the eight filters STORE_STRUCTURE §9.1 specifies,
+ * plus `limit` and `cursor`.
  *
- * STORE_STRUCTURE §9.1 specifies eight filters — origin/destination coverage, transport mode,
- * jurisdiction, standards, storage capability, currency pair, verification state, accepting-requests
- * state. SEVEN OF THEM DO NOT EXIST. The query schema is `.strict()`, so sending one is a **422**,
- * not an ignored param. They are a backend ask, not a frontend build.
+ * SEVEN OF THESE WERE A 422 UNTIL PHASE 31. The query schema is `.strict()`, so sending an
+ * unaccepted key did not degrade to an ignored parameter — it killed the whole read. That is why
+ * this interface stayed at three keys for so long, and why the rule below still holds: DO NOT ADD A
+ * CHIP HERE WITHOUT ADDING THE QUERY KEY THERE.
+ *
+ * The types are narrow on purpose. `providerKind` and `transportMode` are enums rather than
+ * `string` because the backend parses them with `z.enum(...)`; the country codes are ISO-3166-1
+ * alpha-2 and `currencyPair` is `AAA/BBB`, both `.regex()`-checked upstream. A value this file
+ * types as `string` is one the backend genuinely accepts as free text.
  */
 export interface ListProvidersFilter {
-  // Typed as the enum, not `string`: the backend parses it with `z.enum(...)` under `.strict()`, so
-  // a misspelled kind is a 422 that kills the whole read rather than an ignored parameter.
   readonly providerKind?: ProviderKind;
+  /** ISO-3166-1 alpha-2, uppercase — a lowercase code is a 422, not a case-insensitive match. */
+  readonly originCountryCode?: string;
+  readonly destinationCountryCode?: string;
+  readonly transportMode?: FreightTransportMode;
+  /** Free text on a customs broker's `jurisdictions` array. Matched exactly, not fuzzily. */
+  readonly jurisdiction?: string;
+  /** Free text on a testing provider's `standards` array. */
+  readonly standard?: string;
+  /** Free text on a warehouse's `storageTypes` array. */
+  readonly storageType?: string;
+  /** `AAA/BBB`, uppercase — e.g. `USD/INR`. */
+  readonly currencyPair?: string;
+  /**
+   * ABSENT MEANS "NO FILTER", NOT "FALSE". The wire carries `"true"`/`"false"` because a query
+   * string has no booleans; `buildQueryString` stringifies this, and omitting the key is what asks
+   * for both. Never default it to `false` — that would silently hide every provider who has paused
+   * intake, which is a state a buyer may well want to see.
+   */
+  readonly acceptingRequests?: boolean;
   readonly limit?: number;
   readonly cursor?: string;
 }
 
 export type PublicProviderCard = z.infer<typeof PublicProviderCardSchema>;
 export type ProviderDirectoryPage = z.infer<typeof ProviderDirectoryPageSchema>;
+export type ProviderDirectoryFacets = z.infer<typeof ProviderDirectoryFacetsSchema>;
 export type PublicOfferingCard = z.infer<typeof PublicOfferingCardSchema>;
 export type PublicCoverage = z.infer<typeof PublicCoverageSchema>;
 export type ServiceOfferingDetail = z.infer<typeof ServiceOfferingDetailSchema>;
@@ -323,6 +396,29 @@ export const PROVIDER_VERIFICATION_LABELS: Record<ProviderVerificationState, str
   // Neither reaches a public read; present so the map is total and a switch cannot fall through.
   rejected: "Profile rejected",
   suspended: "Profile suspended",
+};
+
+/**
+ * Copy for the PER-KIND verification state — `commerce_provider_kind_link.verificationState`.
+ *
+ * DELIBERATELY SAYS "PROFILE" IN NO STRING. This state answers "has Qatoto approved them to operate
+ * as this kind", which is a strictly stronger claim than the profile map above; a card that renders
+ * one map's copy for the other field promotes a company check into a licence, or demotes a licence
+ * into a company check. The two are separate maps rather than one shared map for exactly that
+ * reason — sharing would make the mistake a one-character edit.
+ *
+ * Nothing here says "licensed" or "authorised" either. Qatoto approving a kind link is Qatoto's
+ * verdict, not a regulator's: a customs broker's actual licence is issued by a customs authority,
+ * and no string on this surface may imply otherwise.
+ */
+export const PROVIDER_KIND_VERIFICATION_LABELS: Record<ProviderVerificationState, string> = {
+  unverified: "Not verified for this service",
+  documents_pending: "Verification under review",
+  verified: "Verified by Qatoto for this service",
+  // Neither reaches a public read — an ineligible kind link is filtered out — but the map stays
+  // total so a switch cannot fall through.
+  rejected: "Rejected for this service",
+  suspended: "Suspended for this service",
 };
 
 export const SERVICE_PRICING_MODEL_LABELS: Record<ServicePricingModel, string> = {

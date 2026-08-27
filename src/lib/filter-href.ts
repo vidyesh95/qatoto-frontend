@@ -51,11 +51,43 @@ export function readEnumParam<TValue extends string>(
 }
 
 /**
+ * Reads a param and keeps it only if it matches `pattern`.
+ *
+ * THE ENUM RULE, APPLIED TO A SHAPE RATHER THAN A LIST. Some backend query keys are not enums but
+ * are still `.regex()`-constrained under `.strict()` — `originCountryCode` is `/^[A-Z]{2}$/`,
+ * `currencyPair` is `/^[A-Z]{3}\/[A-Z]{3}$/` — so a hand-edited `?originCountryCode=xx` is a **422
+ * that blanks the page**, exactly the failure `readEnumParam` exists to prevent. There is no
+ * enumerable list to check against, so the shape is checked instead.
+ *
+ * KEEP THE PATTERN IN STEP WITH THE BACKEND'S. A pattern looser than the server's lets the 422
+ * through; one tighter silently drops a value the server would have accepted. Neither is caught by
+ * a type.
+ */
+export function readPatternParam(
+  searchParams: RawSearchParams,
+  key: string,
+  pattern: RegExp,
+): string | undefined {
+  const value = readSingleParam(searchParams, key);
+  if (value === undefined) return undefined;
+  return pattern.test(value) ? value : undefined;
+}
+
+/**
  * The current query string with `patch` applied, as an href.
  *
  * A `undefined` value REMOVES its key — that is how a chip clears itself. `page` is
  * dropped on every patch: changing a filter while on page 4 of the old result set lands
  * on a page that may not exist in the new one, which reads as an empty result.
+ *
+ * `cursor` IS DROPPED FOR THE SAME REASON, but only when the patch does not mention it. A cursor is
+ * a POSITION IN ONE PARTICULAR RESULT SET — the store's is an opaque encoding of the last row's
+ * sort key — so carrying it across a filter change resumes the new result set partway through and
+ * silently hides every row that sorts before it. That reads as "this filter has fewer matches than
+ * it does", which is worse than an empty page because it looks like an answer.
+ *
+ * `CursorPageControl` is unaffected: it patches `{ cursor }` explicitly, and a key in the patch
+ * always wins. That asymmetry is the whole rule — paging SETS a cursor, filtering CLEARS one.
  */
 export function buildFilterHref(searchParams: RawSearchParams, patch: RawSearchParams): string {
   const nextParams = new URLSearchParams();
@@ -64,6 +96,7 @@ export function buildFilterHref(searchParams: RawSearchParams, patch: RawSearchP
 
   for (const key of mergedKeys) {
     if (key === "page") continue;
+    if (key === "cursor" && !(key in patch)) continue;
 
     const value = key in patch ? patch[key] : searchParams[key];
     if (value === undefined) continue;

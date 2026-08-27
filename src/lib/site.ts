@@ -27,6 +27,25 @@ export const SITE_DESCRIPTION =
   "Qatoto is a B2B platform for product research, development, and support — from idea to funded, market-ready product.";
 
 /**
+ * The branded share card, for any page whose own subject has no image.
+ *
+ * ⚠️ IT IS SHARED BECAUSE NEXT REPLACES `openGraph`, IT DOES NOT MERGE IT. A route that sets its own
+ * `openGraph` object discards the root layout's ENTIRELY — including its `images` — so a page that
+ * omits `images` because its subject happens to have none does not fall back to the branded card,
+ * it previews with NO image at all. That is a silent regression: the tag simply stops appearing,
+ * and nothing typechecks it.
+ *
+ * So a route that sets `openGraph` and may have no image of its own must name this explicitly.
+ * `/store/product/[id]` is the case that found it — the seeded catalogue has no photos.
+ */
+export const SITE_SHARE_IMAGE = {
+  url: "/og-image.png",
+  width: 1200,
+  height: 630,
+  alt: "Qatoto",
+} as const;
+
+/**
  * Where data-subject requests go — access, export, correction and deletion.
  *
  * IT IS SHARED BECAUSE TWO SURFACES MUST NOT DISAGREE. `disclaimers/privacy-policy.tsx` names this

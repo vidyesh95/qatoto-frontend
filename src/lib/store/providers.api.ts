@@ -30,9 +30,14 @@ import {
 /**
  * The connector directory.
  *
- * `providerKind` is the ONLY filter the backend accepts, alongside `limit` and `cursor`. §9.1 asks
- * for eight; seven do not exist, and because `ProvidersQuerySchema` is `.strict()` sending one is a
- * **422** rather than an ignored param. Do not add a chip here without adding the query key there.
+ * ALL EIGHT of §9.1's filters are accepted now, alongside `limit` and `cursor` — see
+ * `ListProvidersFilter`. Seven of them were a **422** until Phase 31, because `ProvidersQuerySchema`
+ * is `.strict()` and an unaccepted key kills the whole read rather than degrading to an ignored
+ * param. That is still the rule that matters: DO NOT ADD A CHIP WITHOUT ADDING THE QUERY KEY THERE.
+ *
+ * The response carries `facets` beside `items` and `page`. They describe the UNFILTERED directory,
+ * not the current result set, so a buyer who has narrowed to one transport mode can still see what
+ * the others would give them.
  *
  * A provider whose profile is `rejected` or `suspended` is excluded by the eligibility predicate,
  * so those two states never appear in a page even though the enum admits them.

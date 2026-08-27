@@ -779,7 +779,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Shipping profiles and carriers.",
       },
       {
-        // `route`, not `planned`: the page reads real data now. The other ten Studio entries stay
+        // `route`, not `planned`: the page reads real data now. The other nine Studio entries stay
         // `planned` — the data for those does not exist, and an honest placeholder is not a feature.
         kind: "route",
         label: "Analytics",
@@ -787,7 +787,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Reach and engagement across your videos, counted on Qatoto.",
       },
       {
-        // `route`, not `planned`: the page reads real data now. The other ten Studio entries stay
+        // `route`, not `planned`: the page reads real data now. The other nine Studio entries stay
         // `planned` — the data for those does not exist, and an honest placeholder is not a feature.
         kind: "route",
         label: "Comments",

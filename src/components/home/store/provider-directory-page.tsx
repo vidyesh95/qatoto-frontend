@@ -4,21 +4,34 @@
 // brokers, cargo insurers, inspection agencies, testing labs, marketing agencies, warehousing and
 // foreign exchange. Nine kinds, one directory.
 //
-// TWO HONESTY PROBLEMS THIS PAGE HAS TO LIVE WITH, both from the read rather than the design.
+// THE TWO HONESTY PROBLEMS THIS PAGE USED TO HAVE, both now fixed rather than lived with.
 //
-//  1. A ROW CANNOT SAY WHAT IT DOES. No public read projects the kinds an organization holds —
-//     `commerce_provider_kind_link` is filtered on and never projected — so the kind chips filter
-//     the list but a card carries no kind of its own. A buyer scanning nine rows cannot tell the
-//     customs broker from the laboratory without opening each one. That is the single most useful
-//     backend addition to this surface and is recorded as an ask.
-//  2. `verificationState` IS PROFILE-LEVEL, NOT PER KIND. It says the organization's own documents
-//     were reviewed; it does NOT say the organization is approved to broker customs. The labels
-//     therefore all say "profile", and no badge on this page implies a per-kind approval.
+//  1. A ROW COULD NOT SAY WHAT IT DID. No public read projected the kinds an organization holds —
+//     `commerce_provider_kind_link` was filtered on and never projected — so the kind chips
+//     filtered the list but a card carried no kind of its own. A buyer could narrow to customs
+//     brokers and then read a page of cards that did not say "customs broker", which looks broken
+//     rather than absent. `PublicProviderCard.providerKinds` closed it, and it shipped WITH the
+//     filters below rather than after them, deliberately.
+//  2. `verificationState` IS PROFILE-LEVEL, NOT PER KIND — and this one is not "fixed", it is
+//     SPLIT. The card carries both facts now, so the risk changed from omission to conflation:
+//     `provider.verificationState` says the organization's own documents were reviewed,
+//     `providerKinds[].verificationState` says Qatoto approved them to operate as that kind. They
+//     get two label maps, `PROVIDER_VERIFICATION_LABELS` (every string says "Profile") and
+//     `PROVIDER_KIND_VERIFICATION_LABELS` (no string says "profile"), so rendering one as the
+//     other is a visible edit rather than a one-character mistake. NEITHER implies a regulator's
+//     licence — a customs broker's actual licence is issued by a customs authority.
+//
+// THE FILTERS ARE FACET-DRIVEN, NOT ENUM-DRIVEN. The kind row used to render all nine
+// `PROVIDER_KINDS` regardless of whether any organization held them; with one provider seeded that
+// is eight chips that return an empty page. `catalog.schemas.ts`'s rule governs here too — a bucket
+// absent is not a bucket at zero — so every chip below comes from the backend's facet counts and
+// every one of them returns at least one row.
 
 import Image from "next/image";
 import Link from "next/link";
 
-import FilterChipRow, { type FilterChipOption } from "@/components/home/shared/filter-chip-row";
+import FacetChipRow from "@/components/home/shared/facet-chip-row";
+import FilterChipRow from "@/components/home/shared/filter-chip-row";
 import CursorPageControl from "@/components/home/store/shared/cursor-page-control";
 import {
   StoreEmptyFilteredPanel,
@@ -28,17 +41,27 @@ import {
 import {
   buildFilterHref,
   readEnumParam,
+  readPatternParam,
   readSingleParam,
   type RawSearchParams,
 } from "@/lib/filter-href";
 import { countryLabelFromCode, formatCountLabel, formatPercentageLabel } from "@/lib/store/format";
-import { PROVIDER_KIND_LABELS } from "@/lib/store/labels";
+import { FREIGHT_TRANSPORT_MODE_LABELS, PROVIDER_KIND_LABELS } from "@/lib/store/labels";
 import {
+  PROVIDER_KIND_VERIFICATION_LABELS,
   PROVIDER_VERIFICATION_LABELS,
+  type ProviderDirectoryFacets,
   type PublicProviderCard,
 } from "@/lib/store/providers.schemas";
 import { listStoreProviders } from "@/lib/store/providers.api";
-import { PROVIDER_KINDS } from "@/lib/store/shared.schemas";
+import { FREIGHT_TRANSPORT_MODES, PROVIDER_KINDS } from "@/lib/store/shared.schemas";
+
+// MIRRORS THE BACKEND'S OWN `.regex()`, character for character. A looser pattern here lets a 422
+// through; a tighter one silently drops a value the server would have taken. Neither is caught by a
+// type, so they are written next to each other and cited: `ProvidersQuerySchema` in
+// `store.schemas.ts`.
+const ISO_COUNTRY_CODE = /^[A-Z]{2}$/;
+const CURRENCY_PAIR = /^[A-Z]{3}\/[A-Z]{3}$/;
 
 type ProviderDirectoryViewState =
   | { status: "error"; message: string }
@@ -55,13 +78,51 @@ export default async function ProviderDirectoryPage({
 }: {
   searchParams: RawSearchParams;
 }) {
-  // `readEnumParam` DROPS an unrecognized value rather than forwarding it, which is what keeps a
-  // hand-edited `?providerKind=banana` from becoming a 422 error page against a `.strict()` schema.
+  // TWO GUARDS, ONE REASON. `ProvidersQuerySchema` is `.strict()` with `z.enum()` and `.regex()`
+  // values, so a hand-edited URL is a 422 that BLANKS THE WHOLE PAGE rather than an ignored param.
+  // `readEnumParam` drops a value outside the enum; `readPatternParam` drops one outside the
+  // backend's own regex. An unknown filter value means "no filter", never "match nothing".
+  //
+  // The three free-text keys go through `readSingleParam` unguarded, and that is correct rather
+  // than an oversight — the backend accepts them as free text, so there is no shape to check.
   const providerKind = readEnumParam(searchParams, "providerKind", PROVIDER_KINDS);
+  const transportMode = readEnumParam(searchParams, "transportMode", FREIGHT_TRANSPORT_MODES);
+  const originCountryCode = readPatternParam(searchParams, "originCountryCode", ISO_COUNTRY_CODE);
+  const destinationCountryCode = readPatternParam(
+    searchParams,
+    "destinationCountryCode",
+    ISO_COUNTRY_CODE,
+  );
+  const currencyPair = readPatternParam(searchParams, "currencyPair", CURRENCY_PAIR);
+  const jurisdiction = readSingleParam(searchParams, "jurisdiction");
+  const standard = readSingleParam(searchParams, "standard");
+  const storageType = readSingleParam(searchParams, "storageType");
+  // ABSENT IS "NO FILTER", NOT "FALSE". Only `?acceptingRequests=true` narrows; anything else —
+  // including a hand-typed `false` — leaves both states in the page, because a buyer may well want
+  // to see a provider who has paused intake.
+  const isAcceptingRequestsOnly = readSingleParam(searchParams, "acceptingRequests") === "true";
   const requestedCursor = readSingleParam(searchParams, "cursor");
 
-  const result = await listStoreProviders({ providerKind, cursor: requestedCursor });
-  const appliedFilterCount = providerKind === undefined ? 0 : 1;
+  const appliedFilters = {
+    providerKind,
+    transportMode,
+    originCountryCode,
+    destinationCountryCode,
+    currencyPair,
+    jurisdiction,
+    standard,
+    storageType,
+    acceptingRequests: isAcceptingRequestsOnly ? true : undefined,
+  };
+
+  const result = await listStoreProviders({ ...appliedFilters, cursor: requestedCursor });
+
+  // COUNTED FROM THE PARSED VALUES, not from `searchParams`. A dropped `?providerKind=banana` is
+  // not an applied filter, and counting it would tell a visitor "no results for your 1 filter"
+  // about a filter that was never sent.
+  const appliedFilterCount = Object.values(appliedFilters).filter(
+    (value) => value !== undefined,
+  ).length;
 
   const viewState: ProviderDirectoryViewState = !result.success
     ? { status: "error", message: result.error.message }
@@ -74,18 +135,10 @@ export default async function ProviderDirectoryPage({
           hasMore: result.data.page.hasMore,
         };
 
-  const kindOptions: FilterChipOption[] = [
-    {
-      label: "All services",
-      href: buildFilterHref(searchParams, { providerKind: undefined }),
-      isSelected: providerKind === undefined,
-    },
-    ...PROVIDER_KINDS.map((kind) => ({
-      label: PROVIDER_KIND_LABELS[kind],
-      href: buildFilterHref(searchParams, { providerKind: kind }),
-      isSelected: providerKind === kind,
-    })),
-  ];
+  // THE FACETS SURVIVE AN EMPTY PAGE, and that is the point of keeping them out of the view state:
+  // a buyer who has narrowed to nothing needs the chips MOST, because they are the way back. They
+  // are `null` only when the read itself failed, where there is nothing to offer.
+  const facets: ProviderDirectoryFacets | null = result.success ? result.data.facets : null;
 
   return (
     <div className="pb-8">
@@ -99,9 +152,62 @@ export default async function ProviderDirectoryPage({
         </p>
       </header>
 
-      <div className="px-4 pt-4 lg:px-6">
-        <FilterChipRow options={kindOptions} ariaLabel="Filter providers by service kind" />
-      </div>
+      {facets !== null && (
+        <div className="flex flex-col gap-2 px-4 pt-4 lg:px-6">
+          <FacetChipRow
+            searchParams={searchParams}
+            queryKey="providerKind"
+            ariaLabel="Filter providers by service kind"
+            buckets={facets.providerKinds}
+            labelsByEnumValue={PROVIDER_KIND_LABELS}
+          />
+          <FacetChipRow
+            searchParams={searchParams}
+            queryKey="transportMode"
+            ariaLabel="Filter providers by transport mode"
+            buckets={facets.transportModes}
+            labelsByEnumValue={FREIGHT_TRANSPORT_MODE_LABELS}
+          />
+          <FacetChipRow
+            searchParams={searchParams}
+            queryKey="originCountryCode"
+            ariaLabel="Filter providers by origin country"
+            buckets={facets.originCountryCodes}
+            formatValue={countryLabelFromCode}
+          />
+          <FacetChipRow
+            searchParams={searchParams}
+            queryKey="destinationCountryCode"
+            ariaLabel="Filter providers by destination country"
+            buckets={facets.destinationCountryCodes}
+            formatValue={countryLabelFromCode}
+          />
+          {/*
+            NOT A FACET, so it carries no count — it is a two-state toggle, and "Taking requests ·
+            12" beside a directory of 13 says nothing a buyer can act on. It is also NOT part of
+            `FacetChipRow`, whose contract is a backend bucket list.
+
+            `cursor: undefined` is unnecessary here — `buildFilterHref` already drops a cursor the
+            patch does not mention — and is omitted rather than written defensively, so the rule
+            lives in exactly one place.
+          */}
+          <FilterChipRow
+            options={[
+              {
+                label: "Any availability",
+                href: buildFilterHref(searchParams, { acceptingRequests: undefined }),
+                isSelected: !isAcceptingRequestsOnly,
+              },
+              {
+                label: "Taking requests",
+                href: buildFilterHref(searchParams, { acceptingRequests: "true" }),
+                isSelected: isAcceptingRequestsOnly,
+              },
+            ]}
+            ariaLabel="Filter providers by whether they are taking requests"
+          />
+        </div>
+      )}
 
       {renderProviderDirectory(viewState, searchParams)}
     </div>
@@ -186,6 +292,30 @@ function ProviderRow({ provider }: { provider: PublicProviderCard }) {
             {countryLabelFromCode(provider.countryCode)}
             {provider.serviceRegionSummary !== null && ` · ${provider.serviceRegionSummary}`}
           </p>
+
+          {/*
+            WHAT THIS ORGANIZATION ACTUALLY IS — the single addition that makes the filters above
+            worth having. Before it, narrowing to customs brokers returned cards that did not say
+            "customs broker".
+
+            The `title` carries the PER-KIND verification state and nothing else does: putting it in
+            the visible chip would sit it inches from the profile-level line below, where the two
+            read as one claim. An empty array renders nothing rather than "Unknown" — a provider
+            with no eligible kind link is not a provider of an unknown kind.
+          */}
+          {provider.providerKinds.length > 0 && (
+            <ul className="mt-1 flex flex-wrap gap-1">
+              {provider.providerKinds.map((providerKind) => (
+                <li
+                  key={providerKind.kind}
+                  title={PROVIDER_KIND_VERIFICATION_LABELS[providerKind.verificationState]}
+                  className="rounded bg-[#D6E3FF] px-1.5 py-0.5 text-[11px] leading-4 font-medium text-[#00696E]"
+                >
+                  {PROVIDER_KIND_LABELS[providerKind.kind]}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Not accepting requests is worth saying; accepting them is the default and is not. */}

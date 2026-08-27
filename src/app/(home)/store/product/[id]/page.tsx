@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import ProductDetail from "@/components/home/store/product-detail";
 import { prettifySlugForDisplay } from "@/lib/store";
-import { SITE_URL } from "@/lib/site";
+import { SITE_SHARE_IMAGE, SITE_URL } from "@/lib/site";
 import { withSentinelValues } from "@/lib/static-params";
 import { StructuredData, buildProductStructuredData } from "@/lib/structured-data";
 import { getStoreProduct } from "@/lib/store/products.api";
@@ -36,6 +36,30 @@ export async function generateMetadata({
   if (!result.success) {
     return { title: `${prettifySlugForDisplay(id)} · Store` };
   }
+
+  // THE PRODUCT'S OWN PHOTOS, NOT THE SITE-WIDE `/og-image.png`. Without this every shared product
+  // link previewed as the same generic Qatoto card — a share of one product was visually
+  // indistinguishable from a share of any other, which is the whole job of the card.
+  //
+  // NO SECOND FETCH: `result.data` is already in hand, and `images[]` is on the detail schema.
+  //
+  // ORDERED BY `position`, which is the seller's own ordering, and sliced to four — the platforms
+  // that read these show one and index a handful; sending thirty is payload nobody renders. Both
+  // `photo` and `spin_360` are stills, so neither needs excluding; if a video kind is ever added to
+  // `PRODUCT_MEDIA_KINDS` it MUST be filtered out here, because an OG image URL that resolves to a
+  // video renders as a broken card.
+  const shareImages = result.data.images
+    .toSorted((left, right) => left.position - right.position)
+    .slice(0, 4)
+    .map((image) => ({
+      url: image.url,
+      // `altText` is nullable and the fallback is the product's own title rather than "" — an image
+      // with no alt text is undescribed, not decorative.
+      alt: image.altText ?? result.data.title,
+      ...(image.widthPx === null ? {} : { width: image.widthPx }),
+      ...(image.heightPx === null ? {} : { height: image.heightPx }),
+    }));
+
   return {
     title: `${result.data.title} · Store`,
     ...(result.data.description === null ? {} : { description: result.data.description }),
@@ -43,6 +67,30 @@ export async function generateMetadata({
     // matters most here: a product is reachable from rails, categories, pathways and search, and
     // every one of those can append its own query string.
     alternates: { canonical: `/store/product/${id}` },
+    openGraph: {
+      title: result.data.title,
+      ...(result.data.description === null ? {} : { description: result.data.description }),
+      // `website`, NOT `product`. Next's `OpenGraph` union has no `product` type, and `article`
+      // would attach author and published-time semantics a listing does not have.
+      type: "website",
+      url: `/store/product/${id}`,
+      // ⚠️ THE FALLBACK IS NAMED HERE, NOT INHERITED. Next REPLACES `openGraph` rather than
+      // merging it, so omitting `images` does not fall back to the root layout's branded card — it
+      // emits no `og:image` at all. This was caught live: the seeded catalogue has no photos, and
+      // the product pages served with the tag simply missing.
+      images: shareImages.length === 0 ? [SITE_SHARE_IMAGE] : shareImages,
+    },
+    // ⚠️ `twitter` IS A SEPARATE TOP-LEVEL KEY AND DOES NOT READ `openGraph`. Setting only
+    // `openGraph` leaves the root layout's twitter block inherited whole, so X — which prefers
+    // `twitter:*` over `og:*` — kept showing "Qatoto : Product Research…" on every product link
+    // while Facebook and Slack showed the product. One network still generic is the same defect,
+    // not a smaller one.
+    twitter: {
+      card: "summary_large_image",
+      title: result.data.title,
+      ...(result.data.description === null ? {} : { description: result.data.description }),
+      images: shareImages.length === 0 ? [SITE_SHARE_IMAGE.url] : shareImages.map((i) => i.url),
+    },
   };
 }
 

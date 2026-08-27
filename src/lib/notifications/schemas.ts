@@ -1,13 +1,13 @@
 // TRANSPORT: props-only — pure contract for the three `/notifications` routes. No network, no React.
 //
-// THE 25 KINDS ARE POSTGRES `pgEnum` LABELS, SENT VERBATIM IN snake_case. The authority is
-// `src/db/schema/platform.ts:412` in the backend repo and the `enqueueNotifications` call sites
+// THE 24 KINDS ARE POSTGRES `pgEnum` LABELS, SENT VERBATIM IN snake_case. The authority is
+// `src/db/schema/platform.ts:442` in the backend repo and the `enqueueNotifications` call sites
 // beside it — never a doc, which drifts. Do not "correct" one of these to kebab-case: they are
 // data that must byte-match the label, not identifiers.
 //
 // `kind` IS PARSED AS A PLAIN STRING, NOT `z.enum(NOTIFICATION_KINDS)`, and that is the one
-// deliberate loosening on this boundary. A `z.enum` over 25 labels means the next backend release
-// that adds a 26th makes `safeParse` fail on the row that carries it — and because the rows are
+// deliberate loosening on this boundary. A `z.enum` over 24 labels means the next backend release
+// that adds a 25th makes `safeParse` fail on the row that carries it — and because the rows are
 // parsed as a page, ONE unknown kind would blank the WHOLE inbox rather than one line of it. That
 // trade is wrong for a surface whose entire job is telling someone what happened. The tuple below
 // still exists and is still exhaustive over what ships today; `isKnownNotificationKind` narrows to

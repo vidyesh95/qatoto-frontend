@@ -51,11 +51,11 @@ already had the `(home)` count right at three, and `todo.md` did not.
   in `sitemap.ts`, and `/policies-and-safety` added to the sidebar's footer so it is reachable at
   all. None invents a capability the backend lacks; each is a directory or a hub over surfaces
   that already work.
-- **Ten under `(studio)`** render `studio-planned-page.tsx` — the roadmap summary verbatim, what
+- **Nine under `(studio)`** render `studio-planned-page.tsx` — the roadmap summary verbatim, what
   the page will do, and a link to the surface that does the job today WHERE ONE TRULY EXISTS. Six
   have no such link and say so rather than inventing one.
 
-    **They stay `kind: "planned"`, and that is the point.** All ten have no backend at all, so
+    **They stay `kind: "planned"`, and that is the point.** All nine have no backend at all, so
     explaining the absence well is not the same as filling it. A `route` on the roadmap is a claim
     the capability exists.
 
@@ -81,7 +81,7 @@ labelled "Five", so the real number before that work was **eighteen**. It is six
 
 ---
 
-## 3. Twenty-two of the twenty-five notification kinds are unproven against live data
+## 3. Twenty-one of the twenty-four notification kinds are unproven against live data
 
 The bell is wired end to end and a throwaway harness passed **156/156** live checks, but only
 three kinds have ever met a real payload: `project_invite_received`, `project_invite_revoked`

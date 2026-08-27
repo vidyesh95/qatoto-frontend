@@ -990,26 +990,90 @@ gone stale in both directions.
    nearly free** — it is Liked and Bookmarked, which `GET /users/me/liked-videos` and
    `/saved-videos` already serve, needing only a `videoType` filter — and **`/anime/genre`'s chips
    and `/anime/ranking`'s sort currently change nothing**, they re-render the same mock array, so
-   wiring them is a behaviour change rather than a data swap. It needs one decision: `genreTags` is a
-   free-text array, and a genre chip row needs a canonical list.
-2. **SEO closeouts.** `/store/product/[id]` has title, description and canonical but no `openGraph` —
-   and `images[]` is already on the product detail schema, so it needs no second fetch.
-   `src/app/manifest.json` (not `public/`) omits `start_url` and `description`. `/channel/[handle]`
-   has a hardcoded `title: "Channel"` rather than `generateMetadata`.
+   wiring them is a behaviour change rather than a data swap.
+
+    **⚠️ THE BLOCKER IS CONTENT, NOT CODE — and that reorders this whole list.** Probed against the
+    live database on 2026-08-27: `anime_series` **0 rows**, `anime_season` **0**, `anime_episode`
+    **0**, and `video WHERE video_type = 'anime_episode'` **0**. Wiring the five pages today would
+    replace five pages of invented content with five blank ones. **YouTube's own decision is the
+    precedent: it does not ship a vertical it cannot fill** — Movies & Shows launched with licensed
+    inventory, not a browse skeleton. Leaving `/anime` on mocks is therefore a decision, recorded
+    here, and it is revisited when the first series is seeded rather than on a schedule.
+
+    **IT IS ALSO CHEAPER THAN THE PARAGRAPH ABOVE BILLS IT.** No migration — every column exists. The
+    projection discipline is already written: `src/modules/studio/series/public-series.service.ts` is
+    "the ONLY public read of an anime series anywhere on the platform" and already states why the
+    studio's own eleven `/series` routes must stay owner-scoped (they return unreleased episode
+    titles, premiere dates and the production schedule). And `/anime/watch` is already the real watch
+    page, not a mock.
+
+    **TWO DECISIONS BLOCK IT, and only one was known.** (a) `genreTags` is a free-text array, so a
+    genre chip row needs a canonical list. (b) **`/anime/ranking`'s period selector cannot be served
+    by `trending_video_snapshot`** — its columns are `as_of`, `rank`, `trending_score_points`,
+    `counted_views_in_window` and the component points, with **no period dimension at all**. It is a
+    rolling HOURLY top-200. "This week" and "this month" are not filters over it; they are a second
+    snapshot cadence, or they are not offered.
+
+2. ~~**SEO closeouts.**~~ **SHIPPED.** `/store/product/[id]` and `/channel/[handle]` both carry
+   `openGraph` **and** `twitter`, and `src/app/manifest.json` has `start_url`, `scope`, `id` and
+   `description`. Three things were learned doing it that the entry above did not know:
+    - **⚠️ Next REPLACES `openGraph`, it does not merge it.** A route that sets its own `openGraph`
+      discards the root layout's ENTIRELY, `images` included — so a page that omits `images` because
+      its own subject has none emits NO `og:image` rather than falling back to the branded card. The
+      seeded catalogue has no product photos, which is how this was caught in the served HTML. The
+      fallback is now named explicitly through `SITE_SHARE_IMAGE` in `src/lib/site.ts`.
+    - **`twitter` is a separate top-level key that does not read `openGraph`.** Setting only
+      `openGraph` left the root layout's twitter block inherited whole, so X kept showing
+      "Qatoto : Product Research…" on every product and creator link while Slack showed the real one.
+      One network still generic is the same defect, not a smaller one.
+    - **The channel `generateMetadata` objection was removed rather than accepted.** It was refused as
+      "a second fetch of a route the page already reads" — true, because that read is `cache:
+"no-store"` (the profile carries the viewer's own subscription state) and Next does not memoize
+      those. `loadChannelProfileOnce` in `src/lib/channels/server.ts` wraps it in React's `cache()`.
+      Measured, not assumed: one page load makes ONE backend call with both the metadata and the page
+      reading the profile.
 3. **The channel sitemap.** Blocked on one bounded public enumeration read;
    `creator_stats.publishedVideoCount` makes "creators with at least one published video" a single
    indexed query. It carries a real consent question — the cofounder directory already argues that
    "a directory of people who did not consent to being in it" is a decision, not a default.
-4. **Provider directory filters.** `GET /store/providers` accepts three query keys; the frontend
-   documents eight and seven do not exist. The schema is `.strict()`, so sending one is a **422 that
-   kills the whole read**, not an ignored parameter. The per-kind extension tables already carry
-   every field. Build the keys and the UI together or neither.
-5. **The six missing doc rows** — `GET /users/me/creator-summary`, `/users/me/video-analytics`,
-   `/users/me/video-comments`, `/research-projects/attachable`, and the jobs
-   `publish-scheduled-videos` and `resweep-unverified-daily-logs`. All six exist in code and appear
-   in no route or job table. The repo's own rule: "a route that ships without a row in §5 or §6 is
-   invisible to the next reader."
-6. **The ten `planned` Studio routes.** They are the entire `kind: "planned"` set on the roadmap and
+4. ~~**Provider directory filters.**~~ **SHIPPED, all eight keys plus facets.**
+   `ProvidersQuerySchema` went from 3 keys to 11, `PublicProviderCard` gained `providerKinds`, and
+   the response carries `facets` beside `items`/`page`. Four things worth keeping:
+    - **1a shipped WITH the filters, not after.** A row could not say what it did —
+      `commerce_provider_kind_link` was filtered on and never projected — so narrowing to customs
+      brokers returned cards that did not say "customs broker", which looks broken rather than
+      absent. Filters without it would have been worse than no filters.
+    - **The A13 split became a conflation risk rather than an omission.** The card now carries
+      profile-level AND per-kind verification, so they get two label maps —
+      `PROVIDER_VERIFICATION_LABELS` (every string says "Profile") and
+      `PROVIDER_KIND_VERIFICATION_LABELS` (no string says "profile"). Neither implies a regulator's
+      licence.
+    - **The chips are facet-driven, not enum-driven.** The kind row used to render all nine
+      `PROVIDER_KINDS` regardless; with one provider seeded that is eight chips returning an empty
+      page. Verified live: every facet count equals the row count its own filter returns, and no
+      zero-count bucket is emitted. `FacetChipRow` was hoisted out of `store-search-page.tsx` so the
+      rule lives in one place.
+    - **A latent cursor bug fell out of it.** `buildFilterHref` dropped `page` but carried `cursor`
+      across a filter change, so filtering from page 2 resumed the NEW result set partway through and
+      silently hid every row sorting before it. It now drops `cursor` unless the patch names it —
+      paging SETS a cursor, filtering CLEARS one. This also fixed `/store/search`, which had it too.
+5. ~~**The six missing doc rows**~~ **WRITTEN.** The three creator self-reads went into a new
+   `HOME_BACKEND_STRUCTURE.md` §5.2f (with the reason they sit on the users router rather than the
+   videos one — `videosRouter` mounts first and shadows any two-segment `/videos/X`);
+   `publish-scheduled-videos` joined HOME §6's job table; `resweep-unverified-daily-logs` and
+   `GET /research-projects/attachable` joined R&D §4e and §5's tables.
+6. **`attachedDocumentNames` COSTS A CREATOR DATA TODAY, and it is the only one of the four
+   remaining `TRANSPORT: mock` placeholders that does.** `src/lib/videos/studio-view.ts:104` keeps
+   the field on the draft so the control in `video-elements-step.tsx` renders, and
+   `toCreateVideoInput` deliberately drops it — `POST /videos` has no document field and its schema
+   is `.strict()`, so sending one would be a hard 422 rather than an ignored key. A creator who
+   fills that control in **loses the value on save, with no error**. The other three
+   (`comments.tsx`'s trending triple, `watch-content.tsx`'s transcript and `isPremium`) are
+   read-only display placeholders and cost nobody anything. `PublicVideo` does return a read-only
+   `documents` array, but nothing writes it — there is no upload route. The honest fix is a backend
+   field, not a frontend workaround; the cheap interim is to disable the control rather than accept
+   a silent discard.
+7. **The nine `planned` Studio routes.** They are the entire `kind: "planned"` set on the roadmap and
    each needs a whole backend domain, not a screen. `/studio/team` means ACCOUNT-level collaborators;
    the per-video `video_collaborator` table that exists is a different thing and is already wired.
 

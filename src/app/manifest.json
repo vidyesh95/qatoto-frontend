@@ -1,6 +1,10 @@
 {
   "name": "Qatoto",
   "short_name": "Qatoto",
+  "description": "Product research, development and support — take an idea from problem to team to funded build, and buy or sell what comes out of it.",
+  "start_url": "/",
+  "scope": "/",
+  "id": "/",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

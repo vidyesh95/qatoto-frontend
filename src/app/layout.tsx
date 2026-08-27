@@ -4,7 +4,7 @@ import { Geist, Geist_Mono, Roboto_Serif } from "next/font/google";
 // eslint-disable-next-line import/no-unassigned-import -- global stylesheet has no exports to bind
 import "./globals.css";
 import { BrowserPreferencesProvider } from "@/state/browser-preferences-context";
-import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_SHARE_IMAGE, SITE_TITLE, SITE_URL } from "@/lib/site";
 import { StructuredData, buildOrganizationStructuredData } from "@/lib/structured-data";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
@@ -45,20 +45,13 @@ export const metadata: Metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     url: SITE_URL,
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Qatoto",
-      },
-    ],
+    images: [SITE_SHARE_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: ["/og-image.png"],
+    images: [SITE_SHARE_IMAGE.url],
   },
 };
 
