@@ -190,19 +190,52 @@ other enum on the wire.
 
 ---
 
+## Cache Components opt-outs — 18 removed, 96 routes left
+
+`export const instant = false` plus a boilerplate `// TODO: Cache Components adoption` was applied
+**wholesale** during the migration and never revisited: **114 routes** carried the TODO, 159 carry
+the opt-out. All 18 in `(disclaimers)` and `(information)` are now clean.
+
+⚠️ **`instant` DOES NOT AFFECT PRERENDERING, AND ASSUMING IT DOES WASTES A ROUND.** This was
+measured, not reasoned about: the route table before and after removing all 18 is **byte-identical**
+— 205 routes, 28 `○` / 172 `◐` / 5 `ƒ`, **zero symbols changed**. Those pages were already static
+WITH the opt-out. Anyone planning this work by promising a static/PPR win is measuring the wrong
+thing.
+
+**What it actually controls**, from the bundled docs (`node_modules/next/dist/docs/01-app/02-guides/
+instant-navigation.md`): it "opts the segment out of validation feedback… For opted-out segments,
+**the navigation blocks on the server**." So the cost is NAVIGATION latency and the loss of the dev
+overlay's insights — neither of which appears in the build output.
+
+**Which means the benefit here was not measured and should not be claimed.** The build stays green,
+the routes stay static, the false TODOs are gone. Whether navigation into those pages actually got
+faster needs the dev overlay in a browser.
+
+**The remaining 96** are `(home)` 59, `(studio)` 21, `(admin)` 11, `(auth)` 4 — and those genuinely
+read cookies or a session, so each needs its dynamic read moved behind a Suspense boundary rather
+than the opt-out simply deleted. `cart/page.tsx` is the model for the ones that must KEEP it: it
+replaced the boilerplate with the real reason ("the cart is a client-query island behind a session —
+its data never reaches the server render at all"), which is what a finished route looks like whether
+the flag stays or goes.
+
+---
+
 ## Documentation drift
 
-Each of these misleads a reader; none changes behaviour.
+~~1. **Sections written in future tense about shipped work.**~~ **DONE.** `STUDIO_BACKEND_STRUCTURE.md`
+§13 (its recipe named `scripts/seed-admin.ts` and `src/state/studio-videos-context.tsx`, **neither
+of which exists**), §9 (opened "there is no background job, no polling, no callback" — deferred
+verification had made that false), and `HOME_BACKEND_STRUCTURE.md` §8.3 (proposed
+`isSourceVerified` as a "new column, new flow" that had already shipped) are all corrected.
 
-1. **Sections written in future tense about shipped work**: `HOME_BACKEND_STRUCTURE.md` §8.3,
-   `STUDIO_BACKEND_STRUCTURE.md` §9, §13 and §5.1. **§13 is the urgent one** — its verification
-   recipe tells a reader to expect behaviour that no longer happens, so following it looks like
-   finding a bug.
-2. **The four `/users/*/reports` moderation routes are still undocumented** —
-   `user-reports.routes.ts` carries `reportUser`, `listUserReports`, `decideUserReport` and
-   `restoreUserProfileText`, and no doc table has a row for any of them. They want a table modelled
-   on `HOME_BACKEND_STRUCTURE.md` §5.2c's. (The rest of that backlog closed: the six missing route
-   and job rows, the channel-profile pair and both self-read report routes all have rows now.)
+⚠️ **§5.1 WAS ON THIS LIST AND SHOULD NOT HAVE BEEN.** Checked line by line: it is an accurate
+present-tense cost analysis with no future-tense claim in it. A register entry that invents work
+is the same defect as one that hides it.
+
+~~2. **The four `/users/*/reports` moderation routes are undocumented.**~~ **DONE** —
+`HOME_BACKEND_STRUCTURE.md` §5.2b2, modelled on §5.2c's table, with the limiters, the idempotency
+requirement on both admin writes, and the three-field scope of `profile_moderation_state`.
+
 3. ~~**The frontend repo carries stale FORKS of four backend docs.**~~ **DELETED — and it was SIX,
    not four.** `STUDIO_BACKEND_STRUCTURE.md` was 45 lines behind and `ESCROW_LEDGER_STRUCTURE.md`
    was byte-identical, which is a fork that has not drifted yet rather than one that will not.
@@ -252,13 +285,30 @@ Each of these misleads a reader; none changes behaviour.
     snapshot cadence, or they are not offered.
 
 2. **The eight `planned` Studio routes that are left.** ⚠️ **DO NOT INHERIT A COST FROM THIS LINE
-   WITHOUT CHECKING IT** — the version above it was wrong about `funding` for months. **Five
-   genuinely need a new domain**: `subtitles` (no caption table; `captionCertification` is a text
-   column on `video`), `copyright` (a video-REPORT-REASON enum member, not a claims table),
-   `pitches` (`pitch` is a `video_type` enum member, not a table), `team` (account-level
-   collaborators; the `video_collaborator` table is per-video and already wired) and `earn` (a money
-   rail — escrow left this codebase, §7). The other three — `learn`, `support`, `feedback` — are the
-   `/customer-service` shape and have not been costed since that page shipped as authored content.
+   WITHOUT CHECKING IT** — the version above it was wrong about `funding` for months, and checking
+   again moved two more.
+
+    **⚠️ `/studio/subtitles` IS NOT A MISSING FEATURE. IT IS IMPOSSIBLE ON THIS ARCHITECTURE**, and
+    it was miscounted as "needs a new backend domain" until 2026-08-27. Every video is
+    `videoSource: "youtube"` — 10 of 10 in the live database — self-hosted video (Livepeer) is
+    explicitly deferred by STUDIO §0 ("**must NOT be built now**"), and **Qatoto cannot inject
+    captions into a YouTube embed**. Captions for a YouTube-hosted video live in that creator's own
+    YouTube Studio. A caption table plus an upload would build a store nothing can play. It belongs
+    with `download` ("structurally impossible — the bytes are on youtube.com") and `isPremium`. It
+    comes back only if self-hosted video does.
+
+    **`/studio/team` is the one genuine remaining feature**, and it is a whole domain rather than a
+    screen: **no account-level delegation primitive exists anywhere.** `video_collaborator` is
+    per-video (it carries a `videoId`) and `video_team_member` is a display-label list. It needs
+    tables, a role model, invite/accept/revoke, an authorization layer every creator route consults,
+    and an audit trail — because it changes who `req.user.id` effectively is on every one of them.
+    Security-sensitive, and realistically several sessions.
+
+    The other three genuinely needing a new domain: `copyright` (`copyright` is a video-REPORT-REASON
+    enum member, not a claims table), `pitches` (`pitch` is a `video_type` enum member, not a table)
+    and `earn` (a money rail — escrow left this codebase, §7). `learn`, `support` and `feedback` are
+    the `/customer-service` shape and are already doing the right thing: each links to the surface
+    that does part of the job today rather than inventing a channel.
 
 ---
 
