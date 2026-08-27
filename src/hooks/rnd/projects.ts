@@ -30,6 +30,7 @@ import {
   respondToProjectInvite,
   listAttachableResearchProjects,
   listMyResearchProjects,
+  listProjectVideos,
   listProjectOpenRoles,
   setOpenRoleOpenState,
   setProjectStage,
@@ -169,6 +170,26 @@ export function useMyProjectsQuery(status: string | undefined) {
   return useQuery({
     queryKey: rndKeys.myProjects(status),
     queryFn: async () => unwrap(await listMyResearchProjects({ status, limit: 100 })),
+  });
+}
+
+/**
+ * A venture's public videos — the pitch composer's picker.
+ *
+ * PUBLIC AND ALREADY GATED. `GET /research-projects/:slug/videos` applies the same
+ * `PUBLICLY_SERVABLE` predicate the pitch write re-applies when accepting a choice, so every
+ * option this returns is one the server will accept. Disabled until a venture is chosen,
+ * because the list is venture-scoped and there is no sensible list before then.
+ */
+export function useProjectVideosQuery(projectSlug: string) {
+  return useQuery({
+    queryKey: rndKeys.projectVideos(projectSlug),
+    // 50, NOT 100. That route's query schema caps `limit` at 50 and answers 422 above it —
+    // and a 422 here rendered as an EMPTY PICKER, which is the "failed looks like empty" bug
+    // this codebase names repeatedly. Found by watching the picker show "no videos" for a
+    // venture that had one.
+    queryFn: async () => unwrap(await listProjectVideos(projectSlug, { limit: 50 })),
+    enabled: projectSlug.length > 0,
   });
 }
 

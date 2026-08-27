@@ -2,6 +2,7 @@
 // (`POST …/submit`, `POST …/close`, `DELETE /pitches/:id`).
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -19,6 +20,7 @@ import {
   usePitchQuery,
   useSubmitPitchMutation,
 } from "@/hooks/rnd/pitches";
+import { formatDurationLabel } from "@/lib/feed/format";
 import { ApiRequestError } from "@/lib/http";
 import type { Pitch } from "@/lib/rnd/pitches.schemas";
 
@@ -163,7 +165,43 @@ function PitchCard({ pitch }: { readonly pitch: Pitch }) {
         <PitchStatusBadge status={pitch.status} />
       </div>
 
-      <p className="mt-2 text-sm text-muted-foreground">{pitch.summary}</p>
+      <div className="mt-2 flex gap-3">
+        {pitch.pitchVideo !== null && (
+          <span className="relative flex aspect-video w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+            {pitch.pitchVideo.thumbnailUrl === null ? (
+              <Image
+                src="/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                alt=""
+                width={24}
+                height={24}
+              />
+            ) : (
+              <Image
+                src={pitch.pitchVideo.thumbnailUrl}
+                alt=""
+                width={128}
+                height={72}
+                className="size-full object-cover"
+              />
+            )}
+            {formatDurationLabel(pitch.pitchVideo.durationSeconds) !== null && (
+              <span className="absolute right-1 bottom-1 rounded bg-black/75 px-1 text-[11px] font-medium text-white">
+                {formatDurationLabel(pitch.pitchVideo.durationSeconds)}
+              </span>
+            )}
+          </span>
+        )}
+        <p className="text-sm text-muted-foreground">{pitch.summary}</p>
+      </div>
+
+      {/* PROMPTED, NOT BLOCKED. Submitting without a video is allowed; saying nothing would
+          mean most pitches ship without one simply because nothing suggested it. */}
+      {pitch.pitchVideo === null && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          No video on this pitch. Funders watch before they read — a pitch without one is much
+          weaker.
+        </p>
+      )}
 
       {/* THE REJECTION REASON IS SHOWN IN FULL. It is the moderator's own sentence and the
           only thing that makes a rejection actionable rather than a wall. */}

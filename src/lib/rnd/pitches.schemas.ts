@@ -27,6 +27,31 @@ export const PITCH_STATUS_LABELS: Record<PitchStatus, string> = {
 };
 
 /**
+ * The video a pitch embeds.
+ *
+ * ⚠️ NULL MEANS "no video, OR the video is no longer publicly servable", and those are one
+ * answer on purpose. The server joins the video through the same public gate the watch page
+ * uses, in the JOIN's ON clause rather than the WHERE — so a video that is unpublished or
+ * hidden by a moderator nulls this field instead of 404ing a live pitch.
+ *
+ * Every field here is already public on the watch payload and the feed item, so rendering it
+ * exposes nothing new. The lifecycle columns — `visibility`, `publishStatus`, `reviewStatus`,
+ * `uploadStatus`, `isSourceVerified` — are deliberately not on the wire.
+ */
+export const PitchVideoSchema = z
+  .object({
+    videoId: z.string(),
+    videoSource: z.enum(["youtube", "hosted"]),
+    youtubeVideoId: z.string().nullable(),
+    title: z.string(),
+    thumbnailUrl: z.string().nullable(),
+    /** NULL until the duration job has enough samples. An absence, never a zero. */
+    durationSeconds: z.number().int().nullable(),
+  })
+  .strip();
+export type PitchVideo = z.infer<typeof PitchVideoSchema>;
+
+/**
  * One pitch.
  *
  * `externalFundingUrl` and `externalContactUrl` are NORMALIZED by the server — what its URL
@@ -47,7 +72,7 @@ export const PitchSchema = z
     projectName: z.string(),
     title: z.string(),
     summary: z.string(),
-    pitchVideoId: z.string().nullable(),
+    pitchVideo: PitchVideoSchema.nullable(),
     externalFundingUrl: z.string().nullable(),
     externalContactUrl: z.string().nullable(),
     status: PitchStatusSchema,
@@ -130,7 +155,16 @@ export const PitchReviewQueueEntrySchema = z
     summary: z.string(),
     projectSlug: z.string(),
     projectName: z.string(),
-    pitchVideoId: z.string().nullable(),
+    /** What the moderator is judging — narrower than the public shape, no `videoSource`. */
+    pitchVideo: z
+      .object({
+        videoId: z.string(),
+        youtubeVideoId: z.string().nullable(),
+        title: z.string(),
+        thumbnailUrl: z.string().nullable(),
+      })
+      .strip()
+      .nullable(),
     externalFundingUrl: z.string().nullable(),
     externalContactUrl: z.string().nullable(),
     submittedByUserId: z.string(),

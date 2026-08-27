@@ -9,6 +9,7 @@ import { useState } from "react";
 
 import StatusPanel from "@/components/home/shared/status-panel";
 import { PitchDisclaimer } from "@/components/pitches/pitch-shared";
+import PitchVideoPicker from "@/components/studio/pitches/pitch-video-picker";
 import {
   useCreatePitchMutation,
   useMyPitchesQuery,
@@ -58,6 +59,11 @@ export default function PitchComposer({ pitchId }: { readonly pitchId?: string }
   const [fundingUrl, setFundingUrl] = useState("");
   const [contactUrl, setContactUrl] = useState("");
   const [hasSeededFromServer, setHasSeededFromServer] = useState(false);
+  // The id is what the write sends; the label is only so the form can show what is chosen
+  // without a second read. Both are cleared together.
+  const [pitchVideoId, setPitchVideoId] = useState<string | null>(null);
+  const [pitchVideoTitle, setPitchVideoTitle] = useState<string | null>(null);
+  const [isVideoPickerOpen, setIsVideoPickerOpen] = useState(false);
 
   const createMutation = useCreatePitchMutation(projectSlug);
   const updateMutation = useUpdatePitchMutation();
@@ -70,6 +76,8 @@ export default function PitchComposer({ pitchId }: { readonly pitchId?: string }
     setFundingUrl(existingPitch.externalFundingUrl ?? "");
     setContactUrl(existingPitch.externalContactUrl ?? "");
     setProjectSlug(existingPitch.projectSlug);
+    setPitchVideoId(existingPitch.pitchVideo?.videoId ?? null);
+    setPitchVideoTitle(existingPitch.pitchVideo?.title ?? null);
     setHasSeededFromServer(true);
   }
 
@@ -138,6 +146,8 @@ export default function PitchComposer({ pitchId }: { readonly pitchId?: string }
                   // `null` CLEARS the link, an empty string is not a valid URL. Emptying the
                   // field has to mean "remove it", or a founder can add a funding link and
                   // never take it down.
+                  // `null` detaches the video, exactly as it clears a link.
+                  pitchVideoId,
                   externalFundingUrl: fundingUrl.trim().length === 0 ? null : fundingUrl.trim(),
                   externalContactUrl: contactUrl.trim().length === 0 ? null : contactUrl.trim(),
                 },
@@ -147,6 +157,7 @@ export default function PitchComposer({ pitchId }: { readonly pitchId?: string }
             createMutation.mutate({
               title: title.trim(),
               summary: summary.trim(),
+              ...(pitchVideoId === null ? {} : { pitchVideoId }),
               ...(fundingUrl.trim().length === 0 ? {} : { externalFundingUrl: fundingUrl.trim() }),
               ...(contactUrl.trim().length === 0 ? {} : { externalContactUrl: contactUrl.trim() }),
             });
@@ -181,6 +192,55 @@ export default function PitchComposer({ pitchId }: { readonly pitchId?: string }
               </p>
             </div>
           )}
+
+          <div>
+            <span className={LABEL_CLASS}>Pitch video</span>
+            {pitchVideoId === null ? (
+              <>
+                <button
+                  type="button"
+                  disabled={projectSlug.length === 0}
+                  onClick={() => {
+                    setIsVideoPickerOpen(true);
+                  }}
+                  className="mt-1 block cursor-pointer rounded-full border border-border px-4 py-2 text-sm text-foreground disabled:opacity-40"
+                >
+                  Choose a video
+                </button>
+                {/* PROMPTED, NOT REQUIRED. A founder whose video is still processing must not
+                    be blocked — the background job that verifies a YouTube embed is not
+                    theirs to hurry — so this is a sentence rather than a gate. */}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {projectSlug.length === 0
+                    ? "Choose a venture first — a pitch shows a video that belongs to it."
+                    : "Optional, but a pitch without a video is much weaker. Funders watch before they read."}
+                </p>
+              </>
+            ) : (
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className="text-sm text-foreground">{pitchVideoTitle ?? "Video chosen"}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsVideoPickerOpen(true);
+                  }}
+                  className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs text-foreground"
+                >
+                  Change
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPitchVideoId(null);
+                    setPitchVideoTitle(null);
+                  }}
+                  className="cursor-pointer rounded-full border border-border px-3 py-1 text-xs text-muted-foreground"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+          </div>
 
           <div>
             <label className={LABEL_CLASS} htmlFor="pitch-title">
@@ -286,6 +346,20 @@ export default function PitchComposer({ pitchId }: { readonly pitchId?: string }
             </p>
           )}
         </form>
+      )}
+
+      {isVideoPickerOpen && (
+        <PitchVideoPicker
+          projectSlug={projectSlug}
+          selectedVideoId={pitchVideoId}
+          onSelect={(video) => {
+            setPitchVideoId(video?.videoId ?? null);
+            setPitchVideoTitle(video?.title ?? null);
+          }}
+          onDone={() => {
+            setIsVideoPickerOpen(false);
+          }}
+        />
       )}
     </div>
   );

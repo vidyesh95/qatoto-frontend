@@ -1,4 +1,5 @@
 // TRANSPORT: server-fetch — `GET /pitches`, which is PUBLIC and unauthenticated.
+import Image from "next/image";
 import Link from "next/link";
 
 import { describeLinkDestination } from "@/components/pitches/pitch-shared";
@@ -65,6 +66,15 @@ export default async function PublicPitchesRail() {
                   href={`/research-and-development/pitches/${pitch.slug}`}
                   className="block h-full rounded-2xl border border-border p-4 hover:bg-secondary/40"
                 >
+                  {pitch.pitchVideo !== null && pitch.pitchVideo.thumbnailUrl !== null && (
+                    <Image
+                      src={pitch.pitchVideo.thumbnailUrl}
+                      alt=""
+                      width={320}
+                      height={180}
+                      className="mb-2 aspect-video w-full rounded-lg object-cover"
+                    />
+                  )}
                   <p className="text-xs text-muted-foreground">{pitch.projectName}</p>
                   <h3 className="mt-0.5 text-sm font-medium text-foreground">{pitch.title}</h3>
                   <p className="mt-1 line-clamp-3 text-sm text-muted-foreground">{pitch.summary}</p>

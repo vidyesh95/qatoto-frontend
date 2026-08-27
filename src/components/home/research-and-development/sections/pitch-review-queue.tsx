@@ -2,6 +2,7 @@
 // `POST /pitches/:pitchId/moderate`. Moderator only; the read 403s for anyone else.
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 import { describeLinkDestination } from "@/components/pitches/pitch-shared";
@@ -84,6 +85,34 @@ function ReviewQueueCard({ entry }: { readonly entry: PitchReviewQueueEntry }) {
           {entry.projectName} · {entry.submittedByName}
         </span>
       </div>
+
+      {/* THE VIDEO IS THE LOUDEST THING ON A PITCH PAGE, so it is on the review card. Judging
+          the text while the video goes unseen is the review missing the thing most likely to
+          be the problem. */}
+      {entry.pitchVideo !== null && (
+        <div className="mt-2 flex items-center gap-3">
+          {entry.pitchVideo.thumbnailUrl !== null && (
+            <Image
+              src={entry.pitchVideo.thumbnailUrl}
+              alt=""
+              width={128}
+              height={72}
+              className="aspect-video w-32 shrink-0 rounded-lg object-cover"
+            />
+          )}
+          <a
+            href={`/watch?v=${encodeURIComponent(entry.pitchVideo.videoId)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-foreground underline"
+          >
+            {entry.pitchVideo.title}
+          </a>
+        </div>
+      )}
+      {entry.pitchVideo === null && (
+        <p className="mt-2 text-xs text-muted-foreground">No video on this pitch.</p>
+      )}
 
       <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">{entry.summary}</p>
 

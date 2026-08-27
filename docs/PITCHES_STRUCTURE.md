@@ -364,3 +364,82 @@ accounts could not be deleted either: `platform_audit_entry.actor_user_id` and
 `project_member.user_id` both `restrict`. And the `pitch_published` audit entry remains by design,
 because that chain is hash-linked and append-only. Every one of those refusals is the deletion
 policy working.
+
+---
+
+## 11. The video — shipped second, and the gate that should have come first
+
+§4's model diagram has always shown `pitchVideoId → video`, and the column shipped with the
+migration. **The feature did not.** Asked "where is the pitch video link, can funders see it like
+Kickstarter", the honest answer was no, and `grep -rn "pitchVideoId" src/components` returned
+nothing at all — no picker, no render, anywhere.
+
+### 11a. ⚠️ The write was unvalidated, and that was a disclosure bug
+
+`pitches.service.ts` wrote the client's `pitchVideoId` straight through. The foreign key proves
+only that **a video row exists** — not that the founder owns it, not that it is public, not that
+it has anything to do with the venture. A founder could name **any video id in the system**,
+including a stranger's private or unlisted upload, and the moment the page rendered a title and
+thumbnail that video would leak.
+
+This is precisely what `studio.ts:297` warns about for `attached_pitch_id` — "deliberately NOT a
+foreign key and deliberately NOT client-writable … accepting it today would store an unvalidated
+client string". The column written to replace it repeated the mistake it was warned about.
+
+**The fix is `isVideoEmbeddableByPitch`**, called on create and on every edit. Two conditions:
+the video passes `PUBLICLY_SERVABLE` (imported from `public-video-gate.ts`, not re-typed — three
+byte-identical copies already exist), and `video.research_project_id` is this pitch's project.
+That second term is what makes ownership checkable without a second gate: attaching a video to a
+venture already went through `resolveAttachableResearchProjectId`, which proved active membership
+of an active project. **Four failures, one answer** — no such video, not public, not yours, not
+this venture's — so the field cannot be used to probe video ids.
+
+### 11b. The read is an object, joined through the gate in the ON clause
+
+`PitchView.pitchVideoId` became `PitchView.pitchVideo`, carrying `videoId`, `videoSource`,
+`youtubeVideoId`, `title`, `thumbnailUrl`, `durationSeconds` — every one already public on the
+watch payload. The lifecycle columns are deliberately absent.
+
+**The gate lives in the JOIN, not the WHERE.** In a WHERE it would filter the _pitch_ out whenever
+its video stopped being public — a live funding solicitation vanishing because a moderator hid a
+video. In the ON clause it only nulls the video. **Verified live:** hiding the video left the
+pitch at HTTP 200 with `pitchVideo: null`.
+
+This is the opposite of `spotlight.service.ts`, which inner-joins so an ineligible slot drops out
+of its rail. Both are right: there the row _is_ the video; here it is not.
+
+### 11c. Two bugs the live run found, both of the same family
+
+- **Every write under-reported the video it had just saved.** `updatePitch` returned its own
+  `.returning()` row, which carries pitch columns and no join — so `pitchVideo` came back `null`
+  on the very response that attached a video. The row was right and the answer was wrong, which is
+  the worst shape of bug because the client caches the lie. Every write now returns
+  `readPitchViewById`, the joined re-read.
+- **The picker rendered a 422 as "no videos".** It requested `limit=100`; that route caps `limit`
+  at 50 and answers 422. The founder saw an empty state for a venture that had a video —
+  "failed" collapsed into "empty", the exact conflation `view-state.ts` exists to prevent. The
+  limit is now 50 _and_ the picker has a distinct error branch.
+
+### 11d. What was deleted rather than kept
+
+`listRecentPitchDecisions` was written for a staff panel that was never built, so nothing called
+it. An uncalled export is unverified code — the same rule the frontend hook audit enforces — and
+`platform_audit_entry` already answers that question durably. Deleted.
+
+### 11e. The picker, and why its empty state is the main screen
+
+It reads `GET /research-projects/:slug/videos` unchanged — public, already `PUBLICLY_SERVABLE`-
+gated, so every option offered is one the write will accept. A picker over `GET /videos/mine`
+would have listed drafts and private uploads the server then refuses.
+
+**No video in the database has a venture attached**, so today every founder meets the empty state
+first. It explains the two-step flow (attach the video to the venture in the upload wizard, then
+pick it here) rather than shrugging.
+
+### 11f. Verified live, then removed
+
+Refused: a stranger's public video, a nonexistent id, and the founder's own video while still a
+draft — all `422`, all the same message. Accepted once that video was published. Hidden video →
+pitch still renders. Watched in a browser: the player leading the public page, and the picker both
+empty and populated. The pitch, the video and the notification were deleted afterwards; the
+throwaway venture is archived again.

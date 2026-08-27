@@ -345,6 +345,14 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     read as endorsing it, which is precisely the liability this design exists to avoid. That
     sentence is the liability position, not decoration.
 
+    **The video shipped in a second pass, and the first pass had a disclosure bug.** `pitchVideoId`
+    was in the schema and in no component — no picker, no render — and the write accepted any video
+    id the client sent, since the FK proves only that a row exists. A founder could have attached a
+    stranger's private video. `isVideoEmbeddableByPitch` now requires the video to pass
+    `PUBLICLY_SERVABLE` **and** to belong to the same venture; the public read joins it through the
+    same gate in the JOIN's ON clause, so a taken-down video nulls the player instead of 404ing a
+    live pitch. See §11 of the structure doc.
+
     **Still open, and it is a writing task rather than a build one:** the terms of service still
     describe "the Qatoto Video Sharing Site" and mention no store, projects, payments or equity —
     see **Decisions needed** below. It was true before this shipped and is more pressing now that

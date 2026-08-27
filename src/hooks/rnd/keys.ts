@@ -34,6 +34,8 @@ export const rndKeys = {
   attachableProjects: () => ["rnd", "projects", "attachable"] as const,
   /** FOUNDER-scoped, drafts included — the pitch composer's picker. Keyed by status. */
   myProjects: (status: string | undefined) => ["rnd", "projects", "mine", status] as const,
+  /** A venture's public video reel — the pitch composer's video picker reads it. */
+  projectVideos: (projectSlug: string) => ["rnd", "project", projectSlug, "videos"] as const,
   myApplications: (status: string | undefined) => ["rnd", "applications", "mine", status] as const,
   myInvites: (status: string | undefined) => ["rnd", "invites", "mine", status] as const,
   /** The FOUNDER's inbox, distinct from `myApplications` — different rows, different actor. */

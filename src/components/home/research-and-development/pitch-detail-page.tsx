@@ -9,6 +9,7 @@ import {
   OutcomeAttestationNote,
   PitchDisclaimer,
 } from "@/components/pitches/pitch-shared";
+import VideoPlayer from "@/components/home/watch/video-player";
 import { getPitch } from "@/lib/rnd/pitches.api";
 import { callerRequestOptions } from "@/lib/server-http";
 
@@ -63,6 +64,34 @@ export default async function PitchDetailPage({ pitchSlug }: { readonly pitchSlu
         <p className="mt-3 rounded-xl bg-secondary/50 p-3 text-sm text-foreground">
           This founder is no longer raising. The page is kept so older links still resolve.
         </p>
+      )}
+
+      {/* THE VIDEO LEADS, because that is what a funder watches before reading anything —
+          the whole reason this page exists in the Kickstarter shape rather than as a text
+          listing. `VideoPlayer` is the watch page's own player: youtube-nocookie, the IFrame
+          API, and its own "embedding is turned off" fallback, so none of that is re-solved
+          here.
+
+          NULL COVERS TWO CASES AND RENDERS THE SAME FOR BOTH: no video was ever chosen, and
+          the video is no longer publicly servable. A pitch whose video was taken down still
+          renders everything else rather than 404ing, which is the join's whole point. */}
+      {pitch.pitchVideo !== null && (
+        <div className="mt-4">
+          <VideoPlayer
+            videoSource={pitch.pitchVideo.videoSource}
+            youtubeVideoId={pitch.pitchVideo.youtubeVideoId}
+            label={pitch.pitchVideo.title}
+          />
+          <p className="mt-2 text-xs text-muted-foreground">
+            {pitch.pitchVideo.title} ·{" "}
+            <Link
+              href={`/watch?v=${encodeURIComponent(pitch.pitchVideo.videoId)}`}
+              className="underline"
+            >
+              open on Qatoto
+            </Link>
+          </p>
+        </div>
       )}
 
       <p className="mt-4 text-base leading-7 whitespace-pre-line text-foreground">
