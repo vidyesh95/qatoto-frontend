@@ -51,7 +51,7 @@ export const ResearchProjectSlugsSchema = z.string().array();
 /**
  * Filters `GET /research-projects` actually accepts.
  *
- * THERE IS NO `sort`. `docs/R_AND_D_BACKEND_STRUCTURE.md` §11a lists one, but
+ * THERE IS NO `sort`. `R_AND_D_BACKEND_STRUCTURE.md` §11a (backend repo) lists one, but
  * `ListProjectsQuerySchema` is `.strict()` over exactly these four keys — sending
  * `?sort=` is a 422, not an ignored param.
  */

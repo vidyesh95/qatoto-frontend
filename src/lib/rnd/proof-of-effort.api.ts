@@ -149,7 +149,7 @@ export function listSliceLedger(
  *
  * THERE IS NO PROJECT-WIDE RATE LIST. The only rate read is this per-member one, so a
  * roster-wide rate panel costs one request per member. Recorded as a gap in
- * `docs/R_AND_D_BACKEND_STRUCTURE.md` Appendix D.
+ * `R_AND_D_BACKEND_STRUCTURE.md` Appendix D (backend repo — see `docs/BACKEND_DOCS.md`).
  */
 export function listMemberFairMarketRates(
   projectSlug: string,

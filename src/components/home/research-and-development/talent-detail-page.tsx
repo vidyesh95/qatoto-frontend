@@ -10,6 +10,7 @@ import RndStatusPanel, {
   RndSignInRequiredPanel,
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import { getTalentProfile } from "@/lib/rnd/discovery.api";
+import ReportProfileOpener from "@/components/home/channel/report-profile-opener";
 import { formatEffortFromMinutes, formatIsoInstant } from "@/lib/rnd/format";
 import { isUnauthorized } from "@/lib/http";
 import { callerRequestOptions } from "@/lib/server-http";
@@ -77,6 +78,19 @@ export default async function TalentDetailPage({ handleOrUserId }: { handleOrUse
       </header>
 
       {profile.bio !== null && <p className="max-w-prose text-sm leading-6">{profile.bio}</p>}
+
+      {/*
+        THE SECOND ENTRY POINT FOR REPORTING A PROFILE, and it belongs here specifically.
+        Video reporting sits on every card menu; profile reporting had exactly one way in — Channel
+        → About → Report — while `talent_profile.bio` was a second surface publishing the same
+        person's own words. That bio is now covered by `user.profileModerationState`, so the surface
+        that displays it should also be a surface you can report it from; a lever nobody can pull
+        from where the text is read is a lever that gets pulled late.
+
+        SAME SHEET, SAME `reportedUserId`. A report is about a PERSON, not about a page, so one
+        report from here reaches the same queue and the same moderator action as one from a channel.
+      */}
+      <ReportProfileOpener reportedUserId={profile.userId} displayName={profile.name} />
 
       <dl className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">

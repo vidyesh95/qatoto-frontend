@@ -172,11 +172,21 @@ other enum on the wire.
 
 ### Moderation gaps recorded by decision, not oversight
 
-- **`talent_profile.bio` is the one other public self-description with no moderation lever.** A
-  person whose channel bio is hidden can put the same text there. Out of scope by decision —
-  recorded so the next reader knows which.
-- **One entry point for reporting a profile** — Channel → About → Report. Video reporting sits on
-  every card menu.
+- ~~**`talent_profile.bio` has no moderation lever.**~~ **CLOSED.** It now honours
+  `user.profileModerationState`, the flag that already hid the channel bio and links — so one
+  moderator action covers every public self-description a person controls, rather than leaving them
+  able to paste hidden text onto a second surface. **The gate is in `toTalentProfileView`, the one
+  mapper every talent read passes through**, so a fourth read inherits it instead of having to
+  remember it. Verified live on a seeded published profile: bio present → hidden → present, with
+  name, headline and skills untouched in all three states.
+    - ⚠️ **A FOURTH PUBLIC SELF-DESCRIPTION MUST GATE ITSELF.** Nothing structural fails if one is
+      added and forgets; the `_core.ts` docblock says so in as many words.
+      `community_cofounder_profile` needs no change — it defaults to `draft` behind its own
+      moderation, a different mechanism reaching the same place.
+- ~~**One entry point for reporting a profile.**~~ **TWO NOW.** The talent detail page mounts
+  `ReportProfileOpener` beside the bio — the surface that displays the newly-moderated text is a
+  surface you can report it from. Same sheet, same `reportedUserId`, same queue: a report is about a
+  PERSON, not a page.
 
 ---
 
@@ -193,9 +203,14 @@ Each of these misleads a reader; none changes behaviour.
    `restoreUserProfileText`, and no doc table has a row for any of them. They want a table modelled
    on `HOME_BACKEND_STRUCTURE.md` §5.2c's. (The rest of that backlog closed: the six missing route
    and job rows, the channel-profile pair and both self-read report routes all have rows now.)
-3. **The frontend repo carries stale FORKS of four backend docs.** Copies, not links, and they have
-   drifted. Decide whether to re-sync them or delete them and point at the backend repo — a fork
-   nobody updates is worse than no copy.
+3. ~~**The frontend repo carries stale FORKS of four backend docs.**~~ **DELETED — and it was SIX,
+   not four.** `STUDIO_BACKEND_STRUCTURE.md` was 45 lines behind and `ESCROW_LEDGER_STRUCTURE.md`
+   was byte-identical, which is a fork that has not drifted yet rather than one that will not.
+   `HOME_BACKEND_STRUCTURE.md` was **576 lines behind** — it predated the channel page, the channel
+   directory, the creator self-reads and the video-document routes, so a reader got confident,
+   detailed, wrong answers about routes that exist. `docs/BACKEND_DOCS.md` replaces all six with a
+   pointer and the reasoning. `STUDIO_PRODUCTS_BACKEND_STRUCTURE.md` and `ADMIN_STRUCTURE.md` stay:
+   despite the names they have no upstream and this is the only copy.
 
 ---
 

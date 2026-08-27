@@ -3,7 +3,7 @@ import { z } from "zod";
 // Shapes shared by more than one research-and-development domain, plus the enum
 // tuples the backend's pgEnums define.
 //
-// EVERY VALUE HERE WAS READ OFF THE BACKEND, not off docs/R_AND_D_BACKEND_STRUCTURE.md.
+// EVERY VALUE HERE WAS READ OFF THE BACKEND, not off R_AND_D_BACKEND_STRUCTURE.md.
 // The doc is a design record and drifts from the shipped enums in a few places (see
 // docs/R_AND_D_STRUCTURE.md §13); `src/db/schema.ts` and the service view interfaces
 // are the contract. When a value below looks wrong, re-read the pgEnum.

@@ -42,7 +42,7 @@ trade-service connectors.
 > - Eight of nine getters go through `storeFetch<T>`, which annotates `res.json()` as `T` — a type
 >   assertion in disguise, and a Pattern 2 violation. Only `getOrganizationStorefront` uses
 >   `storeFetchUnknown` + Zod.
-> - The backend it should be talking to is **fully built**: `docs/STORE_BACKEND_STRUCTURE.md` Phases
+> - The backend it should be talking to is **fully built**: `STORE_BACKEND_STRUCTURE.md` (backend repo — see `BACKEND_DOCS.md`) Phases
 >   0–14 ship 18 public `/store/*` reads, ~110 `/commerce/*` routes and 14 `/products/*` routes,
 >   verified against the backend source. The store is not blocked on the backend; it is unwired.
 >   Appendix A23–A27 there records the only five real gaps found from this side.
