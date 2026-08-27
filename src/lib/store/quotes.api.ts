@@ -201,12 +201,12 @@ export function createQuoteShell(
  * IT CARRIES NO LINES BACK. They were just sent and stored verbatim; echoing them would be a copy of
  * the request, and a screen rendering the echo would look right while proving nothing.
  *
- * **APPEND IS A COMMITMENT, NOT A SAVE.** Only one unsubmitted revision may exist at a time, and
- * there is NO route to abandon one — `commerce-quotes.routes.ts` has no DELETE. So after this
- * succeeds the only forward move is submit. Combined with `validityDeadlineAt`: if that deadline
- * passes before submit, submit answers `QUOTE_EXPIRED`, a second append is refused, and a fresh
- * shell is refused too. The quote is then stuck for that RFQ, which is why the composer prefills a
- * generous deadline and warns on a short one.
+ * **APPEND IS A COMMITMENT, NOT A SAVE — but it is reversible.** Only one unsubmitted revision may
+ * exist at a time, so after this succeeds the two moves are submit and `abandonQuoteRevision`. That
+ * second one is what makes a short `validityDeadlineAt` survivable: a revision whose deadline passes
+ * can no longer be submitted, and discarding it frees the quote to be priced again. Before the
+ * discard route existed this was terminal — the composer still prefills a generous deadline, but now
+ * as advice rather than as the only protection.
  *
  * Requires an `Idempotency-Key`, and it must be a DIFFERENT key from the shell call's — the
  * middleware replays a key against the body it first saw, so one key shared across two routes makes
@@ -247,6 +247,34 @@ export function submitQuoteRevision(
 ): Promise<ActionResponse<SubmittedQuoteRevision>> {
   const path = `/commerce/quotes/${encodeURIComponent(quoteId)}/revisions/${revisionNumber}/submit`;
   return sendJson(path, "POST", undefined, SubmittedQuoteRevisionSchema, options);
+}
+
+/**
+ * Discards an unsubmitted revision — `DELETE /commerce/quotes/:quoteId/revisions/:revision` (A38).
+ *
+ * **THE WAY OUT OF WHAT USED TO BE A DEAD END.** `appendQuoteRevision` refuses a second draft with a
+ * 422 that says "Submit or abandon the existing unsubmitted revision", and for a while nothing
+ * delivered the abandon — so a revision whose `validityDeadlineAt` passed could not be submitted
+ * (`QUOTE_EXPIRED`), could not be replaced, and could not be started over, because one quote exists
+ * per provider per RFQ whatever its status. The quote was finished for that RFQ.
+ *
+ * IT IS ONLY EVER A DRAFT THAT GOES. A submitted revision is refused with a `409` by the service and
+ * again by a database trigger — submitted terms are commercial evidence and nothing deletes them.
+ *
+ * IT ANSWERS THE QUOTE SHELL, whose `latestRevisionNumber` has been rolled back to the highest
+ * SURVIVING revision. That is the useful answer: the next append reuses the number that was just
+ * freed, so a discarded revision leaves no gap in the numbering a buyer would have to interpret.
+ *
+ * Requires an `Idempotency-Key`, minted once per attempt. A retry without one, after the numbering
+ * has already moved, is a different request wearing the same intent.
+ */
+export function abandonQuoteRevision(
+  quoteId: string,
+  revisionNumber: number,
+  options?: RequestOptions,
+): Promise<ActionResponse<QuoteShell>> {
+  const path = `/commerce/quotes/${encodeURIComponent(quoteId)}/revisions/${revisionNumber}`;
+  return sendJson(path, "DELETE", undefined, QuoteShellSchema, options);
 }
 
 /**

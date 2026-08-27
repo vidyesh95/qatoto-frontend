@@ -21,6 +21,7 @@ import { useKeysetList, toCursorKeysetPage } from "@/hooks/keyset-list";
 import { storeKeys } from "@/hooks/store/keys";
 import type { ActionResponse } from "@/lib/http";
 import {
+  abandonQuoteRevision,
   acceptQuote,
   appendQuoteRevision,
   compareQuotesForQuote,
@@ -226,6 +227,38 @@ export function useSubmitQuoteRevision(): UseMutationResult<
       void queryClient.invalidateQueries({ queryKey: storeKeys.quote(quoteId) });
       void queryClient.invalidateQueries({ queryKey: storeKeys.quoteComparison(rfqId) });
       void queryClient.invalidateQueries({ queryKey: storeKeys.rfqList("provider") });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.providerQuoteList() });
+    },
+  });
+}
+
+/**
+ * Discards an unsubmitted revision, freeing the quote to be priced again.
+ *
+ * Invalidates the same three entries the append hook does. The quote read is the important one: its
+ * `latestRevisionNumber` has just moved backwards, and the composer decides what to render from it.
+ */
+export function useAbandonQuoteRevision(): UseMutationResult<
+  ActionResponse<QuoteShell>,
+  Error,
+  {
+    readonly quoteId: string;
+    readonly rfqId: string;
+    readonly revisionNumber: number;
+    readonly idempotencyKey: string;
+  }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ quoteId, revisionNumber, idempotencyKey }) =>
+      abandonQuoteRevision(quoteId, revisionNumber, {
+        headers: { "Idempotency-Key": idempotencyKey },
+      }),
+    onSuccess: (result, { quoteId, rfqId }) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.quote(quoteId) });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.quoteComparison(rfqId) });
       void queryClient.invalidateQueries({ queryKey: storeKeys.providerQuoteList() });
     },
   });

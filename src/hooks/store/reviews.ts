@@ -15,7 +15,12 @@
 // are the only source of that data, which is why the media hooks return rows for the caller to hold
 // rather than filling a cache anyone else could read.
 
-import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+} from "@tanstack/react-query";
 
 import { useKeysetList, toCursorKeysetPage } from "@/hooks/keyset-list";
 import { storeKeys } from "@/hooks/store/keys";
@@ -23,10 +28,16 @@ import type { ActionResponse } from "@/lib/http";
 import {
   attachReviewPhoto,
   attachReviewVideo,
+  clearReviewHelpfulVote,
   createReview,
   detachReviewMedia,
   editOwnReview,
+  getOwnReview,
   listBuyerCompletions,
+  listSellerReviewInbox,
+  markReviewHelpful,
+  upsertReviewReply,
+  withdrawReviewReply,
 } from "@/lib/store/reviews.api";
 import type {
   AttachReviewVideoInput,
@@ -37,6 +48,11 @@ import type {
   DetachedReviewMedia,
   EditOwnReviewInput,
   ListBuyerCompletionsFilter,
+  ReviewHelpfulVote,
+  ReviewReply,
+  SellerReviewInboxFilter,
+  UpsertReviewReplyInput,
+  WithdrawnReviewReply,
 } from "@/lib/store/reviews.schemas";
 
 /**
@@ -147,5 +163,102 @@ export function useDetachReviewMedia(): UseMutationResult<
       detachReviewMedia(reviewId, mediaId, {
         headers: { "Idempotency-Key": idempotencyKey },
       }),
+  });
+}
+
+/**
+ * One review the caller wrote, with its media.
+ *
+ * GATED ON A NON-EMPTY ID, like every other dependent read in this app: a first render with `""`
+ * would fetch `/commerce/reviews/` and cache a 404 under the empty key.
+ */
+export function useOwnReviewQuery(reviewId: string) {
+  return useQuery({
+    queryKey: storeKeys.ownReview(reviewId),
+    queryFn: () => getOwnReview(reviewId),
+    enabled: reviewId.length > 0,
+  });
+}
+
+/** Reviews written about the caller's organization. */
+export function useSellerReviewInboxQuery(filter: SellerReviewInboxFilter = {}) {
+  return useQuery({
+    queryKey: storeKeys.sellerReviewInbox(JSON.stringify(filter)),
+    queryFn: () => listSellerReviewInbox(filter),
+  });
+}
+
+/**
+ * Marks a review helpful, or withdraws the vote.
+ *
+ * ONE HOOK FOR BOTH DIRECTIONS, because both routes answer the same projection and the caller always
+ * knows which way it is going. NO IDEMPOTENCY KEY — PUT and DELETE of a boolean are idempotent by
+ * verb, which is why the routes carry no such middleware.
+ *
+ * Invalidates the PRODUCT REVIEWS PREFIX rather than one filter key: a vote changes `helpfulCount`,
+ * and "Most helpful" is a server-side sort, so every cached filter of that product is now suspect.
+ */
+export function useSetReviewHelpfulVote(): UseMutationResult<
+  ActionResponse<ReviewHelpfulVote>,
+  Error,
+  { readonly reviewId: string; readonly productSlug: string; readonly isHelpful: boolean }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ reviewId, isHelpful }) =>
+      isHelpful ? markReviewHelpful(reviewId) : clearReviewHelpfulVote(reviewId),
+    onSuccess: (result, { productSlug }) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({
+        queryKey: ["store", "products", productSlug, "reviews"],
+      });
+    },
+  });
+}
+
+/**
+ * Writes or revises the seller's reply.
+ *
+ * The caller must be ready for a 409 it cannot pre-empt: the reply may be revised once only, and
+ * only within 30 days of being posted, and `editedAt` is not on the wire — so the server's sentence
+ * is the authority rather than a local guess.
+ */
+export function useUpsertReviewReply(): UseMutationResult<
+  ActionResponse<ReviewReply>,
+  Error,
+  {
+    readonly reviewId: string;
+    readonly input: UpsertReviewReplyInput;
+    readonly idempotencyKey: string;
+  }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ reviewId, input, idempotencyKey }) =>
+      upsertReviewReply(reviewId, input, { headers: { "Idempotency-Key": idempotencyKey } }),
+    onSuccess: (result) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.sellerReviewInboxRoot() });
+    },
+  });
+}
+
+/** Withdraws the reply. Withdrawing one that does not exist is not an error. */
+export function useWithdrawReviewReply(): UseMutationResult<
+  ActionResponse<WithdrawnReviewReply>,
+  Error,
+  { readonly reviewId: string; readonly idempotencyKey: string }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ reviewId, idempotencyKey }) =>
+      withdrawReviewReply(reviewId, { headers: { "Idempotency-Key": idempotencyKey } }),
+    onSuccess: (result) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.sellerReviewInboxRoot() });
+    },
   });
 }

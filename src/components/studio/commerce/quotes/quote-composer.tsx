@@ -22,16 +22,18 @@
 //     withdrawing does not free the slot. That 409 is therefore a RECOVERY here, not an error: the
 //     composer re-reads, finds the existing id and appends to it.
 //
-//  C. APPEND IS A COMMITMENT, NOT A SAVE. Only one unsubmitted revision may exist at a time and there
-//     is NO route to abandon one — `commerce-quotes.routes.ts` has no DELETE. Once appended, the only
-//     forward move is submit, which is why this screen goes terminal after a successful append rather
-//     than returning to an editable form that would 422 on its next press.
+//  C. APPEND IS A COMMITMENT, NOT A SAVE — but it is now REVERSIBLE. Only one unsubmitted revision
+//     may exist at a time, so after appending the screen goes terminal rather than returning to a
+//     form whose next press would 422. The two ways forward are submit and DISCARD
+//     (`DELETE /commerce/quotes/:quoteId/revisions/:revision`), and discarding rolls the quote's
+//     `latestRevisionNumber` back so the next append reuses the number just freed.
 //
-//  D. THE EXPIRY TRAP, and it is the reason the deadline is prefilled generously. If a revision's
-//     `validityDeadlineAt` passes before it is submitted: submit answers `QUOTE_EXPIRED`, a second
-//     append is refused by (C), and a fresh shell is refused by (B). The quote is then stuck for that
-//     RFQ with no route out. The mitigation is entirely in this file — a 30-day default and a loud
-//     warning under a day — and the real fix is a backend abandon route, recorded in `todo.md`.
+//  D. THE EXPIRY TRAP IS CLOSED, and this is why the discard control is not a convenience. Before it
+//     existed, a revision whose `validityDeadlineAt` passed could not be submitted
+//     (`QUOTE_EXPIRED`), could not be replaced by (C), and could not be restarted by (B) — the quote
+//     was finished for that RFQ with no operator path out. The generous default deadline and the
+//     short-deadline warning below are still worth keeping, but they are now advice rather than the
+//     only thing standing between a provider and a dead quote.
 //
 // ONLY THE SHELL CALL CHECKS THE RFQ'S STATE. Append and submit look at the QUOTE's status alone, so a
 // provider who already has a quote may keep revising after the buyer closes the RFQ. The "not open"
@@ -66,6 +68,7 @@ import QuoteServiceDetailFields, {
 } from "@/components/studio/commerce/quotes/quote-service-detail-fields";
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
 import {
+  useAbandonQuoteRevision,
   useAppendQuoteRevision,
   useCreateQuoteShell,
   useQuoteComparisonQuery,
@@ -507,10 +510,14 @@ export default function QuoteComposer({ rfqId }: { rfqId: string }) {
   const shellAttempt = useResettableAttemptIdempotencyKey();
   const appendAttempt = useResettableAttemptIdempotencyKey();
   const submitAttempt = useResettableAttemptIdempotencyKey();
+  const discardAttempt = useResettableAttemptIdempotencyKey();
+
+  const [isDiscardConfirmVisible, setIsDiscardConfirmVisible] = useState(false);
 
   const createShellMutation = useCreateQuoteShell();
   const appendRevisionMutation = useAppendQuoteRevision();
   const submitRevisionMutation = useSubmitQuoteRevision();
+  const abandonRevisionMutation = useAbandonQuoteRevision();
 
   const state = useMemo<QuoteComposerState>(() => {
     if (rfqQuery.isPending) return { status: "loadingRequest" };
@@ -547,8 +554,9 @@ export default function QuoteComposer({ rfqId }: { rfqId: string }) {
           quoteStatus: existingQuote.status,
         };
       }
-      // AN UNSUBMITTED REVISION BLOCKS THE FORM, because appending a second one is refused and there
-      // is no abandon route. Offering the form here would be a trap: every press would 422.
+      // AN UNSUBMITTED REVISION BLOCKS THE FORM, because appending a second one is refused while it
+      // stands. Offering the form here would be a trap: every press would 422. The panel offers the
+      // two moves that actually exist — submit it, or discard it and price again.
       const latestRevision = existingQuote.latestRevision;
       if (latestRevision !== null && latestRevision.submittedAt === null) {
         return {
@@ -680,6 +688,28 @@ export default function QuoteComposer({ rfqId }: { rfqId: string }) {
     setAppendedRevision(null);
   }
 
+  /**
+   * Discards the unsubmitted revision and returns to the form.
+   *
+   * THE DRAFT IS DELIBERATELY LEFT INTACT. The whole point of discarding is almost always a deadline
+   * that ran out, and making the provider retype a priced quote to fix a date would be its own trap.
+   * `appendedRevision` is cleared so the terminal panel gives way to the form, and the quote read is
+   * invalidated by the hook so the composer re-derives from a `latestRevisionNumber` that has moved.
+   */
+  async function handleConfirmDiscardClick(quoteId: string, revisionNumber: number) {
+    const discardResult = await abandonRevisionMutation.mutateAsync({
+      quoteId,
+      rfqId,
+      revisionNumber,
+      idempotencyKey: discardAttempt.getIdempotencyKey(),
+    });
+    if (!discardResult.success) return;
+    discardAttempt.resetIdempotencyKey();
+    setIsDiscardConfirmVisible(false);
+    setAppendedRevision(null);
+    setCurrentStepIndex(COMPOSER_STEPS.length - 1);
+  }
+
   // A revision was just appended in this session: the form is behind us and only submit remains.
   if (appendedRevision !== null) {
     return (
@@ -696,6 +726,15 @@ export default function QuoteComposer({ rfqId }: { rfqId: string }) {
         isSubmitting={submitRevisionMutation.isPending}
         submitResult={submitRevisionMutation.data}
         hasSubmitThrown={submitRevisionMutation.isError}
+        isDiscardConfirmVisible={isDiscardConfirmVisible}
+        onRequestDiscard={() => setIsDiscardConfirmVisible(true)}
+        onCancelDiscard={() => setIsDiscardConfirmVisible(false)}
+        onConfirmDiscard={() =>
+          void handleConfirmDiscardClick(appendedRevision.quoteId, appendedRevision.revisionNumber)
+        }
+        isDiscarding={abandonRevisionMutation.isPending}
+        discardResult={abandonRevisionMutation.data}
+        hasDiscardThrown={abandonRevisionMutation.isError}
       />
     );
   }
@@ -761,24 +800,48 @@ export default function QuoteComposer({ rfqId }: { rfqId: string }) {
             />
           </dl>
           <UnsubmittedRevisionRule />
-          <div className="mt-3">
-            <button
-              type="button"
-              disabled={submitRevisionMutation.isPending}
-              onClick={() => void handleConfirmSubmitClick(state.quoteId, state.revisionNumber)}
-              className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
-            >
-              {submitRevisionMutation.isPending
-                ? "Submitting…"
-                : `Submit revision ${state.revisionNumber}`}
-            </button>
-          </div>
+          {isDiscardConfirmVisible ? (
+            <DiscardConfirmation
+              revisionNumber={state.revisionNumber}
+              isDiscarding={abandonRevisionMutation.isPending}
+              onConfirm={() => void handleConfirmDiscardClick(state.quoteId, state.revisionNumber)}
+              onCancel={() => setIsDiscardConfirmVisible(false)}
+            />
+          ) : (
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={submitRevisionMutation.isPending}
+                onClick={() => void handleConfirmSubmitClick(state.quoteId, state.revisionNumber)}
+                className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+              >
+                {submitRevisionMutation.isPending
+                  ? "Submitting…"
+                  : `Submit revision ${state.revisionNumber}`}
+              </button>
+              {/* THE WAY OUT. Chiefly for a deadline that ran out — without this the quote would be
+                  finished for this RFQ, because a second revision cannot be appended while this one
+                  stands and a fresh quote cannot be started at all. */}
+              <button
+                type="button"
+                onClick={() => setIsDiscardConfirmVisible(true)}
+                className="cursor-pointer text-sm font-medium text-destructive underline"
+              >
+                Discard and price again
+              </button>
+            </div>
+          )}
           <MutationNotice
             result={submitRevisionMutation.data}
             hasThrown={submitRevisionMutation.isError}
             fallbackMessage="The revision could not be submitted."
           />
           <RevisionChangedNotice result={submitRevisionMutation.data} />
+          <MutationNotice
+            result={abandonRevisionMutation.data}
+            hasThrown={abandonRevisionMutation.isError}
+            fallbackMessage="The revision could not be discarded."
+          />
         </PanelShell>
       );
 
@@ -1076,8 +1139,8 @@ export default function QuoteComposer({ rfqId }: { rfqId: string }) {
               <label className="block">
                 <span className="text-xs font-medium text-muted-foreground">Valid until</span>
                 <span className="block text-[11px] leading-4 text-muted-foreground">
-                  Once priced, a revision must be submitted before its deadline — there is no way to
-                  abandon it. Leave yourself room.
+                  A revision has to be submitted before its deadline. Past it you can still discard
+                  and price again, but you lose the round trip — so leave yourself room.
                 </span>
                 <input
                   type="datetime-local"
@@ -1213,18 +1276,67 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * The short-deadline warning, and it is not decoration — see fact (D).
+ * One confirm press before discarding a priced revision.
  *
- * An unsubmitted revision whose deadline passes cannot be submitted, replaced or abandoned, and the
- * quote slot on that RFQ is spent. This is the only thing standing between a provider and that.
+ * SOFTER THAN THE SUBMIT CONFIRMATION, on purpose. Submitting freezes terms a buyer can then accept
+ * — irreversible, and the copy says so. Discarding throws away work that can be re-entered in the
+ * next breath, and the draft is kept, so the risk is a mis-tap rather than a commitment. One press
+ * is the right amount of friction; a typed confirmation would be theatre.
+ */
+function DiscardConfirmation({
+  revisionNumber,
+  isDiscarding,
+  onConfirm,
+  onCancel,
+}: {
+  revisionNumber: number;
+  isDiscarding: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="mt-3 rounded-xl border border-border p-4">
+      <p className="text-sm font-medium text-foreground">Discard revision {revisionNumber}?</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        The prices you entered are kept in the form, so you can change the validity date and price
+        it again straight away. Nothing was ever offered to the buyer, and the next revision will
+        reuse the number this one is giving up.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-3">
+        <button
+          type="button"
+          disabled={isDiscarding}
+          onClick={onConfirm}
+          className="cursor-pointer rounded-full bg-destructive px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+        >
+          {isDiscarding ? "Discarding…" : "Yes, discard it"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="cursor-pointer text-sm font-medium text-foreground underline"
+        >
+          Keep it
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The short-deadline warning — advice now, not a last line of defence.
+ *
+ * A deadline that passes before submit still costs the revision: it can no longer be submitted, and
+ * the way forward is to discard it and price again. That is an annoyance rather than the dead end it
+ * used to be, so the copy warns without alarming.
  */
 function ExpiryWarning({ standing }: { standing: ValidityDeadlineStanding }) {
   if (standing !== "past" && standing !== "short") return null;
   return (
     <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
       {standing === "past"
-        ? "This deadline has already passed. Priced now, the revision could never be submitted and the quote slot on this request would be spent."
-        : "This deadline is less than a day away. If it passes before you submit, the revision cannot be submitted, replaced or abandoned — and one quote exists per request."}
+        ? "This deadline has already passed. Priced now, the revision could not be submitted at all — you would have to discard it and price it again."
+        : "This deadline is less than a day away. If it passes before you submit, the revision can no longer be submitted and you will have to discard it and price again."}
     </p>
   );
 }
@@ -1238,8 +1350,8 @@ function ExpiryWarning({ standing }: { standing: ValidityDeadlineStanding }) {
 function UnsubmittedRevisionRule() {
   return (
     <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-xs leading-4 text-muted-foreground">
-      If this deadline passes before the revision is submitted, it cannot be submitted, replaced or
-      abandoned — and one quote exists per request, so that slot would be spent.
+      Only one revision can be open at a time, so this one has to be submitted or discarded before
+      another can be priced. If its deadline passes first, discarding is the way on.
     </p>
   );
 }
@@ -1366,6 +1478,13 @@ function AppendedRevisionPanel({
   isSubmitting,
   submitResult,
   hasSubmitThrown,
+  isDiscardConfirmVisible,
+  onRequestDiscard,
+  onCancelDiscard,
+  onConfirmDiscard,
+  isDiscarding,
+  discardResult,
+  hasDiscardThrown,
 }: {
   rfqId: string;
   quoteId: string;
@@ -1375,6 +1494,18 @@ function AppendedRevisionPanel({
   onCancelConfirm: () => void;
   onConfirmSubmit: () => void;
   isSubmitting: boolean;
+  isDiscardConfirmVisible: boolean;
+  onRequestDiscard: () => void;
+  onCancelDiscard: () => void;
+  onConfirmDiscard: () => void;
+  isDiscarding: boolean;
+  discardResult:
+    | {
+        readonly success: boolean;
+        readonly error?: { readonly message: string; readonly details?: unknown };
+      }
+    | undefined;
+  hasDiscardThrown: boolean;
   submitResult:
     | {
         readonly success: boolean;
@@ -1449,6 +1580,13 @@ function AppendedRevisionPanel({
             </button>
           </div>
         </div>
+      ) : isDiscardConfirmVisible ? (
+        <DiscardConfirmation
+          revisionNumber={revision.revisionNumber}
+          isDiscarding={isDiscarding}
+          onConfirm={onConfirmDiscard}
+          onCancel={onCancelDiscard}
+        />
       ) : (
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <button
@@ -1457,6 +1595,15 @@ function AppendedRevisionPanel({
             className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
             Submit revision {revision.revisionNumber}
+          </button>
+          {/* Priced it wrong, or dated it wrong? This is the correction, and it is the reason the
+              short-deadline warning above is advice rather than a final warning. */}
+          <button
+            type="button"
+            onClick={onRequestDiscard}
+            className="cursor-pointer text-sm font-medium text-destructive underline"
+          >
+            Discard and price again
           </button>
           <Link
             href={`/studio/rfqs/${rfqId}`}
@@ -1469,7 +1616,7 @@ function AppendedRevisionPanel({
 
       <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
         Leaving it unsubmitted keeps it as this quote&apos;s one open revision. Another cannot be
-        priced until this is submitted.
+        priced until this one is submitted or discarded.
       </p>
 
       <MutationNotice
@@ -1478,6 +1625,11 @@ function AppendedRevisionPanel({
         fallbackMessage="The revision could not be submitted."
       />
       <RevisionChangedNotice result={submitResult} />
+      <MutationNotice
+        result={discardResult}
+        hasThrown={hasDiscardThrown}
+        fallbackMessage="The revision could not be discarded."
+      />
 
       <div className="mt-3">
         <Link

@@ -207,6 +207,18 @@ export const storeKeys = {
   buyerCompletionList: (reviewable?: boolean) =>
     ["store", "completions", reviewable === undefined ? "all" : String(reviewable)] as const,
 
+  /** One review the caller wrote, with its media — the only author-facing review read. */
+  ownReview: (reviewId: string) => ["store", "reviews", reviewId] as const,
+
+  /**
+   * Reviews written about the caller's organization, keyed by the whole filter.
+   *
+   * `sellerReviewInboxRoot` is the PREFIX a reply write invalidates: a reply changes whether a row
+   * matches `unreplied`, so every filter of the inbox is stale, not just the one on screen.
+   */
+  sellerReviewInboxRoot: () => ["store", "seller-reviews"] as const,
+  sellerReviewInbox: (filterKey: string) => ["store", "seller-reviews", filterKey] as const,
+
   /**
    * The caller organization's own service offerings — `GET …/offerings/mine`.
    *

@@ -785,31 +785,82 @@ Rules the UI honours rather than assumes: `shipping` is offered only on a produc
 key, never `{}`; `hasReview` counts hidden reviews, so a hidden one still spends the slot; media
 position is server-assigned and the photo upload takes no text fields at all.
 
-### What 28 left open — two backend asks, and they are the same shape
+### ~~What 28 left open — two backend asks~~ — BOTH CLOSED. See §30.
 
-Both are routes whose absence is only visible once the frontend exists:
-
-1. **`DELETE /commerce/quotes/:quoteId/revisions/:revision`, for an unsubmitted revision.** Without
-   it there is a genuine trap: set a short `validityDeadlineAt`, append, and let it pass — submit
-   answers `QUOTE_EXPIRED`, a second append is refused ("submit or abandon the existing unsubmitted
-   revision"), and a fresh shell is refused because one quote exists per RFQ. **The quote is then
-   unrecoverable for that RFQ.** The service's own error message names an action the API does not
-   expose. Mitigated entirely in the UI for now — a 30-day default deadline and a loud warning under
-   a day — which is a guardrail, not a fix.
-2. **An author-facing `GET /commerce/reviews/:reviewId`, with its media.** The trust router has five
-   GETs — completions, three dispute reads and the SELLER's inbox — so an author cannot re-read their
-   own review or manage its attachments after leaving the page. The media panel says so out loud
-   rather than implying otherwise. This is also what blocks the rest of the review lifecycle below.
+Both shipped. The first one is worth reading for the finding rather than the fix.
 
 ### Not built, deliberately, and each is its own piece of work
 
-- **The rest of the review lifecycle**: helpful votes (`PUT`/`DELETE .../helpful`), the seller's
-  reply (`PUT`/`DELETE .../reply`) and the seller's inbox (`GET /commerce/seller/reviews`). Three
-  more surfaces over routes that already exist.
 - **Documents on a quote.** There is no route to attach one, the same gap the RFQ composer already
   names. The review step says so and ships no control.
 - **`/studio/quotes` has no status filter UI.** The read accepts `?status=` and the wrapper passes it;
   nothing sets it yet.
+- **`/studio/reviews` does not page.** The read is keyset and its cursor is SORT-SCOPED — carrying one
+  across a change of sort is a 422 — so paging needs a cursor that resets on every filter change. The
+  page says plainly that it shows the first page only rather than pretending to be complete.
+
+---
+
+## 30. The quote-expiry trap, and the rest of the review lifecycle — SHIPPED
+
+Both of §28's backend asks, plus the three review surfaces that had routes and no callers.
+
+### 30a. The expiry trap is closed, and the database had allowed it all along
+
+`DELETE /commerce/quotes/:quoteId/revisions/:revision` ships. A provider who priced a revision and
+watched its deadline pass can now discard it and price again, from either the resume panel or the
+just-appended panel, behind one confirm press.
+
+**THE FINDING WORTH KEEPING: no migration was needed, because the schema anticipated this route.**
+`commerce_quote_revision_append_only` has fired `BEFORE UPDATE OR DELETE` since `0045`, and its
+DELETE arm raises only when `submitted_at IS NOT NULL` — otherwise `RETURN OLD`. Deleting an
+unsubmitted revision has been permitted since Phase 3; only the HTTP layer was missing. §28 costed
+this as a schema change and was wrong.
+
+**The counter rollback is the whole risk, and it is `max(revision_number)` of the survivors rather
+than `latest - 1`.** A stale `latestRevisionNumber` does not merely skip a number: `submitRevision`
+and `acceptQuote` both refuse unless the revision number EQUALS it, so a counter naming a deleted row
+would leave a surviving SUBMITTED revision permanently unsubmittable and unacceptable — and the
+expiry sweep only matches a quote whose latest revision row exists, so such a quote could never
+expire either. `latest - 1` is only accidentally correct because append is the sole writer.
+
+**No audit entry, deliberately.** The four `quote_*` audit kinds are all events the BUYER can
+observe; an unsubmitted revision was never visible to the counterparty. Auditing it would need a new
+enum value in its own migration shipped ahead of the code, for an event with no counterparty. Say so
+if you disagree — it is a two-step deploy, not a line.
+
+The service guards `submittedAt` and answers `INVALID_STATE` (409); the trigger stays the backstop
+rather than the mechanism, because its `23514` is indistinguishable from any other check violation.
+
+**Ten comment sites that asserted this was impossible were corrected.** They were the files that made
+the trap legible, and a comment that outlives its fact is worse than none.
+
+### 30b. The review lifecycle is complete on both sides
+
+- **`GET /commerce/reviews/:reviewId` — new**, the only author-facing review READ. Every other
+  author route is a write, so before this a buyer could publish a review with photos and never see
+  them again: closing the tab made the attachments unlistable, unremovable, and a YouTube video the
+  host later deleted undiscoverable rather than reported. It projects media `state`, which the public
+  read drops along with the unavailable rows themselves. `ReviewMediaPanel` now hydrates from it, and
+  its "only while you are on this page" caveat is gone.
+- **Helpful votes** — frontend only, and `review.viewer` finally has a reader. It was parsed on the
+  wire and consumed by nothing. The control renders unpressable when `viewer` is null, exactly as
+  `ratings-and-reviews.tsx` had already specified in prose. It lands on both surfaces that mount that
+  component — the product page and the watch page's Reviews tab.
+- **`/studio/reviews`** — the seller's inbox, reusing `StoreReviewListPageSchema` verbatim because the
+  backend answers the same `{ summary, items, page }` the product page reads. The sidebar's
+  `rateReview` icon had been defined and used zero times, waiting for it.
+- **The seller's reply**, from the inbox.
+
+**Three inbox behaviours that look like bugs and are not**, all recorded in the file headers: the
+seller's `viewer.hasVotedHelpful` is permanently `false` (a party may never vote, so no control is
+offered there), `reviewer` is null for a non-public buyer organization (no privileged identity in
+your own inbox), and `summary` is computed over every visible review rather than the filtered page.
+
+**The reply is not a free-form upsert.** A first reply is always allowed however old the review, but
+revising is bounded twice — once only, and within 30 days of the REPLY's creation — and `editedAt` is
+not on the wire, so the client cannot pre-empt either refusal. Both controls stay enabled and the
+server's own sentence is rendered verbatim; a disabled button there would be a guess.
 
 ---
 

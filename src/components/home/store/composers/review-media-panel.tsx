@@ -7,10 +7,11 @@
 // before the review is written would mean holding a file whose destination might never be created —
 // so the composer creates the review first and this panel follows.
 //
-// THE LIST HERE IS WHAT THIS SESSION ATTACHED, AND THAT IS A BACKEND GAP RATHER THAN A CHOICE. The
-// trust router has no author-facing read of a review or its media — its only GETs are completions,
-// the dispute reads and the SELLER's inbox — so once this page is left there is no way back to these
-// rows. The panel says so out loud rather than implying the attachments are managed elsewhere.
+// THE LIST IS READ BACK FROM THE SERVER, not accumulated from write responses. That used to be
+// impossible: the trust router had no author-facing read, so leaving the page made these rows
+// unreachable — unlistable, unremovable, and a YouTube video the host later deleted was
+// undiscoverable rather than reported. `GET /commerce/reviews/:reviewId` closed that, and this panel
+// is the reason it exists.
 //
 // `unavailable_upstream` IS RENDERED, and it is the reason the author-facing projection differs from
 // the public one at all: the public read filters those rows out entirely and carries no state, while
@@ -24,14 +25,19 @@ import {
   useAttachReviewPhoto,
   useAttachReviewVideo,
   useDetachReviewMedia,
+  useOwnReviewQuery,
 } from "@/hooks/store/reviews";
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
-import { MAXIMUM_REVIEW_MEDIA_COUNT, type AuthoredReviewMedia } from "@/lib/store/reviews.schemas";
+import { MAXIMUM_REVIEW_MEDIA_COUNT } from "@/lib/store/reviews.schemas";
 
 export default function ReviewMediaPanel({ reviewId }: { reviewId: string }) {
-  // What this session attached. See the header: there is no read to hydrate this from.
-  const [attachedMedia, setAttachedMedia] = useState<AuthoredReviewMedia[]>([]);
+  const ownReviewQuery = useOwnReviewQuery(reviewId);
   const [youtubeUrl, setYoutubeUrl] = useState("");
+
+  // THE SERVER'S LIST, not a local one. Every write below re-reads rather than splicing its own
+  // answer in: removing an attachment re-packs the surviving positions to 0..n-1 server-side, so a
+  // locally-edited copy would be wrong about order the moment it diverged.
+  const attachedMedia = ownReviewQuery.data?.success ? ownReviewQuery.data.data.media : [];
 
   const photoAttempt = useResettableAttemptIdempotencyKey();
   const videoAttempt = useResettableAttemptIdempotencyKey();
@@ -53,7 +59,7 @@ export default function ReviewMediaPanel({ reviewId }: { reviewId: string }) {
     // Rotated only after the server confirmed: a retry of a FAILED upload must carry the original
     // key, or the copy the server already stored becomes a second one.
     photoAttempt.resetIdempotencyKey();
-    setAttachedMedia((existingMedia) => [...existingMedia, result.data]);
+    void ownReviewQuery.refetch();
   }
 
   async function handleAttachVideoClick() {
@@ -66,8 +72,8 @@ export default function ReviewMediaPanel({ reviewId }: { reviewId: string }) {
     });
     if (!result.success) return;
     videoAttempt.resetIdempotencyKey();
-    setAttachedMedia((existingMedia) => [...existingMedia, result.data]);
     setYoutubeUrl("");
+    void ownReviewQuery.refetch();
   }
 
   async function handleRemoveClick(mediaId: string) {
@@ -78,7 +84,9 @@ export default function ReviewMediaPanel({ reviewId }: { reviewId: string }) {
     });
     if (!result.success) return;
     detachAttempt.resetIdempotencyKey();
-    setAttachedMedia((existingMedia) => existingMedia.filter((media) => media.id !== mediaId));
+    // The server re-packs the surviving positions to 0..n-1, so this re-reads rather than filtering
+    // a local copy that would then disagree about order.
+    void ownReviewQuery.refetch();
   }
 
   return (

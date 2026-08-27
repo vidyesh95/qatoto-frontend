@@ -10,8 +10,8 @@
 //
 // **THIS IS THE ONLY READ ANYWHERE THAT YIELDS A DRAFT QUOTE'S ID.** That is what makes an abandoned
 // quote recoverable, and it matters more than usual here: only one unsubmitted revision may exist per
-// quote and there is no route to abandon one, so an unfinished quote BLOCKS the next one until it is
-// submitted. A provider needs to be able to find it.
+// quote, so an unfinished one BLOCKS the next until it is submitted or discarded. A provider has to
+// be able to find it before they can do either.
 //
 // `latestSubmittedRevision` IS NULL FOR A DRAFT-ONLY QUOTE, and it is rendered as an absence rather
 // than as a zero. A quote nobody has submitted has no price, which is not the same as being free.

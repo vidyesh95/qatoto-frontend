@@ -9,12 +9,24 @@
 // differ per route and are stated on each — a retried review is a duplicate on a unique index, while
 // a retried photo is a second copy occupying one of six slots.
 
-import { getJson, sendForm, sendJson, type ActionResponse, type RequestOptions } from "@/lib/http";
+import {
+  buildQueryString,
+  getJson,
+  sendForm,
+  sendJson,
+  type ActionResponse,
+  type RequestOptions,
+} from "@/lib/http";
+import { StoreReviewListPageSchema, type StoreReviewListPage } from "@/lib/store/products.schemas";
 import {
   AuthoredReviewMediaSchema,
   AuthoredReviewSchema,
   BuyerCompletionPageSchema,
   DetachedReviewMediaSchema,
+  OwnReviewDetailSchema,
+  ReviewHelpfulVoteSchema,
+  ReviewReplySchema,
+  WithdrawnReviewReplySchema,
   type AttachReviewVideoInput,
   type AuthoredReview,
   type AuthoredReviewMedia,
@@ -23,6 +35,12 @@ import {
   type DetachedReviewMedia,
   type EditOwnReviewInput,
   type ListBuyerCompletionsFilter,
+  type OwnReviewDetail,
+  type ReviewHelpfulVote,
+  type ReviewReply,
+  type UpsertReviewReplyInput,
+  type SellerReviewInboxFilter,
+  type WithdrawnReviewReply,
 } from "@/lib/store/reviews.schemas";
 
 /**
@@ -53,6 +71,26 @@ export async function listBuyerCompletions(
     success: true,
     data: { rows: [...parsed.data.items], nextCursor: parsed.data.page.nextCursor },
   };
+}
+
+/**
+ * Reads back one review the caller wrote, with its media — `GET /commerce/reviews/:reviewId` (A38).
+ *
+ * THE ONLY AUTHOR-FACING REVIEW READ. It is what lets a buyer return to a published review and
+ * manage its attachments instead of only doing so in the session that created them.
+ *
+ * ITS MEDIA CARRIES `state`, unlike the product page's read, which filters `unavailable_upstream`
+ * rows out and projects no state at all. So this is the one place "your video is gone from YouTube"
+ * can be said to the one person who can fix it.
+ *
+ * A review the caller did not write answers 404, never 403 — the route cannot enumerate ids.
+ */
+export function getOwnReview(
+  reviewId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<OwnReviewDetail>> {
+  const path = `/commerce/reviews/${encodeURIComponent(reviewId)}`;
+  return getJson(path, OwnReviewDetailSchema, options);
 }
 
 /**
@@ -154,4 +192,102 @@ export function detachReviewMedia(
 ): Promise<ActionResponse<DetachedReviewMedia>> {
   const path = `/commerce/reviews/${encodeURIComponent(reviewId)}/media/${encodeURIComponent(mediaId)}`;
   return sendJson(path, "DELETE", undefined, DetachedReviewMediaSchema, options);
+}
+
+/**
+ * Marks a review helpful — `PUT /commerce/reviews/:reviewId/helpful` (A8).
+ *
+ * **NO IDEMPOTENCY KEY, and that is deliberate rather than an oversight.** PUT of a boolean is
+ * idempotent by verb: the insert is `ON CONFLICT DO NOTHING` and the counter moves only when a row
+ * actually appeared, so a double-tap cannot double-count. The like, save and subscribe routes
+ * document the same rule.
+ *
+ * **NEITHER PARTY TO A REVIEW MAY VOTE ON IT** — not the author, not the organization being
+ * reviewed. Both are refused with `403 SELF_VOTE_FORBIDDEN` in the service and again by
+ * `commerce_review_vote_relationship_guard` in the database. Any other active trading organization
+ * may vote, whatever its member's role.
+ *
+ * A hidden review is a 404, so the control disappears for a moderated row rather than erroring.
+ */
+export function markReviewHelpful(
+  reviewId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ReviewHelpfulVote>> {
+  const path = `/commerce/reviews/${encodeURIComponent(reviewId)}/helpful`;
+  return sendJson(path, "PUT", undefined, ReviewHelpfulVoteSchema, options);
+}
+
+/** Withdraws a helpful vote. Answers the same shape with `isHelpful: false`. */
+export function clearReviewHelpfulVote(
+  reviewId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ReviewHelpfulVote>> {
+  const path = `/commerce/reviews/${encodeURIComponent(reviewId)}/helpful`;
+  return sendJson(path, "DELETE", undefined, ReviewHelpfulVoteSchema, options);
+}
+
+/**
+ * Writes or revises the seller's reply — `PUT /commerce/reviews/:reviewId/reply` (A38).
+ *
+ * WRITTEN BY THE ORGANIZATION THE REVIEW IS ABOUT. Anyone else gets a 404, never a 403, so the route
+ * cannot be used to discover review ids.
+ *
+ * **IT IS NOT A FREE-FORM UPSERT, and a UI that assumes otherwise just collects 409s.** A FIRST
+ * reply is always allowed however old the review — answering late is fine. REVISING is bounded
+ * twice: once only, and within 30 days of the REPLY's own creation. Both refusals are 409s carrying
+ * the server's own sentence, and since `editedAt` is not projected the client cannot pre-empt them —
+ * render what the server says.
+ *
+ * Requires an `Idempotency-Key`, unlike the helpful vote: this one carries a body, so a retry with a
+ * different body is a genuinely different request.
+ */
+export function upsertReviewReply(
+  reviewId: string,
+  input: UpsertReviewReplyInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<ReviewReply>> {
+  const path = `/commerce/reviews/${encodeURIComponent(reviewId)}/reply`;
+  return sendJson(path, "PUT", input, ReviewReplySchema, options);
+}
+
+/**
+ * Withdraws the reply — `DELETE /commerce/reviews/:reviewId/reply`.
+ *
+ * Same 30-day bound from the reply's creation. Withdrawing a reply that does not exist is NOT an
+ * error, so the control is safe to leave enabled rather than gated on a local guess.
+ */
+export function withdrawReviewReply(
+  reviewId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<WithdrawnReviewReply>> {
+  const path = `/commerce/reviews/${encodeURIComponent(reviewId)}/reply`;
+  return sendJson(path, "DELETE", undefined, WithdrawnReviewReplySchema, options);
+}
+
+/**
+ * Reviews written ABOUT the caller's organization — `GET /commerce/seller/reviews` (A38).
+ *
+ * IT REUSES THE PUBLIC PAGE SHAPE EXACTLY. The backend answers `StoreReviewListPage` — the same
+ * `{ summary, items, page }` the product page reads — so there is no seller-specific projection
+ * here, and none is wanted.
+ *
+ * THREE THINGS THAT LOOK LIKE BUGS AND ARE NOT:
+ *
+ *  1. **`viewer.hasVotedHelpful` is permanently `false`.** The caller is the subject of every row,
+ *     and a party to a review may never vote on it. Do not render a working vote control here.
+ *  2. **`reviewer` is `null` for any buyer whose organization is not publicly visible.** A seller
+ *     gets no privileged identity in their own inbox; the row reads "Verified buyer", exactly as on
+ *     the product page.
+ *  3. **`respondedAt` on a reply is its `updatedAt`**, so a revised reply shows the revision time
+ *     rather than when it was first posted.
+ *
+ * `summary` is computed over every visible review of the organization, never over the filtered page,
+ * so the counts do not renumber as filters are clicked.
+ */
+export function listSellerReviewInbox(
+  filter: SellerReviewInboxFilter = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<StoreReviewListPage>> {
+  const path = `/commerce/seller/reviews${buildQueryString({ ...filter })}`;
+  return getJson(path, StoreReviewListPageSchema, options);
 }

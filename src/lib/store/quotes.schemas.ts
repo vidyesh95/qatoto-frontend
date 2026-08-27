@@ -447,7 +447,8 @@ export type SubmittedQuoteRevision = z.infer<typeof SubmittedQuoteRevisionSchema
  * **DRAFTS ARE INCLUDED, and this is the only list anywhere that yields a draft quote's id.** That
  * is what makes resuming an abandoned quote possible at all: if the shell POST succeeded and the
  * revision POST did not, the shell is reachable from here and nowhere else. A composer that could
- * not find it would create a second shell on the same RFQ every time the network dropped.
+ * not find it would create a second shell on the same RFQ every time the network dropped — and the
+ * server refuses that, so the quote would be unreachable rather than duplicated.
  *
  * `latestSubmittedRevision` IS NULL FOR A DRAFT-ONLY QUOTE. That is not zero and must not render as
  * a price.
@@ -679,9 +680,9 @@ export interface QuoteServiceLineInput {
  * `POST /commerce/quotes/:quoteId/revisions`.
  *
  * `validityDeadlineAt` MUST BE IN THE FUTURE — checked before anything else and answered as a
- * validation failure. **Beware the short deadline**: once a revision is appended and its deadline
- * passes, submit answers `QUOTE_EXPIRED`, appending another answers "submit or abandon the existing
- * unsubmitted revision", and there is NO abandon route — so the quote is stuck for that RFQ. Prefill
+ * validation failure. **Mind the short deadline**: once a revision is appended and its deadline
+ * passes, submit answers `QUOTE_EXPIRED` and appending another is refused while it stands, so the
+ * revision has to be DISCARDED and priced again. Recoverable, but it costs the work — prefill
  * generously and warn on anything short.
  */
 export interface AppendQuoteRevisionInput {

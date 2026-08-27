@@ -118,6 +118,9 @@ const STUDIO_ROUTES = {
   // only surface that lists an UNSUBMITTED quote, and an unsubmitted one blocks the next revision.
   providerRfqs: "/studio/rfqs",
   providerQuotes: "/studio/quotes",
+  // The seller's half of trust. `GET /commerce/seller/reviews` and both reply routes shipped with no
+  // caller at all, so a seller could be reviewed publicly with no way to read it, let alone answer.
+  sellerReviews: "/studio/reviews",
   services: "/studio/services",
   // The manufacturer's own two surfaces. `factoryInquiries` is the RECEIVED queue — the buyer's
   // side of the same rows is `/store/factory-inquiries`, the split `/store/rfqs` and
@@ -339,6 +342,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
       { path: STUDIO_ROUTES.orders, label: "Orders", iconKey: "orders" },
       { path: STUDIO_ROUTES.providerRfqs, label: "Requests to quote", iconKey: "requestQuote" },
       { path: STUDIO_ROUTES.providerQuotes, label: "Your quotes", iconKey: "requestQuote" },
+      { path: STUDIO_ROUTES.sellerReviews, label: "Reviews", iconKey: "rateReview" },
       { path: STUDIO_ROUTES.services, label: "Services", iconKey: "package" },
       {
         path: STUDIO_ROUTES.factoryInquiries,

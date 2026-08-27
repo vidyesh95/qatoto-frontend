@@ -19,6 +19,8 @@
 
 import { useState } from "react";
 
+import { useSetReviewHelpfulVote } from "@/hooks/store/reviews";
+
 import Image from "next/image";
 
 import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
@@ -202,7 +204,7 @@ export default function RatingsAndReviews({
             <ul className="space-y-4">
               {items.map((review) => (
                 <li key={review.id}>
-                  <ReviewCard review={review} />
+                  <ReviewCard review={review} productSlug={productSlug} />
                 </li>
               ))}
             </ul>
@@ -223,7 +225,20 @@ export default function RatingsAndReviews({
   );
 }
 
-function ReviewCard({ review }: { readonly review: StoreReview }) {
+function ReviewCard({
+  review,
+  productSlug,
+}: {
+  readonly review: StoreReview;
+  readonly productSlug: string;
+}) {
+  const setHelpfulVoteMutation = useSetReviewHelpfulVote();
+  // `viewer` IS THE PERMISSION, not just the current state. Null means the caller has no active
+  // trading organization — or is a party to this review, who may never vote on it — so the control
+  // renders as a plain count with nothing to press, which is what this file's header specifies.
+  const canVote = review.viewer !== null;
+  const hasVotedHelpful = review.viewer?.hasVotedHelpful ?? false;
+
   const photos = review.media.filter((media) => media.mediaKind === "photo");
   const videos = review.media.filter((media) => media.mediaKind === "youtube_video");
 
@@ -282,6 +297,29 @@ function ReviewCard({ review }: { readonly review: StoreReview }) {
         <span className="text-[11px] text-[#6F7979]">
           {formatCountLabel(review.helpfulCount)} found this helpful
         </span>
+        {canVote && (
+          <button
+            type="button"
+            aria-pressed={hasVotedHelpful}
+            disabled={setHelpfulVoteMutation.isPending}
+            onClick={() =>
+              setHelpfulVoteMutation.mutate({
+                reviewId: review.id,
+                productSlug,
+                // The toggle direction is decided from what the SERVER last said, never from an
+                // optimistic local flip — the count beside it has to stay true.
+                isHelpful: !hasVotedHelpful,
+              })
+            }
+            className={`cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+              hasVotedHelpful
+                ? "bg-[#00696E] text-white"
+                : "bg-transparent text-[#00696E] outline -outline-offset-1 outline-[#00696E]"
+            }`}
+          >
+            {hasVotedHelpful ? "Helpful" : "Mark helpful"}
+          </button>
+        )}
       </div>
 
       {review.reply !== null && (

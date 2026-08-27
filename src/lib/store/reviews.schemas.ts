@@ -39,6 +39,7 @@
 
 import { z } from "zod";
 
+import type { ReviewSort } from "@/lib/store/products.schemas";
 import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
 
 // --- Completions -------------------------------------------------------------
@@ -163,6 +164,25 @@ export const AuthoredReviewMediaSchema = z
 
 export type AuthoredReviewMedia = z.infer<typeof AuthoredReviewMediaSchema>;
 
+/**
+ * One review as its AUTHOR sees it — `GET /commerce/reviews/:reviewId`.
+ *
+ * THE READ THAT MAKES A PUBLISHED REVIEW MANAGEABLE. Every other author-facing review route is a
+ * WRITE, so before this existed the only way to see your own attachments was to still be holding the
+ * responses from adding them: close the tab and they were unlistable, unremovable, and a YouTube
+ * video the host later deleted was undiscoverable rather than reported.
+ *
+ * IT IS NOT THE PUBLIC READ WITH A DIFFERENT NAME. `media` here keeps `state` and `unavailableAt`,
+ * which the product page's projection drops entirely along with the unavailable rows themselves.
+ * That asymmetry is the point: a browsing buyer should not meet a dead player, and the author is the
+ * only person who can replace one.
+ */
+export const OwnReviewDetailSchema = AuthoredReviewSchema.extend({
+  media: z.array(AuthoredReviewMediaSchema),
+}).strip();
+
+export type OwnReviewDetail = z.infer<typeof OwnReviewDetailSchema>;
+
 /** `DELETE /commerce/reviews/:reviewId/media/:mediaId` answers with the surviving count. */
 export const DetachedReviewMediaSchema = z
   .object({ reviewId: z.string(), mediaCount: z.number().int() })
@@ -217,4 +237,76 @@ export interface EditOwnReviewInput {
 /** A review video is a YouTube LINK. The id is extracted server-side, never sent as a bare id. */
 export interface AttachReviewVideoInput {
   readonly youtubeUrl: string;
+}
+
+// --- Helpful votes and the seller's reply ------------------------------------
+
+/**
+ * What both helpful routes answer with.
+ *
+ * `PUT` returns `isHelpful: true` and `DELETE` returns the same shape with `false`, so one schema
+ * covers both and the caller re-renders from the server's count rather than guessing at it.
+ *
+ * NEITHER ROUTE TAKES AN IDEMPOTENCY KEY, deliberately: PUT and DELETE of a boolean are idempotent
+ * by verb, so a double-tap on a slow connection is already harmless. Same rule like, save and
+ * subscribe follow.
+ */
+export const ReviewHelpfulVoteSchema = z
+  .object({
+    reviewId: z.string(),
+    isHelpful: z.boolean(),
+    helpfulCount: z.number().int(),
+  })
+  .strip();
+
+export type ReviewHelpfulVote = z.infer<typeof ReviewHelpfulVoteSchema>;
+
+/**
+ * The seller's reply to a review about them.
+ *
+ * NO `editedAt` ON THE WIRE, even though the column exists — so a client cannot know locally whether
+ * the single permitted revision has been spent. The 409 is the authority; see `upsertReviewReply`.
+ */
+export const ReviewReplySchema = z
+  .object({
+    reviewId: z.string(),
+    responderOrganizationId: z.string(),
+    body: z.string(),
+    createdAt: IsoDateTimeSchema,
+    updatedAt: IsoDateTimeSchema,
+  })
+  .strip();
+
+export type ReviewReply = z.infer<typeof ReviewReplySchema>;
+
+/** `DELETE /commerce/reviews/:reviewId/reply` answers with the id alone. */
+export const WithdrawnReviewReplySchema = z.object({ reviewId: z.string() }).strip();
+
+export type WithdrawnReviewReply = z.infer<typeof WithdrawnReviewReplySchema>;
+
+/** `PUT /commerce/reviews/:reviewId/reply`. One field, 1..2000 characters. */
+export interface UpsertReviewReplyInput {
+  readonly body: string;
+}
+
+// --- The seller's inbox --------------------------------------------------------
+
+/**
+ * `GET /commerce/seller/reviews` takes the SAME query as the public product-review list, plus one
+ * key the public surface has no use for.
+ *
+ * **`unreplied` IS WHAT MAKES IT AN INBOX** rather than a second list of the same rows. Everything
+ * else — sort, rating, hasMedia, limit, cursor — is `StoreReviewListQuerySchema` verbatim, which is
+ * why the response reuses `StoreReviewListPageSchema` with no new projection to model.
+ *
+ * **THE CURSOR IS SORT-SCOPED.** Its sort key is encoded into the cursor itself, so carrying one
+ * across a change of `sort` is a **422**, not a reset. Clear it on every filter change.
+ */
+export interface SellerReviewInboxFilter {
+  readonly sort?: ReviewSort;
+  readonly rating?: number;
+  readonly hasMedia?: boolean;
+  readonly unreplied?: boolean;
+  readonly limit?: number;
+  readonly cursor?: string;
 }
