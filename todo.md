@@ -23,8 +23,12 @@ and `git log` are the record of what was built and why.
 
 **The one substantial build left** — §5, cost of goods and therefore margin.
 
+**Decided, specced, not yet built** — `/studio/pitches`. The definition that blocked it is
+settled and the plan is [docs/PITCHES_STRUCTURE.md](docs/PITCHES_STRUCTURE.md); it needs two new
+backend tables and is gated on the terms-of-service rewrite under **Decisions needed**.
+
 **Everything else** is either content-blocked (`/anime`), a new backend domain nobody has asked
-for yet (§15, §16, five of the eight planned Studio routes), or a question for Vidyesh rather than
+for yet (§15, §16, four of the eight planned Studio routes), or a question for Vidyesh rather than
 a task (**Decisions needed**).
 
 ---
@@ -317,11 +321,52 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     STUDIO §0 ("**must NOT be built now**"), and Qatoto cannot inject captions into a YouTube embed.
     It belongs with `download` and `isPremium`, and returns only if self-hosted video does.
 
-    **`/studio/pitches` is blocked on a DEFINITION, not on code.** `pitch` is a `video_type` enum
-    member; "sent and received" implies sending a pitch TO someone and no such primitive exists. It
-    could mean pitch videos, R&D project applications, or investor outreach — three different
-    products. `commerce_thread`/`commerce_message` exist but are RFQ-scoped between organizations.
-    Building before that is decided picks the answer by accident.
+    **`/studio/pitches` — THE DEFINITION IS NOW SETTLED, and it is not what the roadmap says.**
+    This entry used to read "blocked on a DEFINITION, not on code", listing pitch videos, R&D
+    applications and investor outreach as three products the word could mean. Decided 2026-08-27:
+    **a pitch is a founder publishing an idea / MVP as a video to an audience of funders —
+    Kickstarter and YC demo day.** "Pitches you sent and received" (`site-roadmap.ts:842`,
+    `studio-sidebar.tsx:332`) described the application-inbox reading and is WRONG; it changes with
+    the build. See the full plan in `docs/PITCHES_STRUCTURE.md`.
+
+    **Four constraints came with it, all downstream of one requirement — Qatoto is bootstrapped and
+    must carry no legal liability and no custody. Money happens off-platform or at a licensed third
+    party.**
+
+    | Decision              | Answer                                                                                                                                                      |
+    | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | Where funding happens | **Outbound link to a licensed platform** the founder supplies (Kickstarter / Wefunder / Ketto / Razorpay page). Qatoto stores a URL and nothing else.       |
+    | Contact handoff       | **Founder-supplied external link** (Calendly, their own site). No inbox to moderate, no personal data brokered.                                             |
+    | Funding outcome       | **Recorded, both-party confirmed, labelled self-reported.** Qatoto asserts nothing.                                                                         |
+    | Publish gate          | **Light gate + visible disclaimer** — spam / scam / illegal only, NEVER merit. Vetting on merit reads as endorsement, which is the liability being avoided. |
+
+    **The result is a listing and discovery board — Product Hunt or a demo-day directory, not
+    Wefunder.** The whole design exists to keep that true, and three things are load-bearing:
+
+    - **A pitch carries NO amount, NO equity percentage and NO pledge button.** The ask lives on the
+      third-party page behind the outbound link. `store.ts:10280-10296` already refused the same
+      question for the cofounder directory ("UNTIL DECIDED, THE BACKEND STORES NO CAPITAL FIGURE")
+      and §14 below keeps it open — **it cannot be answered differently in two places.**
+    - **`ENABLED_FUNDING_ROUND_TYPES` stays `["crowdfunding"]`.** Nothing here ungates `equity` or
+      `venture`, and no investor entity or KYC step is introduced — the design needs neither, which
+      is the point.
+    - **The outcome record is `compensation_payment_record`'s shape, not a payment.** One party
+      records, the counterparty confirms, the page says self-reported. Append-only, no status
+      column, no instrument stored — same rule as `research_contribution_ledger_entry`.
+
+    **Two prerequisites, neither of them code.** (a) **The terms of service must be rewritten
+    first** — both legal documents still call this "the Qatoto Video Sharing Site" and mention no
+    store, projects, payments or equity; shipping a funding-adjacent surface under them is a larger
+    exposure than anything in the diff. It is the same item already listed under **Decisions
+    needed** below. (b) **Probe published `research_project` counts before shipping the public
+    discovery rail** — `/anime` is the standing lesson: five pages stayed on mocks because wiring
+    them would have replaced invented content with blank pages.
+
+    **One tension this creates, deliberately left open.** R&D funding rounds still offer an
+    on-platform pledge button (`POST /funding-rounds/:roundId/pledges`) while a pitch sends people
+    to a third party — two funding models side by side. The pitch page must not carry a pledge
+    button; whether the existing round pledge stays, is relabelled or is retired is a SEPARATE
+    decision and was not taken here.
 
     **`/studio/support` is already correct** and should not be "built". There is no ticket API, and
     `/customer-service` is a directory for exactly that reason — "an unanswered form is worse than an

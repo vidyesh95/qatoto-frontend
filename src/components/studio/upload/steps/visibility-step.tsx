@@ -4,9 +4,18 @@ import Image from "next/image";
 import { useState } from "react";
 import type { StudioVideoVisibility, UploadDraft } from "@/lib/videos/studio-view";
 
-// Step 4 — visibility. Qatoto adds a fourth tier (Investor-only, optionally
-// NDA-gated) beyond YouTube's private/unlisted/public. NDA acceptance and
-// investor identity are enforced server-side — this UI only records intent.
+// Step 4 — visibility. THREE TIERS, NOT FOUR. `investor_only` and NDA-gated playback
+// exist in the enum (`VIDEO_VISIBILITIES`) and a badge still renders for a row that
+// carries them, but they are UNREACHABLE FROM THIS WIZARD and the option is not offered.
+//
+// Every video created here is a YouTube link, and `createVideo` opens with
+// `assertGatingSupported("youtube", …)` — videoSource hardcoded — so the pair is refused
+// before the oEmbed call, and `video_gating_ck` refuses it at the storage layer too. The
+// bytes live on youtube.com; anyone with the link watches them signed in or not, so
+// gating them would be a false security promise. Offering the tier anyway shipped a
+// control that answered `GATING_UNSUPPORTED_FOR_SOURCE` every single time.
+//
+// This comes back only if self-hosted video does (STUDIO §0 defers it explicitly).
 const VISIBILITY_OPTIONS: Array<{
   value: StudioVideoVisibility;
   label: string;
@@ -26,11 +35,6 @@ const VISIBILITY_OPTIONS: Array<{
     value: "public",
     label: "Public",
     description: "Everyone can watch this video.",
-  },
-  {
-    value: "investor_only",
-    label: "Investor-only",
-    description: "A private pitch visible to selected investors only.",
   },
 ];
 
@@ -92,38 +96,6 @@ export default function VisibilityStep({ draft, onDraftChange }: VisibilityStepP
             );
           })}
         </div>
-
-        {draft.visibility === "investor_only" && (
-          <div className="flex flex-col gap-2 rounded-xl bg-secondary/50 p-4">
-            <button
-              type="button"
-              onClick={() => onDraftChange({ isNdaRequired: !draft.isNdaRequired })}
-              className="flex cursor-pointer items-start gap-3 text-left"
-            >
-              <span
-                className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border ${
-                  draft.isNdaRequired ? "border-foreground bg-foreground" : "border-border"
-                }`}
-              >
-                {draft.isNdaRequired && (
-                  <Image
-                    src="/icons/check_18dp_FFFFFF_FILL1_wght400_GRAD0_opsz20.svg"
-                    alt=""
-                    width={14}
-                    height={14}
-                  />
-                )}
-              </span>
-              <span className="text-sm text-foreground">
-                Require NDA acceptance before playback
-              </span>
-            </button>
-            <p className="text-xs text-muted-foreground">
-              NDA acceptance and investor identity are verified server-side — viewers accept the NDA
-              before the video plays.
-            </p>
-          </div>
-        )}
       </section>
 
       <section className="flex flex-col gap-4 rounded-2xl border border-border p-6">
