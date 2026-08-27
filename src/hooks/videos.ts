@@ -23,6 +23,8 @@ import {
   publishVideo,
   replaceVideoChapters,
   replaceVideoPlaylists,
+  attachVideoDocument,
+  detachVideoDocument,
   replaceVideoThumbnail,
   unpublishVideo,
   updateVideo,
@@ -182,6 +184,36 @@ export function useReplaceVideoThumbnailMutation() {
       invalidateList();
       invalidateDetail(variables.videoId);
     },
+  });
+}
+
+/**
+ * `POST /videos/:videoId/documents` — multipart, 25 MB, PDF only.
+ *
+ * Invalidates the DETAIL read alone, not the list: a document changes nothing on a video card, and
+ * the wizard re-reads the detail to show the saved chips.
+ */
+export function useAttachVideoDocumentMutation() {
+  const { invalidateDetail } = useStudioVideoInvalidation();
+  return useMutation({
+    mutationFn: async (variables: { readonly videoId: string; readonly documentFile: File }) =>
+      unwrap(await attachVideoDocument(variables.videoId, variables.documentFile)),
+    // NOT `retry`-ed, like every other write in this file. It would be SAFE to retry — the backend
+    // keys the row on a hash of the bytes, so a duplicate request converges — but a 25 MB re-send
+    // on a slow connection is a cost the creator should choose, not one a hook chooses for them.
+    retry: false,
+    onSuccess: (_data, variables) => invalidateDetail(variables.videoId),
+  });
+}
+
+/** `DELETE /videos/:videoId/documents/:documentId`. */
+export function useDetachVideoDocumentMutation() {
+  const { invalidateDetail } = useStudioVideoInvalidation();
+  return useMutation({
+    mutationFn: async (variables: { readonly videoId: string; readonly documentId: string }) =>
+      unwrap(await detachVideoDocument(variables.videoId, variables.documentId)),
+    retry: false,
+    onSuccess: (_data, variables) => invalidateDetail(variables.videoId),
   });
 }
 

@@ -21,6 +21,7 @@ import {
   type RequestOptions,
 } from "@/lib/http";
 import {
+  AttachedVideoDocumentSchema,
   CreatedVideoSchema,
   DeletedSchema,
   PaginationMetaSchema,
@@ -32,6 +33,7 @@ import {
   type PublicVideo,
   type ReplaceChaptersInput,
   type UpdateVideoInput,
+  type VideoDocument,
   type VideoListRow,
 } from "@/lib/videos/schemas";
 
@@ -192,6 +194,50 @@ export function replaceVideoThumbnail(
     "POST",
     formData,
     PublicVideoSchema,
+    options,
+  );
+}
+
+/**
+ * `POST /videos/:videoId/documents` — multipart, field name `document`.
+ *
+ * 25 MB cap, **PDF only**, and the server re-checks the bytes rather than trusting the browser's
+ * `Content-Type`: a renamed file with a PDF mimetype is a 422 naming what is wrong with it. Do NOT
+ * set Content-Type — the browser must add the multipart boundary.
+ *
+ * A RE-UPLOAD OF THE SAME FILE IS A SUCCESS, NOT A DUPLICATE. The backend keys the row on a hash of
+ * the bytes, so re-attaching what is already there converges on the existing document and answers
+ * 201 with its id. There is no idempotency key to mint here for that reason.
+ *
+ * At most five documents per video; the sixth is a 422 that names the cap.
+ */
+export function attachVideoDocument(
+  videoId: string,
+  documentFile: File,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ document: VideoDocument }>> {
+  const formData = new FormData();
+  formData.append("document", documentFile);
+  return sendForm(
+    `/videos/${encodeURIComponent(videoId)}/documents`,
+    "POST",
+    formData,
+    AttachedVideoDocumentSchema,
+    options,
+  );
+}
+
+/** `DELETE /videos/:videoId/documents/:documentId`. Removes the stored bytes, then the row. */
+export function detachVideoDocument(
+  videoId: string,
+  documentId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ deleted: boolean }>> {
+  return sendJson(
+    `/videos/${encodeURIComponent(videoId)}/documents/${encodeURIComponent(documentId)}`,
+    "DELETE",
+    undefined,
+    DeletedSchema,
     options,
   );
 }

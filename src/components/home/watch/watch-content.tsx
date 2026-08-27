@@ -22,6 +22,8 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 
 import Image from "next/image";
+
+import { API_BASE_URL } from "@/lib/api";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -65,6 +67,13 @@ const PLACEHOLDER_TRANSCRIPT: { time: string; text: string }[] = [];
  * a viewer is entitled to watch. Deliberate; docs/HOME_STRUCTURE.md §10.
  */
 const PLACEHOLDER_IS_PREMIUM = false;
+
+/** Bytes as something a reader can weigh before clicking. Not exact — a size hint, not a checksum. */
+function formatDocumentSizeLabel(byteSize: number): string {
+  if (byteSize < 1024) return `${String(byteSize)} B`;
+  if (byteSize < 1024 * 1024) return `${(byteSize / 1024).toFixed(0)} KB`;
+  return `${(byteSize / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export default function WatchContent({
   video,
@@ -208,6 +217,50 @@ export default function WatchContent({
           )}
 
           <WatchOpenRoles openRoles={video.openRoles} />
+
+          {/*
+            THE PROMISE THE STUDIO MAKES, FINALLY KEPT. The upload control has said "Deck or
+            whitepaper shown as a download under the video" since it existed; until now nothing
+            wrote the table and nothing here read it.
+
+            ⚠️ `API_BASE_URL` + `downloadPath`, NOT a storage link. The href points at this API,
+            which re-checks the video's public gate on every fetch and then 302s to a URL that
+            lives five minutes. A creator who unpublishes this video breaks these links, which is
+            the entire reason the backend stores a key rather than a URL.
+
+            `rel="noopener"` on a `target="_blank"` download, and `download` is deliberately NOT
+            set: the server already sends `Content-Disposition: attachment`, and a `download`
+            attribute on a cross-origin href is ignored by browsers anyway, so writing it would
+            only imply it were doing something.
+          */}
+          {video.documents.length > 0 && (
+            <section className="flex flex-col gap-2">
+              <h2 className="text-sm font-medium text-[#191C1C]">Documents</h2>
+              <ul className="flex flex-wrap gap-2">
+                {video.documents.map((document) => (
+                  <li key={document.id}>
+                    <a
+                      href={`${API_BASE_URL}${document.downloadPath}`}
+                      target="_blank"
+                      rel="noopener"
+                      className="flex items-center gap-2 rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs font-medium text-[#191C1C] transition-colors hover:bg-[#F2F4F4]"
+                    >
+                      <Image
+                        src="/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                        alt=""
+                        width={16}
+                        height={16}
+                      />
+                      {document.fileName}
+                      <span className="text-[#6F7979]">
+                        {formatDocumentSizeLabel(document.byteSize)}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <VideoEngagementBar
             videoId={video.videoId}

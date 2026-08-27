@@ -24,14 +24,38 @@ type VideoElementsStepProps = {
   onDraftChange: (patch: Partial<UploadDraft>) => void;
   onOpenStoreProductsPicker: () => void;
   onOpenInviteCollaborator: () => void;
+  /**
+   * Files chosen but not yet uploaded. HELD BY THE MODAL, NOT THE DRAFT, for the same reason the
+   * thumbnail is: a `File` is not JSON and never goes to `POST /videos`. They are posted to
+   * `POST /videos/:videoId/documents` in the modal's follow-up pass, against a videoId that does
+   * not exist until after create.
+   */
+  pendingDocumentFiles: File[];
+  onPendingDocumentFilesChange: (files: File[]) => void;
+  /** Removes an ALREADY-SAVED document — a real DELETE, not a draft edit. */
+  onRemoveSavedDocument: (documentId: string) => void;
 };
+
+/** What `POST /videos/:videoId/documents` accepts. Mirrored from the backend, not guessed. */
+const MAX_DOCUMENTS_PER_VIDEO = 5;
+const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
+
+function formatByteSizeLabel(byteSize: number): string {
+  if (byteSize < 1024) return `${String(byteSize)} B`;
+  if (byteSize < 1024 * 1024) return `${(byteSize / 1024).toFixed(0)} KB`;
+  return `${(byteSize / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export default function VideoElementsStep({
   draft,
   onDraftChange,
   onOpenStoreProductsPicker,
   onOpenInviteCollaborator,
+  pendingDocumentFiles,
+  onPendingDocumentFilesChange,
+  onRemoveSavedDocument,
 }: VideoElementsStepProps) {
+  const [documentRejectionMessage, setDocumentRejectionMessage] = useState<string | null>(null);
   const documentFileInputRef = useRef<HTMLInputElement>(null);
   const [newOpenRoleText, setNewOpenRoleText] = useState("");
   const [newTeamMemberText, setNewTeamMemberText] = useState("");
@@ -112,15 +136,50 @@ export default function VideoElementsStep({
     setNewMilestoneText("");
   }
 
+  /**
+   * KEEPS THE `File` OBJECTS. This function used to read `documentFile.name`, put the string in the
+   * draft and let the bytes go — which is why "Attach documents" lost a creator's file every time.
+   *
+   * THE CHECKS HERE ARE FAST FEEDBACK, NOT VALIDATION. The backend re-reads the bytes and is the
+   * only authority: it rejects a renamed `.pdf` on its actual header, which nothing in a browser
+   * can do from a file picker. Rejecting the obvious cases up front just saves a 25 MB round trip.
+   */
   function handleDocumentFilesChange(event: React.ChangeEvent<HTMLInputElement>) {
     const selectedDocuments = event.target.files;
     if (!selectedDocuments) return;
-    const newDocumentNames = Array.from(selectedDocuments)
-      .map((documentFile) => documentFile.name)
-      .filter((documentName) => !draft.attachedDocumentNames.includes(documentName));
-    onDraftChange({
-      attachedDocumentNames: [...draft.attachedDocumentNames, ...newDocumentNames],
-    });
+
+    const alreadyChosenNames = new Set(pendingDocumentFiles.map((file) => file.name));
+    const savedNames = new Set(draft.savedDocuments.map((document) => document.fileName));
+    const rejections: string[] = [];
+    const acceptedFiles: File[] = [];
+
+    for (const documentFile of Array.from(selectedDocuments)) {
+      if (documentFile.type !== "application/pdf") {
+        rejections.push(`${documentFile.name} is not a PDF`);
+        continue;
+      }
+      if (documentFile.size > MAX_DOCUMENT_BYTES) {
+        rejections.push(`${documentFile.name} is over 25 MB`);
+        continue;
+      }
+      // Skipped silently rather than reported: re-picking a file already chosen is not a mistake
+      // worth a message, and the backend would converge on the same document anyway.
+      if (alreadyChosenNames.has(documentFile.name) || savedNames.has(documentFile.name)) continue;
+      acceptedFiles.push(documentFile);
+    }
+
+    const roomLeft =
+      MAX_DOCUMENTS_PER_VIDEO - draft.savedDocuments.length - pendingDocumentFiles.length;
+    const withinCap = acceptedFiles.slice(0, Math.max(roomLeft, 0));
+    if (withinCap.length < acceptedFiles.length) {
+      rejections.push(`a video may carry at most ${String(MAX_DOCUMENTS_PER_VIDEO)} documents`);
+    }
+
+    setDocumentRejectionMessage(rejections.length > 0 ? rejections.join("; ") : null);
+    if (withinCap.length > 0) {
+      onPendingDocumentFilesChange([...pendingDocumentFiles, ...withinCap]);
+    }
+    // Cleared so re-picking the same file fires `change` again.
     event.target.value = "";
   }
 
@@ -312,10 +371,15 @@ export default function VideoElementsStep({
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-foreground">Pitch deck / documents</span>
           <div>
+            {/*
+              `.pdf` ONLY, NARROWED FROM `.pdf,.doc,.docx`. The backend takes PDF and nothing else,
+              so offering Word documents in the picker was an invitation to a 422 — and before the
+              upload route existed, to a silent discard.
+            */}
             <input
               ref={documentFileInputRef}
               type="file"
-              accept=".pdf,.doc,.docx"
+              accept="application/pdf"
               multiple
               onChange={handleDocumentFilesChange}
               className="hidden"
@@ -323,7 +387,10 @@ export default function VideoElementsStep({
             <button
               type="button"
               onClick={() => documentFileInputRef.current?.click()}
-              className="flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
+              disabled={
+                draft.savedDocuments.length + pendingDocumentFiles.length >= MAX_DOCUMENTS_PER_VIDEO
+              }
+              className="flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Image
                 src="/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
@@ -334,25 +401,47 @@ export default function VideoElementsStep({
               Attach documents
             </button>
           </div>
-          {draft.attachedDocumentNames.length > 0 && (
+
+          {/*
+            SAVED AND PENDING ARE TWO LISTS, not one, because removing them is two different
+            actions: a saved document is deleted on the server the moment its X is pressed, while a
+            pending file has never left the browser. Merging them would make one X mean two things.
+          */}
+          {draft.savedDocuments.length > 0 && (
             <ul className="flex flex-wrap gap-2">
-              {draft.attachedDocumentNames.map((documentName) => (
+              {draft.savedDocuments.map((savedDocument) => (
                 <RemovableChip
-                  key={documentName}
-                  label={documentName}
+                  key={savedDocument.id}
+                  label={`${savedDocument.fileName} · ${formatByteSizeLabel(savedDocument.byteSize)}`}
+                  onRemove={() => onRemoveSavedDocument(savedDocument.id)}
+                />
+              ))}
+            </ul>
+          )}
+
+          {pendingDocumentFiles.length > 0 && (
+            <ul className="flex flex-wrap gap-2">
+              {pendingDocumentFiles.map((pendingFile) => (
+                <RemovableChip
+                  key={pendingFile.name}
+                  label={`${pendingFile.name} · ${formatByteSizeLabel(pendingFile.size)} · uploads on save`}
                   onRemove={() =>
-                    onDraftChange({
-                      attachedDocumentNames: draft.attachedDocumentNames.filter(
-                        (existingName) => existingName !== documentName,
-                      ),
-                    })
+                    onPendingDocumentFilesChange(
+                      pendingDocumentFiles.filter((file) => file.name !== pendingFile.name),
+                    )
                   }
                 />
               ))}
             </ul>
           )}
+
+          {documentRejectionMessage !== null && (
+            <p className="text-xs text-destructive">{documentRejectionMessage}</p>
+          )}
+
           <p className="text-xs text-muted-foreground">
-            Deck or whitepaper shown as a download under the video.
+            PDF, up to 25 MB, {MAX_DOCUMENTS_PER_VIDEO} per video. Shown as a download under the
+            video once it is published.
           </p>
         </div>
 

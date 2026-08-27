@@ -114,8 +114,22 @@ export const VideoCollaboratorSchema = z
   })
   .strip();
 
+/**
+ * One attached deck or whitepaper.
+ *
+ * ⚠️ `url` IS GONE AND MUST NOT COME BACK. The backend dropped the column deliberately: a stored
+ * URL outlives the gate, so a link handed out while the video was public keeps working after it is
+ * unpublished. `downloadPath` is a path on the API — fetching it re-runs the video's public gate
+ * and 302s to a URL that lives five minutes.
+ */
 export const VideoDocumentSchema = z
-  .object({ id: z.string(), url: z.string(), fileName: z.string(), position: z.number() })
+  .object({
+    id: z.string(),
+    fileName: z.string(),
+    byteSize: z.number().int(),
+    position: z.number(),
+    downloadPath: z.string(),
+  })
   .strip();
 
 export const AnimeEpisodeSchema = z
@@ -297,6 +311,11 @@ export const PaginationMetaSchema = z
   .strip();
 
 export const DeletedSchema = z.object({ deleted: z.boolean() }).strip();
+
+/** `POST /videos/:videoId/documents` — the newly attached (or converged-upon) document. */
+export const AttachedVideoDocumentSchema = z.object({ document: VideoDocumentSchema }).strip();
+
+export type VideoDocument = z.infer<typeof VideoDocumentSchema>;
 
 /* -------------------------------------------------------------------------- */
 /* Write inputs                                                                 */

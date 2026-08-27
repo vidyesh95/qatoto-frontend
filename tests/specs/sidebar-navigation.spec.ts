@@ -9,7 +9,15 @@ test.describe("sidebar navigation", () => {
   // Primary nav items live in NAVIGATION_CONFIG inside sidebar.tsx.
   // We don't test every item (would be brittle and slow); we cover the five
   // most-trafficked product surfaces.
-  const primaryLabels: SidebarLabel[] = ["Anime", "Store", "AI", "Library", "Cart"];
+  //
+  // ⚠️ EVERY LABEL HERE MUST BE VISIBLE TO A SIGNED-OUT VISITOR. This list used to read
+  // ["Anime", "Store", "AI", "Library", "Cart"] and three of those five could never pass: there has
+  // never been an "AI" entry in the sidebar, and `Library` and `Cart` are `requiresSession: true`,
+  // so `sidebar.tsx` filters them out entirely for the fresh context these tests run in. They were
+  // asserting against a sidebar from an earlier shape of the app.
+  //
+  // The assertions below are unchanged — only the label list moved.
+  const primaryLabels: SidebarLabel[] = ["Anime", "Store", "R&D", "Advertise with us", "Customer service"];
 
   for (const label of primaryLabels) {
     // For each label: visit "/", click the matching <Link> in the sidebar,

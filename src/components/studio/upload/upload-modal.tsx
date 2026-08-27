@@ -31,6 +31,8 @@ import {
   useCreateVideoMutation,
   useMyVideoQuery,
   usePublishVideoMutation,
+  useAttachVideoDocumentMutation,
+  useDetachVideoDocumentMutation,
   useReplaceVideoChaptersMutation,
   useReplaceVideoPlaylistsMutation,
   useReplaceVideoThumbnailMutation,
@@ -112,12 +114,23 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
    * exist until after create, so the modal keeps the file and uploads it in the follow-up pass.
    */
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
+  /**
+   * Documents chosen but not yet uploaded — held here for exactly the reason the thumbnail above
+   * is. `POST /videos` is `.strict()` and has no document field, and a `File` is not JSON.
+   *
+   * THIS IS THE STATE THAT USED TO NOT EXIST. The wizard kept `attachedDocumentNames: string[]` on
+   * the draft, threw the bytes away at pick time and dropped the names at save, under copy
+   * promising a download under the video. An array of `File` is the whole fix on this side.
+   */
+  const [pendingDocumentFiles, setPendingDocumentFiles] = useState<File[]>([]);
 
   const createVideoMutation = useCreateVideoMutation();
   const updateVideoMutation = useUpdateVideoMutation();
   const replaceChaptersMutation = useReplaceVideoChaptersMutation();
   const replacePlaylistsMutation = useReplaceVideoPlaylistsMutation();
   const replaceThumbnailMutation = useReplaceVideoThumbnailMutation();
+  const attachDocumentMutation = useAttachVideoDocumentMutation();
+  const detachDocumentMutation = useDetachVideoDocumentMutation();
   const publishMutation = usePublishVideoMutation();
   const isSaving =
     createVideoMutation.isPending ||
@@ -125,6 +138,7 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
     replaceChaptersMutation.isPending ||
     replacePlaylistsMutation.isPending ||
     replaceThumbnailMutation.isPending ||
+    attachDocumentMutation.isPending ||
     publishMutation.isPending;
 
   // Fills the form once the detail read lands. Guarded so a background refetch cannot throw
@@ -137,6 +151,33 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
 
   function applyDraftPatch(draftPatch: Partial<UploadDraft>) {
     setDraft((previousDraft) => ({ ...previousDraft, ...draftPatch }));
+  }
+
+  /**
+   * Removes a document that is already on the server.
+   *
+   * IT DELETES IMMEDIATELY rather than staging a removal into the draft, and that asymmetry with
+   * every other chip in this wizard is deliberate: there is no "documents" field on `PATCH
+   * /videos/:videoId` to carry a deferred removal, and the bytes live in object storage rather than
+   * in a row the save could rewrite. The draft is then patched so the chip goes with it.
+   *
+   * NOT OPTIMISTIC. The chip disappears only after the server confirms — a document that is still
+   * downloadable must not look removed.
+   */
+  async function handleRemoveSavedDocument(documentId: string) {
+    if (props.mode !== "edit") return;
+    setSaveErrorMessage(null);
+    try {
+      await detachDocumentMutation.mutateAsync({ videoId: props.videoIdToEdit, documentId });
+      setDraft((previousDraft) => ({
+        ...previousDraft,
+        savedDocuments: previousDraft.savedDocuments.filter(
+          (savedDocument) => savedDocument.id !== documentId,
+        ),
+      }));
+    } catch (error) {
+      setSaveErrorMessage(`The document was not removed: ${describeSaveError(error)}`);
+    }
   }
 
   /**
@@ -211,6 +252,29 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
       }
     } catch (error) {
       setSaveErrorMessage(`Video saved, but the thumbnail was not: ${describeSaveError(error)}`);
+      return { kind: "saved_with_problem", videoId: savedVideoId };
+    }
+
+    // A FOURTH FOLLOW-UP, AND IT IS THE ONE THAT WAS MISSING. Documents have their own multipart
+    // route against a videoId that does not exist until after create, exactly like the thumbnail
+    // above — so without this pass the wizard collected files and silently discarded them, which
+    // is the bug this whole change exists to fix.
+    //
+    // SEQUENTIAL, so a failure names the file it happened on rather than "some documents". The
+    // uploaded ones stay uploaded: each is its own request, and re-running the save re-sends only
+    // what is still pending, because a successful upload is cleared from `pendingDocumentFiles`.
+    try {
+      for (const pendingFile of pendingDocumentFiles) {
+        await attachDocumentMutation.mutateAsync({
+          videoId: savedVideoId,
+          documentFile: pendingFile,
+        });
+        setPendingDocumentFiles((remaining) =>
+          remaining.filter((file) => file.name !== pendingFile.name),
+        );
+      }
+    } catch (error) {
+      setSaveErrorMessage(`Video saved, but a document was not: ${describeSaveError(error)}`);
       return { kind: "saved_with_problem", videoId: savedVideoId };
     }
 
@@ -350,6 +414,9 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
             onDraftChange={applyDraftPatch}
             onOpenStoreProductsPicker={() => setActiveOverlay("store-products-picker")}
             onOpenInviteCollaborator={() => setActiveOverlay("invite-collaborator")}
+            pendingDocumentFiles={pendingDocumentFiles}
+            onPendingDocumentFilesChange={setPendingDocumentFiles}
+            onRemoveSavedDocument={handleRemoveSavedDocument}
           />
         );
       case "checks":

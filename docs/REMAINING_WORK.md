@@ -104,12 +104,24 @@ rather than by reading a doc: only **one live invite per person** is allowed (a 
 
 ---
 
-## 4. The Playwright sidebar page object has drifted
+## 4. ~~The Playwright sidebar page object has drifted~~ — FIXED
 
-`tests/pages/sidebar.po.ts`'s `SIDEBAR_ROUTES` lists four routes that **do not exist**:
-`/create`, `/ai`, `/your-videos`, `/your-sales`. The sidebar links `/studio`, has no AI entry,
-and uses `/sales`. `tests/specs/sidebar-navigation.spec.ts` iterates that map, so it is
-asserting against a sidebar from an earlier shape of the app.
+`tests/pages/sidebar.po.ts`'s `SIDEBAR_ROUTES` listed four routes that do not exist: `/create`,
+`/ai`, `/your-videos`, `/your-sales`. Corrected against `NAVIGATION_CONFIG`: **`Create` → `/studio`**,
+**`Your sales` → `Sales` at `/sales`**, and **`AI` and `Your videos` removed** — the sidebar has
+never had an AI row, and a creator's own videos live under `/studio`.
 
-Left alone on purpose — CLAUDE.md says not to modify tests unless asked. Named here so the
-next person to run the E2E suite knows the failures are the fixture, not the app.
+**A SECOND DRIFT WAS FOUND WHILE FIXING THE FIRST, and it was the larger one.** The spec's
+`primaryLabels` read `["Anime", "Store", "AI", "Library", "Cart"]`, and **three of those five could
+never pass**: `AI` does not exist, and `Library` and `Cart` are `requiresSession: true`, so
+`sidebar.tsx` filters them out entirely for the fresh context these tests run in. Every label in
+that list must be visible to a signed-out visitor; it now reads `["Anime", "Store", "R&D",
+"Advertise with us", "Customer service"]`. **The assertions themselves are unchanged** — only the
+label list moved, which is what the permission to touch this file covered.
+
+Session-gated entries stay in `SIDEBAR_ROUTES` with a marker comment, because the label → route
+mapping is still correct; what is not safe is putting one in a signed-out spec's label list.
+
+**Still drifted, and deliberately left:** `FOOTER_ROUTES` is missing `Roadmap` and
+`Policies and Safety`. Adding them would ADD assertions rather than correct wrong ones, which is
+outside what was authorised here. Noted so the next person knows it is a gap rather than a decision.

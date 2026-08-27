@@ -1062,17 +1062,41 @@ gone stale in both directions.
    videos one — `videosRouter` mounts first and shadows any two-segment `/videos/X`);
    `publish-scheduled-videos` joined HOME §6's job table; `resweep-unverified-daily-logs` and
    `GET /research-projects/attachable` joined R&D §4e and §5's tables.
-6. **`attachedDocumentNames` COSTS A CREATOR DATA TODAY, and it is the only one of the four
-   remaining `TRANSPORT: mock` placeholders that does.** `src/lib/videos/studio-view.ts:104` keeps
-   the field on the draft so the control in `video-elements-step.tsx` renders, and
-   `toCreateVideoInput` deliberately drops it — `POST /videos` has no document field and its schema
-   is `.strict()`, so sending one would be a hard 422 rather than an ignored key. A creator who
-   fills that control in **loses the value on save, with no error**. The other three
-   (`comments.tsx`'s trending triple, `watch-content.tsx`'s transcript and `isPremium`) are
-   read-only display placeholders and cost nobody anything. `PublicVideo` does return a read-only
-   `documents` array, but nothing writes it — there is no upload route. The honest fix is a backend
-   field, not a frontend workaround; the cheap interim is to disable the control rather than accept
-   a silent discard.
+6. ~~**`attachedDocumentNames` costs a creator data today**~~ **SHIPPED — three halves, not one.**
+   The studio's "Attach documents" control kept `documentFile.name` and threw the bytes away;
+   `toCreateVideoInput` dropped even the name, under copy promising "Deck or whitepaper shown as a
+   download under the video". A creator lost their file with no error. What was actually missing:
+    - **Write.** Nothing had ever written `video_document` — **0 rows**. Now `POST
+/videos/:videoId/documents` (multipart, PDF, 25 MB, 5 per video) and `DELETE …/:documentId`,
+      built on the research-paper rail: `createSingleFileUpload`, byte-level `validatePdfBytes`, and
+      Backblaze object storage.
+    - **Public read.** `videoDocument` was read by the STUDIO owner projection alone, so even a
+      populated row rendered nowhere. `GET /feed/watch/:videoId` now carries `documents`.
+    - **Frontend.** Pending `File` objects live in modal state like the thumbnail already did, and
+      upload in a **fourth follow-up pass** in `saveDraft`.
+
+    Five decisions worth keeping:
+    - **⚠️ `video_document` HAS NO `url` COLUMN, AND ADDING ONE WOULD BE A REGRESSION.** A URL
+      outlives the gate: a link handed out while the video was public keeps working after it is
+      unpublished, because bytes do not know a row's visibility changed. The key is stored instead
+      and every download re-runs the video's public gate. **Verified live**: a signed-out download
+      404s the moment the video goes private, while the owner's still 302s.
+    - **Content-addressed, so there is no idempotency key.** The object key derives from the SHA-256
+      and the row is unique on `(video_id, content_sha256)`, so a retried upload converges on the
+      same object and the same row — stronger than a replayed response. Verified: re-uploading the
+      same file returned the same document id.
+    - **⚠️ THE CASCADE CLEANS ROWS, NOT BYTES.** `video_document` cascades from `video`, which
+      cascades from `user`. `deleteVideo` deletes the objects beside its thumbnail cleanup, and the
+      account scrub does it as a **resumable step before the manifest loop** — after that loop there
+      is no row left naming the keys. `video_document` correctly gets **no manifest entry** (no FK
+      into `user`); one would fail the verifier's check 2 as stale, the same trap `user.bio` hit.
+    - **`ObjectStorageError` is translated, not merged**, into the studio's error union: its three
+      literals are byte-identical to `CloudinaryError`'s, so merging would have made a failed PDF
+      upload answer _"Could not store the image"_.
+    - **A latent bug caught before shipping:** `sanitizeDownloadFileName` appends `.pdf` because it
+      is built for a paper TITLE, so an uploaded `deck.pdf` would have downloaded as `deck.pdf.pdf`.
+      The filename-preserving `sanitizePrivateFileName` is used instead.
+
 7. **The nine `planned` Studio routes.** They are the entire `kind: "planned"` set on the roadmap and
    each needs a whole backend domain, not a screen. `/studio/team` means ACCOUNT-level collaborators;
    the per-video `video_collaborator` table that exists is a different thing and is already wired.

@@ -428,6 +428,24 @@ export const WatchPayloadSchema = z
         })
         .strip(),
     ),
+    /**
+     * THE DECK OR WHITEPAPER SHOWN AS A DOWNLOAD UNDER THE VIDEO.
+     *
+     * ⚠️ `downloadPath` IS A PATH ON THE API, NOT A LINK TO THE BYTES. Fetching it re-runs the
+     * video's public gate and 302s to a storage URL that lives five minutes — which is why the
+     * backend has no `url` column: a stored link would keep working after the video is
+     * unpublished. Render it as an `<a href>` against the API origin; never cache the redirect.
+     */
+    documents: z.array(
+      z
+        .object({
+          id: z.string(),
+          fileName: z.string(),
+          byteSize: z.number().int(),
+          downloadPath: z.string(),
+        })
+        .strip(),
+    ),
   })
   .strip();
 export type WatchPayload = z.infer<typeof WatchPayloadSchema>;

@@ -1,17 +1,33 @@
 import type { Page, Locator } from "@playwright/test";
 
+/**
+ * Label → destination for the sidebar's primary nav, mirrored from `NAVIGATION_CONFIG` in
+ * `src/components/home/layout/sidebar.tsx`.
+ *
+ * THIS MAP HAD DRIFTED PAST THE APP, and the four corrections are worth naming so they are not
+ * "fixed" back: `Create` goes to `/studio` rather than `/create`; `Your sales` is now `Sales` at
+ * `/sales`; and `AI` and `Your videos` were REMOVED because the sidebar has no such entries at all
+ * — it never had an AI row, and a creator's own videos live under `/studio`.
+ *
+ * ⚠️ THE ENTRIES MARKED BELOW ARE SESSION-GATED and do not render for a signed-out visitor.
+ * `sidebar.tsx` filters every item on a `requiresSession` flag and suppresses a section whose items
+ * were all filtered out, so a spec that clicks one of these from a fresh context finds nothing. They
+ * stay in this map because the label → route mapping is still correct; what is NOT safe is putting
+ * one in a signed-out spec's label list.
+ */
 export const SIDEBAR_ROUTES = {
-  Create: "/create",
+  Create: "/studio",
   Home: "/",
   Anime: "/anime",
   Store: "/store",
-  AI: "/ai",
-  Library: "/library",
-  History: "/history",
-  "Your videos": "/your-videos",
-  Cart: "/cart",
-  "Orders and returns": "/orders-and-returns",
-  "Your sales": "/your-sales",
+  "R&D": "/research-and-development",
+  Library: "/library", // session-gated
+  History: "/history", // session-gated
+  Wishlist: "/wishlist", // session-gated
+  Cart: "/cart", // session-gated
+  "Orders and returns": "/orders-and-returns", // session-gated
+  Listings: "/listings", // session-gated
+  Sales: "/sales", // session-gated
   "Advertise with us": "/advertise-with-us",
   "Customer service": "/customer-service",
 } as const;

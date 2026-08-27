@@ -26,6 +26,7 @@ import type {
   StudioVideoType,
   StudioVideoVisibility,
   UpdateVideoInput,
+  VideoDocument,
 } from "@/lib/videos/schemas";
 import { VIDEO_STAGE_BADGES } from "@/lib/videos/schemas";
 
@@ -100,21 +101,21 @@ export type UploadDraft = {
    * real wire field the server resolves and membership-checks.
    */
   researchProjectSlug: string | null;
-  /*
-   * TRANSPORT: mock — THIS ONE IS NEVER SENT. The field above it now is: the venture link
-   * became a real wire field, so the banner that used to cover "the next two" covers only
-   * this one.
+  /**
+   * The documents ALREADY SAVED on this video, read back from `GET /videos/:videoId`.
    *
-   * `POST /videos` has no document field and its schema is `.strict()`, so including one
-   * would be a hard 422 rather than an ignored key. `PublicVideo` does return a read-only
-   * `documents` array, but nothing writes it — there is no upload route.
+   * ⚠️ NOT THE FILES BEING ADDED. A `File` is not JSON and never goes to `POST /videos`; the wizard
+   * holds pending uploads in component state and posts them to `POST /videos/:videoId/documents` in
+   * its follow-up pass, exactly as it already does for the thumbnail. This array is the read half,
+   * so the editor can list what is there and offer to remove it.
    *
-   * It stays on the draft so the control in `video-elements-step.tsx` keeps working as a
-   * layout study, and `toCreateVideoInput` deliberately drops it. A creator who fills it in
-   * loses the value on save; that is a known gap, recorded in docs/HOME_STRUCTURE.md §10, and
-   * the honest fix is a backend field, not a frontend workaround.
+   * THIS FIELD USED TO BE `attachedDocumentNames: string[]` UNDER A MOCK-TRANSPORT BANNER — a
+   * list of file NAMES whose bytes were discarded the instant they were picked, dropped again by
+   * `toCreateVideoInput`, and shown under copy promising "Deck or whitepaper shown as a download
+   * under the video". A creator who used that control lost their file with no error. The banner is
+   * gone because the upload route, the storage and the public read now all exist.
    */
-  attachedDocumentNames: string[];
+  savedDocuments: VideoDocument[];
   /**
    * Recruiting blurbs. Objects since the venture link landed: a blurb may point at a real
    * open role, which is what puts an Apply button under the video instead of a label.
@@ -176,7 +177,7 @@ export function createEmptyUploadDraft(): UploadDraft {
     attachedProductIds: [],
     hasFundingCallToAction: false,
     researchProjectSlug: null,
-    attachedDocumentNames: [],
+    savedDocuments: [],
     openRoles: [],
     teamMemberNames: [],
     milestones: [],
@@ -452,6 +453,9 @@ export function toUploadDraft(video: PublicVideo): UploadDraft {
     attachedProductIds: video.attachedProducts.map((product) => product.productId),
     hasFundingCallToAction: video.hasFundingCallToAction,
     researchProjectSlug: video.researchProjectSlug,
+    // Carried straight through: these are server rows, and the editor renders them read-only with
+    // a Remove control that calls the delete route rather than mutating the draft.
+    savedDocuments: video.documents,
     openRoles: video.openRoles.map((role) => ({
       roleTitle: role.roleTitle,
       roleDescription: role.roleDescription,
