@@ -1152,6 +1152,52 @@ gone stale in both directions.
    rail — escrow left this codebase, §7). The other three — `learn`, `support`, `feedback` — are the
    `/customer-service` shape and have not been costed since that page shipped as authored content.
 
+### Defects found by auditing this session's own work
+
+Written down because three of the four were invisible to every green check — `tsc`, oxlint and the
+full suite all passed with them in.
+
+- **⚠️ `GET /channels`'s CURSOR WAS OFF BY THE LOCAL TIMEZONE, AND IT WAS LIVE ON THIS MACHINE.**
+  `listPublicChannels` read `created_at` through `db.execute` and converted it with a bare
+  `new Date()`. `src/db/index.ts` and `src/lib/sql-time.ts` both forbid exactly that: drizzle
+  overrides `getTypeParser` for TIMESTAMP, a raw query has no column codec to recover it, so the
+  value arrives as `2026-08-27 09:37:15.373` — no `T`, no zone — and `Date.parse` reads it as LOCAL.
+  The `db.execute<{ created_at: Date }>` annotation was the lie `sql-time.ts` warns about.
+
+    **The backend process here runs at `Asia/Calcutta`, not UTC**, so the cursor drifted **330
+    minutes**. Demonstrated end to end rather than argued: with two channels two hours apart, the
+    correct cursor returned page two and **the cursor the shipped code produced returned an EMPTY page
+    — silently skipping a channel**. Fixed with `utcDateFromRow`.
+
+    The lesson is not "use the helper". It is that a paging test on sparse data proves nothing: the
+    first run of this test passed with rows 13 days apart, because a 5½-hour drift cannot cross a
+    13-day gap. The gap had to be shrunk INSIDE the drift window before the test could fail.
+
+- **The public watch payload was dragging studio's whole dependency graph.**
+  `video-watch.service.ts` imported one string helper from `videos.service.ts` — 2,600 lines that
+  pull in `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`, `cloudinary`, `sharp` and the
+  pg-boss job registry — onto a public feed read. Extracted to
+  `src/modules/studio/videos/video-document-paths.ts`, a leaf that imports nothing, following
+  `public-video-gate.ts`: a rule several domains share gets its own file so they need not share a
+  graph.
+
+- **An intermittent test failure was investigated and is NOT ours.** Every failure is a 20 s test
+  TIMEOUT on a different file each run, never an assertion. Bisected properly — `93b0dc8` (before
+  the video-document work) failed **1 of 6** runs and `main` failed **1 of 6**. Same rate on both
+  sides: pre-existing, load-dependent, and it should not be attributed to a change. (A first attempt
+  at this bisect ran in the wrong repository and was discarded.)
+
+- **`REMAINING_WORK.md`'s "six have no such link" was wrong**, and had been since before `funding`
+  graduated. Six of the eight planned Studio pages carry an `insteadFor`; two do not. The audit also
+  found `/studio/learn` offering nothing while `/how-qatoto-works` covers half its brief, so it now
+  links there and claims only that half.
+
+**Still unverified, and it will not be verified from here:** `/studio/funding` has never been seen
+rendering in a browser. It is a client-query page, so curl reaches only the loading shell, and
+Chrome in that session could not reach this machine at all — `localhost`, `127.0.0.1` and the LAN
+address all failed or served a different application, with no service worker or cache to explain it.
+Load it yourself.
+
 ### Corrections to this file, found by checking rather than reading
 
 - **`REMAINING_WORK.md` §1 — "The sidebar has no session gating at all" — is STALE.** `sidebar.tsx`

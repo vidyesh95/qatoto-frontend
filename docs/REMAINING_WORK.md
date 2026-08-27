@@ -52,8 +52,15 @@ already had the `(home)` count right at three, and `todo.md` did not.
   all. None invents a capability the backend lacks; each is a directory or a hub over surfaces
   that already work.
 - **Eight under `(studio)`** render `studio-planned-page.tsx` — the roadmap summary verbatim, what
-  the page will do, and a link to the surface that does the job today WHERE ONE TRULY EXISTS. Six
-  have no such link and say so rather than inventing one.
+  the page will do, and a link to the surface that does the job today WHERE ONE TRULY EXISTS. **Six
+  carry such a link; two do not** — `pitches` and `subtitles`, which have no partial home anywhere
+  and say so rather than inventing one.
+
+    ⚠️ **THIS LINE SAID "SIX HAVE NO SUCH LINK", AND HAD BEEN WRONG SINCE BEFORE `funding`
+    GRADUATED.** The real count was three-without, and the audit that found it also found
+    `/studio/learn` offering nothing while `/how-qatoto-works` covered half its brief — so it now
+    links there, claiming the half that is true. Counted by grepping `insteadFor` across the eight
+    pages rather than by reading the previous number, which is how the old one survived two edits.
 
     **They stay `kind: "planned"`, and that is the point.** Explaining an absence well is not the
     same as filling it — a `route` on the roadmap is a claim the capability exists.
@@ -128,6 +135,6 @@ label list moved, which is what the permission to touch this file covered.
 Session-gated entries stay in `SIDEBAR_ROUTES` with a marker comment, because the label → route
 mapping is still correct; what is not safe is putting one in a signed-out spec's label list.
 
-**Still drifted, and deliberately left:** `FOOTER_ROUTES` is missing `Roadmap` and
-`Policies and Safety`. Adding them would ADD assertions rather than correct wrong ones, which is
-outside what was authorised here. Noted so the next person knows it is a gap rather than a decision.
+**The footer gap is closed too.** `FOOTER_ROUTES` was missing `Roadmap` and `Policies and Safety`;
+both are now in the map by explicit authorisation. **Fixture data only** — the spec's `footerLabels`
+list is untouched, so no new test runs; the map simply stops disagreeing with the sidebar it mirrors.
