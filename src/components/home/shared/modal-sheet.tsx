@@ -7,7 +7,12 @@ import { useCallback, useEffect, type ReactNode } from "react";
 import Image from "next/image";
 
 /**
- * The bottom-sheet shell every store sheet shares.
+ * The bottom-sheet shell.
+ *
+ * IT LIVED UNDER `home/store/shared/` UNTIL THE CHANNEL PAGE NEEDED IT, which is why it is named
+ * for its shape rather than for a surface now. Every caller was a store sheet when it was
+ * extracted; a channel page reaching into `home/store/**` for chrome would have been the wrong
+ * dependency, and this file has nothing store-specific in it.
  *
  * TWELVE FILES HAD A BYTE-IDENTICAL COPY of the overlay, the panel class string, the drag
  * handle, the header and the escape/scroll-lock effect. They were copies of the naive
@@ -21,7 +26,7 @@ import Image from "next/image";
  * a half-filled form. In the App Router the React root container is `document`, so this
  * listener sits on the same node as React's and `stopPropagation` could not reach it anyway.
  *
- * `onClose` ONLY, with no `isOpen`. Every store sheet is conditionally rendered by its
+ * `onClose` ONLY, with no `isOpen`. Every caller is conditionally rendered by its
  * parent — `{isSheetOpen && <XSheet onClose={…} />}` — so an `isOpen` prop would mean
  * twelve call-site changes to move a `return null` from the parent into here, for no
  * behavior. R&D's shell takes `isOpen` because its call sites already did.
@@ -44,7 +49,7 @@ import Image from "next/image";
  * where a back affordance is looked for, and it is a slot rather than an `onBack` callback
  * because a composer's back control also has to be able to be disabled on step one.
  */
-export default function StoreSheet({
+export default function ModalSheet({
   title,
   onClose,
   children,

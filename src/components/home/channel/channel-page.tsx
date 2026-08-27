@@ -11,10 +11,12 @@ import { notFound } from "next/navigation";
 
 import Image from "next/image";
 
+import ChannelAboutOpener from "@/components/home/channel/channel-about-opener";
 import ChannelVideosGrid from "@/components/home/channel/channel-videos-grid";
 import FocusButton from "@/components/home/watch/focus-button";
 import { getChannel, listChannelVideos } from "@/lib/channels/api";
 import { formatSubscriberCountLabel } from "@/lib/feed/format";
+import { formatCountLabel } from "@/lib/store/format";
 import type { FeedVideo } from "@/lib/feed/schemas";
 import { callerRequestOptions } from "@/lib/server-http";
 
@@ -61,8 +63,14 @@ export default async function ChannelPage({ handle }: { readonly handle: string 
           <h1 className="font-serif text-2xl font-semibold text-foreground md:text-3xl">
             {profile.name}
           </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            @{profile.handle} · {formatSubscriberCountLabel(profile.subscriberCount)}
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
+            <span>
+              @{profile.handle} · {formatSubscriberCountLabel(profile.subscriberCount)} ·{" "}
+              {formatCountLabel(profile.publicVideoCount)} videos
+            </span>
+            {/* The one client island in this header. Everything it renders is already fetched
+                above, so opening the panel costs no request. */}
+            <ChannelAboutOpener profile={profile} />
           </p>
         </div>
         {/*

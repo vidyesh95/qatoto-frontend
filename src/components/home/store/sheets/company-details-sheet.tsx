@@ -19,7 +19,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import StoreSheet from "@/components/home/store/shared/store-sheet";
+import ModalSheet from "@/components/home/shared/modal-sheet";
 
 import {
   BUSINESS_TYPE_LABELS,
@@ -97,7 +97,7 @@ export default function CompanyDetailsSheet({
   const VISIT_POLICY = DECLARED_PROFILE?.visitPolicy ?? null;
 
   return (
-    <StoreSheet title="Company details" onClose={onClose}>
+    <ModalSheet title="Company details" onClose={onClose}>
       <p className="px-4 pb-2 text-base font-medium text-[#191C1C]">{STOREFRONT.displayName}</p>
 
       <div className="px-4 pb-5">
@@ -227,6 +227,6 @@ export default function CompanyDetailsSheet({
           View full company profile
         </Link>
       </div>
-    </StoreSheet>
+    </ModalSheet>
   );
 }

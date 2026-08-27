@@ -15,7 +15,7 @@
 
 import Image from "next/image";
 
-import StoreSheet from "@/components/home/store/shared/store-sheet";
+import ModalSheet from "@/components/home/shared/modal-sheet";
 import {
   CAPABILITY_KIND_ICONS,
   CAPABILITY_KIND_LABELS,
@@ -35,7 +35,7 @@ export default function VerifiedCapabilitiesSheet({
   const certifications = declaredProfile?.certifications ?? [];
 
   return (
-    <StoreSheet title="Capabilities and certifications" onClose={onClose}>
+    <ModalSheet title="Capabilities and certifications" onClose={onClose}>
       <p className="px-4 pb-2 text-xs text-[#6F7979]">
         What this factory says it can produce, and the certificates it has submitted.
       </p>
@@ -116,6 +116,6 @@ export default function VerifiedCapabilitiesSheet({
           seller&apos;s own claims and are not verified.
         </p>
       </div>
-    </StoreSheet>
+    </ModalSheet>
   );
 }

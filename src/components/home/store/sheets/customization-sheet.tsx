@@ -25,7 +25,7 @@ import { useRef, useState } from "react";
 
 import Image from "next/image";
 
-import StoreSheet from "@/components/home/store/shared/store-sheet";
+import ModalSheet from "@/components/home/shared/modal-sheet";
 import type { ProductCustomizationOption } from "@/lib/store/products.schemas";
 
 /** Small pill stating how many units unlock a customization. */
@@ -189,7 +189,7 @@ export default function CustomizationSheet({
   ).length;
 
   return (
-    <StoreSheet
+    <ModalSheet
       title="Customization options"
       onClose={onClose}
       footer={
@@ -238,6 +238,6 @@ export default function CustomizationSheet({
           ),
         )}
       </div>
-    </StoreSheet>
+    </ModalSheet>
   );
 }

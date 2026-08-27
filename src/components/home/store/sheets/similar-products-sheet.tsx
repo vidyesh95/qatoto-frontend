@@ -13,7 +13,7 @@
 "use client";
 
 import CatalogProductCard from "@/components/home/store/cards/catalog-product-card";
-import StoreSheet from "@/components/home/store/shared/store-sheet";
+import ModalSheet from "@/components/home/shared/modal-sheet";
 import { PRODUCT_RELATION_KIND_LABELS } from "@/lib/store/merchandising.schemas";
 import { companionSourceCaption, type ProductCompanionGroup } from "@/lib/store/products.schemas";
 
@@ -27,7 +27,7 @@ export default function SimilarProductsSheet({
   const populatedGroups = companionGroups.filter((group) => group.items.length > 0);
 
   return (
-    <StoreSheet title="Related products" onClose={onClose}>
+    <ModalSheet title="Related products" onClose={onClose}>
       <div className="flex flex-col gap-5 px-4 pb-6">
         {populatedGroups.map((group) => (
           <section key={group.relationKind}>
@@ -47,6 +47,6 @@ export default function SimilarProductsSheet({
           </section>
         ))}
       </div>
-    </StoreSheet>
+    </ModalSheet>
   );
 }

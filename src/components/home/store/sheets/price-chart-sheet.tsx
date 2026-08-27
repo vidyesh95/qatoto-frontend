@@ -1,7 +1,7 @@
 // TRANSPORT: props-only — renders the tiers it was handed, no network.
 "use client";
 
-import StoreSheet from "@/components/home/store/shared/store-sheet";
+import ModalSheet from "@/components/home/shared/modal-sheet";
 import { formatCentsLabel } from "@/lib/store/format";
 import type { ProductPricingTier } from "@/lib/store/products.schemas";
 
@@ -25,7 +25,7 @@ export default function PriceChartSheet({
   const hasAnyLeadTime = pricingTiers.some((tier) => tier.leadTimeDays !== null);
 
   return (
-    <StoreSheet title="Price chart" onClose={onClose}>
+    <ModalSheet title="Price chart" onClose={onClose}>
       <p className="px-4 pb-2 text-xs text-[#6F7979]">
         Unit price drops as your order quantity grows. Prices exclude shipping and customization.
       </p>
@@ -56,6 +56,6 @@ export default function PriceChartSheet({
           </div>
         ))}
       </div>
-    </StoreSheet>
+    </ModalSheet>
   );
 }

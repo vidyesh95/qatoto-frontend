@@ -18,7 +18,7 @@ import { useState } from "react";
 
 import Image from "next/image";
 
-import StoreSheet from "@/components/home/store/shared/store-sheet";
+import ModalSheet from "@/components/home/shared/modal-sheet";
 import { formatCentsLabel } from "@/lib/store/format";
 import type { ProductCompanionGroup, StoreProductDetail } from "@/lib/store/products.schemas";
 
@@ -97,7 +97,7 @@ export default function CompareProductsSheet({
   const specificationKeys = [...currentColumn.specificationsByKey.keys()];
 
   return (
-    <StoreSheet
+    <ModalSheet
       title={isComparing ? "Comparison" : "Add to compare"}
       onClose={onClose}
       {...(isComparing
@@ -246,6 +246,6 @@ export default function CompareProductsSheet({
           })}
         </ul>
       )}
-    </StoreSheet>
+    </ModalSheet>
   );
 }

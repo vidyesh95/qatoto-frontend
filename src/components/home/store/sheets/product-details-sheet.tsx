@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import Image from "next/image";
 
-import StoreSheet from "@/components/home/store/shared/store-sheet";
+import ModalSheet from "@/components/home/shared/modal-sheet";
 import { countryLabelFromCode } from "@/lib/store/format";
 import { PRODUCT_CONDITION_LABELS, type StoreProductDetail } from "@/lib/store/products.schemas";
 
@@ -197,7 +197,7 @@ export default function ProductDetailsSheet({
     // `isFixedHeight` is what keeps this sheet from resizing as the buyer moves between tabs:
     // the panels run from three rows to twenty-eight, and a content-sized sheet would grow and
     // shrink under the cursor mid-comparison.
-    <StoreSheet title="Product details" onClose={onClose} isFixedHeight>
+    <ModalSheet title="Product details" onClose={onClose} isFixedHeight>
       {/* Tabs — horizontally scrollable pill row with chevron arrows that appear only when
           there is hidden content in that direction.
 
@@ -292,6 +292,6 @@ export default function ProductDetailsSheet({
           ))}
         </dl>
       </div>
-    </StoreSheet>
+    </ModalSheet>
   );
 }

@@ -36,7 +36,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import StoreSheet from "@/components/home/store/shared/store-sheet";
+import ModalSheet from "@/components/home/shared/modal-sheet";
 import { formatCentsLabel, countryLabelFromCode, formatGramsLabel } from "@/lib/store/format";
 import { FREIGHT_TRANSPORT_MODE_ICONS, FREIGHT_TRANSPORT_MODE_LABELS } from "@/lib/store/labels";
 import {
@@ -72,21 +72,21 @@ export default function DeliverySheet({
 
   if (lanePlan === null) {
     return (
-      <StoreSheet title="How this ships" onClose={onClose}>
+      <ModalSheet title="How this ships" onClose={onClose}>
         <div className="px-4 pb-6">
           <p className="text-sm leading-5 text-[#6F7979]">
             This seller hasn&apos;t published a dispatch country, so the route can&apos;t be worked
             out. Shipping has to be arranged with the seller directly.
           </p>
         </div>
-      </StoreSheet>
+      </ModalSheet>
     );
   }
 
   const { journeys, legs, unpriceableReasons, quotableProviders } = lanePlan;
 
   return (
-    <StoreSheet title="How this ships" onClose={onClose}>
+    <ModalSheet title="How this ships" onClose={onClose}>
       <div className="flex flex-col gap-5 px-4 pb-6">
         <RouteSummary lanePlan={lanePlan} />
 
@@ -185,7 +185,7 @@ export default function DeliverySheet({
           contract with them directly. No delivery date is implied.
         </p>
       </div>
-    </StoreSheet>
+    </ModalSheet>
   );
 }
 

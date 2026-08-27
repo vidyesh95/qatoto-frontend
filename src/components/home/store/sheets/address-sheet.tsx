@@ -27,7 +27,7 @@ import { useState } from "react";
 
 import { COUNTRY_OPTIONS } from "@/components/home/account/menus/location-menu";
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
-import StoreSheet from "@/components/home/store/shared/store-sheet";
+import ModalSheet from "@/components/home/shared/modal-sheet";
 import {
   useCreateOrganizationAddress,
   useUpdateOrganizationAddress,
@@ -200,7 +200,7 @@ export default function AddressSheet({
 
   if (mode.view === "form") {
     return (
-      <StoreSheet
+      <ModalSheet
         title={mode.editing === null ? "Add delivery address" : "Edit delivery address"}
         onClose={onClose}
         leadingAction={
@@ -287,12 +287,12 @@ export default function AddressSheet({
             hasThrown={createAddress.isError || updateAddress.isError}
           />
         </form>
-      </StoreSheet>
+      </ModalSheet>
     );
   }
 
   return (
-    <StoreSheet title="Delivery address" onClose={onClose}>
+    <ModalSheet title="Delivery address" onClose={onClose}>
       <div className="flex flex-col gap-2 px-4 pb-6">
         {addresses.length === 0 && (
           <p className="rounded-lg bg-[#F2F4F4] px-3 py-4 text-sm leading-5 text-[#6F7979]">
@@ -361,6 +361,6 @@ export default function AddressSheet({
           {addresses.length} of {MAXIMUM_ADDRESSES_PER_KIND} delivery addresses saved.
         </p>
       </div>
-    </StoreSheet>
+    </ModalSheet>
   );
 }
