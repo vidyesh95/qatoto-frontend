@@ -134,3 +134,57 @@ export function toOptionalPairedRange(
 //     ...(originCountryCode === undefined ? {} : { originCountryCode }),
 //
 // which omits the key with no cast, and shows the omission in the same line as the field it omits.
+
+/**
+ * A both-or-neither money-with-currency pair.
+ *
+ * TWO ARMS OF THE QUOTE'S SERVICE-DETAIL UNION ARE PAIRED THIS WAY — insurance's
+ * `coverageLimitInCents` + `currency`, and FX's `notionalAmountInCents` + `notionalCurrency`. The
+ * backend enforces both with a `superRefine` and again in the service, and half a pair is a 422
+ * naming the missing half rather than an ignored field.
+ *
+ * Same shape and same reasoning as `toOptionalPairedRange` above: both or neither, never half.
+ */
+export function toOptionalMoneyWithCurrency(
+  rawMajorUnits: string,
+  rawCurrencyCode: string,
+): { readonly amountInCents: number; readonly currency: string } | undefined {
+  const amountInCents = toOptionalCents(rawMajorUnits);
+  const currency = toOptionalCurrencyCode(rawCurrencyCode);
+  if (amountInCents === undefined || currency === undefined) return undefined;
+  return { amountInCents, currency };
+}
+
+/**
+ * A typed decimal exchange rate as the fixed-point pair the wire wants, or `undefined`.
+ *
+ * **THE RISKIEST CONVERSION ON THIS SURFACE, AND FLOATS ARE WHY.** The obvious implementation —
+ * `Math.round(Number("1.0840") * 10 ** 4)` — happens to work for that value and does not for others:
+ * the intermediate is `10839.999999999998`, and any input where it lands just below a .5 boundary
+ * rounds to the wrong integer. A quoted exchange rate that is wrong in its last place is a real
+ * commercial error, and `commerce_prevent_submitted_quote_revision_mutation` freezes it on submit.
+ *
+ * So the STRING is parsed, never the number: the scale is how many digits were typed after the point,
+ * and the mantissa is the digits with the point removed. No float arithmetic anywhere.
+ *
+ * **TRAILING ZEROS ARE SIGNIFICANT AND ARE PRESERVED.** `1.0840` yields `{ 10840, 4 }`, not
+ * `{ 1084, 3 }` — a rate quoted to four places is a different commitment from one quoted to three,
+ * and `formatFixedPointRateLabel` renders it back to exactly what was typed.
+ *
+ * `rateScale` is bounded 0..12 and `rateFixedPoint` must be a positive integer, both per the wire.
+ * A zero rate is refused here rather than sent: no currency trades at zero.
+ */
+export function toFixedPointRate(
+  rawDecimalRate: string,
+): { readonly rateFixedPoint: number; readonly rateScale: number } | undefined {
+  const trimmed = rawDecimalRate.trim();
+  if (!/^\d+(\.\d+)?$/.test(trimmed)) return undefined;
+
+  const [integerDigits, fractionalDigits = ""] = trimmed.split(".");
+  if (fractionalDigits.length > 12) return undefined;
+
+  const rateFixedPoint = Number(`${integerDigits}${fractionalDigits}`);
+  if (!Number.isSafeInteger(rateFixedPoint) || rateFixedPoint <= 0) return undefined;
+
+  return { rateFixedPoint, rateScale: fractionalDigits.length };
+}

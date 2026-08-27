@@ -589,6 +589,15 @@ function ProviderQuoteActions({
 
   return (
     <section aria-label="Quote actions" className="rounded-xl border border-border px-4 py-3">
+      {/* REVISING IS APPENDING, never editing. A submitted revision is frozen by a database trigger,
+          so the way to change terms is a new revision on the same quote — which is also why this
+          links to the RFQ-keyed composer rather than to anything quote-shaped. */}
+      <Link
+        href={`/studio/rfqs/${quote.rfqId}/quote`}
+        className="mr-3 inline-block rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+      >
+        Revise this quote
+      </Link>
       <button
         type="button"
         onClick={onWithdraw}

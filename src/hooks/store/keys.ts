@@ -190,6 +190,24 @@ export const storeKeys = {
   quoteComparisonByQuote: (quoteId: string) => ["store", "quotes", quoteId, "comparison"] as const,
 
   /**
+   * The provider's own bids across every RFQ, optionally narrowed to one status.
+   *
+   * `status` IS PART OF THE KEY because the backend filters in SQL and returns a keyset page — two
+   * filters are two different paginations, and sharing one entry would splice pages from different
+   * result sets together. `undefined` is its own entry, which is the unfiltered list.
+   */
+  providerQuoteList: (status?: string) => ["store", "quotes", "provider", status ?? "all"] as const,
+
+  /**
+   * The buyer's reviewable completions, optionally narrowed to unreviewed ones.
+   *
+   * `reviewable` IS PART OF THE KEY for the same reason `status` is above: the backend filters in
+   * SQL and returns a keyset page, so two filters are two paginations.
+   */
+  buyerCompletionList: (reviewable?: boolean) =>
+    ["store", "completions", reviewable === undefined ? "all" : String(reviewable)] as const,
+
+  /**
    * The caller organization's own service offerings — `GET …/offerings/mine`.
    *
    * Invalidated after a create so `/studio/services` shows the new draft. No organization id in the key,

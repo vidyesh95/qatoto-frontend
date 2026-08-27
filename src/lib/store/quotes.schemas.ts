@@ -30,10 +30,12 @@
 
 import { z } from "zod";
 
+import { RFQ_STATES } from "@/lib/store/rfqs.schemas";
 import {
   FREIGHT_TRANSPORT_MODES,
   IsoDateTimeSchema,
   PROVIDER_KINDS,
+  type FreightTransportMode,
 } from "@/lib/store/shared.schemas";
 
 // --- Wire enums -------------------------------------------------------------
@@ -396,3 +398,314 @@ export const QuoteShellSchema = z
   .strip();
 
 export type QuoteShell = z.infer<typeof QuoteShellSchema>;
+
+/**
+ * What `POST /commerce/quotes/:quoteId/revisions` answers with — the revision's MONEY, plus the id
+ * of the quote it was appended to.
+ *
+ * `QuoteRevisionMoneyProjection & { quoteId }`, and the extra field is what makes the response
+ * usable on its own: the composer may have just created the shell in the previous call, so echoing
+ * the quote id means the submit step needs no bookkeeping to find its target.
+ *
+ * IT CARRIES NO LINES. The lines were just sent by the caller and the server stored them verbatim;
+ * echoing them back would be a second copy of the request, and a screen that rendered the echo
+ * rather than the request would look correct while proving nothing. `submittedAt` is null here —
+ * appending a revision does not submit it.
+ */
+export const AppendedQuoteRevisionSchema = QuoteRevisionMoneySchema.extend({
+  quoteId: z.string(),
+}).strip();
+
+export type AppendedQuoteRevision = z.infer<typeof AppendedQuoteRevisionSchema>;
+
+/**
+ * What `POST /commerce/quotes/:quoteId/revisions/:revision/submit` answers with — the quote shell
+ * with the revision number that was frozen.
+ *
+ * THE REVISION IS IMMUTABLE FROM THIS MOMENT. `commerce_prevent_submitted_quote_revision_mutation`
+ * is a database trigger, not a service check, so there is no correction path and no
+ * administrative override: a typo in a submitted revision is fixed by appending another revision,
+ * which is why the composer confirms before calling this.
+ */
+export const SubmittedQuoteRevisionSchema = QuoteShellSchema.extend({
+  revisionNumber: z.number().int(),
+}).strip();
+
+export type SubmittedQuoteRevision = z.infer<typeof SubmittedQuoteRevisionSchema>;
+
+// --- The provider's own queue -----------------------------------------------
+
+/**
+ * One row of `GET /commerce/provider/quotes` — every quote this provider has authored, across every
+ * RFQ.
+ *
+ * WHY THIS READ MATTERS MORE THAN ITS SIZE SUGGESTS. `GET /commerce/rfqs/:rfqId/quotes` is
+ * RFQ-scoped, so a provider could only reach a quote by already knowing its RFQ, and
+ * `GET /commerce/provider/rfqs` lists the WORK rather than the BIDS — an RFQ leaves that queue when
+ * it closes, taking any quote on it out of reach.
+ *
+ * **DRAFTS ARE INCLUDED, and this is the only list anywhere that yields a draft quote's id.** That
+ * is what makes resuming an abandoned quote possible at all: if the shell POST succeeded and the
+ * revision POST did not, the shell is reachable from here and nowhere else. A composer that could
+ * not find it would create a second shell on the same RFQ every time the network dropped.
+ *
+ * `latestSubmittedRevision` IS NULL FOR A DRAFT-ONLY QUOTE. That is not zero and must not render as
+ * a price.
+ */
+export const ProviderQuoteQueueItemSchema = z
+  .object({
+    quoteId: z.string(),
+    status: z.enum(QUOTE_STATUSES),
+    rfq: z
+      .object({
+        id: z.string(),
+        title: z.string(),
+        state: z.enum(RFQ_STATES),
+        buyerOrganizationId: z.string(),
+      })
+      .strip(),
+    latestSubmittedRevision: QuoteRevisionMoneySchema.nullable(),
+    latestRevisionNumber: z.number().int(),
+    createdAt: IsoDateTimeSchema,
+    updatedAt: IsoDateTimeSchema,
+  })
+  .strip();
+
+export type ProviderQuoteQueueItem = z.infer<typeof ProviderQuoteQueueItemSchema>;
+
+/** The keyset envelope: `{ items, page: { nextCursor, hasMore } }`. */
+export const ProviderQuoteQueuePageSchema = z
+  .object({
+    items: z.array(ProviderQuoteQueueItemSchema),
+    page: z
+      .object({
+        nextCursor: z.string().nullable(),
+        hasMore: z.boolean(),
+      })
+      .strip(),
+  })
+  .strip();
+
+export interface ListProviderQuotesFilter {
+  readonly status?: QuoteStatus;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+// --- Request body: the three provider writes --------------------------------
+//
+// TRANSCRIBED FROM `AppendQuoteRevisionSchema`, and the body is `.strict()` — an extra key is a 422,
+// not an ignored field. So these are TS types rather than Zod schemas, for the reason
+// `rfqs.schemas.ts:356-359` already states: the compiler is what stops a wrong field name, and a
+// runtime re-parse of an object this file just built would only re-check itself.
+//
+// THE OPTIONALITY IS THE CONTRACT. Every `?` below is `.optional()` and NOT `.nullable()` on the
+// backend, so an unanswered field must be OMITTED. Sending `null` is a 422.
+//
+// FOUR WAYS THIS DIVERGES FROM THE READ SHAPES ABOVE, each a 422 if assumed away:
+//
+//  1. `freight_forwarder` AND `logistics_operator` SHARE ONE ARM. The backend writes them as a
+//     single member with `kind: z.enum([...])`; the read union above lists them as two literals.
+//
+//  2. THE RFQ'S REQUIREMENT UNION DISCRIMINATES ON `providerKind`; THIS ONE ON `kind`. Third
+//     spelling of the same idea on this wire. `rfq-requirement-detail-fields.tsx` is the structural
+//     model for the editor, NOT a file to copy — copying it sends `providerKind` and every service
+//     line 422s.
+//
+//  3. NO `subtotalInCents` AND NO `totalInCents`. The server computes both from the lines and a
+//     CHECK enforces the sum. They are absent from the body by design, which is why appending is the
+//     first moment a provider sees a real total — one call before commitment. A client-side total
+//     that disagreed with the constraint is a pricing dispute wearing a rounding bug's costume.
+//
+//  4. `productLines` AND `serviceLines` ARE REQUIRED KEYS THAT MAY HOLD `[]`. They are
+//     `z.array(...).max(200)` with no `.optional()`, so OMITTING the key is a 422 while sending an
+//     empty array is fine. The service then refuses a revision with no lines at all, separately.
+
+/**
+ * Incoterms 2020 — the eleven the ICC publishes.
+ *
+ * A40 widened this from `z.string().max(20)`, which accepted `BANANA` — and
+ * `commerce_prevent_submitted_quote_revision_mutation` then froze the bad value on the revision
+ * forever, so it could not even be corrected afterwards. Render a picker over these, never a text
+ * field.
+ *
+ * UPPERCASE, unlike every other enum on this wire. `commerce_incoterm` is the one exception, and the
+ * casing is not ours to normalise.
+ */
+export const QUOTE_INCOTERMS = [
+  "EXW",
+  "FCA",
+  "CPT",
+  "CIP",
+  "DAP",
+  "DPU",
+  "DDP",
+  "FAS",
+  "FOB",
+  "CFR",
+  "CIF",
+] as const;
+
+export type QuoteIncoterm = (typeof QUOTE_INCOTERMS)[number];
+
+export const QUOTE_INCOTERM_LABELS: Record<QuoteIncoterm, string> = {
+  EXW: "EXW — Ex Works",
+  FCA: "FCA — Free Carrier",
+  CPT: "CPT — Carriage Paid To",
+  CIP: "CIP — Carriage and Insurance Paid To",
+  DAP: "DAP — Delivered At Place",
+  DPU: "DPU — Delivered At Place Unloaded",
+  DDP: "DDP — Delivered Duty Paid",
+  FAS: "FAS — Free Alongside Ship",
+  FOB: "FOB — Free On Board",
+  CFR: "CFR — Cost and Freight",
+  CIF: "CIF — Cost, Insurance and Freight",
+};
+
+/**
+ * The eight typed service details a quote line can carry, discriminating on `kind`.
+ *
+ * `warehouse_provider.temperatureControlled` IS REQUIRED — the only required boolean in the eight,
+ * and the inverse of the RFQ requirement's optional one. A requirement's absent boolean means "not
+ * asked"; a quote's means nothing at all, so the provider must answer.
+ *
+ * TWO PAIRS ARE ALL-OR-NOTHING, enforced by a backend `superRefine` and again in the service:
+ * insurance's `coverageLimitInCents` + `currency`, and FX's `notionalAmountInCents` +
+ * `notionalCurrency`. Sending one without the other is a 422 naming the missing half.
+ */
+export type QuoteServiceDetailInput =
+  | {
+      readonly kind: "freight_forwarder" | "logistics_operator";
+      readonly transportModes: readonly FreightTransportMode[];
+      readonly originCountryCode?: string;
+      readonly destinationCountryCode?: string;
+      readonly estimatedTransitDays?: number;
+    }
+  | {
+      readonly kind: "customs_broker";
+      readonly jurisdictions: readonly string[];
+      readonly filingSummary?: string;
+    }
+  | {
+      readonly kind: "insurance_provider";
+      readonly coverageClasses: readonly string[];
+      readonly coverageLimitInCents?: number;
+      readonly currency?: string;
+    }
+  | {
+      // Free text, deliberately. The RFQ requirement and the offering both use four booleans here; a
+      // quote says what the provider is INCLUDING, in their words. Not interchangeable.
+      readonly kind: "inspection_agency";
+      readonly includedStages: readonly string[];
+    }
+  | {
+      readonly kind: "testing_certification_lab";
+      readonly standards: readonly string[];
+      readonly laboratoryLocation?: string;
+    }
+  | {
+      readonly kind: "marketing_agency";
+      readonly channels: readonly string[];
+      readonly deliverablesSummary?: string;
+    }
+  | {
+      readonly kind: "warehouse_provider";
+      readonly storageTypes: readonly string[];
+      readonly capacityUnits?: string;
+      readonly temperatureControlled: boolean;
+    }
+  | {
+      // ONE pair, not the RFQ requirement's array of pairs. And the rate is fixed-point: `1.0840` is
+      // `{ rateFixedPoint: 10840, rateScale: 4 }`. Multiplying a float by `10 ** scale` yields
+      // `10839.999999999998` and a `.int()` 422 — parse the typed string instead.
+      readonly kind: "foreign_exchange_facilitator";
+      readonly currencyPair: string;
+      readonly rateFixedPoint: number;
+      readonly rateScale: number;
+      readonly settlementRail?: string;
+      readonly notionalAmountInCents?: number;
+      readonly notionalCurrency?: string;
+    };
+
+/**
+ * One step of a service line's deliverable plan.
+ *
+ * `sequence` IS THE CALLER'S AND MUST BE UNIQUE WITHIN THE LINE. The backend refuses duplicates
+ * rather than renumbering, because a plan whose steps were silently reordered is not the plan that
+ * was quoted. Assign it from the array index and re-index on removal.
+ */
+export interface QuoteDeliverablePlanInput {
+  readonly sequence: number;
+  readonly title: string;
+  readonly isRequired: boolean;
+  readonly dueAt?: string;
+}
+
+/**
+ * One priced product line, answering one RFQ product line.
+ *
+ * THE SNAPSHOTS ARE THE PROVIDER'S WORDS, NOT A COPY OF THE BUYER'S. Seeding them from the RFQ is a
+ * composer convenience; what reaches the immutable order line is whatever the provider left in the
+ * field. A supplier quoting a narrower specification than was asked is normal, and
+ * `exclusionsSnapshot` is where that gets said.
+ */
+export interface QuoteProductLineInput {
+  readonly rfqProductLineId: string;
+  readonly quantity: number;
+  readonly unitPriceInCents: number;
+  readonly titleSnapshot: string;
+  readonly specificationSnapshot: string;
+  readonly leadTimeDays?: number;
+  readonly exclusionsSnapshot?: string;
+  readonly siblingOrder: number;
+}
+
+export interface QuoteServiceLineInput {
+  readonly rfqServiceLineId: string;
+  readonly feeInCents: number;
+  readonly titleSnapshot: string;
+  readonly scopeSnapshot: string;
+  readonly leadTimeDays?: number;
+  readonly exclusionsSnapshot?: string;
+  readonly deliverableSnapshot?: string;
+  readonly deliverables: readonly QuoteDeliverablePlanInput[];
+  readonly siblingOrder: number;
+  // EXACTLY ONE, and its `kind` must equal the RFQ service line's `providerKind`. The server checks
+  // it, which is why the editor reads the kind off the RFQ rather than offering a picker.
+  readonly serviceDetail: QuoteServiceDetailInput;
+}
+
+/**
+ * `POST /commerce/quotes/:quoteId/revisions`.
+ *
+ * `validityDeadlineAt` MUST BE IN THE FUTURE — checked before anything else and answered as a
+ * validation failure. **Beware the short deadline**: once a revision is appended and its deadline
+ * passes, submit answers `QUOTE_EXPIRED`, appending another answers "submit or abandon the existing
+ * unsubmitted revision", and there is NO abandon route — so the quote is stuck for that RFQ. Prefill
+ * generously and warn on anything short.
+ */
+export interface AppendQuoteRevisionInput {
+  readonly currency: string;
+  readonly validityDeadlineAt: string;
+  readonly taxInCents: number;
+  readonly serviceFeeInCents: number;
+  readonly shippingInCents: number;
+  readonly discountInCents: number;
+  readonly paymentTerms?: string;
+  readonly incoterm?: QuoteIncoterm;
+  readonly notes?: string;
+  readonly productLines: readonly QuoteProductLineInput[];
+  readonly serviceLines: readonly QuoteServiceLineInput[];
+}
+
+// --- `ApiError.details` payloads worth parsing ------------------------------
+//
+// The FIRST use of `ApiError.details` anywhere in the app, and exactly what that field's docstring
+// asks for: it is `unknown` on purpose, and each caller parses it with Zod at its own boundary rather
+// than promoting one route's payload into a contract every surface shares.
+
+/** `409 REVISION_CHANGED` — the provider appended since this screen last read. */
+export const RevisionChangedDetailSchema = z.object({ currentRevision: z.number().int() }).strip();
+
+/** `409 QUOTE_EXPIRED` — the validity deadline passed before submit. */
+export const QuoteExpiredDetailSchema = z.object({ expiredAt: IsoDateTimeSchema }).strip();

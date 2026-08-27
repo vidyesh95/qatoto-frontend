@@ -17,18 +17,30 @@ import {
   type UseMutationResult,
 } from "@tanstack/react-query";
 
+import { useKeysetList, toCursorKeysetPage } from "@/hooks/keyset-list";
 import { storeKeys } from "@/hooks/store/keys";
 import type { ActionResponse } from "@/lib/http";
 import {
   acceptQuote,
+  appendQuoteRevision,
   compareQuotesForQuote,
   compareQuotesForRfq,
+  createQuoteShell,
   declineQuote,
   getQuote,
+  listProviderQuotes,
+  submitQuoteRevision,
   withdrawQuote,
 } from "@/lib/store/quotes.api";
 import type { CommerceOrder } from "@/lib/store/cart.schemas";
-import type { QuoteShell } from "@/lib/store/quotes.schemas";
+import type {
+  AppendQuoteRevisionInput,
+  AppendedQuoteRevision,
+  ListProviderQuotesFilter,
+  ProviderQuoteQueueItem,
+  QuoteShell,
+  SubmittedQuoteRevision,
+} from "@/lib/store/quotes.schemas";
 
 export function useQuoteQuery(quoteId: string) {
   return useQuery({
@@ -122,5 +134,119 @@ export function useWithdrawQuote(): UseMutationResult<
       if (!result.success) return;
       void queryClient.invalidateQueries({ queryKey: storeKeys.quote(quoteId) });
     },
+  });
+}
+
+/**
+ * Creates the empty quote shell on an RFQ.
+ *
+ * INVALIDATES THE RFQ ITSELF, not only the comparison, and that is not cosmetic: creating a shell
+ * flips this provider's invitation to `responded`, which the RFQ detail renders as "Quoted". Leaving
+ * the RFQ cached would show the provider a stale "not yet responded" beside a quote they just
+ * started.
+ */
+export function useCreateQuoteShell(): UseMutationResult<
+  ActionResponse<QuoteShell>,
+  Error,
+  { readonly rfqId: string; readonly idempotencyKey: string }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ rfqId, idempotencyKey }) =>
+      createQuoteShell(rfqId, { headers: { "Idempotency-Key": idempotencyKey } }),
+    onSuccess: (result, { rfqId }) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.quoteComparison(rfqId) });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.rfq(rfqId) });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.providerQuoteList() });
+    },
+  });
+}
+
+/**
+ * Appends a priced revision to an existing shell.
+ *
+ * `rfqId` RIDES ON THE VARIABLES purely so the RFQ-scoped comparison key can be invalidated without a
+ * second read — the mutation itself never sends it.
+ *
+ * NOTHING OPTIMISTIC AND NOTHING SEEDED. The response carries the server-computed money, and writing
+ * it straight into the quote cache would be seeding a detail entry from a projection that has no
+ * lines on it. Invalidate and let the read answer.
+ */
+export function useAppendQuoteRevision(): UseMutationResult<
+  ActionResponse<AppendedQuoteRevision>,
+  Error,
+  {
+    readonly quoteId: string;
+    readonly rfqId: string;
+    readonly input: AppendQuoteRevisionInput;
+    readonly idempotencyKey: string;
+  }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ quoteId, input, idempotencyKey }) =>
+      appendQuoteRevision(quoteId, input, { headers: { "Idempotency-Key": idempotencyKey } }),
+    onSuccess: (result, { quoteId, rfqId }) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.quote(quoteId) });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.quoteComparison(rfqId) });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.providerQuoteList() });
+    },
+  });
+}
+
+/**
+ * Freezes a revision and offers it to the buyer. Irreversible — the caller confirms first.
+ *
+ * Invalidates the provider's RFQ queue as well: a submitted quote is the thing that moves an RFQ out
+ * of "waiting on me".
+ */
+export function useSubmitQuoteRevision(): UseMutationResult<
+  ActionResponse<SubmittedQuoteRevision>,
+  Error,
+  {
+    readonly quoteId: string;
+    readonly rfqId: string;
+    readonly revisionNumber: number;
+    readonly idempotencyKey: string;
+  }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ quoteId, revisionNumber, idempotencyKey }) =>
+      submitQuoteRevision(quoteId, revisionNumber, {
+        headers: { "Idempotency-Key": idempotencyKey },
+      }),
+    onSuccess: (result, { quoteId, rfqId }) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.quote(quoteId) });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.quoteComparison(rfqId) });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.rfqList("provider") });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.providerQuoteList() });
+    },
+  });
+}
+
+/**
+ * The provider's own bids, across every RFQ — the only list that yields a DRAFT quote's id.
+ *
+ * Keyset-paginated through the shared `useKeysetList`, so an abandoned quote is recoverable from one
+ * page rather than by fanning out per RFQ.
+ */
+export function useProviderQuotesList(filter: ListProviderQuotesFilter = {}) {
+  return useKeysetList<ProviderQuoteQueueItem>({
+    queryKey: storeKeys.providerQuoteList(filter.status),
+    initialPage: null,
+    fetchPage: async (token) =>
+      toCursorKeysetPage(
+        await listProviderQuotes({
+          ...filter,
+          ...(token === null ? {} : { cursor: String(token) }),
+        }),
+      ),
   });
 }

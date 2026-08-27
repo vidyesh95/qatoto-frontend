@@ -112,7 +112,12 @@ const STUDIO_ROUTES = {
   logistics: "/studio/logistics",
   // `/studio/rfqs` and `/studio/quotes` shipped without sidebar entries, so a provider had no way to reach
   // their own quote queue by clicking. `/studio/services` is new and is where a draft listing is visible.
+  //
+  // `/studio/quotes` ALSO HAD NO LIST ROUTE until the composer shipped — only `/studio/quotes/[quoteId]`,
+  // which you could reach solely by already holding the id. That is why it is a real entry now: it is the
+  // only surface that lists an UNSUBMITTED quote, and an unsubmitted one blocks the next revision.
   providerRfqs: "/studio/rfqs",
+  providerQuotes: "/studio/quotes",
   services: "/studio/services",
   // The manufacturer's own two surfaces. `factoryInquiries` is the RECEIVED queue — the buyer's
   // side of the same rows is `/store/factory-inquiries`, the split `/store/rfqs` and
@@ -333,6 +338,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
     items: [
       { path: STUDIO_ROUTES.orders, label: "Orders", iconKey: "orders" },
       { path: STUDIO_ROUTES.providerRfqs, label: "Requests to quote", iconKey: "requestQuote" },
+      { path: STUDIO_ROUTES.providerQuotes, label: "Your quotes", iconKey: "requestQuote" },
       { path: STUDIO_ROUTES.services, label: "Services", iconKey: "package" },
       {
         path: STUDIO_ROUTES.factoryInquiries,

@@ -172,16 +172,16 @@ route's payload into a contract every surface shares is what the old note in `pa
 right to refuse. The refund control parses it with Zod at its own boundary. Purely additive — no
 existing caller reads it.
 
-**Deferred, and NOT because they are low value — because neither is the small wiring job this
-section implies:**
+**~~Deferred~~ — BOTH SHIPPED. See §28.** Kept here because the diagnosis was right and the cost
+estimate was wrong in a way worth remembering: both were described as blocked on "build the
+authoring surface", and in both cases the BACKEND was already complete. The work was frontend-only.
 
-- **A40's incoterm on the quote form.** There is no quote form. No create/append wrapper, no
-  authoring composer, only read-only quote pages — so this is "build quote authoring", and the enum,
-  the routes and the read rendering are all already waiting for it.
-- **`commerce_review_media_state`.** Its three write routes have **zero** frontend wrappers, so the
-  author-facing surface that would render "your video is unavailable" does not exist either. Note
-  the public review read filters unavailable media out entirely and correctly carries no state, so
-  there is nothing to fix on the surface that does exist.
+- ~~**A40's incoterm on the quote form.**~~ **Shipped.** There is a quote form now. The incoterm is
+  an eleven-value picker on it, never a text field — the enum exists precisely because
+  `z.string().max(20)` once accepted `BANANA` and the submit trigger froze it forever.
+- ~~**`commerce_review_media_state`.**~~ **Shipped.** The author-facing surface exists and renders
+  "this video is no longer available on YouTube" against an `unavailable_upstream` row. The note
+  about the public read was correct and still is: it filters those rows out and carries no state.
 
 ### 8. SEO leftovers
 
@@ -718,6 +718,152 @@ rather than a sitemap one.
 **No `generateMetadata`.** The page title is "Channel" rather than the creator's name, because
 titling it properly means a second fetch of a route the page already reads. Worth doing; not
 measured yet.
+
+## 28. Procurement's reply half and the review lifecycle — SHIPPED, frontend only
+
+Two complete backend capabilities had **zero** frontend code. Not partial wiring — no wrappers, no
+hooks, no components. Both are wired now, and neither needed a migration, a route or a product
+decision.
+
+**The pattern is worth naming, because it is how both stayed invisible.** A route with no caller
+looks identical to a route that does not exist, and the uncalled-wrapper audits at the bottom of this
+file only catch a wrapper that EXISTS and is unused. Neither of these had a wrapper to catch.
+
+### 28a. A provider can answer an RFQ
+
+A buyer could draft and open an RFQ and a provider could list incoming ones — and then the flow
+stopped. `(studio)/studio/rfqs/[rfqId]/page.tsx` described itself as "A request for quotation **you
+can answer** on Qatoto" and offered no way to answer it. `GET /commerce/provider/quotes` had no
+wrapper anywhere and there was no `/studio/quotes` list route at all, only `[quoteId]`.
+
+Shipped: `quote-composer.tsx` at `/studio/rfqs/[rfqId]/quote`, the eight-arm
+`quote-service-detail-fields.tsx`, `/studio/quotes` as a real list, four api wrappers, four hooks,
+and entry points from the RFQ detail, the quote detail and the studio sidebar.
+
+**Five backend facts shaped it, none of them guessable from the route list.** They are restated in
+the composer's header because getting any one wrong produces a screen that works until it doesn't:
+
+- **Creating the shell tells the buyer you answered** — it flips the invitation to `responded`,
+  which the buyer's page renders as "Quoted". So the shell is minted on the first pricing attempt,
+  never on mount.
+- **One quote per provider per RFQ, forever.** A second is a 409 regardless of the first's status, so
+  withdrawing does not free the slot. That 409 is a RECOVERY, not an error.
+- **Append is a commitment, not a save.** Only one unsubmitted revision may exist and there is no
+  abandon route, so the composer goes terminal after a successful append rather than back to a form
+  whose next press would 422.
+- **Only the shell call checks the RFQ's state.** Append and submit check the QUOTE's status, so a
+  provider with an existing quote may keep revising after the buyer closes the RFQ. Gating the
+  revise path on `state === "open"` would block a legitimate revision.
+- **Three routes, three idempotency keys.** The middleware replays a key against the body it first
+  saw, so one key shared across them makes the second call return the first call's answer.
+
+**The FX rate is the riskiest field on the surface**, and it is parsed as a string rather than a
+number. `Math.round(Number("1.0840") * 10 ** 4)` computes through `10839.999999999998`; the
+string parse is exact and preserves the trailing zero, because a rate quoted to four places is a
+different commitment from one quoted to three. Hand-verified to round-trip through
+`formatFixedPointRateLabel`.
+
+**One gotcha for anyone extending this**: the RFQ requirement union discriminates on `providerKind`
+and the quote's `serviceDetail` union discriminates on `kind`, with freight and logistics sharing one
+arm on the write side. `rfq-requirement-detail-fields.tsx` is the structural model, **not** a file to
+copy — copying it 422s every service line.
+
+### 28b. A buyer can leave a review, with evidence
+
+`GET /commerce/completions` exists on the backend specifically because `completionId` "was projected
+on NOTHING, so a buyer had no way to obtain the id the route demands. Ratings, review photos and
+review videos were all reachable only by guessing a UUID." **It was never wired.** That is why the
+product page's "Reviews can only be left by a buyer whose order completed" was true in a way nobody
+intended: no buyer could leave one either.
+
+Shipped: `/orders-and-returns/reviews` over the completions read, `review-composer.tsx` (rating,
+body, per-axis scores, and the one edit), and `review-media-panel.tsx` (photo upload, YouTube
+attach, remove) — the author-facing surface `commerce_review_media_state` was built for.
+
+Rules the UI honours rather than assumes: `shipping` is offered only on a product completion
+(a 422 `UNSUPPORTED_SCORE_AXIS` on a service engagement); `scores` is at-least-one-axis or an omitted
+key, never `{}`; `hasReview` counts hidden reviews, so a hidden one still spends the slot; media
+position is server-assigned and the photo upload takes no text fields at all.
+
+### What 28 left open — two backend asks, and they are the same shape
+
+Both are routes whose absence is only visible once the frontend exists:
+
+1. **`DELETE /commerce/quotes/:quoteId/revisions/:revision`, for an unsubmitted revision.** Without
+   it there is a genuine trap: set a short `validityDeadlineAt`, append, and let it pass — submit
+   answers `QUOTE_EXPIRED`, a second append is refused ("submit or abandon the existing unsubmitted
+   revision"), and a fresh shell is refused because one quote exists per RFQ. **The quote is then
+   unrecoverable for that RFQ.** The service's own error message names an action the API does not
+   expose. Mitigated entirely in the UI for now — a 30-day default deadline and a loud warning under
+   a day — which is a guardrail, not a fix.
+2. **An author-facing `GET /commerce/reviews/:reviewId`, with its media.** The trust router has five
+   GETs — completions, three dispute reads and the SELLER's inbox — so an author cannot re-read their
+   own review or manage its attachments after leaving the page. The media panel says so out loud
+   rather than implying otherwise. This is also what blocks the rest of the review lifecycle below.
+
+### Not built, deliberately, and each is its own piece of work
+
+- **The rest of the review lifecycle**: helpful votes (`PUT`/`DELETE .../helpful`), the seller's
+  reply (`PUT`/`DELETE .../reply`) and the seller's inbox (`GET /commerce/seller/reviews`). Three
+  more surfaces over routes that already exist.
+- **Documents on a quote.** There is no route to attach one, the same gap the RFQ composer already
+  names. The review step says so and ships no control.
+- **`/studio/quotes` has no status filter UI.** The read accepts `?status=` and the wrapper passes it;
+  nothing sets it yet.
+
+---
+
+## 29. Still open, in the order worth taking them
+
+Written down after auditing every claim in this file against HEAD, because several entries above had
+gone stale in both directions.
+
+1. **`/anime` end to end — the last fabricated surface on the site.** Five pages read
+   `@/mocks/anime-mocks` and the routes are excluded from `sitemap.ts` for exactly that reason. The
+   backend has the tables — `anime_series` / `anime_season` / `anime_episode`, with `genreTags`,
+   `status` (ongoing/completed/hiatus), `releaseScheduleDay`/`Time` and `premiereDate` — plus
+   `trendingVideoSnapshot` (hourly, ranked) for the ranking page. What does not exist is any PUBLIC
+   catalogue read: all eleven `/series` routes are `requireAuth` and owner-scoped, and the feed has
+   no `videoType` facet, so anime episodes are indistinguishable in it. This is one new public
+   backend module plus five page rewires. Two notes for whoever takes it: **`/anime/favorite` is
+   nearly free** — it is Liked and Bookmarked, which `GET /users/me/liked-videos` and
+   `/saved-videos` already serve, needing only a `videoType` filter — and **`/anime/genre`'s chips
+   and `/anime/ranking`'s sort currently change nothing**, they re-render the same mock array, so
+   wiring them is a behaviour change rather than a data swap. It needs one decision: `genreTags` is a
+   free-text array, and a genre chip row needs a canonical list.
+2. **SEO closeouts.** `/store/product/[id]` has title, description and canonical but no `openGraph` —
+   and `images[]` is already on the product detail schema, so it needs no second fetch.
+   `src/app/manifest.json` (not `public/`) omits `start_url` and `description`. `/channel/[handle]`
+   has a hardcoded `title: "Channel"` rather than `generateMetadata`.
+3. **The channel sitemap.** Blocked on one bounded public enumeration read;
+   `creator_stats.publishedVideoCount` makes "creators with at least one published video" a single
+   indexed query. It carries a real consent question — the cofounder directory already argues that
+   "a directory of people who did not consent to being in it" is a decision, not a default.
+4. **Provider directory filters.** `GET /store/providers` accepts three query keys; the frontend
+   documents eight and seven do not exist. The schema is `.strict()`, so sending one is a **422 that
+   kills the whole read**, not an ignored parameter. The per-kind extension tables already carry
+   every field. Build the keys and the UI together or neither.
+5. **The six missing doc rows** — `GET /users/me/creator-summary`, `/users/me/video-analytics`,
+   `/users/me/video-comments`, `/research-projects/attachable`, and the jobs
+   `publish-scheduled-videos` and `resweep-unverified-daily-logs`. All six exist in code and appear
+   in no route or job table. The repo's own rule: "a route that ships without a row in §5 or §6 is
+   invisible to the next reader."
+6. **The ten `planned` Studio routes.** They are the entire `kind: "planned"` set on the roadmap and
+   each needs a whole backend domain, not a screen. `/studio/team` means ACCOUNT-level collaborators;
+   the per-video `video_collaborator` table that exists is a different thing and is already wired.
+
+### Corrections to this file, found by checking rather than reading
+
+- **`REMAINING_WORK.md` §1 — "The sidebar has no session gating at all" — is STALE.** `sidebar.tsx`
+  imports `useViewerSignedIn`, filters on a `requiresSession` flag and suppresses emptied sections;
+  `sidebar-slot.tsx` is the server wrapper that supplies the boolean, and its header narrates fixing
+  the exact defect that entry still describes in the present tense.
+- **`docs/BACKEND_STRUCTURE.md` DOES have a privacy section** (§11), contrary to §10 above.
+- **The channels routes ARE documented** — `HOME_BACKEND_STRUCTURE.md` §5.2e — contrary to §26's
+  third doc-drift item. The other two doc-drift items stand.
+- **`findings.md` is entirely stale.** Every move it costs out shipped as §19–§23.
+
+---
 
 ## Cross-pillar seams
 

@@ -148,6 +148,25 @@ export default function RfqDetail({ rfqId }: { rfqId: string }) {
               : "Your organization matched this request. The buyer did not invite you by name."}
           </p>
         )}
+
+        {/* THE ANSWER TO THIS REQUEST, and until now there was none — this page has always described
+            itself as one "you can answer" while offering no way to.
+
+            SHOWN TO BOTH PROVIDER RELATIONS. `matched_provider` is not a lesser standing: the buyer
+            opened the request to the market, and the backend gates the write on the organization
+            being an active provider rather than on having been invited by name.
+
+            THE LABEL DOES NOT CLAIM TO KNOW WHETHER A QUOTE EXISTS. This read carries no quote, and
+            fetching one here to pick a verb would be a second request for a word. The composer knows
+            and says so on arrival. */}
+        {!isBuyer && (
+          <Link
+            href={`/studio/rfqs/${rfq.id}/quote`}
+            className="mt-3 inline-block rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Quote this request
+          </Link>
+        )}
       </header>
 
       <TabStrip

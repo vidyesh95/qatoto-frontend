@@ -9,12 +9,23 @@ the map of surfaces, and `todo.md` is the store-wiring log.
 
 ---
 
-## 1. The sidebar has no session gating at all
+## 1. ~~The sidebar has no session gating at all~~ — STALE, this shipped
 
-`src/components/home/layout/sidebar.tsx` contains no `useSession`, no `useViewerSignedIn` and
-no `hasCallerSession` — the whole file, every section. So an anonymous visitor is shown
-**Your account**, **Cart**, **Orders and returns**, **Listings**, **Sales** and **Wishlist**
-as though they were theirs.
+**Checked against the file on 2026-08-27: none of the below is true any more.**
+`sidebar.tsx` imports `useViewerSignedIn`, takes an `isViewerSignedIn` prop describing what the
+SERVER saw, filters every section on a per-item `requiresSession` flag and suppresses a section
+whose items were all filtered out. `sidebar-slot.tsx` is the server wrapper that supplies the
+boolean — and its own header narrates fixing precisely the defect described here, so this entry
+outlived its fix by some margin. "Sign out" is not in the sidebar at all; a destination list holds
+no actions, and it lives in the account menu.
+
+The original text, kept because the REASONING below about not hoisting the cookie read is still
+correct and still worth following:
+
+> `src/components/home/layout/sidebar.tsx` contains no `useSession`, no `useViewerSignedIn` and
+> no `hasCallerSession` — the whole file, every section. So an anonymous visitor is shown
+> **Your account**, **Cart**, **Orders and returns**, **Listings**, **Sales** and **Wishlist**
+> as though they were theirs.
 
 **This is why "Sign out" rendering to signed-out visitors went unnoticed** for as long as that
 row existed: there was nothing anywhere in the file that could have hidden it.

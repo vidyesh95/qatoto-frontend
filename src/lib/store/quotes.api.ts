@@ -24,13 +24,21 @@
 import { getJson, sendJson, type ActionResponse, type RequestOptions } from "@/lib/http";
 import { CommerceOrderSchema, type CommerceOrder } from "@/lib/store/cart.schemas";
 import {
+  AppendedQuoteRevisionSchema,
+  ProviderQuoteQueuePageSchema,
   QuoteComparisonListSchema,
   QuoteDetailSchema,
   QuoteShellSchema,
-  type QuoteShell,
+  SubmittedQuoteRevisionSchema,
   type AcceptQuoteInput,
+  type AppendQuoteRevisionInput,
+  type AppendedQuoteRevision,
+  type ListProviderQuotesFilter,
+  type ProviderQuoteQueueItem,
   type QuoteComparisonItem,
   type QuoteDetail,
+  type QuoteShell,
+  type SubmittedQuoteRevision,
 } from "@/lib/store/quotes.schemas";
 
 /**
@@ -149,4 +157,127 @@ export function withdrawQuote(
 ): Promise<ActionResponse<QuoteShell>> {
   const path = `/commerce/quotes/${encodeURIComponent(quoteId)}/withdraw`;
   return sendJson(path, "POST", undefined, QuoteShellSchema, options);
+}
+
+/**
+ * Creates the empty quote shell on an RFQ — `POST /commerce/rfqs/:rfqId/quotes` (A38).
+ *
+ * EMPTY BODY. The shell carries no terms; the terms arrive as a revision appended to it, which is
+ * what makes negotiation append-only.
+ *
+ * **CREATE IT LATE.** Creating the shell flips this provider's invitation to `responded`, which the
+ * buyer's RFQ page renders as "Quoted". A shell minted when the provider merely OPENED a form would
+ * tell the buyer they had been quoted while nothing exists — so the composer calls this on the first
+ * real pricing attempt, not on mount.
+ *
+ * **ONE QUOTE PER PROVIDER PER RFQ, FOREVER.** A second call answers `409 CONFLICT` regardless of
+ * the first quote's status, so withdrawing does not free the slot. That 409 is usually a RECOVERY,
+ * not an error: re-read the RFQ's quotes, take the existing id and append to it.
+ *
+ * IT IS ALSO THE ONLY ONE OF THE THREE WRITES THAT CHECKS THE RFQ'S STATE. Append and submit look at
+ * the QUOTE's status alone, so a provider who already has a quote may keep revising after the buyer
+ * closes the RFQ. Do not gate the revise path on `rfq.state === "open"`.
+ *
+ * Requires an `Idempotency-Key`, minted once per attempt: a retry without one is a second shell on an
+ * RFQ that permits exactly one.
+ */
+export function createQuoteShell(
+  rfqId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<QuoteShell>> {
+  const path = `/commerce/rfqs/${encodeURIComponent(rfqId)}/quotes`;
+  return sendJson(path, "POST", undefined, QuoteShellSchema, options);
+}
+
+/**
+ * Appends a priced revision — `POST /commerce/quotes/:quoteId/revisions` (A38).
+ *
+ * IT ANSWERS THE REVISION'S **MONEY**, NOT THE REVISION. `subtotalInCents` and `totalInCents` are
+ * computed server-side from the lines and guarded by a CHECK, so they are absent from the request and
+ * present in the response — which makes this call the first honest price the provider has seen. The
+ * client never recomputes the total; a client-side sum that disagreed with the constraint would
+ * present as a pricing dispute rather than as the bug it is.
+ *
+ * IT CARRIES NO LINES BACK. They were just sent and stored verbatim; echoing them would be a copy of
+ * the request, and a screen rendering the echo would look right while proving nothing.
+ *
+ * **APPEND IS A COMMITMENT, NOT A SAVE.** Only one unsubmitted revision may exist at a time, and
+ * there is NO route to abandon one — `commerce-quotes.routes.ts` has no DELETE. So after this
+ * succeeds the only forward move is submit. Combined with `validityDeadlineAt`: if that deadline
+ * passes before submit, submit answers `QUOTE_EXPIRED`, a second append is refused, and a fresh
+ * shell is refused too. The quote is then stuck for that RFQ, which is why the composer prefills a
+ * generous deadline and warns on a short one.
+ *
+ * Requires an `Idempotency-Key`, and it must be a DIFFERENT key from the shell call's — the
+ * middleware replays a key against the body it first saw, so one key shared across two routes makes
+ * the second call return the first call's answer.
+ */
+export function appendQuoteRevision(
+  quoteId: string,
+  input: AppendQuoteRevisionInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<AppendedQuoteRevision>> {
+  const path = `/commerce/quotes/${encodeURIComponent(quoteId)}/revisions`;
+  return sendJson(path, "POST", input, AppendedQuoteRevisionSchema, options);
+}
+
+/**
+ * Freezes a revision and offers it to the buyer —
+ * `POST /commerce/quotes/:quoteId/revisions/:revision/submit` (A38).
+ *
+ * EMPTY BODY, and **IRREVERSIBLE**. `commerce_prevent_submitted_quote_revision_mutation` is a
+ * database trigger rather than a service check, so there is no correction path and no administrative
+ * override: a typo in a submitted revision is fixed by appending ANOTHER revision, never by editing
+ * this one. Confirm before calling.
+ *
+ * What remains possible afterwards is worth saying in the confirmation, because it makes the step
+ * less frightening than "irreversible" alone suggests: the whole quote may still be WITHDRAWN until
+ * the buyer accepts, and a further revision may still be appended. What cannot change is this
+ * revision.
+ *
+ * `REVISION_CHANGED` (409) carries the current number in `details` — a FINDING, never a retry with
+ * the bumped number, because that would submit terms the provider did not just review.
+ *
+ * Requires an `Idempotency-Key`, distinct from the append call's.
+ */
+export function submitQuoteRevision(
+  quoteId: string,
+  revisionNumber: number,
+  options?: RequestOptions,
+): Promise<ActionResponse<SubmittedQuoteRevision>> {
+  const path = `/commerce/quotes/${encodeURIComponent(quoteId)}/revisions/${revisionNumber}/submit`;
+  return sendJson(path, "POST", undefined, SubmittedQuoteRevisionSchema, options);
+}
+
+/**
+ * Every quote this provider has authored, across every RFQ — `GET /commerce/provider/quotes` (A38).
+ *
+ * **DRAFTS INCLUDED, and this is the only list anywhere that yields a draft quote's id.** The
+ * RFQ-scoped comparison needs an RFQ id to start from, and `GET /commerce/provider/rfqs` lists the
+ * WORK rather than the BIDS — an RFQ leaves that queue when it closes, taking any quote on it out of
+ * reach. Without this read, a provider who appended a revision and closed the tab could lose the
+ * quote entirely.
+ *
+ * `latestSubmittedRevision` IS NULL FOR A DRAFT-ONLY QUOTE. That is not zero and must not render as
+ * a price.
+ */
+export async function listProviderQuotes(
+  filter: ListProviderQuotesFilter = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: ProviderQuoteQueueItem[]; nextCursor: string | null }>> {
+  const query = new URLSearchParams();
+  if (filter.status !== undefined) query.set("status", filter.status);
+  if (filter.limit !== undefined) query.set("limit", String(filter.limit));
+  if (filter.cursor !== undefined) query.set("cursor", filter.cursor);
+  const queryString = query.toString();
+  const path = `/commerce/provider/quotes${queryString === "" ? "" : `?${queryString}`}`;
+
+  // The wire shape is `{ items, page }`; the keyset helpers this feeds want `{ rows, nextCursor }`,
+  // so the envelope is unwrapped HERE rather than in every caller.
+  const parsed = await getJson(path, ProviderQuoteQueuePageSchema, options);
+  if (!parsed.success) return parsed;
+  return {
+    success: true,
+    data: { rows: [...parsed.data.items], nextCursor: parsed.data.page.nextCursor },
+  };
 }
