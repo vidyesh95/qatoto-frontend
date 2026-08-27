@@ -63,7 +63,17 @@ export default async function ChannelPage({ handle }: { readonly handle: string 
           <h1 className="font-serif text-2xl font-semibold text-foreground md:text-3xl">
             {profile.name}
           </h1>
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
+          {/*
+            A `div`, NOT a `p`, and that is a correctness fix rather than a style choice.
+            `ChannelAboutOpener` renders the About sheet as a sibling of its button, and that sheet's
+            root is a `fixed inset-0` DIV. A `div` may not descend from a `p`, so the HTML parser
+            closes the paragraph early — the server's markup and the client's tree then genuinely
+            disagree, which React reports as a hydration error rather than a warning.
+
+            Nothing moves visually: the flex classes were already here and a metadata row containing
+            a button was never really a paragraph.
+          */}
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
             <span>
               @{profile.handle} · {formatSubscriberCountLabel(profile.subscriberCount)} ·{" "}
               {formatCountLabel(profile.publicVideoCount)} videos
@@ -71,7 +81,7 @@ export default async function ChannelPage({ handle }: { readonly handle: string 
             {/* The one client island in this header. Everything it renders is already fetched
                 above, so opening the panel costs no request. */}
             <ChannelAboutOpener profile={profile} />
-          </p>
+          </div>
         </div>
         {/*
           THE SAME CONTROL THE WATCH PAGE USES, not a second subscribe button. It is deliberately
