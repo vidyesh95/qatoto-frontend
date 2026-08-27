@@ -54,6 +54,11 @@ const ICON_PATHS = {
   rateReview: {
     static: "/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  // A credit badge, for collaborator credits. `static` because only the FILL0 weight is in
+  // `public/icons`, the same reason `playlistPlay`, `rateReview` and `supportAgent` are.
+  workspacePremium: {
+    static: "/icons/workspace_premium_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   feedback: {
     active: "/icons/feedback_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/feedback_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
@@ -105,6 +110,10 @@ const STUDIO_ROUTES = {
   playlists: "/studio/playlists",
   analytics: "/studio/analytics",
   pitches: "/studio/pitches",
+  // The PRODUCT team — the pipeline stage between Pitches and Funding, and what the
+  // "Product journey" section below has always promised. Until now this path served
+  // YouTube-style video-collaborator credits, which are a CHANNEL feature and now live at
+  // `collaborations` below.
   team: "/studio/team",
   funding: "/studio/funding",
   feedback: "/studio/feedback",
@@ -129,6 +138,9 @@ const STUDIO_ROUTES = {
   factoryInquiries: "/studio/factory-inquiries",
   support: "/studio/support",
   earn: "/studio/earn",
+  // Video-collaborator credits, moved out of `/studio/team`. A credit grants no access; it
+  // records who worked on a video, which is Channel business rather than product-team business.
+  collaborations: "/studio/collaborations",
   comments: "/studio/comments",
   customize: "/studio/customize",
   copyright: "/studio/copyright",
@@ -359,6 +371,11 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
     title: "Channel",
     items: [
       { path: STUDIO_ROUTES.comments, label: "Comments", iconKey: "comment" },
+      {
+        path: STUDIO_ROUTES.collaborations,
+        label: "Collaborations",
+        iconKey: "workspacePremium",
+      },
       { path: STUDIO_ROUTES.customize, label: "Customize", iconKey: "dashboardCustomize" },
       { path: STUDIO_ROUTES.copyright, label: "Copyright", iconKey: "copyright" },
       { path: STUDIO_ROUTES.subtitles, label: "Subtitles", iconKey: "subtitles" },

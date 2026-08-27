@@ -5,6 +5,12 @@
 
 import { useState } from "react";
 
+import RoleCompensationComposer, {
+  buildCompensationStrands,
+  EMPTY_ROLE_COMPENSATION_DRAFT,
+  type RoleCompensationDraft,
+} from "@/components/home/research-and-development/sections/role-compensation-composer";
+
 import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import {
@@ -56,11 +62,14 @@ function isMaintainer(viewerProjectRole: string | null): boolean {
  */
 export default function TeamManagementIsland({
   projectSlug,
+  currency,
   team,
   openRoles,
   viewerProjectRole,
 }: {
   projectSlug: string;
+  /** The PROJECT's currency. A role never carries a client-chosen one. */
+  currency: string;
   team: ProjectTeamMember[];
   openRoles: OpenRole[];
   viewerProjectRole: string | null;
@@ -82,6 +91,11 @@ export default function TeamManagementIsland({
   const [newRoleTitle, setNewRoleTitle] = useState("");
   const [newRoleCommitment, setNewRoleCommitment] = useState<RoleCommitment>("part_time");
   const [newRoleDescription, setNewRoleDescription] = useState("");
+  const [compensationDraft, setCompensationDraft] = useState<RoleCompensationDraft>(
+    EMPTY_ROLE_COMPENSATION_DRAFT,
+  );
+  /** `null` when a ticked strand is half-filled — the submit guard, not an error. */
+  const compensationStrands = buildCompensationStrands(compensationDraft);
 
   const firstError = [
     decideMutation.error,
@@ -359,9 +373,20 @@ export default function TeamManagementIsland({
                   roleTitle: newRoleTitle.trim(),
                   commitment: newRoleCommitment,
                   description: newRoleDescription.trim() || undefined,
+                  // An EMPTY array is a legitimate answer — the unpaid role — so it is sent
+                  // rather than omitted. `null` from the builder means a ticked strand is
+                  // half-filled, and the submit button is already disabled for it.
+                  ...(compensationStrands === null || compensationStrands.length === 0
+                    ? {}
+                    : { compensation: compensationStrands }),
                 },
               },
-              { onSuccess: () => setNewRoleTitle("") },
+              {
+                onSuccess: () => {
+                  setNewRoleTitle("");
+                  setCompensationDraft(EMPTY_ROLE_COMPENSATION_DRAFT);
+                },
+              },
             );
           }}
         >
@@ -396,13 +421,29 @@ export default function TeamManagementIsland({
             placeholder="What would they do?"
             className={INPUT_CLASS}
           />
+          <RoleCompensationComposer
+            draft={compensationDraft}
+            currency={currency}
+            onDraftChange={(patch) => {
+              setCompensationDraft((current) => ({ ...current, ...patch }));
+            }}
+          />
           <button
             type="submit"
-            disabled={roleMutation.isPending}
+            // `null` means a ticked strand is incomplete — an equity band with no minimum, a
+            // maximum below its minimum. Refusing here is friendlier than sending something
+            // `open_role_compensation_ranges_ck` would refuse anyway.
+            disabled={roleMutation.isPending || compensationStrands === null}
             className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
           >
             Advertise it
           </button>
+          {compensationStrands === null && (
+            <p className="text-xs text-muted-foreground">
+              Finish the amounts you ticked — a range needs a starting number, and a maximum cannot
+              be below it.
+            </p>
+          )}
         </form>
       </div>
     );

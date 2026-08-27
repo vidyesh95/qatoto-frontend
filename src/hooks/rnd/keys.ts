@@ -37,6 +37,14 @@ export const rndKeys = {
   /** A venture's public video reel — the pitch composer's video picker reads it. */
   projectVideos: (projectSlug: string) => ["rnd", "project", projectSlug, "videos"] as const,
   myApplications: (status: string | undefined) => ["rnd", "applications", "mine", status] as const,
+  /**
+   * `/studio/team` — applications across every venture the caller MAINTAINS. A different
+   * question from `myApplications` above, asked by the other party, so a different key.
+   */
+  receivedApplications: (status: string | undefined, page: number) =>
+    ["rnd", "applications", "received", status, page] as const,
+  /** Roles the caller advertises, across ventures. Every status, unlike the public board. */
+  maintainedOpenRoles: () => ["rnd", "open-roles", "mine"] as const,
   myInvites: (status: string | undefined) => ["rnd", "invites", "mine", status] as const,
   /** The FOUNDER's inbox, distinct from `myApplications` — different rows, different actor. */
   projectApplications: (projectSlug: string, status: string | undefined) =>

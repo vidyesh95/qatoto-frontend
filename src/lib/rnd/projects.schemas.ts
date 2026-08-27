@@ -298,6 +298,20 @@ export const ProjectApplicationSchema = z
 export type ProjectApplication = z.infer<typeof ProjectApplicationSchema>;
 
 /**
+ * `GET /applications/received` — the same row, plus the venture it belongs to.
+ *
+ * EXTENDS RATHER THAN REDECLARES, for the reason `MyFoundedFundingRoundSchema` gives: a
+ * project-scoped read already knows whose applications these are, a CROSS-VENTURE one does
+ * not. The slug is not decoration — accept and decline are project-scoped routes, so it is
+ * what lets a studio card call the write that already exists.
+ */
+export const ReceivedApplicationSchema = ProjectApplicationSchema.extend({
+  projectSlug: z.string(),
+  projectName: z.string(),
+});
+export type ReceivedApplication = z.infer<typeof ReceivedApplicationSchema>;
+
+/**
  * One row of the APPLICANT'S OWN list — `GET /applications/mine`.
  *
  * Carries the project it was sent to, because an applicant arrives holding no slug. That

@@ -21,6 +21,7 @@ import {
   MyInviteSchema,
   ProjectApplicationSchema,
   ProjectCoverUploadResultSchema,
+  ReceivedApplicationSchema,
   ProjectInviteSchema,
   ProjectTeamMemberSchema,
   ProjectVideoSchema,
@@ -32,6 +33,7 @@ import {
   type MyInvite,
   type ProjectApplication,
   type ProjectCoverUploadResult,
+  type ReceivedApplication,
   type ProjectInvite,
   type ProjectTeamMember,
   type ProjectVideo,
@@ -62,6 +64,45 @@ export function listResearchProjects(
     PaginationMetaSchema,
     options,
   );
+}
+
+/**
+ * `GET /applications/received` — applications across every venture the caller MAINTAINS.
+ *
+ * THE FOUNDER-SIDE MIRROR of `listMyApplications`, and the read `/studio/team` is built on.
+ * Until it existed, a founder running three ventures opened three project pages to answer
+ * "who wants to join" — the same gap `GET /funding-rounds/mine` closed for rounds.
+ *
+ * NO `?projectId=` AND NO `?userId=`. The scope is a membership join on the session at
+ * `maintainer` or above; a client-supplied id here would be a client-supplied authorization
+ * input. A caller who maintains nothing gets an empty list, not a 403 — "none" is a correct
+ * answer to this question, not a refusal.
+ */
+export function listReceivedApplications(
+  filter: { readonly status?: string; readonly page?: number; readonly limit?: number } = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: ReceivedApplication[]; pagination: PaginationMeta }>> {
+  return getPaginated(
+    `/applications/received${buildQueryString({ ...filter })}`,
+    ReceivedApplicationSchema,
+    PaginationMetaSchema,
+    options,
+  );
+}
+
+/**
+ * `GET /open-roles/mine` — roles advertised by ventures the caller maintains.
+ *
+ * NOT `listOpenRoles`, the public board: that one serves candidates and shows only roles that
+ * are `open` with a seat left. This serves the founder and includes `closed` and `filled`,
+ * because "why is nobody applying" is often answered by a role they forgot they closed.
+ *
+ * Unpaginated, matching the project-scoped roles read it generalizes.
+ */
+export function listMaintainedOpenRoles(
+  options?: RequestOptions,
+): Promise<ActionResponse<OpenRole[]>> {
+  return getJson("/open-roles/mine", OpenRoleSchema.array(), options);
 }
 
 /**
@@ -372,6 +413,15 @@ export function listProjectApplications(
  *
  * THE THREE VERBS HAVE DIFFERENT ACTORS: a maintainer accepts or declines, the APPLICANT
  * withdraws. The backend enforces that; this wrapper does not pretend to.
+ *
+ * ⚠️ THE WIRE FIELD IS `note`, AND THIS WRAPPER USED TO SEND `reviewNote`. `DecisionNoteSchema`
+ * is `.strict()`, so every accept or decline that CARRIED A NOTE answered
+ * `422 Unrecognized key: "reviewNote"` — and one that carried none succeeded, because
+ * `optionalBody` lets `{}` through. So the review-note box on the project's Team tab had never
+ * once worked, and it failed in the way that hides best: only when used.
+ *
+ * The parameter keeps the name `reviewNote` because that is what the column and every read call
+ * it; only the wire spelling is translated, here, at the boundary that owns it.
  */
 export function decideProjectApplication(
   projectSlug: string,
@@ -383,7 +433,7 @@ export function decideProjectApplication(
   return sendJson(
     `/research-projects/${projectSlug}/applications/${applicationId}/${decision}`,
     "POST",
-    input,
+    input.reviewNote === undefined ? {} : { note: input.reviewNote },
     ProjectApplicationSchema,
     options,
   );

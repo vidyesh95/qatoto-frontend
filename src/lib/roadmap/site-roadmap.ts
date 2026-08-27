@@ -856,15 +856,27 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
           "Publish a venture to people who might fund it. Funding links out; Qatoto holds no funds.",
       },
       {
-        // `route`, not `planned` — but NOT for what the old summary promised, and the summary
-        // changed with it. It read "Who else can act on this account", which is account-level
-        // DELEGATION: roles, access, revocation. None of that exists. What shipped is the
-        // collaborator CREDIT handshake — an invite the named person can confirm or decline — and
-        // it grants nobody anything. Leaving the old wording over the new page would have been the
-        // one thing a roadmap must never do: claim a capability the platform lacks.
+        // ⚠️ THIS ENTRY HAS NOW BEEN WRONG TWICE, IN OPPOSITE DIRECTIONS, and the history is worth
+        // keeping. It first read "Who else can act on this account" — account-level DELEGATION,
+        // which does not exist. It was then corrected to describe collaborator credits, which is
+        // what the page actually served. Both times the summary chased the page.
+        //
+        // The page was the thing that was wrong. `/studio/team` sits in the sidebar's Product
+        // journey section between Pitches and Funding, so it owes the pipeline stage where a
+        // founder assembles a team; the credits moved to `/studio/collaborations` below and this
+        // route now does that job.
         kind: "route",
         label: "Team",
         href: "/studio/team",
+        summary:
+          "Who wants to build with you, across every venture you run — and what each role offers.",
+      },
+      {
+        // The credits, unchanged, in the Channel section where the other video features live.
+        // A credit still grants nobody anything, which is why the summary keeps saying so.
+        kind: "route",
+        label: "Collaborations",
+        href: "/studio/collaborations",
         summary: "Collaborator credits on your videos. Credits grant no access.",
       },
       {

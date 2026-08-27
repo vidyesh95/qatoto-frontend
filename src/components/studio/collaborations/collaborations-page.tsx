@@ -15,6 +15,10 @@ import type { CollaborationInvite, VideoCollaborator } from "@/lib/videos/collab
 /**
  * Collaborator credits — who worked on your videos, and what you have been credited on.
  *
+ * A CHANNEL FEATURE, not a product team. This used to live at `/studio/team`, which is the
+ * pipeline stage where a founder assembles the people who build the product; that page now does
+ * that job and this one kept the credits. Nothing here changed in the move except the heading.
+ *
  * ⚠️ THIS PAGE GRANTS NOBODY ANYTHING, AND THE COPY HAS TO SAY SO. `/studio/team`'s roadmap line
  * read "who else can act on this account", which is ACCOUNT-LEVEL DELEGATION — roles, invites that
  * confer access, revocation. **That does not exist**: no delegation primitive exists anywhere in
@@ -32,14 +36,14 @@ import type { CollaborationInvite, VideoCollaborator } from "@/lib/videos/collab
  * the bottom is what you say about others and only they can answer. Neither list can edit the
  * other, which is why they are separate reads rather than one merged table.
  */
-export default function StudioTeamPage() {
+export default function StudioCollaborationsPage() {
   const invitesQuery = useMyCollaborationsQuery();
   const rosterQuery = useMyCollaboratorsQuery();
   const respondMutation = useRespondToCollaborationMutation();
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold text-foreground">Team</h1>
+      <h1 className="text-2xl font-semibold text-foreground">Collaborations</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Collaborator credits on videos. <strong>A credit grants no access</strong> — it does not let
         anyone sign in, edit a video, or act on your account. It records who worked on what.

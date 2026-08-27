@@ -29,8 +29,10 @@ import {
   removeProjectMember,
   respondToProjectInvite,
   listAttachableResearchProjects,
+  listMaintainedOpenRoles,
   listMyResearchProjects,
   listProjectVideos,
+  listReceivedApplications,
   listProjectOpenRoles,
   setOpenRoleOpenState,
   setProjectStage,
@@ -159,6 +161,28 @@ export function useMyInvitesQuery(status?: string) {
  * client island and this is the only place it is needed. The list mirrors the backend's
  * write gate, so every option it renders is one `POST /videos` will accept.
  */
+/**
+ * `/studio/team` — applications waiting on the caller, across every venture they maintain.
+ *
+ * THE FOUNDER'S SIDE. `useMyApplicationsQuery` is the applicant's; these are different rows,
+ * a different actor and a different gate, which is why they are separate hooks rather than
+ * one with a flag.
+ */
+export function useReceivedApplicationsQuery(status: string | undefined, page: number) {
+  return useQuery({
+    queryKey: rndKeys.receivedApplications(status, page),
+    queryFn: async () => unwrap(await listReceivedApplications({ status, page })),
+  });
+}
+
+/** Roles the caller advertises across their ventures — every status, not just `open`. */
+export function useMaintainedOpenRolesQuery() {
+  return useQuery({
+    queryKey: rndKeys.maintainedOpenRoles(),
+    queryFn: async () => unwrap(await listMaintainedOpenRoles()),
+  });
+}
+
 /**
  * The caller's own ventures — the pitch composer's picker.
  *

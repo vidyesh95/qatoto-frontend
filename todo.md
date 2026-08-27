@@ -362,10 +362,39 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     `/customer-service` is a directory for exactly that reason — "an unanswered form is worse than an
     honest signpost". A support inbox means a real ticket domain AND somebody to read it.
 
+    ~~`/studio/team`~~ **SHIPPED as the product-team console, and the route changed meaning.**
+    2026-08-27. It served YouTube-style video-collaborator credits while sitting in the sidebar's
+    **Product journey** section between Pitches and Funding — a section whose own comment says it
+    maps "pitch → team → fund". The navigation promised the pipeline stage and delivered video
+    credits. The credits moved to **`/studio/collaborations`** under Channel, unchanged.
+
+    **What it does now, and the gap it closed.** The whole team-building domain was PER PROJECT:
+    `GET /research-projects/:slug/applications` is maintainer-gated on one venture, so a founder
+    running three opened three project pages to answer "who wants to join". Two new
+    cross-venture reads on `applicationInboxRouter` — **`GET /applications/received`** and
+    **`GET /open-roles/mine`**, both scoped by a membership join at `maintainer` or above — are the
+    founder-side mirror of `/applications/mine`. Same gap, same answer, as `GET /funding-rounds/mine`
+    for rounds. The WRITES stayed in R&D: accept and decline call the project-scoped route, because
+    that transaction locks the role row to serialize two maintainers taking the last seat.
+
+    **A role can finally state its terms.** The "Advertise a role" form collected title, commitment
+    and description only — so nobody could advertise "2–4% equity + $40k/mo" even though
+    `open_role_compensation`, its three CHECK constraints and the API had supported exactly that
+    since the table shipped. Blends are two strands on one role (the unique index is
+    `(open_role_id, kind)`), and **no strands is a real answer** — the unpaid hobbyist role.
+
+    ⚠️ **AND ONE BUG THIS UNCOVERED, WHICH HAD NEVER WORKED.** `decideProjectApplication` sent
+    `{ reviewNote }`; the backend's `DecisionNoteSchema` is `.strict()` and expects `{ note }`. So
+    every accept or decline that CARRIED A NOTE answered `422 Unrecognized key`, while one without
+    a note succeeded — meaning the review-note box on every project's Team tab had failed since it
+    shipped, and failed only when used. Fixed at the wrapper.
+
     **Still genuinely needing a new domain: `earn`** (a money rail — escrow left this codebase, §7)
-    and **account-level delegation**, which is what `/studio/team`'s old summary promised and remains
-    the one substantial Studio feature unbuilt. `learn` and `feedback` are the `/customer-service`
-    shape and already signpost correctly.
+    and **account-level delegation** — roles, access, revocation on an ACCOUNT, which is what
+    `/studio/team`'s first summary promised and what no primitive anywhere supports. It is now the
+    one substantial Studio feature unbuilt, and it is unrelated to the team console above: that one
+    is about who builds a venture, this would be about who may act as you. `learn` and `feedback`
+    are the `/customer-service` shape and already signpost correctly.
 
 ---
 
