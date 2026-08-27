@@ -494,3 +494,39 @@ the opposite of what it looks like it reports:
 ```bash
 rg --files-without-match 'TRANSPORT:' src/components/home/research-and-development --glob '*.tsx'
 ```
+
+---
+
+## ⚠️ Video copyright reporting is a COMMUNITY FLAG QUEUE, not a DMCA process
+
+`/studio/copyright`, `POST /videos/:id/reports` and the moderation queue behind them let anyone
+flag a video and let staff hide it, dismiss the report, or redirect the reporter to YouTube. That
+is a **moderation** system. **It is not a notice-and-takedown process and nothing in it should be
+described as one** — in copy, in a policy page, or in a reply to a rights-holder.
+
+**What a real DMCA safe-harbour process needs that this does NOT have, none of it implied by
+what shipped:**
+
+- **Claimant identity disclosed to the accused creator.** Deliberately impossible here: reporter
+  identity is hidden from the moderator, let alone from the creator, and the notification that
+  reaches a creator names nobody. Reversing that is a policy decision with a retaliation cost,
+  not a field to add.
+- **A sworn statement** — good-faith belief and accuracy under penalty of perjury. The report form
+  collects a reason enum and free text, and asks the reporter to swear to nothing.
+- **A counter-notice path.** A creator whose video is hidden can read the notice and cannot
+  contest it. There is no appeal route in the backend at all.
+- **A repeat-infringer policy.** Nothing counts strikes against a creator or a channel, and
+  nothing terminates an account for accumulating them. §512(i) makes this a condition of
+  safe harbour, not an optional extra.
+- **A designated agent** registered with the Copyright Office, published on the site.
+
+**Why it is nevertheless the right thing to have built now:** every video on the platform today is
+`videoSource: "youtube"`, so Qatoto does not hold the bytes and hiding a row does not take
+anything down. `redirected_to_source` exists to say exactly that, truthfully, instead of filing a
+valid claim as a rejection.
+
+**THE TRIGGER IS SELF-HOSTED VIDEO.** The moment Qatoto stores its own media, a takedown becomes
+legally binding rather than a courtesy, `redirected_to_source` goes from the common answer to a
+rare one, and every bullet above turns into required work. The data model is source-agnostic and
+does not need replacing — the _process_ around it does. Do not let the existence of a working
+flag queue read as "copyright is handled".

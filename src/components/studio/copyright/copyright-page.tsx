@@ -172,8 +172,49 @@ function MyReportRow({ report }: { readonly report: MyVideoReport }) {
         </span>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        {VIDEO_REPORT_REASON_LABELS[report.reason]} · {report.status}
+        {VIDEO_REPORT_REASON_LABELS[report.reason]} · {describeReportOutcome(report)}
       </p>
+      {report.resolutionNote === null ? null : (
+        <p className="mt-2 border-l-2 border-border pl-3 text-xs text-foreground">
+          {report.resolutionNote}
+        </p>
+      )}
     </div>
   );
+}
+
+/**
+ * The outcome sentence for a report the reporter filed.
+ *
+ * ⚠️ SWITCHES ON `outcomeKind`, NOT ON `status`, and that is the whole reason the field is on
+ * the wire. `redirected_to_source` and `report_dismissed` both arrive as `status: "dismissed"`
+ * because neither took a content action — so rendering the status would tell a rights-holder
+ * whose claim Qatoto never disputed that they were turned down.
+ *
+ * A redirect is not a refusal. Qatoto does not hold these bytes: hiding the Qatoto row leaves
+ * the video playing on youtube.com, so the only remedy that actually removes it is one only
+ * YouTube can grant. Saying so is help, and the copy has to read that way.
+ */
+function describeReportOutcome(report: MyVideoReport): string {
+  if (report.status === "open") return "Under review";
+  switch (report.outcomeKind) {
+    case "content_hidden":
+      return "Hidden on Qatoto";
+    case "content_restored":
+      return "Restored after review";
+    case "report_dismissed":
+      return "Reviewed, left up";
+    case "redirected_to_source":
+      // STANDS ALONE. `resolutionNote` is optional and often absent, so this cannot point at a
+      // note that may not render — it has to carry the whole answer by itself.
+      return "Qatoto can't remove this — file the claim with YouTube";
+    case null:
+      // Decided, but no action row is joinable — a report closed before the outcome kind was
+      // carried, or one whose action row was detached by a video deletion (`set null`).
+      return "Reviewed";
+    default: {
+      const exhaustiveCheck: never = report.outcomeKind;
+      return exhaustiveCheck;
+    }
+  }
 }

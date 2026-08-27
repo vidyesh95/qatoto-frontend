@@ -16,7 +16,7 @@ map of surfaces, and `todo.md` is the open-work log.
 
 ---
 
-## 3. Twenty-one of the twenty-four notification kinds are unproven against live data
+## 3. Twenty-one of the twenty-six notification kinds are unproven against live data
 
 The bell is wired end to end and a throwaway harness passed **156/156** live checks, but only
 three kinds have ever met a real payload: `project_invite_received`, `project_invite_revoked`

@@ -1,13 +1,13 @@
 // TRANSPORT: props-only — pure contract for the three `/notifications` routes. No network, no React.
 //
-// THE 24 KINDS ARE POSTGRES `pgEnum` LABELS, SENT VERBATIM IN snake_case. The authority is
+// THE 26 KINDS ARE POSTGRES `pgEnum` LABELS, SENT VERBATIM IN snake_case. The authority is
 // `src/db/schema/platform.ts:442` in the backend repo and the `enqueueNotifications` call sites
 // beside it — never a doc, which drifts. Do not "correct" one of these to kebab-case: they are
 // data that must byte-match the label, not identifiers.
 //
 // `kind` IS PARSED AS A PLAIN STRING, NOT `z.enum(NOTIFICATION_KINDS)`, and that is the one
-// deliberate loosening on this boundary. A `z.enum` over 24 labels means the next backend release
-// that adds a 25th makes `safeParse` fail on the row that carries it — and because the rows are
+// deliberate loosening on this boundary. A `z.enum` over 26 labels means the next backend release
+// that adds a 27th makes `safeParse` fail on the row that carries it — and because the rows are
 // parsed as a page, ONE unknown kind would blank the WHOLE inbox rather than one line of it. That
 // trade is wrong for a surface whose entire job is telling someone what happened. The tuple below
 // still exists and is still exhaustive over what ships today; `isKnownNotificationKind` narrows to
@@ -56,6 +56,22 @@ export const NOTIFICATION_KINDS = [
   "research_program_published",
   "research_program_rejected",
   "research_program_paper_moderated",
+  // Video moderation — TWO KINDS, TWO AUDIENCES, and the asymmetry between them is the point.
+  //
+  // `video_report_decided` goes to whoever filed the report, on EVERY close. They asked a
+  // question; they get an answer, and a `redirected_to_source` outcome is an answer rather than
+  // a refusal.
+  //
+  // ⚠️ `video_content_actioned` goes to the creator ONLY when their video was hidden or
+  // restored — NEVER on a dismissal or a redirect. Nothing happened to their video in those
+  // cases, and telling somebody "you were reported and we let it go" hands them a grievance
+  // plus a very small suspect pool. That is the same retaliation risk that keeps reporter
+  // identity hidden from moderators in the first place.
+  //
+  // NEITHER NAMES THE MODERATOR. Both are enqueued with `actorUserId: null`, so `actorName`
+  // arrives as `null` and the sentences below must read without one.
+  "video_report_decided",
+  "video_content_actioned",
   // §4a — staff roles. The proposal goes to the other admins, who are who can countersign it;
   // the outcome goes to the subject, who until now could be made a moderator without being told.
   "platform_role_change_proposed",

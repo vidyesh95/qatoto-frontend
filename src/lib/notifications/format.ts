@@ -259,6 +259,36 @@ function buildKnownHeadline(kind: NotificationKind, notification: NotificationRo
       return `Your staff role changed from ${previousRole} to ${nextRole}.`;
     }
 
+    case "video_report_decided": {
+      // The OUTCOME KIND carries the meaning, not the report status: `redirected_to_source` and
+      // `report_dismissed` both close the report as `dismissed`, and rendering the status alone
+      // would file every "take this to YouTube" answer as a rejection.
+      const outcome = readPayloadString(payload, "outcome");
+      const reporterNote = readPayloadString(payload, "reporterNote");
+      const verdict =
+        outcome === "content_hidden"
+          ? "A video you reported has been hidden."
+          : outcome === "redirected_to_source"
+            ? // NOT A REJECTION, and the wording has to carry that. Qatoto does not hold these
+              // bytes — hiding the Qatoto row leaves the video playing on youtube.com, so the
+              // only remedy that works is one Qatoto cannot exercise.
+              "A video you reported is hosted on YouTube, so Qatoto cannot take it down."
+            : outcome === "report_dismissed"
+              ? "A video you reported was reviewed and left up."
+              : "A video you reported has been reviewed.";
+      return reporterNote === null ? verdict : `${verdict} ${reporterNote}`;
+    }
+    case "video_content_actioned": {
+      // ONLY EVER `content_hidden` OR `content_restored` — a dismissal and a redirect do not
+      // notify the creator at all. Anything else here is a backend release ahead of this file.
+      const outcome = readPayloadString(payload, "outcome");
+      return outcome === "content_restored"
+        ? "One of your videos has been restored and is public again."
+        : outcome === "content_hidden"
+          ? "One of your videos has been hidden after a report was reviewed."
+          : "A moderation decision was made about one of your videos.";
+    }
+
     default: {
       const exhaustiveCheck: never = kind;
       return exhaustiveCheck;
