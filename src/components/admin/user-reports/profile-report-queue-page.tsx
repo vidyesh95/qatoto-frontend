@@ -155,6 +155,21 @@ export default function ProfileReportQueuePage() {
                   : "profile text is visible"}
               </p>
 
+              {/*
+                THE ONE REASON NO ACTION ON THIS PAGE ANSWERS. Without this banner a moderator is
+                offered hide-or-dismiss and nothing else, which quietly implies one of them was the
+                appropriate response to a report about someone being in danger. The controls are
+                unchanged; what changes is that the row says what they do and do not reach.
+              */}
+              {report.reason === "severe_harm_escalation" && (
+                <p className="mt-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs leading-4 text-destructive">
+                  No action on this page addresses this report. Hiding the profile text does not
+                  answer a report about someone being in danger, and this platform has no
+                  account-level enforcement. Escalate it out of band; hide or dismiss only reflects
+                  what happens to the description.
+                </p>
+              )}
+
               {report.detailText !== null && (
                 <p className="mt-2 text-sm whitespace-pre-line text-foreground">
                   {report.detailText}

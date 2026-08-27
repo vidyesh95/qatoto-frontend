@@ -11,15 +11,21 @@ import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * Why somebody is reporting a profile.
  *
  * PROFILE-SCOPED, AND NOT THE VIDEO EIGHT. Upholding one of these hides a person's description and
- * links and nothing else, so every reason names something that lever can actually address. There is
- * deliberately no `child_safety` or `copyright` here: answering either by hiding a description would
+ * links and nothing else, so five of the six name something that lever can actually address. There
+ * is deliberately no `child_safety` or `copyright`: answering either by hiding a description would
  * look like the platform had acted when it had not.
+ *
+ * `severe_harm_escalation` IS THE EXCEPTION, AND IT IS HONEST ABOUT BEING ONE. No in-product action
+ * answers it. It exists so a report about real danger arrives DISTINGUISHABLE from a spam complaint
+ * instead of collapsed into `other` and triaged like one — the queue marks those rows as needing
+ * something this product cannot do. It must never acquire an automatic action.
  */
 export const USER_REPORT_REASONS = [
   "impersonation",
   "abusive_profile_text",
   "misleading_links",
   "spam",
+  "severe_harm_escalation",
   "other",
 ] as const;
 
@@ -30,6 +36,7 @@ export const USER_REPORT_REASON_LABELS: Record<UserReportReason, string> = {
   abusive_profile_text: "Abusive or hateful description",
   misleading_links: "Misleading or harmful links",
   spam: "Spam",
+  severe_harm_escalation: "Someone is in danger",
   other: "Something else",
 };
 
@@ -91,3 +98,27 @@ export interface RestoreProfileTextInput {
   readonly reportedUserId: string;
   readonly reasonNote: string;
 }
+
+/**
+ * One of the caller's OWN profile reports.
+ *
+ * NARROWER THAN THE QUEUE ROW, and the omissions are the contract rather than an oversight: no
+ * moderator identity, no resolution note, no sibling count, and no copy of the reported bio. Naming
+ * the moderator makes a takedown personal, the count makes brigading measurable, and re-serving the
+ * text to the person who complained about it would be the machinery that hid it handing it back.
+ */
+export const MyProfileReportSchema = z
+  .object({
+    id: z.string(),
+    reportedUserId: z.string(),
+    reportedName: z.string(),
+    reportedHandle: z.string().nullable(),
+    reason: z.enum(USER_REPORT_REASONS),
+    detailText: z.string().nullable(),
+    status: z.enum(USER_REPORT_STATUSES),
+    createdAt: IsoDateTimeSchema,
+    resolvedAt: IsoDateTimeSchema.nullable(),
+  })
+  .strip();
+
+export type MyProfileReport = z.infer<typeof MyProfileReportSchema>;

@@ -1,19 +1,24 @@
 // TRANSPORT: client-query — reporting a profile, and the moderator queue that answers it.
 
+import { z } from "zod";
+
 import {
   getCursorSiblingList,
+  getJson,
   sendJson,
   type ActionResponse,
   type RequestOptions,
 } from "@/lib/http";
 import {
   CreatedUserReportSchema,
+  MyProfileReportSchema,
   RestoredProfileTextSchema,
   UserReportQueueItemSchema,
   type CreateUserReportInput,
   type CreatedUserReport,
   type DecideUserReportInput,
   type ListUserReportsFilter,
+  type MyProfileReport,
   type RestoreProfileTextInput,
   type UserReportQueueItem,
 } from "@/lib/users/user-reports.schemas";
@@ -91,4 +96,20 @@ export function restoreUserProfileText(
     RestoredProfileTextSchema,
     options,
   );
+}
+
+/**
+ * The caller's own profile reports — `GET /users/me/profile-reports`.
+ *
+ * IT EXISTS BECAUSE A REPORT THAT VANISHES IS INDISTINGUISHABLE FROM ONE NOBODY READ, which is the
+ * sentence `/report-history` was built around for videos. Profile reporting shipped without it, so
+ * a reporter got a 201 and then silence.
+ *
+ * The projection is narrow by contract: no moderator identity, no resolution note, no count of who
+ * else complained. See `MyProfileReportSchema`.
+ */
+export function listMyProfileReports(
+  options?: RequestOptions,
+): Promise<ActionResponse<MyProfileReport[]>> {
+  return getJson("/users/me/profile-reports", z.array(MyProfileReportSchema), options);
 }

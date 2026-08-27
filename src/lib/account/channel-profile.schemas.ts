@@ -23,6 +23,15 @@ export const ChannelProfileDraftSchema = z
   .object({
     bio: z.string().nullable(),
     links: z.array(ProfileLinkSchema),
+    /**
+     * Whether a moderator has hidden this text from the public channel page.
+     *
+     * ⚠️ THIS IS THE ONLY WAY THE PERSON FINDS OUT. Upholding a report writes an audit entry and
+     * an action row and reaches them not at all — there is no notification. Without this field the
+     * editor would render their description exactly as before, so somebody asked to fix a problem
+     * would not know there was one.
+     */
+    profileModerationState: z.enum(["visible", "hidden_by_moderator"]),
   })
   .strip();
 

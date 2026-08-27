@@ -12,6 +12,7 @@ import {
 import type { ActionResponse } from "@/lib/http";
 import {
   decideUserReport,
+  listMyProfileReports,
   listUserReports,
   reportUser,
   restoreUserProfileText,
@@ -21,6 +22,7 @@ import type {
   CreatedUserReport,
   DecideUserReportInput,
   ListUserReportsFilter,
+  MyProfileReport,
   RestoreProfileTextInput,
   UserReportQueueItem,
 } from "@/lib/users/user-reports.schemas";
@@ -29,22 +31,39 @@ export const userReportKeys = {
   all: ["user-reports"] as const,
   queueRoot: () => ["user-reports", "queue"] as const,
   queue: (filterKey: string) => ["user-reports", "queue", filterKey] as const,
+  /** The caller's own reports — what `/report-history` reads. */
+  mine: () => ["user-reports", "mine"] as const,
 };
 
 /**
  * Files a report.
  *
- * NOTHING IS INVALIDATED. The reporter sees no list of their own profile reports — there is no such
- * read — and the profile they reported does not change until a moderator decides. Inventing a cache
- * update here would be inventing a verdict.
+ * IT INVALIDATES THE REPORTER'S OWN LIST AND NOTHING ELSE. The profile they reported does not change
+ * until a moderator decides, so touching anything else would be inventing a verdict. This hook used
+ * to invalidate nothing at all, because the reporter had no list to look at — that was the gap
+ * `listMyProfileReports` closed.
  */
 export function useReportUserMutation(): UseMutationResult<
   ActionResponse<CreatedUserReport>,
   Error,
   { readonly reportedUserId: string; readonly input: CreateUserReportInput }
 > {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ reportedUserId, input }) => reportUser(reportedUserId, input),
+    retry: false,
+    onSuccess: (result) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: userReportKeys.mine() });
+    },
+  });
+}
+
+/** The caller's own profile reports. `retry: false` — a 401 is an answer, not a flake. */
+export function useMyProfileReportsQuery() {
+  return useQuery<ActionResponse<MyProfileReport[]>>({
+    queryKey: userReportKeys.mine(),
+    queryFn: () => listMyProfileReports(),
     retry: false,
   });
 }

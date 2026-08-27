@@ -118,12 +118,16 @@ than a sixth one to keep in sync.
 pages now — they were the only two whose data already existed and simply had no reader. See the
 new §25 for what that surfaced.
 
-**The remaining ten `(studio)` pages are honest placeholders, and they are STILL `kind: "planned"`.** This
-is the part worth not misreading later: ten of them have **no backend whatsoever** — `feedback`
-returns zero matches across the entire backend; `subtitles`, `copyright`, `customize`, `pitches`,
-`learn` and `support` likewise; `comments` has per-video primitives but not the cross-video
-moderation queue its roadmap line specifies; `team` means account-level collaborators, which do not
-exist. Building those ten is ten backend domains, not twelve screens.
+**The remaining NINE `(studio)` pages are honest placeholders, and they are STILL `kind: "planned"`.**
+This is the part worth not misreading later: nine of them have **no backend whatsoever** — `feedback`
+returns zero matches across the entire backend; `subtitles`, `copyright`, `pitches`, `learn` and
+`support` likewise; `comments` has per-video primitives but not the cross-video moderation queue its
+roadmap line specifies; `team` means account-level collaborators, which do not exist. Building those
+nine is nine backend domains, not nine screens.
+
+**It was ten until `customize` graduated** — see §31. It is `kind: "route"` now, with
+`GET|PATCH /users/me/channel-profile` behind it, and it is the only one of the twelve that left this
+list by growing a backend rather than by having one found.
 
 What shipped is `studio-planned-page.tsx`: the roadmap summary verbatim, what the page will do, and
 — where one truthfully exists — a link to the surface that does the job today. **Six of the twelve
@@ -672,6 +676,9 @@ None of these change behaviour; all of them mislead a reader.
    `/users/me/video-analytics`, `/users/me/video-comments`, `/research-projects/attachable`, the
    product-venture read, and the two new jobs (`publish-scheduled-videos`,
    `resweep-unverified-daily-logs`).
+   **Partly closed:** the channel-profile pair and both self-read report routes now have rows in
+   `docs/BACKEND_STRUCTURE.md`. The four `/users/*/reports` moderation routes still do not — they
+   want a `§5.2f` in `HOME_BACKEND_STRUCTURE.md` modelled on §5.2c's table.
 3. **The frontend repo carries stale FORKS of four backend docs.** They are copies, not links, and
    they have drifted. Decide whether to re-sync them or delete them and point at the backend repo —
    a fork that nobody updates is worse than no copy.
@@ -861,6 +868,109 @@ your own inbox), and `summary` is computed over every visible review rather than
 revising is bounded twice — once only, and within 30 days of the REPLY's creation — and `editedAt` is
 not on the wire, so the client cannot pre-empt either refusal. Both controls stay enabled and the
 server's own sentence is rendered verbatim; a disabled button there would be a guess.
+
+---
+
+## 31. The channel profile, and the abuse path that had to ship with it — SHIPPED
+
+The channel page grew an About panel, a description and links, and the reporting domain that makes
+publishing them defensible. Four migrations (`0139`–`0142`), all additive.
+
+### 31a. The About panel, and two counters that are NOT the cached ones
+
+`joinedAt`, subscribers, videos and views. The last two are **aggregated over
+`publicVideoPredicate()` — the grid's own predicate — rather than read from `creator_stats`**, and
+that is the whole reason they are publishable:
+
+- `published_video_count` counts published rows REGARDLESS OF VISIBILITY, so it routinely exceeds
+  the grid beneath it. A header saying 12 over a grid of 9 reads as a bug, and explaining it means
+  explaining which three are private.
+- `total_view_count` is a lifetime figure including views of videos since made private or deleted —
+  a fact about withdrawn content, and one a viewer could diff against the visible grid to infer that
+  deleted videos existed. It is also never reconciled and is EXPECTED to disagree with the sum over
+  survivors.
+
+Verified against live data: 4 videos / 4 cards, 3 views / 3 views.
+
+**It also shipped a hydration error, which is worth recording because every gate missed it.**
+`<ChannelAboutOpener>` sat inside a `<p>`, and the sheet it renders is a `fixed inset-0` DIV — which
+a `<p>` may not contain, so the parser closed the paragraph early and the server's markup and the
+client's tree genuinely differed. `tsc`, oxlint and `next build` all passed. Only the browser caught
+it.
+
+### 31b. `user.bio` + `user_profile_link`
+
+Public the moment they are written, which **diverges from every precedent in this schema** —
+`talent_profile.visibility` defaults to `private`, `community_cofounder_profile.state` to `draft`
+behind moderation. That is only defensible because §31c shipped with it. If the reporting domain is
+ever removed, the bio must go back behind a gate.
+
+`https://`-only on the URL, enforced by a database CHECK — proven against live data, an `http://`
+link is refused with `23514`. It is a security control, not a format preference: the value becomes an
+`href` on a public page.
+
+**The editor is ONE component rendered by two surfaces** — the account dropdown panel and
+`/studio/customize`, which graduated from `kind: "planned"` to `kind: "route"`. They cannot link to
+each other: `AccountMenu` has no URL and closes on an outside click, which is why `/settings` and
+`/your-account` were deleted as routes. The preview renders the _same_ `ChannelProfileDetails` the
+channel page does, so it cannot drift.
+
+### 31c. Reporting a profile, and a lever that is deliberately narrow
+
+`user_report` + `user_moderation_action` + `user.profile_moderation_state`, a report sheet on the
+channel and a queue at `/admin/profile-reports`.
+
+**Upholding hides the bio and links and NOTHING ELSE** — not the name, not the avatar, not a video,
+not the ability to sign in. That narrowness is the design: those two fields are new, so the channel
+read is their only public consumer and one enforcement point covers them completely. A platform-wide
+"hidden user" would need every public read of a person to honour a new predicate — six modules in
+`home/` alone before the feed, spotlight, store and R&D — with **nothing failing if one were
+missed**. A half-enforced hide is worse than an honest narrow one.
+
+It is **not** `deactivated_at`: that column's invariant is that a live session implies NULL, so a
+moderator writing it would be undone the next time the person signed in.
+
+**The subject is told.** `getMyChannelProfile` returns the moderation state and the editor renders a
+banner, because upholding a report notifies nobody — without it, somebody asked to fix a problem
+would open an editor that looked exactly as it did before. "They can still edit it" is only true if
+they know there is something to edit.
+
+**`severe_harm_escalation` is a reason with no matching action, on purpose.** The other five name
+things the lever can address. Severe harm is not one, and the alternatives were worse: `child_safety`
+would read as the platform having acted when it had not, and omitting it entirely collapses real
+danger into `other` where it is triaged like spam. So the queue marks those rows as needing something
+this product cannot do. **It must never acquire an automatic action** — a reason that triggers a hide
+on a count makes brigading measurable and then effective.
+
+### 31d. The privacy work, which is the part with no safety net
+
+- **`user.bio` is invisible to `db:verify-anonymization-coverage`.** That script walks foreign keys
+  into `user`; a scalar column has none. The scrub's single `bio: null` line could be deleted and
+  nothing would turn red — so the `"the identity is gone"` assertion in `scripts/smoke-privacy.ts`
+  was extended to cover it. Those two belong together.
+- **`user_report.reported_user_id` is `retain`.** A report filed ABOUT somebody survives their
+  erasure, because otherwise requesting deletion would erase the enforcement history against you —
+  deletion becomes a ban-evasion route, and the record a future moderator needs is what it destroys.
+- `user_profile_link` rides in the Art. 15 export beside the bio. It was nearly missed: the bio is a
+  column and the links are a table, so adding one did not surface the other.
+
+**The verifier was already red before any of this**, and that is the finding worth keeping. Six user
+references from migrations `0127`–`0130` were never classified, so by the manifest's own definition
+their PII survived an erasure silently. It reads `All 6 anonymization-coverage guarantees are in
+force` now, over 163 references.
+
+### What 31 left open
+
+- **`talent_profile.bio` is the one other public self-description with no moderation lever.** A
+  person whose channel bio is hidden can put the same text there. Out of scope by decision, not by
+  oversight — recorded so the next reader knows which.
+- **One entry point for reporting a profile** — Channel → About → Report. Video reporting sits on
+  every card menu.
+- **No tests on the new domain.** The behaviours that would actually bite: uphold-closes-all-siblings,
+  `MODERATOR_IS_SUBJECT`, the already-visible restore refusal, and the `isNull(anonymizedAt)` guard
+  on the profile write.
+- **Nothing has been watched in a browser.** Every authenticated path here — saving a bio, filing a
+  report, upholding one — was verified structurally and by route gating, not by eye.
 
 ---
 
@@ -1213,10 +1323,15 @@ for h in $(rg --no-filename -o 'export function (use\w+)' -r '$1' src/hooks/ | s
   rg -q "\b$h\b" src/components src/app || echo "UNCALLED $h"; done
 
 for f in $(rg --no-filename -o 'export (?:async )?function (\w+)' -r '$1' \
-    src/lib/store/*.api.ts src/lib/rnd/*.api.ts src/lib/admin/*.api.ts src/lib/account/*.api.ts \
-    | sort -u); do
+    $(find src/lib -name '*.api.ts') | sort -u); do
   rg -q "\b$f\b" src/hooks src/components src/app || echo "UNCALLED-API $f"; done
 ```
+
+**THE GLOB IS NOW `find`, NOT FOUR HAND-LISTED DIRECTORIES**, and that is the third time this has
+bitten. It started as `src/lib/store/*.api.ts` alone, which is why seven R&D wrappers went unnoticed;
+it was widened to four directories, and `src/lib/users/*.api.ts` then shipped outside all four — so
+the audit that is supposed to catch unverified code was not looking at the newest code in the repo.
+A hand-maintained list of places to check is a list that will be wrong again.
 
 **Both are silent today.** The second printed seven R&D names until those wrappers were wired
 (`listRoundBackers`, `listEquitySnapshots`, `verifyStatementChain`, `getAuditHashInput`,

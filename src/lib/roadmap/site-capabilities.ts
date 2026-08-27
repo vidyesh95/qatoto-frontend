@@ -286,6 +286,12 @@ export const ROADMAP_AUDIENCES: readonly RoadmapAudience[] = [
           { label: "Disputes", href: "/disputes" },
         ],
       },
+      {
+        action: "Say how it went",
+        summary:
+          "Everything of yours that has completed, and the one review you get to leave on each — with photos or a video if you have them.",
+        routes: [{ label: "Reviews you can leave", href: "/orders-and-returns/reviews" }],
+      },
     ],
   },
   {
@@ -354,9 +360,11 @@ export const ROADMAP_AUDIENCES: readonly RoadmapAudience[] = [
       },
       {
         action: "Quote the RFQs that arrive",
-        summary: "Incoming requests, the quote you return, and the engagement that follows it.",
+        summary:
+          "Incoming requests, the quote you return, and every bid you have authored — including the ones you started and have not submitted.",
         routes: [
           { label: "Incoming RFQs", href: "/studio/rfqs" },
+          { label: "Your quotes", href: "/studio/quotes" },
           { label: "Factory profile", href: "/studio/factory-profile" },
         ],
       },
@@ -371,10 +379,25 @@ export const ROADMAP_AUDIENCES: readonly RoadmapAudience[] = [
         ],
       },
       {
-        action: "Read the numbers and get paid",
+        action: "Say what your channel is about",
         summary:
-          "Analytics, earnings, subtitles, comments and copyright have routes in Studio, but they are still placeholders — they are on the map, not yet in your hands.",
-        routes: [],
+          "The description and links visitors read in the About panel on your channel, beside your join date and your counts.",
+        routes: [{ label: "Customise", href: "/studio/customize" }],
+      },
+      {
+        action: "Answer what buyers said about you",
+        summary:
+          "Every review of your organization, and the one reply you get to each — revisable once, within 30 days.",
+        routes: [{ label: "Reviews", href: "/studio/reviews" }],
+      },
+      {
+        action: "Read the numbers",
+        summary:
+          "Reach and engagement across your videos, and every comment on them in one place. Earnings, subtitles and copyright have routes in Studio but are still placeholders — on the map, not yet in your hands.",
+        routes: [
+          { label: "Analytics", href: "/studio/analytics" },
+          { label: "Comments", href: "/studio/comments" },
+        ],
       },
     ],
   },

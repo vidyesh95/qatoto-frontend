@@ -159,8 +159,25 @@ export default function ChannelProfileEditor({ onSaved }: { readonly onSaved?: (
     );
   }
 
+  const isHiddenByModerator = savedProfile?.profileModerationState === "hidden_by_moderator";
+
   return (
     <div className="flex flex-col gap-5 p-4">
+      {/*
+        THE ONLY PLACE A PERSON LEARNS THIS. Upholding a report hides their text and notifies
+        nobody, so without this banner the editor below would look exactly as it did before and
+        somebody asked to fix a problem would not know there was one.
+
+        IT NAMES WHAT WAS HIDDEN AND WHAT WAS NOT, because "your profile was hidden" would read as
+        an account suspension, and the lever does not reach that far.
+      */}
+      {isHiddenByModerator && (
+        <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs leading-4 text-destructive">
+          A moderator has hidden your description and links, so visitors to your channel cannot see
+          them. Your videos, your name and your account are unaffected. You can still edit the text
+          below — editing it does not put it back, but it is what a review will look at.
+        </p>
+      )}
       <section>
         <label className="block">
           <span className="text-xs font-medium text-muted-foreground">Description</span>
