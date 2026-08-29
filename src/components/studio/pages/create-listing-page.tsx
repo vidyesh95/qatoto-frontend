@@ -44,6 +44,7 @@ import {
   type ListingCompleteness,
   type ProductAttributeValueInput,
   type ProductHighlightInput,
+  type ProductPricingTierInput,
   type ProductVariantInput,
   type SellerProductDocument,
 } from "@/lib/products/schemas";
@@ -163,6 +164,83 @@ interface PricingTierDraft {
   id: string;
   unitPriceInDollars: string;
   minimumOrderQuantity: string;
+  /**
+   * A27. This band's own maximum lead time, as a form string. EMPTY MEANS "the product's applies",
+   * which is what a NULL on the wire means and what every pre-Phase-15 row means.
+   *
+   * ⚠️ IT HAS TO BE HERE OR THE FORM DESTROYS IT. This ladder is sent as a replace-set on every
+   * save, so a field the draft cannot hold is a field the next save overwrites with null.
+   */
+  leadTimeDays: string;
+}
+
+function makeEmptyTierDraft(): PricingTierDraft {
+  return {
+    id: crypto.randomUUID(),
+    unitPriceInDollars: "",
+    minimumOrderQuantity: "",
+    leadTimeDays: "",
+  };
+}
+
+/** Hydrates one saved band into its form strings, NULL lead time becoming an empty control. */
+function toTierDraft(
+  tier: { unitPriceInCents: number; minimumOrderQuantity: number; leadTimeDays: number | null },
+  keyPrefix: string,
+  tierIndex: number,
+): PricingTierDraft {
+  return {
+    id: `${keyPrefix}-${String(tierIndex)}`,
+    unitPriceInDollars: centsToDollarString(tier.unitPriceInCents),
+    minimumOrderQuantity: String(tier.minimumOrderQuantity),
+    leadTimeDays: tier.leadTimeDays === null ? "" : String(tier.leadTimeDays),
+  };
+}
+
+/**
+ * Form strings to wire values for ONE ladder, shared by the product's and every variant's.
+ *
+ * A blank row is skipped — an untouched "Add tier" press is not a band. Anything else that will not
+ * parse is refused, and `label` says whose ladder is at fault so the message can name it.
+ *
+ * ⚠️ `leadTimeDays` IS OMITTED WHEN BLANK, NEVER SENT AS NULL — the write schema is `.optional()`
+ * inside a `.strict()` object, so a null is a 422 that fails the whole save.
+ */
+function collectTierDrafts(
+  drafts: readonly PricingTierDraft[],
+  label: string,
+): { tiers: ProductPricingTierInput[] } | { error: string } {
+  const tiers: ProductPricingTierInput[] = [];
+  for (const tier of drafts) {
+    const rawLeadTime = tier.leadTimeDays.trim();
+    const isBlankRow =
+      tier.unitPriceInDollars.trim().length === 0 &&
+      tier.minimumOrderQuantity.trim().length === 0 &&
+      rawLeadTime.length === 0;
+    if (isBlankRow) continue;
+
+    const unitPriceInCents = dollarsToCents(tier.unitPriceInDollars);
+    const minimumOrderQuantity = Number.parseInt(tier.minimumOrderQuantity, 10);
+    if (
+      unitPriceInCents === null ||
+      !Number.isFinite(minimumOrderQuantity) ||
+      minimumOrderQuantity < 1
+    ) {
+      return {
+        error: `Each pricing tier ${label} needs a valid unit price and a minimum quantity of at least 1.`,
+      };
+    }
+    const leadTimeDays = Number.parseInt(rawLeadTime, 10);
+    if (rawLeadTime.length > 0 && (!Number.isInteger(leadTimeDays) || leadTimeDays < 0)) {
+      return { error: `A lead time ${label} must be a whole number of days, or blank.` };
+    }
+    tiers.push({
+      unitPriceInCents,
+      minimumOrderQuantity,
+      ...(rawLeadTime.length === 0 ? {} : { leadTimeDays }),
+    });
+  }
+  return { tiers };
 }
 
 /**
@@ -189,6 +267,16 @@ interface VariantDraft {
   priceInDollars: string;
   stockQuantity: string;
   minimumOrderQuantity: string;
+  /**
+   * A1. THIS VARIANT'S OWN LADDER, and an empty array means it has none — in which case it falls
+   * back to the listing's at price resolution (`commerce-pricing.ts:365-377`).
+   *
+   * ⚠️ IT IS SENT ON EVERY SAVE AND OMITTING IT DELETES. The backend field is `.default([])`, so
+   * an absent key is an empty one, and `replaceProductVariants` deletes this variant's bands
+   * unconditionally before re-inserting. Hydrating it is therefore not a convenience — it is what
+   * stops a save from wiping a ladder the seller never touched.
+   */
+  pricingTiers: PricingTierDraft[];
 }
 
 /**
@@ -519,14 +607,12 @@ export default function CreateListingPage({ productId }: { productId?: string })
     );
     setRemovedDocumentIds([]);
     setPendingDocuments([]);
+    // A27's band lead times ride along now. Before they did, this hydrated without them and the
+    // next save wrote null over whatever the seller had declared.
     setPricingTiers(
       loadedProduct.pricingTiers
         .toSorted((first, second) => first.position - second.position)
-        .map((tier, tierIndex) => ({
-          id: `hydrated-tier-${String(tierIndex)}`,
-          unitPriceInDollars: centsToDollarString(tier.unitPriceInCents),
-          minimumOrderQuantity: String(tier.minimumOrderQuantity),
-        })),
+        .map((tier, tierIndex) => toTierDraft(tier, "hydrated-tier", tierIndex)),
     );
     // `group: null` is UNGROUPED and hydrates as an empty control — the same rule the packaging
     // and sample fields follow above. It must not survive as a null into the next save: the write
@@ -553,6 +639,12 @@ export default function CreateListingPage({ productId }: { productId?: string })
           // `.optional()` inside a `.strict()` object, so an empty control omits the key instead.
           minimumOrderQuantity:
             variant.minimumOrderQuantity === null ? "" : String(variant.minimumOrderQuantity),
+          // The SELLER read does not inherit, so `[]` here genuinely means "no ladder of its own".
+          pricingTiers: variant.pricingTiers
+            .toSorted((first, second) => first.position - second.position)
+            .map((tier, tierIndex) =>
+              toTierDraft(tier, `hydrated-variant-${String(variantIndex)}-tier`, tierIndex),
+            ),
         })),
     );
     setRetiredVariantCount(
@@ -712,10 +804,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
   }
 
   function handleAddTierClick() {
-    setPricingTiers((previousTiers) => [
-      ...previousTiers,
-      { id: crypto.randomUUID(), unitPriceInDollars: "", minimumOrderQuantity: "" },
-    ]);
+    setPricingTiers((previousTiers) => [...previousTiers, makeEmptyTierDraft()]);
   }
 
   function handleTierChange(tierIndex: number, field: keyof PricingTierDraft, value: string) {
@@ -745,6 +834,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
         priceInDollars: "",
         stockQuantity: "",
         minimumOrderQuantity: "",
+        pricingTiers: [],
       },
     ]);
   }
@@ -785,6 +875,53 @@ export default function CreateListingPage({ productId }: { productId?: string })
     setVariants((previous) =>
       previous.map((variant, index) =>
         index === variantIndex ? { ...variant, [field]: value } : variant,
+      ),
+    );
+  }
+
+  // A variant's ladder is addressed by BOTH indices — the product ladder's handlers above close
+  // over one array and cannot be reused.
+  function handleAddVariantTierClick(variantIndex: number) {
+    setVariants((previous) =>
+      previous.map((variant, index) =>
+        index === variantIndex
+          ? { ...variant, pricingTiers: [...variant.pricingTiers, makeEmptyTierDraft()] }
+          : variant,
+      ),
+    );
+  }
+
+  function handleVariantTierChange(
+    variantIndex: number,
+    tierIndex: number,
+    field: keyof PricingTierDraft,
+    value: string,
+  ) {
+    setVariants((previous) =>
+      previous.map((variant, index) =>
+        index === variantIndex
+          ? {
+              ...variant,
+              pricingTiers: variant.pricingTiers.map((tier, index2) =>
+                index2 === tierIndex ? { ...tier, [field]: value } : tier,
+              ),
+            }
+          : variant,
+      ),
+    );
+  }
+
+  function handleRemoveVariantTierClick(variantIndex: number, tierIndexToRemove: number) {
+    setVariants((previous) =>
+      previous.map((variant, index) =>
+        index === variantIndex
+          ? {
+              ...variant,
+              pricingTiers: variant.pricingTiers.filter(
+                (_, tierIndex) => tierIndex !== tierIndexToRemove,
+              ),
+            }
+          : variant,
       ),
     );
   }
@@ -890,25 +1027,9 @@ export default function CreateListingPage({ productId }: { productId?: string })
     const parsedStock = Number.parseInt(stockQuantity, 10);
     const resolvedStock = Number.isFinite(parsedStock) && parsedStock > 0 ? parsedStock : 0;
 
-    const tiers: { unitPriceInCents: number; minimumOrderQuantity: number }[] = [];
-    for (const tier of pricingTiers) {
-      const isBlankRow =
-        tier.unitPriceInDollars.trim().length === 0 &&
-        tier.minimumOrderQuantity.trim().length === 0;
-      if (isBlankRow) continue;
-      const unitPriceInCents = dollarsToCents(tier.unitPriceInDollars);
-      const minimumOrderQuantity = Number.parseInt(tier.minimumOrderQuantity, 10);
-      if (
-        unitPriceInCents === null ||
-        !Number.isFinite(minimumOrderQuantity) ||
-        minimumOrderQuantity < 1
-      ) {
-        return {
-          error: "Each pricing tier needs a valid unit price and a minimum quantity of at least 1.",
-        };
-      }
-      tiers.push({ unitPriceInCents, minimumOrderQuantity });
-    }
+    const collectedTiers = collectTierDrafts(pricingTiers, "on this listing");
+    if ("error" in collectedTiers) return { error: collectedTiers.error };
+    const tiers = collectedTiers.tiers;
 
     /**
      * The spec sheet. A REPLACE-SET: whatever this array holds becomes the listing's whole spec
@@ -1075,7 +1196,8 @@ export default function CreateListingPage({ productId }: { productId?: string })
         sku.length === 0 &&
         variant.priceInDollars.trim().length === 0 &&
         rawStock.length === 0 &&
-        rawMinimum.length === 0;
+        rawMinimum.length === 0 &&
+        variant.pricingTiers.length === 0;
       if (isUntouchedNewRow) continue;
 
       const label = name.length > 0 ? `"${name}"` : `variant ${String(variantIndex + 1)}`;
@@ -1107,6 +1229,12 @@ export default function CreateListingPage({ productId }: { productId?: string })
         };
       }
 
+      // ALWAYS SENT, even when empty. `[]` is the instruction "this variant has no ladder of its
+      // own"; omitting the key would be the same instruction with none of the intent, because the
+      // backend defaults it to `[]` and then deletes.
+      const collectedVariantTiers = collectTierDrafts(variant.pricingTiers, `on ${label}`);
+      if ("error" in collectedVariantTiers) return { error: collectedVariantTiers.error };
+
       collected.push({
         name,
         publicSlug,
@@ -1114,6 +1242,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
         stockQuantity: variantStockQuantity,
         ...(sku.length === 0 ? {} : { sku }),
         ...(rawMinimum.length === 0 ? {} : { minimumOrderQuantity }),
+        pricingTiers: collectedVariantTiers.tiers,
       });
     }
 
@@ -1961,7 +2090,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   <li>A buyer must choose one before they can add this listing to a cart.</li>
                   <li>
                     A variant with no volume pricing of its own uses the bulk tiers you set on the
-                    Pricing step.
+                    Pricing step; giving it tiers replaces them for that variant.
                   </li>
                 </ul>
               )}
@@ -2105,6 +2234,45 @@ export default function CreateListingPage({ productId }: { productId?: string })
                           className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-foreground"
                         />
                       </label>
+
+                      {/* THIS VARIANT'S OWN LADDER. Leaving it empty is a real answer — the
+                          listing's bulk tiers then apply. It is rendered here rather than on the
+                          Pricing step because a variant ladder REPLACES the listing's rather than
+                          merging with it (A1), so the two must never look like one list. */}
+                      <div className="flex flex-col gap-2 border-t border-border pt-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <span className="text-xs font-medium text-foreground">
+                              Volume pricing for this variant
+                            </span>
+                            <p className="text-[11px] leading-4 text-muted-foreground">
+                              Optional. With none, this variant uses the listing&apos;s bulk tiers.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAddVariantTierClick(variantIndex)}
+                            className="flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary/50"
+                          >
+                            <Image
+                              src="/icons/add_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                              alt=""
+                              width={16}
+                              height={16}
+                            />
+                            Add tier
+                          </button>
+                        </div>
+                        <PricingTierRows
+                          tiers={variant.pricingTiers}
+                          onTierChange={(tierIndex, field, value) =>
+                            handleVariantTierChange(variantIndex, tierIndex, field, value)
+                          }
+                          onRemoveTier={(tierIndex) =>
+                            handleRemoveVariantTierClick(variantIndex, tierIndex)
+                          }
+                        />
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -2122,8 +2290,8 @@ export default function CreateListingPage({ productId }: { productId?: string })
               )}
 
               <p className="text-xs leading-4 text-muted-foreground">
-                Volume pricing per variant is not editable here yet — the bulk tiers on the Pricing
-                step apply to every variant that has none of its own.
+                A variant&apos;s own volume pricing replaces the listing&apos;s rather than adding
+                to it. Give a variant no tiers and the Pricing step&apos;s bulk tiers apply to it.
               </p>
             </div>
           </StepCard>
@@ -2508,7 +2676,8 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 <div>
                   <h3 className="text-sm font-medium text-foreground">Bulk pricing tiers</h3>
                   <p className="text-xs text-muted-foreground">
-                    Offer a lower unit price for larger B2B orders. Optional.
+                    Offer a lower unit price for larger B2B orders. Optional. A band may carry its
+                    own lead time; leave it blank to use the listing's.
                   </p>
                 </div>
                 <button
@@ -2526,64 +2695,11 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 </button>
               </div>
 
-              {pricingTiers.length > 0 && (
-                <ul className="flex flex-col gap-2">
-                  {pricingTiers.map((tier, tierIndex) => (
-                    <li
-                      key={tier.id}
-                      className="grid grid-cols-[1fr_1fr_auto] items-end gap-3 rounded-xl border border-border p-3"
-                    >
-                      <div className="flex flex-col gap-1.5">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          Unit price
-                        </span>
-                        <div className="flex h-11 items-center rounded-lg border border-border px-3 focus-within:border-[#1DBDC5]">
-                          <span className="mr-2 text-sm text-muted-foreground">$</span>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={tier.unitPriceInDollars}
-                            onChange={(event) =>
-                              handleTierChange(tierIndex, "unitPriceInDollars", event.target.value)
-                            }
-                            placeholder="0.00"
-                            className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          Min. quantity
-                        </span>
-                        <input
-                          type="number"
-                          min="1"
-                          value={tier.minimumOrderQuantity}
-                          onChange={(event) =>
-                            handleTierChange(tierIndex, "minimumOrderQuantity", event.target.value)
-                          }
-                          placeholder="e.g. 10"
-                          className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTierClick(tierIndex)}
-                        aria-label="Remove tier"
-                        className="flex h-11 cursor-pointer items-center transition-opacity hover:opacity-70"
-                      >
-                        <Image
-                          src="/icons/delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                          alt=""
-                          width={20}
-                          height={20}
-                        />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <PricingTierRows
+                tiers={pricingTiers}
+                onTierChange={handleTierChange}
+                onRemoveTier={handleRemoveTierClick}
+              />
             </div>
 
             {/*
@@ -3268,6 +3384,93 @@ function collectPackagingFacts(
  * and grams, not centimetres and kilograms. Offering a decimal control for a field the backend
  * parses with `z.number().int()` invites a 422 for a perfectly reasonable "1.5".
  */
+/**
+ * The rows of ONE volume ladder — the listing's, or a single variant's.
+ *
+ * SHARED SO THE TWO CANNOT DRIFT. A variant ladder replaces the listing's rather than merging with
+ * it (A1), so the two are the same shape by definition, and a second copy of this markup would be a
+ * second place for A27's lead-time column to go missing.
+ */
+function PricingTierRows({
+  tiers,
+  onTierChange,
+  onRemoveTier,
+}: {
+  readonly tiers: readonly PricingTierDraft[];
+  readonly onTierChange: (tierIndex: number, field: keyof PricingTierDraft, value: string) => void;
+  readonly onRemoveTier: (tierIndex: number) => void;
+}) {
+  if (tiers.length === 0) return null;
+
+  return (
+    <ul className="flex flex-col gap-2">
+      {tiers.map((tier, tierIndex) => (
+        <li
+          key={tier.id}
+          className="grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-3 rounded-xl border border-border p-3"
+        >
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Unit price</span>
+            <div className="flex h-11 items-center rounded-lg border border-border px-3 focus-within:border-[#1DBDC5]">
+              <span className="mr-2 text-sm text-muted-foreground">$</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={tier.unitPriceInDollars}
+                onChange={(event) =>
+                  onTierChange(tierIndex, "unitPriceInDollars", event.target.value)
+                }
+                placeholder="0.00"
+                className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Min. quantity</span>
+            <input
+              type="number"
+              min="1"
+              value={tier.minimumOrderQuantity}
+              onChange={(event) =>
+                onTierChange(tierIndex, "minimumOrderQuantity", event.target.value)
+              }
+              placeholder="e.g. 10"
+              className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+            />
+          </div>
+          {/* A27. Blank is a real answer — it means the listing's own lead time applies. */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Lead time (days)</span>
+            <input
+              type="number"
+              min="0"
+              max="3650"
+              value={tier.leadTimeDays}
+              onChange={(event) => onTierChange(tierIndex, "leadTimeDays", event.target.value)}
+              placeholder="Listing's"
+              className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => onRemoveTier(tierIndex)}
+            aria-label="Remove tier"
+            className="flex h-11 cursor-pointer items-center transition-opacity hover:opacity-70"
+          >
+            <Image
+              src="/icons/delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+              alt=""
+              width={20}
+              height={20}
+            />
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function PackagingInput({
   fieldKey,
   value,

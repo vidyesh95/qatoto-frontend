@@ -25,6 +25,21 @@ import { CATEGORY_ATTRIBUTE_VALUE_KINDS } from "@/lib/store/catalog.schemas";
  */
 
 export const PRODUCT_CONDITION_SLUGS = ["new", "refurbished", "used"] as const;
+/**
+ * §20. What a moderator decided about this listing. `pending` is the default every listing starts
+ * at, so it is NOT news; `rejected` and `suspended` are.
+ */
+export const PRODUCT_MODERATION_STATES = ["pending", "approved", "rejected", "suspended"] as const;
+export type ProductModerationState = (typeof PRODUCT_MODERATION_STATES)[number];
+
+/** Copy for the two states a seller needs to act on. `pending`/`approved` render nothing. */
+export const PRODUCT_MODERATION_NOTICES: Record<ProductModerationState, string | null> = {
+  pending: null,
+  approved: null,
+  rejected: "A moderator rejected this listing. It is not visible to buyers.",
+  suspended: "A moderator suspended this listing. It is not visible to buyers.",
+};
+
 export const PRODUCT_STATUSES = ["draft", "active"] as const;
 
 export const CONDITION_LABELS = ["New", "Refurbished", "Used"] as const;
@@ -51,11 +66,30 @@ export const ProductImageSchema = z
   })
   .strip();
 
+/**
+ * One band of the volume ladder, as the SELLER sees it.
+ *
+ * ⚠️ `leadTimeDays` AND `variantId` WERE MISSING, AND `.strip()` MADE BOTH SILENT — with real
+ * consequences, because this form does not just read the ladder, it REPLACES it on every save.
+ *
+ * `leadTimeDays` (A27) is this band's own maximum lead time; `null` means "the product's
+ * `leadTimeMaxDays` applies", which is what every pre-Phase-15 row means. Because the form could
+ * not see it, `collectListingInput` rebuilt every tier without it and the backend re-inserted
+ * `null` — so **every listing edit silently destroyed whatever bands the seller had declared**.
+ * Reproduced against the live database before this was fixed: two bands carrying 14 and 28 days
+ * came back as `null, null` after a save that changed nothing.
+ *
+ * `variantId` is `null` on the product's own ladder and set on a variant's. The seller read is
+ * STRICT — it does NOT inherit — so a variant with no ladder of its own reads `[]` here, while the
+ * BUYER read substitutes the product's (`store-catalog.service.ts:1401`). Do not compare the two.
+ */
 export const ProductPricingTierSchema = z
   .object({
     id: z.string(),
+    variantId: z.string().nullable(),
     unitPriceInCents: z.number(),
     minimumOrderQuantity: z.number(),
+    leadTimeDays: z.number().int().nullable(),
     position: z.number(),
   })
   .strip();
@@ -241,7 +275,29 @@ export const PublicProductSchema = z
      * this listing has been published. This is whether the seller still sells the thing.
      */
     sellingState: z.enum(PRODUCT_SELLING_STATES),
+    /**
+     * A THIRD STATE, AND THE ONLY ONE THE SELLER DOES NOT CONTROL. `status` is draft/active and
+     * `sellingState` is whether the seller still sells the thing; this is what a MODERATOR decided.
+     *
+     * ⚠️ IT WAS ON THE WIRE AND NOT IN THIS SCHEMA, so `.strip()` dropped it and a seller whose
+     * listing was `rejected` or `suspended` was told nothing at all — the studio showed "Draft" or
+     * "Active" as though nothing had happened. That is the same defect `video.moderationVisibility
+     * State` had in the Studio before `/studio/copyright` shipped: not silence about a takedown,
+     * but a wrong answer on the one screen the person who could appeal would look at.
+     */
+    moderationState: z.enum(PRODUCT_MODERATION_STATES),
     publishedAt: z.string().nullable(),
+    /**
+     * The buyer-facing slug, so the studio can link to the live listing at
+     * `/store/product/${publicSlug}`. Server-generated and returned since the column shipped;
+     * nothing on this client had ever named it, so there was no way out of the studio to the page
+     * a seller was editing.
+     *
+     * NULL UNTIL PUBLISHED. A draft has no buyer page, so the link is gated on the value rather
+     * than on `status` — the two can disagree and the slug is the one that decides whether a URL
+     * exists.
+     */
+    publicSlug: z.string().nullable(),
     /**
      * THE THREE IDENTITY FACTS THE BUYER PAGE ALREADY RENDERS.
      *
@@ -342,6 +398,10 @@ export const ProductListRowSchema = z
     priceInCents: z.number(),
     stockQuantity: z.number(),
     status: z.enum(PRODUCT_STATUSES),
+    /** §20. What a moderator decided. `status` says draft/active and cannot carry this. */
+    moderationState: z.enum(PRODUCT_MODERATION_STATES),
+    /** NULL until published. */
+    publicSlug: z.string().nullable(),
   })
   .strip();
 
@@ -410,7 +470,7 @@ export interface CreateProductInput {
   countryOfOriginCode?: string;
   /** Free text — "piece", "set", "metre", "carton". There is no unit enum on the wire. */
   unitOfMeasure?: string;
-  pricingTiers: { unitPriceInCents: number; minimumOrderQuantity: number }[];
+  pricingTiers: ProductPricingTierInput[];
   /**
    * The spec sheet, as a REPLACE-SET. Sending it on a PATCH replaces every row the listing has;
    * sending `[]` clears them. Omitting it on create is fine — the backend defaults to `[]`.
@@ -503,9 +563,19 @@ export interface ProductHighlightInput {
  * `.strict()` object, so a hydrated `null` sent straight back is a **422 that fails the whole
  * save**. Omit the key instead.
  *
- * `pricingTiers` is omitted by this build rather than sent empty-on-purpose — a variant carrying no
- * ladder INHERITS the listing's (`commerce-pricing.ts:365-377`), so leaving it out preserves volume
- * pricing rather than clearing it.
+ * ⚠️ `pricingTiers` IS REQUIRED, AND OMITTING IT DELETES THE VARIANT'S LADDER. An earlier version of
+ * this comment claimed the opposite — that leaving the key out "preserves volume pricing" because a
+ * variant with no ladder inherits the listing's. **That was wrong, and it shipped.** Inheritance is
+ * a READ-time fallback at price resolution (`commerce-pricing.ts:365-377`), which fires when a
+ * variant has no tier ROWS; the write is what creates that state. The backend field is
+ * `.default([])`, so an absent key parses to `[]` — *defined*, not absent — and
+ * `replaceProductVariants` then runs an unconditional `delete … where variantId = X`
+ * (`products.service.ts:901`) with the insert guarded by `length > 0`.
+ *
+ * Reproduced live before the fix: a variant carrying two bands came back with zero after a save
+ * that changed nothing. The field is required here so the compiler makes every caller decide, and
+ * `[]` now means what it says — this variant has no ladder of its own and falls back to the
+ * listing's.
  */
 export interface ProductVariantInput {
   name: string;
@@ -514,6 +584,20 @@ export interface ProductVariantInput {
   priceInCents: number;
   stockQuantity: number;
   minimumOrderQuantity?: number;
+  pricingTiers: ProductPricingTierInput[];
+}
+
+/**
+ * One band on the way IN.
+ *
+ * ⚠️ `leadTimeDays` IS OPTIONAL, NOT NULLABLE. The backend types it `.optional()` inside a
+ * `.strict()` object and inserts `?? null`, so OMITTING the key means "the product's lead time
+ * applies" — which is the honest answer for a band the seller left blank. Sending `null` is a 422.
+ */
+export interface ProductPricingTierInput {
+  unitPriceInCents: number;
+  minimumOrderQuantity: number;
+  leadTimeDays?: number;
 }
 
 /** A1. The backend caps a listing at 50 variants (`products.schemas.ts:155`). */

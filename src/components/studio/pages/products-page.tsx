@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useDeleteProductMutation, useMyProductsQuery } from "@/hooks/products";
-import { centsToPriceLabel } from "@/lib/products/schemas";
+import { centsToPriceLabel, PRODUCT_MODERATION_NOTICES } from "@/lib/products/schemas";
 
 // Seller-facing list of store products, backed by GET /products/mine. Links into
 // the create wizard and, per row, into edit / delete.
@@ -104,6 +104,15 @@ export default function ProductsPage() {
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-foreground">{product.title}</p>
                 <p className="text-xs text-muted-foreground">SKU: {product.sku ?? "—"}</p>
+                {/* §20. A MODERATOR'S DECISION OUTRANKS THE DRAFT/ACTIVE BADGE, because the badge
+                    cannot express it: a rejected listing is still `status: "active"` in the row,
+                    which is exactly how the studio came to show "Active" for something buyers
+                    could not see. Only the two states a seller must act on render. */}
+                {PRODUCT_MODERATION_NOTICES[product.moderationState] !== null && (
+                  <p className="text-xs font-medium text-red-500">
+                    {PRODUCT_MODERATION_NOTICES[product.moderationState]}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -123,6 +132,16 @@ export default function ProductsPage() {
               <span className="w-24 text-right text-sm text-muted-foreground">
                 {product.stockQuantity} in stock
               </span>
+              {/* Gated on the SLUG, not on `status` — a draft has no buyer page at all, and the
+                  slug is the field that decides whether a URL exists. */}
+              {product.publicSlug !== null && (
+                <Link
+                  href={`/store/product/${product.publicSlug}`}
+                  className="text-sm font-medium text-foreground hover:underline"
+                >
+                  View live
+                </Link>
+              )}
               {confirmingDeleteId === product.id ? (
                 <span className="flex items-center gap-3">
                   <button
