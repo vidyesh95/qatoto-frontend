@@ -571,6 +571,24 @@ export const QUOTE_INCOTERMS = [
 
 export type QuoteIncoterm = (typeof QUOTE_INCOTERMS)[number];
 
+/**
+ * The human label for a term that arrives as a bare string.
+ *
+ * GUARDED, BECAUSE THE READ SIDE IS NOT NARROWED. `QuoteRevisionSchema.incoterm` and
+ * `orders.schemas.ts`'s `incotermSnapshot` are both `z.string().nullable()` — the backend column is
+ * the enum, so in practice the value is always one of eleven, but a defensive boundary does not
+ * assume that. An unrecognised code renders AS ITSELF rather than crashing or blanking: "FOB" is
+ * still more useful to a buyer than nothing.
+ */
+export function formatIncotermLabel(incoterm: string | null): string | null {
+  if (incoterm === null) return null;
+  return isQuoteIncoterm(incoterm) ? QUOTE_INCOTERM_LABELS[incoterm] : incoterm;
+}
+
+function isQuoteIncoterm(value: string): value is QuoteIncoterm {
+  return (QUOTE_INCOTERMS as readonly string[]).includes(value);
+}
+
 export const QUOTE_INCOTERM_LABELS: Record<QuoteIncoterm, string> = {
   EXW: "EXW — Ex Works",
   FCA: "FCA — Free Carrier",

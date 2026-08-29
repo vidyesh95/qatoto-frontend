@@ -17,7 +17,12 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { formatCentsLabel, formatCountLabel, formatLeadTimeRangeLabel } from "@/lib/store/format";
+import {
+  formatCentsLabel,
+  formatCountLabel,
+  formatLeadTimeRangeLabel,
+  formatPercentageLabel,
+} from "@/lib/store/format";
 import type { StoreProductCard } from "@/lib/store/organizations.schemas";
 import {
   SAMPLE_POLICY_LABELS,
@@ -27,6 +32,7 @@ import {
 
 export default function CatalogProductCard({ product }: { product: StoreProductCard }) {
   const leadTimeLabel = formatLeadTimeRangeLabel(product.leadTimeMinDays, product.leadTimeMaxDays);
+  const onTimeRate = product.fulfillmentMetrics.onTimeShipmentRate;
 
   return (
     <Link
@@ -88,6 +94,25 @@ export default function CatalogProductCard({ product }: { product: StoreProductC
         )}
 
         {leadTimeLabel && <p className="text-[11px] leading-4 text-[#6F7979]">{leadTimeLabel}</p>}
+
+        {/* A13. ON-TIME DELIVERY — the same null rule as the rating above, for the same reason.
+            `onTimeShipmentRate: null` means not enough scored orders, or a seller who declared no
+            lead time so their orders carry no promise to score. Printing 0% would publish a failure
+            they never earned; printing nothing at all would hide that they have delivered. The
+            completed count is what covers the second case. This was computed on every read and
+            discarded by the card schema until now. */}
+        {onTimeRate === null ? (
+          product.fulfillmentMetrics.completedOrderCount > 0 && (
+            <p className="text-[11px] leading-4 text-[#6F7979]">
+              {formatCountLabel(product.fulfillmentMetrics.completedOrderCount)} completed
+            </p>
+          )
+        ) : (
+          <p className="text-[11px] leading-4 text-[#6F7979]">
+            {formatPercentageLabel(onTimeRate)} on time across{" "}
+            {formatCountLabel(product.fulfillmentMetrics.onTimeSampleSize)} orders
+          </p>
+        )}
 
         <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
           {product.reviewMetrics.averageRating !== null && (

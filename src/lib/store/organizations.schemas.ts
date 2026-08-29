@@ -428,6 +428,23 @@ export const StoreProductCardSchema = z
     reviewMetrics: z
       .object({ averageRating: z.number().nullable(), reviewCount: z.number().int() })
       .strip(),
+    /**
+     * A13. How reliably this seller delivers on time — computed by the server on EVERY product
+     * read and, until now, thrown away by this schema's `.strip()`.
+     *
+     * ⚠️ `onTimeShipmentRate` IS NULL RATHER THAN 0 for a seller below the sample threshold or one
+     * who never declared a lead time, and the distinction is the whole point: printing 0% would
+     * publish a failure they never earned, while printing nothing would hide that they have
+     * delivered at all. `completedOrderCount` is what carries the second case — the same rule
+     * `factory-directory-page.tsx` already renders for the identical shape.
+     */
+    fulfillmentMetrics: z
+      .object({
+        onTimeShipmentRate: z.number().nullable(),
+        onTimeSampleSize: z.number().int(),
+        completedOrderCount: z.number().int(),
+      })
+      .strip(),
   })
   .strip();
 

@@ -35,6 +35,7 @@ import OrderCancelControl from "@/components/commerce/sections/order-cancel-cont
 import TabStrip from "@/components/home/shared/tab-strip";
 import { useOrderQuery, useViewerOrganizationsQuery } from "@/hooks/store/orders";
 import { ORDER_STATE_LABELS, SETTLEMENT_RAIL_LABELS } from "@/lib/store/cart.schemas";
+import { formatIncotermLabel } from "@/lib/store/quotes.schemas";
 import { formatCentsLabel, formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
 import {
   deriveOrderViewerRelation,
@@ -115,7 +116,7 @@ function OrderBody({
     { term: "Seller", value: order.counterpartyLegalNameSnapshot },
     // Nullable on the wire, and `DefinitionList` prints "Not provided" for a null rather than dropping
     // the row — on an order, "the seller did not state an Incoterm" is itself the fact worth showing.
-    { term: "Incoterm", value: order.incotermSnapshot },
+    { term: "Incoterm", value: formatIncotermLabel(order.incotermSnapshot) },
     { term: "Payment terms", value: order.paymentTermsSnapshot },
     {
       term: "Settles",

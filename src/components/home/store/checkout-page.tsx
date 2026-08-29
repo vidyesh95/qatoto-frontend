@@ -305,8 +305,21 @@ function ReservedStep({
         </p>
         <ul className="mt-2 space-y-2">
           {prepare.items.map((line) => (
-            <li key={`${line.productId}-${line.sellerOrganizationId}`} className="flex gap-3">
-              <span className="min-w-0 flex-1 text-sm leading-5 text-[#191C1C]">{line.title}</span>
+            // KEYED ON THE VARIANT TOO. Two variants of one listing are two prepare lines with
+            // the same product and seller, so the old key collided the moment variants became
+            // authorable — React would reuse one row's DOM for the other.
+            <li
+              key={`${line.productId}-${line.sellerOrganizationId}-${line.variantNameSnapshot ?? ""}`}
+              className="flex gap-3"
+            >
+              <span className="min-w-0 flex-1 text-sm leading-5 text-[#191C1C]">
+                {line.title}
+                {line.variantNameSnapshot !== null && (
+                  <span className="block text-xs leading-4 text-[#6F7979]">
+                    {line.variantNameSnapshot}
+                  </span>
+                )}
+              </span>
               <span className="text-xs leading-4 text-[#6F7979]">
                 × {formatCountLabel(line.quantity)}
               </span>

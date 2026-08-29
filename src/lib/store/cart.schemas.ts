@@ -106,6 +106,15 @@ export const CheckoutPrepareLineSchema = z
     // decide it.
     sellerOrganizationId: z.string(),
     title: z.string(),
+    /**
+     * A1. Which variation this line is for — the prepare row's own snapshot, which confirm copies
+     * onto the order line.
+     *
+     * ⚠️ IT WAS WRITTEN SERVER-SIDE AND PROJECTED NOWHERE. The cart names the variant and the order
+     * names it; the last screen before payment did not, so two visually identical lines were
+     * indistinguishable at the one moment that mattered. `null` on a listing sold as one thing.
+     */
+    variantNameSnapshot: z.string().nullable(),
     quantity: z.number().int(),
     // Not nullable here, unlike the cart line: preparation refuses outright if a line cannot be
     // priced, so anything that reaches this shape has a price.

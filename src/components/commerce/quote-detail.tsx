@@ -58,6 +58,7 @@ import {
   type QuoteProductLine,
   type QuoteRevision,
   type QuoteServiceLine,
+  formatIncotermLabel,
 } from "@/lib/store/quotes.schemas";
 import type { RfqCallerRelation } from "@/lib/store/rfqs.schemas";
 
@@ -166,7 +167,9 @@ function QuoteBody({
       : [
           { term: "Valid until", value: formatIsoInstantLabel(revision.validityDeadlineAt) },
           { term: "Payment terms", value: revision.paymentTerms },
-          { term: "Incoterm", value: revision.incoterm },
+          // Through the label map the composer's own picker uses — a buyer should read the same
+          // words the provider chose from, not the three-letter code underneath them.
+          { term: "Incoterm", value: formatIncotermLabel(revision.incoterm) },
           { term: "Provider notes", value: revision.notes },
         ]),
   ];
