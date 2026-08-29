@@ -21,7 +21,10 @@ and `git log` are the record of what was built and why.
 
 **Blocked on a purchase, not on code** — §11 (SMS provider), §18 (freight rate cards).
 
-**The one substantial build left** — §5, cost of goods and therefore margin.
+**The one substantial build left** — the store's catalogue is not parametric: item 3 under
+_Still open_, specified in `docs/CATEGORY_ATTRIBUTES_STRUCTURE.md`. Its cheapest half needs no
+migration. (This line used to name §5, cost of goods — that was **decided against** and the
+section below says so; it is not an open build.)
 
 **SHIPPED 2026-08-27** — `/studio/pitches`, its composer, the public pitch page and the deal-flow
 rail, on two new backend tables (migration `0148`). Proved end to end against the live database.
@@ -395,6 +398,77 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     one substantial Studio feature unbuilt, and it is unrelated to the team console above: that one
     is about who builds a venture, this would be about who may act as you. `learn` and `feedback`
     are the `/customer-service` shape and already signpost correctly.
+
+3. **Category attribute templates — the store's catalogue is not parametric, and its spec field
+   has never been written to.** Full design in
+   [docs/CATEGORY_ATTRIBUTES_STRUCTURE.md](docs/CATEGORY_ATTRIBUTES_STRUCTURE.md) and
+   `STORE_BACKEND_STRUCTURE.md` §20 / Phase 24 (backend repo).
+
+    ⚠️ **START BY COUNTING ROWS, NOT BY WRITING A MIGRATION.** The whole design rests on one
+    measured claim: `commerce_product_specification` is empty in production because no client has
+    ever written to it. The backend has accepted `specifications[]` on create and PATCH since the
+    table shipped (`products.schemas.ts:103-120`, 40 max, key uniqueness `.refine()`d), and
+    `rg "specifications" src/lib/products/schemas.ts` returns **nothing** — the seller write
+    contract does not carry the field and the five-step wizard has no step for it. If that count
+    comes back non-zero, somebody wired it and the design's opening paragraph is wrong.
+
+    **Two shipped buyer surfaces are already built on the empty field**, which is why this is
+    worth doing rather than a nice-to-have: `product-details-sheet.tsx` tabs on
+    `specifications[].group`, and `compare-products-sheet.tsx:76-97` builds its comparison table
+    by aligning rows on `specifications[].key` — the exact operation free text guarantees will
+    not match across two sellers of the same chair.
+
+    **Step 1 is worth shipping alone.** Add `specifications[]` to `src/lib/products/schemas.ts`
+    and a free-text repeater to the wizard, and both sheets stop rendering empty. It needs no
+    migration and no backend change. Everything after it — the definition tables, the inherited
+    resolution, the typed controls, the facets — is the vocabulary that makes those rows
+    comparable, and it is a Phase-24 build.
+
+    **The one rule that must survive a later trim:** a category with no filterable attributes
+    returns an empty facet array and the client renders NO new control. That is the answer to
+    "does this add UI complexity" — Books & Media pays nothing, Electronics gets voltage,
+    tolerance and package. A frontend that invented chips from distinct values in the fetched
+    page would break it, and is what `filter-href.ts:1-11` and `facet-chip-row.tsx` already
+    forbid.
+
+4. **`modelNumber` reaches nobody, and it is three edits.** `product.model_number` exists, has a
+   CHECK, and is projected onto `StoreProductDetailSchema` — but it is not in the wizard, not in
+   `store_search_document`, and not a filter. So the one column that would let a buyer search an
+   exact part code (`LM358`, a furniture model code, a garment style code) is inert. Wizard field
+    - index the column + an exact-match rank branch ahead of `websearch_to_tsquery`. **No
+      migration.** `STORE_BACKEND_STRUCTURE.md` §21.1.
+
+    ⚠️ **Do not make it unique.** Two sellers listing the same manufacturer part is the premise of
+    a parametric marketplace, not a data error. `sku` is the unique one, per seller organization.
+
+5. **Nothing on a listing can say "discontinued".** `status` is `draft|active` — an authoring
+   state. `deriveStockState` is a measurement of `stock_quantity`. A seller's declaration about
+   the FUTURE has no column, so a buyer orders a thing that no longer exists and finds out in a
+   message. `product_selling_state` = `selling | paused | discontinued`, filterable, a facet
+   bucket, excluded from search by default. `STORE_BACKEND_STRUCTURE.md` §21.2.
+
+    **The discontinued page STAYS LIVE and answers 200** — that is the feature, not a concession.
+    Buy actions suppressed, state named, and the `replaces` kind on `commerce_product_relation`
+    (already shipped, already derived nightly) renders the alternates. 404ing it would destroy the
+    inbound links and the only place a buyer learns what to buy instead.
+
+6. **There is no public document on a product** — no datasheet, no assembly manual, no size chart.
+   `commerce_encrypted_document` is envelope-encrypted, organization-private and RFQ/quote-scoped;
+   it is the right home for a business registration and the wrong home for published material.
+   `commerce_product_document` modelled on `video_document` instead: content-addressed, **no `url`
+   column** (a URL outlives the gate), PDF-only, through the existing scan pipeline so the upload
+   answers **202** and the PDP omits it until `available`. `STORE_BACKEND_STRUCTURE.md` §21.3.
+
+    ⚠️ **The cascade cleans rows, not bytes.** `deleteProduct` must delete the objects explicitly,
+    the way `deleteVideo` does. SQL cannot reach object storage.
+
+7. **The product page cannot start an RFQ, and the RFQ domain is fully built.** Not a feature —
+   a link. `commerce_rfq_product_line` is a multi-line request with quantity and a free unit
+   label, `commerce_quote_product_line` answers it line by line through `rfqProductLineId`, and
+   the composer, both studio queues and `QuoteComparisonItemSchema` all ship and are wired.
+   Meanwhile `buy-action-buttons.tsx` still says two of its three buttons are inert. A "Request a
+   quote for N units" control on the PDP, and an add-to-RFQ affordance on search results, reach
+   an end-to-end surface that exists today.
 
 ---
 
