@@ -40,6 +40,7 @@ import { StoreCategorySchema } from "@/lib/store/catalog.schemas";
 import { FreightLanePlanSchema } from "@/lib/store/freight.schemas";
 import { DeliveryEstimateBasisSchema, DeliveryEstimateSchema } from "@/lib/store/cart.schemas";
 import { PRODUCT_RELATION_KINDS } from "@/lib/store/merchandising.schemas";
+import { CATEGORY_ATTRIBUTE_VALUE_KINDS } from "@/lib/store/catalog.schemas";
 // The stage tuple is R&D's, and it is imported rather than restated: these are Postgres pgEnum
 // labels that must byte-match, and a second copy is a second thing to drift.
 import { ProjectStageSchema } from "@/lib/rnd/shared.schemas";
@@ -275,6 +276,31 @@ export const StoreProductDetailSchema = StoreProductCardSchema.extend({
         // A3. Null is ungrouped, which is every pre-Phase-8 row.
         group: z.string().nullable(),
         position: z.number().int(),
+      })
+      .strip(),
+  ),
+  /**
+   * STORE §20. The STRUCTURED answers, beside the free-text `specifications` above.
+   *
+   * ⚠️ THEY RENDER AS ONE SPEC SHEET, not two sections. Structured rows come first inside each
+   * group; free-text rows follow. "Specifications" and "Other specifications" as separate
+   * headings would expose an implementation detail as if it were a taxonomy of truth — a buyer
+   * does not care which table an answer came from.
+   */
+  attributeValues: z.array(
+    z
+      .object({
+        attributeKey: z.string(),
+        label: z.string(),
+        groupLabel: z.string().nullable(),
+        valueKind: z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS),
+        unitLabel: z.string().nullable(),
+        numericScale: z.number().int().nullable(),
+        position: z.number().int(),
+        choiceValue: z.string().nullable(),
+        choiceLabel: z.string().nullable(),
+        numericValueScaled: z.number().nullable(),
+        textValue: z.string().nullable(),
       })
       .strip(),
   ),

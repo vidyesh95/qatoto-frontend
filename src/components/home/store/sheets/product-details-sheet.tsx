@@ -21,6 +21,7 @@ import Image from "next/image";
 
 import ModalSheet from "@/components/home/shared/modal-sheet";
 import { countryLabelFromCode } from "@/lib/store/format";
+import { formatScaledAttributeValue } from "@/lib/store/catalog.schemas";
 import { PRODUCT_CONDITION_LABELS, type StoreProductDetail } from "@/lib/store/products.schemas";
 
 // Fraction of the visible tab-row width to advance per chevron click.
@@ -59,6 +60,36 @@ function buildItemDetailsTab(product: StoreProductDetail): SpecTab | null {
 }
 
 /**
+ * One structured answer as the string the sheet shows.
+ *
+ * The three kinds render differently on purpose: an enum shows its CHOICE LABEL ("Oak"), not the
+ * snake_case wire value; a number is unscaled and given its unit; text is itself. An exhaustive
+ * switch, so a fourth kind is a compile error rather than a blank row.
+ */
+function renderAttributeValue(
+  attributeValue: StoreProductDetail["attributeValues"][number],
+): string {
+  switch (attributeValue.valueKind) {
+    case "enum":
+      return attributeValue.choiceLabel ?? attributeValue.choiceValue ?? "";
+    case "number":
+      return attributeValue.numericValueScaled === null || attributeValue.numericScale === null
+        ? ""
+        : formatScaledAttributeValue(
+            attributeValue.numericValueScaled,
+            attributeValue.numericScale,
+            attributeValue.unitLabel,
+          );
+    case "text":
+      return attributeValue.textValue ?? "";
+    default: {
+      const exhaustiveKind: never = attributeValue.valueKind;
+      return exhaustiveKind;
+    }
+  }
+}
+
+/**
  * Distinct `group` values, in the order the server's `position` puts them.
  *
  * Insertion order into the Map IS the tab order, which keeps the seller's own arrangement rather
@@ -66,8 +97,28 @@ function buildItemDetailsTab(product: StoreProductDetail): SpecTab | null {
  */
 function buildSpecificationTabs(
   specifications: StoreProductDetail["specifications"],
+  attributeValues: StoreProductDetail["attributeValues"],
 ): readonly SpecTab[] {
   const rowsByGroup = new Map<string, SpecRow[]>();
+
+  /**
+   * STORE §20. STRUCTURED ANSWERS FIRST, WITHIN EACH GROUP, and free text after — one sheet, not
+   * two sections. A buyer does not care which table a fact came from; what they care about is that
+   * "Voltage" sits with the other electrical facts. Structured rows lead because they are the ones
+   * that mean the same thing on the next listing.
+   */
+  for (const attributeValue of attributeValues.toSorted(
+    (left, right) => left.position - right.position,
+  )) {
+    const groupLabel = attributeValue.groupLabel ?? UNGROUPED_TAB_LABEL;
+    const groupRows = rowsByGroup.get(groupLabel) ?? [];
+    groupRows.push({
+      label: attributeValue.label,
+      value: renderAttributeValue(attributeValue),
+    });
+    rowsByGroup.set(groupLabel, groupRows);
+  }
+
   for (const specification of specifications.toSorted(
     (left, right) => left.position - right.position,
   )) {
@@ -94,7 +145,7 @@ export default function ProductDetailsSheet({
     const itemDetailsTab = buildItemDetailsTab(product);
     return [
       ...(itemDetailsTab === null ? [] : [itemDetailsTab]),
-      ...buildSpecificationTabs(product.specifications),
+      ...buildSpecificationTabs(product.specifications, product.attributeValues),
     ];
   }, [product]);
 

@@ -37,6 +37,7 @@ import {
 import {
   buildFilterHref,
   readEnumParam,
+  readMultiParam,
   readSingleParam,
   type RawSearchParams,
 } from "@/lib/filter-href";
@@ -73,6 +74,10 @@ export default async function StoreSearchPage({ searchParams }: { searchParams: 
   const samplePolicy = readSingleParam(searchParams, "samplePolicy");
   const condition = readSingleParam(searchParams, "condition");
   const sellingState = readSingleParam(searchParams, "sellingState");
+  // §20.5. REPEATABLE, so `readMultiParam` — one key can carry several choices and the backend
+  // reads them as an OR. `readSingleParam` would silently drop all but the first.
+  const attribute = readMultiParam(searchParams, "attribute");
+  const attributeRange = readMultiParam(searchParams, "attributeRange");
   const verificationState = readSingleParam(searchParams, "verificationState");
   const leadTimeMaxDaysParam = readSingleParam(searchParams, "leadTimeMaxDays");
   // A day threshold, and a non-numeric one is DROPPED rather than forwarded — `?leadTimeMaxDays=soon`
@@ -93,6 +98,8 @@ export default async function StoreSearchPage({ searchParams }: { searchParams: 
     samplePolicy,
     condition,
     sellingState,
+    attribute,
+    attributeRange,
     verificationState,
     leadTimeMaxDays,
     cursor: requestedCursor,
@@ -110,6 +117,8 @@ export default async function StoreSearchPage({ searchParams }: { searchParams: 
     samplePolicy,
     condition,
     sellingState,
+    attribute,
+    attributeRange,
     verificationState,
     leadTimeMaxDays,
   ].filter((appliedValue) => appliedValue !== undefined).length;
@@ -241,6 +250,36 @@ function SearchFilters({
             The counts are computed with this filter omitted, so the `discontinued` bucket shows
             what clicking would actually return rather than zero.
           */}
+          {/*
+            §20.6. THE PER-CATEGORY CHIPS, and the reason the whole design does not make the UI
+            noisier: `attributeFacets` is EMPTY unless a category is in scope and defines
+            filterable attributes, so this maps over nothing on every other search. A category
+            with no attributes renders no new control at all.
+
+            Number attributes are not rendered as chips — a range needs two inputs, not a list —
+            so they are filed as the one gap this row knowingly leaves.
+          */}
+          {facets.attributeFacets.map((attributeFacet) =>
+            attributeFacet.valueKind === "enum" ? (
+              <FacetChipRow
+                key={attributeFacet.attributeKey}
+                searchParams={searchParams}
+                queryKey="attribute"
+                ariaLabel={`Filter by ${attributeFacet.label.toLowerCase()}`}
+                buckets={attributeFacet.buckets.map((bucket) => ({
+                  // The wire value is `key:choice`; the chip shows the choice's own label.
+                  value: `${attributeFacet.attributeKey}:${bucket.value}`,
+                  count: bucket.count,
+                }))}
+                labelsByEnumValue={Object.fromEntries(
+                  attributeFacet.buckets.map((bucket) => [
+                    `${attributeFacet.attributeKey}:${bucket.value}`,
+                    bucket.label,
+                  ]),
+                )}
+              />
+            ) : null,
+          )}
           <FacetChipRow
             searchParams={searchParams}
             queryKey="sellingState"

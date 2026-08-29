@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { PRODUCT_SAMPLE_POLICIES, PRODUCT_SELLING_STATES } from "@/lib/store/organizations.schemas";
+import { CATEGORY_ATTRIBUTE_VALUE_KINDS } from "@/lib/store/catalog.schemas";
 
 /**
  * Client-side contract for the store product-listing API. Data truth lives in the
@@ -209,6 +210,24 @@ export const PublicProductSchema = z
      */
     specifications: z.array(ProductSpecificationSchema),
     /**
+     * STORE §20. The listing's STRUCTURED answers, so an edit hydrates what was saved.
+     *
+     * Shaped like the buyer's, minus the display-only joins: the wizard needs the raw answer to
+     * put back in a control, not a rendered string.
+     */
+    attributeValues: z.array(
+      z
+        .object({
+          attributeKey: z.string(),
+          valueKind: z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS),
+          numericScale: z.number().int().nullable(),
+          choiceValue: z.string().nullable(),
+          numericValueScaled: z.number().nullable(),
+          textValue: z.string().nullable(),
+        })
+        .strip(),
+    ),
+    /**
      * The long-form body. Rendered by `sections/product-highlights.tsx` on the buyer page, which
      * has been mapping an empty array since it shipped — the table, both routes and the image
      * pipeline all existed and no seller surface ever wrote to them.
@@ -363,6 +382,25 @@ export interface CreateProductInput {
   packageGrossWeightGrams?: number;
   unitsPerPackage?: number;
 }
+
+/**
+ * One structured answer to a category attribute — STORE §20.
+ *
+ * ⚠️ NOT PART OF `CreateProductInput`. These go to `PUT /products/:id/attributes`, their own
+ * route, because the backend validates each one against the resolved attribute set of the
+ * product's category — which it can only look up once the listing exists and has a category.
+ *
+ * ⚠️ A TAGGED UNION, so an answer cannot arrive as two types at once. `kind` must match the
+ * DEFINITION's `valueKind` or the backend answers 422 naming the expected one; the whole point of
+ * a definition is that the answer has a type.
+ *
+ * ⚠️ `numericValueScaled` IS ALREADY MULTIPLIED by the definition's `numericScale`. No decimal
+ * crosses the wire, the same rule integer cents follow.
+ */
+export type ProductAttributeValueInput =
+  | { attributeKey: string; kind: "enum"; choiceValue: string }
+  | { attributeKey: string; kind: "number"; numericValueScaled: number }
+  | { attributeKey: string; kind: "text"; textValue: string };
 
 /** The backend's own bounds (`products.controller.ts:84-88`), mirrored so the form can refuse early. */
 export const PACKAGE_DIMENSION_MM_MAX = 50_000;

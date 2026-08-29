@@ -19,6 +19,7 @@ import { useState } from "react";
 import Image from "next/image";
 
 import ModalSheet from "@/components/home/shared/modal-sheet";
+import { formatScaledAttributeValue } from "@/lib/store/catalog.schemas";
 import { formatCentsLabel } from "@/lib/store/format";
 import type { ProductCompanionGroup, StoreProductDetail } from "@/lib/store/products.schemas";
 
@@ -34,6 +35,30 @@ interface CompareColumn {
   readonly isCurrentProduct: boolean;
   /** Spec values by key. Only the viewed product has a full set; companions carry cards only. */
   readonly specificationsByKey: ReadonlyMap<string, string>;
+}
+
+/** One structured answer as a comparable string. Mirrors the spec sheet's own renderer. */
+function renderComparableAttributeValue(
+  attributeValue: StoreProductDetail["attributeValues"][number],
+): string {
+  switch (attributeValue.valueKind) {
+    case "enum":
+      return attributeValue.choiceLabel ?? attributeValue.choiceValue ?? "";
+    case "number":
+      return attributeValue.numericValueScaled === null || attributeValue.numericScale === null
+        ? ""
+        : formatScaledAttributeValue(
+            attributeValue.numericValueScaled,
+            attributeValue.numericScale,
+            attributeValue.unitLabel,
+          );
+    case "text":
+      return attributeValue.textValue ?? "";
+    default: {
+      const exhaustiveKind: never = attributeValue.valueKind;
+      return exhaustiveKind;
+    }
+  }
 }
 
 export default function CompareProductsSheet({
@@ -73,9 +98,28 @@ export default function CompareProductsSheet({
     priceInCents: product.priceInCents,
     currency: product.currency,
     isCurrentProduct: true,
-    specificationsByKey: new Map(
-      product.specifications.map((specification) => [specification.key, specification.value]),
-    ),
+    /**
+     * STORE §20. STRUCTURED ANSWERS FIRST, keyed on `attributeKey`.
+     *
+     * ⚠️ THIS IS THE ROW THE WHOLE FEATURE EXISTS FOR. Aligning two listings on a free-text
+     * `key` only works when both sellers happened to type the same word — "Material" and
+     * "material type" produce two rows that never line up, which is why this table has been
+     * comparing almost nothing. An `attributeKey` is the same string on every listing in the
+     * category by construction, so these rows align by definition rather than by luck.
+     *
+     * Free-text rows are still merged in underneath, keyed on their own `key`, so a listing that
+     * answers something no attribute covers still shows it.
+     */
+    specificationsByKey: new Map([
+      ...product.attributeValues.map((attributeValue): [string, string] => [
+        attributeValue.label,
+        renderComparableAttributeValue(attributeValue),
+      ]),
+      ...product.specifications.map((specification): [string, string] => [
+        specification.key,
+        specification.value,
+      ]),
+    ]),
   };
 
   const selectedColumns: readonly CompareColumn[] = companions

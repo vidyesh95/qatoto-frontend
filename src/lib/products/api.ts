@@ -12,6 +12,7 @@ import {
   ProductListRowSchema,
   PublicProductSchema,
   type CreateProductInput,
+  type ProductAttributeValueInput,
   type ProductHighlightInput,
   type ProductImage,
   type ProductListRow,
@@ -109,6 +110,23 @@ export function uploadProductHighlightImage(
     formData,
     PublicProductSchema,
   );
+}
+
+/**
+ * `PUT /products/:id/attributes` — the listing's STRUCTURED answers, as a replace-set.
+ *
+ * Its own route rather than a field on the create/patch body, because the values are validated
+ * against the category's resolved attribute set — which the product's category decides, and which
+ * therefore has to be read after the listing exists.
+ *
+ * ⚠️ SENDING `[]` CLEARS THEM. That is the replace-set's meaning; the free-text `specifications`
+ * on the main body are untouched by this call.
+ */
+export function replaceProductAttributeValues(
+  productId: string,
+  values: readonly ProductAttributeValueInput[],
+): Promise<ActionResponse<unknown>> {
+  return sendJson(`/products/${productId}/attributes`, "PUT", { values }, z.unknown());
 }
 
 export function publishProduct(productId: string): Promise<ActionResponse<PublicProduct>> {

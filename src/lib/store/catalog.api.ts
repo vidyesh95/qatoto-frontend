@@ -13,12 +13,14 @@
 
 import { buildQueryString, getJson, type ActionResponse, type RequestOptions } from "@/lib/http";
 import {
+  CategoryAttributeListSchema,
   StoreCategoryDetailSchema,
   StoreCategoryListSchema,
   StoreSearchPageSchema,
   type CategoryDetailFilter,
   type CategoryListFilter,
   type StoreCategory,
+  type CategoryAttribute,
   type StoreCategoryDetail,
   type StoreSearchFilter,
   type StoreSearchPage,
@@ -83,6 +85,28 @@ export function searchStore(
 ): Promise<ActionResponse<StoreSearchPage>> {
   const path = `/store/search${buildQueryString({ ...filter })}`;
   return getJson(path, StoreSearchPageSchema, options);
+}
+
+/**
+ * `GET /store/categories/:slug/attributes` — the RESOLVED attribute set, STORE §20.
+ *
+ * Resolved means the category's own definitions PLUS every ancestor's, with a nearer definition
+ * shadowing a farther one on the same key. The caller never walks the tree itself; asking about a
+ * leaf is asking about everything that applies to it.
+ *
+ * Public, so the seller wizard can read it before a listing exists and the buyer's filter row can
+ * read it before anyone signs in.
+ */
+export async function getStoreCategoryAttributes(
+  categorySlug: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<CategoryAttribute[]>> {
+  const result = await getJson(
+    `/store/categories/${encodeURIComponent(categorySlug)}/attributes`,
+    CategoryAttributeListSchema,
+    options,
+  );
+  return result.success ? { success: true, data: result.data.attributes } : result;
 }
 
 /**

@@ -399,58 +399,43 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     is about who builds a venture, this would be about who may act as you. `learn` and `feedback`
     are the `/customer-service` shape and already signpost correctly.
 
-3. **Category attribute templates — the store's catalogue is not parametric, and its spec field
-   has never been written to.** Full design in
-   [docs/CATEGORY_ATTRIBUTES_STRUCTURE.md](docs/CATEGORY_ATTRIBUTES_STRUCTURE.md) and
-   `STORE_BACKEND_STRUCTURE.md` §20 / Phase 24 (backend repo).
+3. **Category attribute templates — the vocabulary SHIPPED; the seller request queue did not.**
+   Design in [docs/CATEGORY_ATTRIBUTES_STRUCTURE.md](docs/CATEGORY_ATTRIBUTES_STRUCTURE.md) and
+   `STORE_BACKEND_STRUCTURE.md` §20 / Phase 24.
 
-    ⚠️ **START BY COUNTING ROWS, NOT BY WRITING A MIGRATION.** The whole design rests on one
-    measured claim: `commerce_product_specification` is empty in production because no client has
-    ever written to it. The backend has accepted `specifications[]` on create and PATCH since the
-    table shipped (`products.schemas.ts:103-120`, 40 max, key uniqueness `.refine()`d), and
-    `rg "specifications" src/lib/products/schemas.ts` returns **nothing** — the seller write
-    contract does not carry the field and the five-step wizard has no step for it. If that count
-    comes back non-zero, somebody wired it and the design's opening paragraph is wrong.
+    **Shipped, migrations `0151` + `0152`, both applied to the live database and verified against
+    `information_schema` and `pg_enum` rather than drizzle's exit code:**
+    `commerce_category_attribute`, `_choice`, `commerce_product_attribute_value`, admin CRUD on
+    the existing categories router, the public resolved read, the seller replace-set at
+    `PUT /products/:id/attributes`, the `attribute` / `attributeRange` filters, `attributeFacets`,
+    the typed wizard controls, the merged PDP spec sheet, and the compare table now aligning on
+    `attributeKey`.
 
-    **Two shipped buyer surfaces are already built on the empty field**, which is why this is
-    worth doing rather than a nice-to-have: `product-details-sheet.tsx` tabs on
-    `specifications[].group`, and `compare-products-sheet.tsx:76-97` builds its comparison table
-    by aligning rows on `specifications[].key` — the exact operation free text guarantees will
-    not match across two sellers of the same chair.
+    **Proved live over HTTP**, with probe data seeded and reverted: an attribute defined on a
+    PARENT resolved on a child leaf; the filter narrowed 5 results to 2; OR-within-a-key returned
+    2; a choice nobody answers returned 0; and — the one that matters — with the results filtered
+    to `pine` and showing nothing, the facet still reported `oak · 2`, i.e. what clicking would
+    return rather than what is on screen. In the browser: `46.5` reached the wire as `465` and
+    came back as "45 mm" on the buyer's Dimensions tab.
 
-    ~~**Step 1 is worth shipping alone.**~~ **SHIPPED.** `specifications[]` is on
-    `PublicProductSchema` and `CreateProductInput`, and the wizard has a sixth step — a
-    Specifications repeater between Description and Pricing, with edit-mode hydration and a
-    replace-set save. No migration, no backend change: the routes had accepted the field since
-    the table shipped. So `rg "specifications" src/lib/products/schemas.ts` now RETURNS HITS, and
-    the paragraph above is a record of what was true before, not a check to re-run.
+    ⚠️ **STILL OPEN: `commerce_category_attribute_request` IS AN UNUSED TABLE.** It exists with its
+    queue index and its review CHECK, and NOTHING reads or writes it — no service, no route, no UI.
+    That is the documented cut line, not an oversight: a seller whose field has no definition falls
+    back to a free-text specification row, which works. But an unused table is unverified schema,
+    so either build the queue (mirror `decideCommerceCategoryRequest` — the discriminated verdict
+    where rejection requires a note) or drop the table.
 
-    Three client-side refusals ride with it, each preventing a 422 the form had the facts to
-    stop: a half-filled row, a duplicate key compared case-insensitively with the backend's own
-    `toLocaleLowerCase("en-US")`, and more than 40 rows. ⚠️ **And `group` is OMITTED, never
-    nulled** — the read view is `string | null`, the write schema is `.optional()` inside a
-    `.strict()` object, so round-tripping a hydrated null fails the whole save.
+    ⚠️ **TWO MORE GAPS, both deliberate and both named here so nobody infers they were done.**
+    There is **no admin UI** for attributes — `store-category-admin-page.tsx` is untouched, so
+    definitions can only be created by direct SQL today. And `isRequiredForPublish` is stored,
+    rendered as an asterisk, and **enforced nowhere**: `projectListingCompleteness` still has its
+    five keys, so a listing publishes with a required attribute blank.
 
-    **Everything after step 1 is still open** — the definition tables, the inherited resolution,
-    the typed controls, the facets. That is the vocabulary that makes these rows comparable, and
-    it is a Phase-24 build. Until it lands, two sellers can still spell one field two ways.
-
-    ⚠️ **The new step is NOT a publish requirement**, and adding one now would be wrong.
-    `LISTING_REQUIREMENT_KEYS` is still five, server-owned; a free-text sheet cannot say which
-    fields a category needs, which is exactly what the attribute definitions are for.
-
-    **One bug was closed on the way past.** Inserting a step moved `pricing` from index 3 to 4,
-    and both the review-step "Edit" links and the publish checklist's `stepIndexByRequirementKey`
-    carried hardcoded ordinals — so "Add" beside a missing price would have opened the
-    specification sheet. Both now resolve through `stepIndexOf(stepId)`, so the next inserted step
-    cannot reintroduce it and a stale id is a compile error rather than a wrong jump.
-
-    **The one rule that must survive a later trim:** a category with no filterable attributes
-    returns an empty facet array and the client renders NO new control. That is the answer to
-    "does this add UI complexity" — Books & Media pays nothing, Electronics gets voltage,
-    tolerance and package. A frontend that invented chips from distinct values in the fetched
-    page would break it, and is what `filter-href.ts:1-11` and `facet-chip-row.tsx` already
-    forbid.
+    **One real bug this caught, worth keeping.** `min()`/`max()` over a `bigint` come back from
+    node-postgres as STRINGS, so the number facet shipped `minScaled: "450"` and the frontend's
+    `z.number()` rejected the whole search response — the page rendered "Client-side contract
+    validation failed". Fixed with `.mapWith(Number)`, which the price facet already did for the
+    same reason. The defensive parse boundary is what surfaced it.
 
 4. ~~**`modelNumber` reaches nobody.**~~ **MOSTLY SHIPPED. One piece is left and it needs a
    migration.**

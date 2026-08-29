@@ -11,11 +11,13 @@ import {
   publishProduct,
   updateProduct,
   uploadProductImage,
+  replaceProductAttributeValues,
   replaceProductHighlights,
   uploadProductHighlightImage,
 } from "@/lib/products/api";
 import type {
   CreateProductInput,
+  ProductAttributeValueInput,
   ProductHighlightInput,
   UpdateProductInput,
 } from "@/lib/products/schemas";
@@ -71,6 +73,8 @@ interface CreateListingVariables {
   /** The long-form body. Saved after the listing exists — see `saveProductHighlights`. */
   highlights: readonly ProductHighlightInput[];
   highlightImageFileByIndex: ReadonlyMap<number, File>;
+  /** STORE §20. Structured answers, saved through their own route after the listing exists. */
+  attributeValues: readonly ProductAttributeValueInput[];
   publish: boolean;
   onProgress?: (progress: SaveProgress) => void;
 }
@@ -118,6 +122,7 @@ export function useCreateListingMutation() {
       imageFiles,
       highlights,
       highlightImageFileByIndex,
+      attributeValues,
       publish,
       onProgress,
     }: CreateListingVariables) => {
@@ -133,6 +138,12 @@ export function useCreateListingMutation() {
       // so anything that should count towards it has to be saved first.
       if (highlights.length > 0) {
         await saveProductHighlights(created.id, highlights, highlightImageFileByIndex, onProgress);
+      }
+
+      // AFTER the listing exists: the backend validates each answer against the resolved
+      // attribute set of the product's category, which it cannot look up before there is one.
+      if (attributeValues.length > 0) {
+        unwrap(await replaceProductAttributeValues(created.id, attributeValues));
       }
 
       if (publish) {
@@ -160,6 +171,7 @@ interface UpdateListingVariables {
   removedImageIds: string[];
   highlights: readonly ProductHighlightInput[];
   highlightImageFileByIndex: ReadonlyMap<number, File>;
+  attributeValues: readonly ProductAttributeValueInput[];
   /** true = ensure the listing ends up active (publish); false = leave as-is. */
   publish: boolean;
   onProgress?: (progress: SaveProgress) => void;
@@ -175,6 +187,7 @@ export function useUpdateListingMutation() {
       removedImageIds,
       highlights,
       highlightImageFileByIndex,
+      attributeValues,
       publish,
       onProgress,
     }: UpdateListingVariables) => {
@@ -193,6 +206,10 @@ export function useUpdateListingMutation() {
       // ALWAYS sent on an edit, even when empty — this is a replace-set, so "no blocks" is a real
       // instruction (the seller deleted them) and skipping the call would silently keep them.
       await saveProductHighlights(productId, highlights, highlightImageFileByIndex, onProgress);
+
+      // ALWAYS sent on an edit, even when empty: a replace-set's "no answers" is the seller
+      // having cleared them, and skipping the call would silently keep the old ones.
+      unwrap(await replaceProductAttributeValues(productId, attributeValues));
 
       if (publish) {
         onProgress?.({ phase: "publishing" });

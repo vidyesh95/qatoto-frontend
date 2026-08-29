@@ -23,7 +23,20 @@ import type { StoreCategory } from "@/lib/store/catalog.schemas";
  * resolving; the id is the part that has to be right.
  */
 export type ListingCategoryChoice =
-  | { kind: "category"; categoryId: string; displayLabel: string }
+  | {
+      kind: "category";
+      categoryId: string;
+      displayLabel: string;
+      /**
+       * STORE §20. The public slug, which the attribute read is keyed on.
+       *
+       * NULL WHILE A HYDRATED EDIT IS STILL RESOLVING, for exactly the reason `displayLabel` is
+       * empty there: the product read returns a category ID and nothing else, and inventing a
+       * slug from it would be a guess the attribute route would 404. The picker fills it in as
+       * soon as the seller touches the control, and the attribute step says so meanwhile.
+       */
+      categorySlug: string | null;
+    }
   | { kind: "request"; categoryRequestId: string; displayLabel: string };
 
 /**
@@ -73,7 +86,12 @@ export function ListingCategoryPicker({
     onChange(
       nextRootId === "" || chosenRoot === undefined
         ? null
-        : { kind: "category", categoryId: nextRootId, displayLabel: chosenRoot.name },
+        : {
+            kind: "category",
+            categoryId: nextRootId,
+            displayLabel: chosenRoot.name,
+            categorySlug: chosenRoot.slug,
+          },
     );
   }
 
@@ -124,6 +142,7 @@ export function ListingCategoryPicker({
                       kind: "category",
                       categoryId: chosenChild.id,
                       displayLabel: chosenChild.name,
+                      categorySlug: chosenChild.slug,
                     },
               );
             }}

@@ -93,6 +93,102 @@ export const StoreCategoryFacetsSchema = z
  * artifact of having no backend — a rail is a curated strip and a category is a filtered
  * result set, and the two are not the same control.
  */
+/**
+ * STORE §20. One question a category asks of every listing under it.
+ *
+ * ⚠️ `attributeKey` AND `choiceValue` ARE snake_case WIRE IDENTITIES, not labels, and are never
+ * re-cased. A stored value points at the key and a saved filter link names it; kebab-casing one
+ * would be a 422 from the backend's own CHECK. `label` is the display string — that is what
+ * changes when the wording changes.
+ */
+export const CATEGORY_ATTRIBUTE_VALUE_KINDS = ["enum", "number", "text"] as const;
+export type CategoryAttributeValueKind = (typeof CATEGORY_ATTRIBUTE_VALUE_KINDS)[number];
+
+export const CategoryAttributeChoiceSchema = z
+  .object({
+    choiceValue: z.string(),
+    label: z.string(),
+    position: z.number().int(),
+  })
+  .strip();
+
+export const CategoryAttributeSchema = z
+  .object({
+    attributeKey: z.string(),
+    label: z.string(),
+    /** Becomes the tab on the buyer's spec sheet. Null is ungrouped. */
+    groupLabel: z.string().nullable(),
+    valueKind: z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS),
+    /** `number` only — rendered as a suffix, never parsed back out of the value. */
+    unitLabel: z.string().nullable(),
+    /** `number` only. The stored integer is the real value multiplied by 10^scale. */
+    numericScale: z.number().int().nullable(),
+    /** Only `enum` and `number` can be true — a free-text filter is worse than none. */
+    isFilterable: z.boolean(),
+    isRequiredForPublish: z.boolean(),
+    position: z.number().int(),
+    choices: z.array(CategoryAttributeChoiceSchema),
+  })
+  .strip();
+
+export const CategoryAttributeListSchema = z
+  .object({ attributes: z.array(CategoryAttributeSchema) })
+  .strip();
+
+/**
+ * STORE §20.6. One attribute's facet.
+ *
+ * A DISCRIMINATED UNION on `valueKind`, mirroring the backend rather than a looser shape: an enum
+ * facet has buckets and no bounds, a number facet has bounds and no buckets, and a renderer must
+ * not have to guess which. `text` never appears — a free-text attribute is display-only.
+ */
+export const AttributeFacetSchema = z.discriminatedUnion("valueKind", [
+  z
+    .object({
+      valueKind: z.literal("enum"),
+      attributeKey: z.string(),
+      label: z.string(),
+      groupLabel: z.string().nullable(),
+      buckets: z.array(
+        z.object({ value: z.string(), label: z.string(), count: z.number().int() }).strip(),
+      ),
+    })
+    .strip(),
+  z
+    .object({
+      valueKind: z.literal("number"),
+      attributeKey: z.string(),
+      label: z.string(),
+      groupLabel: z.string().nullable(),
+      unitLabel: z.string().nullable(),
+      numericScale: z.number().int(),
+      minScaled: z.number().nullable(),
+      maxScaled: z.number().nullable(),
+      count: z.number().int(),
+    })
+    .strip(),
+]);
+
+export type CategoryAttribute = z.infer<typeof CategoryAttributeSchema>;
+export type CategoryAttributeChoice = z.infer<typeof CategoryAttributeChoiceSchema>;
+export type AttributeFacet = z.infer<typeof AttributeFacetSchema>;
+
+/**
+ * A scaled integer back to a readable number.
+ *
+ * The wire carries `4700` with a scale of 2; a person reads `47`. Formatting happens here and
+ * nowhere else, the same arrangement integer cents follow.
+ */
+export function formatScaledAttributeValue(
+  numericValueScaled: number,
+  numericScale: number,
+  unitLabel: string | null,
+): string {
+  const value = numericValueScaled / 10 ** numericScale;
+  const formatted = value.toLocaleString("en-US", { maximumFractionDigits: numericScale });
+  return unitLabel === null ? formatted : `${formatted} ${unitLabel}`;
+}
+
 export const StoreCategoryDetailSchema = z
   .object({
     category: StoreCategorySchema,
@@ -219,6 +315,12 @@ export const StoreSearchFacetsSchema = z
     samplePolicies: z.array(StoreFacetBucketSchema),
     conditions: z.array(StoreFacetBucketSchema),
     sellingStates: z.array(StoreFacetBucketSchema),
+    /**
+     * §20.6. EMPTY UNLESS A CATEGORY IS IN SCOPE, and empty for a category that defines no
+     * filterable attributes. That is the rule the whole design rests on: a category with no
+     * attributes renders no new control, so Books & Media costs a buyer nothing.
+     */
+    attributeFacets: z.array(AttributeFacetSchema),
     verificationStates: z.array(StoreFacetBucketSchema),
     documentKinds: z.array(StoreFacetBucketSchema),
     providerKinds: z.array(StoreFacetBucketSchema),
@@ -278,6 +380,14 @@ export interface StoreSearchFilter {
    * value narrows to exactly that state, which is how a buyer asks to see retired listings.
    */
   readonly sellingState?: string;
+  /**
+   * §20.5. `attributeKey:choiceValue`, repeatable, max 6. OR within one key, AND across keys.
+   * ⚠️ Sending an attribute filter forces `documentKind=product` server-side — offerings and
+   * suppliers have no category attributes.
+   */
+  readonly attribute?: readonly string[];
+  /** `attributeKey:minScaled:maxScaled`, repeatable, max 4. Bounds are ALREADY scaled. */
+  readonly attributeRange?: readonly string[];
   readonly verificationState?: string;
   /** A day threshold, not a range — matches the bucketed facet. */
   readonly leadTimeMaxDays?: number;

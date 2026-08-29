@@ -11,13 +11,15 @@ import { useQuery } from "@tanstack/react-query";
 
 import { unwrap } from "@/lib/http";
 import { listOwnStoreCategoryRequests } from "@/lib/store/admin-categories.api";
-import { listStoreCategories } from "@/lib/store/catalog.api";
+import { getStoreCategoryAttributes, listStoreCategories } from "@/lib/store/catalog.api";
 
 export const storeCategoryBrowseKeys = {
   all: ["store-category-browse"] as const,
   level: (parentCategoryId: string | null) =>
     ["store-category-browse", "level", parentCategoryId ?? "root"] as const,
   ownRequests: () => ["store-category-browse", "own-requests"] as const,
+  attributes: (categorySlug: string) =>
+    ["store-category-browse", "attributes", categorySlug] as const,
 };
 
 /**
@@ -62,5 +64,23 @@ export function useOwnStoreCategoryRequestsQuery(isEnabled: boolean) {
     queryFn: async () => unwrap(await listOwnStoreCategoryRequests()),
     enabled: isEnabled,
     retry: false,
+  });
+}
+
+/**
+ * The RESOLVED attribute set for a category — STORE §20.
+ *
+ * Keyed on the SLUG rather than the id because that is what the public route takes, and the
+ * wizard holds an id: the caller maps one to the other once rather than this hook guessing.
+ *
+ * `isEnabled` is false until a category is chosen, so a wizard on step one fires nothing. An
+ * empty array is a real answer — most categories define no attributes yet, and the step renders
+ * its free-text repeater alone rather than an error.
+ */
+export function useStoreCategoryAttributesQuery(categorySlug: string | null) {
+  return useQuery({
+    queryKey: storeCategoryBrowseKeys.attributes(categorySlug ?? ""),
+    queryFn: async () => unwrap(await getStoreCategoryAttributes(categorySlug ?? "")),
+    enabled: categorySlug !== null && categorySlug.length > 0,
   });
 }

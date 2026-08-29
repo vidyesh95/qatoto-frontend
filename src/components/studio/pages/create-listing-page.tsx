@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useStoreCategoryAttributesQuery } from "@/hooks/store/categories";
+import type { CategoryAttribute } from "@/lib/store/catalog.schemas";
 import {
   useCreateListingMutation,
   useProductQuery,
@@ -35,6 +37,7 @@ import {
   UNITS_PER_PACKAGE_MAX,
   type CreateProductInput,
   type ListingCompleteness,
+  type ProductAttributeValueInput,
   type ProductHighlightInput,
 } from "@/lib/products/schemas";
 import {
@@ -234,6 +237,15 @@ export default function CreateListingPage({ productId }: { productId?: string })
   // buyer's spec sheet turns into a tab. There is no canonical vocabulary yet, so two sellers can
   // still spell one field two ways — that is `docs/CATEGORY_ATTRIBUTES_STRUCTURE.md`, not this.
   const [specifications, setSpecifications] = useState<SpecificationDraft[]>([]);
+  /**
+   * STORE §20. The typed answers, keyed by `attributeKey` and held as STRINGS — a select and a
+   * number input both produce strings, and the conversion to a scaled integer happens once, in
+   * `collectAttributeValues`, the same way dollars become cents.
+   *
+   * An absent or empty entry means unanswered, which is a real state: an attribute the seller
+   * has not filled in is simply not sent.
+   */
+  const [attributeAnswers, setAttributeAnswers] = useState<Record<string, string>>({});
 
   // Step 5 — the long-form body. Object URLs for newly picked files are revoked on remove and on
   // unmount, the same discipline the gallery uses; never from an effect that then setState.
@@ -278,6 +290,18 @@ export default function CreateListingPage({ productId }: { productId?: string })
 
   // Rows that will survive `collectListingInput`. An added-but-untouched row is dropped there, so
   // the review step must not count it as a specification the listing is going to have.
+  /**
+   * The category's RESOLVED attribute set — its own definitions plus every ancestor's.
+   *
+   * Keyed on the SLUG, which the picker does not hold, so this reads only once a real category
+   * is chosen. A pending category REQUEST resolves nothing on purpose: the category does not
+   * exist yet, so it asks no questions, and the free-text repeater below is the whole answer.
+   */
+  const selectedCategorySlug =
+    categoryChoice?.kind === "category" ? categoryChoice.categorySlug : null;
+  const attributesQuery = useStoreCategoryAttributesQuery(selectedCategorySlug);
+  const categoryAttributes = attributesQuery.data ?? [];
+
   // Blocks that will survive `collectHighlights` — both fields are required for a block to save.
   const filledHighlightCount = highlights.filter(
     (highlight) => highlight.title.trim().length > 0 && highlight.bodyText.trim().length > 0,
@@ -332,7 +356,15 @@ export default function CreateListingPage({ productId }: { productId?: string })
         ? // The label is left empty rather than guessed: the read returns the category ID,
           // not its name, and inventing one here would put a wrong word in the review step.
           // The picker fills it in as soon as the seller touches the control.
-          { kind: "category", categoryId: loadedProduct.categoryId, displayLabel: "" }
+          {
+            kind: "category",
+            categoryId: loadedProduct.categoryId,
+            displayLabel: "",
+            // NULL for the same reason the label is empty: the product read returns an id, not a
+            // slug, and the attribute step says "pick your category again to load its fields"
+            // rather than guessing one the route would 404.
+            categorySlug: null,
+          }
         : {
             kind: "request",
             categoryRequestId: loadedProduct.pendingCategoryRequestId,
@@ -415,6 +447,26 @@ export default function CreateListingPage({ productId }: { productId?: string })
           imageFile: null,
           imagePreviewUrl: null,
         })),
+    );
+    /**
+     * STORE §20. The structured answers back into form strings — the inverse of
+     * `collectAttributeValues`, including UNSCALING a number by its definition's scale.
+     *
+     * The seller's own product read carries these, so an edit shows what was saved even before
+     * the category picker has been touched and the attribute DEFINITIONS have loaded.
+     */
+    setAttributeAnswers(
+      Object.fromEntries(
+        loadedProduct.attributeValues.map((attributeValue) => [
+          attributeValue.attributeKey,
+          attributeValue.choiceValue ??
+            (attributeValue.numericValueScaled === null
+              ? (attributeValue.textValue ?? "")
+              : String(
+                  attributeValue.numericValueScaled / 10 ** (attributeValue.numericScale ?? 0),
+                )),
+        ]),
+      ),
     );
     setSpecifications(
       loadedProduct.specifications
@@ -807,6 +859,56 @@ export default function CreateListingPage({ productId }: { productId?: string })
     return { plan, imageFileByIndex };
   }
 
+  /**
+   * STORE §20. The typed answers, from form strings to the wire's tagged union.
+   *
+   * ⚠️ A NUMBER IS SCALED HERE AND NOWHERE ELSE. The definition's `numericScale` says how many
+   * decimal places the integer carries, so `4.7` with a scale of 2 becomes `470`. Rounding rather
+   * than truncating, because a seller typing 4.705 into a 2-decimal field means 4.71 and not 4.70.
+   *
+   * An unanswered attribute is OMITTED, not sent empty: unanswered is a real state, and the
+   * backend's replace-set reads absence as "this listing does not state that".
+   */
+  function collectAttributeValues(): ProductAttributeValueInput[] {
+    const collected: ProductAttributeValueInput[] = [];
+    for (const attribute of categoryAttributes) {
+      const rawAnswer = (attributeAnswers[attribute.attributeKey] ?? "").trim();
+      if (rawAnswer.length === 0) continue;
+
+      switch (attribute.valueKind) {
+        case "enum":
+          collected.push({
+            attributeKey: attribute.attributeKey,
+            kind: "enum",
+            choiceValue: rawAnswer,
+          });
+          break;
+        case "number": {
+          const parsed = Number(rawAnswer);
+          if (!Number.isFinite(parsed)) continue;
+          collected.push({
+            attributeKey: attribute.attributeKey,
+            kind: "number",
+            numericValueScaled: Math.round(parsed * 10 ** (attribute.numericScale ?? 0)),
+          });
+          break;
+        }
+        case "text":
+          collected.push({
+            attributeKey: attribute.attributeKey,
+            kind: "text",
+            textValue: rawAnswer,
+          });
+          break;
+        default: {
+          const exhaustiveKind: never = attribute.valueKind;
+          throw new Error(`Unhandled attribute kind: ${String(exhaustiveKind)}`);
+        }
+      }
+    }
+    return collected;
+  }
+
   function handleSave(publish: boolean) {
     if (isSaving) return;
     const input = collectListingInput();
@@ -816,6 +918,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
     }
     setLocalError(null);
     const collectedHighlights = collectHighlights();
+    const collectedAttributeValues = collectAttributeValues();
 
     if (isEditMode && productId) {
       updateMutation.mutate(
@@ -826,6 +929,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
           removedImageIds,
           highlights: collectedHighlights.plan,
           highlightImageFileByIndex: collectedHighlights.imageFileByIndex,
+          attributeValues: collectedAttributeValues,
           publish,
           onProgress: setSaveProgress,
         },
@@ -840,6 +944,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
         imageFiles: selectedImageFiles,
         highlights: collectedHighlights.plan,
         highlightImageFileByIndex: collectedHighlights.imageFileByIndex,
+        attributeValues: collectedAttributeValues,
         publish,
         onProgress: setSaveProgress,
       },
@@ -909,6 +1014,134 @@ export default function CreateListingPage({ productId }: { productId?: string })
         </div>
       </div>
     );
+  }
+
+  /**
+   * STORE §20. The category's typed questions, or an honest sentence about why there are none.
+   *
+   * NOT A DISCRIMINATED UNION over a query state here, deliberately: the three cases are decided
+   * by two booleans the component already holds, and lifting them into a union would be ceremony
+   * around an `if`. The exhaustive-switch rule earns its keep where a WIRE value can grow a
+   * variant — which is `attribute.valueKind` below, and that one is switched exhaustively.
+   */
+  function renderCategoryAttributes() {
+    if (selectedCategorySlug === null) {
+      return (
+        <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+          {isEditMode
+            ? "Pick your category again on the first step to load the fields it asks for. Anything you have already typed below is kept."
+            : "Choose a category on the first step and the fields it asks for will appear here."}
+        </p>
+      );
+    }
+    if (attributesQuery.isPending) {
+      return <p className="text-sm text-muted-foreground">Loading this category&apos;s fields…</p>;
+    }
+    if (categoryAttributes.length === 0) {
+      return (
+        <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+          This category does not define any standard fields yet, so use the free-text rows below.
+        </p>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-3">
+        <div>
+          <h3 className="text-sm font-medium text-foreground">
+            {categoryChoice?.displayLabel === "" || categoryChoice === null
+              ? "Category fields"
+              : `${categoryChoice.displayLabel} fields`}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Every listing in this category answers these, so buyers can filter and compare on them.
+            Blank means you have not stated it.
+          </p>
+        </div>
+        <ul className="flex flex-col gap-3">
+          {categoryAttributes.map((attribute) => (
+            <li key={attribute.attributeKey} className="flex flex-col gap-1.5">
+              <label
+                htmlFor={`attribute-${attribute.attributeKey}`}
+                className="text-sm font-medium text-foreground"
+              >
+                {attribute.label}
+                {attribute.isRequiredForPublish && <span className="text-[#8C1D18]"> *</span>}
+              </label>
+              {renderAttributeControl(attribute)}
+              {attribute.groupLabel !== null && (
+                <p className="text-xs text-muted-foreground">
+                  Shows under &ldquo;{attribute.groupLabel}&rdquo; on your listing.
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  /** One control per `valueKind`. Exhaustive, so a fourth kind is a compile error. */
+  function renderAttributeControl(attribute: CategoryAttribute) {
+    const controlId = `attribute-${attribute.attributeKey}`;
+    const answer = attributeAnswers[attribute.attributeKey] ?? "";
+    const setAnswer = (value: string) => {
+      setAttributeAnswers((previous) => ({ ...previous, [attribute.attributeKey]: value }));
+    };
+
+    switch (attribute.valueKind) {
+      case "enum":
+        return (
+          <select
+            id={controlId}
+            value={answer}
+            onChange={(event) => setAnswer(event.target.value)}
+            className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+          >
+            <option value="">Not stated</option>
+            {attribute.choices.map((choice) => (
+              <option key={choice.choiceValue} value={choice.choiceValue}>
+                {choice.label}
+              </option>
+            ))}
+          </select>
+        );
+      case "number":
+        return (
+          <div className="flex h-12 items-center rounded-lg border border-border px-3 focus-within:border-[#1DBDC5]">
+            <input
+              id={controlId}
+              type="number"
+              // The step follows the definition's scale: a 2-decimal attribute accepts 0.01, a
+              // whole-number one accepts 1. Typing a finer value than the scale holds would be
+              // silently rounded at save, so the control refuses it up front.
+              step={attribute.numericScale === null ? 1 : 10 ** -attribute.numericScale}
+              value={answer}
+              onChange={(event) => setAnswer(event.target.value)}
+              placeholder="Not stated"
+              className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+            {attribute.unitLabel !== null && (
+              <span className="ml-2 text-sm text-muted-foreground">{attribute.unitLabel}</span>
+            )}
+          </div>
+        );
+      case "text":
+        return (
+          <input
+            id={controlId}
+            type="text"
+            value={answer}
+            onChange={(event) => setAnswer(event.target.value)}
+            placeholder="Not stated"
+            className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+          />
+        );
+      default: {
+        const exhaustiveKind: never = attribute.valueKind;
+        return exhaustiveKind;
+      }
+    }
   }
 
   function renderCurrentStep(stepId: ListingStepId) {
@@ -1271,6 +1504,16 @@ export default function CreateListingPage({ productId }: { productId?: string })
             title="Specifications"
             subtitle="The facts a buyer compares before they choose. Voltage, material, dimensions — whatever your category turns on."
           >
+            {/*
+              STORE §20. THE CATEGORY'S OWN QUESTIONS, above the free-text repeater.
+
+              Three states, said apart rather than collapsed into one empty-ish panel: no category
+              chosen yet, a category that asks nothing, and a resolved set. The third is the only
+              one that renders controls, and a category with no attributes costs the seller a
+              single sentence rather than a blank form.
+            */}
+            {renderCategoryAttributes()}
+
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div>
