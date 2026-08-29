@@ -189,12 +189,48 @@ row's slug is rendered READ-ONLY, and only a new row's slug follows what is type
 is a RETIRED variant, so silently skipping one would turn a cleared price field into lost inventory a
 seller's past orders still name.
 
-**Two things this deliberately did not do**, both recorded rather than hidden:
+~~**Per-variant volume pricing is not authorable.**~~ ⚠️ **THAT CLAIM WAS WRONG AND IT WAS A
+DATA-LOSS BUG. NOW SHIPPED AND FIXED.** The reasoning — "omitting `pricingTiers` is safe because a
+variant with no ladder inherits the listing's" — confused a READ-time fallback with a WRITE. The
+backend field is `.default([])`, so an absent key parses to `[]`, and `replaceProductVariants` then
+runs an unconditional `delete … where variantId = X` (`products.service.ts:901`) with the insert
+guarded by `length > 0`. **Every save deleted every per-variant ladder.**
 
-- **Per-variant volume pricing is not authorable.** `ProductVariantSchema.pricingTiers` exists and
-  the step omits it. That is safe rather than lossy: `commerce-pricing.ts:365-377` falls back to the
-  product-level ladder when a variant carries none, so a variant inherits the listing's tiers. The
-  step says so on screen.
+**And it uncovered a second, older one with wider reach.** `PricingTierDraft` had no lead-time field
+and `collectListingInput` rebuilt every tier without it, so `products.service.ts:1627` re-inserted
+the product ladder with `leadTimeDays: null` — **every listing edit destroyed A27's band lead
+times**, and had done since A27 shipped. The root cause was the same class as everything else here:
+the frontend seller `ProductPricingTierSchema` omitted `leadTimeDays` and `variantId`, so `.strip()`
+dropped them and the form could not see what it was about to overwrite.
+
+**Both reproduced live before fixing, on a save that changed nothing**: two product bands carrying
+14 and 28 days came back `null, null`, and a variant carrying two bands came back with zero. After
+the fix both survive a no-op save byte for byte. The ladder rows are now shared by one
+`PricingTierRows` component so the listing's ladder and a variant's cannot drift again.
+**Four smaller gaps closed alongside**, each a field the backend already returned and the client
+discarded, or a label map with one consumer:
+
+- **`moderationState` reaches the seller.** A listing a moderator had rejected still showed "Active"
+  in the studio — proved live by rejecting a demo listing and reading back `status: "active"` beside
+  `moderationState: "rejected"`. Same defect `video.moderationVisibilityState` had before
+  `/studio/copyright`: not silence about a takedown, a wrong answer on the screen the person who
+  could appeal is looking at. Added to the list-row projection too, so it shows without opening each.
+- **`publicSlug` reaches the seller**, so the studio can link to the live buyer page. ⚠️ **NULL until
+  published** — the link is gated on the slug rather than on `status`, because the two can disagree
+  and the slug is what decides whether a URL exists.
+- **`fulfillmentMetrics` stops being thrown away** on every product card and detail. ⚠️ Carry its
+  rule: `onTimeShipmentRate: null` must never print 0% — "printing 0% would publish a failure they
+  never earned" — and `completedOrderCount` covers the seller who has delivered but has too small a
+  sample. The live demo seller is exactly that case.
+- **Checkout names the variant.** The cart named it and the order named it; the last screen before
+  payment did not. ⚠️ **And its React key was `productId-sellerOrganizationId`, which two variants of
+  one listing collide on** — a latent bug that became reachable the moment variants were authorable.
+- **Incoterms render as words**, through the label map that had exactly one consumer. The lookup is
+  guarded, because the read side is `z.string().nullable()` and an unrecognised code should render as
+  itself rather than blank. Backend `incotermSnapshot: string | null` tightened to `CommerceIncoterm`.
+
+**Still deliberately not done:**
+
 - **Retired variants are shown as a count, not as editable rows.** They cannot be deleted at all —
   `commerce_order_product_line.variant_id` is `restrict` — and re-editing one would revive a version
   the seller withdrew. Note that re-sending a retired slug DOES re-activate it, which is the right
@@ -381,9 +417,17 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
    and `/anime/ranking`'s sort currently change nothing**, they re-render the same mock array, so
    wiring them is a behaviour change rather than a data swap.
 
-    **⚠️ THE BLOCKER IS CONTENT, NOT CODE — and that reorders this whole list.** Probed against the
-    live database on 2026-08-27: `anime_series` **0 rows**, `anime_season` **0**, `anime_episode`
-    **0**, and `video WHERE video_type = 'anime_episode'` **0**. Wiring the five pages today would
+    ⚠️ **THE COST ABOVE IS STALE: THE PUBLIC BACKEND MODULE SHIPPED.**
+    `qatoto-backend/src/modules/home/anime/` is mounted at `app.ts:303` with three bare public reads
+    (`/anime/hero-slides`, `/anime/series`, `/anime/series/:seriesSlug`), the frontend wrappers exist
+    in `src/lib/anime/`, there is a real series-detail page, and `sitemap.ts` announces it. **What is
+    left is five page rewires, not "one new public backend module plus five".** The studio's own
+    `/series` routes are 13, not eleven, and all still `requireAuth` — that half holds.
+
+    **⚠️ THE BLOCKER IS CONTENT, NOT CODE — and that reorders this whole list.** Re-probed against
+    the live database on 2026-08-29, unchanged: `anime_series` **0 rows**, `anime_season` **0**,
+    `anime_episode` **0**, and `video WHERE video_type = 'anime_episode'` **0** — while
+    `anime_hero_slide` has **4**, which is exactly why the hero is real and the rails are not. Wiring the five pages today would
     replace five pages of invented content with five blank ones. **YouTube's own decision is the
     precedent: it does not ship a vertical it cannot fill** — Movies & Shows launched with licensed
     inventory, not a browse skeleton. Leaving `/anime` on mocks is therefore a decision, recorded
@@ -836,6 +880,38 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
 
 ---
 
+## ⚠️ The frontend is far behind the backend — ~90 routes have no caller
+
+Six instances of one defect class were closed one at a time (`productId` on an RFQ goods line,
+`serviceOfferingId`, `pitchVideoId`, `commerce_product_highlight`, `commerce_product_variant`,
+`variantNameSnapshot`). A systematic sweep on 2026-08-29 found the class is not a punch-list — it is
+the shape of the whole gap. **Do not treat these as oversights to fix opportunistically; each is a
+feature-sized build, and several are user-visible today.** Ranked:
+
+1. **Product Q&A is read-only.** Seven write routes unwired — ask, answer, mark helpful, delete. The
+   server computes a `contactAffordance: "ask_question"` permission whose ONLY purpose is to gate a
+   control that does not exist, and `viewer.hasVotedHelpful` can never become true.
+2. **Customization option authoring.** `PUT /products/:id/customization-options` has no caller while
+   the buyer's `customization-sheet.tsx` renders the slots. ⚠️ A buyer may be refused at checkout
+   with `REQUIRED_OPTION_MISSING` for a slot no seller can create — **verify that refusal is
+   genuinely reachable before costing this**, because this file has been wrong about live blockers
+   before (§8).
+3. **Seller profile writes** — all 11 `commerce-seller-profile` routes. The buyer storefront already
+   renders stakeholders, site access, capabilities and certifications from `declaredProfile`; nothing
+   can fill any of it in.
+4. **Product relations** (`companions` is read and rendered, nothing writes it), **settlement
+   agreements** (`hasEscrowProtection` is labelled copy over an unreachable flow), **logistics
+   writes** (a provider can watch a shipment, not create or advance one), **pathway authoring**,
+   **commerce moderation and dispute-opening** (a buyer can read a dispute they cannot open),
+   **provider offering edit/submit/coverage**, image reorder, the product view-beacon, RFQ
+   invitations.
+5. ⚠️ **Two frontend files assert in prose that a shipped backend route does not exist.**
+   `verification-pipeline-tab.tsx:63-65` says there is no override-queue endpoint — there is
+   (`proof-of-effort.routes.ts:169`), and it is an EU AI Act Art. 14 surface. `overview-tab.tsx:29-31`
+   says there is no `GET /discovery/market-insights/:insightId`, which is why the demand-evidence
+   chips deliberately do not link — there is. **Both comments are load-bearing decisions built on a
+   false premise.**
+
 ## Cross-pillar seams
 
 R&D, Store and Studio keep separate copies of the same venture. The four moves that shipped
@@ -976,9 +1052,16 @@ for h in $(rg --no-filename -o 'export function (use\w+)' -r '$1' src/hooks/ | s
   rg -q "\b$h\b" src/components src/app || echo "UNCALLED $h"; done
 
 for f in $(rg --no-filename -o 'export (?:async )?function (\w+)' -r '$1' \
-    $(find src/lib -name '*.api.ts') | sort -u); do
-  rg -q "\b$f\b" src/hooks src/components src/app || echo "UNCALLED-API $f"; done
+    $(find src/lib \( -name '*.api.ts' -o -name 'api.ts' \)) | sort -u); do
+  rg -q "\b$f\b" src/hooks src/components src/app src/lib || echo "UNCALLED-API $f"; done
 ```
+
+⚠️ **THIS LOOP HAS NOW BEEN WRONG THREE TIMES, AND THE THIRD AND FOURTH FIXES ARE ABOVE.** The glob
+`-name '*.api.ts'` missed **`src/lib/products/api.ts`** — the file that owns every seller `/products/*`
+write, and therefore exactly where the biggest gaps were hiding. And the caller search omitted
+`src/lib`, so a wrapper consumed by another `src/lib` module read as dead: it printed a false
+`UNCALLED-API listPublicAnimeSeries`, which is called from `sitemap-sources.ts:134` and from its own
+sibling at `series.api.ts:70`. Both halves are fixed above.
 
 **THE GLOB IS NOW `find`, NOT FOUR HAND-LISTED DIRECTORIES**, and that is the third time this has
 bitten. It started as `src/lib/store/*.api.ts` alone, which is why seven R&D wrappers went unnoticed;
@@ -986,7 +1069,8 @@ it was widened to four directories, and `src/lib/users/*.api.ts` then shipped ou
 the audit that is supposed to catch unverified code was not looking at the newest code in the repo.
 A hand-maintained list of places to check is a list that will be wrong again.
 
-**Both are silent today.** The second printed seven R&D names until those wrappers were wired
+**Both are silent again**, after the loop itself was corrected — the one name it printed was a
+false positive caused by the search path, not unverified code. The second printed seven R&D names until those wrappers were wired
 (`listRoundBackers`, `listEquitySnapshots`, `verifyStatementChain`, `getAuditHashInput`,
 `updateWorkshopChatMessage`, `deleteWorkshopChatMessage`) or deleted as a duplicate
 (`getProjectEquity`). A name reappearing here is unverified code, not a style nit.

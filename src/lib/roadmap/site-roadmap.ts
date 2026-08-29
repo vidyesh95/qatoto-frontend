@@ -779,16 +779,20 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Shipping profiles and carriers.",
       },
       {
-        // `route`, not `planned`: the page reads real data now. The other six Studio entries stay
+        // `route`, not `planned`: the page reads real data now. The other five Studio entries stay
         // `planned` — the data for those does not exist, and an honest placeholder is not a feature.
+        // (The count is the live one: Subtitles, Earn, Learn, Support, Feedback. It drifted to
+        // "six" and "seven" here as routes graduated and these comments did not.)
         kind: "route",
         label: "Analytics",
         href: "/studio/analytics",
         summary: "Reach and engagement across your videos, counted on Qatoto.",
       },
       {
-        // `route`, not `planned`: the page reads real data now. The other six Studio entries stay
+        // `route`, not `planned`: the page reads real data now. The other five Studio entries stay
         // `planned` — the data for those does not exist, and an honest placeholder is not a feature.
+        // (The count is the live one: Subtitles, Earn, Learn, Support, Feedback. It drifted to
+        // "six" and "seven" here as routes graduated and these comments did not.)
         kind: "route",
         label: "Comments",
         href: "/studio/comments",
@@ -810,7 +814,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Decisions about your videos, and the reports you have filed.",
       },
       {
-        // `route`, not `planned`: the page writes real columns now. The other seven Studio entries
+        // `route`, not `planned`: the page writes real columns now. The other five Studio entries
         // stay `planned` — the data for those does not exist, and an honest placeholder is not a
         // feature.
         //
