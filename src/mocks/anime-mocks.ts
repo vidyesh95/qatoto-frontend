@@ -47,13 +47,6 @@ export const ANIME_CATEGORIES = [
   { icon: "/icons/ranking_40dp.svg", label: "Ranking", href: "/anime/ranking" },
 ];
 
-export const MOCK_ANIME_HERO = {
-  imageSrc: "/dummy/anime_hero.avif",
-  title:
-    "A Record Of Mortal's Journey To Immortality: Immortal Han Li's Adventure with cyan bottle",
-  tag: "Featured",
-};
-
 export const MOCK_RECENT_EPISODES: Media[] = [
   { id: "1", imageSrc: "/dummy/recent_episode_01.avif", title: "God Troubles Me Season 3" },
   { id: "2", imageSrc: "/dummy/recent_episode_02.avif", title: "Dragon's Disciple" },

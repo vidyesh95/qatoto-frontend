@@ -23,6 +23,7 @@
 //    though it were the whole catalogue. These loops walk to the end — but a backend that returns a
 //    non-advancing cursor would otherwise spin forever, so each loop is bounded and says so.
 
+import { listPublicAnimeSeries } from "@/lib/anime/series.api";
 import { listChannels } from "@/lib/channels/api";
 import { getBlogs, getPressList } from "@/lib/cms";
 import { listStoreCategories, searchStore } from "@/lib/store/catalog.api";
@@ -115,6 +116,35 @@ export async function getResearchProjectSitemapEntries(): Promise<SitemapEntry[]
   if (!result.success) return [];
 
   return result.data.map((slug) => ({ path: `/research-and-development/project/${slug}` }));
+}
+
+/**
+ * Public anime series, walked over `pagination.totalPages`.
+ *
+ * `updatedAt` on the row is the SERIES record's own timestamp, not a crawl artefact, so this
+ * is one of the surfaces that can honestly carry `lastModified`. A series only appears here
+ * once at least one of its episodes is publicly watchable — the backend derives that rather
+ * than reading a flag — so an unreleased show is never announced.
+ */
+export async function getAnimeSeriesSitemapEntries(): Promise<SitemapEntry[]> {
+  "use cache";
+  const entries: SitemapEntry[] = [];
+
+  for (let pageNumber = 1; pageNumber <= MAX_PAGES_PER_SURFACE; pageNumber += 1) {
+    const result = await listPublicAnimeSeries({ page: pageNumber, limit: OFFSET_PAGE_LIMIT });
+    if (!result.success) break;
+
+    entries.push(
+      ...result.data.rows.map((series) => ({
+        path: `/anime/series/${series.seriesSlug}`,
+        lastModified: series.updatedAt,
+      })),
+    );
+
+    if (pageNumber >= result.data.pagination.totalPages) break;
+  }
+
+  return entries;
 }
 
 /**

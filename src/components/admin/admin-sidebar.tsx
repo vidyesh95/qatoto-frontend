@@ -137,6 +137,14 @@ const ADMIN_NAVIGATION_ITEMS: AdminNavItem[] = [
     inactiveIcon: "/icons/featured_video_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    // Desktop only, same tradeoff as Promotions and Spotlight — uploading art and setting an
+    // order is a desk job, and a seventh tab would break the mobile bar.
+    href: "/admin/anime-hero",
+    label: "Anime hero",
+    activeIcon: "/icons/live_tv_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/live_tv_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     // ADMIN ONLY, and the page says so rather than this list: `view_platform_metrics` is held by
     // `admin` alone, but the sidebar is rendered for every staff role and has no capability read of
     // its own. Hiding the row for a moderator would mean fetching `/admin/whoami` from the chrome

@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { UNRESOLVABLE_PARAM_VALUE } from "@/lib/static-params";
 import {
+  getAnimeSeriesSitemapEntries,
   getBlogSitemapEntries,
   getCatalogSitemapEntries,
   getChannelSitemapEntries,
@@ -46,8 +47,11 @@ import {
  *
  * - `/watch`, `/anime/watch`, `/search` and `/store/search` are driven by search params (`?v=`,
  *   `?query=`). The bare path renders a placeholder, so announcing it advertises an empty page.
- * - The six `/anime/*` routes are backed entirely by `@/mocks/anime-mocks` — real UI over
- *   fabricated content. They come back when they read real data.
+ * - Five of the six `/anime/*` routes are still backed by `@/mocks/anime-mocks` — real UI over
+ *   fabricated content — and stay out until they read real data. `/anime/series/[seriesSlug]`
+ *   is the exception and IS announced, through `getAnimeSeriesSitemapEntries` below: it reads
+ *   the catalogue, and a series only appears once one of its episodes is publicly watchable.
+ *   `/anime` itself stays out because its rails are still mock, even though its hero is not.
  * - `/research-and-development/new` and `/programs/new` are wizard forms with nothing to index.
  * - The remaining stub routes render a bare `<h1>` and already carry `noindex`. There are twelve
  *   now rather than sixteen: `/report-history` shipped with video content reporting, and
@@ -118,7 +122,7 @@ function toSitemapUrl(entry: SitemapEntry): MetadataRoute.Sitemap[number] {
 }
 
 /**
- * The fifteen enumerations, run ONE AT A TIME.
+ * The sixteen enumerations, run ONE AT A TIME.
  *
  * `Promise.all` WAS TRIED AND IS WRONG HERE, measurably. Each of these walks a paginated surface to
  * exhaustion, so fifteen of them at once is dozens of concurrent requests against a backend whose
@@ -132,6 +136,7 @@ function toSitemapUrl(entry: SitemapEntry): MetadataRoute.Sitemap[number] {
  * buys a file whose contents are the same every time.
  */
 const SITEMAP_SOURCES: readonly (() => Promise<SitemapEntry[]>)[] = [
+  getAnimeSeriesSitemapEntries,
   getBlogSitemapEntries,
   getPressSitemapEntries,
   getResearchProgramSitemapEntries,
