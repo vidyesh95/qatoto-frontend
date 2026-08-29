@@ -281,6 +281,16 @@ export const StoreSearchHitSchema = z
     sellingState: z.string().nullable(),
     providerVerificationState: z.string().nullable(),
     leadTimeMaxDays: z.number().int().nullable(),
+    /**
+     * STORE §21.1. The manufacturer part code, so a row can SHOW what a part-code search matched
+     * on — a buyer who typed `LM358` and got twelve rows needs to see which of them carries it.
+     *
+     * Nullable rather than optional, and it travels on EVERY hit: the backend projects it from
+     * all three sort branches and sends `null` for offerings and organizations, which are not
+     * manufactured parts. `undefined` is not `null` to Zod, so an optional here would quietly
+     * accept a backend that stopped sending it.
+     */
+    modelNumber: z.string().nullable(),
     relevanceScore: z.number().nullable(),
     /**
      * When the listing last changed. A REAL content clock, not a refresh stamp — the backend

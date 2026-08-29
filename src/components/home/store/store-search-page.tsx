@@ -459,6 +459,18 @@ function SearchHitShell({
 
       <p className="mt-1 text-sm leading-5 font-medium text-[#191C1C]">{hit.title}</p>
 
+      {/* STORE §21.1. WHAT A PART-CODE SEARCH MATCHED ON. Searching `LM358` can return a dozen
+          rows whose titles say nothing about it, because the code lives in the listing's own
+          fields rather than its title — so without this the buyer is asked to trust an ordering
+          they cannot see the reason for. Null on offerings and organizations, which have no part
+          code, so the guard doubles as the kind branch. Same label the detail sheet uses. */}
+      {hit.modelNumber !== null && (
+        <p className="mt-0.5 font-mono text-xs leading-4 text-[#191C1C]">
+          <span className="sr-only">Model number: </span>
+          {hit.modelNumber}
+        </p>
+      )}
+
       {hit.summary !== null && (
         <p className="mt-0.5 line-clamp-2 text-xs leading-4 text-[#6F7979]">{hit.summary}</p>
       )}

@@ -21,18 +21,23 @@ and `git log` are the record of what was built and why.
 
 **Blocked on a purchase, not on code** — §11 (SMS provider), §18 (freight rate cards).
 
-**The one substantial build left** — the store's catalogue is not parametric: item 3 under
-_Still open_, specified in `docs/CATEGORY_ATTRIBUTES_STRUCTURE.md`. Its cheapest half needs no
-migration. (This line used to name §5, cost of goods — that was **decided against** and the
-section below says so; it is not an open build.)
+**No substantial store build is left.** The parametric catalogue this line used to name — item 3
+under _Still open_ — SHIPPED (migrations `0151`/`0152`, admin console, required-at-publish), and
+its one remaining piece, the seller request queue, was **decided against and dropped** (`0153`).
+Part-code search shipped after it (`0154`). What is left in the store is `commerce_product_document`
+(§21.3, the electronics case) and a single-line checkout for "Buy now" — both named below. (This
+line previously named §5, cost of goods; that was **decided against** and the section below says
+so.)
 
 **SHIPPED 2026-08-27** — `/studio/pitches`, its composer, the public pitch page and the deal-flow
 rail, on two new backend tables (migration `0148`). Proved end to end against the live database.
 **One thing still gates it: the terms-of-service rewrite under Decisions needed** — see §12 below.
 
 **Everything else** is either content-blocked (`/anime`), a new backend domain nobody has asked
-for yet (§15, §16, four of the eight planned Studio routes), or a question for Vidyesh rather than
-a task (**Decisions needed**).
+for yet (§15, §16, and **two** of the planned Studio routes — `earn` and account-level delegation;
+`/studio/copyright`, `/studio/pitches` and `/studio/team` all shipped, `/studio/subtitles` is
+architecturally impossible on a youtube-embed model, and support/learn/feedback are signposts that
+are already correct), or a question for Vidyesh rather than a task (**Decisions needed**).
 
 ---
 
@@ -99,7 +104,9 @@ cost is correctable.
 
 ### 2. The video domain — two `TRANSPORT: mock` banners remain
 
-`rg -l "TRANSPORT: mock" src/` returns **two** files:
+`rg -l "TRANSPORT: mock" src/` returns **three** files. Two belong to the video domain and are the
+subject of this section; the third, `src/components/home/anime/anime-page.tsx`, belongs to item 1
+(`/anime`, content-blocked) and is tracked there:
 
 - `src/components/home/watch/comments.tsx` — `trending` only
 - `src/components/home/watch/watch-content.tsx` — `transcript` and `isPremium` only
@@ -115,12 +122,16 @@ impossible — the bytes are on youtube.com.
 
 ### 9. Never exercised
 
-- **`standardName`** — the seed creates 7 uncoded and 0 coded factory certifications, so the field
-  added for it has never met a live payload.
+- ~~**`standardName`**~~ — **exercised.** Two certifications were submitted against a live
+  organization (`ISO 9001:2015` as JPEG, `ISO 14001:2015` as PDF), both landing `pending` with
+  their evidence documents promoted `pending_scan` -> `available`. Both were uncoded, so
+  `standardCode` — the _matchable_ half — is still the part no live payload has set.
 - **The delivery-address 429** — the seeded checkout sends no `deliveryAddressId`, so the reveal
   404s before the limiter is in play.
-- **The browser.** Every store contract above was asserted over HTTP. No screen has been watched
-  rendering.
+- **The browser.** Most store contracts above were asserted over HTTP rather than watched. Two
+  screens HAVE now been watched rendering: the category-attributes admin console (create, both
+  toggles, and the 409/422/422 refusals) and the store search results page. Everything else in
+  this file still rests on HTTP alone.
 
 ### Share targets have no brand marks
 
@@ -466,30 +477,54 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     `search_text`, so it lands at weight class `C` on its own, and `updateProduct` already enqueues
     a refresh unconditionally.
 
-    ⚠️ **STILL OPEN: the exact-match rank boost, and it is a migration.** Indexing makes a part
-    code _findable_; it does not make it _first_. A listing whose TITLE contains the query still
-    outranks the listing that actually carries the code, because `searchText` is weight `C`.
-    Ranking an exact code first means comparing against the value, and `store_search_document` has
-    **no `model_number` column** — the service reads every column on that table and none of them is
-    it. Boosting on `search_text ILIKE` instead would lift anything that merely mentions the
-    string, which is worse than no boost.
+    ~~⚠️ **STILL OPEN: the exact-match rank boost, and it is a migration.**~~ **SHIPPED,
+    migration `0154`** — and it WAS a migration, which is the half `STORE_BACKEND_STRUCTURE.md`
+    §21.1 got wrong when it said "three edits, no migration" while telling you to put the column
+    _into_ `store_search_document`. That doc is corrected.
 
-    The one place to change is `searchByRelevance`'s single `rankExpression` const — it feeds ORDER
-    BY, both cursor predicates and the projected score, so a `CASE WHEN` there keeps all four in
-    sync. Note the cursor's fixed-width encoding (`toFixed(12).padStart(24,'0')`) only preserves
-    lexicographic order for boost constants under 12 integer digits.
+    **What shipped:** `model_number` on `store_search_document` plus a generated
+    `model_number_normalized` (lowercased, non-alphanumerics stripped), one `CASE WHEN` inside the
+    single `rankExpression` const — which feeds ORDER BY, both cursor predicates and the projected
+    score, so one edit keeps all four in sync — and the code now renders on the result row.
+
+    ⚠️ **THE BOOST ALONE WOULD HAVE BEEN A NO-OP, and this is the part worth remembering.** A row
+    that membership excludes cannot be reordered into view. Measured live:
+
+    ```
+    to_tsvector('english','LM-358')         -> '-358':2 'lm':1
+    websearch_to_tsquery('english','LM358') -> 'lm358'      (numnode = 1)
+    ... @@ ...                              -> FALSE
+    ```
+
+    A stored `LM-358` produces `lm` and `-358` and **never** `lm358`, and the `ILIKE` fallback
+    fires only when the QUERY fails to parse — `LM358` parses fine. So the normalized equality is
+    OR'd into the shared text predicate, widening what matches for **all three sorts and every
+    facet count**. That is A39's rule working as intended, not a violation of it: a sort must not
+    change what matches.
+
+    **Proved live, with the assertion that separates a boost from a coincidence.** A _Calibration
+    Kit_ was given `model_number = 'banquet'`; searching `banquet` put it **first at 1000000.2**,
+    ahead of _"Banquet chair, stackable"_ whose TITLE matches at weight `A` — and the chair was
+    **still returned** at `0.545`, which is the half that would have made this a regression if it
+    had been dropped. `LM358` / `LM-358` / `lm 358` / `lm358` all resolved to the same listing;
+    `LM359` returned nothing. Four tied rows paged 2-at-a-time with no duplicate and no skip, and
+    the `documentKinds` facet reported `product: 4` against 4 results — the facet/result parity
+    that widening a shared predicate most endangered. All probe values reverted to NULL after.
+
+    ⚠️ **The normalization rule now lives in two places** — the Postgres generated column and
+    `normalizeModelNumberQuery` — because a generated column cannot call application code. They
+    must stay byte-for-byte equivalent, and **the order is load-bearing**: both strip
+    `[^a-zA-Z0-9]` _before_ lowercasing, since characters like U+212A KELVIN SIGN only become
+    `[a-z0-9]` after case folding. Drift raises nothing; it silently stops exact matches matching.
+
+    ⚠️ **The boost constant has a ceiling.** `encodeRelevanceSortKey` is
+    `rank.toFixed(12).padStart(24,"0")` and `padStart` only pads — above 11 integer digits the
+    fixed-width encoding stops sorting lexicographically and keyset pagination breaks silently.
+    `1_000_000` sits five orders under that and six above `ts_rank_cd`'s `[0,1)` range.
 
     ⚠️ **No UNIQUE constraint on `model_number`, ever.** Two sellers listing the same manufacturer
-    part is the premise of a parametric marketplace, not a data error. `sku` is the unique one, per
-    seller organization.
-
-    **Not verified at runtime, and here is why:** no product in the database has a model number —
-    which is exactly what the defect predicted, since no client could set one. Confirming the
-    search path end to end needs a listing patched with one, i.e. an authenticated seller session.
-    No backfill is needed when that happens: `updateProduct` enqueues the refresh itself.
-
-    ⚠️ **Do not make it unique.** Two sellers listing the same manufacturer part is the premise of
-    a parametric marketplace, not a data error. `sku` is the unique one, per seller organization.
+    part is the premise of a parametric marketplace, not a data error. `sku` is the unique one,
+    per seller organization.
 
 5. ~~**Nothing on a listing can say "discontinued".**~~ **SHIPPED** — migration `0150`,
    `product_selling_state` = `selling | paused | discontinued`, applied to the live database and
@@ -522,7 +557,10 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     distinct from `PRODUCT_NOT_PURCHASABLE` so a page the buyer can see says why — and placed
     _after_ the visibility gate so it cannot become an id oracle for hidden listings. An existing
     cart line keeps `getCart`'s non-fatal `pricingError` rather than vanishing.
-    ⚠️ **The cart refusal is NOT verified live** — it needs a signed-in buyer session.
+    ~~⚠️ **The cart refusal is NOT verified live**~~ — **verified.** Signed in, the same listing
+    accepted an add at **200** while `selling` and refused it at **409** once `discontinued`
+    ("This listing has been discontinued and can no longer be ordered"), while the owner read
+    still answered **200**.
 
 6. **Product PDFs — REFRAMED after asking what Alibaba does, and mostly answered by wiring what
    already existed.**
