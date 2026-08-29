@@ -91,6 +91,27 @@ minimumReleaseAgeExclude:
 overrides:
   "@types/react": 19.2.18
   "@types/react-dom": 19.2.4
+  # Security advisories in DEV-ONLY transitive dependencies. Neither path ships:
+  # `vite` arrives through `better-auth`'s OPTIONAL PEER on vitest, satisfied by this
+  # repo's own devDependency, and `next-devtools-mcp` is itself a devDependency — the
+  # MCP server named in .mcp.json.
+  #
+  # ⚠️ AN OVERRIDE IS THE ONLY MECHANISM. `pnpm update --depth Infinity` answers
+  # "Already up to date": pnpm will not move a transitive dependency the lockfile
+  # already resolves inside its parent's range.
+  #
+  # GHSA: `server.fs.deny` bypass via Windows alternate paths, and an NTLMv2 hash
+  # disclosure through launch-editor's UNC handling (<8.0.16).
+  vite: "^8.0.16"
+  # GHSA: cross-client data leak when a server/transport instance is reused (<1.26.0).
+  # NOT FIXABLE BY UPGRADING: next-devtools-mcp@0.4.0 is the latest and pins this to
+  # EXACTLY 1.25.2, so nothing in the range can move. An exact pin usually guards a
+  # known incompatibility — re-prove the devtools MCP server whenever this line changes.
+  "@modelcontextprotocol/sdk": "^1.26.0"
+  # GHSA: ReDoS in the CORS middleware, `memo()` retaining SSR output across requests,
+  # a Connection-header leak in the proxy helper, and a complexity DoS in the language
+  # middleware (all <4.12.34). Reached only through @hono/node-server inside that SDK.
+  hono: "^4.12.34"
 peerDependencyRules:
   allowedVersions:
     tsconfck@*>typescript: ^5.0.0 || ^6.0.0
