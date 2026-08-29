@@ -161,6 +161,45 @@ export const ProductHighlightSchema = z
   })
   .strip();
 
+/** The four kinds a seller can file a listing document under. Matches the backend pgEnum. */
+export const PRODUCT_DOCUMENT_KINDS = ["datasheet", "manual", "care_guide", "other"] as const;
+
+/** Parses a document kind off untrusted input — a DOM value, a query string. */
+export const ProductDocumentKindSchema = z.enum(PRODUCT_DOCUMENT_KINDS);
+
+export const PRODUCT_DOCUMENT_KIND_LABELS: Readonly<
+  Record<(typeof PRODUCT_DOCUMENT_KINDS)[number], string>
+> = {
+  datasheet: "Datasheet",
+  manual: "Manual",
+  care_guide: "Care guide",
+  other: "Document",
+};
+
+/**
+ * STORE §21.3. One public PDF on a listing.
+ *
+ * ⚠️ `downloadPath`, AND THERE IS NO `url` — not an oversight to be "fixed" later. The backend
+ * stores an object key rather than a URL precisely so a link cannot outlive the listing's
+ * visibility: this path goes back through the API, which re-checks eligibility on every fetch and
+ * only then mints a five-minute presigned link. Resolve it against `API_BASE_URL`; never cache it
+ * as an absolute URL anywhere.
+ *
+ * ⚠️ NOTHING HERE SAYS THE FILE WAS SCANNED, because it was not. No copy rendering this may imply
+ * a virus check happened — see migration `0155` for why that is the honest position rather than
+ * the lax one.
+ */
+export const ProductDocumentSchema = z
+  .object({
+    id: z.string(),
+    documentKind: z.enum(PRODUCT_DOCUMENT_KINDS),
+    fileName: z.string(),
+    byteSize: z.number().int(),
+    position: z.number().int(),
+    downloadPath: z.string(),
+  })
+  .strip();
+
 /**
  * A18/A23. A commercial term the buyer is held to, so the buyer must be able to read it.
  *
@@ -267,6 +306,7 @@ export const StoreProductDetailSchema = StoreProductCardSchema.extend({
   pricingTiers: z.array(ProductPricingTierSchema),
   variants: z.array(ProductVariantSchema),
   highlights: z.array(ProductHighlightSchema),
+  documents: z.array(ProductDocumentSchema),
   customizationOptions: z.array(ProductCustomizationOptionSchema),
   specifications: z.array(
     z
@@ -560,6 +600,8 @@ export type ProductMedia = z.infer<typeof ProductMediaSchema>;
 export type ProductPricingTier = z.infer<typeof ProductPricingTierSchema>;
 export type ProductVariant = z.infer<typeof ProductVariantSchema>;
 export type ProductHighlight = z.infer<typeof ProductHighlightSchema>;
+export type ProductDocument = z.infer<typeof ProductDocumentSchema>;
+export type ProductDocumentKind = (typeof PRODUCT_DOCUMENT_KINDS)[number];
 export type ProductCustomizationOption = z.infer<typeof ProductCustomizationOptionSchema>;
 export type ProductEngagement = z.infer<typeof ProductEngagementSchema>;
 export type ProductVentureProvenance = z.infer<typeof ProductVentureProvenanceSchema>;

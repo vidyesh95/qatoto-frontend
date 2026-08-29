@@ -11,14 +11,17 @@ import {
   ProductImageSchema,
   ProductListRowSchema,
   PublicProductSchema,
+  SellerProductDocumentSchema,
   type CreateProductInput,
   type ProductAttributeValueInput,
   type ProductHighlightInput,
   type ProductImage,
   type ProductListRow,
   type PublicProduct,
+  type SellerProductDocument,
   type UpdateProductInput,
 } from "@/lib/products/schemas";
+import type { ProductDocumentKind } from "@/lib/store/products.schemas";
 import { z } from "zod";
 
 /**
@@ -97,6 +100,46 @@ export function replaceProductHighlights(
  * front of this the way one sits in front of an uploaded PDF: what lands in storage is sharp's
  * output, not the uploader's file.
  */
+/**
+ * STORE §21.3. Attaches one public PDF to a listing.
+ *
+ * ⚠️ THE SERVER ANSWERS 201, NOT 202 — there is no scan, and nothing in this flow may tell a
+ * seller their file is "being checked". See migration `0155` for why that is the honest answer.
+ *
+ * NO IDEMPOTENCY KEY, and that is deliberate rather than forgotten: the storage key is derived
+ * from the file's content hash and the row is unique on `(productId, contentSha256)`, so a retried
+ * upload converges on the same document instead of duplicating it. Re-sending the same PDF is
+ * success, not a conflict.
+ */
+export function uploadProductDocument(
+  productId: string,
+  documentFile: File,
+  documentKind: ProductDocumentKind,
+): Promise<ActionResponse<{ documents: SellerProductDocument[] }>> {
+  const formData = new FormData();
+  formData.append("document", documentFile);
+  formData.append("documentKind", documentKind);
+  return sendForm(
+    `/products/${productId}/documents`,
+    "POST",
+    formData,
+    z.object({ documents: z.array(SellerProductDocumentSchema) }),
+  );
+}
+
+/** STORE §21.3. Removes one document. The server deletes the bytes before the row. */
+export function deleteProductDocument(
+  productId: string,
+  documentId: string,
+): Promise<ActionResponse<unknown>> {
+  return sendJson(
+    `/products/${productId}/documents/${documentId}`,
+    "DELETE",
+    undefined,
+    z.unknown(),
+  );
+}
+
 export function uploadProductHighlightImage(
   productId: string,
   highlightId: string,

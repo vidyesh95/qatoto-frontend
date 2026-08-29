@@ -47,6 +47,7 @@ import EngagementBar from "@/components/home/store/sections/engagement-bar";
 import PackagingAndDelivery from "@/components/home/store/sections/packaging-and-delivery";
 import PriceChart from "@/components/home/store/sections/price-chart";
 import ProductDetailsSection from "@/components/home/store/sections/product-details-section";
+import ProductDocuments from "@/components/home/store/sections/product-documents";
 import ProductHighlights from "@/components/home/store/sections/product-highlights";
 import ProductImageGallery from "@/components/home/store/sections/product-image-gallery";
 import { ProductSelectionProvider } from "@/components/home/store/sections/product-selection-context";
@@ -283,6 +284,8 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
             />
 
             <ProductHighlights highlights={product.highlights} />
+
+            <ProductDocuments documents={product.documents} />
 
             <RatingsAndReviews productSlug={product.publicSlug} initialPage={reviewsPage} />
 

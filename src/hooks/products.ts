@@ -2,8 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { unwrap } from "@/lib/http";
+import type { ProductDocumentKind } from "@/lib/store/products.schemas";
 import {
   createProduct,
+  deleteProductDocument,
+  uploadProductDocument,
   deleteProduct,
   deleteProductImage,
   getMyProducts,
@@ -64,8 +67,16 @@ export type SaveProgress =
   | { phase: "uploading"; current: number; total: number }
   /** The highlight blocks: one PUT for the plan, then one upload per block that has an image. */
   | { phase: "highlights"; current: number; total: number }
+  /** STORE §21.3. One POST per attached PDF, after the listing exists. */
+  | { phase: "documents"; current: number; total: number }
   | { phase: "publishing" }
   | { phase: "done" };
+
+/** STORE §21.3. A file the seller picked but that has not been uploaded yet. */
+export interface PendingProductDocument {
+  readonly file: File;
+  readonly documentKind: ProductDocumentKind;
+}
 
 interface CreateListingVariables {
   input: CreateProductInput;
@@ -75,6 +86,8 @@ interface CreateListingVariables {
   highlightImageFileByIndex: ReadonlyMap<number, File>;
   /** STORE §20. Structured answers, saved through their own route after the listing exists. */
   attributeValues: readonly ProductAttributeValueInput[];
+  /** STORE §21.3. PDFs picked in the wizard, uploaded once the listing has an id. */
+  newDocuments: readonly PendingProductDocument[];
   publish: boolean;
   onProgress?: (progress: SaveProgress) => void;
 }
@@ -89,6 +102,38 @@ interface CreateListingVariables {
  * ⚠️ THE ORDER OF `highlights` IS THE ORDER ON THE PAGE, and `imageFileByIndex` is keyed on that
  * same index rather than on an id — a newly added block has no id until the PUT returns.
  */
+/**
+ * STORE §21.3. Uploads the PDFs a seller attached, and removes the ones they took away.
+ *
+ * SIMPLER THAN `saveProductHighlights` ON PURPOSE. A highlight needs a server-minted id before its
+ * image can go anywhere, so that one is a two-phase dance. A document's identity is its own content
+ * hash, so this is the images loop: delete what was removed, then post what is new.
+ *
+ * ⚠️ REMOVALS FIRST. The listing is capped at five documents, so replacing a file when already at
+ * the cap only works if the old one goes first — the other order refuses with the seller's own
+ * change half-applied.
+ */
+async function saveProductDocuments(
+  productId: string,
+  removedDocumentIds: readonly string[],
+  newDocuments: readonly PendingProductDocument[],
+  onProgress?: (progress: SaveProgress) => void,
+): Promise<void> {
+  for (const documentId of removedDocumentIds) {
+    unwrap(await deleteProductDocument(productId, documentId));
+  }
+
+  for (let documentIndex = 0; documentIndex < newDocuments.length; documentIndex++) {
+    const pending = newDocuments[documentIndex];
+    onProgress?.({
+      phase: "documents",
+      current: documentIndex + 1,
+      total: newDocuments.length,
+    });
+    unwrap(await uploadProductDocument(productId, pending.file, pending.documentKind));
+  }
+}
+
 async function saveProductHighlights(
   productId: string,
   highlights: readonly ProductHighlightInput[],
@@ -123,6 +168,7 @@ export function useCreateListingMutation() {
       highlights,
       highlightImageFileByIndex,
       attributeValues,
+      newDocuments,
       publish,
       onProgress,
     }: CreateListingVariables) => {
@@ -144,6 +190,11 @@ export function useCreateListingMutation() {
       // attribute set of the product's category, which it cannot look up before there is one.
       if (attributeValues.length > 0) {
         unwrap(await replaceProductAttributeValues(created.id, attributeValues));
+      }
+
+      // STORE §21.3. Nothing to remove on a fresh listing, so only the uploads run.
+      if (newDocuments.length > 0) {
+        await saveProductDocuments(created.id, [], newDocuments, onProgress);
       }
 
       if (publish) {
@@ -172,6 +223,9 @@ interface UpdateListingVariables {
   highlights: readonly ProductHighlightInput[];
   highlightImageFileByIndex: ReadonlyMap<number, File>;
   attributeValues: readonly ProductAttributeValueInput[];
+  /** STORE §21.3. Newly picked PDFs, and the ids of ones the seller removed. */
+  newDocuments: readonly PendingProductDocument[];
+  removedDocumentIds: readonly string[];
   /** true = ensure the listing ends up active (publish); false = leave as-is. */
   publish: boolean;
   onProgress?: (progress: SaveProgress) => void;
@@ -188,6 +242,8 @@ export function useUpdateListingMutation() {
       highlights,
       highlightImageFileByIndex,
       attributeValues,
+      newDocuments,
+      removedDocumentIds,
       publish,
       onProgress,
     }: UpdateListingVariables) => {
@@ -210,6 +266,14 @@ export function useUpdateListingMutation() {
       // ALWAYS sent on an edit, even when empty: a replace-set's "no answers" is the seller
       // having cleared them, and skipping the call would silently keep the old ones.
       unwrap(await replaceProductAttributeValues(productId, attributeValues));
+
+      /**
+       * STORE §21.3. NOT a replace-set, unlike the two calls above — documents are append/delete,
+       * so an empty pair is genuinely nothing to do and the guard is real rather than a shortcut.
+       */
+      if (removedDocumentIds.length > 0 || newDocuments.length > 0) {
+        await saveProductDocuments(productId, removedDocumentIds, newDocuments, onProgress);
+      }
 
       if (publish) {
         onProgress?.({ phase: "publishing" });

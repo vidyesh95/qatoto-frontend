@@ -10,6 +10,7 @@ import {
   useCreateListingMutation,
   useProductQuery,
   useUpdateListingMutation,
+  type PendingProductDocument,
   type SaveProgress,
 } from "@/hooks/products";
 import {
@@ -39,7 +40,13 @@ import {
   type ListingCompleteness,
   type ProductAttributeValueInput,
   type ProductHighlightInput,
+  type SellerProductDocument,
 } from "@/lib/products/schemas";
+import {
+  PRODUCT_DOCUMENT_KIND_LABELS,
+  PRODUCT_DOCUMENT_KINDS,
+  ProductDocumentKindSchema,
+} from "@/lib/store/products.schemas";
 import {
   PRODUCT_SAMPLE_POLICIES,
   PRODUCT_SELLING_STATES,
@@ -56,12 +63,23 @@ import {
   type ProductPublishRefusal,
 } from "@/lib/products/publish-refusal";
 
+/** STORE §21.3. Mirrors `MAX_PRODUCT_DOCUMENTS` in the service; the server is the authority. */
+const PRODUCT_DOCUMENT_MAX_COUNT = 5;
+
+/** Bytes to something a seller reads. Same three-branch shape the watch page uses for videos. */
+function formatDocumentSizeLabel(byteSize: number): string {
+  if (byteSize < 1024) return `${String(byteSize)} B`;
+  if (byteSize < 1024 * 1024) return `${(byteSize / 1024).toFixed(0)} KB`;
+  return `${(byteSize / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 const LISTING_STEPS = [
   { id: "identity", label: "Product Identity" },
   { id: "images", label: "Images & Media" },
   { id: "description", label: "Description" },
   { id: "specifications", label: "Specifications" },
   { id: "highlights", label: "Highlights" },
+  { id: "documents", label: "Documents" },
   { id: "pricing", label: "Pricing & Inventory" },
   { id: "review", label: "Review & Publish" },
 ] as const;
@@ -252,6 +270,21 @@ export default function CreateListingPage({ productId }: { productId?: string })
   const [highlights, setHighlights] = useState<HighlightDraft[]>([]);
   const highlightPreviewUrlsRef = useRef<string[]>([]);
 
+  /**
+   * STORE §21.3 — the public PDFs on this listing.
+   *
+   * Two lists rather than one, matching the images step: `existingDocuments` came back from the
+   * server and can only be REMOVED, `pendingDocuments` are files picked here and not yet uploaded.
+   * ⚠️ NOTHING UPLOADS ON PICK — it happens on save, once the listing has an id, exactly as the
+   * gallery and the highlight images do.
+   */
+  const [existingDocuments, setExistingDocuments] = useState<readonly SellerProductDocument[]>([]);
+  const [removedDocumentIds, setRemovedDocumentIds] = useState<string[]>([]);
+  const [pendingDocuments, setPendingDocuments] = useState<PendingProductDocument[]>([]);
+  const documentCount =
+    existingDocuments.filter((document) => !removedDocumentIds.includes(document.id)).length +
+    pendingDocuments.length;
+
   // Step 5 — pricing & inventory
   const [priceInDollars, setPriceInDollars] = useState("");
   const [compareAtPriceInDollars, setCompareAtPriceInDollars] = useState("");
@@ -421,6 +454,13 @@ export default function CreateListingPage({ productId }: { productId?: string })
         .toSorted((first, second) => first.position - second.position)
         .map((image) => ({ id: image.id, url: image.url })),
     );
+    // STORE §21.3. Hydrated as read-only rows: an existing document can be removed but not edited,
+    // because its identity is its own content hash.
+    setExistingDocuments(
+      loadedProduct.documents.toSorted((first, second) => first.position - second.position),
+    );
+    setRemovedDocumentIds([]);
+    setPendingDocuments([]);
     setPricingTiers(
       loadedProduct.pricingTiers
         .toSorted((first, second) => first.position - second.position)
@@ -930,6 +970,8 @@ export default function CreateListingPage({ productId }: { productId?: string })
           highlights: collectedHighlights.plan,
           highlightImageFileByIndex: collectedHighlights.imageFileByIndex,
           attributeValues: collectedAttributeValues,
+          newDocuments: pendingDocuments,
+          removedDocumentIds,
           publish,
           onProgress: setSaveProgress,
         },
@@ -945,6 +987,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
         highlights: collectedHighlights.plan,
         highlightImageFileByIndex: collectedHighlights.imageFileByIndex,
         attributeValues: collectedAttributeValues,
+        newDocuments: pendingDocuments,
         publish,
         onProgress: setSaveProgress,
       },
@@ -1772,6 +1815,133 @@ export default function CreateListingPage({ productId }: { productId?: string })
 
               <p className="text-xs text-muted-foreground">
                 {highlights.length}/{PRODUCT_HIGHLIGHT_MAX_COUNT} blocks added
+              </p>
+            </div>
+          </StepCard>
+        );
+
+      case "documents":
+        return (
+          <StepCard
+            title="Documents"
+            subtitle="Datasheets, manuals and care guides buyers can download. PDF, up to 25 MB each."
+          >
+            <div className="flex flex-col gap-3">
+              {/*
+                ⚠️ NOTHING HERE SAYS THE FILE IS SCANNED, and no copy added later may. There is no
+                virus scan on this path — see migration `0155`. Telling a seller their upload is
+                "being checked" would be a claim about a check nobody performs.
+              */}
+              <p className="rounded-lg bg-[#F2F4F4] px-3 py-2 text-xs leading-4 text-[#6F7979]">
+                Buyers download these straight from the listing, so upload only what you are happy
+                to publish. Up to {String(PRODUCT_DOCUMENT_MAX_COUNT)} files.
+              </p>
+
+              {existingDocuments
+                .filter((document) => !removedDocumentIds.includes(document.id))
+                .map((document) => (
+                  <div
+                    key={document.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2"
+                  >
+                    <span className="min-w-0 text-sm">
+                      <span className="block truncate font-medium">{document.fileName}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {PRODUCT_DOCUMENT_KIND_LABELS[document.documentKind]} ·{" "}
+                        {formatDocumentSizeLabel(document.byteSize)}
+                      </span>
+                    </span>
+                    {/* Removed on SAVE, not now — the same deferral the gallery uses. */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setRemovedDocumentIds((previous) => [...previous, document.id])
+                      }
+                      className="cursor-pointer text-xs text-[#8C1D18] underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+
+              {pendingDocuments.map((pending, pendingIndex) => (
+                <div
+                  key={`${pending.file.name}-${String(pendingIndex)}`}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed border-border px-3 py-2"
+                >
+                  <span className="min-w-0 text-sm">
+                    <span className="block truncate font-medium">{pending.file.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDocumentSizeLabel(pending.file.size)} · uploads when you save
+                    </span>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={pending.documentKind}
+                      onChange={(changeEvent) => {
+                        // Parsed, not asserted: the value comes off a DOM element, which is
+                        // untrusted input like any other. A select the browser could not have
+                        // produced falls back rather than widening the type by fiat.
+                        const parsedKind = ProductDocumentKindSchema.safeParse(
+                          changeEvent.target.value,
+                        );
+                        if (!parsedKind.success) return;
+                        const nextKind = parsedKind.data;
+                        setPendingDocuments((previous) =>
+                          previous.map((entry, entryIndex) =>
+                            entryIndex === pendingIndex
+                              ? { ...entry, documentKind: nextKind }
+                              : entry,
+                          ),
+                        );
+                      }}
+                      className="h-9 cursor-pointer rounded-lg border border-border bg-transparent px-2 text-xs"
+                    >
+                      {PRODUCT_DOCUMENT_KINDS.map((documentKind) => (
+                        <option key={documentKind} value={documentKind}>
+                          {PRODUCT_DOCUMENT_KIND_LABELS[documentKind]}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPendingDocuments((previous) =>
+                          previous.filter((_, entryIndex) => entryIndex !== pendingIndex),
+                        )
+                      }
+                      className="cursor-pointer text-xs text-[#8C1D18] underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">Add a PDF</span>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  disabled={documentCount >= PRODUCT_DOCUMENT_MAX_COUNT}
+                  onChange={(changeEvent) => {
+                    const picked = changeEvent.target.files?.[0];
+                    // The cap is the server's rule; refusing here saves a round-trip that would
+                    // only come back 409. It is fast feedback, not the enforcement.
+                    if (picked && documentCount < PRODUCT_DOCUMENT_MAX_COUNT) {
+                      setPendingDocuments((previous) => [
+                        ...previous,
+                        { file: picked, documentKind: "datasheet" },
+                      ]);
+                    }
+                    changeEvent.target.value = "";
+                  }}
+                  className="text-sm"
+                />
+              </label>
+
+              <p className="text-xs text-muted-foreground">
+                {String(documentCount)}/{String(PRODUCT_DOCUMENT_MAX_COUNT)} documents
               </p>
             </div>
           </StepCard>
@@ -2685,6 +2855,8 @@ function describeProgress(progress: SaveProgress): string {
       return progress.total === 0
         ? "Saving highlights…"
         : `Uploading highlight image ${progress.current}/${progress.total}…`;
+    case "documents":
+      return `Uploading document ${String(progress.current)}/${String(progress.total)}…`;
     case "publishing":
       return "Publishing…";
     case "idle":

@@ -24,10 +24,12 @@ and `git log` are the record of what was built and why.
 **No substantial store build is left.** The parametric catalogue this line used to name — item 3
 under _Still open_ — SHIPPED (migrations `0151`/`0152`, admin console, required-at-publish), and
 its one remaining piece, the seller request queue, was **decided against and dropped** (`0153`).
-Part-code search shipped after it (`0154`), and the service offering page's dead CTAs after that
-(item 8). What is left in the store is `commerce_product_document` (§21.3, the electronics case)
-and a single-line checkout for "Buy now" — which needs a payment rail that does not exist yet.
-Both are named below. (This
+Part-code search shipped after it (`0154`), the service offering page's dead CTAs after that
+(item 8), and product documents after that (`0155`). **The only store item left is a single-line
+checkout for "Buy now"**, which needs a payment rail that does not exist — `stripe` is a name in an
+enum with no implementation and the `fake` provider is refuse-closed in production. Vidyesh is
+doing Stripe and Razorpay later; ⚠️ note Razorpay means widening `CommercePaymentProviderName`,
+which is `"fake" | "stripe"` today. (This
 line previously named §5, cost of goods; that was **decided against** and the section below says
 so.)
 
@@ -578,10 +580,49 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     every upload, "strips EXIF/metadata and any non-image payload smuggled in the container", so
     what lands in storage is sharp's output rather than the uploader's bytes.
 
-    **What is still open is the PDF specifically — the Octopart/electronics case**, not the
-    general one: a real multi-page datasheet where an image loses searchable text and printing.
-    `commerce_product_document` modelled on `video_document`: content-addressed, **no `url` column**
-    (a URL outlives the gate), PDF-only. `STORE_BACKEND_STRUCTURE.md` §21.3.
+    ~~**What is still open is the PDF specifically**~~ — **SHIPPED, migration `0155`.**
+    `commerce_product_document`: content-addressed, **no `url` column**, PDF-only, capped at five,
+    with a seller step in the wizard and a Documents block on the PDP.
+
+    ⚠️ **UNSCANNED, 201 NOT 202, AND NO `state` COLUMN — a decision, not an omission.**
+    `video_document`, the precedent §21.3 is told to copy, is not scanned at all, and the only
+    working scanner is an EICAR-only fake whose `clamav` sibling returns `SCANNER_UNAVAILABLE`.
+    ⚠️ Unlike the payment and escrow factories, **that fake is permitted in production on purpose**
+    — so a `pending_scan` gate would have stamped every upload `clean` and promoted it while
+    implying a review nobody performed. No copy on this surface says the file is checked. A gate
+    that passes everything is worse than an honest absence.
+
+    ⚠️ **`certificate` WAS DROPPED FROM THE KIND ENUM, AND THE SPEC CONTRADICTED ITSELF.** §21.3
+    lists it two paragraphs after saying `commerce_encrypted_document` "is the right home for a
+    business registration certificate and the wrong home for a datasheet".
+    `commerce_organization_certification` already carries reviewed claims — three-way state, a
+    reviewer who may not be the submitter, validity dates, evidence that never rides the wire. A
+    seller-uploaded "certificate" would look identical to a buyer with none of that behind it.
+    Postgres cannot DROP an enum value; adding one is a one-line migration. Four kinds is
+    reversible, five is not. Doc corrected.
+
+    ⚠️ **AND ITS "`deleteVideo` is the precedent to copy" WAS ALSO WRONG** — the same class of
+    error as §21.1's "no migration". `deleteVideo`'s cleanup is BEST-EFFORT; the two sweeps already
+    inside `deleteProduct` REFUSE and abort before the transaction. Three near-identical cleanups in
+    one function must behave alike, so the document sweep matches its siblings. **My own plan
+    repeated the doc's error and was corrected against the code.**
+
+    **Proved live, end to end.** A 695-byte PDF uploaded through the seller path answered **201**;
+    the public read carried `downloadPath` and **no `url` key**; the route answered **302** with
+    `Cache-Control: no-store` to a presigned Backblaze URL, and following it returned the same 695
+    bytes, `%PDF-` header and original text intact. ⚠️ **The gate was tested by making it fail**:
+    unpublishing the listing turned that same link into a **404**, and republishing restored it —
+    which is the entire reason there is no `url` column. **A discontinued listing still serves its
+    documents**, the deliberate exception, because the buyer who most needs a manual is the one who
+    already owns the thing. Re-uploading identical bytes **converged at 201 with the count still 1**
+    rather than 409; a GIF renamed `.pdf` and declared `application/pdf` was refused **422** by the
+    magic-byte check the mimetype gate would have let through; the cap refused the sixth with
+    `TOO_MANY_DOCUMENTS limit 5`. Deleting the listing left **0 objects in the bucket and 0 rows**,
+    checked against object storage itself rather than a delivery URL — the misread that cost time
+    last round. Probe listing deleted, organisation reverted.
+
+    ⚠️ **The upload limiter (10/15min) fired mid-verification**, which is the limiter working; the
+    cap was then proved at the service level instead. Worth knowing before anyone tests by hand.
 
     **Certificates got the opposite answer, deliberately — and the difference is the point.**
     A highlight image is _looked at_; a certificate is _read_, and it is the artefact a moderator

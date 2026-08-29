@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { PRODUCT_DOCUMENT_KINDS } from "@/lib/store/products.schemas";
+
 import { PRODUCT_SAMPLE_POLICIES, PRODUCT_SELLING_STATES } from "@/lib/store/organizations.schemas";
 import { CATEGORY_ATTRIBUTE_VALUE_KINDS } from "@/lib/store/catalog.schemas";
 
@@ -88,6 +90,23 @@ export const ProductHighlightSchema = z
     title: z.string(),
     bodyText: z.string(),
     imageUrl: z.string().nullable(),
+    position: z.number().int(),
+  })
+  .strip();
+
+/**
+ * STORE §21.3. A public PDF the seller attached — the owner's view of it.
+ *
+ * ⚠️ NO `downloadPath` HERE, unlike the buyer's projection. The wizard lists and removes files; it
+ * does not link to them, and the seller's own listing may not be public yet, so a download path
+ * would be a link that legitimately 404s.
+ */
+export const SellerProductDocumentSchema = z
+  .object({
+    id: z.string(),
+    documentKind: z.enum(PRODUCT_DOCUMENT_KINDS),
+    fileName: z.string(),
+    byteSize: z.number().int(),
     position: z.number().int(),
   })
   .strip();
@@ -240,6 +259,7 @@ export const PublicProductSchema = z
      * pipeline all existed and no seller surface ever wrote to them.
      */
     highlights: z.array(ProductHighlightSchema),
+    documents: z.array(SellerProductDocumentSchema),
     /**
      * A17. THE THREE SAMPLE FACTS, which answer three different questions and must not be
      * collapsed. `samplePolicy` says whether a sample can be had at all and whether its price
@@ -297,6 +317,7 @@ export const PaginationMetaSchema = z
 export type ProductImage = z.infer<typeof ProductImageSchema>;
 export type ProductSpecification = z.infer<typeof ProductSpecificationSchema>;
 export type ProductHighlight = z.infer<typeof ProductHighlightSchema>;
+export type SellerProductDocument = z.infer<typeof SellerProductDocumentSchema>;
 export type PublicProduct = z.infer<typeof PublicProductSchema>;
 export type ProductListRow = z.infer<typeof ProductListRowSchema>;
 export type ListingRequirementKey = (typeof LISTING_REQUIREMENT_KEYS)[number];
