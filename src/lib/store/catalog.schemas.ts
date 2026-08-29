@@ -104,6 +104,9 @@ export const StoreCategoryFacetsSchema = z
 export const CATEGORY_ATTRIBUTE_VALUE_KINDS = ["enum", "number", "text"] as const;
 export type CategoryAttributeValueKind = (typeof CATEGORY_ATTRIBUTE_VALUE_KINDS)[number];
 
+/** The tuple as a parser, so an admin `<select>` narrows rather than asserts. */
+export const CategoryAttributeValueKindSchema = z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS);
+
 export const CategoryAttributeChoiceSchema = z
   .object({
     choiceValue: z.string(),

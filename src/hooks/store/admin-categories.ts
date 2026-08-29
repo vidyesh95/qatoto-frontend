@@ -8,20 +8,25 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { unwrap } from "@/lib/http";
 import {
+  createCategoryAttribute,
   createStoreCategory,
   decideStoreCategoryRequest,
+  listCategoryAttributesForAdmin,
   listStoreCategoriesForAdmin,
   listStoreCategoryRequestsForAdmin,
   reorderStoreCategories,
   replaceStoreCategoryImage,
   retireStoreCategory,
   submitStoreCategoryRequest,
+  updateCategoryAttribute,
   updateStoreCategory,
 } from "@/lib/store/admin-categories.api";
 import type {
+  CreateCategoryAttributeInput,
   CreateStoreCategoryInput,
   DecideStoreCategoryRequestInput,
   SubmitStoreCategoryRequestInput,
+  UpdateCategoryAttributeInput,
   UpdateStoreCategoryInput,
 } from "@/lib/store/admin-categories.schemas";
 
@@ -37,6 +42,9 @@ export const storeCategoryKeys = {
   adminList: () => ["store-categories", "admin", "list"] as const,
   adminRequests: (state?: string) =>
     ["store-categories", "admin", "requests", state ?? "all"] as const,
+  /** Per category, because the resolved set differs for every node in the tree. */
+  adminAttributes: (categoryId: string) =>
+    ["store-categories", "admin", "attributes", categoryId] as const,
 };
 
 /**
@@ -177,6 +185,56 @@ export function useSubmitStoreCategoryRequestMutation() {
       unwrap(await submitStoreCategoryRequest(input)),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: storeCategoryKeys.all });
+    },
+  });
+}
+
+/**
+ * The resolved attribute set for one category. Requires `moderate_commerce`.
+ *
+ * `isEnabled` is false until the admin opens the panel, so a page of forty categories fires forty
+ * reads only if somebody opens forty panels. `retry: false` for the same reason as its siblings: a
+ * 403 is an answer, not a flake.
+ */
+export function useAdminCategoryAttributesQuery(categoryId: string, isEnabled: boolean) {
+  return useQuery({
+    queryKey: storeCategoryKeys.adminAttributes(categoryId),
+    queryFn: async () => unwrap(await listCategoryAttributesForAdmin(categoryId)),
+    enabled: isEnabled,
+    retry: false,
+  });
+}
+
+export function useCreateCategoryAttributeMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { categoryId: string; input: CreateCategoryAttributeInput }) =>
+      unwrap(await createCategoryAttribute(input.categoryId, input.input)),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: storeCategoryKeys.adminAttributes(variables.categoryId),
+      });
+    },
+  });
+}
+
+/**
+ * Edit a definition's presentation and flags.
+ *
+ * ⚠️ INVALIDATES EVERY ATTRIBUTE KEY, not just this category's, and the breadth is the point: an
+ * attribute is INHERITED, so editing one on a parent changes the resolved set of every descendant
+ * whose panel may also be open. Narrowing this to the owning category would leave a child showing
+ * the old label.
+ */
+export function useUpdateCategoryAttributeMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { attributeId: string; patch: UpdateCategoryAttributeInput }) =>
+      unwrap(await updateCategoryAttribute(input.attributeId, input.patch)),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["store-categories", "admin", "attributes"],
+      });
     },
   });
 }

@@ -8,9 +8,13 @@ import { z } from "zod";
 
 import { sendForm, sendJson, getJson, type ActionResponse, type RequestOptions } from "@/lib/http";
 import {
+  AdminCategoryAttributeSchema,
   AdminStoreCategorySchema,
   CommerceCategoryRequestSchema,
+  type AdminCategoryAttribute,
   type AdminStoreCategory,
+  type CreateCategoryAttributeInput,
+  type UpdateCategoryAttributeInput,
   type CommerceCategoryRequest,
   type CreateStoreCategoryInput,
   type DecideStoreCategoryRequestInput,
@@ -219,4 +223,65 @@ export async function listOwnStoreCategoryRequests(
     options,
   );
   return result.success ? { success: true, data: result.data.requests } : result;
+}
+
+// --- Category attributes (STORE §20) ---------------------------------------
+
+const AttributeListSchema = z.object({ attributes: AdminCategoryAttributeSchema.array() }).strip();
+const AttributeSchema = z.object({ attribute: AdminCategoryAttributeSchema }).strip();
+
+/**
+ * `GET /commerce/admin/categories/:categoryId/attributes` — the RESOLVED set.
+ *
+ * Resolved means this category's own definitions PLUS every ancestor's, each flagged with
+ * `isInherited`. The console shows inherited rows read-only so an admin can see what a leaf
+ * actually asks for without being invited to fork a parent's vocabulary.
+ */
+export async function listCategoryAttributesForAdmin(
+  categoryId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<AdminCategoryAttribute[]>> {
+  const result = await getJson(
+    `/commerce/admin/categories/${encodeURIComponent(categoryId)}/attributes`,
+    AttributeListSchema,
+    options,
+  );
+  return result.success ? { success: true, data: result.data.attributes } : result;
+}
+
+/** `POST /commerce/admin/categories/:categoryId/attributes` — define one. */
+export function createCategoryAttribute(
+  categoryId: string,
+  input: CreateCategoryAttributeInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ attribute: AdminCategoryAttribute }>> {
+  return sendJson(
+    `/commerce/admin/categories/${encodeURIComponent(categoryId)}/attributes`,
+    "POST",
+    input,
+    AttributeSchema,
+    options,
+  );
+}
+
+/**
+ * `PATCH /commerce/admin/category-attributes/:attributeId` — presentation and flags.
+ *
+ * ⚠️ THERE IS NO DELETE ROUTE, and that is not an omission to fill later:
+ * `commerce_product_attribute_value.attribute_id` is `ON DELETE RESTRICT`, so a definition any
+ * listing has answered cannot be removed at all. `isFilterable: false` takes it out of browse and
+ * is reversible, which is the exit the console offers.
+ */
+export function updateCategoryAttribute(
+  attributeId: string,
+  patch: UpdateCategoryAttributeInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ attribute: AdminCategoryAttribute }>> {
+  return sendJson(
+    `/commerce/admin/category-attributes/${encodeURIComponent(attributeId)}`,
+    "PATCH",
+    patch,
+    AttributeSchema,
+    options,
+  );
 }

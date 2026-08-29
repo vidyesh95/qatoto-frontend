@@ -76,6 +76,7 @@ export const LISTING_REQUIREMENT_LABELS: Record<ListingRequirementKey, string> =
   images: "Images",
   samplePrice: "Sample price",
   shippingFacts: "Package size and weight",
+  categoryAttributes: "Required category fields",
 };
 
 function joinLabels(fieldNames: readonly string[]): string {

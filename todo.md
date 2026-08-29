@@ -418,18 +418,30 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     return rather than what is on screen. In the browser: `46.5` reached the wire as `465` and
     came back as "45 mm" on the buyer's Dimensions tab.
 
-    ⚠️ **STILL OPEN: `commerce_category_attribute_request` IS AN UNUSED TABLE.** It exists with its
-    queue index and its review CHECK, and NOTHING reads or writes it — no service, no route, no UI.
-    That is the documented cut line, not an oversight: a seller whose field has no definition falls
-    back to a free-text specification row, which works. But an unused table is unverified schema,
-    so either build the queue (mirror `decideCommerceCategoryRequest` — the discriminated verdict
-    where rejection requires a note) or drop the table.
+    ~~⚠️ **STILL OPEN: `commerce_category_attribute_request` IS AN UNUSED TABLE.**~~ **DROPPED,
+    migration `0153`.** The queue was never built and the cut line held: attributes are
+    platform-defined on Alibaba too, and a seller whose field has no definition still has the
+    free-text specification row. ⚠️ **Two labels in `platform_audit_event_kind` survive the drop**
+    — Postgres has no `ALTER TYPE ... DROP VALUE`, and that enum is referenced by every audit row
+    ever written. They are unused labels, not a feature that went missing; `0153`'s header says so.
 
-    ⚠️ **TWO MORE GAPS, both deliberate and both named here so nobody infers they were done.**
-    There is **no admin UI** for attributes — `store-category-admin-page.tsx` is untouched, so
-    definitions can only be created by direct SQL today. And `isRequiredForPublish` is stored,
-    rendered as an asterisk, and **enforced nowhere**: `projectListingCompleteness` still has its
-    five keys, so a listing publishes with a required attribute blank.
+    ~~⚠️ **TWO MORE GAPS.**~~ **BOTH CLOSED.**
+
+    - **Admin UI for attributes — shipped.** `store-category-admin-page.tsx` gained a fourth
+      toggle trio ("Fields") and a `CategoryAttributesPanel`, following the file's existing idiom
+      rather than inventing one. An inherited attribute is **read-only from the child** (editing
+      there would rewrite a parent's vocabulary for every sibling leaf), `isFilterable` is not
+      offered on a `text` attribute, and there is no delete control — the backend refuses both,
+      and a control that only ever errors is worse than no control. **Verified through the console
+      with a real `moderate_commerce` capability**: created, both toggles flipped, and three
+      refusals confirmed — duplicate key **409**, filterable-text **422**, kebab-case key **422**.
+    - **`isRequiredForPublish` — now enforced.** `ListingRequirementKey` gained
+      `"categoryAttributes"`, which is a compile-time trip-wire that forced the frontend label map
+      to grow with it. ⚠️ **The projection stayed synchronous on purpose**: making it async would
+      have cascaded into `createProduct`'s serializable transaction, so the _caller_ computes
+      `missingRequiredAttributeKeys` via `listMissingRequiredAttributeKeys` and passes it in.
+      **Verified live**: publish refused naming `qa_probe_wood` alongside the shipping facts, the
+      key dropped off the refusal once answered, and the listing then published.
 
     **One real bug this caught, worth keeping.** `min()`/`max()` over a `bigint` come back from
     node-postgres as STRINGS, so the number facet shipped `minScaled: "450"` and the frontend's
@@ -530,6 +542,35 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     general one: a real multi-page datasheet where an image loses searchable text and printing.
     `commerce_product_document` modelled on `video_document`: content-addressed, **no `url` column**
     (a URL outlives the gate), PDF-only. `STORE_BACKEND_STRUCTURE.md` §21.3.
+
+    **Certificates got the opposite answer, deliberately — and the difference is the point.**
+    A highlight image is _looked at_; a certificate is _read_, and it is the artefact a moderator
+    uses to decide whether a compliance claim is true. So:
+
+    - ⚠️ **PDF is stored byte-for-byte, no transform.** It is what SGS, TÜV and Bureau Veritas
+      actually issue; refusing it makes a supplier photograph an official document and makes
+      multi-page scope annexes unrepresentable. **Verified: 419 bytes in, 419 bytes stored,
+      `application/pdf` intact.** The premise for dropping PDF did not survive checking — the
+      certificate path already scans (`scheduleDocumentScan` after commit, Phase 14b), unlike
+      `video_document`.
+    - **JPEG/PNG are re-encoded to AVIF**, which strips EXIF and anything smuggled in the
+      container. **Verified: a 210,563-byte JPEG stored as 88,401 bytes of `image/avif`.**
+    - ⚠️ **A DOCUMENT PROFILE, NOT THE PHOTO PROFILE.** `validateAndNormalizeImage` hardcoded
+      `avif({ quality: 55 })`, tuned for photographs; certificates pass `outputQuality: 88` at a
+      2400 px cap through a new **optional** `outputQuality` that defaults to the old value, so
+      the other seven call sites are untouched. ⚠️ **Honest note on the justification**: a
+      side-by-side re-encode of a clean synthetic certificate showed q55/1600 still legible, so
+      "q55 destroys the evidence" was overstated. The document profile is still the right default
+      — a phone photo of a real certificate under uneven light, already carrying JPEG noise, is a
+      far harder input than clean vector text, and that is the case the cap protects — but the
+      claim was stronger than the evidence for it.
+
+    ⚠️ **THE REAL GAP, RECORDED RATHER THAN PAPERED OVER: THE SCANNER IS AN EICAR-ONLY FAKE.**
+    `clamav` is a configurable value with no implementation and returns `SCANNER_UNAVAILABLE`, so
+    every scan above this line is ceremony until a real one is wired. Image-only uploads would not
+    have fixed it either: that degrades every certificate while leaving a malicious PDF merely
+    _unuploadable_ and a malicious image _neutralised by luck of the re-encode_. Wire a real
+    scanner; that is the fix.
 
     ⚠️ **AND ITS SCAN DECISION IS STILL UNMADE.** Only the scanner _adapter_ is reusable;
     `scanEncryptedDocument`, `sweepPendingDocumentScans` and the job all name

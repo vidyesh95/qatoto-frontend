@@ -116,6 +116,13 @@ export const LISTING_REQUIREMENT_KEYS = [
   "images",
   "samplePrice",
   "shippingFacts",
+  /**
+   * STORE §20. The category's own required attributes.
+   *
+   * `not_applicable` for most listings — a category that marks nothing required asks nothing — so
+   * this shows as an unmet box only where an admin actually demanded a field.
+   */
+  "categoryAttributes",
 ] as const;
 
 /**

@@ -13,17 +13,25 @@ import {
 import {
   useAdminStoreCategoriesQuery,
   useAdminStoreCategoryRequestsQuery,
+  useAdminCategoryAttributesQuery,
+  useCreateCategoryAttributeMutation,
   useCreateStoreCategoryMutation,
   useDecideStoreCategoryRequestMutation,
   useReorderStoreCategoriesMutation,
   useReplaceStoreCategoryImageMutation,
   useRetireStoreCategoryMutation,
+  useUpdateCategoryAttributeMutation,
   useUpdateStoreCategoryMutation,
 } from "@/hooks/store/admin-categories";
 import { useOwnStaffContextQuery } from "@/hooks/rnd/platform-roles";
 import { ApiRequestError } from "@/lib/http";
 import {
+  CategoryAttributeValueKindSchema,
+  type CategoryAttributeValueKind,
+} from "@/lib/store/catalog.schemas";
+import {
   CommerceCategoryStateSchema,
+  toAttributeKey,
   toCategorySlug,
   type AdminStoreCategory,
   type CommerceCategoryRequest,
@@ -551,6 +559,7 @@ function CategoryRow({
   const [isReplacingImage, setIsReplacingImage] = useState(false);
   const [replacementFile, setReplacementFile] = useState<File | null>(null);
   const [isConfirmingRetire, setIsConfirmingRetire] = useState(false);
+  const [isEditingAttributes, setIsEditingAttributes] = useState(false);
 
   const rowError = [updateCategory.error, replaceImage.error, retireCategory.error].find(
     (error): error is ApiRequestError => error instanceof ApiRequestError,
@@ -688,6 +697,16 @@ function CategoryRow({
             {isReplacingImage ? "Cancel image" : "Replace image"}
           </button>
 
+          {/* STORE §20. The fourth toggle on this row, same trio as the three above it. */}
+          <button
+            type="button"
+            disabled={isBusy}
+            onClick={() => setIsEditingAttributes((wasEditing) => !wasEditing)}
+            className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isEditingAttributes ? "Hide fields" : "Fields"}
+          </button>
+
           {/* TWO-STEP CONFIRM, not a `window.confirm` — oxlint's `no-alert` forbids that, and
               a browser dialog blocks the whole tab anyway. */}
           {isProtected ? (
@@ -821,6 +840,301 @@ function CategoryRow({
           </button>
         </div>
       )}
+
+      {/*
+        Mounted only while open, so the resolved-attribute read fires when an admin asks for it
+        rather than once per row on every page load.
+      */}
+      {canManage && isEditingAttributes && <CategoryAttributesPanel category={category} />}
+    </div>
+  );
+}
+
+/**
+ * STORE §20. One category's attribute vocabulary.
+ *
+ * Its own component rather than more lines inside `CategoryRow`, because it owns two mutations and
+ * a query of its own, and the row is already at three toggles.
+ */
+function CategoryAttributesPanel({ category }: { category: AdminStoreCategory }) {
+  const attributesQuery = useAdminCategoryAttributesQuery(category.id, true);
+  const createAttribute = useCreateCategoryAttributeMutation();
+  const updateAttribute = useUpdateCategoryAttributeMutation();
+
+  const [label, setLabel] = useState("");
+  const [attributeKey, setAttributeKey] = useState("");
+  const [hasEditedKey, setHasEditedKey] = useState(false);
+  const [groupLabel, setGroupLabel] = useState("");
+  const [valueKind, setValueKind] = useState<CategoryAttributeValueKind>("enum");
+  const [unitLabel, setUnitLabel] = useState("");
+  const [numericScale, setNumericScale] = useState("0");
+  const [choiceLabels, setChoiceLabels] = useState("");
+
+  const panelError = [createAttribute.error, updateAttribute.error].find(
+    (error): error is ApiRequestError => error instanceof ApiRequestError,
+  );
+  const isBusy = createAttribute.isPending || updateAttribute.isPending;
+
+  const attributes = attributesQuery.data ?? [];
+  const trimmedLabel = label.trim();
+  const trimmedKey = attributeKey.trim();
+  /**
+   * An `enum` with no choices is unanswerable — the seller's select would have only "Not stated" —
+   * so the form insists here rather than letting the backend accept a dead attribute.
+   */
+  const parsedChoices = choiceLabels
+    .split(",")
+    .map((choice) => choice.trim())
+    .filter((choice) => choice.length > 0)
+    .map((choice) => ({ choiceValue: toAttributeKey(choice), label: choice }));
+  const canSubmit =
+    !isBusy &&
+    trimmedLabel.length > 0 &&
+    trimmedKey.length > 0 &&
+    (valueKind !== "enum" || parsedChoices.length >= 2);
+
+  return (
+    <div className="space-y-3 rounded-xl border border-[#CAC4D0]/60 p-3">
+      {panelError && <MutationErrorNotice error={panelError.apiError} />}
+
+      {attributesQuery.isPending ? (
+        <p className="text-xs text-muted-foreground">Loading attributes…</p>
+      ) : attributes.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          This category asks for nothing yet, so its listings render no extra filters. Add a field
+          below.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {attributes.map((attribute) => (
+            <li
+              key={attribute.id}
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-[#CAC4D0]/60 p-2 text-xs"
+            >
+              <span className="min-w-32 flex-1">
+                <span className="font-medium">{attribute.label}</span>{" "}
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  {attribute.attributeKey}
+                </span>
+              </span>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px]">
+                {attribute.valueKind}
+                {attribute.unitLabel === null ? "" : ` · ${attribute.unitLabel}`}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                {attribute.valueCount} answered
+              </span>
+
+              {attribute.isInherited ? (
+                /*
+                  ⚠️ INHERITED ROWS ARE READ-ONLY HERE, and that is a rule rather than a shortcut.
+                  The row belongs to an ANCESTOR category; editing it from a child would rewrite the
+                  parent's vocabulary for every sibling leaf under it. The admin edits it where it
+                  is defined.
+                */
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                  Inherited — edit it on the category that defines it
+                </span>
+              ) : (
+                <>
+                  {/*
+                    A `text` attribute has no filterable toggle at all: the backend refuses it
+                    (`ATTRIBUTE_NOT_FILTERABLE_KIND`), because free text yields one chip per
+                    spelling. A control that can only ever error is worse than no control.
+                  */}
+                  {attribute.valueKind !== "text" && (
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() =>
+                        updateAttribute.mutate({
+                          attributeId: attribute.id,
+                          patch: { isFilterable: !attribute.isFilterable },
+                        })
+                      }
+                      className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {attribute.isFilterable ? "Filterable ✓" : "Not filterable"}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() =>
+                      updateAttribute.mutate({
+                        attributeId: attribute.id,
+                        patch: { isRequiredForPublish: !attribute.isRequiredForPublish },
+                      })
+                    }
+                    className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {attribute.isRequiredForPublish ? "Required ✓" : "Optional"}
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/*
+        ⚠️ NO DELETE CONTROL ANYWHERE ON THIS PANEL. `commerce_product_attribute_value.attribute_id`
+        is ON DELETE RESTRICT, so a definition any listing has answered cannot be removed — there is
+        no route for it. Turning off "Filterable" takes it out of browse and is reversible, which is
+        the honest exit.
+      */}
+      <p className="text-[10px] text-muted-foreground">
+        Attributes cannot be deleted once listings answer them — turn off Filterable to take one out
+        of browse instead. Requiring one blocks publishing until every listing here answers it.
+      </p>
+
+      <div className="space-y-2 rounded-lg border border-[#CAC4D0]/60 p-2">
+        <span className="text-xs font-medium">Add a field</span>
+
+        <label className="block space-y-1 text-xs">
+          <span className="font-medium">Label</span>
+          <input
+            value={label}
+            onChange={(changeEvent) => {
+              setLabel(changeEvent.target.value);
+              // Follows the label until the admin takes the key over, then never again — the same
+              // latch the slug field uses on the create-category form.
+              if (!hasEditedKey) setAttributeKey(toAttributeKey(changeEvent.target.value));
+            }}
+            maxLength={120}
+            placeholder="Wood type"
+            className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+          />
+        </label>
+
+        <label className="block space-y-1 text-xs">
+          <span className="font-medium">Key</span>
+          <input
+            value={attributeKey}
+            onChange={(changeEvent) => {
+              setHasEditedKey(true);
+              setAttributeKey(changeEvent.target.value);
+            }}
+            maxLength={64}
+            className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 font-mono text-sm"
+          />
+          <span className="block text-[10px] text-muted-foreground">
+            snake_case, and permanent — a saved filter link names it. A field needing a different
+            key is a new field.
+          </span>
+        </label>
+
+        <div className="flex flex-wrap gap-2">
+          <label className="block space-y-1 text-xs">
+            <span className="font-medium">Kind</span>
+            <select
+              value={valueKind}
+              onChange={(changeEvent) => {
+                // Parsed, not asserted — the same discipline the category state select uses.
+                const parsedKind = CategoryAttributeValueKindSchema.safeParse(
+                  changeEvent.target.value,
+                );
+                if (!parsedKind.success) return;
+                setValueKind(parsedKind.data);
+              }}
+              className="rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+            >
+              <option value="enum">enum — a fixed list</option>
+              <option value="number">number — a measurement</option>
+              <option value="text">text — free text, not filterable</option>
+            </select>
+          </label>
+
+          <label className="block space-y-1 text-xs">
+            <span className="font-medium">Group</span>
+            <input
+              value={groupLabel}
+              onChange={(changeEvent) => setGroupLabel(changeEvent.target.value)}
+              maxLength={80}
+              placeholder="Materials"
+              className="rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+            />
+          </label>
+
+          {/* Unit and scale belong to `number` and the backend refuses them elsewhere. */}
+          {valueKind === "number" && (
+            <>
+              <label className="block space-y-1 text-xs">
+                <span className="font-medium">Unit</span>
+                <input
+                  value={unitLabel}
+                  onChange={(changeEvent) => setUnitLabel(changeEvent.target.value)}
+                  maxLength={24}
+                  placeholder="mm"
+                  className="w-20 rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+                />
+              </label>
+              <label className="block space-y-1 text-xs">
+                <span className="font-medium">Decimals</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={6}
+                  value={numericScale}
+                  onChange={(changeEvent) => setNumericScale(changeEvent.target.value)}
+                  className="w-20 rounded-lg border border-[#CAC4D0]/60 px-2 py-1 text-xs"
+                />
+              </label>
+            </>
+          )}
+        </div>
+
+        {valueKind === "enum" && (
+          <label className="block space-y-1 text-xs">
+            <span className="font-medium">Choices (comma separated)</span>
+            <input
+              value={choiceLabels}
+              onChange={(changeEvent) => setChoiceLabels(changeEvent.target.value)}
+              placeholder="Oak, Pine, Walnut"
+              className="w-full rounded-lg border border-[#CAC4D0]/60 px-3 py-2 text-sm"
+            />
+            <span className="block text-[10px] text-muted-foreground">
+              At least two — one choice is not a filter, and the chip row hides a single-bucket
+              facet anyway.
+            </span>
+          </label>
+        )}
+
+        <button
+          type="button"
+          disabled={!canSubmit}
+          onClick={() => {
+            createAttribute.mutate({
+              categoryId: category.id,
+              input: {
+                attributeKey: trimmedKey,
+                label: trimmedLabel,
+                groupLabel: groupLabel.trim() === "" ? null : groupLabel.trim(),
+                valueKind,
+                // Both are `number`-only; sending them otherwise is a 422 the form can avoid.
+                unitLabel:
+                  valueKind === "number" && unitLabel.trim() !== "" ? unitLabel.trim() : null,
+                numericScale: valueKind === "number" ? Number(numericScale) : null,
+                // New fields start out of browse and optional: making one filterable or required
+                // the instant it exists would change the storefront before anybody has answered it.
+                isFilterable: false,
+                isRequiredForPublish: false,
+                choices: valueKind === "enum" ? parsedChoices : [],
+              },
+            });
+            setLabel("");
+            setAttributeKey("");
+            setHasEditedKey(false);
+            setGroupLabel("");
+            setUnitLabel("");
+            setNumericScale("0");
+            setChoiceLabels("");
+          }}
+          className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {createAttribute.isPending ? "Adding…" : "Add field"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -8,6 +8,12 @@
 
 import { z } from "zod";
 
+import {
+  CATEGORY_ATTRIBUTE_VALUE_KINDS,
+  CategoryAttributeChoiceSchema,
+  type CategoryAttributeValueKind,
+} from "@/lib/store/catalog.schemas";
+
 /**
  * The states a category can hold.
  *
@@ -150,4 +156,81 @@ export function toCategorySlug(displayName: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 100);
+}
+
+// --- Category attributes (STORE §20) ---------------------------------------
+
+/**
+ * One attribute as the ADMIN console sees it.
+ *
+ * Two fields the public read does not carry, and both are why this shape is separate:
+ * `valueCount` is what the delete guard reads — a definition any listing has answered cannot be
+ * removed — and `isInherited` says the row belongs to an ANCESTOR category, so editing it here
+ * would rewrite a parent's vocabulary for every sibling leaf.
+ */
+export const AdminCategoryAttributeSchema = z
+  .object({
+    id: z.string(),
+    categoryId: z.string(),
+    attributeKey: z.string(),
+    label: z.string(),
+    groupLabel: z.string().nullable(),
+    valueKind: z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS),
+    unitLabel: z.string().nullable(),
+    numericScale: z.number().int().nullable(),
+    isFilterable: z.boolean(),
+    isRequiredForPublish: z.boolean(),
+    position: z.number().int(),
+    choices: z.array(CategoryAttributeChoiceSchema),
+    valueCount: z.number().int(),
+    isInherited: z.boolean(),
+  })
+  .strip();
+
+export type AdminCategoryAttribute = z.infer<typeof AdminCategoryAttributeSchema>;
+
+/**
+ * Create input.
+ *
+ * ⚠️ THREE FIELDS ARE IDENTITY AND EXIST ONLY HERE, never on the patch: `attributeKey` is what a
+ * stored value points at and a saved filter link names; `valueKind` and `numericScale` decide
+ * which column every answer lives in and what its integer means. An attribute needing a different
+ * one of those is a NEW attribute.
+ */
+export interface CreateCategoryAttributeInput {
+  readonly attributeKey: string;
+  readonly label: string;
+  readonly groupLabel: string | null;
+  readonly valueKind: CategoryAttributeValueKind;
+  readonly unitLabel: string | null;
+  readonly numericScale: number | null;
+  readonly isFilterable: boolean;
+  readonly isRequiredForPublish: boolean;
+  readonly choices: readonly { readonly choiceValue: string; readonly label: string }[];
+}
+
+/** The patch. Presentation and flags only — see the create input for what is missing and why. */
+export interface UpdateCategoryAttributeInput {
+  readonly label?: string;
+  readonly groupLabel?: string | null;
+  readonly unitLabel?: string | null;
+  readonly isFilterable?: boolean;
+  readonly isRequiredForPublish?: boolean;
+  readonly choices?: readonly { readonly choiceValue: string; readonly label: string }[];
+}
+
+/**
+ * A display name into the `attributeKey` the create form proposes.
+ *
+ * ⚠️ SNAKE_CASE, NOT KEBAB, unlike `toCategorySlug` right above it — and the difference is not
+ * cosmetic. A slug is a URL segment, where `-` is the web's word break. An `attributeKey` is a
+ * wire identity in the same class as a pgEnum label, and the backend's own CHECK is
+ * `^[a-z0-9]+(_[a-z0-9]+)*$`. Producing kebab here would offer a default the server rejects.
+ */
+export function toAttributeKey(displayName: string): string {
+  return displayName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 64);
 }
