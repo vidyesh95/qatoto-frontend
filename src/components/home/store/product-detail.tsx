@@ -260,6 +260,7 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
                     productId={product.id}
                     productSlug={product.publicSlug}
                     hasVariants={product.hasVariants}
+                    sellingState={product.sellingState}
                     isViewerSignedIn={isViewerSignedIn}
                   />
                 </div>
@@ -316,6 +317,7 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
                 productId={product.id}
                 productSlug={product.publicSlug}
                 hasVariants={product.hasVariants}
+                sellingState={product.sellingState}
                 isViewerSignedIn={isViewerSignedIn}
               />
             </div>

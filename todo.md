@@ -494,32 +494,64 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     ⚠️ **Do not make it unique.** Two sellers listing the same manufacturer part is the premise of
     a parametric marketplace, not a data error. `sku` is the unique one, per seller organization.
 
-5. **Nothing on a listing can say "discontinued".** `status` is `draft|active` — an authoring
-   state. `deriveStockState` is a measurement of `stock_quantity`. A seller's declaration about
-   the FUTURE has no column, so a buyer orders a thing that no longer exists and finds out in a
-   message. `product_selling_state` = `selling | paused | discontinued`, filterable, a facet
-   bucket, excluded from search by default. `STORE_BACKEND_STRUCTURE.md` §21.2.
+5. ~~**Nothing on a listing can say "discontinued".**~~ **SHIPPED** — migration `0150`,
+   `product_selling_state` = `selling | paused | discontinued`, applied to the live database and
+   verified independently of drizzle's exit code.
 
-    **The discontinued page STAYS LIVE and answers 200** — that is the feature, not a concession.
-    Buy actions suppressed, state named, and the `replaces` kind on `commerce_product_relation`
-    (already shipped, already derived nightly) renders the alternates. 404ing it would destroy the
-    inbound links and the only place a buyer learns what to buy instead.
+    **The two rules that make it work, and either one would silently undo it.** `sellingState` is
+    absent from `store_search_document.isEligible` and from `publicProductEligibility`. The first
+    is element [0] of the shared search WHERE with no per-facet escape, so folding selling state
+    into it would delete a discontinued listing from the results _and_ from the count on the very
+    chip a buyer would click to find it. The second is the sole 404 decision for a product page —
+    leaving it alone is what keeps a discontinued page at **200** with its `replaces` rail intact.
+    Both now carry comments saying so.
 
-6. **There is no public document on a product** — no datasheet, no assembly manual, no size chart.
-   `commerce_encrypted_document` is envelope-encrypted, organization-private and RFQ/quote-scoped;
-   it is the right home for a business registration and the wrong home for published material.
-   `commerce_product_document` modelled on `video_document` instead: content-addressed, **no `url`
-   column** (a URL outlives the gate), PDF-only. `STORE_BACKEND_STRUCTURE.md` §21.3.
+    ⚠️ **THE DEFAULT FILTER IS THE ONE THAT ACTS WHEN UNSET.** Omitting `sellingState` excludes
+    `discontinued`; naming a value narrows to it. The predicate is
+    `selling_state IS NULL OR selling_state <> 'discontinued'` — **the NULL arm is load-bearing**,
+    because offerings and organizations share that table and `NULL <> 'discontinued'` is NULL, not
+    true. Without it every supplier and service vanishes from an unfiltered search.
 
-    ⚠️ **SCANNING IS AN OPEN DECISION AND THIS ENTRY USED TO GET IT WRONG.** It said the upload
-    goes "through the existing scan pipeline so the upload answers 202". Only the **adapter** is
-    reusable — it takes a `Buffer` and returns a verdict. `scanEncryptedDocument`,
-    `sweepPendingDocumentScans` and the `scan-encrypted-document` job all name
-    `commerce_encrypted_document`, its `state` enum and its envelope columns, and the job payload
-    has no field saying which table an id belongs to. **`video_document`, the precedent being
-    copied, is not scanned at all**, and today's only working scanner is an EICAR-only fake.
-    So: add a second scan service, job and `state` column — or ship unscanned and answer **201**,
-    with no copy claiming the file is being checked. Decide before writing the table.
+    **Verified live:** a discontinued product left the default results (17 → 16), came back under
+    `?sellingState=discontinued`, still counted 1 in the facet, and its page and companions rail
+    both answered 200. Test data reverted; all 17 products are `selling`.
+
+    **A backfill was needed and is done.** The new document column starts NULL, so the facet was
+    empty until existing rows were populated from `product.selling_state` (17 rows, dry-run first,
+    `updated_at` deliberately untouched because no product actually changed and that field feeds
+    the sitemap's `lastModified`).
+
+    **Cart and checkout refuse both non-selling states** with a new `PRODUCT_NOT_SELLING` (409),
+    distinct from `PRODUCT_NOT_PURCHASABLE` so a page the buyer can see says why — and placed
+    _after_ the visibility gate so it cannot become an id oracle for hidden listings. An existing
+    cart line keeps `getCart`'s non-fatal `pricingError` rather than vanishing.
+    ⚠️ **The cart refusal is NOT verified live** — it needs a signed-in buyer session.
+
+6. **Product PDFs — REFRAMED after asking what Alibaba does, and mostly answered by wiring what
+   already existed.**
+
+    Alibaba's listing pages carry spec content as stacked image-and-text blocks; documents are
+    exchanged in the RFQ thread and certificates live at organization level. Qatoto had all three,
+    and the third — `commerce_product_highlight` — was **built and unreachable**: table, both
+    routes, the Cloudinary pipeline and the buyer renderer all shipped, and `src/lib/products/*`
+    referenced none of it. **That is now wired** (up to 12 ordered blocks of heading + body +
+    image, a wizard step, two-phase save). No migration.
+
+    It also sidesteps the scan question entirely: `src/lib/image.ts` decodes and **re-encodes**
+    every upload, "strips EXIF/metadata and any non-image payload smuggled in the container", so
+    what lands in storage is sharp's output rather than the uploader's bytes.
+
+    **What is still open is the PDF specifically — the Octopart/electronics case**, not the
+    general one: a real multi-page datasheet where an image loses searchable text and printing.
+    `commerce_product_document` modelled on `video_document`: content-addressed, **no `url` column**
+    (a URL outlives the gate), PDF-only. `STORE_BACKEND_STRUCTURE.md` §21.3.
+
+    ⚠️ **AND ITS SCAN DECISION IS STILL UNMADE.** Only the scanner _adapter_ is reusable;
+    `scanEncryptedDocument`, `sweepPendingDocumentScans` and the job all name
+    `commerce_encrypted_document`, its `state` enum and its envelope columns, and the payload has
+    no table discriminator. `video_document`, the precedent, is **not scanned at all**, and the
+    only working scanner is an EICAR-only fake. Either add a second scan service, job and `state`
+    column — or ship unscanned and answer **201**, with no copy claiming the file is checked.
 
     ⚠️ **The cascade cleans rows, not bytes.** `deleteProduct` must delete the objects explicitly,
     the way `deleteVideo` does. SQL cannot reach object storage.

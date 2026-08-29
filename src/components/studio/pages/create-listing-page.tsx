@@ -24,6 +24,9 @@ import {
   dollarsToCents,
   PACKAGE_DIMENSION_MM_MAX,
   PACKAGE_GROSS_WEIGHT_GRAMS_MAX,
+  PRODUCT_HIGHLIGHT_BODY_MAX_LENGTH,
+  PRODUCT_HIGHLIGHT_MAX_COUNT,
+  PRODUCT_HIGHLIGHT_TITLE_MAX_LENGTH,
   PRODUCT_SPECIFICATION_GROUP_MAX_LENGTH,
   PRODUCT_SPECIFICATION_KEY_MAX_LENGTH,
   PRODUCT_SPECIFICATION_MAX_COUNT,
@@ -32,12 +35,16 @@ import {
   UNITS_PER_PACKAGE_MAX,
   type CreateProductInput,
   type ListingCompleteness,
+  type ProductHighlightInput,
 } from "@/lib/products/schemas";
 import {
   PRODUCT_SAMPLE_POLICIES,
+  PRODUCT_SELLING_STATES,
   ProductSamplePolicySchema,
+  ProductSellingStateSchema,
   SAMPLE_POLICY_LABELS,
   type ProductSamplePolicy,
+  type ProductSellingState,
 } from "@/lib/store/organizations.schemas";
 import {
   describeProductPublishBlock,
@@ -51,6 +58,7 @@ const LISTING_STEPS = [
   { id: "images", label: "Images & Media" },
   { id: "description", label: "Description" },
   { id: "specifications", label: "Specifications" },
+  { id: "highlights", label: "Highlights" },
   { id: "pricing", label: "Pricing & Inventory" },
   { id: "review", label: "Review & Publish" },
 ] as const;
@@ -86,6 +94,27 @@ const PRODUCT_UNIT_OF_MEASURE_MAX_LENGTH = 40;
  * characters on the wire, so a closed list here would refuse units the backend accepts — "reel",
  * "linear foot", "gross" — and a seller with an unusual unit would have nowhere to put it.
  */
+/**
+ * §21.2. The seller's own words for the three states, which are NOT the buyer's words.
+ * `SELLING_STATE_LABELS` in the schemas file is what a shopper reads on a card ("Discontinued");
+ * this is what the person deciding reads on a form. Two audiences, two vocabularies, and one map
+ * serving both would end up bad at each.
+ */
+const SELLING_STATE_OPTION_LABELS: Record<ProductSellingState, string> = {
+  selling: "Yes — available to order",
+  paused: "Paused — temporarily not selling",
+  discontinued: "Discontinued — not coming back",
+};
+
+/** What each choice actually does, said plainly, because two of the three stop orders. */
+const SELLING_STATE_HELP_TEXT: Record<ProductSellingState, string> = {
+  selling: "Buyers can order this as normal.",
+  paused:
+    "The page stays live and buyers can still find it, but nothing can be ordered until you switch this back.",
+  discontinued:
+    "The page stays live so existing links keep working, and it points buyers at any replacement you have listed. Nothing can be ordered.",
+};
+
 const UNIT_OF_MEASURE_SUGGESTIONS = [
   "piece",
   "pair",
@@ -122,6 +151,27 @@ interface ExistingImage {
  * conversion back to "omit the key" happens once, in `collectListingInput` — sending a hydrated
  * `null` straight back is a 422 against the backend's `.strict()` write schema.
  */
+/**
+ * One long-form block as typed in the form.
+ *
+ * `savedId` is the row's server id, present only for a block that came back from a previous save.
+ * It is echoed on the next PUT so the block's uploaded image survives an edit to its text —
+ * without it the replace-set cannot tell the row survived and the image is discarded.
+ *
+ * `imageUrl` is what the server currently holds; `imageFile` is a newly picked file that has not
+ * been uploaded yet. Both can be set at once: that is a seller replacing an existing image.
+ */
+interface HighlightDraft {
+  /** Stable per-row key for the React list; never sent. */
+  readonly localId: string;
+  savedId: string | null;
+  title: string;
+  bodyText: string;
+  imageUrl: string | null;
+  imageFile: File | null;
+  imagePreviewUrl: string | null;
+}
+
 interface SpecificationDraft {
   /** Stable per-row key for the React list; generated on add/hydrate, never sent to the backend. */
   id: string;
@@ -185,6 +235,11 @@ export default function CreateListingPage({ productId }: { productId?: string })
   // still spell one field two ways — that is `docs/CATEGORY_ATTRIBUTES_STRUCTURE.md`, not this.
   const [specifications, setSpecifications] = useState<SpecificationDraft[]>([]);
 
+  // Step 5 — the long-form body. Object URLs for newly picked files are revoked on remove and on
+  // unmount, the same discipline the gallery uses; never from an effect that then setState.
+  const [highlights, setHighlights] = useState<HighlightDraft[]>([]);
+  const highlightPreviewUrlsRef = useRef<string[]>([]);
+
   // Step 5 — pricing & inventory
   const [priceInDollars, setPriceInDollars] = useState("");
   const [compareAtPriceInDollars, setCompareAtPriceInDollars] = useState("");
@@ -197,6 +252,9 @@ export default function CreateListingPage({ productId }: { productId?: string })
   // decoration — a sample skips the tier ladder and the minimum order quantity, so an uncapped
   // "sample" line is a bulk order at sample pricing, and on a refundable listing it mints a credit
   // the size of the whole line.
+  // Step 5 — §21.2. Whether the seller still sells this. Beside stock because it is the same
+  // decision made at a different horizon: stock is "how many right now", this is "at all".
+  const [sellingState, setSellingState] = useState<ProductSellingState>("selling");
   const [samplePolicy, setSamplePolicy] = useState<ProductSamplePolicy>("unavailable");
   const [samplePriceInDollars, setSamplePriceInDollars] = useState("");
   const [maximumSampleQuantity, setMaximumSampleQuantity] = useState("1");
@@ -220,6 +278,11 @@ export default function CreateListingPage({ productId }: { productId?: string })
 
   // Rows that will survive `collectListingInput`. An added-but-untouched row is dropped there, so
   // the review step must not count it as a specification the listing is going to have.
+  // Blocks that will survive `collectHighlights` — both fields are required for a block to save.
+  const filledHighlightCount = highlights.filter(
+    (highlight) => highlight.title.trim().length > 0 && highlight.bodyText.trim().length > 0,
+  ).length;
+
   const filledSpecificationCount = specifications.filter(
     (specification) => specification.key.trim().length > 0 && specification.value.trim().length > 0,
   ).length;
@@ -292,6 +355,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
     );
     setStockQuantity(String(loadedProduct.stockQuantity));
     setSkuCode(loadedProduct.sku ?? "");
+    setSellingState(loadedProduct.sellingState);
     setSamplePolicy(loadedProduct.samplePolicy);
     // NULL IS UNSTATED, NOT FREE — it hydrates as an empty control, the same rule the shipping
     // facts follow below. A zero here would be a declared price of nothing.
@@ -338,6 +402,20 @@ export default function CreateListingPage({ productId }: { productId?: string })
     // and sample fields follow above. It must not survive as a null into the next save: the write
     // schema's `group` is `.optional()`, so `{ group: null }` is a 422, and `collectListingInput`
     // is where the key gets omitted again.
+    setHighlights(
+      loadedProduct.highlights
+        .toSorted((first, second) => first.position - second.position)
+        .map((highlight, highlightIndex) => ({
+          localId: `hydrated-highlight-${String(highlightIndex)}`,
+          // ECHOED BACK ON THE NEXT SAVE. Dropping it would discard this block's image.
+          savedId: highlight.id,
+          title: highlight.title,
+          bodyText: highlight.bodyText,
+          imageUrl: highlight.imageUrl,
+          imageFile: null,
+          imagePreviewUrl: null,
+        })),
+    );
     setSpecifications(
       loadedProduct.specifications
         .toSorted((first, second) => first.position - second.position)
@@ -359,6 +437,18 @@ export default function CreateListingPage({ productId }: { productId?: string })
   useEffect(() => {
     return () => {
       selectedImagePreviewUrlsRef.current.forEach((previewUrl) => URL.revokeObjectURL(previewUrl));
+    };
+  }, []);
+
+  useEffect(() => {
+    highlightPreviewUrlsRef.current = highlights.flatMap((highlight) =>
+      highlight.imagePreviewUrl === null ? [] : [highlight.imagePreviewUrl],
+    );
+  }, [highlights]);
+
+  useEffect(() => {
+    return () => {
+      highlightPreviewUrlsRef.current.forEach((previewUrl) => URL.revokeObjectURL(previewUrl));
     };
   }, []);
 
@@ -463,6 +553,60 @@ export default function CreateListingPage({ productId }: { productId?: string })
   function handleRemoveTierClick(tierIndexToRemove: number) {
     setPricingTiers((previousTiers) =>
       previousTiers.filter((_, tierIndex) => tierIndex !== tierIndexToRemove),
+    );
+  }
+
+  function handleAddHighlightClick() {
+    setHighlights((previous) => [
+      ...previous,
+      {
+        localId: crypto.randomUUID(),
+        savedId: null,
+        title: "",
+        bodyText: "",
+        imageUrl: null,
+        imageFile: null,
+        imagePreviewUrl: null,
+      },
+    ]);
+  }
+
+  function handleHighlightTextChange(
+    highlightIndex: number,
+    field: "title" | "bodyText",
+    value: string,
+  ) {
+    setHighlights((previous) =>
+      previous.map((highlight, index) =>
+        index === highlightIndex ? { ...highlight, [field]: value } : highlight,
+      ),
+    );
+  }
+
+  function handleHighlightImageChange(highlightIndex: number, imageFile: File | null) {
+    setHighlights((previous) =>
+      previous.map((highlight, index) => {
+        if (index !== highlightIndex) return highlight;
+        // Revoke the URL this row was holding before replacing it — one object URL per row at a
+        // time, so the unmount sweep below has nothing to miss.
+        if (highlight.imagePreviewUrl !== null) URL.revokeObjectURL(highlight.imagePreviewUrl);
+        return {
+          ...highlight,
+          imageFile,
+          imagePreviewUrl: imageFile === null ? null : URL.createObjectURL(imageFile),
+        };
+      }),
+    );
+  }
+
+  function handleRemoveHighlightClick(highlightIndexToRemove: number) {
+    setHighlights((previous) =>
+      previous.filter((highlight, index) => {
+        if (index === highlightIndexToRemove && highlight.imagePreviewUrl !== null) {
+          URL.revokeObjectURL(highlight.imagePreviewUrl);
+        }
+        return index !== highlightIndexToRemove;
+      }),
     );
   }
 
@@ -631,10 +775,36 @@ export default function CreateListingPage({ productId }: { productId?: string })
       stockQuantity: resolvedStock,
       sku: skuCode.trim() || undefined,
       pricingTiers: tiers,
+      sellingState,
       specifications: collectedSpecifications,
       ...sampleFacts,
       ...packaging.facts,
     };
+  }
+
+  /**
+   * The highlight plan and its image files, derived from one ordered pass so the map's keys are
+   * indices into the same array the PUT sends. A blank block is dropped rather than saved: an
+   * untouched row the seller added and never filled in is not content.
+   */
+  function collectHighlights(): {
+    plan: ProductHighlightInput[];
+    imageFileByIndex: Map<number, File>;
+  } {
+    const plan: ProductHighlightInput[] = [];
+    const imageFileByIndex = new Map<number, File>();
+    for (const highlight of highlights) {
+      const title = highlight.title.trim();
+      const bodyText = highlight.bodyText.trim();
+      if (title.length === 0 || bodyText.length === 0) continue;
+      if (highlight.imageFile !== null) imageFileByIndex.set(plan.length, highlight.imageFile);
+      plan.push({
+        ...(highlight.savedId === null ? {} : { id: highlight.savedId }),
+        title,
+        bodyText,
+      });
+    }
+    return { plan, imageFileByIndex };
   }
 
   function handleSave(publish: boolean) {
@@ -645,6 +815,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
       return;
     }
     setLocalError(null);
+    const collectedHighlights = collectHighlights();
 
     if (isEditMode && productId) {
       updateMutation.mutate(
@@ -653,6 +824,8 @@ export default function CreateListingPage({ productId }: { productId?: string })
           patch: input,
           newImageFiles: selectedImageFiles,
           removedImageIds,
+          highlights: collectedHighlights.plan,
+          highlightImageFileByIndex: collectedHighlights.imageFileByIndex,
           publish,
           onProgress: setSaveProgress,
         },
@@ -662,7 +835,14 @@ export default function CreateListingPage({ productId }: { productId?: string })
     }
 
     createMutation.mutate(
-      { input, imageFiles: selectedImageFiles, publish, onProgress: setSaveProgress },
+      {
+        input,
+        imageFiles: selectedImageFiles,
+        highlights: collectedHighlights.plan,
+        highlightImageFileByIndex: collectedHighlights.imageFileByIndex,
+        publish,
+        onProgress: setSaveProgress,
+      },
       {
         onSuccess: () => {
           if (publish) setIsPublished(true);
@@ -1220,6 +1400,140 @@ export default function CreateListingPage({ productId }: { productId?: string })
           </StepCard>
         );
 
+      case "highlights":
+        return (
+          <StepCard
+            title="Highlights"
+            subtitle="The long-form part of your listing — a heading, a paragraph and a picture, repeated down the page."
+          >
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">Detail blocks</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Optional. This is where a buyer reads what the photos cannot show — finish,
+                    tolerances, what is in the box.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddHighlightClick}
+                  disabled={highlights.length >= PRODUCT_HIGHLIGHT_MAX_COUNT}
+                  className="flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Image
+                    src="/icons/add_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                    alt=""
+                    width={18}
+                    height={18}
+                  />
+                  Add block
+                </button>
+              </div>
+
+              {highlights.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  No detail blocks yet. Your listing still publishes without them — they are the
+                  part buyers scroll through once the photos have their attention.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {highlights.map((highlight, highlightIndex) => (
+                    <li
+                      key={highlight.localId}
+                      className="flex flex-col gap-3 rounded-xl border border-border p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Block {highlightIndex + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveHighlightClick(highlightIndex)}
+                          aria-label={
+                            highlight.title.trim().length > 0
+                              ? `Remove ${highlight.title.trim()}`
+                              : `Remove block ${String(highlightIndex + 1)}`
+                          }
+                          className="flex cursor-pointer items-center transition-opacity hover:opacity-70"
+                        >
+                          <Image
+                            src="/icons/delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                            alt=""
+                            width={20}
+                            height={20}
+                          />
+                        </button>
+                      </div>
+
+                      <input
+                        type="text"
+                        value={highlight.title}
+                        maxLength={PRODUCT_HIGHLIGHT_TITLE_MAX_LENGTH}
+                        onChange={(event) =>
+                          handleHighlightTextChange(highlightIndex, "title", event.target.value)
+                        }
+                        placeholder="Heading — e.g. Solid oak, not veneer"
+                        className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                      />
+                      <textarea
+                        value={highlight.bodyText}
+                        maxLength={PRODUCT_HIGHLIGHT_BODY_MAX_LENGTH}
+                        onChange={(event) =>
+                          handleHighlightTextChange(highlightIndex, "bodyText", event.target.value)
+                        }
+                        rows={3}
+                        placeholder="What a buyer should know about this point."
+                        className="rounded-lg border border-border bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                      />
+
+                      <div className="flex items-center gap-3">
+                        {/* The picked file wins over the stored URL: that is a seller replacing an
+                            image, and showing the old one would misreport what is about to save. */}
+                        {(highlight.imagePreviewUrl ?? highlight.imageUrl) !== null && (
+                          <div className="relative size-16 shrink-0 overflow-hidden rounded-lg border border-border">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={highlight.imagePreviewUrl ?? highlight.imageUrl ?? ""}
+                              alt=""
+                              className="size-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <label className="cursor-pointer text-xs font-medium text-[#1DBDC5] underline-offset-2 hover:underline">
+                          {(highlight.imagePreviewUrl ?? highlight.imageUrl) === null
+                            ? "Add an image"
+                            : "Replace image"}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={(event) =>
+                              handleHighlightImageChange(
+                                highlightIndex,
+                                event.target.files?.[0] ?? null,
+                              )
+                            }
+                          />
+                        </label>
+                        {highlight.imageFile !== null && (
+                          <span className="text-xs text-muted-foreground">
+                            Uploads when you save.
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <p className="text-xs text-muted-foreground">
+                {highlights.length}/{PRODUCT_HIGHLIGHT_MAX_COUNT} blocks added
+              </p>
+            </div>
+          </StepCard>
+        );
+
       case "pricing":
         return (
           <StepCard
@@ -1299,6 +1613,37 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   Your internal identifier for tracking this product.
                 </p>
               </div>
+            </div>
+
+            {/* §21.2. A SELLING DECISION, so it sits with stock rather than with the publish
+                controls. Pausing or discontinuing is NOT unpublishing: the listing stays live and
+                findable, its inbound links keep working, and a discontinued page is where a buyer
+                learns what replaced it. Unpublishing would delete all of that. */}
+            <div className="flex flex-col gap-1.5 border-t border-border pt-6">
+              <label htmlFor="selling-state" className="text-sm font-medium text-foreground">
+                Still selling this?
+              </label>
+              <select
+                id="selling-state"
+                value={sellingState}
+                onChange={(event) => {
+                  // Parsed, not asserted — the same discipline the sample-policy select uses, so a
+                  // future fourth option is a compile error rather than a 422.
+                  const parsedState = ProductSellingStateSchema.safeParse(event.target.value);
+                  if (!parsedState.success) return;
+                  setSellingState(parsedState.data);
+                }}
+                className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+              >
+                {PRODUCT_SELLING_STATES.map((state) => (
+                  <option key={state} value={state}>
+                    {SELLING_STATE_OPTION_LABELS[state]}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                {SELLING_STATE_HELP_TEXT[sellingState]}
+              </p>
             </div>
 
             {/* B2B volume pricing tiers (optional). */}
@@ -1611,6 +1956,22 @@ export default function CreateListingPage({ productId }: { productId?: string })
                       ? `${String(filledSpecificationCount)} specification${
                           filledSpecificationCount === 1 ? "" : "s"
                         }`
+                      : "",
+                },
+              ]}
+            />
+            <ReviewSection
+              title="Highlights"
+              onEditClick={() => setCurrentStepIndex(stepIndexOf("highlights"))}
+              rows={[
+                {
+                  label: "Detail blocks",
+                  // Counts what will SAVE — a block missing its heading or body is dropped by
+                  // `collectHighlights`, so counting the form's rows would promise one that is not
+                  // going to exist.
+                  value:
+                    filledHighlightCount > 0
+                      ? `${String(filledHighlightCount)} block${filledHighlightCount === 1 ? "" : "s"}`
                       : "",
                 },
               ]}
@@ -2077,6 +2438,10 @@ function describeProgress(progress: SaveProgress): string {
       return "Saving listing…";
     case "uploading":
       return `Uploading image ${progress.current}/${progress.total}…`;
+    case "highlights":
+      return progress.total === 0
+        ? "Saving highlights…"
+        : `Uploading highlight image ${progress.current}/${progress.total}…`;
     case "publishing":
       return "Publishing…";
     case "idle":

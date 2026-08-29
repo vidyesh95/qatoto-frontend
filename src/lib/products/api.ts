@@ -12,6 +12,7 @@ import {
   ProductListRowSchema,
   PublicProductSchema,
   type CreateProductInput,
+  type ProductHighlightInput,
   type ProductImage,
   type ProductListRow,
   type PublicProduct,
@@ -68,6 +69,46 @@ export function deleteProductImage(
   imageId: string,
 ): Promise<ActionResponse<unknown>> {
   return sendJson(`/products/${productId}/images/${imageId}`, "DELETE", undefined, z.unknown());
+}
+
+/**
+ * `PUT /products/:id/highlights` — the long-form body, as a REPLACE-SET.
+ *
+ * Answers the whole `PublicProduct`, which is what makes the two-phase flow work: the response
+ * carries the server-generated `id` of every block, and those ids are what the image upload below
+ * is keyed on. There is no way to attach an image to a block that has not been saved first.
+ *
+ * ⚠️ SENDING `[]` CLEARS THE BODY, and its images with it. That is the replace-set's meaning, not
+ * a bug — but it is why the wizard must send the blocks it is keeping rather than only the ones
+ * it changed.
+ */
+export function replaceProductHighlights(
+  productId: string,
+  highlights: readonly ProductHighlightInput[],
+): Promise<ActionResponse<PublicProduct>> {
+  return sendJson(`/products/${productId}/highlights`, "PUT", { highlights }, PublicProductSchema);
+}
+
+/**
+ * `POST /products/:id/highlights/:highlightId/image` — multipart, field `image`.
+ *
+ * The bytes are decoded and RE-ENCODED server-side by sharp, which is why no malware scan sits in
+ * front of this the way one sits in front of an uploaded PDF: what lands in storage is sharp's
+ * output, not the uploader's file.
+ */
+export function uploadProductHighlightImage(
+  productId: string,
+  highlightId: string,
+  imageFile: File,
+): Promise<ActionResponse<PublicProduct>> {
+  const formData = new FormData();
+  formData.append("image", imageFile);
+  return sendForm(
+    `/products/${productId}/highlights/${highlightId}/image`,
+    "POST",
+    formData,
+    PublicProductSchema,
+  );
 }
 
 export function publishProduct(productId: string): Promise<ActionResponse<PublicProduct>> {

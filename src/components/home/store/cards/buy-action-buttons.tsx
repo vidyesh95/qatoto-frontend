@@ -30,6 +30,7 @@ import { useCartQuery, useSetCartItem } from "@/hooks/store/cart";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
 import type { CommerceCart } from "@/lib/store/cart.schemas";
 import { formatCountLabel } from "@/lib/store/format";
+import { SELLING_STATE_LABELS, type ProductSellingState } from "@/lib/store/organizations.schemas";
 
 interface BuyActionButtonsProps {
   readonly productId: string;
@@ -50,6 +51,11 @@ interface BuyActionButtonsProps {
    * `VARIANT_REQUIRED`, so the button is disabled with a reason rather than firing a refusal.
    */
   readonly hasVariants: boolean;
+  /**
+   * §21.2. Whether the seller still sells this. `paused` and `discontinued` both suppress the buy
+   * controls; the difference is the sentence underneath.
+   */
+  readonly sellingState: ProductSellingState;
 }
 
 /**
@@ -71,6 +77,7 @@ export default function BuyActionButtons({
   productId,
   productSlug,
   hasVariants,
+  sellingState,
   isViewerSignedIn,
 }: BuyActionButtonsProps) {
   // The composer's route reads this slug server-side and seeds its first product line from the
@@ -131,6 +138,33 @@ export default function BuyActionButtons({
     addResult !== undefined && addResult.success
       ? findBulkCartLine(addResult.data, productId, variantId)
       : null;
+
+  /**
+   * §21.2. NOT SELLING MEANS NO BUY CONTROLS AT ALL — not disabled ones.
+   *
+   * The server refuses the add with a 409, so a live-looking button would only produce an error the
+   * buyer cannot act on. The quote link SURVIVES, deliberately: "this exact one is gone, ask the
+   * seller what replaces it" is the single most useful thing a discontinued page can offer, and it
+   * is the whole reason the page stays at 200 instead of 404ing.
+   */
+  if (sellingState !== "selling") {
+    return (
+      <div className="w-full">
+        <p className="mb-2 rounded-lg bg-[#8C1D18]/10 px-3 py-2 text-xs leading-4 text-[#8C1D18]">
+          <span className="font-medium">{SELLING_STATE_LABELS[sellingState]}.</span>{" "}
+          {sellingState === "discontinued"
+            ? "This listing is no longer sold. Any replacements the seller has listed are shown below."
+            : "The seller has paused this listing, so it cannot be ordered right now."}
+        </p>
+        <Link
+          href={requestQuoteHref}
+          className="flex w-full items-center justify-center rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
+        >
+          Request a quote
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">

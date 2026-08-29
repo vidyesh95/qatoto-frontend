@@ -51,6 +51,7 @@ import {
 } from "@/lib/store/catalog.schemas";
 import { countryLabelFromCode, formatCentsLabel, formatCountLabel } from "@/lib/store/format";
 import { SAMPLE_POLICY_LABELS, STOCK_STATE_LABELS } from "@/lib/store/organizations.schemas";
+import { SELLING_STATE_FACET_LABELS } from "@/lib/store/organizations.schemas";
 import { PRODUCT_CONDITION_LABELS } from "@/lib/store/products.schemas";
 import { PROVIDER_KIND_ICONS, PROVIDER_KIND_LABELS } from "@/lib/store/labels";
 
@@ -71,6 +72,7 @@ export default async function StoreSearchPage({ searchParams }: { searchParams: 
   const stockState = readSingleParam(searchParams, "stockState");
   const samplePolicy = readSingleParam(searchParams, "samplePolicy");
   const condition = readSingleParam(searchParams, "condition");
+  const sellingState = readSingleParam(searchParams, "sellingState");
   const verificationState = readSingleParam(searchParams, "verificationState");
   const leadTimeMaxDaysParam = readSingleParam(searchParams, "leadTimeMaxDays");
   // A day threshold, and a non-numeric one is DROPPED rather than forwarded — `?leadTimeMaxDays=soon`
@@ -90,6 +92,7 @@ export default async function StoreSearchPage({ searchParams }: { searchParams: 
     stockState,
     samplePolicy,
     condition,
+    sellingState,
     verificationState,
     leadTimeMaxDays,
     cursor: requestedCursor,
@@ -106,6 +109,7 @@ export default async function StoreSearchPage({ searchParams }: { searchParams: 
     stockState,
     samplePolicy,
     condition,
+    sellingState,
     verificationState,
     leadTimeMaxDays,
   ].filter((appliedValue) => appliedValue !== undefined).length;
@@ -229,6 +233,20 @@ function SearchFilters({
             ariaLabel="Filter by condition"
             buckets={facets.conditions}
             labelsByEnumValue={PRODUCT_CONDITION_LABELS}
+          />
+          {/*
+            §21.2. THE ONE CHIP ROW WHOSE UNSELECTED STATE IS NOT "no filter". With nothing picked
+            the backend already excludes `discontinued`, so this row is how a buyer opts INTO
+            retired listings — searching for a part that is no longer made is a real B2B errand.
+            The counts are computed with this filter omitted, so the `discontinued` bucket shows
+            what clicking would actually return rather than zero.
+          */}
+          <FacetChipRow
+            searchParams={searchParams}
+            queryKey="sellingState"
+            ariaLabel="Filter by selling state"
+            buckets={facets.sellingStates}
+            labelsByEnumValue={SELLING_STATE_FACET_LABELS}
           />
           <FacetChipRow
             searchParams={searchParams}

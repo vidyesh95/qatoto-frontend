@@ -179,6 +179,7 @@ export const StoreSearchHitSchema = z
     stockState: z.string().nullable(),
     samplePolicy: z.string().nullable(),
     condition: z.string().nullable(),
+    sellingState: z.string().nullable(),
     providerVerificationState: z.string().nullable(),
     leadTimeMaxDays: z.number().int().nullable(),
     relevanceScore: z.number().nullable(),
@@ -217,6 +218,7 @@ export const StoreSearchFacetsSchema = z
     stockStates: z.array(StoreFacetBucketSchema),
     samplePolicies: z.array(StoreFacetBucketSchema),
     conditions: z.array(StoreFacetBucketSchema),
+    sellingStates: z.array(StoreFacetBucketSchema),
     verificationStates: z.array(StoreFacetBucketSchema),
     documentKinds: z.array(StoreFacetBucketSchema),
     providerKinds: z.array(StoreFacetBucketSchema),
@@ -271,6 +273,11 @@ export interface StoreSearchFilter {
   readonly stockState?: string;
   readonly samplePolicy?: string;
   readonly condition?: string;
+  /**
+   * §21.2. ABSENT IS NOT NEUTRAL HERE. Omitting it excludes `discontinued` server-side; naming a
+   * value narrows to exactly that state, which is how a buyer asks to see retired listings.
+   */
+  readonly sellingState?: string;
   readonly verificationState?: string;
   /** A day threshold, not a range — matches the bucketed facet. */
   readonly leadTimeMaxDays?: number;

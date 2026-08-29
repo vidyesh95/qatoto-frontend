@@ -19,7 +19,11 @@ import Link from "next/link";
 
 import { formatCentsLabel, formatCountLabel, formatLeadTimeRangeLabel } from "@/lib/store/format";
 import type { StoreProductCard } from "@/lib/store/organizations.schemas";
-import { SAMPLE_POLICY_LABELS, STOCK_STATE_LABELS } from "@/lib/store/organizations.schemas";
+import {
+  SAMPLE_POLICY_LABELS,
+  SELLING_STATE_LABELS,
+  STOCK_STATE_LABELS,
+} from "@/lib/store/organizations.schemas";
 
 export default function CatalogProductCard({ product }: { product: StoreProductCard }) {
   const leadTimeLabel = formatLeadTimeRangeLabel(product.leadTimeMinDays, product.leadTimeMaxDays);
@@ -39,11 +43,24 @@ export default function CatalogProductCard({ product }: { product: StoreProductC
             className="object-cover transition duration-300 group-hover:scale-105"
           />
         )}
-        {/* Only an unusual stock state is worth a badge — "In stock" on every tile is noise. */}
-        {product.stockState !== "in_stock" && (
-          <span className="absolute top-2 left-2 rounded bg-white/90 px-2 py-0.5 text-[11px] leading-4 font-medium tracking-[0.5px] text-[#4A6364]">
-            {STOCK_STATE_LABELS[product.stockState]}
+        {/*
+          §21.2. SELLING STATE OUTRANKS STOCK STATE, and only one badge shows. "Low stock" on a
+          discontinued listing is true and useless — it describes the last few units of something
+          nobody can order. The stronger fact wins the corner rather than stacking two badges the
+          buyer has to reconcile.
+
+          `selling` renders nothing, like `in_stock`: the ordinary case on every tile is noise.
+        */}
+        {product.sellingState !== "selling" ? (
+          <span className="absolute top-2 left-2 rounded bg-[#8C1D18] px-2 py-0.5 text-[11px] leading-4 font-medium tracking-[0.5px] text-white">
+            {SELLING_STATE_LABELS[product.sellingState]}
           </span>
+        ) : (
+          product.stockState !== "in_stock" && (
+            <span className="absolute top-2 left-2 rounded bg-white/90 px-2 py-0.5 text-[11px] leading-4 font-medium tracking-[0.5px] text-[#4A6364]">
+              {STOCK_STATE_LABELS[product.stockState]}
+            </span>
+          )
         )}
       </div>
 

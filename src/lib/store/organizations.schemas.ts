@@ -68,6 +68,21 @@ export const ProductSamplePolicySchema = z.enum(PRODUCT_SAMPLE_POLICIES);
 
 export const PRODUCT_CONDITIONS = ["new", "refurbished", "used"] as const;
 
+/**
+ * §21.2. Whether the SELLER still intends to sell this listing.
+ *
+ * ⚠️ NOT `stockState`, WHICH IS A MEASUREMENT. `unavailable` there means nothing is on hand right
+ * now; `discontinued` here means it is not coming back. A listing can be `in_stock` and
+ * `discontinued` at once — the seller is clearing the last of it — and collapsing the two would
+ * lose that.
+ *
+ * Values are pgEnum labels and travel verbatim.
+ */
+export const PRODUCT_SELLING_STATES = ["selling", "paused", "discontinued"] as const;
+
+/** The tuple as a parser, so a studio `<select>` narrows rather than asserts. */
+export const ProductSellingStateSchema = z.enum(PRODUCT_SELLING_STATES);
+
 export const ORGANIZATION_TRADE_STATES = ["pending", "active", "suspended", "closed"] as const;
 
 /**
@@ -400,6 +415,11 @@ export const StoreProductCardSchema = z
     variantCount: z.number().int(),
     condition: z.enum(PRODUCT_CONDITIONS),
     samplePolicy: z.enum(PRODUCT_SAMPLE_POLICIES),
+    /**
+     * §21.2. On the CARD, not just the detail, because a grid is where a buyer decides what to
+     * open. `selling` is the ordinary case and renders nothing.
+     */
+    sellingState: z.enum(PRODUCT_SELLING_STATES),
     leadTimeMinDays: z.number().int().nullable(),
     leadTimeMaxDays: z.number().int().nullable(),
     mainImageUrl: z.string().nullable(),
@@ -579,12 +599,36 @@ export const VISIT_POLICY_LABELS: Record<VisitPolicy, string> = {
 
 export type StoreStockState = (typeof STORE_STOCK_STATES)[number];
 export type ProductSamplePolicy = (typeof PRODUCT_SAMPLE_POLICIES)[number];
+export type ProductSellingState = (typeof PRODUCT_SELLING_STATES)[number];
 
 export const STOCK_STATE_LABELS: Record<StoreStockState, string> = {
   in_stock: "In stock",
   low_stock: "Low stock",
   made_to_order: "Made to order",
   unavailable: "Unavailable",
+};
+
+/**
+ * §21.2. What a buyer is told. `selling` has NO label because it is never rendered — a listing
+ * being for sale is the unremarkable case, and a badge saying so on every card would make the two
+ * that matter invisible.
+ */
+export const SELLING_STATE_LABELS: Record<Exclude<ProductSellingState, "selling">, string> = {
+  paused: "Paused by seller",
+  discontinued: "Discontinued",
+};
+
+/**
+ * §21.2. The FACET row needs all three, unlike the badge map above.
+ *
+ * A chip row renders whatever buckets the backend counted, and `selling` is one of them — so a map
+ * that omitted it would render the raw wire value "selling" as a chip label. It reads "Currently
+ * sold" rather than "Selling" because the row is answering "show me which", not describing a state.
+ */
+export const SELLING_STATE_FACET_LABELS: Record<ProductSellingState, string> = {
+  selling: "Currently sold",
+  paused: "Paused",
+  discontinued: "Discontinued",
 };
 
 export const SAMPLE_POLICY_LABELS: Record<ProductSamplePolicy, string> = {

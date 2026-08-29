@@ -11,8 +11,14 @@ import {
   publishProduct,
   updateProduct,
   uploadProductImage,
+  replaceProductHighlights,
+  uploadProductHighlightImage,
 } from "@/lib/products/api";
-import type { CreateProductInput, UpdateProductInput } from "@/lib/products/schemas";
+import type {
+  CreateProductInput,
+  ProductHighlightInput,
+  UpdateProductInput,
+} from "@/lib/products/schemas";
 
 /** Query key factory — one place so invalidation can't drift. */
 export const productKeys = {
@@ -54,26 +60,79 @@ export type SaveProgress =
   | { phase: "idle" }
   | { phase: "creating" }
   | { phase: "uploading"; current: number; total: number }
+  /** The highlight blocks: one PUT for the plan, then one upload per block that has an image. */
+  | { phase: "highlights"; current: number; total: number }
   | { phase: "publishing" }
   | { phase: "done" };
 
 interface CreateListingVariables {
   input: CreateProductInput;
   imageFiles: File[];
+  /** The long-form body. Saved after the listing exists — see `saveProductHighlights`. */
+  highlights: readonly ProductHighlightInput[];
+  highlightImageFileByIndex: ReadonlyMap<number, File>;
   publish: boolean;
   onProgress?: (progress: SaveProgress) => void;
+}
+
+/**
+ * Save the long-form body: the plan first, then one image upload per block that has a new file.
+ *
+ * TWO PHASES BECAUSE THE IMAGE IS KEYED ON A ROW THAT MUST EXIST FIRST. `PUT …/highlights` answers
+ * the whole product, so the server-generated ids come back in the same round trip and the uploads
+ * below can be addressed. This mirrors the image flow the wizard already runs for the gallery.
+ *
+ * ⚠️ THE ORDER OF `highlights` IS THE ORDER ON THE PAGE, and `imageFileByIndex` is keyed on that
+ * same index rather than on an id — a newly added block has no id until the PUT returns.
+ */
+async function saveProductHighlights(
+  productId: string,
+  highlights: readonly ProductHighlightInput[],
+  imageFileByIndex: ReadonlyMap<number, File>,
+  onProgress?: (progress: SaveProgress) => void,
+): Promise<void> {
+  onProgress?.({ phase: "highlights", current: 0, total: imageFileByIndex.size });
+  const saved = unwrap(await replaceProductHighlights(productId, highlights));
+
+  const savedByPosition = saved.highlights.toSorted(
+    (first, second) => first.position - second.position,
+  );
+  let uploadedCount = 0;
+  for (const [highlightIndex, imageFile] of imageFileByIndex) {
+    const savedHighlight = savedByPosition[highlightIndex];
+    // A block whose row is missing means the plan and the response disagree about length, which
+    // the server decides. Skipping is right: inventing an id would upload against someone else's
+    // block, and the service would refuse it anyway.
+    if (savedHighlight === undefined) continue;
+    uploadedCount += 1;
+    onProgress?.({ phase: "highlights", current: uploadedCount, total: imageFileByIndex.size });
+    unwrap(await uploadProductHighlightImage(productId, savedHighlight.id, imageFile));
+  }
 }
 
 export function useCreateListingMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ input, imageFiles, publish, onProgress }: CreateListingVariables) => {
+    mutationFn: async ({
+      input,
+      imageFiles,
+      highlights,
+      highlightImageFileByIndex,
+      publish,
+      onProgress,
+    }: CreateListingVariables) => {
       onProgress?.({ phase: "creating" });
       const created = unwrap(await createProduct(input));
 
       for (let imageIndex = 0; imageIndex < imageFiles.length; imageIndex++) {
         onProgress?.({ phase: "uploading", current: imageIndex + 1, total: imageFiles.length });
         unwrap(await uploadProductImage(created.id, imageFiles[imageIndex]));
+      }
+
+      // AFTER the gallery, BEFORE publish: the publish gate re-derives completeness from the row,
+      // so anything that should count towards it has to be saved first.
+      if (highlights.length > 0) {
+        await saveProductHighlights(created.id, highlights, highlightImageFileByIndex, onProgress);
       }
 
       if (publish) {
@@ -99,6 +158,8 @@ interface UpdateListingVariables {
   patch: UpdateProductInput;
   newImageFiles: File[];
   removedImageIds: string[];
+  highlights: readonly ProductHighlightInput[];
+  highlightImageFileByIndex: ReadonlyMap<number, File>;
   /** true = ensure the listing ends up active (publish); false = leave as-is. */
   publish: boolean;
   onProgress?: (progress: SaveProgress) => void;
@@ -112,6 +173,8 @@ export function useUpdateListingMutation() {
       patch,
       newImageFiles,
       removedImageIds,
+      highlights,
+      highlightImageFileByIndex,
       publish,
       onProgress,
     }: UpdateListingVariables) => {
@@ -126,6 +189,10 @@ export function useUpdateListingMutation() {
         onProgress?.({ phase: "uploading", current: imageIndex + 1, total: newImageFiles.length });
         unwrap(await uploadProductImage(productId, newImageFiles[imageIndex]));
       }
+
+      // ALWAYS sent on an edit, even when empty — this is a replace-set, so "no blocks" is a real
+      // instruction (the seller deleted them) and skipping the call would silently keep them.
+      await saveProductHighlights(productId, highlights, highlightImageFileByIndex, onProgress);
 
       if (publish) {
         onProgress?.({ phase: "publishing" });

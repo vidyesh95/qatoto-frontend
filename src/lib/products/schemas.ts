@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { PRODUCT_SAMPLE_POLICIES } from "@/lib/store/organizations.schemas";
+import { PRODUCT_SAMPLE_POLICIES, PRODUCT_SELLING_STATES } from "@/lib/store/organizations.schemas";
 
 /**
  * Client-side contract for the store product-listing API. Data truth lives in the
@@ -72,6 +72,25 @@ export const ProductPricingTierSchema = z
  * share nothing. A canonical per-category vocabulary is a separate build — see
  * `docs/CATEGORY_ATTRIBUTES_STRUCTURE.md`.
  */
+/**
+ * One ordered block of the Alibaba-style long-form listing body: a heading, a paragraph, and an
+ * optional image. Up to 12 per listing.
+ *
+ * ⚠️ `imageUrl` IS READ-ONLY. Migration `0091` removed it from the write schema so the platform
+ * holds the bytes rather than hotlinking a seller's server: the image is uploaded separately to
+ * `POST /products/:id/highlights/:highlightId/image` and comes back here as a Cloudinary URL.
+ * Sending it back on a write is a 422 against a `.strict()` body.
+ */
+export const ProductHighlightSchema = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    bodyText: z.string(),
+    imageUrl: z.string().nullable(),
+    position: z.number().int(),
+  })
+  .strip();
+
 export const ProductSpecificationSchema = z
   .object({
     key: z.string(),
@@ -158,6 +177,11 @@ export const PublicProductSchema = z
     sku: z.string().nullable(),
     keyFeatures: z.array(z.string()),
     status: z.enum(PRODUCT_STATUSES),
+    /**
+     * §21.2. NOT `status`, and the two are easy to confuse. `status` is draft/active — whether
+     * this listing has been published. This is whether the seller still sells the thing.
+     */
+    sellingState: z.enum(PRODUCT_SELLING_STATES),
     publishedAt: z.string().nullable(),
     /**
      * THE THREE IDENTITY FACTS THE BUYER PAGE ALREADY RENDERS.
@@ -184,6 +208,12 @@ export const PublicProductSchema = z
      * sheet and comparison table were rendering an array nothing wrote to.
      */
     specifications: z.array(ProductSpecificationSchema),
+    /**
+     * The long-form body. Rendered by `sections/product-highlights.tsx` on the buyer page, which
+     * has been mapping an empty array since it shipped — the table, both routes and the image
+     * pipeline all existed and no seller surface ever wrote to them.
+     */
+    highlights: z.array(ProductHighlightSchema),
     /**
      * A17. THE THREE SAMPLE FACTS, which answer three different questions and must not be
      * collapsed. `samplePolicy` says whether a sample can be had at all and whether its price
@@ -240,6 +270,7 @@ export const PaginationMetaSchema = z
 
 export type ProductImage = z.infer<typeof ProductImageSchema>;
 export type ProductSpecification = z.infer<typeof ProductSpecificationSchema>;
+export type ProductHighlight = z.infer<typeof ProductHighlightSchema>;
 export type PublicProduct = z.infer<typeof PublicProductSchema>;
 export type ProductListRow = z.infer<typeof ProductListRowSchema>;
 export type ListingRequirementKey = (typeof LISTING_REQUIREMENT_KEYS)[number];
@@ -270,6 +301,15 @@ export interface CreateProductInput {
   compareAtPriceInCents?: number;
   stockQuantity: number;
   sku?: string;
+  /**
+   * §21.2. Omitted on create — the column defaults to `selling`, which is what creating a listing
+   * means. Set it on a PATCH to pause or retire one.
+   *
+   * ⚠️ `paused` AND `discontinued` ARE BOTH UNBUYABLE. The backend refuses a cart add for either
+   * with a 409; the difference is what the buyer is told, and whether the page points them at
+   * replacements.
+   */
+  sellingState?: (typeof PRODUCT_SELLING_STATES)[number];
   /**
    * The manufacturer's own code for this item — a part number, a model number, a style code.
    *
@@ -328,6 +368,24 @@ export interface CreateProductInput {
 export const PACKAGE_DIMENSION_MM_MAX = 50_000;
 export const PACKAGE_GROSS_WEIGHT_GRAMS_MAX = 50_000_000;
 export const UNITS_PER_PACKAGE_MAX = 1_000_000;
+
+/**
+ * The highlight plan sent to `PUT /products/:id/highlights`.
+ *
+ * ⚠️ ECHO BACK THE `id` OF A BLOCK YOU ARE KEEPING. The backend calls it "a HINT, NOT A GRANT" —
+ * it is honoured only when the row already belongs to this product, and otherwise a new row is
+ * inserted with a server id. Omitting it on an edit discards that block's uploaded image, because
+ * the replace-set has no way to tell the row survived.
+ */
+export interface ProductHighlightInput {
+  id?: string;
+  title: string;
+  bodyText: string;
+}
+
+export const PRODUCT_HIGHLIGHT_MAX_COUNT = 12;
+export const PRODUCT_HIGHLIGHT_TITLE_MAX_LENGTH = 120;
+export const PRODUCT_HIGHLIGHT_BODY_MAX_LENGTH = 2000;
 
 /** The spec-sheet bounds, from the same schema, mirrored for the same reason. */
 export const PRODUCT_SPECIFICATION_MAX_COUNT = 40;
