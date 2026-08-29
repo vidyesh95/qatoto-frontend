@@ -93,6 +93,17 @@ interface GoodsLineDraft {
 interface ServiceLineDraft {
   readonly localId: string;
   providerKind: ProviderKind;
+  /**
+   * The offering this line came from, when the buyer arrived from one — mirroring `productId` on
+   * a goods line. NULL for a line typed by hand, and the wire OMITS the key rather than sending
+   * null, because `CreateDraftRfqSchema` is `.strict()`.
+   *
+   * IT IS NOT A GRANT AND NOT A COMMITMENT. The backend validates every id against a real
+   * offering and refuses an unknown one; the buyer stays free to edit the line into something the
+   * offering never described. It exists so a provider answering can see WHICH listing prompted
+   * the request instead of re-matching on title text.
+   */
+  serviceOfferingId: string | null;
   requirementSummary: string;
   /** An index into the goods lines, or `null` for "not related to a specific goods line". */
   linkedGoodsLineIndex: number | null;
@@ -168,26 +179,68 @@ export interface RfqGoodsLineSeed {
   readonly unitLabel: string;
 }
 
-function buildInitialDraft(seededGoodsLine: RfqGoodsLineSeed | null): RfqComposerDraft {
-  if (seededGoodsLine === null) return EMPTY_COMPOSER_DRAFT;
+/**
+ * A first SERVICE line, prepared server-side from a provider's offering. The twin of
+ * {@link RfqGoodsLineSeed}, and built by the route for the same reason.
+ *
+ * ⚠️ THERE IS NO TYPED REQUIREMENT IN HERE, AND THAT IS THE POINT. An offering's `detail` says
+ * what the PROVIDER offers — lanes, modes, capacities. A requirement says what the BUYER needs.
+ * They are not the same statement, and seeding one from the other would put words in the buyer's
+ * mouth about their own shipment. The typed fields start blank; the buyer fills them.
+ */
+export interface RfqServiceLineSeed {
+  readonly serviceOfferingId: string;
+  readonly providerKind: ProviderKind;
+  readonly requirementSummary: string;
+}
+
+function buildInitialDraft(
+  seededGoodsLine: RfqGoodsLineSeed | null,
+  seededServiceLine: RfqServiceLineSeed | null,
+): RfqComposerDraft {
+  if (seededGoodsLine === null && seededServiceLine === null) return EMPTY_COMPOSER_DRAFT;
   return {
     ...EMPTY_COMPOSER_DRAFT,
-    // The RFQ's own title starts as the product's. It is required, and a buyer who arrived from
-    // one listing has already said what this is about.
-    title: seededGoodsLine.requestedTitle,
-    goodsLines: [{ localId: mintLocalId("goods"), ...seededGoodsLine }],
+    // The RFQ's own title starts as whatever the buyer arrived from. It is required, and someone
+    // who came from one listing has already said what this is about. GOODS WINS WHEN BOTH ARE
+    // PRESENT, which preserves the behaviour that shipped first.
+    title: seededGoodsLine?.requestedTitle ?? seededServiceLine?.requirementSummary ?? "",
+    goodsLines:
+      seededGoodsLine === null ? [] : [{ localId: mintLocalId("goods"), ...seededGoodsLine }],
+    serviceLines:
+      seededServiceLine === null
+        ? []
+        : [
+            {
+              localId: mintLocalId("service"),
+              ...seededServiceLine,
+              linkedGoodsLineIndex: null,
+              requirement: { ...EMPTY_RFQ_REQUIREMENT_DRAFT },
+            },
+          ],
   };
 }
 
+/** Index into {@link COMPOSER_STEPS}. Named rather than inlined so the two uses cannot drift. */
+const SERVICES_STEP_INDEX = COMPOSER_STEPS.findIndex((step) => step.id === "services");
+
 export default function RfqComposer({
   seededGoodsLine = null,
+  seededServiceLine = null,
 }: {
   readonly seededGoodsLine?: RfqGoodsLineSeed | null;
+  readonly seededServiceLine?: RfqServiceLineSeed | null;
 } = {}) {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  // A buyer who arrived from an OFFERING and nothing else lands on Services, where their line
+  // already is. Starting them on Basics would hide the one thing the seed did.
+  const [currentStepIndex, setCurrentStepIndex] = useState(
+    seededServiceLine !== null && seededGoodsLine === null ? SERVICES_STEP_INDEX : 0,
+  );
   // Seeded ONCE, as the initial state. Re-seeding from a prop in an effect would overwrite what
   // the buyer had already typed every time this re-rendered.
-  const [draft, setDraft] = useState<RfqComposerDraft>(() => buildInitialDraft(seededGoodsLine));
+  const [draft, setDraft] = useState<RfqComposerDraft>(() =>
+    buildInitialDraft(seededGoodsLine, seededServiceLine),
+  );
   // Lazily minted on first submit and reused across retries — see the hook for why it cannot be a
   // `useState` initializer here.
   const getIdempotencyKey = useAttemptIdempotencyKey();
@@ -632,6 +685,8 @@ export default function RfqComposer({
         {
           localId: mintLocalId("service"),
           providerKind: "freight_forwarder",
+          // Typed by hand, so it names no offering — and null becomes an OMITTED key on the wire.
+          serviceOfferingId: null,
           requirementSummary: "",
           linkedGoodsLineIndex: null,
           requirement: { ...EMPTY_RFQ_REQUIREMENT_DRAFT },
@@ -726,6 +781,12 @@ function buildCreateDraftRfqInput(draft: RfqComposerDraft): CreateDraftRfqInput 
       requirementSummary,
       siblingOrder: serviceLineIndex,
       requirementDetail,
+      // OMITTED WHEN ABSENT, never nulled: `RfqServiceLineInput` types this as optional and the
+      // create schema is `.strict()`, so an explicit null would be a 422 rather than "no
+      // offering". Same reason `productId` is spread this way on a goods line above.
+      ...(serviceLine.serviceOfferingId === null
+        ? {}
+        : { serviceOfferingId: serviceLine.serviceOfferingId }),
       ...(serviceLine.linkedGoodsLineIndex === null
         ? {}
         : { linkedProductLineSiblingOrder: serviceLine.linkedGoodsLineIndex }),

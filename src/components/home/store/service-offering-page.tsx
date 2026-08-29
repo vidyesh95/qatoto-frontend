@@ -3,16 +3,28 @@
 // `/store/services/[offeringSlug]`. One connector offering: its scope, its typed extension, the
 // lanes it covers, and the provider behind it.
 //
-// THE TWO CTAs ARE DELIBERATELY DIFFERENT FROM A PRODUCT'S.
+// THE CTA IS DELIBERATELY DIFFERENT FROM A PRODUCT'S. "Request a quote" starts a SERVICE RFQ —
+// connector work is quoted, not priced, and even an offering with an indicative range is quoted
+// before it is booked. There is no "add to cart" for a service and there should not be one.
 //
-// "Request a quote" starts a SERVICE RFQ — connector work is quoted, not priced, and even an
-// offering with an indicative range is quoted before it is booked. "Add to order" would create an
-// explicit draft linkage and must NOT silently alter the product cart: `commerce_order_service_link`
-// exists precisely so an engagement can attach to an order, a line or a shipment — or to nothing at
-// all, because a company may buy lab testing or marketing without buying a product on Qatoto.
+// IT USED TO BE INERT, AND THE REASON EXPIRED. The comment here said an RFQ "needs a buyer
+// organization, which is the auto-provisioning decision Batch D lands" — Batch D landed (Phase 21,
+// A37), which is why the product page's quote link and the storefront rail's have both worked for
+// some time. This page was the one entrance left dead. It now links to the same composer, seeding
+// a SERVICE line rather than a goods one.
 //
-// Both are inert here. `POST /commerce/rfqs` exists and takes service lines, but an RFQ needs a
-// buyer organization, which is the auto-provisioning decision Batch D lands.
+// AND THE LINK CARRIES THE OFFERING ID. `RfqServiceLineInput.serviceOfferingId` has existed on the
+// backend the whole time — a column, validated against real offerings, stored and read back — and
+// no client had ever sent it. A provider answering can now see which listing prompted the request
+// instead of re-matching on title text.
+//
+// "ADD TO AN ORDER" WAS REMOVED RATHER THAN LEFT INERT, and it was not merely unfinished: there is
+// NO route that creates a service engagement at all — `/commerce/service-engagements` exposes only
+// GET, /events, /commands and /transitions. It would also need an order to attach to, and a buyer
+// arriving from a public offering page may have none. `commerce_order_service_link` still exists
+// and attaching a service to an order stays reachable from the order surface, where engagements are
+// already read. One live CTA beats one live and one dead — the same call that deleted the inert
+// "Send inquiry" from the product page.
 
 import { notFound } from "next/navigation";
 
@@ -118,18 +130,15 @@ export default async function ServiceOfferingPage({ offeringSlug }: { offeringSl
             </p>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
+              {/* A LINK, NOT A MUTATION — the composer is six steps and mints its own idempotency
+                  key, so this hands the buyer to it rather than starting anything here. The slug
+                  is encoded because it is server-generated but still lands in a query value. */}
+              <Link
+                href={`/store/rfqs/new?offeringSlug=${encodeURIComponent(offering.slug)}`}
                 className="rounded-full bg-[#00696E] px-5 py-2 text-sm font-medium text-white"
               >
                 Request a quote
-              </button>
-              <button
-                type="button"
-                className="rounded-full bg-background px-5 py-2 text-sm font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
-              >
-                Add to an order
-              </button>
+              </Link>
             </div>
           </header>
 

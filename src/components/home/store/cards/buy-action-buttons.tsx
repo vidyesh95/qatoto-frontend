@@ -1,4 +1,5 @@
-// TRANSPORT: client-query — "Add to cart" writes through React Query; the other two are still inert.
+// TRANSPORT: client-query — "Add to cart" writes through React Query; "Request a quote" is a real
+// link to the RFQ composer; only "Buy now" is still inert, and the comment on it says why.
 "use client";
 
 // The three buy CTAs — rendered twice on the PDP: in the mobile/tablet fixed bottom bar and inline at

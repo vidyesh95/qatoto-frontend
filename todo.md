@@ -24,8 +24,10 @@ and `git log` are the record of what was built and why.
 **No substantial store build is left.** The parametric catalogue this line used to name — item 3
 under _Still open_ — SHIPPED (migrations `0151`/`0152`, admin console, required-at-publish), and
 its one remaining piece, the seller request queue, was **decided against and dropped** (`0153`).
-Part-code search shipped after it (`0154`). What is left in the store is `commerce_product_document`
-(§21.3, the electronics case) and a single-line checkout for "Buy now" — both named below. (This
+Part-code search shipped after it (`0154`), and the service offering page's dead CTAs after that
+(item 8). What is left in the store is `commerce_product_document` (§21.3, the electronics case)
+and a single-line checkout for "Buy now" — which needs a payment rail that does not exist yet.
+Both are named below. (This
 line previously named §5, cost of goods; that was **decided against** and the section below says
 so.)
 
@@ -645,6 +647,54 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     ⚠️ **"Buy now" stays inert and its comment explains why.** Checkout prepares the ENTIRE cart
     across every seller, so a button labelled as buying one chair would misstate what the buyer
     committed to. It waits on a single-line checkout, not on a handler.
+
+    ⚠️ **AND IT WAITS ON MORE THAN THAT — THERE IS NO PAYMENT RAIL AT ALL.** `stripe` is a name in
+    an enum with no implementation, and `resolveCommercePaymentProvider` refuses everything except
+    `fake`, which is itself **refuse-closed in production**. "Buy now" cannot mean "pay now" when
+    there is nothing to pay into. Separately, `prepareCheckout` locks and reserves EVERY cart line
+    and consumes reservations keyed to the whole `checkoutPrepareId`; there is no line-scoped path
+    and no `selected` flag on a cart line. Two blockers, not one.
+
+8. ~~**The service offering page cannot start an RFQ either, and its blocker had expired.**~~
+   **SHIPPED — the twin of item 7, frontend only, no migration.**
+
+    `/store/services/[offeringSlug]` had **two buttons with no `onClick`** and — unlike the product
+    page — **no chat, no inquiry, no contact path of any kind**. It was the last dead-end surface
+    in the store.
+
+    ⚠️ **THE REASON IT GAVE FOR BEING INERT HAD SHIPPED.** The file said an RFQ "needs a buyer
+    organization, which is the auto-provisioning decision Batch D lands" — Batch D landed in Phase
+    21 / A37, which is why the product page's quote link and the storefront rail's had both worked
+    for some time. Only the comment was still there. **Read a stale blocker as a claim to check,
+    not a fact.**
+
+    ⚠️ **AND UNDERNEATH IT, THE SAME DEFECT THIS WHOLE ARC HAS BEEN CLOSING.**
+    `RfqServiceLineInput.serviceOfferingId` was fully wired server-side — column (`store.ts:5498`),
+    validated against real offerings (`commerce-rfqs.service.ts:418-439`), stored and read back —
+    and **no client had ever sent it.** That is `productId` on a goods line before item 7 wired it,
+    exactly.
+
+    **Proved live, both halves in one round-trip.** A draft raised from
+    `/store/services/store-demo-sea-freight` came back with service line 0 carrying
+    `serviceOfferingId: "store_demo_offering_sea"` and a second, HAND-TYPED line carrying `null` —
+    which is the half that matters, because `CreateDraftRfqSchema` is `.strict()` and a hand-typed
+    line must OMIT the key rather than null it. A bad `?offeringSlug=` renders an empty composer
+    rather than a 404, and `?productSlug=` still opens on Basics exactly as before. Probe RFQ
+    deleted, organisation reverted.
+
+    ⚠️ **THE TYPED REQUIREMENT IS SEEDED EMPTY, DELIBERATELY.** An offering's `detail` says what
+    the PROVIDER offers; a requirement says what the BUYER needs. Copying one into the other would
+    write the buyer's requirement for them — the same refusal item 7 made when it declined to seed
+    a quantity from a `minimumOrderQuantity` the seller never stated. Only `providerKind`,
+    `requirementSummary` and the offering id are seeded; the buyer fills the lanes and modes.
+
+    **"Add to an order" was REMOVED, not left inert.** It is not merely unfinished: there is **no
+    route that creates a service engagement at all** — `/commerce/service-engagements` exposes only
+    `GET`, `/events`, `/commands` and `/transitions` — and it would need an existing order to
+    attach to, which a buyer arriving from a public offering page may not have.
+    `commerce_order_service_link` still exists and attaching a service to an order stays reachable
+    from the order surface. One live CTA beats one live and one dead, which is the call item 7 made
+    when it deleted the inert "Send inquiry".
 
 ---
 
