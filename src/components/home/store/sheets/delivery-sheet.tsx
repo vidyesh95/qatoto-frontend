@@ -44,6 +44,7 @@ import {
   describeUnpriceableReason,
   FREIGHT_LEG_KIND_LABELS,
   FREIGHT_UNAVAILABLE_REASON_LABELS,
+  type FreightJourneyProjection,
   type FreightLanePlan,
   type FreightLegPlan,
   type FreightOption,
@@ -83,7 +84,19 @@ export default function DeliverySheet({
     );
   }
 
-  const { journeys, legs, unpriceableReasons, quotableProviders } = lanePlan;
+  const { journeys, partialJourneys, legs, unpriceableReasons, quotableProviders } = lanePlan;
+
+  // WHICH LEGS THE PARTIALS LEAVE OUT, derived from what the server actually selected rather than
+  // from `unpriceableReasons`. The reasons section below says WHY a leg has no rate; this says
+  // WHICH leg the numbers above it stop short of, and a buyer needs both.
+  const coveredLegSequences = new Set(
+    partialJourneys.flatMap((journey) =>
+      journey.legSelections.map((legSelection) => legSelection.legSequence),
+    ),
+  );
+  const excludedLegsLabel = formatLegListLabel(
+    legs.filter((leg) => !coveredLegSequences.has(leg.sequence)),
+  );
 
   return (
     <ModalSheet title="How this ships" onClose={onClose}>
@@ -95,43 +108,36 @@ export default function DeliverySheet({
           <section className="flex flex-col gap-2">
             <h3 className="text-sm font-medium text-[#191C1C]">Priced end to end</h3>
             {journeys.map((journey) => (
-              <div
+              <JourneyCard
                 key={`${journey.currency}-${journey.primaryMode}`}
-                className="flex flex-col gap-1 rounded-lg border border-[#CAC4D0]/60 p-3"
-              >
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-xs font-medium text-[#191C1C]">
-                    {FREIGHT_TRANSPORT_MODE_LABELS[journey.primaryMode]}
-                  </span>
-                  <span className="text-sm font-medium text-[#191C1C]">
-                    {formatCentsLabel(journey.totalInCents, journey.currency)}
-                  </span>
-                </div>
-                <span className="text-[11px] leading-4 text-[#6F7979]">
-                  {journey.transitDaysMin}–{journey.transitDaysMax} days in transit, across{" "}
-                  {journey.legSelections.length} leg
-                  {journey.legSelections.length === 1 ? "" : "s"}
-                </span>
-                {/* Per leg, because two forwarders' divisors legitimately disagree on one journey. */}
-                <ul className="mt-1 flex flex-col gap-0.5">
-                  {journey.legSelections.map((legSelection) => (
-                    <li
-                      key={legSelection.legSequence}
-                      className="text-[11px] leading-4 text-[#6F7979]"
-                    >
-                      {/* Named by KIND, never by `legSequence` — that is zero-indexed on the wire,
-                          and "Leg 0" shows a buyer an array index. */}
-                      {legLabelForSequence(legs, legSelection.legSequence)}:{" "}
-                      {FREIGHT_TRANSPORT_MODE_LABELS[legSelection.mode]} ·{" "}
-                      {formatCentsLabel(legSelection.priceInCents, journey.currency)} ·{" "}
-                      {legSelection.sourceForwarderName} ·{" "}
-                      {CHARGEABLE_WEIGHT_BASIS_LABELS[legSelection.chargeableWeightBasis]} (
-                      {formatGramsLabel(legSelection.chargeableWeightGrams)})
-                    </li>
-                  ))}
-                </ul>
-                <ExpiryNote validUntil={journey.validUntil} />
-              </div>
+                journey={journey}
+                legs={legs}
+                coverage="end_to_end"
+              />
+            ))}
+          </section>
+        )}
+
+        {/* PRICED AS FAR AS RATES EXIST — the covered legs, never presented as a delivered price.
+            The server keeps these in their own array for exactly that reason (§19.9): folding them
+            into `journeys` above would be the cheaper-looking total §19.6 refuses. THE WORD "TOTAL"
+            DOES NOT APPEAR IN THIS SECTION and must not be added to it — what is missing here is a
+            leg of the route, not a rounding. */}
+        {partialJourneys.length > 0 && (
+          <section className="flex flex-col gap-2">
+            <h3 className="text-sm font-medium text-[#191C1C]">Priced as far as rates exist</h3>
+            <p className="text-xs leading-4 text-[#6F7979]">
+              {excludedLegsLabel === null
+                ? "This covers only part of the route, so it is not a delivered price."
+                : `This is not a delivered price — ${excludedLegsLabel} is not included, and you arrange that part yourself.`}
+            </p>
+            {partialJourneys.map((journey) => (
+              <JourneyCard
+                key={`${journey.currency}-${journey.primaryMode}`}
+                journey={journey}
+                legs={legs}
+                coverage="covered_legs_only"
+              />
             ))}
           </section>
         )}
@@ -186,6 +192,62 @@ export default function DeliverySheet({
         </p>
       </div>
     </ModalSheet>
+  );
+}
+
+/**
+ * One journey the server composed, priced and timed by it.
+ *
+ * SHARED BY BOTH SECTIONS SO THE TWO CANNOT DRIFT, and `coverage` is the only thing that differs.
+ * It changes what the transit line CLAIMS: the same day range across the legs that priced is not
+ * the same fact as the same day range across a whole route, and reading one as the other turns a
+ * shorter ROUTE into a faster DELIVERY. Nothing else about a partial is different, because nothing
+ * else about it is less true — every number here is still a named forwarder's.
+ */
+function JourneyCard({
+  journey,
+  legs,
+  coverage,
+}: {
+  readonly journey: FreightJourneyProjection;
+  readonly legs: readonly FreightLegPlan[];
+  readonly coverage: "end_to_end" | "covered_legs_only";
+}) {
+  const legCount = journey.legSelections.length;
+  const legPlural = legCount === 1 ? "" : "s";
+
+  return (
+    <div className="flex flex-col gap-1 rounded-lg border border-[#CAC4D0]/60 p-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-xs font-medium text-[#191C1C]">
+          {FREIGHT_TRANSPORT_MODE_LABELS[journey.primaryMode]}
+        </span>
+        <span className="text-sm font-medium text-[#191C1C]">
+          {formatCentsLabel(journey.totalInCents, journey.currency)}
+        </span>
+      </div>
+      <span className="text-[11px] leading-4 text-[#6F7979]">
+        {coverage === "end_to_end"
+          ? `${journey.transitDaysMin}–${journey.transitDaysMax} days in transit, across ${legCount} leg${legPlural}`
+          : `${journey.transitDaysMin}–${journey.transitDaysMax} days in transit on the ${legCount} priced leg${legPlural}`}
+      </span>
+      {/* Per leg, because two forwarders' divisors legitimately disagree on one journey. */}
+      <ul className="mt-1 flex flex-col gap-0.5">
+        {journey.legSelections.map((legSelection) => (
+          <li key={legSelection.legSequence} className="text-[11px] leading-4 text-[#6F7979]">
+            {/* Named by KIND, never by `legSequence` — that is zero-indexed on the wire,
+                and "Leg 0" shows a buyer an array index. */}
+            {legLabelForSequence(legs, legSelection.legSequence)}:{" "}
+            {FREIGHT_TRANSPORT_MODE_LABELS[legSelection.mode]} ·{" "}
+            {formatCentsLabel(legSelection.priceInCents, journey.currency)} ·{" "}
+            {legSelection.sourceForwarderName} ·{" "}
+            {CHARGEABLE_WEIGHT_BASIS_LABELS[legSelection.chargeableWeightBasis]} (
+            {formatGramsLabel(legSelection.chargeableWeightGrams)})
+          </li>
+        ))}
+      </ul>
+      <ExpiryNote validUntil={journey.validUntil} />
+    </div>
   );
 }
 
@@ -406,6 +468,27 @@ function ExpiryNote({
 function legLabelForSequence(legs: readonly FreightLegPlan[], legSequence: number): string {
   const namedLeg = legs.find((leg) => leg.sequence === legSequence);
   return namedLeg === undefined ? `Leg ${legSequence + 1}` : FREIGHT_LEG_KIND_LABELS[namedLeg.kind];
+}
+
+/**
+ * The legs a partial journey leaves out, as a phrase: "the inland leg", "the inland leg and the
+ * domestic delivery".
+ *
+ * BY KIND, never by sequence, for the same reason `describeUnpriceableReason` is — "Leg 1" is an
+ * array index. `null` when nothing is excluded, so the caller states the shortfall generically
+ * rather than rendering an empty clause into a sentence about it.
+ */
+function formatLegListLabel(excludedLegs: readonly FreightLegPlan[]): string | null {
+  const labels = excludedLegs.map(
+    (leg) => `the ${FREIGHT_LEG_KIND_LABELS[leg.kind].toLowerCase()}`,
+  );
+  if (labels.length === 0) {
+    return null;
+  }
+  if (labels.length === 1) {
+    return labels[0] ?? null;
+  }
+  return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
 }
 
 /** `locality` is a LABEL — it renders beside the country and selects no rate card. */

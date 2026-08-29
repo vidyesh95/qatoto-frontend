@@ -162,11 +162,58 @@ writing trademarked logo paths from memory was the worse option. Drop real asset
 deliberately — building axes early migrates every row that reaches an immutable order-line
 snapshot, for a UI nothing has asked for yet.
 
-### 16. Incoterm semantics
+### 16. Incoterm semantics — the DIVERGENCE is closed; the CONCEPT is not
 
-Phase 23 shipped the vocabulary only; nothing branches on the value. Needed for port-to-port
-pricing on an uncovered inland leg. Note the casing: `commerce_incoterm` is UPPERCASE, unlike every
-other enum on the wire.
+⚠️ **THE HEADLINE HERE CHANGED. Do not reopen "an uncovered inland leg makes the whole journey
+unpriceable" as though it were still true.** It shipped: `composeJourneys` runs a second pass over
+the **covered** legs and publishes it as `partialJourneys[]`, so a good ocean rate is shown with the
+inland leg named as excluded instead of the whole journey being emptied. `STORE_BACKEND_STRUCTURE.md`
+§19.9 called that "the largest practical divergence in the phase".
+
+**The doc contradicted itself and that was the opening.** §19.6 bullet 2 said an uncovered leg makes
+a journey unpriceable rather than cheaper; bullet 3 said "report the components you have, name the
+ones you do not". Bullet 2's real guard is against a total that LOOKS complete while a leg is
+missing — not against pricing what priced beside a named absence. So the payload shape changed and
+the rule did not. All three doc sections (§19.6, §19.8, §19.9) are corrected.
+
+⚠️ **THE SEPARATE ARRAY IS THE ENTIRE SAFETY ARGUMENT AND MUST NOT BE COLLAPSED.** `journeys[]` keeps
+its exact prior meaning — every leg covered, a real delivered total — so `projectFreight`, which
+reads only that field, keeps the order arrival window and checkout prepare answering
+`unknown / leg_uncovered` **by construction**. An arrival window is a time promise about delivery to
+the buyer; a partial ends at the destination COUNTRY with a leg nobody has arranged, and its honestly
+shorter transit days would read as a faster delivery rather than a shorter route. An uncovered
+**primary** leg still yields nothing — a journey with no international leg is not a shipment.
+
+**On the client**, `delivery-sheet.tsx` gained a "Priced as far as rates exist" section between the
+priced path and "No end-to-end price for this route", sharing one `JourneyCard` with the end-to-end
+list so the two cannot drift. ⚠️ **The word "total" does not appear in it and must not be added** —
+what is missing is a leg of the route, not a rounding.
+
+**STILL OPEN, and it is the Incoterm concept itself.** What shipped is the EFFECT with no incoterm
+input, because there is none to read: `commerce_incoterm` sits on exactly two nullable columns —
+`commerce_quote_revision.incoterm` (`store.ts:5887`) and `commerce_order.incoterm_snapshot`
+(`store.ts:6173`) — both of which exist only AFTER a buyer already has a priced offer. A product
+carries no term.
+
+- **A seller-declared incoterm on a listing — a migration.** It is the value that would say which
+  legs are the BUYER's to arrange, distinguishing an FOB listing (buyer arranges ocean AND inland)
+  from a DDP one (seller arranges everything, and Qatoto should price nothing).
+- **`commerce_rfq.desired_incoterm` — a second migration.** `rfqs.schemas.ts` carries no incoterm at
+  all, so a buyer cannot state the term they want quoted under. The quote revision states the
+  SELLER's offered term; nothing states the buyer's asked-for one.
+- **Three vocabulary gaps, all small.** `quote-detail.tsx:169` and `order-detail.tsx:118` print the
+  bare wire code ("FOB") rather than routing through `QUOTE_INCOTERM_LABELS`
+  (`quotes.schemas.ts:574-586`) — which today has exactly ONE consumer, the composer picker at
+  `quote-composer.tsx:1206`. And `commerce-orders.service.ts:135` / `commerce-checkout.service.ts:239`
+  still declare `incotermSnapshot: string | null` where `commerce-quotes.service.ts` uses
+  `CommerceIncoterm`.
+
+Note the casing: `commerce_incoterm` is UPPERCASE, unlike every other enum on the wire.
+
+⚠️ **NONE OF THIS IS VISIBLE IN PRODUCTION UNTIL §18 IS BOUGHT.** Every rate table is empty (A36), so
+the international leg answers `no_active_rate_card` too and there is nothing to compose a partial
+from. That is still the right order — _Decisions needed_ said settle the uncovered-inland-leg rule
+BEFORE spending on cards, which is what this did.
 
 ### Procurement — all three SHIPPED
 
@@ -822,8 +869,9 @@ Each of these is a question for Vidyesh, not a task.
   needs a consent column, a withdrawal path and a third wire member. **Not the same thing as the
   `/sales` earnings panel**, which is self-scoped and authenticated; a seller reading their own
   books needs no consent.
-- **The uncovered-inland-leg rule.** Until it is settled, most real lanes show nothing _even after_
-  rate data is bought. Worth deciding before spending on cards.
+- ~~**The uncovered-inland-leg rule.**~~ **SETTLED — see §16.** An uncovered inland leg no longer
+  empties the sheet: the covered legs compose into `partialJourneys[]` with the missing leg named.
+  Decided before the rate cards are bought, which is the order this entry asked for.
 - **Below-smallest-band yields no option.** One reviewable row per card at
   `minBillableWeightGrams: 0` closes it — a data decision, documented as §19.11 step 4.
 - **Should `POST /commerce/admin/freight-rate-cards` refuse a silent supersede?** §19.10's list

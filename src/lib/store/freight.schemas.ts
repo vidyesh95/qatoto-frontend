@@ -209,11 +209,18 @@ export const FreightJourneyProjectionSchema = z
 /**
  * Why no whole journey could be priced, discriminated on `kind`.
  *
- * `leg_uncovered` is the one that will fire most: an uncovered leg makes the WHOLE journey
- * unpriceable, and on most lanes no forwarder sells a domestic card in the destination country, so a
- * perfectly good ocean rate goes unshown. §19.9 calls this the largest practical divergence from
- * Alibaba and agrees the fix is an Incoterm concept rather than a rate table — so nothing on this
- * client works around it. Faking a port-to-port render would be the client deciding an Incoterm.
+ * `leg_uncovered` is the one that will fire most: on most lanes no forwarder sells a domestic card
+ * in the destination country, so the inland leg has no rate. §19.9 calls this the largest practical
+ * divergence from Alibaba.
+ *
+ * ⚠️ IT NOW FIRES ALONGSIDE A NON-EMPTY `partialJourneys`, AND STILL MEANS THE SAME THING: there is
+ * no END-TO-END price. The server answers the uncovered leg by pricing the covered ones into a
+ * separate array rather than by pricing nothing, so this reason is no longer proof that the sheet
+ * has no numbers on it — only that none of them is a delivered total.
+ *
+ * THE CLIENT STILL WORKS NOTHING AROUND. It renders the two arrays the server composed under two
+ * different headings; it does not sum a leg, promote a partial, or decide where one route ends.
+ * Faking a port-to-port render would be the client deciding an Incoterm.
  */
 export const JourneyUnpriceableReasonSchema = z.discriminatedUnion("kind", [
   z
@@ -242,7 +249,18 @@ export const FreightLanePlanSchema = z
     destination: z.object({ countryCode: z.string(), locality: z.string().nullable() }).strip(),
     consignment: ConsignmentMeasurementSchema,
     legs: z.array(FreightLegPlanSchema),
+    /** END TO END: every leg covered, a real delivered total. */
     journeys: z.array(FreightJourneyProjectionSchema),
+    /**
+     * PRICED AS FAR AS RATES EXIST — the covered legs only, with `unpriceableReasons` naming the leg
+     * that is missing. Same shape as a whole journey, and `legSelections[].legSequence` says which
+     * legs it actually covers.
+     *
+     * ⚠️ A SEPARATE ARRAY BECAUSE IT IS NOT A TOTAL. Merging it into `journeys` is exactly the
+     * "cheaper-looking total" §19.6 refuses, and the word "total" must not appear in any copy that
+     * renders one. It stops at the destination COUNTRY, with a leg the buyer arranges themselves.
+     */
+    partialJourneys: z.array(FreightJourneyProjectionSchema),
     unpriceableReasons: z.array(JourneyUnpriceableReasonSchema),
     quotableProviders: z.array(QuotableFreightProviderSchema),
   })
