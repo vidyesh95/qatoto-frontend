@@ -48,33 +48,53 @@ export const ANIME_CATEGORIES = [
 ];
 
 export const MOCK_RECENT_EPISODES: Media[] = [
-  { id: "1", imageSrc: "/dummy/recent_episode_01.avif", title: "God Troubles Me Season 3" },
-  { id: "2", imageSrc: "/dummy/recent_episode_02.avif", title: "Dragon's Disciple" },
-  { id: "3", imageSrc: "/dummy/recent_episode_03.avif", title: "Master of the Star Spring" },
-  { id: "4", imageSrc: "/dummy/recent_episode_04.avif", title: "The Furious Yama" },
+  {
+    id: "1",
+    imageSrc: "/dummy/recent_episode_01.avif",
+    title: "God Troubles Me Season 3 Episode 7",
+  },
+  { id: "2", imageSrc: "/dummy/recent_episode_02.avif", title: "Dragon's Disciple Episode 15" },
+  {
+    id: "3",
+    imageSrc: "/dummy/recent_episode_03.avif",
+    title: "Master of the Star Spring Episode 3",
+  },
+  { id: "4", imageSrc: "/dummy/recent_episode_04.avif", title: "The Furious Yama Episode 22" },
   {
     id: "5",
     imageSrc: "/dummy/recent_episode_05.avif",
-    title: "R.E.D (Rescue Eternal Desert)",
+    title: "R.E.D (Rescue Eternal Desert) Episode 9",
   },
-  { id: "6", imageSrc: "/dummy/recent_episode_06.avif", title: "Fairy Mountain" },
+  { id: "6", imageSrc: "/dummy/recent_episode_06.avif", title: "Fairy Mountain Episode 11" },
 ];
 
 export const MOCK_RECOMMENDED_ANIME: Media[] = [
-  { id: "1", imageSrc: "/dummy/recommended_for_you_01.avif", title: "Word of Honor" },
-  { id: "2", imageSrc: "/dummy/recommended_for_you_02.avif", title: "You're A Genius!" },
+  { id: "1", imageSrc: "/dummy/recommended_for_you_01.avif", title: "Word of Honor Episode 18" },
+  {
+    id: "2",
+    imageSrc: "/dummy/recommended_for_you_02.avif",
+    title: "You're A Genius! Episode 6",
+  },
   {
     id: "3",
     imageSrc: "/dummy/recommended_for_you_03.avif",
-    title: "Let Me Check the Walkthrough First",
+    title: "Let Me Check the Walkthrough First Episode 13",
   },
   {
     id: "4",
     imageSrc: "/dummy/recommended_for_you_04.avif",
-    title: "The Soul of Soldier Master",
+    title: "The Soul of Soldier Master Episode 4",
   },
-  { id: "5", imageSrc: "/dummy/recommended_for_you_05.avif", title: "The Warrior From Qin" },
-  { id: "6", imageSrc: "/dummy/recommended_for_you_06.avif", title: "Spirit Wind Elegance" },
+  {
+    id: "5",
+    imageSrc: "/dummy/recommended_for_you_05.avif",
+    title: "The Warrior From Qin Episode 20",
+  },
+  {
+    id: "6",
+    imageSrc: "/dummy/recommended_for_you_06.avif",
+    title: "Spirit Wind Elegance Episode 8",
+  },
 ];
 
 export const MOCK_COMPLETED_SERIES: Media[] = [
