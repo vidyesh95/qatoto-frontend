@@ -21,6 +21,10 @@ import {
   dollarsToCents,
   PACKAGE_DIMENSION_MM_MAX,
   PACKAGE_GROSS_WEIGHT_GRAMS_MAX,
+  PRODUCT_SPECIFICATION_GROUP_MAX_LENGTH,
+  PRODUCT_SPECIFICATION_KEY_MAX_LENGTH,
+  PRODUCT_SPECIFICATION_MAX_COUNT,
+  PRODUCT_SPECIFICATION_VALUE_MAX_LENGTH,
   SLUG_TO_CONDITION_LABEL,
   UNITS_PER_PACKAGE_MAX,
   type CreateProductInput,
@@ -43,11 +47,25 @@ const LISTING_STEPS = [
   { id: "identity", label: "Product Identity" },
   { id: "images", label: "Images & Media" },
   { id: "description", label: "Description" },
+  { id: "specifications", label: "Specifications" },
   { id: "pricing", label: "Pricing & Inventory" },
   { id: "review", label: "Review & Publish" },
 ] as const;
 
 type ListingStepId = (typeof LISTING_STEPS)[number]["id"];
+
+/**
+ * Where a step sits, BY ID.
+ *
+ * Every "Edit" link on the review step and every "Add" link on the publish checklist used to
+ * carry a hardcoded ordinal, so inserting `specifications` at index 3 silently pointed all of
+ * them one step to the left — a wrong jump, not a crash, which is the kind that ships. Reading
+ * the position out of the array means the next inserted step cannot reintroduce it, and a stale
+ * id is a compile error rather than a wrong number.
+ */
+function stepIndexOf(stepId: ListingStepId): number {
+  return LISTING_STEPS.findIndex((step) => step.id === stepId);
+}
 
 const PRODUCT_CONDITIONS = CONDITION_LABELS;
 
@@ -66,6 +84,21 @@ interface PricingTierDraft {
 interface ExistingImage {
   id: string;
   url: string;
+}
+
+/**
+ * One spec-sheet row as typed in the form.
+ *
+ * `group` is held as a STRING, never as `string | null`, because a text input has no null. The
+ * conversion back to "omit the key" happens once, in `collectListingInput` — sending a hydrated
+ * `null` straight back is a 422 against the backend's `.strict()` write schema.
+ */
+interface SpecificationDraft {
+  /** Stable per-row key for the React list; generated on add/hydrate, never sent to the backend. */
+  id: string;
+  key: string;
+  value: string;
+  group: string;
 }
 
 // Multi-step wizard for creating (or, with `productId`, editing) a store listing.
@@ -113,14 +146,19 @@ export default function CreateListingPage({ productId }: { productId?: string })
   const [keyFeatures, setKeyFeatures] = useState<string[]>([]);
   const [keyFeatureDraft, setKeyFeatureDraft] = useState("");
 
-  // Step 4 — pricing & inventory
+  // Step 4 — the spec sheet. Free-text key/value pairs, optionally grouped; `group` is what the
+  // buyer's spec sheet turns into a tab. There is no canonical vocabulary yet, so two sellers can
+  // still spell one field two ways — that is `docs/CATEGORY_ATTRIBUTES_STRUCTURE.md`, not this.
+  const [specifications, setSpecifications] = useState<SpecificationDraft[]>([]);
+
+  // Step 5 — pricing & inventory
   const [priceInDollars, setPriceInDollars] = useState("");
   const [compareAtPriceInDollars, setCompareAtPriceInDollars] = useState("");
   const [stockQuantity, setStockQuantity] = useState("");
   const [skuCode, setSkuCode] = useState("");
   const [pricingTiers, setPricingTiers] = useState<PricingTierDraft[]>([]);
 
-  // Step 4 — the three sample facts (A17). Three controls because they answer three questions:
+  // Step 5 — the three sample facts (A17). Three controls because they answer three questions:
   // whether a sample can be had, what it costs, and how many one order may hold. The cap is not
   // decoration — a sample skips the tier ladder and the minimum order quantity, so an uncapped
   // "sample" line is a bulk order at sample pricing, and on a refundable listing it mints a credit
@@ -129,7 +167,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
   const [samplePriceInDollars, setSamplePriceInDollars] = useState("");
   const [maximumSampleQuantity, setMaximumSampleQuantity] = useState("1");
 
-  // Step 4 — the five shipping facts (§19.9a). HELD AS TYPED STRINGS IN THEIR OWN UNIT, never as a
+  // Step 5 — the five shipping facts (§19.9a). HELD AS TYPED STRINGS IN THEIR OWN UNIT, never as a
   // formatted "52 × 46 × 12 cm" this file would then have to parse back. The unit is in the label
   // and in the field name, and the conversion to an integer happens once, in `collectListingInput`.
   const [packageLengthMm, setPackageLengthMm] = useState("");
@@ -145,6 +183,22 @@ export default function CreateListingPage({ productId }: { productId?: string })
 
   const selectedImageFiles = selectedImagePreviews.map((preview) => preview.file);
   const imageCount = existingImages.length + selectedImagePreviews.length;
+
+  // Rows that will survive `collectListingInput`. An added-but-untouched row is dropped there, so
+  // the review step must not count it as a specification the listing is going to have.
+  const filledSpecificationCount = specifications.filter(
+    (specification) => specification.key.trim().length > 0 && specification.value.trim().length > 0,
+  ).length;
+
+  // The groups already used on THIS listing, offered back as autocomplete. Free text with no
+  // memory is how one product page ends up with a "Materials" tab and a "Material" tab.
+  const specificationGroupSuggestions = [
+    ...new Set(
+      specifications
+        .map((specification) => specification.group.trim())
+        .filter((groupName) => groupName.length > 0),
+    ),
+  ];
 
   // THE REFUSAL IS CLASSIFIED, NOT FLATTENED TO ITS FIRST SENTENCE. `readMutationError` used to read
   // `apiError.message` alone, which discarded `errors.missing` — the only thing on the wire that
@@ -239,6 +293,20 @@ export default function CreateListingPage({ productId }: { productId?: string })
           id: `hydrated-tier-${String(tierIndex)}`,
           unitPriceInDollars: centsToDollarString(tier.unitPriceInCents),
           minimumOrderQuantity: String(tier.minimumOrderQuantity),
+        })),
+    );
+    // `group: null` is UNGROUPED and hydrates as an empty control — the same rule the packaging
+    // and sample fields follow above. It must not survive as a null into the next save: the write
+    // schema's `group` is `.optional()`, so `{ group: null }` is a 422, and `collectListingInput`
+    // is where the key gets omitted again.
+    setSpecifications(
+      loadedProduct.specifications
+        .toSorted((first, second) => first.position - second.position)
+        .map((specification, specificationIndex) => ({
+          id: `hydrated-specification-${String(specificationIndex)}`,
+          key: specification.key,
+          value: specification.value,
+          group: specification.group ?? "",
         })),
     );
   }
@@ -359,6 +427,33 @@ export default function CreateListingPage({ productId }: { productId?: string })
     );
   }
 
+  function handleAddSpecificationClick() {
+    setSpecifications((previousSpecifications) => [
+      ...previousSpecifications,
+      { id: crypto.randomUUID(), key: "", value: "", group: "" },
+    ]);
+  }
+
+  function handleSpecificationChange(
+    specificationIndex: number,
+    field: keyof SpecificationDraft,
+    value: string,
+  ) {
+    setSpecifications((previousSpecifications) =>
+      previousSpecifications.map((specification, index) =>
+        index === specificationIndex ? { ...specification, [field]: value } : specification,
+      ),
+    );
+  }
+
+  function handleRemoveSpecificationClick(specificationIndexToRemove: number) {
+    setSpecifications((previousSpecifications) =>
+      previousSpecifications.filter(
+        (_, specificationIndex) => specificationIndex !== specificationIndexToRemove,
+      ),
+    );
+  }
+
   /** Build the request DTO from form state, or return a client-side error. */
   function collectListingInput(): CreateProductInput | { error: string } {
     const title = productTitle.trim();
@@ -393,6 +488,47 @@ export default function CreateListingPage({ productId }: { productId?: string })
         };
       }
       tiers.push({ unitPriceInCents, minimumOrderQuantity });
+    }
+
+    /**
+     * The spec sheet. A REPLACE-SET: whatever this array holds becomes the listing's whole spec
+     * sheet, and an empty one clears it.
+     *
+     * Three refusals happen here rather than at the server, because each of them is a 422 the
+     * form had every fact needed to prevent:
+     *
+     * - a half-filled row (a key with no value, or a value with no key) — the backend requires
+     *   both at 1–80 and 1–500 characters, and a silent drop would lose what the seller typed;
+     * - a duplicate key, compared CASE-INSENSITIVELY with the backend's own
+     *   `toLocaleLowerCase("en-US")`, because `Material` and `material` collide there and a
+     *   case-sensitive check here would let the pair through to a refusal;
+     * - more than 40 rows.
+     *
+     * ⚠️ AND `group` IS OMITTED, NEVER NULLED. The read view returns `string | null`; the write
+     * schema is `.optional()` inside a `.strict()` object, so `{ group: null }` fails the whole
+     * save. A blank control means "no group", which on the wire means the key is absent.
+     */
+    const collectedSpecifications: { key: string; value: string; group?: string }[] = [];
+    const seenSpecificationKeys = new Set<string>();
+    for (const specification of specifications) {
+      const key = specification.key.trim();
+      const value = specification.value.trim();
+      const group = specification.group.trim();
+      if (key.length === 0 && value.length === 0 && group.length === 0) continue;
+      if (key.length === 0 || value.length === 0) {
+        return { error: "Every specification needs both a name and a value." };
+      }
+      const comparableKey = key.toLocaleLowerCase("en-US");
+      if (seenSpecificationKeys.has(comparableKey)) {
+        return { error: `"${key}" is listed twice. Each specification name may appear once.` };
+      }
+      seenSpecificationKeys.add(comparableKey);
+      collectedSpecifications.push({ key, value, ...(group.length > 0 ? { group } : {}) });
+    }
+    if (collectedSpecifications.length > PRODUCT_SPECIFICATION_MAX_COUNT) {
+      return {
+        error: `A listing can hold up to ${String(PRODUCT_SPECIFICATION_MAX_COUNT)} specifications.`,
+      };
     }
 
     /**
@@ -449,6 +585,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
       stockQuantity: resolvedStock,
       sku: skuCode.trim() || undefined,
       pricingTiers: tiers,
+      specifications: collectedSpecifications,
       ...sampleFacts,
       ...packaging.facts,
     };
@@ -824,6 +961,141 @@ export default function CreateListingPage({ productId }: { productId?: string })
           </StepCard>
         );
 
+      case "specifications":
+        return (
+          <StepCard
+            title="Specifications"
+            subtitle="The facts a buyer compares before they choose. Voltage, material, dimensions — whatever your category turns on."
+          >
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">Specification sheet</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Optional, and worth filling in: this is what the buyer&apos;s comparison table
+                    puts side by side.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddSpecificationClick}
+                  disabled={specifications.length >= PRODUCT_SPECIFICATION_MAX_COUNT}
+                  className="flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Image
+                    src="/icons/add_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                    alt=""
+                    width={18}
+                    height={18}
+                  />
+                  Add specification
+                </button>
+              </div>
+
+              {specifications.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  No specifications yet. A listing with none still publishes — it just cannot be
+                  compared against anything on the fields a buyer cares about.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {specifications.map((specification, specificationIndex) => (
+                    <li
+                      key={specification.id}
+                      className="grid grid-cols-[1fr_1fr_auto] items-end gap-3 rounded-xl border border-border p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"
+                    >
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-medium text-muted-foreground">Name</span>
+                        <input
+                          type="text"
+                          value={specification.key}
+                          maxLength={PRODUCT_SPECIFICATION_KEY_MAX_LENGTH}
+                          onChange={(event) =>
+                            handleSpecificationChange(specificationIndex, "key", event.target.value)
+                          }
+                          placeholder="e.g. Material"
+                          className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-medium text-muted-foreground">Value</span>
+                        <input
+                          type="text"
+                          value={specification.value}
+                          maxLength={PRODUCT_SPECIFICATION_VALUE_MAX_LENGTH}
+                          onChange={(event) =>
+                            handleSpecificationChange(
+                              specificationIndex,
+                              "value",
+                              event.target.value,
+                            )
+                          }
+                          placeholder="e.g. Solid oak"
+                          className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Group (optional)
+                        </span>
+                        {/* Free text, and it becomes a TAB on the buyer's spec sheet. Blank means
+                            ungrouped, which is a real answer rather than a missing one. */}
+                        <input
+                          type="text"
+                          value={specification.group}
+                          maxLength={PRODUCT_SPECIFICATION_GROUP_MAX_LENGTH}
+                          list="specification-group-suggestions"
+                          onChange={(event) =>
+                            handleSpecificationChange(
+                              specificationIndex,
+                              "group",
+                              event.target.value,
+                            )
+                          }
+                          placeholder="e.g. Materials"
+                          className="h-11 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSpecificationClick(specificationIndex)}
+                        aria-label={
+                          specification.key.trim().length > 0
+                            ? `Remove ${specification.key.trim()}`
+                            : "Remove specification"
+                        }
+                        className="flex h-11 cursor-pointer items-center transition-opacity hover:opacity-70"
+                      >
+                        <Image
+                          src="/icons/delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                          alt=""
+                          width={20}
+                          height={20}
+                        />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Suggests groups THIS listing already uses, so a seller does not end up with
+                  "Materials" and "Material" as two tabs on their own product page. It cannot
+                  suggest across listings: nothing on the wire carries other sellers' groups. */}
+              <datalist id="specification-group-suggestions">
+                {specificationGroupSuggestions.map((groupName) => (
+                  <option key={groupName} value={groupName}>
+                    {groupName}
+                  </option>
+                ))}
+              </datalist>
+
+              <p className="text-xs text-muted-foreground">
+                {specifications.length}/{PRODUCT_SPECIFICATION_MAX_COUNT} specifications added
+              </p>
+            </div>
+          </StepCard>
+        );
+
       case "pricing":
         return (
           <StepCard
@@ -1157,7 +1429,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
           >
             <ReviewSection
               title="Product Identity"
-              onEditClick={() => setCurrentStepIndex(0)}
+              onEditClick={() => setCurrentStepIndex(stepIndexOf("identity"))}
               rows={[
                 { label: "Title", value: productTitle },
                 { label: "Brand", value: brandName },
@@ -1167,7 +1439,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
             />
             <ReviewSection
               title="Images & Media"
-              onEditClick={() => setCurrentStepIndex(1)}
+              onEditClick={() => setCurrentStepIndex(stepIndexOf("images"))}
               rows={[
                 {
                   label: "Images",
@@ -1178,7 +1450,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
             />
             <ReviewSection
               title="Description"
-              onEditClick={() => setCurrentStepIndex(2)}
+              onEditClick={() => setCurrentStepIndex(stepIndexOf("description"))}
               rows={[
                 { label: "Description", value: productDescription },
                 {
@@ -1188,8 +1460,30 @@ export default function CreateListingPage({ productId }: { productId?: string })
               ]}
             />
             <ReviewSection
+              title="Specifications"
+              onEditClick={() => setCurrentStepIndex(stepIndexOf("specifications"))}
+              rows={[
+                {
+                  label: "Specification sheet",
+                  // COUNTS WHAT WILL ACTUALLY BE SAVED, not how many rows the form is showing.
+                  // An untouched row the seller added and never filled in is dropped by
+                  // `collectListingInput`, so counting it here would promise the review step a
+                  // specification the listing is not going to have.
+                  //
+                  // Blank when there are none, so `ReviewSection` renders it as the missing thing
+                  // it is rather than as a confident "0 specifications".
+                  value:
+                    filledSpecificationCount > 0
+                      ? `${String(filledSpecificationCount)} specification${
+                          filledSpecificationCount === 1 ? "" : "s"
+                        }`
+                      : "",
+                },
+              ]}
+            />
+            <ReviewSection
               title="Pricing & Inventory"
-              onEditClick={() => setCurrentStepIndex(3)}
+              onEditClick={() => setCurrentStepIndex(stepIndexOf("pricing"))}
               rows={[
                 { label: "Price", value: priceInDollars ? `$${priceInDollars}` : "" },
                 {
@@ -1221,7 +1515,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
             />
             <ReviewSection
               title="Packaging & Shipping"
-              onEditClick={() => setCurrentStepIndex(3)}
+              onEditClick={() => setCurrentStepIndex(stepIndexOf("pricing"))}
               rows={[
                 {
                   label: "Package size",
@@ -1467,13 +1761,26 @@ function ListingCompletenessChecklist({
   completeness: ListingCompleteness;
   onEditClick: (stepIndex: number) => void;
 }) {
-  /** Which wizard step fixes each requirement. */
-  const stepIndexByRequirementKey: Record<string, number> = {
-    title: 0,
-    images: 1,
-    price: 3,
-    samplePrice: 3,
-    shippingFacts: 3,
+  /**
+   * Which wizard step fixes each requirement.
+   *
+   * BY STEP ID, resolved through `stepIndexOf`. These were ordinals, and inserting the
+   * Specifications step at index 3 moved pricing without moving them — so "Add" beside a missing
+   * price would have opened the specification sheet. A wrong jump is worse than a broken link,
+   * because the seller reads it as the form losing their work.
+   *
+   * ⚠️ THERE IS NO `specifications` ROW HERE, DELIBERATELY. The server owns this checklist
+   * (`projectListingCompleteness`) and its five requirements are unchanged; a free-text spec sheet
+   * is optional to publish. A publish requirement only becomes meaningful once per-category
+   * attributes can say WHICH fields a category requires — see
+   * `docs/CATEGORY_ATTRIBUTES_STRUCTURE.md`.
+   */
+  const stepIdByRequirementKey: Record<string, ListingStepId> = {
+    title: "identity",
+    images: "images",
+    price: "pricing",
+    samplePrice: "pricing",
+    shippingFacts: "pricing",
   };
 
   return (
@@ -1507,7 +1814,9 @@ function ListingCompletenessChecklist({
               {!isSatisfied && (
                 <button
                   type="button"
-                  onClick={() => onEditClick(stepIndexByRequirementKey[requirement.key] ?? 0)}
+                  onClick={() =>
+                    onEditClick(stepIndexOf(stepIdByRequirementKey[requirement.key] ?? "identity"))
+                  }
                   className="cursor-pointer text-xs text-[#1DBDC5] underline-offset-2 hover:underline"
                 >
                   Add

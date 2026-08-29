@@ -58,6 +58,30 @@ export const ProductPricingTierSchema = z
   .strip();
 
 /**
+ * One structured key/value fact about a listing — "Material: Solid oak", "Voltage: 5 V".
+ *
+ * ⚠️ `group` IS NULLABLE HERE AND OPTIONAL ON THE WAY IN, and the asymmetry is not an oversight.
+ * The backend's read view types it `string | null` (`products.service.ts:114-121`) because NULL is
+ * how the column spells "ungrouped". Its WRITE schema types it
+ * `z.string().trim().min(1).max(80).optional()` inside a `.strict()` object, so sending
+ * `{ group: null }` back is a **422**, not an ignored field — see `CreateProductInput` below,
+ * which is where the key has to be omitted rather than nulled.
+ *
+ * `group` is what the buyer's spec sheet turns into a tab. It is free text on purpose: the useful
+ * groupings for a chair ("Dimensions", "Materials") and a transformer ("Electrical", "Thermal")
+ * share nothing. A canonical per-category vocabulary is a separate build — see
+ * `docs/CATEGORY_ATTRIBUTES_STRUCTURE.md`.
+ */
+export const ProductSpecificationSchema = z
+  .object({
+    key: z.string(),
+    value: z.string(),
+    group: z.string().nullable(),
+    position: z.number(),
+  })
+  .strip();
+
+/**
  * WHAT A LISTING STILL NEEDS BEFORE IT CAN BE PUBLISHED.
  *
  * The backend computes this with `projectListingCompleteness`, and the SAME projection feeds both
@@ -138,6 +162,13 @@ export const PublicProductSchema = z
     images: z.array(ProductImageSchema),
     pricingTiers: z.array(ProductPricingTierSchema),
     /**
+     * The structured spec sheet. Ordered by `position`, and EMPTY FOR EVERY LISTING CREATED
+     * BEFORE THIS FIELD REACHED THE FORM — the backend has accepted `specifications[]` on create
+     * and PATCH since the table shipped, and no client had ever sent one, so the buyer's spec
+     * sheet and comparison table were rendering an array nothing wrote to.
+     */
+    specifications: z.array(ProductSpecificationSchema),
+    /**
      * A17. THE THREE SAMPLE FACTS, which answer three different questions and must not be
      * collapsed. `samplePolicy` says whether a sample can be had at all and whether its price
      * comes back against a later bulk order; `samplePriceInCents` says what it costs, and NULL
@@ -192,6 +223,7 @@ export const PaginationMetaSchema = z
   .strip();
 
 export type ProductImage = z.infer<typeof ProductImageSchema>;
+export type ProductSpecification = z.infer<typeof ProductSpecificationSchema>;
 export type PublicProduct = z.infer<typeof PublicProductSchema>;
 export type ProductListRow = z.infer<typeof ProductListRowSchema>;
 export type ListingRequirementKey = (typeof LISTING_REQUIREMENT_KEYS)[number];
@@ -224,6 +256,21 @@ export interface CreateProductInput {
   sku?: string;
   pricingTiers: { unitPriceInCents: number; minimumOrderQuantity: number }[];
   /**
+   * The spec sheet, as a REPLACE-SET. Sending it on a PATCH replaces every row the listing has;
+   * sending `[]` clears them. Omitting it on create is fine — the backend defaults to `[]`.
+   *
+   * ⚠️ `group` IS OPTIONAL, NOT NULLABLE, AND THIS IS THE ONE THING TO GET RIGHT. The read view
+   * returns `string | null` (see `ProductSpecificationSchema`), but the write schema is
+   * `.optional()` inside a `.strict()` object — so an ungrouped row must OMIT the key. Round-
+   * tripping a hydrated `null` straight back is a **422 that fails the whole save**, not a field
+   * the server ignores.
+   *
+   * Keys are unique per listing, CASE-INSENSITIVELY: the backend's `.refine()` lowercases with
+   * `toLocaleLowerCase("en-US")` before comparing, so `Material` and `material` collide. A form
+   * collecting these must apply the same rule or it will send a body it could have refused.
+   */
+  specifications: { key: string; value: string; group?: string }[];
+  /**
    * A17. Both-or-neither in practice, and the backend enforces it: `paid` and `refundable` are
    * refused without a `samplePriceInCents`, and `unavailable` is refused WITH one. Sending the
    * price alongside `unavailable` is the mistake that reads as harmless and 422s.
@@ -252,6 +299,12 @@ export interface CreateProductInput {
 export const PACKAGE_DIMENSION_MM_MAX = 50_000;
 export const PACKAGE_GROSS_WEIGHT_GRAMS_MAX = 50_000_000;
 export const UNITS_PER_PACKAGE_MAX = 1_000_000;
+
+/** The spec-sheet bounds, from the same schema, mirrored for the same reason. */
+export const PRODUCT_SPECIFICATION_MAX_COUNT = 40;
+export const PRODUCT_SPECIFICATION_KEY_MAX_LENGTH = 80;
+export const PRODUCT_SPECIFICATION_VALUE_MAX_LENGTH = 500;
+export const PRODUCT_SPECIFICATION_GROUP_MAX_LENGTH = 80;
 
 export type UpdateProductInput = Partial<CreateProductInput>;
 

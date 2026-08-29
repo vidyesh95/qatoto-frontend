@@ -418,11 +418,32 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     by aligning rows on `specifications[].key` — the exact operation free text guarantees will
     not match across two sellers of the same chair.
 
-    **Step 1 is worth shipping alone.** Add `specifications[]` to `src/lib/products/schemas.ts`
-    and a free-text repeater to the wizard, and both sheets stop rendering empty. It needs no
-    migration and no backend change. Everything after it — the definition tables, the inherited
-    resolution, the typed controls, the facets — is the vocabulary that makes those rows
-    comparable, and it is a Phase-24 build.
+    ~~**Step 1 is worth shipping alone.**~~ **SHIPPED.** `specifications[]` is on
+    `PublicProductSchema` and `CreateProductInput`, and the wizard has a sixth step — a
+    Specifications repeater between Description and Pricing, with edit-mode hydration and a
+    replace-set save. No migration, no backend change: the routes had accepted the field since
+    the table shipped. So `rg "specifications" src/lib/products/schemas.ts` now RETURNS HITS, and
+    the paragraph above is a record of what was true before, not a check to re-run.
+
+    Three client-side refusals ride with it, each preventing a 422 the form had the facts to
+    stop: a half-filled row, a duplicate key compared case-insensitively with the backend's own
+    `toLocaleLowerCase("en-US")`, and more than 40 rows. ⚠️ **And `group` is OMITTED, never
+    nulled** — the read view is `string | null`, the write schema is `.optional()` inside a
+    `.strict()` object, so round-tripping a hydrated null fails the whole save.
+
+    **Everything after step 1 is still open** — the definition tables, the inherited resolution,
+    the typed controls, the facets. That is the vocabulary that makes these rows comparable, and
+    it is a Phase-24 build. Until it lands, two sellers can still spell one field two ways.
+
+    ⚠️ **The new step is NOT a publish requirement**, and adding one now would be wrong.
+    `LISTING_REQUIREMENT_KEYS` is still five, server-owned; a free-text sheet cannot say which
+    fields a category needs, which is exactly what the attribute definitions are for.
+
+    **One bug was closed on the way past.** Inserting a step moved `pricing` from index 3 to 4,
+    and both the review-step "Edit" links and the publish checklist's `stepIndexByRequirementKey`
+    carried hardcoded ordinals — so "Add" beside a missing price would have opened the
+    specification sheet. Both now resolve through `stepIndexOf(stepId)`, so the next inserted step
+    cannot reintroduce it and a stale id is a compile error rather than a wrong jump.
 
     **The one rule that must survive a later trim:** a category with no filterable attributes
     returns an empty facet array and the client renders NO new control. That is the answer to
@@ -434,9 +455,16 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
 4. **`modelNumber` reaches nobody, and it is three edits.** `product.model_number` exists, has a
    CHECK, and is projected onto `StoreProductDetailSchema` — but it is not in the wizard, not in
    `store_search_document`, and not a filter. So the one column that would let a buyer search an
-   exact part code (`LM358`, a furniture model code, a garment style code) is inert. Wizard field
-    - index the column + an exact-match rank branch ahead of `websearch_to_tsquery`. **No
-      migration.** `STORE_BACKEND_STRUCTURE.md` §21.1.
+   exact part code (`LM358`, a furniture model code, a garment style code) is inert. Wizard
+   field, then index the column, then an exact-match rank branch ahead of
+   `websearch_to_tsquery`. **No migration.** `STORE_BACKEND_STRUCTURE.md` §21.1.
+
+    ⚠️ **`countryOfOriginCode` AND `unitOfMeasure` ARE THE SAME DEFECT, found while shipping the
+    specification step.** Both are accepted by the backend's write schema
+    (`products.schemas.ts:77-82`), both are absent from `src/lib/products/schemas.ts`, and both
+    are already parsed by the buyer's `StoreProductDetailSchema` — so the product page has fields
+    for them that no seller can ever fill, and they render as permanently null. They are two more
+    inputs on the identity step and nothing else. Do all three together.
 
     ⚠️ **Do not make it unique.** Two sellers listing the same manufacturer part is the premise of
     a parametric marketplace, not a data error. `sku` is the unique one, per seller organization.
