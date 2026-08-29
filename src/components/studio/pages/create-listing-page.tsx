@@ -34,12 +34,17 @@ import {
   PRODUCT_SPECIFICATION_KEY_MAX_LENGTH,
   PRODUCT_SPECIFICATION_MAX_COUNT,
   PRODUCT_SPECIFICATION_VALUE_MAX_LENGTH,
+  PRODUCT_VARIANT_MAX_COUNT,
+  PRODUCT_VARIANT_NAME_MAX_LENGTH,
+  PRODUCT_VARIANT_SKU_MAX_LENGTH,
+  PRODUCT_VARIANT_SLUG_MAX_LENGTH,
   SLUG_TO_CONDITION_LABEL,
   UNITS_PER_PACKAGE_MAX,
   type CreateProductInput,
   type ListingCompleteness,
   type ProductAttributeValueInput,
   type ProductHighlightInput,
+  type ProductVariantInput,
   type SellerProductDocument,
 } from "@/lib/products/schemas";
 import {
@@ -81,6 +86,7 @@ const LISTING_STEPS = [
   { id: "highlights", label: "Highlights" },
   { id: "documents", label: "Documents" },
   { id: "pricing", label: "Pricing & Inventory" },
+  { id: "variants", label: "Variants" },
   { id: "review", label: "Review & Publish" },
 ] as const;
 
@@ -157,6 +163,47 @@ interface PricingTierDraft {
   id: string;
   unitPriceInDollars: string;
   minimumOrderQuantity: string;
+}
+
+/**
+ * A1. One variation as typed in the form.
+ *
+ * ⚠️ `publicSlug` IS THE IDENTITY THE BACKEND UPSERTS ON, not `savedId`. A slug that changes retires
+ * the old row and creates a new one, so `isSlugEdited` exists to stop the name from silently driving
+ * it: a NEW row's slug follows what is typed until the seller touches it, and a HYDRATED row's slug
+ * is frozen and rendered read-only. Renaming "Sea blue" to "Ocean blue" must not orphan the orders
+ * that bought Sea blue.
+ *
+ * Money and counts are held as STRINGS, like every other numeric control in this form — an input has
+ * no number, and the conversion happens once in `collectVariants`.
+ */
+interface VariantDraft {
+  /** Stable per-row key for the React list; generated on create/hydrate, never sent. */
+  localId: string;
+  /** The server's id when this row was hydrated. Distinguishes an edit from an addition. */
+  savedId: string | null;
+  name: string;
+  publicSlug: string;
+  isSlugEdited: boolean;
+  sku: string;
+  priceInDollars: string;
+  stockQuantity: string;
+  minimumOrderQuantity: string;
+}
+
+/**
+ * The kebab-case slug the backend demands, derived from a name.
+ *
+ * Client-side only to spare a pointless round trip — `products.schemas.ts` refuses anything that is
+ * not kebab-case with a 422, and this produces what it accepts. It is never applied to a hydrated
+ * row: see `VariantDraft`.
+ */
+function toVariantSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, PRODUCT_VARIANT_SLUG_MAX_LENGTH);
 }
 
 /** An image already stored on the backend (edit mode). */
@@ -269,6 +316,17 @@ export default function CreateListingPage({ productId }: { productId?: string })
   // unmount, the same discipline the gallery uses; never from an effect that then setState.
   const [highlights, setHighlights] = useState<HighlightDraft[]>([]);
   const highlightPreviewUrlsRef = useRef<string[]>([]);
+
+  /**
+   * A1. The ACTIVE variants only. Retired ones are counted below and deliberately not editable.
+   *
+   * A retired variant is absent from the payload, which is exactly how it stays retired — the
+   * replace-set retires what it does not name, and a row already retired needs no instruction.
+   * Editing one would be worse than useless: it cannot be deleted at all, because an order line
+   * that bought under it holds a `restrict` FK.
+   */
+  const [variants, setVariants] = useState<VariantDraft[]>([]);
+  const [retiredVariantCount, setRetiredVariantCount] = useState(0);
 
   /**
    * STORE §21.3 — the public PDFs on this listing.
@@ -474,6 +532,32 @@ export default function CreateListingPage({ productId }: { productId?: string })
     // and sample fields follow above. It must not survive as a null into the next save: the write
     // schema's `group` is `.optional()`, so `{ group: null }` is a 422, and `collectListingInput`
     // is where the key gets omitted again.
+    // A1. Actives hydrate as editable rows; retired ones are counted and left out of the payload,
+    // which is what keeps them retired. Before `variants` reached the seller schema this array was
+    // discarded by `.strip()`, so there was nothing to hydrate from.
+    setVariants(
+      loadedProduct.variants
+        .filter((variant) => variant.state === "active")
+        .toSorted((first, second) => first.position - second.position)
+        .map((variant, variantIndex) => ({
+          localId: `hydrated-variant-${String(variantIndex)}`,
+          savedId: variant.id,
+          name: variant.name,
+          publicSlug: variant.publicSlug,
+          // Frozen: the backend upserts on this, so letting the name drive it would retire the row.
+          isSlugEdited: true,
+          sku: variant.sku ?? "",
+          priceInDollars: centsToDollarString(variant.priceInCents),
+          stockQuantity: String(variant.stockQuantity),
+          // NULL is "not stated", and it must not travel back as a null — the write schema is
+          // `.optional()` inside a `.strict()` object, so an empty control omits the key instead.
+          minimumOrderQuantity:
+            variant.minimumOrderQuantity === null ? "" : String(variant.minimumOrderQuantity),
+        })),
+    );
+    setRetiredVariantCount(
+      loadedProduct.variants.filter((variant) => variant.state === "retired").length,
+    );
     setHighlights(
       loadedProduct.highlights
         .toSorted((first, second) => first.position - second.position)
@@ -646,6 +730,67 @@ export default function CreateListingPage({ productId }: { productId?: string })
     setPricingTiers((previousTiers) =>
       previousTiers.filter((_, tierIndex) => tierIndex !== tierIndexToRemove),
     );
+  }
+
+  function handleAddVariantClick() {
+    setVariants((previous) => [
+      ...previous,
+      {
+        localId: crypto.randomUUID(),
+        savedId: null,
+        name: "",
+        publicSlug: "",
+        isSlugEdited: false,
+        sku: "",
+        priceInDollars: "",
+        stockQuantity: "",
+        minimumOrderQuantity: "",
+      },
+    ]);
+  }
+
+  /**
+   * A NAME CHANGE DRAGS THE SLUG ALONG ONLY ON AN UNSAVED, UNTOUCHED ROW. Everywhere else the slug
+   * is the row's identity and changing it retires the variant — see `VariantDraft`.
+   */
+  function handleVariantNameChange(variantIndex: number, value: string) {
+    setVariants((previous) =>
+      previous.map((variant, index) => {
+        if (index !== variantIndex) return variant;
+        const shouldFollowName = variant.savedId === null && !variant.isSlugEdited;
+        return {
+          ...variant,
+          name: value,
+          publicSlug: shouldFollowName ? toVariantSlug(value) : variant.publicSlug,
+        };
+      }),
+    );
+  }
+
+  function handleVariantSlugChange(variantIndex: number, value: string) {
+    setVariants((previous) =>
+      previous.map((variant, index) =>
+        index === variantIndex
+          ? { ...variant, publicSlug: toVariantSlug(value), isSlugEdited: true }
+          : variant,
+      ),
+    );
+  }
+
+  function handleVariantFieldChange(
+    variantIndex: number,
+    field: "sku" | "priceInDollars" | "stockQuantity" | "minimumOrderQuantity",
+    value: string,
+  ) {
+    setVariants((previous) =>
+      previous.map((variant, index) =>
+        index === variantIndex ? { ...variant, [field]: value } : variant,
+      ),
+    );
+  }
+
+  function handleRemoveVariantClick(variantIndexToRemove: number) {
+    setVariants((previous) => previous.filter((_, index) => index !== variantIndexToRemove));
   }
 
   function handleAddHighlightClick() {
@@ -900,6 +1045,89 @@ export default function CreateListingPage({ productId }: { productId?: string })
   }
 
   /**
+   * A1. The variant set, form strings to wire values.
+   *
+   * ⚠️ THIS REFUSES RATHER THAN SKIPPING, WHICH IS THE OPPOSITE OF `collectHighlights`, AND THE
+   * DIFFERENCE IS THE WHOLE POINT. A half-filled highlight block is simply not content, so dropping
+   * it costs nothing. Dropping a variant RETIRES IT — the payload is a replace-set keyed on slug —
+   * so a seller who clears a price by accident would lose the variant, and with it the ability to
+   * sell under a slug their past orders name. A blank row is a refusal the seller can see, not a
+   * silent deletion they cannot.
+   *
+   * The ONE row that is skipped is an entirely empty, never-saved one: that is the "Add variant"
+   * button pressed and abandoned, which is not an instruction to do anything.
+   *
+   * `sku` and `minimumOrderQuantity` are OMITTED when blank rather than sent null — the write schema
+   * is `.strict()` with `.optional()` keys, so a null is a 422 that fails the whole save.
+   */
+  function collectVariants(): { variants: ProductVariantInput[] } | { error: string } {
+    const collected: ProductVariantInput[] = [];
+    for (const [variantIndex, variant] of variants.entries()) {
+      const name = variant.name.trim();
+      const publicSlug = variant.publicSlug.trim();
+      const sku = variant.sku.trim();
+      const rawStock = variant.stockQuantity.trim();
+      const rawMinimum = variant.minimumOrderQuantity.trim();
+      const isUntouchedNewRow =
+        variant.savedId === null &&
+        name.length === 0 &&
+        publicSlug.length === 0 &&
+        sku.length === 0 &&
+        variant.priceInDollars.trim().length === 0 &&
+        rawStock.length === 0 &&
+        rawMinimum.length === 0;
+      if (isUntouchedNewRow) continue;
+
+      const label = name.length > 0 ? `"${name}"` : `variant ${String(variantIndex + 1)}`;
+      if (name.length === 0) {
+        return { error: `Give ${label} a name, or remove the row.` };
+      }
+      if (publicSlug.length === 0) {
+        return { error: `${label} needs a URL slug.` };
+      }
+      const priceInCents = dollarsToCents(variant.priceInDollars);
+      if (priceInCents === null) {
+        return { error: `Enter a valid price for ${label}.` };
+      }
+      const variantStockQuantity = Number(rawStock);
+      if (
+        rawStock.length === 0 ||
+        !Number.isInteger(variantStockQuantity) ||
+        variantStockQuantity < 0
+      ) {
+        return { error: `Enter a whole stock quantity for ${label}.` };
+      }
+      const minimumOrderQuantity = Number(rawMinimum);
+      if (
+        rawMinimum.length > 0 &&
+        (!Number.isInteger(minimumOrderQuantity) || minimumOrderQuantity < 1)
+      ) {
+        return {
+          error: `The minimum order quantity for ${label} must be a whole number, 1 or more.`,
+        };
+      }
+
+      collected.push({
+        name,
+        publicSlug,
+        priceInCents,
+        stockQuantity: variantStockQuantity,
+        ...(sku.length === 0 ? {} : { sku }),
+        ...(rawMinimum.length === 0 ? {} : { minimumOrderQuantity }),
+      });
+    }
+
+    if (new Set(collected.map((variant) => variant.publicSlug)).size !== collected.length) {
+      return { error: "Two variants share a URL slug. Each one needs its own." };
+    }
+    const skus = collected.flatMap((variant) => (variant.sku === undefined ? [] : [variant.sku]));
+    if (new Set(skus).size !== skus.length) {
+      return { error: "Two variants share an SKU. Each one needs its own, or leave it blank." };
+    }
+    return { variants: collected };
+  }
+
+  /**
    * STORE §20. The typed answers, from form strings to the wire's tagged union.
    *
    * ⚠️ A NUMBER IS SCALED HERE AND NOWHERE ELSE. The definition's `numericScale` says how many
@@ -956,6 +1184,11 @@ export default function CreateListingPage({ productId }: { productId?: string })
       setLocalError(input.error);
       return;
     }
+    const collectedVariants = collectVariants();
+    if ("error" in collectedVariants) {
+      setLocalError(collectedVariants.error);
+      return;
+    }
     setLocalError(null);
     const collectedHighlights = collectHighlights();
     const collectedAttributeValues = collectAttributeValues();
@@ -972,6 +1205,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
           attributeValues: collectedAttributeValues,
           newDocuments: pendingDocuments,
           removedDocumentIds,
+          variants: collectedVariants.variants,
           publish,
           onProgress: setSaveProgress,
         },
@@ -988,6 +1222,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
         highlightImageFileByIndex: collectedHighlights.imageFileByIndex,
         attributeValues: collectedAttributeValues,
         newDocuments: pendingDocuments,
+        variants: collectedVariants.variants,
         publish,
         onProgress: setSaveProgress,
       },
@@ -1681,6 +1916,214 @@ export default function CreateListingPage({ productId }: { productId?: string })
 
               <p className="text-xs text-muted-foreground">
                 {specifications.length}/{PRODUCT_SPECIFICATION_MAX_COUNT} specifications added
+              </p>
+            </div>
+          </StepCard>
+        );
+
+      case "variants":
+        return (
+          <StepCard
+            title="Variants"
+            subtitle="Sizes, colours, voltages — the versions of this listing a buyer picks between."
+          >
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">Variations</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Optional. Leave this empty and the listing sells as one thing at the price on
+                    the previous step.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddVariantClick}
+                  disabled={variants.length >= PRODUCT_VARIANT_MAX_COUNT}
+                  className="flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Image
+                    src="/icons/add_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                    alt=""
+                    width={18}
+                    height={18}
+                  />
+                  Add variant
+                </button>
+              </div>
+
+              {/* The three consequences of adding one, stated here rather than discovered at
+                  checkout. Each is enforced server-side. */}
+              {variants.length > 0 && (
+                <ul className="flex flex-col gap-1 rounded-xl bg-secondary/40 p-3 text-xs leading-4 text-muted-foreground">
+                  <li>Price and stock come from the variant, not from the Pricing step.</li>
+                  <li>Your listing shows a &ldquo;from&rdquo; price across the variants below.</li>
+                  <li>A buyer must choose one before they can add this listing to a cart.</li>
+                  <li>
+                    A variant with no volume pricing of its own uses the bulk tiers you set on the
+                    Pricing step.
+                  </li>
+                </ul>
+              )}
+
+              {variants.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  No variants. Add one only if buyers genuinely choose between versions — a listing
+                  sold one way is simpler for everyone.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {variants.map((variant, variantIndex) => (
+                    <li
+                      key={variant.localId}
+                      className="flex flex-col gap-3 rounded-xl border border-border p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Variant {variantIndex + 1}
+                          {variant.savedId !== null && " · saved"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveVariantClick(variantIndex)}
+                          aria-label={
+                            variant.name.trim().length > 0
+                              ? `Remove ${variant.name.trim()}`
+                              : `Remove variant ${String(variantIndex + 1)}`
+                          }
+                          className="flex cursor-pointer items-center transition-opacity hover:opacity-70"
+                        >
+                          <Image
+                            src="/icons/delete_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                            alt=""
+                            width={20}
+                            height={20}
+                          />
+                        </button>
+                      </div>
+
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-medium text-muted-foreground">Name</span>
+                        <input
+                          type="text"
+                          value={variant.name}
+                          maxLength={PRODUCT_VARIANT_NAME_MAX_LENGTH}
+                          placeholder="Sea blue"
+                          onChange={(event) =>
+                            handleVariantNameChange(variantIndex, event.target.value)
+                          }
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-foreground"
+                        />
+                      </label>
+
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-medium text-muted-foreground">URL slug</span>
+                        <input
+                          type="text"
+                          value={variant.publicSlug}
+                          maxLength={PRODUCT_VARIANT_SLUG_MAX_LENGTH}
+                          readOnly={variant.savedId !== null}
+                          placeholder="sea-blue"
+                          onChange={(event) =>
+                            handleVariantSlugChange(variantIndex, event.target.value)
+                          }
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none read-only:cursor-not-allowed read-only:opacity-60 focus:border-foreground"
+                        />
+                        <span className="text-[11px] leading-4 text-muted-foreground">
+                          {variant.savedId === null
+                            ? "Set once. It identifies this variant afterwards, so it cannot be changed later."
+                            : "Fixed — past orders name this variant by its slug."}
+                        </span>
+                      </label>
+
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <label className="flex flex-col gap-1">
+                          <span className="text-xs font-medium text-muted-foreground">Price</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={variant.priceInDollars}
+                            placeholder="0.00"
+                            onChange={(event) =>
+                              handleVariantFieldChange(
+                                variantIndex,
+                                "priceInDollars",
+                                event.target.value,
+                              )
+                            }
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-foreground"
+                          />
+                        </label>
+                        <label className="flex flex-col gap-1">
+                          <span className="text-xs font-medium text-muted-foreground">Stock</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={variant.stockQuantity}
+                            placeholder="0"
+                            onChange={(event) =>
+                              handleVariantFieldChange(
+                                variantIndex,
+                                "stockQuantity",
+                                event.target.value,
+                              )
+                            }
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-foreground"
+                          />
+                        </label>
+                        <label className="flex flex-col gap-1">
+                          <span className="text-xs font-medium text-muted-foreground">
+                            Min. order
+                          </span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={variant.minimumOrderQuantity}
+                            placeholder="Optional"
+                            onChange={(event) =>
+                              handleVariantFieldChange(
+                                variantIndex,
+                                "minimumOrderQuantity",
+                                event.target.value,
+                              )
+                            }
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-foreground"
+                          />
+                        </label>
+                      </div>
+
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-medium text-muted-foreground">SKU</span>
+                        <input
+                          type="text"
+                          value={variant.sku}
+                          maxLength={PRODUCT_VARIANT_SKU_MAX_LENGTH}
+                          placeholder="Optional, unique within this listing"
+                          onChange={(event) =>
+                            handleVariantFieldChange(variantIndex, "sku", event.target.value)
+                          }
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-foreground"
+                        />
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Retired variants are shown as a count and nothing more: they cannot be deleted —
+                  an order line that bought one holds a `restrict` FK — and re-editing one would
+                  bring back a version the seller withdrew. */}
+              {retiredVariantCount > 0 && (
+                <p className="text-xs leading-4 text-muted-foreground">
+                  {retiredVariantCount} retired variant{retiredVariantCount === 1 ? " is" : "s are"}{" "}
+                  kept out of sight so past orders still name what was bought. Removing a variant
+                  above retires it the same way — it stops selling, it is not deleted.
+                </p>
+              )}
+
+              <p className="text-xs leading-4 text-muted-foreground">
+                Volume pricing per variant is not editable here yet — the bulk tiers on the Pricing
+                step apply to every variant that has none of its own.
               </p>
             </div>
           </StepCard>
@@ -2385,6 +2828,21 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   value:
                     filledHighlightCount > 0
                       ? `${String(filledHighlightCount)} block${filledHighlightCount === 1 ? "" : "s"}`
+                      : "",
+                },
+              ]}
+            />
+            <ReviewSection
+              title="Variants"
+              onEditClick={() => setCurrentStepIndex(stepIndexOf("variants"))}
+              rows={[
+                {
+                  label: "Variations",
+                  // Counts the form's rows, unlike Highlights above — `collectVariants` REFUSES a
+                  // bad row rather than dropping it, so what is on screen is what will save.
+                  value:
+                    variants.length > 0
+                      ? `${String(variants.length)} variant${variants.length === 1 ? "" : "s"}`
                       : "",
                 },
               ]}

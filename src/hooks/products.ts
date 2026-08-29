@@ -15,6 +15,7 @@ import {
   updateProduct,
   uploadProductImage,
   replaceProductAttributeValues,
+  replaceProductVariants,
   replaceProductHighlights,
   uploadProductHighlightImage,
 } from "@/lib/products/api";
@@ -22,6 +23,7 @@ import type {
   CreateProductInput,
   ProductAttributeValueInput,
   ProductHighlightInput,
+  ProductVariantInput,
   UpdateProductInput,
 } from "@/lib/products/schemas";
 
@@ -88,6 +90,8 @@ interface CreateListingVariables {
   attributeValues: readonly ProductAttributeValueInput[];
   /** STORE §21.3. PDFs picked in the wizard, uploaded once the listing has an id. */
   newDocuments: readonly PendingProductDocument[];
+  /** A1. The variant set, saved through its own replace-set route after the listing exists. */
+  variants: readonly ProductVariantInput[];
   publish: boolean;
   onProgress?: (progress: SaveProgress) => void;
 }
@@ -169,6 +173,7 @@ export function useCreateListingMutation() {
       highlightImageFileByIndex,
       attributeValues,
       newDocuments,
+      variants,
       publish,
       onProgress,
     }: CreateListingVariables) => {
@@ -195,6 +200,12 @@ export function useCreateListingMutation() {
       // STORE §21.3. Nothing to remove on a fresh listing, so only the uploads run.
       if (newDocuments.length > 0) {
         await saveProductDocuments(created.id, [], newDocuments, onProgress);
+      }
+
+      // A1. AFTER the listing exists, because the route is keyed on its id. Skipped when empty on a
+      // FRESH listing only — there is nothing to retire yet, so the call would be a no-op.
+      if (variants.length > 0) {
+        unwrap(await replaceProductVariants(created.id, variants));
       }
 
       if (publish) {
@@ -226,6 +237,8 @@ interface UpdateListingVariables {
   /** STORE §21.3. Newly picked PDFs, and the ids of ones the seller removed. */
   newDocuments: readonly PendingProductDocument[];
   removedDocumentIds: readonly string[];
+  /** A1. The variants the seller is KEEPING. Anything absent is retired — see the call site. */
+  variants: readonly ProductVariantInput[];
   /** true = ensure the listing ends up active (publish); false = leave as-is. */
   publish: boolean;
   onProgress?: (progress: SaveProgress) => void;
@@ -244,6 +257,7 @@ export function useUpdateListingMutation() {
       attributeValues,
       newDocuments,
       removedDocumentIds,
+      variants,
       publish,
       onProgress,
     }: UpdateListingVariables) => {
@@ -274,6 +288,14 @@ export function useUpdateListingMutation() {
       if (removedDocumentIds.length > 0 || newDocuments.length > 0) {
         await saveProductDocuments(productId, removedDocumentIds, newDocuments, onProgress);
       }
+
+      /**
+       * A1. ALWAYS sent on an edit, like the two replace-sets above — but the consequence of
+       * getting it wrong is heavier here. Omitting a variant RETIRES it, so this must carry every
+       * variant the seller is keeping, not just the ones they touched. A retired variant is not
+       * deleted: order lines bought under it still name it.
+       */
+      unwrap(await replaceProductVariants(productId, variants));
 
       if (publish) {
         onProgress?.({ phase: "publishing" });

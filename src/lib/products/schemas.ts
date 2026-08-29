@@ -61,6 +61,38 @@ export const ProductPricingTierSchema = z
   .strip();
 
 /**
+ * A1. One buyable variation of this listing, as the SELLER sees it — "Sea blue", "480 V / 60 Hz".
+ *
+ * ⚠️ THIS WAS MISSING ENTIRELY UNTIL NOW, AND `.strip()` MADE THAT SILENT. The backend has returned
+ * `variants[]` on the owner read since Phase 8 (`products.service.ts:474`), and because this schema
+ * did not name the key, every seller read DISCARDED it — which is why the wizard could not hydrate
+ * variants and therefore never offered to author them. Same defect as `highlights` below, one field
+ * over.
+ *
+ * ⚠️ `state` IS PART OF THE SELLER'S VIEW AND NOT THE BUYER'S. A retired variant is still returned
+ * here, deliberately: order lines bought under it still name it, and it is retired rather than
+ * deleted because `commerce_order_product_line.variant_id` is `restrict`. The buyer's projection
+ * filters to `active`; a seller form must show what exists and edit only what is live.
+ *
+ * A FLAT LIST, NOT AXES (A26, deferred). "Sea blue × Large" is one opaque variant name rather than
+ * two dimensions — see `src/components/home/store/sections/variant-picker.tsx`.
+ */
+export const SellerProductVariantSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    publicSlug: z.string(),
+    sku: z.string().nullable(),
+    priceInCents: z.number().int(),
+    stockQuantity: z.number().int(),
+    minimumOrderQuantity: z.number().int().nullable(),
+    position: z.number().int(),
+    state: z.enum(["active", "retired"]),
+    pricingTiers: z.array(ProductPricingTierSchema),
+  })
+  .strip();
+
+/**
  * One structured key/value fact about a listing — "Material: Solid oak", "Voltage: 5 V".
  *
  * ⚠️ `group` IS NULLABLE HERE AND OPTIONAL ON THE WAY IN, and the asymmetry is not an oversight.
@@ -228,6 +260,14 @@ export const PublicProductSchema = z
     unitOfMeasure: z.string().nullable(),
     images: z.array(ProductImageSchema),
     pricingTiers: z.array(ProductPricingTierSchema),
+    /**
+     * A1. Every variation on this listing, ACTIVE AND RETIRED, ordered by `position`.
+     *
+     * Empty means the listing is sold as one thing. Non-empty changes how it is bought: a cart line
+     * naming no variant is refused `VARIANT_REQUIRED`, and the storefront card shows a "from" price
+     * the server computes across the active ones.
+     */
+    variants: z.array(SellerProductVariantSchema),
     /**
      * The structured spec sheet. Ordered by `position`, and EMPTY FOR EVERY LISTING CREATED
      * BEFORE THIS FIELD REACHED THE FORM — the backend has accepted `specifications[]` on create
@@ -448,6 +488,39 @@ export interface ProductHighlightInput {
   title: string;
   bodyText: string;
 }
+
+/**
+ * A1. One variation on the way IN — `PUT /products/:id/variants`, a whole-set replace.
+ *
+ * ⚠️ `publicSlug` IS THE IDENTITY ACROSS SAVES, NOT `id`. The backend upserts by slug and RETIRES
+ * whatever the payload leaves out (`products.service.ts:825-826`), so changing a slug does not
+ * rename a variant — it retires the old row and creates a new one, orphaning the order lines that
+ * bought under it. A form may derive a slug from the name for a NEW row; an existing row's slug is
+ * frozen.
+ *
+ * ⚠️ `sku` AND `minimumOrderQuantity` ARE OPTIONAL, NOT NULLABLE, and this is the `group` trap one
+ * table over: the read view types both `| null`, the write schema types them `.optional()` inside a
+ * `.strict()` object, so a hydrated `null` sent straight back is a **422 that fails the whole
+ * save**. Omit the key instead.
+ *
+ * `pricingTiers` is omitted by this build rather than sent empty-on-purpose — a variant carrying no
+ * ladder INHERITS the listing's (`commerce-pricing.ts:365-377`), so leaving it out preserves volume
+ * pricing rather than clearing it.
+ */
+export interface ProductVariantInput {
+  name: string;
+  publicSlug: string;
+  sku?: string;
+  priceInCents: number;
+  stockQuantity: number;
+  minimumOrderQuantity?: number;
+}
+
+/** A1. The backend caps a listing at 50 variants (`products.schemas.ts:155`). */
+export const PRODUCT_VARIANT_MAX_COUNT = 50;
+export const PRODUCT_VARIANT_NAME_MAX_LENGTH = 120;
+export const PRODUCT_VARIANT_SLUG_MAX_LENGTH = 80;
+export const PRODUCT_VARIANT_SKU_MAX_LENGTH = 80;
 
 export const PRODUCT_HIGHLIGHT_MAX_COUNT = 12;
 export const PRODUCT_HIGHLIGHT_TITLE_MAX_LENGTH = 120;

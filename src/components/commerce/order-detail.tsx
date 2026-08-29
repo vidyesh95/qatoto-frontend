@@ -349,6 +349,13 @@ function ProductLineRow({
   return (
     <div className="rounded-xl border border-border px-4 py-3">
       <p className="text-sm leading-5 font-medium text-foreground">{line.titleSnapshot}</p>
+      {/* A1. WHICH VARIATION, from the snapshot rather than the live variant — the listing may have
+          been renamed or the variant retired since, and what was bought does not change. Absent
+          rather than "—" when the listing sells as one thing: there is no variant to report, which
+          is different from one that went unnamed. */}
+      {line.variantNameSnapshot !== null && (
+        <p className="text-xs leading-4 font-medium text-foreground">{line.variantNameSnapshot}</p>
+      )}
       <p className="text-xs leading-4 text-muted-foreground">{line.specificationSnapshot}</p>
 
       {/* FIVE COUNTERS, EACH STATED, and none computed from the others. A line can be partly fulfilled,

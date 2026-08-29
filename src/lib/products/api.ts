@@ -17,6 +17,7 @@ import {
   type ProductHighlightInput,
   type ProductImage,
   type ProductListRow,
+  type ProductVariantInput,
   type PublicProduct,
   type SellerProductDocument,
   type UpdateProductInput,
@@ -153,6 +154,29 @@ export function uploadProductHighlightImage(
     formData,
     PublicProductSchema,
   );
+}
+
+/**
+ * `PUT /products/:id/variants` — the whole variant set, as a REPLACE-SET.
+ *
+ * ⚠️ THIS ROUTE HAD NO CALLER AT ALL UNTIL NOW. The table, the route, the cart's `VARIANT_REQUIRED`
+ * gate, the reservation, the prepare snapshot and the order line all shipped in Phase 8, and no
+ * seller surface ever wrote to them — so `variant-picker.tsx` on the buyer page could only render
+ * against seeded rows. Same shape as `highlights` above, one feature over.
+ *
+ * ⚠️ OMITTING A VARIANT RETIRES IT; IT DOES NOT DELETE IT. The upsert is keyed on `publicSlug`, and
+ * a variant that has reached an order line cannot be deleted at all — `commerce_order_product_line
+ * .variant_id` is `restrict`, because "Sea blue" is part of what someone bought. So sending `[]`
+ * retires the lot rather than erasing them, and a caller must send back the ones it is KEEPING.
+ *
+ * Answers the whole `PublicProduct`, so the caller sees the server's ids, positions and states
+ * without a follow-up read.
+ */
+export function replaceProductVariants(
+  productId: string,
+  variants: readonly ProductVariantInput[],
+): Promise<ActionResponse<PublicProduct>> {
+  return sendJson(`/products/${productId}/variants`, "PUT", { variants }, PublicProductSchema);
 }
 
 /**

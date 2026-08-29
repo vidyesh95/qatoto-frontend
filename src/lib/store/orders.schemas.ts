@@ -129,6 +129,18 @@ export const OrderProductLineSchema = z
     // that was never a catalog listing.
     productId: z.string().nullable(),
     titleSnapshot: z.string(),
+    /**
+     * A1. WHICH VARIATION WAS BOUGHT — "Sea blue" — frozen at order time.
+     *
+     * `null` on a listing sold as one thing, which is a different fact from an unnamed variant: the
+     * backend pairs this with `variantId` under a CHECK, so both are set or neither is.
+     *
+     * ⚠️ IT IS THE SNAPSHOT, NOT THE LIVE VARIANT NAME, and that is the whole reason the column
+     * exists — reading through to `commerce_product_variant.name` would let a seller rename what
+     * somebody already bought. Written since Phase 8 and projected NOWHERE until now, so an order
+     * for one variant of a multi-variant listing did not say which one.
+     */
+    variantNameSnapshot: z.string().nullable(),
     specificationSnapshot: z.string(),
     /**
      * FIVE QUANTITIES, and they do not sum to each other. Ordered is the commitment; reserved,
