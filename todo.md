@@ -156,11 +156,54 @@ writing trademarked logo paths from memory was the worse option. Drop real asset
 
 ## Backend (`qatoto-backend`)
 
-### 15. Multi-axis variants
+### 15. Multi-axis variants — STILL DEFERRED, and the FLAT surface under it is now finished
 
 `commerce_product_variant_option{variantId, optionName, optionValue, position}`. A26 defers it
 deliberately — building axes early migrates every row that reaches an immutable order-line
-snapshot, for a UI nothing has asked for yet.
+snapshot, for a UI nothing has asked for yet. **Unchanged.**
+
+⚠️ **WHAT WAS ACTUALLY MISSING WAS NOT AXES.** Sizing this entry found the flat variant surface had
+never been finished on the client — three gaps, all the same class as `productId` on a goods line
+before §7 and `serviceOfferingId` before §8, and all now closed:
+
+- **`PUT /products/:id/variants` had ZERO frontend callers.** The 2,932-line wizard never mentioned
+  variants, so **a seller could not create one at all** and `variant-picker.tsx` could only render
+  against seeded rows. There is now a Variants step between Pricing and Review.
+- **The seller's own read SILENTLY DROPPED them.** The backend has returned `variants[]` on the
+  owner read since Phase 8, and `src/lib/products/schemas.ts` never named the key — so
+  `PublicProductSchema`'s `.strip()` discarded the array on every seller read. That is why nothing
+  could hydrate. Same defect the `highlights` docblock in that file already records one field over.
+- **`commerce_order_product_line.variantNameSnapshot` was written and never read.**
+  `commerce-orders.service.ts` had zero occurrences of "variant", so a buyer who bought "Sea blue"
+  saw a line that did not say so — while the column exists precisely so a seller cannot rename what
+  someone already bought. Three lines: the projection interface, the projector, the buyer schema.
+
+⚠️ **THE SLUG IS THE IDENTITY, NOT THE ID, AND THIS IS THE THING NOT TO FORGET.** The replace-set
+upserts by `publicSlug` and RETIRES whatever the payload omits. **Measured live, not reasoned about:**
+renaming a variant while keeping its slug left `store_demo_variant_lamp_brass` untouched and active;
+changing the _slug_ **retired that row and created a brand-new one in its place**. So a hydrated
+row's slug is rendered READ-ONLY, and only a new row's slug follows what is typed.
+
+⚠️ **`collectVariants` REFUSES A BAD ROW RATHER THAN SKIPPING IT — the opposite of
+`collectHighlights`, deliberately.** A half-filled highlight is simply not content. A dropped variant
+is a RETIRED variant, so silently skipping one would turn a cleared price field into lost inventory a
+seller's past orders still name.
+
+**Two things this deliberately did not do**, both recorded rather than hidden:
+
+- **Per-variant volume pricing is not authorable.** `ProductVariantSchema.pricingTiers` exists and
+  the step omits it. That is safe rather than lossy: `commerce-pricing.ts:365-377` falls back to the
+  product-level ladder when a variant carries none, so a variant inherits the listing's tiers. The
+  step says so on screen.
+- **Retired variants are shown as a count, not as editable rows.** They cannot be deleted at all —
+  `commerce_order_product_line.variant_id` is `restrict` — and re-editing one would revive a version
+  the seller withdrew. Note that re-sending a retired slug DOES re-activate it, which is the right
+  behaviour for a deliberate act and the wrong one for an accident.
+
+**Three more reasons A26 is bigger than this entry implies**, found while sizing: 7 FK tables and 5
+DB triggers key off `variantId`; the order line snapshots only a flat name string, so historical
+orders can never be back-filled into axes; and `commerce_product_variant_position_uidx` is a strict
+per-product unique position an axis matrix would have to serialize into.
 
 ### 16. Incoterm semantics — the DIVERGENCE is closed; the CONCEPT is not
 
@@ -259,11 +302,18 @@ BEFORE spending on cards, which is what this did.
 
 ---
 
-## Cache Components opt-outs — 18 removed, 96 routes left
+## Cache Components opt-outs — 101 routes left
 
 `export const instant = false` plus a boilerplate `// TODO: Cache Components adoption` was applied
-**wholesale** during the migration and never revisited: **114 routes** carried the TODO, 159 carry
-the opt-out. All 18 in `(disclaimers)` and `(information)` are now clean.
+**wholesale** during the migration and never revisited. All 18 in `(disclaimers)` and
+`(information)` are now clean.
+
+⚠️ **THE NUMBERS IN THIS SECTION WERE WRONG AND ARE NOW MEASURED.** It read "18 removed, 96 routes
+left" over a breakdown that summed to **95**, against "114 carried the TODO, 159 carry the opt-out".
+Counted 2026-08-29: **147 files carry the opt-out and 101 still carry the boilerplate TODO** —
+`(home)` 61, `(studio)` 24, `(admin)` 11, `(auth)` 4, plus `src/app/layout.tsx`. The two totals
+differ because **46 files already had the boilerplate replaced with a real reason** in the
+`cart/page.tsx` style, which is the finished state rather than an outstanding one.
 
 ⚠️ **`instant` DOES NOT AFFECT PRERENDERING, AND ASSUMING IT DOES WASTES A ROUND.** This was
 measured, not reasoned about: the route table before and after removing all 18 is **byte-identical**
@@ -280,7 +330,7 @@ overlay's insights — neither of which appears in the build output.
 the routes stay static, the false TODOs are gone. Whether navigation into those pages actually got
 faster needs the dev overlay in a browser.
 
-**The remaining 96** are `(home)` 59, `(studio)` 21, `(admin)` 11, `(auth)` 4 — and those genuinely
+**The remaining 101** are `(home)` 61, `(studio)` 24, `(admin)` 11, `(auth)` 4 and the root layout — and those genuinely
 read cookies or a session, so each needs its dynamic read moved behind a Suspense boundary rather
 than the opt-out simply deleted. `cart/page.tsx` is the model for the ones that must KEEP it: it
 replaced the boilerplate with the real reason ("the cart is a client-query island behind a session —
