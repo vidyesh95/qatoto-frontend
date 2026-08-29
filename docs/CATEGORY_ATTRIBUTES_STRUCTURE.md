@@ -225,11 +225,30 @@ Two refusals to surface rather than hide:
 
 ## 7. The three smaller pieces (backend §21)
 
-| Piece                 | Frontend work                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`modelNumber`**     | It is already on `StoreProductDetailSchema` ([products.schemas.ts:254](../src/lib/store/products.schemas.ts)) and reaches the PDP. Add it to `CreateProductInput` and the wizard's identity step, labelled by category vocabulary — part number, model number, style code. Once it is in the backend's search document, exact-code lookup works for every category.                                                                                      |
-| **`sellingState`**    | `selling \| paused \| discontinued`. A card badge, a facet bucket, and a PDP that **stays live**: the buy actions are suppressed, the state is named, and the `replaces` relations already carried by the companions read render as alternates. Do not 404 a discontinued listing — the inbound links and the "what do I buy instead" answer are the whole point.                                                                                        |
-| **Product documents** | A picker on the wizard modelled on [trade-document-picker.tsx](../src/components/commerce/trade-document-picker.tsx) — same `sendForm` primitive ([src/lib/http.ts:270-288](../src/lib/http.ts)), same size guard, same **202** handling. The upload answers 202 with the row `pending_scan`; render "we are checking this file" and poll. **A 202 is not a result.** On the PDP, a download list that links to the gated route, never to a storage URL. |
+| Piece                 | Frontend work                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`modelNumber`**     | It is already on `StoreProductDetailSchema` ([products.schemas.ts:254](../src/lib/store/products.schemas.ts)) and reaches the PDP. Add it to `CreateProductInput` and the wizard's identity step, labelled by category vocabulary — part number, model number, style code. Once it is in the backend's search document, exact-code lookup works for every category.                                                         |
+| **`sellingState`**    | `selling \| paused \| discontinued`. A card badge, a facet bucket, and a PDP that **stays live**: the buy actions are suppressed, the state is named, and the `replaces` relations already carried by the companions read render as alternates. Do not 404 a discontinued listing — the inbound links and the "what do I buy instead" answer are the whole point.                                                           |
+| **Product documents** | A picker on the wizard modelled on [trade-document-picker.tsx](../src/components/commerce/trade-document-picker.tsx) — same `sendForm` primitive ([src/lib/http.ts:270-288](../src/lib/http.ts)), same size guard. On the PDP, a download list that links to the gated route, never to a storage URL. **Whether the upload answers 202 or 201 depends on a backend decision that is not yet made — see the warning below.** |
+
+> ⚠️ **THE 202 IN THAT ROW IS NOT FREE, AND AN EARLIER DRAFT OF THIS FILE WAS WRONG ABOUT IT.**
+> It said a public product PDF could "reuse the shipped scan pipeline". Only the **adapter** is
+> reusable: `DocumentScannerAdapter` takes a `Buffer` and returns a verdict, encryption-agnostic.
+> Everything above it is welded to a different table — `scanEncryptedDocument`,
+> `sweepPendingDocumentScans` and the `scan-encrypted-document` job all name
+> `commerce_encrypted_document`, its `state` enum and its envelope columns
+> (`encryptedDataKey`, `initializationVector`), and the job payload carries no field saying which
+> table a `documentId` belongs to.
+>
+> Two further facts settle it. **`video_document` — the public-document precedent this design
+> copies — has no scan at all**; `attachVideoDocument` validates the PDF bytes and stores them.
+> And the only working scanner today is an EICAR-only fake (`clamav` is configured but
+> unimplemented and returns `SCANNER_UNAVAILABLE`).
+>
+> So item 6 has a decision to make before it has code to write: add a second scan service, job and
+> `state` column for unencrypted documents, or ship unscanned like `video_document` does and say
+> so in the copy. **A frontend that renders "we are checking this file" over a pipeline that
+> checks nothing is the worse of the two.**
 
 ---
 

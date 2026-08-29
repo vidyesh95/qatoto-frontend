@@ -258,6 +258,7 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
                 <div className="hidden px-6 py-3 lg:block">
                   <BuyActionButtons
                     productId={product.id}
+                    productSlug={product.publicSlug}
                     hasVariants={product.hasVariants}
                     isViewerSignedIn={isViewerSignedIn}
                   />
@@ -313,6 +314,7 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
             <div className="fixed inset-x-0 bottom-[calc(80px+env(safe-area-inset-bottom))] z-20 mx-auto max-w-md bg-white px-4 py-2 md:bottom-0 lg:hidden">
               <BuyActionButtons
                 productId={product.id}
+                productSlug={product.publicSlug}
                 hasVariants={product.hasVariants}
                 isViewerSignedIn={isViewerSignedIn}
               />

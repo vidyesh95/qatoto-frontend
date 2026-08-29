@@ -159,6 +159,22 @@ export const PublicProductSchema = z
     keyFeatures: z.array(z.string()),
     status: z.enum(PRODUCT_STATUSES),
     publishedAt: z.string().nullable(),
+    /**
+     * THE THREE IDENTITY FACTS THE BUYER PAGE ALREADY RENDERS.
+     *
+     * `product-details-sheet.tsx` builds its "Item details" tab from `brand`, `modelNumber`,
+     * `condition`, `countryOfOriginCode` and `unitOfMeasure` — so before these reached the seller
+     * form, three of those five rows were dropped for every listing on the site. The columns, the
+     * CHECK (`product_model_unit_ck`) and the write schema all predate this; only the seller had
+     * no way to fill them in.
+     *
+     * `countryOfOriginCode` is ISO 3166-1 alpha-2 and the backend regex is `/^[A-Z]{2}$/`.
+     * `unitOfMeasure` is free text ("piece", "metre", "carton") — there is no unit enum on the
+     * wire, and inventing one here would refuse a unit the backend accepts.
+     */
+    modelNumber: z.string().nullable(),
+    countryOfOriginCode: z.string().nullable(),
+    unitOfMeasure: z.string().nullable(),
     images: z.array(ProductImageSchema),
     pricingTiers: z.array(ProductPricingTierSchema),
     /**
@@ -254,6 +270,19 @@ export interface CreateProductInput {
   compareAtPriceInCents?: number;
   stockQuantity: number;
   sku?: string;
+  /**
+   * The manufacturer's own code for this item — a part number, a model number, a style code.
+   *
+   * ⚠️ NOT UNIQUE, and it must never become so. Two sellers listing the same manufacturer part is
+   * the premise of a parametric marketplace rather than a data error; `sku` is the unique one, and
+   * it is unique per seller organization. The backend indexes this into the store search document,
+   * so an exact code typed into search finds the listings that carry it.
+   */
+  modelNumber?: string;
+  /** ISO 3166-1 alpha-2, upper case. Normalise with `toOptionalCountryCode` before sending. */
+  countryOfOriginCode?: string;
+  /** Free text — "piece", "set", "metre", "carton". There is no unit enum on the wire. */
+  unitOfMeasure?: string;
   pricingTiers: { unitPriceInCents: number; minimumOrderQuantity: number }[];
   /**
    * The spec sheet, as a REPLACE-SET. Sending it on a PATCH replaces every row the listing has;

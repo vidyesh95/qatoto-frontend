@@ -14,6 +14,9 @@ import {
   ListingCategoryPicker,
   type ListingCategoryChoice,
 } from "@/components/studio/listing/listing-category-picker";
+import { COUNTRY_OPTIONS } from "@/components/home/account/menus/location-menu";
+import { toOptionalCountryCode } from "@/components/commerce/composer/composer-input";
+import { countryLabelFromCode } from "@/lib/store/format";
 import {
   centsToDollarString,
   CONDITION_LABEL_TO_SLUG,
@@ -72,6 +75,32 @@ const PRODUCT_CONDITIONS = CONDITION_LABELS;
 const PRODUCT_TITLE_MAX_LENGTH = 200;
 const MAX_PRODUCT_IMAGES = 9;
 
+/** Backend bounds on the two free-text identity fields (`productFieldShapes`), mirrored. */
+const PRODUCT_MODEL_NUMBER_MAX_LENGTH = 120;
+const PRODUCT_UNIT_OF_MEASURE_MAX_LENGTH = 40;
+
+/**
+ * Common units, offered as autocomplete only.
+ *
+ * NOT AN ENUM, and it must not become a `<select>`. `unitOfMeasure` is free text up to 40
+ * characters on the wire, so a closed list here would refuse units the backend accepts — "reel",
+ * "linear foot", "gross" — and a seller with an unusual unit would have nowhere to put it.
+ */
+const UNIT_OF_MEASURE_SUGGESTIONS = [
+  "piece",
+  "pair",
+  "set",
+  "pack",
+  "box",
+  "carton",
+  "pallet",
+  "roll",
+  "metre",
+  "square metre",
+  "kilogram",
+  "litre",
+] as const;
+
 /** A pricing tier as typed in the form (dollar/quantity strings). */
 interface PricingTierDraft {
   /** Stable per-row key for the React list; generated on create/hydrate, never sent to the backend. */
@@ -129,6 +158,11 @@ export default function CreateListingPage({ productId }: { productId?: string })
    */
   const [categoryChoice, setCategoryChoice] = useState<ListingCategoryChoice | null>(null);
   const [selectedCondition, setSelectedCondition] = useState<string>(PRODUCT_CONDITIONS[0]);
+  // Step 1 — the three identity facts the buyer's "Item details" tab has always rendered and no
+  // seller could set. Held as typed strings; normalised once, in `collectListingInput`.
+  const [modelNumber, setModelNumber] = useState("");
+  const [countryOfOriginCode, setCountryOfOriginCode] = useState("");
+  const [unitOfMeasure, setUnitOfMeasure] = useState("");
 
   // Step 2 — images. Preview URLs are created in the pick/drop handlers and revoked on
   // remove or unmount — never from an effect that then setState, which the compiler rejects.
@@ -243,6 +277,11 @@ export default function CreateListingPage({ productId }: { productId?: string })
           },
     );
     setSelectedCondition(SLUG_TO_CONDITION_LABEL[loadedProduct.condition] ?? PRODUCT_CONDITIONS[0]);
+    // Null is UNSTATED and hydrates as an empty control, the same rule the packaging, sample and
+    // specification fields follow.
+    setModelNumber(loadedProduct.modelNumber ?? "");
+    setCountryOfOriginCode(loadedProduct.countryOfOriginCode ?? "");
+    setUnitOfMeasure(loadedProduct.unitOfMeasure ?? "");
     setProductDescription(loadedProduct.description ?? "");
     setKeyFeatures(loadedProduct.keyFeatures);
     setPriceInDollars(centsToDollarString(loadedProduct.priceInCents));
@@ -578,6 +617,13 @@ export default function CreateListingPage({ productId }: { productId?: string })
         ? { categoryId: categoryChoice.categoryId }
         : { categoryRequestId: categoryChoice.categoryRequestId }),
       condition: CONDITION_LABEL_TO_SLUG[selectedCondition] ?? "new",
+      modelNumber: modelNumber.trim() || undefined,
+      // NORMALISED, NOT SENT RAW. The wire regex is `/^[A-Z]{2}$/`, and `toOptionalCountryCode`
+      // answers `undefined` for anything else rather than letting "United Kingdom" become a 422
+      // the seller has to decode. The control is a select over the app's own country list, so this
+      // is a belt on a brace — but it is the same helper every other country field uses.
+      countryOfOriginCode: toOptionalCountryCode(countryOfOriginCode),
+      unitOfMeasure: unitOfMeasure.trim() || undefined,
       description: productDescription.trim() || undefined,
       keyFeatures,
       priceInCents,
@@ -735,6 +781,84 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 isDisabled={isSaving}
                 onChange={setCategoryChoice}
               />
+            </div>
+
+            {/* THE THREE FACTS THE BUYER'S "ITEM DETAILS" TAB ALREADY RENDERS. `product-details-sheet.tsx`
+                builds that tab from brand, model number, condition, country of origin and unit of
+                measure — and until these controls existed, three of those five rows were dropped for
+                every listing, because the columns and the write schema were there and no seller could
+                reach them. */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="model-number" className="text-sm font-medium text-foreground">
+                  Model or part number
+                </label>
+                <input
+                  id="model-number"
+                  type="text"
+                  value={modelNumber}
+                  maxLength={PRODUCT_MODEL_NUMBER_MAX_LENGTH}
+                  onChange={(event) => setModelNumber(event.target.value)}
+                  placeholder="e.g. LM358, DC-4420, SS24-1180"
+                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                />
+                <p className="text-xs text-muted-foreground">
+                  The manufacturer&apos;s own code — a part number, a model number, a style code.
+                  Buyers search by it, so it is worth the exact characters.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="unit-of-measure" className="text-sm font-medium text-foreground">
+                  Unit of measure
+                </label>
+                <input
+                  id="unit-of-measure"
+                  type="text"
+                  value={unitOfMeasure}
+                  maxLength={PRODUCT_UNIT_OF_MEASURE_MAX_LENGTH}
+                  list="unit-of-measure-suggestions"
+                  onChange={(event) => setUnitOfMeasure(event.target.value)}
+                  placeholder="e.g. piece"
+                  className="h-12 rounded-lg border border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[#1DBDC5]"
+                />
+                {/* SUGGESTS, NEVER CONSTRAINS. There is no unit enum on the wire — the backend takes
+                    free text up to 40 characters — so a <select> here would refuse units it accepts. */}
+                <datalist id="unit-of-measure-suggestions">
+                  {UNIT_OF_MEASURE_SUGGESTIONS.map((unitName) => (
+                    <option key={unitName} value={unitName}>
+                      {unitName}
+                    </option>
+                  ))}
+                </datalist>
+                <p className="text-xs text-muted-foreground">
+                  What one unit is, so a quantity means something. Leave it blank if a piece is
+                  obvious.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="country-of-origin" className="text-sm font-medium text-foreground">
+                Country of origin
+              </label>
+              <select
+                id="country-of-origin"
+                value={countryOfOriginCode}
+                onChange={(event) => setCountryOfOriginCode(event.target.value)}
+                className="h-12 cursor-pointer rounded-lg border border-border bg-transparent px-3 text-sm outline-none focus:border-[#1DBDC5]"
+              >
+                <option value="">Not stated</option>
+                {COUNTRY_OPTIONS.map((country) => (
+                  <option key={country.code} value={country.code}>
+                    {country.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Where the product is made. Buyers filtering on origin, and customs paperwork, both
+                read this.
+              </p>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -1435,6 +1559,16 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 { label: "Brand", value: brandName },
                 { label: "Category", value: categoryChoice?.displayLabel ?? "" },
                 { label: "Condition", value: selectedCondition },
+                { label: "Model number", value: modelNumber },
+                {
+                  label: "Country of origin",
+                  // The NAME, not the code — the review step is where a seller catches a wrong
+                  // choice, and "DE" is not a thing anyone proof-reads. Blank stays blank so
+                  // `ReviewSection` renders it as unstated.
+                  value:
+                    countryOfOriginCode === "" ? "" : countryLabelFromCode(countryOfOriginCode),
+                },
+                { label: "Unit of measure", value: unitOfMeasure },
               ]}
             />
             <ReviewSection

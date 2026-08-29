@@ -33,6 +33,14 @@ import { formatCountLabel } from "@/lib/store/format";
 
 interface BuyActionButtonsProps {
   readonly productId: string;
+  /**
+   * The product's public slug, carried to the RFQ composer so it can look this listing up and seed
+   * the first request line from it.
+   *
+   * THE SLUG RATHER THAN THE ID, because `GET /store/products/:productSlug` is the read the
+   * composer's route has — the id would need a second lookup nothing offers publicly.
+   */
+  readonly productSlug: string;
   /** What the SERVER saw. Seeds the first render so it matches the HTML — see `useViewerSignedIn`. */
   readonly isViewerSignedIn: boolean;
   /**
@@ -61,9 +69,14 @@ function findBulkCartLine(cart: CommerceCart, productId: string, variantId: stri
 
 export default function BuyActionButtons({
   productId,
+  productSlug,
   hasVariants,
   isViewerSignedIn,
 }: BuyActionButtonsProps) {
+  // The composer's route reads this slug server-side and seeds its first product line from the
+  // listing. Encoded because a slug is server-generated but still a URL segment being placed into
+  // a query value.
+  const requestQuoteHref = `/store/rfqs/new?productSlug=${encodeURIComponent(productSlug)}`;
   // The quantity the buyer set on the price chart's stepper and the variant they picked, not
   // constants — both controls are visible on the page, and an add that ignored either would put
   // something different in the cart than the one the buyer is looking at.
@@ -122,15 +135,23 @@ export default function BuyActionButtons({
   return (
     <div className="w-full">
       <div className="flex gap-2">
-        {/* INERT, DELIBERATELY. An inquiry is the RFQ path — `POST /commerce/products/:productId/
-            inquiries`, promotable into `POST /commerce/rfqs` — which is its own surface with its own
-            draft, invitations and quote thread. It is not a variation on adding to a cart. */}
-        <button
-          type="button"
-          className="flex-1 rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
+        {/* THIS WAS AN INERT "Send inquiry", AND IT WAS ALSO A DUPLICATE. The comment here used to
+            say an inquiry is the RFQ path and left the button doing nothing — but the inquiry half
+            already works elsewhere on this page: `sections/store-and-chat-actions.tsx` renders a
+            real contact control (Chat now / Ask a question / Sign in, chosen by
+            `contactAffordance`) with `ManufacturerChatSheet` behind it. A second, dead entrance to
+            a live feature is worse than no entrance.
+
+            The RFQ half is what was genuinely unreachable. `POST /commerce/rfqs` and the whole
+            quote-and-compare surface behind it have shipped for some time with no way in from a
+            product. This link is that way in — and it stays a LINK rather than a mutation, because
+            the composer is five steps and its own idempotency key. */}
+        <Link
+          href={requestQuoteHref}
+          className="flex flex-1 items-center justify-center rounded-full bg-background px-4 py-1.5 text-xs font-medium text-[#00696E] outline -outline-offset-1 outline-[#6F7979]"
         >
-          Send inquiry
-        </button>
+          Request a quote
+        </Link>
         <button
           type="button"
           onClick={handleAddToCartClick}

@@ -75,6 +75,15 @@ const COMPOSER_STEPS = [
 
 interface GoodsLineDraft {
   readonly localId: string;
+  /**
+   * The catalogue listing this line is about, when the buyer arrived from a product page.
+   *
+   * NULL FOR A HAND-TYPED LINE, which is every line a buyer adds inside this composer — an RFQ is
+   * allowed to ask for something no listing covers, and that is most of the point of one. When it
+   * IS set, the wire carries it (`RfqProductLineInput.productId`) so a provider answering the
+   * request can see which listing prompted it rather than re-matching on the title text.
+   */
+  readonly productId: string | null;
   requestedTitle: string;
   requestedSpecificationSnapshot: string;
   quantity: string;
@@ -140,9 +149,45 @@ function mintLocalId(prefix: string): string {
   return `${prefix}-${nextLocalIdCounter}`;
 }
 
-export default function RfqComposer() {
+/**
+ * A first goods line, prepared server-side from a catalogue listing.
+ *
+ * WHY THE SEED IS BUILT BY THE ROUTE AND NOT HERE. `/store/rfqs/new` is a server component that
+ * already fetches the product to build it, so the composer receives finished strings rather than
+ * doing a client fetch of its own — and the buyer's URL carries a slug rather than a title,
+ * quantity and spec sheet.
+ *
+ * EVERY FIELD IS EDITABLE ONCE SEEDED. This starts the buyer somewhere rather than committing
+ * them to anything: an RFQ that could only restate a listing would be a cart with extra steps.
+ */
+export interface RfqGoodsLineSeed {
+  readonly productId: string;
+  readonly requestedTitle: string;
+  readonly requestedSpecificationSnapshot: string;
+  readonly quantity: string;
+  readonly unitLabel: string;
+}
+
+function buildInitialDraft(seededGoodsLine: RfqGoodsLineSeed | null): RfqComposerDraft {
+  if (seededGoodsLine === null) return EMPTY_COMPOSER_DRAFT;
+  return {
+    ...EMPTY_COMPOSER_DRAFT,
+    // The RFQ's own title starts as the product's. It is required, and a buyer who arrived from
+    // one listing has already said what this is about.
+    title: seededGoodsLine.requestedTitle,
+    goodsLines: [{ localId: mintLocalId("goods"), ...seededGoodsLine }],
+  };
+}
+
+export default function RfqComposer({
+  seededGoodsLine = null,
+}: {
+  readonly seededGoodsLine?: RfqGoodsLineSeed | null;
+} = {}) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [draft, setDraft] = useState<RfqComposerDraft>(EMPTY_COMPOSER_DRAFT);
+  // Seeded ONCE, as the initial state. Re-seeding from a prop in an effect would overwrite what
+  // the buyer had already typed every time this re-rendered.
+  const [draft, setDraft] = useState<RfqComposerDraft>(() => buildInitialDraft(seededGoodsLine));
   // Lazily minted on first submit and reused across retries — see the hook for why it cannot be a
   // `useState` initializer here.
   const getIdempotencyKey = useAttemptIdempotencyKey();
@@ -546,6 +591,9 @@ export default function RfqComposer() {
         ...draft.goodsLines,
         {
           localId: mintLocalId("goods"),
+          // A line added here is the buyer describing something in their own words; it points at
+          // no listing. Only the seed from a product page carries an id.
+          productId: null,
           requestedTitle: "",
           requestedSpecificationSnapshot: "",
           quantity: "",
@@ -653,6 +701,10 @@ function buildCreateDraftRfqInput(draft: RfqComposerDraft): CreateDraftRfqInput 
       return null;
     }
     productLines.push({
+      // OMITTED, NOT NULLED, for a hand-typed line. `CreateDraftRfqSchema` is `.strict()` and
+      // types `productId` as optional, so sending an explicit null would be a 422 rather than an
+      // ignored field.
+      ...(goodsLine.productId === null ? {} : { productId: goodsLine.productId }),
       requestedTitle,
       requestedSpecificationSnapshot,
       quantity,

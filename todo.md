@@ -452,19 +452,44 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     page would break it, and is what `filter-href.ts:1-11` and `facet-chip-row.tsx` already
     forbid.
 
-4. **`modelNumber` reaches nobody, and it is three edits.** `product.model_number` exists, has a
-   CHECK, and is projected onto `StoreProductDetailSchema` — but it is not in the wizard, not in
-   `store_search_document`, and not a filter. So the one column that would let a buyer search an
-   exact part code (`LM358`, a furniture model code, a garment style code) is inert. Wizard
-   field, then index the column, then an exact-match rank branch ahead of
-   `websearch_to_tsquery`. **No migration.** `STORE_BACKEND_STRUCTURE.md` §21.1.
+4. ~~**`modelNumber` reaches nobody.**~~ **MOSTLY SHIPPED. One piece is left and it needs a
+   migration.**
 
-    ⚠️ **`countryOfOriginCode` AND `unitOfMeasure` ARE THE SAME DEFECT, found while shipping the
-    specification step.** Both are accepted by the backend's write schema
-    (`products.schemas.ts:77-82`), both are absent from `src/lib/products/schemas.ts`, and both
-    are already parsed by the buyer's `StoreProductDetailSchema` — so the product page has fields
-    for them that no seller can ever fill, and they render as permanently null. They are two more
-    inputs on the identity step and nothing else. Do all three together.
+    **Done:** `modelNumber`, `countryOfOriginCode` and `unitOfMeasure` are on the seller contract
+    and on the identity step — all three were accepted by the backend write schema and absent from
+    `src/lib/products/schemas.ts`, and the last two were _already parsed by the buyer's
+    `StoreProductDetailSchema`_, so `product-details-sheet.tsx` had been dropping three of its five
+    "Item details" rows for every listing on the site. The country control is a select over the
+    app's own `COUNTRY_OPTIONS` normalised through `toOptionalCountryCode`; the unit is free text
+    with a datalist, because `unitOfMeasure` is free text on the wire and a `<select>` would refuse
+    units the backend accepts.
+
+    **Also done, backend:** `model_number` is folded into `searchText` in
+    `refreshProductSearchDocument`. No migration — `search_document` is `GENERATED ALWAYS` over
+    `search_text`, so it lands at weight class `C` on its own, and `updateProduct` already enqueues
+    a refresh unconditionally.
+
+    ⚠️ **STILL OPEN: the exact-match rank boost, and it is a migration.** Indexing makes a part
+    code _findable_; it does not make it _first_. A listing whose TITLE contains the query still
+    outranks the listing that actually carries the code, because `searchText` is weight `C`.
+    Ranking an exact code first means comparing against the value, and `store_search_document` has
+    **no `model_number` column** — the service reads every column on that table and none of them is
+    it. Boosting on `search_text ILIKE` instead would lift anything that merely mentions the
+    string, which is worse than no boost.
+
+    The one place to change is `searchByRelevance`'s single `rankExpression` const — it feeds ORDER
+    BY, both cursor predicates and the projected score, so a `CASE WHEN` there keeps all four in
+    sync. Note the cursor's fixed-width encoding (`toFixed(12).padStart(24,'0')`) only preserves
+    lexicographic order for boost constants under 12 integer digits.
+
+    ⚠️ **No UNIQUE constraint on `model_number`, ever.** Two sellers listing the same manufacturer
+    part is the premise of a parametric marketplace, not a data error. `sku` is the unique one, per
+    seller organization.
+
+    **Not verified at runtime, and here is why:** no product in the database has a model number —
+    which is exactly what the defect predicted, since no client could set one. Confirming the
+    search path end to end needs a listing patched with one, i.e. an authenticated seller session.
+    No backfill is needed when that happens: `updateProduct` enqueues the refresh itself.
 
     ⚠️ **Do not make it unique.** Two sellers listing the same manufacturer part is the premise of
     a parametric marketplace, not a data error. `sku` is the unique one, per seller organization.
@@ -484,19 +509,46 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
    `commerce_encrypted_document` is envelope-encrypted, organization-private and RFQ/quote-scoped;
    it is the right home for a business registration and the wrong home for published material.
    `commerce_product_document` modelled on `video_document` instead: content-addressed, **no `url`
-   column** (a URL outlives the gate), PDF-only, through the existing scan pipeline so the upload
-   answers **202** and the PDP omits it until `available`. `STORE_BACKEND_STRUCTURE.md` §21.3.
+   column** (a URL outlives the gate), PDF-only. `STORE_BACKEND_STRUCTURE.md` §21.3.
+
+    ⚠️ **SCANNING IS AN OPEN DECISION AND THIS ENTRY USED TO GET IT WRONG.** It said the upload
+    goes "through the existing scan pipeline so the upload answers 202". Only the **adapter** is
+    reusable — it takes a `Buffer` and returns a verdict. `scanEncryptedDocument`,
+    `sweepPendingDocumentScans` and the `scan-encrypted-document` job all name
+    `commerce_encrypted_document`, its `state` enum and its envelope columns, and the job payload
+    has no field saying which table an id belongs to. **`video_document`, the precedent being
+    copied, is not scanned at all**, and today's only working scanner is an EICAR-only fake.
+    So: add a second scan service, job and `state` column — or ship unscanned and answer **201**,
+    with no copy claiming the file is being checked. Decide before writing the table.
 
     ⚠️ **The cascade cleans rows, not bytes.** `deleteProduct` must delete the objects explicitly,
     the way `deleteVideo` does. SQL cannot reach object storage.
 
-7. **The product page cannot start an RFQ, and the RFQ domain is fully built.** Not a feature —
-   a link. `commerce_rfq_product_line` is a multi-line request with quantity and a free unit
-   label, `commerce_quote_product_line` answers it line by line through `rfqProductLineId`, and
-   the composer, both studio queues and `QuoteComparisonItemSchema` all ship and are wired.
-   Meanwhile `buy-action-buttons.tsx` still says two of its three buttons are inert. A "Request a
-   quote for N units" control on the PDP, and an add-to-RFQ affordance on search results, reach
-   an end-to-end surface that exists today.
+7. ~~**The product page cannot start an RFQ.**~~ **SHIPPED, and it removed a dead control rather
+   than adding a fourth one.**
+
+    The inert "Send inquiry" button was also a **duplicate**: `store-and-chat-actions.tsx` already
+    renders a working contact control — an exhaustive switch over `contactAffordance` giving Chat
+    now / Ask a question / Sign in, with `ManufacturerChatSheet` behind it. A second, dead entrance
+    to a live feature is worse than no entrance. It is now **"Request a quote"**, linking to
+    `/store/rfqs/new?productSlug=…`.
+
+    That route is a server component: it fetches the listing and hands `RfqComposer` a typed seed
+    for goods line 0 — title, specification snapshot, quantity and unit. **Three absences are
+    preserved rather than papered over:** a listing with no specifications falls back to its
+    description and then to blank; a null `minimumOrderQuantity` seeds no quantity, because
+    unstated is not one; a null `unitOfMeasure` seeds no unit, because this page does not get to
+    decide what a seller sells in. A bad or stale `?productSlug` renders an empty composer rather
+    than a 404 — the slug is a convenience, not the route's identity.
+
+    **`productId` now travels on a product line.** `RfqProductLineInput` always supported it and
+    the composer never sent it; a seeded line carries it so a provider can see which listing
+    prompted the request instead of re-matching on title text. A hand-typed line **omits** the key
+    rather than nulling it — `CreateDraftRfqSchema` is `.strict()`.
+
+    ⚠️ **"Buy now" stays inert and its comment explains why.** Checkout prepares the ENTIRE cart
+    across every seller, so a button labelled as buying one chair would misstate what the buyer
+    committed to. It waits on a single-line checkout, not on a handler.
 
 ---
 
