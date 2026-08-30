@@ -1016,8 +1016,8 @@ feature-sized build, and several are user-visible today.** Ranked:
     sent; the backend defaults it to `false`. **The toggle unlocks when cart selections are wired —
     that is now a precise dependency, not a vague one.**
 
-    ⚠️ **A REAL BACKEND BUG FOUND WHILE VERIFYING, AND IT IS DETERMINISTIC. NOT FIXED — it lives in
-    the other repo.** Retire a slot, then save again, and the write answers **500 forever** on that
+    ⚠️ ~~**A REAL BACKEND BUG FOUND WHILE VERIFYING.**~~ **FIXED, in `qatoto-backend`.** It was
+    deterministic: retire a slot, then save again, and the write answered **500 forever** on that
     listing. `replaceProductCustomizationOptions` parks existing rows at
     `position + (existing.length + options.length + 1000)` before rewriting, but **a retired row is
     never given a final position, so it keeps its parked value permanently**. The next save whose
@@ -1031,10 +1031,21 @@ feature-sized build, and several are user-visible today.** Ranked:
     next save, 3 options: offset = 2+3+1000 = 1005 → no collision                200
     ```
 
-    **That is the whole mechanism, proven by falsification rather than inferred.** It is reachable by
-    the most ordinary sequence there is — remove a slot, save, edit something else, save — so the
-    step is shipped but a seller who removes a slot may hit it. The fix is server-side: reset a
-    retired row's position, or park with an offset that cannot collide with one.
+    **That is the whole mechanism, proven by falsification rather than inferred**, and it is reachable
+    by the most ordinary sequence there is — remove a slot, save, edit something else, save.
+
+    **The fix is one clause**, in `replaceProductCustomizationOptions`: a retired row now gets
+    `position: options.length + retiredIndex` instead of keeping its parked value.
+    ⚠️ **`replaceProductVariants` NEVER HAD THIS** — I assumed it shared the bug because it shares the
+    parking trick, and it does not: it already sets `position: variants.length + index` when it
+    retires. It was the template, not a second patient. Checking before fixing is what kept that from
+    becoming a needless second edit.
+
+    **Verified against the running server, same sequence that failed:** the retired row now lands at
+    `pos=1` rather than `1004`, and the previously-fatal 2-option save answers **200 three times in a
+    row**, with the row reviving to `active`. Then seven consecutive retire/revive cycles across
+    changing slot counts — every one 200, positions unique and contiguous throughout. Probe listing
+    deleted; the seeded chair's two slots confirmed byte-identical afterwards.
 
     **Everything else proved live on a throwaway listing, then deleted:** both kinds saved with
     `isRequired: false`; omitting a slot **retired** it rather than deleting; re-sending its key
