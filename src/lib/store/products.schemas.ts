@@ -561,6 +561,57 @@ export const ProductQuestionSchema = z
 export const ProductQuestionListPageSchema = cursorPageOf(ProductQuestionSchema);
 export const ProductAnswerListPageSchema = cursorPageOf(ProductAnswerSchema);
 
+// --- The seller's question inbox --------------------------------------------
+//
+// `GET /commerce/seller/questions` — every question on every listing this organization owns, in one
+// place. It exists because the only other route to a `questionId` was to walk your own catalogue
+// product by product from the browser: a seller could answer any question they were shown and had no
+// way to find one.
+//
+// ⚠️ IT IS THE SAME QUESTION SHAPE PLUS THE PRODUCT, which the per-product read cannot carry because
+// there the product is the page. `publicSlug` is NULLABLE here — a question outlives its listing's
+// publication — so the link out is gated on the slug rather than on any status.
+//
+// ⚠️ OLDEST FIRST, unlike every other inbox. It is a work queue rather than a feed, and newest-first
+// is how the oldest unanswered question stays unanswered forever. So paging forward moves toward
+// NEWER rows, and a "Show older" label copied from the review inbox would be backwards.
+
+export const SellerQuestionInboxItemSchema = ProductQuestionSchema.extend({
+  product: z
+    .object({
+      id: z.string(),
+      title: z.string(),
+      /** NULL until published, and again if it is unpublished. The link is gated on this. */
+      publicSlug: z.string().nullable(),
+    })
+    .strip(),
+}).strip();
+
+export const SellerQuestionInboxPageSchema = cursorPageOf(SellerQuestionInboxItemSchema);
+
+/**
+ * ⚠️ **`unansweredOnly` MEANS "NO SELLER ANSWER", NOT "NO ANSWERS".** The backend predicate is
+ * `hasSellerAnswer = false`, a maintained column — not `answerCount = 0` — so a question a verified
+ * buyer already answered still matches. Any label built from this must say "awaiting your answer"
+ * rather than "unanswered", which would be false about a question that has one.
+ *
+ * ⚠️ **AND IT IS A STRING ENUM ON THE WIRE, NOT A COERCED BOOLEAN.** The backend refused
+ * `z.coerce.boolean()` because that turns `"false"` into `true`. `buildQueryString` stringifies, so a
+ * JS `true` serialises correctly — but OMIT the key for "all" rather than sending `false`, which is
+ * what every other filter here does and what keeps the two spellings from drifting.
+ *
+ * ⚠️ **THE CURSOR IS OPAQUE AND ARRIVES ALREADY PERCENT-ENCODED** (`2026-08-07T11%3A39%3A28.827Z_…`).
+ * Pass it back untouched: `URLSearchParams` re-encodes the `%`, the backend decodes once, and the
+ * round trip is correct. Decoding it here to make it "look right" breaks it.
+ *
+ * `limit` caps at 100 rather than the public read's 24 — this is a queue somebody is clearing.
+ */
+export interface SellerQuestionInboxFilter {
+  readonly unansweredOnly?: boolean;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
 // --- Question and answer writes ---------------------------------------------
 //
 // ⚠️ NEITHER BODY CARRIES `authorKind`. The seller / verified-buyer badge is DERIVED by the service
@@ -669,6 +720,8 @@ export type ProductAnswer = z.infer<typeof ProductAnswerSchema>;
 export type ProductQuestion = z.infer<typeof ProductQuestionSchema>;
 export type ProductQuestionListPage = z.infer<typeof ProductQuestionListPageSchema>;
 export type ProductAnswerListPage = z.infer<typeof ProductAnswerListPageSchema>;
+export type SellerQuestionInboxItem = z.infer<typeof SellerQuestionInboxItemSchema>;
+export type SellerQuestionInboxPage = z.infer<typeof SellerQuestionInboxPageSchema>;
 export type CreatedProductQuestion = z.infer<typeof CreatedProductQuestionSchema>;
 export type CreatedProductAnswer = z.infer<typeof CreatedProductAnswerSchema>;
 export type RetractedProductQuestion = z.infer<typeof RetractedProductQuestionSchema>;

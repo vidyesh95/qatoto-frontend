@@ -37,6 +37,7 @@ import {
   bookmarkStoreProduct,
   clearProductAnswerHelpfulVote,
   getStoreProductDeliveryEstimate,
+  listSellerQuestionInbox,
   listStoreProductQuestions,
   listStoreProductReviews,
   listStoreQuestionAnswers,
@@ -55,6 +56,8 @@ import type {
   ProductAnswerListPage,
   RetractedProductAnswer,
   RetractedProductQuestion,
+  SellerQuestionInboxFilter,
+  SellerQuestionInboxPage,
   ProductDeliveryEstimatePage,
   ProductEngagement,
   ProductQuestionListPage,
@@ -250,6 +253,27 @@ export function useProductDeliveryEstimateQuery(
   });
 }
 
+/**
+ * The seller's question inbox — every question on every listing this organization owns.
+ *
+ * THE WHOLE FILTER IS THE KEY, cursor included, so each page is its own cache entry and going back
+ * to a page already fetched is instant. Same shape as `useSellerReviewInboxQuery`.
+ *
+ * ⚠️ **THE CALLER MUST CLEAR `cursor` WHENEVER IT CHANGES THE FILTER.** A cursor is a position in one
+ * particular result set: carried across the `unansweredOnly` toggle it resumes the OTHER result set
+ * partway through and silently hides every row sorting before it, which reads as "this filter has
+ * fewer matches than it does" — worse than an empty page, because it looks like an answer. Nothing
+ * here can enforce that; it is the page's job, and a bare setter passed to an `onChange` is the bug.
+ */
+export function useSellerQuestionInboxQuery(filter: SellerQuestionInboxFilter = {}) {
+  return useQuery<ActionResponse<SellerQuestionInboxPage>>({
+    queryKey: storeKeys.sellerQuestionInbox(JSON.stringify(filter)),
+    queryFn: () => listSellerQuestionInbox(filter),
+    // A 401 or 403 is an answer, not a flake. Retrying one only delays the explanation.
+    retry: false,
+  });
+}
+
 // --- Question and answer writes ---------------------------------------------
 //
 // ONE INVALIDATION RULE ACROSS ALL SIX, and it is why they share this block: any of them can change
@@ -266,10 +290,24 @@ export function useProductDeliveryEstimateQuery(
 // carries the `authorKind` badge the SERVER derived — neither is knowable on the client before the
 // response, and guessing either would put a "seller" badge on text the seller did not write.
 
-/** Invalidates the question list, which every Q&A write can change. */
-function useQuestionListInvalidator(productSlug: string) {
+/**
+ * Invalidates every read a Q&A write can change.
+ *
+ * ⚠️ **THE SELLER INBOX ROOT IS ALWAYS INVALIDATED, AND THAT IS NOT BELT-AND-BRACES.** The inbox is
+ * keyed on the SELLER, not on a product, so `productQuestions(slug)` does not touch it. Without this
+ * an answer posted from the studio would succeed and leave its own row on screen still reading as
+ * unanswered — never dropping out of the "Awaiting your answer" queue it was just cleared from.
+ *
+ * ⚠️ **AND `productSlug` IS NULLABLE FOR THE SAME REASON.** An inbox row's listing may be
+ * unpublished, in which case there is no slug and no product-scoped cache entry to refresh. Passing
+ * `null` skips those two and still refreshes the inbox, rather than writing
+ * `["store","products",null,"questions"]` — a key nothing reads.
+ */
+function useQuestionReadInvalidator(productSlug: string | null) {
   const queryClient = useQueryClient();
   return () => {
+    void queryClient.invalidateQueries({ queryKey: storeKeys.sellerQuestionInboxRoot() });
+    if (productSlug === null) return;
     void queryClient.invalidateQueries({ queryKey: storeKeys.productQuestions(productSlug) });
   };
 }
@@ -293,7 +331,7 @@ export function useAskProductQuestion(
   Error,
   { readonly bodyText: string; readonly idempotencyKey: string }
 > {
-  const invalidateQuestionList = useQuestionListInvalidator(productSlug);
+  const invalidateQuestionReads = useQuestionReadInvalidator(productSlug);
   return useMutation({
     mutationFn: ({ bodyText, idempotencyKey }) =>
       askProductQuestion(
@@ -303,7 +341,7 @@ export function useAskProductQuestion(
       ),
     onSuccess: (result) => {
       if (!result.success) return;
-      invalidateQuestionList();
+      invalidateQuestionReads();
     },
   });
 }
@@ -319,14 +357,14 @@ export function useAskProductQuestion(
  * answered" is true and "you already answered" is false for the colleague who did not.
  */
 export function useAnswerProductQuestion(
-  productSlug: string,
+  productSlug: string | null,
 ): UseMutationResult<
   ActionResponse<CreatedProductAnswer>,
   Error,
   { readonly questionId: string; readonly bodyText: string; readonly idempotencyKey: string }
 > {
   const queryClient = useQueryClient();
-  const invalidateQuestionList = useQuestionListInvalidator(productSlug);
+  const invalidateQuestionReads = useQuestionReadInvalidator(productSlug);
   return useMutation({
     mutationFn: ({ questionId, bodyText, idempotencyKey }) =>
       answerProductQuestion(
@@ -336,7 +374,8 @@ export function useAnswerProductQuestion(
       ),
     onSuccess: (result, { questionId }) => {
       if (!result.success) return;
-      invalidateQuestionList();
+      invalidateQuestionReads();
+      if (productSlug === null) return;
       void queryClient.invalidateQueries({
         queryKey: storeKeys.productQuestionAnswers(productSlug, questionId),
       });
@@ -352,12 +391,12 @@ export function useRetractProductQuestion(
   Error,
   { readonly questionId: string }
 > {
-  const invalidateQuestionList = useQuestionListInvalidator(productSlug);
+  const invalidateQuestionReads = useQuestionReadInvalidator(productSlug);
   return useMutation({
     mutationFn: ({ questionId }) => retractProductQuestion(questionId),
     onSuccess: (result) => {
       if (!result.success) return;
-      invalidateQuestionList();
+      invalidateQuestionReads();
     },
   });
 }
@@ -371,12 +410,12 @@ export function useRetractProductAnswer(
   { readonly answerId: string; readonly questionId: string }
 > {
   const queryClient = useQueryClient();
-  const invalidateQuestionList = useQuestionListInvalidator(productSlug);
+  const invalidateQuestionReads = useQuestionReadInvalidator(productSlug);
   return useMutation({
     mutationFn: ({ answerId }) => retractProductAnswer(answerId),
     onSuccess: (result, { questionId }) => {
       if (!result.success) return;
-      invalidateQuestionList();
+      invalidateQuestionReads();
       void queryClient.invalidateQueries({
         queryKey: storeKeys.productQuestionAnswers(productSlug, questionId),
       });
@@ -401,7 +440,7 @@ export function useSetProductAnswerHelpfulVote(
   { readonly answerId: string; readonly questionId: string; readonly isHelpful: boolean }
 > {
   const queryClient = useQueryClient();
-  const invalidateQuestionList = useQuestionListInvalidator(productSlug);
+  const invalidateQuestionReads = useQuestionReadInvalidator(productSlug);
   return useMutation({
     mutationFn: ({ answerId, isHelpful }) =>
       isHelpful ? markProductAnswerHelpful(answerId) : clearProductAnswerHelpfulVote(answerId),
@@ -409,7 +448,7 @@ export function useSetProductAnswerHelpfulVote(
       if (!result.success) return;
       // The list embeds `topAnswer`, whose order is seller-first then most-endorsed — so a vote can
       // reorder it. Both reads are refreshed rather than only the one that was written to.
-      invalidateQuestionList();
+      invalidateQuestionReads();
       void queryClient.invalidateQueries({
         queryKey: storeKeys.productQuestionAnswers(productSlug, questionId),
       });

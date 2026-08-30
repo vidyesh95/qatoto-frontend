@@ -391,6 +391,12 @@ export const ROADMAP_AUDIENCES: readonly RoadmapAudience[] = [
         routes: [{ label: "Reviews", href: "/studio/reviews" }],
       },
       {
+        action: "Answer what buyers asked",
+        summary:
+          "Every question asked on a product you sell, oldest first, with the ones still waiting on you filtered out from the rest.",
+        routes: [{ label: "Questions", href: "/studio/questions" }],
+      },
+      {
         action: "Read the numbers",
         summary:
           "Reach and engagement across your videos, and every comment on them in one place. Earnings, subtitles and copyright have routes in Studio but are still placeholders — on the map, not yet in your hands.",

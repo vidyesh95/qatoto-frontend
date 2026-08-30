@@ -54,6 +54,12 @@ const ICON_PATHS = {
   rateReview: {
     static: "/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  // Both weights are in `public/icons`, so this one is a real active/inactive pair rather than a
+  // `static` — unlike `rateReview` immediately above it.
+  forum: {
+    active: "/icons/forum_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/forum_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   // A credit badge, for collaborator credits. `static` because only the FILL0 weight is in
   // `public/icons`, the same reason `playlistPlay`, `rateReview` and `supportAgent` are.
   workspacePremium: {
@@ -130,6 +136,10 @@ const STUDIO_ROUTES = {
   // The seller's half of trust. `GET /commerce/seller/reviews` and both reply routes shipped with no
   // caller at all, so a seller could be reviewed publicly with no way to read it, let alone answer.
   sellerReviews: "/studio/reviews",
+  // The other half of the same trust surface. `GET /commerce/seller/questions` shipped with no caller,
+  // so a seller could answer any question they were SHOWN and had no way to find one — the only route
+  // to a question id was to walk their own catalogue product by product from the browser.
+  sellerQuestions: "/studio/questions",
   services: "/studio/services",
   // The manufacturer's own two surfaces. `factoryInquiries` is the RECEIVED queue — the buyer's
   // side of the same rows is `/store/factory-inquiries`, the split `/store/rfqs` and
@@ -355,6 +365,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
       { path: STUDIO_ROUTES.providerRfqs, label: "Requests to quote", iconKey: "requestQuote" },
       { path: STUDIO_ROUTES.providerQuotes, label: "Your quotes", iconKey: "requestQuote" },
       { path: STUDIO_ROUTES.sellerReviews, label: "Reviews", iconKey: "rateReview" },
+      { path: STUDIO_ROUTES.sellerQuestions, label: "Questions", iconKey: "forum" },
       { path: STUDIO_ROUTES.services, label: "Services", iconKey: "package" },
       {
         path: STUDIO_ROUTES.factoryInquiries,

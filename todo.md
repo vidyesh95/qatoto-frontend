@@ -942,9 +942,49 @@ feature-sized build, and several are user-visible today.** Ranked:
     still exist as withdrawn rows; they are excluded from the public list, the seller inbox and every
     counter. That is the revert this surface has.
 
-    **Still unwired: `GET /commerce/seller/questions`,** the seller's unanswered-question inbox. Its
-    own route comment says a seller with two hundred listings can answer a question and cannot find
-    one. A new studio page, and the obvious next slice.
+    ~~**Still unwired: `GET /commerce/seller/questions`.**~~ **SHIPPED — `/studio/questions`.** The
+    last unwired route on the Q&A surface. Its own route comment named the gap: a seller with two
+    hundred listings could answer any question they were SHOWN and had no way to find one.
+
+    ⚠️ **"AWAITING YOUR ANSWER", NOT "UNANSWERED", AND THE DIFFERENCE IS NOT PEDANTRY.** The backend
+    filter is `hasSellerAnswer = false` — a maintained column — **not** `answerCount = 0`. A question
+    a verified BUYER already answered still matches, so an "Unanswered" chip would be a false
+    statement about a question that has an answer.
+
+    ⚠️ **AN EMPTY INBOX AND "YOU ARE NOT A SELLER" ARE THE SAME RESPONSE. I expected a 403 and was
+    wrong.** The demo BUYER organization answers **200 with zero items** —
+    `requireActiveSellerCommerceOrganization` admits any caller holding a seller/owner membership, and
+    the protection is the `product.sellerOrganizationId` scoping rather than the guard. A real 403
+    needs no active organization at all. So the empty state says "no questions" and never "you are not
+    a seller": a seller who has cleared their queue gets a byte-identical payload.
+
+    ⚠️ **OLDEST FIRST, SO THE BUTTON SAYS "SHOW NEWER".** `asc(createdAt), asc(id)` is deliberate —
+    newest-first is how the oldest unanswered question stays unanswered forever. `seller-reviews-page`
+    says "Show older" and is right for ITS newest-first default; copying that label points backwards.
+
+    ⚠️ **THE INVALIDATION WAS THE REAL WORK, AND IT WOULD HAVE FAILED SILENTLY.**
+    `useAnswerProductQuestion` invalidated only `productQuestions(slug)` — a key the inbox does not
+    use, because the inbox is keyed on the SELLER. Answering from the studio would have posted
+    successfully and left the row on screen still reading as unanswered, never leaving the queue it
+    had just been cleared from. Fixed with a `sellerQuestionInboxRoot()` prefix that ALWAYS fires,
+    the same root/leaf shape `sellerReviewInboxRoot` already uses. ⚠️ And `productSlug` is now
+    **nullable** on that hook: an inbox row's listing may be unpublished, and the product-scoped keys
+    are skipped rather than writing `["store","products",null,"questions"]`, a key nothing reads.
+
+    **Proved live, probe rows written and withdrawn:** a buyer's new question appeared under
+    "Awaiting your answer" (1 of 5); the seller answered → **201 `authorKind: "seller"`** → the row
+    **left** the filtered queue (0) while staying in "All questions" (5) with `hasSellerAnswer: true`.
+    Paging `limit=2` walked 3 pages / 5 rows / 5 unique — no duplicate, no skip. A buyer-org session
+    got 200 with 0 items. Both rows withdrawn, inbox back to its baseline 4.
+
+    ⚠️ **AND IT UNCOVERED A DRIFT BUG THAT WAS NOT MINE.** `/studio/reviews` — built by the identical
+    slice — was registered in `site-capabilities.ts` and **never in `site-roadmap.ts`**; the
+    `/studio/quotes` LIST route was missing too, with only its `[quoteId]` detail present. The
+    roadmap's own drift loop walks roadmap → filesystem and so cannot see a page that has no entry.
+    Both were added alongside `/studio/questions` rather than left for the next reader. **A new studio
+    route needs six edits across four files**: the route, the component, THREE separate structures in
+    `studio-sidebar.tsx` (`ICON_PATHS`, `STUDIO_ROUTES`, `STUDIO_NAVIGATION_CONFIG`), and both roadmap
+    files. Only `iconKey` is compiler-checked.
 
     ⚠️ **`STORE_BACKEND_STRUCTURE.md` DOES NOT LIST FOUR OF THESE ROUTES.** §6.4's table has the
     helpful pair and the seller inbox; the two creates and two deletes appear in no table, and §A35

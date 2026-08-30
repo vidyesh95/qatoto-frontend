@@ -739,12 +739,37 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Read the request and send a quote.",
         reachedFrom: "your incoming RFQs list",
       },
+      // ⚠️ THE THREE LIST ROUTES BELOW WERE MISSING FROM THIS FILE, and two of them are not new.
+      // `/studio/quotes` and `/studio/reviews` both shipped without a roadmap entry — only the
+      // `[quoteId]` DETAIL was here, and reviews had nothing at all. Both were registered in
+      // `site-capabilities.ts` at the time, which is why nobody noticed: the drift loop in this
+      // file's header only walks roadmap → filesystem and cannot see a page that has no entry.
+      // Added alongside `/studio/questions` rather than left for the next reader to trip over.
+      {
+        kind: "route",
+        label: "Your quotes",
+        href: "/studio/quotes",
+        summary: "Every quote you sent, including the unsubmitted one blocking the next revision.",
+      },
       {
         kind: "dynamic",
         label: "Quote detail",
         pathPattern: "/studio/quotes/[quoteId]",
         summary: "One quote you sent, and its outcome.",
         reachedFrom: "an RFQ you quoted on",
+      },
+      {
+        kind: "route",
+        label: "Reviews",
+        href: "/studio/reviews",
+        summary: "What buyers said about your organization, and your one answer to each.",
+      },
+      {
+        kind: "route",
+        label: "Questions",
+        href: "/studio/questions",
+        summary:
+          "Questions asked on your listings, oldest first, filtered to the ones still waiting on you.",
       },
       {
         kind: "dynamic",

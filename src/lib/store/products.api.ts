@@ -28,6 +28,7 @@ import {
   ProductQuestionListPageSchema,
   RetractedProductAnswerSchema,
   RetractedProductQuestionSchema,
+  SellerQuestionInboxPageSchema,
   StoreProductDetailSchema,
   StoreReviewListPageSchema,
   type AnswerListFilter,
@@ -46,6 +47,8 @@ import {
   type RetractedProductAnswer,
   type RetractedProductQuestion,
   type ReviewListFilter,
+  type SellerQuestionInboxFilter,
+  type SellerQuestionInboxPage,
   type StoreProductDetail,
   type StoreReviewListPage,
 } from "@/lib/store/products.schemas";
@@ -321,4 +324,25 @@ export function clearProductAnswerHelpfulVote(
 ): Promise<ActionResponse<ProductAnswerHelpfulVote>> {
   const path = `/commerce/answers/${encodeURIComponent(answerId)}/helpful`;
   return sendJson(path, "DELETE", undefined, ProductAnswerHelpfulVoteSchema, options);
+}
+
+/**
+ * The seller's own question inbox — `GET /commerce/seller/questions`.
+ *
+ * ⚠️ **AN EMPTY INBOX AND "YOU ARE NOT A SELLER" ARE THE SAME RESPONSE.** Measured: an organization
+ * that owns no listings answers **200 with zero items**, not 403. The guard admits any caller holding
+ * a seller or owner membership, and the data protection is the `product.sellerOrganizationId` scoping
+ * rather than the guard — a real 403 needs no active organization at all. So the caller's empty state
+ * must say "no questions", never "you are not a seller": a seller who has cleared their queue gets a
+ * byte-identical payload.
+ *
+ * SCOPED BY LISTING OWNERSHIP, and moderator-hidden questions are withheld from the seller too —
+ * answering one would republish it underneath the moderation decision.
+ */
+export function listSellerQuestionInbox(
+  filter: SellerQuestionInboxFilter = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<SellerQuestionInboxPage>> {
+  const path = `/commerce/seller/questions${buildQueryString({ ...filter })}`;
+  return getJson(path, SellerQuestionInboxPageSchema, options);
 }

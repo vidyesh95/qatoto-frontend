@@ -250,6 +250,15 @@ export const storeKeys = {
   productReviews: (productSlug: string, filterKey: string) =>
     ["store", "products", productSlug, "reviews", filterKey] as const,
 
+  /**
+   * `sellerQuestionInboxRoot` is the PREFIX an answer write invalidates: answering flips
+   * `hasSellerAnswer`, which decides whether a row matches `unansweredOnly` — so EVERY filter of the
+   * inbox is stale, not just the one on screen. Same shape and same reason as
+   * `sellerReviewInboxRoot` above.
+   */
+  sellerQuestionInboxRoot: () => ["store", "seller-questions"] as const,
+  sellerQuestionInbox: (filterKey: string) => ["store", "seller-questions", filterKey] as const,
+
   productQuestions: (productSlug: string) =>
     ["store", "products", productSlug, "questions"] as const,
   productQuestionAnswers: (productSlug: string, questionId: string) =>
