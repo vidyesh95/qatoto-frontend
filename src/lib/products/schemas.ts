@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { PRODUCT_DOCUMENT_KINDS } from "@/lib/store/products.schemas";
+import {
+  PRODUCT_CUSTOMIZATION_KINDS,
+  PRODUCT_DOCUMENT_KINDS,
+  type ProductCustomizationKind,
+} from "@/lib/store/products.schemas";
 
 import { PRODUCT_SAMPLE_POLICIES, PRODUCT_SELLING_STATES } from "@/lib/store/organizations.schemas";
 import { CATEGORY_ATTRIBUTE_VALUE_KINDS } from "@/lib/store/catalog.schemas";
@@ -123,6 +127,45 @@ export const SellerProductVariantSchema = z
     position: z.number().int(),
     state: z.enum(["active", "retired"]),
     pricingTiers: z.array(ProductPricingTierSchema),
+  })
+  .strip();
+
+/**
+ * A18. One customization slot the seller offers on this listing — "Your logo", "Packaging material".
+ *
+ * ⚠️ THIS WAS MISSING ENTIRELY, AND `.strip()` MADE THAT SILENT — the same defect as
+ * `SellerProductVariantSchema` above, one feature over. The backend has returned
+ * `customizationOptions[]` on the owner read since A23 (`products.service.ts:478`), and because this
+ * schema did not name the key, every seller read DISCARDED it. That is why the wizard could not
+ * hydrate slots and therefore never offered to author them.
+ *
+ * ⚠️ `state` IS THE SELLER'S VIEW AND NOT THE BUYER'S, and the reason is the same as a variant's. A
+ * retired slot is still returned here — order lines bought under it still name it, and all three
+ * selection tables reference it `onDelete: restrict`, so it is retired rather than deleted. The
+ * buyer's projection (`@/lib/store/products.schemas`) filters to `active` and omits the field; a
+ * seller form must show what exists and edit only what is live.
+ *
+ * ⚠️ RETIRED ROWS CARRY A PARKED `position`. The replace-set offsets every existing row out of range
+ * before rewriting, and a retired one is never given a final position — so retired slots sort after
+ * active ones by accident of that offset rather than by design. Only the active rows are ordered
+ * meaningfully, which is all a form should be reading anyway.
+ *
+ * TWO KINDS, AND THEY ARE MUTUALLY EXCLUSIVE. An upload slot carries `acceptedMediaTypes` and no
+ * `choiceValues`; a choice slot the reverse. The backend enforces that with a cross-field refine, so
+ * a slot carrying both is a 422 that fails the whole save.
+ */
+export const SellerProductCustomizationOptionSchema = z
+  .object({
+    id: z.string(),
+    slotKey: z.string(),
+    label: z.string(),
+    customizationKind: z.enum(PRODUCT_CUSTOMIZATION_KINDS),
+    acceptedMediaTypes: z.array(z.string()),
+    choiceValues: z.array(z.string()),
+    minimumOrderQuantity: z.number().int(),
+    isRequired: z.boolean(),
+    position: z.number().int(),
+    state: z.enum(["active", "retired"]),
   })
   .strip();
 
@@ -356,6 +399,9 @@ export const PublicProductSchema = z
      */
     highlights: z.array(ProductHighlightSchema),
     documents: z.array(SellerProductDocumentSchema),
+    // A18. ACTIVE AND RETIRED BOTH — see `SellerProductCustomizationOptionSchema`. Naming the key is
+    // the whole fix: `.strip()` was discarding this array on every seller read.
+    customizationOptions: z.array(SellerProductCustomizationOptionSchema),
     /**
      * A17. THE THREE SAMPLE FACTS, which answer three different questions and must not be
      * collapsed. `samplePolicy` says whether a sample can be had at all and whether its price
@@ -418,6 +464,9 @@ export type ProductImage = z.infer<typeof ProductImageSchema>;
 export type ProductSpecification = z.infer<typeof ProductSpecificationSchema>;
 export type ProductHighlight = z.infer<typeof ProductHighlightSchema>;
 export type SellerProductDocument = z.infer<typeof SellerProductDocumentSchema>;
+export type SellerProductCustomizationOption = z.infer<
+  typeof SellerProductCustomizationOptionSchema
+>;
 export type PublicProduct = z.infer<typeof PublicProductSchema>;
 export type ProductListRow = z.infer<typeof ProductListRowSchema>;
 export type ListingRequirementKey = (typeof LISTING_REQUIREMENT_KEYS)[number];
@@ -602,6 +651,47 @@ export interface ProductPricingTierInput {
 
 /** A1. The backend caps a listing at 50 variants (`products.schemas.ts:155`). */
 export const PRODUCT_VARIANT_MAX_COUNT = 50;
+
+/**
+ * A18. One customization slot on the way IN.
+ *
+ * ⚠️ `slotKey` IS THE IDENTITY THE BACKEND UPSERTS ON, exactly as `publicSlug` is for a variant, and
+ * the write is a REPLACE-SET THAT RETIRES OMISSIONS. A slot dropped from this array is set
+ * `state: "retired"` rather than deleted; a slot whose key CHANGES is a retirement plus a fresh
+ * insert. So a caller must send back every slot it is keeping, and must never silently drop a row it
+ * failed to serialise.
+ *
+ * ⚠️ IT IS SNAKE_CASE, NOT KEBAB. The backend regex is `/^[a-z0-9]+(_[a-z0-9]+)*$/` — a machine key
+ * of the same family as an enum label, not a URL slug. `toVariantSlug` produces kebab and cannot be
+ * reused for it.
+ *
+ * ⚠️ `isRequired` IS DELIBERATELY ABSENT FROM THIS TYPE, and it is a safety decision rather than an
+ * oversight. `checkout/prepare` revalidates every cart line unconditionally, and NO CLIENT ANYWHERE
+ * SUBMITS A CUSTOMIZATION SELECTION yet — `customization-sheet.tsx` collects the buyer's choices and
+ * sends none of them, because an uploaded asset lands `pending_scan` and cannot be attached until a
+ * scanner promotes it. So a required slot would make its listing permanently uncheckoutable BY
+ * ANYBODY, including a buyer who wants to answer. The backend defaults the flag to `false` when the
+ * key is absent, which is the only safe value until the buyer-side selection path exists.
+ *
+ * The three optional keys are OMITTED when empty, never nulled — the backend object is `.strict()`
+ * with `.optional()` keys, so a null is a 422 that fails the whole save.
+ */
+export interface ProductCustomizationOptionInput {
+  slotKey: string;
+  label: string;
+  customizationKind: ProductCustomizationKind;
+  acceptedMediaTypes?: string[];
+  choiceValues?: string[];
+  minimumOrderQuantity?: number;
+}
+
+/** A18. The backend caps a listing at 12 slots (`products.schemas.ts:395`). */
+export const PRODUCT_CUSTOMIZATION_SLOT_MAX_COUNT = 12;
+/** Per slot: at most 12 accepted media types, at most 50 choice values. */
+export const PRODUCT_CUSTOMIZATION_MEDIA_TYPE_MAX_COUNT = 12;
+export const PRODUCT_CUSTOMIZATION_CHOICE_MAX_COUNT = 50;
+/** The backend's own key shape. Snake_case, so `toVariantSlug`'s kebab output would be refused. */
+export const PRODUCT_CUSTOMIZATION_SLOT_KEY_PATTERN = /^[a-z0-9]+(_[a-z0-9]+)*$/;
 export const PRODUCT_VARIANT_NAME_MAX_LENGTH = 120;
 export const PRODUCT_VARIANT_SLUG_MAX_LENGTH = 80;
 export const PRODUCT_VARIANT_SKU_MAX_LENGTH = 80;

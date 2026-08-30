@@ -15,6 +15,7 @@ import {
   updateProduct,
   uploadProductImage,
   replaceProductAttributeValues,
+  replaceProductCustomizationOptions,
   replaceProductVariants,
   replaceProductHighlights,
   uploadProductHighlightImage,
@@ -23,6 +24,7 @@ import type {
   CreateProductInput,
   ProductAttributeValueInput,
   ProductHighlightInput,
+  ProductCustomizationOptionInput,
   ProductVariantInput,
   UpdateProductInput,
 } from "@/lib/products/schemas";
@@ -92,6 +94,8 @@ interface CreateListingVariables {
   newDocuments: readonly PendingProductDocument[];
   /** A1. The variant set, saved through its own replace-set route after the listing exists. */
   variants: readonly ProductVariantInput[];
+  /** A18. The customization slots, same shape and same route timing as the variants above. */
+  customizationOptions: readonly ProductCustomizationOptionInput[];
   publish: boolean;
   onProgress?: (progress: SaveProgress) => void;
 }
@@ -174,6 +178,7 @@ export function useCreateListingMutation() {
       attributeValues,
       newDocuments,
       variants,
+      customizationOptions,
       publish,
       onProgress,
     }: CreateListingVariables) => {
@@ -208,6 +213,12 @@ export function useCreateListingMutation() {
         unwrap(await replaceProductVariants(created.id, variants));
       }
 
+      // A18. Same rule as variants immediately above: keyed on the listing id, and skipped when
+      // empty on a FRESH listing only, because there is no slot to retire yet.
+      if (customizationOptions.length > 0) {
+        unwrap(await replaceProductCustomizationOptions(created.id, customizationOptions));
+      }
+
       if (publish) {
         onProgress?.({ phase: "publishing" });
         const published = unwrap(await publishProduct(created.id));
@@ -239,6 +250,8 @@ interface UpdateListingVariables {
   removedDocumentIds: readonly string[];
   /** A1. The variants the seller is KEEPING. Anything absent is retired — see the call site. */
   variants: readonly ProductVariantInput[];
+  /** A18. The slots the seller is KEEPING. Anything absent is retired — see the call site. */
+  customizationOptions: readonly ProductCustomizationOptionInput[];
   /** true = ensure the listing ends up active (publish); false = leave as-is. */
   publish: boolean;
   onProgress?: (progress: SaveProgress) => void;
@@ -258,6 +271,7 @@ export function useUpdateListingMutation() {
       newDocuments,
       removedDocumentIds,
       variants,
+      customizationOptions,
       publish,
       onProgress,
     }: UpdateListingVariables) => {
@@ -296,6 +310,14 @@ export function useUpdateListingMutation() {
        * deleted: order lines bought under it still name it.
        */
       unwrap(await replaceProductVariants(productId, variants));
+
+      /**
+       * A18. ALWAYS sent on an edit, for the same reason and with the same weight. Omitting a slot
+       * RETIRES it, so this must carry every slot the seller is keeping. Retirement is reversible
+       * here — re-sending the `slotKey` reactivates the same row — which makes it a softer failure
+       * than the variant case, not a safe one.
+       */
+      unwrap(await replaceProductCustomizationOptions(productId, customizationOptions));
 
       if (publish) {
         onProgress?.({ phase: "publishing" });

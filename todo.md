@@ -990,11 +990,66 @@ feature-sized build, and several are user-visible today.** Ranked:
     helpful pair and the seller inbox; the two creates and two deletes appear in no table, and §A35
     admits it. The code was the authority for all of the above.
 
-2. **Customization option authoring.** `PUT /products/:id/customization-options` has no caller while
-   the buyer's `customization-sheet.tsx` renders the slots. ⚠️ A buyer may be refused at checkout
-   with `REQUIRED_OPTION_MISSING` for a slot no seller can create — **verify that refusal is
-   genuinely reachable before costing this**, because this file has been wrong about live blockers
-   before (§8).
+2. ~~**Customization option authoring.**~~ **SHIPPED — a Customization step in the wizard, frontend
+   only, no migration.** Both halves: the write had no caller, AND the seller read was discarding
+   `customizationOptions` through `.strip()` — `src/lib/products/schemas.ts` named it nowhere, so the
+   wizard could not have hydrated a slot even once the write existed. That is `variants` before §15,
+   verbatim, and the seventh instance of the class.
+
+    ⚠️ **THE VERIFICATION THIS ENTRY DEMANDED CAME BACK NEGATIVE, AND THE ENTRY WAS WRONG.** All 17
+    purchasable products scanned (the search's own `documentKinds` facet says `product: 17`,
+    `hasMore: false`, so the scan was complete): exactly ONE carries slots, and both are
+    `isRequired: false`. **No buyer could hit `REQUIRED_OPTION_MISSING`** — nothing could mint a
+    required slot, because the only route that can has no caller. The two halves of the old claim
+    cancel each other out. The doc is where it came from: `STORE_BACKEND_STRUCTURE.md` A23 says a
+    required slot meant a product "could not be checked out by anybody" in the past tense, describing
+    a class of bug as though it were an incident. **Worth correcting at the source before it
+    propagates a fourth time.**
+
+    ⚠️ **AND `isRequired` IS DELIBERATELY NOT AUTHORABLE. Shipping the toggle would have CREATED the
+    blocker this entry imagined.** `rg customizationSelections src/` returns **nothing** — no client
+    submits a selection, not artwork and not even a plain choice; `customization-sheet.tsx` collects
+    locally and sends none of it, because an upload lands `pending_scan` and cannot be attached until
+    a scanner promotes it. Meanwhile `checkout/prepare` revalidates **every cart line
+    unconditionally**, even one with zero selections. So one required slot would make its listing
+    permanently uncheckoutable BY ANYBODY, including a buyer who wanted to answer. The key is never
+    sent; the backend defaults it to `false`. **The toggle unlocks when cart selections are wired —
+    that is now a precise dependency, not a vague one.**
+
+    ⚠️ **A REAL BACKEND BUG FOUND WHILE VERIFYING, AND IT IS DETERMINISTIC. NOT FIXED — it lives in
+    the other repo.** Retire a slot, then save again, and the write answers **500 forever** on that
+    listing. `replaceProductCustomizationOptions` parks existing rows at
+    `position + (existing.length + options.length + 1000)` before rewriting, but **a retired row is
+    never given a final position, so it keeps its parked value permanently**. The next save whose
+    offset lands on that stale number collides on
+    `commerce_product_customization_option_position_uidx` and raises `23505`, which `ProductError` has
+    no member for — so it escapes as an unmapped 500.
+
+    ```
+    after retiring one of two slots:  packaging_material pos=0 active · your_logo pos=1004 retired
+    next save, 2 options: offset = 2+2+1000 = 1004 → packaging 0→1004 collides   500  (3× in a row)
+    next save, 3 options: offset = 2+3+1000 = 1005 → no collision                200
+    ```
+
+    **That is the whole mechanism, proven by falsification rather than inferred.** It is reachable by
+    the most ordinary sequence there is — remove a slot, save, edit something else, save — so the
+    step is shipped but a seller who removes a slot may hit it. The fix is server-side: reset a
+    retired row's position, or park with an offset that cannot collide with one.
+
+    **Everything else proved live on a throwaway listing, then deleted:** both kinds saved with
+    `isRequired: false`; omitting a slot **retired** it rather than deleting; re-sending its key
+    **revived the same row**; a choice slot carrying `acceptedMediaTypes` → **422** (the XOR refine);
+    a kebab `slotKey` → **422 "Slot key must be snake_case"**, which is why the step has its own
+    `toSlotKey` rather than reusing `toVariantSlug`'s kebab output. ⚠️ **The seeded chair's two slots
+    were confirmed byte-identical afterwards** — it is the only listing in the database with slots,
+    and a replace-set `PUT` omitting them would have retired them.
+
+    **Two adjacent findings, recorded not fixed:** `DELETE /products/:id` for a listing ever bought
+    with a customization hits an `onDelete: restrict` FK from the order line and surfaces as a raw
+    500, since `ProductError` has no member for it. And `platform_audit_event_kind` declares
+    `product_customization_options_replaced`, which nothing emits — retiring a commercial term a
+    buyer is held to leaves no trail.
+
 3. **Seller profile writes** — all 11 `commerce-seller-profile` routes. The buyer storefront already
    renders stakeholders, site access, capabilities and certifications from `declaredProfile`; nothing
    can fill any of it in.

@@ -34,6 +34,11 @@ import {
   PRODUCT_SPECIFICATION_KEY_MAX_LENGTH,
   PRODUCT_SPECIFICATION_MAX_COUNT,
   PRODUCT_SPECIFICATION_VALUE_MAX_LENGTH,
+  type ProductCustomizationOptionInput,
+  PRODUCT_CUSTOMIZATION_CHOICE_MAX_COUNT,
+  PRODUCT_CUSTOMIZATION_MEDIA_TYPE_MAX_COUNT,
+  PRODUCT_CUSTOMIZATION_SLOT_KEY_PATTERN,
+  PRODUCT_CUSTOMIZATION_SLOT_MAX_COUNT,
   PRODUCT_VARIANT_MAX_COUNT,
   PRODUCT_VARIANT_NAME_MAX_LENGTH,
   PRODUCT_VARIANT_SKU_MAX_LENGTH,
@@ -49,6 +54,8 @@ import {
   type SellerProductDocument,
 } from "@/lib/products/schemas";
 import {
+  type ProductCustomizationKind,
+  PRODUCT_CUSTOMIZATION_KINDS,
   PRODUCT_DOCUMENT_KIND_LABELS,
   PRODUCT_DOCUMENT_KINDS,
   ProductDocumentKindSchema,
@@ -88,6 +95,7 @@ const LISTING_STEPS = [
   { id: "documents", label: "Documents" },
   { id: "pricing", label: "Pricing & Inventory" },
   { id: "variants", label: "Variants" },
+  { id: "customization", label: "Customization" },
   { id: "review", label: "Review & Publish" },
 ] as const;
 
@@ -280,6 +288,45 @@ interface VariantDraft {
 }
 
 /**
+ * A18. One customization slot as typed in the form.
+ *
+ * ⚠️ `slotKey` IS THE IDENTITY THE BACKEND UPSERTS ON — the role `publicSlug` plays for a variant,
+ * and the same hazard. A key that changes retires the old slot and creates a new one, so
+ * `isSlotKeyEdited` stops the label from silently driving it: a NEW row's key follows what is typed
+ * until the seller touches it, and a HYDRATED row's key is frozen and rendered read-only.
+ *
+ * ⚠️ IT IS SNAKE_CASE, NOT KEBAB. `toVariantSlug` below produces kebab and would be refused by the
+ * backend's `/^[a-z0-9]+(_[a-z0-9]+)*$/`, so this has its own deriver.
+ *
+ * THE TWO LISTS ARE MUTUALLY EXCLUSIVE and only the one matching `customizationKind` is ever sent —
+ * the backend refuses a slot carrying both. They are held separately rather than in one field so
+ * that switching kind and switching back does not discard what was already typed.
+ *
+ * `minimumOrderQuantity` is a STRING like every other numeric control here; an input has no number,
+ * and the conversion happens once in `collectCustomizationSlots`.
+ */
+interface CustomizationSlotDraft {
+  localId: string;
+  savedId: string | null;
+  slotKey: string;
+  isSlotKeyEdited: boolean;
+  label: string;
+  customizationKind: ProductCustomizationKind;
+  acceptedMediaTypes: string[];
+  choiceValues: string[];
+  minimumOrderQuantity: string;
+}
+
+/** A18. The backend's key shape — snake_case, unlike `toVariantSlug`'s kebab one below. */
+function toSlotKey(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 60);
+}
+
+/**
  * The kebab-case slug the backend demands, derived from a name.
  *
  * Client-side only to spare a pointless round trip — `products.schemas.ts` refuses anything that is
@@ -415,6 +462,18 @@ export default function CreateListingPage({ productId }: { productId?: string })
    */
   const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [retiredVariantCount, setRetiredVariantCount] = useState(0);
+
+  /**
+   * A18. The ACTIVE slots only, for exactly the reasons the variants above are.
+   *
+   * A retired slot is absent from the payload, which is how it stays retired. It is also why the
+   * retired ones are counted rather than listed: a slot cannot be deleted at all — the cart, prepare
+   * and order lines that named it hold `restrict` FKs — and re-editing one would revive a term the
+   * seller withdrew. Re-sending its key DOES revive it, which is right for a deliberate act and
+   * wrong for an accident.
+   */
+  const [customizationSlots, setCustomizationSlots] = useState<CustomizationSlotDraft[]>([]);
+  const [retiredCustomizationSlotCount, setRetiredCustomizationSlotCount] = useState(0);
 
   /**
    * STORE §21.3 — the public PDFs on this listing.
@@ -649,6 +708,29 @@ export default function CreateListingPage({ productId }: { productId?: string })
     );
     setRetiredVariantCount(
       loadedProduct.variants.filter((variant) => variant.state === "retired").length,
+    );
+    setCustomizationSlots(
+      loadedProduct.customizationOptions
+        .filter((option) => option.state === "active")
+        .toSorted((first, second) => first.position - second.position)
+        .map((option, optionIndex) => ({
+          localId: `hydrated-slot-${String(optionIndex)}`,
+          savedId: option.id,
+          slotKey: option.slotKey,
+          // Frozen: the backend upserts on this, so letting the label drive it would retire the row.
+          isSlotKeyEdited: true,
+          label: option.label,
+          customizationKind: option.customizationKind,
+          acceptedMediaTypes: [...option.acceptedMediaTypes],
+          choiceValues: [...option.choiceValues],
+          // The server defaults an omitted minimum to 1, so 1 reads back as "not stated" and travels
+          // as a blank control rather than a number the seller never typed.
+          minimumOrderQuantity:
+            option.minimumOrderQuantity === 1 ? "" : String(option.minimumOrderQuantity),
+        })),
+    );
+    setRetiredCustomizationSlotCount(
+      loadedProduct.customizationOptions.filter((option) => option.state === "retired").length,
     );
     setHighlights(
       loadedProduct.highlights
@@ -1306,6 +1388,147 @@ export default function CreateListingPage({ productId }: { productId?: string })
     return collected;
   }
 
+  /**
+   * A18. The customization plan, form strings to wire values.
+   *
+   * ⚠️ THIS REFUSES RATHER THAN SKIPPING, for the same reason `collectVariants` does and not the one
+   * `collectHighlights` does. The payload is a replace-set keyed on `slotKey`, so a row silently
+   * dropped here is a slot RETIRED on the server — and a retired slot is one buyers can no longer
+   * choose, on a listing whose past orders still name it. A blank row is a refusal the seller can
+   * see, not a deletion they cannot.
+   *
+   * The ONE row that is skipped is an entirely empty, never-saved one: the "Add slot" button pressed
+   * and abandoned, which is not an instruction to do anything.
+   *
+   * ⚠️ ONLY THE LIST MATCHING THE KIND IS SENT. The backend refines the two against each other — an
+   * upload slot needs accepted media types and NO choice values, and the reverse — so sending the
+   * other list is a 422 that fails the whole save. The draft keeps both so switching kind twice does
+   * not lose typing; this is where the unused one is dropped.
+   *
+   * ⚠️ `isRequired` IS NEVER SENT. See `ProductCustomizationOptionInput` — no client submits a
+   * customization selection yet, so a required slot would make this listing uncheckoutable by
+   * anybody. The backend defaults it to `false`.
+   */
+  function handleAddCustomizationSlotClick() {
+    setCustomizationSlots((previous) => [
+      ...previous,
+      {
+        localId: `slot-${String(Date.now())}-${String(previous.length)}`,
+        savedId: null,
+        slotKey: "",
+        isSlotKeyEdited: false,
+        label: "",
+        customizationKind: "choice",
+        acceptedMediaTypes: [],
+        choiceValues: [],
+        minimumOrderQuantity: "",
+      },
+    ]);
+  }
+
+  /**
+   * ⚠️ REMOVING A HYDRATED ROW RETIRES IT ON SAVE. It is not deleted — buyers who already ordered
+   * under it keep naming it — and re-adding the same key revives it. Nothing is written until save,
+   * so this is a local removal from the plan rather than an instruction of its own.
+   */
+  function handleRemoveCustomizationSlotClick(slotIndex: number) {
+    setCustomizationSlots((previous) => previous.filter((_, index) => index !== slotIndex));
+  }
+
+  function updateCustomizationSlot(
+    slotIndex: number,
+    patch: Partial<CustomizationSlotDraft>,
+  ): void {
+    setCustomizationSlots((previous) =>
+      previous.map((slot, index) => (index === slotIndex ? { ...slot, ...patch } : slot)),
+    );
+  }
+
+  /** The label drives the key until the seller touches it, and never on a hydrated row. */
+  function handleCustomizationLabelChange(slotIndex: number, label: string) {
+    const slot = customizationSlots[slotIndex];
+    if (slot === undefined) return;
+    updateCustomizationSlot(slotIndex, {
+      label,
+      ...(slot.isSlotKeyEdited ? {} : { slotKey: toSlotKey(label) }),
+    });
+  }
+
+  function collectCustomizationSlots():
+    | { slots: ProductCustomizationOptionInput[] }
+    | { error: string } {
+    const collected: ProductCustomizationOptionInput[] = [];
+    for (const [slotIndex, slot] of customizationSlots.entries()) {
+      const label = slot.label.trim();
+      const slotKey = slot.slotKey.trim();
+      const rawMinimum = slot.minimumOrderQuantity.trim();
+      const isUntouchedNewRow =
+        slot.savedId === null &&
+        label.length === 0 &&
+        slotKey.length === 0 &&
+        rawMinimum.length === 0 &&
+        slot.acceptedMediaTypes.length === 0 &&
+        slot.choiceValues.length === 0;
+      if (isUntouchedNewRow) continue;
+
+      const slotLabel = label.length > 0 ? `"${label}"` : `slot ${String(slotIndex + 1)}`;
+      if (label.length === 0) {
+        return { error: `Give ${slotLabel} a label, or remove the row.` };
+      }
+      if (slotKey.length === 0) {
+        return { error: `${slotLabel} needs a key.` };
+      }
+      if (!PRODUCT_CUSTOMIZATION_SLOT_KEY_PATTERN.test(slotKey)) {
+        return {
+          error: `The key for ${slotLabel} must be lower-case words joined by underscores, like "packaging_material".`,
+        };
+      }
+      const minimumOrderQuantity = Number(rawMinimum);
+      if (
+        rawMinimum.length > 0 &&
+        (!Number.isInteger(minimumOrderQuantity) || minimumOrderQuantity < 1)
+      ) {
+        return {
+          error: `The minimum order quantity for ${slotLabel} must be a whole number, 1 or more.`,
+        };
+      }
+
+      if (slot.customizationKind === "file_upload") {
+        if (slot.acceptedMediaTypes.length === 0) {
+          return {
+            error: `${slotLabel} takes an upload, so it needs at least one accepted file type.`,
+          };
+        }
+        collected.push({
+          slotKey,
+          label,
+          customizationKind: "file_upload",
+          acceptedMediaTypes: [...slot.acceptedMediaTypes],
+          ...(rawMinimum.length === 0 ? {} : { minimumOrderQuantity }),
+        });
+        continue;
+      }
+
+      if (slot.choiceValues.length === 0) {
+        return {
+          error: `${slotLabel} is a choice, so it needs at least one option to choose from.`,
+        };
+      }
+      collected.push({
+        slotKey,
+        label,
+        customizationKind: "choice",
+        choiceValues: [...slot.choiceValues],
+        ...(rawMinimum.length === 0 ? {} : { minimumOrderQuantity }),
+      });
+    }
+
+    if (new Set(collected.map((slot) => slot.slotKey)).size !== collected.length) {
+      return { error: "Two slots share a key. Each one needs its own." };
+    }
+    return { slots: collected };
+  }
+
   function handleSave(publish: boolean) {
     if (isSaving) return;
     const input = collectListingInput();
@@ -1316,6 +1539,13 @@ export default function CreateListingPage({ productId }: { productId?: string })
     const collectedVariants = collectVariants();
     if ("error" in collectedVariants) {
       setLocalError(collectedVariants.error);
+      return;
+    }
+    // A18. Refuses like the variants above, and before anything is sent — a slot this cannot
+    // serialise must stop the save rather than be retired by its own absence.
+    const collectedCustomizationSlots = collectCustomizationSlots();
+    if ("error" in collectedCustomizationSlots) {
+      setLocalError(collectedCustomizationSlots.error);
       return;
     }
     setLocalError(null);
@@ -1335,6 +1565,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
           newDocuments: pendingDocuments,
           removedDocumentIds,
           variants: collectedVariants.variants,
+          customizationOptions: collectedCustomizationSlots.slots,
           publish,
           onProgress: setSaveProgress,
         },
@@ -1352,6 +1583,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
         attributeValues: collectedAttributeValues,
         newDocuments: pendingDocuments,
         variants: collectedVariants.variants,
+        customizationOptions: collectedCustomizationSlots.slots,
         publish,
         onProgress: setSaveProgress,
       },
@@ -2862,6 +3094,200 @@ export default function CreateListingPage({ productId }: { productId?: string })
           </StepCard>
         );
 
+      case "customization":
+        return (
+          <StepCard
+            title="Customization"
+            subtitle="What a buyer can specify on this listing — artwork to upload, or a choice you offer."
+          >
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">Slots</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Optional. Leave this empty and the listing sells exactly as described.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddCustomizationSlotClick}
+                  disabled={customizationSlots.length >= PRODUCT_CUSTOMIZATION_SLOT_MAX_COUNT}
+                  className="flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Image
+                    src="/icons/add_circle_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                    alt=""
+                    width={18}
+                    height={18}
+                  />
+                  Add slot
+                </button>
+              </div>
+
+              {/* Stated here rather than discovered later. Both are enforced server-side. */}
+              {customizationSlots.length > 0 && (
+                <ul className="flex flex-col gap-1 rounded-xl bg-secondary/40 p-3 text-xs leading-4 text-muted-foreground">
+                  <li>Buyers see these on the listing and fill them in before ordering.</li>
+                  <li>
+                    A minimum order quantity on a slot is a commercial term — the server checks it
+                    at the cart and again at checkout.
+                  </li>
+                  <li>
+                    Every slot is optional to answer. Slots a buyer MUST answer are not offered yet.
+                  </li>
+                </ul>
+              )}
+
+              {customizationSlots.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  No customization. Add a slot only if buyers genuinely supply something — a listing
+                  sold as-is is simpler for everyone.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {customizationSlots.map((slot, slotIndex) => (
+                    <li
+                      key={slot.localId}
+                      className="flex flex-col gap-3 rounded-xl border border-border p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Slot {slotIndex + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCustomizationSlotClick(slotIndex)}
+                          aria-label={`Remove slot ${String(slotIndex + 1)}`}
+                          className="cursor-pointer text-xs font-medium text-destructive"
+                        >
+                          Remove
+                        </button>
+                      </div>
+
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-medium text-muted-foreground">Label</span>
+                        <input
+                          type="text"
+                          value={slot.label}
+                          maxLength={120}
+                          onChange={(changeEvent) =>
+                            handleCustomizationLabelChange(slotIndex, changeEvent.target.value)
+                          }
+                          placeholder="Packaging material"
+                          className="rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                        />
+                      </label>
+
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-medium text-muted-foreground">Key</span>
+                        <input
+                          type="text"
+                          value={slot.slotKey}
+                          maxLength={60}
+                          // ⚠️ FROZEN ONCE SAVED. The backend upserts on this: changing it retires
+                          // the slot and creates a new one, orphaning what past orders named.
+                          readOnly={slot.savedId !== null}
+                          onChange={(changeEvent) =>
+                            updateCustomizationSlot(slotIndex, {
+                              slotKey: changeEvent.target.value,
+                              isSlotKeyEdited: true,
+                            })
+                          }
+                          placeholder="packaging_material"
+                          className="rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none read-only:text-muted-foreground focus:border-primary"
+                        />
+                        <span className="text-[11px] leading-4 text-muted-foreground">
+                          {slot.savedId === null
+                            ? "Lower-case words joined by underscores. Follows the label until you edit it."
+                            : "Fixed once saved — buyers' past orders name this key."}
+                        </span>
+                      </label>
+
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-medium text-muted-foreground">Kind</span>
+                        <select
+                          value={slot.customizationKind}
+                          onChange={(changeEvent) => {
+                            // NARROWED, NOT ASSERTED. The two `<option>` values below are the only
+                            // ones this can produce, but an `as` here would be a claim about the
+                            // DOM rather than a check of it — and this enum has to byte-match a
+                            // pgEnum label, which is exactly where a near-miss goes unnoticed.
+                            const nextKind = PRODUCT_CUSTOMIZATION_KINDS.find(
+                              (kind) => kind === changeEvent.target.value,
+                            );
+                            if (nextKind === undefined) return;
+                            updateCustomizationSlot(slotIndex, { customizationKind: nextKind });
+                          }}
+                          className="rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                        >
+                          <option value="choice">A choice you offer</option>
+                          <option value="file_upload">A file the buyer uploads</option>
+                        </select>
+                      </label>
+
+                      {/* ONLY THE LIST MATCHING THE KIND IS SENT — the backend refuses a slot
+                          carrying both. The other list stays in state so switching back does not
+                          lose typing. */}
+                      {slot.customizationKind === "choice" ? (
+                        <StringListRows
+                          legend="Options a buyer picks from"
+                          placeholder="kraft"
+                          values={slot.choiceValues}
+                          maxCount={PRODUCT_CUSTOMIZATION_CHOICE_MAX_COUNT}
+                          onChange={(choiceValues) =>
+                            updateCustomizationSlot(slotIndex, { choiceValues })
+                          }
+                        />
+                      ) : (
+                        <StringListRows
+                          legend="Accepted file types"
+                          placeholder="image/png"
+                          values={slot.acceptedMediaTypes}
+                          maxCount={PRODUCT_CUSTOMIZATION_MEDIA_TYPE_MAX_COUNT}
+                          onChange={(acceptedMediaTypes) =>
+                            updateCustomizationSlot(slotIndex, { acceptedMediaTypes })
+                          }
+                        />
+                      )}
+
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Minimum order quantity
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={slot.minimumOrderQuantity}
+                          onChange={(changeEvent) =>
+                            updateCustomizationSlot(slotIndex, {
+                              minimumOrderQuantity: changeEvent.target.value,
+                            })
+                          }
+                          placeholder="Any quantity"
+                          className="rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                        />
+                        <span className="text-[11px] leading-4 text-muted-foreground">
+                          Leave blank if this applies at any quantity.
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Counted, not listed — a retired slot cannot be deleted and re-editing one would
+                  revive a term the seller withdrew. */}
+              {retiredCustomizationSlotCount > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {retiredCustomizationSlotCount} retired{" "}
+                  {retiredCustomizationSlotCount === 1 ? "slot is" : "slots are"} kept on this
+                  listing because past orders name them. They are not offered to buyers.
+                </p>
+              )}
+            </div>
+          </StepCard>
+        );
+
       case "review":
         return (
           <StepCard
@@ -2959,6 +3385,22 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   value:
                     variants.length > 0
                       ? `${String(variants.length)} variant${variants.length === 1 ? "" : "s"}`
+                      : "",
+                },
+              ]}
+            />
+            <ReviewSection
+              title="Customization"
+              onEditClick={() => setCurrentStepIndex(stepIndexOf("customization"))}
+              rows={[
+                {
+                  label: "Slots",
+                  // Counts the form's rows, like Variants above and unlike Highlights —
+                  // `collectCustomizationSlots` REFUSES a bad row rather than dropping it, so what
+                  // is on screen is what will save.
+                  value:
+                    customizationSlots.length > 0
+                      ? `${String(customizationSlots.length)} slot${customizationSlots.length === 1 ? "" : "s"}`
                       : "",
                 },
               ]}
@@ -3384,6 +3826,90 @@ function collectPackagingFacts(
  * and grams, not centimetres and kilograms. Offering a decimal control for a field the backend
  * parses with `z.number().int()` invites a 422 for a perfectly reasonable "1.5".
  */
+/**
+ * A18. An editable list of plain strings — a slot's choice values, or its accepted file types.
+ *
+ * SHARED SO THE TWO CANNOT DRIFT, the same argument that produced `PricingTierRows` below. They are
+ * the same control by definition: one list of short strings, added one at a time, removable, capped
+ * by the backend. A second copy would be a second place for the cap or the trim to go missing.
+ *
+ * ENTER ADDS, so the keyboard path does not require reaching for the button. `type="button"` on the
+ * add control matters — inside the wizard's form a bare button submits.
+ */
+function StringListRows({
+  legend,
+  placeholder,
+  values,
+  maxCount,
+  onChange,
+}: {
+  readonly legend: string;
+  readonly placeholder: string;
+  readonly values: readonly string[];
+  readonly maxCount: number;
+  readonly onChange: (values: string[]) => void;
+}) {
+  const [pendingValue, setPendingValue] = useState("");
+
+  function addPendingValue() {
+    const trimmed = pendingValue.trim();
+    // Duplicates are dropped rather than refused: a repeated choice is not a decision the seller is
+    // making, and the backend would store it twice.
+    if (trimmed.length === 0 || values.length >= maxCount || values.includes(trimmed)) return;
+    onChange([...values, trimmed]);
+    setPendingValue("");
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs font-medium text-muted-foreground">{legend}</span>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={pendingValue}
+          maxLength={120}
+          onChange={(changeEvent) => setPendingValue(changeEvent.target.value)}
+          onKeyDown={(keyEvent) => {
+            if (keyEvent.key !== "Enter") return;
+            keyEvent.preventDefault();
+            addPendingValue();
+          }}
+          placeholder={placeholder}
+          className="flex-1 rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+        />
+        <button
+          type="button"
+          onClick={addPendingValue}
+          disabled={pendingValue.trim().length === 0 || values.length >= maxCount}
+          className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Add
+        </button>
+      </div>
+      {values.length > 0 && (
+        <ul className="flex flex-wrap gap-2 pt-1">
+          {values.map((value, valueIndex) => (
+            <li
+              key={value}
+              className="flex items-center gap-2 rounded-full bg-secondary/60 px-3 py-1 text-xs text-foreground"
+            >
+              {value}
+              <button
+                type="button"
+                onClick={() => onChange(values.filter((_, index) => index !== valueIndex))}
+                aria-label={`Remove ${value}`}
+                className="cursor-pointer text-muted-foreground"
+              >
+                &times;
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 /**
  * The rows of ONE volume ladder — the listing's, or a single variant's.
  *

@@ -17,6 +17,7 @@ import {
   type ProductHighlightInput,
   type ProductImage,
   type ProductListRow,
+  type ProductCustomizationOptionInput,
   type ProductVariantInput,
   type PublicProduct,
   type SellerProductDocument,
@@ -172,6 +173,37 @@ export function uploadProductHighlightImage(
  * Answers the whole `PublicProduct`, so the caller sees the server's ids, positions and states
  * without a follow-up read.
  */
+/**
+ * `PUT /products/:id/customization-options` — the whole slot plan, as a REPLACE-SET.
+ *
+ * ⚠️ THIS ROUTE HAD NO CALLER AT ALL UNTIL NOW. The table, the route, the buyer's slot grid and
+ * fill-in sheet, the per-slot minimum enforced at cart and again at prepare — all shipped, and no
+ * seller surface ever wrote to them. So the only slots in existence anywhere are seeded rows, which
+ * is why `customization-sheet.tsx` could only ever render against the demo chair. Same shape as
+ * `variants` above, one feature over.
+ *
+ * ⚠️ OMITTING A SLOT RETIRES IT; IT DOES NOT DELETE IT. The upsert is keyed on `slotKey`, and all
+ * three selection tables — cart line, prepare line, order line — reference the option
+ * `onDelete: restrict`, because the packaging a buyer chose is part of what they bought. So sending
+ * `[]` retires the lot rather than erasing them, and a caller must send back the ones it is KEEPING.
+ * Retirement is at least reversible here: re-sending a retired `slotKey` reactivates the same row.
+ *
+ * Answers the whole `PublicProduct`, so the caller sees the server's ids, positions and states
+ * without a follow-up read — which only became useful once `PublicProductSchema` stopped stripping
+ * `customizationOptions`.
+ */
+export function replaceProductCustomizationOptions(
+  productId: string,
+  options: readonly ProductCustomizationOptionInput[],
+): Promise<ActionResponse<PublicProduct>> {
+  return sendJson(
+    `/products/${productId}/customization-options`,
+    "PUT",
+    { options },
+    PublicProductSchema,
+  );
+}
+
 export function replaceProductVariants(
   productId: string,
   variants: readonly ProductVariantInput[],
