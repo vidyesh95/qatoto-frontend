@@ -1,10 +1,12 @@
 // TRANSPORT: props-only — presentational server component. Fetches nothing; the claim
 // index and the caller's receipts arrive as view states from proof-of-effort-page, which
 // read GET …/effort-claims and GET …/physical-receipts. The claim index is a client-query
-// island — it pages the rest of the index by `?cursor=` — and the per-claim disclosure
-// inside it is another.
+// island — it pages the rest of the index by `?cursor=` — the per-claim disclosure inside
+// it is another, and the review queue is a third (it reads GET …/override-queue itself,
+// because it must refetch when a step is answered).
 import ClaimIndexIsland from "@/components/home/research-and-development/sections/claim-index-island";
 import ClaimSubmitIsland from "@/components/home/research-and-development/sections/claim-submit-island";
+import OverrideQueueIsland from "@/components/home/research-and-development/sections/override-queue-island";
 import FilterChipRow, {
   type FilterChipOption,
 } from "@/components/home/research-and-development/sections/filter-chip-row";
@@ -60,11 +62,23 @@ const FILTERABLE_STATUSES: EffortVerificationStatus[] = [
  * and evidence, which is four queries per claim and catastrophic for a page of twenty.
  * Opening a row fetches the rest.
  *
- * THE HUMAN-REVIEW QUEUE IS `?claimStatus=flagged_for_review`, forwarded to the backend as
- * `?status=` and applied in SQL. No override-queue endpoint exists and there is no
- * `VerificationOverrideRequest` concept server-side; the flagged claims ARE the queue.
- * Recorded in R_AND_D_BACKEND_STRUCTURE.md Appendix D, because this is the EU AI Act
- * Art. 14 surface and which shape it has matters.
+ * ⚠️ THE HUMAN-REVIEW QUEUE IS ITS OWN READ, `GET …/override-queue`, AND THIS FILE USED TO
+ * SAY IT DID NOT EXIST. The claim was that `?claimStatus=flagged_for_review` was the queue
+ * because no override-queue endpoint existed; the route has been declared in
+ * `proof-of-effort.routes.ts` since the domain shipped and only the client wrapper was
+ * missing. This is the EU AI Act Art. 14 surface, so a comment about its shape being wrong
+ * was not a stale note — it was the surface describing itself incorrectly.
+ *
+ * THE HALF THAT WAS RIGHT: there is still no `VerificationOverrideRequest` entity, and there
+ * must not be. The queue is a PREDICATE over facts that already exist —
+ * `verification_step.status = 'flagged' AND overridden_status IS NULL` — so answering a step
+ * removes it in the same statement that records the answer. A request table would duplicate
+ * the flag's timestamp, author and finding, and could say review was pending on a step
+ * somebody had already answered.
+ *
+ * THE CHIP AND THE QUEUE ARE BOTH KEPT, because they are different units. The chip filters
+ * CLAIMS; the queue lists STEPS. A claim with one answered step and one still waiting
+ * appears under the chip either way, which tells a reviewer nothing about what is left.
  *
  * ANY MEMBER SEES ANY MEMBER'S CLAIMS. That is §9's transparency posture rather than a
  * leak: people sharing a pie can audit what everyone else was credited for.
@@ -101,6 +115,23 @@ export default function VerificationPipelineTab({
 
   return (
     <div className="space-y-6 px-4 lg:px-6">
+      {/* Above the index on purpose: the index is a record, the queue is work. A reviewer
+          opening this tab is answering what is waiting far more often than browsing what
+          has already been decided. */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="text-sm font-medium tracking-wide xl:text-lg">Waiting on a person</h3>
+          <p className="text-xs text-muted-foreground">
+            Steps the pipeline flagged and nobody has answered. Maintainers can answer them here.
+          </p>
+        </div>
+        <OverrideQueueIsland
+          projectSlug={projectSlug}
+          projectCurrency={projectCurrency}
+          viewerProjectRole={viewerProjectRole}
+        />
+      </section>
+
       <section className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-sm font-medium tracking-wide xl:text-lg">Claims</h3>

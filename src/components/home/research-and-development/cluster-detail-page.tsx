@@ -30,6 +30,18 @@ function formatCentroid(latitudeMicrodegrees: number, longitudeMicrodegrees: num
  * indistinguishable; rendering a "this exists but you can't see it" hint would leak which
  * ids are real.
  *
+ * ⚠️ SO DOES A `422`, AND THIS PAGE SHIPPED WITHOUT THAT ARM. `ClusterIdParamSchema` is
+ * `z.uuid()`, so an id that is not a UUID is refused by SHAPE before the lookup runs —
+ * measured, not assumed: `/discovery/problem-clusters/__none__` answers 422, not 404. The
+ * only input this route validates is the path segment, so a 422 here means the URL is a
+ * typo, and a typo is a 404 rather than "couldn't load".
+ *
+ * IT WAS REACHABLE, NOT THEORETICAL. `withSentinelValues` PRERENDERS `__none__` whenever the
+ * cluster list read comes back empty or failing, so the sentinel page was served with an
+ * error panel on it — the one outcome `@/lib/static-params` says it must not produce, since
+ * its whole argument is that the sentinel "takes the same path a typo does". Found by
+ * building the market-insight detail page, whose id param has the identical shape.
+ *
  * THE PROJECTS BORN FROM THIS CLUSTER ARE NOT SHOWN. `problem_cluster_project_link` is
  * written by `/discovery/problem-clusters/:clusterId/project-links` and read by the
  * scoring jobs, but `ProblemClusterView` exposes no linked-project list, so there is
@@ -45,7 +57,7 @@ export default async function ClusterDetailPage({ clusterId }: { clusterId: stri
   const clusterResult = await getProblemCluster(clusterId, requestOptions);
 
   if (!clusterResult.success) {
-    if (clusterResult.error.code === "404") notFound();
+    if (clusterResult.error.code === "404" || clusterResult.error.code === "422") notFound();
     return (
       <div className="px-4 pt-4 lg:px-6 lg:pt-6">
         <RndErrorPanel message="Couldn't load this cluster." />

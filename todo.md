@@ -905,12 +905,65 @@ feature-sized build, and several are user-visible today.** Ranked:
    **commerce moderation and dispute-opening** (a buyer can read a dispute they cannot open),
    **provider offering edit/submit/coverage**, image reorder, the product view-beacon, RFQ
    invitations.
-5. ⚠️ **Two frontend files assert in prose that a shipped backend route does not exist.**
-   `verification-pipeline-tab.tsx:63-65` says there is no override-queue endpoint — there is
-   (`proof-of-effort.routes.ts:169`), and it is an EU AI Act Art. 14 surface. `overview-tab.tsx:29-31`
-   says there is no `GET /discovery/market-insights/:insightId`, which is why the demand-evidence
-   chips deliberately do not link — there is. **Both comments are load-bearing decisions built on a
-   false premise.**
+5. ~~⚠️ **Two frontend files assert in prose that a shipped backend route does not exist.**~~
+   **BOTH SHIPPED, frontend only, no migration.** Each route was proved to exist against the running
+   backend before anything was written, by the assertion that separates "the route is missing" from
+   "the wrapper is missing": a path that really does not exist answers `Route not found`, and
+   neither of these did.
+
+    ```
+    GET /research-projects/project-immortal/override-queue   -> 401 "Please sign in."
+    GET /research-projects/project-immortal/override-quueue   -> 404 "Route not found: …"
+    GET /discovery/market-insights/__none__                   -> 422 (id shape)
+    GET /discovery/market-insights/mi_x/nope                  -> 404 "Route not found: …"
+    ```
+
+    - **The override queue is now a surface.** `listOverrideQueue` + `useOverrideQueueQuery` +
+      `OverrideQueueIsland`, mounted ABOVE the claim index as "Waiting on a person". ⚠️ **IT IS PER
+      STEP AND THE FLAGGED-CLAIMS CHIP IS PER CLAIM — both are kept**, because a claim with one
+      answered step and one still waiting appears under the chip either way, which tells a reviewer
+      nothing about what is left. The row mounts the SAME `ClaimDetailDisclosure` the index does, so
+      a maintainer answers from the queue; the override mutation already invalidates the `poe`
+      prefix, so an answered step drops out on its own. A contributor sees the queue and cannot
+      answer it — the read is `contributor`, the write is `maintainer` — deliberately, because
+      hiding the backlog from the people whose equity is waiting on it helps nobody.
+    - **The half of the old comment that was RIGHT and must not be re-deleted:** there is still no
+      `VerificationOverrideRequest` entity and there must not be one. The queue is a PREDICATE over
+      facts that already exist (`status = 'flagged' AND overridden_status IS NULL`), so a request
+      table would duplicate the flag's timestamp, author and finding and could say review was
+      pending on a step somebody had answered.
+    - **`STEP_KIND_LABELS` moved to `lib/rnd/labels.ts`** and is now typed over the enum. It had one
+      consumer; the queue is the second, and two maps for one enum drift.
+    - **Market insights have a detail page** at `/research-and-development/knowledge-hub/insight/
+[insightId]`, the `relatedInsights` chips link to it, and the card headline links too — the
+      headline rather than the whole card, because the source citation is its own `<a>` and an
+      anchor inside an anchor is invalid HTML.
+    - ⚠️ **`insightId` IS `z.uuid()`, SO A BAD ID IS A `422`, NOT A `404`** — measured, not assumed.
+      The new page routes 422 to `notFound()` as well, because the only input this route validates
+      is the path segment: a 422 here means the URL is a typo, and a typo is a 404. Without that arm
+      the SENTINEL PARAM `withSentinelValues` prerenders serves an error panel, which is the one
+      outcome `@/lib/static-params` says it must not.
+    - ~~⚠️ **`cluster-detail-page.tsx` has the same gap.**~~ **FIXED TOO, and the CLASS is closed
+      rather than the instance.** `ClusterIdParamSchema` is also `z.uuid()`. The sweep that followed
+      is the part worth keeping: **exactly TWO page segments in the whole app validate as `z.uuid()`**
+      — `clusterId` and `insightId`. Every other detail route addresses by slug or by a prefixed
+      string id (`store_demo_…`), which `__none__` satisfies, so the lookup runs and answers a real 404. Probed live: `/commerce/products/__none__` and the commerce id routes never reach a shape
+      refusal. The remaining strict-uuid schemas (`videoId`, `commentId`, `submissionId`) are query
+      params or have no frontend page segment at all.
+    - **Proved side by side against `pnpm start`, before and after.** Before: `/problem-map/cluster/
+__none__` rendered **"Couldn't load this cluster"**. After: `__none__` and `not-a-uuid` both
+      render only the 404 page, and a REAL cluster id still renders its content — "People who
+      reported it", "Submissions in total", "Opportunity score" all present, no error panel.
+    - ⚠️ **THE SENTINEL WAS THE ARGUMENT, NOT THE ONLY WAY IN.** With the backend up,
+      `generateStaticParams` prerenders two real cluster ids and no sentinel — so the panel was
+      reached by a TYPED URL here, and by the sentinel only where the list read is empty or failing
+      (CI, backend down), which is most machines. Both are the same 422.
+    - **Note the status code**, so nobody re-tests this and thinks it regressed: both routes answer
+      **HTTP 200** for a bad id. They are `◐` under Cache Components, and PPR commits the status
+      before the dynamic hole resolves, so `notFound()` changes the BODY and never the status.
+      ⚠️ **And assert on the ERROR-PANEL string, not on "This page could not be found"** — the
+      streamed document carries the not-found boundary's markup either way, so that phrase appears
+      even on a page that rendered perfectly. It is what made the first A/B read as ambiguous.
 
 ## Cross-pillar seams
 

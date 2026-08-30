@@ -273,6 +273,45 @@ export const VerificationStepSchema = z
   .strip();
 export type VerificationStep = z.infer<typeof VerificationStepSchema>;
 
+/**
+ * One step waiting on a human — the human-oversight queue (EU AI Act Art. 14).
+ *
+ * IT IS PER STEP, NOT PER CLAIM, and that is the whole reason this read exists rather than
+ * a `?status=flagged_for_review` filter over claims. A claim with four steps can have one
+ * answered and one still waiting; a reviewer needs the step that is waiting, not the claim
+ * it belongs to. The backend states the queue as a predicate —
+ * `status = 'flagged' AND overridden_status IS NULL` — so answering a step removes it in
+ * the same statement that records the answer, and no row can ever say "review pending" for
+ * a step somebody already answered.
+ *
+ * `verificationStatus` IS `flagged_for_review` ON EVERY ROW, by construction. It is carried
+ * anyway because the row is rendered beside claims that are not, and re-deriving it from the
+ * absence of a filter would be a guess.
+ *
+ * `flaggedAt` is `completedAt` COALESCED with `createdAt` server-side: a step flagged by a
+ * pipeline that crashed before stamping completion still belongs in the queue.
+ */
+export const OverrideQueueRowSchema = z
+  .object({
+    stepId: z.string(),
+    claimId: z.string(),
+    runId: z.string(),
+    attemptNumber: z.number(),
+    memberUserId: z.string(),
+    memberName: z.string(),
+    stepKind: VerificationStepKindSchema,
+    stepOrder: z.number(),
+    findingSummary: z.string().nullable(),
+    scoreBps: z.number().nullable(),
+    confidenceBps: z.number().nullable(),
+    claimedForDate: z.string(),
+    claimSummary: z.string(),
+    verificationStatus: EffortVerificationStatusSchema,
+    flaggedAt: z.string(),
+  })
+  .strip();
+export type OverrideQueueRow = z.infer<typeof OverrideQueueRowSchema>;
+
 export const ARTIFACT_SIGNATURE_STATUSES = ["valid", "invalid", "unsigned", "unknown"] as const;
 export const ArtifactSignatureStatusSchema = z.enum(ARTIFACT_SIGNATURE_STATUSES);
 export type ArtifactSignatureStatus = z.infer<typeof ArtifactSignatureStatusSchema>;

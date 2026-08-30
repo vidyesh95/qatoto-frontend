@@ -27,6 +27,7 @@ import type {
 } from "@/lib/rnd/shared.schemas";
 import type { ResearchCategory } from "@/lib/rnd/catalog.schemas";
 import type { SupplierContactPolicy, SupplierVerificationState } from "@/lib/rnd/suppliers.schemas";
+import type { VerificationStepKind } from "@/lib/rnd/proof-of-effort.schemas";
 import type { TalentAvailability } from "@/lib/rnd/discovery.schemas";
 
 export const PROJECT_STAGE_LABELS: Record<ProjectStage, string> = {
@@ -76,6 +77,24 @@ export const EFFORT_VERIFICATION_STATUS_LABELS: Record<EffortVerificationStatus,
   verified: "Verified",
   flagged_for_review: "Flagged for review",
   unverified: "Could not verify",
+};
+
+/**
+ * The four pipeline steps, phrased as the QUESTION each one answers rather than as its
+ * internal name — a reviewer deciding whether to override needs to know what was asked,
+ * and "artifact_grounding" does not say.
+ *
+ * TYPED OVER THE ENUM, so a fifth step kind is a compile error here rather than a raw
+ * `snake_case` token rendered to a reviewer. It moved out of `claim-detail-disclosure.tsx`
+ * when the override queue gained a second reader: two maps for one enum drift, and the
+ * queue and the detail must name the same step identically or a reviewer answering from
+ * the queue cannot tell it is the row they just read.
+ */
+export const VERIFICATION_STEP_KIND_LABELS: Record<VerificationStepKind, string> = {
+  claim_extraction: "What was claimed",
+  artifact_grounding: "Do the artifacts back it",
+  substance_analysis: "Is the work substantive",
+  temporal_analysis: "Do the timestamps line up",
 };
 
 /**

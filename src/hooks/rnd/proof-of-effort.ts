@@ -29,6 +29,7 @@ import {
   lockFairMarketRate,
   listEquitySnapshots,
   listMemberFairMarketRates,
+  listOverrideQueue,
   overrideVerificationStep,
   proposeFairMarketRate,
   raiseDispute,
@@ -107,6 +108,27 @@ export function useAuditHashInputQuery(projectSlug: string, entryId: string, isE
     queryKey: rndKeys.auditHashInput(projectSlug, entryId),
     queryFn: async () => unwrap(await getAuditHashInput(projectSlug, entryId)),
     enabled: isExpanded,
+  });
+}
+
+/**
+ * The steps waiting on a human, oldest first.
+ *
+ * IT IS ITS OWN READ, not a filter over the claim list — the queue is per STEP and a claim
+ * can hold one answered step beside one still waiting. `verification-pipeline-tab.tsx` used
+ * to state that no such route existed and that the flagged-claims filter WAS the queue;
+ * `listOverrideQueue` records why that was wrong.
+ *
+ * NO POLLING. A step enters this queue when the pipeline flags it and leaves when a person
+ * answers it, and the answer is a mutation this client makes — which already invalidates
+ * the `poe` prefix this key sits under. Polling would only pick up a step flagged by
+ * somebody else's re-verification, which is not worth a request every few seconds on a page
+ * a reviewer sits on.
+ */
+export function useOverrideQueueQuery(projectSlug: string) {
+  return useQuery({
+    queryKey: rndKeys.overrideQueue(projectSlug),
+    queryFn: async () => unwrap(await listOverrideQueue(projectSlug)),
   });
 }
 

@@ -63,6 +63,12 @@ export const rndKeys = {
     ["rnd", "poe", projectSlug, "claims", filter.status, filter.memberUserId] as const,
   claim: (projectSlug: string, claimId: string) =>
     ["rnd", "poe", projectSlug, "claim", claimId] as const,
+  /**
+   * Under the `poe` prefix on purpose: the override write already invalidates
+   * `proofOfEffort(projectSlug)`, so answering a step empties its own row out of the queue
+   * with no second invalidation to remember.
+   */
+  overrideQueue: (projectSlug: string) => ["rnd", "poe", projectSlug, "override-queue"] as const,
   memberRate: (projectSlug: string, memberUserId: string) =>
     ["rnd", "poe", projectSlug, "rate", memberUserId] as const,
   receipts: (projectSlug: string) => ["rnd", "poe", projectSlug, "receipts"] as const,

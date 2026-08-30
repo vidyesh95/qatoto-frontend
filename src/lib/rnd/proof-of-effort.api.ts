@@ -40,6 +40,7 @@ import {
   LedgerEntrySchema,
   OpenRoleProjectionSchema,
   OptimizationSuggestionSchema,
+  OverrideQueueRowSchema,
   PhysicalReceiptSchema,
   PieBakeSchema,
   ProofOfEffortSummarySchema,
@@ -64,6 +65,7 @@ import {
   type ListClaimsFilter,
   type OpenRoleProjection,
   type OptimizationSuggestion,
+  type OverrideQueueRow,
   type PhysicalReceipt,
   type PhysicalReceiptKind,
   type PieBake,
@@ -168,8 +170,11 @@ export function listMemberFairMarketRates(
  * posture, not an oversight: people sharing a pie can audit what everyone else was
  * credited for.
  *
- * `?status=flagged_for_review` is what the human-review queue reads, because no dedicated
- * override-queue endpoint exists (Appendix D).
+ * `?status=flagged_for_review` NARROWS THIS LIST TO FLAGGED CLAIMS. It is not the review
+ * queue — `listOverrideQueue` below is, and this comment used to deny that route existed.
+ * The difference is the unit: a claim can hold one answered step and one still waiting, so
+ * a claim-level filter shows a reviewer work that is already done and hides work that is
+ * not.
  *
  * DUAL MODE. Without a `cursor` the backend serves an offset page and returns a
  * `pagination` block; with one it serves a keyset page and drops that block rather than
@@ -184,6 +189,36 @@ export function listEffortClaims(
   return getCursorSiblingList(
     projectPath(projectSlug, `/effort-claims${buildQueryString({ ...filter })}`),
     ClaimSummarySchema,
+    options,
+  );
+}
+
+/**
+ * `GET …/override-queue` — the steps awaiting a human (EU AI Act Art. 14).
+ *
+ * ⚠️ **THIS FILE PREVIOUSLY ASSERTED THIS ROUTE DID NOT EXIST**, and `verification-pipeline-tab.tsx`
+ * repeated the claim in prose. It has existed since the domain shipped —
+ * `proof-of-effort.routes.ts` declares it a literal one segment under `/:projectSlug` — and
+ * only the client wrapper was missing. Read a comment asserting a route's absence as a claim
+ * to check against the router.
+ *
+ * NOT PAGINATED AND NOT A FEED. It answers a bare array capped by `?limit=` (backend default
+ * 50, maximum 200), oldest first, because a queue is worked from the front: the oldest
+ * unanswered flag is the one whose member has been waiting longest on equity that is not
+ * being minted. A cursor over a list that shrinks as it is worked would page over holes.
+ *
+ * MEMBER-SCOPED like every read here, at `contributor` and above. Answering a row still
+ * needs `maintainer` — `overrideVerificationStep` is the write, and the queue deliberately
+ * shows a contributor what is pending without granting them the answer.
+ */
+export function listOverrideQueue(
+  projectSlug: string,
+  filter: { readonly limit?: number } = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<OverrideQueueRow[]>> {
+  return getJson(
+    projectPath(projectSlug, `/override-queue${buildQueryString({ ...filter })}`),
+    OverrideQueueRowSchema.array(),
     options,
   );
 }

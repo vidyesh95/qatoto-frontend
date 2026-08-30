@@ -27,9 +27,12 @@ type OverviewTabProps = {
  * `originCluster` and `relatedInsights`. Three rules govern how they render:
  *
  * - The origin chip links by CLUSTER ID. Clusters have no slug anywhere in the backend.
- * - `relatedInsights` chips DO NOT LINK. There is no `GET /discovery/market-insights/
- *   :insightId` — the insight read is a list only — so there is no page to open. A chip
- *   that navigates nowhere useful is worse than a chip that plainly does not navigate.
+ * - `relatedInsights` chips LINK BY INSIGHT ID, the same shape as the origin chip. This
+ *   file used to state that `GET /discovery/market-insights/:insightId` did not exist and
+ *   that the chips therefore could not navigate. IT DOES EXIST — `discovery.routes.ts`
+ *   declares it public, above the list's `:insightId` catch — and the read had simply
+ *   never been wrapped on the client. A comment asserting a route's absence is a claim to
+ *   check against the router, not a fact to inherit.
  * - Both render below `demandEvidenceNotes` and look different from it. That block is the
  *   founder's own assertion; these are moderated, platform-published evidence. Collapsing
  *   the two would let an assertion borrow the credibility of a moderated insight.
@@ -107,11 +110,13 @@ export default function OverviewTab({ project, milestonesState }: OverviewTabPro
               </p>
               <ul className="flex flex-wrap gap-2">
                 {project.relatedInsights.map((insight) => (
-                  <li
-                    key={insight.insightId}
-                    className="rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs"
-                  >
-                    {insight.headline}
+                  <li key={insight.insightId}>
+                    <Link
+                      href={`/research-and-development/knowledge-hub/insight/${insight.insightId}`}
+                      className="inline-flex rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs transition hover:bg-muted"
+                    >
+                      {insight.headline} →
+                    </Link>
                   </li>
                 ))}
               </ul>

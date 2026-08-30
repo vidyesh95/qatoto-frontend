@@ -111,6 +111,24 @@ export function listMarketInsights(
   );
 }
 
+/**
+ * One published market insight.
+ *
+ * SAME PROJECTION AS THE LIST. The backend returns `MarketInsightView` from both reads, so
+ * `MarketInsightSchema` is reused rather than forked — a detail schema that drifted from the
+ * list's would make a card and its own page disagree about the same row.
+ *
+ * A `404` COVERS TWO CASES DELIBERATELY: no such insight, and an insight that is still an
+ * unpublished draft. The backend refuses to distinguish them so a moderator's work in
+ * progress cannot be discovered by id, and this wrapper must not try to either.
+ */
+export function getMarketInsight(
+  insightId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<MarketInsight>> {
+  return getJson(`/discovery/market-insights/${insightId}`, MarketInsightSchema, options);
+}
+
 export interface ListDemandSignalsFilter {
   readonly region?: string;
   readonly category?: string;

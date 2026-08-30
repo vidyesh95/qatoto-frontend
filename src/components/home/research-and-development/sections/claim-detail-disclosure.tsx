@@ -21,13 +21,7 @@ import {
   type VerificationStep,
   type VerificationStepStatus,
 } from "@/lib/rnd/proof-of-effort.schemas";
-
-const STEP_KIND_LABELS: Record<string, string> = {
-  claim_extraction: "What was claimed",
-  artifact_grounding: "Do the artifacts back it",
-  substance_analysis: "Is the work substantive",
-  temporal_analysis: "Do the timestamps line up",
-};
+import { VERIFICATION_STEP_KIND_LABELS } from "@/lib/rnd/labels";
 
 const STEP_STATUS_LABELS: Record<VerificationStepStatus, string> = {
   pending: "Pending",
@@ -286,7 +280,7 @@ export default function ClaimDetailDisclosure({
     return (
       <li key={step.id} className="space-y-1 rounded-lg bg-white/60 p-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-sm">{STEP_KIND_LABELS[step.stepKind] ?? step.stepKind}</span>
+          <span className="text-sm">{VERIFICATION_STEP_KIND_LABELS[step.stepKind]}</span>
           <span
             className={`rounded-full px-2 py-0.5 text-xs font-medium ${STEP_STATUS_BADGE_CLASS[effectiveStatus]}`}
           >
