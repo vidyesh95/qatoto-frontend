@@ -34,7 +34,7 @@
 // second read of the same rows is a second place for them to disagree, and §16.1 is about exactly
 // that failure.
 
-import { getJson, sendJson, type ActionResponse, type RequestOptions } from "@/lib/http";
+import { getJson, sendForm, sendJson, type ActionResponse, type RequestOptions } from "@/lib/http";
 import {
   FactoryProductionLineListSchema,
   FactorySiteListSchema,
@@ -45,8 +45,27 @@ import {
   type UpdateFactoryTermsInput,
 } from "@/lib/store/factories.schemas";
 import {
+  CapabilityRowListSchema,
+  DeletedOrganizationMediaSchema,
+  OrganizationMediaListSchema,
+  OrganizationMediaSchema,
+  OrganizationStakeholderSchema,
+  OwnedCertificationSchema,
   SellerDeclaredProfileSchema,
+  SiteAccessRowListSchema,
+  StakeholderRowListSchema,
+  type CapabilityRowInput,
+  type OrganizationCapability,
+  type OrganizationMedia,
+  type OrganizationSiteAccess,
+  type OrganizationStakeholder,
+  type OwnedCertification,
+  type ReorderOrganizationMediaInput,
   type SellerDeclaredProfile,
+  type SiteAccessRowInput,
+  type StakeholderRowInput,
+  type SubmitCertificationInput,
+  type UpsertSellerProfileInput,
 } from "@/lib/store/organizations.schemas";
 
 /**
@@ -100,3 +119,202 @@ export function updateFactoryTerms(
 // Imported for the wiring lines above; referenced so they survive while every call is mock-backed.
 void getJson;
 void sendJson;
+
+// --- Seller profile writes (A13) --------------------------------------------
+//
+// The nine seller-facing writes whose routes had no caller at all — an organization could be
+// DESCRIBED on its storefront and could not describe itself. They live here rather than in a new
+// file because they share the prefix and the row: `factory-terms` above already writes
+// `commerce_seller_profile` and already answers the whole `SellerDeclaredProfile` back.
+//
+// ⚠️ **EVERY ONE NEEDS AN `Idempotency-Key` HEADER**, and its absence is a **400** rather than a 422 —
+// a refusal, not a default. The caller mints one per attempt and rotates it only on success.
+//
+// ⚠️ **A REFUSAL IS A 404, INCLUDING FOR THE WRONG ROLE.** These routes carry no org guard;
+// `requireMembershipRole` runs inside the service and answers `NOT_FOUND` both for a non-member and
+// for a member whose role is below owner/administrator, so the status cannot be used as a membership
+// oracle. Render the backend's own sentence rather than "no such organization".
+//
+// ⚠️ **THERE IS STILL NO SELLER-SIDE READ OF THE PROFILE.** `loadSellerDeclaredProfiles` has three
+// callers and all three are public browse reads, gated on `tradeState = 'active' AND visibility =
+// 'public'`. So the editor prefills from the storefront read, and an organization that is private or
+// not yet active cannot open it at all. `GET …/certifications` below is the module's only
+// authenticated read.
+
+/** `PATCH …/seller-profile` — a SPARSE patch; an omitted key is untouched, an explicit null clears. */
+export function upsertSellerProfile(
+  organizationId: string,
+  input: UpsertSellerProfileInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<SellerDeclaredProfile>> {
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/seller-profile`;
+  return sendJson(path, "PATCH", input, SellerDeclaredProfileSchema, options);
+}
+
+/**
+ * `PUT …/site-access` — the whole freight-access list.
+ *
+ * ⚠️ **DELETE-THEN-INSERT: an omitted row is DESTROYED, and the surviving rows get NEW ids.** There is
+ * no `state` column and no revive, so this is stricter than a variant or a customization slot — a
+ * caller must send back every row it is keeping, and must refuse rather than silently drop one.
+ */
+export function replaceOrganizationSiteAccess(
+  organizationId: string,
+  rows: readonly SiteAccessRowInput[],
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: OrganizationSiteAccess[] }>> {
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/site-access`;
+  return sendJson(path, "PUT", { rows }, SiteAccessRowListSchema, options);
+}
+
+/**
+ * `PUT …/stakeholders` — the whole officer list, IDENTITY-PRESERVING.
+ *
+ * ⚠️ **ECHO THE `id` OF EVERY ROW BEING KEPT** or its uploaded portrait is orphaned: the photo lives
+ * on the row, and an unrecognised id is treated as a new row rather than refused.
+ *
+ * ⚠️ **DEDUPE BEFORE SENDING.** A repeated `id` collapses two rows into one server-side, silently,
+ * and the response comes back short — quiet data loss rather than an error.
+ */
+export function replaceOrganizationStakeholders(
+  organizationId: string,
+  rows: readonly StakeholderRowInput[],
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: OrganizationStakeholder[] }>> {
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/stakeholders`;
+  return sendJson(path, "PUT", { rows }, StakeholderRowListSchema, options);
+}
+
+/**
+ * `POST …/stakeholders/:stakeholderId/photo` — one portrait, multipart, field `photo`, 5 MB.
+ *
+ * SEPARATE FROM THE LIST WRITE ON PURPOSE. Migration `0091` removed `photoUrl` from the list body, so
+ * a portrait cannot be set by URL — which is what stops a client naming an image it does not own.
+ */
+export function uploadStakeholderPhoto(
+  organizationId: string,
+  stakeholderId: string,
+  photoFile: File,
+  options?: RequestOptions,
+): Promise<ActionResponse<OrganizationStakeholder>> {
+  const formData = new FormData();
+  formData.append("photo", photoFile);
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/stakeholders/${encodeURIComponent(stakeholderId)}/photo`;
+  // ONE ROW BACK, not the gallery and not the profile — the caller patches it into its own list.
+  return sendForm(path, "POST", formData, OrganizationStakeholderSchema, options);
+}
+
+/**
+ * `PUT …/capabilities` — the whole capability list. Delete-then-insert, like site access.
+ *
+ * ⚠️ **A KIND MAY APPEAR ONCE.** A repeat is a 409 rather than a dedupe, so the form must not offer
+ * a kind it already holds.
+ */
+export function replaceOrganizationCapabilities(
+  organizationId: string,
+  rows: readonly CapabilityRowInput[],
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: OrganizationCapability[] }>> {
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/capabilities`;
+  return sendJson(path, "PUT", { rows }, CapabilityRowListSchema, options);
+}
+
+/**
+ * `POST …/media` — one company photo, multipart, field `image`, 8 MB. Answers **201**.
+ *
+ * ⚠️ **NOT A SCAN FLOW.** Unlike a trade document this is 201 rather than 202: the image is
+ * re-encoded and stored, and nothing here may tell a seller their photo is "being checked".
+ * The twelfth photo is a **409 `MEDIA_LIMIT_REACHED`**, counted inside the transaction.
+ */
+export function addOrganizationMedia(
+  organizationId: string,
+  imageFile: File,
+  mediaKind: string,
+  altText: string | undefined,
+  options?: RequestOptions,
+): Promise<ActionResponse<OrganizationMedia>> {
+  const formData = new FormData();
+  formData.append("image", imageFile);
+  formData.append("mediaKind", mediaKind);
+  if (altText !== undefined) formData.append("altText", altText);
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/media`;
+  // ONE ROW BACK — the photo just added, not the gallery it joined.
+  return sendForm(path, "POST", formData, OrganizationMediaSchema, options);
+}
+
+/**
+ * `PATCH …/media/reorder` — an EXACT COVER of the current gallery.
+ *
+ * ⚠️ **EVERY CURRENT IMAGE, EXACTLY ONCE.** A missing, extra or duplicated id is a 409 rather than a
+ * partial reorder, so this must never be sent from a stale gallery.
+ */
+export function reorderOrganizationMedia(
+  organizationId: string,
+  input: ReorderOrganizationMediaInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ media: OrganizationMedia[] }>> {
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/media/reorder`;
+  // `{ media }`, not `{ rows }` — the one list write that does not use the shared key.
+  return sendJson(path, "PATCH", input, OrganizationMediaListSchema, options);
+}
+
+/** `DELETE …/media/:mediaId` — removes one photo and its stored asset. */
+export function deleteOrganizationMedia(
+  organizationId: string,
+  mediaId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ deleted: true }>> {
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/media/${encodeURIComponent(mediaId)}`;
+  // A bare acknowledgement — the surviving gallery is NOT returned, so the caller drops the row.
+  return sendJson(path, "DELETE", undefined, DeletedOrganizationMediaSchema, options);
+}
+
+/**
+ * `GET …/certifications` — the seller's own list, every state.
+ *
+ * THE MODULE'S ONLY AUTHENTICATED READ, and it exists for four fields rather than for more rows:
+ * `state`, `decisionReason`, `submittedAt` and `decidedAt`. The public projection ships only
+ * approved, unexpired rows and renames `decidedAt` to `approvedAt`.
+ */
+export function listOrganizationCertifications(
+  organizationId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<OwnedCertification[]>> {
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/certifications`;
+  return getJson(path, OwnedCertificationSchema.array(), options);
+}
+
+/**
+ * `POST …/certifications` — the claim AND its evidence in one multipart request. Answers **201**.
+ *
+ * ⚠️ **201, NOT 202, AND THE DISTINCTION MATTERS TWICE OVER.** The certification row lands `pending`
+ * — a moderator has not seen it — while its evidence document lands `pending_scan` and is promoted to
+ * `available` by an async scan. Those are two independent lifecycles: **promotion is not approval**,
+ * and no copy may imply a review has happened because a file finished scanning.
+ *
+ * ⚠️ **THE EVIDENCE NEVER RIDES BACK.** Neither projection carries a document id, URL or token, in
+ * either direction.
+ *
+ * ⚠️ **`standardCode` CANNOT BE SET FROM HERE, and that is a backend gap rather than an omission in
+ * this wrapper.** The service writes the column, but the route's schema has no such key and is
+ * `.strict()`, and the controller never passes one — so every certification created through this
+ * route has `standardCode: null`, and the manufacturer directory's certification filter can never
+ * match one.
+ */
+export function submitOrganizationCertification(
+  organizationId: string,
+  evidenceFile: File,
+  input: SubmitCertificationInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<OwnedCertification>> {
+  const formData = new FormData();
+  formData.append("evidence", evidenceFile);
+  formData.append("standardName", input.standardName);
+  formData.append("issuerName", input.issuerName);
+  formData.append("certificateNumber", input.certificateNumber);
+  if (input.scopeSummary !== undefined) formData.append("scopeSummary", input.scopeSummary);
+  formData.append("validFrom", input.validFrom);
+  formData.append("validUntil", input.validUntil);
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/certifications`;
+  return sendForm(path, "POST", formData, OwnedCertificationSchema, options);
+}

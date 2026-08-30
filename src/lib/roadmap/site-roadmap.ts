@@ -779,10 +779,14 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         reachedFrom: "a service order in Studio",
       },
       {
+        // The label follows the page, which stopped being factory-only when it grew the four
+        // seller-profile lists. Its `summary` already promised certifications — a sentence that was
+        // false until this route could actually edit them.
         kind: "route",
-        label: "Factory profile",
+        label: "Company profile",
         href: "/studio/factory-profile",
-        summary: "Your lines, certifications and minimums, as buyers see them.",
+        summary:
+          "Your lines, sites, people, capabilities, photos and certifications, as buyers see them.",
       },
       {
         kind: "route",

@@ -143,9 +143,15 @@ const STUDIO_ROUTES = {
   services: "/studio/services",
   // The manufacturer's own two surfaces. `factoryInquiries` is the RECEIVED queue — the buyer's
   // side of the same rows is `/store/factory-inquiries`, the split `/store/rfqs` and
-  // `/studio/rfqs` already use. `factoryProfile` needs a `?factorySlug=`, so it is reached from
-  // the directory listing rather than from here.
+  // `/studio/rfqs` already use.
+  //
+  // ⚠️ `companyProfile` USED TO BE ABSENT FROM THIS MAP, because the route needed a `?factorySlug=`
+  // only the buyer-facing directory could supply — so the one page a seller describes their company
+  // on was reachable only by going through the storefront first. The route now resolves the
+  // viewer's own organization when the parameter is missing, which is what makes this entry honest.
+  // The query parameter still wins when present, so every existing link keeps working.
   factoryInquiries: "/studio/factory-inquiries",
+  companyProfile: "/studio/factory-profile",
   support: "/studio/support",
   earn: "/studio/earn",
   // Video-collaborator credits, moved out of `/studio/team`. A credit grants no access; it
@@ -372,6 +378,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
         label: "Manufacturing inquiries",
         iconKey: "factory",
       },
+      { path: STUDIO_ROUTES.companyProfile, label: "Company profile", iconKey: "workspacePremium" },
       { path: STUDIO_ROUTES.logistics, label: "Logistics", iconKey: "localShipping" },
       { path: STUDIO_ROUTES.support, label: "Support", iconKey: "supportAgent" },
       { path: STUDIO_ROUTES.earn, label: "Earn", iconKey: "paid" },

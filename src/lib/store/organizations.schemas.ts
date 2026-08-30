@@ -345,6 +345,178 @@ export const OrganizationCertificationSchema = z
   })
   .strip();
 
+// --- Seller profile writes (A13) --------------------------------------------
+//
+// The nine seller-facing writes on `commerce-seller-profile.routes.ts`, whose routes had no caller
+// at all: an organization could be described on its storefront and could not describe itself.
+//
+// ⚠️ **EVERY ONE REQUIRES AN `Idempotency-Key` HEADER** and answers **400**, not 422, without one.
+// The middleware's scope defaults to the USER rather than the active organization, so two colleagues
+// retrying the same attempt do not collide with each other.
+//
+// ⚠️ **AUTHORIZATION IS INSIDE THE SERVICE, AND A REFUSAL IS A 404.** None of these routes carries an
+// org guard; `requireMembershipRole` runs in the service and answers `NOT_FOUND` for a non-member AND
+// for a member whose role is too low — deliberately, "or the error code becomes a membership oracle".
+// Every write here is **owner/administrator only**. So a 404 on this surface means "not yours, or not
+// your role", and must never be rendered as "no such organization".
+//
+// ⚠️ **THE THREE COLLECTION WRITES DO NOT SHARE SEMANTICS. Read the per-type note before editing one.**
+
+/**
+ * `PATCH …/seller-profile` — the scalar block.
+ *
+ * ⚠️ **A SPARSE PATCH, THE ONLY ONE ON THIS SURFACE.** An omitted key is left untouched and an
+ * explicit `null` CLEARS the column, so the two are not interchangeable here the way they are
+ * everywhere else in this file. An empty object is a 422: the backend refines for at least one key.
+ */
+export interface UpsertSellerProfileInput {
+  readonly yearFounded?: number | null;
+  readonly factoryCount?: number | null;
+  readonly totalStaffCount?: number | null;
+  readonly productionLineCount?: number | null;
+  readonly factoryAreaSquareMetres?: number | null;
+  readonly businessType?: SellerBusinessType | null;
+  readonly visitPolicy?: VisitPolicy | null;
+  readonly acceptingCustomOrders?: boolean;
+  readonly publicSummary?: string | null;
+  readonly declaredResponseTimeHours?: number | null;
+}
+
+/**
+ * `PUT …/site-access` — replace-set, at most 12 rows.
+ *
+ * ⚠️ **DELETE-THEN-INSERT, SO THERE IS NO STABLE ROW IDENTITY.** The service wipes the whole set and
+ * re-inserts, minting fresh ids every time. A returned `id` is therefore valid only until the next
+ * save: never cache one, and never carry one as a React key across a write.
+ *
+ * ⚠️ **AN OMITTED ROW IS HARD-DELETED, NOT RETIRED.** There is no `state` column and no revive, which
+ * makes this stricter than a variant or a customization slot: a collector must REFUSE a row it cannot
+ * serialise rather than skip it, because skipping is destruction the seller did not ask for.
+ */
+export interface SiteAccessRowInput {
+  readonly accessMode: SiteAccessMode;
+  readonly facilityName: string;
+  readonly distanceKm?: number | null;
+  readonly notes?: string | null;
+}
+
+/**
+ * `PUT …/stakeholders` — replace-set, at most 12 rows, IDENTITY-PRESERVING.
+ *
+ * ⚠️ **ECHO BACK THE `id` OF EVERY ROW YOU ARE KEEPING.** It is a HINT, not a grant — honoured only
+ * when the id already belongs to this organization, and silently treated as a new row otherwise. It
+ * is what keeps an uploaded portrait attached across an edit, because the photo lives on the row.
+ *
+ * ⚠️ **A DUPLICATE `id` IN ONE PAYLOAD SILENTLY COLLAPSES TWO ROWS INTO ONE.** The server keys on a
+ * Set, both entries update the same row, and the response comes back short with a gap in positions.
+ * It is not an error — it is quiet data loss, so the caller must dedupe.
+ *
+ * ⚠️ **THERE IS NO `photoUrl` ON THE WAY IN.** Migration `0091` removed it; a portrait is its own
+ * multipart route, and sending the key is a 422 under `.strict()`.
+ */
+export interface StakeholderRowInput {
+  readonly id?: string;
+  readonly fullName: string;
+  readonly roleTitle: string;
+}
+
+/**
+ * `PUT …/capabilities` — replace-set, at most 6 rows, delete-then-insert like site access.
+ *
+ * ⚠️ **A KIND MAY BE DECLARED AT MOST ONCE**, refused with a 409 rather than deduped, and the cap of
+ * six is the enum's own cardinality rather than a policy number.
+ */
+export interface CapabilityRowInput {
+  readonly capabilityKind: OrganizationCapabilityKind;
+  readonly detail?: string | null;
+}
+
+/**
+ * `PATCH …/media/reorder` — an EXACT COVER of the current gallery.
+ *
+ * ⚠️ **IT MUST LIST EVERY CURRENT IMAGE EXACTLY ONCE.** A missing id, an extra id or a duplicate is a
+ * 409, not a partial reorder — so this cannot be sent from a stale gallery, and the caller must
+ * re-read before reordering if anything else may have changed the set.
+ */
+export interface ReorderOrganizationMediaInput {
+  readonly mediaIdsInOrder: readonly string[];
+}
+
+/** `POST …/certifications` — the six text parts that ride beside the `evidence` file. */
+export interface SubmitCertificationInput {
+  readonly standardName: string;
+  readonly issuerName: string;
+  readonly certificateNumber: string;
+  readonly scopeSummary?: string;
+  /** `YYYY-MM-DD`. The backend refines that `validUntil` is strictly after `validFrom`. */
+  readonly validFrom: string;
+  readonly validUntil: string;
+}
+
+/**
+ * ⚠️ **THE NINE WRITES DO NOT SHARE A RESPONSE SHAPE, AND ASSUMING THEY DID WAS WRONG.**
+ *
+ * `factory-terms` answers the whole `SellerDeclaredProfile`, so it is tempting to read the rest the
+ * same way. Measured against the running backend, they do not: the three list replacements answer
+ * `{ rows }`, reorder answers `{ media }`, the two single-row writes answer ONE row, and the delete
+ * answers `{ deleted: true }`. Only the scalar PATCH answers the whole profile.
+ *
+ * Parsing the wrong one is not a soft failure — the schema is `.strip()` over required keys, so a
+ * mismatch is a `PARSE` result that looks like a refused write.
+ */
+export const SiteAccessRowListSchema = z
+  .object({ rows: z.array(OrganizationSiteAccessSchema) })
+  .strip();
+export const StakeholderRowListSchema = z
+  .object({ rows: z.array(OrganizationStakeholderSchema) })
+  .strip();
+export const CapabilityRowListSchema = z
+  .object({ rows: z.array(OrganizationCapabilitySchema) })
+  .strip();
+export const OrganizationMediaListSchema = z
+  .object({ media: z.array(OrganizationMediaSchema) })
+  .strip();
+/** `DELETE …/media/:mediaId` answers a bare acknowledgement, not the surviving gallery. */
+export const DeletedOrganizationMediaSchema = z.object({ deleted: z.literal(true) }).strip();
+
+/** The caps the backend enforces, mirrored so a form can refuse before the wire does. */
+export const SELLER_PROFILE_MAX_SITE_ACCESS_ROWS = 12;
+export const SELLER_PROFILE_MAX_STAKEHOLDERS = 12;
+export const SELLER_PROFILE_MAX_CAPABILITIES = 6;
+export const SELLER_PROFILE_MAX_MEDIA = 12;
+
+/**
+ * `GET …/certifications` — the seller's own list.
+ *
+ * ⚠️ **THE ONLY AUTHENTICATED READ IN THIS MODULE, AND IT EXISTS FOR THE FOUR EXTRA FIELDS.** It is
+ * not more rows — measured live, it returns the same set as the public read — it is `state`,
+ * `submittedAt`, `decidedAt` and `decisionReason`, the moderation trail a buyer never sees. The
+ * public projection carries only approved, unexpired rows and renames `decidedAt` to `approvedAt`.
+ *
+ * ⚠️ **`evidenceDocumentId` IS ON NEITHER PROJECTION.** No id, URL or token for the scanned evidence
+ * ever rides the wire in either direction, deliberately.
+ */
+export const OWNED_CERTIFICATION_STATES = ["pending", "approved", "rejected", "withdrawn"] as const;
+export type OwnedCertificationState = (typeof OWNED_CERTIFICATION_STATES)[number];
+
+export const OwnedCertificationSchema = z
+  .object({
+    id: z.string(),
+    standardName: z.string(),
+    standardCode: z.string().nullable(),
+    issuerName: z.string(),
+    certificateNumber: z.string(),
+    scopeSummary: z.string().nullable(),
+    validFrom: z.string(),
+    validUntil: z.string(),
+    state: z.enum(OWNED_CERTIFICATION_STATES),
+    decisionReason: z.string().nullable(),
+    submittedAt: IsoDateTimeSchema,
+    decidedAt: IsoDateTimeSchema.nullable(),
+  })
+  .strip();
+export type OwnedCertification = z.infer<typeof OwnedCertificationSchema>;
+
 export const SellerDeclaredProfileSchema = z
   .object({
     yearFounded: z.number().int().nullable(),

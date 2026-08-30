@@ -1061,9 +1061,91 @@ feature-sized build, and several are user-visible today.** Ranked:
     `product_customization_options_replaced`, which nothing emits — retiring a commercial term a
     buyer is held to leaves no trail.
 
-3. **Seller profile writes** — all 11 `commerce-seller-profile` routes. The buyer storefront already
-   renders stakeholders, site access, capabilities and certifications from `declaredProfile`; nothing
-   can fill any of it in.
+3. ~~**Seller profile writes** — all 11 `commerce-seller-profile` routes.~~ **SHIPPED — nine seller
+   writes plus the one seller read, as six new sections on `/studio/factory-profile`, now "Your
+   company profile". Frontend only, no migration.**
+
+    ⚠️ **IT EXTENDED THE EXISTING PAGE RATHER THAN ADDING ONE, because that page writes the SAME
+    `commerce_seller_profile` row.** `PUT …/factory-terms` already answered the whole
+    `SellerDeclaredProfile` and the editor fed it to `MutationNotice` and threw the four arrays away
+    — they were arriving on the seller's wire already. Two studio pages over one row would be the
+    "second place for them to disagree" that file argues against three separate times.
+
+    **Two defects it closed on the way in.** The page had **no sidebar entry at all** — it needed a
+    `?factorySlug=` only the buyer-facing directory could supply, so the one page a seller describes
+    their company on was reachable only by going through the storefront first; the route now resolves
+    the viewer's own active membership when the parameter is absent, and the parameter still wins when
+    present. And `site-roadmap.ts` already promised "lines, **certifications** and minimums" — a
+    sentence that was false until this shipped.
+
+    ⚠️ **"ALL 11 ROUTES" WAS IMPRECISE AND THE SHAPE MATTERS.** It is **9 seller writes + 1 seller
+    read + 1 ADMIN write**. `GET …/certifications` is a read — and it exists for four FIELDS rather
+    than more rows (`state`, `decisionReason`, `submittedAt`, `decidedAt`); measured live it returns
+    the same 7 rows as the public read. `POST /commerce/admin/certifications/:id/decision` is a
+    moderator route with no caller and **no home in the admin console**, so a seller can now submit
+    and nobody can decide. Its own slice.
+
+    ⚠️ **THE NINE WRITES DO NOT SHARE A RESPONSE SHAPE, AND ASSUMING THEY DID WAS A REAL BUG I
+    SHIPPED INTO THE WRAPPERS AND THEN CAUGHT BY PROBING.** `factory-terms` answers the whole profile,
+    so the rest look like they should. They do not:
+
+    ```
+    PATCH …/seller-profile        -> the whole SellerDeclaredProfile
+    PUT   …/site-access           -> { rows }
+    PUT   …/stakeholders          -> { rows }
+    PUT   …/capabilities          -> { rows }
+    PATCH …/media/reorder         -> { media }      (not { rows } — the one that differs)
+    POST  …/media                 -> ONE media row
+    POST  …/stakeholders/:id/photo-> ONE stakeholder row
+    DELETE …/media/:mediaId       -> { deleted: true }
+    POST  …/certifications        -> ONE certification
+    ```
+
+    Seven of nine were wrong. **A mismatch is not a soft failure**: the schema is `.strip()` over
+    required keys, so it surfaces as a refused write that actually succeeded on the server. Reading
+    the controller would have caught it; assuming from a sibling did not.
+
+    ⚠️ **THREE COLLECTOR SEMANTICS, ONE PAGE, AND THEY MUST NOT BE COPIED BETWEEN SECTIONS.** The
+    scalar PATCH is SPARSE — an omitted key is untouched, so the form sends explicit `null`s or
+    clearing a value becomes impossible. Site access and capabilities are **delete-then-insert with no
+    stable identity**: omitting a row destroys it and every surviving row gets a NEW id, so nothing
+    may cache one. Stakeholders preserve identity through an echoed `id`, which is what keeps an
+    uploaded portrait attached — ⚠️ **and a duplicate id silently collapses two rows into one**, so the
+    form dedupes because the server will not.
+
+    **Proved live, with the profile captured first and restored after:** an empty site-access `PUT`
+    left **no retired row** (hard delete, unlike a variant); re-saving minted a **new id**, proving
+    delete-then-insert; a stakeholder re-saved WITH its `id` kept it and re-saved WITHOUT one got a
+    new row, which is exactly the orphaning case; duplicate `capabilityKind` → **409**; an incomplete
+    media reorder → **409 "must list every current image exactly once"**; a missing `Idempotency-Key`
+    → **400**. ⚠️ Note 13 site-access rows is a **422** from Zod's `.max(12)`, not the service's 409 —
+    the cap is enforced twice and the client only ever sees the outer one.
+
+    ⚠️ **RESTORATION WAS CONTENT-FOR-CONTENT, NOT BYTE-FOR-BYTE, and the difference is worth stating.**
+    Every scalar and every row's content came back identical, but the `siteAccess` and `stakeholders`
+    ids differ — the first unavoidably (delete-then-insert always mints new ones), the second because
+    the no-echo case was deliberately tested. Nothing references either: the stakeholder's `photoUrl`
+    was null, so no stored asset was orphaned.
+
+    ⚠️ **ONE PROBE WAS DELIBERATELY NOT RUN.** A certification submit could not be reverted: **there
+    is no withdraw or delete route**, so the row would be permanent. `withdrawn` exists in the enum
+    and nothing can reach it. The submit wrapper's shape was confirmed from the controller instead.
+
+    **Three things recorded, not fixed:**
+
+    - ⚠️ **`standardCode` is unreachable from any client.** The service writes the column, but the
+      route's schema has no such key and is `.strict()`, and the controller never passes one — so it
+      is **always null**. The manufacturer directory's `certification` filter therefore can never
+      match and every certification lands in `otherCertifications`. **This is what §9 above was
+      describing when it said `standardCode` is "the part no live payload has set" — it is a backend
+      gap, not a missing frontend call.**
+    - **There is no seller-side read of `declaredProfile`.** All three callers of
+      `loadSellerDeclaredProfiles` are public browse reads gated on `tradeState = 'active' AND
+visibility = 'public'`, so an organization that is private or not yet active cannot open the
+      editor at all. The page says so rather than rendering empty forms over an unknown.
+    - **`STORE_BACKEND_STRUCTURE.md` A13 says "ten routes"; there are 11** — third documentation
+      strike this session, after §21.1's "no migration" and A23's hypothetical-written-as-history.
+
 4. **Product relations** (`companions` is read and rendered, nothing writes it), **settlement
    agreements** (`hasEscrowProtection` is labelled copy over an unreachable flow), **logistics
    writes** (a provider can watch a shipment, not create or advance one), **pathway authoring**,

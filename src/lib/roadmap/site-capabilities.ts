@@ -365,7 +365,6 @@ export const ROADMAP_AUDIENCES: readonly RoadmapAudience[] = [
         routes: [
           { label: "Incoming RFQs", href: "/studio/rfqs" },
           { label: "Your quotes", href: "/studio/quotes" },
-          { label: "Factory profile", href: "/studio/factory-profile" },
         ],
       },
       {
@@ -383,6 +382,12 @@ export const ROADMAP_AUDIENCES: readonly RoadmapAudience[] = [
         summary:
           "The description and links visitors read in the About panel on your channel, beside your join date and your counts.",
         routes: [{ label: "Customise", href: "/studio/customize" }],
+      },
+      {
+        action: "Describe your company",
+        summary:
+          "Who runs it, what it can do, the ports it ships through, its photos, and the certifications Qatoto checks before buyers see them.",
+        routes: [{ label: "Company profile", href: "/studio/factory-profile" }],
       },
       {
         action: "Answer what buyers said about you",
