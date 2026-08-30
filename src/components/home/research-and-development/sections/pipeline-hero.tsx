@@ -9,7 +9,14 @@ import Link from "next/link";
 export default function PipelineHero() {
   return (
     <section className="relative mx-4 overflow-hidden rounded-2xl lg:mx-6">
-      <Image src="/dummy/rnd_hero_bg_01.avif" fill sizes="100vw" alt="" className="object-cover" />
+      <Image
+        src="/dummy/rnd_hero_bg_01.avif"
+        fill
+        sizes="100vw"
+        alt=""
+        loading="eager"
+        className="object-cover"
+      />
       <div className="absolute inset-0 bg-linear-to-r from-black/70 to-black/30" />
       <div className="relative max-w-2xl p-6 text-white md:p-10">
         <h1 className="font-serif text-3xl md:text-5xl">From concept to consumer.</h1>
