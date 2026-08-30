@@ -22,7 +22,13 @@ const CATEGORY_PLACEHOLDER_IMAGE_SRC = "/images/store/category-placeholder.svg";
  * indirection bought one edit when the catch-all is finally deleted; it cost a second of
  * every visitor's time.
  */
-export default function CategoryCard({ category }: { category: StoreCategory }) {
+export default function CategoryCard({
+  category,
+  loading = "lazy",
+}: {
+  category: StoreCategory;
+  loading?: "eager" | "lazy";
+}) {
   return (
     <Link
       href={`/store/categories/${category.slug}`}
@@ -34,6 +40,7 @@ export default function CategoryCard({ category }: { category: StoreCategory }) 
         width={159}
         height={159}
         alt={category.name}
+        loading={loading}
         className="aspect-square w-full rounded-xl object-cover"
       />
       <p className="text-center text-xs font-medium xl:text-sm">{category.name}</p>

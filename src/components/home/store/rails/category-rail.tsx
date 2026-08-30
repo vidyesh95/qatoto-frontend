@@ -17,7 +17,7 @@ export default function CategoryRail({ categories }: { categories: readonly Stor
       <SectionHeader title="Categories" href="/store/categories" />
       <div className="grid grid-cols-4 gap-3 px-4 lg:grid-cols-6 lg:px-6 xl:grid-cols-8">
         {categories.map((category) => (
-          <CategoryCard key={category.id} category={category} />
+          <CategoryCard key={category.id} category={category} loading="eager" />
         ))}
       </div>
     </section>
