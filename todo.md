@@ -959,8 +959,11 @@ __none__` rendered **"Couldn't load this cluster"**. After: `__none__` and `not-
       reached by a TYPED URL here, and by the sentinel only where the list read is empty or failing
       (CI, backend down), which is most machines. Both are the same 422.
     - **Note the status code**, so nobody re-tests this and thinks it regressed: both routes answer
-      **HTTP 200** for a bad id. They are `◐` under Cache Components, and PPR commits the status
-      before the dynamic hole resolves, so `notFound()` changes the BODY and never the status.
+      **HTTP 200** for a bad id, and that is the app-wide default rather than anything these two do.
+      ⚠️ **It is the SUSPENSE BOUNDARY, not PPR** — I first wrote "PPR commits the status before the
+      dynamic hole resolves", and `/channel/nope`, which is `◐` and answers a real **404**, is the
+      counter-example that separates the two. See _"`notFound()` answers 200 wherever a `loading.tsx`
+      sits above it"_ below for the mechanism and the measurements.
       ⚠️ **And assert on the ERROR-PANEL string, not on "This page could not be found"** — the
       streamed document carries the not-found boundary's markup either way, so that phrase appears
       even on a page that rendered perfectly. It is what made the first A/B read as ambiguous.
@@ -1071,6 +1074,96 @@ Every contract in this file was asserted over HTTP or in served HTML. Two surfac
 have never been watched rendering: the authenticated channel-profile paths (saving a bio, filing a
 report, upholding one) and **`/studio/funding`**, which is a client-query page whose data never
 reaches a curl. A browser check is the one gap no amount of route testing closes.
+
+---
+
+## ⚠️ `notFound()` answers 200 wherever a `loading.tsx` sits above it — WORKING AS DESIGNED
+
+**19 of 21 record-detail routes render the not-found page with an HTTP 200.** This is documented Next
+behaviour, not a defect, and the SEO harm it looks like it causes is already prevented. Recorded
+because it cost most of a session to establish and because two plausible wrong explanations are easy
+to land on. **Do not "fix" it without reading the cost line at the bottom.**
+
+**The mechanism, from Next 16.3.0's own bundled docs** (`node_modules/next/dist/docs/`):
+
+- `01-app/03-api-reference/03-file-conventions/loading.md:105` — _"Because the response headers have
+  already been sent to the client, the status code of the response cannot be updated."_
+- `01-app/02-guides/streaming.md:611` — _"When a `<Suspense>` fallback renders or a component
+  suspends, the server must commit to `200 OK` in order to start sending the HTML stream. If a
+  `notFound()` fires mid-stream, Next.js cannot go back and change the status to 404."_
+- `loading.md:118` — _"The response body starts streaming when a Suspense fallback renders (for
+  example, a `loading.tsx`)… Place `notFound()` before those boundaries and before any `await` that
+  may suspend."_
+
+Exactly two places in Next's source turn a `notFound()` into a status —
+`server/app-render/app-render.js:2382-2385` and `:5889-5894` — and both are `catch` blocks around the
+**whole** React render. A Suspense boundary above the throw absorbs it before it reaches either, so
+neither `catch` ever runs.
+
+**THE DISCRIMINATOR IS A `loading.tsx` AT OR ABOVE THE SEGMENT, and the correlation is exact:**
+
+| Route                                                                          | `loading.tsx` in ancestry | Status  |
+| ------------------------------------------------------------------------------ | ------------------------- | ------- |
+| `/blogs/nope` · `/press/nope` · `/channel/nope`                                | none                      | **404** |
+| `/store/**` · `/anime/series/**` · every `/research-and-development/**` detail | yes (segment or a parent) | 200     |
+
+`/store/forum/[threadSlug]` is what proves it is ANCESTRY rather than the segment: it has no
+`loading.tsx` of its own, and still answers 200 because `(home)/store/loading.tsx` sits above it.
+
+⚠️ **TWO EXPLANATIONS THAT LOOK RIGHT AND ARE WRONG. Do not re-derive them — both were measured and
+refuted.**
+
+- **NOT session forwarding.** The soft-404 routes mostly call `callerRequestOptions()` first, so
+  `cookies()` looks like the cause. `series-detail-page.tsx` refutes it: its banner says _"the route
+  is PUBLIC, so no `callerRequestOptions()` and no cookie forwarding"_ and it answers 200 anyway.
+  Reading `cookies()` only CORRELATES, because under `cacheComponents` it is what forces the route to
+  have a Suspense boundary — `src/lib/server-http.ts:46-48` already says exactly this.
+- **NOT `"use cache"`.** `/blogs` and `/press` read through `cms.ts`'s cached getters and 404
+  correctly, which makes caching look like the answer. `/channel/nope` refutes it: it reads the live
+  API through `loadChannelProfileOnce` and still answers a real 404, because nothing above it
+  suspends.
+
+⚠️ **THE SEO RISK IS ALREADY HANDLED, AND THAT IS WHAT DECIDES THIS.** Next injects
+`<meta name="robots" content="noindex">` into every one of these responses by itself
+(`client/components/http-access-fallback/error-boundary.js`). **Verified in the served HTML** — the
+meta is present on `/store/forum/nope`, `/knowledge-hub/insight/nope` and `/channel/nope`.
+`loading.md:109`: _"Some crawlers may label these responses as 'soft 404s'. In the streaming case,
+this does not lead to indexation because the page is explicitly marked `noindex`."_ **A dead URL is
+therefore NOT indexed.** What is left is Search Console labelling, analytics and compliance — which is
+why this is recorded rather than fixed.
+
+**If it is ever revisited, the two real options and what each costs:**
+
+- **Remove the Suspense boundary above the check** — delete or narrow the `loading.tsx` so
+  `notFound()` throws before anything streams. Cheap diff; costs those routes their instant skeleton
+  and makes the navigation block on the server, which is the exact trade `loading.tsx` exists to make.
+- **`proxy.ts`** — check existence before the render and return a 404. Keeps the skeletons; costs a
+  backend round trip **per request, per detail route**, against `loading.md:113`'s own warning to
+  _"keep proxy checks fast, and avoid fetching full content there"_. ~20 route patterns, each a
+  different lookup. There is no `proxy.ts` today. ⚠️ Note `middleware` is deprecated and renamed to
+  `proxy` (`proxy.md:12`).
+- ⚠️ **NOT AN OPTION, so nobody spends an afternoon looking:** there is no API to set a response
+  status from a page render. `next/headers` exports only `cookies`, `headers` and `draft-mode`.
+  `not-found.tsx` is a UI convention and does not touch the status. `generateMetadata` cannot set one.
+  `dynamicParams: false` needs the complete param set at build time, which a UUID detail route cannot
+  have — and the docs contradict themselves on whether it even works under `cacheComponents`
+  (`dynamicParams.md:22` says it is unavailable, `migrating-to-cache-components.md:595` says it is
+  unchanged; no validation code enforces the former).
+
+**`src/lib/static-params.ts` reads slightly wider than it is.** Its docblock argues a sentinel
+prerender is safe because the page "calls `notFound()` on a 404". That holds for the BODY —
+`/…/__none__` does render the not-found page — but the response is a 200 on every route with a
+`loading.tsx`. Nothing is broken: `sitemap.ts:163-169` filters `UNRESOLVABLE_PARAM_VALUE` so the
+sentinel is never advertised.
+
+### A separate defect found on the way, NOT fixed
+
+`pitch-detail-page.tsx:40` and `src/app/(home)/store/factories/[factorySlug]/inquire/page.tsx:38` call
+`notFound()` on **any** failed read — `if (!result.success) notFound()` — where every other detail
+page in the app tests `error.code === "404"` first. So a backend outage renders "this pitch does not
+exist". That is precisely the lie `series-detail-page.tsx:14-22` documents its `unavailable` state to
+avoid: _"rendering 'this show does not exist' for a backend outage would be a lie that a crawler would
+then cache."_ One line each.
 
 ---
 
