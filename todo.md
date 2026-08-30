@@ -888,9 +888,68 @@ Six instances of one defect class were closed one at a time (`productId` on an R
 the shape of the whole gap. **Do not treat these as oversights to fix opportunistically; each is a
 feature-sized build, and several are user-visible today.** Ranked:
 
-1. **Product Q&A is read-only.** Seven write routes unwired — ask, answer, mark helpful, delete. The
-   server computes a `contactAffordance: "ask_question"` permission whose ONLY purpose is to gate a
-   control that does not exist, and `viewer.hasVotedHelpful` can never become true.
+1. ~~**Product Q&A is read-only.**~~ **SHIPPED — all six writes, frontend only, no migration.** Ask,
+   answer, the helpful pair and the two author retractions. `contactAffordance: "ask_question"` now
+   gates a control that exists, and `viewer.hasVotedHelpful` renders.
+
+    ⚠️ **THE CREATE IS KEYED ON `productId`, NOT THE SLUG** every other read on that page uses, so
+    `product.id` is threaded into the island beside `publicSlug`. Posting the slug is a 404 that looks
+    exactly like a missing product.
+
+    ⚠️ **AND THE WRITES MOUNT UNDER `/commerce`, THE READS UNDER `/store`.** One surface, two mounts —
+    the reads are public (`attachOptionalUser`) on the storefront router, the writes authenticated on
+    the trust router. Do not "tidy" a write onto the `/store` prefix.
+
+    **Two of the six require an `Idempotency-Key` HEADER and answer 400 without one** — a missing key
+    is a refusal, not a default. Minted by the component through
+    `useResettableAttemptIdempotencyKey`, rotated only on confirmed success: the ask box is not
+    one-shot, and reusing the first key on a second question dedupes it into silence. The four others
+    take no key, idempotent by verb.
+
+    **Proved live end to end, 16 checks, probe data written and withdrawn:**
+
+    - No key → **400**. Key + body → **201**. Same key + same body → **201 replayed** with
+      `Idempotency-Replayed: true` and the SAME id, with the list still showing **one** question.
+      Same key + different body → **409**.
+    - A buyer with no completion answering → **403** _"Only the seller or a verified buyer of this
+      product may answer."_ The seller answering → **201** with `authorKind: "seller"` (derived — the
+      body carries no `authorKind` and `.strict()` makes sending one a 422).
+    - ⚠️ **The second answer from the SAME ORGANIZATION → 409 _"Your organization has already
+      answered this question."_** Per organization, not per user — so a colleague having answered
+      refuses you. Surface the backend's sentence; "you already answered" is false for that person.
+    - Helpful: author endorsing their own answer → **403**; the buyer org → 200 with
+      `helpfulCount: 1` and `viewer.hasVotedHelpful: true` read back; withdraw → back to 0.
+    - Retraction: a NON-author → **404, not 403**, so the route never confirms a row they may not
+      touch exists. The author → 200.
+
+    ⚠️ **A PREREQUISITE THAT COST A ROUND AND IS NOT IN ANY DOC I READ:** every commerce route
+    resolves its actor from `session.active_organization_id` and **there is no auto-select**. Signing
+    in is not enough — the seller answered with a flat 403 until
+    `POST /commerce/organizations/:id/activate` was called. The Better Auth organization plugin
+    endpoints (`/api/auth/organization/list`, `/set-active`) are **404**; that activate route is the
+    only way. `scripts/smoke-store-phase-15.ts:185-189` says so and is the only place that does.
+
+    ⚠️ **DELETE CONTROLS RENDER ONLY ON ROWS THE SESSION POSTED, AND THAT IS A BACKEND GAP.**
+    Retraction is author-only matched on the USER, but the question projection carries **no `viewer`
+    object at all** and an answer's `author` is the ORGANIZATION — so neither payload says whether the
+    reader wrote the row. The ids returned by the two 201s are the only authorship the client can
+    prove. **The fix is `viewer.canDelete` on both projections**; until then a control on every row
+    would 404 for almost everyone, which is what the category-attributes console already refused to
+    ship.
+
+    **Withdrawal is not deletion, deliberately** — the row moves to `removed_by_author` because an
+    answer thread is other people's writing and a real delete would cascade it away. So the probe rows
+    still exist as withdrawn rows; they are excluded from the public list, the seller inbox and every
+    counter. That is the revert this surface has.
+
+    **Still unwired: `GET /commerce/seller/questions`,** the seller's unanswered-question inbox. Its
+    own route comment says a seller with two hundred listings can answer a question and cannot find
+    one. A new studio page, and the obvious next slice.
+
+    ⚠️ **`STORE_BACKEND_STRUCTURE.md` DOES NOT LIST FOUR OF THESE ROUTES.** §6.4's table has the
+    helpful pair and the seller inbox; the two creates and two deletes appear in no table, and §A35
+    admits it. The code was the authority for all of the above.
+
 2. **Customization option authoring.** `PUT /products/:id/customization-options` has no caller while
    the buyer's `customization-sheet.tsx` renders the slots. ⚠️ A buyer may be refused at checkout
    with `REQUIRED_OPTION_MISSING` for a slot no seller can create — **verify that refusal is

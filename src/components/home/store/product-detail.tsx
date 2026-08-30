@@ -289,10 +289,14 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
 
             <RatingsAndReviews productSlug={product.publicSlug} initialPage={reviewsPage} />
 
-            {/* The anchor `store-and-chat-actions.tsx` sends an `ask_question` caller to. */}
+            {/* The anchor `store-and-chat-actions.tsx` sends an `ask_question` caller to — and it
+                now lands on a real ask box rather than a read-only list. `product.id` travels
+                beside the slug because the CREATE route is keyed on the id while every read here
+                is keyed on the slug. */}
             <div id="product-questions">
               <QuestionsAndAnswers
                 productSlug={product.publicSlug}
+                productId={product.id}
                 initialPage={questionsPage}
                 contactAffordance={product.contactAffordance}
               />

@@ -18,21 +18,33 @@ import {
   type RequestOptions,
 } from "@/lib/http";
 import {
+  CreatedProductAnswerSchema,
+  CreatedProductQuestionSchema,
+  ProductAnswerHelpfulVoteSchema,
   ProductAnswerListPageSchema,
   ProductCompanionsSchema,
   ProductDeliveryEstimatePageSchema,
   ProductEngagementSchema,
   ProductQuestionListPageSchema,
+  RetractedProductAnswerSchema,
+  RetractedProductQuestionSchema,
   StoreProductDetailSchema,
   StoreReviewListPageSchema,
   type AnswerListFilter,
+  type AnswerProductQuestionInput,
+  type AskProductQuestionInput,
+  type CreatedProductAnswer,
+  type CreatedProductQuestion,
   type DeliveryEstimateFilter,
+  type ProductAnswerHelpfulVote,
   type ProductAnswerListPage,
   type ProductCompanions,
   type ProductDeliveryEstimatePage,
   type ProductEngagement,
   type ProductQuestionListPage,
   type QuestionListFilter,
+  type RetractedProductAnswer,
+  type RetractedProductQuestion,
   type ReviewListFilter,
   type StoreProductDetail,
   type StoreReviewListPage,
@@ -199,4 +211,114 @@ export function shareStoreProduct(
 ): Promise<ActionResponse<ProductEngagement>> {
   const path = `/store/products/${encodeURIComponent(productSlug)}/share`;
   return sendJson(path, "POST", undefined, ProductEngagementSchema, options);
+}
+
+// --- Question and answer writes ---------------------------------------------
+//
+// ⚠️ THESE LIVE UNDER `/commerce`, NOT `/store`, unlike every read above them. The reads are public
+// (`attachOptionalUser`) and sit on the storefront router; the writes are authenticated and sit on
+// the trust router. One surface, two mounts — do not "tidy" a write onto the `/store` prefix.
+//
+// ⚠️ AND THE CREATE IS KEYED ON `productId`, NOT `publicSlug`. Every read on this page is addressed
+// by slug, so the id has to be threaded down separately. Passing the slug here is a 404 that looks
+// exactly like a missing product.
+//
+// TWO OF THE SIX REQUIRE AN `Idempotency-Key`, AND IT IS A HEADER. `POST …/questions` and
+// `POST …/answers` go through the backend's `idempotency({ required: true, scope: "user" })`
+// middleware, which answers **400** when the header is absent — a missing key is a refusal, not a
+// default. The scope is the USER rather than the active organization, so switching organizations
+// mid-attempt does not mint a second question. The four remaining routes take no key: the deletes
+// and the helpful pair are idempotent by verb, the same reasoning the engagement block above states.
+
+/**
+ * Asks the seller a public question — `POST /commerce/products/:productId/questions`, **201**.
+ *
+ * ANY IDENTIFIED USER MAY ASK; no organization is needed, which is exactly what
+ * `contactAffordance: "ask_question"` encodes. The product must be publicly eligible: asking about a
+ * draft or suspended listing answers 404, so the route cannot confirm that a hidden id exists.
+ *
+ * ⚠️ A REPLAYED KEY STILL ANSWERS **201**, with the original response and an `Idempotency-Replayed`
+ * header — not 200. Do not treat a 200 as "already asked".
+ */
+export function askProductQuestion(
+  productId: string,
+  input: AskProductQuestionInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<CreatedProductQuestion>> {
+  const path = `/commerce/products/${encodeURIComponent(productId)}/questions`;
+  return sendJson(path, "POST", input, CreatedProductQuestionSchema, options);
+}
+
+/**
+ * Withdraws the caller's own question — `DELETE /commerce/questions/:questionId`.
+ *
+ * AUTHOR ONLY, and the match is on the USER. Anything else — someone else's question, one already
+ * hidden, one already withdrawn — is a 404 rather than a 403, so the route never confirms that a
+ * question the caller may not touch exists.
+ */
+export function retractProductQuestion(
+  questionId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<RetractedProductQuestion>> {
+  const path = `/commerce/questions/${encodeURIComponent(questionId)}`;
+  return sendJson(path, "DELETE", undefined, RetractedProductQuestionSchema, options);
+}
+
+/**
+ * Answers a question — `POST /commerce/questions/:questionId/answers`, **201**.
+ *
+ * ⚠️ NOT OPEN TO EVERY SIGNED-IN USER. The service resolves exactly two standings from the database:
+ * the selling organization (`authorKind: "seller"`) or an organization holding a completion against
+ * this product (`"verified_buyer"`). Anyone else — including a signed-in user with no active
+ * commerce organization — is **403**, and that refusal is what stops Q&A quietly becoming the public
+ * comment surface the backend has not decided on yet.
+ *
+ * ⚠️ **THE 409 IS PER ORGANIZATION, NOT PER USER.** One answer per organization per question, on a
+ * unique index — so a colleague having answered refuses you with `ALREADY_ANSWERED` even though you
+ * personally never did. Surface the backend's own message; a "you already answered" paraphrase is
+ * wrong for exactly the person who did not.
+ */
+export function answerProductQuestion(
+  questionId: string,
+  input: AnswerProductQuestionInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<CreatedProductAnswer>> {
+  const path = `/commerce/questions/${encodeURIComponent(questionId)}/answers`;
+  return sendJson(path, "POST", input, CreatedProductAnswerSchema, options);
+}
+
+/** Withdraws the caller's own answer. Author-only on the USER, 404 for anything else — as above. */
+export function retractProductAnswer(
+  answerId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<RetractedProductAnswer>> {
+  const path = `/commerce/answers/${encodeURIComponent(answerId)}`;
+  return sendJson(path, "DELETE", undefined, RetractedProductAnswerSchema, options);
+}
+
+/**
+ * Endorses an answer — `PUT /commerce/answers/:answerId/helpful`.
+ *
+ * NEEDS AN ACTIVE COMMERCE ORGANIZATION, because the vote table is keyed on the organization rather
+ * than the user. That is the same fact `answer.viewer === null` already encodes on the read, so the
+ * control can be gated without probing this route.
+ *
+ * ⚠️ AN AUTHOR MAY NOT ENDORSE THEIR OWN ANSWER — **403**, refused in the service and again by a
+ * database trigger. The `DELETE` below deliberately has no such check.
+ */
+export function markProductAnswerHelpful(
+  answerId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ProductAnswerHelpfulVote>> {
+  const path = `/commerce/answers/${encodeURIComponent(answerId)}/helpful`;
+  return sendJson(path, "PUT", undefined, ProductAnswerHelpfulVoteSchema, options);
+}
+
+/** Withdraws the caller's endorsement. Idempotent — clearing a vote nobody cast is not an error. */
+export function clearProductAnswerHelpfulVote(
+  answerId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ProductAnswerHelpfulVote>> {
+  const path = `/commerce/answers/${encodeURIComponent(answerId)}/helpful`;
+  return sendJson(path, "DELETE", undefined, ProductAnswerHelpfulVoteSchema, options);
 }

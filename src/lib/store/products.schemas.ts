@@ -561,6 +561,56 @@ export const ProductQuestionSchema = z
 export const ProductQuestionListPageSchema = cursorPageOf(ProductQuestionSchema);
 export const ProductAnswerListPageSchema = cursorPageOf(ProductAnswerSchema);
 
+// --- Question and answer writes ---------------------------------------------
+//
+// ⚠️ NEITHER BODY CARRIES `authorKind`. The seller / verified-buyer badge is DERIVED by the service
+// from the caller's standing — selling organization, or an organization with a completion against
+// this product — and both backend schemas are `.strict()`, so sending one is a loud 422 rather than
+// an ignored field. The same `.strict()` is why a write must carry no query string at all.
+//
+// THE LIMITS ARE THE BACKEND'S, MIRRORED SO THE FORM REFUSES BEFORE THE WIRE DOES. A question is
+// 1..1000 and an answer 1..4000 — an answer is longer because it is the one that has to explain.
+
+/** `POST /commerce/products/:productId/questions`. Requires an `Idempotency-Key` HEADER. */
+export interface AskProductQuestionInput {
+  readonly bodyText: string;
+}
+
+/** `POST /commerce/questions/:questionId/answers`. Requires an `Idempotency-Key` HEADER. */
+export interface AnswerProductQuestionInput {
+  readonly bodyText: string;
+}
+
+export const PRODUCT_QUESTION_BODY_MAX_LENGTH = 1000;
+export const PRODUCT_ANSWER_BODY_MAX_LENGTH = 4000;
+
+// Both creates answer with the SAME projection the reads return, so there is no create-specific
+// response shape to keep in step. A new field on the read reaches the write for free.
+export const CreatedProductQuestionSchema = ProductQuestionSchema;
+export const CreatedProductAnswerSchema = ProductAnswerSchema;
+
+/**
+ * What the two author retractions answer with — the id that is now gone, and nothing else.
+ *
+ * ⚠️ **NEITHER IS A HARD DELETE.** The row moves to `removed_by_author`, because an answer thread is
+ * other people's writing and a real delete would cascade it away. The state also keeps an author's
+ * retraction distinguishable from a moderator's hide, which is why there is no shared "deleted" flag.
+ */
+export const RetractedProductQuestionSchema = z.object({ questionId: z.string() }).strip();
+export const RetractedProductAnswerSchema = z.object({ answerId: z.string() }).strip();
+
+/**
+ * What the helpful pair answers with. `helpfulCount` is the SERVER's count after the write — render
+ * it rather than incrementing locally, because the two disagree the moment anyone else votes.
+ */
+export const ProductAnswerHelpfulVoteSchema = z
+  .object({
+    answerId: z.string(),
+    isHelpful: z.boolean(),
+    helpfulCount: z.number().int(),
+  })
+  .strip();
+
 // --- Filter inputs ----------------------------------------------------------
 //
 // Hand-written interfaces mirroring the backend's `.strict()` query schemas key-for-key. An unknown
@@ -619,6 +669,11 @@ export type ProductAnswer = z.infer<typeof ProductAnswerSchema>;
 export type ProductQuestion = z.infer<typeof ProductQuestionSchema>;
 export type ProductQuestionListPage = z.infer<typeof ProductQuestionListPageSchema>;
 export type ProductAnswerListPage = z.infer<typeof ProductAnswerListPageSchema>;
+export type CreatedProductQuestion = z.infer<typeof CreatedProductQuestionSchema>;
+export type CreatedProductAnswer = z.infer<typeof CreatedProductAnswerSchema>;
+export type RetractedProductQuestion = z.infer<typeof RetractedProductQuestionSchema>;
+export type RetractedProductAnswer = z.infer<typeof RetractedProductAnswerSchema>;
+export type ProductAnswerHelpfulVote = z.infer<typeof ProductAnswerHelpfulVoteSchema>;
 
 // --- Display maps -----------------------------------------------------------
 

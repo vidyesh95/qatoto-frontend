@@ -12,9 +12,15 @@
 // small numbers on a public page and a counter that flickers back teaches a buyer that none of the
 // numbers are to be trusted.
 //
-// NO IDEMPOTENCY KEY ON ANY OF THESE. Like and bookmark are `PUT`/`DELETE` of a boolean and are
-// idempotent by verb; a key would be ceremony around an operation already safe to repeat. That is
+// NO IDEMPOTENCY KEY ON THE ENGAGEMENT WRITES. Like and bookmark are `PUT`/`DELETE` of a boolean and
+// are idempotent by verb; a key would be ceremony around an operation already safe to repeat. That is
 // the same rule the backend applies to review and answer helpful votes.
+//
+// ⚠️ THE TWO Q&A CREATES ARE THE EXCEPTION, and this sentence used to say "none of these". Asking a
+// question and answering one both go through the backend's `idempotency({ required: true })`
+// middleware and REFUSE WITH 400 without a key. The key is minted by the component — one per attempt,
+// held across retries, rotated only after a confirmed success — and passed in, because a hook that
+// generated its own would mint a fresh one on every retry and defeat the whole mechanism.
 
 import {
   useMutation,
@@ -26,18 +32,29 @@ import {
 import { storeKeys } from "@/hooks/store/keys";
 import type { ActionResponse } from "@/lib/http";
 import {
+  answerProductQuestion,
+  askProductQuestion,
   bookmarkStoreProduct,
+  clearProductAnswerHelpfulVote,
   getStoreProductDeliveryEstimate,
   listStoreProductQuestions,
   listStoreProductReviews,
   listStoreQuestionAnswers,
   likeStoreProduct,
+  markProductAnswerHelpful,
+  retractProductAnswer,
+  retractProductQuestion,
   shareStoreProduct,
   unbookmarkStoreProduct,
   unlikeStoreProduct,
 } from "@/lib/store/products.api";
 import type {
+  CreatedProductAnswer,
+  CreatedProductQuestion,
+  ProductAnswerHelpfulVote,
   ProductAnswerListPage,
+  RetractedProductAnswer,
+  RetractedProductQuestion,
   ProductDeliveryEstimatePage,
   ProductEngagement,
   ProductQuestionListPage,
@@ -230,5 +247,172 @@ export function useProductDeliveryEstimateQuery(
       }),
     enabled: destinationCountryCode !== null && destinationCountryCode.length > 0,
     retry: false,
+  });
+}
+
+// --- Question and answer writes ---------------------------------------------
+//
+// ONE INVALIDATION RULE ACROSS ALL SIX, and it is why they share this block: any of them can change
+// what the question LIST shows. A new question is a new row; an answer moves `answerCount` and can
+// flip `hasSellerAnswer`; a helpful vote can reorder `topAnswer`, which the list embeds. So every
+// hook here invalidates `productQuestions`, and the answer-scoped ones invalidate their answer list
+// as well.
+//
+// ⚠️ BOTH KEYS COME FROM `storeKeys`, NEVER AN INLINE ARRAY. `src/hooks/store/reviews.ts` spells its
+// review key out by hand; that is the drift `keys.ts` exists to prevent, and it is not the example
+// to copy.
+//
+// NOTHING HERE IS OPTIMISTIC. A helpful vote answers the server's own `helpfulCount`, and an answer
+// carries the `authorKind` badge the SERVER derived — neither is knowable on the client before the
+// response, and guessing either would put a "seller" badge on text the seller did not write.
+
+/** Invalidates the question list, which every Q&A write can change. */
+function useQuestionListInvalidator(productSlug: string) {
+  const queryClient = useQueryClient();
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: storeKeys.productQuestions(productSlug) });
+  };
+}
+
+/**
+ * Asks a public question about the product.
+ *
+ * ⚠️ KEYED ON `productId`, NOT THE SLUG every other hook in this file takes. The create route is the
+ * one place on this page addressed by id, so the caller has to thread it down; `productSlug` is here
+ * only to invalidate the list.
+ *
+ * THE IDEMPOTENCY KEY IS THE CALLER'S. It is minted once per attempt in component state and rotated
+ * only on a confirmed success — a key regenerated per request would let a retry after a network
+ * failure post the question twice.
+ */
+export function useAskProductQuestion(
+  productSlug: string,
+  productId: string,
+): UseMutationResult<
+  ActionResponse<CreatedProductQuestion>,
+  Error,
+  { readonly bodyText: string; readonly idempotencyKey: string }
+> {
+  const invalidateQuestionList = useQuestionListInvalidator(productSlug);
+  return useMutation({
+    mutationFn: ({ bodyText, idempotencyKey }) =>
+      askProductQuestion(
+        productId,
+        { bodyText },
+        { headers: { "Idempotency-Key": idempotencyKey } },
+      ),
+    onSuccess: (result) => {
+      if (!result.success) return;
+      invalidateQuestionList();
+    },
+  });
+}
+
+/**
+ * Answers a question.
+ *
+ * REFUSES FOR MOST CALLERS, BY DESIGN — 403 unless the caller's organization is the seller or holds
+ * a completion against this product. The component discloses that before the press rather than
+ * letting the refusal be the discovery.
+ *
+ * ⚠️ ITS 409 IS PER ORGANIZATION. Render the backend's own message: "your organization has already
+ * answered" is true and "you already answered" is false for the colleague who did not.
+ */
+export function useAnswerProductQuestion(
+  productSlug: string,
+): UseMutationResult<
+  ActionResponse<CreatedProductAnswer>,
+  Error,
+  { readonly questionId: string; readonly bodyText: string; readonly idempotencyKey: string }
+> {
+  const queryClient = useQueryClient();
+  const invalidateQuestionList = useQuestionListInvalidator(productSlug);
+  return useMutation({
+    mutationFn: ({ questionId, bodyText, idempotencyKey }) =>
+      answerProductQuestion(
+        questionId,
+        { bodyText },
+        { headers: { "Idempotency-Key": idempotencyKey } },
+      ),
+    onSuccess: (result, { questionId }) => {
+      if (!result.success) return;
+      invalidateQuestionList();
+      void queryClient.invalidateQueries({
+        queryKey: storeKeys.productQuestionAnswers(productSlug, questionId),
+      });
+    },
+  });
+}
+
+/** Withdraws the caller's own question. Author-only server-side; anything else is a 404. */
+export function useRetractProductQuestion(
+  productSlug: string,
+): UseMutationResult<
+  ActionResponse<RetractedProductQuestion>,
+  Error,
+  { readonly questionId: string }
+> {
+  const invalidateQuestionList = useQuestionListInvalidator(productSlug);
+  return useMutation({
+    mutationFn: ({ questionId }) => retractProductQuestion(questionId),
+    onSuccess: (result) => {
+      if (!result.success) return;
+      invalidateQuestionList();
+    },
+  });
+}
+
+/** Withdraws the caller's own answer. Invalidates the answer list AND the count on its question. */
+export function useRetractProductAnswer(
+  productSlug: string,
+): UseMutationResult<
+  ActionResponse<RetractedProductAnswer>,
+  Error,
+  { readonly answerId: string; readonly questionId: string }
+> {
+  const queryClient = useQueryClient();
+  const invalidateQuestionList = useQuestionListInvalidator(productSlug);
+  return useMutation({
+    mutationFn: ({ answerId }) => retractProductAnswer(answerId),
+    onSuccess: (result, { questionId }) => {
+      if (!result.success) return;
+      invalidateQuestionList();
+      void queryClient.invalidateQueries({
+        queryKey: storeKeys.productQuestionAnswers(productSlug, questionId),
+      });
+    },
+  });
+}
+
+/**
+ * Endorses an answer, or withdraws the endorsement.
+ *
+ * THE DIRECTION COMES FROM WHAT THE SERVER LAST SAID (`viewer.hasVotedHelpful`), never from a local
+ * flip — the count rendered beside the control has to stay true.
+ *
+ * ⚠️ ENDORSING YOUR OWN ANSWER IS A 403. It is refused in the service and again by a database
+ * trigger, so it is a real refusal to render rather than a control to hide.
+ */
+export function useSetProductAnswerHelpfulVote(
+  productSlug: string,
+): UseMutationResult<
+  ActionResponse<ProductAnswerHelpfulVote>,
+  Error,
+  { readonly answerId: string; readonly questionId: string; readonly isHelpful: boolean }
+> {
+  const queryClient = useQueryClient();
+  const invalidateQuestionList = useQuestionListInvalidator(productSlug);
+  return useMutation({
+    mutationFn: ({ answerId, isHelpful }) =>
+      isHelpful ? markProductAnswerHelpful(answerId) : clearProductAnswerHelpfulVote(answerId),
+    onSuccess: (result, { questionId }) => {
+      if (!result.success) return;
+      // The list embeds `topAnswer`, whose order is seller-first then most-endorsed — so a vote can
+      // reorder it. Both reads are refreshed rather than only the one that was written to.
+      invalidateQuestionList();
+      void queryClient.invalidateQueries({
+        queryKey: storeKeys.productQuestionAnswers(productSlug, questionId),
+      });
+    },
   });
 }
