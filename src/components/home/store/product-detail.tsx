@@ -57,6 +57,7 @@ import SamplePrice from "@/components/home/store/sections/sample-price";
 import SimilarAndCompare from "@/components/home/store/sections/similar-and-compare";
 import StoreAndChatActions from "@/components/home/store/sections/store-and-chat-actions";
 import VariantPicker from "@/components/home/store/sections/variant-picker";
+import ReportContentOpener from "@/components/home/store/shared/report-content-opener";
 import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
 import { callerRequestOptions, hasCallerSession } from "@/lib/server-http";
 import { getOrganizationStorefront } from "@/lib/store/organizations.api";
@@ -302,18 +303,24 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
               />
             </div>
 
+            {/*
+              REPLACED A DEAD LINK, and that is worth stating rather than quietly fixing. This was
+              `<Link href="/store/report">Report abuse</Link>` and **there is no such route** — it
+              fell through to the legacy `store/[...slug]` catch-all, which redirected to
+              `/store/categories/report` and 404ed. So the busiest page in the store has been
+              offering a report control that went nowhere. Same class as the inert "Send inquiry"
+              this file's sibling deleted: a dead entrance to a live feature is worse than none.
+
+              `product.id`, NOT `publicSlug` — the report route matches `product.id`, and posting
+              the slug is a 404 that looks exactly like a missing listing.
+            */}
             <div className="flex justify-center px-4 py-3 lg:px-6">
-              <Link
-                href="/store/report"
-                className="flex items-center gap-1 text-xs font-medium text-[#6F7979]"
-              >
-                <Icon
-                  src="flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  size={16}
-                  className="opacity-70"
-                />
-                Report abuse
-              </Link>
+              <ReportContentOpener
+                targetKind="product"
+                targetId={product.id}
+                targetLabel={product.title}
+                variant="standalone"
+              />
             </div>
 
             {/* Sticky action bar — sits above the mobile bottom nav (md:hidden adds its ~80px

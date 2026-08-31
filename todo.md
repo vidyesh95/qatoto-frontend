@@ -916,6 +916,14 @@ Six instances of one defect class were closed one at a time (`productId` on an R
 the shape of the whole gap. **Do not treat these as oversights to fix opportunistically; each is a
 feature-sized build, and several are user-visible today.** Ranked:
 
+⚠️ **AND ONE OF THEM TURNS OUT NOT TO BELONG TO THE CLASS AT ALL.** Every entry here reads as "the
+route exists, write the wrapper" — but **product relations cannot be wired that way**, because its
+replace-set has no faithful owner-side read to seed it. Wiring it would delete moderator-curated
+rows. The class is really TWO classes: writes waiting for a caller, and writes waiting for a READ.
+Service coverage is the other member of the second, and both are backend asks. Check which one an
+entry is in before costing it — the audit loop cannot tell them apart, because neither has a
+wrapper to report as uncalled.
+
 1. ~~**Product Q&A is read-only.**~~ **SHIPPED — all six writes, frontend only, no migration.** Ask,
    answer, the helpful pair and the two author retractions. `contactAffordance: "ask_question"` now
    gates a control that exists, and `viewer.hasVotedHelpful` renders.
@@ -1113,14 +1121,15 @@ feature-sized build, and several are user-visible today.** Ranked:
     moderator route with no caller and **no home in the admin console**, so a seller can now submit
     and nobody can decide. Its own slice.
 
-    **SIZED 2026-08-31, NOT BUILT — and it is the largest LIVE gap on the site**, in the sense that
-    a seller can take an action today that nothing can answer. Five pieces, all modelled on
-    `/admin/site-audits`, which is the same domain (a `moderate_commerce` verification fact about a
-    seller organization) with the same review-decision shape: route
-    (`src/app/(admin)/admin/site-audits/page.tsx`, 13 lines), component
-    (`src/components/admin/site-audits/site-audit-admin-page.tsx`), hook
-    (`src/hooks/store/admin-site-audits.ts`), api (`src/lib/store/admin-site-audits.api.ts`), and
-    **one entry in `ADMIN_NAVIGATION_ITEMS`** (`admin-sidebar.tsx:29`).
+    ~~**SIZED 2026-08-31, NOT BUILT — and it is the largest LIVE gap on the site.**~~ **BUILT, in
+    commit `8fc70f1`, and this entry was left standing for four days after it stopped being true.**
+    All five sized pieces exist: `src/app/(admin)/admin/certifications/page.tsx`,
+    `src/components/admin/certifications/certification-review-page.tsx`,
+    `src/hooks/store/admin-certifications.ts`, `src/lib/store/admin-certifications.api.ts`, and the
+    nav entry at `admin-sidebar.tsx`. `8003a7c` then added audited evidence downloads and moved the
+    queue onto a paginated keyset list. ⚠️ **A "NOT BUILT" ENTRY THAT SURVIVES ITS OWN BUILD IS THE
+    MOST EXPENSIVE KIND OF STALE**, because the next reader costs it, plans it, and only discovers
+    the console on the way to writing a second one.
 
     ⚠️ **AN ADMIN ROUTE NEEDS NO ROADMAP EDIT — unlike a studio route, which needs six across four
     files.** `site-roadmap.ts:18` says in as many words that the `/admin` console is out of scope
@@ -1138,10 +1147,10 @@ feature-sized build, and several are user-visible today.** Ranked:
     so the check and the write cannot drift apart. Adding middleware would duplicate the gate, not
     close one.
 
-    ⚠️ **AND THERE IS STILL NO WITHDRAW OR DELETE ROUTE** for a certification — `withdrawn` exists
-    in the enum and nothing can reach it — so every probe against this surface is permanent. That is
-    why the submit wrapper's shape was confirmed from the controller rather than by writing a row,
-    and it constrains how this slice can be verified live.
+    ~~⚠️ **AND THERE IS STILL NO WITHDRAW OR DELETE ROUTE** for a certification.~~ **THERE IS NOW**
+    — `withdrawOrganizationCertification` at `src/lib/store/factory-profile.api.ts:366`, against a
+    real backend route, shipped as the seller half of `8fc70f1`. `withdrawn` is reachable, so a
+    probe against this surface is no longer permanent.
 
     ⚠️ **THE NINE WRITES DO NOT SHARE A RESPONSE SHAPE, AND ASSUMING THEY DID WAS A REAL BUG I
     SHIPPED INTO THE WRAPPERS AND THEN CAUGHT BY PROBING.** `factory-terms` answers the whole profile,
@@ -1204,11 +1213,128 @@ visibility = 'public'`, so an organization that is private or not yet active can
     - **`STORE_BACKEND_STRUCTURE.md` A13 says "ten routes"; there are 11** — third documentation
       strike this session, after §21.1's "no migration" and A23's hypothetical-written-as-history.
 
-4. **What is left of the class, after three of them shipped.** Still open: **product relations**
-   (`companions` is read and rendered, nothing writes it), **pathway authoring**, **commerce
-   moderation** (`POST /commerce/reports` and all four `/commerce/admin/*` moderation routes have no
-   caller — the VIDEO console for the same thing shipped long ago), image reorder, the product
-   view-beacon, RFQ invitations.
+4. **What is left of the class, after four of them shipped.** Still open: **pathway authoring**,
+   **image reorder**, the **product view-beacon**, **RFQ invitations** — and **product relations**,
+   which is the one that must NOT simply be wired (see below).
+
+    ~~**Commerce moderation.**~~ **SHIPPED — all five routes, frontend only, no migration.** The
+    reporter half (`POST /commerce/reports`) mounts on the product page, a review, a question, an
+    answer and a company storefront; the staff half is `/admin/commerce-reports`, one page with a
+    report queue and a moderation-action log.
+
+    ⚠️ **IT REPLACED A DEAD CONTROL RATHER THAN ADDING A NEW ONE.** `product-detail.tsx` had linked
+    `/store/report` since it shipped and **there is no such route** — it fell through the legacy
+    `store/[...slug]` catch-all to a 404. The busiest page in the store had been offering a report
+    button that went nowhere, which is the same defect the inert "Send inquiry" was deleted for.
+
+    ⚠️ **THE CONFIRMATION COPY BRANCHES ON TARGET KIND, AND FLATTENING IT WOULD MAKE IT FALSE.**
+    A review, question or answer auto-hides once **three distinct reporters** have open reports
+    against it, in the same transaction as the third insert; a product and an organization never do
+    ("delisting a seller's listing is a commercial action against their livelihood"). **Proved
+    live**: three distinct users on one seeded question flipped it to `hidden_pending_review` with a
+    `content_hidden` action whose `actionSource` is **`automatic`** and whose note reads
+    "Automatically hidden after 3 distinct open reports". The video sheet's line — "nothing here
+    happens automatically" — is true for video and would be a plain lie on a review.
+    ⚠️ **The threshold NUMBER is deliberately never printed**: "three reports hides this" is a
+    griefing recipe, and the copy says "several different people", which is true at any value.
+
+    ⚠️ **A SELF-REPORT IS `422`, NOT `403` — AND 422 IS ALSO THE SCHEMA-FAILURE STATUS.** Measured
+    side by side in one run: an empty `detailText` answered `422 "Please check the highlighted
+    fields."` while reporting your own organization answered `422 "You cannot report your own
+    organization's content."` So a sheet that renders 422 as a field error tells a seller their form
+    is broken when the answer is a rule. The sheet prints the backend's sentence.
+    ⚠️ And the guard only fires with an **active organization** — the first attempt returned **201**
+    because `activate` had been called without its required `Idempotency-Key` and the session
+    therefore had no active org. The report route itself needs none, which is why it still worked.
+
+    ⚠️ **ONE DECISION CLOSES EVERY OPEN REPORT ON THE TARGET, WHICH IS WHY THE HOOK INVALIDATES THE
+    ROOT AND NEVER ONE FILTER.** Proved twice, in both directions: actioning one of two open reports
+    on the seeded chair closed the other one too, and dismissing one of three on a question closed
+    the remaining two (they answered `409 "already resolved"`). A console that invalidated
+    `status=open` alone would leave the `actioned` list on screen as a lie.
+
+    ⚠️ **RESTORE IS OFFERED ON `actioned` AND ON A `content_hidden` LOG ROW, NEVER ON `dismissed`.**
+    Nothing in the projection says whether a target is currently hidden — there is no visibility
+    field — so `actioned` is the closest honest proxy. A dismissal already un-hides, so restoring
+    there would write a permanent record of an un-hide that never happened. `reasonNote` is
+    **required** (empty is a 422) because an un-hide nobody justified is one nobody can review.
+    The log row matters on its own: it is the ONLY surface where an `automatic` hide is visible or
+    reversible, since nobody is notified and no audit entry names a person.
+
+    ⚠️ **`GET /commerce/admin/moderation-actions` ACCEPTS `status` AND SILENTLY IGNORES IT** — it
+    shares a query schema with the queue and then reads only `targetKind` and `cursor`. The log tab
+    offers no status control, because one would change the key, refetch and return identical rows.
+
+    ⚠️ **BOTH QUEUES ARE `asc(createdAt)`, SO THE BUTTON SAYS "Load newer".** Confirmed in the live
+    payload (Aug 07 row first). `certification-review-page.tsx` says "Load older" and is right for
+    ITS newest-first default; copying that label here points the reader backwards.
+
+    ⚠️ **`/community/admin/content-reports` IS A DIFFERENT MODULE WITH A NEARLY IDENTICAL NAME** and
+    was already wired. It is `moderate_content` over forum threads and cofounder profiles; this is
+    `moderate_commerce` over listings, reviews, questions, answers and companies. Do not fold either
+    into the other — §17.4 refuses to merge those shifts.
+
+    **Everything reverted after the run**: the chair is back to `approved/active/selling`, the
+    probed question to `visible`, and the open-report queue to **0**. ⚠️ **The probe rows were
+    DISMISSED rather than deleted, deliberately** — `commerce_moderation_action` is a hash-chained
+    audit trail with an FK to the report it records, so deleting a labelled probe row would falsify
+    a record of something that really happened. Reverting the STATE is the revert; erasing the
+    history is not.
+
+    **SIZED 2026-08-31 AND NOT BUILT — the next two passes, in this order.** Both were checked
+    against the running backend rather than a doc, and the check is what makes them cheap:
+
+    - **Image reorder + the product view-beacon — one small pass, both safe.**
+      `PATCH /products/:id/images/reorder` takes `{ imageIds: string[] }` (`.min(1)`, `.strict()`),
+      answers the whole `PublicProduct`, and **needs no `Idempotency-Key`** (optional there).
+      ⚠️ **IT MUST BE THE COMPLETE ID SET — a partial list is `IMAGE_ORDER_MISMATCH` (422)** — and
+      **index 0 is the main image**, so a reorder control is also the "make this the cover" control.
+      Unlike relations, the owner-side read EXISTS: `GET /products/:id` returns `images[].position`,
+      so the form can show what it is about to replace. It belongs in the wizard's media step.
+      `POST /store/products/:productSlug/view-beacon` is the twin of the video beacon: **no auth**
+      (`attachOptionalUser`), no idempotency, `{ dwellSeconds: int 0..3600, viewSource }` where
+      `viewSource` is one of `product_detail | search | rail | pathway | companion | unknown`.
+      ⚠️ **It answers `200`, NOT `202`**, with the SERVER-CLAMPED `{ dwellSeconds, isCountedView }`
+      — so the client renders the server's number or nothing, never its own. It takes the **public
+      slug**, unlike the relations route's internal id.
+
+    - **Pathway authoring — the big one, and the only remaining surface with a COMPLETE owner-side
+      read.** Nine routes on `commerce-merchandising.routes.ts`, all
+      `idempotency({ required: true, scope: "user" })` — user scope deliberately, so a merchandiser
+      with no organization is not 403'd. `GET /commerce/pathways/mine` returns full projections
+      **including slots and their candidates**, so both replace-sets can be hydrated and neither has
+      the relations trap. Create is a **201**; the rest are 200.
+      ⚠️ **`slug` IS IMMUTABLE — `UpdatePathwaySchema` has no `slug` key**, and the update refines to
+      "provide at least one field", so an empty patch is a 422.
+      ⚠️ **ART DOES NOT TRAVEL IN THE BODY.** `heroImageUrl`/`cardImageUrl` were removed by migration
+      `0091`; images go through `POST …/images/:imageSlot` (`hero` | `card`) as multipart under the
+      field name **`image`**, 8 MB, re-encoded to AVIF server-side.
+      ⚠️ **`state`, `submittedAt`, `reviewedAt` AND `sourceKind` ARE SERVER-OWNED** and every body is
+      `.strict()`, so sending one is a 422 rather than an ignored field. A slot carries at most 12
+      candidates and a pathway at most 100 slots.
+      It needs a studio surface plus an `/admin/pathways` moderation queue
+      (`ModeratePathwaySchema` is `{ decision: "publish" | "reject", reviewNote? }` and **a rejection
+      must say why**).
+
+    ⚠️ **RFQ invitations are the fifth and are NOT blocked, but read this first.**
+    `POST /commerce/rfqs/:rfqId/invitations` is append-only (no replace-set trap) and the RFQ detail
+    read already returns `invitations[]`. Two catches: the path param is a **strict `z.uuid()`**, and
+    the guard is `requireActiveBuyerCommerceOrganization` — the STRICTER one, so an org whose trade
+    state is still pending gets a 403 here even though it can draft an RFQ. And the projection
+    carries **no provider display name** (`rfqs.schemas.ts:142` already says so), so an invitation
+    list cannot be labelled from that read alone — the picker has to source names from the public
+    provider directory.
+
+    ⚠️ **PRODUCT RELATIONS IS THE ONE THAT MUST NOT SIMPLY BE WIRED, AND IT IS A BACKEND ASK.**
+    `PUT /commerce/products/:productId/relations` is a REPLACE-SET, and the only read that could
+    seed it — `GET /store/products/:slug/companions` — is not a mirror of it: it caps at **12 rows
+    per kind** while the PUT accepts 100, it MIXES IN `moderator_curated` and `derived_cooccurrence`
+    rows that the PUT must never resend (doing so downgrades a curated relation to a seller claim),
+    and it DROPS targets that are no longer publicly eligible, which the next save would then
+    delete. A form that cannot show what it is about to replace deletes a seller's data the first
+    time they use it. **This is the same shape `providers.schemas.ts:381-392` already refuses on for
+    service coverage, and the fix is the same: an owner-side read first.** Writing the wrapper now
+    would be unverified code the audit is designed to catch.
 
     ~~**provider offering edit/submit/coverage**~~, ~~**logistics writes**~~ and
     ~~**dispute-opening**~~ **SHIPPED — the three dead ends, frontend only, no migration.** Each was

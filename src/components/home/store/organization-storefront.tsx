@@ -28,6 +28,7 @@ import StorefrontMeasuredMetrics from "@/components/home/store/sections/organiza
 import StorefrontSiteAccess from "@/components/home/store/sections/organization/storefront-site-access";
 import StorefrontStakeholders from "@/components/home/store/sections/organization/storefront-stakeholders";
 import { StorefrontDivider } from "@/components/home/store/sections/organization/storefront-section";
+import ReportContentOpener from "@/components/home/store/shared/report-content-opener";
 
 type StorefrontViewState =
   | { status: "error"; message: string }
@@ -162,6 +163,25 @@ function StorefrontBody({
         >
           Read buyer reviews of this seller
         </Link>
+      </div>
+
+      {/*
+        THE ONLY PLACE AN ORGANIZATION IS REPORTABLE, deliberately. `factory-detail-page.tsx` and
+        `provider-detail-page.tsx` both carry an `organizationId` and both render the same company,
+        so a control on each would be three entrances to one target — three places for the copy to
+        drift and two that teach the reporter nothing the first did not.
+
+        ⚠️ AN ORGANIZATION NEVER AUTO-HIDES, and upholding a report against one does not change the
+        company page at all: `setTargetVisibility`'s organization arm is a documented no-op, because
+        an organization's state belongs to `commerce-organizations.service`. The report is a signal
+        to a moderator, and the sheet's confirmation promises exactly that and nothing more.
+      */}
+      <div className="flex justify-center px-4 pb-4 lg:px-6">
+        <ReportContentOpener
+          targetKind="organization"
+          targetId={storefront.organizationId}
+          targetLabel={storefront.displayName}
+        />
       </div>
     </div>
   );

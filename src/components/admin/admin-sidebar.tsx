@@ -122,6 +122,25 @@ const ADMIN_NAVIGATION_ITEMS: AdminNavItem[] = [
     inactiveIcon: "/icons/fact_check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    // BUYER REPORTS ON THE STORE, and it is separate from the two queues above it for the reason
+    // those two are separate from each other: the CAPABILITY and the subject differ. "Community" is
+    // `moderate_content` over forum threads and cofounder profiles; this is `moderate_commerce` over
+    // listings, reviews, questions, answers and companies. §17.4 refuses to merge those shifts —
+    // a counterfeit-listing shift and an off-topic-thread shift are not the same job.
+    //
+    // ⚠️ AND NOT THE SAME AS "Video reports" EITHER, despite the word. Different medium, different
+    // capability — and unlike video, this surface has an AUTOMATIC hide, which is why the page
+    // carries a moderation log beside the queue and the video console does not.
+    //
+    // `feedback`, not `flag` or `report`: those two are taken by the video and profile queues above,
+    // and a shared glyph would say this page is that page. Only its FILL0 and FILL1 pair is
+    // committed black, which is what the nav needs.
+    href: "/admin/commerce-reports",
+    label: "Store reports",
+    activeIcon: "/icons/feedback_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/feedback_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     // The queue the certification decision route shipped without: a seller's compliance claim
     // becomes a filterable fact for buyers only after somebody here decides it. Also
     // `moderate_commerce`, and it sits beside site audits because both are checks on one seller.

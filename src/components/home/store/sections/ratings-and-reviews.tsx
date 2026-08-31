@@ -24,6 +24,7 @@ import { useSetReviewHelpfulVote } from "@/hooks/store/reviews";
 import Image from "next/image";
 
 import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
+import ReportContentOpener from "@/components/home/store/shared/report-content-opener";
 import { useProductReviewsQuery } from "@/hooks/store/products";
 import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
 import {
@@ -225,6 +226,20 @@ export default function RatingsAndReviews({
   );
 }
 
+/**
+ * A short, recognisable excerpt of a review, for the report sheet's "what's wrong with …" line.
+ *
+ * A review carries no title, so the alternative is quoting the whole body into a sheet header. The
+ * ellipsis is only added when something was actually cut.
+ */
+function toReviewExcerpt(body: string): string {
+  const collapsedBody = body.trim().replace(/\s+/g, " ");
+  const EXCERPT_MAX_LENGTH = 60;
+  return collapsedBody.length <= EXCERPT_MAX_LENGTH
+    ? collapsedBody
+    : `${collapsedBody.slice(0, EXCERPT_MAX_LENGTH)}…`;
+}
+
 function ReviewCard({
   review,
   productSlug,
@@ -320,6 +335,24 @@ function ReviewCard({
             {hasVotedHelpful ? "Helpful" : "Mark helpful"}
           </button>
         )}
+        {/*
+          ⚠️ A REVIEW IS ONE OF THE THREE KINDS THAT CAN HIDE WITHOUT A MODERATOR — several
+          distinct reporters take it down pending review, and a dismissal puts it straight back.
+          The sheet says so; a product's confirmation says the opposite, truthfully. Do not
+          flatten the two into one sentence.
+
+          NO CLIENT-SIDE SELF-REPORT GUARD HERE. A review's owning organization is the REVIEWER's,
+          so a seller reporting a review of their own product is legitimate and the server allows
+          it. Hiding the control for the seller would refuse something the backend permits.
+        */}
+        <ReportContentOpener
+          targetKind="review"
+          targetId={review.id}
+          // A review has no title on the wire — the field is `body`. An excerpt is what a
+          // reporter can recognise; the sheet quotes it back so they can see they picked the
+          // row they meant.
+          targetLabel={toReviewExcerpt(review.body)}
+        />
       </div>
 
       {review.reply !== null && (

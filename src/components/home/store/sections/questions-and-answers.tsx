@@ -30,6 +30,7 @@ import Link from "next/link";
 
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
+import ReportContentOpener from "@/components/home/store/shared/report-content-opener";
 import {
   useAnswerProductQuestion,
   useAskProductQuestion,
@@ -298,6 +299,17 @@ function QuestionRow({
             </button>
           </>
         )}
+        {" · "}
+        {/*
+          ⚠️ A QUESTION HAS NO OWNING ORGANIZATION on the backend (`loadTargetOwner` returns a null
+          owner for this kind), so the self-report refusal can never fire here. That is a reason NOT
+          to add a client-side guard, not a reason to add one.
+        */}
+        <ReportContentOpener
+          targetKind="question"
+          targetId={question.id}
+          targetLabel={question.bodyText}
+        />
       </p>
       <MutationNotice
         result={retractQuestion.data}
@@ -533,6 +545,12 @@ function AnswerBlock({
             </button>
           </>
         )}
+        {" · "}
+        <ReportContentOpener
+          targetKind="answer"
+          targetId={answer.id}
+          targetLabel={answer.bodyText}
+        />
       </p>
       <MutationNotice
         result={setHelpfulVote.data}
