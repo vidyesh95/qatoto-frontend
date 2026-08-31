@@ -10,6 +10,7 @@ import {
   PitchDisclaimer,
 } from "@/components/pitches/pitch-shared";
 import VideoPlayer from "@/components/home/watch/video-player";
+import { RndErrorPanel } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import { getPitch } from "@/lib/rnd/pitches.api";
 import { callerRequestOptions } from "@/lib/server-http";
 
@@ -37,7 +38,23 @@ export default async function PitchDetailPage({ pitchSlug }: { readonly pitchSlu
 
   // A 404 stays a 404. It covers "no such pitch" and "not published yet" alike, and turning
   // either into a message would tell a stranger which unpublished slugs exist.
-  if (!pitchResult.success) notFound();
+  //
+  // ⚠️ BUT ONLY A 404. This used to be `if (!pitchResult.success) notFound()`, which turned a
+  // backend outage, a 500 and a parse failure into "this pitch does not exist" — the exact lie
+  // series-detail-page.tsx documents its `unavailable` state to avoid, and a worse one here,
+  // because a funding-adjacent listing reading as deleted is a claim about a founder's venture.
+  // Every other detail page in the app tests the code first; this one was the outlier.
+  //
+  // No 422 arm, unlike market-insight-detail-page.tsx: `insightId` is a `z.uuid()` path segment
+  // so a typo there is a shape refusal, while `pitchSlug` is a slug the lookup actually runs.
+  if (!pitchResult.success) {
+    if (pitchResult.error.code === "404") notFound();
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <RndErrorPanel message="Couldn't load this pitch." />
+      </div>
+    );
+  }
 
   const { pitch, outcomes } = pitchResult.data;
   const isClosed = pitch.status === "closed";

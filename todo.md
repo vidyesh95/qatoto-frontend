@@ -143,6 +143,18 @@ impossible — the bytes are on youtube.com.
 WhatsApp, LinkedIn — render the generic `share` glyph and are told apart by their labels. Hand-
 writing trademarked logo paths from memory was the worse option. Drop real assets in.
 
+**Confirmed 2026-08-31 and this is BLOCKED ON ASSETS, NOT CODE.** Of 204 files in `public/icons`,
+the only non-Material-Symbols marks are `apple`, `google` and `github` — OAuth provider marks, not
+share targets. The fallbacks are `share-sheet.tsx:44` (WhatsApp), `:53` (X) and `:62` (LinkedIn);
+only Email at `:71` is correct.
+
+⚠️ **ONE THING TO KNOW BEFORE DROPPING FILES IN.** The render at `share-sheet.tsx:270-277` builds
+the path from a hardcoded Material Symbols filename template
+(`/icons/${icon}_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg`) and `ShareTarget.icon` is a bare base
+name (`:13-14`). A real brand SVG either has to be named to match that template — which is a lie
+about what the file is — or `icon` becomes a full path and the template moves behind a branch. The
+second is right; it is a small refactor rather than a drop-in.
+
 ### The feed's negative signal has two known limits
 
 - **A topic penalty only lands where a snapshot row already exists**, because the job's `FROM` is
@@ -280,12 +292,15 @@ carries no term.
 - **`commerce_rfq.desired_incoterm` — a second migration.** `rfqs.schemas.ts` carries no incoterm at
   all, so a buyer cannot state the term they want quoted under. The quote revision states the
   SELLER's offered term; nothing states the buyer's asked-for one.
-- **Three vocabulary gaps, all small.** `quote-detail.tsx:169` and `order-detail.tsx:118` print the
-  bare wire code ("FOB") rather than routing through `QUOTE_INCOTERM_LABELS`
-  (`quotes.schemas.ts:574-586`) — which today has exactly ONE consumer, the composer picker at
-  `quote-composer.tsx:1206`. And `commerce-orders.service.ts:135` / `commerce-checkout.service.ts:239`
-  still declare `incotermSnapshot: string | null` where `commerce-quotes.service.ts` uses
-  `CommerceIncoterm`.
+- ~~**Three vocabulary gaps, all small.**~~ **TWO OF THE THREE SHIPPED; ONE IS LEFT, and it is the
+  backend half.** ⚠️ **This entry was STALE and would have sent the next reader to fix working code.**
+  Re-checked 2026-08-31: `QUOTE_INCOTERM_LABELS` is at `src/lib/store/quotes.schemas.ts:592-604`
+  behind the guarded `formatIncotermLabel` (`:583-586`), and **both** `quote-detail.tsx:172` and
+  `order-detail.tsx:119` already call it — commit `0443ae7` did it. `rg` finds no raw-code render
+  site anywhere in `src`, and the label map now has three consumers rather than one.
+
+    **Still open:** `commerce-orders.service.ts:135` and `commerce-checkout.service.ts:239` declare
+    `incotermSnapshot: string | null` where `commerce-quotes.service.ts` uses `CommerceIncoterm`.
 
 Note the casing: `commerce_incoterm` is UPPERCASE, unlike every other enum on the wire.
 
@@ -338,7 +353,7 @@ BEFORE spending on cards, which is what this did.
 
 ---
 
-## Cache Components opt-outs — 101 routes left
+## Cache Components opt-outs — 102 routes left
 
 `export const instant = false` plus a boilerplate `// TODO: Cache Components adoption` was applied
 **wholesale** during the migration and never revisited. All 18 in `(disclaimers)` and
@@ -347,7 +362,15 @@ BEFORE spending on cards, which is what this did.
 ⚠️ **THE NUMBERS IN THIS SECTION WERE WRONG AND ARE NOW MEASURED.** It read "18 removed, 96 routes
 left" over a breakdown that summed to **95**, against "114 carried the TODO, 159 carry the opt-out".
 Counted 2026-08-29: **147 files carry the opt-out and 101 still carry the boilerplate TODO** —
-`(home)` 61, `(studio)` 24, `(admin)` 11, `(auth)` 4, plus `src/app/layout.tsx`. The two totals
+`(home)` 61, `(studio)` 24, `(admin)` 11, `(auth)` 4, plus `src/app/layout.tsx`.
+
+⚠️ **RE-COUNTED 2026-08-31 AND IT IS 102, NOT 101 — `(home)` is 62.** One `(home)` route has been
+added since. The number moves whenever a route is added, which is the argument for re-running the
+count rather than trusting this line:
+
+````bash
+rg -l "// TODO: Cache Components adoption" src/app | wc -l
+``` The two totals
 differ because **46 files already had the boilerplate replaced with a real reason** in the
 `cart/page.tsx` style, which is the finished state rather than an outstanding one.
 
@@ -366,12 +389,17 @@ overlay's insights — neither of which appears in the build output.
 the routes stay static, the false TODOs are gone. Whether navigation into those pages actually got
 faster needs the dev overlay in a browser.
 
-**The remaining 101** are `(home)` 61, `(studio)` 24, `(admin)` 11, `(auth)` 4 and the root layout — and those genuinely
+**The remaining 102** are `(home)` 62, `(studio)` 24, `(admin)` 11, `(auth)` 4 and the root layout — and those genuinely
 read cookies or a session, so each needs its dynamic read moved behind a Suspense boundary rather
 than the opt-out simply deleted. `cart/page.tsx` is the model for the ones that must KEEP it: it
 replaced the boilerplate with the real reason ("the cart is a client-query island behind a session —
 its data never reaches the server render at all"), which is what a finished route looks like whether
 the flag stays or goes.
+
+**AND FOUR ROUTES ARE ALREADY IN THE FINISHED STATE, which is worth knowing before anyone counts
+this as 102 units of work.** `(admin)`'s `site-audits`, `profile-reports`, `reports` and `anime-hero`
+carry `export const instant = false` with NO boilerplate TODO above it — they never entered the
+backlog, and they are what a done route looks like in the group that has the most left.
 
 ---
 
@@ -1085,6 +1113,36 @@ feature-sized build, and several are user-visible today.** Ranked:
     moderator route with no caller and **no home in the admin console**, so a seller can now submit
     and nobody can decide. Its own slice.
 
+    **SIZED 2026-08-31, NOT BUILT — and it is the largest LIVE gap on the site**, in the sense that
+    a seller can take an action today that nothing can answer. Five pieces, all modelled on
+    `/admin/site-audits`, which is the same domain (a `moderate_commerce` verification fact about a
+    seller organization) with the same review-decision shape: route
+    (`src/app/(admin)/admin/site-audits/page.tsx`, 13 lines), component
+    (`src/components/admin/site-audits/site-audit-admin-page.tsx`), hook
+    (`src/hooks/store/admin-site-audits.ts`), api (`src/lib/store/admin-site-audits.api.ts`), and
+    **one entry in `ADMIN_NAVIGATION_ITEMS`** (`admin-sidebar.tsx:29`).
+
+    ⚠️ **AN ADMIN ROUTE NEEDS NO ROADMAP EDIT — unlike a studio route, which needs six across four
+    files.** `site-roadmap.ts:18` says in as many words that the `/admin` console is out of scope
+    for the roadmap because it is staff-gated. Do not go looking for the drift loop here.
+
+    ⚠️ **THE MOBILE BAR IS CAPPED AT SIX TABS**, so a new console page is desktop-sidebar only —
+    `admin-mobile-bottom-nav.tsx` omits `site-audits` deliberately and each omitted entry carries a
+    comment saying so. Follow that, do not grow the bar.
+
+    ⚠️ **THE ROUTE CARRYING NO CAPABILITY MIDDLEWARE IS NOT A HOLE — DO NOT "FIX" IT.** Checked
+    against the code: `commerce-seller-profile.routes.ts:141-148` mounts only `requireAuth`, and
+    `moderate_commerce` is demanded by the SERVICE inside the write transaction
+    (`commerce-seller-profile.service.ts:1842`, `requirePlatformCapability`). The routes file's
+    header at line 26 states this is the posture `commerce-content-reports.routes.ts` established,
+    so the check and the write cannot drift apart. Adding middleware would duplicate the gate, not
+    close one.
+
+    ⚠️ **AND THERE IS STILL NO WITHDRAW OR DELETE ROUTE** for a certification — `withdrawn` exists
+    in the enum and nothing can reach it — so every probe against this surface is permanent. That is
+    why the submit wrapper's shape was confirmed from the controller rather than by writing a row,
+    and it constrains how this slice can be verified live.
+
     ⚠️ **THE NINE WRITES DO NOT SHARE A RESPONSE SHAPE, AND ASSUMING THEY DID WAS A REAL BUG I
     SHIPPED INTO THE WRAPPERS AND THEN CAUGHT BY PROBING.** `factory-terms` answers the whole profile,
     so the rest look like they should. They do not:
@@ -1235,7 +1293,7 @@ studio.ts:190-198   creatorId → user.id, onDelete: CASCADE
 rnd.ts:3095-3100    authorMemberId → projectMember.id, onDelete: RESTRICT
                     "this row is effort evidence and its author must stay
                      resolvable forever"
-```
+````
 
 `dailyLog` → `effortClaim` (unique, one claim per log, `rnd.ts:3966`) → `sliceLedgerEntry`. It is
 the input to the entire equity ledger. Putting it behind a row that cascade-dies with a user
@@ -1309,9 +1367,87 @@ Each of these is a question for Vidyesh, not a task.
 - **Naming the reporter in the moderation queue.** `CommunityContentReportProjection` carries no
   reporter identity and the queue shows none. A moderator who can see who reported whom is a
   moderator who can be lobbied — worth deciding deliberately rather than by adding a schema field.
-- **The Postgres ceiling.** `max_connections = 20` on the free-tier Aiven instance, and API +
-  worker + a seed script is most of it. Either the per-process pool comes down or the plan goes up
-  before anyone trusts a local run.
+- ~~**The Postgres ceiling.**~~ **DECIDED AND BUILT 2026-08-31: the per-process pools came down,
+  the plan stays. Stay on Aiven free for now; migrate to AWS RDS later.** The entry was right that
+  20 is tight and wrong about where the slack was — **the ceilings already existed as env vars and
+  were set in NO config file**, so the defaults ran in production:
+
+    ```
+    API      shared pool                   ->  8   (DATABASE_POOL_MAX)
+    Worker   shared pool + dedicated pool  -> 12   (8 + WORKER_DATABASE_POOL_MAX 4)
+    db:*     shared pool                   ->  8
+                                             ══
+                                             28   against a server-wide 20
+    ```
+
+    ⚠️ **THE WORKER HOLDS BOTH POOLS AND THAT IS THE NUMBER EVERYONE GETS WRONG.** Its pg-boss
+    pollers use the dedicated pool; its handlers reach the shared one through `db`. Budgeting with
+    `WORKER_DATABASE_POOL_MAX` alone understates the worker by two thirds. `src/worker.ts` ends both
+    at shutdown, which was the only place that said so. `.env.example` and `BACKEND_STRUCTURE.md`
+    §5b now carry a worked budget summing to 20.
+
+    ⚠️ **28 IS A CEILING, NOT A STEADY STATE** — `pg.Pool` connects on demand, so a sequential seed
+    script holds exactly one. The exposure is concurrency spikes, which is why lowering the ceilings
+    costs no throughput. It has fired before: `src/worker.ts:731-737` records one poller per
+    dead-letter queue reaching fourteen and hitting `FATAL: sorry, too many clients already`.
+
+    **`logConnectionBudget()` replaces an assertion with a measurement.** `max_connections = 20` was
+    stated in prose in five files and read from the server by none of them; both runtime processes
+    now run one `SHOW max_connections` at boot and log this process's ceiling against the server's
+    total. ⚠️ **Do not "finish" this by rewriting those five comments to a new hardcoded number** —
+    that relocates the defect rather than closing it.
+
+    ⚠️ **WHEN THE RDS MIGRATION HAPPENS: three env vars, zero code, and NOTHING AUTO-SCALES.**
+    `DATABASE_URL` and `DATABASE_CA_CERT_PATH` (point it at the RDS bundle —
+    `postgresPoolSslOption()` reads whatever file it is given, and `stripSslModeQueryParameter`
+    already handles `?sslmode=` either way), then **raise the two pool vars by hand**. No code
+    anywhere sizes a pool from the server, so a 110-connection instance would keep running 8 and 4 —
+    a permanent under-use with no error attached, which is exactly what the boot log makes visible on
+    the first deploy. Second trap: both vars are Zod-capped `.max(100)`, so a larger value is a
+    startup failure rather than a larger pool.
+
+    **Two things checked and worth not re-deriving.** `db.t4g.micro` is the SAME 1 GiB RAM class as
+    the Aiven free node — ~110 connections on paper, but treat ~40 as the practical number. And AWS
+    retired the 12-month free tier for accounts opened after mid-2025 in favour of ~$200 of credits
+    over six months, after which the free-plan account closes; RDS's 750 hours was never one of the
+    always-free services. Confirm which terms the account is on before planning around it.
+
+- **⚠️ THE TOPOLOGY IS WORSE THAN THE BUDGET ABOVE ASSUMED, and the correction is recorded here
+  rather than re-derived.** Confirmed with Vidyesh 2026-08-31: **the cloud box and the laptop share
+  ONE Aiven instance** (`pg-free-vinitchuri0312-0118`), and the cloud runs the API and the worker
+  **on one box off one `.env`**. So it is not two processes on 20 connections, it is **four plus a
+  script** — worst case `5X + 2Y`, which on the shipped defaults is **48 against 20**.
+
+    ⚠️ **A SINGLE `.env` CANNOT GIVE THE API AND THE WORKER DIFFERENT VALUES.** `src/index.ts:1` and
+    `src/worker.ts:1` both `import "dotenv/config"` off the same file, so a per-service split is only
+    expressible where the services have separate environments — which neither environment here has.
+    The first version of `.env.example` prescribed `API=6 / worker=3` and was therefore unfollowable;
+    it now carries four labelled profiles (Aiven shared, Aiven split, RDS cloud, RDS from a laptop)
+    keyed on MACHINE rather than on service.
+
+    ⚠️ **THE BUDGET SPANS MACHINES.** Setting the cloud correctly and ignoring the laptop still
+    exhausts the server. That is the sentence the first version was missing entirely.
+
+    **The escape hatch, checked in the dependency rather than assumed:** a real environment variable
+    beats `.env`, because `node_modules/dotenv/lib/main.js:382-392` skips any key already in
+    `processEnv` unless `{ override: true }`, which nothing passes. So
+    `DATABASE_POOL_MAX=2 pnpm db:seed-store-demo` caps one command with no file edit.
+
+- **⚠️ THE ACTUAL FIX IS PROBABLY FREE AND IS NOT DONE: there is a SECOND Aiven instance.**
+  `.claude/settings.local.json` names `pg-qatoto-vinitchuri0312-0118` beside the `pg-free-` host both
+  environments currently share. If that service is live, pointing the cloud box at it separates
+  production from local development, gives each side its own 20, and makes every number above
+  comfortable instead of tight — **one `DATABASE_URL` change, beating the whole budget**.
+
+    ⚠️ **NOT DONE, AND DELIBERATELY NOT ASSUMED.** Whether it is live, what plan it is on and whether
+    it holds the real data are things only Vidyesh can confirm; pointing production at the wrong
+    database on an inference from a settings file is not a risk worth taking to save a question.
+
+- **⚠️ THE REAL REMAINING DATABASE RISK IS BACKUPS, NOT CONNECTIONS. Aiven free has none**, and
+  nothing above adds any. That is the thing worth migrating FOR — automated backups — rather than
+  connection headroom, which is now a solved config problem. Also note Aiven withholds PgBouncer
+  below the Startup plan (Free 20 / Hobbyist 25 / Startup 100 + pooling), so "add a pooler" is not
+  available on the current plan at any effort.
 
 ---
 
@@ -1403,14 +1539,46 @@ prerender is safe because the page "calls `notFound()` on a 404". That holds for
 `loading.tsx`. Nothing is broken: `sitemap.ts:163-169` filters `UNRESOLVABLE_PARAM_VALUE` so the
 sentinel is never advertised.
 
-### A separate defect found on the way, NOT fixed
+### ~~A separate defect found on the way, NOT fixed~~ — FIXED 2026-08-31
 
-`pitch-detail-page.tsx:40` and `src/app/(home)/store/factories/[factorySlug]/inquire/page.tsx:38` call
+`pitch-detail-page.tsx` and `src/app/(home)/store/factories/[factorySlug]/inquire/page.tsx` called
 `notFound()` on **any** failed read — `if (!result.success) notFound()` — where every other detail
-page in the app tests `error.code === "404"` first. So a backend outage renders "this pitch does not
+page in the app tests `error.code === "404"` first. So a backend outage rendered "this pitch does not
 exist". That is precisely the lie `series-detail-page.tsx:14-22` documents its `unavailable` state to
 avoid: _"rendering 'this show does not exist' for a backend outage would be a lie that a crawler would
-then cache."_ One line each.
+then cache."_
+
+**Both now gate on the code** and fall through to a status panel — `RndErrorPanel` on the pitch page
+(the shape `market-insight-detail-page.tsx:56-63` already used), `StoreErrorPanel` on the inquire page
+(the shape its own sibling `factory-detail-page.tsx:56` already used). The 404 arm is unchanged and
+still deliberate: one code covers "no such thing" and "not visible to you" so a stranger cannot probe
+which slugs exist.
+
+⚠️ **NO `422` ARM ON EITHER.** That arm exists on the insight and cluster pages because their path
+segments are `z.uuid()`; a `pitchSlug` and a `factorySlug` are slugs the lookup actually runs. Adding
+one here would be cargo-culted from a page whose constraint these do not share — see the sweep above
+that established exactly two page segments in the app validate as uuid.
+
+⚠️ **THE INQUIRE PAGE'S OLD COMMENT CITED A PRECEDENT THAT REFUTED IT** — it claimed parity with
+"the detail page", and `factory-detail-page.tsx`, reading the same `getStoreFactory`, has always
+tested the code first. Worth remembering as a class: a comment naming its own precedent is checkable,
+and this one had never been checked.
+
+**Proved in BOTH directions against `pnpm start`**, with the outage simulated by pointing
+`NEXT_PUBLIC_API_URL` at a dead port rather than by stopping anything:
+
+|                      | pitch page                  | factory inquire                    |
+| -------------------- | --------------------------- | ---------------------------------- |
+| backend unreachable  | "Couldn't load this pitch." | "Network error. Please try again." |
+| bad slug, backend up | not-found page, no panel    | not-found page, no panel           |
+
+⚠️ **AND A VERIFICATION TRAP THAT COST A ROUND, worth more than the fix.** The first assertion used
+`"Back to Store"` as the marker for "the error panel rendered" — **it is not one.** That link is on
+the store not-found page too, so it matched on the very case it was meant to exclude. The markers
+that actually discriminate are the panel's own MESSAGE (`Couldn't load this pitch.`, or the backend's
+own sentence, which `StoreErrorPanel` renders verbatim). This is the same shape as the warning above
+about `"This page could not be found"` appearing in every streamed document — **pick a marker only
+the failing branch can produce, and confirm it is absent from the passing branch before trusting it.**
 
 ---
 

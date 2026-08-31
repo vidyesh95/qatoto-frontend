@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import FactoryInquiryComposer from "@/components/home/store/composers/factory-inquiry-composer";
+import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
 import { withSentinelValues } from "@/lib/static-params";
 import { getStoreFactory } from "@/lib/store/factories.api";
 
@@ -33,9 +34,23 @@ export default async function StoreFactoryInquireRoute({
   const { factorySlug } = await params;
   const result = await getStoreFactory(factorySlug);
 
-  // A form for a factory that does not exist has nothing to submit against. Same 404 the detail page
-  // takes, and for the same reason the backend gives one code for "no such thing" and "not visible".
-  if (!result.success) notFound();
+  // A form for a factory that does not exist has nothing to submit against, and the backend gives
+  // ONE code for "no such thing" and "not visible to you" so a stranger cannot probe which slugs
+  // exist — never render a permission hint from a 404.
+  //
+  // ⚠️ ONLY A 404, THOUGH. This used to be `if (!result.success) notFound()`, and its comment
+  // claimed parity with "the detail page" — which does not do that: factory-detail-page.tsx:56
+  // tests the code first and renders StoreErrorPanel otherwise. So the comment cited a precedent
+  // that refuted it, and a backend outage told the buyer this manufacturer did not exist.
+  if (!result.success && result.error.code === "404") notFound();
+
+  if (!result.success) {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 pt-4 pb-10 lg:px-6">
+        <StoreErrorPanel message={result.error.message} />
+      </div>
+    );
+  }
 
   const { factory } = result.data;
 
