@@ -1232,6 +1232,57 @@ visibility = 'public'`, so an organization that is private or not yet active can
    the pattern worth carrying: **a write with no faithful owner-side read is not a frontend task
    until the read exists.**
 
+    ~~**The moderator half of product relations.**~~ **SHIPPED — `/admin/product-relations`, plus
+    the list read it never had.** `POST …/product-relations/:id/verify` had shipped with nothing
+    that hands out a `relationId`, so no moderator could ever confirm a claim — which meant the
+    `sourceKind` the buyer's companions sheet renders could only ever say "the seller says so".
+    Third instance of that pattern in this module, by the backend doc's own count.
+
+    ⚠️ **THIS LIST CANNOT BE DISMISSED FROM, AND THE COPY SAYS SO RATHER THAN IMPLYING A QUEUE.**
+    There is no review state beside `sourceKind`, and `commerce_product_relation_verified_ck` ties
+    verification attribution to `moderator_curated` — so nothing can record "a moderator read this
+    and left it". `updatedAt` cannot stand in either: verification is the only UPDATE of that table
+    in the whole backend, so it equals `createdAt` on every unverified row. A claim judged FALSE
+    stays and returns to the next reviewer. Real dismissal is a migration; the page states the
+    limitation instead of hiding it behind a client-side "seen" flag, which would be a private
+    opinion no other moderator can see.
+
+    ⚠️ **CONFIRMING IS IRREVERSIBLE FOR BOTH PARTIES**, so the console confirms first. Nothing sets
+    the source kind back, and the seller cannot delete a curated row either — their replace-set is
+    scoped to their own declarations. Probe cleanup needed direct SQL for exactly this reason.
+
+    ⚠️ **A KEYSET BUG FOUND BY THE "no duplicate, no skip" TEST, AND IT IS A CLASS WORTH KNOWING.**
+    The sibling queues use `gt(sortColumn, cursor) OR (eq(sortColumn, cursor) AND gt(id, …))`, which
+    is correct FOR THEM because their sort columns are written from JavaScript and are therefore
+    millisecond-precise, so `toISOString()` round-trips exactly. `commerce_product_relation.created_at`
+    defaults to Postgres `now()` — **microsecond** precision, `…538694` — so the cursor's `…538Z`
+    never satisfies `eq` and always satisfies `gt`, and **page 2 returned page 1's row**. Measured,
+    then fixed with a millisecond window (`>= next ms`, or same ms with a larger id). Proved: the
+    two demo timestamps ended `538694` while the certification queue's end `714000`, `750000`,
+    `555000` — all JS-written, which is why that queue never hit this.
+
+    ⚠️ **THE LIST DELIBERATELY DOES NOT USE `resolveEligibleProductCardsByIds`.** That helper
+    applies `publicProductEligibility` and silently DROPS a target that is not publicly visible —
+    so a seller could hide a claim from review by unpublishing what it points at, and the page would
+    under-fill and corrupt `hasMore` on the way. Two aliased inner joins instead, with the target's
+    `status`/`moderationState` surfaced. **Proved live**: unpublishing the lamp left the claim
+    listed and flagged `draft`, while the buyer-facing companions read correctly dropped it.
+
+    ⚠️ **A SECOND CONFIRM IS A 200, NOT A 409.** The service returns the existing row for an
+    already-curated relation, so `ALREADY_VERIFIED` and its 409 mapping are a dead branch no client
+    will see — no "already confirmed" error path was built. Verified.
+
+    Also verified: a non-moderator gets **403 naming `moderate_commerce`** rendered as `restricted`;
+    a fabricated cursor gets a new `INVALID_CURSOR` **422** rather than a 500; the confirmed claim
+    left the `seller_declared` list and appeared under `?sourceKind=moderator_curated`; the buyer's
+    companions read flipped that row to `moderator_curated`; and the org audit trail gained a
+    `product_relation_verified` entry.
+
+    **Recorded, not built:** `verifyRelation` has **no self-moderation guard**, unlike content
+    reports, which refuse a moderator belonging to the reported organization. A moderator could
+    confirm their own organization's claim. And no `(source_kind, created_at, id)` index exists —
+    deliberately deferred while the table holds nothing.
+
     ~~**RFQ invitations.**~~ **SHIPPED — a provider picker on the RFQ detail page, plus a
     one-join backend read.** And it surfaced a live break in shipped code before anything new was
     written.

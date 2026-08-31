@@ -122,6 +122,20 @@ const ADMIN_NAVIGATION_ITEMS: AdminNavItem[] = [
     inactiveIcon: "/icons/fact_check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    // SELLER CLAIMS ABOUT WHICH PRODUCTS GO TOGETHER. `moderate_commerce`, and it sits with the
+    // other commerce checks for the same reason they do: this is a fact about a seller's catalogue,
+    // not about somebody's words.
+    //
+    // ⚠️ THE ONE ACTION HERE IS PERMANENT — nothing in the backend un-confirms a relation, and the
+    // seller cannot remove a confirmed one either. The page confirms before acting.
+    //
+    // `link`, because a relation is an edge between two listings, and both fills are committed.
+    href: "/admin/product-relations",
+    label: "Product claims",
+    activeIcon: "/icons/link_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/link_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     // CURATED SETS AWAITING PUBLICATION. `moderate_commerce`, and it sits with the other commerce
     // checks rather than with Community for the reason §17.4 gives: a self-dealing shopping list
     // and an off-topic forum thread are not the same shift.
