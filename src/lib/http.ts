@@ -207,6 +207,79 @@ export async function getJson<T>(
 }
 
 /**
+ * GET for a response that is BYTES rather than an envelope.
+ *
+ * THE ONE NON-JSON READER IN THIS FILE, and it lives here rather than beside its caller so the
+ * error contract cannot drift: a refusal is still the backend's JSON envelope, so `readEnvelope`
+ * reads it and the server's own sentence survives — which is the whole point on a route whose
+ * two 409s ("still being scanned", "quarantined") mean different things to whoever is reading.
+ *
+ * `credentials: "include"`, like every other call here. These bytes are decrypted server-side
+ * from private storage and there is no shareable URL for them — no presigned link, no token in a
+ * query string — so the session cookie is the only way to ask, deliberately.
+ *
+ * THE CALLER OWNS THE BLOB'S LIFETIME. Whatever turns this into an object URL must revoke it;
+ * nothing here can know when a viewer closed.
+ */
+export async function getBinary(
+  path: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ blob: Blob; mediaType: string; fileName: string | null }>> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "*/*", ...options?.headers },
+      ...(options?.cache === undefined ? {} : { cache: options.cache }),
+    });
+  } catch {
+    return { success: false, error: NETWORK_ERROR };
+  }
+
+  if (!response.ok) {
+    // A refusal is JSON even on a route that succeeds with bytes, so this reads exactly like
+    // every other failure in this file. `readEnvelope` never returns success for a non-ok
+    // response; the fallback exists so the type is honest rather than because it can happen.
+    const refusal = await readEnvelope(response);
+    return refusal.success
+      ? { success: false, error: { code: String(response.status), message: "Request failed." } }
+      : refusal;
+  }
+
+  let blob: Blob;
+  try {
+    blob = await response.blob();
+  } catch {
+    return { success: false, error: NETWORK_ERROR };
+  }
+
+  return {
+    success: true,
+    data: {
+      blob,
+      // The header, not the blob's own type: a `Content-Type` with parameters still names the
+      // media type, and the caller branches on it to pick a renderer.
+      mediaType: (response.headers.get("Content-Type") ?? blob.type).split(";")[0]?.trim() ?? "",
+      fileName: readContentDispositionFileName(response.headers.get("Content-Disposition")),
+    },
+  };
+}
+
+/**
+ * The `filename="…"` out of a `Content-Disposition`, or null.
+ *
+ * DISPLAY ONLY. The backend already sanitized it, and nothing may use it to build a path — a
+ * file name is uploader-supplied text that happens to have travelled through a header.
+ */
+function readContentDispositionFileName(header: string | null): string | null {
+  if (header === null) return null;
+  const match = /filename="([^"]*)"/.exec(header);
+  const fileName = match?.[1]?.trim();
+  return fileName === undefined || fileName.length === 0 ? null : fileName;
+}
+
+/**
  * GET with a Zod schema over the WHOLE envelope, not over `data`.
  *
  * `getJson` above hands the schema `envelope.data` and discards every sibling key, which is

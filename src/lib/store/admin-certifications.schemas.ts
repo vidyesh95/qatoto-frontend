@@ -37,7 +37,7 @@ export type ModerationCertificationPage = z.infer<typeof ModerationCertification
  * "correcting" one to kebab-case is a 422 from a `.strict()` query schema.
  */
 export interface ModerationCertificationQuery {
-  readonly state?: (typeof MODERATION_CERTIFICATION_STATES)[number];
+  readonly state?: ModerationCertificationState;
   readonly cursor?: string;
   readonly limit?: number;
 }
@@ -48,6 +48,7 @@ export const MODERATION_CERTIFICATION_STATES = [
   "rejected",
   "withdrawn",
 ] as const;
+export type ModerationCertificationState = (typeof MODERATION_CERTIFICATION_STATES)[number];
 
 /**
  * The decision body — a discriminated union, mirroring the backend's.
@@ -62,10 +63,7 @@ export type CertificationDecisionInput =
   | { readonly kind: "reject"; readonly decisionReason: string };
 
 /** Queue copy. Says what the state MEANS to the seller, not what the column is called. */
-export const MODERATION_CERTIFICATION_STATE_LABELS: Record<
-  (typeof MODERATION_CERTIFICATION_STATES)[number],
-  string
-> = {
+export const MODERATION_CERTIFICATION_STATE_LABELS: Record<ModerationCertificationState, string> = {
   pending: "Awaiting a decision",
   approved: "Approved and published",
   rejected: "Refused, with a reason",

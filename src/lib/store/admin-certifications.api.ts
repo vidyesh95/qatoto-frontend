@@ -8,11 +8,12 @@
 //
 // TWO RULES THAT LIVE HERE RATHER THAN IN THE COMPONENT:
 //
-//  1. **THE EVIDENCE NEVER RIDES THIS WIRE.** No projection on this surface — public, seller or
-//     moderator — carries an evidence document id, URL or token. A certificate carries
-//     registration numbers, site addresses and signatures; the moderator reads it through the
-//     document surface that audits the read, and this queue must never become a second, unaudited
-//     way to reach it.
+//  1. **NO PROJECTION HERE CARRIES AN EVIDENCE ID, URL OR TOKEN** — not the public one, not the
+//     seller's, not the moderator's. A certificate carries registration numbers, site addresses
+//     and signatures, so it is reached BY THE CERTIFICATION, through
+//     `downloadCertificationEvidence` below, which decrypts server-side and writes
+//     `document_downloaded` to the seller's own audit chain. A queue row carrying a document id
+//     would be a second, unaudited way to the same bytes.
 //  2. **A DECISION IS FINAL AND NOT OPTIMISTIC.** Approving publishes a compliance claim to every
 //     buyer browsing the directory; rejecting refuses one with a reason the seller reads verbatim.
 //     Neither may be rendered before the server has said it happened, and a `409` means the row was
@@ -23,6 +24,7 @@
 
 import {
   buildQueryString,
+  getBinary,
   getJson,
   sendJson,
   type ActionResponse,
@@ -77,4 +79,32 @@ export function decideOrganizationCertification(
 ): Promise<ActionResponse<OwnedCertification>> {
   const path = `/commerce/admin/certifications/${encodeURIComponent(certificationId)}/decision`;
   return sendJson(path, "POST", input, OwnedCertificationSchema, options);
+}
+
+/**
+ * `GET /commerce/organizations/:organizationId/certifications/:certificationId/evidence` — the
+ * certificate itself, decrypted server-side and streamed.
+ *
+ * THIS IS WHAT MAKES THE CONSOLE HONEST. Approving a claim publishes it to every buyer browsing
+ * the directory, and before this route there was nothing anywhere that let a moderator read the
+ * paper behind it — the decision was being made on a typed-in standard name.
+ *
+ * ⚠️ **EVERY STAFF CALL IS AN AUDITED CROSS-ORGANIZATION READ**: it lands on the seller's chain as
+ * `document_downloaded`. Call it when somebody asks to see a certificate, NEVER on render — a
+ * queue that prefetched twenty would write twenty reads nobody made, and the route carries a
+ * 30-per-minute limiter besides.
+ *
+ * ⚠️ **TWO REFUSALS ARE NOT FAILURES.** A **409** means either that the scanner has not finished
+ * (wait, do not decide) or that it quarantined the file (refuse the claim without opening it).
+ * Both carry the backend's own sentence; render it rather than "could not load".
+ *
+ * THE CALLER OWNS THE BLOB. Whatever makes an object URL of it must revoke it.
+ */
+export function downloadCertificationEvidence(
+  organizationId: string,
+  certificationId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ blob: Blob; mediaType: string; fileName: string | null }>> {
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/certifications/${encodeURIComponent(certificationId)}/evidence`;
+  return getBinary(path, options);
 }

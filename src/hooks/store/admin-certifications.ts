@@ -6,22 +6,20 @@
 // without `moderate_commerce` never fires a speculative request that comes back a refusal. And
 // `retry: false`: a refusal is an answer, not a flake.
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseMutationResult,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
+
+import { useKeysetList } from "@/hooks/keyset-list";
 
 import type { ActionResponse } from "@/lib/http";
 import {
   decideOrganizationCertification,
+  downloadCertificationEvidence,
   listCertificationsForModeration,
 } from "@/lib/store/admin-certifications.api";
 import type {
   CertificationDecisionInput,
-  ModerationCertificationPage,
-  ModerationCertificationQuery,
+  ModerationCertification,
+  ModerationCertificationState,
 } from "@/lib/store/admin-certifications.schemas";
 import type { OwnedCertification } from "@/lib/store/organizations.schemas";
 
@@ -35,16 +33,62 @@ export const moderationCertificationKeys = {
   forState: (state: string) => ["store", "admin", "certifications", state] as const,
 };
 
-/** The queue, oldest first. `state` omitted asks the server for its default, which is `pending`. */
-export function useCertificationsForModerationQuery(
-  query: ModerationCertificationQuery,
-  isEnabled: boolean,
-) {
-  return useQuery<ActionResponse<ModerationCertificationPage>>({
-    queryKey: moderationCertificationKeys.forState(query.state ?? "pending"),
-    queryFn: () => listCertificationsForModeration(query),
-    enabled: isEnabled,
-    retry: false,
+/**
+ * The queue, oldest first, ACCUMULATING PAGES.
+ *
+ * `useKeysetList` is the app's one keyset accumulator; this read answers
+ * `{ items, page: { nextCursor } }` rather than the `{ rows, nextCursor }` shape
+ * `toCursorKeysetPage` adapts, so the mapping happens in `fetchPage` — `items` become rows and
+ * the server's cursor becomes the token. Nothing here constructs or compares a cursor: a
+ * fabricated one is a 422.
+ *
+ * `initialPage: null` because this console is a client island with no server-rendered first
+ * page. Seeding an empty page instead would write a fabricated, authoritative-looking empty list
+ * into the cache — the bug that hook's own banner is about.
+ *
+ * DISABLED UNTIL THE CAPABILITY CHECK ANSWERS. `useKeysetList` has no `enabled`, so the caller
+ * gates by not mounting the read: passing a `fetchPage` that refuses locally would put an
+ * invented refusal in the cache. See the component.
+ */
+export function useCertificationsForModerationList(state: ModerationCertificationState) {
+  return useKeysetList<ModerationCertification>({
+    queryKey: moderationCertificationKeys.forState(state),
+    initialPage: null,
+    fetchPage: async (token) => {
+      const result = await listCertificationsForModeration({
+        state,
+        // The token is the server's own opaque cursor, echoed back untouched.
+        ...(typeof token === "string" ? { cursor: token } : {}),
+      });
+      return result.success
+        ? {
+            success: true,
+            data: { rows: result.data.items, nextToken: result.data.page.nextCursor },
+          }
+        : result;
+    },
+  });
+}
+
+/**
+ * One certificate's bytes, fetched ON DEMAND.
+ *
+ * A MUTATION RATHER THAN A QUERY, deliberately, and the reason is what the call does rather than
+ * what it returns: every staff read writes `document_downloaded` to the seller's audit chain. A
+ * query would refetch on invalidation, on remount, on whatever React Query decides — each one
+ * another entry in somebody's permanent record for a read no human asked for. A mutation fires
+ * exactly when a button is pressed.
+ *
+ * The blob is handed straight back. The caller makes the object URL and the caller revokes it.
+ */
+export function useCertificationEvidenceMutation(): UseMutationResult<
+  ActionResponse<{ blob: Blob; mediaType: string; fileName: string | null }>,
+  Error,
+  { readonly organizationId: string; readonly certificationId: string }
+> {
+  return useMutation({
+    mutationFn: ({ organizationId, certificationId }) =>
+      downloadCertificationEvidence(organizationId, certificationId),
   });
 }
 
