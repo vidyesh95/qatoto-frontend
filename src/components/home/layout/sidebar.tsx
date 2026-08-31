@@ -72,10 +72,6 @@ const ICON_PATHS = {
   history: {
     static: "/icons/history_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
-  slideshow: {
-    active: "/icons/slideshow_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    inactive: "/icons/slideshow_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-  },
   favorite: {
     active: "/icons/favorite_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/favorite_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
@@ -91,10 +87,6 @@ const ICON_PATHS = {
   localShipping: {
     active: "/icons/local_shipping_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-  },
-  chartData: {
-    active: "/icons/chart_data_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    inactive: "/icons/chart_data_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   featuredVideo: {
     active: "/icons/featured_video_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
@@ -134,8 +126,6 @@ const ROUTES = {
   wishlist: "/wishlist",
   cart: "/cart",
   ordersAndReturns: "/orders-and-returns",
-  listings: "/listings",
-  sales: "/sales",
   advertiseWithUs: "/advertise-with-us",
   customerService: "/customer-service",
   policiesAndSafety: "/policies-and-safety",
@@ -412,9 +402,16 @@ const NAVIGATION_CONFIG: NavSection[] = [
   {
     // EVERY ROW HERE EXCEPT THE LAST IS THE VIEWER'S OWN, so each is `requiresSession`. Before
     // that flag existed this whole section rendered to anonymous visitors — the section is
-    // literally titled "Personalisation" and it was offering strangers a cart, an order history
-    // and a sales dashboard that could not be theirs. `advertise-with-us` is a public page and
-    // stays, which is why the section survives the filter rather than disappearing.
+    // literally titled "Personalisation" and it was offering strangers a cart and an order
+    // history that could not be theirs. `advertise-with-us` is a public page and stays, which is
+    // why the section survives the filter rather than disappearing.
+    //
+    // WHAT IS DELIBERATELY ABSENT: "Listings" and "Sales". Both were SELLER surfaces sitting in a
+    // section about the viewer's own preferences, and both left this chrome the moment you clicked
+    // them — `/listings` was a bare redirect to `/studio/products`, and `/sales` linked every row
+    // to `/studio/orders/[orderId]`. They live in the studio sidebar now, beside the listing
+    // creation they belong to. "Create" above is the one row here that enters the studio on
+    // purpose.
     title: "Personalisation",
     items: [
       { path: ROUTES.library, label: "Library", iconKey: "videoLibrary", requiresSession: true },
@@ -429,8 +426,6 @@ const NAVIGATION_CONFIG: NavSection[] = [
         iconKey: "localShipping",
         requiresSession: true,
       },
-      { path: ROUTES.listings, label: "Listings", iconKey: "slideshow", requiresSession: true },
-      { path: ROUTES.sales, label: "Sales", iconKey: "chartData", requiresSession: true },
       { path: ROUTES.advertiseWithUs, label: "Advertise with us", iconKey: "featuredVideo" },
     ],
     hasDivider: true,

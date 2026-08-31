@@ -23,7 +23,7 @@ export default function StudioEarn() {
       ]}
       insteadFor={{
         label: "Sales",
-        href: "/sales",
+        href: "/studio/sales",
         note: "Revenue from things you SELL is already real and is shown in",
       }}
     />

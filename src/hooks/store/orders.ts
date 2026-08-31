@@ -89,7 +89,7 @@ export function useViewerOrganizationsQuery() {
  *
  * `filter.state` IS A SERVER-SIDE NARROWING and is part of the key, because it changes the answer.
  * Two calls with different states are two different lists and must not share a cache entry — the
- * dispatch queue on `/sales` asks for `confirmed` while the full list beside it asks for
+ * dispatch queue on `/studio/sales` asks for `confirmed` while the full list beside it asks for
  * everything, and one entry would let each overwrite the other.
  */
 export function useOrderListQuery(which: "buyer" | "provider", filter: ListOrdersFilter = {}) {

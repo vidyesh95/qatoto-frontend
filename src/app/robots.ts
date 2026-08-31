@@ -41,7 +41,6 @@ const PRIVATE_PATH_PREFIXES = [
   "/library",
   "/history",
   "/orders-and-returns",
-  "/sales",
 
   // Conversations and cases — other people's data by definition.
   "/messages",

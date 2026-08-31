@@ -27,6 +27,7 @@
 
 import Link from "next/link";
 
+import OrderList from "@/components/commerce/order-list";
 import SellerEarningsPanel from "@/components/commerce/sections/seller-earnings-panel";
 import StatusPanel from "@/components/home/shared/status-panel";
 import { useOrderListQuery } from "@/hooks/store/orders";
@@ -37,7 +38,6 @@ import type { OrderSummary } from "@/lib/store/orders.schemas";
 import { SHIPMENT_STATE_LABELS } from "@/lib/store/shipments.schemas";
 
 export default function SalesPage() {
-  const ordersQuery = useOrderListQuery("provider");
   /**
    * ITS OWN READ, not a view of the list below.
    *
@@ -68,11 +68,16 @@ export default function SalesPage() {
         <div className="mt-2">{renderDispatchQueue(dispatchQueueQuery)}</div>
       </section>
 
-      <section aria-label="All orders received" className="mt-6 px-4 lg:px-6">
-        <h2 className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+      <section aria-label="All orders received" className="mt-6">
+        <h2 className="px-4 text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase lg:px-6">
           All orders received
         </h2>
-        <div className="mt-2">{renderAllOrders(ordersQuery)}</div>
+        {/* `OrderList` RATHER THAN A LOCAL LIST. This was the entire body of `/studio/orders` until
+            that page folded into this one, and keeping it is what stops the provider half of
+            `OrderList` becoming unreachable code. Its rows are a superset of `OrderRow` below —
+            they also carry the order source and the settlement rail. It supplies its own
+            horizontal padding, which is why the section is bare and the heading pads itself. */}
+        <OrderList which="provider" />
       </section>
 
       <section aria-label="Shipments" className="mt-6 px-4 lg:px-6">
@@ -98,28 +103,6 @@ function renderDispatchQueue(dispatchQueueQuery: ReturnType<typeof useOrderListQ
 
   if (orders.length === 0) {
     return <p className="text-sm text-muted-foreground">Nothing is waiting to be dispatched.</p>;
-  }
-
-  return (
-    <ul className="space-y-2">
-      {orders.map((order) => (
-        <OrderRow key={order.id} order={order} />
-      ))}
-    </ul>
-  );
-}
-
-function renderAllOrders(ordersQuery: ReturnType<typeof useOrderListQuery>) {
-  const orders = readOrders(ordersQuery);
-  if (orders === null) return <OrdersFallback ordersQuery={ordersQuery} />;
-
-  if (orders.length === 0) {
-    return (
-      <StatusPanel
-        message="No orders yet. They appear here the moment a buyer confirms one."
-        className="border border-border px-6 py-16"
-      />
-    );
   }
 
   return (

@@ -26,7 +26,7 @@
 import Link from "next/link";
 
 // `StatusPanel` DIRECTLY, not the store wrappers in `store/shared/store-status-panel`. Those
-// supply the store's hardcoded Material palette, and `/sales` is a seller-side surface built on
+// supply the store's hardcoded Material palette, and `/studio/sales` is a seller-side surface built on
 // semantic tokens — mixing the two puts a light-mode-only panel inside a page that follows the
 // theme.
 import StatusPanel from "@/components/home/shared/status-panel";
@@ -160,7 +160,7 @@ function EarningsFigures({ earnings }: { earnings: SellerEarnings }) {
                 {formatOrderCount(uncounted.offlineOrdersWithNoAttestation)} settle directly between
                 you and the buyer, and nobody has recorded a payment yet. They may well have been
                 paid — we have no way to know.{" "}
-                <Link href="/sales" className="underline">
+                <Link href="/studio/sales" className="underline">
                   Mark one received
                 </Link>{" "}
                 from the order.

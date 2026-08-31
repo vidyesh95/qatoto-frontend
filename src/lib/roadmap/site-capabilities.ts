@@ -353,9 +353,10 @@ export const ROADMAP_AUDIENCES: readonly RoadmapAudience[] = [
         action: "Fulfil what sells",
         summary: "Incoming orders, their detail pages, and the logistics surface behind them.",
         routes: [
-          { label: "Orders", href: "/studio/orders" },
+          // ONE ENTRY, NOT TWO. `/studio/orders` had a list page rendering the same
+          // `GET /commerce/provider/orders` that `/studio/sales` already shows; it folded in.
+          { label: "Sales", href: "/studio/sales" },
           { label: "Logistics", href: "/studio/logistics" },
-          { label: "Sales", href: "/sales" },
         ],
       },
       {

@@ -1,7 +1,7 @@
 // TRANSPORT: client-query — reads whichever order endpoint the surface belongs to.
 "use client";
 
-// The order queue, for the buyer at `/orders-and-returns` and the seller at `/studio/orders`.
+// The order queue, for the buyer at `/orders-and-returns` and the seller at `/studio/sales`.
 //
 // `which` PICKS THE ENDPOINT, NOT A FILTER. `GET /commerce/orders` returns orders where you are the
 // buyer; `GET /commerce/provider/orders` returns orders where you are the counterparty. Two reads with
@@ -10,6 +10,10 @@
 //
 // The row's link target differs per surface for the same reason: a seller opening an order should land on
 // the studio detail, where the counterparty controls live.
+//
+// `/studio/orders` NO LONGER HAS A LIST PAGE — it folded into `/studio/sales`, which renders this
+// component for its "All orders received" section. Only the `[orderId]` detail route survives, and
+// that is still where the provider rows below point.
 
 import Link from "next/link";
 

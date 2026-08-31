@@ -635,12 +635,6 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "One dispute, its evidence and its resolution.",
         reachedFrom: "your disputes list",
       },
-      {
-        kind: "route",
-        label: "Sales",
-        href: "/sales",
-        summary: "The other side of the same orders, if you sell.",
-      },
     ],
   },
   {
@@ -715,16 +709,16 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
       },
       {
         kind: "route",
-        label: "Orders",
-        href: "/studio/orders",
-        summary: "Orders to fulfil.",
+        label: "Sales",
+        href: "/studio/sales",
+        summary: "What you have been paid, what is ready to dispatch, and every order received.",
       },
       {
         kind: "dynamic",
         label: "Order detail",
         pathPattern: "/studio/orders/[orderId]",
         summary: "Fulfil, ship and invoice one order.",
-        reachedFrom: "your Studio orders list",
+        reachedFrom: "your Studio sales list",
       },
       {
         kind: "route",

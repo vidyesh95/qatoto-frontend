@@ -129,7 +129,12 @@ const STUDIO_ROUTES = {
   team: "/studio/team",
   funding: "/studio/funding",
   feedback: "/studio/feedback",
-  orders: "/studio/orders",
+  // SALES, NOT "ORDERS". This entry used to be `/studio/orders`, a bare render of
+  // `GET /commerce/provider/orders`. `/sales` — which lived under `(home)` and so threw a seller
+  // into this chrome on every row click — reads the SAME endpoint plus earnings and the dispatch
+  // queue, so the two folded into one route here. `/studio/orders/[orderId]` is still the detail
+  // page every row opens; only the list collapsed.
+  sales: "/studio/sales",
   logistics: "/studio/logistics",
   // `/studio/rfqs` and `/studio/quotes` shipped without sidebar entries, so a provider had no way to reach
   // their own quote queue by clicking. `/studio/services` is new and is where a draft listing is visible.
@@ -374,7 +379,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
   {
     title: "Commerce and operations",
     items: [
-      { path: STUDIO_ROUTES.orders, label: "Orders", iconKey: "orders" },
+      { path: STUDIO_ROUTES.sales, label: "Sales", iconKey: "orders" },
       { path: STUDIO_ROUTES.providerRfqs, label: "Requests to quote", iconKey: "requestQuote" },
       { path: STUDIO_ROUTES.providerQuotes, label: "Your quotes", iconKey: "requestQuote" },
       { path: STUDIO_ROUTES.sellerReviews, label: "Reviews", iconKey: "rateReview" },

@@ -1,6 +1,6 @@
 // TRANSPORT: client-query — one organization-scoped read, made from a client island.
 //
-// WIRED, AND THIS FILE IS NEW BECAUSE `/sales` SHIPPED WITH A PANEL EXPLAINING ITS OWN ABSENCE.
+// WIRED, AND THIS FILE IS NEW BECAUSE `/studio/sales` SHIPPED WITH A PANEL EXPLAINING ITS OWN ABSENCE.
 // That page carried "Revenue and profit are not shown here yet — nothing on this platform reports
 // a seller's takings", which was true of the ROUTES and false of the DATA: the double-entry
 // journal, the payment intents and the refund rows had all existed since Phase 14. Phase 25 added
