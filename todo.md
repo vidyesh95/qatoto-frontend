@@ -122,7 +122,7 @@ been a `StudioPlannedPage` stub pointing at Sales for the panel it should have c
 **The leg command rail is wired** — see the corrected bullet in §19.10 above. Four things that ask
 depended on are NOT, each blocked on the backend rather than on effort.
 
-### A. Seller cost basis and indicative profit — the JOIN is missing, not the read
+### A. Seller cost basis — **BACKEND SHIPPED (A44, migration `0159`); FRONTEND NOT WIRED**
 
 ⚠️ **This reopens "Seller cost-of-goods and margin — DECIDED: NOT BUILDING IT" above, and only
 halfway.** That decision refused a **seller-typed** cost on three grounds. Two of them do not
@@ -151,7 +151,7 @@ constraint from the original entry is unchanged: the cost cannot live on
 
 Until then `seller-earnings-panel.tsx`'s "Profit and margin are not shown" card is correct and stays.
 
-### B. The buyer's transport choice is never persisted
+### B. The buyer's transport choice — **BACKEND SHIPPED (A45, migration `0159`); FRONTEND NOT WIRED**
 
 `delivery-sheet.tsx` lets a buyer pick a mode per leg and holds it in
 `selectedModeByLegSequence`, **local component state that dies when the sheet closes.** Nothing
@@ -165,9 +165,43 @@ carries it to the cart, the order or the seller.
 - `ArrivalWindowQuerySchema`'s `?mode=` is **read-only exploration** on an existing order. Its own
   comment: "OPTIONAL, AND NOTHING IS AUTO-SELECTED WHEN IT IS ABSENT." Nothing writes it back.
 
-Carrying the choice through needs a cart or checkout column plus a widened schema. Note the order
-this has to happen in: a persisted mode is only worth having once a lane can be priced, and every
-lane answers `no_active_rate_card` today (§18).
+~~Carrying the choice through needs a cart or checkout column plus a widened schema.~~ **Both columns
+exist now**, and the note about ordering still stands: a persisted mode is only worth having once a
+lane can be priced, and every lane answers `no_active_rate_card` today (§18).
+
+---
+
+### What the frontend still has to wire for A44 and A45
+
+⚠️ **`0159` IS GENERATED BUT NOT APPLIED.** Vidyesh runs it. Until then every field below reads as
+absent, which is a state each surface must already render honestly.
+
+**A44 — cost basis.** `GET /commerce/provider/earnings` gained `sourcingCost: CurrencyAmount[]` and
+`uncounted.orderLinesWithNoSourcingRecord`. `SellerEarningsSchema` is `.strip()`, so nothing broke —
+the members are simply being dropped today.
+
+- `src/lib/store/earnings.schemas.ts` — add both to `SellerEarningsSchema`.
+- `seller-earnings-panel.tsx` — a "What these goods cost you" tile. ⚠️ **It may not be rendered
+  without `orderLinesWithNoSourcingRecord` beside it**, and it may never be subtracted from
+  anything. The "Profit and margin are not shown" card at `:182` **stays** — the backend's own
+  header explains why in full.
+- The listing editor (`create-listing-page.tsx`) needs a sourcing picker over the seller's accepted
+  quotes to set `sourcingQuoteProductLineId`. Without it the column is unfillable and `sourcingCost`
+  is permanently empty. **There is no read that lists a seller's accepted quote product lines** —
+  `/commerce/provider/quotes` is the provider's own bids, the wrong side. That is a backend gap and
+  the next thing to build.
+
+**A45 — requested transport mode.** `POST /commerce/checkout/prepare` accepts
+`requestedFreightMode`; the order projections carry `requestedFreightModeSnapshot`.
+
+- `delivery-sheet.tsx:71` still holds `selectedModeByLegSequence` — **per leg**, while the backend
+  takes **one mode for the journey** (`ArrivalWindowQuerySchema`, and now prepare). Reconcile before
+  wiring: either lift the sheet to a single choice, or send the primary leg's. Do not invent a
+  per-leg wire field; none exists.
+- Thread the choice into the prepare call, and render `requestedFreightModeSnapshot` on the seller's
+  order view so it reaches the person who acts on it.
+- ⚠️ No copy may say a shipment WILL travel this way. It is a request; the actual mode is
+  `commerce_shipment_leg.mode`.
 
 ### C. A leg cannot be added, or reassigned, after the shipment exists — **BACKEND SHIPPED (A43, no migration); FRONTEND NOT WIRED**
 
