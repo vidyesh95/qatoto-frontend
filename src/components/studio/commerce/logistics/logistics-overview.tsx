@@ -1,4 +1,5 @@
-// TRANSPORT: client-query — reads GET /commerce/provider/shipments.
+// TRANSPORT: client-query — reads GET /commerce/provider/shipments; each expanded row reads the
+// shipment detail and writes leg commands through `shipment-leg-panel.tsx`.
 "use client";
 
 // THIS PAGE USED TO APOLOGISE FOR A GAP THAT HAD ALREADY CLOSED.
@@ -22,11 +23,17 @@
 //  3. AN EMPTY QUEUE IS NOT AN ERROR. A seller with nothing in transit sees an empty state, which
 //     is a different sentence from a failed read.
 
+// THE QUEUE ROW IS A SUMMARY AND ALWAYS WAS. `mode`, `logisticsEngagementId`, `carrierReference`
+// and the per-leg state live on `commerce_shipment_leg` and are projected by NEITHER queue read —
+// which is why every row now expands into `ShipmentLegPanel`, the only surface on the platform
+// that answers "how is this moving, and who is carrying it". That panel owns the leg commands too.
+
 import { useState } from "react";
 
 import Link from "next/link";
 
 import StatusPanel from "@/components/home/shared/status-panel";
+import ShipmentLegPanel from "@/components/studio/commerce/logistics/shipment-leg-panel";
 import { useShipmentQueueQuery } from "@/hooks/store/shipments";
 import { formatIsoInstantLabel } from "@/lib/store/format";
 import {
@@ -155,7 +162,16 @@ function renderQueue(
   );
 }
 
+/**
+ * ONE ROW, EXPANDABLE TO ITS LEGS.
+ *
+ * COLLAPSED BY DEFAULT AND FETCHED ONLY WHEN OPENED. The queue route exists precisely so a browser
+ * does not make one request per shipment; expanding every row on mount would reinstate the N+1 this
+ * page's own header comment rejects. `useShipmentDetailQuery` is `enabled`-gated for that reason.
+ */
 function ShipmentRow({ shipment }: { shipment: ShipmentQueueRow }) {
+  const [areLegsOpen, setAreLegsOpen] = useState(false);
+
   return (
     <li className="rounded-xl border border-border px-4 py-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -181,6 +197,17 @@ function ShipmentRow({ shipment }: { shipment: ShipmentQueueRow }) {
           ? ""
           : ` · ${(shipment.totalWeightGrams / 1000).toFixed(1)} kg`}
       </p>
+
+      <button
+        type="button"
+        aria-expanded={areLegsOpen}
+        onClick={() => setAreLegsOpen(!areLegsOpen)}
+        className="mt-2 text-xs font-medium text-foreground underline hover:no-underline"
+      >
+        {areLegsOpen ? "Hide route" : "Route and transport"}
+      </button>
+
+      {areLegsOpen && <ShipmentLegPanel shipmentId={shipment.id} />}
     </li>
   );
 }

@@ -14,7 +14,7 @@
 // `summary` IS COPIED FROM THE ROADMAP ENTRY VERBATIM, so the card on `/roadmap` and this page
 // cannot drift into describing the same route differently.
 //
-// `insteadFor` IS OPTIONAL AND USUALLY ABSENT. Six of the twelve have nowhere real to send anyone,
+// `insteadFor` IS OPTIONAL AND USUALLY ABSENT. Six of the NINE have nowhere real to send anyone,
 // and inventing a destination there would be the same failure in a smaller font — a link that does
 // not answer the need costs more than no link, because it spends the reader's trust.
 import Link from "next/link";

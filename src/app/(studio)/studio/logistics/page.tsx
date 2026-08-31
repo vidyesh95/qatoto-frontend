@@ -23,9 +23,13 @@ export const metadata: Metadata = {
  * be one request per order and could only cover the orders currently loaded, so a shipment could be
  * missing from a page claiming to list all of them.
  *
- * Shipments are CREATED and ADVANCED from the order they belong to (`/studio/orders/[orderId]`),
- * because that is how the backend scopes both writes — the queue lists no order this page could
- * create one against.
+ * Shipments are CREATED from the order they belong to (`/studio/orders/[orderId]`), because that is
+ * how the backend scopes the write — the queue lists no order this page could create one against.
+ *
+ * THEIR LEGS ARE ADVANCED HERE, THOUGH, and that is the difference this page gained. A leg is its
+ * own state machine on `POST /commerce/shipment-legs/:legId/commands`, scoped through the leg
+ * rather than the order, so `book`/`depart`/`arrive`/`complete` belong on the queue that lists
+ * every leg a seller is carrying. Expanding a row opens `ShipmentLegPanel`.
  */
 export default function StudioLogisticsRoute() {
   return (

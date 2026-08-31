@@ -17,12 +17,18 @@ import {
   type ActionResponse,
   type RequestOptions,
 } from "@/lib/http";
+import { ShipmentLegSchema, type ShipmentLeg } from "@/lib/store/fulfillment.schemas";
 import {
+  ShipmentDetailSchema,
+  ShipmentLegEventListSchema,
   ShipmentQueuePageSchema,
   WrittenShipmentSchema,
   type AppendShipmentEventInput,
   type CreateShipmentInput,
   type ListShipmentsFilter,
+  type ShipmentDetail,
+  type ShipmentLegCommand,
+  type ShipmentLegEventList,
   type ShipmentQueuePage,
   type WrittenShipment,
 } from "@/lib/store/shipments.schemas";
@@ -78,8 +84,11 @@ export function listBuyerShipments(
  * the check is against what remains unshipped rather than against the ordered quantity; a client
  * cap is a convenience and never the rule.
  *
- * `legs` is not sent — see `CreateShipmentInput` for why a leg with no way to advance it is worse
- * than no leg.
+ * `legs` IS sent now. It was withheld while nothing could advance a leg; `executeShipmentLegCommand`
+ * below is that surface, so a leg created here can be booked, departed, arrived and completed.
+ *
+ * ⚠️ **THIS CALL IS A SELLER'S ONLY CHANCE TO NAME THE TRANSPORT MODE OR THE FORWARDER CARRYING A
+ * LEG.** No route adds a leg to an existing shipment or re-points `logisticsEngagementId`.
  */
 export function createOrderShipment(
   orderId: string,
@@ -107,4 +116,60 @@ export function appendShipmentEvent(
 ): Promise<ActionResponse<WrittenShipment>> {
   const path = `/commerce/shipments/${encodeURIComponent(shipmentId)}/events`;
   return sendJson(path, "POST", input, WrittenShipmentSchema, options);
+}
+
+/**
+ * One shipment in full — `GET /commerce/shipments/:shipmentId`.
+ *
+ * THE ONLY READ THAT RETURNS LEGS. The two queues above project a cross-order summary with a
+ * `max()` ETA and no leg rows at all, so "which transport is this moving by, and who is carrying
+ * it" is answerable here and nowhere else.
+ */
+export function getShipmentDetail(
+  shipmentId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ShipmentDetail>> {
+  const path = `/commerce/shipments/${encodeURIComponent(shipmentId)}`;
+  return getJson(path, ShipmentDetailSchema, options);
+}
+
+/**
+ * `POST /commerce/shipment-legs/:legId/commands` — advances ONE leg.
+ *
+ * ⚠️ **THE ROUTE REQUIRES AN `Idempotency-Key` HEADER** (`requireIdempotencyKey` in the controller)
+ * and a missing one is refused before the body is read. The key is minted once per ATTEMPT in
+ * component state, never per render and never per retry of a different command: replaying a key
+ * returns the FIRST call's stored response, which is the point.
+ *
+ * ⚠️ **A 409 IS A FINDING, NOT A RETRY.** `expectedVersion` is echoed from the leg that was read;
+ * if it is stale, somebody else moved this leg and the honest answer is to re-read and show what
+ * they did. Bumping the number and resending would overwrite their command.
+ *
+ * Answers **200** with the updated leg — not the shipment. Re-read the shipment for the rest.
+ */
+export function executeShipmentLegCommand(
+  legId: string,
+  command: ShipmentLegCommand,
+  idempotencyKey: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ShipmentLeg>> {
+  const path = `/commerce/shipment-legs/${encodeURIComponent(legId)}/commands`;
+  return sendJson(path, "POST", command, ShipmentLegSchema, {
+    ...options,
+    headers: { ...options?.headers, "Idempotency-Key": idempotencyKey },
+  });
+}
+
+/**
+ * `GET /commerce/shipment-legs/:legId/events` — one leg's history, oldest first.
+ *
+ * Finer-grained than the shipment's own event list: a leg records `departed`, which has no
+ * equivalent on `commerce_shipment_event_kind`.
+ */
+export function listShipmentLegEvents(
+  legId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ShipmentLegEventList>> {
+  const path = `/commerce/shipment-legs/${encodeURIComponent(legId)}/events`;
+  return getJson(path, ShipmentLegEventListSchema, options);
 }

@@ -125,6 +125,19 @@ export const storeKeys = {
   shipmentQueues: () => ["store", "shipments"] as const,
 
   /**
+   * One shipment in full, WITH ITS LEGS — `GET /commerce/shipments/:shipmentId`.
+   *
+   * A SEPARATE PREFIX FROM `shipmentQueues()` ON PURPOSE. Folding it under `["store","shipments"]`
+   * would put a detail entry in the same namespace as `shipmentQueue(which, state)`, where the
+   * third element means "which endpoint" — a detail id sitting in that slot reads as a third side
+   * of the queue. Leg commands invalidate all three keys explicitly instead.
+   */
+  shipmentDetail: (shipmentId: string) => ["store", "shipment-detail", shipmentId] as const,
+
+  /** One leg's event history — finer-grained than its shipment's, and read on demand. */
+  shipmentLegEvents: (legId: string) => ["store", "shipment-leg-events", legId] as const,
+
+  /**
    * What this organization has been paid, over one window.
    *
    * NO ORGANIZATION ID IN THE KEY, following this file's own rule: the route is not addressed by

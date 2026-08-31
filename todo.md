@@ -107,6 +107,96 @@ cost is correctable.
 
 ---
 
+## Seller console split, and the four things it left blocked
+
+`/studio/sales` used to do four jobs — money, dispatch, orders and a shipments summary that
+duplicated `/studio/logistics`. It now does one, and the money moved to `/studio/earn`, which had
+been a `StudioPlannedPage` stub pointing at Sales for the panel it should have carried itself:
+
+```
+/studio/earn       what has settled to you                 (SellerEarningsPanel)
+/studio/sales      orders received, ready to dispatch
+/studio/logistics  shipments, legs, transport mode, commands
+```
+
+**The leg command rail is wired** — see the corrected bullet in §19.10 above. Four things that ask
+depended on are NOT, each blocked on the backend rather than on effort.
+
+### A. Seller cost basis and indicative profit — the JOIN is missing, not the read
+
+⚠️ **This reopens "Seller cost-of-goods and margin — DECIDED: NOT BUILDING IT" above, and only
+halfway.** That decision refused a **seller-typed** cost on three grounds. Two of them do not
+survive a **platform-recorded** one: a cost taken from a quote the seller accepted on Qatoto is
+measured, not self-reported, so it does not cross the A13 boundary
+`commerce_journal_account_memorandum_ck` exists to hold, and nobody has to fill anything in.
+
+**It is still not buildable, for a reason the original entry never reached.** There is no join:
+
+- `commerce_manufacturing_inquiry.target_unit_price_in_cents` (`store.ts:9163`) is the **buyer's own
+  aspiration** sent to a factory. There is no answering price column — the factory's reply lands in
+  `commerce_thread` prose, or the inquiry converts to an RFQ.
+- Where a seller genuinely was quoted, `commerce_quote_product_line.unit_price_in_cents`
+  (`store.ts:5972`) is the number — but **nothing links that quote line back to the `product` row
+  it sourced.** No FK from a listing to the inquiry or quote that produced it.
+- Storage is the same shape: `warehouse_quote_service_detail` (`store.ts:6134`) carries capacity and
+  temperature, never money; the fee lives on `commerce_quote_service_line` with no link to a product.
+
+**What to design first, before any endpoint.** The link, and the allocation rule with it: a
+manufacturing quote prices a BATCH and an order ships a few units of it, so attributing cost to an
+order line needs a documented apportionment — not an average nobody can audit. Then the coverage
+rule: the figure must be **per order and silent where its inputs are absent**, never an aggregate.
+`todo.md`'s own line stands — a margin over 12 of 47 orders is worse than no margin. And the
+constraint from the original entry is unchanged: the cost cannot live on
+`commerce_order_product_line`.
+
+Until then `seller-earnings-panel.tsx`'s "Profit and margin are not shown" card is correct and stays.
+
+### B. The buyer's transport choice is never persisted
+
+`delivery-sheet.tsx` lets a buyer pick a mode per leg and holds it in
+`selectedModeByLegSequence`, **local component state that dies when the sheet closes.** Nothing
+carries it to the cart, the order or the seller.
+
+- `PrepareCheckoutSchema` and `ConfirmCheckoutSchema` (`commerce-checkout.schemas.ts:19,25`) are
+  `.strict()` and accept only `deliveryAddressId`, `prepareId` and the settlement-agreement array.
+- Prepare calls `projectPrepareArrivalWindow` with `requestedMode: undefined`
+  (`commerce-arrival-window.service.ts:574`), producing
+  `freight: { status: "unknown", reason: "mode_not_selected" }` — the absence is already modelled.
+- `ArrivalWindowQuerySchema`'s `?mode=` is **read-only exploration** on an existing order. Its own
+  comment: "OPTIONAL, AND NOTHING IS AUTO-SELECTED WHEN IT IS ABSENT." Nothing writes it back.
+
+Carrying the choice through needs a cart or checkout column plus a widened schema. Note the order
+this has to happen in: a persisted mode is only worth having once a lane can be priced, and every
+lane answers `no_active_rate_card` today (§18).
+
+### C. A leg cannot be added, or reassigned, after the shipment exists
+
+`commerce_shipment_leg.logistics_engagement_id` (`store.ts:7248`) is settable **only** through
+`legs[].logisticsEngagementId` on `POST /commerce/orders/:orderId/shipments`. There is no route to
+add a leg to an existing shipment, and none to attach or re-point an engagement on one.
+
+So a seller who books a forwarder **after** creating the shipment has nowhere to record it, and a
+shipment created without legs can never grow a route. `ShipmentLegPanel` says both out loud rather
+than rendering an affordance that cannot exist. This is the one real gap behind "deploy to the
+appropriate logistics provider", and it is a backend task.
+
+### D. Nothing calls a carrier, and nothing insures anything
+
+Two seams that read as integrations and are not. Neither is a bug; both are worth knowing before
+somebody writes copy that overclaims.
+
+- `logistics-provider.adapter.ts` has **zero importers**, and says so: "A seam only. No carrier is
+  contracted; the fake is the sole implementation and no shipment-leg transition calls it."
+  `book` writes `carrierReference` and `trackingReference` as **free text a human typed in**.
+- `insurance-provider.adapter.ts` likewise: "No insurer is contracted, nothing calls it, and **no
+  client copy may claim a shipment is insured**." Insurance is reachable only as a provider kind
+  through the ordinary RFQ → quote → engagement rail, and `/studio/logistics` links into
+  `/store/providers?providerKind=insurance_provider` with that disclaimer beside it. The one place a
+  policy is recorded is `insurance_deliverable_detail.policy_reference` (`store.ts:7757`) — attached
+  to an engagement deliverable, **not to a shipment**. `declaredValue` exists nowhere in either repo.
+
+---
+
 ## Frontend
 
 ### 2. The video domain — two `TRANSPORT: mock` banners remain
@@ -1851,9 +1941,15 @@ visibility = 'public'`, so an organization that is private or not yet active can
       is the same gap the seller profile had** (writes with no owner-side read), fixed there by
       adding the GET; the fix here is the same, and it is a backend task.
     - **Shipments**: `POST /orders/:orderId/shipments` and `POST /shipments/:id/events`, on the
-      order detail page's fulfilment panel, counterparty side only. `legs` is **not** sent — a leg
+      order detail page's fulfilment panel, counterparty side only. ~~`legs` is **not** sent — a leg
       is its own state machine with `expectedVersion` commands, and creating one with no way to
-      advance it leaves a booking nobody can move.
+      advance it leaves a booking nobody can move.~~ **STALE — the command surface shipped.**
+      `POST /commerce/shipment-legs/:legId/commands` (`book`/`depart`/`arrive`/`complete`/
+      `report_exception`, each with `expectedVersion` and an `Idempotency-Key` header),
+      `GET /commerce/shipment-legs/:legId/events` and `GET /commerce/shipments/:shipmentId` all
+      existed in the backend with **no frontend caller at all**; they are wired now, from
+      `/studio/logistics`, and `CreateShipmentInput` accepts `legs` because its own stated
+      condition — "until their command surface has a caller" — is met.
     - **Disputes**: `POST /orders/:orderId/disputes`, on the order detail page, **buyer side only**
       — `evaluateDisputeOpeningRelationship` refuses any actor that is not the order's buyer, so a
       seller answers with a note on the existing dispute. `reasonCode` is free text under a regex
@@ -2098,8 +2194,8 @@ Each of these is a question for Vidyesh, not a task.
   absence by name.
 - **§14: "online revenue" on a public seller profile.** Publishable only on explicit consent —
   needs a consent column, a withdrawal path and a third wire member. **Not the same thing as the
-  `/sales` earnings panel**, which is self-scoped and authenticated; a seller reading their own
-  books needs no consent.
+  `/studio/earn` earnings panel** (it was `/sales`, then briefly `/studio/sales`), which is
+  self-scoped and authenticated; a seller reading their own books needs no consent.
 - ~~**The uncovered-inland-leg rule.**~~ **SETTLED — see §16.** An uncovered inland leg no longer
   empties the sheet: the covered legs compose into `partialJourneys[]` with the missing leg named.
   Decided before the rate cards are bought, which is the order this entry asked for.

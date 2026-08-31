@@ -1,31 +1,26 @@
 import type { Metadata } from "next";
 
-import StudioPlannedPage from "@/components/studio/studio-planned-page";
+import EarnPage from "@/components/studio/commerce/earnings/earn-page";
 
-// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+// Permanently dynamic: session-scoped and behind a seller organization.
 export const instant = false;
 
+/**
+ * NO LONGER A PLANNED PAGE. This rendered `StudioPlannedPage` with an "instead" link to
+ * `/studio/sales`, because the earnings panel lived there. The panel is here now, so the stub
+ * would have been pointing readers away from the very thing they came for.
+ *
+ * `site-roadmap.ts` was changed in the same edit — a `kind: "planned"` entry there is what
+ * `studio-planned-page.tsx` copies its summary from, and leaving it would advertise a built page
+ * as unbuilt on `/roadmap`.
+ *
+ * NO `robots` HERE: `(studio)/layout.tsx` sets `noindex` for the whole group.
+ */
 export const metadata: Metadata = {
   title: "Earn",
-  description: "Earn page for Qatoto Creator Studio",
+  description: "What you have been paid on Qatoto",
 };
 
 export default function StudioEarn() {
-  return (
-    <StudioPlannedPage
-      title="Earn"
-      // Verbatim from this route's `site-roadmap.ts` entry — one description, two surfaces.
-      summary="Monetisation and payouts."
-      whatItWillDo={[
-        "Bring seller revenue, video monetisation and payouts into one place.",
-        "Show what has been earned, what is owed and when it moves.",
-      ]}
-      insteadFor={{
-        label: "Sales",
-        href: "/studio/sales",
-        note: "Revenue from things you SELL is already real and is shown in",
-      }}
-    />
-  );
+  return <EarnPage />;
 }

@@ -11,16 +11,21 @@ import {
 
 import { storeKeys } from "@/hooks/store/keys";
 import type { ActionResponse } from "@/lib/http";
+import type { ShipmentLeg } from "@/lib/store/fulfillment.schemas";
 import {
   appendShipmentEvent,
   createOrderShipment,
+  executeShipmentLegCommand,
+  getShipmentDetail,
   listBuyerShipments,
   listProviderShipments,
+  listShipmentLegEvents,
 } from "@/lib/store/shipments.api";
 import type {
   AppendShipmentEventInput,
   CreateShipmentInput,
   ListShipmentsFilter,
+  ShipmentLegCommand,
   WrittenShipment,
 } from "@/lib/store/shipments.schemas";
 
@@ -103,6 +108,80 @@ export function useAppendShipmentEventMutation(): UseMutationResult<
       if (!result.success) return;
       void queryClient.invalidateQueries({
         queryKey: storeKeys.orderFulfillment(variables.orderId),
+      });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.shipmentQueues() });
+    },
+  });
+}
+
+/**
+ * One shipment in full, including its legs.
+ *
+ * `enabled` GUARDS AN UNOPENED ROW. The logistics queue renders many shipments and expands one at
+ * a time; without this every row would fetch its own detail on mount, which is the N+1 the queue
+ * route exists to avoid.
+ *
+ * `retry: false` for the same reason as the queue: a 403 is an answer about the caller's
+ * workspace, not a flake.
+ */
+export function useShipmentDetailQuery(shipmentId: string | null) {
+  return useQuery({
+    queryKey: storeKeys.shipmentDetail(shipmentId ?? ""),
+    queryFn: () => getShipmentDetail(shipmentId ?? ""),
+    enabled: shipmentId !== null,
+    retry: false,
+  });
+}
+
+/** One leg's history. Same `enabled` guard, same reason. */
+export function useShipmentLegEventsQuery(legId: string | null) {
+  return useQuery({
+    queryKey: storeKeys.shipmentLegEvents(legId ?? ""),
+    queryFn: () => listShipmentLegEvents(legId ?? ""),
+    enabled: legId !== null,
+    retry: false,
+  });
+}
+
+/**
+ * Advances one shipment leg — book, depart, arrive, complete, or report a problem.
+ *
+ * NOT OPTIMISTIC, AND `retry: false`. Every arm of this command is a claim about physical goods
+ * that the buyer reads on their own order, and the response carries the leg's NEW version — which
+ * the next command must echo. Painting a state locally would hand the next command a version the
+ * server never issued.
+ *
+ * ⚠️ **A 409 MEANS SOMEBODY ELSE MOVED THIS LEG.** `expectedVersion` was stale. React Query must
+ * not retry it: the correct response is to re-read and show what they did, which is why the
+ * invalidations below run on the failure path too — the caller needs fresh versions either way.
+ *
+ * The idempotency key is minted per ATTEMPT by the component, never per render. Replaying a key
+ * returns the first call's stored response rather than executing twice.
+ */
+export function useExecuteShipmentLegCommandMutation(): UseMutationResult<
+  ActionResponse<ShipmentLeg>,
+  Error,
+  {
+    readonly shipmentId: string;
+    readonly legId: string;
+    readonly command: ShipmentLegCommand;
+    readonly idempotencyKey: string;
+  }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    retry: false,
+    mutationFn: ({ legId, command, idempotencyKey }) =>
+      executeShipmentLegCommand(legId, command, idempotencyKey),
+    onSettled: (_result, _error, variables) => {
+      // ON SETTLED, NOT ON SUCCESS. A 409 is exactly the case where the cached leg version is
+      // wrong, so the refetch matters more on the failure path than on the happy one.
+      void queryClient.invalidateQueries({
+        queryKey: storeKeys.shipmentDetail(variables.shipmentId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: storeKeys.shipmentLegEvents(variables.legId),
       });
       void queryClient.invalidateQueries({ queryKey: storeKeys.shipmentQueues() });
     },

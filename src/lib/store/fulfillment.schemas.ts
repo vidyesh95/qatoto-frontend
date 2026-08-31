@@ -42,6 +42,61 @@ export const SHIPMENT_EVENT_KINDS = [
 
 export type ShipmentEventKind = (typeof SHIPMENT_EVENT_KINDS)[number];
 
+/**
+ * A LEG'S OWN STATE MACHINE, WHICH IS NOT THE SHIPMENT'S. `commerce_shipment_leg_state` has six
+ * members against `commerce_shipment_state`'s four, and only `planned` and `cancelled` are spelled
+ * the same in both. A leg reaches `completed`; a shipment reaches `delivered`.
+ *
+ * `state` on `ShipmentLegSchema` below was `z.string()` — it parsed anything, so a typo in a
+ * `state === "booked"` comparison would have been silently false rather than a type error. The
+ * command surface branches on this value, so the loose type stopped being acceptable.
+ */
+export const SHIPMENT_LEG_STATES = [
+  "planned",
+  "booked",
+  "in_transit",
+  "arrived",
+  "completed",
+  "cancelled",
+] as const;
+
+export type ShipmentLegState = (typeof SHIPMENT_LEG_STATES)[number];
+
+export const SHIPMENT_LEG_STATE_LABELS: Record<ShipmentLegState, string> = {
+  planned: "Planned",
+  booked: "Booked",
+  in_transit: "In transit",
+  arrived: "Arrived",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
+
+/**
+ * `commerce_shipment_leg_event_kind` — SEVEN members, and note `departed`, which the shipment event
+ * enum has no equivalent of. A leg's history is finer-grained than its parent's by design.
+ */
+export const SHIPMENT_LEG_EVENT_KINDS = [
+  "created",
+  "booked",
+  "departed",
+  "arrived",
+  "completed",
+  "exception",
+  "cancelled",
+] as const;
+
+export type ShipmentLegEventKind = (typeof SHIPMENT_LEG_EVENT_KINDS)[number];
+
+export const SHIPMENT_LEG_EVENT_KIND_LABELS: Record<ShipmentLegEventKind, string> = {
+  created: "Created",
+  booked: "Booked",
+  departed: "Departed",
+  arrived: "Arrived",
+  completed: "Completed",
+  exception: "Problem reported",
+  cancelled: "Cancelled",
+};
+
 export const SERVICE_ENGAGEMENT_STATES = [
   "awaiting_provider",
   "scheduled",
@@ -103,7 +158,7 @@ export const ShipmentLegSchema = z
      * the same one.
      */
     mode: FreightModeSchema,
-    state: z.string(),
+    state: z.enum(SHIPMENT_LEG_STATES),
     version: z.number().int(),
     originCountryCode: z.string().nullable(),
     originLocality: z.string().nullable(),

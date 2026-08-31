@@ -858,10 +858,15 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Your channel description and links.",
       },
       {
-        kind: "planned",
+        // `route`, not `planned`: the seller half is real. `GET /commerce/provider/earnings`
+        // renders here — settled, refunded, escrow movements, commission owed and the two
+        // uncounted order buckets. The summary names ONLY that half; video monetisation and
+        // payouts, which the old placeholder also promised, have no entitlement model and no
+        // payout rail, and claiming them here would be the roadmap lying about a built page.
+        kind: "route",
         label: "Earn",
-        pathPattern: "/studio/earn",
-        summary: "Monetisation and payouts.",
+        href: "/studio/earn",
+        summary: "What has settled to you, what came back, and what nobody has counted yet.",
       },
       {
         // `route`, not `planned`: the page reads real data now. `GET /funding-rounds/mine` is the

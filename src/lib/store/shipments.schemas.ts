@@ -10,7 +10,12 @@ import { z } from "zod";
 // copy of `fulfillment.schemas.ts`'s tuple — a pre-existing duplication this file does not widen.
 // Two tuples for one pgEnum drift, and the drift is silent: an appended value simply stops parsing
 // on whichever copy was forgotten.
-import { SHIPMENT_EVENT_KINDS } from "@/lib/store/fulfillment.schemas";
+import {
+  SHIPMENT_EVENT_KINDS,
+  SHIPMENT_LEG_EVENT_KINDS,
+  ShipmentLegSchema,
+  type ShipmentLegState,
+} from "@/lib/store/fulfillment.schemas";
 import { cursorPageOf, IsoDateTimeSchema } from "@/lib/store/shared.schemas";
 
 export const SHIPMENT_STATES = ["planned", "in_transit", "delivered", "cancelled"] as const;
@@ -138,10 +143,15 @@ export type WrittenShipment = z.infer<typeof WrittenShipmentSchema>;
 /**
  * `POST …/shipments` — which order lines are in the box, and where it is going.
  *
- * ⚠️ **`legs` IS DELIBERATELY ABSENT FROM THIS INPUT.** The route accepts one, but a leg is a state
- * machine of its own with optimistic-concurrency commands (`book`, `depart`, … each carrying an
- * `expectedVersion`), and a form that could create a leg it has no way to advance would leave a
- * booking nobody can move. Legs stay out until their command surface has a caller.
+ * ⚠️ **`legs` IS ACCEPTED NOW, AND THE CONDITION FOR THAT WAS EXPLICIT.** This comment used to
+ * refuse them: "a form that could create a leg it has no way to advance would leave a booking
+ * nobody can move. Legs stay out until their command surface has a caller." That surface has a
+ * caller — `executeShipmentLegCommand` — so the refusal expired rather than being overruled.
+ *
+ * ⚠️ **THIS IS THE ONLY PLACE A LEG CAN BE CREATED, AND THE ONLY PLACE `logisticsEngagementId` CAN
+ * BE SET.** No route attaches an engagement to an existing leg or adds a leg to an existing
+ * shipment, so a seller who books a forwarder after creating the shipment cannot record it. Say so
+ * at the form rather than letting them find out.
  *
  * The lane fields are all optional because a shipment created before its origin is known has none,
  * and an invented one is a lane somebody schedules a truck against.
@@ -154,6 +164,28 @@ export interface CreateShipmentInput {
   readonly destinationLocality?: string;
   readonly packageCount: number;
   readonly totalWeightGrams?: number;
+  readonly legs?: readonly ShipmentLegInput[];
+}
+
+/**
+ * One leg on shipment creation.
+ *
+ * `mode` IS THE FOUR-MEMBER LEG TUPLE, not `FREIGHT_MODES`' five — a leg can never be
+ * `multimodal`; that is what a sequence of legs IS. The two country codes are REQUIRED here even
+ * though they are nullable on the way back, because a leg with no route is not a leg.
+ */
+export interface ShipmentLegInput {
+  readonly sequence: number;
+  readonly mode: "air" | "sea" | "land" | "rail";
+  readonly originCountryCode: string;
+  readonly originLocality?: string;
+  readonly originLocationIdentifier?: string;
+  readonly destinationCountryCode: string;
+  readonly destinationLocality?: string;
+  readonly destinationLocationIdentifier?: string;
+  readonly logisticsEngagementId?: string;
+  readonly estimatedDepartureAt?: string;
+  readonly estimatedArrivalAt?: string;
 }
 
 /** `POST …/events` — `occurredAt` omitted means now, which is the common case. */
@@ -170,3 +202,124 @@ export const APPENDABLE_SHIPMENT_EVENT_KIND_LABELS: Record<AppendableShipmentEve
   exception: "Something went wrong",
   cancelled: "Cancelled",
 };
+
+// --- Shipment detail, legs and leg commands (Phase 26) -----------------------
+//
+// THE THREE ROUTES THAT WERE BUILT AND NEVER CALLED. `GET /commerce/shipments/:shipmentId`,
+// `POST /commerce/shipment-legs/:legId/commands` and `GET /commerce/shipment-legs/:legId/events`
+// all shipped with the backend's Phase 6 fulfilment service and had no frontend wrapper at all, so
+// a leg could be created by a seed and then never moved by anybody.
+//
+// THIS IS WHAT UNBLOCKS `legs` ON SHIPMENT CREATION. `CreateShipmentInput` above carried a comment
+// refusing to send legs because "a form that could create a leg it has no way to advance would
+// leave a booking nobody can move". That condition is met by the command surface below, so the
+// input now accepts them.
+
+/**
+ * One shipment in full — `GET /commerce/shipments/:shipmentId`.
+ *
+ * The write projection plus the two fields only the read carries: `version`, and the `legs` that
+ * are the whole point of opening a shipment rather than reading its queue row.
+ */
+export const ShipmentDetailSchema = WrittenShipmentSchema.extend({
+  version: z.number().int(),
+  legs: z.array(ShipmentLegSchema),
+}).strip();
+export type ShipmentDetail = z.infer<typeof ShipmentDetailSchema>;
+
+/**
+ * The five commands a leg accepts, mirroring `ShipmentLegCommandSchema` in
+ * `commerce-fulfillment.schemas.ts`.
+ *
+ * ⚠️ **`expectedVersion` IS ECHOED FROM THE LEG, NEVER INVENTED.** Leg commands execute through an
+ * outbox and a stale version is refused with a 409 carrying the current one. That refusal is a
+ * FINDING — somebody else moved the leg — and never something to retry with a bumped number.
+ *
+ * ⚠️ **THE BACKEND ARMS ARE `.strict()`.** An extra key is a 422 that kills the whole write, not a
+ * field the server ignores. Send only what the arm names.
+ */
+export const ShipmentLegCommandSchema = z.discriminatedUnion("command", [
+  z.object({
+    command: z.literal("book"),
+    expectedVersion: z.number().int().min(0),
+    carrierReference: z.string().optional(),
+    trackingReference: z.string().optional(),
+    note: z.string().optional(),
+  }),
+  z.object({
+    command: z.literal("depart"),
+    expectedVersion: z.number().int().min(0),
+    departedAt: z.string().optional(),
+    locationIdentifier: z.string().optional(),
+    note: z.string().optional(),
+  }),
+  z.object({
+    command: z.literal("arrive"),
+    expectedVersion: z.number().int().min(0),
+    arrivedAt: z.string().optional(),
+    locationIdentifier: z.string().optional(),
+    note: z.string().optional(),
+  }),
+  z.object({
+    command: z.literal("complete"),
+    expectedVersion: z.number().int().min(0),
+    note: z.string().optional(),
+  }),
+  z.object({
+    command: z.literal("report_exception"),
+    expectedVersion: z.number().int().min(0),
+    description: z.string(),
+    locationIdentifier: z.string().optional(),
+  }),
+]);
+export type ShipmentLegCommand = z.infer<typeof ShipmentLegCommandSchema>;
+export type ShipmentLegCommandName = ShipmentLegCommand["command"];
+
+/**
+ * Which command a leg in each state accepts, and it is NOT a client-side guard.
+ *
+ * The backend's state machine is the authority and refuses anything else with a 409; this map
+ * exists so the UI does not OFFER a button that can only fail. `cancelled` and `completed` are
+ * terminal and appear here with an empty list rather than being absent, so a new leg state becomes
+ * a type error instead of a silently button-less row.
+ */
+export const SHIPMENT_LEG_COMMANDS_BY_STATE: Record<
+  ShipmentLegState,
+  readonly ShipmentLegCommandName[]
+> = {
+  planned: ["book", "report_exception"],
+  booked: ["depart", "report_exception"],
+  in_transit: ["arrive", "report_exception"],
+  arrived: ["complete", "report_exception"],
+  completed: [],
+  cancelled: [],
+};
+
+export const SHIPMENT_LEG_COMMAND_LABELS: Record<ShipmentLegCommandName, string> = {
+  book: "Book",
+  depart: "Mark departed",
+  arrive: "Mark arrived",
+  complete: "Complete",
+  report_exception: "Report a problem",
+};
+
+/** One entry in a leg's history — `GET /commerce/shipment-legs/:legId/events`. */
+export const ShipmentLegEventSchema = z
+  .object({
+    id: z.string(),
+    sequence: z.number().int(),
+    eventKind: z.enum(SHIPMENT_LEG_EVENT_KINDS),
+    occurredAt: IsoDateTimeSchema,
+    description: z.string().nullable(),
+    carrierReference: z.string().nullable(),
+    trackingReference: z.string().nullable(),
+    locationIdentifier: z.string().nullable(),
+    evidenceDocumentId: z.string().nullable(),
+  })
+  .strip();
+export type ShipmentLegEvent = z.infer<typeof ShipmentLegEventSchema>;
+
+export const ShipmentLegEventListSchema = z
+  .object({ items: z.array(ShipmentLegEventSchema) })
+  .strip();
+export type ShipmentLegEventList = z.infer<typeof ShipmentLegEventListSchema>;
