@@ -30,6 +30,7 @@ import {
   replaceOrganizationSiteAccess,
   replaceOrganizationStakeholders,
   submitOrganizationCertification,
+  withdrawOrganizationCertification,
   updateFactoryTerms,
   uploadStakeholderPhoto,
   upsertSellerProfile,
@@ -398,6 +399,38 @@ export function useSubmitOrganizationCertificationMutation(): UseMutationResult<
   return useMutation({
     mutationFn: ({ organizationId, evidenceFile, input, idempotencyKey }) =>
       submitOrganizationCertification(organizationId, evidenceFile, input, {
+        headers: { "Idempotency-Key": idempotencyKey },
+      }),
+    onSuccess: (result) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: factoryProfileKeys.all });
+    },
+  });
+}
+
+/**
+ * `POST …/certifications/:certificationId/withdraw` — the seller retracts its own claim.
+ *
+ * NOT OPTIMISTIC AND NOT A DELETE. The row stays in the list with `state: "withdrawn"` once the
+ * response says so; nothing is removed locally first, because a withdrawal that failed while the
+ * UI showed it gone is a seller who believes a claim was retracted when it is still published.
+ *
+ * A **409** here is a finding, not a retry — the row is already withdrawn, or was rejected and has
+ * nothing to retract. Surface the backend's own sentence.
+ */
+export function useWithdrawOrganizationCertificationMutation(): UseMutationResult<
+  ActionResponse<OwnedCertification>,
+  Error,
+  {
+    readonly organizationId: string;
+    readonly certificationId: string;
+    readonly idempotencyKey: string;
+  }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ organizationId, certificationId, idempotencyKey }) =>
+      withdrawOrganizationCertification(organizationId, certificationId, {
         headers: { "Idempotency-Key": idempotencyKey },
       }),
     onSuccess: (result) => {

@@ -42,6 +42,7 @@ import {
   useUpdateFactoryTermsMutation,
   useUploadStakeholderPhotoMutation,
   useUpsertSellerProfileMutation,
+  useWithdrawOrganizationCertificationMutation,
 } from "@/hooks/store/factory-profile";
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
 import { formatSquareMetresLabel } from "@/lib/store/format";
@@ -56,15 +57,21 @@ import {
   VISIT_POLICIES,
   type CapabilityRowInput,
   type OrganizationCapabilityKind,
+  type OwnSellerDeclaredProfile,
   type SellerDeclaredProfile,
   type SiteAccessRowInput,
   type StakeholderRowInput,
 } from "@/lib/store/organizations.schemas";
-import type {
-  FactoryDetail,
-  FactoryProductionLineInput,
-  FactorySiteInput,
-  UpdateFactoryTermsInput,
+import {
+  FACTORY_CERTIFICATION_LABELS,
+  FACTORY_CERTIFICATIONS,
+  type FactoryCertification,
+  type FactoryProductionLine,
+  type FactoryProductionLineInput,
+  type FactorySamplePolicy,
+  type FactorySite,
+  type FactorySiteInput,
+  type UpdateFactoryTermsInput,
 } from "@/lib/store/factories.schemas";
 
 const PRIMARY_BUTTON_CLASS =
@@ -115,17 +122,35 @@ function toInputText(value: number | null): string {
   return value === null ? "" : String(value);
 }
 
+/**
+ * What the three whole-object PUT forms prefill from.
+ *
+ * NOT `FactoryDetail` ANY MORE, and the reason is who can read it. The public factory detail read
+ * sits behind `tradeState = 'active' AND visibility = 'public'`, so prefilling from it meant a
+ * private, unlisted or not-yet-active seller could not open its own editor at all. Every field
+ * below comes from `GET …/seller-profile`, which is gated on membership instead — the page maps it
+ * once and this component never learns which read it came from.
+ */
+export interface FactoryProfileEditorSource {
+  readonly displayName: string;
+  readonly productionLines: readonly FactoryProductionLine[];
+  readonly sites: readonly FactorySite[];
+  readonly samplePolicy: FactorySamplePolicy;
+  readonly orderBounds: OwnSellerDeclaredProfile["orderBounds"];
+  readonly acceptingInquiries: boolean;
+}
+
 export default function FactoryProfileEditor({
   organizationId,
-  detail,
+  source,
   declaredProfile,
 }: {
   organizationId: string;
-  detail: FactoryDetail;
+  source: FactoryProfileEditorSource;
   /**
-   * The four lists and the scalar block, from the storefront read. NULL means the organization has
-   * no profile row yet OR that read failed — both are states where an empty form would be a lie, so
-   * the sections say which.
+   * The four lists and the scalar block. NULL means the organization has no profile row yet OR
+   * that read failed — both are states where an empty form would be a lie, so the sections say
+   * which.
    */
   declaredProfile: SellerDeclaredProfile | null;
 }) {
@@ -139,13 +164,13 @@ export default function FactoryProfileEditor({
             agent and distributor — a trading company has stakeholders and certifications and no
             production lines at all, so the page's own title should not assume a factory. */}
         <p className="mt-1 text-sm leading-5 text-[#6F7979]">
-          What buyers see on {detail.factory.displayName} across the directory and your storefront.
+          What buyers see on {source.displayName} across the directory and your storefront.
         </p>
       </header>
 
-      <ProductionLinesForm organizationId={organizationId} detail={detail} />
-      <SitesForm organizationId={organizationId} detail={detail} />
-      <TermsForm organizationId={organizationId} detail={detail} />
+      <ProductionLinesForm organizationId={organizationId} source={source} />
+      <SitesForm organizationId={organizationId} source={source} />
+      <TermsForm organizationId={organizationId} source={source} />
 
       {declaredProfile === null ? (
         <p className={`${SECTION_CLASS} text-sm leading-5 text-[#6F7979]`}>
@@ -177,13 +202,13 @@ interface ProductionLineDraft {
 
 function ProductionLinesForm({
   organizationId,
-  detail,
+  source,
 }: {
   organizationId: string;
-  detail: FactoryDetail;
+  source: FactoryProfileEditorSource;
 }) {
   const [lines, setLines] = useState<ProductionLineDraft[]>(() =>
-    detail.productionLines.map((line) => ({
+    source.productionLines.map((line) => ({
       name: line.name,
       processSummary: line.processSummary,
       monthlyCapacityUnits: toInputText(line.monthlyCapacityUnits),
@@ -332,9 +357,15 @@ interface SiteDraft {
   readonly productionStaffCount: string;
 }
 
-function SitesForm({ organizationId, detail }: { organizationId: string; detail: FactoryDetail }) {
+function SitesForm({
+  organizationId,
+  source,
+}: {
+  organizationId: string;
+  source: FactoryProfileEditorSource;
+}) {
   const [sites, setSites] = useState<SiteDraft[]>(() =>
-    detail.sites.map((site) => ({
+    source.sites.map((site) => ({
       label: site.label,
       countryCode: site.countryCode,
       locality: site.locality ?? "",
@@ -504,8 +535,14 @@ function SitesForm({ organizationId, detail }: { organizationId: string; detail:
 
 type SampleFeeChoice = "unstated" | "free" | "priced";
 
-function TermsForm({ organizationId, detail }: { organizationId: string; detail: FactoryDetail }) {
-  const { samplePolicy, factory } = detail;
+function TermsForm({
+  organizationId,
+  source,
+}: {
+  organizationId: string;
+  source: FactoryProfileEditorSource;
+}) {
+  const { samplePolicy, orderBounds } = source;
 
   const [offersSamples, setOffersSamples] = useState(samplePolicy.offersSamples);
   const [sampleFeeChoice, setSampleFeeChoice] = useState<SampleFeeChoice>(() => {
@@ -522,18 +559,18 @@ function TermsForm({ organizationId, detail }: { organizationId: string; detail:
   );
   const [currency, setCurrency] = useState(samplePolicy.currency);
   const [minimumOrderQuantity, setMinimumOrderQuantity] = useState(
-    toInputText(factory.minimumOrderQuantity),
+    toInputText(orderBounds.minimumOrderQuantity),
   );
   const [minimumOrderQuantityUnitLabel, setMinimumOrderQuantityUnitLabel] = useState(
-    factory.minimumOrderQuantityUnitLabel ?? "",
+    orderBounds.minimumOrderQuantityUnitLabel ?? "",
   );
   const [minimumLeadTimeDays, setMinimumLeadTimeDays] = useState(
-    toInputText(factory.minimumLeadTimeDays),
+    toInputText(orderBounds.minimumLeadTimeDays),
   );
   const [maximumLeadTimeDays, setMaximumLeadTimeDays] = useState(
-    toInputText(factory.maximumLeadTimeDays),
+    toInputText(orderBounds.maximumLeadTimeDays),
   );
-  const [acceptingInquiries, setAcceptingInquiries] = useState(factory.acceptingInquiries);
+  const [acceptingInquiries, setAcceptingInquiries] = useState(source.acceptingInquiries);
 
   const updateTerms = useUpdateFactoryTermsMutation();
 
@@ -1694,11 +1731,19 @@ function MediaForm({
  * for a moderator; its evidence lands `pending_scan` for a scanner. **Promotion is not approval**,
  * so nothing here may suggest a review happened because a file finished scanning.
  *
- * ⚠️ **THERE IS NO WITHDRAW ROUTE.** `withdrawn` exists in the enum and nothing can produce it, so
- * no control offers it — a button whose only outcome is a 404 is worse than its absence.
+ * ⚠️ **WITHDRAW IS THE ONLY WAY TO REACH `withdrawn`, AND IT IS NOT A DELETE.** The row and its
+ * evidence survive; the certificate stops being published and the audit chain carries the
+ * retraction. `pending` and `approved` may be withdrawn, nothing else, and there is no un-withdraw
+ * — the control says so before it is pressed.
+ *
+ * ⚠️ **THE STANDARD CODE IS WHAT BUYERS FILTER ON; THE STANDARD NAME IS WHAT THEY READ.** Only the
+ * eight closed codes appear in the directory's certification facet. Leaving the picker on "not one
+ * of these" is a real answer — the certificate still publishes, it is just unfilterable — and
+ * nothing infers a code from the typed name.
  */
 function CertificationsForm({ organizationId }: { organizationId: string }) {
   const [standardName, setStandardName] = useState("");
+  const [standardCode, setStandardCode] = useState<FactoryCertification | undefined>(undefined);
   const [issuerName, setIssuerName] = useState("");
   const [certificateNumber, setCertificateNumber] = useState("");
   const [scopeSummary, setScopeSummary] = useState("");
@@ -1709,7 +1754,17 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
 
   const certificationsQuery = useOrganizationCertificationsQuery(organizationId);
   const submitCertification = useSubmitOrganizationCertificationMutation();
+  const withdrawCertification = useWithdrawOrganizationCertificationMutation();
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
+  /**
+   * A SECOND KEY, ROTATED SEPARATELY. A withdrawal and a submission are different attempts, and
+   * sharing one key would make a retracted claim and a new one collide inside the idempotency
+   * window.
+   */
+  const {
+    getIdempotencyKey: getWithdrawIdempotencyKey,
+    resetIdempotencyKey: resetWithdrawIdempotencyKey,
+  } = useResettableAttemptIdempotencyKey();
 
   const certifications = certificationsQuery.data?.success ? certificationsQuery.data.data : null;
 
@@ -1737,6 +1792,9 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
             idempotencyKey: getIdempotencyKey(),
             input: {
               standardName: standardName.trim(),
+              // Omitted entirely when the seller picked none — the body is `.strict()` and there
+              // is no "none" label in the enum.
+              ...(standardCode === undefined ? {} : { standardCode }),
               issuerName: issuerName.trim(),
               certificateNumber: certificateNumber.trim(),
               ...(toOptionalText(scopeSummary) === undefined
@@ -1751,6 +1809,7 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
               if (!result.success) return;
               resetIdempotencyKey();
               setStandardName("");
+              setStandardCode(undefined);
               setIssuerName("");
               setCertificateNumber("");
               setScopeSummary("");
@@ -1765,8 +1824,13 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
       <h2 className="text-sm font-medium text-[#191C1C]">Certifications</h2>
       <p className="mt-1 text-xs leading-4 text-[#6F7979]">
         Qatoto staff check each one against the certificate you attach. Buyers see it only once it
-        is approved.
+        is approved. Withdrawing a claim stops publishing it and cannot be undone.
       </p>
+      <MutationNotice
+        result={withdrawCertification.data}
+        fallbackMessage="That certification did not withdraw. Try again."
+        hasThrown={withdrawCertification.isError}
+      />
 
       {certificationsQuery.isPending ? (
         <p className="mt-3 text-xs text-[#6F7979]">Loading your certifications…</p>
@@ -1797,6 +1861,33 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
                   {certification.decisionReason}
                 </p>
               )}
+              {/* Offered on the two states the backend accepts, and on no others: asking about a
+                  rejected or already-withdrawn row is a 409, not a retry. */}
+              {(certification.state === "pending" || certification.state === "approved") && (
+                <button
+                  type="button"
+                  disabled={withdrawCertification.isPending}
+                  onClick={() => {
+                    if (withdrawCertification.isPending) return;
+                    withdrawCertification.mutate(
+                      {
+                        organizationId,
+                        certificationId: certification.id,
+                        idempotencyKey: getWithdrawIdempotencyKey(),
+                      },
+                      {
+                        onSuccess: (result) => {
+                          if (!result.success) return;
+                          resetWithdrawIdempotencyKey();
+                        },
+                      },
+                    );
+                  }}
+                  className={`${QUIET_BUTTON_CLASS} mt-2`}
+                >
+                  {withdrawCertification.isPending ? "Withdrawing…" : "Withdraw this claim"}
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -1813,6 +1904,27 @@ function CertificationsForm({ organizationId }: { organizationId: string }) {
             placeholder="ISO 9001:2015"
             className={FIELD_CLASS}
           />
+        </label>
+        <label className="block text-xs font-medium text-[#6F7979]">
+          Filterable code (optional)
+          <select
+            value={standardCode ?? ""}
+            onChange={(event) =>
+              setStandardCode(narrowToOption(FACTORY_CERTIFICATIONS, event.target.value))
+            }
+            className={FIELD_CLASS}
+          >
+            <option value="">Not one of these eight</option>
+            {FACTORY_CERTIFICATIONS.map((certification) => (
+              <option key={certification} value={certification}>
+                {FACTORY_CERTIFICATION_LABELS[certification]}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block text-[11px] leading-4 font-normal text-[#6F7979]">
+            Buyers filter the directory by these eight. Anything else still publishes on your
+            profile — it just cannot be filtered for.
+          </span>
         </label>
         <label className="block text-xs font-medium text-[#6F7979]">
           Issued by

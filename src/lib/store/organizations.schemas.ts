@@ -15,6 +15,12 @@
 
 import { z } from "zod";
 
+import {
+  FactoryProductionLineSchema,
+  FactorySamplePolicySchema,
+  FactorySiteSchema,
+  type FactoryCertification,
+} from "@/lib/store/factories.schemas";
 import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
 
 // --- Wire enums -------------------------------------------------------------
@@ -442,9 +448,20 @@ export interface ReorderOrganizationMediaInput {
   readonly mediaIdsInOrder: readonly string[];
 }
 
-/** `POST …/certifications` — the six text parts that ride beside the `evidence` file. */
+/** `POST …/certifications` — the seven text parts that ride beside the `evidence` file. */
 export interface SubmitCertificationInput {
   readonly standardName: string;
+  /**
+   * THE FILTERABLE HALF, and the only optional one that costs the seller anything to omit.
+   *
+   * `standardName` is free text and is what a buyer READS; this is one of eight closed codes and
+   * is what the manufacturer directory's certification filter MATCHES. A certificate outside the
+   * eight carries no code, still renders on the detail page, and is simply unfilterable.
+   *
+   * NOTHING INFERS IT FROM `standardName`, here or on the backend — a fuzzy match would put a
+   * factory into a compliance filter it never claimed.
+   */
+  readonly standardCode?: FactoryCertification;
   readonly issuerName: string;
   readonly certificateNumber: string;
   readonly scopeSummary?: string;
@@ -659,6 +676,54 @@ export type OrganizationStakeholder = z.infer<typeof OrganizationStakeholderSche
 export type OrganizationCapability = z.infer<typeof OrganizationCapabilitySchema>;
 export type OrganizationCertification = z.infer<typeof OrganizationCertificationSchema>;
 export type SellerDeclaredProfile = z.infer<typeof SellerDeclaredProfileSchema>;
+
+/**
+ * The owner's read of the SAME backend projection, with the five members the public storefront
+ * read does not need and this schema therefore never parsed.
+ *
+ * WHY IT EXTENDS RATHER THAN WIDENS. `SellerDeclaredProfileSchema` is parsed from three other
+ * responses; adding required keys to it would turn any response that omits one into a `PARSE`
+ * failure that reads like a refused write. The backend's `SellerDeclaredProfileProjection` has
+ * carried these all along — the editor simply used to reach them through the public factory
+ * detail read, which a private organization cannot open.
+ *
+ * `position` is dropped by `.strip()` on the row schemas: array order IS the stored order on
+ * every one of these writes, so a second copy of it in each row would be a second thing to keep
+ * in sync.
+ */
+export const OwnSellerDeclaredProfileSchema = SellerDeclaredProfileSchema.extend({
+  productionLines: z.array(FactoryProductionLineSchema),
+  sites: z.array(FactorySiteSchema),
+  samplePolicy: FactorySamplePolicySchema,
+  orderBounds: z
+    .object({
+      /**
+       * BOTH-OR-NEITHER with its unit label, which is why they are one object rather than two
+       * loose fields: a bare `500` is unreadable, because 500 pieces and 500 cartons are
+       * different businesses.
+       */
+      minimumOrderQuantity: z.number().int().nullable(),
+      minimumOrderQuantityUnitLabel: z.string().nullable(),
+      minimumLeadTimeDays: z.number().int().nullable(),
+      maximumLeadTimeDays: z.number().int().nullable(),
+    })
+    .strip(),
+  acceptingInquiries: z.boolean(),
+}).strip();
+export type OwnSellerDeclaredProfile = z.infer<typeof OwnSellerDeclaredProfileSchema>;
+
+/**
+ * `GET …/seller-profile` — the seller's own read of the row its editor writes.
+ *
+ * `.nullable()`, NOT `.optional()` AND NOT A DEFAULT. The backend answers an explicit `null` for an
+ * organization that has never saved a profile, and that null is the fact the first-run form keys
+ * off. Substituting an empty projection here would tell the editor a seller had described itself
+ * and said nothing.
+ */
+export const OwnSellerProfileSchema = z
+  .object({ declaredProfile: OwnSellerDeclaredProfileSchema.nullable() })
+  .strip();
+
 export type OrganizationMeasuredMetrics = z.infer<typeof OrganizationMeasuredMetricsSchema>;
 export type StoreProductCard = z.infer<typeof StoreProductCardSchema>;
 export type StoreOrganizationStorefront = z.infer<typeof StoreOrganizationStorefrontSchema>;

@@ -27,12 +27,16 @@
 // readable beside its unit, so a partial patch could validate neither without first reading the
 // stored row and merging — which is a race against the seller's other tab.
 //
-// THERE IS NO GET IN THIS FILE, AND THAT IS THE BACKEND'S SHAPE RATHER THAN AN OMISSION HERE.
-// §6.6 lists three PUTs and no reads: a factory's lines, sites and terms are already projected by
-// `GET /store/factories/:factorySlug`, so the editor prefills from `getStoreFactory` and posts
-// back through these three. Do not invent `GET /commerce/organizations/:id/production-lines` — a
-// second read of the same rows is a second place for them to disagree, and §16.1 is about exactly
-// that failure.
+// THERE IS EXACTLY ONE PROFILE GET IN THIS FILE, AND IT IS NOT A SECOND COPY OF THE PUBLIC READ.
+// §6.6 shipped three PUTs and no reads, on the reasoning that a factory's lines, sites and terms
+// are already projected by `GET /store/factories/:factorySlug` — which held right up until an
+// organization was NOT PUBLIC. Both public projections sit behind
+// `tradeState = 'active' AND visibility = 'public'`, so a private, unlisted or not-yet-active
+// seller could write every field on this surface and never read one back; its own editor opened
+// on an error panel. `getOwnSellerProfile` is the read half of these writes, gated by the same
+// membership roles, and it calls the SAME backend projection the storefront does rather than a
+// parallel one — so §16.1's objection (two places for one row to disagree) does not apply. Still
+// do not invent `GET …/production-lines`: one read of a superset, not six reads of the parts.
 
 import { getJson, sendForm, sendJson, type ActionResponse, type RequestOptions } from "@/lib/http";
 import {
@@ -51,6 +55,8 @@ import {
   OrganizationMediaSchema,
   OrganizationStakeholderSchema,
   OwnedCertificationSchema,
+  OwnSellerProfileSchema,
+  type OwnSellerDeclaredProfile,
   SellerDeclaredProfileSchema,
   SiteAccessRowListSchema,
   StakeholderRowListSchema,
@@ -116,10 +122,6 @@ export function updateFactoryTerms(
   return sendJson(path, "PUT", input, SellerDeclaredProfileSchema, options);
 }
 
-// Imported for the wiring lines above; referenced so they survive while every call is mock-backed.
-void getJson;
-void sendJson;
-
 // --- Seller profile writes (A13) --------------------------------------------
 //
 // The nine seller-facing writes whose routes had no caller at all — an organization could be
@@ -135,11 +137,31 @@ void sendJson;
 // for a member whose role is below owner/administrator, so the status cannot be used as a membership
 // oracle. Render the backend's own sentence rather than "no such organization".
 //
-// ⚠️ **THERE IS STILL NO SELLER-SIDE READ OF THE PROFILE.** `loadSellerDeclaredProfiles` has three
-// callers and all three are public browse reads, gated on `tradeState = 'active' AND visibility =
-// 'public'`. So the editor prefills from the storefront read, and an organization that is private or
-// not yet active cannot open it at all. `GET …/certifications` below is the module's only
-// authenticated read.
+// ⚠️ **THE SELLER-SIDE READ IS `getOwnSellerProfile` BELOW, AND IT IS WHY THIS SURFACE WORKS FOR A
+// PRIVATE ORGANIZATION.** `loadSellerDeclaredProfiles` had three callers and all three were public
+// browse reads gated on `tradeState = 'active' AND visibility = 'public'`, so the editor prefilled
+// from the storefront and an organization that was private or not yet active could not open it at
+// all. A fourth caller now reads the same projection behind `PROFILE_MANAGERS` membership.
+
+/**
+ * `GET …/seller-profile` — the organization's own declared profile, visibility ignored.
+ *
+ * **A `null` PROFILE IS A SUCCESS, NOT AN EMPTY ONE.** An organization that has never saved a
+ * profile row answers `{ declaredProfile: null }` with a 200, and the editor renders blank forms
+ * over it. Never fabricate an empty projection here: "has not described itself" and "described
+ * itself and said nothing" are different facts, and only the first may show a first-run form.
+ *
+ * A REFUSAL IS A 404, INCLUDING FOR THE WRONG ROLE — `requireMembershipRole` answers `NOT_FOUND`
+ * for a non-member and for a member below owner/administrator alike, so the status is not a
+ * membership oracle. Render the backend's sentence rather than "no such organization".
+ */
+export function getOwnSellerProfile(
+  organizationId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ declaredProfile: OwnSellerDeclaredProfile | null }>> {
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/seller-profile`;
+  return getJson(path, OwnSellerProfileSchema, options);
+}
 
 /** `PATCH …/seller-profile` — a SPARSE patch; an omitted key is untouched, an explicit null clears. */
 export function upsertSellerProfile(
@@ -295,11 +317,15 @@ export function listOrganizationCertifications(
  * ⚠️ **THE EVIDENCE NEVER RIDES BACK.** Neither projection carries a document id, URL or token, in
  * either direction.
  *
- * ⚠️ **`standardCode` CANNOT BE SET FROM HERE, and that is a backend gap rather than an omission in
- * this wrapper.** The service writes the column, but the route's schema has no such key and is
- * `.strict()`, and the controller never passes one — so every certification created through this
- * route has `standardCode: null`, and the manufacturer directory's certification filter can never
- * match one.
+ * **`standardCode` IS SETTABLE AND OPTIONAL.** It used to be neither: the service wrote the column
+ * but the route's `.strict()` schema had no such key, so every certification ever created carried
+ * `standardCode: null` and the manufacturer directory's certification filter — which matches only
+ * approved rows carrying a code — could never match one. The key now exists on the body.
+ *
+ * OMITTING IT IS A REAL ANSWER, not a missing field. A certificate outside the eight filterable
+ * codes carries none, still renders on the detail page, and is simply unfilterable. NOTHING infers
+ * a code from `standardName`, here or on the backend — a fuzzy match would put a factory into a
+ * compliance filter it never claimed.
  */
 export function submitOrganizationCertification(
   organizationId: string,
@@ -310,6 +336,9 @@ export function submitOrganizationCertification(
   const formData = new FormData();
   formData.append("evidence", evidenceFile);
   formData.append("standardName", input.standardName);
+  // Appended only when the seller picked one: the body is `.strict()` and an empty string is not
+  // one of the eight enum labels, so sending `""` for "none of these" would be a 422.
+  if (input.standardCode !== undefined) formData.append("standardCode", input.standardCode);
   formData.append("issuerName", input.issuerName);
   formData.append("certificateNumber", input.certificateNumber);
   if (input.scopeSummary !== undefined) formData.append("scopeSummary", input.scopeSummary);
@@ -317,4 +346,28 @@ export function submitOrganizationCertification(
   formData.append("validUntil", input.validUntil);
   const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/certifications`;
   return sendForm(path, "POST", formData, OwnedCertificationSchema, options);
+}
+
+/**
+ * `POST …/certifications/:certificationId/withdraw` — the seller retracts its own claim.
+ *
+ * THE ONLY ROUTE THAT REACHES `withdrawn`, which sat in the state enum with nothing able to write
+ * it. It is NOT a delete and NOT an undo: the row and its evidence survive, the certificate stops
+ * being published, and the organization's audit chain carries the retraction. **There is no
+ * un-withdraw** — say so at the control.
+ *
+ * `pending` and `approved` may be withdrawn. Asking again, or asking about a `rejected` row, is a
+ * **409 carrying the backend's own sentence** naming the state — surface it rather than retrying,
+ * because it is a finding about what the row already is.
+ *
+ * Takes no body and still needs an `Idempotency-Key`: a retried retraction must not append a
+ * second audit entry.
+ */
+export function withdrawOrganizationCertification(
+  organizationId: string,
+  certificationId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<OwnedCertification>> {
+  const path = `/commerce/organizations/${encodeURIComponent(organizationId)}/certifications/${encodeURIComponent(certificationId)}/withdraw`;
+  return sendJson(path, "POST", undefined, OwnedCertificationSchema, options);
 }

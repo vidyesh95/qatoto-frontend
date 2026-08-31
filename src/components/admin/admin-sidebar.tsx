@@ -122,6 +122,20 @@ const ADMIN_NAVIGATION_ITEMS: AdminNavItem[] = [
     inactiveIcon: "/icons/fact_check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    // The queue the certification decision route shipped without: a seller's compliance claim
+    // becomes a filterable fact for buyers only after somebody here decides it. Also
+    // `moderate_commerce`, and it sits beside site audits because both are checks on one seller.
+    //
+    // THE SAME ICON IN BOTH STATES, unlike every other item. `workspace_premium` is the app's
+    // certification glyph — the storefront section, the capabilities sheet and the studio sidebar
+    // all use it — and only its FILL0 is committed. Borrowing another item's pair would say this
+    // page is that page; repeating one glyph only makes the active state quieter.
+    href: "/admin/certifications",
+    label: "Certifications",
+    activeIcon: "/icons/workspace_premium_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/workspace_premium_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     // Desktop only, deliberately not added to admin-mobile-bottom-nav: that bar would go
     // from six tabs to seven, and managing a carousel means picking image files.
     href: "/admin/promotions",

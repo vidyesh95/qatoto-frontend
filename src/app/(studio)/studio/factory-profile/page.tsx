@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import FactoryProfileEditor from "@/components/home/store/factories/factory-profile-editor";
+import FactoryProfileEditor, {
+  type FactoryProfileEditorSource,
+} from "@/components/home/store/factories/factory-profile-editor";
 import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
-import { getStoreFactory } from "@/lib/store/factories.api";
-import {
-  getOrganizationStorefront,
-  listMyCommerceOrganizations,
-} from "@/lib/store/organizations.api";
+import { getOwnSellerProfile } from "@/lib/store/factory-profile.api";
+import { listMyCommerceOrganizations } from "@/lib/store/organizations.api";
+import type { MyCommerceOrganizationMembership } from "@/lib/store/organizations.schemas";
 import { callerRequestOptions } from "@/lib/server-http";
 
 // Permanently dynamic: the editor reads the seller's own live profile and writes to it, so there
@@ -15,7 +15,7 @@ import { callerRequestOptions } from "@/lib/server-http";
 export const instant = false;
 
 /**
- * The viewer's own organization slug, when the URL did not name one.
+ * The organization this page edits.
  *
  * ⚠️ **THIS IS WHY THE PAGE CAN HAVE A SIDEBAR ENTRY AT ALL.** `factoryProfile` was deliberately
  * absent from `STUDIO_ROUTES` because the route needed a `?factorySlug=` only the directory listing
@@ -27,12 +27,24 @@ export const instant = false;
  * does not serve it — but it is strictly better than the previous answer, which was no entry point.
  * A picker belongs here the moment a second membership is common; the `?factorySlug=` escape hatch
  * covers it until then.
+ *
+ * ⚠️ **THE SLUG IS MATCHED AGAINST THE CALLER'S OWN MEMBERSHIPS, never resolved through a public
+ * read.** That is what makes a private organization openable: `GET /organizations/mine` is
+ * session-scoped and carries the id, so nothing on this page depends on the company being
+ * published. A `?factorySlug=` naming an organization the caller is not an active member of
+ * resolves to nothing, which is the same answer the backend would give.
  */
-async function resolveOwnOrganizationSlug(): Promise<string | undefined> {
+async function resolveOwnOrganization(
+  factorySlug: string | undefined,
+): Promise<MyCommerceOrganizationMembership["organization"] | undefined> {
   const requestOptions = await callerRequestOptions();
   const result = await listMyCommerceOrganizations(requestOptions);
   if (!result.success) return undefined;
-  return result.data.find((entry) => entry.membership.state === "active")?.organization.slug;
+  const activeMemberships = result.data.filter((entry) => entry.membership.state === "active");
+  if (factorySlug === undefined || factorySlug.length === 0) {
+    return activeMemberships[0]?.organization;
+  }
+  return activeMemberships.find((entry) => entry.organization.slug === factorySlug)?.organization;
 }
 
 export const metadata: Metadata = {
@@ -49,9 +61,14 @@ export const metadata: Metadata = {
  * needs `generateStaticParams`, and there is no sensible static set for "the organizations a
  * signed-in seller belongs to" — the answer is session-scoped by definition.
  *
- * The editor PREFILLS FROM THE PUBLIC DETAIL READ, because §6.6 ships three PUTs and no GETs: a
- * factory's lines, sites and terms are already projected by `GET /store/factories/:factorySlug`,
- * and a second read of the same rows would be a second place for them to disagree (§16.1).
+ * ONE READ, AND IT IS THE SELLER'S OWN. This page used to make two public ones —
+ * `GET /store/factories/:slug` for the lines, sites and terms, and `GET /store/organizations/:slug`
+ * for the rest — because §6.6 had shipped three PUTs and no GETs. Both sit behind
+ * `tradeState = 'active' AND visibility = 'public'`, so a seller who was private, unlisted or not
+ * yet approved to trade could write every field on this page and never read one back: the editor
+ * opened on an error panel. `GET …/seller-profile` is the same backend projection read behind
+ * membership instead, so §16.1's objection to a duplicate read does not apply — there is now one
+ * read where there were two.
  */
 export default async function StudioFactoryProfileRoute({
   searchParams,
@@ -59,12 +76,12 @@ export default async function StudioFactoryProfileRoute({
   searchParams: Promise<{ factorySlug?: string }>;
 }) {
   const { factorySlug } = await searchParams;
-  const resolvedSlug = factorySlug ?? (await resolveOwnOrganizationSlug());
+  const organization = await resolveOwnOrganization(factorySlug);
 
-  if (resolvedSlug === undefined || resolvedSlug.length === 0) {
+  if (organization === undefined) {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 pt-6 lg:px-6">
-        <StoreErrorPanel message="Open this page from your factory's directory listing so it knows which profile to edit." />
+        <StoreErrorPanel message="This page edits a company you are an active member of. Sign in with that account, or open it from your factory's directory listing." />
         <p className="mt-3 text-center text-xs leading-4 text-[#6F7979]">
           <Link href="/store/factories" className="hover:underline">
             Browse the manufacturer directory
@@ -74,44 +91,53 @@ export default async function StudioFactoryProfileRoute({
     );
   }
 
-  /**
-   * TWO READS, BECAUSE THE PROFILE IS ONE ROW PROJECTED BY TWO ROUTES.
-   *
-   * `GET /store/factories/:slug` carries the lines, sites and terms this page already edited. It
-   * does NOT carry stakeholders, site access, capabilities or the media gallery, and it reshapes
-   * certifications into a closed-enum form that the write side cannot round-trip. The storefront
-   * read projects all four in exactly the shape the writes take.
-   *
-   * ⚠️ THE FACTORY SLUG **IS** THE ORGANIZATION SLUG — projected as
-   * `slug: storeSearchDocument.organizationSlug`, so this is one identifier rather than a
-   * coincidence of the seed. Do not derive one from the other.
-   *
-   * §16.1's objection is to DUPLICATING a read, not to reading a superset once: nothing below reads
-   * the same rows twice, and the two projections are disjoint in what this page edits.
-   */
-  const [result, storefrontResult] = await Promise.all([
-    getStoreFactory(resolvedSlug),
-    getOrganizationStorefront(resolvedSlug),
-  ]);
+  const requestOptions = await callerRequestOptions();
+  const profileResult = await getOwnSellerProfile(organization.id, requestOptions);
 
-  if (!result.success) {
-    // NOT `notFound()`. A seller who mistyped their own slug is better served by the backend's own
-    // message than by the store's 404 page, which is written for a buyer who followed a dead link.
+  if (!profileResult.success) {
+    // NOT `notFound()`. A refusal here is a membership answer — `requireMembershipRole` returns
+    // NOT_FOUND for a non-member and for a member below owner/administrator alike — and the
+    // backend's own sentence serves the reader better than the store's 404 page, which is written
+    // for a buyer who followed a dead link.
     return (
       <div className="mx-auto w-full max-w-3xl px-4 pt-6 lg:px-6">
-        <StoreErrorPanel message={result.error.message} />
+        <StoreErrorPanel message={profileResult.error.message} />
       </div>
     );
   }
 
+  const { declaredProfile } = profileResult.data;
+
+  /**
+   * A SELLER WITH NO PROFILE ROW STILL GETS THE FORMS. `null` means nobody has described this
+   * company yet, which is the one state where empty inputs are the truth rather than a lie — so
+   * the three whole-object forms open on the server's own defaults (no lines, no sites, samples
+   * not offered, USD) and the first save creates the row.
+   */
+  const source: FactoryProfileEditorSource = {
+    displayName: organization.displayName,
+    productionLines: declaredProfile?.productionLines ?? [],
+    sites: declaredProfile?.sites ?? [],
+    samplePolicy: declaredProfile?.samplePolicy ?? {
+      offersSamples: false,
+      sampleLeadTimeDays: null,
+      sampleFeeInCents: null,
+      currency: "USD",
+    },
+    orderBounds: declaredProfile?.orderBounds ?? {
+      minimumOrderQuantity: null,
+      minimumOrderQuantityUnitLabel: null,
+      minimumLeadTimeDays: null,
+      maximumLeadTimeDays: null,
+    },
+    acceptingInquiries: declaredProfile?.acceptingInquiries ?? false,
+  };
+
   return (
     <FactoryProfileEditor
-      organizationId={result.data.factory.organizationId}
-      detail={result.data}
-      // NULL rather than an empty object when the storefront read failed: an organization with no
-      // profile row and one this page could not read are different facts, and the sections below
-      // say so instead of rendering empty forms over an unknown.
-      declaredProfile={storefrontResult.success ? storefrontResult.data.declaredProfile : null}
+      organizationId={organization.id}
+      source={source}
+      declaredProfile={declaredProfile}
     />
   );
 }
