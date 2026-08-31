@@ -25,6 +25,8 @@
 
 import { z } from "zod";
 
+import type { FreightMode } from "@/lib/store/freight.schemas";
+
 import { ArrivalWindowProjectionSchema } from "@/lib/store/arrival-window.schemas";
 import { CommercePricingErrorSchema } from "@/lib/store/merchandising.schemas";
 import { STORE_STOCK_STATES } from "@/lib/store/organizations.schemas";
@@ -306,6 +308,14 @@ export const CommerceOrderSchema = z
     totalInCents: z.number().int(),
     paymentTermsSnapshot: z.string().nullable(),
     incotermSnapshot: z.string().nullable(),
+    /**
+     * A45. What the buyer asked for at checkout — never what was booked.
+     *
+     * NULL MEANS "NOT ASKED OR NOT CHOSEN", not "no preference", and nothing may default it. The
+     * mode the goods actually move by lives on the shipment's legs.
+     */
+    requestedFreightModeSnapshot: z.string().nullable(),
+
     buyerLegalNameSnapshot: z.string(),
     counterpartyLegalNameSnapshot: z.string(),
     settlementRail: z.enum(SETTLEMENT_RAILS),
@@ -379,6 +389,18 @@ export interface RemoveCartItemInput {
 
 export interface PrepareCheckoutInput {
   readonly deliveryAddressId?: string;
+  /**
+   * A45. How the buyer is asking for the goods to travel.
+   *
+   * ⚠️ **A REQUEST, NOT A BOOKING.** It prices nothing — `shippingInCents` stays 0 — and reserves
+   * no capacity. What it does is let the arrival window answer with a real freight component
+   * instead of `mode_not_selected`, and carry the preference to the seller on the order.
+   *
+   * OPTIONAL, AND NOTHING IS AUTO-SELECTED WHEN ABSENT. Sea is nearly always cheapest and roughly
+   * four times slower, so guessing would publish the slowest window as though the buyer had chosen
+   * it.
+   */
+  readonly requestedFreightMode?: FreightMode;
 }
 
 /**

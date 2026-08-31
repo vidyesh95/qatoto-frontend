@@ -342,6 +342,14 @@ export const PublicProductSchema = z
     currency: z.string(),
     stockQuantity: z.number(),
     sku: z.string().nullable(),
+    /**
+     * A44. The accepted quote line these goods were sourced from, or null.
+     *
+     * ⚠️ **THE EDITOR NEEDS THIS OR IT DESTROYS DATA.** The listing save sends the field on every
+     * write, `null` included, because `null` is how a wrong link is cleared. A form that could not
+     * read the existing value would prefill empty and wipe the link on the next unrelated edit.
+     */
+    sourcingQuoteProductLineId: z.string().nullable(),
     keyFeatures: z.array(z.string()),
     status: z.enum(PRODUCT_STATUSES),
     /**
@@ -596,6 +604,17 @@ export interface CreateProductInput {
   packageHeightMm?: number;
   packageGrossWeightGrams?: number;
   unitsPerPackage?: number;
+  /**
+   * A44. The accepted quote product line these goods were sourced from — the seller's cost basis.
+   *
+   * ⚠️ **`null` CLEARS IT, OMITTING IT LEAVES IT ALONE.** That distinction is the only reason the
+   * backend field is nullable rather than merely optional: without it a seller who linked the wrong
+   * quote could overwrite the link but never remove it.
+   *
+   * The id is validated server-side against a four-table join — the quote must be one this
+   * organization requested AND accepted. A refusal is a 422, never a silent drop.
+   */
+  sourcingQuoteProductLineId?: string | null;
 }
 
 /**

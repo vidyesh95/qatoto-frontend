@@ -316,6 +316,41 @@ export const SHIPMENT_LEG_COMMAND_LABELS: Record<ShipmentLegCommandName, string>
   cancel: "Cancel this leg",
 };
 
+/**
+ * `POST /commerce/shipments/:shipmentId/legs` — A43.
+ *
+ * `.min(1)` mirrors the backend: an empty array answers 201 having done nothing, which reads as
+ * success to a client that sent a broken body.
+ */
+/** What `POST …/legs` answers: the shipment it touched, and the legs it created. */
+export const ShipmentLegsAddedSchema = z
+  .object({
+    shipmentId: z.string(),
+    legs: z.array(ShipmentLegSchema),
+  })
+  .strip();
+export type ShipmentLegsAdded = z.infer<typeof ShipmentLegsAddedSchema>;
+
+export interface AddShipmentLegsInput {
+  readonly legs: readonly ShipmentLegInput[];
+}
+
+/**
+ * `POST /commerce/shipment-legs/:legId/assignment` — who is carrying this leg.
+ *
+ * ⚠️ **`null` IS A DETACH AND MUST BE SENT EXPLICITLY.** The backend schema is `.strict()` and the
+ * field is `.nullable()` rather than optional precisely so attach and detach are different
+ * requests rather than one of them being an omission.
+ *
+ * ⚠️ **ATTACHING TRANSFERS CONTROL.** Once a leg carries an engagement, `book`/`depart`/`arrive`/
+ * `complete` are executable by the PROVIDER organization, not the seller. Detach is how it comes
+ * back, and the backend refuses assignment once the leg is past `booked`.
+ */
+export interface ShipmentLegAssignmentInput {
+  readonly expectedVersion: number;
+  readonly logisticsEngagementId: string | null;
+}
+
 /** One entry in a leg's history — `GET /commerce/shipment-legs/:legId/events`. */
 export const ShipmentLegEventSchema = z
   .object({

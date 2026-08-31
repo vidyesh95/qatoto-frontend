@@ -122,7 +122,7 @@ been a `StudioPlannedPage` stub pointing at Sales for the panel it should have c
 **The leg command rail is wired** — see the corrected bullet in §19.10 above. Four things that ask
 depended on are NOT, each blocked on the backend rather than on effort.
 
-### A. Seller cost basis — **BACKEND SHIPPED (A44, migration `0159`); FRONTEND NOT WIRED**
+### A. Seller cost basis — **SHIPPED end to end (A44 + A46, migration `0159` UNAPPLIED)**
 
 ⚠️ **This reopens "Seller cost-of-goods and margin — DECIDED: NOT BUILDING IT" above, and only
 halfway.** That decision refused a **seller-typed** cost on three grounds. Two of them do not
@@ -151,7 +151,7 @@ constraint from the original entry is unchanged: the cost cannot live on
 
 Until then `seller-earnings-panel.tsx`'s "Profit and margin are not shown" card is correct and stays.
 
-### B. The buyer's transport choice — **BACKEND SHIPPED (A45, migration `0159`); FRONTEND NOT WIRED**
+### B. The buyer's transport choice — **SHIPPED end to end (A45, migration `0159` UNAPPLIED)**
 
 `delivery-sheet.tsx` lets a buyer pick a mode per leg and holds it in
 `selectedModeByLegSequence`, **local component state that dies when the sheet closes.** Nothing
@@ -171,10 +171,25 @@ lane can be priced, and every lane answers `no_active_rate_card` today (§18).
 
 ---
 
-### What the frontend still has to wire for A44 and A45
+### ~~What the frontend still has to wire for A44 and A45~~ — **WIRED**
 
-⚠️ **`0159` IS GENERATED BUT NOT APPLIED.** Vidyesh runs it. Until then every field below reads as
-absent, which is a state each surface must already render honestly.
+⚠️ **`0159` IS STILL GENERATED BUT NOT APPLIED.** Vidyesh runs it. Every surface below is built and
+renders its absent/empty state until then, which is the honest behaviour and is what was actually
+observed — no field has round-tripped against a real row.
+
+**Everything in this section now exists**, plus one backend read that had to be built first:
+`GET /commerce/sourcing/quote-lines` (**A46**). The picker could not use `GET /commerce/quotes/:id`
+— that read projects the LATEST revision while the listing save requires the ACCEPTED one, so on a
+quote revised after acceptance it cannot produce a linkable id at all.
+
+⚠️ **One data-loss path was found and closed while wiring.** The listing editor sends
+`sourcingQuoteProductLineId` on every save, `null` included, because `null` is how a wrong link is
+cleared. The product READ projection did not carry the field, so an edit would have prefilled empty
+and wiped an existing link on the next unrelated save. `PublicProduct` (backend) and
+`PublicProductSchema` (frontend) both carry it now, and the editor prefills from it. This is the
+same class as [replace-set needs an owner read] — a write with no matching read destroys data.
+
+The original wiring list, for the record:
 
 **A44 — cost basis.** `GET /commerce/provider/earnings` gained `sourcingCost: CurrencyAmount[]` and
 `uncounted.orderLinesWithNoSourcingRecord`. `SellerEarningsSchema` is `.strip()`, so nothing broke —
@@ -203,7 +218,7 @@ the members are simply being dropped today.
 - ⚠️ No copy may say a shipment WILL travel this way. It is a request; the actual mode is
   `commerce_shipment_leg.mode`.
 
-### C. A leg cannot be added, or reassigned, after the shipment exists — **BACKEND SHIPPED (A43, no migration); FRONTEND NOT WIRED**
+### C. A leg cannot be added, or reassigned, after the shipment exists — **SHIPPED end to end (A43, no migration)**
 
 ~~`commerce_shipment_leg.logistics_engagement_id` is settable only through
 `legs[].logisticsEngagementId` on `POST /commerce/orders/:orderId/shipments`. There is no route to

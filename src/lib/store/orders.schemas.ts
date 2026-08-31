@@ -189,6 +189,14 @@ export const OrderDetailSchema = z
     totalInCents: z.number().int(),
     paymentTermsSnapshot: z.string().nullable(),
     incotermSnapshot: z.string().nullable(),
+    /**
+     * A45. What the buyer asked for at checkout — never what was booked.
+     *
+     * NULL MEANS "NOT ASKED OR NOT CHOSEN", not "no preference", and nothing may default it. The
+     * mode the goods actually move by lives on the shipment's legs.
+     */
+    requestedFreightModeSnapshot: z.string().nullable(),
+
     buyerLegalNameSnapshot: z.string(),
     counterpartyLegalNameSnapshot: z.string(),
     createdAt: IsoDateTimeSchema,

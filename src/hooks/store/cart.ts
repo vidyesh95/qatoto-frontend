@@ -43,6 +43,7 @@ import type {
   SetCartItemInput,
 } from "@/lib/store/cart.schemas";
 import { storeKeys } from "@/hooks/store/keys";
+import type { FreightMode } from "@/lib/store/freight.schemas";
 
 /**
  * What a component may know about the cart read.
@@ -187,13 +188,24 @@ export function useRemoveCartItem(): UseMutationResult<
 export function usePrepareCheckout(): UseMutationResult<
   ActionResponse<CheckoutPrepare>,
   Error,
-  { readonly idempotencyKey: string; readonly deliveryAddressId?: string }
+  {
+    readonly idempotencyKey: string;
+    readonly deliveryAddressId?: string;
+    readonly requestedFreightMode?: FreightMode;
+  }
 > {
   return useMutation({
-    mutationFn: ({ idempotencyKey, deliveryAddressId }) =>
-      prepareCheckout(deliveryAddressId === undefined ? {} : { deliveryAddressId }, {
-        headers: { "Idempotency-Key": idempotencyKey },
-      }),
+    // A45. RE-PREPARING WITH A DIFFERENT MODE IS A DIFFERENT REQUEST, and the caller mints a fresh
+    // idempotency key for it — replaying the first key would return the first prepare's body and
+    // the buyer's new choice would silently vanish.
+    mutationFn: ({ idempotencyKey, deliveryAddressId, requestedFreightMode }) =>
+      prepareCheckout(
+        {
+          ...(deliveryAddressId === undefined ? {} : { deliveryAddressId }),
+          ...(requestedFreightMode === undefined ? {} : { requestedFreightMode }),
+        },
+        { headers: { "Idempotency-Key": idempotencyKey } },
+      ),
   });
 }
 

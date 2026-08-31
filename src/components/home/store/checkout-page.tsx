@@ -56,6 +56,7 @@ import { newIdempotencyKey } from "@/lib/idempotency";
 import { ARRIVAL_WINDOW_COMPONENT_LABELS } from "@/lib/store/arrival-window.schemas";
 import type { CheckoutPrepare, ConfirmCheckout } from "@/lib/store/cart.schemas";
 import { SETTLEMENT_RAIL_LABELS } from "@/lib/store/cart.schemas";
+import type { FreightMode } from "@/lib/store/freight.schemas";
 import { formatCentsLabel, formatCountLabel } from "@/lib/store/format";
 
 /**
@@ -94,9 +95,49 @@ export default function CheckoutPage() {
    */
   const [prepareIdempotencyKey, setPrepareIdempotencyKey] = useState(newIdempotencyKey);
 
+  /**
+   * A45. The freight mode the buyer has asked for, or `null` for "not chosen".
+   *
+   * ⚠️ **NEVER DEFAULTED.** `null` is a real state the server understands — it answers
+   * `mode_not_selected` and lists the modes it covers, which is exactly the choice rendered below.
+   * Pre-selecting the cheapest would commit a buyer to five weeks at sea to save a little.
+   */
+  const [requestedFreightMode, setRequestedFreightMode] = useState<FreightMode | null>(null);
+
+  /**
+   * Re-reserve with a mode the buyer just picked.
+   *
+   * A FRESH IDEMPOTENCY KEY, DELIBERATELY. This is a different request from the prepare that came
+   * before it — replaying the old key would return the old body and the buyer's choice would
+   * vanish silently. That is the opposite of the retry case, where reusing the key is what stops a
+   * second reservation.
+   */
+  const handleSelectFreightMode = (mode: FreightMode) => {
+    setRequestedFreightMode(mode);
+    const rePrepareKey = newIdempotencyKey();
+    setPrepareIdempotencyKey(rePrepareKey);
+    prepareCheckout.mutate(
+      { idempotencyKey: rePrepareKey, requestedFreightMode: mode },
+      {
+        onSuccess: (result) => {
+          if (!result.success) return;
+          setPrepareIdempotencyKey(newIdempotencyKey());
+          setStep({
+            status: "reserved",
+            prepare: result.data,
+            idempotencyKey: newIdempotencyKey(),
+          });
+        },
+      },
+    );
+  };
+
   const handlePrepareClick = () => {
     prepareCheckout.mutate(
-      { idempotencyKey: prepareIdempotencyKey },
+      {
+        idempotencyKey: prepareIdempotencyKey,
+        ...(requestedFreightMode === null ? {} : { requestedFreightMode }),
+      },
       {
         onSuccess: (result) => {
           if (!result.success) return;
@@ -141,6 +182,7 @@ export default function CheckoutPage() {
         confirmCheckout,
         onPrepareClick: handlePrepareClick,
         onConfirmClick: handleConfirmClick,
+        onSelectFreightMode: handleSelectFreightMode,
       })}
     </div>
   );
@@ -153,6 +195,7 @@ function renderStep({
   confirmCheckout,
   onPrepareClick,
   onConfirmClick,
+  onSelectFreightMode,
 }: {
   step: CheckoutStep;
   cartQuery: ReturnType<typeof useCartQuery>;
@@ -160,6 +203,7 @@ function renderStep({
   confirmCheckout: ReturnType<typeof useConfirmCheckout>;
   onPrepareClick: () => void;
   onConfirmClick: () => void;
+  onSelectFreightMode: (mode: FreightMode) => void;
 }) {
   switch (step.status) {
     case "review":
@@ -176,6 +220,7 @@ function renderStep({
           prepare={step.prepare}
           confirmCheckout={confirmCheckout}
           onConfirmClick={onConfirmClick}
+          onSelectFreightMode={onSelectFreightMode}
         />
       );
     case "confirmed":
@@ -284,10 +329,12 @@ function ReservedStep({
   prepare,
   confirmCheckout,
   onConfirmClick,
+  onSelectFreightMode,
 }: {
   prepare: CheckoutPrepare;
   confirmCheckout: ReturnType<typeof useConfirmCheckout>;
   onConfirmClick: () => void;
+  onSelectFreightMode: (mode: FreightMode) => void;
 }) {
   const sellerOrganizationIds = [
     ...new Set(prepare.items.map((item) => item.sellerOrganizationId)),
@@ -383,7 +430,7 @@ function ReservedStep({
 
       <DeliveryEstimateSection prepare={prepare} />
 
-      <PrepareArrivalWindowSection prepare={prepare} />
+      <PrepareArrivalWindowSection prepare={prepare} onSelectMode={onSelectFreightMode} />
 
       <section
         aria-label="How this settles"
@@ -449,10 +496,24 @@ function ReservedStep({
  * because a seller who declared no lead time would otherwise produce a null window with an empty
  * reason, which is an unnamed absence.
  *
- * NO MODE PICKER, unlike the order panel. Choosing a freight mode re-prices an order, and there is
- * no order yet; `mode_not_selected` is reported here as the reason it is.
+ * ⚠️ **THERE IS A MODE PICKER NOW, AND THIS NOTE USED TO ARGUE AGAINST ONE.** It read: "Choosing a
+ * freight mode re-prices an order, and there is no order yet; `mode_not_selected` is reported here
+ * as the reason it is." The premise was right and has changed — `POST /checkout/prepare` accepts a
+ * mode (A45), so choosing one re-runs the reservation rather than re-pricing an order that does not
+ * exist. `mode_not_selected` is still the honest answer until the buyer picks.
+ *
+ * ⚠️ **PICKING STILL DOES NOT PRICE ANYTHING.** `shippingInCents` stays 0 and freight is arranged
+ * separately; what the choice buys is a real transit range in the breakdown, and a preference the
+ * seller can read on the order. Where no rate card covers the lane — which is every lane today —
+ * the answer becomes `no_active_rate_card`, and that is a truthful outcome rather than a failure.
  */
-function PrepareArrivalWindowSection({ prepare }: { prepare: CheckoutPrepare }) {
+function PrepareArrivalWindowSection({
+  prepare,
+  onSelectMode,
+}: {
+  readonly prepare: CheckoutPrepare;
+  readonly onSelectMode: (mode: FreightMode) => void;
+}) {
   if (prepare.arrivalWindows.length === 0) return null;
 
   return (
@@ -474,8 +535,10 @@ function PrepareArrivalWindowSection({ prepare }: { prepare: CheckoutPrepare }) 
                 />
               </ComponentRow>
               <ComponentRow name="freight">
-                {/* No `onSelectMode` — see the note above. */}
-                <FreightLine component={sellerWindow.arrivalWindow.components.freight} />
+                <FreightLine
+                  component={sellerWindow.arrivalWindow.components.freight}
+                  onSelectMode={onSelectMode}
+                />
               </ComponentRow>
               <ComponentRow name="customs">
                 <CustomsLine component={sellerWindow.arrivalWindow.components.customs} />

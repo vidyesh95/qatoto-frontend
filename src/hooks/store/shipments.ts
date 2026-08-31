@@ -13,8 +13,10 @@ import { storeKeys } from "@/hooks/store/keys";
 import type { ActionResponse } from "@/lib/http";
 import type { ShipmentLeg } from "@/lib/store/fulfillment.schemas";
 import {
+  addShipmentLegs,
   appendShipmentEvent,
   createOrderShipment,
+  assignShipmentLeg,
   executeShipmentLegCommand,
   getShipmentDetail,
   listBuyerShipments,
@@ -22,10 +24,13 @@ import {
   listShipmentLegEvents,
 } from "@/lib/store/shipments.api";
 import type {
+  AddShipmentLegsInput,
   AppendShipmentEventInput,
   CreateShipmentInput,
   ListShipmentsFilter,
+  ShipmentLegAssignmentInput,
   ShipmentLegCommand,
+  ShipmentLegsAdded,
   WrittenShipment,
 } from "@/lib/store/shipments.schemas";
 
@@ -182,6 +187,80 @@ export function useExecuteShipmentLegCommandMutation(): UseMutationResult<
       });
       void queryClient.invalidateQueries({
         queryKey: storeKeys.shipmentLegEvents(variables.legId),
+      });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.shipmentQueues() });
+    },
+  });
+}
+
+/**
+ * Adds legs to a shipment that already exists.
+ *
+ * INVALIDATES THE ORDER'S FULFILMENT READ TOO, not just the shipment: a leg carrying an engagement
+ * writes a `commerce_order_service_link` row, which is what the order's fulfilment panel lists.
+ *
+ * `retry: false` — a 409 here is a sequence collision the caller has to resolve by choosing another
+ * number, and a retry would only collide again.
+ */
+export function useAddShipmentLegsMutation(): UseMutationResult<
+  ActionResponse<ShipmentLegsAdded>,
+  Error,
+  {
+    readonly shipmentId: string;
+    readonly orderId: string;
+    readonly input: AddShipmentLegsInput;
+    readonly idempotencyKey: string;
+  }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    retry: false,
+    mutationFn: ({ shipmentId, input, idempotencyKey }) =>
+      addShipmentLegs(shipmentId, input, idempotencyKey),
+    onSuccess: (result, variables) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({
+        queryKey: storeKeys.shipmentDetail(variables.shipmentId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: storeKeys.orderFulfillment(variables.orderId),
+      });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.shipmentQueues() });
+    },
+  });
+}
+
+/**
+ * Attaches or detaches the logistics engagement carrying one leg.
+ *
+ * ⚠️ **THIS CHANGES WHO MAY COMMAND THE LEG**, so it invalidates the shipment detail on both the
+ * success and the failure path: a 409 means the version was stale, and the caller needs the fresh
+ * one either way before they can try again.
+ */
+export function useAssignShipmentLegMutation(): UseMutationResult<
+  ActionResponse<ShipmentLeg>,
+  Error,
+  {
+    readonly shipmentId: string;
+    readonly orderId: string;
+    readonly legId: string;
+    readonly input: ShipmentLegAssignmentInput;
+    readonly idempotencyKey: string;
+  }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    retry: false,
+    mutationFn: ({ legId, input, idempotencyKey }) =>
+      assignShipmentLeg(legId, input, idempotencyKey),
+    onSettled: (_result, _error, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: storeKeys.shipmentDetail(variables.shipmentId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: storeKeys.orderFulfillment(variables.orderId),
       });
       void queryClient.invalidateQueries({ queryKey: storeKeys.shipmentQueues() });
     },

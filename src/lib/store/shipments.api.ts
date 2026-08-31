@@ -20,14 +20,18 @@ import {
 import { ShipmentLegSchema, type ShipmentLeg } from "@/lib/store/fulfillment.schemas";
 import {
   ShipmentDetailSchema,
+  ShipmentLegsAddedSchema,
   ShipmentLegEventListSchema,
   ShipmentQueuePageSchema,
   WrittenShipmentSchema,
+  type AddShipmentLegsInput,
   type AppendShipmentEventInput,
   type CreateShipmentInput,
+  type ShipmentLegAssignmentInput,
   type ListShipmentsFilter,
   type ShipmentDetail,
   type ShipmentLegCommand,
+  type ShipmentLegsAdded,
   type ShipmentLegEventList,
   type ShipmentQueuePage,
   type WrittenShipment,
@@ -172,4 +176,51 @@ export function listShipmentLegEvents(
 ): Promise<ActionResponse<ShipmentLegEventList>> {
   const path = `/commerce/shipment-legs/${encodeURIComponent(legId)}/events`;
   return getJson(path, ShipmentLegEventListSchema, options);
+}
+
+/**
+ * `POST /commerce/shipments/:shipmentId/legs` — add legs to a shipment that already exists (A43).
+ *
+ * ⚠️ **COUNTERPARTY ONLY.** Adding a leg is the seller planning their own route; a forwarder
+ * assigned to one leg may not append another. A buyer calling this is refused.
+ *
+ * A **409** here is a sequence collision — the shipment already has a leg at that number — and the
+ * backend names the number in its message. It is a finding, not a retry.
+ *
+ * Answers **201** with `{ shipmentId, legs }`.
+ */
+export function addShipmentLegs(
+  shipmentId: string,
+  input: AddShipmentLegsInput,
+  idempotencyKey: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ShipmentLegsAdded>> {
+  const path = `/commerce/shipments/${encodeURIComponent(shipmentId)}/legs`;
+  return sendJson(path, "POST", input, ShipmentLegsAddedSchema, {
+    ...options,
+    headers: { ...options?.headers, "Idempotency-Key": idempotencyKey },
+  });
+}
+
+/**
+ * `POST /commerce/shipment-legs/:legId/assignment` — attach or detach the carrying engagement.
+ *
+ * ⚠️ **NOT A LEG COMMAND, AND ON PURPOSE.** It could not be one: `executeShipmentLegCommand`
+ * authorizes an engagement-bound leg through the PROVIDER, so routing assignment there would make
+ * attaching a one-way door the seller could not undo.
+ *
+ * `expectedVersion` is echoed from the leg, never invented — a 409 means somebody else moved it.
+ * Answers **200** with the updated leg.
+ */
+export function assignShipmentLeg(
+  legId: string,
+  input: ShipmentLegAssignmentInput,
+  idempotencyKey: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ShipmentLeg>> {
+  const path = `/commerce/shipment-legs/${encodeURIComponent(legId)}/assignment`;
+  return sendJson(path, "POST", input, ShipmentLegSchema, {
+    ...options,
+    headers: { ...options?.headers, "Idempotency-Key": idempotencyKey },
+  });
 }

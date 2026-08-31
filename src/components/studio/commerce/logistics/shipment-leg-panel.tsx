@@ -24,10 +24,17 @@
 //     "unassigned". `ShipmentLegSchema` says so in as many words, and "unassigned" would read as a
 //     gap somebody should fill.
 //
-// ⚠️ WHAT THIS PANEL CANNOT DO, AND SAYS SO RATHER THAN HIDING IT. A leg exists only if it was
-// declared when the shipment was created, and `logisticsEngagementId` is settable only there. No
-// route adds a leg to an existing shipment or re-points its engagement, so a seller who books a
-// forwarder afterwards has nowhere to record it.
+// ⚠️ THIS PARAGRAPH USED TO SAY THE OPPOSITE, and the correction is the point of the panel.
+// It read: "A leg exists only if it was declared when the shipment was created, and
+// `logisticsEngagementId` is settable only there. No route adds a leg to an existing shipment or
+// re-points its engagement." Both routes exist now (A43), so the two dead-ends became controls:
+// an ADD A LEG form, and ASSIGN / DETACH on each leg.
+//
+// ⚠️ **ASSIGNING HANDS OVER CONTROL, AND THE UI HAS TO SAY SO BEFORE IT ACTS.** The moment a leg
+// carries an engagement, the five commands above are executable by the PROVIDER organization and
+// not by the seller. Detach is how it comes back — and the backend refuses assignment entirely
+// once the leg is past `booked`, because re-pointing a leg in transit strands whoever is carrying
+// it.
 
 import { useState } from "react";
 
@@ -35,7 +42,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 import StatusPanel from "@/components/home/shared/status-panel";
+import { useOrderFulfillmentQuery } from "@/hooks/store/orders";
 import {
+  useAddShipmentLegsMutation,
+  useAssignShipmentLegMutation,
   useExecuteShipmentLegCommandMutation,
   useShipmentDetailQuery,
   useShipmentLegEventsQuery,
@@ -47,10 +57,12 @@ import {
 } from "@/lib/store/fulfillment.schemas";
 import { countryLabelFromCode, formatIsoInstantLabel } from "@/lib/store/format";
 import { FREIGHT_TRANSPORT_MODE_ICONS, FREIGHT_TRANSPORT_MODE_LABELS } from "@/lib/store/labels";
+import { FREIGHT_MODES } from "@/lib/store/freight.schemas";
 import {
   SHIPMENT_LEG_COMMAND_LABELS,
   SHIPMENT_LEG_COMMANDS_BY_STATE,
   type ShipmentDetail,
+  type ShipmentLegInput,
   type ShipmentLegCommand,
   type ShipmentLegCommandName,
 } from "@/lib/store/shipments.schemas";
@@ -58,7 +70,7 @@ import {
 type ShipmentDetailViewState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "empty" }
+  | { status: "empty"; shipment: ShipmentDetail }
   | { status: "ready"; shipment: ShipmentDetail };
 
 export default function ShipmentLegPanel({ shipmentId }: { readonly shipmentId: string }) {
@@ -72,7 +84,7 @@ export default function ShipmentLegPanel({ shipmentId }: { readonly shipmentId: 
       : !result.success
         ? { status: "error", message: result.error.message }
         : result.data.legs.length === 0
-          ? { status: "empty" }
+          ? { status: "empty", shipment: result.data }
           : { status: "ready", shipment: result.data };
 
   switch (viewState.status) {
@@ -84,19 +96,35 @@ export default function ShipmentLegPanel({ shipmentId }: { readonly shipmentId: 
       );
     case "empty":
       return (
-        // NOT AN ERROR, AND NOT A GAP TO FILL FROM HERE. Legs are declared when the shipment is
-        // created and nowhere else, so this shipment will never have any.
-        <p className="mt-3 text-xs text-muted-foreground">
-          No legs were declared for this shipment, so there is no route to track. Legs can only be
-          added when a shipment is created.
-        </p>
+        // NOT AN ERROR. A shipment with no legs is one whose route has not been planned yet, and
+        // planning it is now something this panel can do.
+        <div className="mt-3 space-y-2">
+          <p className="text-xs text-muted-foreground">
+            No legs declared yet, so there is no route to track.
+          </p>
+          <AddLegForm
+            shipmentId={viewState.shipment.id}
+            orderId={viewState.shipment.orderId}
+            takenSequences={[]}
+          />
+        </div>
       );
     case "ready":
       return (
         <div className="mt-3 space-y-2">
           {viewState.shipment.legs.map((leg) => (
-            <LegRow key={leg.id} leg={leg} shipmentId={viewState.shipment.id} />
+            <LegRow
+              key={leg.id}
+              leg={leg}
+              shipmentId={viewState.shipment.id}
+              orderId={viewState.shipment.orderId}
+            />
           ))}
+          <AddLegForm
+            shipmentId={viewState.shipment.id}
+            orderId={viewState.shipment.orderId}
+            takenSequences={viewState.shipment.legs.map((leg) => leg.sequence)}
+          />
           <InsuranceSignpost />
         </div>
       );
@@ -107,7 +135,15 @@ export default function ShipmentLegPanel({ shipmentId }: { readonly shipmentId: 
   }
 }
 
-function LegRow({ leg, shipmentId }: { readonly leg: ShipmentLeg; readonly shipmentId: string }) {
+function LegRow({
+  leg,
+  shipmentId,
+  orderId,
+}: {
+  readonly leg: ShipmentLeg;
+  readonly shipmentId: string;
+  readonly orderId: string;
+}) {
   const [openCommand, setOpenCommand] = useState<ShipmentLegCommandName | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
@@ -145,6 +181,8 @@ function LegRow({ leg, shipmentId }: { readonly leg: ShipmentLeg; readonly shipm
         {leg.carrierReference === null ? "" : ` · Carrier ${leg.carrierReference}`}
         {leg.trackingReference === null ? "" : ` · Tracking ${leg.trackingReference}`}
       </p>
+
+      <LegAssignmentControl leg={leg} shipmentId={shipmentId} orderId={orderId} />
 
       {/* ESTIMATED AND ACTUAL ARE FOUR SEPARATE FIELDS AND NEITHER FALLS BACK TO THE OTHER. An
           estimate rendered where the actual is missing tells a buyer their goods moved when nobody
@@ -410,6 +448,308 @@ function LegEventHistory({ legId }: { readonly legId: string }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+/**
+ * Attach or detach the logistics engagement carrying this leg.
+ *
+ * ⚠️ **ONLY WHILE `planned` OR `booked`.** The backend refuses later, because re-pointing a leg
+ * already in transit strands the provider holding the goods. Past that the control is replaced by
+ * a sentence saying so, rather than a button that can only 409.
+ *
+ * ⚠️ **THE WARNING IS NOT DECORATION.** Attaching moves command authority to the provider
+ * organization: the seller can no longer book, depart, arrive or complete this leg. Detach is the
+ * only way back, and it stops being available at the same boundary.
+ *
+ * Candidates come from the ORDER's fulfilment read, filtered to the two provider kinds the backend
+ * accepts. Offering any other kind would build a picker whose choices are refused with
+ * `PROVIDER_KIND_MISMATCH`.
+ */
+function LegAssignmentControl({
+  leg,
+  shipmentId,
+  orderId,
+}: {
+  readonly leg: ShipmentLeg;
+  readonly shipmentId: string;
+  readonly orderId: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const fulfillmentQuery = useOrderFulfillmentQuery(orderId);
+  const assignLeg = useAssignShipmentLegMutation();
+
+  const isAssignable = leg.state === "planned" || leg.state === "booked";
+  if (!isAssignable) {
+    return leg.logisticsEngagementId === null ? null : (
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        This leg is {SHIPMENT_LEG_STATE_LABELS[leg.state].toLowerCase()} — who carries it can no
+        longer be changed.
+      </p>
+    );
+  }
+
+  const fulfillment = fulfillmentQuery.data;
+  const carriers =
+    fulfillment !== undefined && fulfillment.success
+      ? fulfillment.data.engagements.filter(
+          (engagement) =>
+            engagement.providerKind === "freight_forwarder" ||
+            engagement.providerKind === "logistics_operator",
+        )
+      : [];
+
+  function submitAssignment(logisticsEngagementId: string | null) {
+    assignLeg.mutate(
+      {
+        shipmentId,
+        orderId,
+        legId: leg.id,
+        input: { expectedVersion: leg.version, logisticsEngagementId },
+        idempotencyKey,
+      },
+      {
+        onSuccess: (result) => {
+          if (!result.success) return;
+          setIdempotencyKey(crypto.randomUUID());
+          setIsOpen(false);
+        },
+      },
+    );
+  }
+
+  const assignResult = assignLeg.data;
+
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="text-[11px] text-muted-foreground underline hover:no-underline"
+      >
+        {leg.logisticsEngagementId === null ? "Assign a forwarder" : "Change who carries this leg"}
+      </button>
+
+      {isOpen && (
+        <div className="mt-1 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+          <p className="text-[11px] leading-4 text-muted-foreground">
+            Assigning hands this leg to the provider: they book, depart, arrive and complete it, and
+            you no longer can. Detaching returns it to you. Neither is possible once the leg leaves{" "}
+            <span className="font-medium">booked</span>.
+          </p>
+
+          {fulfillmentQuery.isPending ? (
+            <p className="mt-2 text-[11px] text-muted-foreground">Loading engagements…</p>
+          ) : carriers.length === 0 ? (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              This order has no freight or logistics engagement to assign. One is created when a
+              provider&apos;s quote is accepted on the order.
+            </p>
+          ) : (
+            <ul className="mt-2 space-y-1">
+              {carriers.map((engagement) => (
+                <li key={engagement.id}>
+                  <button
+                    type="button"
+                    disabled={assignLeg.isPending || engagement.id === leg.logisticsEngagementId}
+                    onClick={() => submitAssignment(engagement.id)}
+                    className="w-full rounded-lg border border-border px-2 py-1 text-left text-[11px] text-foreground disabled:opacity-50"
+                  >
+                    {engagement.titleSnapshot}
+                    {engagement.id === leg.logisticsEngagementId ? " · carrying it now" : ""}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {leg.logisticsEngagementId !== null && (
+            <button
+              type="button"
+              disabled={assignLeg.isPending}
+              onClick={() => submitAssignment(null)}
+              className="mt-2 rounded-full border border-border px-3 py-1 text-[11px] font-medium text-foreground disabled:opacity-50"
+            >
+              Detach — I will move this leg myself
+            </button>
+          )}
+
+          {assignResult !== undefined && !assignResult.success && (
+            <p className="mt-2 text-[11px] text-foreground">
+              {assignResult.error.code}: {assignResult.error.message}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Declare another leg on this shipment.
+ *
+ * ⚠️ **SEQUENCE MUST NOT COLLIDE, AND THE BACKEND ENFORCES IT WITH A 409.** The default offered
+ * here is the next free number so the ordinary case never collides; the field stays editable
+ * because a seller inserting a leg mid-route needs a number of their choosing, and the server is
+ * the authority either way.
+ *
+ * ⚠️ **BOTH COUNTRY CODES ARE REQUIRED**, per `ShipmentLegInputSchema`. A leg with no route is not
+ * a leg, and the origin is not defaulted from the shipment — a shipment's own lane fields are
+ * nullable and frequently null.
+ */
+function AddLegForm({
+  shipmentId,
+  orderId,
+  takenSequences,
+}: {
+  readonly shipmentId: string;
+  readonly orderId: string;
+  readonly takenSequences: readonly number[];
+}) {
+  const nextFreeSequence = takenSequences.length === 0 ? 0 : Math.max(...takenSequences) + 1;
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [sequenceText, setSequenceText] = useState(String(nextFreeSequence));
+  const [mode, setMode] = useState<ShipmentLegInput["mode"]>("sea");
+  const [originCountryCode, setOriginCountryCode] = useState("");
+  const [destinationCountryCode, setDestinationCountryCode] = useState("");
+
+  const addLegs = useAddShipmentLegsMutation();
+  const result = addLegs.data;
+
+  const sequence = Number.parseInt(sequenceText, 10);
+  const isSequenceValid = Number.isInteger(sequence) && sequence >= 0;
+  const isSubmitDisabled =
+    addLegs.isPending ||
+    !isSequenceValid ||
+    originCountryCode.trim().length !== 2 ||
+    destinationCountryCode.trim().length !== 2;
+
+  function handleSubmit() {
+    addLegs.mutate(
+      {
+        shipmentId,
+        orderId,
+        input: {
+          legs: [
+            {
+              sequence,
+              mode,
+              // UPPERCASED HERE because the backend regex is `^[A-Z]{2}$` and a lowercase code is a
+              // 422 rather than a case-insensitive match.
+              originCountryCode: originCountryCode.trim().toUpperCase(),
+              destinationCountryCode: destinationCountryCode.trim().toUpperCase(),
+            },
+          ],
+        },
+        idempotencyKey,
+      },
+      {
+        onSuccess: (addResult) => {
+          if (!addResult.success) return;
+          setIdempotencyKey(crypto.randomUUID());
+          setIsOpen(false);
+          setOriginCountryCode("");
+          setDestinationCountryCode("");
+        },
+      },
+    );
+  }
+
+  if (!isOpen) {
+    return (
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/50"
+      >
+        Add a leg
+      </button>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/30 px-3 py-2.5">
+      <p className="text-xs font-medium text-foreground">Add a leg</p>
+
+      <div className="mt-2 space-y-2">
+        <label className="block">
+          <span className="block text-[11px] text-muted-foreground">Position in the route</span>
+          <input
+            type="number"
+            min={0}
+            value={sequenceText}
+            onChange={(event) => setSequenceText(event.target.value)}
+            className="mt-0.5 w-24 rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground"
+          />
+        </label>
+
+        <label className="block">
+          <span className="block text-[11px] text-muted-foreground">Transport mode</span>
+          <select
+            value={mode}
+            onChange={(event) => {
+              // NARROWED AGAINST THE TUPLE, NOT ASSERTED. `event.target.value` is a string as far
+              // as the DOM is concerned, and `as` here would be this component promising something
+              // the browser never guaranteed. The options are built from `FREIGHT_MODES`, so the
+              // lookup always succeeds — which is exactly why the assertion was unnecessary.
+              const picked = FREIGHT_MODES.find((candidate) => candidate === event.target.value);
+              if (picked !== undefined) setMode(picked);
+            }}
+            className="mt-0.5 rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground"
+          >
+            {FREIGHT_MODES.map((freightMode) => (
+              <option key={freightMode} value={freightMode}>
+                {FREIGHT_TRANSPORT_MODE_LABELS[freightMode]}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="flex gap-2">
+          <LabelledInput
+            label="From (country code)"
+            value={originCountryCode}
+            onChange={setOriginCountryCode}
+            placeholder="CN"
+          />
+          <LabelledInput
+            label="To (country code)"
+            value={destinationCountryCode}
+            onChange={setDestinationCountryCode}
+            placeholder="IN"
+          />
+        </div>
+      </div>
+
+      {result !== undefined && !result.success && (
+        <p className="mt-2 text-[11px] text-foreground">
+          {/* A 409 here names the sequence that is already taken — the backend writes that
+              sentence, and repeating it in our own words would let the two drift. */}
+          {result.error.code}: {result.error.message}
+        </p>
+      )}
+
+      <div className="mt-2 flex gap-2">
+        <button
+          type="button"
+          disabled={isSubmitDisabled}
+          onClick={handleSubmit}
+          className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50"
+        >
+          {addLegs.isPending ? "Adding…" : "Add leg"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsOpen(false)}
+          className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }
 

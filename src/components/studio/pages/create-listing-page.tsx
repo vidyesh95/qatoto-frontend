@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useStoreCategoryAttributesQuery } from "@/hooks/store/categories";
+import { useSourcingQuoteLinesQuery } from "@/hooks/store/sourcing";
 import type { CategoryAttribute } from "@/lib/store/catalog.schemas";
 import {
   useCreateListingMutation,
@@ -20,12 +21,13 @@ import {
 import { COUNTRY_OPTIONS } from "@/components/home/account/menus/location-menu";
 import { toOptionalCountryCode } from "@/components/commerce/composer/composer-input";
 import PathwayCandidatePicker from "@/components/studio/pathways/pathway-candidate-picker";
-import { countryLabelFromCode } from "@/lib/store/format";
+import { countryLabelFromCode, formatCentsLabel } from "@/lib/store/format";
 import {
   PRODUCT_RELATION_KINDS,
   PRODUCT_RELATION_KIND_LABELS,
 } from "@/lib/store/merchandising.schemas";
 import type { SellerProductRelation } from "@/lib/products/schemas";
+import type { SourcingQuoteLine } from "@/lib/store/sourcing.schemas";
 import {
   centsToDollarString,
   CONDITION_LABEL_TO_SLUG,
@@ -649,6 +651,14 @@ export default function CreateListingPage({ productId }: { productId?: string })
   const [compareAtPriceInDollars, setCompareAtPriceInDollars] = useState("");
   const [stockQuantity, setStockQuantity] = useState("");
   const [skuCode, setSkuCode] = useState("");
+  /**
+   * A44. Which accepted quote these goods were sourced from, or `null` for none.
+   *
+   * NULL IS THE OVERWHELMING DEFAULT and is not a gap to nag about — almost no listing is sourced
+   * through a Qatoto quote. It sits beside the pricing state because a cost basis belongs next to
+   * a price, not in its own step.
+   */
+  const [sourcingQuoteProductLineId, setSourcingQuoteProductLineId] = useState<string | null>(null);
   const [pricingTiers, setPricingTiers] = useState<PricingTierDraft[]>([]);
 
   // Step 5 — the three sample facts (A17). Three controls because they answer three questions:
@@ -779,6 +789,9 @@ export default function CreateListingPage({ productId }: { productId?: string })
     );
     setStockQuantity(String(loadedProduct.stockQuantity));
     setSkuCode(loadedProduct.sku ?? "");
+    // A44. Without this line the collector would send `null` on the next save and destroy an
+    // existing link — see the field's comment in `PublicProductSchema`.
+    setSourcingQuoteProductLineId(loadedProduct.sourcingQuoteProductLineId);
     setSellingState(loadedProduct.sellingState);
     setSamplePolicy(loadedProduct.samplePolicy);
     // NULL IS UNSTATED, NOT FREE — it hydrates as an empty control, the same rule the shipping
@@ -1432,6 +1445,11 @@ export default function CreateListingPage({ productId }: { productId?: string })
       pricingTiers: tiers,
       sellingState,
       specifications: collectedSpecifications,
+      // ALWAYS SENT, INCLUDING AS `null`. On an edit this is how an unlinked listing stays
+      // unlinked and how a wrong link is removed; omitting it when empty would make clearing
+      // impossible. On a create `null` is simply "not sourced through a Qatoto quote", which is
+      // true of nearly every listing.
+      sourcingQuoteProductLineId: sourcingQuoteProductLineId,
       ...sampleFacts,
       ...packaging.facts,
     };
@@ -3154,6 +3172,15 @@ export default function CreateListingPage({ productId }: { productId?: string })
               </div>
             </div>
 
+            {/* A44. THE COST BASIS SITS BESIDE THE PRICE, which is the only place it means
+                anything: a seller reading "what I charge" is the one who wants "what it cost me"
+                on the same screen. It is not its own step because it is one optional field, and a
+                step would imply every listing should have one. */}
+            <SourcingQuoteLinePicker
+              selectedId={sourcingQuoteProductLineId}
+              onSelect={setSourcingQuoteProductLineId}
+            />
+
             {/* §21.2. A SELLING DECISION, so it sits with stock rather than with the publish
                 controls. Pausing or discontinuing is NOT unpublishing: the listing stays live and
                 findable, its inbound links keep working, and a discontinued page is where a buyer
@@ -4360,6 +4387,88 @@ function describeProgress(progress: SaveProgress): string {
 }
 
 // Shared card wrapper for each wizard step.
+/**
+ * A44. Which accepted quote these goods were sourced from.
+ *
+ * ⚠️ **EMPTY IS THE NORMAL CASE AND MUST NOT READ AS A PROBLEM.** Almost nobody has sourced a
+ * listing through a Qatoto quote, so the empty state explains what the field is for and points at
+ * the RFQ surface — it is not a validation failure, and nothing about publishing depends on it.
+ *
+ * ⚠️ **THE OPTIONS ARE EXACTLY WHAT THE SAVE WILL ACCEPT.** The read behind this returns only
+ * lines on ACCEPTED revisions of quotes this organization requested — the same join the server
+ * re-validates on write. A picker offering anything else would produce a 422 the seller cannot act
+ * on.
+ *
+ * The quote's currency is shown beside the price and never converted to the listing's: a seller may
+ * buy in one currency and sell in another, and converting would be this component inventing an
+ * exchange rate.
+ */
+function SourcingQuoteLinePicker({
+  selectedId,
+  onSelect,
+}: {
+  readonly selectedId: string | null;
+  readonly onSelect: (next: string | null) => void;
+}) {
+  const sourcingQuery = useSourcingQuoteLinesQuery();
+  const result = sourcingQuery.data;
+
+  const lines: readonly SourcingQuoteLine[] =
+    result !== undefined && result.success ? result.data.items : [];
+  const selectedLine = lines.find((line) => line.quoteProductLineId === selectedId) ?? null;
+
+  return (
+    <div className="flex flex-col gap-1.5 border-t border-border pt-6">
+      <span className="text-sm font-medium text-foreground">What these goods cost you</span>
+      <p className="text-xs text-muted-foreground">
+        Optional. Link the accepted quote you sourced these goods under, and Studio can show what
+        they cost beside what they earned. Nothing is published to buyers.
+      </p>
+
+      {sourcingQuery.isPending ? (
+        <p className="mt-1 text-xs text-muted-foreground">Loading your accepted quotes…</p>
+      ) : result !== undefined && !result.success ? (
+        <p className="mt-1 text-xs text-muted-foreground">
+          {result.error.code}: {result.error.message}
+        </p>
+      ) : lines.length === 0 ? (
+        <p className="mt-1 text-xs text-muted-foreground">
+          You have no accepted quotes to link yet. Quotes you accept on a{" "}
+          <Link href="/store/rfqs" className="underline">
+            request for quotation
+          </Link>{" "}
+          appear here.
+        </p>
+      ) : (
+        <>
+          <select
+            value={selectedId ?? ""}
+            onChange={(event) => onSelect(event.target.value === "" ? null : event.target.value)}
+            className="mt-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+          >
+            {/* THE EMPTY OPTION IS HOW A LINK IS REMOVED. It is not a placeholder. */}
+            <option value="">Not sourced through a Qatoto quote</option>
+            {lines.map((line) => (
+              <option key={line.quoteProductLineId} value={line.quoteProductLineId}>
+                {line.titleSnapshot} · {line.providerDisplayName} ·{" "}
+                {formatCentsLabel(line.unitPriceInCents, line.currency)} per unit
+              </option>
+            ))}
+          </select>
+          {selectedLine !== null && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {formatCentsLabel(selectedLine.unitPriceInCents, selectedLine.currency)} per unit,
+              from revision {selectedLine.revisionNumber} of a quote on &ldquo;
+              {selectedLine.rfqTitle}
+              &rdquo;. Shown in the quote&apos;s own currency, never converted.
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function StepCard({
   title,
   subtitle,

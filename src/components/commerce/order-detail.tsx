@@ -36,6 +36,8 @@ import OrderDisputeControl from "@/components/commerce/sections/order-dispute-co
 import TabStrip from "@/components/home/shared/tab-strip";
 import { useOrderQuery, useViewerOrganizationsQuery } from "@/hooks/store/orders";
 import { ORDER_STATE_LABELS, SETTLEMENT_RAIL_LABELS } from "@/lib/store/cart.schemas";
+import { FREIGHT_MODES } from "@/lib/store/freight.schemas";
+import { FREIGHT_TRANSPORT_MODE_LABELS } from "@/lib/store/labels";
 import { formatIncotermLabel } from "@/lib/store/quotes.schemas";
 import { formatCentsLabel, formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
 import {
@@ -118,6 +120,18 @@ function OrderBody({
     // Nullable on the wire, and `DefinitionList` prints "Not provided" for a null rather than dropping
     // the row — on an order, "the seller did not state an Incoterm" is itself the fact worth showing.
     { term: "Incoterm", value: formatIncotermLabel(order.incotermSnapshot) },
+    {
+      /**
+       * A45. WHAT THE BUYER ASKED FOR, and the label says "requested" for a reason: nothing here
+       * books freight. The mode the goods actually move by lives on the shipment's legs, visible
+       * on `/studio/logistics`.
+       *
+       * `DefinitionList` prints "Not provided" for a null, which is the correct reading — null
+       * means the buyer was never asked or never chose, not that they have no preference.
+       */
+      term: "Requested transport",
+      value: formatRequestedFreightModeLabel(order.requestedFreightModeSnapshot),
+    },
     { term: "Payment terms", value: order.paymentTermsSnapshot },
     {
       term: "Settles",
@@ -421,4 +435,18 @@ function QuantityFact({
       <dd className="text-xs leading-4 text-foreground">{formatCountLabel(quantity)}</dd>
     </div>
   );
+}
+
+/**
+ * A45. The buyer's requested mode, or null.
+ *
+ * ⚠️ **NARROWED, NOT ASSERTED.** The wire type is `z.string().nullable()` — it mirrors a pgEnum
+ * whose tuple the server owns — so `as FreightMode` would be this client claiming a guarantee it
+ * does not have. A value outside the tuple renders verbatim, which is the right failure: a mode the
+ * server added and this build has not heard of should read as itself, not disappear.
+ */
+function formatRequestedFreightModeLabel(mode: string | null): string | null {
+  if (mode === null) return null;
+  const knownMode = FREIGHT_MODES.find((candidate) => candidate === mode);
+  return knownMode === undefined ? mode : FREIGHT_TRANSPORT_MODE_LABELS[knownMode];
 }

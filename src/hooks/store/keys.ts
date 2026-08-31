@@ -124,6 +124,10 @@ export const storeKeys = {
    */
   shipmentQueues: () => ["store", "shipments"] as const,
 
+  /** A44. Accepted quote product lines the caller may link a listing to. */
+  sourcingQuoteLines: (cursor: string | undefined) =>
+    ["store", "sourcing-quote-lines", cursor ?? null] as const,
+
   /**
    * One shipment in full, WITH ITS LEGS — `GET /commerce/shipments/:shipmentId`.
    *

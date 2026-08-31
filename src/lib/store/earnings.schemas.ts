@@ -66,9 +66,28 @@ export const SellerEarningsSchema = z
       attestedReceived: z.array(CurrencyAmountSchema),
     }),
     commissionOwed: z.array(CurrencyAmountSchema),
+    /**
+     * What the goods this seller sold cost them — A44.
+     *
+     * ⚠️ **NEVER SUBTRACTED FROM ANYTHING ELSE IN THIS OBJECT.** Exactly `commissionOwed`'s
+     * treatment, for its reason: the backend's header says a client is free to render these together
+     * and is not free to add them. It is also measured on a DIFFERENT clock — `order.confirmedAt`,
+     * where revenue uses `paymentIntent.settledAt` — so the two describe different sets of orders.
+     *
+     * The currency is the QUOTE's, not the order's. A seller may buy in CNY and sell in USD.
+     */
+    sourcingCost: z.array(CurrencyAmountSchema),
     uncounted: z.object({
       offlineOrdersWithNoAttestation: z.number().int(),
       ordersAwaitingPayment: z.number().int(),
+      /**
+       * Sold order lines with NO cost basis recorded — the denominator behind `sourcingCost`.
+       *
+       * ⚠️ **`sourcingCost` MAY NOT BE RENDERED WITHOUT THIS BESIDE IT.** A partial cost shown alone
+       * reads as a complete one; the coverage count is what stops it being misleading, and the
+       * backend's own header says so.
+       */
+      orderLinesWithNoSourcingRecord: z.number().int(),
     }),
   })
   .strip();

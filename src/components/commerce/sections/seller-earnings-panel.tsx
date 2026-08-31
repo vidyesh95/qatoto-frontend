@@ -74,7 +74,7 @@ export default function SellerEarningsPanel() {
 }
 
 function EarningsFigures({ earnings }: { earnings: SellerEarnings }) {
-  const { observed, selfReported, commissionOwed, uncounted } = earnings;
+  const { observed, selfReported, commissionOwed, sourcingCost, uncounted } = earnings;
 
   const hasAnyMoney =
     observed.processorSettled.length > 0 ||
@@ -149,6 +149,38 @@ function EarningsFigures({ earnings }: { earnings: SellerEarnings }) {
         </div>
       </section>
 
+      {/* A44. WHAT THE GOODS COST — ITS OWN SECTION, NOT A FIFTH TILE UNDER "OBSERVED".
+          The order of these sections carries meaning (observed → self-reported → cost → uncounted
+          → absent), and cost is a fourth kind of fact: not money that moved to this seller, but
+          money that moved FROM them, on a different clock. Folding it into the observed grid would
+          invite exactly the subtraction the whole design refuses. */}
+      <section aria-label="What these goods cost you">
+        <h3 className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
+          What these goods cost you
+        </h3>
+        <p className="mt-1 text-xs leading-4 text-muted-foreground">
+          Taken from quotes you accepted on Qatoto, for the listings those goods were sourced under.
+          Measured when an order was confirmed — a different clock from the figures above, which is
+          one of several reasons the two are not subtracted from one another.
+        </p>
+        <div className="mt-2 grid gap-3 sm:grid-cols-2">
+          <MoneyTile
+            label="Sourcing cost"
+            amounts={sourcingCost}
+            caveat="Goods only. Storage, freight, duties and fees are not recorded anywhere on this platform."
+          />
+        </div>
+        {/* ⚠️ THE COVERAGE LINE IS NOT OPTIONAL AND MUST NEVER BE CONDITIONAL ON BEING NON-ZERO.
+            A cost figure shown without its denominator reads as complete. Rendering it at zero is
+            the good case — it means everything sold is accounted for — and rendering it at 40 is
+            the whole reason the number above cannot be trusted as a total. */}
+        <p className="mt-2 text-xs leading-4 text-muted-foreground">
+          {uncounted.orderLinesWithNoSourcingRecord === 0
+            ? "Every line you have sold has a recorded cost basis."
+            : `${formatOrderCount(uncounted.orderLinesWithNoSourcingRecord)} you have sold carry no cost basis, so they are not in the figure above. Link a listing to the quote you sourced it from when you edit it.`}
+        </p>
+      </section>
+
       {/* THE BLIND SPOTS, NAMED. Neither of these is a zero — they are orders nobody has told us
           about. Rendering them as revenue of 0 would be a claim the platform cannot support. */}
       {uncounted.offlineOrdersWithNoAttestation > 0 || uncounted.ordersAwaitingPayment > 0 ? (
@@ -176,14 +208,19 @@ function EarningsFigures({ earnings }: { earnings: SellerEarnings }) {
         </div>
       ) : null}
 
-      {/* See the header. Margin is absent because the input does not exist, not because the sum
-          was hard. */}
+      {/* ⚠️ THIS CARD USED TO SAY "Qatoto never records what you paid for your goods, so there is
+          nothing to subtract". That stopped being true when the sourcing link shipped, and the card
+          stays only because the CONCLUSION survives its premise changing: a cost that covers some
+          goods and none of the storage, freight or duties is not a smaller profit when subtracted,
+          it is a wrong one. */}
       <div className="rounded-xl border border-border px-4 py-3">
         <p className="text-sm font-medium text-foreground">Profit and margin are not shown</p>
         <p className="mt-1 text-xs leading-4 text-muted-foreground">
-          Qatoto never records what you paid for your goods, so there is nothing to subtract from
-          the figures above. Anything we called profit here would just be revenue with a different
-          label.
+          What you paid for goods is recorded where you have linked a listing to the quote you
+          sourced it from. Storage, freight, duties and labour are not recorded anywhere, and most
+          listings have no link at all — so subtracting the cost above from the revenue above would
+          not give you a smaller profit, it would give you a wrong one, flattering by exactly the
+          costs nobody captured.
         </p>
       </div>
     </div>
