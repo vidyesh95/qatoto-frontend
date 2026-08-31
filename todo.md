@@ -353,6 +353,106 @@ BEFORE spending on cards, which is what this did.
 
 ---
 
+## Keyset pagination precision — FIXED 2026-08-31 (backend `0157`)
+
+**14 keyset-paginated lists were sorting on microsecond `timestamp` columns under a millisecond
+cursor.** `encodeStoreCursor` mints its sort key with `Date.toISOString()` (3 decimal places), but a
+plain `timestamp` defaulted by Postgres `now()` stores 6. The predicate then compares `.538000`
+against a stored `.538694`, so `eq` never matches and the boundary row is mishandled.
+
+Fixed by adding `precision: 3` to all 14 columns — `commerce_order`, `commerce_refund`,
+`commerce_service_engagement`, `commerce_shipment`, `commerce_rfq`, `commerce_message`,
+`commerce_thread.updated_at`, `commerce_quote.updated_at`, `commerce_dispute`, `commerce_review`,
+`commerce_encrypted_document`, `notification`, `user_report`, `user`. This finishes a convention the
+repo already held: `precision: 3` appears 44× in `store.ts`, 17× in `home.ts`, 11× in `rnd.ts` and
+**0× in `platform.ts` / `_core.ts`**, which is exactly where the bugs were. `home.ts:312` labels it
+"LOAD-BEARING"; `instant-cursor.ts` states the `timestamp(3)` dependency outright.
+
+⚠️ **THE DOMINANT SYMPTOM IS THE ASC CASE, AND IT DOES NOT TERMINATE.** Measured on unconverted
+microsecond columns with the real cursor semantics:
+
+```
+research_project          ASC   reached 53/53  dup=402   <- cursor never advances
+daily_log_extracted_claim ASC   reached 80/80  dup=401
+research_project          DESC  reached 52/53            <- 1 row unreachable
+commerce_order (after 0157) ASC/DESC  367/367  dup=0     <- fixed
+```
+
+An ASC keyset on a microsecond column re-reads the cursor row forever; a DESC one silently drops
+rows in `[cursor_ms, cursor_actual)`. Those three tables sort by `id`/`name`/`sequenceNumber` in
+production, so they are **demonstrations of the class, not live bugs** — checked, not assumed.
+
+⚠️ **A CORRECTION TO AN EARLIER CLAIM IN THIS FILE'S HISTORY.** The first measurement of this bug
+reported "5 orders silently dropped" in `commerce_order`. **That number was a probe artifact, not a
+product defect.** node-pg parses `timestamp without time zone` into a *local-time* JS Date, so a
+probe that reads via pg and writes back an ISO string cast to `::timestamp` compares values one UTC
+offset apart. The application is not affected: drizzle's own mapper reads `value + "+0000"` and
+writes `toISOString()`, symmetric in both directions, and the server runs in UTC. Re-measured
+app-level with the real codec and real drizzle predicates: `commerce_message` 36/36 and
+`commerce_order` 43/43, zero duplicates. **The precision bug was real; that specific figure was
+not.** Measure keyset behaviour through the app's own codec, never through raw `pg`.
+
+Also folded in: **11 cursor call sites across 9 files** now use `decodeTimestampStoreCursor` instead
+of `decodeStoreCursor` + `new Date(...)`. The loose decoder does no format validation, so
+`"abc"`, `"2026-8-12"` (silently reinterpreted in local time), a microsecond cursor and an
+out-of-range year all passed it — two of them reaching the driver as `Invalid Date` and answering
+**500 instead of 422**. `commerce-pathways.service.ts:1318` was deliberately left on
+`decodeStoreCursor`: it is a **title** cursor, not a timestamp.
+
+### New finding, NOT fixed — the cursor separator collides with underscores in ids
+
+`encodeStoreCursor` joins as `` `${sortKey}_${id}` `` and splits on the **last** `_`, but
+`encodeURIComponent` does **not** escape `_`. Any id containing an underscore therefore produces a
+cursor that decodes into a corrupt sort key.
+
+Not a production bug today: every id is `randomUUID()` (123 such defaults in `store.ts`), which never
+contains `_`. It bites **only seeded rows** — 324 of 367 `commerce_order` ids are
+`devseed_order_chest-freezer-500_40`-shaped, and paging those in a probe fails at page 9. Worth
+knowing before someone introduces a prefixed id format, and worth remembering when a local
+pagination test fails for no apparent reason.
+
+## Deferred from the product-relations console — decided, not built
+
+The moderator console at `/admin/product-relations` shipped; these three were scoped out
+deliberately after the decision was made, so the next pass starts from fact rather than memory.
+
+- **Self-moderation guard on `verifyRelation`.** A moderator can currently confirm their own
+  organization's claim. Copy `isModeratorPartyToTarget`
+  (`commerce-content-reports.service.ts:455-473`) — it is executor-polymorphic, so it runs inside
+  `verifyRelation`'s existing `.for("update")` transaction — and use the pathway's error name
+  `SELF_MODERATION_FORBIDDEN` → **403**. `verifyRelation` already loads `sellerOrganizationId`, but
+  **after** the UPDATE; hoist it above. ⚠️ The check must run **after** the capability check, or it
+  becomes an existence oracle for anyone without `moderate_commerce`.
+- **Dismissal — DECIDED: nullable `dismissed_at` + `dismissed_by_user_id`, NOT a new `sourceKind`
+  enum value.** `sourceKind` means *provenance*; writing a verdict into it destroys the origin fact
+  and cannot distinguish a rejected seller claim from a rejected derived edge. The blocker is
+  structural: `commerce_product_relation_verified_ck`'s negative branch is
+  `source_kind <> 'moderator_curated' AND verified_by_user_id IS NULL`, so a `moderator_rejected`
+  value **cannot record who dismissed it** without rewriting the constraint anyway. Three places
+  already read "not `moderator_curated`" as "the seller's claim" — `create-listing-page.tsx:823`,
+  `pathway-slot-list.tsx:191`, and the CHECK itself.
+    - **Decided semantics: dismissal SUPPRESSES the claim from buyers**, not just from the queue. So
+      `isNull(dismissedAt)` goes on `listProductCompanions`, `listSparePartsForProducts`, the
+      pathway candidate read **and** the moderation list. Fitment is a safety claim.
+    - A seller re-declaring a dismissed edge correctly gets a **fresh undismissed row** — the
+      replace-delete leg is already scoped to `seller_declared`, so it wipes the dismissed row and
+      the claim re-enters the queue. No change needed there, and no false 409.
+    - ⚠️ Needs the audit enum value `product_relation_dismissed` in its **own** migration first —
+      Postgres forbids using a value added by `ALTER TYPE ADD VALUE` in the transaction that added
+      it (see `drizzle/0152`).
+- **Seed images from `public/dummy`.** All 17 seeded products are `status='active'` with **zero**
+  images, so every one is stranded: the publish rule requires `imageCount >= 1`
+  (`products.service.ts:319`), and unpublishing any of them makes it unrepublishable — which is how
+  the demo lamp got stuck. The frontend has 135 assets in `public/dummy/`; seed one `product_image`
+  row per product pointing at `/dummy/<name>.avif`. ⚠️ Confirm `next/image` renders a root-relative
+  path here — the column comment calls `url` a Cloudinary `secure_url`, so that expectation is worth
+  testing rather than assuming.
+    - The neighbouring `listEligibleProducts` `coalesce(published_at, created_at)` invariant was
+      **tested and holds** — all 17 active rows have a non-null `published_at`, so that list never
+      falls through to the microsecond `created_at` and needs nothing.
+
+---
+
 ## Cache Components opt-outs — 102 routes left
 
 `export const instant = false` plus a boilerplate `// TODO: Cache Components adoption` was applied
