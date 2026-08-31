@@ -122,7 +122,7 @@ been a `StudioPlannedPage` stub pointing at Sales for the panel it should have c
 **The leg command rail is wired** — see the corrected bullet in §19.10 above. Four things that ask
 depended on are NOT, each blocked on the backend rather than on effort.
 
-### A. Seller cost basis — **SHIPPED end to end (A44 + A46, migration `0159` UNAPPLIED)**
+### A. Seller cost basis — **SHIPPED end to end and VERIFIED (A44 + A46, `0159` applied)**
 
 ⚠️ **This reopens "Seller cost-of-goods and margin — DECIDED: NOT BUILDING IT" above, and only
 halfway.** That decision refused a **seller-typed** cost on three grounds. Two of them do not
@@ -151,7 +151,7 @@ constraint from the original entry is unchanged: the cost cannot live on
 
 Until then `seller-earnings-panel.tsx`'s "Profit and margin are not shown" card is correct and stays.
 
-### B. The buyer's transport choice — **SHIPPED end to end (A45, migration `0159` UNAPPLIED)**
+### B. The buyer's transport choice — **SHIPPED end to end and VERIFIED (A45, `0159` applied)**
 
 `delivery-sheet.tsx` lets a buyer pick a mode per leg and holds it in
 `selectedModeByLegSequence`, **local component state that dies when the sheet closes.** Nothing
@@ -173,9 +173,23 @@ lane can be priced, and every lane answers `no_active_rate_card` today (§18).
 
 ### ~~What the frontend still has to wire for A44 and A45~~ — **WIRED**
 
-⚠️ **`0159` IS STILL GENERATED BUT NOT APPLIED.** Vidyesh runs it. Every surface below is built and
-renders its absent/empty state until then, which is the honest behaviour and is what was actually
-observed — no field has round-tripped against a real row.
+✅ **`0159` IS APPLIED, AND THE SCHEMA IS VERIFIED.** `pnpm db:verify-store-phase-27-constraints`
+in the backend asserts all of it — 8/8, including the two things nothing functional could catch: the
+mode columns using `commerce_shipment_leg_mode` rather than the five-member `freight_transport_mode`,
+and the sourcing index being PARTIAL rather than full.
+
+Read paths were exercised over HTTP against the live database as the seeded demo seller:
+`GET /products/:id` carries `sourcingQuoteProductLineId: null`, `GET /commerce/sourcing/quote-lines`
+answers the exact empty cursor envelope, `GET /commerce/provider/earnings` carries `sourcingCost: []`
+and **`orderLinesWithNoSourcingRecord: 18`** over real sold lines, and an order detail carries
+`requestedFreightModeSnapshot: null`.
+
+⚠️ **WHAT REMAINS UNPROVEN, and it needs writes rather than code.** No listing has been linked to a
+quote, no order has carried a requested mode, and no leg has been added or assigned — the database
+holds exactly one `commerce_shipment`. So every one of these paths is proven to RUN and to return
+its empty/absent form correctly; none is proven to produce a correct NON-empty result. Closing that
+means writing commerce rows plus append-only audit entries that cannot honestly be deleted
+afterwards, so it belongs to real usage rather than to a verification script.
 
 **Everything in this section now exists**, plus one backend read that had to be built first:
 `GET /commerce/sourcing/quote-lines` (**A46**). The picker could not use `GET /commerce/quotes/:id`
