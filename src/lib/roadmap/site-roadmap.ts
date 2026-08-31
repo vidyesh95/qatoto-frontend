@@ -772,6 +772,13 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
           "Questions asked on your listings, oldest first, filtered to the ones still waiting on you.",
       },
       {
+        kind: "route",
+        label: "Sets",
+        href: "/studio/pathways",
+        summary:
+          "Curated shopping lists — a piece for each thing a buyer needs, and the products that fill it. A moderator reads one before it goes out.",
+      },
+      {
         kind: "dynamic",
         label: "Engagement (seller)",
         pathPattern: "/studio/service-engagements/[engagementId]",

@@ -924,6 +924,12 @@ Service coverage is the other member of the second, and both are backend asks. C
 entry is in before costing it — the audit loop cannot tell them apart, because neither has a
 wrapper to report as uncalled.
 
+⚠️ **AND THE SECOND CLASS IS NOW THE ONLY ONE LEFT.** Seven of the ranked entries have shipped;
+what remains is **RFQ invitations** (a genuine gap, small) and **product relations**, which is in
+the read-first class and must not be wired until the backend has an owner-side read. Pathway
+authoring turned out to be in BOTH classes at once — it needed a caller AND a read, and the read
+was added as part of shipping it.
+
 1. ~~**Product Q&A is read-only.**~~ **SHIPPED — all six writes, frontend only, no migration.** Ask,
    answer, the helpful pair and the two author retractions. `contactAffordance: "ask_question"` now
    gates a control that exists, and `viewer.hasVotedHelpful` renders.
@@ -1213,9 +1219,73 @@ visibility = 'public'`, so an organization that is private or not yet active can
     - **`STORE_BACKEND_STRUCTURE.md` A13 says "ten routes"; there are 11** — third documentation
       strike this session, after §21.1's "no migration" and A23's hypothetical-written-as-history.
 
-4. **What is left of the class, after four of them shipped.** Still open: **pathway authoring**,
-   **image reorder**, the **product view-beacon**, **RFQ invitations** — and **product relations**,
-   which is the one that must NOT simply be wired (see below).
+4. **What is left of the class, after seven of them shipped.** Still open: **RFQ invitations** —
+   and **product relations**, which is the one that must NOT simply be wired (see below).
+
+    ~~**Pathway authoring.**~~ **SHIPPED — `/studio/pathways`, its composer and
+    `/admin/pathways`.** Nine routes that had no caller at all: `grep "commerce/pathways" src/`
+    used to return nothing. Two backend changes went with it, and both were enabling rather than
+    optional.
+
+    ⚠️ **A DRAFT'S CANDIDATES COULD NOT BE RESOLVED TO PRODUCT NAMES, SO THE EDITOR WOULD HAVE
+    SHOWN UUIDs.** The projection was `{ id, productId, variantId, rank }` and NO read anywhere
+    turns a product id into a title for an arbitrary caller: the public read is slug-only,
+    `GET /products/:id` is owner-scoped and 404s on somebody else's listing — which is exactly the
+    case that matters, because `ownCandidateShare` exists precisely so a set can mix other
+    people's products with your own — and the public pathway read serves `active` sets only.
+    `projectPathway` now left-joins `product` and `commerce_product_variant`. **Same answer this
+    file already gave for service coverage and product relations: when a write has no faithful
+    owner-side read, add the read.**
+
+    ⚠️ **AND A REJECTED SET COULD NEVER BE RESUBMITTED — a 500, every time, and it killed the one
+    recoverable path moderation has.** `store_pathway_review_ck` asserts
+    `reviewed_at IS NULL OR state IN ('active','rejected')`. A rejection stamps `reviewed_at`;
+    `submitPathway` then moved the row to `pending_review` **without clearing it**, violating the
+    constraint and escaping as an unmapped 500. So reject → fix → resubmit was dead on arrival,
+    and nothing had noticed because nothing had ever called the route. `submitPathway` now clears
+    `reviewedByUserId`, `reviewedAt` and `reviewNote` — last round's verdict has no business
+    sitting on a set awaiting a new one. **Found by doing it, not by reading it.**
+
+    ⚠️ **SAVING SLOTS CASCADE-DELETES EVERY CANDIDATE UNDER THE PATHWAY, AND THIS IS THE WHOLE
+    SHAPE OF THE EDITOR.** Slots are hard delete-then-insert with positional identity and no `id`
+    in the body (a unique index on `(pathwayId, siblingOrder)` makes an in-place reorder collide
+    with itself), and the candidate FK is `onDelete: "cascade"`. **Measured, not reasoned about**:
+    three slots each holding one product, rename ONE slot's label, re-save slots alone → **all
+    three slots came back empty**. So there is exactly one "Save the set" action, which re-sends
+    every slot's candidates against the freshly-minted ids, and **no per-slot save button exists
+    or may be added**. Local rows are keyed positionally; a slot id is dead the moment a save
+    lands.
+
+    ⚠️ **THE WRITE LIMITER IS 30/MINUTE AND A SAVE COSTS `1 + slotCount` REQUESTS**, with no
+    transaction spanning them. `savePathwayPlan` runs sequentially and reports how far it got, so a
+    half-written plan is stated rather than silent. A partial save cannot be published by accident:
+    submit refuses a required slot with no candidates.
+
+    ⚠️ **PUBLICATION IS TERMINAL AND THE UI SAYS SO BEFORE THE PRESS.** No delete, no withdraw, no
+    unpublish; `retired` is in the enum and nothing sets it. Verified live: a published set answers
+    **409 "A pathway in state active cannot be edited."** for ever. `endsAt` is the only lever that
+    can ever retire one, and it can only be written while the set is still editable — so the
+    composer surfaces it during authoring rather than offering it too late to matter.
+
+    **Two refusals found by probing that no doc mentions.** A slot's `quantity` must reach its
+    candidate's **minimum order quantity** (a chair with an MOQ of 10 in a slot asking for 1 is a
+    422) — the picker now carries the MOQ and the editor warns before the save; and a product with
+    variants must name one (**"Choose a variant for products that have them."**), which is why
+    picking a product is a two-step act rather than one.
+
+    Other things worth keeping: `ownCandidateShare` is **surfaced, never acted on** ("a bicycle
+    maker legitimately supplies most of a bicycle kit"), and `null` is not zero — it means nothing
+    was measurable, including a fully-derived set. It appears on the queue listing only, never on
+    the moderate response. This is also **the first live catalog search in the frontend**:
+    `searchStore` existed with no hook and two server-side callers, and needs
+    `documentKind: "product"` or it returns organizations too.
+
+    ~~**Image reorder** and the **product view-beacon**.~~ **SHIPPED.** Reorder gave sellers a way
+    to change a listing's cover photo for the first time — proved that sending only the
+    pre-existing ids after an upload is a 422, which is why the upload loop now captures the ids it
+    was discarding. The beacon shipped with a privacy-policy disclosure, a panel card and a
+    `productPagesYouLookedAt` export section, because a signed-in product view is personal data and
+    the Art. 15 export had eight sections and none of them was this one.
 
     ~~**Commerce moderation.**~~ **SHIPPED — all five routes, frontend only, no migration.** The
     reporter half (`POST /commerce/reports`) mounts on the product page, a review, a question, an

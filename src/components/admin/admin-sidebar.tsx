@@ -122,6 +122,21 @@ const ADMIN_NAVIGATION_ITEMS: AdminNavItem[] = [
     inactiveIcon: "/icons/fact_check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
+    // CURATED SETS AWAITING PUBLICATION. `moderate_commerce`, and it sits with the other commerce
+    // checks rather than with Community for the reason §17.4 gives: a self-dealing shopping list
+    // and an off-topic forum thread are not the same shift.
+    //
+    // ⚠️ THE DECISION HERE IS A ONE-WAY DOOR. There is no route anywhere that deletes, withdraws or
+    // unpublishes a set, so publishing is permanent — the page confirms before it does.
+    //
+    // `category`, matching the studio sidebar's entry for the same thing, so an author and a
+    // moderator recognise the same glyph.
+    href: "/admin/pathways",
+    label: "Curated sets",
+    activeIcon: "/icons/category_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/category_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
+  {
     // BUYER REPORTS ON THE STORE, and it is separate from the two queues above it for the reason
     // those two are separate from each other: the CAPABILITY and the subject differ. "Community" is
     // `moderate_content` over forum threads and cofounder profiles; this is `moderate_commerce` over

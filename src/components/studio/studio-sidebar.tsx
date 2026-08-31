@@ -104,6 +104,12 @@ const ICON_PATHS = {
     active: "/icons/school_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/school_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  // `category`, not `local_mall`: a set is a grouping of things, and the mall glyph is the store's
+  // own. Both fills are committed, which is what the nav needs.
+  category: {
+    active: "/icons/category_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/category_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
 } as const;
 
 /* ---------- Route paths (outside component) ---------- */
@@ -140,6 +146,7 @@ const STUDIO_ROUTES = {
   // so a seller could answer any question they were SHOWN and had no way to find one — the only route
   // to a question id was to walk their own catalogue product by product from the browser.
   sellerQuestions: "/studio/questions",
+  pathways: "/studio/pathways",
   services: "/studio/services",
   // The manufacturer's own two surfaces. `factoryInquiries` is the RECEIVED queue — the buyer's
   // side of the same rows is `/store/factory-inquiries`, the split `/store/rfqs` and
@@ -372,6 +379,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
       { path: STUDIO_ROUTES.providerQuotes, label: "Your quotes", iconKey: "requestQuote" },
       { path: STUDIO_ROUTES.sellerReviews, label: "Reviews", iconKey: "rateReview" },
       { path: STUDIO_ROUTES.sellerQuestions, label: "Questions", iconKey: "forum" },
+      { path: STUDIO_ROUTES.pathways, label: "Sets", iconKey: "category" },
       { path: STUDIO_ROUTES.services, label: "Services", iconKey: "package" },
       {
         path: STUDIO_ROUTES.factoryInquiries,
