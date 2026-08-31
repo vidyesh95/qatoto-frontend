@@ -34,6 +34,62 @@ export const DISPUTE_EVENT_KINDS = ["opened", "note_added", "closed", "dismissed
 
 export type DisputeEventKind = (typeof DISPUTE_EVENT_KINDS)[number];
 
+/**
+ * WHO MAY OPEN ONE, AND FROM WHAT.
+ *
+ * ⚠️ **THE BUYER ONLY** — `evaluateDisputeOpeningRelationship` returns `forbidden` when the actor
+ * is not the order's buyer organization (`commerce-trust.service.ts:218`), so a seller reading an
+ * accusation answers it with a note rather than opening one of their own.
+ *
+ * ⚠️ **AND ONLY FROM THESE FOUR ORDER STATES.** A `draft` or `cancelled` order has nothing to
+ * dispute and the route answers `invalid_state`. Mirrored here so the control is absent rather than
+ * offered-and-refused; the server decides regardless.
+ */
+export const DISPUTABLE_ORDER_STATES = [
+  "confirmed",
+  "in_fulfillment",
+  "partially_completed",
+  "completed",
+] as const;
+
+/**
+ * The reason codes this client offers.
+ *
+ * ⚠️ **`reasonCode` IS FREE TEXT ON THE WIRE, NOT A pgEnum** — the column takes anything matching
+ * `^[a-z][a-z0-9_]{0,79}$`, and this tuple is a CLIENT vocabulary over it. It exists because a text
+ * input would fragment one reason into six spellings that no moderator could group or count, and
+ * because a code is snake_case data rather than an identifier: it is sent verbatim and must not be
+ * "corrected" to kebab-case.
+ *
+ * A code added here needs no backend change. That is the point of the column being open, and it is
+ * also why nothing may ASSUME a stored code is one of these — a dispute opened by another client,
+ * or by an older version of this one, can carry anything.
+ */
+export const DISPUTE_REASON_CODES = [
+  "not_delivered",
+  "damaged_on_arrival",
+  "wrong_items",
+  "quantity_short",
+  "quality_below_spec",
+  "other",
+] as const;
+export type DisputeReasonCode = (typeof DISPUTE_REASON_CODES)[number];
+
+export const DISPUTE_REASON_CODE_LABELS: Record<DisputeReasonCode, string> = {
+  not_delivered: "It never arrived",
+  damaged_on_arrival: "It arrived damaged",
+  wrong_items: "The wrong items arrived",
+  quantity_short: "Some of it is missing",
+  quality_below_spec: "It is not what was specified",
+  other: "Something else",
+};
+
+/** `POST /commerce/orders/:orderId/disputes` — answers **201** with the dispute. */
+export interface OpenDisputeInput {
+  readonly reasonCode: string;
+  readonly summary: string;
+}
+
 // --- Projections ------------------------------------------------------------
 
 export const DisputeSchema = z

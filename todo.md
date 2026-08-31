@@ -1204,12 +1204,46 @@ visibility = 'public'`, so an organization that is private or not yet active can
     - **`STORE_BACKEND_STRUCTURE.md` A13 says "ten routes"; there are 11** — third documentation
       strike this session, after §21.1's "no migration" and A23's hypothetical-written-as-history.
 
-4. **Product relations** (`companions` is read and rendered, nothing writes it), **settlement
-   agreements** (`hasEscrowProtection` is labelled copy over an unreachable flow), **logistics
-   writes** (a provider can watch a shipment, not create or advance one), **pathway authoring**,
-   **commerce moderation and dispute-opening** (a buyer can read a dispute they cannot open),
-   **provider offering edit/submit/coverage**, image reorder, the product view-beacon, RFQ
-   invitations.
+4. **What is left of the class, after three of them shipped.** Still open: **product relations**
+   (`companions` is read and rendered, nothing writes it), **pathway authoring**, **commerce
+   moderation** (`POST /commerce/reports` and all four `/commerce/admin/*` moderation routes have no
+   caller — the VIDEO console for the same thing shipped long ago), image reorder, the product
+   view-beacon, RFQ invitations.
+
+    ~~**provider offering edit/submit/coverage**~~, ~~**logistics writes**~~ and
+    ~~**dispute-opening**~~ **SHIPPED — the three dead ends, frontend only, no migration.** Each was
+    a wall a real user hit: a provider could create a listing and never publish it, nothing on the
+    platform could create or advance a shipment, and a buyer could read disputes they had no door to
+    open.
+
+    - **Offerings**: `PATCH /service-offerings/:id` and `POST …/submit`, on the row in
+      `/studio/services`. Send-for-review is offered on `draft` and nowhere else — `pending_review`
+      is already queued and the two moderator states are refused by the route. **Submitting is not
+      publishing**: the row comes back `pending_review` and keeps its no-public-link rule.
+    - ⚠️ **COVERAGE WAS DELIBERATELY NOT BUILT, AND IT IS A BACKEND GAP.**
+      `PUT /service-offerings/:id/coverage` replaces the WHOLE lane list, and **no read returns a
+      provider's current lanes** — `offerings/mine` answers the raw offering row and the public
+      detail read exists only for `active` listings. A form that cannot show what it is about to
+      replace deletes a provider's lanes the first time they add one. **No wrapper was written
+      either** — an uncalled one is unverified code, which the hook audit catches by design. **That
+      is the same gap the seller profile had** (writes with no owner-side read), fixed there by
+      adding the GET; the fix here is the same, and it is a backend task.
+    - **Shipments**: `POST /orders/:orderId/shipments` and `POST /shipments/:id/events`, on the
+      order detail page's fulfilment panel, counterparty side only. `legs` is **not** sent — a leg
+      is its own state machine with `expectedVersion` commands, and creating one with no way to
+      advance it leaves a booking nobody can move.
+    - **Disputes**: `POST /orders/:orderId/disputes`, on the order detail page, **buyer side only**
+      — `evaluateDisputeOpeningRelationship` refuses any actor that is not the order's buyer, so a
+      seller answers with a note on the existing dispute. `reasonCode` is free text under a regex
+      rather than a pgEnum, so the client ships a closed picker over it: a textarea would fragment
+      one reason into six spellings no moderator could group.
+
+    ⚠️ **SETTLEMENT AGREEMENTS: DECIDED AGAINST FOR NOW, not forgotten.** `POST
+    /threads/:threadId/settlement-agreements` and `…/responses` exist and have no caller, and they
+    stay that way: a propose/respond UI reads as Qatoto holding the money even when a licensed third
+    party does, which is the exact liability the no-custody posture exists to avoid. Escrow left this
+    codebase (§7) and nothing here reopens it. Revisit if a licensed provider is actually
+    contracted — the routes are the smaller half of that decision.
 5. ~~⚠️ **Two frontend files assert in prose that a shipped backend route does not exist.**~~
    **BOTH SHIPPED, frontend only, no migration.** Each route was proved to exist against the running
    backend before anything was written, by the assertion that separates "the route is missing" from

@@ -32,6 +32,7 @@ import OrderPaymentPanel from "@/components/commerce/sections/order-payment-pane
 import SettlementAttestationPanel from "@/components/commerce/sections/settlement-attestation-panel";
 import StatusPanel from "@/components/home/shared/status-panel";
 import OrderCancelControl from "@/components/commerce/sections/order-cancel-control";
+import OrderDisputeControl from "@/components/commerce/sections/order-dispute-control";
 import TabStrip from "@/components/home/shared/tab-strip";
 import { useOrderQuery, useViewerOrganizationsQuery } from "@/hooks/store/orders";
 import { ORDER_STATE_LABELS, SETTLEMENT_RAIL_LABELS } from "@/lib/store/cart.schemas";
@@ -208,6 +209,14 @@ function OrderBody({
                     buyer-only line of copy pointing at a cancel control on the orders list that did not
                     exist — see `order-cancel-control.tsx`. */}
                 <OrderCancelControl orderId={order.id} orderState={order.state} />
+                {/* BUYER-ONLY, unlike cancellation above: the service refuses any actor that is not
+                    the order's buyer organization. A seller answers an accusation with a note on the
+                    dispute, which is what the note write is for. */}
+                <OrderDisputeControl
+                  orderId={order.id}
+                  orderState={order.state}
+                  relation={relation}
+                />
               </div>
             ),
           },
@@ -231,7 +240,13 @@ function OrderBody({
                   clear it. That is still the more useful of the two.
                 */}
                 <OrderArrivalWindowPanel orderId={order.id} />
-                <OrderFulfillmentPanel orderId={order.id} relation={relation} />
+                <OrderFulfillmentPanel
+                  orderId={order.id}
+                  relation={relation}
+                  // The fulfillment read carries shipments, not the order's own lines, and a
+                  // shipment is built FROM those lines. Passed down rather than re-read.
+                  productLines={order.productLines}
+                />
               </div>
             ),
           },

@@ -11,8 +11,18 @@ import {
 
 import { storeKeys } from "@/hooks/store/keys";
 import type { ActionResponse } from "@/lib/http";
-import { addDisputeNote, getDispute, listDisputes } from "@/lib/store/disputes.api";
-import type { DisputeDetail, ListDisputesFilter } from "@/lib/store/disputes.schemas";
+import {
+  addDisputeNote,
+  getDispute,
+  listDisputes,
+  openOrderDispute,
+} from "@/lib/store/disputes.api";
+import type {
+  Dispute,
+  DisputeDetail,
+  ListDisputesFilter,
+  OpenDisputeInput,
+} from "@/lib/store/disputes.schemas";
 
 /**
  * One dispute and its timeline.
@@ -62,6 +72,41 @@ export function useAddDisputeNote(): UseMutationResult<
     onSuccess: (result, { disputeId }) => {
       if (!result.success) return;
       queryClient.setQueryData(storeKeys.dispute(disputeId), result);
+    },
+  });
+}
+
+/**
+ * Opens a dispute on one order.
+ *
+ * ⚠️ **THIS CHANGES THE ORDER'S STATE**, so the order read is invalidated alongside the dispute
+ * list: the order becomes `disputed` and its previous state is frozen on the dispute. A UI still
+ * showing `in_fulfillment` beside a live dispute would be showing two contradictory facts about
+ * one order.
+ *
+ * NOT OPTIMISTIC, and the response is not necessarily new: an order already carrying an open
+ * dispute answers THAT one instead of creating a second, so the caller renders what came back.
+ *
+ * The idempotency key is minted per attempt by the form.
+ */
+export function useOpenOrderDisputeMutation(): UseMutationResult<
+  ActionResponse<Dispute>,
+  Error,
+  {
+    readonly orderId: string;
+    readonly input: OpenDisputeInput;
+    readonly idempotencyKey: string;
+  }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orderId, input, idempotencyKey }) =>
+      openOrderDispute(orderId, input, { headers: { "Idempotency-Key": idempotencyKey } }),
+    onSuccess: (result, variables) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.order(variables.orderId) });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.disputeLists() });
     },
   });
 }

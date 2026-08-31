@@ -376,6 +376,57 @@ export type ProviderDirectoryPage = z.infer<typeof ProviderDirectoryPageSchema>;
 export type ProviderDirectoryFacets = z.infer<typeof ProviderDirectoryFacetsSchema>;
 export type PublicOfferingCard = z.infer<typeof PublicOfferingCardSchema>;
 export type PublicCoverage = z.infer<typeof PublicCoverageSchema>;
+
+/**
+ * ⚠️ **THERE IS NO COVERAGE WRITE ON THIS CLIENT, AND THAT IS A BACKEND GAP.**
+ *
+ * `PUT /commerce/service-offerings/:offeringId/coverage` exists and replaces the WHOLE lane list —
+ * an omitted lane is a deletion. **No read returns a provider its own lanes**:
+ * `GET /providers/offerings/mine` answers the raw offering row, and `PublicCoverageSchema` above is
+ * reached only through the public detail read, which exists solely for `active` listings. A form
+ * that cannot show what it is about to replace would delete a provider's lanes the first time they
+ * added one, so the wrapper is not written until a `GET …/coverage` exists to seed it.
+ *
+ * This is the same shape the seller profile had — writes with no owner-side read — and it was fixed
+ * there by adding the GET rather than by guessing at the current state.
+ */
+
+/**
+ * `PATCH /commerce/service-offerings/:offeringId` — a SPARSE patch.
+ *
+ * An omitted key is untouched; an explicit `null` clears the two nullable pairs. The body is
+ * `.strict()`, so a form must send only what it changed rather than echoing the whole row back —
+ * echoing would also make an unrelated concurrent edit invisible to whoever made it.
+ *
+ * ⚠️ **THE TWO RANGES ARE BOTH-OR-NEITHER**, checked server-side: an indicative price range with
+ * only a minimum, or a lead time with only a maximum, is a 422. That is the same rule the create
+ * body follows and the reason both halves live on one form.
+ */
+export interface UpdateServiceOfferingInput {
+  readonly title?: string;
+  readonly summary?: string | null;
+  readonly pricingModel?: ServicePricingModel;
+  readonly indicativePriceMinInCents?: number | null;
+  readonly indicativePriceMaxInCents?: number | null;
+  readonly currency?: string;
+  readonly minimumLeadTimeDays?: number | null;
+  readonly maximumLeadTimeDays?: number | null;
+}
+
+/**
+ * One lane the provider serves. Every field is optional — a coverage row saying only
+ * "hazardous goods, consolidation" is a real answer for a provider who works everywhere.
+ */
+export interface ServiceCoverageInput {
+  readonly originCountryCode?: string;
+  readonly destinationCountryCode?: string;
+  readonly originRegionLabel?: string;
+  readonly destinationRegionLabel?: string;
+  readonly locationIdentifier?: string;
+  readonly supportsHazardousGoods?: boolean;
+  readonly supportsConsolidation?: boolean;
+}
+
 export type ServiceOfferingDetail = z.infer<typeof ServiceOfferingDetailSchema>;
 export type PublicProviderDetail = z.infer<typeof PublicProviderDetailSchema>;
 export type PublicServiceOffering = z.infer<typeof PublicServiceOfferingSchema>;

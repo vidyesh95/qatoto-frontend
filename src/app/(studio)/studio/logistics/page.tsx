@@ -12,14 +12,20 @@ export const metadata: Metadata = {
 };
 
 /**
- * BLOCKED ON A CROSS-ORDER SHIPMENT READ THAT DOES NOT EXIST.
+ * THE CROSS-ORDER SHIPMENT QUEUE.
  *
- * `commerce-fulfillment.routes.ts` exposes `GET /commerce/orders/:orderId/shipments`,
- * `GET /commerce/shipments/:shipmentId` and its events — every one scoped to an id the caller already holds.
- * There is no `GET /commerce/provider/shipments`, which is the only thing a logistics queue is.
+ * ⚠️ THIS COMMENT USED TO SAY THE ROUTE DID NOT EXIST, and it had been wrong since A29:
+ * `GET /commerce/provider/shipments` (`commerce-fulfillment.routes.ts:40`) is what the component
+ * below reads, and A38 added the buyer twin beside it. The component was rewired and this banner
+ * was not — read a stale blocker as a claim to CHECK, not as a fact.
  *
- * Stitching one together client-side would be a request per order and could only cover the orders currently
- * loaded, so a shipment could be missing from a page claiming to list all of them. See the component.
+ * The half that was right survives in the component: stitching a queue together client-side would
+ * be one request per order and could only cover the orders currently loaded, so a shipment could be
+ * missing from a page claiming to list all of them.
+ *
+ * Shipments are CREATED and ADVANCED from the order they belong to (`/studio/orders/[orderId]`),
+ * because that is how the backend scopes both writes — the queue lists no order this page could
+ * create one against.
  */
 export default function StudioLogisticsRoute() {
   return (

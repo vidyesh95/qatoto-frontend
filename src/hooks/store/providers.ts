@@ -18,10 +18,16 @@ import {
 
 import { storeKeys } from "@/hooks/store/keys";
 import type { ActionResponse } from "@/lib/http";
-import { createServiceOffering, listMyServiceOfferings } from "@/lib/store/providers.api";
+import {
+  createServiceOffering,
+  listMyServiceOfferings,
+  submitServiceOffering,
+  updateServiceOffering,
+} from "@/lib/store/providers.api";
 import type {
   CreatedServiceOffering,
   CreateServiceOfferingInput,
+  UpdateServiceOfferingInput,
 } from "@/lib/store/providers.schemas";
 
 /** Every offering the caller's organization owns, drafts included. The only read that shows one. */
@@ -52,6 +58,61 @@ export function useCreateServiceOffering(): UseMutationResult<
   return useMutation({
     mutationFn: ({ input, idempotencyKey }) =>
       createServiceOffering(input, { headers: { "Idempotency-Key": idempotencyKey } }),
+    onSuccess: (result) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.providerOfferingsMine() });
+    },
+  });
+}
+
+/**
+ * Edits a listing in place — a SPARSE patch, so the caller sends only what changed.
+ *
+ * Invalidates the provider's own list, which is the only read that carries a draft. An `active`
+ * listing also appears in public reads that are server-fetched and never in this cache, so a buyer
+ * sees the edit on their next request rather than through an invalidation here.
+ */
+export function useUpdateServiceOfferingMutation(): UseMutationResult<
+  ActionResponse<CreatedServiceOffering>,
+  Error,
+  {
+    readonly offeringId: string;
+    readonly input: UpdateServiceOfferingInput;
+    readonly idempotencyKey: string;
+  }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ offeringId, input, idempotencyKey }) =>
+      updateServiceOffering(offeringId, input, {
+        headers: { "Idempotency-Key": idempotencyKey },
+      }),
+    onSuccess: (result) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.providerOfferingsMine() });
+    },
+  });
+}
+
+/**
+ * Sends a draft for review — `draft` → `pending_review`.
+ *
+ * ⚠️ **NOT OPTIMISTIC, AND NOT A PUBLICATION.** The row's new state comes from the response, and
+ * that state is `pending_review`: a moderator has not looked yet. A UI that flipped the row to
+ * "published" here would tell a provider their listing is findable when its public URL is still a
+ * 404.
+ */
+export function useSubmitServiceOfferingMutation(): UseMutationResult<
+  ActionResponse<CreatedServiceOffering>,
+  Error,
+  { readonly offeringId: string; readonly idempotencyKey: string }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ offeringId, idempotencyKey }) =>
+      submitServiceOffering(offeringId, { headers: { "Idempotency-Key": idempotencyKey } }),
     onSuccess: (result) => {
       if (!result.success) return;
       void queryClient.invalidateQueries({ queryKey: storeKeys.providerOfferingsMine() });

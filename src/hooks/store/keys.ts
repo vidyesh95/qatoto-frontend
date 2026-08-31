@@ -105,9 +105,24 @@ export const storeKeys = {
   dispute: (disputeId: string) => ["store", "disputes", disputeId] as const,
   disputeList: (state: string | undefined) => ["store", "disputes", "list", state] as const,
 
+  /**
+   * The PREFIX over every dispute-list entry. Opening a dispute changes which state filter the
+   * order belongs under, so the entry that must refetch is often not the one on screen.
+   */
+  disputeLists: () => ["store", "disputes", "list"] as const,
+
   /** The cross-order shipment queue. `which` is the ENDPOINT, so the two must not share an entry. */
   shipmentQueue: (which: "buyer" | "provider", state: string | undefined) =>
     ["store", "shipments", which, state] as const,
+
+  /**
+   * The PREFIX over every shipment queue entry, for invalidation after a write.
+   *
+   * A write invalidates this rather than one `shipmentQueue(which, state)`: a new shipment or a new
+   * event changes which state filter a row belongs to, so the entry that must refetch is often the
+   * one the caller was not looking at.
+   */
+  shipmentQueues: () => ["store", "shipments"] as const,
 
   /**
    * What this organization has been paid, over one window.

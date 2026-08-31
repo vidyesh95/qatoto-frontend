@@ -20,10 +20,13 @@ import {
 import {
   DisputeDetailSchema,
   DisputeListPageSchema,
+  DisputeSchema,
   type AddDisputeNoteInput,
+  type Dispute,
   type DisputeDetail,
   type DisputeListPage,
   type ListDisputesFilter,
+  type OpenDisputeInput,
 } from "@/lib/store/disputes.schemas";
 
 /**
@@ -92,4 +95,31 @@ export function addDisputeNote(
     DisputeDetailSchema,
     options,
   );
+}
+
+/**
+ * `POST /commerce/orders/:orderId/disputes` — opens one. **201.**
+ *
+ * ⚠️ **THE BUYER OPENS A DISPUTE AND NOBODY ELSE DOES.** The service refuses any actor that is not
+ * the order's buyer organization, so a seller's answer to an accusation is a note on the existing
+ * dispute rather than a second dispute. Offer this control on the buyer's side only.
+ *
+ * ⚠️ **OPENING ONE MOVES THE ORDER TO `disputed`**, and the state it came from is frozen on the
+ * dispute as `priorOrderState` — which is what a decision restores it to. This is not a message: it
+ * is a state change on a live order, and the copy at the control must say so.
+ *
+ * ⚠️ **AN ORDER HAS AT MOST ONE OPEN DISPUTE.** Asking again while one is open answers the existing
+ * one rather than creating a second, so a caller must render what comes back rather than assuming
+ * it is new.
+ *
+ * NO MONEY MOVES. Qatoto holds none — there is no escrow in this codebase — so nothing here
+ * refunds, holds or releases anything, and no copy may imply it does.
+ */
+export function openOrderDispute(
+  orderId: string,
+  input: OpenDisputeInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<Dispute>> {
+  const path = `/commerce/orders/${encodeURIComponent(orderId)}/disputes`;
+  return sendJson(path, "POST", input, DisputeSchema, options);
 }

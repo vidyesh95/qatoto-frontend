@@ -25,6 +25,7 @@ import {
   type ProviderDirectoryPage,
   type PublicProviderDetail,
   type PublicServiceOffering,
+  type UpdateServiceOfferingInput,
 } from "@/lib/store/providers.schemas";
 
 /**
@@ -132,4 +133,42 @@ export function createServiceOffering(
     CreatedServiceOfferingSchema,
     options,
   );
+}
+
+/**
+ * `PATCH /commerce/service-offerings/:offeringId` — edit a listing in place.
+ *
+ * SPARSE: send only the keys the form touched. The body is `.strict()` and an omitted key is
+ * untouched, so echoing the whole row back would also overwrite a field somebody else edited
+ * between the read and the save.
+ *
+ * ⚠️ **EDITING AN `active` LISTING EDITS WHAT BUYERS SEE**, with no re-review. That is the
+ * backend's choice, not this wrapper's, and it is why the two ranges are validated server-side as
+ * both-or-neither rather than being repairable later.
+ */
+export function updateServiceOffering(
+  offeringId: string,
+  input: UpdateServiceOfferingInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<CreatedServiceOffering>> {
+  const path = `/commerce/service-offerings/${encodeURIComponent(offeringId)}`;
+  return sendJson(path, "PATCH", input, CreatedServiceOfferingSchema, options);
+}
+
+/**
+ * `POST /commerce/service-offerings/:offeringId/submit` — `draft` → `pending_review`.
+ *
+ * ⚠️ **SUBMITTING IS NOT PUBLISHING, AND THE 200 IS NOT A LISTING.** The row comes back
+ * `pending_review`; a moderator decides from there through
+ * `POST /commerce/admin/service-offerings/:id/moderate`. No copy on the success path may say live,
+ * listed or published, and the public URL stays a 404 until the state reads `active`.
+ *
+ * Takes no body and still needs an `Idempotency-Key`.
+ */
+export function submitServiceOffering(
+  offeringId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<CreatedServiceOffering>> {
+  const path = `/commerce/service-offerings/${encodeURIComponent(offeringId)}/submit`;
+  return sendJson(path, "POST", undefined, CreatedServiceOfferingSchema, options);
 }

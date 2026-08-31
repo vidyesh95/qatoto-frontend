@@ -14,6 +14,8 @@
 // in particular is not an error — it means the engagement predates typed deliverables, so its results
 // cannot be read back — and dropping it would leave a buyer wondering where the report went.
 
+import { useState } from "react";
+
 import Link from "next/link";
 
 import RecordTimeline, {
@@ -32,14 +34,30 @@ import {
   type FulfillmentEngagement,
   type FulfillmentShipment,
 } from "@/lib/store/fulfillment.schemas";
-import type { OrderViewerRelation } from "@/lib/store/orders.schemas";
+import {
+  useAppendShipmentEventMutation,
+  useCreateOrderShipmentMutation,
+} from "@/hooks/store/shipments";
+import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
+import {
+  APPENDABLE_SHIPMENT_EVENT_KIND_LABELS,
+  APPENDABLE_SHIPMENT_EVENT_KINDS,
+  type AppendableShipmentEventKind,
+} from "@/lib/store/shipments.schemas";
+import type { OrderProductLine, OrderViewerRelation } from "@/lib/store/orders.schemas";
 
 export default function OrderFulfillmentPanel({
   orderId,
   relation,
+  productLines,
 }: {
   orderId: string;
   relation: OrderViewerRelation;
+  /**
+   * The order's own lines, passed down because the fulfillment read does not carry them and a
+   * shipment is built FROM them. Only the counterparty side uses this.
+   */
+  productLines: readonly OrderProductLine[];
 }) {
   const fulfillmentQuery = useOrderFulfillmentQuery(orderId);
 
@@ -64,6 +82,12 @@ export default function OrderFulfillmentPanel({
 
   const fulfillment = result.data;
   const isBuyerSide = relation === "buyer" || relation === "both";
+  /**
+   * WHO SHIPS. The service scopes both writes to the order's counterparty, so a buyer pressing
+   * these would collect a refusal. Offering them anyway would not grant anything — the server
+   * re-authorizes — it would just be the studio telling a buyer they are the one with the boxes.
+   */
+  const isCounterpartySide = relation === "counterparty" || relation === "both";
 
   return (
     <div className="space-y-4">
@@ -116,11 +140,16 @@ export default function OrderFulfillmentPanel({
             {fulfillment.shipments.map((shipment) => (
               <li key={shipment.id}>
                 <ShipmentBlock shipment={shipment} />
+                {isCounterpartySide && (
+                  <ShipmentEventControl orderId={orderId} shipmentId={shipment.id} />
+                )}
               </li>
             ))}
           </ul>
         </section>
       )}
+
+      {isCounterpartySide && <CreateShipmentForm orderId={orderId} productLines={productLines} />}
 
       {fulfillment.engagements.length > 0 && (
         <section aria-label="Services">
@@ -135,6 +164,287 @@ export default function OrderFulfillmentPanel({
         </section>
       )}
     </div>
+  );
+}
+
+const FIELD_CLASS =
+  "mt-1 w-full rounded-lg border border-border px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary";
+
+const QUIET_BUTTON_CLASS =
+  "cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium text-foreground outline -outline-offset-1 outline-border disabled:opacity-40";
+
+const PRIMARY_BUTTON_CLASS =
+  "cursor-pointer rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground disabled:opacity-40";
+
+/** Narrows a `<select>`'s value against the tuple it was rendered from. NOT an `as`. */
+function narrowToEventKind(value: string): AppendableShipmentEventKind | undefined {
+  return APPENDABLE_SHIPMENT_EVENT_KINDS.find((eventKind) => eventKind === value);
+}
+
+/**
+ * Records what happened to one shipment.
+ *
+ * ⚠️ **`delivered` IS A CLAIM THE BUYER READS ON THEIR OWN ORDER**, so nothing here is optimistic:
+ * the shipment's new state arrives with the response and the panel refetches. A **409** is the
+ * state machine refusing the transition — advancing something already cancelled — and is shown
+ * verbatim rather than retried.
+ */
+function ShipmentEventControl({ orderId, shipmentId }: { orderId: string; shipmentId: string }) {
+  const [eventKind, setEventKind] = useState<AppendableShipmentEventKind>("in_transit");
+  const [description, setDescription] = useState("");
+  const appendEvent = useAppendShipmentEventMutation();
+  const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
+
+  return (
+    <form
+      className="mt-2 flex flex-wrap items-end gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (appendEvent.isPending) return;
+        const trimmedDescription = description.trim();
+        appendEvent.mutate(
+          {
+            orderId,
+            shipmentId,
+            input: {
+              eventKind,
+              // `occurredAt` is omitted, which the backend reads as now. A date picker here would
+              // let somebody record a delivery for a time that has not happened.
+              ...(trimmedDescription.length === 0 ? {} : { description: trimmedDescription }),
+            },
+            idempotencyKey: getIdempotencyKey(),
+          },
+          {
+            onSuccess: (result) => {
+              if (!result.success) return;
+              resetIdempotencyKey();
+              setDescription("");
+            },
+          },
+        );
+      }}
+    >
+      <label className="text-xs font-medium text-muted-foreground">
+        Record
+        <select
+          value={eventKind}
+          onChange={(changeEvent) =>
+            setEventKind(narrowToEventKind(changeEvent.target.value) ?? "in_transit")
+          }
+          className={FIELD_CLASS}
+        >
+          {APPENDABLE_SHIPMENT_EVENT_KINDS.map((kind) => (
+            <option key={kind} value={kind}>
+              {APPENDABLE_SHIPMENT_EVENT_KIND_LABELS[kind]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="min-w-[12rem] flex-1 text-xs font-medium text-muted-foreground">
+        What happened (optional)
+        <input
+          type="text"
+          value={description}
+          maxLength={2000}
+          onChange={(changeEvent) => setDescription(changeEvent.target.value)}
+          className={FIELD_CLASS}
+        />
+      </label>
+      <button type="submit" disabled={appendEvent.isPending} className={QUIET_BUTTON_CLASS}>
+        {appendEvent.isPending ? "Recording…" : "Record it"}
+      </button>
+      {appendEvent.data?.success === false && (
+        <p className="w-full text-xs leading-4 text-destructive">
+          {appendEvent.data.error.message}
+        </p>
+      )}
+      {appendEvent.isError && (
+        <p className="w-full text-xs leading-4 text-destructive">
+          That event was not recorded. Try again.
+        </p>
+      )}
+    </form>
+  );
+}
+
+/**
+ * Creates a shipment from the order's own lines.
+ *
+ * ⚠️ **A LINE CAN SHIP IN PARTS, so the quantities are per line and default to nothing.** The cap
+ * rendered here is the ordered quantity, which is a CONVENIENCE: the server checks against what
+ * remains unshipped, which is the smaller number once a first box has gone.
+ *
+ * ⚠️ **NO LEGS.** The route accepts them and this form sends none — a leg is its own state machine
+ * with `expectedVersion` commands, and creating one with no way to advance it would leave a booking
+ * nobody can move.
+ */
+function CreateShipmentForm({
+  orderId,
+  productLines,
+}: {
+  orderId: string;
+  productLines: readonly OrderProductLine[];
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [quantityByLineId, setQuantityByLineId] = useState<Record<string, string>>({});
+  const [packageCount, setPackageCount] = useState("1");
+  const [originLocality, setOriginLocality] = useState("");
+  const [destinationLocality, setDestinationLocality] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const createShipment = useCreateOrderShipmentMutation();
+  const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
+
+  if (!isOpen) {
+    return (
+      <button type="button" onClick={() => setIsOpen(true)} className={PRIMARY_BUTTON_CLASS}>
+        Create a shipment
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className="space-y-3 rounded-xl border border-border px-4 py-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (createShipment.isPending) return;
+
+        const lines = productLines.flatMap((productLine) => {
+          const quantity = Number.parseInt(quantityByLineId[productLine.id] ?? "", 10);
+          return Number.isNaN(quantity) || quantity <= 0
+            ? []
+            : [{ orderProductLineId: productLine.id, quantity }];
+        });
+        if (lines.length === 0) {
+          setLocalError("Say how many of at least one line are in this shipment.");
+          return;
+        }
+        const packages = Number.parseInt(packageCount, 10);
+        if (Number.isNaN(packages) || packages <= 0) {
+          setLocalError("A shipment has at least one package.");
+          return;
+        }
+        setLocalError(null);
+
+        const trimmedOrigin = originLocality.trim();
+        const trimmedDestination = destinationLocality.trim();
+        createShipment.mutate(
+          {
+            orderId,
+            input: {
+              lines,
+              packageCount: packages,
+              // A lane nobody has stated is OMITTED rather than blanked — an invented origin is one
+              // somebody schedules a truck against.
+              ...(trimmedOrigin.length === 0 ? {} : { originLocality: trimmedOrigin }),
+              ...(trimmedDestination.length === 0
+                ? {}
+                : { destinationLocality: trimmedDestination }),
+            },
+            idempotencyKey: getIdempotencyKey(),
+          },
+          {
+            onSuccess: (result) => {
+              if (!result.success) return;
+              resetIdempotencyKey();
+              setQuantityByLineId({});
+              setPackageCount("1");
+              setOriginLocality("");
+              setDestinationLocality("");
+              setIsOpen(false);
+            },
+          },
+        );
+      }}
+    >
+      <p className="text-sm font-medium text-foreground">What is in this shipment</p>
+      <ul className="space-y-2">
+        {productLines.map((productLine) => (
+          <li key={productLine.id} className="flex flex-wrap items-end gap-2">
+            <span className="min-w-0 flex-1 text-xs leading-4 text-foreground">
+              {productLine.titleSnapshot}
+              <span className="text-muted-foreground">
+                {" "}
+                · {formatCountLabel(productLine.quantityOrdered)} ordered
+              </span>
+            </span>
+            <label className="text-xs font-medium text-muted-foreground">
+              Shipping now
+              <input
+                type="number"
+                min={0}
+                max={productLine.quantityOrdered}
+                value={quantityByLineId[productLine.id] ?? ""}
+                onChange={(event) =>
+                  setQuantityByLineId((quantities) => ({
+                    ...quantities,
+                    [productLine.id]: event.target.value,
+                  }))
+                }
+                className={`${FIELD_CLASS} w-24`}
+              />
+            </label>
+          </li>
+        ))}
+      </ul>
+
+      <div className="grid gap-2 sm:grid-cols-3">
+        <label className="text-xs font-medium text-muted-foreground">
+          Packages
+          <input
+            type="number"
+            min={1}
+            value={packageCount}
+            onChange={(event) => setPackageCount(event.target.value)}
+            className={FIELD_CLASS}
+          />
+        </label>
+        <label className="text-xs font-medium text-muted-foreground">
+          Leaving from (optional)
+          <input
+            type="text"
+            value={originLocality}
+            maxLength={150}
+            onChange={(event) => setOriginLocality(event.target.value)}
+            className={FIELD_CLASS}
+          />
+        </label>
+        <label className="text-xs font-medium text-muted-foreground">
+          Going to (optional)
+          <input
+            type="text"
+            value={destinationLocality}
+            maxLength={150}
+            onChange={(event) => setDestinationLocality(event.target.value)}
+            className={FIELD_CLASS}
+          />
+        </label>
+      </div>
+
+      <p className="text-[11px] leading-4 text-muted-foreground">
+        Leave a line at zero to ship it later — an order can go out in several shipments.
+      </p>
+
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" disabled={createShipment.isPending} className={PRIMARY_BUTTON_CLASS}>
+          {createShipment.isPending ? "Creating…" : "Create the shipment"}
+        </button>
+        <button type="button" onClick={() => setIsOpen(false)} className={QUIET_BUTTON_CLASS}>
+          Cancel
+        </button>
+      </div>
+
+      {localError !== null && <p className="text-xs leading-4 text-destructive">{localError}</p>}
+      {createShipment.data?.success === false && (
+        <p className="text-xs leading-4 text-destructive">{createShipment.data.error.message}</p>
+      )}
+      {createShipment.isError && (
+        <p className="text-xs leading-4 text-destructive">
+          That shipment was not created. Try again.
+        </p>
+      )}
+    </form>
   );
 }
 
