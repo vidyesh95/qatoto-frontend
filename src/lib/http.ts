@@ -108,10 +108,11 @@ export interface RequestOptions {
   /**
    * Let this request outlive the page that started it.
    *
-   * ONE CALLER, AND IT IS NOT OPTIONAL THERE: the watch-progress beacon's final flush on
-   * `visibilitychange` / `pagehide`. Without it the browser cancels the request as the document
-   * tears down, and since backgrounding a tab is the COMMON way a video session ends, most
-   * watch time on the platform would simply never be reported.
+   * TWO CALLERS, AND IT IS NOT OPTIONAL IN EITHER: the watch-progress beacon's final flush on
+   * `visibilitychange` / `pagehide`, and the product view beacon, which reports only on leaving and
+   * so is ENTIRELY a final flush. Without it the browser cancels the request as the document tears
+   * down — and since backgrounding a tab is the COMMON way both a video session and a product page
+   * end, most watch time and every product dwell would simply never be reported.
    *
    * `navigator.sendBeacon` is the usual answer and is silently broken for us: the API is
    * cross-origin, an `application/json` body is not CORS-safelisted, and `sendBeacon` cannot

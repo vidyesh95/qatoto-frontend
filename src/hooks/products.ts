@@ -9,6 +9,7 @@ import {
   uploadProductDocument,
   deleteProduct,
   deleteProductImage,
+  reorderProductImages,
   getMyProducts,
   getProduct,
   publishProduct,
@@ -242,6 +243,15 @@ interface UpdateListingVariables {
   patch: UpdateProductInput;
   newImageFiles: File[];
   removedImageIds: string[];
+  /**
+   * The ids of the images the seller is KEEPING, in the order they should appear — index 0 is the
+   * cover. Empty means "the seller did not reorder anything", which is NOT the same as "no images"
+   * and is why this is a separate signal rather than being inferred from length.
+   *
+   * ⚠️ These are the EXISTING ids only. Images uploaded in this same save have no id until the
+   * upload answers, so the mutation appends those itself — see the reorder phase below.
+   */
+  keptImageIdsInOrder: readonly string[];
   highlights: readonly ProductHighlightInput[];
   highlightImageFileByIndex: ReadonlyMap<number, File>;
   attributeValues: readonly ProductAttributeValueInput[];
@@ -265,6 +275,7 @@ export function useUpdateListingMutation() {
       patch,
       newImageFiles,
       removedImageIds,
+      keptImageIdsInOrder,
       highlights,
       highlightImageFileByIndex,
       attributeValues,
@@ -282,9 +293,36 @@ export function useUpdateListingMutation() {
         unwrap(await deleteProductImage(productId, imageId));
       }
 
+      // The uploaded ids are CAPTURED rather than discarded, because the reorder below needs an
+      // exact cover of the gallery and a freshly uploaded image has no id until this answers.
+      const uploadedImageIds: string[] = [];
       for (let imageIndex = 0; imageIndex < newImageFiles.length; imageIndex++) {
         onProgress?.({ phase: "uploading", current: imageIndex + 1, total: newImageFiles.length });
-        unwrap(await uploadProductImage(productId, newImageFiles[imageIndex]));
+        const uploadedImage = unwrap(
+          await uploadProductImage(productId, newImageFiles[imageIndex]),
+        );
+        uploadedImageIds.push(uploadedImage.id);
+      }
+
+      /**
+       * A THIRD PHASE, AFTER THE DELETES AND THE UPLOADS, and it can only run here.
+       *
+       * ⚠️ The route demands an EXACT COVER of the listing's images, so the set has to include the
+       * ones uploaded a moment ago — whose ids did not exist when the seller pressed save. Sending
+       * only the pre-existing ids is `IMAGE_ORDER_MISMATCH` (422).
+       *
+       * ⚠️ SENT ONLY WHEN THE SELLER ACTUALLY MOVED SOMETHING. `keptImageIdsInOrder` is empty on an
+       * ordinary save, and an unconditional call would write a new order on every edit for nothing.
+       * New uploads alone need no call either: the upload loop appends in array order, so the
+       * positions already come out right.
+       *
+       * Uploads go LAST because that is where the server just put them, so an untouched gallery
+       * plus a new photo needs no reordering at all.
+       */
+      if (keptImageIdsInOrder.length > 0) {
+        unwrap(
+          await reorderProductImages(productId, [...keptImageIdsInOrder, ...uploadedImageIds]),
+        );
       }
 
       // ALWAYS sent on an edit, even when empty — this is a replace-set, so "no blocks" is a real

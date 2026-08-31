@@ -355,6 +355,49 @@ export const StoreProductDetailSchema = StoreProductCardSchema.extend({
   builtInTheOpen: ProductVentureProvenanceSchema.nullable(),
 }).strip();
 
+// --- View beacon ------------------------------------------------------------
+
+/**
+ * Where the reader arrived from. A `commerce_product_view_source` pgEnum, sent verbatim.
+ *
+ * ⚠️ **ONLY `product_detail` IS PRODUCED BY THIS CLIENT TODAY.** Nothing anywhere sets a source
+ * parameter on a product link, so the other five would be a claim nothing backs. They are listed
+ * because the wire accepts them and a future rail/search link can start setting one — not because
+ * anything currently does.
+ */
+export const PRODUCT_VIEW_SOURCES = [
+  "product_detail",
+  "search",
+  "rail",
+  "pathway",
+  "companion",
+  "unknown",
+] as const;
+
+export type ProductViewSource = (typeof PRODUCT_VIEW_SOURCES)[number];
+
+/** The client's CLAIM. The server bounds it by wall time before believing any of it. */
+export interface ProductViewBeaconInput {
+  readonly dwellSeconds: number;
+  readonly viewSource: ProductViewSource;
+}
+
+/**
+ * What the server decided.
+ *
+ * ⚠️ **`dwellSeconds` HERE IS THE CLAMPED VALUE, NOT THE ONE THAT WAS SENT**, and it is the only
+ * one anything may render. `isCountedView` is the server's judgement about whether the dwell
+ * crossed its own threshold — the client does not know the threshold and must not guess it.
+ */
+export const ProductViewBeaconResultSchema = z
+  .object({
+    dwellSeconds: z.number().int(),
+    isCountedView: z.boolean(),
+  })
+  .strip();
+
+export type ProductViewBeaconResult = z.infer<typeof ProductViewBeaconResultSchema>;
+
 // --- Companions -------------------------------------------------------------
 
 export const ProductCompanionSchema = z

@@ -150,6 +150,25 @@ const HELD_DATA_CATEGORIES: readonly HeldDataCategory[] = [
       "The platform-wide hourly total is not in the download — it carries no account id, so there is no way to say which part of it is yours.",
   },
   {
+    // ADDED WITH THE PRODUCT VIEW BEACON, for the same reason the watch-time card above was added
+    // with the watch-time panel: the surface started recording something this list claims to
+    // mirror, so shipping it without the disclosure would have made an existing promise false.
+    //
+    // ⚠️ SEPARATE FROM "How much you watch, and when" ON PURPOSE. That card is about VIDEO and its
+    // note — "only recorded while you are signed in" — is true there and false here. A product
+    // page is timed either way, so folding the two together would make one of them a lie.
+    title: "Product pages you looked at",
+    icon: "/icons/local_mall_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    items: [
+      "Which listing you opened, and on which day",
+      "Roughly how long the page was open, measured by us rather than reported by your browser",
+      "Whether you arrived from search, a rail or the listing itself",
+    ],
+    note: "Recorded whether or not you are signed in. Signed in, it is attached to your account and is in the download below; signed out, there is no account to attach it to.",
+    absentFromExport:
+      "The scrambled per-day code and the blunted network address stored beside each row are not in the download — they exist to stop one person counting as a hundred, are not identifiers we can read back, and printing them would tell you nothing about yourself.",
+  },
+  {
     title: "Work you have done",
     icon: "/icons/shield_person_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
     items: [

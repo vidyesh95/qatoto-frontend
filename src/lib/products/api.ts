@@ -78,6 +78,37 @@ export function deleteProductImage(
 }
 
 /**
+ * `PATCH /products/:id/images/reorder` — sets the whole gallery order at once.
+ *
+ * ⚠️ **`imageIds` MUST BE AN EXACT COVER OF THE LISTING'S IMAGES.** The service refuses anything
+ * else with `IMAGE_ORDER_MISMATCH` (422): a missing id, an extra one, or a duplicate. It is not a
+ * partial reorder, so it must never be sent from a stale gallery — the same rule
+ * `reorderOrganizationMedia` states for seller-profile media.
+ *
+ * ⚠️ **INDEX 0 IS THE MAIN IMAGE.** This route is therefore also the only way to change a
+ * listing's cover photo; there is no separate "set primary" endpoint, and before this wrapper
+ * existed a seller could not change the cover at all except by deleting and re-uploading in order.
+ *
+ * ⚠️ **THE SET HAS TO INCLUDE IMAGES UPLOADED IN THE SAME SAVE**, whose ids do not exist until
+ * `uploadProductImage` answers. That is why the caller runs this AFTER the upload loop and builds
+ * the list from the ids the server returned rather than from local state — see `src/hooks/products.ts`.
+ *
+ * No `Idempotency-Key`: the route does not require one, and re-sending the same order is the same
+ * order.
+ */
+export function reorderProductImages(
+  productId: string,
+  imageIds: readonly string[],
+): Promise<ActionResponse<PublicProduct>> {
+  return sendJson(
+    `/products/${productId}/images/reorder`,
+    "PATCH",
+    { imageIds },
+    PublicProductSchema,
+  );
+}
+
+/**
  * `PUT /products/:id/highlights` — the long-form body, as a REPLACE-SET.
  *
  * Answers the whole `PublicProduct`, which is what makes the two-phase flow work: the response

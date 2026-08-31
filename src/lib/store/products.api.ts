@@ -51,6 +51,9 @@ import {
   type SellerQuestionInboxPage,
   type StoreProductDetail,
   type StoreReviewListPage,
+  ProductViewBeaconResultSchema,
+  type ProductViewBeaconInput,
+  type ProductViewBeaconResult,
 } from "@/lib/store/products.schemas";
 
 /**
@@ -205,6 +208,34 @@ export function unbookmarkStoreProduct(
 ): Promise<ActionResponse<ProductEngagement>> {
   const path = `/store/products/${encodeURIComponent(productSlug)}/bookmark`;
   return sendJson(path, "DELETE", undefined, ProductEngagementSchema, options);
+}
+
+/**
+ * `POST /store/products/:productSlug/view-beacon` — records that somebody looked, and for how long.
+ *
+ * ⚠️ **THE ONLY UNAUTHENTICATED WRITE ON THE STORE.** The route is `attachOptionalUser`, so a
+ * signed-out reader is counted too. That is deliberate — a conversion rate is orders over views,
+ * and dropping anonymous traffic would make the denominator a fiction — but it is also why the
+ * privacy policy had to grow a product-view disclosure when this shipped.
+ *
+ * ⚠️ **IT ANSWERS 200 WITH THE SERVER'S OWN CLAMPED NUMBERS, UNLIKE THE VIDEO BEACON.**
+ * `recordViewBeacon` in `src/lib/feed/api.ts` parses `AcknowledgedSchema` because that route
+ * answers a bare 202, on the stated ground that returning the clamped watch time "would hand an
+ * attacker an oracle for the clamp". This route made the opposite call and returns
+ * `{ dwellSeconds, isCountedView }`. So it needs its own schema — and any UI must render the
+ * SERVER's number, never the client's own count, which is the reason the field is returned at all.
+ *
+ * No idempotency key and no rate-limit concern here: the server dedupes on
+ * (product, viewer fingerprint, UTC day) and clamps the dwell by wall time, so a replayed beacon
+ * rewrites one row rather than adding one.
+ */
+export function recordProductViewBeacon(
+  productSlug: string,
+  input: ProductViewBeaconInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<ProductViewBeaconResult>> {
+  const path = `/store/products/${encodeURIComponent(productSlug)}/view-beacon`;
+  return sendJson(path, "POST", input, ProductViewBeaconResultSchema, options);
 }
 
 /** Records that the product was shared. Not a link mint — the count is the whole effect. */

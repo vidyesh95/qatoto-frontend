@@ -71,6 +71,22 @@ export default function PrivacyPolicy() {
               on. The wider Art. 13 gaps this block once named as outstanding — controller identity,
               lawful basis, enumerated rights — were closed on 2026-08-19 and are the sections
               above and below. */}
+          <dt>Product Pages You Look At</dt>
+          <dd>
+            When you open a product page in the store we record which listing it was, roughly how
+            long the page was open, and which day it was — so that a seller can see how many people
+            looked at a listing and how many of those went on to order. Unlike watch activity below,
+            this is recorded <strong>whether or not you are signed in</strong>, because a shop with
+            no count of anonymous visitors has no idea how many people it turned away. If you are
+            signed in the record is attached to your account, and you can download it from Settings
+            &rarr; Your data &amp; privacy; if you are not, there is no account to attach it to. We
+            also keep a short-lived scrambled code and a scrambled, blunted form of your network
+            address alongside it, so that one person reloading a page a hundred times does not read
+            as a hundred shoppers — neither can be turned back into you, and we cannot read them
+            back either. How long the page was open is measured by us, not reported by your browser,
+            so it cannot be inflated.
+          </dd>
+
           <dt>Watch Activity and How Long We Keep It</dt>
           <dd>
             When you are signed in, we record how long you watch and which hour of which day you

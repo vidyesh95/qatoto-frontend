@@ -424,6 +424,14 @@ export default function CreateListingPage({ productId }: { productId?: string })
   >([]);
   const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
   const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
+  /**
+   * Whether the seller reordered the SAVED gallery in this session.
+   *
+   * A flag rather than a comparison against the hydrated order, because the reorder route wants an
+   * exact cover and an ordinary save must not issue one. Reordering the not-yet-uploaded previews
+   * does NOT set this: those upload in array order, so their positions already come out right.
+   */
+  const [hasImageOrderChanged, setHasImageOrderChanged] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const selectedImagePreviewUrlsRef = useRef<string[]>([]);
@@ -870,6 +878,53 @@ export default function CreateListingPage({ productId }: { productId?: string })
   function handleRemoveExistingImage(imageId: string) {
     setExistingImages((previousImages) => previousImages.filter((image) => image.id !== imageId));
     setRemovedImageIds((previousIds) => [...previousIds, imageId]);
+  }
+
+  /**
+   * Moves a SAVED image one place along. Index 0 is the cover, so moving to the front is what
+   * "Make main image" does — there is no separate primary-image route to call.
+   */
+  function handleMoveExistingImage(imageIndex: number, direction: -1 | 1) {
+    const targetIndex = imageIndex + direction;
+    setExistingImages((previousImages) => {
+      if (targetIndex < 0 || targetIndex >= previousImages.length) return previousImages;
+      const reordered = [...previousImages];
+      const moved = reordered[imageIndex];
+      const displaced = reordered[targetIndex];
+      if (moved === undefined || displaced === undefined) return previousImages;
+      reordered[imageIndex] = displaced;
+      reordered[targetIndex] = moved;
+      return reordered;
+    });
+    if (targetIndex >= 0) setHasImageOrderChanged(true);
+  }
+
+  function handleMakeMainImageClick(imageIndex: number) {
+    if (imageIndex === 0) return;
+    setExistingImages((previousImages) => {
+      const promoted = previousImages[imageIndex];
+      if (promoted === undefined) return previousImages;
+      return [promoted, ...previousImages.filter((_, index) => index !== imageIndex)];
+    });
+    setHasImageOrderChanged(true);
+  }
+
+  /**
+   * Reordering the LOCAL previews needs no flag: they are uploaded in array order, so their
+   * positions follow without a reorder request.
+   */
+  function handleMoveSelectedPreview(previewIndex: number, direction: -1 | 1) {
+    const targetIndex = previewIndex + direction;
+    setSelectedImagePreviews((previousPreviews) => {
+      if (targetIndex < 0 || targetIndex >= previousPreviews.length) return previousPreviews;
+      const reordered = [...previousPreviews];
+      const moved = reordered[previewIndex];
+      const displaced = reordered[targetIndex];
+      if (moved === undefined || displaced === undefined) return previousPreviews;
+      reordered[previewIndex] = displaced;
+      reordered[targetIndex] = moved;
+      return reordered;
+    });
   }
 
   function handleAddKeyFeatureClick() {
@@ -1559,6 +1614,9 @@ export default function CreateListingPage({ productId }: { productId?: string })
           patch: input,
           newImageFiles: selectedImageFiles,
           removedImageIds,
+          // Empty unless the seller moved a saved image — see the mutation, which only calls the
+          // reorder route when this is non-empty.
+          keptImageIdsInOrder: hasImageOrderChanged ? existingImages.map((image) => image.id) : [],
           highlights: collectedHighlights.plan,
           highlightImageFileByIndex: collectedHighlights.imageFileByIndex,
           attributeValues: collectedAttributeValues,
@@ -2011,6 +2069,41 @@ export default function CreateListingPage({ productId }: { productId?: string })
                     {/* Remote Cloudinary asset; plain <img> avoids next/image domain config. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={image.url} alt="" className="size-full object-cover" />
+
+                    {/*
+                      BUTTONS RATHER THAN DRAG-AND-DROP. There is no drag library in this repo and
+                      every other row editor here is button-driven — and buttons are reachable from
+                      a keyboard, which a bare drag target is not.
+                    */}
+                    <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between gap-1 bg-background/85 px-1 py-1">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveExistingImage(imageIndex, -1)}
+                        disabled={imageIndex === 0}
+                        aria-label="Move image earlier"
+                        className="cursor-pointer rounded px-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-30"
+                      >
+                        &larr;
+                      </button>
+                      {imageIndex !== 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleMakeMainImageClick(imageIndex)}
+                          className="cursor-pointer rounded px-1 text-[10px] font-medium text-primary"
+                        >
+                          Make main
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleMoveExistingImage(imageIndex, 1)}
+                        disabled={imageIndex === existingImages.length - 1}
+                        aria-label="Move image later"
+                        className="cursor-pointer rounded px-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-30"
+                      >
+                        &rarr;
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {selectedImagePreviews.map((imagePreview, imageIndex) => (
@@ -2043,6 +2136,32 @@ export default function CreateListingPage({ productId }: { productId?: string })
                       alt={imagePreview.file.name}
                       className="size-full object-cover"
                     />
+
+                    {/* No "Make main" here: a not-yet-uploaded file can only become the cover if
+                        there are no saved images, and in that case moving it to the front of this
+                        list is enough — the upload loop follows array order. */}
+                    {selectedImagePreviews.length > 1 && (
+                      <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between gap-1 bg-background/85 px-1 py-1">
+                        <button
+                          type="button"
+                          onClick={() => handleMoveSelectedPreview(imageIndex, -1)}
+                          disabled={imageIndex === 0}
+                          aria-label="Move image earlier"
+                          className="cursor-pointer rounded px-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                          &larr;
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveSelectedPreview(imageIndex, 1)}
+                          disabled={imageIndex === selectedImagePreviews.length - 1}
+                          aria-label="Move image later"
+                          className="cursor-pointer rounded px-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                          &rarr;
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

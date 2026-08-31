@@ -57,6 +57,7 @@ import SamplePrice from "@/components/home/store/sections/sample-price";
 import SimilarAndCompare from "@/components/home/store/sections/similar-and-compare";
 import StoreAndChatActions from "@/components/home/store/sections/store-and-chat-actions";
 import VariantPicker from "@/components/home/store/sections/variant-picker";
+import ProductViewBeacon from "@/components/home/store/sections/product-view-beacon";
 import ReportContentOpener from "@/components/home/store/shared/report-content-opener";
 import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
 import { callerRequestOptions, hasCallerSession } from "@/lib/server-http";
@@ -164,6 +165,13 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
           productMinimumOrderQuantity={product.minimumOrderQuantity}
         >
           <div className="mx-auto w-full max-w-md pb-40 md:max-w-2xl md:pb-24 lg:max-w-6xl lg:pb-12">
+            {/*
+              THE VIEW BEACON. Renders nothing; mounting it starts the dwell clock, and it posts
+              once when the reader leaves. It sits here rather than inside the buy column so its
+              lifetime is the page's.
+            */}
+            <ProductViewBeacon productSlug={product.publicSlug} />
+
             <CategoryBreadcrumb categoryTrail={product.categoryTrail} />
 
             {/* lg+: two-column PDP — sticky media gallery left, buy box right. Below lg these
