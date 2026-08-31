@@ -240,6 +240,12 @@ export const storeKeys = {
    * Invalidated after a create so `/studio/services` shows the new draft. No organization id in the key,
    * for the same reason `cart` has none: the active organization is server-derived.
    */
+  /**
+   * The public directory, keyed by its FILTER — a list narrowed to `freight_forwarder` is a
+   * different question from the unfiltered one and must not share a cache entry.
+   */
+  providerDirectory: (filter: { readonly providerKind?: string }) =>
+    ["store", "providers", "directory", filter.providerKind ?? "all"] as const,
   providerOfferingsMine: () => ["store", "provider", "offerings", "mine"] as const,
 
   /**

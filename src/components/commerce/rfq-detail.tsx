@@ -16,7 +16,7 @@
 // closes, and both are re-checked server-side under a lock. `open` in particular is a real validation
 // gate rather than a flip — it can come back with findings, and the page renders them.
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import Link from "next/link";
 
@@ -29,7 +29,9 @@ import RfqRequirementPanel from "@/components/commerce/sections/rfq-requirement-
 import StatusPanel from "@/components/home/shared/status-panel";
 import TabStrip from "@/components/home/shared/tab-strip";
 import { useQuoteComparisonQuery } from "@/hooks/store/quotes";
-import { useCloseRfq, useOpenRfq, useRfqQuery } from "@/hooks/store/rfqs";
+import { useProviderDirectoryQuery } from "@/hooks/store/providers";
+import { useCloseRfq, useInviteRfqProviders, useOpenRfq, useRfqQuery } from "@/hooks/store/rfqs";
+import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
 import {
   countryLabelFromCode,
   formatCountLabel,
@@ -51,6 +53,12 @@ export default function RfqDetail({ rfqId }: { rfqId: string }) {
   const rfqQuery = useRfqQuery(rfqId);
   const openRfq = useOpenRfq();
   const closeRfq = useCloseRfq();
+  // Both routes REQUIRE an `Idempotency-Key`. Separate holders, because opening and closing are
+  // different attempts and a shared key would make the second a replay of the first. Resettable
+  // rather than one-shot: this component stays mounted across both, so a single key would dedupe
+  // the close into silence after an open.
+  const openAttempt = useResettableAttemptIdempotencyKey();
+  const closeAttempt = useResettableAttemptIdempotencyKey();
 
   const viewState = useMemo(() => {
     if (rfqQuery.isPending) return { status: "loading" } as const;
@@ -208,8 +216,26 @@ export default function RfqDetail({ rfqId }: { rfqId: string }) {
                 {isBuyer && (
                   <BuyerControls
                     rfq={rfq}
-                    onOpen={() => openRfq.mutate({ rfqId: rfq.id })}
-                    onClose={() => closeRfq.mutate({ rfqId: rfq.id })}
+                    onOpen={() =>
+                      openRfq.mutate(
+                        { rfqId: rfq.id, idempotencyKey: openAttempt.getIdempotencyKey() },
+                        {
+                          onSuccess: (result) => {
+                            if (result.success) openAttempt.resetIdempotencyKey();
+                          },
+                        },
+                      )
+                    }
+                    onClose={() =>
+                      closeRfq.mutate(
+                        { rfqId: rfq.id, idempotencyKey: closeAttempt.getIdempotencyKey() },
+                        {
+                          onSuccess: (result) => {
+                            if (result.success) closeAttempt.resetIdempotencyKey();
+                          },
+                        },
+                      )
+                    }
                     isBusy={openRfq.isPending || closeRfq.isPending}
                     errorMessage={
                       openResult !== undefined && !openResult.success
@@ -405,34 +431,190 @@ function RfqQuotesPanel({ rfq }: { rfq: RfqDetailValue }) {
 }
 
 function InvitationList({ rfq }: { rfq: RfqDetailValue }) {
-  if (rfq.invitations.length === 0) {
-    return (
-      <p className="px-4 pb-4 text-xs leading-4 text-muted-foreground lg:px-6">
-        Nobody has been invited yet.
-        {rfq.visibility === "matched_providers" &&
-          " This request is open to matched providers, so it can still receive quotes without invitations."}
-      </p>
+  return (
+    <div className="space-y-3 px-4 pb-4 lg:px-6">
+      <InviteProvidersControl rfq={rfq} />
+
+      {rfq.invitations.length === 0 ? (
+        <p className="text-xs leading-4 text-muted-foreground">
+          Nobody has been invited yet.
+          {rfq.visibility === "matched_providers" &&
+            " This request is open to matched providers, so it can still receive quotes without invitations."}
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {rfq.invitations.map((invitation) => (
+            <li key={invitation.id} className="rounded-xl border border-border px-4 py-3">
+              {/* THE NAME, at last. This rendered a raw uuid until `providerDisplayName` and
+                  `providerSlug` were added to the projection — the invitation row's
+                  `providerOrganizationId` was already an FK to the organization, so it cost one
+                  join and no extra query. */}
+              <Link
+                href={`/store/providers/${invitation.providerSlug}`}
+                className="text-sm leading-5 font-medium text-foreground"
+              >
+                {invitation.providerDisplayName}
+              </Link>
+              <p className="text-xs leading-4 text-muted-foreground">
+                {RFQ_INVITATION_STATE_LABELS[invitation.state]}
+                {invitation.sentAt !== null &&
+                  ` · sent ${formatIsoInstantLabel(invitation.sentAt)}`}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Invites providers to quote.
+ *
+ * ⚠️ **ABSENT, NOT DISABLED, ON A PRODUCT-ONLY REQUEST — and that is the whole reason this reads
+ * the service lines.** Eligibility requires a provider to hold a VERIFIED link for one of the
+ * provider kinds the request's SERVICE lines name. A request with no service lines names no kinds,
+ * so the eligible set is empty and every single invitation is refused. A control whose only
+ * outcome is an error is worse than its absence.
+ *
+ * ⚠️ **ONLY AN OPEN REQUEST CAN INVITE** — a draft answers 409.
+ */
+function InviteProvidersControl({ rfq }: { rfq: RfqDetailValue }) {
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [selectedOrganizationIds, setSelectedOrganizationIds] = useState<readonly string[]>([]);
+
+  const inviteProviders = useInviteRfqProviders();
+  const inviteAttempt = useResettableAttemptIdempotencyKey();
+
+  // The kinds this request actually needs. The first is enough to narrow the directory usefully;
+  // the backend accepts a provider verified for ANY of them.
+  const requiredProviderKind = rfq.serviceLines[0]?.providerKind;
+
+  const directoryQuery = useProviderDirectoryQuery(
+    requiredProviderKind === undefined ? {} : { providerKind: requiredProviderKind },
+    isPickerOpen && requiredProviderKind !== undefined,
+  );
+
+  if (requiredProviderKind === undefined || rfq.state !== "open") return null;
+
+  const alreadyInvitedIds = new Set(
+    rfq.invitations.map((invitation) => invitation.providerOrganizationId),
+  );
+
+  const handleSendClick = () => {
+    if (inviteProviders.isPending || selectedOrganizationIds.length === 0) return;
+    inviteProviders.mutate(
+      {
+        rfqId: rfq.id,
+        providerOrganizationIds: selectedOrganizationIds,
+        idempotencyKey: inviteAttempt.getIdempotencyKey(),
+      },
+      {
+        onSuccess: (result) => {
+          if (!result.success) return;
+          inviteAttempt.resetIdempotencyKey();
+          setSelectedOrganizationIds([]);
+          setIsPickerOpen(false);
+        },
+      },
     );
-  }
+  };
 
   return (
-    <ul className="space-y-2 px-4 pb-4 lg:px-6">
-      {rfq.invitations.map((invitation) => (
-        <li key={invitation.id} className="rounded-xl border border-border px-4 py-3">
-          {/* THE ORGANIZATION ID, because that is all this read carries. There is no
-              `providerDisplayName` on `RfqInvitationProjection`, and resolving each id would be one
-              request per row — so the id is shown rather than a name invented for it. A display name here
-              is a one-field backend ask. */}
-          <p className="font-mono text-xs leading-4 text-foreground">
-            {invitation.providerOrganizationId}
-          </p>
+    <section className="rounded-xl border border-border px-4 py-3">
+      {!isPickerOpen ? (
+        <button
+          type="button"
+          onClick={() => setIsPickerOpen(true)}
+          className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        >
+          Invite providers
+        </button>
+      ) : (
+        <>
           <p className="text-xs leading-4 text-muted-foreground">
-            {RFQ_INVITATION_STATE_LABELS[invitation.state]}
-            {invitation.sentAt !== null && ` · sent ${formatIsoInstantLabel(invitation.sentAt)}`}
+            {/* The list is narrowed to the kind this request needs, because inviting anyone else
+                is refused — and the refusal names no provider, so the whole batch would fail
+                without saying which id was wrong. */}
+            Providers verified for {requiredProviderKind.replace(/_/g, " ")} and currently accepting
+            requests. <strong>An invitation cannot be withdrawn.</strong>
           </p>
-        </li>
-      ))}
-    </ul>
+
+          {directoryQuery.isPending && (
+            <p className="mt-2 text-xs text-muted-foreground">Loading providers…</p>
+          )}
+          {directoryQuery.data?.success === false && (
+            <output role="alert" className="mt-2 block text-xs text-red-700">
+              {directoryQuery.data.error.message}
+            </output>
+          )}
+          {directoryQuery.data?.success === true && (
+            <ul className="mt-2 space-y-1">
+              {directoryQuery.data.data.items
+                // `acceptingRequests` is part of the eligibility gate, so a provider who has
+                // paused is filtered out here rather than refused on send.
+                .filter((provider) => provider.acceptingRequests)
+                .map((provider) => {
+                  const isInvited = alreadyInvitedIds.has(provider.organizationId);
+                  const isSelected = selectedOrganizationIds.includes(provider.organizationId);
+                  return (
+                    <li key={provider.organizationId}>
+                      <button
+                        type="button"
+                        disabled={isInvited}
+                        aria-pressed={isSelected}
+                        onClick={() =>
+                          setSelectedOrganizationIds((previous) =>
+                            previous.includes(provider.organizationId)
+                              ? previous.filter((id) => id !== provider.organizationId)
+                              : [...previous, provider.organizationId],
+                          )
+                        }
+                        className={`w-full cursor-pointer rounded-lg px-2 py-1.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40 ${
+                          isSelected ? "bg-muted" : "hover:bg-muted/60"
+                        }`}
+                      >
+                        {provider.displayName}
+                        {isInvited && (
+                          <span className="text-xs text-muted-foreground"> · already invited</span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+            </ul>
+          )}
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleSendClick}
+              disabled={inviteProviders.isPending || selectedOrganizationIds.length === 0}
+              className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40"
+            >
+              {inviteProviders.isPending
+                ? "Inviting…"
+                : `Invite ${formatCountLabel(selectedOrganizationIds.length)}`}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsPickerOpen(false)}
+              className="cursor-pointer rounded-full bg-background px-4 py-2 text-sm font-medium outline -outline-offset-1 outline-border"
+            >
+              Cancel
+            </button>
+          </div>
+
+          {inviteProviders.data?.success === false && (
+            <output role="alert" className="mt-2 block text-xs text-red-700">
+              {/* The server's own sentence. A 409 here names no provider, so paraphrasing it
+                  would be inventing detail the backend did not give. */}
+              {inviteProviders.data.error.message}
+            </output>
+          )}
+        </>
+      )}
+    </section>
   );
 }
 

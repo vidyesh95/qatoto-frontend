@@ -8,6 +8,8 @@ import {
 
 import { PRODUCT_SAMPLE_POLICIES, PRODUCT_SELLING_STATES } from "@/lib/store/organizations.schemas";
 import { CATEGORY_ATTRIBUTE_VALUE_KINDS } from "@/lib/store/catalog.schemas";
+import { PRODUCT_RELATION_KINDS } from "@/lib/store/merchandising.schemas";
+import { PRODUCT_RELATION_SOURCE_KINDS } from "@/lib/store/products.schemas";
 
 /**
  * Client-side contract for the store product-listing API. Data truth lives in the
@@ -286,6 +288,35 @@ export const ListingCompletenessSchema = z
   })
   .strip();
 
+/**
+ * One related product, as its OWNER sees it.
+ *
+ * ⚠️ **`sourceKind` DECIDES WHETHER A ROW MAY BE RESENT.** The write replaces only the
+ * `seller_declared` rows — a moderator's curated edge and the derived co-occurrence graph survive
+ * a seller save that omits them, which is measured behaviour and not an assumption. Resending a
+ * curated edge is a **409**, because the unique index does not include `sourceKind`. So the editor
+ * shows curated and derived rows READ-ONLY and rebuilds its payload from the seller's own.
+ */
+export const SellerProductRelationSchema = z
+  .object({
+    id: z.string(),
+    toProductId: z.string(),
+    relationKind: z.enum(PRODUCT_RELATION_KINDS),
+    sourceKind: z.enum(PRODUCT_RELATION_SOURCE_KINDS),
+    rank: z.number().int(),
+    toProductTitle: z.string(),
+    toProductPublicSlug: z.string().nullable(),
+  })
+  .strip();
+
+export type SellerProductRelation = z.infer<typeof SellerProductRelationSchema>;
+
+/** One relation in a `PUT …/relations` body. `rank` is optional — the server uses array index. */
+export interface ProductRelationInput {
+  readonly toProductId: string;
+  readonly relationKind: (typeof PRODUCT_RELATION_KINDS)[number];
+}
+
 export const PublicProductSchema = z
   .object({
     id: z.string(),
@@ -399,6 +430,13 @@ export const PublicProductSchema = z
      */
     highlights: z.array(ProductHighlightSchema),
     documents: z.array(SellerProductDocumentSchema),
+    /**
+     * ⚠️ **NAMING THIS KEY IS THE WHOLE FIX, AND THIS FILE HAS BEEN BITTEN TWICE ALREADY** —
+     * `moderationState` and then `customizationOptions`, both documented above. `.strip()` discards
+     * an array nobody names, so a missing key here would leave the wizard hydrating empty and the
+     * next save wiping every relation the seller had declared.
+     */
+    relations: z.array(SellerProductRelationSchema),
     // A18. ACTIVE AND RETIRED BOTH — see `SellerProductCustomizationOptionSchema`. Naming the key is
     // the whole fix: `.strip()` was discarding this array on every seller read.
     customizationOptions: z.array(SellerProductCustomizationOptionSchema),

@@ -16,17 +16,20 @@ import {
   updateProduct,
   uploadProductImage,
   replaceProductAttributeValues,
+  replaceProductRelations,
   replaceProductCustomizationOptions,
   replaceProductVariants,
   replaceProductHighlights,
   uploadProductHighlightImage,
 } from "@/lib/products/api";
+import { newIdempotencyKey } from "@/lib/idempotency";
 import type {
   CreateProductInput,
   ProductAttributeValueInput,
   ProductHighlightInput,
   ProductCustomizationOptionInput,
   ProductVariantInput,
+  ProductRelationInput,
   UpdateProductInput,
 } from "@/lib/products/schemas";
 
@@ -252,6 +255,11 @@ interface UpdateListingVariables {
    * upload answers, so the mutation appends those itself — see the reorder phase below.
    */
   keptImageIdsInOrder: readonly string[];
+  /**
+   * The seller's OWN relations. Curated and derived rows are excluded by the caller — resending a
+   * curated edge is a 409, see the api file.
+   */
+  relations: readonly ProductRelationInput[];
   highlights: readonly ProductHighlightInput[];
   highlightImageFileByIndex: ReadonlyMap<number, File>;
   attributeValues: readonly ProductAttributeValueInput[];
@@ -276,6 +284,7 @@ export function useUpdateListingMutation() {
       newImageFiles,
       removedImageIds,
       keptImageIdsInOrder,
+      relations,
       highlights,
       highlightImageFileByIndex,
       attributeValues,
@@ -332,6 +341,19 @@ export function useUpdateListingMutation() {
       // ALWAYS sent on an edit, even when empty: a replace-set's "no answers" is the seller
       // having cleared them, and skipping the call would silently keep the old ones.
       unwrap(await replaceProductAttributeValues(productId, attributeValues));
+
+      /**
+       * ALWAYS sent on an edit too, for the same reason — an empty list is the seller having
+       * removed their declarations, and skipping the call would silently keep them.
+       *
+       * ⚠️ Its own idempotency key: this route is the only replace-set here that REQUIRES one, and
+       * a key shared with another write in this sequence would make it a replay.
+       */
+      unwrap(
+        await replaceProductRelations(productId, relations, {
+          headers: { "Idempotency-Key": newIdempotencyKey() },
+        }),
+      );
 
       /**
        * STORE §21.3. NOT a replace-set, unlike the two calls above — documents are append/delete,

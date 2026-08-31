@@ -21,16 +21,41 @@ import type { ActionResponse } from "@/lib/http";
 import {
   createServiceOffering,
   listMyServiceOfferings,
+  listStoreProviders,
   submitServiceOffering,
   updateServiceOffering,
 } from "@/lib/store/providers.api";
 import type {
   CreatedServiceOffering,
   CreateServiceOfferingInput,
+  ListProvidersFilter,
+  ProviderDirectoryPage,
   UpdateServiceOfferingInput,
 } from "@/lib/store/providers.schemas";
 
 /** Every offering the caller's organization owns, drafts included. The only read that shows one. */
+/**
+ * The PUBLIC provider directory, as a client query.
+ *
+ * `listStoreProviders` is `TRANSPORT: server-fetch` and its only consumer is a server component, so
+ * there was no hook and no key. This adds both — additive plumbing over an already-wired public
+ * read, not a new transport; `getJson` is isomorphic and the wrapper already threads
+ * `RequestOptions`.
+ *
+ * ⚠️ **FILTERED BY `providerKind` FOR A REASON THAT IS NOT COSMETIC.** An invitation is refused
+ * unless the provider holds a VERIFIED link for one of the kinds the RFQ's service lines name, and
+ * the whole invite batch is one transaction whose refusal names no id. Narrowing the list to the
+ * kind the RFQ actually needs is what turns a 409 nobody can act on into a list that works.
+ */
+export function useProviderDirectoryQuery(filter: ListProvidersFilter, isEnabled: boolean) {
+  return useQuery<ActionResponse<ProviderDirectoryPage>>({
+    queryKey: storeKeys.providerDirectory(filter),
+    queryFn: () => listStoreProviders(filter),
+    enabled: isEnabled,
+    retry: false,
+  });
+}
+
 export function useMyServiceOfferingsQuery() {
   return useQuery({
     queryKey: storeKeys.providerOfferingsMine(),

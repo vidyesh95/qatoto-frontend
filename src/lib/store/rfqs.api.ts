@@ -25,6 +25,9 @@ import {
   type CreateDraftRfqInput,
   type RfqDetail,
   type RfqListPage,
+  InvitedProvidersSchema,
+  type InviteProvidersInput,
+  type RfqInvitation,
 } from "@/lib/store/rfqs.schemas";
 
 /** The buyer's own RFQs, drafts included. */
@@ -85,6 +88,32 @@ export function openRfq(
   // Returns the RFQ unchanged: synthesising `state: "open"` here would claim a transition the server
   // never validated, and the validation IS the operation.
   return sendJson(path, "POST", undefined, RfqDetailSchema, options);
+}
+
+/**
+ * `POST /commerce/rfqs/:rfqId/invitations` — names providers who may quote.
+ *
+ * ⚠️ **REQUIRES AN `Idempotency-Key`**, and the guard is the STRICT one:
+ * `requireActiveBuyerCommerceOrganization`, not the softer workspace guard that lets a pending
+ * organization draft an RFQ. So a buyer who can compose one may still be refused here.
+ *
+ * ⚠️ **ONLY AN OPEN RFQ CAN INVITE** — a draft is `409 Providers can only be invited to open RFQs.`
+ *
+ * ⚠️ **A PRODUCT-ONLY RFQ CAN INVITE NOBODY.** Eligibility requires the provider to hold a VERIFIED
+ * link for one of the provider kinds the RFQ's SERVICE lines name; with no service lines that set
+ * is empty and matches nothing, so every id is refused. The caller gates the control on service
+ * lines existing rather than letting a buyer find this out.
+ *
+ * Answers **201** with only the rows created, not the full set — so the caller refetches the detail
+ * rather than painting from this response.
+ */
+export function inviteRfqProviders(
+  rfqId: string,
+  input: InviteProvidersInput,
+  options?: RequestOptions,
+): Promise<ActionResponse<{ invitations: RfqInvitation[] }>> {
+  const path = `/commerce/rfqs/${rfqId}/invitations`;
+  return sendJson(path, "POST", input, InvitedProvidersSchema, options);
 }
 
 /** Closes an open RFQ to new quotes. Existing quotes stay valid until they expire. */

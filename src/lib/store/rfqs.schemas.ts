@@ -139,14 +139,21 @@ export const RfqDocumentSchema = z
 /**
  * One invited provider.
  *
- * Only `providerOrganizationId` — NO display name, so a buyer's invitation list cannot be labelled
- * from this read alone. Noted rather than papered over: resolving each id would be N requests, and
- * inventing a name is not an option. A `providerDisplayName` here is a one-field backend ask.
+ * ~~Only `providerOrganizationId` — NO display name.~~ **THE BACKEND ASK LANDED.** This used to
+ * carry only the id, so the buyer's list rendered a column of raw uuids; the invitation row's
+ * `providerOrganizationId` was already an FK to `commerce_organization`, so it cost one join.
+ *
+ * ⚠️ **`state` IS EFFECTIVELY ALWAYS `sent`.** The only INSERT writes `state: "sent"` with `sentAt`
+ * set, so `pending` — the column's own default — is unreachable, and `read`, `withdrawn` and
+ * `expired` are written by nothing at all. `responded` is set provider-side when a quote shell is
+ * created. Do not build a "send" control for `pending`: it is a state that cannot occur.
  */
 export const RfqInvitationSchema = z
   .object({
     id: z.string(),
     providerOrganizationId: z.string(),
+    providerDisplayName: z.string(),
+    providerSlug: z.string(),
     state: z.enum(RFQ_INVITATION_STATES),
     sentAt: IsoDateTimeSchema.nullable(),
     createdAt: IsoDateTimeSchema,
@@ -474,6 +481,26 @@ export interface RfqServiceLineInput {
  *
  * Requires an `Idempotency-Key`.
  */
+/**
+ * `POST /commerce/rfqs/:rfqId/invitations` — **201**, answering only the rows just created.
+ *
+ * ⚠️ **THE WHOLE BATCH IS ONE TRANSACTION AND THE REFUSAL NAMES NO ID.** One ineligible or
+ * already-invited provider rolls every id in the call back, and
+ * `409 One or more providers are not eligible for invitation.` does not say which. So the picker
+ * pre-filters to providers the gate will accept rather than discovering this by failing.
+ *
+ * ⚠️ **AN INVITATION CANNOT BE UNDONE.** There is no withdraw, cancel or DELETE route anywhere in
+ * the module — `withdrawn` exists in the enum and nothing reaches it.
+ */
+/** `POST …/invitations` answers `{ invitations }` — only the rows it just created. */
+export const InvitedProvidersSchema = z
+  .object({ invitations: z.array(RfqInvitationSchema) })
+  .strip();
+
+export interface InviteProvidersInput {
+  readonly providerOrganizationIds: readonly string[];
+}
+
 export interface CreateDraftRfqInput {
   readonly title: string;
   readonly description?: string;

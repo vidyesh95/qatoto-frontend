@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 
 import MyPathwayList from "@/components/studio/pathways/my-pathway-list";
 
-// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+// Permanently dynamic, and this opt-out is the finished state rather than a TODO: the list is a
+// client-query island behind a session — `GET /commerce/pathways/mine` is the only read that
+// returns a draft — so its data never reaches the server render at all. Same shape as
+// `cart/page.tsx`.
 export const instant = false;
 
 export const metadata: Metadata = {

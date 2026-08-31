@@ -19,7 +19,13 @@ import {
 } from "@/components/studio/listing/listing-category-picker";
 import { COUNTRY_OPTIONS } from "@/components/home/account/menus/location-menu";
 import { toOptionalCountryCode } from "@/components/commerce/composer/composer-input";
+import PathwayCandidatePicker from "@/components/studio/pathways/pathway-candidate-picker";
 import { countryLabelFromCode } from "@/lib/store/format";
+import {
+  PRODUCT_RELATION_KINDS,
+  PRODUCT_RELATION_KIND_LABELS,
+} from "@/lib/store/merchandising.schemas";
+import type { SellerProductRelation } from "@/lib/products/schemas";
 import {
   centsToDollarString,
   CONDITION_LABEL_TO_SLUG,
@@ -96,6 +102,7 @@ const LISTING_STEPS = [
   { id: "pricing", label: "Pricing & Inventory" },
   { id: "variants", label: "Variants" },
   { id: "customization", label: "Customization" },
+  { id: "relations", label: "Related products" },
   { id: "review", label: "Review & Publish" },
 ] as const;
 
@@ -341,6 +348,142 @@ function toVariantSlug(name: string): string {
     .slice(0, PRODUCT_VARIANT_SLUG_MAX_LENGTH);
 }
 
+/**
+ * One related product the seller is declaring.
+ *
+ * ⚠️ **ONLY `seller_declared` ROWS LIVE HERE.** Curated and derived relations come back on the read
+ * and are shown read-only — resending a curated edge is a 409, and the seller cannot edit a
+ * moderator's decision anyway.
+ */
+interface RelationDraft {
+  readonly localKey: string;
+  readonly toProductId: string;
+  readonly toProductTitle: string;
+  readonly relationKind: (typeof PRODUCT_RELATION_KINDS)[number];
+}
+
+/**
+ * The related-products editor.
+ *
+ * ⚠️ **THE COLLECT REFUSES A HALF-FILLED ROW RATHER THAN SKIPPING IT** — but there is no such row
+ * to refuse, because a row cannot exist without a picked product: the picker creates it. That is
+ * the same protection `collectVariants` buys with an explicit error, obtained by construction
+ * instead. A dropped relation is a DELETED declaration, not absent content.
+ */
+function RelationRows({
+  relations,
+  readOnlyRelations,
+  onRelationsChange,
+}: {
+  readonly relations: readonly RelationDraft[];
+  readonly readOnlyRelations: readonly SellerProductRelation[];
+  readonly onRelationsChange: (relations: RelationDraft[]) => void;
+}) {
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+  return (
+    <div className="space-y-3">
+      {relations.length === 0 && readOnlyRelations.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          Nothing linked yet. Until something is, the “View similar” button stays hidden on your
+          listing — two buttons that open empty sheets would be worse than none.
+        </p>
+      )}
+
+      <ul className="space-y-2">
+        {relations.map((relation, relationIndex) => (
+          <li
+            key={relation.localKey}
+            className="flex flex-wrap items-center gap-2 rounded-xl border border-border px-3 py-2"
+          >
+            <span className="flex-1 text-sm">{relation.toProductTitle}</span>
+            <select
+              value={relation.relationKind}
+              onChange={(changeEvent) => {
+                const chosen = PRODUCT_RELATION_KINDS.find(
+                  (kind) => kind === changeEvent.target.value,
+                );
+                if (chosen === undefined) return;
+                onRelationsChange(
+                  relations.map((other, otherIndex) =>
+                    otherIndex === relationIndex ? { ...other, relationKind: chosen } : other,
+                  ),
+                );
+              }}
+              className="rounded-lg border border-border px-2 py-1.5 text-xs"
+            >
+              {PRODUCT_RELATION_KINDS.map((relationKind) => (
+                <option key={relationKind} value={relationKind}>
+                  {PRODUCT_RELATION_KIND_LABELS[relationKind]}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() =>
+                onRelationsChange(relations.filter((_, index) => index !== relationIndex))
+              }
+              className="cursor-pointer text-xs text-[#8C1D18]"
+            >
+              Remove
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {readOnlyRelations.length > 0 && (
+        <div className="rounded-xl bg-muted/40 px-3 py-2">
+          <p className="text-xs font-medium">Confirmed by a moderator, or found automatically</p>
+          {/*
+            ⚠️ SHOWN BUT NOT EDITABLE, AND SAYING SO IS THE POINT. These survive your saves — the
+            server only replaces your own declarations — and re-sending one is refused outright.
+            Hiding them would leave a seller wondering why a link they can see is not in their list.
+          */}
+          <ul className="mt-1 space-y-0.5">
+            {readOnlyRelations.map((relation) => (
+              <li key={relation.id} className="text-xs text-muted-foreground">
+                {relation.toProductTitle} · {PRODUCT_RELATION_KIND_LABELS[relation.relationKind]}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 text-[11px] text-muted-foreground">These stay whatever you do here.</p>
+        </div>
+      )}
+
+      {isPickerOpen ? (
+        <PathwayCandidatePicker
+          onClose={() => setIsPickerOpen(false)}
+          onCandidatePicked={(candidate) => {
+            const isAlreadyLinked =
+              relations.some((other) => other.toProductId === candidate.productId) ||
+              readOnlyRelations.some((other) => other.toProductId === candidate.productId);
+            if (!isAlreadyLinked) {
+              onRelationsChange([
+                ...relations,
+                {
+                  localKey: crypto.randomUUID(),
+                  toProductId: candidate.productId,
+                  toProductTitle: candidate.productTitle,
+                  relationKind: "complements",
+                },
+              ]);
+            }
+            setIsPickerOpen(false);
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsPickerOpen(true)}
+          className="cursor-pointer rounded-full bg-background px-3 py-1.5 text-xs font-medium outline -outline-offset-1 outline-border"
+        >
+          Link a product
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** An image already stored on the backend (edit mode). */
 interface ExistingImage {
   id: string;
@@ -424,6 +567,9 @@ export default function CreateListingPage({ productId }: { productId?: string })
   >([]);
   const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
   const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
+  const [relations, setRelations] = useState<RelationDraft[]>([]);
+  /** Curated and derived rows, shown but never resent. */
+  const [readOnlyRelations, setReadOnlyRelations] = useState<SellerProductRelation[]>([]);
   /**
    * Whether the seller reordered the SAVED gallery in this session.
    *
@@ -661,6 +807,20 @@ export default function CreateListingPage({ productId }: { productId?: string })
     );
     setUnitsPerPackage(
       loadedProduct.unitsPerPackage === null ? "" : String(loadedProduct.unitsPerPackage),
+    );
+    setRelations(
+      loadedProduct.relations
+        .filter((relation) => relation.sourceKind === "seller_declared")
+        .map((relation) => ({
+          localKey: relation.id,
+          toProductId: relation.toProductId,
+          toProductTitle: relation.toProductTitle,
+          relationKind: relation.relationKind,
+        })),
+    );
+    // Everything a moderator confirmed or the graph derived: visible, and deliberately not editable.
+    setReadOnlyRelations(
+      loadedProduct.relations.filter((relation) => relation.sourceKind !== "seller_declared"),
     );
     setExistingImages(
       loadedProduct.images
@@ -1617,6 +1777,10 @@ export default function CreateListingPage({ productId }: { productId?: string })
           // Empty unless the seller moved a saved image — see the mutation, which only calls the
           // reorder route when this is non-empty.
           keptImageIdsInOrder: hasImageOrderChanged ? existingImages.map((image) => image.id) : [],
+          relations: relations.map((relation) => ({
+            toProductId: relation.toProductId,
+            relationKind: relation.relationKind,
+          })),
           highlights: collectedHighlights.plan,
           highlightImageFileByIndex: collectedHighlights.imageFileByIndex,
           attributeValues: collectedAttributeValues,
@@ -3582,6 +3746,26 @@ export default function CreateListingPage({ productId }: { productId?: string })
                 onEditClick={setCurrentStepIndex}
               />
             )}
+          </StepCard>
+        );
+
+      case "relations":
+        return (
+          <StepCard
+            title="Related products"
+            subtitle="What goes with this, what replaces it, what it is a spare part for. Buyers see these under “View similar” and in the compare tray."
+          >
+            {/*
+              ⚠️ A DECLARATION, NOT A FACT, AND THE COPY SAYS SO. The server stores these as
+              `seller_declared` and the buyer's sheet captions them that way — only a moderator can
+              promote one to a confirmed fit. Wording this as certainty would be the claim §15.3
+              exists to prevent.
+            */}
+            <RelationRows
+              relations={relations}
+              readOnlyRelations={readOnlyRelations}
+              onRelationsChange={setRelations}
+            />
           </StepCard>
         );
 

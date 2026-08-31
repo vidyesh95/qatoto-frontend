@@ -924,7 +924,14 @@ Service coverage is the other member of the second, and both are backend asks. C
 entry is in before costing it — the audit loop cannot tell them apart, because neither has a
 wrapper to report as uncalled.
 
-⚠️ **AND THE SECOND CLASS IS NOW THE ONLY ONE LEFT.** Seven of the ranked entries have shipped;
+⚠️ **THE WHOLE CLASS IS NOW CLOSED, AND THE SECOND KIND IS THE LESSON WORTH KEEPING.** Every entry
+below has shipped. Three of them — pathway candidates, RFQ invitation names, product relations —
+were not "write the wrapper" tasks at all: each needed a small backend READ before its write could
+be driven honestly, and in each case the read was a join onto data the query already had. **Before
+costing one of these, ask which kind it is: a write waiting for a caller, or a write waiting for a
+read.** The uncalled-wrapper audit cannot tell them apart, because neither has a wrapper to report.
+
+The superseded note, kept because its framing was half wrong and the correction matters: Seven of the ranked entries have shipped;
 what remains is **RFQ invitations** (a genuine gap, small) and **product relations**, which is in
 the read-first class and must not be wired until the backend has an owner-side read. Pathway
 authoring turned out to be in BOTH classes at once — it needed a caller AND a read, and the read
@@ -1219,8 +1226,46 @@ visibility = 'public'`, so an organization that is private or not yet active can
     - **`STORE_BACKEND_STRUCTURE.md` A13 says "ten routes"; there are 11** — third documentation
       strike this session, after §21.1's "no migration" and A23's hypothetical-written-as-history.
 
-4. **What is left of the class, after seven of them shipped.** Still open: **RFQ invitations** —
-   and **product relations**, which is the one that must NOT simply be wired (see below).
+4. ~~**What is left of the class.**~~ **THE CLASS IS CLOSED — all nine shipped.** Every entry that
+   was "a backend write with no frontend caller" now has one. Three of the nine needed a small
+   backend READ added first (pathway candidates, RFQ invitation names, product relations), which is
+   the pattern worth carrying: **a write with no faithful owner-side read is not a frontend task
+   until the read exists.**
+
+    ~~**RFQ invitations.**~~ **SHIPPED — a provider picker on the RFQ detail page, plus a
+    one-join backend read.** And it surfaced a live break in shipped code before anything new was
+    written.
+
+    ⚠️ **"OPEN FOR QUOTES" AND "CLOSE TO NEW QUOTES" WERE BOTH DEAD BUTTONS.** `useOpenRfq` and
+    `useCloseRfq` called their wrappers with no options, and `sendJson` mints no header — but both
+    routes carry `idempotency({ required: true })`. **Reproduced before fixing**:
+    `POST /commerce/rfqs/:id/open` with no header is
+    `400 This request requires an Idempotency-Key header.` `rfqs.api.ts`'s own header had recorded
+    that these two need a key; only the hooks never caught up. Both now mint one per attempt, and
+    the same call reaches business validation instead.
+
+    ⚠️ **THE INVITATION LIST RENDERED RAW UUIDs**, with a comment calling a display name "a
+    one-field backend ask". It was: the row's `providerOrganizationId` is already an FK to
+    `commerce_organization`, so one `innerJoin` adds `providerDisplayName` and `providerSlug` — no
+    new table, no N+1. The list now names providers and links to them.
+
+    ⚠️ **A PRODUCT-ONLY RFQ CAN INVITE NOBODY, SO THE CONTROL IS ABSENT RATHER THAN DISABLED.**
+    Eligibility needs a VERIFIED provider-kind link among the kinds the RFQ's **service lines**
+    name; with no service lines that set is empty and `inArray(…, [])` matches nothing, so every id
+    is refused. The picker also narrows the directory to the required kind and filters out providers
+    not `acceptingRequests` — because **the whole batch is one transaction and the 409 names no
+    id**, so one ineligible pick would roll back the lot without saying which.
+
+    ⚠️ **`pending` IS AN UNREACHABLE STATE.** The only INSERT writes `state: "sent"` with `sentAt`
+    set; `read`, `withdrawn` and `expired` are written by nothing at all. The label map calls
+    `pending` "Not sent yet" — a label for something that cannot occur. No "send" control was built
+    for it.
+
+    ⚠️ **AN INVITATION CANNOT BE UNDONE** — no withdraw, cancel or DELETE route anywhere in the
+    module, so the copy says so before the press. **Proved live**: invite → 201 with the provider's
+    NAME; the same provider again → `409 Provider is already invited to this RFQ.`; on a draft →
+    `409 Providers can only be invited to open RFQs.`; and the invited provider's own queue then
+    contained the request.
 
     ~~**Pathway authoring.**~~ **SHIPPED — `/studio/pathways`, its composer and
     `/admin/pathways`.** Nine routes that had no caller at all: `grep "commerce/pathways" src/`
@@ -1395,16 +1440,36 @@ visibility = 'public'`, so an organization that is private or not yet active can
     list cannot be labelled from that read alone — the picker has to source names from the public
     provider directory.
 
-    ⚠️ **PRODUCT RELATIONS IS THE ONE THAT MUST NOT SIMPLY BE WIRED, AND IT IS A BACKEND ASK.**
-    `PUT /commerce/products/:productId/relations` is a REPLACE-SET, and the only read that could
-    seed it — `GET /store/products/:slug/companions` — is not a mirror of it: it caps at **12 rows
-    per kind** while the PUT accepts 100, it MIXES IN `moderator_curated` and `derived_cooccurrence`
-    rows that the PUT must never resend (doing so downgrades a curated relation to a seller claim),
-    and it DROPS targets that are no longer publicly eligible, which the next save would then
-    delete. A form that cannot show what it is about to replace deletes a seller's data the first
-    time they use it. **This is the same shape `providers.schemas.ts:381-392` already refuses on for
-    service coverage, and the fix is the same: an owner-side read first.** Writing the wrapper now
-    would be unverified code the audit is designed to catch.
+    ~~⚠️ **PRODUCT RELATIONS IS THE ONE THAT MUST NOT SIMPLY BE WIRED.**~~ **SHIPPED — a
+    "Related products" wizard step, and it lit up a surface that had been dark since it was built.**
+    `similar-and-compare.tsx:31-35` returns `null` when every group is empty ("two buttons that open
+    empty sheets is worse than no buttons"), so the compare tray and both sheets rendered nothing on
+    every listing on the site, because nothing had ever written a `seller_declared` relation.
+
+    ⚠️ **AND I HAD ONE OF MY OWN REASONS WRONG, WHICH IS WHY THIS ENTRY IS REWRITTEN RATHER THAN
+    TICKED.** I wrote that wiring it "downgrades a curated relation to a seller claim" and would
+    "delete rows". **The delete half was false.** The service is `replaceSellerDeclaredRelations`
+    and its predicate is `and(eq(fromProductId, …), eq(sourceKind, "seller_declared"))`, with a
+    comment saying a seller "must not be able to erase a reviewer's decision or the co-occurrence
+    graph by sending a shorter list". **Proved live**: a curated edge was promoted via the verify
+    route, the seller then saved a list omitting it, and it survived. The write was always safe.
+    What was true is that the PUBLIC companions read cannot rebuild the payload — 12 per kind, mixed
+    source kinds, ineligible targets dropped — so the conclusion held on one leg, not two.
+
+    **The read that unblocked it**: `loadOrganizationProduct` now returns a `relations` array
+    carrying `sourceKind` and the target's title and slug, following the `highlights` pattern.
+
+    ⚠️ **RE-SENDING A CURATED EDGE WAS AN UNMAPPED 500, AND IS NOW A 409.**
+    `commerce_product_relation_edge_uidx` is `(from, to, relationKind)` and **omits `sourceKind`**,
+    while the delete is scoped to `seller_declared` — so a curated row survives the wipe and then
+    collides with the seller's re-insert. The `23505` escaped uncaught. Reproduced, then mapped to
+    `RELATION_ALREADY_CURATED` → **409** with a sentence a seller can act on. The editor also shows
+    curated and derived rows **read-only** and excludes them from the payload, so the refusal is
+    unreachable from our own UI — but the client is untrusted and a foreseeable input must not be a
+    500.
+
+    Also verified: a self-relation is a 422, an invisible target is a 422 **naming the id**, and an
+    empty save really does clear the seller's own declarations while leaving the curated one alone.
 
     ~~**provider offering edit/submit/coverage**~~, ~~**logistics writes**~~ and
     ~~**dispute-opening**~~ **SHIPPED — the three dead ends, frontend only, no migration.** Each was

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 
 import PathwayComposer from "@/components/studio/pathways/pathway-composer";
 
-// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+// Permanently dynamic, and deliberately so rather than pending adoption: the composer reads
+// `?pathwayId=` and every write behind it is a client-query island behind a session. There is
+// nothing here a server render could produce.
 export const instant = false;
 
 export const metadata: Metadata = {

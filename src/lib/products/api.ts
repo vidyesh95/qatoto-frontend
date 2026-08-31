@@ -5,6 +5,7 @@ import {
   sendJson,
   type ActionResponse,
   type PaginationMeta,
+  type RequestOptions,
 } from "@/lib/http";
 import {
   PaginationMetaSchema,
@@ -12,10 +13,13 @@ import {
   ProductListRowSchema,
   PublicProductSchema,
   SellerProductDocumentSchema,
+  SellerProductRelationSchema,
   type CreateProductInput,
   type ProductAttributeValueInput,
   type ProductHighlightInput,
   type ProductImage,
+  type ProductRelationInput,
+  type SellerProductRelation,
   type ProductListRow,
   type ProductCustomizationOptionInput,
   type ProductVariantInput,
@@ -232,6 +236,38 @@ export function replaceProductCustomizationOptions(
     "PUT",
     { options },
     PublicProductSchema,
+  );
+}
+
+/**
+ * `PUT /commerce/products/:productId/relations` — the seller's own related-product declarations.
+ *
+ * ⚠️ **SEND ONLY `seller_declared` ROWS.** The server replaces that source kind and nothing else —
+ * a moderator's curated edge and the derived co-occurrence graph survive a save that omits them,
+ * measured live. But the unique index is `(from, to, relationKind)` and does NOT include
+ * `sourceKind`, so **re-sending an edge a moderator has curated is a 409**, with the backend's own
+ * sentence telling the seller to drop it. Filter before sending.
+ *
+ * ⚠️ **A DIFFERENT MOUNT AND A REQUIRED KEY.** This lives under `/commerce`, not `/products` like
+ * every other replace-set in this file, and it is the only one whose `idempotency` is
+ * `required: true` — a keyless call is a 400 rather than an accepted write.
+ *
+ * `rank` is omitted deliberately: the server falls back to array index, so position IS the order.
+ *
+ * Answers `{ relations }` for the WHOLE product — curated and derived rows included — not just the
+ * ones sent. Do not feed that response straight back into the next save.
+ */
+export function replaceProductRelations(
+  productId: string,
+  relations: readonly ProductRelationInput[],
+  options?: RequestOptions,
+): Promise<ActionResponse<{ relations: SellerProductRelation[] }>> {
+  return sendJson(
+    `/commerce/products/${productId}/relations`,
+    "PUT",
+    { relations },
+    z.object({ relations: z.array(SellerProductRelationSchema) }).strip(),
+    options,
   );
 }
 
