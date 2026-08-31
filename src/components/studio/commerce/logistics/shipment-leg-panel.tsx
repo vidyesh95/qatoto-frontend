@@ -216,13 +216,19 @@ function LegCommandForm({
   const [carrierReference, setCarrierReference] = useState("");
   const [trackingReference, setTrackingReference] = useState("");
   const [problemDescription, setProblemDescription] = useState("");
+  const [isCancelConfirmed, setIsCancelConfirmed] = useState(false);
 
   const executeCommand = useExecuteShipmentLegCommandMutation();
   const result = executeCommand.data;
 
   const isProblemReport = commandName === "report_exception";
+  // THE ONE COMMAND WITH NO INVERSE. `cancelled` is terminal in `LEG_TRANSITIONS` — nothing moves a
+  // leg out of it — so this is the only button here that asks twice.
+  const isCancel = commandName === "cancel";
   const isSubmitDisabled =
-    executeCommand.isPending || (isProblemReport && problemDescription.trim().length === 0);
+    executeCommand.isPending ||
+    (isProblemReport && problemDescription.trim().length === 0) ||
+    (isCancel && !isCancelConfirmed);
 
   function handleSubmit() {
     const command = buildLegCommand(commandName, leg.version, {
@@ -277,6 +283,21 @@ function LegCommandForm({
             placeholder="Required"
           />
         </div>
+      )}
+
+      {isCancel && (
+        <label className="mt-2 flex items-start gap-2">
+          <input
+            type="checkbox"
+            checked={isCancelConfirmed}
+            onChange={(event) => setIsCancelConfirmed(event.target.checked)}
+            className="mt-0.5"
+          />
+          <span className="text-[11px] leading-4 text-muted-foreground">
+            Cancelling is permanent — a cancelled leg cannot be reopened, and the shipment&apos;s
+            own state is recomputed from its legs.
+          </span>
+        </label>
       )}
 
       {result !== undefined && !result.success && (
@@ -353,6 +374,8 @@ function buildLegCommand(
         expectedVersion,
         description: fields.problemDescription.trim(),
       };
+    case "cancel":
+      return { command: "cancel", expectedVersion };
     default: {
       const exhaustiveCheck: never = commandName;
       return exhaustiveCheck;

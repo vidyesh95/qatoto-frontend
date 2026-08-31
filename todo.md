@@ -169,16 +169,35 @@ Carrying the choice through needs a cart or checkout column plus a widened schem
 this has to happen in: a persisted mode is only worth having once a lane can be priced, and every
 lane answers `no_active_rate_card` today (§18).
 
-### C. A leg cannot be added, or reassigned, after the shipment exists
+### C. A leg cannot be added, or reassigned, after the shipment exists — **BACKEND SHIPPED (A43, no migration); FRONTEND NOT WIRED**
 
-`commerce_shipment_leg.logistics_engagement_id` (`store.ts:7248`) is settable **only** through
+~~`commerce_shipment_leg.logistics_engagement_id` is settable only through
 `legs[].logisticsEngagementId` on `POST /commerce/orders/:orderId/shipments`. There is no route to
-add a leg to an existing shipment, and none to attach or re-point an engagement on one.
+add a leg to an existing shipment, and none to attach or re-point an engagement on one.~~ **Both
+routes now exist** — `qatoto-backend` A43, `docs/STORE_BACKEND_STRUCTURE.md`:
 
-So a seller who books a forwarder **after** creating the shipment has nowhere to record it, and a
-shipment created without legs can never grow a route. `ShipmentLegPanel` says both out loud rather
-than rendering an affordance that cannot exist. This is the one real gap behind "deploy to the
-appropriate logistics provider", and it is a backend task.
+| Method | Route                                       | Body                                                         | Answers                      |
+| ------ | ------------------------------------------- | ------------------------------------------------------------ | ---------------------------- |
+| POST   | `/commerce/shipments/:shipmentId/legs`      | `{ legs: ShipmentLegInput[] }`, 1–50                         | 201 `{ shipmentId, legs[] }` |
+| POST   | `/commerce/shipment-legs/:legId/assignment` | `{ expectedVersion, logisticsEngagementId: string \| null }` | 200, the updated leg         |
+
+Both take an `Idempotency-Key` header (8–200 chars) and are **counterparty-only** — deliberately not
+the two-branch rule `executeShipmentLegCommand` uses, under which authority passes to the assigned
+provider. `null` on assignment detaches; assignment is refused once a leg is past `booked`.
+
+⚠️ **NEITHER HAS A FRONTEND CALLER YET, AND THAT IS THIS FILE'S OWN DEFINITION OF UNVERIFIED CODE.**
+The next slice, and it is small because the surface exists:
+
+- `src/lib/store/shipments.api.ts` — `addShipmentLegs(shipmentId, input, idempotencyKey)` and
+  `assignShipmentLeg(legId, input, idempotencyKey)`, both on the `sendJson` + `Idempotency-Key`
+  shape `executeShipmentLegCommand` already uses.
+- `src/hooks/store/shipments.ts` — two mutations invalidating `shipmentDetail` + `shipmentQueues`.
+- `shipment-leg-panel.tsx` — replace the two honest dead-ends. "No legs were declared for this
+  shipment" becomes an **Add a leg** form (sequence, mode, origin/destination country); "You are
+  moving this leg" gains an **Assign a forwarder** control listing the order's freight and logistics
+  engagements, with a detach beside it once one is attached.
+- The engagement picker needs the order's engagements, which
+  `GET /commerce/orders/:orderId/fulfillment` already returns and the panel does not yet read.
 
 ### D. Nothing calls a carrier, and nothing insures anything
 

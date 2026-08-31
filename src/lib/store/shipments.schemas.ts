@@ -271,6 +271,11 @@ export const ShipmentLegCommandSchema = z.discriminatedUnion("command", [
     description: z.string(),
     locationIdentifier: z.string().optional(),
   }),
+  z.object({
+    command: z.literal("cancel"),
+    expectedVersion: z.number().int().min(0),
+    note: z.string().optional(),
+  }),
 ]);
 export type ShipmentLegCommand = z.infer<typeof ShipmentLegCommandSchema>;
 export type ShipmentLegCommandName = ShipmentLegCommand["command"];
@@ -282,15 +287,22 @@ export type ShipmentLegCommandName = ShipmentLegCommand["command"];
  * exists so the UI does not OFFER a button that can only fail. `cancelled` and `completed` are
  * terminal and appear here with an empty list rather than being absent, so a new leg state becomes
  * a type error instead of a silently button-less row.
+ *
+ * ⚠️ **THIS SHIPPED WRONG ONCE AND THE FAILURE MODE IS WORTH NAMING.** It was transcribed with FIVE
+ * commands while `LEG_TRANSITIONS` in the backend has SIX — `cancel` was missing from every state,
+ * so a seller could reach a leg they were entitled to cancel and be offered no way to do it. It
+ * cost nothing at runtime and nothing in the type system, because a map that under-offers is
+ * indistinguishable from a correct one: only reading the backend table beside it finds the gap.
+ * Re-read `LEG_TRANSITIONS` when touching this, never the previous version of this map.
  */
 export const SHIPMENT_LEG_COMMANDS_BY_STATE: Record<
   ShipmentLegState,
   readonly ShipmentLegCommandName[]
 > = {
-  planned: ["book", "report_exception"],
-  booked: ["depart", "report_exception"],
-  in_transit: ["arrive", "report_exception"],
-  arrived: ["complete", "report_exception"],
+  planned: ["book", "report_exception", "cancel"],
+  booked: ["depart", "report_exception", "cancel"],
+  in_transit: ["arrive", "report_exception", "cancel"],
+  arrived: ["complete", "report_exception", "cancel"],
   completed: [],
   cancelled: [],
 };
@@ -301,6 +313,7 @@ export const SHIPMENT_LEG_COMMAND_LABELS: Record<ShipmentLegCommandName, string>
   arrive: "Mark arrived",
   complete: "Complete",
   report_exception: "Report a problem",
+  cancel: "Cancel this leg",
 };
 
 /** One entry in a leg's history — `GET /commerce/shipment-legs/:legId/events`. */
