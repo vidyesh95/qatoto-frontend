@@ -25,8 +25,11 @@ and `git log` are the record of what was built and why.
 under _Still open_ — SHIPPED (migrations `0151`/`0152`, admin console, required-at-publish), and
 its one remaining piece, the seller request queue, was **decided against and dropped** (`0153`).
 Part-code search shipped after it (`0154`), the service offering page's dead CTAs after that
-(item 8), and product documents after that (`0155`). **The only store item left is a single-line
-checkout for "Buy now"**, which needs a payment rail that does not exist — `stripe` is a name in an
+(item 8), and product documents after that (`0155`). ~~**The only store item left is a single-line checkout for "Buy now"**~~ — ⚠️ **not quite; four
+smaller store items are still open**: the service-offering coverage read, `standardCode` being
+unreachable from any client, `viewer.canDelete` on Q&A, and the `DELETE /products/:id` 500 on a
+customized listing. The *blocked* one is the single-line checkout, which needs a payment rail that
+does not exist — `stripe` is a name in an
 enum with no implementation and the `fake` provider is refuse-closed in production. Vidyesh is
 doing Stripe and Razorpay later; ⚠️ note Razorpay means widening `CommercePaymentProviderName`,
 which is `"fake" | "stripe"` today. (This
@@ -299,8 +302,11 @@ carries no term.
   `order-detail.tsx:119` already call it — commit `0443ae7` did it. `rg` finds no raw-code render
   site anywhere in `src`, and the label map now has three consumers rather than one.
 
-    **Still open:** `commerce-orders.service.ts:135` and `commerce-checkout.service.ts:239` declare
-    `incotermSnapshot: string | null` where `commerce-quotes.service.ts` uses `CommerceIncoterm`.
+    ~~**Still open:** `commerce-orders.service.ts:135` and `commerce-checkout.service.ts:239`
+    declare `incotermSnapshot: string | null`.~~ **DONE — verified 2026-08-31.** All three now read
+    `readonly incotermSnapshot: CommerceIncoterm | null` (`commerce-orders.service.ts:155`,
+    `commerce-checkout.service.ts:257`, `commerce-quotes.service.ts:387`). The line above at §15 was
+    right and this one had gone stale.
 
 Note the casing: `commerce_incoterm` is UPPERCASE, unlike every other enum on the wire.
 
@@ -460,7 +466,10 @@ republish **succeeds**; with the image deleted, the same republish returns
 `INCOMPLETE_FOR_PUBLISH {missing:["images"]}` and the listing sticks at `draft` — the exact trap that
 stranded the demo lamp.
 
-⚠️ **The 14 industrial listings share `machinery.avif`, and that is a knowing compromise.**
+⚠️ ~~**The 14 industrial listings share `machinery.avif`, and that is a knowing compromise.**~~
+**SUPERSEDED — see "Seed images — CORRECTED" below.** They now carry one labelled placeholder tile
+per category. The paragraph below describes the state for a few hours only; it is kept because the
+reasoning about honest filler still holds.
 `public/dummy/` is a furniture and lifestyle library with no freezer, compressor, carton or probe in
 it. `altText` carries the real product title so the accessible name stays truthful even though the
 picture is filler. The 3 demo furniture products got real matches. Replacing the filler needs 14 real
@@ -551,6 +560,21 @@ dismissed derived row present: **still dismissed** afterwards.
 All eight verification points passed, including the party-moderator 403 and the audit entry. 2044/2044
 backend tests green.
 
+## ⚠️ The seed SCRIPT path has never executed — data is right, code is unverified
+
+The 14 industrial `product_image` rows are in the database because they were **inserted with SQL**,
+not because `seed-store-ranking-dev.ts` ran. So `placeholderImageForCategory()` and the
+`productImage` insert beside the pricing-tier block are **unverified code** by this repo's own
+doctrine, even though the resulting rows are correct (17/17 products, one image each, 5/4/3/2 by
+category).
+
+⚠️ **AND IT CANNOT BE CHECKED CHEAPLY.** The script refuses to start without `--reset`, and
+`--reset` deletes every `devseed_%` row — including the 367 orders the ranking engine's whole
+history depends on. It also ends in a top-level `await main()` and exports nothing, so it cannot be
+imported and exercised in isolation. The only honest test is `--reset` on a database where losing
+devseed data is acceptable. `seed-store-demo.ts` **did** run, so the 3 furniture products went
+through their script path normally.
+
 ## Seed images — CORRECTED 2026-08-31
 
 The previous pass gave all 14 industrial listings the same `machinery.avif`. They now get one
@@ -563,17 +587,28 @@ furniture would be a more convincing lie than an obvious grey tile. `altText` ca
 product title, so the accessible name is exact either way. Cloudinary IS configured and the upload
 path works (`seed-commerce-categories.ts` is the precedent) if real assets ever arrive.
 
-### ⚠️ The tiles are AVIF, not SVG, and that is not cosmetic
+### ~~⚠️ The tiles are AVIF, not SVG, and that is not cosmetic~~ — ⚠️ **THAT CLAIM WAS WRONG**
 
-`next/image` **refuses to optimize SVG** unless `images.dangerouslyAllowSVG` is set — it answers
-`400 "image type is not allowed"`. An SVG tile renders as a broken image in the product card and the
-PDP gallery. The tiles are authored as SVG and rasterised with sharp (the backend has it; the
-frontend does not).
+**Retracted 2026-08-31, same day it was written.** It said `next/image` "refuses to optimize SVG…
+an SVG tile renders as a broken image", and that
+`/images/store/category-placeholder.svg` "**400s today**" on every category with no art of its own.
+**Neither is true.**
 
-**The same trap already catches `/images/store/category-placeholder.svg`** — `category-card.tsx`
-feeds it straight to `next/image`, and it **400s today**. Not fixed here; recorded. The fix is either
-rasterising that asset too or setting `dangerouslyAllowSVG` (which has a real security cost, since
-SVG can carry script).
+`next/image` detects a local `.svg` and serves it **unoptimized** rather than routing it through the
+optimizer. Proof from the served HTML: `navbar.tsx` renders Material Symbols through
+`<Image src="/icons/menu_24dp….svg">`, and the browser receives
+`src="/icons/menu_24dp….svg"` — no `/_next/image` anywhere. There are **559** such
+`<Image src="…​.svg">` call sites and they have always worked.
+
+⚠️ **THE ERROR WAS THE MEASUREMENT, NOT THE CODE.** The `400` came from requesting
+`/_next/image?url=…​.svg` **by hand with curl** — an endpoint no component ever hits for SVG. A
+category-card "fix" was written on the strength of it and then reverted; nothing was broken.
+
+The tiles stay AVIF, on the honest reason: an AVIF is resized per breakpoint by the optimizer where
+an SVG is passed through whole. A preference, not a correctness fix.
+
+⚠️ **The lesson generalises: do not infer a component's behaviour from curling an endpoint it does
+not call.** Read the served HTML.
 
 ## Noted, not fixed
 
@@ -593,18 +628,23 @@ correct; changing it now risks a regression for no user-visible gain.
 
 ⚠️ **THE NUMBERS IN THIS SECTION WERE WRONG AND ARE NOW MEASURED.** It read "18 removed, 96 routes
 left" over a breakdown that summed to **95**, against "114 carried the TODO, 159 carry the opt-out".
-Counted 2026-08-29: **147 files carry the opt-out and 101 still carry the boilerplate TODO** —
+Counted 2026-08-29: **147 files carried the opt-out and 101 still carried the boilerplate TODO** —
 `(home)` 61, `(studio)` 24, `(admin)` 11, `(auth)` 4, plus `src/app/layout.tsx`.
+⚠️ **RE-MEASURED 2026-08-31: the opt-out count is now 155, not 147.** Both numbers drift with every
+route added, which is the argument for the command below over any figure written here.
 
 ⚠️ **RE-COUNTED 2026-08-31 AND IT IS 102, NOT 101 — `(home)` is 62.** One `(home)` route has been
 added since. The number moves whenever a route is added, which is the argument for re-running the
 count rather than trusting this line:
 
-````bash
-rg -l "// TODO: Cache Components adoption" src/app | wc -l
-``` The two totals
-differ because **46 files already had the boilerplate replaced with a real reason** in the
-`cart/page.tsx` style, which is the finished state rather than an outstanding one.
+```bash
+rg -l "// TODO: Cache Components adoption" src/app | wc -l   # 102
+rg -l "export const instant = false"       src/app | wc -l   # 155
+```
+
+The two totals differ because **53 files already had the boilerplate replaced with a real reason**
+(155 − 102) in the `cart/page.tsx` style, which is the finished state rather than an outstanding
+one. That figure read 46 while the opt-out count was stale.
 
 ⚠️ **`instant` DOES NOT AFFECT PRERENDERING, AND ASSUMING IT DOES WASTES A ROUND.** This was
 measured, not reasoned about: the route table before and after removing all 18 is **byte-identical**
@@ -707,8 +747,12 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     rolling HOURLY top-200. "This week" and "this month" are not filters over it; they are a second
     snapshot cadence, or they are not offered.
 
-2. **The six `planned` Studio routes that are left.** ⚠️ **DO NOT INHERIT A COST FROM THIS LINE
-   WITHOUT CHECKING IT** — it has now been wrong about four separate routes.
+2. **The `planned` Studio routes that are left — TWO, not six.** ⚠️ **DO NOT INHERIT A COST FROM
+   THIS LINE WITHOUT CHECKING IT** — it has now been wrong about four separate routes, and the
+   word "six" was itself one of them. `copyright`, `pitches` and `team` graduated; `subtitles`,
+   `support`, `learn` and `feedback` were ruled out. What is left is **`earn`** (blocked on a money
+   rail) and **account-level delegation** (needs a product decision first), which is what the
+   At-a-glance already says.
 
     ~~`/studio/copyright`~~ **GRADUATED, and it closed a defect rather than only filling a gap.**
     ⚠️ **THE STUDIO WAS TELLING CREATORS SOMETHING FALSE.** `video.moderationVisibilityState`
@@ -1054,15 +1098,20 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     _unuploadable_ and a malicious image _neutralised by luck of the re-encode_. Wire a real
     scanner; that is the fix.
 
-    ⚠️ **AND ITS SCAN DECISION IS STILL UNMADE.** Only the scanner _adapter_ is reusable;
+    ⚠️ ~~**AND ITS SCAN DECISION IS STILL UNMADE.**~~ **IT WAS MADE AND SHIPPED** — unscanned,
+    **201** not 202, no `state` column, and no copy claiming the file is checked; the entry a few
+    items up states the decision and proves it live. The trade-off below is kept as the reasoning,
+    not as an open question. Only the scanner _adapter_ is reusable;
     `scanEncryptedDocument`, `sweepPendingDocumentScans` and the job all name
     `commerce_encrypted_document`, its `state` enum and its envelope columns, and the payload has
     no table discriminator. `video_document`, the precedent, is **not scanned at all**, and the
     only working scanner is an EICAR-only fake. Either add a second scan service, job and `state`
     column — or ship unscanned and answer **201**, with no copy claiming the file is checked.
 
-    ⚠️ **The cascade cleans rows, not bytes.** `deleteProduct` must delete the objects explicitly,
-    the way `deleteVideo` does. SQL cannot reach object storage.
+    ⚠️ ~~**The cascade cleans rows, not bytes.** `deleteProduct` must delete the objects
+    explicitly.~~ **DONE AND VERIFIED AGAINST OBJECT STORAGE ITSELF** — deleting the listing left
+    **0 objects in the bucket and 0 rows**, checked in the bucket rather than through a delivery
+    URL. The principle still holds for the next such cascade: SQL cannot reach object storage.
 
 7. ~~**The product page cannot start an RFQ.**~~ **SHIPPED, and it removed a dead control rather
    than adding a fourth one.**
@@ -1140,7 +1189,14 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
 
 ---
 
-## ⚠️ The frontend is far behind the backend — ~90 routes have no caller
+## ~~⚠️ The frontend is far behind the backend — ~90 routes have no caller~~ — **CLASS CLOSED**
+
+⚠️ **THE OLD HEADING SAID "~90 ROUTES HAVE NO CALLER". THE NUMBER IS NOW ZERO**, by this file's own
+measuring instrument: both audit loops in §Verification print nothing (re-run 2026-08-31). The
+section is kept as the record of how the class was closed, and for the second lesson below, which
+is the part worth carrying. **Two real remainders survive but belong to a different class** — a
+write waiting for a *read*, not for a caller: service-offering coverage and `viewer.canDelete` on
+Q&A.
 
 Six instances of one defect class were closed one at a time (`productId` on an RFQ goods line,
 `serviceOfferingId`, `pitchVideoId`, `commerce_product_highlight`, `commerce_product_variant`,
@@ -1149,7 +1205,9 @@ the shape of the whole gap. **Do not treat these as oversights to fix opportunis
 feature-sized build, and several are user-visible today.** Ranked:
 
 ⚠️ **AND ONE OF THEM TURNS OUT NOT TO BELONG TO THE CLASS AT ALL.** Every entry here reads as "the
-route exists, write the wrapper" — but **product relations cannot be wired that way**, because its
+route exists, write the wrapper" — ⚠️ **and the paragraph that follows had one of its own reasons
+WRONG; it is kept because the correction is the lesson.** It claimed **product relations cannot be
+wired that way**, because its
 replace-set has no faithful owner-side read to seed it. Wiring it would delete moderator-curated
 rows. The class is really TWO classes: writes waiting for a caller, and writes waiting for a READ.
 Service coverage is the other member of the second, and both are backend asks. Check which one an
@@ -1363,8 +1421,9 @@ was added as part of shipping it.
     read + 1 ADMIN write**. `GET …/certifications` is a read — and it exists for four FIELDS rather
     than more rows (`state`, `decisionReason`, `submittedAt`, `decidedAt`); measured live it returns
     the same 7 rows as the public read. `POST /commerce/admin/certifications/:id/decision` is a
-    moderator route with no caller and **no home in the admin console**, so a seller can now submit
-    and nobody can decide. Its own slice.
+    moderator route with no caller and ~~**no home in the admin console**, so a seller can now submit
+    and nobody can decide~~ — **that was true when written and was closed by `8fc70f1`; see the
+    struck heading immediately below.** Its own slice.
 
     ~~**SIZED 2026-08-31, NOT BUILT — and it is the largest LIVE gap on the site.**~~ **BUILT, in
     commit `8fc70f1`, and this entry was left standing for four days after it stopped being true.**
@@ -1439,11 +1498,26 @@ was added as part of shipping it.
     the no-echo case was deliberately tested. Nothing references either: the stakeholder's `photoUrl`
     was null, so no stored asset was orphaned.
 
-    ⚠️ **ONE PROBE WAS DELIBERATELY NOT RUN.** A certification submit could not be reverted: **there
-    is no withdraw or delete route**, so the row would be permanent. `withdrawn` exists in the enum
-    and nothing can reach it. The submit wrapper's shape was confirmed from the controller instead.
+    ⚠️ **ONE PROBE WAS DELIBERATELY NOT RUN.** A certification submit could not be reverted:
+    ~~**there is no withdraw or delete route**~~ — **there is now**, `withdrawOrganizationCertification`
+    (`factory-profile.api.ts:366`), so this constraint no longer applies and the probe is runnable.
+    `withdrawn` was unreachable in the enum at the time. The submit wrapper's shape was confirmed from the controller instead.
 
     **Three things recorded, not fixed:**
+
+    - ⚠️ ~~**`DELETE /products/:id` answers a raw 500 on a listing bought with customization.**~~
+      **FIXED 2026-08-31, and it was much worse than a 500.** Twelve foreign keys point at `product`
+      with `ON DELETE restrict` — orders, completions, reservations, reviews, questions, inquiries,
+      RFQ lines, sample credits, relations (both ends), pathway anchors and slot candidates — so the
+      refusal was reachable from any listing anyone had ever ordered or reviewed, not just a
+      customized one.
+      ⚠️ **AND THE THREE ASSET SWEEPS RAN BEFORE THE ROW DELETE.** A refused delete had already
+      destroyed every Cloudinary image, every highlight image and every document object, then rolled
+      back — leaving the listing alive with no bytes and, at `imageCount` 0, permanently
+      unpublishable. Measured on the demo data: **16 of 17 products** carried an order line and
+      would have hit it. Now a preflight refuses **above** the sweeps with `PRODUCT_IN_USE` → **409
+      naming what holds it** ("orders", "reviews", "pathways" are different problems with different
+      remedies). Verified live: images before 1, after 1, row intact, `blocked by: orders`.
 
     - ⚠️ **`standardCode` is unreachable from any client.** The service writes the column, but the
       route's schema has no such key and is `.strict()`, and the controller never passes one — so it
@@ -1470,14 +1544,12 @@ visibility = 'public'`, so an organization that is private or not yet active can
     `sourceKind` the buyer's companions sheet renders could only ever say "the seller says so".
     Third instance of that pattern in this module, by the backend doc's own count.
 
-    ⚠️ **THIS LIST CANNOT BE DISMISSED FROM, AND THE COPY SAYS SO RATHER THAN IMPLYING A QUEUE.**
-    There is no review state beside `sourceKind`, and `commerce_product_relation_verified_ck` ties
-    verification attribution to `moderator_curated` — so nothing can record "a moderator read this
-    and left it". `updatedAt` cannot stand in either: verification is the only UPDATE of that table
-    in the whole backend, so it equals `createdAt` on every unverified row. A claim judged FALSE
-    stays and returns to the next reviewer. Real dismissal is a migration; the page states the
-    limitation instead of hiding it behind a client-side "seen" flag, which would be a private
-    opinion no other moderator can see.
+    ⚠️ ~~**THIS LIST CANNOT BE DISMISSED FROM.**~~ **IT CAN — dismissal SHIPPED 2026-08-31 as
+    migration `0158`.** The reasoning below was correct about the schema as it stood: there was no
+    review state beside `sourceKind`, and `commerce_product_relation_verified_ck` tied attribution
+    to `moderator_curated`. The answer was `dismissed_at` + `dismissed_by_user_id` — orthogonal to
+    `sourceKind`, so provenance survives the verdict. The queue now drains in both directions and
+    a dismissal suppresses the claim on all three buyer surfaces.
 
     ⚠️ **CONFIRMING IS IRREVERSIBLE FOR BOTH PARTIES**, so the console confirms first. Nothing sets
     the source kind back, and the seller cannot delete a curated row either — their replace-set is
@@ -1510,10 +1582,10 @@ visibility = 'public'`, so an organization that is private or not yet active can
     companions read flipped that row to `moderator_curated`; and the org audit trail gained a
     `product_relation_verified` entry.
 
-    **Recorded, not built:** `verifyRelation` has **no self-moderation guard**, unlike content
-    reports, which refuse a moderator belonging to the reported organization. A moderator could
-    confirm their own organization's claim. And no `(source_kind, created_at, id)` index exists —
-    deliberately deferred while the table holds nothing.
+    ~~**Recorded, not built:** `verifyRelation` has **no self-moderation guard**.~~ **BOTH SHIPPED
+    2026-08-31** — `SELF_MODERATION_FORBIDDEN` → 403 (verified four ways, including on the replay
+    path), and the `(source_kind, created_at, id)` index landed with migration `0158`, partial on
+    `WHERE dismissed_at IS NULL`. See the SHIPPED sections near the top of this file.
 
     ~~**RFQ invitations.**~~ **SHIPPED — a provider picker on the RFQ detail page, plus a
     one-join backend read.** And it surfaced a live break in shipped code before anything new was
@@ -1679,8 +1751,14 @@ visibility = 'public'`, so an organization that is private or not yet active can
     a record of something that really happened. Reverting the STATE is the revert; erasing the
     history is not.
 
-    **SIZED 2026-08-31 AND NOT BUILT — the next two passes, in this order.** Both were checked
-    against the running backend rather than a doc, and the check is what makes them cheap:
+    ⚠️ ~~**SIZED 2026-08-31 AND NOT BUILT — the next two passes, in this order.**~~ **ALL OF IT
+    SHIPPED, and this block stood for hours after it stopped being true** — image reorder and the
+    view beacon (`6367d04`), pathway authoring (`ea8c4e5`), RFQ invitations and relations
+    (`341461f`). Each is struck as SHIPPED earlier in this very section, so the two halves
+    contradicted each other. Kept only for the backend contracts quoted below, which are still
+    accurate and still worth reading before touching these routes. **This is the exact failure this
+    file warns about a few hundred lines up: a "NOT BUILT" entry that survives its own build is the
+    most expensive kind of stale.**
 
     - **Image reorder + the product view-beacon — one small pass, both safe.**
       `PATCH /products/:id/images/reorder` takes `{ imageIds: string[] }` (`.min(1)`, `.strict()`),
@@ -1871,7 +1949,7 @@ studio.ts:190-198   creatorId → user.id, onDelete: CASCADE
 rnd.ts:3095-3100    authorMemberId → projectMember.id, onDelete: RESTRICT
                     "this row is effort evidence and its author must stay
                      resolvable forever"
-````
+```
 
 `dailyLog` → `effortClaim` (unique, one claim per log, `rnd.ts:3966`) → `sliceLedgerEntry`. It is
 the input to the entire equity ledger. Putting it behind a row that cascade-dies with a user
@@ -1900,6 +1978,94 @@ evidence — see the section above. The prediction here was half right: the numb
 today because no product carries a `researchProjectId` yet, so the join finds nothing. What was
 wrong is the assumption that it needed items 19–21 first; the plumbing was buildable now, and
 the counts will start moving on their own the moment a venture ships a listing that sells.
+
+---
+
+## Decisions taken 2026-08-31, with Alibaba as the reference
+
+Researched against Alibaba.com (the B2B supplier marketplace) plus eBay/Amazon for fitment. ⚠️ **A
+lot of what search returns for "how Alibaba does X" is Alibaba's own SEO content on
+`seller.alibaba.com/blogs` and `alibaba.com/product-insights`, not documentation** — programmatically
+generated marketing that reads authoritative. Live supplier pages are bot-blocked, so the current
+filter sidebar could not be seen. Everything below marks what is documented versus inferred.
+
+### 1. `standardCode` — BUILD IT, over a controlled vocabulary
+
+Alibaba's seller-side Certificate Center is a **structured record**, not a bare upload: Certificate
+Holder, Certificate Type, Product Category, **Certificate Number**, Certificate Name, **Issued by**,
+and **issue/expiry dates**, plus the scan
+([UI capture](https://www.iorad.com/player/2141314/Alibaba---How-to-upload-Product-Certificates)).
+
+⚠️ **What could NOT be confirmed: whether their standard name is a controlled vocabulary or free
+text.** No evidence of an enum containing the literal strings `ISO 9001` / `CE` / `RoHS`. So this is
+our decision, not a copy. **Decided: controlled vocabulary**, because the filter is the entire point
+— a free-text standard makes `certification=ISO9001` unmatchable, which is exactly the bug the
+manufacturer directory has today.
+
+⚠️ **AND THE BADGE IS NOT COPYABLE.** Alibaba's "Verified Supplier" rests on an on-site audit by SGS
+/ TÜV / Intertek with a downloadable report. We have no inspection capacity, and their own terms
+concede they *"cannot verify every single statement on the suppliers' pages or the documents they
+upload"*. The structured fields are free to copy; **the word "verified" is not**. Label
+supplier-supplied certificates as declared, and let buyers check IAF CertSearch themselves.
+
+### 2. Public seller revenue — a COARSE SELF-DECLARED BAND, explicitly labelled
+
+Alibaba splits cleanly, and the split is worth copying:
+
+- **Self-declared:** Total Annual Revenue as a *range bucket* (Below US$1M / 1–2.5M / … / Above
+  US$100M), year established, employee count, factory size, output. The supplier types these.
+- **Platform-measured:** transaction count and amount over the **last 6 months**, response rate,
+  on-time delivery, reorder rate — all derived from on-platform orders.
+
+⚠️ **THE ONE PLACE TO DIVERGE FROM ALIBABA.** They appear to put **no provenance label** on the
+self-declared revenue; the distinction is carried by page region alone, which only works after a
+decade of training buyers. **Decided: every number carries its provenance** — `declared by the
+seller` or `measured by Qatoto · last 6 months · N orders`. The platform-measured half needs no new
+capability; it is our own order table aggregated. A band rather than an exact figure also sidesteps
+the consent problem an exact revenue disclosure raises.
+
+### 3. Naming the reporter — SPLIT BY REPORT KIND
+
+- **IP / counterfeit: the complainant IS named, and this is documented.** Alibaba's IPP takes two
+  contacts, one explicitly *"disclosed to the party being complained of"*. The sibling
+  [Alibaba Cloud IPR policy](https://www.alibabacloud.com/help/en/legal/latest/411745) is published
+  documentation: full name, country, address, email; forwarded to the reported user, typically
+  within five business days; counter-notice forwarded back. Anonymous IP complaint is structurally
+  impossible, and matches DMCA-style regimes generally.
+- **General marketplace reports: UNDOCUMENTED at Alibaba.** Nothing published says whether a
+  non-IP report names the reporter. (⚠️ Alibaba's "handled discreetly" language is about their
+  **corporate whistleblower channel**, not marketplace reports — do not cite it as one.)
+
+**Decided: the reporter is NOT named to the reported party for general reports** (quality, listing
+accuracy, conduct), because the reporter is usually a buyer in an ongoing commercial relationship
+with the seller and naming them converts a report into a retaliation risk. The moderator sees the
+identity; the seller sees the substance. **If an IP/counterfeit path is ever built it must be a
+separate, named flow** — that is a legal requirement, not a preference. Write this into the policy
+pages before the first report arrives, which is the thing Alibaba never did.
+
+Worth knowing: Alibaba publicly **boycotted an IP enforcement agency for abusing its notice-takedown
+system** ([Retail Dive](https://retaildive.com/news/alibaba-fighting-false-intellectual-property-claims/435939)).
+Full identification does not stop abuse; it only makes it attributable.
+
+### 4. Compatibility claims — the relations design is right, and NOBODY verifies fitment
+
+⚠️ **No marketplace verifies a compatibility claim. Not one.** Amazon takes seller-submitted
+ACES/PIES fitment files and puts accuracy on the seller; eBay says outright *"Sellers are always
+responsible for the fitment associated with their listings."* Alibaba has no fitment system at all —
+just per-category attributes (Compatible Brand, Applicable Models, OE NO.) with most fitment living
+in free-text titles. Grainger/RS/McMaster are first-party catalogues, so they are not a comparison.
+
+This **validates the `seller_declared` → `moderator_curated` design already shipped**: a moderator
+confirming a claim is a stronger signal than any major marketplace offers, and the dismissal path
+gives a way to remove a false one — which none of them have either.
+
+**The idea worth stealing later is eBay's, and it is not verification.** eBay Guaranteed Fit never
+checks a claim; it makes a wrong one **expensive to the seller** — if the buyer supplied accurate
+details and it does not fit, eBay covers return shipping and refund. Crucially the guarantee applies
+**only to structured fitment data**, never to free text: structure earns the remedy. ⚠️ **Not
+actionable here yet** — it needs a returns/remedy rail, and escrow left this codebase (§7). Recorded
+as the direction for when a money rail exists.
+
 
 ---
 
@@ -2031,8 +2197,14 @@ Each of these is a question for Vidyesh, not a task.
 
 ## Never verified in a browser
 
-Every contract in this file was asserted over HTTP or in served HTML. Two surfaces in particular
-have never been watched rendering: the authenticated channel-profile paths (saving a bio, filing a
+⚠️ **THE BLANKET CLAIM THAT USED TO OPEN THIS SECTION WAS STALE.** It said every contract was
+asserted over HTTP or in served HTML and nothing had been watched — but two screens have since been
+watched rendering (the category-attributes admin console with both toggles and its 409/422/422
+refusals, and the store search results page), and a dimensions bug was caught *in the browser*
+(`46.5` reaching the wire as `465`).
+
+What remains true is narrower, and it is the part worth keeping. Two surfaces have never been
+watched rendering: the authenticated channel-profile paths (saving a bio, filing a
 report, upholding one) and **`/studio/funding`**, which is a client-query page whose data never
 reaches a curl. A browser check is the one gap no amount of route testing closes.
 
