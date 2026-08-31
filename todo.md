@@ -41,7 +41,8 @@ rail, on two new backend tables (migration `0148`). Proved end to end against th
 **One thing still gates it: the terms-of-service rewrite under Decisions needed** — see §12 below.
 
 **Everything else** is either content-blocked (`/anime`), a new backend domain nobody has asked
-for yet (§15, §16, and **two** of the planned Studio routes — `earn` and account-level delegation;
+for yet (§15, §16, and account-level delegation — `/studio/earn` SHIPPED and is wired to
+`GET /commerce/provider/earnings`;
 `/studio/copyright`, `/studio/pitches` and `/studio/team` all shipped, `/studio/subtitles` is
 architecturally impossible on a youtube-embed model, and support/learn/feedback are signposts that
 are already correct), or a question for Vidyesh rather than a task (**Decisions needed**).
@@ -124,50 +125,51 @@ depended on are NOT, each blocked on the backend rather than on effort.
 
 ### A. Seller cost basis — **SHIPPED end to end and VERIFIED (A44 + A46, `0159` applied)**
 
-⚠️ **This reopens "Seller cost-of-goods and margin — DECIDED: NOT BUILDING IT" above, and only
+**This reopened "Seller cost-of-goods and margin — DECIDED: NOT BUILDING IT" above, and only
 halfway.** That decision refused a **seller-typed** cost on three grounds. Two of them do not
 survive a **platform-recorded** one: a cost taken from a quote the seller accepted on Qatoto is
-measured, not self-reported, so it does not cross the A13 boundary
-`commerce_journal_account_memorandum_ck` exists to hold, and nobody has to fill anything in.
+measured, not self-reported, and nobody has to fill anything in.
 
-**It is still not buildable, for a reason the original entry never reached.** There is no join:
+**What unblocked it was reading a column, not designing around one.**
+`commerce_quote_product_line.unit_price_in_cents` is **already per unit**, so the batch-to-order-line
+apportionment this entry once said had to be settled first **is not needed, and none was invented**.
+The join genuinely was missing — a quote line reaches `product` only through
+`commerce_rfq_product_line.product_id`, which is nullable — so `product.sourcing_quote_product_line_id`
+was added as an explicit, seller-declared link (A44), with a four-table ownership check in the
+service: the quote's RFQ buyer must be the listing's seller org, and the quote must be accepted at
+that revision.
 
-- `commerce_manufacturing_inquiry.target_unit_price_in_cents` (`store.ts:9163`) is the **buyer's own
-  aspiration** sent to a factory. There is no answering price column — the factory's reply lands in
-  `commerce_thread` prose, or the inquiry converts to an RFQ.
-- Where a seller genuinely was quoted, `commerce_quote_product_line.unit_price_in_cents`
-  (`store.ts:5972`) is the number — but **nothing links that quote line back to the `product` row
-  it sourced.** No FK from a listing to the inquiry or quote that produced it.
-- Storage is the same shape: `warehouse_quote_service_detail` (`store.ts:6134`) carries capacity and
-  temperature, never money; the fee lives on `commerce_quote_service_line` with no link to a product.
+**Storage is still absent and always was**, for a reason no link fixes: warehouse fees sit on
+`commerce_quote_service_line` as a flat per-engagement `fee_in_cents`, with no quantity, no per-unit
+basis and no product link. There is no per-unit storage cost to have.
 
-**What to design first, before any endpoint.** The link, and the allocation rule with it: a
-manufacturing quote prices a BATCH and an order ships a few units of it, so attributing cost to an
-order line needs a documented apportionment — not an average nobody can audit. Then the coverage
-rule: the figure must be **per order and silent where its inputs are absent**, never an aggregate.
-`todo.md`'s own line stands — a margin over 12 of 47 orders is worse than no margin. And the
-constraint from the original entry is unchanged: the cost cannot live on
-`commerce_order_product_line`.
-
-Until then `seller-earnings-panel.tsx`'s "Profit and margin are not shown" card is correct and stays.
+**So the "Profit and margin are not shown" card stays**, and its copy was corrected rather than
+removed. The premise changed — cost IS recorded now — but the conclusion survives: subtracting a
+cost that covers some goods and none of the storage, freight or duties does not give a smaller
+profit, it gives a wrong one, flattering by exactly the costs nobody captured. `sourcingCost`
+therefore sits in its own member and is never netted, which is `commissionOwed`'s treatment for
+`commissionOwed`'s reason.
 
 ### B. The buyer's transport choice — **SHIPPED end to end and VERIFIED (A45, `0159` applied)**
 
-`delivery-sheet.tsx` lets a buyer pick a mode per leg and holds it in
-`selectedModeByLegSequence`, **local component state that dies when the sheet closes.** Nothing
-carries it to the cart, the order or the seller.
+**The whole defect was one hard-coded literal.** `projectPrepareArrivalWindow` called
+`projectFreight({ …, requestedMode: undefined })` — not a parameter, a literal — because its input
+object had no field for a caller to fill. So every checkout prepare ever made answered
+`freight: { status: "unknown", reason: "mode_not_selected" }` whatever the buyer had chosen.
 
-- `PrepareCheckoutSchema` and `ConfirmCheckoutSchema` (`commerce-checkout.schemas.ts:19,25`) are
-  `.strict()` and accept only `deliveryAddressId`, `prepareId` and the settlement-agreement array.
-- Prepare calls `projectPrepareArrivalWindow` with `requestedMode: undefined`
-  (`commerce-arrival-window.service.ts:574`), producing
-  `freight: { status: "unknown", reason: "mode_not_selected" }` — the absence is already modelled.
-- `ArrivalWindowQuerySchema`'s `?mode=` is **read-only exploration** on an existing order. Its own
-  comment: "OPTIONAL, AND NOTHING IS AUTO-SELECTED WHEN IT IS ABSENT." Nothing writes it back.
+`commerce_checkout_prepare.requested_freight_mode` and `commerce_order.requested_freight_mode_snapshot`
+carry it now (A45), and the chooser lives on the **checkout** page, where prepare is called and the
+destination is known — not on the product page, where the sheet has no way to persist anything. The
+picker UI already existed: `FreightLine`'s `onSelectMode`, which checkout had been rendering without.
 
-~~Carrying the choice through needs a cart or checkout column plus a widened schema.~~ **Both columns
-exist now**, and the note about ordering still stands: a persisted mode is only worth having once a
-lane can be priced, and every lane answers `no_active_rate_card` today (§18).
+**Proven end to end** by `pnpm db:smoke-store-phase-27`: prepare with `requestedFreightMode: "sea"`
+stops answering `mode_not_selected`, confirm snapshots `"sea"` onto the order, and the seller reads
+it back.
+
+⚠️ **How little it changes today, and this note stands.** A persisted mode is only worth having once
+a lane can be priced, and every lane answers `no_active_rate_card` (§18 — a purchase, not code). The
+smoke observed the freight reason move from `mode_not_selected` to `leg_uncovered`, which is the
+honest next answer rather than a priced range.
 
 ---
 
@@ -214,11 +216,11 @@ the members are simply being dropped today.
   without `orderLinesWithNoSourcingRecord` beside it**, and it may never be subtracted from
   anything. The "Profit and margin are not shown" card at `:182` **stays** — the backend's own
   header explains why in full.
-- The listing editor (`create-listing-page.tsx`) needs a sourcing picker over the seller's accepted
-  quotes to set `sourcingQuoteProductLineId`. Without it the column is unfillable and `sourcingCost`
-  is permanently empty. **There is no read that lists a seller's accepted quote product lines** —
-  `/commerce/provider/quotes` is the provider's own bids, the wrong side. That is a backend gap and
-  the next thing to build.
+- ~~The listing editor needs a sourcing picker, and there is no read behind it.~~ **Both shipped.**
+  `GET /commerce/sourcing/quote-lines` (**A46**) had to be built rather than reusing
+  `GET /commerce/quotes/:quoteId`, which projects the LATEST revision while the save requires the
+  ACCEPTED one — on a quote revised after acceptance that read cannot produce a linkable id at all.
+  `SourcingQuoteLinePicker` sits in the listing editor's pricing step.
 
 **A45 — requested transport mode.** `POST /commerce/checkout/prepare` accepts
 `requestedFreightMode`; the order projections carry `requestedFreightModeSnapshot`.
@@ -248,19 +250,30 @@ Both take an `Idempotency-Key` header (8–200 chars) and are **counterparty-onl
 the two-branch rule `executeShipmentLegCommand` uses, under which authority passes to the assigned
 provider. `null` on assignment detaches; assignment is refused once a leg is past `booked`.
 
-⚠️ **NEITHER HAS A FRONTEND CALLER YET, AND THAT IS THIS FILE'S OWN DEFINITION OF UNVERIFIED CODE.**
-The next slice, and it is small because the surface exists:
+**Both are wired.** `addShipmentLegs` / `assignShipmentLeg` in `shipments.api.ts`, two mutations in
+`hooks/store/shipments.ts`, and `shipment-leg-panel.tsx`'s two dead-ends replaced: an **Add a leg**
+form where "No legs were declared" used to sit, and **Assign a forwarder** / **Detach** on each leg,
+reading the order's engagements from `useOrderFulfillmentQuery`.
 
-- `src/lib/store/shipments.api.ts` — `addShipmentLegs(shipmentId, input, idempotencyKey)` and
-  `assignShipmentLeg(legId, input, idempotencyKey)`, both on the `sendJson` + `Idempotency-Key`
-  shape `executeShipmentLegCommand` already uses.
-- `src/hooks/store/shipments.ts` — two mutations invalidating `shipmentDetail` + `shipmentQueues`.
-- `shipment-leg-panel.tsx` — replace the two honest dead-ends. "No legs were declared for this
-  shipment" becomes an **Add a leg** form (sequence, mode, origin/destination country); "You are
-  moving this leg" gains an **Assign a forwarder** control listing the order's freight and logistics
-  engagements, with a detach beside it once one is attached.
-- The engagement picker needs the order's engagements, which
-  `GET /commerce/orders/:orderId/fulfillment` already returns and the panel does not yet read.
+**Proven by `pnpm db:smoke-store-phase-27`:** a shipment created with `legs[]`, a leg added to an
+existing shipment (201), and a taken sequence refused with a 409 that names the number.
+
+⚠️ **ONE PATH IS STRUCTURALLY UNREACHABLE, AND THAT IS A PRODUCT GAP RATHER THAN A MISSING TEST.**
+`logisticsEngagementId` cannot be exercised end to end by anyone today. The chain:
+
+1. `insert(commerceServiceEngagement)` appears in exactly ONE place in the backend —
+   `commerce-quotes.service.ts`, the quote-accept path. Nothing else creates one.
+2. Accepting a quote produces an order on the **`direct_offline`** rail.
+3. `direct_offline` is refused a payment intent by name — "Record the transfer as a settlement
+   attestation rather than paying it here."
+4. A settlement attestation records that money moved and **never touches `commerce_order.state`**.
+   Only `applyPaymentSettlement` and the escrow service set `confirmed`, and neither runs on this rail.
+5. `createShipment` requires `confirmed | in_fulfillment | partially_completed`.
+
+So **the only orders that have a freight engagement are the only orders that can never be shipped.**
+The assignment route is correct; what is missing is a confirmation path for an offline order. That
+is a decision for Vidyesh, and it also affects anything else that wants to fulfil a quote-originated
+order. The smoke skips those three checks loudly rather than pretending.
 
 ### D. Nothing calls a carrier, and nothing insures anything
 
