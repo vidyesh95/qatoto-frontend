@@ -384,7 +384,7 @@ production, so they are **demonstrations of the class, not live bugs** — check
 
 ⚠️ **A CORRECTION TO AN EARLIER CLAIM IN THIS FILE'S HISTORY.** The first measurement of this bug
 reported "5 orders silently dropped" in `commerce_order`. **That number was a probe artifact, not a
-product defect.** node-pg parses `timestamp without time zone` into a *local-time* JS Date, so a
+product defect.** node-pg parses `timestamp without time zone` into a _local-time_ JS Date, so a
 probe that reads via pg and writes back an ISO string cast to `::timestamp` compares values one UTC
 offset apart. The application is not affected: drizzle's own mapper reads `value + "+0000"` and
 writes `toISOString()`, symmetric in both directions, and the server runs in UTC. Re-measured
@@ -399,57 +399,160 @@ out-of-range year all passed it — two of them reaching the driver as `Invalid 
 **500 instead of 422**. `commerce-pathways.service.ts:1318` was deliberately left on
 `decodeStoreCursor`: it is a **title** cursor, not a timestamp.
 
-### New finding, NOT fixed — the cursor separator collides with underscores in ids
+### ~~New finding, NOT fixed — the cursor separator~~ — FIXED 2026-08-31
 
-`encodeStoreCursor` joins as `` `${sortKey}_${id}` `` and splits on the **last** `_`, but
-`encodeURIComponent` does **not** escape `_`. Any id containing an underscore therefore produces a
-cursor that decodes into a corrupt sort key.
+`encodeStoreCursor` joined as `` `${sortKey}_${id}` `` and split on the **last** `_`, but
+`encodeURIComponent` does not escape `_`. **Both halves now escape it to `%5F`**, so exactly one
+literal `_` survives in any cursor and the split cannot land anywhere else.
 
-Not a production bug today: every id is `randomUUID()` (123 such defaults in `store.ts`), which never
-contains `_`. It bites **only seeded rows** — 324 of 367 `commerce_order` ids are
-`devseed_order_chest-freezer-500_40`-shaped, and paging those in a probe fails at page 9. Worth
-knowing before someone introduces a prefixed id format, and worth remembering when a local
-pagination test fails for no apparent reason.
+⚠️ **The direction of the bug was the opposite of the obvious one, and my first note here had it
+half right.** Because the split is `lastIndexOf`, a `_` in the **sortKey** round-trips _correctly_ —
+the title cursors were never the bug. Only a `_` in the **id** breaks. The split stays `lastIndexOf`
+deliberately: the four sibling codecs split on the FIRST separator and are immune, but every one of
+them has a regex-pinned numeric or date prefix, whereas this codec's sort keys include free text.
 
-## Deferred from the product-relations console — decided, not built
+Verified against the real service on the exact rows that broke — `store_rail_placement` ids are
+`store_demo_rail_placement_store_demo_product_chair`-shaped. Paging at `limit=1` now reaches all
+three, none repeated, with `%5F` visible on the wire.
 
-The moderator console at `/admin/product-relations` shipped; these three were scoped out
-deliberately after the decision was made, so the next pass starts from fact rather than memory.
+**Three more defects fixed in the same pass**, all found by the sweep rather than reported:
 
-- **Self-moderation guard on `verifyRelation`.** A moderator can currently confirm their own
-  organization's claim. Copy `isModeratorPartyToTarget`
-  (`commerce-content-reports.service.ts:455-473`) — it is executor-polymorphic, so it runs inside
-  `verifyRelation`'s existing `.for("update")` transaction — and use the pathway's error name
-  `SELF_MODERATION_FORBIDDEN` → **403**. `verifyRelation` already loads `sellerOrganizationId`, but
-  **after** the UPDATE; hoist it above. ⚠️ The check must run **after** the capability check, or it
-  becomes an existence oracle for anyone without `moderate_commerce`.
-- **Dismissal — DECIDED: nullable `dismissed_at` + `dismissed_by_user_id`, NOT a new `sourceKind`
-  enum value.** `sourceKind` means *provenance*; writing a verdict into it destroys the origin fact
-  and cannot distinguish a rejected seller claim from a rejected derived edge. The blocker is
-  structural: `commerce_product_relation_verified_ck`'s negative branch is
-  `source_kind <> 'moderator_curated' AND verified_by_user_id IS NULL`, so a `moderator_rejected`
-  value **cannot record who dismissed it** without rewriting the constraint anyway. Three places
-  already read "not `moderator_curated`" as "the seller's claim" — `create-listing-page.tsx:823`,
-  `pathway-slot-list.tsx:191`, and the CHECK itself.
-    - **Decided semantics: dismissal SUPPRESSES the claim from buyers**, not just from the queue. So
-      `isNull(dismissedAt)` goes on `listProductCompanions`, `listSparePartsForProducts`, the
-      pathway candidate read **and** the moderation list. Fitment is a safety claim.
-    - A seller re-declaring a dismissed edge correctly gets a **fresh undismissed row** — the
-      replace-delete leg is already scoped to `seller_declared`, so it wipes the dismissed row and
-      the claim re-enters the queue. No change needed there, and no false 409.
-    - ⚠️ Needs the audit enum value `product_relation_dismissed` in its **own** migration first —
-      Postgres forbids using a value added by `ALTER TYPE ADD VALUE` in the transaction that added
-      it (see `drizzle/0152`).
-- **Seed images from `public/dummy`.** All 17 seeded products are `status='active'` with **zero**
-  images, so every one is stranded: the publish rule requires `imageCount >= 1`
-  (`products.service.ts:319`), and unpublishing any of them makes it unrepublishable — which is how
-  the demo lamp got stuck. The frontend has 135 assets in `public/dummy/`; seed one `product_image`
-  row per product pointing at `/dummy/<name>.avif`. ⚠️ Confirm `next/image` renders a root-relative
-  path here — the column comment calls `url` a Cloudinary `secure_url`, so that expectation is worth
-  testing rather than assuming.
-    - The neighbouring `listEligibleProducts` `coalesce(published_at, created_at)` invariant was
-      **tested and holds** — all 17 active rows have a non-null `published_at`, so that list never
-      falls through to the microsecond `created_at` and needs nothing.
+- `store-merchandising.service.ts` and `commerce-ranking.service.ts` fed `Number(cursor.sortKey)`
+  into SQL with **no NaN guard at all** — a forged cursor was a 500. Both now carry the
+  `Number.isInteger` guard `store-pathways.service.ts:301-304` already had. Confirmed: a forged
+  `not-a-number_abc` now answers `INVALID_CURSOR`.
+- `user-reports.service.ts` used `const [rawInstant, rawId] = cursor.split("_")`, which takes
+  element `[1]` and **discards the rest** — an id with an underscore paged from a truncated id and
+  returned the **wrong rows without erroring**. Now splits on the first separator with the id as the
+  unbounded tail.
+
+⚠️ **Cursors are ephemeral** — nothing persists one, so the encoding change is free. A cursor held
+across a deploy decodes to `null` and answers the existing 422 rather than mispaging.
+
+Production ids remain `randomUUID()`, so no live customer was affected; the seeded `devseed_`/
+`store_demo_` ids are what made it reproducible. All 2044 backend tests pass, including the four
+cursor codec test files.
+
+## Self-moderation guard on `verifyRelation` — SHIPPED 2026-08-31
+
+A moderator holding `moderate_commerce` who also belonged to the **selling** organization could
+confirm their own company's compatibility claim. Now refused with `SELF_MODERATION_FORBIDDEN` → 403,
+copying `isModeratorPartyToTarget` from the content-report queue (executor-polymorphic, so it runs
+inside the existing `.for("update")` transaction).
+
+⚠️ **The `fromProduct` select was HOISTED above the replay return.** It used to sit after the UPDATE
+where it only fed the audit append. Left there, "verify it twice" would have been a way around the
+guard — the second call takes the `already_verified` path and never reaches the check.
+
+⚠️ **The capability check still runs FIRST.** It happens before any row is read, so a caller without
+`moderate_commerce` still learns nothing about whether a relation id exists. Verified all four ways:
+party → 403 with the row unchanged; party on a replay → still 403; non-party → 200 and promoted;
+no capability → `PLATFORM_CAPABILITY_REQUIRED`, not the party error.
+
+## Seed product images — SHIPPED 2026-08-31
+
+All 17 seeded products were `status='active'` with zero `product_image` rows, so every one was
+stranded: the publish rule requires `imageCount >= 1`, and the seeds write `status` directly,
+bypassing it. Both seeds now write one image row per product.
+
+**Proven both directions** on `devseed_prod_chest-freezer-500`: with the image, unpublish →
+republish **succeeds**; with the image deleted, the same republish returns
+`INCOMPLETE_FOR_PUBLISH {missing:["images"]}` and the listing sticks at `draft` — the exact trap that
+stranded the demo lamp.
+
+⚠️ **The 14 industrial listings share `machinery.avif`, and that is a knowing compromise.**
+`public/dummy/` is a furniture and lifestyle library with no freezer, compressor, carton or probe in
+it. `altText` carries the real product title so the accessible name stays truthful even though the
+picture is filler. The 3 demo furniture products got real matches. Replacing the filler needs 14 real
+assets, which is its own task.
+
+Root-relative URLs confirmed end to end: `/dummy/machinery.avif` serves **200 image/avif**, and
+`/_next/image?url=%2Fdummy%2Fmachinery.avif` serves **200 image/jpeg**. `remotePatterns` gates only
+absolute URLs, and `product_image` has no `https://` CHECK (unlike
+`commerce_product_highlight_image_ck`).
+
+⚠️ Both seeds use a **bare `.onConflictDoNothing()`**, not one targeting the PK — `product_image` has
+a second unique key, `product_image_position_uidx (product_id, coalesce(variant_id,''), position)`.
+
+## `pnpm lint` was nondeterministic — FIXED 2026-08-31
+
+`.oxlintrc.json` now sets `"typeCheck": false`, keeping `"typeAware": true`.
+
+⚠️ **The failure could not be reproduced on demand, and that IS the finding.** `pnpm lint` failed
+once with `TS2307: Cannot find module 'vitest'` on a clean tree, then passed 4/4, and still passed
+after replaying the exact preceding sequence and deleting `tsconfig.tsbuildinfo`.
+
+`options.typeCheck` is the only source of TS compiler diagnostics in oxlint, and it shells out to
+`oxlint-tsgolint` — a Go reimplementation whose own CLI prints _"the `tsgolint` CLI entrypoint is
+unsupported!"_. It can also fail to spawn silently, so `pnpm lint` could exit 0 having type-checked
+**nothing**. Nondeterministic in both directions.
+
+The diagnostic was a false positive — real `tsc --noEmit` resolves `vitest` fine, and within the same
+file only the bare specifier failed while the relative import resolved. The duplicated pass is
+redundant because the gate already runs `tsc --noEmit`.
+
+**Verified the fix does not gut linting**: with `typeCheck: false`, a deliberate floating promise is
+still caught by `typescript(no-floating-promises)` — a genuinely type-aware rule. So `typeAware`
+alone retains type-informed rules; only the redundant compiler pass is gone.
+
+## Deferred: relation DISMISSAL — decided, not built
+
+Two of the three items once listed here (self-moderation guard, seed images) **shipped** — see the
+sections above. Dismissal is all that remains: two migrations and ~11 files. The design is settled,
+so the next pass starts from fact rather than memory.
+
+**Nullable `dismissed_at` + `dismissed_by_user_id`, NOT a new `sourceKind` enum value.** `sourceKind`
+means _provenance_; writing a verdict into it destroys the origin fact and cannot distinguish a
+rejected seller claim from a rejected derived edge. The blocker is structural:
+`commerce_product_relation_verified_ck`'s negative branch is
+`source_kind <> 'moderator_curated' AND verified_by_user_id IS NULL`, so a `moderator_rejected` value
+**cannot record who dismissed it** without rewriting the constraint anyway. Three places already read
+"not `moderator_curated`" as "the seller's claim" — `create-listing-page.tsx:823`,
+`pathway-slot-list.tsx:191`, and the CHECK itself.
+
+- **Dismissal SUPPRESSES the claim from buyers**, not just from the queue. `isNull(dismissedAt)` goes
+  on `listProductCompanions`, `listSparePartsForProducts`, the `store-pathways.service.ts:475-487`
+  candidate read **and** `listRelationsForModeration`. Fitment is a safety claim. Note `isNull` is
+  not currently imported in any of those files.
+
+- ⚠️ **A FIFTH READ, WHICH AN EARLIER VERSION OF THIS ENTRY MISSED.**
+  `products.service.ts:820-829` is the **seller's own editor** and must **NOT** filter dismissed
+  rows — its docblock explains that showing moderator-owned edges read-only is what stops a seller
+  wondering where an edge went. Instead **project `dismissedAt`** into
+  `PRODUCT_RELATION_VIEW_COLUMNS` so the editor can say "reviewed, not confirmed".
+
+- ⚠️ **The nightly `derive-product-relations.ts:74-80` read must stay UNFILTERED.** It exists purely
+  to avoid colliding with `commerce_product_relation_edge_uidx`. Filtering it would make the job
+  insert over a dismissed edge and die on a `23505` mid-transaction, killing the whole nightly run.
+
+- ⚠️ **CORRECTION — DISMISSAL MUST SURVIVE THE SELLER'S SAVE. An earlier version of this entry said
+  the opposite and was wrong.** It claimed a seller re-declaring a dismissed edge "correctly gets a
+  fresh undismissed row… no change needed there". Under suppression semantics that is not a
+  re-appeal, it is a **bypass**: a dismissed row is still `seller_declared`, so
+  `replaceSellerDeclaredRelations`'s delete leg (`:341-347`) wipes the moderator's decision and the
+  claim goes live to buyers again until someone re-reviews it — cleared by the very party it was
+  aimed at. **Decided: add `AND dismissed_at IS NULL` to that delete.** Re-sending the edge then
+  collides on the unique index and surfaces as a **409** naming the dismissal, exactly the shape
+  `RELATION_ALREADY_CURATED` already uses. Sellers cannot re-appeal in-product — accepted.
+
+- A repeat dismissal is a **200 replay** like `verifyRelation`, not `decideContentReport`'s 409 — the
+  console renders `success === false` in red, and a correctly-dismissed claim is not an error.
+
+- ⚠️ Needs the audit enum value `product_relation_dismissed` in its **own** migration first — Postgres
+  forbids using a value added by `ALTER TYPE ADD VALUE` in the transaction that added it (see
+  `drizzle/0152`). The enum currently holds only `product_relations_declared` and
+  `product_relation_verified`.
+
+- **Frontend**: `CardState` must become parameterised
+  (`{ status: "working"; action: "verify" | "dismiss" }`) and the card needs **two independent
+  idempotency keys**. One key for two actions replays the wrong response — the key rotates only on
+  success, so a failed confirm followed by a dismiss would send the dismiss under the confirm's key
+  and the server would replay the verify. `commerce-report-queue.tsx:152-155, :164-165` is the
+  precedent for both.
+
+- The console's header comment and its visible _"there is no way to dismiss a claim"_ paragraph both
+  become false and must be rewritten, along with the empty state, which currently cannot distinguish
+  "none yet" from "all reviewed".
 
 ---
 
