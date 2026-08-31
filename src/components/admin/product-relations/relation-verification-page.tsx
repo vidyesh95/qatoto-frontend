@@ -1,4 +1,4 @@
-// TRANSPORT: client-query — the list and the confirm both call hooks in
+// TRANSPORT: client-query — the list, the confirm and the dismiss all call hooks in
 // `@/hooks/store/admin-product-relations`. The capability check reads `@/hooks/rnd/platform-roles`.
 "use client";
 
@@ -9,11 +9,17 @@
 // buyer's sheet renders with confirmatory language. Until this page existed the promote route had
 // no way to be reached, so every relation on the platform read as "seller says so" forever.
 //
-// ⚠️ **THIS IS NOT A QUEUE THAT DRAINS, AND THE COPY MUST NOT PRETEND IT IS.** There is no way to
-// dismiss a claim: the schema has no review state beside `sourceKind`, and its CHECK constraint ties
-// verification attribution to `moderator_curated`, so nothing can record "a moderator read this and
-// left it". A claim you judge false stays here and comes back to the next reviewer. The list shrinks
-// only when a claim is CONFIRMED or the seller retracts it. Adding real dismissal is a migration.
+// THIS QUEUE DRAINS, in both directions: confirm promotes a claim, dismiss refuses it, and either
+// decision removes it from this list. `dismissed_at` + `dismissed_by_user_id` carry the refusal, so
+// `sourceKind` still records only PROVENANCE and a dismissed seller claim stays distinguishable
+// from a dismissed derived edge.
+//
+// ⚠️ **DISMISSING HIDES THE CLAIM FROM BUYERS — IT IS NOT "NOT NOW".** The server filters
+// `dismissed_at IS NULL` on the PDP companions rail, the spare-parts read and the pathway candidate
+// resolver. A fitment claim is a safety claim, so refusing one has to stop it reaching anybody.
+//
+// ⚠️ **AND IT BINDS THE SELLER.** Their replace-set skips dismissed rows, so re-sending that edge
+// is a 409 naming the dismissal. They cannot re-appeal in-product.
 //
 // ⚠️ **CONFIRMING CANNOT BE UNDONE, BY ANYONE.** One UPDATE of this table exists in the whole
 // backend and nothing reverses it; the seller cannot delete a curated row either. Hence the confirm
@@ -23,6 +29,7 @@ import { useState } from "react";
 
 import { useOwnStaffContextQuery } from "@/hooks/rnd/platform-roles";
 import {
+  useDismissProductRelationMutation,
   useProductRelationModerationList,
   useVerifyProductRelationMutation,
 } from "@/hooks/store/admin-product-relations";
@@ -64,13 +71,12 @@ export default function RelationVerificationPage() {
           the seller&apos;s own word.
         </p>
         {/*
-          The honest sentence about a list with only one action. Saying "queue" here would promise a
-          thing that empties, and this one cannot.
+          Both actions are permanent and the copy has to say so — dismissing is not a "not now", it
+          takes the claim off every buyer-facing surface and the seller cannot put it back.
         */}
         <p className="max-w-2xl text-xs text-muted-foreground">
-          There is no way to dismiss a claim — leaving one alone simply leaves it a claim, and it
-          will still be here next time. Only confirming, or the seller withdrawing it, removes it
-          from this list.
+          Dismissing a claim hides it from buyers everywhere and cannot be undone — the seller
+          cannot re-add it either. Leaving a claim alone keeps it here for the next reviewer.
         </p>
       </header>
 
@@ -152,8 +158,9 @@ function RelationList() {
       return (
         <p className="rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
           {/* Never "you are not a moderator" — this subtree only exists once the capability was
-              confirmed, so empty means exactly one thing. */}
-          No seller has claimed a related product yet.
+              confirmed. Empty now means "nothing UNREVIEWED": a decided claim, confirmed or
+              dismissed, has left this list. It does not mean no claims exist. */}
+          Nothing is waiting for review.
         </p>
       );
     case "ready":
@@ -187,34 +194,57 @@ function RelationList() {
   }
 }
 
+/**
+ * ⚠️ **`confirming` AND `working` CARRY THE ACTION.** With two mutually exclusive decisions on one
+ * card, an unparameterised state cannot say WHICH is pending, and the panel would offer the wrong
+ * confirmation copy. Same shape as the commerce report queue's row state.
+ */
+type CardAction = "verify" | "dismiss";
+
 type CardState =
   | { readonly status: "idle" }
-  | { readonly status: "confirming" }
-  | { readonly status: "working" }
+  | { readonly status: "confirming"; readonly action: CardAction }
+  | { readonly status: "working"; readonly action: CardAction }
   | { readonly status: "refused"; readonly message: string };
 
 function RelationCard({ relation }: { readonly relation: ModerationProductRelation }) {
   const [cardState, setCardState] = useState<CardState>({ status: "idle" });
 
   const verifyRelation = useVerifyProductRelationMutation();
-  const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
+  const dismissRelation = useDismissProductRelationMutation();
+
+  /**
+   * ⚠️ **ONE KEY PER ACTION, NOT ONE PER CARD.** A key rotates only on a confirmed success, so a
+   * failed confirm followed by a dismiss would send the dismiss under the confirm attempt's key and
+   * the server — whose idempotency is user-scoped — would replay the verify response instead.
+   */
+  const verifyKey = useResettableAttemptIdempotencyKey();
+  const dismissKey = useResettableAttemptIdempotencyKey();
 
   // The seller's own listing is what they are claiming FROM, so a target that is no longer public
   // is the interesting case: the claim stands while the thing it points at has gone.
   const isTargetPubliclyVisible =
     relation.toProductStatus === "active" && relation.toProductModerationState === "approved";
 
-  const handleConfirmClick = () => {
-    setCardState({ status: "working" });
-    verifyRelation.mutate(
-      { relationId: relation.id, idempotencyKey: getIdempotencyKey() },
+  const handleDecideClick = (action: CardAction) => {
+    setCardState({ status: "working", action });
+    const isVerify = action === "verify";
+    const mutation = isVerify ? verifyRelation : dismissRelation;
+    const attemptKey = isVerify ? verifyKey : dismissKey;
+    mutation.mutate(
+      { relationId: relation.id, idempotencyKey: attemptKey.getIdempotencyKey() },
       {
         onSuccess: (result) => {
           if (result.success) {
-            resetIdempotencyKey();
+            // Rotated ONLY on a confirmed success — a retry after a network failure must carry the
+            // key of the attempt it is retrying.
+            attemptKey.resetIdempotencyKey();
             setCardState({ status: "idle" });
             return;
           }
+          // ⚠️ A 403 here is PER-ROW, not per-page: the moderator belongs to this seller's
+          // organization. The client cannot know their memberships, so the controls stay visible
+          // and the refusal is shown where it happened.
           setCardState({ status: "refused", message: result.error.message });
         },
         onError: (error) => setCardState({ status: "refused", message: error.message }),
@@ -253,13 +283,23 @@ function RelationCard({ relation }: { readonly relation: ModerationProductRelati
 
       {cardState.status === "confirming" ? (
         <div className="mt-3 rounded-lg bg-muted/40 p-3">
+          {/*
+            The two consequences are NOT symmetrical and the copy must not pretend they are.
+            Confirming publishes a claim as checked; dismissing removes it from every buyer surface
+            and locks the seller out of re-adding it.
+          */}
           <p className="text-xs">
-            Confirming marks this as checked by us, and it is permanent — there is no way to undo
-            it, and the seller cannot remove it afterwards either.
+            {cardState.action === "verify"
+              ? "Confirming marks this as checked by us, and it is permanent — there is no way to undo it, and the seller cannot remove it afterwards either."
+              : "Dismissing hides this claim from buyers everywhere — the companions list, spare parts and pathways. It is permanent, and the seller cannot re-add this pairing afterwards."}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <button type="button" onClick={handleConfirmClick} className={PRIMARY_BUTTON_CLASS}>
-              Confirm it anyway
+            <button
+              type="button"
+              onClick={() => handleDecideClick(cardState.action)}
+              className={PRIMARY_BUTTON_CLASS}
+            >
+              {cardState.action === "verify" ? "Confirm it anyway" : "Dismiss it anyway"}
             </button>
             <button
               type="button"
@@ -271,14 +311,28 @@ function RelationCard({ relation }: { readonly relation: ModerationProductRelati
           </div>
         </div>
       ) : (
-        <button
-          type="button"
-          disabled={cardState.status === "working"}
-          onClick={() => setCardState({ status: "confirming" })}
-          className={`${PRIMARY_BUTTON_CLASS} mt-3`}
-        >
-          {cardState.status === "working" ? "Confirming…" : "Confirm this fits"}
-        </button>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={cardState.status === "working"}
+            onClick={() => setCardState({ status: "confirming", action: "verify" })}
+            className={PRIMARY_BUTTON_CLASS}
+          >
+            {cardState.status === "working" && cardState.action === "verify"
+              ? "Confirming…"
+              : "Confirm this fits"}
+          </button>
+          <button
+            type="button"
+            disabled={cardState.status === "working"}
+            onClick={() => setCardState({ status: "confirming", action: "dismiss" })}
+            className={QUIET_BUTTON_CLASS}
+          >
+            {cardState.status === "working" && cardState.action === "dismiss"
+              ? "Dismissing…"
+              : "Dismiss"}
+          </button>
+        </div>
       )}
 
       {cardState.status === "refused" && (

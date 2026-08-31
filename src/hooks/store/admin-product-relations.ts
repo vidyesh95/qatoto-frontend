@@ -12,6 +12,7 @@ import { toCursorKeysetPage, useKeysetList, type KeysetListResult } from "@/hook
 import type { ActionResponse } from "@/lib/http";
 import {
   listProductRelationsForModeration,
+  dismissProductRelation,
   verifyProductRelation,
   type ModerationProductRelation,
 } from "@/lib/store/admin-product-relations.api";
@@ -59,6 +60,35 @@ export function useVerifyProductRelationMutation(): UseMutationResult<
   return useMutation({
     mutationFn: ({ relationId, idempotencyKey }) =>
       verifyProductRelation(relationId, { headers: { "Idempotency-Key": idempotencyKey } }),
+    onSuccess: (result) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: productRelationModerationKeys.all });
+    },
+  });
+}
+
+/**
+ * Refuses one claim.
+ *
+ * ⚠️ **IRREVERSIBLE, AND IT SUPPRESSES THE CLAIM FROM BUYERS** — see the api file. The card
+ * confirms before calling this.
+ *
+ * ⚠️ **THE CARD OWNS A SEPARATE IDEMPOTENCY KEY FOR THIS ACTION.** A key shared with the confirm
+ * mutation would replay the WRONG response: keys rotate only on success, so a failed confirm
+ * followed by a dismiss would send the dismiss under the confirm attempt's key and the server would
+ * hand back the verify result.
+ *
+ * Invalidates the root: a dismissed claim leaves this list entirely.
+ */
+export function useDismissProductRelationMutation(): UseMutationResult<
+  ActionResponse<unknown>,
+  Error,
+  { readonly relationId: string; readonly idempotencyKey: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ relationId, idempotencyKey }) =>
+      dismissProductRelation(relationId, { headers: { "Idempotency-Key": idempotencyKey } }),
     onSuccess: (result) => {
       if (!result.success) return;
       void queryClient.invalidateQueries({ queryKey: productRelationModerationKeys.all });

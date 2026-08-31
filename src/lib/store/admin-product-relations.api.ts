@@ -59,11 +59,11 @@ export type ModerationProductRelationPage = z.infer<typeof ModerationProductRela
 /**
  * `GET /commerce/admin/product-relations` — oldest first, because it is a queue and not a feed.
  *
- * ⚠️ **THE SERVER DEFAULTS TO `seller_declared`, WHICH IS THE ONLY MEANING OF "UNREVIEWED".** There
- * is no review state on the row: a claim is unreviewed exactly while its source kind is the
- * seller's. It must never be expressed as "has no verification timestamp", because
- * `derived_cooccurrence` rows are un-attributed too and that predicate would pour the nightly
- * co-occurrence graph into a human's review list.
+ * ⚠️ **UNREVIEWED IS NOW TWO CONDITIONS, NOT ONE.** The server defaults `sourceKind` to
+ * `seller_declared` AND filters `dismissed_at IS NULL` — a dismissed claim has had its decision and
+ * leaves the queue for good. Neither half may be expressed as "has no verification timestamp",
+ * because `derived_cooccurrence` rows are un-attributed too and that predicate would pour the
+ * nightly co-occurrence graph into a human's review list.
  */
 export function listProductRelationsForModeration(
   filter: { readonly cursor?: string },
@@ -79,7 +79,8 @@ export function listProductRelationsForModeration(
  * ⚠️ **IRREVERSIBLE, FOR BOTH PARTIES.** There is exactly one UPDATE of this table in the whole
  * backend and nothing anywhere sets the source kind back, clears the attribution, or deletes a
  * curated row. The seller cannot remove it either — their replace-set is scoped to their own
- * declarations, and re-sending the edge is a 409. So the console confirms before calling.
+ * declarations, and re-sending the edge is a 409 (`RELATION_ALREADY_CURATED`, distinct from the
+ * dismissal 409 below). So the console confirms before calling.
  *
  * ⚠️ **A SECOND CALL IS A 200, NOT A 409.** The service returns the existing row for an
  * already-curated relation, so there is no "already confirmed" error path to build — the row simply
@@ -90,5 +91,28 @@ export function verifyProductRelation(
   options?: RequestOptions,
 ): Promise<ActionResponse<unknown>> {
   const path = `/commerce/admin/product-relations/${encodeURIComponent(relationId)}/verify`;
+  return sendJson(path, "POST", {}, z.unknown(), options);
+}
+
+/**
+ * Refuses one claim. **Requires an `Idempotency-Key`.**
+ *
+ * ⚠️ **THIS HIDES THE CLAIM FROM BUYERS, IT DOES NOT JUST TIDY THIS LIST.** The server filters
+ * `dismissed_at IS NULL` on the PDP companions rail, the spare-parts reverse read and the pathway
+ * candidate resolver. Dismissing is a judgement that the fit is wrong, so the copy beside this
+ * control must not imply it is a "not now".
+ *
+ * ⚠️ **IRREVERSIBLE, AND IT BINDS THE SELLER TOO.** Nothing clears `dismissed_at`, and the seller's
+ * replace-set deliberately skips dismissed rows — re-sending that edge comes back a 409 naming the
+ * dismissal. They cannot re-appeal in-product, so confirm before calling.
+ *
+ * ⚠️ **A SECOND CALL IS A 200, NOT A 409**, matching verify: the service returns the existing row
+ * for an already-dismissed relation rather than treating a re-press as an error.
+ */
+export function dismissProductRelation(
+  relationId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<unknown>> {
+  const path = `/commerce/admin/product-relations/${encodeURIComponent(relationId)}/dismiss`;
   return sendJson(path, "POST", {}, z.unknown(), options);
 }

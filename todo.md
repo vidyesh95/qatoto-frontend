@@ -495,64 +495,93 @@ redundant because the gate already runs `tsc --noEmit`.
 still caught by `typescript(no-floating-promises)` — a genuinely type-aware rule. So `typeAware`
 alone retains type-informed rules; only the redundant compiler pass is gone.
 
-## Deferred: relation DISMISSAL — decided, not built
+## Relation DISMISSAL — SHIPPED 2026-08-31 (backend `0158`)
 
-Two of the three items once listed here (self-moderation guard, seed images) **shipped** — see the
-sections above. Dismissal is all that remains: two migrations and ~11 files. The design is settled,
-so the next pass starts from fact rather than memory.
+The moderator console could confirm a claim but never refuse one, so the queue never drained and a
+claim judged false stayed live to buyers forever. `dismissed_at` + `dismissed_by_user_id` now carry
+the refusal — **not** a new `sourceKind` member, so `sourceKind` still records only PROVENANCE and a
+dismissed seller claim stays distinguishable from a dismissed derived edge.
 
-**Nullable `dismissed_at` + `dismissed_by_user_id`, NOT a new `sourceKind` enum value.** `sourceKind`
-means _provenance_; writing a verdict into it destroys the origin fact and cannot distinguish a
-rejected seller claim from a rejected derived edge. The blocker is structural:
-`commerce_product_relation_verified_ck`'s negative branch is
-`source_kind <> 'moderator_curated' AND verified_by_user_id IS NULL`, so a `moderator_rejected` value
-**cannot record who dismissed it** without rewriting the constraint anyway. Three places already read
-"not `moderator_curated`" as "the seller's claim" — `create-listing-page.tsx:823`,
-`pathway-slot-list.tsx:191`, and the CHECK itself.
+**Dismissal suppresses the claim from buyers, not just from the queue.** Verified on all three
+surfaces rather than inferred from one: companions rail `2 -> 0`, spare-parts reverse read `1 -> 0`,
+pathway candidates `1 -> 0`.
 
-- **Dismissal SUPPRESSES the claim from buyers**, not just from the queue. `isNull(dismissedAt)` goes
-  on `listProductCompanions`, `listSparePartsForProducts`, the `store-pathways.service.ts:475-487`
-  candidate read **and** `listRelationsForModeration`. Fitment is a safety claim. Note `isNull` is
-  not currently imported in any of those files.
+### ⚠️ The finding that shaped the build: the `23505` would have told the seller a lie
 
-- ⚠️ **A FIFTH READ, WHICH AN EARLIER VERSION OF THIS ENTRY MISSED.**
-  `products.service.ts:820-829` is the **seller's own editor** and must **NOT** filter dismissed
-  rows — its docblock explains that showing moderator-owned edges read-only is what stops a seller
-  wondering where an edge went. Instead **project `dismissedAt`** into
-  `PRODUCT_RELATION_VIEW_COLUMNS` so the editor can say "reviewed, not confirmed".
+Making dismissal survive the seller's save means adding `dismissed_at IS NULL` to
+`replaceSellerDeclaredRelations`'s delete leg — without which the seller's next save wipes the
+moderator's decision and the claim goes live again, cleared by the party it was aimed at.
 
-- ⚠️ **The nightly `derive-product-relations.ts:74-80` read must stay UNFILTERED.** It exists purely
-  to avoid colliding with `commerce_product_relation_edge_uidx`. Filtering it would make the job
-  insert over a dismissed edge and die on a `23505` mid-transaction, killing the whole nightly run.
+But a surviving dismissed row still occupies its `(from, to, relationKind)` slot in
+`commerce_product_relation_edge_uidx`, so re-sending that edge raises **the same unique violation a
+moderator-CURATED edge raises**. The existing `.catch(isUniqueViolation)` would have answered
+*"A moderator has already **confirmed** one of these related products"* about a claim a moderator
+**rejected**. `isUniqueViolation` carries no way to tell the two apart.
 
-- ⚠️ **CORRECTION — DISMISSAL MUST SURVIVE THE SELLER'S SAVE. An earlier version of this entry said
-  the opposite and was wrong.** It claimed a seller re-declaring a dismissed edge "correctly gets a
-  fresh undismissed row… no change needed there". Under suppression semantics that is not a
-  re-appeal, it is a **bypass**: a dismissed row is still `seller_declared`, so
-  `replaceSellerDeclaredRelations`'s delete leg (`:341-347`) wipes the moderator's decision and the
-  claim goes live to buyers again until someone re-reviews it — cleared by the very party it was
-  aimed at. **Decided: add `AND dismissed_at IS NULL` to that delete.** Re-sending the edge then
-  collides on the unique index and surfaces as a **409** naming the dismissal, exactly the shape
-  `RELATION_ALREADY_CURATED` already uses. Sellers cannot re-appeal in-product — accepted.
+Fixed with an explicit pre-read diff of the dismissed edges inside the transaction, returning a
+distinct `RELATION_DISMISSED` (409) with its own wording. The `isUniqueViolation` catch stays as the
+backstop for the genuine curated case. **Verified the message, not just the status** — a seller
+re-sending a dismissed edge gets `RELATION_DISMISSED`.
 
-- A repeat dismissal is a **200 replay** like `verifyRelation`, not `decideContentReport`'s 409 — the
-  console renders `success === false` in red, and a correctly-dismissed claim is not an error.
+### ⚠️ Second finding: the nightly job silently un-dismissed derived rows
 
-- ⚠️ Needs the audit enum value `product_relation_dismissed` in its **own** migration first — Postgres
-  forbids using a value added by `ALTER TYPE ADD VALUE` in the transaction that added it (see
-  `drizzle/0152`). The enum currently holds only `product_relations_declared` and
-  `product_relation_verified`.
+`derive-product-relations.ts` deleted **every** `derived_cooccurrence` row and re-derived, so a
+dismissed derived edge came back undismissed overnight. The delete is now scoped
+`AND dismissed_at IS NULL`; the job's own `humanAuthoredPairs` read is unfiltered, so the surviving
+row is still seen and its pair skipped — no collision. Verified by running the real job with a
+dismissed derived row present: **still dismissed** afterwards.
 
-- **Frontend**: `CardState` must become parameterised
-  (`{ status: "working"; action: "verify" | "dismiss" }`) and the card needs **two independent
-  idempotency keys**. One key for two actions replays the wrong response — the key rotates only on
-  success, so a failed confirm followed by a dismiss would send the dismiss under the confirm's key
-  and the server would replay the verify. `commerce-report-queue.tsx:152-155, :164-165` is the
-  precedent for both.
+### Decisions worth keeping
 
-- The console's header comment and its visible _"there is no way to dismiss a claim"_ paragraph both
-  become false and must be rewritten, along with the empty state, which currently cannot distinguish
-  "none yet" from "all reviewed".
+- **The edge unique index was deliberately NOT made partial.** Unconditional is what makes dismissal
+  binding — a partial index would let a live row sit beside the dismissed one and reopen the bypass.
+  Sellers cannot re-appeal in-product; that is the accepted cost.
+- **`products.service.ts`'s seller-editor read PROJECTS `dismissedAt` and does not filter on it.**
+  Filtering there would make the row vanish from the seller's own editor, they would re-declare it,
+  and their save would 409 naming a row they can no longer see.
+- **A repeat dismissal is a 200 replay**, matching `verifyRelation` rather than the content-report
+  queue's 409 — the console paints a failed result red, and a correctly-dismissed claim is not an
+  error.
+- **`SELF_MODERATION_FORBIDDEN`'s message was reworded to "cannot moderate its own claim".** It was
+  verify-specific ("cannot *confirm*"), and one arm now serves both actions.
+- **The card carries TWO idempotency keys, one per action.** Keys rotate only on success, so a
+  failed confirm followed by a dismiss would have sent the dismiss under the confirm's key and the
+  user-scoped server idempotency would have replayed the verify response.
+
+All eight verification points passed, including the party-moderator 403 and the audit entry. 2044/2044
+backend tests green.
+
+## Seed images — CORRECTED 2026-08-31
+
+The previous pass gave all 14 industrial listings the same `machinery.avif`. They now get one
+labelled placeholder tile per category — freezers, compressors, cartons, instruments — each carrying
+the Material Symbol already committed in `public/icons/` and the words "placeholder image".
+
+⚠️ **This is a placeholder, not photography, because there is none to be had.** A sweep of all 350
+files under `public/` found exactly one industrial photograph. Dressing a chest freezer in stock
+furniture would be a more convincing lie than an obvious grey tile. `altText` carries the real
+product title, so the accessible name is exact either way. Cloudinary IS configured and the upload
+path works (`seed-commerce-categories.ts` is the precedent) if real assets ever arrive.
+
+### ⚠️ The tiles are AVIF, not SVG, and that is not cosmetic
+
+`next/image` **refuses to optimize SVG** unless `images.dangerouslyAllowSVG` is set — it answers
+`400 "image type is not allowed"`. An SVG tile renders as a broken image in the product card and the
+PDP gallery. The tiles are authored as SVG and rasterised with sharp (the backend has it; the
+frontend does not).
+
+**The same trap already catches `/images/store/category-placeholder.svg`** — `category-card.tsx`
+feeds it straight to `next/image`, and it **400s today**. Not fixed here; recorded. The fix is either
+rasterising that asset too or setting `dangerouslyAllowSVG` (which has a real security cost, since
+SVG can carry script).
+
+## Noted, not fixed
+
+`commerce_product_relation.created_at` is plain `timestamp`, not `precision: 3` — migration `0157`
+swept 14 columns and **skipped this table**, which is why `listRelationsForModeration` carries a
+millisecond-window keyset instead of the plain `eq`/`gt` its siblings use. The hack is verified
+correct; changing it now risks a regression for no user-visible gain.
+
 
 ---
 
