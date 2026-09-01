@@ -60,25 +60,28 @@ const PIPELINE_STAGES: PipelineStage[] = [
   },
 ];
 
-// Horizontally scrolling strip of the six pipeline stages. Every card lands on
-// a page that teaches its stage — never an in-page anchor, which used to scroll
-// the landing page instead of going anywhere, and left team building, daily
-// logs and governance reachable only from inside a project someone had already
-// picked.
+// Wrap grid of the six pipeline stages — 1 column on mobile, 2 from `sm`, 3 from
+// `xl` — so every stage is visible at once (the old horizontal scroller hid the
+// later cards off-screen with no affordance). Every card lands on a page that
+// teaches its stage — never an in-page anchor, which used to scroll the landing
+// page instead of going anywhere, and left team building, daily logs and
+// governance reachable only from inside a project someone had already picked.
 export default function PipelineStagesStrip() {
   return (
-    <div className="flex gap-3 overflow-x-auto px-4 lg:px-6">
+    <div className="grid gap-4 px-4 sm:grid-cols-2 lg:px-6 xl:grid-cols-3">
       {PIPELINE_STAGES.map((stage) => (
         <Link
           key={stage.stepNumber}
           href={stage.href}
-          className="min-w-56 rounded-2xl border border-[#CAC4D0]/60 p-4 transition-colors hover:bg-gray-100"
+          className="rounded-2xl border border-[#CAC4D0]/60 p-5 transition-colors hover:bg-gray-100"
         >
-          <p className="text-xs text-muted-foreground">{stage.stepNumber}</p>
-          <div className="mt-2 grid size-10 place-items-center rounded-full bg-[#00696E]/10">
-            <Image src={stage.iconSrc} width={24} height={24} alt="" />
+          <div className="flex items-start justify-between">
+            <div className="grid size-10 place-items-center rounded-full bg-[#00696E]/10">
+              <Image src={stage.iconSrc} width={24} height={24} alt="" />
+            </div>
+            <p className="text-xs text-muted-foreground">{stage.stepNumber}</p>
           </div>
-          <p className="mt-3 font-medium">{stage.title}</p>
+          <p className="mt-4 font-medium">{stage.title}</p>
           <p className="mt-1 text-xs text-muted-foreground">{stage.blurb}</p>
         </Link>
       ))}
