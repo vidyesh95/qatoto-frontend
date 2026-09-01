@@ -11,10 +11,12 @@ type SectionHeaderProps = {
 // Left-aligned section title with an optional trailing "see all" chevron, used
 // above every R&D rail (Featured projects, Open roles, Market insights, …).
 // Sections without a deeper destination pass no href and render title-only.
+// Set in the same serif as the landing hero so every band on the R&D surface
+// speaks with the page's opening voice.
 export default function SectionHeader({ title, href }: SectionHeaderProps) {
   return (
     <div className="flex items-center justify-between px-4 lg:px-6">
-      <h2 className="text-sm font-medium tracking-wide xl:text-lg">{title}</h2>
+      <h2 className="font-serif text-xl xl:text-2xl">{title}</h2>
       {href && (
         <Link
           href={href}

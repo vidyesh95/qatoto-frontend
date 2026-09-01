@@ -10,7 +10,7 @@ import type { ResearchProjectListRow } from "@/lib/rnd/projects.schemas";
 export default function ProjectsRail({ projects }: { projects: ResearchProjectListRow[] }) {
   return (
     <section id="featured-projects" className="scroll-mt-20 space-y-1">
-      <SectionHeader title="Featured projects" />
+      <SectionHeader title="Featured projects" href="/research-and-development/projects" />
       <div className="flex gap-3 overflow-x-auto px-4 pt-2 pb-2 lg:px-6">
         {projects.map((project) => (
           <ProjectCard key={project.slug} project={project} />

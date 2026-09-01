@@ -58,7 +58,7 @@ export default async function ResearchAndDevelopmentPage() {
   const openRolesState = toListViewState(openRolesResult);
 
   return (
-    <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
+    <div className="space-y-10 pt-4 pb-4 lg:space-y-14 lg:pt-6 lg:pb-6">
       <PipelineHero />
       <PipelineStagesStrip />
       <LifecycleRolesStrip />
@@ -70,7 +70,10 @@ export default async function ResearchAndDevelopmentPage() {
           anchorId="featured-projects"
           title="Featured projects"
           state={projectsState}
-          emptyMessage="No published projects yet. Be the first — post your idea."
+          emptyMessage="No published projects yet."
+          emptyAction={
+            <EmptyRailActionLink href="/research-and-development/new" label="Post your idea" />
+          }
           errorMessage="Couldn't load featured projects."
         />
       )}
@@ -82,6 +85,12 @@ export default async function ResearchAndDevelopmentPage() {
           title="Top reported gaps"
           state={topGapsState}
           emptyMessage="No problems have been clustered yet."
+          emptyAction={
+            <EmptyRailActionLink
+              href="/research-and-development/problem-map"
+              label="Open problem map"
+            />
+          }
           errorMessage="Couldn't load the problem map."
         />
       )}
@@ -93,6 +102,12 @@ export default async function ResearchAndDevelopmentPage() {
           title="Market insights"
           state={insightsState}
           emptyMessage="No market insights published yet."
+          emptyAction={
+            <EmptyRailActionLink
+              href="/research-and-development/knowledge-hub"
+              label="Open knowledge hub"
+            />
+          }
           errorMessage="Couldn't load market insights."
         />
       )}
@@ -105,13 +120,19 @@ export default async function ResearchAndDevelopmentPage() {
           title="Join a team"
           state={openRolesState}
           emptyMessage="No open roles right now."
+          emptyAction={
+            <EmptyRailActionLink
+              href="/research-and-development/projects"
+              label="Browse projects"
+            />
+          }
           errorMessage="Couldn't load open roles."
         />
       )}
 
       <ResearchProgramBanner />
       <section className="mx-4 rounded-2xl bg-[#00696E]/5 p-6 text-center md:p-8 lg:mx-6">
-        <h2 className="text-xl font-semibold md:text-2xl">Have an idea the world needs?</h2>
+        <h2 className="font-serif text-2xl md:text-3xl">Have an idea the world needs?</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Post it and Qatoto lines up the demand data, teammates, and backers to build it.
         </p>
@@ -141,12 +162,14 @@ function RailFallback({
   title,
   state,
   emptyMessage,
+  emptyAction,
   errorMessage,
 }: {
   anchorId?: string;
   title: string;
   state: Exclude<ListViewState<unknown>, { status: "ready" }>;
   emptyMessage: string;
+  emptyAction?: React.ReactNode;
   errorMessage: string;
 }) {
   return (
@@ -161,11 +184,26 @@ function RailFallback({
       case "error":
         return <RndErrorPanel message={errorMessage} />;
       case "empty":
-        return <RndStatusPanel message={emptyMessage} />;
+        return <RndStatusPanel message={emptyMessage} action={emptyAction} />;
       default: {
         const exhaustiveCheck: never = state;
         return exhaustiveCheck;
       }
     }
   }
+}
+
+// The pill an empty rail offers as its next step — an empty section is an
+// invitation to act, not a dead end. Error branches deliberately get no pill:
+// a failed read is an outage report, and a cheerful CTA under it would
+// misreport the platform's state.
+function EmptyRailActionLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-block cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E]"
+    >
+      {label}
+    </Link>
+  );
 }
