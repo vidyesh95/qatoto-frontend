@@ -16,6 +16,18 @@ import { SwitchAccountPanel } from "@/components/home/account/menus/switch-accou
 type AccountMenuProps = {
   /** Called when the menu should close — e.g. an outside click or after sign-out. */
   onClose: () => void;
+  /**
+   * Opens the send-feedback sheet.
+   *
+   * REQUIRED, so the compiler names every caller. This menu is mounted by three different
+   * navbars, and an optional handler would have wired one of them and quietly left the other
+   * two with the dead button this prop exists to fix.
+   *
+   * THE OWNER CLOSES THE MENU AND OWNS THE SHEET. This component is unmounted the moment the
+   * menu closes, so a sheet rendered here would die with it — the caller opens one beside the
+   * menu instead.
+   */
+  onSendFeedback: () => void;
 };
 
 /** Marketing/information pages, shown as a divider section near the foot of the menu. */
@@ -50,7 +62,7 @@ type MenuView = "main" | "ai-assist" | "language" | "location" | "settings" | "s
  * Closes itself when the user clicks anywhere outside the panel, and exposes a
  * sign-out action that clears the local auth flag and returns to the home page.
  */
-export default function AccountMenu({ onClose }: AccountMenuProps) {
+export default function AccountMenu({ onClose, onSendFeedback }: AccountMenuProps) {
   // Reference to the root panel element, used to detect clicks landing outside it.
   const menuPanelRef = useRef<HTMLDivElement>(null);
 
@@ -456,7 +468,7 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             >
               <Image
                 src="/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Send feedback"
+                alt=""
                 width={24}
                 height={24}
               />
@@ -466,11 +478,12 @@ export default function AccountMenu({ onClose }: AccountMenuProps) {
             </Link>
             <button
               type="button"
+              onClick={onSendFeedback}
               className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
             >
               <Image
                 src="/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Send feedback"
+                alt=""
                 width={24}
                 height={24}
               />

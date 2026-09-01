@@ -19,6 +19,7 @@ import Image from "next/image";
 import { useState } from "react";
 
 import AccountMenu from "@/components/home/account/menus/account-menu";
+import SendFeedbackSheet from "@/components/home/shared/send-feedback-sheet";
 import CartNavButton from "@/components/home/layout/cart-nav-button";
 import NotificationBell from "@/components/home/layout/notification-bell";
 import { useViewerAvatarUrl } from "@/hooks/use-viewer-avatar-url";
@@ -43,6 +44,10 @@ export default function NavbarAccountCluster({
   const viewerAvatarUrl = useViewerAvatarUrl();
   const isAuthenticated = useViewerSignedIn(isViewerSignedIn);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  // THE SHEET'S OPEN BIT LIVES HERE, NOT IN THE MENU. Opening it closes the menu, and the menu
+  // is unmounted when it closes — a sheet owned by `AccountMenu` would be destroyed by the same
+  // click that opened it.
+  const [isFeedbackSheetOpen, setIsFeedbackSheetOpen] = useState(false);
 
   return (
     <>
@@ -71,8 +76,19 @@ export default function NavbarAccountCluster({
                 className="rounded-full"
               />
             </button>
-            {isAccountMenuOpen && <AccountMenu onClose={() => setIsAccountMenuOpen(false)} />}
+            {isAccountMenuOpen && (
+              <AccountMenu
+                onClose={() => setIsAccountMenuOpen(false)}
+                onSendFeedback={() => {
+                  setIsAccountMenuOpen(false);
+                  setIsFeedbackSheetOpen(true);
+                }}
+              />
+            )}
           </div>
+          {isFeedbackSheetOpen && (
+            <SendFeedbackSheet onClose={() => setIsFeedbackSheetOpen(false)} />
+          )}
         </>
       ) : (
         <Link

@@ -11,6 +11,7 @@ import Image from "next/image";
 import { useState } from "react";
 
 import AccountMenu from "@/components/home/account/menus/account-menu";
+import SendFeedbackSheet from "@/components/home/shared/send-feedback-sheet";
 import CreateMenu from "@/components/studio/create-menu";
 import { useViewerAvatarUrl } from "@/hooks/use-viewer-avatar-url";
 import { useViewerSignedIn } from "@/hooks/use-viewer-signed-in";
@@ -25,6 +26,9 @@ export default function StudioNavbarAccountCluster({
   const isAuthenticated = useViewerSignedIn(isViewerSignedIn);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
+  // Owned here rather than in `AccountMenu`, which unmounts the moment it closes — see the
+  // note on `onSendFeedback` in `account-menu.tsx`.
+  const [isFeedbackSheetOpen, setIsFeedbackSheetOpen] = useState(false);
 
   return (
     <>
@@ -64,7 +68,18 @@ export default function StudioNavbarAccountCluster({
               className="rounded-full"
             />
           </button>
-          {isAccountMenuOpen && <AccountMenu onClose={() => setIsAccountMenuOpen(false)} />}
+          {isAccountMenuOpen && (
+            <AccountMenu
+              onClose={() => setIsAccountMenuOpen(false)}
+              onSendFeedback={() => {
+                setIsAccountMenuOpen(false);
+                setIsFeedbackSheetOpen(true);
+              }}
+            />
+          )}
+          {isFeedbackSheetOpen && (
+            <SendFeedbackSheet onClose={() => setIsFeedbackSheetOpen(false)} />
+          )}
         </div>
       ) : (
         <Link

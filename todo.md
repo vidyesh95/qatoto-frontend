@@ -28,7 +28,7 @@ Part-code search shipped after it (`0154`), the service offering page's dead CTA
 (item 8), and product documents after that (`0155`). ~~**The only store item left is a single-line checkout for "Buy now"**~~ — ⚠️ **not quite; four
 smaller store items are still open**: the service-offering coverage read, `standardCode` being
 unreachable from any client, `viewer.canDelete` on Q&A, and the `DELETE /products/:id` 500 on a
-customized listing. The *blocked* one is the single-line checkout, which needs a payment rail that
+customized listing. The _blocked_ one is the single-line checkout, which needs a payment rail that
 does not exist — `stripe` is a name in an
 enum with no implementation and the `fake` provider is refuse-closed in production. Vidyesh is
 doing Stripe and Razorpay later; ⚠️ note Razorpay means widening `CommercePaymentProviderName`,
@@ -709,7 +709,7 @@ moderator's decision and the claim goes live again, cleared by the party it was 
 But a surviving dismissed row still occupies its `(from, to, relationKind)` slot in
 `commerce_product_relation_edge_uidx`, so re-sending that edge raises **the same unique violation a
 moderator-CURATED edge raises**. The existing `.catch(isUniqueViolation)` would have answered
-*"A moderator has already **confirmed** one of these related products"* about a claim a moderator
+_"A moderator has already **confirmed** one of these related products"_ about a claim a moderator
 **rejected**. `isUniqueViolation` carries no way to tell the two apart.
 
 Fixed with an explicit pre-read diff of the dismissed edges inside the transaction, returning a
@@ -737,7 +737,7 @@ dismissed derived row present: **still dismissed** afterwards.
   queue's 409 — the console paints a failed result red, and a correctly-dismissed claim is not an
   error.
 - **`SELF_MODERATION_FORBIDDEN`'s message was reworded to "cannot moderate its own claim".** It was
-  verify-specific ("cannot *confirm*"), and one arm now serves both actions.
+  verify-specific ("cannot _confirm_"), and one arm now serves both actions.
 - **The card carries TWO idempotency keys, one per action.** Keys rotate only on success, so a
   failed confirm followed by a dismiss would have sent the dismiss under the confirm's key and the
   user-scoped server idempotency would have replayed the verify response.
@@ -801,7 +801,6 @@ not call.** Read the served HTML.
 swept 14 columns and **skipped this table**, which is why `listRelationsForModeration` carries a
 millisecond-window keyset instead of the plain `eq`/`gt` its siblings use. The hack is verified
 correct; changing it now risks a regression for no user-visible gain.
-
 
 ---
 
@@ -1380,7 +1379,7 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
 measuring instrument: both audit loops in §Verification print nothing (re-run 2026-08-31). The
 section is kept as the record of how the class was closed, and for the second lesson below, which
 is the part worth carrying. **Two real remainders survive but belong to a different class** — a
-write waiting for a *read*, not for a caller: service-offering coverage and `viewer.canDelete` on
+write waiting for a _read_, not for a caller: service-offering coverage and `viewer.canDelete` on
 Q&A.
 
 Six instances of one defect class were closed one at a time (`productId` on an RFQ goods line,
@@ -1853,8 +1852,7 @@ visibility = 'public'`, so an organization that is private or not yet active can
     composer surfaces it during authoring rather than offering it too late to matter.
 
     **Two refusals found by probing that no doc mentions.** A slot's `quantity` must reach its
-    candidate's **minimum order quantity** (a chair with an MOQ of 10 in a slot asking for 1 is a
-    422) — the picker now carries the MOQ and the editor warns before the save; and a product with
+    candidate's **minimum order quantity** (a chair with an MOQ of 10 in a slot asking for 1 is a 422) — the picker now carries the MOQ and the editor warns before the save; and a product with
     variants must name one (**"Choose a variant for products that have them."**), which is why
     picking a product is a two-step act rather than one.
 
@@ -1895,8 +1893,8 @@ visibility = 'public'`, so an organization that is private or not yet active can
 
     ⚠️ **A SELF-REPORT IS `422`, NOT `403` — AND 422 IS ALSO THE SCHEMA-FAILURE STATUS.** Measured
     side by side in one run: an empty `detailText` answered `422 "Please check the highlighted
-    fields."` while reporting your own organization answered `422 "You cannot report your own
-    organization's content."` So a sheet that renders 422 as a field error tells a seller their form
+ fields."` while reporting your own organization answered `422 "You cannot report your own
+ organization's content."` So a sheet that renders 422 as a field error tells a seller their form
     is broken when the answer is a rule. The sheet prints the backend's sentence.
     ⚠️ And the guard only fires with an **active organization** — the first attempt returned **201**
     because `activate` had been called without its required `Idempotency-Key` and the session
@@ -2011,8 +2009,7 @@ visibility = 'public'`, so an organization that is private or not yet active can
     collides with the seller's re-insert. The `23505` escaped uncaught. Reproduced, then mapped to
     `RELATION_ALREADY_CURATED` → **409** with a sentence a seller can act on. The editor also shows
     curated and derived rows **read-only** and excludes them from the payload, so the refusal is
-    unreachable from our own UI — but the client is untrusted and a foreseeable input must not be a
-    500.
+    unreachable from our own UI — but the client is untrusted and a foreseeable input must not be a 500.
 
     Also verified: a self-relation is a 422, an invisible target is a 422 **naming the id**, and an
     empty save really does clear the seller's own declarations while leaving the curated one alone.
@@ -2052,11 +2049,12 @@ visibility = 'public'`, so an organization that is private or not yet active can
       one reason into six spellings no moderator could group.
 
     ⚠️ **SETTLEMENT AGREEMENTS: DECIDED AGAINST FOR NOW, not forgotten.** `POST
-    /threads/:threadId/settlement-agreements` and `…/responses` exist and have no caller, and they
+ /threads/:threadId/settlement-agreements` and `…/responses` exist and have no caller, and they
     stay that way: a propose/respond UI reads as Qatoto holding the money even when a licensed third
     party does, which is the exact liability the no-custody posture exists to avoid. Escrow left this
     codebase (§7) and nothing here reopens it. Revisit if a licensed provider is actually
     contracted — the routes are the smaller half of that decision.
+
 5. ~~⚠️ **Two frontend files assert in prose that a shipped backend route does not exist.**~~
    **BOTH SHIPPED, frontend only, no migration.** Each route was proved to exist against the running
    backend before anything was written, by the assertion that separates "the route is missing" from
@@ -2195,15 +2193,15 @@ manufacturer directory has today.
 
 ⚠️ **AND THE BADGE IS NOT COPYABLE.** Alibaba's "Verified Supplier" rests on an on-site audit by SGS
 / TÜV / Intertek with a downloadable report. We have no inspection capacity, and their own terms
-concede they *"cannot verify every single statement on the suppliers' pages or the documents they
-upload"*. The structured fields are free to copy; **the word "verified" is not**. Label
+concede they _"cannot verify every single statement on the suppliers' pages or the documents they
+upload"_. The structured fields are free to copy; **the word "verified" is not**. Label
 supplier-supplied certificates as declared, and let buyers check IAF CertSearch themselves.
 
 ### 2. Public seller revenue — a COARSE SELF-DECLARED BAND, explicitly labelled
 
 Alibaba splits cleanly, and the split is worth copying:
 
-- **Self-declared:** Total Annual Revenue as a *range bucket* (Below US$1M / 1–2.5M / … / Above
+- **Self-declared:** Total Annual Revenue as a _range bucket_ (Below US$1M / 1–2.5M / … / Above
   US$100M), year established, employee count, factory size, output. The supplier types these.
 - **Platform-measured:** transaction count and amount over the **last 6 months**, response rate,
   on-time delivery, reorder rate — all derived from on-platform orders.
@@ -2218,7 +2216,7 @@ the consent problem an exact revenue disclosure raises.
 ### 3. Naming the reporter — SPLIT BY REPORT KIND
 
 - **IP / counterfeit: the complainant IS named, and this is documented.** Alibaba's IPP takes two
-  contacts, one explicitly *"disclosed to the party being complained of"*. The sibling
+  contacts, one explicitly _"disclosed to the party being complained of"_. The sibling
   [Alibaba Cloud IPR policy](https://www.alibabacloud.com/help/en/legal/latest/411745) is published
   documentation: full name, country, address, email; forwarded to the reported user, typically
   within five business days; counter-notice forwarded back. Anonymous IP complaint is structurally
@@ -2241,8 +2239,8 @@ Full identification does not stop abuse; it only makes it attributable.
 ### 4. Compatibility claims — the relations design is right, and NOBODY verifies fitment
 
 ⚠️ **No marketplace verifies a compatibility claim. Not one.** Amazon takes seller-submitted
-ACES/PIES fitment files and puts accuracy on the seller; eBay says outright *"Sellers are always
-responsible for the fitment associated with their listings."* Alibaba has no fitment system at all —
+ACES/PIES fitment files and puts accuracy on the seller; eBay says outright _"Sellers are always
+responsible for the fitment associated with their listings."_ Alibaba has no fitment system at all —
 just per-category attributes (Compatible Brand, Applicable Models, OE NO.) with most fitment living
 in free-text titles. Grainger/RS/McMaster are first-party catalogues, so they are not a comparison.
 
@@ -2256,7 +2254,6 @@ details and it does not fit, eBay covers return shipping and refund. Crucially t
 **only to structured fitment data**, never to free text: structure earns the remedy. ⚠️ **Not
 actionable here yet** — it needs a returns/remedy rail, and escrow left this codebase (§7). Recorded
 as the direction for when a money rail exists.
-
 
 ---
 
@@ -2391,7 +2388,7 @@ Each of these is a question for Vidyesh, not a task.
 ⚠️ **THE BLANKET CLAIM THAT USED TO OPEN THIS SECTION WAS STALE.** It said every contract was
 asserted over HTTP or in served HTML and nothing had been watched — but two screens have since been
 watched rendering (the category-attributes admin console with both toggles and its 409/422/422
-refusals, and the store search results page), and a dimensions bug was caught *in the browser*
+refusals, and the store search results page), and a dimensions bug was caught _in the browser_
 (`46.5` reaching the wire as `465`).
 
 What remains true is narrower, and it is the part worth keeping. Two surfaces have never been
@@ -2619,3 +2616,37 @@ legally binding rather than a courtesy, `redirected_to_source` goes from the com
 rare one, and every bullet above turns into required work. The data model is source-agnostic and
 does not need replacing — the _process_ around it does. Do not let the existence of a working
 flag queue read as "copyright is handled".
+
+---
+
+## Site feedback — PART 1 SHIPPED 2026-09-01 (backend `0160`), parts 2–3 are not built
+
+The account menu's "Send feedback" button was dead — no `onClick`, not even a menu close. It now
+opens `send-feedback-sheet.tsx` over all three shells (home, studio, admin all mount the same
+`AccountMenu`), and `POST /feedback` writes `platform_feedback` through the new
+`qatoto-backend/src/modules/platform/feedback/` module. `GET /admin/feedback` exists and is
+keyset-paginated behind `moderate_content`, **and nothing in this repo calls it yet** — that is
+part 2, and until it lands the queue is readable only by hand.
+
+**Three things about the shape, so they are not re-litigated:**
+
+- **It is not a report.** No verdict, no moderator decision, no audit entry, no reply. The sheet's
+  receipt says thanks and says plainly that no reply is coming, which is the ceiling — "we'll get
+  back to you" and "logged and prioritised" are both inventions this system cannot honour.
+- **`pagePath` is in the body; the user agent is NOT.** The client is the only thing that knows
+  the route, so it sends it; the browser string is read from the request header server-side,
+  because a body-carried one is a value this untrusted client chooses.
+- **The status enum shipped with the table** (`new | reviewed | closed`, default `new`) precisely
+  so part 3 needs no migration. Nothing moves it off `new` today.
+
+**Part 2 — the admin queue page.** `src/lib/platform/admin-feedback.api.ts` (a separate file from
+`feedback.api.ts`, the same viewer/staff split `content-reports.api.ts` documents), a `feedbackKeys`
+factory, a capability-gated hook, and an admin page consuming `nextCursor`. **Part 3 — triage.**
+`POST /admin/feedback/:feedbackId/decisions` flipping the status; it takes
+`idempotency({ required: true })` only if it starts writing audit entries.
+
+**Not scoped, and each is a decision rather than an oversight:** screenshots (a capture library is
+client weight this repo's thin-client rule does not want), signed-out feedback (needs optional-auth
+plus an IP-keyed limiter, and the spam surface grows), wiring `/studio/feedback`'s placeholder page
+to the same hook, notifying anyone on submit, and including feedback in the data export — check
+`smoke-data-export`'s scope when part 2 lands.
