@@ -289,6 +289,27 @@ function buildKnownHeadline(kind: NotificationKind, notification: NotificationRo
           : "A moderation decision was made about one of your videos.";
     }
 
+    // --- Support cases -------------------------------------------------------------------
+
+    case "support_case_opened":
+      // STAFF-FACING. Deliberately says nothing about what the case is about: the subject line
+      // is text the person wrote, and an inbox row is not the place to repeat it.
+      return "Someone opened a support case.";
+    case "support_case_replied":
+      // NO STAFF NAME. `actorUserId` is null on this kind by design, so there is none to read.
+      return "Support replied to your case.";
+    case "support_case_decided": {
+      // BOTH VERDICTS, ONE KIND. `resolved` leaves the case reopenable and `closed` does not,
+      // which is the difference worth telling somebody about — so the sentence names it when
+      // the payload says which, and stays vague rather than guessing when it does not.
+      const state = readPayloadString(payload, "state");
+      return state === "closed"
+        ? "Your support case was closed."
+        : state === "resolved"
+          ? "Your support case was resolved. You can still reply if it is not fixed."
+          : "Your support case was reviewed.";
+    }
+
     default: {
       const exhaustiveCheck: never = kind;
       return exhaustiveCheck;
@@ -311,6 +332,19 @@ function buildKnownHeadline(kind: NotificationKind, notification: NotificationRo
 export function buildNotificationHref(notification: NotificationRow): string | null {
   const programSlug = readPayloadString(notification.payload, "programSlug");
   if (programSlug !== null) return `/research-and-development/programs/${programSlug}`;
+
+  /**
+   * The support kinds carry no project and no program, so without this they would fall through
+   * to the `projectSlug === null` return and become text — on the one surface where the whole
+   * point is getting back to the thread. The member kinds go to the case; the staff one goes to
+   * the queue, because the member route would 404 for whoever is not the opener.
+   */
+  const supportCaseId = readPayloadString(notification.payload, "supportCaseId");
+  if (supportCaseId !== null) {
+    return notification.kind === "support_case_opened"
+      ? "/admin/support"
+      : `/customer-service/cases/${supportCaseId}`;
+  }
 
   if (notification.kind === "platform_role_change_proposed") return "/admin/staff";
   if (notification.projectSlug === null) return null;

@@ -76,6 +76,19 @@ export const NOTIFICATION_KINDS = [
   // the outcome goes to the subject, who until now could be made a moderator without being told.
   "platform_role_change_proposed",
   "platform_role_changed",
+  // Support cases — THREE KINDS, TWO AUDIENCES.
+  //
+  // `support_case_opened` goes to STAFF and is the reason the queue is not poll-only: a case
+  // sitting unread is the product failing at the one job it has.
+  //
+  // The other two go to the person who opened the case. `support_case_decided` carries BOTH
+  // verdicts — resolved and closed — because one kind whose sentence names neither is better
+  // than a sentence that guesses. ⚠️ NEITHER NAMES THE STAFF MEMBER: both are enqueued with
+  // `actorUserId: null`, so `actorName` arrives as `null` and the sentences must read without
+  // one.
+  "support_case_opened",
+  "support_case_replied",
+  "support_case_decided",
 ] as const;
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];

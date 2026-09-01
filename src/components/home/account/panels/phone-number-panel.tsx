@@ -19,10 +19,11 @@ import Image from "next/image";
  * mints codes nobody receives, which is the same failure one layer down.
  *
  * WHY THE PANEL STAYS MOUNTED rather than being deleted from the settings menu: it marks where the
- * feature will live, and its absence would tell a reader nothing. This is the shape
- * `customer-service.tsx` uses for the missing ticket queue, and its reasoning applies unchanged —
- * an unanswered form is worse than an honest signpost, because the person believes they have been
- * heard.
+ * feature will live, and its absence would tell a reader nothing. The rule behind that is the one
+ * `customer-service.tsx` used to be the example of — an unanswered form is worse than an honest
+ * signpost, because the person believes they have been heard. ⚠️ THAT PAGE IS NO LONGER THE
+ * EXAMPLE: `/support` shipped, so customer service now runs a real case queue somebody answers.
+ * The principle is unchanged and this panel is now the surface it applies to.
  *
  * WHAT TO DO WHEN AN SMS PROVIDER IS BOUGHT: add the provider to config, mount the `phoneNumber`
  * plugin with a real `sendOTP`, then restore the two-step flow. `git log` has the version that was

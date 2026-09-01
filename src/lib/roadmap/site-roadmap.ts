@@ -1010,11 +1010,13 @@ export const ROADMAP_REFERENCE_DESTINATIONS: readonly RoadmapDestination[] = [
   },
   {
     // `route`, not `planned`: the body is a real page now rather than a placeholder heading, which
-    // is the whole distinction between those two kinds.
+    // is the whole distinction between those two kinds. It also stopped being only a page — the
+    // `/support` routes shipped, so this surface now opens a case a person answers rather than
+    // pointing at other pages and stopping there.
     kind: "route",
     label: "Customer service",
     href: "/customer-service",
-    summary: "Help with an order or an account.",
+    summary: "Help with an order or an account, and a case a person answers.",
   },
   {
     // `route`, not `planned`: the body is a real page now rather than a placeholder heading, which

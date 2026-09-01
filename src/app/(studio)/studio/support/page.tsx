@@ -21,10 +21,15 @@ export default function StudioSupport() {
         "Open a support conversation attached to your account.",
         "Track what you have asked and what was answered.",
       ]}
+      // STILL `planned`, because nothing was built AT THIS ROUTE — a seller has no
+      // studio-scoped support surface, and counting somebody else's page as this one's
+      // delivery is exactly what `studio-planned-page.tsx` refuses to do. What changed is
+      // that the alternative is no longer a signpost: support cases are live on the main
+      // site, and both bullets above describe what that page already does.
       insteadFor={{
         label: "Customer Service",
         href: "/customer-service",
-        note: "Every problem that has a real home today is signposted from",
+        note: "Support cases are live and a person answers them — open one from",
       }}
     />
   );

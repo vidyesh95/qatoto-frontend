@@ -289,6 +289,22 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
     title: "Platform",
     items: [
       {
+        // NOT IN A MODERATION SECTION, and that is the same argument the capability itself
+        // makes. Every queue above decides something ABOUT a piece of content — may this go
+        // out, should this come down. This one answers a person who wrote in, and what a staff
+        // member reads here is unstructured free text about payments, accounts and whatever
+        // else somebody chose to type. `handle_support_cases` is `admin`-only for that reason,
+        // which puts the row beside Staff and the audit log rather than beside Video reports.
+        //
+        // ONE ICON FOR BOTH STATES: only the FILL0 `support_agent` glyph exists in this repo,
+        // and it is the one the (home) sidebar already uses for Customer service — a different
+        // glyph here would break the association a staff member has with the member-facing page.
+        href: "/admin/support",
+        label: "Support cases",
+        activeIcon: "/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+        inactiveIcon: "/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      },
+      {
         // ADMIN ONLY, and the page says so rather than this list: `view_platform_metrics` is held
         // by `admin` alone, but the sidebar is rendered for every staff role and has no
         // capability read of its own. Hiding the row for a moderator would mean fetching

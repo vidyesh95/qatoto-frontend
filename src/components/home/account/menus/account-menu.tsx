@@ -449,18 +449,12 @@ export default function AccountMenu({ onClose, onSendFeedback }: AccountMenuProp
               />
               <span className="text-sm font-medium text-secondary-foreground">Forum</span>
             </a>
-            <button
-              type="button"
-              className="flex w-full cursor-pointer flex-row items-center gap-4 p-4 transition-colors hover:bg-muted"
-            >
-              <Image
-                src="/icons/help_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt="Help"
-                width={24}
-                height={24}
-              />
-              <span className="text-sm font-medium text-secondary-foreground">Help</span>
-            </button>
+            {/*
+              THE "Help" ROW WAS REMOVED HERE, not disabled. It was a `<button>` with no
+              onClick and no href — a control that did nothing — sitting directly above
+              "Customer service", which goes where a person clicking "Help" was trying to get.
+              Two rows to one destination, one of them inert, is worse than one row that works.
+            */}
             <Link
               href="/customer-service"
               onClick={onClose}

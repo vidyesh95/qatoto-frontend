@@ -25,6 +25,8 @@
 
 import { useState } from "react";
 
+import Link from "next/link";
+
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import {
@@ -71,7 +73,14 @@ export default function BuyerWorkspaceNotice() {
               : "None of your organizations can trade right now."}
           </p>
           <p className="mt-1 text-xs leading-4 text-[#6F7979]">
-            Orders are on hold until that changes. Contact support if you think this is wrong.
+            Orders are on hold until that changes.{" "}
+            {/* This sentence used to name a channel that did not exist — "contact support"
+                with nowhere to go. It has a destination now, and a blocked workspace is
+                exactly the `account_problem` a case is for. */}
+            <Link href="/customer-service" className="underline">
+              Contact support
+            </Link>{" "}
+            if you think this is wrong.
           </p>
         </div>
       );
