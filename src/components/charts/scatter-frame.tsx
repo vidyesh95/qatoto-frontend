@@ -130,7 +130,13 @@ export function ScatterFrame({
           ))}
         </div>
 
-        <div className={`relative ${plotHeightClassName}`}>
+        {/* `overflow-hidden` is a BACKSTOP, not the containment. `scatter-series.tsx` clamps
+            every point a full radius inside this box, so nothing should reach the edge — but
+            a future change to the fan spacing or a new overlay element must not be able to
+            paint over the caption and the page margin again, which is what happened once.
+            ⚠️ NOT the same rule as `chart-frame.tsx`, which sets `overflow-visible` on
+            purpose so a bar's value label can sit above its bar. Different frame. */}
+        <div className={`relative overflow-hidden ${plotHeightClassName}`}>
           <svg
             aria-hidden
             viewBox={`0 0 ${PLOT_WIDTH_UNITS} ${scale.plotHeightUnits}`}

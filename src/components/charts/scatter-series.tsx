@@ -23,6 +23,24 @@ import type { ScatterChartScale } from "@/lib/charts/scatter-scale";
 //
 // THE `title` ATTRIBUTE IS THE ONLY MOUSE AFFORDANCE. There is no tooltip layer and no hover
 // state: it costs nothing, and the exact numbers are in the frame's `sr-only` table.
+//
+// ⚠️ EVERY POINT IS CLAMPED TO STAY WHOLLY INSIDE THE PLOT, AND THAT IS ALSO A BUG FIX. Two
+// things pushed points out of the box and onto the surrounding page:
+//
+//   1. A point at the domain MAXIMUM sits at `left: 100%`, and `translate(-50%, -50%)` then
+//      leaves half the circle outside. That was true before any fan-out existed.
+//   2. The fan-out below adds up to `13 × √index` px on top of that — a cluster of five
+//      reaches 26px, plus the radius, so ~35px of circle landed past the boundary and
+//      painted over the caption above the chart.
+//
+// `clamp()` mixes `%` and `px` and resolves against the containing block, so the centre can
+// be held one radius in from each edge with no measurement, no effect, and byte-identical
+// server and client output. It is what a chart library sells as a "plot margin".
+//
+// The displacement it costs is at most ONE RADIUS, and only for a point already within a
+// radius of an edge. The reading survives that: the fan had already moved the point, the
+// ladder had already discarded far more precision than 11px of plot (see `PlacedPoint`
+// below), and the frame's `sr-only` table carries the exact figures either way.
 
 /**
  * How far apart fanned-out neighbours sit, in pixels.
@@ -138,7 +156,12 @@ export function ScatterSeries({ scale, points, colorClassName, formatPoint }: Sc
         // type holds without an assertion.
         if (point.magnitude === null) return null;
 
-        const diameterPixels = scale.radiusPixels(point.magnitude) * 2;
+        const radiusPixels = scale.radiusPixels(point.magnitude);
+        const diameterPixels = radiusPixels * 2;
+        // The fan offset lives INSIDE the clamp, not in `transform` — a transform is applied
+        // after layout and nothing can bound it, which is how points ended up on the page.
+        const clampedCentre = (percent: number, offsetPixels: number): string =>
+          `clamp(${String(radiusPixels)}px, calc(${String(percent)}% + ${String(offsetPixels)}px), calc(100% - ${String(radiusPixels)}px))`;
         const clusterNote =
           placement.clusterSize > 1
             ? ` · ${String(placement.clusterIndex)} of ${String(placement.clusterSize)} at this exact score`
@@ -150,13 +173,13 @@ export function ScatterSeries({ scale, points, colorClassName, formatPoint }: Sc
             // `title`, not a `<title>` child — this is an HTML element now.
             title={`${formatPoint(point)}${clusterNote}`}
             style={{
-              left: `${String(scale.xPercent(point.x))}%`,
-              top: `${String(scale.yPercent(point.y))}%`,
+              left: clampedCentre(scale.xPercent(point.x), placement.offsetXPixels),
+              top: clampedCentre(scale.yPercent(point.y), placement.offsetYPixels),
               width: `${String(diameterPixels)}px`,
               height: `${String(diameterPixels)}px`,
-              // The centring translate first, then the fan-out offset. Written as one
-              // transform because a second `translate` in a class would override this one.
-              transform: `translate(-50%, -50%) translate(${String(placement.offsetXPixels)}px, ${String(placement.offsetYPixels)}px)`,
+              // Centring only. `left`/`top` place the CENTRE, and the clamp above keeps that
+              // centre a full radius in from every edge, so the whole circle stays in the box.
+              transform: "translate(-50%, -50%)",
             }}
             // Semi-transparent so a fanned cluster still reads as one group and the overlap
             // shows where the mass sits.
