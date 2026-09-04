@@ -208,6 +208,22 @@ export const LocalizationPathwaySuggestionSchema = z
     modelVersion: z.string().nullable(),
     promptVersion: z.string(),
     confidenceBps: z.number().nullable(),
+    /**
+     * The model's guess at what it costs to stand up a first commercial line, in cents, as a
+     * DECIMAL STRING — or NULL throughout.
+     *
+     * ⚠️ AN ESTIMATE, NOT A QUOTE, and the only model-supplied NUMBER anywhere on this
+     * surface. Everything else §20 renders is computed from Comtrade filings. A renderer must
+     * show `modelName`, `promptVersion` and `asOf` beside it and must never format it as a
+     * price this platform will honour — nothing here is a commitment to anybody.
+     *
+     * NULL means the model DECLINED to estimate, which the prompt explicitly permits. It does
+     * not mean zero, and it does not mean cheap. `formatCapitalBand` renders the absence.
+     */
+    estimatedCapitalMinInCents: z.string().nullable(),
+    estimatedCapitalMaxInCents: z.string().nullable(),
+    /** What scale was costed and what was excluded. Present exactly when the band is. */
+    capitalBasisText: z.string().nullable(),
     asOf: z.string(),
     decidedAt: z.string().nullable(),
     decisionNote: z.string().nullable(),
@@ -276,10 +292,23 @@ export const LocalizationAssessmentGridCellSchema = z
   .strip();
 export type LocalizationAssessmentGridCell = z.infer<typeof LocalizationAssessmentGridCellSchema>;
 
+/**
+ * What `POST /localization-assessments/:id/pathway` answers.
+ *
+ * ⚠️ IT CARRIES NO VERDICT, AND THAT IS THE CONTRACT. A 202 means a job is queued; the
+ * pathway and its capital band do not exist yet. The only field is the status, so a caller
+ * cannot mistake acceptance for output — it polls the commodity read for the real thing.
+ */
+export const PathwayRequestAcceptedSchema = z
+  .object({ narrativeStatus: LocalizationNarrativeStatusSchema })
+  .strip();
+export type PathwayRequestAccepted = z.infer<typeof PathwayRequestAcceptedSchema>;
+
 /** The grid's filters. No `page`/`limit` — the result is bounded by the ladders. */
 export interface ListLocalizationAssessmentGridFilter {
   readonly reporterCountryCode?: string;
   readonly commodityKind?: ImportCommodityKind;
+  readonly manufacturedOnly?: boolean;
 }
 
 /**
@@ -352,6 +381,14 @@ export interface ListSubstitutesFilter {
 export interface ListLocalizationAssessmentsFilter {
   readonly reporterCountryCode?: string;
   readonly commodityKind?: ImportCommodityKind;
+  /**
+   * Drop what nobody localises by building a factory — fuel, gems, ores, crops.
+   *
+   * ⚠️ SERVER-SIDE. India's ranking opens with petroleum, jewellery, aircraft, diamonds and
+   * unwrought gold; filtering those out of a fetched page would return 45 rows and call them
+   * a top-50.
+   */
+  readonly manufacturedOnly?: boolean;
   readonly page?: number;
   readonly limit?: number;
 }

@@ -201,6 +201,17 @@ export const rndKeys = {
   platformRoleSubject: (email: string) => ["rnd", "platform-role-subject", email] as const,
   platformRoleProposals: () => ["rnd", "platform-role-proposals"] as const,
 
+  // --- Import intelligence ---------------------------------------------------
+  /**
+   * One commodity's detail, keyed by HS code AND country.
+   *
+   * The country is part of the key because the payload is: the same HS6 line carries a
+   * different assessment, a different score and a different pathway per reporter, and dropping
+   * it would serve India's numbers for Vietnam from cache.
+   */
+  importCommodity: (hsCode: string, reporterCountryCode: string | undefined) =>
+    ["rnd", "import-commodity", hsCode, reporterCountryCode ?? "any"] as const,
+
   // --- Platform audit --------------------------------------------------------
   /** The staff decision log. Keyed by kind, since the page reads one slice of it. */
   platformAuditTrail: (eventKind: string | undefined) =>

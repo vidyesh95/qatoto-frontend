@@ -36,6 +36,14 @@ import { toListViewState, type ListViewState } from "@/lib/view-state";
 const INSIGHTS_PAGE_LIMIT = 24;
 const DEMAND_SIGNALS_PAGE_LIMIT = 20;
 const LEADERBOARD_LIMIT = 24;
+/**
+ * How many products the picker plots. The backend's `limit` ceiling, deliberately.
+ *
+ * Fifty manufactured products occupy fifty distinct positions on the log axes and split 33/17
+ * across the parity line, so one page carries the reading. A larger set would need paging, and
+ * paging a scatter means a chart that shows some of the data without saying which.
+ */
+const PICKER_LIMIT = 50;
 const CATALOGUE_LIMIT = 30;
 
 /** ISO-3166 alpha-2, the shape `discovery_region.country_code` stores. */
@@ -90,6 +98,7 @@ export default async function MarketResearchPage({
     insightsResult,
     demandSignalsResult,
     assessmentsResult,
+    pickerAssessmentsResult,
     assessmentGridResult,
     commoditiesResult,
     kindsResult,
@@ -99,6 +108,18 @@ export default async function MarketResearchPage({
     listDemandSignals({ limit: DEMAND_SIGNALS_PAGE_LIMIT }, requestOptions),
     listLocalizationAssessments(
       { limit: LEADERBOARD_LIMIT, reporterCountryCode, commodityKind },
+      requestOptions,
+    ),
+    // The PICKER's own read: manufactured kinds only, and a full page of them.
+    //
+    // ⚠️ A SEPARATE READ FROM THE LEADERBOARD ABOVE, ON PURPOSE. The leaderboard is the
+    // ranking as it stands, petroleum and unwrought gold included, because that is what the
+    // ranking says. The chart is a "what should I build" surface and must not open with five
+    // answers that are not manufacturing, so it asks the backend to drop fuel, gems, ores and
+    // crops. Filtering the leaderboard's page client-side instead would return 33 rows and
+    // call them a top-50.
+    listLocalizationAssessments(
+      { limit: PICKER_LIMIT, reporterCountryCode, commodityKind, manufacturedOnly: true },
       requestOptions,
     ),
     // The SAME filters as the leaderboard above, and that is load-bearing: the scatter's
@@ -121,6 +142,9 @@ export default async function MarketResearchPage({
   const commodityKinds = kindsResult.success ? kindsResult.data : [];
   const assessments = assessmentsResult.success ? assessmentsResult.data.rows : [];
   const assessmentGridCells = assessmentGridResult.success ? assessmentGridResult.data : [];
+  const pickerAssessments = pickerAssessmentsResult.success
+    ? pickerAssessmentsResult.data.rows
+    : [];
   const demandSignals = demandSignalsResult.success ? demandSignalsResult.data.rows : [];
   const commodities = commoditiesResult.success ? commoditiesResult.data.rows : [];
 
@@ -159,10 +183,17 @@ export default async function MarketResearchPage({
           />
 
           <div className="px-4 lg:px-6">
-            {assessmentGridCells.length === 0 ? (
+            {pickerAssessments.length === 0 ? (
               <RndStatusPanel message="Nothing has been scored for this country yet." />
             ) : (
-              <OpportunityScatter cells={assessmentGridCells} />
+              <OpportunityScatter
+                assessments={pickerAssessments}
+                reporterCountryCode={reporterCountryCode}
+                scoredCommodityCount={assessmentGridCells.reduce(
+                  (running, cell) => running + cell.commodityCount,
+                  0,
+                )}
+              />
             )}
           </div>
 

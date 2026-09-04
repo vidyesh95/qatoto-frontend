@@ -1,192 +1,211 @@
-// TRANSPORT: props-only — presentational. Fetches nothing and computes no score.
+"use client";
+
+// TRANSPORT: props-only — the assessments arrive from the server component. Client-side
+// because a dot can be clicked and the selection has to live somewhere; it fetches nothing
+// itself. The panel below it is the piece that talks to the network.
+
+import { useCallback, useRef, useState } from "react";
 
 import { ScatterFrame } from "@/components/charts/scatter-frame";
 import { ScatterSeries, type ScatterPoint } from "@/components/charts/scatter-series";
+import LocalizationDetailPanel from "@/components/home/research-and-development/sections/localization-detail-panel";
 import { formatIsoInstant } from "@/lib/rnd/format";
-import type { LocalizationAssessmentGridCell } from "@/lib/rnd/import-intelligence.schemas";
+import { formatImportToExportRatio, formatTradeValueCompact } from "@/lib/rnd/import-format";
+import type { LocalizationAssessment } from "@/lib/rnd/import-intelligence.schemas";
 
 /**
- * Where the whole scored population sits, against the two components that decide whether an
- * opportunity is worth a year of somebody's life.
+ * The import-substitution picker: one dot per product, hover to read it, click for the
+ * pathway and what it might cost to start.
  *
- * ⚠️ THE AXES ARE SCORE COMPONENTS, NOT MONEY, AND THAT IS THE WHOLE DESIGN. Plotting the
- * import bill directly spans five orders of magnitude — $1M to $141B — so every point but a
- * handful would pile onto the origin unless the axis were log-scaled, and a log axis on a "how
- * big is the prize" chart misleads far more than it reveals. The two components are bounded
- * integers (0–35 and 0–25) that already encode those magnitudes on a ladder somebody can read.
+ * ⚠️ THE AXES ARE MONEY ON A LOG SCALE, AND THE PREVIOUS TWO DESIGNS FAILED BECAUSE THEY WERE
+ * NOT. Plotting the two SCORE COMPONENTS put every product on a nine-by-nine grid — the top
+ * 400 manufacturable commodities occupied EIGHTEEN distinct positions, so a per-product dot
+ * was impossible and the chart first fanned points out on a spiral and then gave up and
+ * aggregated into a density grid. Aggregating answered a question nobody asked: you cannot
+ * hover a bin and learn what to build.
  *
- * ⚠️ ONE CIRCLE IS ONE SCORE CELL, NOT ONE COMMODITY, AND THAT IS A FIX. This plotted the top
- * 24 of the ranking, which are by construction the top-right corner of the score space — a
- * chart drawing its own answer while hiding the question, with three of its four quadrants
- * permanently empty and 70% of the plot dead. Because both axes are nine-rung ladders, the
- * COMPLETE distribution of all 5,469 scored commodities is at most 81 cells, and the backend
- * returns it in one unpaginated read. Every quadrant now holds what it actually holds.
+ * The underlying money separates them completely. Annual imports run $225M to $14.5B and
+ * exports $14M to $20B across the plotted set — three and a half orders of magnitude, which
+ * is exactly what a log axis is for, and 50 products land on 50 distinct positions.
  *
- * THE QUADRANT IS THE READING. Top-right is a large import bill against proven domestic export
- * capability: the country is paying foreigners for something somebody here demonstrably already
- * makes. That is the one corner worth starting in, and the frame tints it strongest.
+ * ⚠️ THE PARITY DIAGONAL IS THE READING, NOT A QUADRANT. Four quadrants were dead weight here:
+ * the top of a ranking is by construction all in one of them (every plotted product clears
+ * both thresholds), so the four names divided nothing and their in-plot labels covered the
+ * dots. `y = x` divides them for real — 33 of the top 50 sit BELOW it, meaning the country
+ * buys more of that product than it sells. That gap is the whole thesis of this surface.
+ *
+ * ⚠️ NOTHING IS PLOTTED THAT NOBODY MANUFACTURES. The unfiltered ranking opens with petroleum,
+ * jewellery, aircraft, diamonds and unwrought gold — the five largest import bills in the
+ * country and not one of them a factory decision. The page asks the backend for
+ * `manufacturedOnly`, server-side; see `market-research-page.tsx`.
  */
+
+// ⚠️ THERE IS ONE GUIDE, NOT TWO. A `$100M of imports a year` line was drawn here and
+// removed: every plotted product is in the top 50 of the ranking, and the ranking's own import
+// rung is $100M, so the line landed exactly on the axis floor and separated nothing. It was
+// the four quadrants' mistake in miniature — a threshold the plotted set cannot straddle is
+// decoration, and a legend entry for it is worse, because it implies a division that is not
+// there.
+
+const CENTS_PER_DOLLAR = 100;
 
 /**
- * The component budgets, which ARE the axis ceilings.
+ * How big a dot is.
  *
- * ⚠️ PASSED EXPLICITLY so the axis is not rounded up. `chooseNiceDomainMax` walks a
- * 1/2/2.5/5/10 ladder and turns 35 into 50 — fifteen points of headroom the score cannot
- * reach, 30% of the plot permanently empty, and an axis that contradicts the "0-35" caption
- * beneath it. That is a correct default for a measured maximum and wrong for a bounded one.
+ * Six pixels of radius: twelve across, which is a comfortable click target and small enough
+ * that fifty of them read as a distribution rather than as overlapping discs. Size encodes
+ * NOTHING here — see `uniformRadiusPixels` in `scatter-scale.ts` for why that is stated
+ * explicitly rather than achieved by a magnitude trick.
  */
-const IMPORT_DEPENDENCE_BUDGET = 35;
-const EXPORT_CAPABILITY_BUDGET = 25;
-
-/** Seven and five intervals divide those cleanly, so every tick lands on a multiple of five. */
-const IMPORT_DEPENDENCE_TICK_INTERVALS = 7;
-const EXPORT_CAPABILITY_TICK_INTERVALS = 5;
+const DOT_RADIUS_PIXELS = 6;
 
 /**
- * Where the sweet-spot corner starts, in SCORE POINTS.
+ * Dollars, as a Number, for POSITIONING ONLY.
  *
- * ⚠️ THESE ARE LADDER RUNGS FROM `localization-feasibility-score.ts`, not the middle of the
- * plot. 21 points is the $100M import rung — the measured p90 of India's HS6 lines — and 14 is
- * the $50M export rung. So the shaded corner reads "imports over $100M AND exports over $50M",
- * which is a claim the data supports. A divider at half the plot marks a number that exists
- * nowhere in the data and moves whenever the domain changes.
+ * ⚠️ THE ONLY PLACE ON THIS SURFACE THAT TURNS CENTS INTO A `Number`, and it is safe for one
+ * reason: the result is fed to `Math.log10` and becomes a percentage. It is never displayed,
+ * never summed and never compared for equality — every figure a reader sees goes through
+ * `import-format.ts`, which is BigInt throughout. India's largest line is 1.4e13 cents, well
+ * inside `MAX_SAFE_INTEGER`, and a float error in the fifteenth digit moves a dot by less
+ * than a millionth of a pixel.
  */
-const IMPORT_DEPENDENCE_SWEET_SPOT = 21;
-const EXPORT_CAPABILITY_SWEET_SPOT = 14;
-
-interface QuadrantTotals {
-  readonly boughtAndMadeHere: number;
-  readonly madeHereBarelyImported: number;
-  readonly boughtNobodyMakesIt: number;
-  readonly neither: number;
+function positionDollars(valueInCents: string): number {
+  return Number(BigInt(valueInCents)) / CENTS_PER_DOLLAR;
 }
 
-/**
- * How many commodities sit in each region.
- *
- * ⚠️ THIS IS NOT THE CLIENT-SIDE FILTERING THE ARCHITECTURE RULES FORBID. That rule is about
- * narrowing a fetched PAGE and presenting the remainder as a result. These cells are the
- * complete population — the backend's own `sum(commodityCount)` equals the leaderboard's
- * `pagination.total` — so summing them is arithmetic over everything, not a sample. The
- * thresholds are frontend ladder constants the backend has no reason to know.
- */
-function countByQuadrant(cells: readonly LocalizationAssessmentGridCell[]): QuadrantTotals {
-  const totals = {
-    boughtAndMadeHere: 0,
-    madeHereBarelyImported: 0,
-    boughtNobodyMakesIt: 0,
-    neither: 0,
-  };
-
-  for (const cell of cells) {
-    const isBoughtHeavily = cell.importDependencyPoints >= IMPORT_DEPENDENCE_SWEET_SPOT;
-    const isMadeHere = cell.exportCapabilityPoints >= EXPORT_CAPABILITY_SWEET_SPOT;
-
-    if (isBoughtHeavily && isMadeHere) totals.boughtAndMadeHere += cell.commodityCount;
-    else if (isMadeHere) totals.madeHereBarelyImported += cell.commodityCount;
-    else if (isBoughtHeavily) totals.boughtNobodyMakesIt += cell.commodityCount;
-    else totals.neither += cell.commodityCount;
-  }
-
-  return totals;
-}
-
-const commodityCountFormat = new Intl.NumberFormat("en-US");
-
-function formatCommodityCount(commodityCount: number): string {
-  return `${commodityCountFormat.format(commodityCount)} commodit${commodityCount === 1 ? "y" : "ies"}`;
+function formatAxisDollars(dollars: number): string {
+  if (dollars >= 1_000_000_000) return `$${String(dollars / 1_000_000_000)}B`;
+  if (dollars >= 1_000_000) return `$${String(dollars / 1_000_000)}M`;
+  if (dollars >= 1_000) return `$${String(dollars / 1_000)}K`;
+  return `$${String(dollars)}`;
 }
 
 export default function OpportunityScatter({
-  cells,
+  assessments,
+  reporterCountryCode,
+  scoredCommodityCount,
 }: {
-  cells: readonly LocalizationAssessmentGridCell[];
+  assessments: readonly LocalizationAssessment[];
+  reporterCountryCode: string | undefined;
+  /**
+   * How many commodities are scored in total, from the grid read.
+   *
+   * The chart plots the top 50 manufactured products; this is the denominator that stops that
+   * reading as "there are 50 opportunities". It comes from a separate aggregate over the whole
+   * population, so it is a fact rather than a page size.
+   */
+  scoredCommodityCount: number;
 }) {
-  const points: ScatterPoint[] = cells.map((cell) => ({
-    // The coordinate IS the identity — the backend groups by it, so it is unique by
-    // construction and no synthetic id is needed.
-    key: `${String(cell.importDependencyPoints)}:${String(cell.exportCapabilityPoints)}`,
-    label: formatCommodityCount(cell.commodityCount),
-    x: cell.importDependencyPoints,
-    y: cell.exportCapabilityPoints,
-    magnitude: cell.commodityCount,
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string | null>(null);
+  const detailRef = useRef<HTMLDivElement | null>(null);
+
+  const handleSelect = useCallback((point: ScatterPoint) => {
+    setSelectedAssessmentId(point.key);
+    // Scrolled AFTER the state lands, so the panel exists to scroll to. `requestAnimationFrame`
+    // rather than a timeout: React has committed by the next frame and a timeout would be a
+    // guess about how long that takes.
+    requestAnimationFrame(() => {
+      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }, []);
+
+  const selectedAssessment =
+    assessments.find((assessment) => assessment.id === selectedAssessmentId) ?? null;
+
+  const importDollars = assessments.map((assessment) =>
+    positionDollars(assessment.observedImportValueInCents),
+  );
+  const exportDollars = assessments.map((assessment) =>
+    positionDollars(assessment.observedExportValueInCents),
+  );
+  // Zero is excluded from the MINIMUM rather than clamped into it: a product with no exports
+  // has no place on a log axis, and letting it set the floor would drag the whole axis to $1.
+  // `scatter-scale.ts` floors it and `scatter-series.tsx` draws it as a ring.
+  const positiveExportDollars = exportDollars.filter((dollars) => dollars > 0);
+
+  const points: ScatterPoint[] = assessments.map((assessment, assessmentIndex) => ({
+    key: assessment.id,
+    label: assessment.commodityLabel,
+    x: importDollars[assessmentIndex] ?? 0,
+    y: exportDollars[assessmentIndex] ?? 0,
+    // Uniform dots. The one thing available to size by — the feasibility score — is exactly
+    // the sum of the two coordinates today, so it would encode nothing the position does not,
+    // and large circles are what made the previous version unreadable.
+    magnitude: 1,
   }));
 
-  const quadrants = countByQuadrant(cells);
-  const scoredCommodityCount = cells.reduce((running, cell) => running + cell.commodityCount, 0);
-  const largestCellCount = cells.reduce(
-    (running, cell) => Math.max(running, cell.commodityCount),
-    1,
-  );
-  const asOf = cells[0]?.asOf;
+  const netImporterCount = assessments.filter(
+    (assessment) =>
+      BigInt(assessment.observedImportValueInCents) > BigInt(assessment.observedExportValueInCents),
+  ).length;
+  const asOf = assessments[0]?.asOf;
 
   return (
     <section className="space-y-3">
       <div className="space-y-1">
-        <h2 className="font-serif text-xl">Where the opportunity sits</h2>
+        <h2 className="font-serif text-xl">What to make here</h2>
         <p className="text-sm text-muted-foreground">
-          Every scored commodity, not just the top of the list. Both axes are scoring ladders with
-          nine steps each, so the whole population fits in {cells.length} cells — one circle per
-          cell, sized by how many commodities land there. The dashed lines cut it into the four
-          regions named below.
+          One dot is one manufactured product this country imports. Hover to see which; click for
+          the pathway and what it might cost to start. Both axes are annual trade, on a log scale —
+          each gridline is ten times the last — because the figures span three and a half orders of
+          magnitude and a linear axis would stack all but the largest onto the origin.
           {asOf === undefined ? null : <> Computed {formatIsoInstant(asOf)}.</>}
         </p>
         <p className="text-sm text-muted-foreground">
-          {/* Measured across all 5,469 rows: the other three components are zero on every one
-              of them. Saying so is the difference between a reader trusting the diagonal and a
-              reader mistaking it for a law. */}
-          Only two of the five score components have data yet — no domestic substitutes have been
-          contributed, and supplier capacity and lead time follow from those. So a commodity&rsquo;s
-          feasibility score is currently the exact sum of its two coordinates, which is why the
-          ranked list runs along the diagonal. The other three start counting the moment somebody
-          adds a substitute.
+          <span className="text-foreground">
+            {netImporterCount} of {assessments.length}
+          </span>{" "}
+          sit below the parity line — the country buys more of that product than it sells. That gap
+          is the opportunity; the ones above it are already served by domestic makers. These are the
+          top {assessments.length} manufactured products out of{" "}
+          {scoredCommodityCount.toLocaleString("en-US")} scored.
         </p>
       </div>
 
       <ScatterFrame
-        rawMaxX={IMPORT_DEPENDENCE_BUDGET}
-        rawMaxY={EXPORT_CAPABILITY_BUDGET}
-        rawMaxMagnitude={largestCellCount}
-        xDomainMax={IMPORT_DEPENDENCE_BUDGET}
-        yDomainMax={EXPORT_CAPABILITY_BUDGET}
-        xTickIntervalCount={IMPORT_DEPENDENCE_TICK_INTERVALS}
-        yTickIntervalCount={EXPORT_CAPABILITY_TICK_INTERVALS}
-        xAxisLabel="import dependence (0–35)"
-        yAxisLabel="existing export capability (0–25)"
-        formatX={(value) => String(value)}
-        formatY={(value) => String(value)}
-        plotHeightClassName="h-96"
-        caption={`${formatCommodityCount(scoredCommodityCount)} across ${String(cells.length)} score cells, by import dependence and existing export capability.`}
-        rowColumnLabel="Score cell"
-        valueColumnLabels={["Import dependence", "Export capability", "Commodities", "Region"]}
-        tableRows={cells.map((cell) => {
-          const isBoughtHeavily = cell.importDependencyPoints >= IMPORT_DEPENDENCE_SWEET_SPOT;
-          const isMadeHere = cell.exportCapabilityPoints >= EXPORT_CAPABILITY_SWEET_SPOT;
-          return {
-            key: `${String(cell.importDependencyPoints)}:${String(cell.exportCapabilityPoints)}`,
-            label: `${String(cell.importDependencyPoints)} / ${String(cell.exportCapabilityPoints)}`,
-            cells: [
-              `${String(cell.importDependencyPoints)} of 35`,
-              `${String(cell.exportCapabilityPoints)} of 25`,
-              commodityCountFormat.format(cell.commodityCount),
-              isBoughtHeavily && isMadeHere
-                ? "Bought heavily, and already made here"
-                : isMadeHere
-                  ? "Already made here, barely imported"
-                  : isBoughtHeavily
-                    ? "Bought heavily, nobody here makes it"
-                    : "Neither",
-            ],
-          };
-        })}
-        xThreshold={IMPORT_DEPENDENCE_SWEET_SPOT}
-        yThreshold={EXPORT_CAPABILITY_SWEET_SPOT}
-        quadrantLabels={{
-          topRight: `Bought heavily, and already made here · ${commodityCountFormat.format(quadrants.boughtAndMadeHere)}`,
-          topLeft: `Already made here, barely imported · ${commodityCountFormat.format(quadrants.madeHereBarelyImported)}`,
-          bottomRight: `Bought heavily, nobody here makes it · ${commodityCountFormat.format(quadrants.boughtNobodyMakesIt)}`,
-          bottomLeft: `Neither · ${commodityCountFormat.format(quadrants.neither)}`,
+        x={{
+          kind: "log",
+          rawMin: Math.min(...importDollars),
+          rawMax: Math.max(...importDollars),
         }}
+        y={{
+          kind: "log",
+          rawMin: positiveExportDollars.length === 0 ? 1 : Math.min(...positiveExportDollars),
+          rawMax: Math.max(...exportDollars, 1),
+        }}
+        rawMaxMagnitude={1}
+        uniformRadiusPixels={DOT_RADIUS_PIXELS}
+        xAxisLabel="annual imports"
+        yAxisLabel="annual exports"
+        formatX={formatAxisDollars}
+        formatY={formatAxisDollars}
+        plotHeightClassName="h-96"
+        caption={`${String(assessments.length)} manufactured products this country imports, by annual imports against annual exports.`}
+        rowColumnLabel="Product"
+        valueColumnLabels={["HS code", "Annual imports", "Annual exports", "Buys per unit sold"]}
+        tableRows={assessments.map((assessment) => ({
+          key: assessment.id,
+          label: assessment.commodityLabel,
+          cells: [
+            assessment.hsCode,
+            formatTradeValueCompact(assessment.observedImportValueInCents, assessment.currency),
+            BigInt(assessment.observedExportValueInCents) === BigInt(0)
+              ? "none recorded"
+              : formatTradeValueCompact(assessment.observedExportValueInCents, assessment.currency),
+            formatImportToExportRatio(
+              assessment.observedImportValueInCents,
+              assessment.observedExportValueInCents,
+            ) ?? "nothing exported",
+          ],
+        }))}
+        referenceGuides={[
+          {
+            key: "parity",
+            kind: "parity",
+            label: "buys as much as it sells — below this line is the gap",
+            isPrimary: true,
+          },
+        ]}
         emptyMessage="Nothing has been scored for this country yet."
       >
         {(scale) => (
@@ -194,12 +213,34 @@ export default function OpportunityScatter({
             scale={scale}
             points={points}
             colorClassName="bg-chart-2"
-            formatPoint={(point) =>
-              `${point.label} · import dependence ${String(point.x)}/35 · export capability ${String(point.y)}/25`
-            }
+            selectedKey={selectedAssessmentId}
+            onSelect={handleSelect}
+            formatPoint={(point) => {
+              const assessment = assessments.find((candidate) => candidate.id === point.key);
+              if (assessment === undefined) return point.label;
+              const ratio = formatImportToExportRatio(
+                assessment.observedImportValueInCents,
+                assessment.observedExportValueInCents,
+              );
+              return [
+                assessment.commodityLabel,
+                `HS ${assessment.hsCode}`,
+                `buys ${formatTradeValueCompact(assessment.observedImportValueInCents, assessment.currency)}/yr`,
+                ratio === null
+                  ? "sells none"
+                  : `sells ${formatTradeValueCompact(assessment.observedExportValueInCents, assessment.currency)}/yr · ${ratio} more bought than sold`,
+              ].join(" · ");
+            }}
           />
         )}
       </ScatterFrame>
+
+      <div ref={detailRef}>
+        <LocalizationDetailPanel
+          assessment={selectedAssessment}
+          reporterCountryCode={reporterCountryCode}
+        />
+      </div>
     </section>
   );
 }

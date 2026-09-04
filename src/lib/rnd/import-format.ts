@@ -90,6 +90,46 @@ export function formatTradeValueExact(tradeValueInCents: string, currency: strin
   return `${currencyPrefixFor(currency)}${new Intl.NumberFormat(TRADE_FORMATTING_LOCALE).format(units)}`;
 }
 
+/**
+ * The model's capital band — `"$2.0M – $15.0M"` — or the absence, spelled out.
+ *
+ * ⚠️ NULL IS NOT ZERO AND NOT "CHEAP". The prompt explicitly permits the model to decline,
+ * and it declines when it has no honest basis. Rendering that as `$0` or as a blank would
+ * turn a refusal into a claim, so the absence gets a sentence.
+ *
+ * ⚠️ THE CALLER MUST STILL SHOW THE PROVENANCE. This returns a number; the model name, the
+ * prompt version and the `asOf` belong beside it, because an unattributed figure about money
+ * reads as a platform quote. Nothing on this platform honours it.
+ */
+export function formatCapitalBand(
+  estimatedCapitalMinInCents: string | null,
+  estimatedCapitalMaxInCents: string | null,
+  currency: string,
+): string | null {
+  if (estimatedCapitalMinInCents === null || estimatedCapitalMaxInCents === null) return null;
+  return `${formatTradeValueCompact(estimatedCapitalMinInCents, currency)} – ${formatTradeValueCompact(estimatedCapitalMaxInCents, currency)}`;
+}
+
+/**
+ * How many times more the country buys than it sells — `"4.2x"`, or null when it exports none.
+ *
+ * ⚠️ NULL MEANS NO EXPORTS AT ALL, which is a division by zero and also the strongest possible
+ * version of the signal. It must render as "nothing exported", never as an enormous ratio and
+ * never as zero.
+ *
+ * BigInt throughout until the final divide, per the module header — these are cents.
+ */
+export function formatImportToExportRatio(
+  observedImportValueInCents: string,
+  observedExportValueInCents: string,
+): string | null {
+  const exportCents = BigInt(observedExportValueInCents);
+  if (exportCents <= ZERO) return null;
+  // Scaled by ten before the integer divide so one decimal survives it.
+  const ratioTenths = (BigInt(observedImportValueInCents) * TEN) / exportCents;
+  return `${(Number(ratioTenths) / 10).toFixed(1)}x`;
+}
+
 /** The noun that follows a quantity. `not_applicable` has none — see below. */
 const QUANTITY_UNIT_SUFFIXES: Record<ImportQuantityUnit, string> = {
   not_applicable: "",

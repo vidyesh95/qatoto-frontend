@@ -6,15 +6,19 @@
 // for a platform moderator. Nothing here authorizes anything, and no call needs a signed-in
 // caller to answer.
 //
-// THERE ARE NO WRITE WRAPPERS IN THIS FILE, deliberately. §11m's three writes are all
-// `moderate_taxonomy` and belong to the admin console; a wrapper with no caller is
-// unverified code, and the audit in `docs/R_AND_D_STRUCTURE.md` §18 exists to catch exactly
-// that.
+// ONE WRITE WRAPPER, AND IT IS THE ONLY AUTHENTICATED CALL HERE. §11m's three
+// `moderate_taxonomy` writes still have no wrapper — they belong to the admin console, and a
+// wrapper with no caller is unverified code (`docs/R_AND_D_STRUCTURE.md` §18 exists to catch
+// exactly that). `requestPathwayNarrative` is different: it is called from the opportunity
+// picker, it needs a signed-in caller, and the reason is the bill. It enqueues a metered
+// model call, so the backend puts it behind `requireAuth` plus a rate limiter while every
+// read beside it stays public.
 
 import {
   buildQueryString,
   getJson,
   getPaginated,
+  sendJson,
   type ActionResponse,
   type PaginationMeta,
   type RequestOptions,
@@ -28,6 +32,7 @@ import {
   ImportReporterSchema,
   LocalizationAssessmentGridCellSchema,
   LocalizationAssessmentSchema,
+  PathwayRequestAcceptedSchema,
   type CommodityTradeFlow,
   type DomesticSubstitute,
   type ImportCommodity,
@@ -41,6 +46,7 @@ import {
   type ListTradeFlowsFilter,
   type LocalizationAssessment,
   type LocalizationAssessmentGridCell,
+  type PathwayRequestAccepted,
 } from "@/lib/rnd/import-intelligence.schemas";
 import { PaginationMetaSchema } from "@/lib/rnd/shared.schemas";
 
@@ -152,6 +158,35 @@ export function listLocalizationAssessmentGrid(
   return getJson(
     `/localization-assessment-grid${buildQueryString({ ...filter })}`,
     LocalizationAssessmentGridCellSchema.array(),
+    options,
+  );
+}
+
+/**
+ * Ask for one product's pathway narrative and capital band.
+ *
+ * ⚠️ **A 202 IS NOT A RESULT.** Success here means a job is QUEUED — the pathway does not
+ * exist yet and neither does the capital figure. The response carries `narrativeStatus` and
+ * nothing else precisely so a caller cannot render acceptance as an answer; poll
+ * `getImportCommodity` for the real thing.
+ *
+ * NOT IDEMPOTENCY-KEYED FROM HERE, and that is deliberate rather than an omission: the
+ * BACKEND keys the job on the assessment id, which is the natural key — the same key
+ * `recompute-localization-assessments` uses — so a double-click, a retry and the nightly
+ * recompute all collapse into one job. A client-minted key would create a second.
+ *
+ * A `200` rather than a `202` means it was already written and no model call was spent.
+ */
+export function requestPathwayNarrative(
+  assessmentId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<PathwayRequestAccepted>> {
+  return sendJson(
+    `/localization-assessments/${encodeURIComponent(assessmentId)}/pathway`,
+    "POST",
+    // No body. The assessment is named by the path and there is nothing else to say.
+    undefined,
+    PathwayRequestAcceptedSchema,
     options,
   );
 }
