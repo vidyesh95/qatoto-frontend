@@ -111,6 +111,38 @@ export function formatCapitalBand(
 }
 
 /**
+ * The capital estimate measured against the country's own annual import bill for that product
+ * — `"3x"`, `"0.2x"` — or null when there is no band.
+ *
+ * ⚠️ THIS EXISTS TO MAKE A WRONG MODEL ANSWER OBVIOUS. The batch run produced one estimate of
+ * $500B–$1.5T to build a semiconductor fab, which is roughly fifty times what such a plant
+ * actually costs. Nothing in the platform can tell that it is wrong — no schedule of plant
+ * costs exists here, which is precisely why the figure is a model's guess in the first place.
+ * What CAN be stated is measured: the country buys $6.9B of that product a year, so the
+ * estimate is 217 times the entire annual import bill. A reader who sees "217x" needs no
+ * domain knowledge to distrust it, and one who sees "0.2x" has a number worth taking to a
+ * supplier.
+ *
+ * It is a RATIO OF THE UPPER BOUND, deliberately — the pessimistic end is the one that makes
+ * an over-estimate visible, and an over-estimate is the failure mode that costs a founder a
+ * project they should have started.
+ *
+ * BigInt until the final divide, per the module header.
+ */
+export function formatCapitalAgainstImports(
+  estimatedCapitalMaxInCents: string | null,
+  observedImportValueInCents: string,
+): string | null {
+  if (estimatedCapitalMaxInCents === null) return null;
+  const importCents = BigInt(observedImportValueInCents);
+  if (importCents <= ZERO) return null;
+  const ratioTenths = (BigInt(estimatedCapitalMaxInCents) * TEN) / importCents;
+  const ratio = Number(ratioTenths) / 10;
+  // Whole numbers above ten: "217.4x" implies a precision this figure does not have.
+  return ratio >= 10 ? `${String(Math.round(ratio))}x` : `${ratio.toFixed(1)}x`;
+}
+
+/**
  * How many times more the country buys than it sells — `"4.2x"`, or null when it exports none.
  *
  * ⚠️ NULL MEANS NO EXPORTS AT ALL, which is a division by zero and also the strongest possible

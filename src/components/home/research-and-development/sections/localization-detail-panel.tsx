@@ -13,6 +13,7 @@ import {
 } from "@/hooks/rnd/import-intelligence";
 import { formatIsoInstant } from "@/lib/rnd/format";
 import {
+  formatCapitalAgainstImports,
   formatCapitalBand,
   formatConfidenceBps,
   formatImportToExportRatio,
@@ -147,6 +148,25 @@ export default function LocalizationDetailPanel({
           suggestion.estimatedCapitalMaxInCents,
           assessment.currency,
         );
+  const capitalAgainstImports =
+    suggestion === undefined
+      ? null
+      : formatCapitalAgainstImports(
+          suggestion.estimatedCapitalMaxInCents,
+          assessment.observedImportValueInCents,
+        );
+  /**
+   * An estimate worth more than several years of the entire national import bill for that
+   * product is not a plant cost, whatever its basis says.
+   *
+   * Ten is a threshold, not a boundary — nothing here knows the true figure. It exists so the
+   * copy can say "unreliable" out loud on the one case the batch run actually produced (a
+   * $1.5T fab, 217x the market) rather than leaving a reader to notice.
+   */
+  const isCapitalImplausible =
+    suggestion?.estimatedCapitalMaxInCents != null &&
+    BigInt(suggestion.estimatedCapitalMaxInCents) >
+      BigInt(assessment.observedImportValueInCents) * BigInt(10);
 
   return (
     <section className="space-y-4 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
@@ -245,6 +265,22 @@ export default function LocalizationDetailPanel({
                       {suggestion?.capitalBasisText === null ? null : (
                         <p className="text-sm text-muted-foreground">
                           {suggestion?.capitalBasisText}
+                        </p>
+                      )}
+                      {capitalAgainstImports === null ? null : (
+                        <p className="text-sm text-muted-foreground">
+                          {/* ⚠️ THE ONE CHECK ON THE MODEL THAT USES MEASURED DATA. Nothing
+                              here can tell whether a capital figure is right — that is why it
+                              is a guess. But the annual import bill IS measured, and an
+                              estimate many times larger than everything the country buys of
+                              that product in a year is visibly wrong without any domain
+                              knowledge. One batch run produced exactly that. */}
+                          Upper end is{" "}
+                          <span className="text-foreground">{capitalAgainstImports}</span> what this
+                          country buys of it in a year.{" "}
+                          {isCapitalImplausible
+                            ? "That is far more than the whole market, so treat this estimate as unreliable."
+                            : null}
                         </p>
                       )}
                     </div>
