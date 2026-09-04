@@ -1,7 +1,7 @@
 // TRANSPORT: server-fetch + client-query — callable from both sides via the optional
 // `RequestOptions`.
 //
-// ALL SIX READS ARE PUBLIC. The backend mounts them behind `attachOptionalUser`, and it
+// ALL SEVEN READS ARE PUBLIC. The backend mounts them behind `attachOptionalUser`, and it
 // reads the session for exactly one purpose: the substitutes read widens to include drafts
 // for a platform moderator. Nothing here authorizes anything, and no call needs a signed-in
 // caller to answer.
@@ -26,6 +26,7 @@ import {
   ImportCommodityKindOptionSchema,
   ImportCommoditySchema,
   ImportReporterSchema,
+  LocalizationAssessmentGridCellSchema,
   LocalizationAssessmentSchema,
   type CommodityTradeFlow,
   type DomesticSubstitute,
@@ -34,10 +35,12 @@ import {
   type ImportCommodityKindOption,
   type ImportReporter,
   type ListImportCommoditiesFilter,
+  type ListLocalizationAssessmentGridFilter,
   type ListLocalizationAssessmentsFilter,
   type ListSubstitutesFilter,
   type ListTradeFlowsFilter,
   type LocalizationAssessment,
+  type LocalizationAssessmentGridCell,
 } from "@/lib/rnd/import-intelligence.schemas";
 import { PaginationMetaSchema } from "@/lib/rnd/shared.schemas";
 
@@ -131,6 +134,24 @@ export function listLocalizationAssessments(
     `/localization-assessments${buildQueryString({ ...filter })}`,
     LocalizationAssessmentSchema,
     PaginationMetaSchema,
+    options,
+  );
+}
+
+/**
+ * The whole scored population, counted per score cell.
+ *
+ * Unpaginated for the reason the schema gives: nine-rung ladders on both axes cap the result
+ * at 81 cells. `getJson`, not `getPaginated` — there is no pagination envelope to parse, and
+ * asking for one would make an honest 81-row answer look like a truncated page.
+ */
+export function listLocalizationAssessmentGrid(
+  filter: ListLocalizationAssessmentGridFilter = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<LocalizationAssessmentGridCell[]>> {
+  return getJson(
+    `/localization-assessment-grid${buildQueryString({ ...filter })}`,
+    LocalizationAssessmentGridCellSchema.array(),
     options,
   );
 }

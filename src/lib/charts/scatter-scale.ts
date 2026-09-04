@@ -42,13 +42,17 @@ const MINIMUM_POINT_RADIUS_PIXELS = 4;
 /**
  * The radius the largest magnitude renders at.
  *
- * ⚠️ DELIBERATELY SMALL, and it is `scatter-series.tsx`'s fan-out that sets the ceiling. Points
- * sharing a cell are spread on a spiral of `13 × √index` pixels, so a cell holding eight
- * reaches ~34px from centre. With a 22px radius those circles were bigger than the cluster
- * containing them and the fan read as scatter rather than as a group; at 11px the cluster holds
- * together and still separates.
+ * ⚠️ THE CEILING IS THE GRID SPACING, NOT AESTHETICS. The opportunity scatter draws one circle
+ * per score cell on a nine-by-nine ladder grid, and the tightest spacing is vertical at a
+ * narrow viewport: a 384px plot over nine rows is ~43px between neighbouring rows. At 18px the
+ * largest circle is 36px across and still clears its neighbour; much beyond that and the
+ * biggest cells merge into a blob, which destroys the count encoding.
+ *
+ * It was briefly 11px, when the series fanned colliding points onto a spiral and a large
+ * circle swallowed its own cluster. That fan-out is gone (see `scatter-series.tsx`), and with
+ * counts spanning 1 to 507 the area range needs the room back.
  */
-const MAXIMUM_POINT_RADIUS_PIXELS = 11;
+const MAXIMUM_POINT_RADIUS_PIXELS = 18;
 
 export interface ScatterChartScale {
   readonly plotWidthUnits: number;

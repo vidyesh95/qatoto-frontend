@@ -255,6 +255,34 @@ export const LocalizationAssessmentSchema = z
 export type LocalizationAssessment = z.infer<typeof LocalizationAssessmentSchema>;
 
 /**
+ * One cell of the score grid: how many commodities scored this exact pair of components.
+ *
+ * ⚠️ THE SAME POPULATION AS THE LEADERBOARD ABOVE, COUNTED RATHER THAN LISTED. The two share
+ * one `where` clause server-side, so `sum(commodityCount)` equals the leaderboard's
+ * `pagination.total` — 5,469 for India today, across 67 of the 81 possible cells.
+ *
+ * WHY A SEPARATE READ EXISTS AT ALL. A ranked list's first page is by construction the
+ * top-right corner of the score space; plotting it draws the answer and hides the question.
+ * Both axes are nine-rung ladders, so this is the COMPLETE distribution in at most 81 rows —
+ * no sampling, no paging, and no `limit` to get wrong.
+ */
+export const LocalizationAssessmentGridCellSchema = z
+  .object({
+    importDependencyPoints: z.number(),
+    exportCapabilityPoints: z.number(),
+    commodityCount: z.number(),
+    asOf: z.string(),
+  })
+  .strip();
+export type LocalizationAssessmentGridCell = z.infer<typeof LocalizationAssessmentGridCellSchema>;
+
+/** The grid's filters. No `page`/`limit` — the result is bounded by the ladders. */
+export interface ListLocalizationAssessmentGridFilter {
+  readonly reporterCountryCode?: string;
+  readonly commodityKind?: ImportCommodityKind;
+}
+
+/**
  * The commodity detail payload.
  *
  * ⚠️ `assessment` IS NULLABLE AND THAT IS NOT A 404. The commodity read decides whether the

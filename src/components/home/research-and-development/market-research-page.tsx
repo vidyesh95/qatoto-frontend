@@ -1,7 +1,8 @@
 // TRANSPORT: server-fetch — server component. Reads GET /discovery/market-insights,
-// GET /discovery/demand-signals, GET /localization-assessments, GET /import-commodities,
-// GET /import-commodity-kinds and GET /import-reporters via @/lib/rnd/*.api, with the session
-// cookie forwarded by callerRequestOptions(). All six are public. No React Query here.
+// GET /discovery/demand-signals, GET /localization-assessments,
+// GET /localization-assessment-grid, GET /import-commodities, GET /import-commodity-kinds and
+// GET /import-reporters via @/lib/rnd/*.api, with the session cookie forwarded by
+// callerRequestOptions(). All seven are public. No React Query here.
 
 import MarketInsightCard from "@/components/home/research-and-development/cards/market-insight-card";
 import CommodityDirectory from "@/components/home/research-and-development/sections/commodity-directory";
@@ -25,6 +26,7 @@ import {
   listImportCommodities,
   listImportCommodityKinds,
   listImportReporters,
+  listLocalizationAssessmentGrid,
   listLocalizationAssessments,
 } from "@/lib/rnd/import-intelligence.api";
 import { IMPORT_COMMODITY_KINDS } from "@/lib/rnd/import-intelligence.schemas";
@@ -77,11 +79,18 @@ export default async function MarketResearchPage({
     COUNTRY_CODE_PATTERN,
   );
 
+  const commodityKind = readEnumParam(
+    resolvedSearchParams,
+    "commodityKind",
+    IMPORT_COMMODITY_KINDS,
+  );
+
   const [
     reportersResult,
     insightsResult,
     demandSignalsResult,
     assessmentsResult,
+    assessmentGridResult,
     commoditiesResult,
     kindsResult,
   ] = await Promise.all([
@@ -89,13 +98,13 @@ export default async function MarketResearchPage({
     listMarketInsights({ limit: INSIGHTS_PAGE_LIMIT }, requestOptions),
     listDemandSignals({ limit: DEMAND_SIGNALS_PAGE_LIMIT }, requestOptions),
     listLocalizationAssessments(
-      {
-        limit: LEADERBOARD_LIMIT,
-        reporterCountryCode,
-        commodityKind: readEnumParam(resolvedSearchParams, "commodityKind", IMPORT_COMMODITY_KINDS),
-      },
+      { limit: LEADERBOARD_LIMIT, reporterCountryCode, commodityKind },
       requestOptions,
     ),
+    // The SAME filters as the leaderboard above, and that is load-bearing: the scatter's
+    // quadrant counts and the ranked list beneath it must describe one population, or the
+    // chart says 5,469 while the list says something else and neither is wrong on its face.
+    listLocalizationAssessmentGrid({ reporterCountryCode, commodityKind }, requestOptions),
     listImportCommodities(
       {
         limit: CATALOGUE_LIMIT,
@@ -111,6 +120,7 @@ export default async function MarketResearchPage({
   const reporters = reportersResult.success ? reportersResult.data : [];
   const commodityKinds = kindsResult.success ? kindsResult.data : [];
   const assessments = assessmentsResult.success ? assessmentsResult.data.rows : [];
+  const assessmentGridCells = assessmentGridResult.success ? assessmentGridResult.data : [];
   const demandSignals = demandSignalsResult.success ? demandSignalsResult.data.rows : [];
   const commodities = commoditiesResult.success ? commoditiesResult.data.rows : [];
 
@@ -149,10 +159,10 @@ export default async function MarketResearchPage({
           />
 
           <div className="px-4 lg:px-6">
-            {assessments.length === 0 ? (
+            {assessmentGridCells.length === 0 ? (
               <RndStatusPanel message="Nothing has been scored for this country yet." />
             ) : (
-              <OpportunityScatter assessments={assessments} />
+              <OpportunityScatter cells={assessmentGridCells} />
             )}
           </div>
 
