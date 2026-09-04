@@ -26,6 +26,33 @@ import type { LocalizationAssessment } from "@/lib/rnd/import-intelligence.schem
  */
 const MAX_PLOTTED_POINTS = 60;
 
+/**
+ * The component budgets, which ARE the axis ceilings.
+ *
+ * ⚠️ PASSED EXPLICITLY so the axis is not rounded up. `chooseNiceDomainMax` walks a
+ * 1/2/2.5/5/10 ladder and turns 35 into 50 — fifteen points of headroom the score cannot
+ * reach, 30% of the plot permanently empty, and an axis that contradicts the "0-35" caption
+ * beneath it. That is a correct default for a measured maximum and wrong for a bounded one.
+ */
+const IMPORT_DEPENDENCE_BUDGET = 35;
+const EXPORT_CAPABILITY_BUDGET = 25;
+
+/** Seven and five intervals divide those cleanly, so every tick lands on a multiple of five. */
+const IMPORT_DEPENDENCE_TICK_INTERVALS = 7;
+const EXPORT_CAPABILITY_TICK_INTERVALS = 5;
+
+/**
+ * Where the sweet-spot corner starts, in SCORE POINTS.
+ *
+ * ⚠️ THESE ARE LADDER RUNGS FROM `localization-feasibility-score.ts`, not the middle of the
+ * plot. 21 points is the $100M import rung — the measured p90 of India's HS6 lines — and 14 is
+ * the $50M export rung. So the shaded corner reads "imports over $100M AND exports over $50M",
+ * which is a claim the data supports. A wash at half the plot marks a number that exists
+ * nowhere in the data and moves whenever the domain changes.
+ */
+const IMPORT_DEPENDENCE_SWEET_SPOT = 21;
+const EXPORT_CAPABILITY_SWEET_SPOT = 14;
+
 export default function OpportunityScatter({
   assessments,
 }: {
@@ -56,14 +83,18 @@ export default function OpportunityScatter({
       </div>
 
       <ScatterFrame
-        rawMaxX={35}
-        rawMaxY={25}
+        rawMaxX={IMPORT_DEPENDENCE_BUDGET}
+        rawMaxY={EXPORT_CAPABILITY_BUDGET}
         rawMaxMagnitude={100}
+        xDomainMax={IMPORT_DEPENDENCE_BUDGET}
+        yDomainMax={EXPORT_CAPABILITY_BUDGET}
+        xTickIntervalCount={IMPORT_DEPENDENCE_TICK_INTERVALS}
+        yTickIntervalCount={EXPORT_CAPABILITY_TICK_INTERVALS}
         xAxisLabel="import dependence (0–35)"
         yAxisLabel="existing export capability (0–25)"
         formatX={(value) => String(value)}
         formatY={(value) => String(value)}
-        plotHeightClassName="h-80"
+        plotHeightClassName="h-96"
         caption={`The top ${String(plotted.length)} localization opportunities, by import dependence and existing export capability.`}
         rowColumnLabel="Commodity"
         valueColumnLabels={[
@@ -82,6 +113,8 @@ export default function OpportunityScatter({
             formatTradeValueCompact(assessment.observedImportValueInCents, assessment.currency),
           ],
         }))}
+        xThreshold={IMPORT_DEPENDENCE_SWEET_SPOT}
+        yThreshold={EXPORT_CAPABILITY_SWEET_SPOT}
         quadrantLabels={{
           topRight: "Bought heavily, and already made here",
           topLeft: "Already made here, barely imported",
@@ -94,7 +127,7 @@ export default function OpportunityScatter({
           <ScatterSeries
             scale={scale}
             points={points}
-            colorClassName="fill-chart-2"
+            colorClassName="bg-chart-2"
             formatPoint={(point) =>
               `${point.label} · import dependence ${String(point.x)}/35 · export capability ${String(point.y)}/25 · score ${String(point.magnitude ?? 0)}/100`
             }

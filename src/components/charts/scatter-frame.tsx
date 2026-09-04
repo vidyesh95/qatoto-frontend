@@ -10,22 +10,26 @@ import {
 import type { ChartTableRow } from "@/components/charts/chart-frame";
 
 // The frame half of the repo's SCATTER charting — the two-continuous-axis sibling of
-// `chart-frame.tsx`. `scatter-series.tsx` draws the circles; `scatter-scale.ts` does the
+// `chart-frame.tsx`. `scatter-series.tsx` draws the points; `scatter-scale.ts` does the
 // arithmetic. Every rule `chart-frame.tsx` established is kept:
 //
-//   NO CHART LIBRARY. This draws circles and gridlines. A dependency would buy scales,
-//   tooltips and animation to do that.
-//
-//   ONLY THE CIRCLES AND GRIDLINES ARE SVG; every piece of text is HTML positioned over the
-//   plot, because `<text>` in a `preserveAspectRatio="none"` viewBox is stretched horizontally
-//   by whatever the container width happens to be.
+//   NO CHART LIBRARY. This draws gridlines and positioned circles. A dependency would buy
+//   scales, tooltips and animation to do that.
 //
 //   THE `<svg>` IS `aria-hidden` AND THE FRAME RENDERS AN `sr-only` TABLE. A scatter read
 //   aloud is a list of numbers, and the numbers are what the surface is for.
 //
-// WHAT THIS ADDS THAT THE BAR FRAME DOES NOT: quadrant shading. A scatter whose whole reading
-// is "top-right is the interesting corner" needs that corner marked, or every reader has to be
-// told in prose what the chart is for.
+// ⚠️ THE SVG HOLDS THE GRIDLINES AND NOTHING ELSE. Its viewBox is
+// `preserveAspectRatio="none"`, which is right for a line that should span the plot and wrong
+// for anything that must keep its shape — a circle in there is stretched into an ellipse by
+// whatever the container width happens to be. So the points, the quadrant wash and every label
+// live in an HTML overlay positioned by percentage, tracking the same integer arithmetic. That
+// is the same split `chart-frame.tsx` makes for text, applied to everything shape-bearing.
+//
+// WHAT THIS ADDS THAT THE BAR FRAME DOES NOT: quadrant shading, marking the corner both axes
+// agree on. ⚠️ IT IS DRIVEN BY THRESHOLDS IN DATA UNITS, never by half the plot — a wash at
+// the geometric middle marks a number that exists nowhere in the data and moves whenever the
+// domain changes.
 
 export interface ScatterQuadrantLabels {
   /** Shown in the top-right corner — the corner both axes agree on. */
@@ -40,6 +44,11 @@ interface ScatterFrameProps {
   readonly rawMaxY: number;
   /** The largest magnitude any point carries. Fixes the radius scale. */
   readonly rawMaxMagnitude: number;
+  /** An explicit ceiling, for an axis that has one. See `computeScatterChartScale`. */
+  readonly xDomainMax?: number;
+  readonly yDomainMax?: number;
+  readonly xTickIntervalCount?: number;
+  readonly yTickIntervalCount?: number;
   readonly xAxisLabel: string;
   readonly yAxisLabel: string;
   readonly formatX: (value: number) => string;
@@ -52,24 +61,36 @@ interface ScatterFrameProps {
   readonly tableRows: readonly ChartTableRow[];
   /** Marks the corner a reader should look at first. Omit for a chart with no sweet spot. */
   readonly quadrantLabels?: ScatterQuadrantLabels;
+  /** Where that corner STARTS, in data units. Required alongside `quadrantLabels`. */
+  readonly xThreshold?: number;
+  readonly yThreshold?: number;
   readonly emptyMessage?: string;
   readonly children: (scale: ScatterChartScale) => ReactNode;
 }
+
+const CORNER_LABEL_CLASS =
+  "pointer-events-none absolute max-w-[42%] rounded bg-background/80 px-1.5 py-0.5 text-[10px] leading-tight";
 
 export function ScatterFrame({
   rawMaxX,
   rawMaxY,
   rawMaxMagnitude,
+  xDomainMax,
+  yDomainMax,
+  xTickIntervalCount,
+  yTickIntervalCount,
   xAxisLabel,
   yAxisLabel,
   formatX,
   formatY,
-  plotHeightClassName = "h-72",
+  plotHeightClassName = "h-96",
   caption,
   rowColumnLabel,
   valueColumnLabels,
   tableRows,
   quadrantLabels,
+  xThreshold,
+  yThreshold,
   emptyMessage = "Nothing to plot yet.",
   children,
 }: ScatterFrameProps) {
@@ -77,11 +98,26 @@ export function ScatterFrame({
     return <p className="text-sm text-muted-foreground">{emptyMessage}</p>;
   }
 
-  const scale = computeScatterChartScale({ rawMaxX, rawMaxY, rawMaxMagnitude });
+  const scale = computeScatterChartScale({
+    rawMaxX,
+    rawMaxY,
+    rawMaxMagnitude,
+    xDomainMax,
+    yDomainMax,
+    xTickIntervalCount,
+    yTickIntervalCount,
+  });
 
   // Top-down, because that is the order the axis reads on screen. The ticks themselves are
   // ascending — the frame reverses a copy rather than asking the scale for a second ordering.
   const descendingYTicks = scale.yTicks.toReversed();
+
+  // The wash is drawn only when BOTH thresholds are given: a corner needs two edges, and
+  // guessing the missing one is how it ends up back at the middle of the plot.
+  const hasQuadrant =
+    quadrantLabels !== undefined && xThreshold !== undefined && yThreshold !== undefined;
+  const washLeftPercent = hasQuadrant ? scale.xPercent(xThreshold) : 0;
+  const washTopPercent = hasQuadrant ? scale.yPercent(yThreshold) : 0;
 
   return (
     <figure className="space-y-2">
@@ -99,20 +135,8 @@ export function ScatterFrame({
             aria-hidden
             viewBox={`0 0 ${PLOT_WIDTH_UNITS} ${scale.plotHeightUnits}`}
             preserveAspectRatio="none"
-            className="h-full w-full overflow-visible"
+            className="h-full w-full"
           >
-            {/* The sweet-spot corner, washed so it reads before any label does. Drawn first so
-                every gridline and point sits above it. */}
-            {quadrantLabels === undefined ? null : (
-              <rect
-                x={PLOT_WIDTH_UNITS / 2}
-                y={0}
-                width={PLOT_WIDTH_UNITS / 2}
-                height={scale.plotHeightUnits / 2}
-                className="fill-[#00696E]/5"
-              />
-            )}
-
             {scale.yTicks.map((tickValue, tickIndex) => {
               const tickY = scale.yUnits(tickValue);
               return (
@@ -146,33 +170,58 @@ export function ScatterFrame({
                 />
               );
             })}
-
-            {children(scale)}
           </svg>
 
-          {/* HTML, not `<text>` — see the module header. Absolutely positioned over the plot. */}
-          {quadrantLabels === undefined ? null : (
-            <>
-              <span className="pointer-events-none absolute top-1 right-2 max-w-[45%] text-right text-[10px] leading-tight font-medium text-[#00696E]">
-                {quadrantLabels.topRight}
-              </span>
-              {quadrantLabels.topLeft === undefined ? null : (
-                <span className="pointer-events-none absolute top-1 left-2 max-w-[45%] text-[10px] leading-tight text-muted-foreground">
-                  {quadrantLabels.topLeft}
+          {/* THE OVERLAY. Wash, points and labels, all positioned by percentage against the same
+              integer arithmetic the gridlines use — so a point and a gridline at the same value
+              land on the same pixel, and nothing here can be deformed by the container's shape. */}
+          <div className="absolute inset-0">
+            {hasQuadrant ? (
+              <div
+                aria-hidden
+                style={{
+                  left: `${String(washLeftPercent)}%`,
+                  top: `${String(washTopPercent)}%`,
+                  right: "0",
+                  bottom: "0",
+                }}
+                className="absolute bg-[#00696E]/[0.06]"
+              />
+            ) : null}
+
+            {/* LABELS FIRST, POINTS SECOND. These are chrome and the points are the data —
+                and they WILL collide, because the corner worth reading is exactly where the
+                points cluster. The data wins; the chip background keeps a label legible
+                everywhere it is not covered. */}
+            {quadrantLabels === undefined ? null : (
+              <>
+                <span
+                  className={`${CORNER_LABEL_CLASS} top-1 right-1 text-right font-medium text-[#00696E]`}
+                >
+                  {quadrantLabels.topRight}
                 </span>
-              )}
-              {quadrantLabels.bottomLeft === undefined ? null : (
-                <span className="pointer-events-none absolute bottom-1 left-2 max-w-[45%] text-[10px] leading-tight text-muted-foreground">
-                  {quadrantLabels.bottomLeft}
-                </span>
-              )}
-              {quadrantLabels.bottomRight === undefined ? null : (
-                <span className="pointer-events-none absolute right-2 bottom-1 max-w-[45%] text-right text-[10px] leading-tight text-muted-foreground">
-                  {quadrantLabels.bottomRight}
-                </span>
-              )}
-            </>
-          )}
+                {quadrantLabels.topLeft === undefined ? null : (
+                  <span className={`${CORNER_LABEL_CLASS} top-1 left-1 text-muted-foreground`}>
+                    {quadrantLabels.topLeft}
+                  </span>
+                )}
+
+                {children(scale)}
+                {quadrantLabels.bottomLeft === undefined ? null : (
+                  <span className={`${CORNER_LABEL_CLASS} bottom-1 left-1 text-muted-foreground`}>
+                    {quadrantLabels.bottomLeft}
+                  </span>
+                )}
+                {quadrantLabels.bottomRight === undefined ? null : (
+                  <span
+                    className={`${CORNER_LABEL_CLASS} right-1 bottom-1 text-right text-muted-foreground`}
+                  >
+                    {quadrantLabels.bottomRight}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         <div aria-hidden />
@@ -181,9 +230,7 @@ export function ScatterFrame({
           {scale.xTicks.map((tickValue, tickIndex) => (
             <span
               key={`x-label-${String(tickIndex)}`}
-              // The drawing width is 1000 units, so a tick's position in units IS its position
-              // in per-mille — divided by ten to become the percentage offset.
-              style={{ left: `${scale.xUnits(tickValue) / 10}%` }}
+              style={{ left: `${String(scale.xPercent(tickValue))}%` }}
               className="absolute -translate-x-1/2 whitespace-nowrap"
             >
               {formatX(tickValue)}
