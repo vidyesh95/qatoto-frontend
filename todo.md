@@ -2118,7 +2118,7 @@ __none__` rendered **"Couldn't load this cluster"**. After: `__none__` and `not-
       streamed document carries the not-found boundary's markup either way, so that phrase appears
       even on a page that rendered perfectly. It is what made the first A/B read as ambiguous.
 
-## 19. Import Intelligence & AI-Driven Localization — DESIGNED, nothing built
+## 19. Import Intelligence & AI-Driven Localization — SHIPPED end to end
 
 A new R&D reference surface: country-level import volumes per HS6 commodity, domestic substitute mappings, and a
 feasibility score with an LLM-written localization pathway. The full design is
@@ -2128,22 +2128,42 @@ feasibility score with an LLM-written localization pathway. The full design is
 **⚠️ Nineteen is the next free anchor, not the next position in this list.** Numbers here are
 anchors and gaps mean an item shipped; 1–18 are all spoken for somewhere in this file.
 
-**Backend first, and the frontend is deliberately not started.** Five tables, six enums, one
-migration (**0162** — `0161_aromatic_patriot.sql` is current), a pure score module, two pg-boss
-jobs, one root-mounted router with six reads and three moderator writes, a seed script and two
-verification scripts. Building the frontend against a contract nobody has run would mean
-negotiating it twice.
+**Both sides shipped, and the data is real.** Backend: six tables, ten enums, migrations
+0162–0163, a UN Comtrade client, a five-component score module, three pg-boss jobs, one
+router with six reads and three moderator writes, seven test files (251 tests). Frontend:
+two routes, two `server-fetch` bodies, six `props-only` leaves, a schema/api/format trio.
 
-**What is a PURCHASE rather than a task** — the same shape as §18's freight rate cards. The
-baseline is a **seeded reference set: ~200 HS6 manufacturing commodities for India**, real
-published figures with a source on every row. A proprietary dataset (DGCI&S, Volza) replaces it
-later through `import_trade_flow.data_origin`, which exists from the first migration so the swap
-is rows rather than a schema change. **No UN Comtrade sync job** — an automated feed buys schema
-drift, per-reporter sanitization and rate-limit backoff before anyone has looked at the surface.
+**In the shared database now: 5,668 commodities, 60,550 trade flows (India, 2019–2024, both
+directions, 24 successful sync runs) and 5,668 scored assessments.** Verified live —
+India's top 2024 import line is petroleum at $141.5B, then gold at $57.3B, which match the
+published national figures.
 
-⚠️ **A seeded figure is a published figure or it is not a row.** If a number cannot be sourced,
-the commodity ships with **no flow row** and the surface says "no import data recorded". It does
-not ship a zero. Zero is a finding; null is the absence of one.
+⚠️ **`pnpm jobs:install` WAS RUN, and it migrated pg-boss's own schema from 38 to 39.** That
+was a PRE-EXISTING break, not one this feature caused: the pg-boss package had been upgraded
+to 12.29 without the schema migration, so `sendJob` was throwing for EVERY queue in the app —
+daily-log analysis, notifications, compensation drafts, all of it. Worth knowing that it was
+broken and for how long is not recorded anywhere.
+
+⚠️ **THE 25 ENQUEUED NARRATIVES ARE STILL `pending`** because no worker process is running.
+They will be written the first time `pnpm worker` runs, and the surface renders the pending
+state honestly in the meantime.
+
+**IT IS FED BY A REAL FEED — the seeded-fixture plan was abandoned once the keys existed.** One
+pinned UN Comtrade call returns a whole country-year-direction: 6,352 rows for India 2023, of which
+5,052 are HS6 leaves totalling **$672,140,129,636**, matching the published national figure. The
+whole ingest plan is twelve calls a week against a 500/day free tier, and `cmdDesc` comes back with
+them — so the commodity vocabulary is the WCO's own wording rather than 200 hand-authored rows.
+
+⚠️ **`partnerCode=0` ALONE IS NOT ENOUGH.** It returns a `partner2Code` breakdown and summing it
+double-counts. All four of `partnerCode=0`, `partner2Code=0`, `customsCode=C00` and `motCode=0` must
+be pinned. This is the most important thing to know before touching `comtrade.ts`.
+
+⚠️ **Null is not zero, and it bites on day one.** 679 of those 5,052 lines carry no net weight at
+all, and a CHECK refuses an estimation flag on a value that is not there.
+
+A proprietary dataset (DGCI&S, Volza) can still replace or enrich the feed later through
+`commodity_trade_flow.data_origin`, which exists from the first migration so the swap is rows rather
+than a schema change.
 
 **The AI half needs no new vendor, and that was checked rather than assumed.**
 `qatoto-backend/src/modules/rnd/gemini.ts` already makes this call over plain `fetch` with no

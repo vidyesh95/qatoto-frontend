@@ -35,6 +35,7 @@ import { listStoreProviders } from "@/lib/store/providers.api";
 import { listProblemClusters } from "@/lib/rnd/discovery.api";
 import { listResearchProgramSlugs } from "@/lib/rnd/research-programs.api";
 import { listResearchProjectSlugs } from "@/lib/rnd/projects.api";
+import { listImportCommodities } from "@/lib/rnd/import-intelligence.api";
 import { listSuppliers } from "@/lib/rnd/suppliers.api";
 
 /**
@@ -185,6 +186,31 @@ export async function getSupplierSitemapEntries(): Promise<SitemapEntry[]> {
 
     for (const supplier of result.data.rows) {
       entries.push({ path: `/research-and-development/go-to-market/supplier/${supplier.slug}` });
+    }
+
+    if (pageNumber >= result.data.pagination.totalPages) break;
+  }
+
+  return entries;
+}
+
+/**
+ * §20 commodities. Bounded by `MAX_PAGES_PER_SURFACE` like every other offset walk here —
+ * India alone has 5,668 commodities and the catalogue grows with each country ingested, so
+ * an unbounded walk would be a very long build for pages nobody has linked to.
+ */
+export async function getImportCommoditySitemapEntries(): Promise<SitemapEntry[]> {
+  "use cache";
+  const entries: SitemapEntry[] = [];
+
+  for (let pageNumber = 1; pageNumber <= MAX_PAGES_PER_SURFACE; pageNumber += 1) {
+    const result = await listImportCommodities({ page: pageNumber, limit: OFFSET_PAGE_LIMIT });
+    if (!result.success) break;
+
+    for (const commodity of result.data.rows) {
+      entries.push({
+        path: `/research-and-development/import-intelligence/${commodity.hsCode}`,
+      });
     }
 
     if (pageNumber >= result.data.pagination.totalPages) break;

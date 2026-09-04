@@ -9,6 +9,14 @@
 // reason the backend never sends prose (backend §4d).
 
 import type {
+  DomesticSubstituteKind,
+  DomesticSubstituteMaturity,
+  ImportCommodityKind,
+  LocalizationNarrativeStatus,
+  LocalizationPathwayStatus,
+  TradeFlowKind,
+} from "@/lib/rnd/import-intelligence.schemas";
+import type {
   ResearchContributionKind,
   ResearchBranchStatus,
   ResearchModerationActionKind,
@@ -226,3 +234,124 @@ export const RESEARCH_MODERATION_ACTION_LABELS: Record<ResearchModerationActionK
   post_restored: "Restored a post",
   report_dismissed: "Dismissed a report",
 };
+
+// --- §20 import intelligence.
+
+/**
+ * What kind of thing a commodity is. Derived from its HS chapter server-side; these are
+ * the reader's words for the sixteen values.
+ */
+export const IMPORT_COMMODITY_KIND_LABELS: Record<ImportCommodityKind, string> = {
+  agricultural_product: "Agricultural produce",
+  food_product: "Processed food",
+  mineral_ceramic: "Minerals & ceramics",
+  energy_fuel: "Fuels & energy",
+  chemical: "Chemicals",
+  pharmaceutical: "Pharmaceuticals",
+  plastic_rubber: "Plastics & rubber",
+  wood_paper: "Wood & paper",
+  textile_leather: "Textiles & leather",
+  precious_material: "Precious materials",
+  metal: "Metals",
+  machinery: "Machinery",
+  electronic_subassembly: "Electronics",
+  transport_equipment: "Transport equipment",
+  precision_instrument: "Precision instruments",
+  other_manufactured: "Other manufactured",
+};
+
+/** Which way the goods moved. */
+export const TRADE_FLOW_KIND_LABELS: Record<TradeFlowKind, string> = {
+  import: "Imports",
+  export: "Exports",
+};
+
+/** How a domestic substitute relates to the import it would replace. */
+export const DOMESTIC_SUBSTITUTE_KIND_LABELS: Record<DomesticSubstituteKind, string> = {
+  direct_material_substitute: "Same material, made here",
+  alternative_material: "Alternative material",
+  domestic_component: "Domestic component",
+  process_change: "Different process",
+};
+
+/**
+ * How proven a substitute is. Ordered, and the order is scored — `mature` pays the full
+ * component and `lab_scale` the least, because a substitute that exists only in a paper is
+ * evidence of possibility rather than of supply.
+ */
+export const DOMESTIC_SUBSTITUTE_MATURITY_LABELS: Record<DomesticSubstituteMaturity, string> = {
+  lab_scale: "Lab scale",
+  pilot_scale: "Pilot scale",
+  commercial: "Commercial",
+  mature: "Mature",
+};
+
+/**
+ * Whether the pathway narrative was written.
+ *
+ * `skipped_unconfigured` is deliberately NOT phrased as a failure: the score beside it is
+ * real and complete, and the only thing missing is prose the environment could not generate.
+ */
+export const LOCALIZATION_NARRATIVE_STATUS_LABELS: Record<LocalizationNarrativeStatus, string> = {
+  pending: "Pathway not written yet",
+  generated: "Pathway written",
+  skipped_unconfigured: "Pathway not generated in this environment",
+  failed: "Pathway could not be written",
+};
+
+/** What a reviewer decided about a machine suggestion. */
+export const LOCALIZATION_PATHWAY_STATUS_LABELS: Record<LocalizationPathwayStatus, string> = {
+  open: "Awaiting review",
+  accepted: "Accepted by a reviewer",
+  dismissed: "Dismissed by a reviewer",
+};
+
+/**
+ * The five feasibility components, and the budget each tops out at.
+ *
+ * The budgets are restated here because the UI renders "27 of 35" and a reader needs the
+ * denominator. They match `localization-feasibility-score.ts` and the database CHECK that
+ * bounds each column.
+ */
+export const LOCALIZATION_SCORE_COMPONENT_LABELS: readonly {
+  readonly key:
+    | "importDependencyPoints"
+    | "exportCapabilityPoints"
+    | "substituteAvailabilityPoints"
+    | "supplierCapacityPoints"
+    | "leadTimeAdvantagePoints";
+  readonly label: string;
+  readonly budget: number;
+  readonly explanation: string;
+}[] = [
+  {
+    key: "importDependencyPoints",
+    label: "Import dependence",
+    budget: 35,
+    explanation: "How much of this the country buys from abroad each year.",
+  },
+  {
+    key: "exportCapabilityPoints",
+    label: "Existing export capability",
+    budget: 25,
+    explanation: "The country already exports some, so somebody here can already make it.",
+  },
+  {
+    key: "substituteAvailabilityPoints",
+    label: "Substitute availability",
+    budget: 20,
+    explanation: "Published domestic substitutes, weighted by how proven each one is.",
+  },
+  {
+    key: "supplierCapacityPoints",
+    label: "Supplier capacity",
+    budget: 12,
+    explanation: "Suppliers in-country whose listed capabilities match a substitute.",
+  },
+  {
+    key: "leadTimeAdvantagePoints",
+    label: "Lead-time advantage",
+    budget: 8,
+    explanation: "How much faster a domestic supplier is than the import lane.",
+  },
+];

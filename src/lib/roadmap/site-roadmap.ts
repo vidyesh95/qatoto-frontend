@@ -216,13 +216,18 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Market research, papers and prior art before you commit.",
       },
       {
-        // PLANNED, not a route: the surface is designed in docs/R_AND_D_STRUCTURE.md §20 and its
-        // backend is ordered as phase 9 there. Listing it as `kind: "route"` would make this map a
-        // promise the app does not keep, which is what the three-variant union exists to prevent.
-        kind: "planned",
+        kind: "route",
         label: "Import intelligence",
-        pathPattern: "/research-and-development/import-intelligence",
+        href: "/research-and-development/import-intelligence",
         summary: "What the country imports, and what could be made here instead.",
+      },
+      {
+        kind: "dynamic",
+        label: "Commodity",
+        pathPattern: "/research-and-development/import-intelligence/[hsCode]",
+        summary:
+          "One commodity: trade history, substitutes, and how feasible making it here looks.",
+        reachedFrom: "clicking a commodity on the import-intelligence page",
       },
     ],
   },

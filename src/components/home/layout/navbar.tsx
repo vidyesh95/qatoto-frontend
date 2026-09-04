@@ -30,6 +30,10 @@ const RESEARCH_AND_DEVELOPMENT_SUBPAGES: Record<string, string> = {
   // §10 research programmes. The index and the wizard are STATIC paths and need entries;
   // an individual programme is `/programs/[programSlug]` and falls through to prettifySlug,
   // which renders its slug — the right answer, because the programme names itself.
+  // §20 import intelligence. The index needs an entry because prettifySlug would render
+  // "Import intelligence"; an individual commodity is `/[hsCode]` and falls through to it,
+  // which renders the six digits — the right answer, because a code is its own name.
+  "/research-and-development/import-intelligence": "Import Intelligence",
   "/research-and-development/programs": "Research Programmes",
   "/research-and-development/programs/new": "Propose a Programme",
 };
