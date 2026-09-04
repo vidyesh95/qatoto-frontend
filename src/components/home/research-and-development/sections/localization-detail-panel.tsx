@@ -252,9 +252,11 @@ export default function LocalizationDetailPanel({
 
                   {suggestion === undefined ? null : (
                     <p className="text-xs text-muted-foreground">
-                      Confidence {formatConfidenceBps(suggestion.confidenceBps)} ·{" "}
-                      {suggestion.modelName} · {suggestion.promptVersion} ·{" "}
-                      {formatIsoInstant(suggestion.asOf)}
+                      {/* No "Confidence" prefix — `formatConfidenceBps` already returns
+                          "65% confidence" or "No confidence recorded", and prefixing it
+                          rendered "Confidence 65% confidence". */}
+                      {formatConfidenceBps(suggestion.confidenceBps)} · {suggestion.modelName} ·{" "}
+                      {suggestion.promptVersion} · {formatIsoInstant(suggestion.asOf)}
                     </p>
                   )}
 
