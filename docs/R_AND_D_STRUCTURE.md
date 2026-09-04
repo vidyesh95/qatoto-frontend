@@ -135,7 +135,7 @@ stage** — all six are built (§4c).
 
 Fourteen page routes built, each with a `loading.tsx`.
 
-`🔌` reads the backend · `🧪` still static mock · `🚫` blocked, no backend exists.
+`🔌` reads the backend · `🧪` still static mock · `🚫` blocked, no backend exists · `⏳` designed, not built (§20).
 
 ```text
 🔌 /research-and-development                             pipeline hub landing
@@ -153,6 +153,8 @@ Fourteen page routes built, each with a `loading.tsx`.
 🧪 /research-and-development/build-log                   cross-project daily-log feed    — stage 04, phase 3
 🧪 /research-and-development/governance                  commitments + statements        — stage 05, phase 5
 🔌 /research-and-development/go-to-market                suppliers → store listing       — stage 06, §4c.4
+⏳ /research-and-development/import-intelligence            country import volumes           — §20
+⏳ /research-and-development/import-intelligence/[hsCode]   one commodity + its assessment   — §20
 ```
 
 **Every wired route reads `searchParams` and is therefore dynamic** (`◐` in the build output), because
@@ -1013,29 +1015,32 @@ note on `MemberSliceBreakdown`. Both must be rewritten when §11 lands, not befo
 
 ## 13. Route → endpoint map
 
-Every row below is wired. The table is the READ map; §19 lists the write islands separately,
-because a write belongs to a control rather than to a route.
+Every row below is wired **unless its State column says otherwise** — two do. The table is the
+READ map; §19 lists the write islands separately, because a write belongs to a control rather
+than to a route.
 
-| Frontend route                          | Endpoints                                                                                                                                                                                                                                    | State          |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| `/research-and-development`             | `GET /research-projects` · `/discovery/problem-clusters` · `/discovery/market-insights` · `/open-roles`                                                                                                                                      | ✅ wired       |
-| `/new`                                  | `GET /research-categories?status=approved` → `POST /research-categories` (when new) → `POST /research-projects`. Creates a **DRAFT**; publishing is separate                                                                                 | ✅ wired       |
-| `/applications`                         | `GET /applications/mine` · `GET /invites/mine` → invite `accept` / `decline`                                                                                                                                                                 | ✅ wired       |
-| `/project/[id]`                         | `GET /research-projects/:slug` **first**, then `…/roles` · `…/milestones` · `…/daily-logs` · `…/funding-rounds` · `…/investor-confidence` · `…/launch-readiness` · `…/compensation-agreements` · `…/compensation-periods` · `…/compensation` | ✅ wired       |
-| `/project/[id]/workshop`                | `GET /research-projects/:slug` then `…/workshop` (board, files, chat, read state in one payload)                                                                                                                                             | ✅ wired       |
-| `/project/[id]/proof-of-effort`         | `GET /research-projects/:slug` then twelve §9 reads (§19)                                                                                                                                                                                    | ✅ wired       |
-| `/problem-map`                          | `GET /discovery/problem-clusters` · `/research-categories` · `/discovery/regions`                                                                                                                                                            | ✅ wired       |
-| `/problem-map/cluster/[clusterId]`      | `GET /discovery/problem-clusters/:clusterId`                                                                                                                                                                                                 | ✅ wired       |
-| `/knowledge-hub`                        | `GET /discovery/market-insights` · `/discovery/demand-signals`                                                                                                                                                                               | ✅ wired       |
-| `/talent`                               | `GET /discovery/talent` · `/discovery/skills` · `/open-roles`                                                                                                                                                                                | ✅ wired       |
-| `/talent/[handle]`                      | `GET /discovery/talent/:talentUserIdOrHandle`                                                                                                                                                                                                | ✅ wired       |
-| `/funding`                              | `GET /funding/deals` → `GET /funding-rounds/:id/pledge-options` → `POST …/pledges`                                                                                                                                                           | ✅ wired       |
-| `/governance`                           | `GET /governance/summary` — public aggregates, `disclosureKeys`, and the caller's own open lines                                                                                                                                             | ✅ wired       |
-| `/team-building`                        | `GET /open-roles` · `/research-projects?stage=team_building` · `/discovery/talent` · `/discovery/skills`                                                                                                                                     | ✅ wired       |
-| `/build-log`                            | `GET /daily-logs` (member-scoped, keyset) · `/daily-logs/streak-leaderboard` (public)                                                                                                                                                        | ✅ wired       |
-| `/go-to-market`                         | `GET /suppliers` · `/supplier-capabilities` · `/launch-ready-projects` · `/discovery/regions`                                                                                                                                                | ✅ wired       |
-| `/go-to-market/supplier/[supplierSlug]` | `GET /suppliers/:supplierSlug`                                                                                                                                                                                                               | ✅ wired       |
-| `/projects/project-immortal`            | `/research-programs/*`                                                                                                                                                                                                                       | 🚫 **blocked** |
+| Frontend route                          | Endpoints                                                                                                                                                                                                                                    | State           |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| `/research-and-development`             | `GET /research-projects` · `/discovery/problem-clusters` · `/discovery/market-insights` · `/open-roles`                                                                                                                                      | ✅ wired        |
+| `/new`                                  | `GET /research-categories?status=approved` → `POST /research-categories` (when new) → `POST /research-projects`. Creates a **DRAFT**; publishing is separate                                                                                 | ✅ wired        |
+| `/applications`                         | `GET /applications/mine` · `GET /invites/mine` → invite `accept` / `decline`                                                                                                                                                                 | ✅ wired        |
+| `/project/[id]`                         | `GET /research-projects/:slug` **first**, then `…/roles` · `…/milestones` · `…/daily-logs` · `…/funding-rounds` · `…/investor-confidence` · `…/launch-readiness` · `…/compensation-agreements` · `…/compensation-periods` · `…/compensation` | ✅ wired        |
+| `/project/[id]/workshop`                | `GET /research-projects/:slug` then `…/workshop` (board, files, chat, read state in one payload)                                                                                                                                             | ✅ wired        |
+| `/project/[id]/proof-of-effort`         | `GET /research-projects/:slug` then twelve §9 reads (§19)                                                                                                                                                                                    | ✅ wired        |
+| `/problem-map`                          | `GET /discovery/problem-clusters` · `/research-categories` · `/discovery/regions`                                                                                                                                                            | ✅ wired        |
+| `/problem-map/cluster/[clusterId]`      | `GET /discovery/problem-clusters/:clusterId`                                                                                                                                                                                                 | ✅ wired        |
+| `/knowledge-hub`                        | `GET /discovery/market-insights` · `/discovery/demand-signals`                                                                                                                                                                               | ✅ wired        |
+| `/talent`                               | `GET /discovery/talent` · `/discovery/skills` · `/open-roles`                                                                                                                                                                                | ✅ wired        |
+| `/talent/[handle]`                      | `GET /discovery/talent/:talentUserIdOrHandle`                                                                                                                                                                                                | ✅ wired        |
+| `/funding`                              | `GET /funding/deals` → `GET /funding-rounds/:id/pledge-options` → `POST …/pledges`                                                                                                                                                           | ✅ wired        |
+| `/governance`                           | `GET /governance/summary` — public aggregates, `disclosureKeys`, and the caller's own open lines                                                                                                                                             | ✅ wired        |
+| `/team-building`                        | `GET /open-roles` · `/research-projects?stage=team_building` · `/discovery/talent` · `/discovery/skills`                                                                                                                                     | ✅ wired        |
+| `/build-log`                            | `GET /daily-logs` (member-scoped, keyset) · `/daily-logs/streak-leaderboard` (public)                                                                                                                                                        | ✅ wired        |
+| `/go-to-market`                         | `GET /suppliers` · `/supplier-capabilities` · `/launch-ready-projects` · `/discovery/regions`                                                                                                                                                | ✅ wired        |
+| `/go-to-market/supplier/[supplierSlug]` | `GET /suppliers/:supplierSlug`                                                                                                                                                                                                               | ✅ wired        |
+| `/projects/project-immortal`            | `/research-programs/*`                                                                                                                                                                                                                       | 🚫 **blocked**  |
+| `/import-intelligence`                  | `GET /localization-assessments` · `/import-commodities` · `/import-commodity-kinds` · `/discovery/regions` · `/research-categories?status=approved`                                                                                          | ⏳ **designed** |
+| `/import-intelligence/[hsCode]`         | `GET /import-commodities/:hsCode` **first**, then `…/trade-flows` · `…/substitutes`                                                                                                                                                          | ⏳ **designed** |
 
 ### ⚠️ Where the backend contract doc is wrong about its own backend
 
@@ -1537,18 +1542,19 @@ than kept as a fallback. That is deliberate: a silent fallback masks a broken en
 every mock to be migrated to the wire format to stay type-compatible. What is left on disk is
 therefore exactly what is still fabricated.
 
-| Phase                             | Scope                                                                                                                                                                                                                                   | State   |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| **0 · foundations**               | `src/lib/rnd/` (schemas, api, formatters, view state, filter hrefs, map projection, labels) · `src/lib/server-http.ts` · `QueryProvider` in `(home)` · `snake_case` enum migration · `TRANSPORT:` banners                               | ✅ done |
-| **1 · public discovery reads**    | landing · `/knowledge-hub` · `/problem-map` · `/talent` · `/team-building` · `/go-to-market` · `/funding`                                                                                                                               | ✅ done |
-| **2 · projects & detail**         | `/research-projects/slugs` for `generateStaticParams` · detail · team · roles · milestones · funding rounds · investor confidence                                                                                                       | ✅ done |
-| **3 · workshop & daily logs**     | board / files / chat in one `…/workshop` read · per-project logs · `/build-log` (member-scoped, `401` signed out)                                                                                                                       | ✅ done |
-| **4 · proof of effort**           | slice ledger · verification · disputes · integrations · audit trail · rate lock · pie bake                                                                                                                                              | ✅ done |
-| **5 · compensation & governance** | agreements · periods · finalize / countersign / payments / export · `/governance/summary`                                                                                                                                               | ✅ done |
-| **W · writes**                    | the whole mutation surface — PoE, compensation, funding pledges, project create/publish, applications & invites, workshop board / files / chat                                                                                          | ✅ done |
-| **W2 · write UI**                 | a control for every one of them: the rate lifecycle, claim + receipt, founder round/milestone/role/member management, the application inbox, daily-log authoring, board editing, talent profile, problem reports                        | ✅ done |
-| **K · keyset paging**             | six lists made pageable — the daily-log feed, the claim index, allocation proposals, the slice ledger, the project audit trail, compensation statements                                                                                 | ✅ done |
-| **6 · research programmes**       | the whole `/research-programs` domain — index, detail, branch tree, paper library with real PDF upload, both post tracks, reactions, reports, moderation, contributors, effort and contribution records, the propose-a-programme wizard | ✅ done |
+| Phase                             | Scope                                                                                                                                                                                                                                    | State       |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| **0 · foundations**               | `src/lib/rnd/` (schemas, api, formatters, view state, filter hrefs, map projection, labels) · `src/lib/server-http.ts` · `QueryProvider` in `(home)` · `snake_case` enum migration · `TRANSPORT:` banners                                | ✅ done     |
+| **1 · public discovery reads**    | landing · `/knowledge-hub` · `/problem-map` · `/talent` · `/team-building` · `/go-to-market` · `/funding`                                                                                                                                | ✅ done     |
+| **2 · projects & detail**         | `/research-projects/slugs` for `generateStaticParams` · detail · team · roles · milestones · funding rounds · investor confidence                                                                                                        | ✅ done     |
+| **3 · workshop & daily logs**     | board / files / chat in one `…/workshop` read · per-project logs · `/build-log` (member-scoped, `401` signed out)                                                                                                                        | ✅ done     |
+| **4 · proof of effort**           | slice ledger · verification · disputes · integrations · audit trail · rate lock · pie bake                                                                                                                                               | ✅ done     |
+| **5 · compensation & governance** | agreements · periods · finalize / countersign / payments / export · `/governance/summary`                                                                                                                                                | ✅ done     |
+| **W · writes**                    | the whole mutation surface — PoE, compensation, funding pledges, project create/publish, applications & invites, workshop board / files / chat                                                                                           | ✅ done     |
+| **W2 · write UI**                 | a control for every one of them: the rate lifecycle, claim + receipt, founder round/milestone/role/member management, the application inbox, daily-log authoring, board editing, talent profile, problem reports                         | ✅ done     |
+| **K · keyset paging**             | six lists made pageable — the daily-log feed, the claim index, allocation proposals, the slice ledger, the project audit trail, compensation statements                                                                                  | ✅ done     |
+| **6 · research programmes**       | the whole `/research-programs` domain — index, detail, branch tree, paper library with real PDF upload, both post tracks, reactions, reports, moderation, contributors, effort and contribution records, the propose-a-programme wizard  | ✅ done     |
+| **7 · import intelligence**       | §20 — the HS6 commodity index, country import volumes, domestic substitute mappings, the deterministic feasibility score and its LLM pathway narrative. **Backend first**: `R_AND_D_BACKEND_STRUCTURE.md` §10A / §11m, its build phase 9 | ⏳ designed |
 
 **Phase W is the one that was not in the original plan**, and it is the larger half of what
 landed. Until it, `rg 'sendJson|sendForm' src/lib/rnd/` returned NOTHING: every control on this
@@ -1860,3 +1866,157 @@ here that exists purely to read further.
   throwing so an unreachable backend cannot break CI. `withSentinelValues`
   (`src/lib/rnd/static-params.ts`) reconciles the two: no rows means one unresolvable param, which
   the route renders as `notFound()`.
+
+---
+
+## 20. Import Intelligence & AI-Driven Localization
+
+**⏳ Nothing is built — not a route, not a schema, not a component.** This section is the design,
+written before the code so the backend contract and the frontend shapes are agreed once rather than
+negotiated twice. The backend half is `qatoto-backend/docs/R_AND_D_BACKEND_STRUCTURE.md` §10A
+(the data) and §11m (the API), ordered there as build phase 9.
+
+### What it is
+
+The pipeline ends at `/go-to-market`, where a founder picks a supplier and lists a product. Nothing
+upstream of it answers the question that decides whether a venture is worth starting: **what does
+this country already buy from abroad, and could it be made here instead?**
+
+Three layers, and the surface renders them as three:
+
+1. **Import volumes** — country-level, per HS6 commodity, every figure carrying its own source.
+2. **Domestic substitutes** — the material or component that could replace the import, and the
+   `supplier_capability` that would make it, which is the join into the §4c.4 directory.
+3. **A feasibility assessment** — a deterministic 0–100 score with its four component sub-scores,
+   plus an LLM-written pathway narrative over a score the model did not compute.
+
+### Routes
+
+```text
+⏳ /research-and-development/import-intelligence            commodity index + feasibility leaderboard
+⏳ /research-and-development/import-intelligence/[hsCode]   one commodity: flows, substitutes, assessment
+```
+
+**A sibling of `/knowledge-hub` and `/problem-map`, not a seventh pipeline stage.** It is not a step
+a founder walks through — it is a reference surface consulted before and during the early stages, in
+the same way the knowledge hub is. Making it stage 07 would also mean extending
+`pipeline-stages-strip.tsx`'s `STAGE_BACKGROUND_TINT_CLASSES` ramp and renumbering a sequence three
+other files cite, and it would put a lookup tool inside a sequence.
+
+**It is not folded into `/go-to-market` either.** That page already carries a hero, an explainer, a
+readiness checklist, a filtered supplier directory and a launch-ready rail; adding a second
+filterable dataset to it makes an already-dense surface unreadable, and the two are consulted at
+opposite ends of the pipeline.
+
+**`[hsCode]`, and it stays six digits.** An HS code is issued by the World Customs Organization and
+is already a stable public identity. It is not slugified — not in the path, not in a query key, not
+on the wire. §11's kebab-case rule covers identities this platform mints, and this is not one.
+
+### Endpoints, per route
+
+| Frontend route                  | Endpoints                                                                                                                                           |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/import-intelligence`          | `GET /localization-assessments` · `/import-commodities` · `/import-commodity-kinds` · `/discovery/regions` · `/research-categories?status=approved` |
+| `/import-intelligence/[hsCode]` | `GET /import-commodities/:hsCode` **first** — its `404` is `notFound()` — then `…/trade-flows` · `…/substitutes` concurrently                       |
+
+All public (`attachOptionalUser` on the backend). The same ordering rule every detail page on this
+surface follows: the read that decides whether the page exists at all runs first and alone.
+
+### Planned files and their `TRANSPORT:` banners
+
+⚠️ **No row goes into §19 until the file exists.** §19 says the banners are ground truth and the
+table is their readable summary; a table row for a file nobody wrote makes the summary a claim about
+nothing. This list is the _plan_, and §19 gains its rows when the components land.
+
+| File                                                                    | Planned banner |
+| ----------------------------------------------------------------------- | -------------- |
+| `components/home/research-and-development/import-intelligence-page.tsx` | `server-fetch` |
+| `components/home/research-and-development/commodity-detail-page.tsx`    | `server-fetch` |
+| `sections/localization-leaderboard.tsx`                                 | `props-only`   |
+| `sections/commodity-directory.tsx`                                      | `props-only`   |
+| `sections/trade-flow-table.tsx`                                         | `props-only`   |
+| `sections/substitute-list.tsx`                                          | `props-only`   |
+| `sections/feasibility-score-panel.tsx`                                  | `props-only`   |
+| `sections/localization-pathway-panel.tsx`                               | `props-only`   |
+| `cards/commodity-card.tsx`                                              | `props-only`   |
+| `rails/import-intelligence-rail.tsx`                                    | `props-only`   |
+
+**No `client-query` island and no `src/hooks/rnd/import-intelligence.ts` in this phase.** The three
+writes §11m defines are all `moderate_taxonomy` — they belong to an admin surface, not to this one.
+A hook with no caller is unverified code, and the audit in the phase note above exists to catch
+exactly that; the rule is to wire it to a control or not write it.
+
+**Every filter is a `Link`, because the backend applies it.** `commodityKind`, `categoryId`,
+`reporterCountryCode` and `periodKind` all live in the query string and are read with the existing
+helpers — `readEnumParam`, `readSingleParam`, and `readPatternParam(sp, "reporterCountryCode",
+/^[A-Z]{2}$/)`, which `src/lib/filter-href.ts:66` already carries for exactly this ISO-2 shape. A
+filter the server cannot apply is not shipped at all.
+
+### Data shapes
+
+`src/lib/rnd/import-intelligence.schemas.ts` and `.api.ts`, beside the others, following
+`suppliers.*` exactly: enum tuples `as const` → `z.enum` → type, every object `.strip()`, filter
+interfaces as plain `readonly` TS rather than Zod. Reads go through `getPaginated` / `getJson` from
+`src/lib/http.ts` with `callerRequestOptions()` forwarded from the page body.
+
+Units, per §11 — none of these is negotiable and all of them are on the wire already agreed:
+
+| Field                                                                                                                                   | Shape                                                                                                                                                    |
+| --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `importValueInCents` + `currency`                                                                                                       | **decimal string** over a `bigint` column. Parse with `BigInt`, never `Number`                                                                           |
+| `quantityMilli` + `quantityUnit`                                                                                                        | integer milli-units + a unit enum. The client composes the label, exactly as `formatMarketInsightStat` does for `statValueMilli` (`discovery-format.ts`) |
+| `feasibilityScorePoints`, `importDependencyPoints`, `substituteAvailabilityPoints`, `supplierCapacityPoints`, `leadTimeAdvantagePoints` | integer, 0–100 total, the four components summing to it                                                                                                  |
+| `confidenceBps`                                                                                                                         | integer basis points, `10000` = 100%, **nullable**                                                                                                       |
+| `medianSupplierLeadTimeDays`                                                                                                            | integer, **nullable**                                                                                                                                    |
+| `asOf`, `decidedAt`                                                                                                                     | ISO-8601 UTC                                                                                                                                             |
+| `periodStartsDate`, `periodEndsDate`, `sourcePublishedDate`                                                                             | ISO-8601 date-only `YYYY-MM-DD`                                                                                                                          |
+| `commodityKind`, `substituteKind`, `maturityLevel`, `periodKind`, `dataOrigin`, `status`                                                | `snake_case`, byte-identical to the backend `pgEnum` labels                                                                                              |
+| `hsCode`                                                                                                                                | six digits                                                                                                                                               |
+
+New `Record<Enum, string>` maps go in `src/lib/rnd/labels.ts`. A unit suffix map and the
+milli-composition go in a new `src/lib/rnd/import-format.ts`, modelled on `discovery-format.ts` —
+`format.ts` stays free of domain-specific composition.
+
+### Rules this surface adds, and one it inherits loudly
+
+- **Null is not zero, and here it is the whole point.** A commodity with no `import_trade_flow` row
+  has **no import data recorded** — it is not a commodity nobody imports. A null
+  `medianSupplierLeadTimeDays` means no supplier published one. A null `confidenceBps` means no
+  confidence was recorded, not zero confidence. `formatScorePoints` already renders "Not computed
+  yet" for a null score and is the precedent for all four.
+- **Every figure renders its source.** `sourceName` and `sourcePublishedDate` ride on every trade
+  flow row and are shown beside the number, not in a footnote. A country-level import figure with no
+  visible provenance reads as a platform assertion.
+- **The assessment renders `asOf`, and an empty leaderboard means no scoring run.** Same rule the
+  knowledge hub's demand leaderboard follows: a stored counter renders its freshness, and an absent
+  one is an absence rather than a finding of zero.
+- **The narrative always shows its provenance** — `modelName`, `promptVersion`, `confidenceBps` —
+  and always beside the deterministic score it is describing. The house rule is `optimization-tab.tsx`'s
+  and it is unchanged here: **a machine opinion whose origin is hidden reads as a platform ruling.**
+  The score is arithmetic and the prose is advisory, and the UI must not let a reader confuse which
+  is which.
+- **`narrativeStatus: "skipped_unconfigured"` renders as a state, not an error.** It means this
+  environment has no model key. The panel says the score stands and the narrative was not generated;
+  it does not show a failure a founder cannot act on.
+- **Money is a decimal string.** `importValueInCents` comes off a `bigint` column and an import bill
+  for a country overflows `Number.MAX_SAFE_INTEGER` in cents faster than anything else on this
+  surface. `BigInt`, then `formatMoneyFromCents`, which already accepts one.
+
+### Registration, when the routes land
+
+| Where                                | What                                                                                                                                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `components/home/layout/navbar.tsx`  | `RESEARCH_AND_DEVELOPMENT_SUBPAGES` — otherwise the breadcrumb reads "Import intelligence" from `prettifySlug`, which is close but not the title                                                 |
+| `app/sitemap.ts`                     | `STATIC_PUBLIC_PATHS`, the R&D block                                                                                                                                                             |
+| `lib/sitemap-sources.ts`             | a `"use cache"` commodity enumerator beside `getSupplierSitemapEntries`, appended to `SITEMAP_SOURCES` — **which runs sequentially**, never `Promise.all`, on the backend's 20-connection budget |
+| `lib/roadmap/site-roadmap.ts`        | `kind: "planned"` until the page exists, then `kind: "route"` + a `kind: "dynamic"` child                                                                                                        |
+| `components/home/layout/sidebar.tsx` | **not added.** The four stage routes are deliberately absent from the sidebar and this is a sibling of them, reached from the landing rail                                                       |
+
+### Deliberately not built
+
+- **No tariff or duty display.** Rates are jurisdictional and dated; a stale one is worse than none.
+- **No landed-cost figure.** It needs a per-supplier price, and §4c.4 refuses to invent one — a
+  supplier belongs to no project, so a directory-level price would have to invent a currency too.
+- **No commodity↔project pin.** `research_project_commodity_link` is what turns this dataset into
+  per-project advice, and it is the phase after this one.
+- **No moderator UI.** §11m's three writes are `moderate_taxonomy` and belong to the admin console.

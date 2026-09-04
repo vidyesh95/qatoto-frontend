@@ -2118,6 +2118,61 @@ __none__` rendered **"Couldn't load this cluster"**. After: `__none__` and `not-
       streamed document carries the not-found boundary's markup either way, so that phrase appears
       even on a page that rendered perfectly. It is what made the first A/B read as ambiguous.
 
+## 19. Import Intelligence & AI-Driven Localization — DESIGNED, nothing built
+
+A new R&D reference surface: country-level import volumes per HS6 commodity, domestic substitute mappings, and a
+feasibility score with an LLM-written localization pathway. The full design is
+`docs/R_AND_D_STRUCTURE.md` §20 (frontend) and `qatoto-backend/docs/R_AND_D_BACKEND_STRUCTURE.md`
+§10A (data) / §11m (API), ordered there as backend build phase 9.
+
+**⚠️ Nineteen is the next free anchor, not the next position in this list.** Numbers here are
+anchors and gaps mean an item shipped; 1–18 are all spoken for somewhere in this file.
+
+**Backend first, and the frontend is deliberately not started.** Five tables, six enums, one
+migration (**0162** — `0161_aromatic_patriot.sql` is current), a pure score module, two pg-boss
+jobs, one root-mounted router with six reads and three moderator writes, a seed script and two
+verification scripts. Building the frontend against a contract nobody has run would mean
+negotiating it twice.
+
+**What is a PURCHASE rather than a task** — the same shape as §18's freight rate cards. The
+baseline is a **seeded reference set: ~200 HS6 manufacturing commodities for India**, real
+published figures with a source on every row. A proprietary dataset (DGCI&S, Volza) replaces it
+later through `import_trade_flow.data_origin`, which exists from the first migration so the swap
+is rows rather than a schema change. **No UN Comtrade sync job** — an automated feed buys schema
+drift, per-reporter sanitization and rate-limit backoff before anyone has looked at the surface.
+
+⚠️ **A seeded figure is a published figure or it is not a row.** If a number cannot be sourced,
+the commodity ships with **no flow row** and the surface says "no import data recorded". It does
+not ship a zero. Zero is a finding; null is the absence of one.
+
+**The AI half needs no new vendor, and that was checked rather than assumed.**
+`qatoto-backend/src/modules/rnd/gemini.ts` already makes this call over plain `fetch` with no
+SDK, and `GEMINI_API_KEY` / `GEMINI_MODEL` / `GEMINI_TIMEOUT_MS` are already in
+`src/config/index.ts`. There is **no `anthropic` and no `openai` dependency in either repo**, and
+adding one means a second key, a second config block, a second error classifier and a second
+`.env.example` section for a call this codebase already makes correctly.
+
+⚠️ **One refactor to shipped code is on the critical path**: `gemini.ts` keeps its transport half
+private (`generateOnce`, the timeout, the error classification, the single repair attempt). It
+moves to `gemini-transport.ts` so the narrative module imports it rather than duplicating ~120
+lines of vendor call. Pure move; the guard is `gemini.test.ts` staying green with no edits to the
+test file.
+
+**The score is arithmetic and the model never touches it.** 0–100 from a pure integer step-ladder
+module mirroring `demand-score.ts` (budgets 40/25/20/15, asserted at module load to sum to 100).
+The LLM is handed the computed score, its four component sub-scores and the evidence, and writes
+prose over arithmetic it cannot contradict. It may never produce a score, a rank or a verdict —
+`gemini.ts`'s own rule, unchanged.
+
+**Two things the design refuses, recorded so they are not re-litigated:** no tariff or duty
+table (jurisdictional and dated — a stale rate is worse than none), and no landed-cost figure (it
+needs a per-supplier price, and `supplier` deliberately has none because a quote belongs to an
+engagement priced in a project's currency).
+
+⚠️ **`db:verify-import-intelligence-constraints` and `db:smoke-import-intelligence` write to the
+SHARED Aiven database** — there is no local dev instance. Ask before running either, and the
+smoke script reaches the live model, so it also costs requests.
+
 ## Cross-pillar seams
 
 R&D, Store and Studio keep separate copies of the same venture. The four moves that shipped
