@@ -69,10 +69,10 @@ export default async function MarketInsightDetailPage({ insightId }: { insightId
     <div className="space-y-6 px-4 pt-4 pb-4 lg:px-6 lg:pt-6 lg:pb-6">
       <header className="space-y-2">
         <Link
-          href="/research-and-development/knowledge-hub"
+          href="/research-and-development/market-research"
           className="text-xs font-medium text-[#00696E]"
         >
-          ← Knowledge Hub
+          ← Market Research
         </Link>
         <p className="flex items-baseline gap-2 text-4xl font-semibold">
           {formatMarketInsightStat(insight)}

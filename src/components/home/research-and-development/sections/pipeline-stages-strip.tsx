@@ -28,7 +28,7 @@ const PIPELINE_STAGES: PipelineStage[] = [
     title: "Market Research",
     blurb: "See where demand is highest before anything gets built.",
     iconSrc: "/icons/analytics_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-    href: "/research-and-development/knowledge-hub",
+    href: "/research-and-development/market-research",
   },
   {
     stepNumber: "03",

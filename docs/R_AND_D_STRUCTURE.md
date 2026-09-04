@@ -135,7 +135,7 @@ stage** — all six are built (§4c).
 
 Fourteen page routes built, each with a `loading.tsx`.
 
-`🔌` reads the backend · `🧪` still static mock · `🚫` blocked, no backend exists.
+`🔌` reads the backend · `🧪` still static mock · `🚫` blocked, no backend exists · `↩️` a 308 in `next.config.ts`.
 
 ```text
 🔌 /research-and-development                             pipeline hub landing
@@ -144,7 +144,7 @@ Fourteen page routes built, each with a `loading.tsx`.
 🧪 /research-and-development/project/[id]/workshop       Virtual Workshop                — phase 3
 🧪 /research-and-development/project/[id]/proof-of-effort Slicing Pie ledger (6 tabs)    — phase 4, §5b
 🔌 /research-and-development/problem-map                 Civic Pulse map                 — stage 01
-🔌 /research-and-development/knowledge-hub               market intelligence             — stage 02
+🔌 /research-and-development/market-research             BOTH evidence bases, tabbed     — stage 02, §7
 🔌 /research-and-development/talent                      people trading skills for equity
 🔌 /research-and-development/funding                     investor deal-flow view
 🚫 /research-and-development/projects/project-immortal   moonshot research program — §4b, §18
@@ -153,7 +153,7 @@ Fourteen page routes built, each with a `loading.tsx`.
 🧪 /research-and-development/build-log                   cross-project daily-log feed    — stage 04, phase 3
 🧪 /research-and-development/governance                  commitments + statements        — stage 05, phase 5
 🔌 /research-and-development/go-to-market                suppliers → store listing       — stage 06, §4c.4
-🔌 /research-and-development/import-intelligence            country import volumes           — §20
+↩️ /research-and-development/import-intelligence            308 → market-research?tab=…   — §20
 🔌 /research-and-development/import-intelligence/[hsCode]   one commodity + its assessment   — §20
 ```
 
@@ -222,7 +222,7 @@ The six `href`s in `PIPELINE_STAGES` — every one of them now a route, none an 
 | #   | Stage                | Was                  | Now                                          |
 | --- | -------------------- | -------------------- | -------------------------------------------- |
 | 01  | Problem Mapping      | `/problem-map`       | unchanged                                    |
-| 02  | Market Research      | `/knowledge-hub`     | unchanged                                    |
+| 02  | Market Research      | `/market-research`   | renamed — the stage was always called this   |
 | 03  | Team Building        | `#open-roles`        | ✅ `/research-and-development/team-building` |
 | 04  | Build & Daily Logs   | `#featured-projects` | ✅ `/research-and-development/build-log`     |
 | 05  | Funding & Governance | `#featured-projects` | ✅ `/research-and-development/governance`    |
@@ -415,17 +415,17 @@ than an absent one.
 
 **New data this section added** — the only genuinely new mock in §4c:
 
-| File                                                                    | Banner         |
-| ----------------------------------------------------------------------- | -------------- |
-| `components/home/research-and-development/import-intelligence-page.tsx` | `server-fetch` |
-| `components/home/research-and-development/commodity-detail-page.tsx`    | `server-fetch` |
-| `sections/localization-leaderboard.tsx`                                 | `props-only`   |
-| `sections/commodity-directory.tsx`                                      | `props-only`   |
-| `sections/trade-flow-table.tsx`                                         | `props-only`   |
-| `sections/substitute-list.tsx`                                          | `props-only`   |
-| `sections/feasibility-score-panel.tsx`                                  | `props-only`   |
-| `sections/localization-pathway-panel.tsx`                               | `props-only`   |
-| `cards/commodity-card.tsx`                                              | `props-only`   |
+| File                                                                 | Banner         |
+| -------------------------------------------------------------------- | -------------- |
+| `components/home/research-and-development/market-research-page.tsx`  | `server-fetch` |
+| `components/home/research-and-development/commodity-detail-page.tsx` | `server-fetch` |
+| `sections/localization-leaderboard.tsx`                              | `props-only`   |
+| `sections/commodity-directory.tsx`                                   | `props-only`   |
+| `sections/trade-flow-table.tsx`                                      | `props-only`   |
+| `sections/substitute-list.tsx`                                       | `props-only`   |
+| `sections/feasibility-score-panel.tsx`                               | `props-only`   |
+| `sections/localization-pathway-panel.tsx`                            | `props-only`   |
+| `cards/commodity-card.tsx`                                           | `props-only`   |
 
 The supplier shape is authored in **§11 wire format from the start** — `leadTimeDays`,
 `minimumOrderQuantity`, snake_case enum values — like `compensation.ts` and `oversight.ts` were. It
@@ -654,18 +654,93 @@ Two things this surface currently renders that the contract contradicts, both on
 
 ---
 
-## 7. Knowledge hub — `/research-and-development/knowledge-hub`
+## 7. Market Research — `/research-and-development/market-research`
 
-- Header framing: "where demand is highest."
-- **Insight card grid** — the same `MarketInsightCard` as landing 4.5, full set.
-- **Demand leaderboard** (`trending-demand-signals`): rank, category, region, demand score, trend,
-  related-projects count.
-- **Rising categories** trend chips row.
+**Stage 02 of the pipeline, and the surface that answers "what should I build" from both
+directions.** Was the knowledge hub; absorbed import substitution (§20) and took the name the
+pipeline strip had always used for it.
 
-All static mock. No chart library — plain numbers + arrow glyphs (▲ ▼ —). Real charting is a later
-phase. Scores are server-computed on a nightly schedule once integrated, never computed on read and
-never accepted in a body.
+⚠️ **THE RENAME WAS THE FIX FOR A REACHABILITY BUG, not a cosmetic change.**
+`PIPELINE_STAGES[1]` has been titled "Market Research" since it was written and pointed at
+`/knowledge-hub`, which held only the reported-problems half of the evidence. Import
+intelligence — the other half — had NO link from anywhere in the app: its own detail-page
+breadcrumb, `/roadmap` and `sitemap.xml`, and nothing else. Two surfaces answering one
+question with one of them unreachable was the defect; a link would have left the IA saying
+two things.
 
+### Three tabs, as a `?tab=` param
+
+| Tab                   | Shows                                                                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------- |
+| `overview` (default)  | Country picker, KPI row, the opportunity scatter, the agreement band, and "Ruled out, and why" |
+| `demand`              | The market-insight grid and the demand leaderboard — the old knowledge hub, unchanged          |
+| `import-substitution` | The feasibility leaderboard and the HS6 catalogue — §20's two sections, unchanged              |
+
+A query param rather than nested routes or client state: a `useState` tab is not shareable,
+does not survive back-navigation and cannot be server-rendered. It is the same mechanism
+`FilterChipRow` uses for every other selection in R&D, and it keeps the surface a server
+component.
+
+**Every read fires on every tab.** The tab decides what RENDERS, not what is fetched — the
+country picker has to work everywhere and the KPI row must not disagree with itself between
+tabs. Six concurrent reads, each with its own view state.
+
+### The two evidence bases are never merged into one number
+
+|        | Demand signals                                                | Localization assessments    |
+| ------ | ------------------------------------------------------------- | --------------------------- |
+| Key    | `(category × region)`                                         | `(HS6 commodity × country)` |
+| Counts | people who reported a problem                                 | national customs filings    |
+| Shape  | `rank`, 0–100 score, previous score, `trendDirection`, `asOf` | **identical five fields**   |
+
+⚠️ **That identical shape is exactly what makes averaging them tempting and wrong.** There is
+no join on the wire. The only shared key is the research category, which is what the
+**agreement band** correlates on — and it says so in its own copy, twice: once that it is a
+coincidence rather than a combined score, and once that eight categories covering 5,668
+commodities is the coarsest possible link.
+
+### The opportunity scatter
+
+A new chart primitive (`src/components/charts/scatter-frame.tsx`, `scatter-series.tsx`,
+`src/lib/charts/scatter-scale.ts`) — the two-continuous-axis sibling of the bar charting,
+which is band-based and could not express this.
+
+⚠️ **THE AXES ARE SCORE COMPONENTS, NOT MONEY.** Import value spans five orders of magnitude
+($1M to $141B), so a linear axis piles every point on the origin and a log axis on a "how big
+is the prize" chart misleads more than it reveals. It plots `importDependencyPoints` (0–35)
+against `exportCapabilityPoints` (0–25), both bounded integers, with the total score as the
+bubble. Top-right is the reading: a large import bill against proven domestic capability.
+
+⚠️ **The bubble scales by AREA, not diameter.** Radius ∝ √magnitude, because a reader
+perceives area — mapping magnitude onto the radius makes a value twice as large draw four
+times the ink. That correction is the single most common way a hand-rolled bubble chart lies.
+
+### "Ruled out, and why"
+
+199 commodities sit in the catalogue and not in the ranking, because the country records no
+imports of them; demand cells with no scoring run are absent rather than zeroed; and tariffs,
+duty and landed cost are not modelled at all. A ranking that shows only what it kept invites
+the reader to assume it considered everything.
+
+### The redirects live in `next.config.ts`, NOT in page shims
+
+⚠️ **A `redirect()` server component under `research-and-development/loading.tsx` answers 200.** The Suspense boundary commits its status before the dynamic hole resolves — the same
+mechanism `todo.md` records for `notFound()`, which is correct for a 404 and a SOFT REDIRECT
+for a permanent move: a crawler indexes the old URL as a live page and a reader with JS off
+never arrives. Verified: the shims answered 200 before they were moved, and 308 after.
+
+| Old                                 | New                                        |
+| ----------------------------------- | ------------------------------------------ |
+| `/knowledge-hub`                    | `/market-research`                         |
+| `/knowledge-hub/insight/:insightId` | `/market-research/insight/:insightId`      |
+| `/import-intelligence`              | `/market-research?tab=import-substitution` |
+
+⚠️ **The third has no `:path*`.** `/import-intelligence/[hsCode]` did NOT move — it is the
+target of the sitemap enumerator and of every commodity card, and a wildcard would redirect
+all 5,668 of them into a tab.
+
+**Indexed, unlike the hub it replaced.** That route carried `robots: { index: false }`
+justified as "signed-in only", which had stopped being true — every read here is public.
 ---
 
 ## 8. Sheets
@@ -1026,28 +1101,28 @@ Every row below is wired **unless its State column says otherwise** — two do. 
 READ map; §19 lists the write islands separately, because a write belongs to a control rather
 than to a route.
 
-| Frontend route                          | Endpoints                                                                                                                                                                                                                                    | State          |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| `/research-and-development`             | `GET /research-projects` · `/discovery/problem-clusters` · `/discovery/market-insights` · `/open-roles`                                                                                                                                      | ✅ wired       |
-| `/new`                                  | `GET /research-categories?status=approved` → `POST /research-categories` (when new) → `POST /research-projects`. Creates a **DRAFT**; publishing is separate                                                                                 | ✅ wired       |
-| `/applications`                         | `GET /applications/mine` · `GET /invites/mine` → invite `accept` / `decline`                                                                                                                                                                 | ✅ wired       |
-| `/project/[id]`                         | `GET /research-projects/:slug` **first**, then `…/roles` · `…/milestones` · `…/daily-logs` · `…/funding-rounds` · `…/investor-confidence` · `…/launch-readiness` · `…/compensation-agreements` · `…/compensation-periods` · `…/compensation` | ✅ wired       |
-| `/project/[id]/workshop`                | `GET /research-projects/:slug` then `…/workshop` (board, files, chat, read state in one payload)                                                                                                                                             | ✅ wired       |
-| `/project/[id]/proof-of-effort`         | `GET /research-projects/:slug` then twelve §9 reads (§19)                                                                                                                                                                                    | ✅ wired       |
-| `/problem-map`                          | `GET /discovery/problem-clusters` · `/research-categories` · `/discovery/regions`                                                                                                                                                            | ✅ wired       |
-| `/problem-map/cluster/[clusterId]`      | `GET /discovery/problem-clusters/:clusterId`                                                                                                                                                                                                 | ✅ wired       |
-| `/knowledge-hub`                        | `GET /discovery/market-insights` · `/discovery/demand-signals`                                                                                                                                                                               | ✅ wired       |
-| `/talent`                               | `GET /discovery/talent` · `/discovery/skills` · `/open-roles`                                                                                                                                                                                | ✅ wired       |
-| `/talent/[handle]`                      | `GET /discovery/talent/:talentUserIdOrHandle`                                                                                                                                                                                                | ✅ wired       |
-| `/funding`                              | `GET /funding/deals` → `GET /funding-rounds/:id/pledge-options` → `POST …/pledges`                                                                                                                                                           | ✅ wired       |
-| `/governance`                           | `GET /governance/summary` — public aggregates, `disclosureKeys`, and the caller's own open lines                                                                                                                                             | ✅ wired       |
-| `/team-building`                        | `GET /open-roles` · `/research-projects?stage=team_building` · `/discovery/talent` · `/discovery/skills`                                                                                                                                     | ✅ wired       |
-| `/build-log`                            | `GET /daily-logs` (member-scoped, keyset) · `/daily-logs/streak-leaderboard` (public)                                                                                                                                                        | ✅ wired       |
-| `/go-to-market`                         | `GET /suppliers` · `/supplier-capabilities` · `/launch-ready-projects` · `/discovery/regions`                                                                                                                                                | ✅ wired       |
-| `/go-to-market/supplier/[supplierSlug]` | `GET /suppliers/:supplierSlug`                                                                                                                                                                                                               | ✅ wired       |
-| `/projects/project-immortal`            | `/research-programs/*`                                                                                                                                                                                                                       | 🚫 **blocked** |
-| `/import-intelligence`                  | `GET /localization-assessments` · `/import-commodities` · `/import-commodity-kinds` · `/discovery/regions` · `/research-categories?status=approved`                                                                                          | ✅ wired       |
-| `/import-intelligence/[hsCode]`         | `GET /import-commodities/:hsCode` **first**, then `…/trade-flows` · `…/substitutes`                                                                                                                                                          | ✅ wired       |
+| Frontend route                          | Endpoints                                                                                                                                                                                                                                                        | State          |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| `/research-and-development`             | `GET /research-projects` · `/discovery/problem-clusters` · `/discovery/market-insights` · `/open-roles`                                                                                                                                                          | ✅ wired       |
+| `/new`                                  | `GET /research-categories?status=approved` → `POST /research-categories` (when new) → `POST /research-projects`. Creates a **DRAFT**; publishing is separate                                                                                                     | ✅ wired       |
+| `/applications`                         | `GET /applications/mine` · `GET /invites/mine` → invite `accept` / `decline`                                                                                                                                                                                     | ✅ wired       |
+| `/project/[id]`                         | `GET /research-projects/:slug` **first**, then `…/roles` · `…/milestones` · `…/daily-logs` · `…/funding-rounds` · `…/investor-confidence` · `…/launch-readiness` · `…/compensation-agreements` · `…/compensation-periods` · `…/compensation`                     | ✅ wired       |
+| `/project/[id]/workshop`                | `GET /research-projects/:slug` then `…/workshop` (board, files, chat, read state in one payload)                                                                                                                                                                 | ✅ wired       |
+| `/project/[id]/proof-of-effort`         | `GET /research-projects/:slug` then twelve §9 reads (§19)                                                                                                                                                                                                        | ✅ wired       |
+| `/problem-map`                          | `GET /discovery/problem-clusters` · `/research-categories` · `/discovery/regions`                                                                                                                                                                                | ✅ wired       |
+| `/problem-map/cluster/[clusterId]`      | `GET /discovery/problem-clusters/:clusterId`                                                                                                                                                                                                                     | ✅ wired       |
+| `/market-research`                      | `GET /discovery/market-insights` · `/discovery/demand-signals` · `/localization-assessments` · `/import-commodities` · `/import-commodity-kinds` · `/import-reporters` — all six on every tab, because the country picker and the KPI row must agree across tabs | ✅ wired       |
+| `/talent`                               | `GET /discovery/talent` · `/discovery/skills` · `/open-roles`                                                                                                                                                                                                    | ✅ wired       |
+| `/talent/[handle]`                      | `GET /discovery/talent/:talentUserIdOrHandle`                                                                                                                                                                                                                    | ✅ wired       |
+| `/funding`                              | `GET /funding/deals` → `GET /funding-rounds/:id/pledge-options` → `POST …/pledges`                                                                                                                                                                               | ✅ wired       |
+| `/governance`                           | `GET /governance/summary` — public aggregates, `disclosureKeys`, and the caller's own open lines                                                                                                                                                                 | ✅ wired       |
+| `/team-building`                        | `GET /open-roles` · `/research-projects?stage=team_building` · `/discovery/talent` · `/discovery/skills`                                                                                                                                                         | ✅ wired       |
+| `/build-log`                            | `GET /daily-logs` (member-scoped, keyset) · `/daily-logs/streak-leaderboard` (public)                                                                                                                                                                            | ✅ wired       |
+| `/go-to-market`                         | `GET /suppliers` · `/supplier-capabilities` · `/launch-ready-projects` · `/discovery/regions`                                                                                                                                                                    | ✅ wired       |
+| `/go-to-market/supplier/[supplierSlug]` | `GET /suppliers/:supplierSlug`                                                                                                                                                                                                                                   | ✅ wired       |
+| `/projects/project-immortal`            | `/research-programs/*`                                                                                                                                                                                                                                           | 🚫 **blocked** |
+| `/import-intelligence`                  | — **308 to `/market-research?tab=import-substitution`**, declared in `next.config.ts`                                                                                                                                                                            | ↩️ redirect    |
+| `/import-intelligence/[hsCode]`         | `GET /import-commodities/:hsCode` **first**, then `…/trade-flows` · `…/substitutes`                                                                                                                                                                              | ✅ wired       |
 
 ### ⚠️ Where the backend contract doc is wrong about its own backend
 
@@ -1417,7 +1492,7 @@ filter has to hold its own state, and none of them may reach for a context provi
 ├── workshop-page.tsx                  3-tab shell (boards/files/chat)
 ├── proof-of-effort-page.tsx           6-tab shell (§5b)
 ├── problem-map-page.tsx               thin shell over the canvas island
-├── knowledge-hub-page.tsx             insight grid + leaderboard + trends
+├── market-research-page.tsx           tabs: overview / demand / import substitution
 ├── talent-page.tsx                    filters + profile grid + open-roles rail
 ├── funding-page.tsx                   derives FundingDeal views from open rounds
 ├── project-immortal-page.tsx          moonshot program composition (§4b)
@@ -1746,7 +1821,7 @@ find . -name '*.tsx' -exec grep -L 'TRANSPORT:' {} \; | wc -l   # must be 0
 ```
 
 The four kinds must sum to the file total, and the unlabelled count must be zero. At the time of
-writing: **159 files — 22 `server-fetch`, 52 `client-query`, 85 `props-only`, 0 `mock`.**
+writing: **163 files — 21 `server-fetch`, 52 `client-query`, 90 `props-only`, 0 `mock`.**
 
 ⚠️ **THOSE NUMBERS REPLACED 137/15/34/87/1, AND THE GAP IS BIGGER THAN THE WORK THAT
 CLOSED IT.** §20 added seven files; the rest had drifted unnoticed between revisions, which
@@ -1755,25 +1830,24 @@ is exactly why the block above says to re-derive rather than to trust. Note also
 
 ### The `server-fetch` page bodies
 
-| Body                                | Endpoints                                                                                                                                                                                                                                                                                                      | Notes                                                                                                                                                             |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `research-and-development-page.tsx` | `/research-projects` · `/discovery/problem-clusters?sort=opportunity` · `/discovery/market-insights` · `/open-roles`                                                                                                                                                                                           | 4 concurrent reads, one view state per rail — a dead endpoint dims one rail                                                                                       |
-| `knowledge-hub-page.tsx`            | `/discovery/market-insights` · `/discovery/demand-signals`                                                                                                                                                                                                                                                     | Leaderboard renders `asOf`; empty means no scoring run, not zero demand                                                                                           |
-| `problem-map-page.tsx`              | `/discovery/problem-clusters` · `/research-categories?status=approved` · `/discovery/regions`                                                                                                                                                                                                                  | Category AND region chips are Links; canvas island holds selection only                                                                                           |
-| `cluster-detail-page.tsx`           | `/discovery/problem-clusters/:clusterId`                                                                                                                                                                                                                                                                       | Addressed by ID — clusters have no slug. A merged cluster links on to the one it merged into                                                                      |
-| `talent-page.tsx`                   | `/discovery/talent` **(requireAuth)** · `/discovery/skills` · `/open-roles`                                                                                                                                                                                                                                    | Signed out → sign-in panel + empty grid                                                                                                                           |
-| `talent-detail-page.tsx`            | `/discovery/talent/:handle` **(requireAuth)**                                                                                                                                                                                                                                                                  | Unpublished → `404` → `notFound()`, identical to a person who does not exist                                                                                      |
-| `team-building-page.tsx`            | `/open-roles` · `/research-projects?stage=team_building` · `/discovery/skills` · `/discovery/talent`                                                                                                                                                                                                           | Spotlight strip has its own signed-out branch                                                                                                                     |
-| `go-to-market-page.tsx`             | `/suppliers` · `/supplier-capabilities` · `/launch-ready-projects` · `/discovery/regions`                                                                                                                                                                                                                      | Repeated `?capability=` is **AND**ed in SQL                                                                                                                       |
-| `supplier-detail-page.tsx`          | `/suppliers/:supplierSlug`                                                                                                                                                                                                                                                                                     | An INACTIVE supplier is a 404 — never rendered as "withdrawn"                                                                                                     |
-| `import-intelligence-page.tsx`      | `/localization-assessments` · `/import-commodities` · `/import-commodity-kinds`                                                                                                                                                                                                                                | The leaderboard and the catalogue use SEPARATE filter keys (`commodityKind`, `catalogueKind`) — a shared one would make a chip in one answer the other's question |
-| `commodity-detail-page.tsx`         | `/import-commodities/:hsCode` **then** `…/trade-flows` · `…/substitutes`                                                                                                                                                                                                                                       | A NULL `assessment` inside a 200 is "not scored yet"; only the commodity read's 404 is `notFound()`                                                               |
-| `funding-page.tsx`                  | `/funding/deals` **(requireAuth)**                                                                                                                                                                                                                                                                             | Unpaginated on the wire. Each deal card carries the pledge island                                                                                                 |
-| `governance-page.tsx`               | `/governance/summary` **(attachOptionalUser)**                                                                                                                                                                                                                                                                 | Renders signed out. Caller's own lines only; the worked example is authored and labelled                                                                          |
-| `project-detail.tsx`                | `/research-projects/:slug` (public) **then** `…/roles` · `…/milestones` · `…/daily-logs` · `…/funding-rounds` · `…/investor-confidence` · `…/launch-readiness` · the three §7A reads                                                                                                                           | The public read runs FIRST and alone; its 404 is `notFound()`. Nine member-scoped reads then run concurrently                                                     |
-| `proof-of-effort-page.tsx`          | `/research-projects/:slug` **then** `…/proof-of-effort` · `…/slice-ledger` · `…/equity/open-role-projection` · `…/pie-bake` · `…/effort-claims` · `…/physical-receipts` · `…/allocation-proposals` · `…/disputes` · `…/integrations` · `…/optimization-suggestions` · `…/audit-trail` · `…/audit-trail/verify` | Same ordering rule. `…/pie-bake` 404s before the bake, and that is an ABSENCE rather than a failure                                                               |
-| `workshop-page.tsx`                 | `/research-projects/:slug` (public, for the header + roster) · `…/workshop` (member-only)                                                                                                                                                                                                                      | Two reads total; three write islands nested inside the tabs                                                                                                       |
-| `build-log-page.tsx`                | `/daily-logs` **(requireAuth, keyset)** · `/daily-logs/streak-leaderboard` (public)                                                                                                                                                                                                                            | Its feed is now a keyset island (§13). Signed out → hero + legend + public leaderboard + **empty** feed                                                           |
+| Body                                | Endpoints                                                                                                                                                                                                                                                                                                      | Notes                                                                                                         |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `research-and-development-page.tsx` | `/research-projects` · `/discovery/problem-clusters?sort=opportunity` · `/discovery/market-insights` · `/open-roles`                                                                                                                                                                                           | 4 concurrent reads, one view state per rail — a dead endpoint dims one rail                                   |
+| `market-research-page.tsx`          | `/discovery/market-insights` · `/discovery/demand-signals` · `/localization-assessments` · `/import-commodities` · `/import-commodity-kinds` · `/import-reporters`                                                                                                                                             | Leaderboard renders `asOf`; empty means no scoring run, not zero demand                                       |
+| `problem-map-page.tsx`              | `/discovery/problem-clusters` · `/research-categories?status=approved` · `/discovery/regions`                                                                                                                                                                                                                  | Category AND region chips are Links; canvas island holds selection only                                       |
+| `cluster-detail-page.tsx`           | `/discovery/problem-clusters/:clusterId`                                                                                                                                                                                                                                                                       | Addressed by ID — clusters have no slug. A merged cluster links on to the one it merged into                  |
+| `talent-page.tsx`                   | `/discovery/talent` **(requireAuth)** · `/discovery/skills` · `/open-roles`                                                                                                                                                                                                                                    | Signed out → sign-in panel + empty grid                                                                       |
+| `talent-detail-page.tsx`            | `/discovery/talent/:handle` **(requireAuth)**                                                                                                                                                                                                                                                                  | Unpublished → `404` → `notFound()`, identical to a person who does not exist                                  |
+| `team-building-page.tsx`            | `/open-roles` · `/research-projects?stage=team_building` · `/discovery/skills` · `/discovery/talent`                                                                                                                                                                                                           | Spotlight strip has its own signed-out branch                                                                 |
+| `go-to-market-page.tsx`             | `/suppliers` · `/supplier-capabilities` · `/launch-ready-projects` · `/discovery/regions`                                                                                                                                                                                                                      | Repeated `?capability=` is **AND**ed in SQL                                                                   |
+| `supplier-detail-page.tsx`          | `/suppliers/:supplierSlug`                                                                                                                                                                                                                                                                                     | An INACTIVE supplier is a 404 — never rendered as "withdrawn"                                                 |
+| `commodity-detail-page.tsx`         | `/import-commodities/:hsCode` **then** `…/trade-flows` · `…/substitutes`                                                                                                                                                                                                                                       | A NULL `assessment` inside a 200 is "not scored yet"; only the commodity read's 404 is `notFound()`           |
+| `funding-page.tsx`                  | `/funding/deals` **(requireAuth)**                                                                                                                                                                                                                                                                             | Unpaginated on the wire. Each deal card carries the pledge island                                             |
+| `governance-page.tsx`               | `/governance/summary` **(attachOptionalUser)**                                                                                                                                                                                                                                                                 | Renders signed out. Caller's own lines only; the worked example is authored and labelled                      |
+| `project-detail.tsx`                | `/research-projects/:slug` (public) **then** `…/roles` · `…/milestones` · `…/daily-logs` · `…/funding-rounds` · `…/investor-confidence` · `…/launch-readiness` · the three §7A reads                                                                                                                           | The public read runs FIRST and alone; its 404 is `notFound()`. Nine member-scoped reads then run concurrently |
+| `proof-of-effort-page.tsx`          | `/research-projects/:slug` **then** `…/proof-of-effort` · `…/slice-ledger` · `…/equity/open-role-projection` · `…/pie-bake` · `…/effort-claims` · `…/physical-receipts` · `…/allocation-proposals` · `…/disputes` · `…/integrations` · `…/optimization-suggestions` · `…/audit-trail` · `…/audit-trail/verify` | Same ordering rule. `…/pie-bake` 404s before the bake, and that is an ABSENCE rather than a failure           |
+| `workshop-page.tsx`                 | `/research-projects/:slug` (public, for the header + roster) · `…/workshop` (member-only)                                                                                                                                                                                                                      | Two reads total; three write islands nested inside the tabs                                                   |
+| `build-log-page.tsx`                | `/daily-logs` **(requireAuth, keyset)** · `/daily-logs/streak-leaderboard` (public)                                                                                                                                                                                                                            | Its feed is now a keyset island (§13). Signed out → hero + legend + public leaderboard + **empty** feed       |
 
 ### The thirty-four `client-query` islands
 
@@ -1885,6 +1959,11 @@ here that exists purely to read further.
 
 ## 20. Import Intelligence & AI-Driven Localization
 
+⚠️ **THE SURFACE MOVED. §20 IS NOW THE DOMAIN, §7 IS THE PAGE.** Import substitution is a tab
+of Market Research (§7); `/import-intelligence` is a 308 and only `/[hsCode]` survives as a
+route. Everything below describes the DATA and the contract, which did not change — read §7 for
+what a reader actually sees.
+
 **✅ Built, both sides.** The backend is `R_AND_D_BACKEND_STRUCTURE.md` §10A (six tables,
 ten enums, migrations 0162–0163, three jobs) and §11m (six reads, three moderator writes),
 with 251 tests. This side is two `server-fetch` bodies, five `props-only` sections, one
@@ -1947,18 +2026,18 @@ surface follows: the read that decides whether the page exists at all runs first
 The two page bodies now carry rows in §19; the `props-only` sections do not, because §19
 lists page bodies and write islands rather than every leaf.
 
-| File                                                                    | Planned banner |
-| ----------------------------------------------------------------------- | -------------- |
-| `components/home/research-and-development/import-intelligence-page.tsx` | `server-fetch` |
-| `components/home/research-and-development/commodity-detail-page.tsx`    | `server-fetch` |
-| `sections/localization-leaderboard.tsx`                                 | `props-only`   |
-| `sections/commodity-directory.tsx`                                      | `props-only`   |
-| `sections/trade-flow-table.tsx`                                         | `props-only`   |
-| `sections/substitute-list.tsx`                                          | `props-only`   |
-| `sections/feasibility-score-panel.tsx`                                  | `props-only`   |
-| `sections/localization-pathway-panel.tsx`                               | `props-only`   |
-| `cards/commodity-card.tsx`                                              | `props-only`   |
-| `rails/import-intelligence-rail.tsx`                                    | `props-only`   |
+| File                                                                 | Planned banner |
+| -------------------------------------------------------------------- | -------------- |
+| `components/home/research-and-development/market-research-page.tsx`  | `server-fetch` |
+| `components/home/research-and-development/commodity-detail-page.tsx` | `server-fetch` |
+| `sections/localization-leaderboard.tsx`                              | `props-only`   |
+| `sections/commodity-directory.tsx`                                   | `props-only`   |
+| `sections/trade-flow-table.tsx`                                      | `props-only`   |
+| `sections/substitute-list.tsx`                                       | `props-only`   |
+| `sections/feasibility-score-panel.tsx`                               | `props-only`   |
+| `sections/localization-pathway-panel.tsx`                            | `props-only`   |
+| `cards/commodity-card.tsx`                                           | `props-only`   |
+| `rails/import-intelligence-rail.tsx`                                 | `props-only`   |
 
 **No `client-query` island and no `src/hooks/rnd/import-intelligence.ts` in this phase.** The three
 writes §11m defines are all `moderate_taxonomy` — they belong to an admin surface, not to this one.

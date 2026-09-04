@@ -32,7 +32,7 @@ export default function MarketInsightCard({ insight }: { insight: MarketInsight 
       </p>
       <p className="text-sm">
         <Link
-          href={`/research-and-development/knowledge-hub/insight/${insight.id}`}
+          href={`/research-and-development/market-research/insight/${insight.id}`}
           className="hover:underline"
         >
           {insight.headline}

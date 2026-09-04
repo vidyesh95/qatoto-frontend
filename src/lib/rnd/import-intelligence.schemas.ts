@@ -270,6 +270,26 @@ export const ImportCommodityDetailSchema = z
   .strip();
 export type ImportCommodityDetail = z.infer<typeof ImportCommodityDetailSchema>;
 
+/**
+ * One country that actually has trade data.
+ *
+ * ⚠️ THIS IS NOT THE COUNTRY TAXONOMY. `discovery_region` seeds eighteen countries and only the
+ * ones ingested appear here — a picker built off the taxonomy would offer seventeen dead ends.
+ * The counts ride along so a chip can say how much is behind it before it is clicked.
+ */
+export const ImportReporterSchema = z
+  .object({
+    countryCode: z.string(),
+    regionSlug: z.string(),
+    displayLabel: z.string(),
+    commodityCount: z.number(),
+    flowCount: z.number(),
+    earliestPeriodYear: z.number(),
+    latestPeriodYear: z.number(),
+  })
+  .strip();
+export type ImportReporter = z.infer<typeof ImportReporterSchema>;
+
 /** The chip vocabulary. A bare `{ kind }` per value, so the list is server-owned. */
 export const ImportCommodityKindOptionSchema = z
   .object({ kind: ImportCommodityKindSchema })

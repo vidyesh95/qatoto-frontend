@@ -41,9 +41,9 @@ export async function generateMetadata({
   const insightResult = await getMarketInsight(insightId);
   if (!insightResult.success) return { title: "Market insight · R&D" };
   return {
-    title: `${insightResult.data.headline} · Knowledge Hub`,
+    title: `${insightResult.data.headline} · Market Research`,
     description: insightResult.data.summary ?? undefined,
-    alternates: { canonical: `/research-and-development/knowledge-hub/insight/${insightId}` },
+    alternates: { canonical: `/research-and-development/market-research/insight/${insightId}` },
   };
 }
 

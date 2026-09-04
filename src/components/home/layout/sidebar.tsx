@@ -50,6 +50,12 @@ const ICON_PATHS = {
     active: "/icons/flag_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/flag_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  // Stage 02's icon in `pipeline-stages-strip.tsx` already, so the sidebar and the pipeline
+  // strip name the same surface with the same glyph.
+  analytics: {
+    active: "/icons/analytics_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/analytics_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
   school: {
     active: "/icons/school_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/school_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
@@ -114,7 +120,7 @@ const ROUTES = {
   serviceEngagements: "/service-engagements",
   researchAndDevelopment: "/research-and-development",
   problemMap: "/research-and-development/problem-map",
-  knowledgeHub: "/research-and-development/knowledge-hub",
+  marketResearch: "/research-and-development/market-research",
   talent: "/research-and-development/talent",
   funding: "/research-and-development/funding",
   // Project Immortal is now ONE ROW in the generic /programs surface rather than a hardcoded
@@ -355,7 +361,9 @@ const NAVIGATION_CONFIG: NavSection[] = [
     title: "Research and Development",
     items: [
       { path: ROUTES.problemMap, label: "Problem Map", iconKey: "flag" },
-      { path: ROUTES.knowledgeHub, label: "Knowledge Hub", iconKey: "school" },
+      // Stage 02 of the pipeline. It absorbed the knowledge hub AND import intelligence,
+      // the latter of which had no link from anywhere in the app until this entry.
+      { path: ROUTES.marketResearch, label: "Market Research", iconKey: "analytics" },
       { path: ROUTES.talent, label: "Talent", iconKey: "group" },
       { path: ROUTES.funding, label: "Funding", iconKey: "paid" },
       { path: ROUTES.projectImmortal, label: "PROJECT IMMORTAL", iconKey: "selfImprovement" },

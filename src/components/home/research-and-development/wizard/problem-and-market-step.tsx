@@ -4,7 +4,7 @@ import type { NewIdeaStepProps } from "@/components/home/research-and-developmen
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 
 // Step 2: the demand story — who has the problem, where, and what evidence
-// exists. Free text this phase; the Knowledge Hub cross-check is backend-later.
+// exists. Free text this phase; the Market Research cross-check is backend-later.
 export default function ProblemAndMarketStep({ draft, onDraftChange }: NewIdeaStepProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -41,7 +41,7 @@ export default function ProblemAndMarketStep({ draft, onDraftChange }: NewIdeaSt
         />
       </label>
       <p className="text-xs text-muted-foreground">
-        Tip: the Knowledge Hub lists where demand is highest — cite an insight if one fits.
+        Tip: Market Research lists where demand is highest — cite an insight if one fits.
       </p>
     </div>
   );

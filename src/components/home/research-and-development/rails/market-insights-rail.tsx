@@ -19,7 +19,7 @@ export default function MarketInsightsRail({
 }: MarketInsightsRailProps) {
   return (
     <section className="space-y-1">
-      <SectionHeader title={title} href="/research-and-development/knowledge-hub" />
+      <SectionHeader title={title} href="/research-and-development/market-research" />
       <div className="flex gap-3 overflow-x-auto px-4 pt-2 pb-2 lg:px-6">
         {insights.map((insight) => (
           <div key={insight.id} className="w-64 shrink-0">

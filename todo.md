@@ -2118,12 +2118,30 @@ __none__` rendered **"Couldn't load this cluster"**. After: `__none__` and `not-
       streamed document carries the not-found boundary's markup either way, so that phrase appears
       even on a page that rendered perfectly. It is what made the first A/B read as ambiguous.
 
-## 19. Import Intelligence & AI-Driven Localization — SHIPPED end to end
+## 19. Import Intelligence & Market Research — SHIPPED end to end
 
 A new R&D reference surface: country-level import volumes per HS6 commodity, domestic substitute mappings, and a
 feasibility score with an LLM-written localization pathway. The full design is
 `docs/R_AND_D_STRUCTURE.md` §20 (frontend) and `qatoto-backend/docs/R_AND_D_BACKEND_STRUCTURE.md`
 §10A (data) / §11m (API), ordered there as backend build phase 9.
+
+⚠️ **THE SURFACE WAS UNREACHABLE ON ARRIVAL, AND THE FIX WAS A RENAME RATHER THAN A LINK.**
+Import intelligence shipped with no link from anywhere: its own detail-page breadcrumb,
+`/roadmap` and `sitemap.xml`, and nothing else. Meanwhile `PIPELINE_STAGES[1]` had always been
+titled "Market Research" and pointed at `/knowledge-hub`, which held only the
+reported-problems half of the evidence. So the knowledge hub became
+`/research-and-development/market-research` with three tabs — overview, reported demand,
+import substitution — and the sidebar gained the entry it never had. Full write-up in
+`docs/R_AND_D_STRUCTURE.md` §7.
+
+⚠️ **THE THREE REDIRECTS LIVE IN `next.config.ts`, NOT IN PAGE SHIMS, AND THAT IS LOAD-BEARING.**
+A `redirect()` server component under `research-and-development/loading.tsx` answers **200** —
+the Suspense boundary commits the status before the dynamic hole resolves, the same mechanism
+the `notFound()` entry in this file records. Correct for a 404; a soft redirect for a permanent
+move. The shims were built, measured at 200, and moved to the config, where they answer 308.
+
+⚠️ **`GET /import-reporters` was added so the country picker offers choices rather than dead
+ends.** Eighteen countries are seeded in `discovery_region` and one has been ingested.
 
 **⚠️ Nineteen is the next free anchor, not the next position in this list.** Numbers here are
 anchors and gaps mean an item shipped; 1–18 are all spoken for somewhere in this file.

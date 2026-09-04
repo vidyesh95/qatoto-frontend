@@ -96,13 +96,16 @@ const STATIC_PUBLIC_PATHS: readonly string[] = [
   "/store/pathways",
   "/store/providers",
 
-  // R&D hubs. `/knowledge-hub`, `/talent` and `/applications` are `noindex` and stay out.
+  // R&D hubs. `/talent` and `/applications` are `noindex` and stay out. `/market-research`
+  // IS indexed: it replaced the knowledge hub, whose noindex was justified as "signed-in
+  // only" and had stopped being true — every read on it is public.
   "/research-and-development",
   "/research-and-development/build-log",
   "/research-and-development/funding",
   "/research-and-development/go-to-market",
   "/research-and-development/governance",
   "/research-and-development/import-intelligence",
+  "/research-and-development/market-research",
   "/research-and-development/problem-map",
   "/research-and-development/programs",
   "/research-and-development/team-building",

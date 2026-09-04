@@ -21,6 +21,45 @@ const nextConfig: NextConfig = {
     // drop this flag first to fall back to the Babel compiler before hunting the component.
     turbopackRustReactCompiler: true,
   },
+  /**
+   * Permanent URL moves.
+   *
+   * ⚠️ THESE CANNOT BE PAGE SHIMS, and that is the whole reason they live here. A
+   * `redirect()` inside a server component sits BELOW `research-and-development/loading.tsx`,
+   * and a Suspense boundary commits its HTTP status before the dynamic hole resolves — so the
+   * shim answers **200** and the browser only redirects after the stream lands. `todo.md`
+   * records the same mechanism for `notFound()` and calls it working as designed, which it is
+   * for a 404. For a permanent move it is a soft redirect: a crawler indexes the old URL as a
+   * live page, and a reader with JS off never arrives.
+   *
+   * Declared here instead, the redirect happens at the routing layer before any boundary
+   * exists, and answers a real 308.
+   */
+  async redirects() {
+    return [
+      {
+        // The knowledge hub absorbed import substitution and became Market Research —
+        // stage 02 of the pipeline was always called that.
+        source: "/research-and-development/knowledge-hub",
+        destination: "/research-and-development/market-research",
+        permanent: true,
+      },
+      {
+        source: "/research-and-development/knowledge-hub/insight/:insightId",
+        destination: "/research-and-development/market-research/insight/:insightId",
+        permanent: true,
+      },
+      {
+        // ⚠️ THE INDEX ONLY. No `:path*` — `/import-intelligence/[hsCode]` did NOT move, it is
+        // the target of the sitemap enumerator and of every commodity card, and a wildcard here
+        // would redirect all 5,668 of them into a tab.
+        source: "/research-and-development/import-intelligence",
+        destination: "/research-and-development/market-research?tab=import-substitution",
+        permanent: true,
+      },
+    ];
+  },
+
   // this is used to proxy api requests to the backend
   async rewrites() {
     return [

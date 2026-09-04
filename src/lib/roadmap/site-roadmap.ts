@@ -212,7 +212,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
       {
         kind: "route",
         label: "Knowledge hub",
-        href: "/research-and-development/knowledge-hub",
+        href: "/research-and-development/market-research",
         summary: "Market research, papers and prior art before you commit.",
       },
       {

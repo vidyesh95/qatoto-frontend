@@ -112,7 +112,7 @@ export default function OverviewTab({ project, milestonesState }: OverviewTabPro
                 {project.relatedInsights.map((insight) => (
                   <li key={insight.insightId}>
                     <Link
-                      href={`/research-and-development/knowledge-hub/insight/${insight.insightId}`}
+                      href={`/research-and-development/market-research/insight/${insight.insightId}`}
                       className="inline-flex rounded-full border border-[#CAC4D0] px-3 py-1.5 text-xs transition hover:bg-muted"
                     >
                       {insight.headline} →

@@ -16,7 +16,7 @@ const ANIME_SUBPAGES: Record<string, string> = {
 
 const RESEARCH_AND_DEVELOPMENT_SUBPAGES: Record<string, string> = {
   "/research-and-development/problem-map": "Problem Map",
-  "/research-and-development/knowledge-hub": "Knowledge Hub",
+  "/research-and-development/market-research": "Market Research",
   "/research-and-development/talent": "Talent",
   "/research-and-development/funding": "Funding",
   "/research-and-development/new": "Post an Idea",
@@ -33,6 +33,8 @@ const RESEARCH_AND_DEVELOPMENT_SUBPAGES: Record<string, string> = {
   // §20 import intelligence. The index needs an entry because prettifySlug would render
   // "Import intelligence"; an individual commodity is `/[hsCode]` and falls through to it,
   // which renders the six digits — the right answer, because a code is its own name.
+  // The index redirects into Market Research; this entry still names the parent crumb
+  // for `/import-intelligence/[hsCode]`, which did NOT move.
   "/research-and-development/import-intelligence": "Import Intelligence",
   "/research-and-development/programs": "Research Programmes",
   "/research-and-development/programs/new": "Propose a Programme",

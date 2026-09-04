@@ -25,12 +25,14 @@ import {
   ImportCommodityDetailSchema,
   ImportCommodityKindOptionSchema,
   ImportCommoditySchema,
+  ImportReporterSchema,
   LocalizationAssessmentSchema,
   type CommodityTradeFlow,
   type DomesticSubstitute,
   type ImportCommodity,
   type ImportCommodityDetail,
   type ImportCommodityKindOption,
+  type ImportReporter,
   type ListImportCommoditiesFilter,
   type ListLocalizationAssessmentsFilter,
   type ListSubstitutesFilter,
@@ -131,6 +133,19 @@ export function listLocalizationAssessments(
     PaginationMetaSchema,
     options,
   );
+}
+
+/**
+ * The countries that have trade data, with how much.
+ *
+ * Unpaginated: the ceiling is the number of countries ingested. An EMPTY array means nothing
+ * has been synced, which a picker should say plainly rather than falling back to the region
+ * taxonomy and offering countries with nothing behind them.
+ */
+export function listImportReporters(
+  options?: RequestOptions,
+): Promise<ActionResponse<ImportReporter[]>> {
+  return getJson("/import-reporters", ImportReporterSchema.array(), options);
 }
 
 /** The chip vocabulary. Server-owned, so a new commodity kind appears without a deploy. */

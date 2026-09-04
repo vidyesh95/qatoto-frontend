@@ -79,7 +79,7 @@ export const ROADMAP_AUDIENCES: readonly RoadmapAudience[] = [
         action: "Check the prior art before you commit",
         summary:
           "Market research, papers and prior art, so the first month is not spent rediscovering what someone already published.",
-        routes: [{ label: "Knowledge hub", href: "/research-and-development/knowledge-hub" }],
+        routes: [{ label: "Knowledge hub", href: "/research-and-development/market-research" }],
       },
       {
         action: "Propose a whole research programme",
@@ -213,7 +213,7 @@ export const ROADMAP_AUDIENCES: readonly RoadmapAudience[] = [
       {
         action: "Read the market research and prior art",
         summary: "Papers, market work and prior art, gathered per problem rather than per project.",
-        routes: [{ label: "Knowledge hub", href: "/research-and-development/knowledge-hub" }],
+        routes: [{ label: "Knowledge hub", href: "/research-and-development/market-research" }],
       },
       {
         action: "Find an unworked branch of a programme",

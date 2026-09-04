@@ -104,7 +104,7 @@ export default async function ResearchAndDevelopmentPage() {
           emptyMessage="No market insights published yet."
           emptyAction={
             <EmptyRailActionLink
-              href="/research-and-development/knowledge-hub"
+              href="/research-and-development/market-research"
               label="Open knowledge hub"
             />
           }
