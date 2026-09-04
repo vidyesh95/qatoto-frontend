@@ -37,10 +37,18 @@ const DEFAULT_AXIS_TICK_INTERVAL_COUNT = 4;
  * A point of zero radius is invisible, and an invisible point is indistinguishable from a
  * commodity that was excluded — which is the one distinction this surface exists to keep.
  */
-const MINIMUM_POINT_RADIUS_PIXELS = 6;
+const MINIMUM_POINT_RADIUS_PIXELS = 4;
 
-/** The radius the largest magnitude renders at. Bounded so one bubble cannot swallow a quadrant. */
-const MAXIMUM_POINT_RADIUS_PIXELS = 22;
+/**
+ * The radius the largest magnitude renders at.
+ *
+ * ⚠️ DELIBERATELY SMALL, and it is `scatter-series.tsx`'s fan-out that sets the ceiling. Points
+ * sharing a cell are spread on a spiral of `13 × √index` pixels, so a cell holding eight
+ * reaches ~34px from centre. With a 22px radius those circles were bigger than the cluster
+ * containing them and the fan read as scatter rather than as a group; at 11px the cluster holds
+ * together and still separates.
+ */
+const MAXIMUM_POINT_RADIUS_PIXELS = 11;
 
 export interface ScatterChartScale {
   readonly plotWidthUnits: number;

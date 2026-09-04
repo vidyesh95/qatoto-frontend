@@ -10,8 +10,7 @@ import type { ScatterChartScale } from "@/lib/charts/scatter-scale";
 // claimed the resulting distortion was acceptable "because position is the reading and size is
 // a rank". It was not: at 1900x320 against a 1000x600 viewBox the x axis scales 1.90 and the y
 // axis 0.53, so a `r=40` circle rendered 152px wide by 43px tall — a 3.6:1 ellipse. A bubble
-// chart whose bubbles are not round has destroyed the area encoding it exists to carry, and it
-// reads as a different chart type entirely.
+// chart whose bubbles are not round has destroyed the area encoding it exists to carry.
 //
 // An HTML element with equal width and height and a full border-radius is geometrically
 // incapable of that, at any container width. `chart-frame.tsx` already splits SVG (geometry)
@@ -24,6 +23,25 @@ import type { ScatterChartScale } from "@/lib/charts/scatter-scale";
 //
 // THE `title` ATTRIBUTE IS THE ONLY MOUSE AFFORDANCE. There is no tooltip layer and no hover
 // state: it costs nothing, and the exact numbers are in the frame's `sr-only` table.
+
+/**
+ * How far apart fanned-out neighbours sit, in pixels.
+ *
+ * Tuned against `MAXIMUM_POINT_RADIUS_PIXELS` in `scatter-scale.ts`: a little over one
+ * diameter, so two neighbours overlap enough to read as one cluster and not so much that
+ * either centre is hidden.
+ */
+const CLUSTER_SPACING_PIXELS = 13;
+
+/**
+ * The golden angle, in radians.
+ *
+ * Phyllotaxis — the arrangement a sunflower head uses. Successive points at this angle with a
+ * radius of `spacing × √index` pack evenly with no ring seams and no parameters to tune per
+ * cluster size, which is what makes it work identically for a cell holding two points and one
+ * holding twenty.
+ */
+const GOLDEN_ANGLE_RADIANS = Math.PI * (3 - Math.sqrt(5));
 
 export interface ScatterPoint {
   readonly key: string;
@@ -42,30 +60,107 @@ interface ScatterSeriesProps {
   readonly formatPoint: (point: ScatterPoint) => string;
 }
 
+/**
+ * Where one point sits after collided neighbours have been fanned apart.
+ *
+ * ⚠️ WHY THIS EXISTS AT ALL, AND WHY IT IS NOT DISHONEST. Both axes on the localization
+ * scatter are LADDER OUTPUTS: import dependence can only be one of nine values (0, 2, 5, 10,
+ * 15, 21, 26, 31, 35) and export capability likewise. That is a 9×9 grid by construction, so
+ * the top of any ranking piles onto a handful of cells — 24 commodities rendered as 6 visible
+ * circles, which is a chart that has stopped reporting.
+ *
+ * The ladder ALREADY discarded the precision this displaces. A commodity at 31 points is
+ * somewhere in a wide band of import values that all round to the same rung, so nudging it a
+ * few pixels adds no error the score has not already introduced. What it must not do is imply
+ * a reading the axis cannot support — so the offsets are in PIXELS rather than data units,
+ * they are small, and the caller labels the chart as fanned.
+ *
+ * ⚠️ DETERMINISTIC, NOT JITTERED. Position comes from the point's index within its cell, in
+ * the order the caller supplied. Random jitter would move points on every render and, on a
+ * server-rendered surface, differ between the server and client passes — a hydration mismatch
+ * and a chart that will not sit still.
+ */
+interface PlacedPoint {
+  readonly point: ScatterPoint;
+  readonly offsetXPixels: number;
+  readonly offsetYPixels: number;
+  /** How many points share this exact coordinate, including this one. */
+  readonly clusterSize: number;
+  /** 1-based position within that cluster, so a tooltip can say "3 of 8". */
+  readonly clusterIndex: number;
+}
+
+function placePoints(
+  points: readonly ScatterPoint[],
+  scale: ScatterChartScale,
+): readonly PlacedPoint[] {
+  // Group by the RENDERED coordinate rather than the raw value: two points a hundredth of a
+  // point apart land on the same pixel and need separating just the same.
+  const cellMembers = new Map<string, ScatterPoint[]>();
+  for (const point of points) {
+    if (point.magnitude === null) continue;
+    const cellKey = `${String(scale.xPercent(point.x))}:${String(scale.yPercent(point.y))}`;
+    const members = cellMembers.get(cellKey);
+    if (members === undefined) {
+      cellMembers.set(cellKey, [point]);
+    } else {
+      members.push(point);
+    }
+  }
+
+  const placed: PlacedPoint[] = [];
+  for (const members of cellMembers.values()) {
+    for (const [memberIndex, point] of members.entries()) {
+      // The first point of a cell keeps the TRUE coordinate. A lone point is never moved, and
+      // in a cluster the centre one still marks where the cell actually is.
+      const spiralRadius = memberIndex === 0 ? 0 : CLUSTER_SPACING_PIXELS * Math.sqrt(memberIndex);
+      const spiralAngle = memberIndex * GOLDEN_ANGLE_RADIANS;
+      placed.push({
+        point,
+        // Rounded to whole pixels, exactly once, here — the same rule `scatter-scale.ts`
+        // states about hydration.
+        offsetXPixels: Math.round(spiralRadius * Math.cos(spiralAngle)),
+        offsetYPixels: Math.round(spiralRadius * Math.sin(spiralAngle)),
+        clusterSize: members.length,
+        clusterIndex: memberIndex + 1,
+      });
+    }
+  }
+  return placed;
+}
+
 export function ScatterSeries({ scale, points, colorClassName, formatPoint }: ScatterSeriesProps) {
   return (
     <>
-      {points.map((point) => {
+      {placePoints(points, scale).map((placement) => {
+        const { point } = placement;
+        // Narrowed already by `placePoints`, which drops null magnitudes; repeated so the
+        // type holds without an assertion.
         if (point.magnitude === null) return null;
 
-        const radiusPixels = scale.radiusPixels(point.magnitude);
-        const diameterPixels = radiusPixels * 2;
+        const diameterPixels = scale.radiusPixels(point.magnitude) * 2;
+        const clusterNote =
+          placement.clusterSize > 1
+            ? ` · ${String(placement.clusterIndex)} of ${String(placement.clusterSize)} at this exact score`
+            : "";
 
         return (
           <div
             key={point.key}
             // `title`, not a `<title>` child — this is an HTML element now.
-            title={formatPoint(point)}
+            title={`${formatPoint(point)}${clusterNote}`}
             style={{
               left: `${String(scale.xPercent(point.x))}%`,
               top: `${String(scale.yPercent(point.y))}%`,
               width: `${String(diameterPixels)}px`,
               height: `${String(diameterPixels)}px`,
+              // The centring translate first, then the fan-out offset. Written as one
+              // transform because a second `translate` in a class would override this one.
+              transform: `translate(-50%, -50%) translate(${String(placement.offsetXPixels)}px, ${String(placement.offsetYPixels)}px)`,
             }}
-            // Semi-transparent because a dense scatter overlaps, and an opaque point hides the
-            // one behind it — with integer score components many commodities share exact
-            // coordinates, and the stacking IS information about where the mass sits.
-            className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/50 ${colorClassName} opacity-55`}
+            // Semi-transparent so a fanned cluster still reads as one group and the overlap
+            // shows where the mass sits.
+            className={`absolute rounded-full border border-white/60 ${colorClassName} opacity-70`}
           />
         );
       })}

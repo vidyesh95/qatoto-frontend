@@ -77,7 +77,9 @@ export default function OpportunityScatter({
       <div className="space-y-1">
         <h2 className="font-serif text-xl">Where the opportunity sits</h2>
         <p className="text-sm text-muted-foreground">
-          Each circle is one commodity; its size is the feasibility score.
+          Each circle is one commodity; its size is the feasibility score. Both axes are scoring
+          ladders with nine steps each, so commodities often land on the same point — those are
+          fanned into a cluster around it rather than stacked out of sight.
           {asOf === undefined ? null : <> Computed {formatIsoInstant(asOf)}.</>}
         </p>
       </div>
