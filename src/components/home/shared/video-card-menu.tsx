@@ -75,8 +75,8 @@ function iconSrc(iconBaseName: string, isFilled = false): string {
 
 type VideoCardMenuProps = {
   /**
-   * The backend row id. ABSENT on the anime surfaces, which still build cards from
-   * `src/mocks/anime-mocks.ts` — so the two wired items branch on it rather than assume it.
+   * The backend row id. The two wired items branch on its absence rather than assume it —
+   * though no producer omits it any more; see the note on `videoId` in `@/types/video`.
    */
   readonly videoId?: string;
   /** The card's title, used for the trigger's accessible name. */
@@ -94,7 +94,7 @@ type VideoCardMenuProps = {
    * The creator's row id, for "don't recommend channel".
    *
    * NOT `channelHref`, which is a path and is omitted entirely for a creator with no handle.
-   * Absent on the anime surfaces, so the control branches on it exactly as the video ones do.
+   * The control branches on it exactly as the `videoId` ones do.
    */
   readonly creatorId?: string;
   /** The channel's display name — mute confirmation copy, and the queue panel's subtitle. */
@@ -479,10 +479,11 @@ export default function VideoCardMenu({
  * The `switch` is exhaustive with a `never` default, so a fourth state cannot be added to
  * `PreferenceState` without this failing to compile — which is the point of the union.
  *
- * `isAvailable` is false on the anime surfaces, which build cards with neither a `videoId` nor
- * a `creatorId`. It renders the row inert rather than hiding it, matching the four stubs
- * around it: a menu that changes length depending on which page you opened it from is more
- * confusing than one whose rows sometimes do nothing.
+ * `isAvailable` is false for a card carrying neither a `videoId` nor a `creatorId`. It renders
+ * the row inert rather than hiding it, matching the four stubs around it: a menu that changes
+ * length depending on which page you opened it from is more confusing than one whose rows
+ * sometimes do nothing. (The anime surfaces were the only producer that hit this; it is now
+ * unreachable in practice, and stays as a guard rather than a live branch.)
  */
 function PreferenceMenuItem({
   state,

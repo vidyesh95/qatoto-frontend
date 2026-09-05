@@ -7,13 +7,6 @@ import type { ReactNode } from "react";
 import QueueButton from "@/components/home/layout/queue-button";
 import { useSidebar } from "@/state/sidebar-context";
 
-const ANIME_SUBPAGES: Record<string, string> = {
-  "/anime/genre": "Genre",
-  "/anime/daily": "Daily",
-  "/anime/favorite": "Favorite",
-  "/anime/ranking": "Ranking",
-};
-
 const RESEARCH_AND_DEVELOPMENT_SUBPAGES: Record<string, string> = {
   "/research-and-development/problem-map": "Problem Map",
   "/research-and-development/market-research": "Market Research",
@@ -48,11 +41,23 @@ function prettifySlug(slug: string): string {
 type SubHeader = { title: string; parentHref: string; parentLabel: string };
 
 // Sub-page header shown on mobile (back arrow + title) and desktop (breadcrumb).
-// Anime and R&D use fixed title maps; store category/pathway and R&D project
+// R&D uses a fixed title map; blueprints, store category/pathway and R&D project
 // routes derive their title from the last URL segment.
+//
+// BLUEPRINTS IS PREFIX-MATCHED, NOT A FIXED MAP. The /anime map this replaces listed four
+// literal sub-pages and so gave /anime/series/<slug> no breadcrumb at all. A blueprint's slug
+// is human-readable by construction, so prettifying it is better than omitting the crumb.
 function getSubHeader(pathname: string): SubHeader | null {
-  const anime = ANIME_SUBPAGES[pathname];
-  if (anime) return { title: anime, parentHref: "/anime", parentLabel: "Anime" };
+  if (pathname.startsWith("/blueprints/")) {
+    const lastSegment = pathname.split("/").filter(Boolean).at(-1);
+    if (lastSegment) {
+      return {
+        title: prettifySlug(lastSegment),
+        parentHref: "/blueprints",
+        parentLabel: "Blueprints",
+      };
+    }
+  }
   const researchAndDevelopment = RESEARCH_AND_DEVELOPMENT_SUBPAGES[pathname];
   if (researchAndDevelopment) {
     return {

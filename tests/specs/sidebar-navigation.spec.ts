@@ -11,13 +11,13 @@ test.describe("sidebar navigation", () => {
   // most-trafficked product surfaces.
   //
   // ⚠️ EVERY LABEL HERE MUST BE VISIBLE TO A SIGNED-OUT VISITOR. This list used to read
-  // ["Anime", "Store", "AI", "Library", "Cart"] and three of those five could never pass: there has
+  // ["Blueprints", "Store", "AI", "Library", "Cart"] and three of those five could never pass: there has
   // never been an "AI" entry in the sidebar, and `Library` and `Cart` are `requiresSession: true`,
   // so `sidebar.tsx` filters them out entirely for the fresh context these tests run in. They were
   // asserting against a sidebar from an earlier shape of the app.
   //
   // The assertions below are unchanged — only the label list moved.
-  const primaryLabels: SidebarLabel[] = ["Anime", "Store", "R&D", "Advertise with us", "Customer service"];
+  const primaryLabels: SidebarLabel[] = ["Blueprints", "Store", "R&D", "Advertise with us", "Customer service"];
 
   for (const label of primaryLabels) {
     // For each label: visit "/", click the matching <Link> in the sidebar,

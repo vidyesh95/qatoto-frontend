@@ -45,7 +45,7 @@ const TIMELINE = [
   {
     year: "Ship",
     title: "From prototype to product.",
-    body: "Qatoto Store handles shipping, compliance, and support. Marketing videos get produced on platform. Insights from demand maps and anime-inspired R&D feed back into the next iteration.",
+    body: "Qatoto Store handles shipping, compliance, and support. Marketing videos get produced on platform. Insights from demand maps and published teardowns feed back into the next iteration.",
   },
 ];
 
@@ -191,7 +191,7 @@ export default function About() {
               </h2>
               <p className="mt-5 text-base leading-relaxed text-muted-foreground">
                 Demand maps show where the need is. Civic reports flag missing roads, water,
-                infrastructure , by location. Anime-inspired R&D feeds devices and designs.
+                infrastructure , by location. Published teardowns feed devices and designs.
                 Long-horizon research like Project Immortal lives next to commercial work. Every
                 project benefits from what every other project learned.
               </p>
@@ -212,7 +212,7 @@ export default function About() {
                 </span>
               </li>
               <li className="rounded-2xl border border-border bg-background px-5 py-4">
-                <strong className="font-semibold">Anime inspiration feed</strong>
+                <strong className="font-semibold">Engineering blueprints feed</strong>
                 <span className="ml-2 text-muted-foreground">— devices and designs, made real</span>
               </li>
             </ul>

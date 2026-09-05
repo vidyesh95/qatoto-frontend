@@ -1,10 +1,10 @@
-// TRANSPORT: server-fetch — async server component. Reads `GET /anime/hero-slides` via
-// `@/lib/anime/hero.api`. The route is PUBLIC, so no `callerRequestOptions()` and no cookie
+// TRANSPORT: server-fetch — async server component. Reads `GET /blueprints/hero-slides` via
+// `@/lib/blueprints/hero.api`. The route is PUBLIC, so no `callerRequestOptions()` and no cookie
 // forwarding: nothing about a slide depends on who is asking.
 
-import AnimeHeroCarousel from "@/components/home/anime/sections/anime-hero-carousel";
-import { listActiveAnimeHeroSlides } from "@/lib/anime/hero.api";
-import type { PublicAnimeHeroSlide } from "@/lib/anime/schemas";
+import BlueprintsHeroCarousel from "@/components/home/blueprints/sections/blueprints-hero-carousel";
+import { listActiveBlueprintHeroSlides } from "@/lib/blueprints/hero.api";
+import type { PublicBlueprintHeroSlide } from "@/lib/blueprints/hero.schemas";
 
 /**
  * `unavailable` and `empty` both render nothing, and they stay two variants anyway.
@@ -13,13 +13,13 @@ import type { PublicAnimeHeroSlide } from "@/lib/anime/schemas";
  * still showing nothing when the backend is down — is a one-line change inside an already
  * exhaustive switch. Collapsing them now would throw that away for no gain.
  */
-type AnimeHeroViewState =
+type BlueprintsHeroViewState =
   | { status: "unavailable" }
   | { status: "empty" }
-  | { status: "ready"; slides: PublicAnimeHeroSlide[] };
+  | { status: "ready"; slides: PublicBlueprintHeroSlide[] };
 
 /**
- * The hero slot at the top of /anime.
+ * The hero slot at the top of /blueprints.
  *
  * WHY SERVER-FETCH AND NOT `client-query`. The read is public, so there is no session to
  * forward and nothing per-visitor to protect. And this is the topmost above-the-fold element
@@ -38,18 +38,18 @@ type AnimeHeroViewState =
  *      forbidden on a wired surface.
  *
  * `cache: "no-store"` for the same reason as (2): an admin who just reordered the carousel
- * reloads /anime to check it, and a stale answer there reads as a bug in the reorder.
+ * reloads /blueprints to check it, and a stale answer there reads as a bug in the reorder.
  *
  * IF THE BACKEND IS DOWN, THE PAGE RENDERS WITHOUT A HERO. Deliberately: the rails below are
- * the page's content, and an error banner at the top of /anime would announce our
+ * the page's content, and an error banner at the top of /blueprints would announce our
  * infrastructure to every visitor — strictly worse than the card simply not being there.
  * "No live slides" is also a state an admin can create on purpose by deactivating every
  * slide, and it must look identical to a visitor.
  */
-export default async function AnimeHeroCarouselSection() {
-  const slidesResult = await listActiveAnimeHeroSlides({ cache: "no-store" });
+export default async function BlueprintsHeroCarouselSection() {
+  const slidesResult = await listActiveBlueprintHeroSlides({ cache: "no-store" });
 
-  const viewState: AnimeHeroViewState = !slidesResult.success
+  const viewState: BlueprintsHeroViewState = !slidesResult.success
     ? { status: "unavailable" }
     : slidesResult.data.length === 0
       ? { status: "empty" }
@@ -61,7 +61,7 @@ export default async function AnimeHeroCarouselSection() {
     case "empty":
       return null;
     case "ready":
-      return <AnimeHeroCarousel slides={viewState.slides} />;
+      return <BlueprintsHeroCarousel slides={viewState.slides} />;
     default: {
       const exhaustiveCheck: never = viewState;
       return exhaustiveCheck;

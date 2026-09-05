@@ -1,5 +1,5 @@
 // TRANSPORT: client-query — the list, create, edit, reorder, activate/deactivate and delete
-// all call hooks in `@/hooks/anime-hero`. The capability check reads `@/hooks/rnd/platform-roles`.
+// all call hooks in `@/hooks/blueprints-hero`. The capability check reads `@/hooks/rnd/platform-roles`.
 "use client";
 
 import Image from "next/image";
@@ -11,15 +11,18 @@ import {
   MutationSuccessNotice,
 } from "@/components/home/research-and-development/sections/mutation-feedback";
 import {
-  useAdminAnimeHeroSlidesQuery,
-  useCreateAnimeHeroSlideMutation,
-  useDeleteAnimeHeroSlideMutation,
-  useReorderAnimeHeroSlidesMutation,
-  useReplaceAnimeHeroSlideImageMutation,
-  useUpdateAnimeHeroSlideMutation,
-} from "@/hooks/anime-hero";
+  useAdminBlueprintHeroSlidesQuery,
+  useCreateBlueprintHeroSlideMutation,
+  useDeleteBlueprintHeroSlideMutation,
+  useReorderBlueprintHeroSlidesMutation,
+  useReplaceBlueprintHeroSlideImageMutation,
+  useUpdateBlueprintHeroSlideMutation,
+} from "@/hooks/blueprints-hero";
 import { useOwnStaffContextQuery } from "@/hooks/rnd/platform-roles";
-import { MAX_ANIME_HERO_SLIDES, type AdminAnimeHeroSlide } from "@/lib/anime/schemas";
+import {
+  MAX_BLUEPRINT_HERO_SLIDES,
+  type AdminBlueprintHeroSlide,
+} from "@/lib/blueprints/hero.schemas";
 import { ApiRequestError } from "@/lib/http";
 
 /**
@@ -34,7 +37,7 @@ type SlideListViewState =
   | { status: "restricted" }
   | { status: "error"; message: string }
   | { status: "empty" }
-  | { status: "ready"; slides: AdminAnimeHeroSlide[] };
+  | { status: "ready"; slides: AdminBlueprintHeroSlide[] };
 
 function toSlideListViewState(
   canManage: boolean,
@@ -42,7 +45,7 @@ function toSlideListViewState(
     isPending: boolean;
     isError: boolean;
     error: unknown;
-    data: AdminAnimeHeroSlide[] | undefined;
+    data: AdminBlueprintHeroSlide[] | undefined;
   },
 ): SlideListViewState {
   if (!canManage) return { status: "restricted" };
@@ -53,7 +56,7 @@ function toSlideListViewState(
       message:
         query.error instanceof ApiRequestError
           ? query.error.apiError.message
-          : "Couldn't load the anime hero.",
+          : "Couldn't load the Blueprints hero.",
     };
   }
   return query.data.length === 0 ? { status: "empty" } : { status: "ready", slides: query.data };
@@ -78,7 +81,7 @@ function isSeededImage(imageUrl: string): boolean {
 }
 
 /**
- * The /anime hero console.
+ * The /blueprints hero console.
  *
  * THREE CONTROLS ARE THE POINT — add a slide with a link, set which slide shows 1st / 2nd /
  * 3rd, and delete one. Everything else on a row (activate, edit, replace image) exists
@@ -90,28 +93,28 @@ function isSeededImage(imageUrl: string): boolean {
  * it does not hide it, matching every other console here.
  *
  * NOTHING IS OPTIMISTIC. Every control waits for the server and the list re-renders from its
- * answer, so what an admin sees after a reorder is exactly what /anime will serve.
+ * answer, so what an admin sees after a reorder is exactly what /blueprints will serve.
  */
-export default function AnimeHeroSlideAdminPage() {
+export default function BlueprintHeroSlideAdminPage() {
   const staffContextQuery = useOwnStaffContextQuery();
-  const canManageAnimeHero =
+  const canManageBlueprintHero =
     staffContextQuery.data?.capabilities.includes("manage_promotions") ?? false;
 
-  const slidesQuery = useAdminAnimeHeroSlidesQuery(canManageAnimeHero);
+  const slidesQuery = useAdminBlueprintHeroSlidesQuery(canManageBlueprintHero);
 
   // THE PAGE OWNS ONLY LIST-LEVEL WRITES. Update and image-replace live inside SlideRow so
   // their errors render on the row the admin clicked rather than in one banner at the top of
   // the page. Reorder stays here on purpose: it sends the whole permutation, so its failure
   // belongs to the list, not to any single row.
-  const createSlide = useCreateAnimeHeroSlideMutation();
-  const reorderSlides = useReorderAnimeHeroSlidesMutation();
-  const deleteSlide = useDeleteAnimeHeroSlideMutation();
+  const createSlide = useCreateBlueprintHeroSlideMutation();
+  const reorderSlides = useReorderBlueprintHeroSlidesMutation();
+  const deleteSlide = useDeleteBlueprintHeroSlideMutation();
 
   const firstError = [createSlide.error, reorderSlides.error, deleteSlide.error].find(
     (error): error is ApiRequestError => error instanceof ApiRequestError,
   );
 
-  const listState = toSlideListViewState(canManageAnimeHero, {
+  const listState = toSlideListViewState(canManageBlueprintHero, {
     isPending: slidesQuery.isPending,
     isError: slidesQuery.isError,
     error: slidesQuery.error,
@@ -141,11 +144,11 @@ export default function AnimeHeroSlideAdminPage() {
   return (
     <div className="space-y-8">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Anime hero</h1>
+        <h1 className="text-2xl font-semibold">Blueprints hero</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          The rotating card at the top of the anime page. Each slide is an image, the title shown
-          over it, and the page it links to — usually a series at{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-xs">/anime/series/…</code>. The order
+          The rotating card at the top of the Blueprints page. Each slide is an image, the title
+          shown over it, and the page it links to — usually a series at{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">/blueprints/…</code>. The order
           here is the order visitors see.
         </p>
       </header>
@@ -157,16 +160,16 @@ export default function AnimeHeroSlideAdminPage() {
           Couldn&apos;t check your permissions, so this page is read-only.
         </output>
       )}
-      {staffContextQuery.isSuccess && !canManageAnimeHero && (
+      {staffContextQuery.isSuccess && !canManageBlueprintHero && (
         <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
-          Managing the anime hero needs the admin role. Your role is{" "}
+          Managing the Blueprints hero needs the admin role. Your role is{" "}
           {staffContextQuery.data.platformRole ?? "none"}, so this page is read-only.
         </output>
       )}
 
       {firstError && <MutationErrorNotice error={firstError.apiError} />}
 
-      {canManageAnimeHero && (
+      {canManageBlueprintHero && (
         <CreateSlideForm
           isSubmitting={createSlide.isPending}
           slideCount={slidesQuery.data?.length ?? 0}
@@ -203,7 +206,7 @@ export default function AnimeHeroSlideAdminPage() {
       case "empty":
         return (
           <p className="text-sm text-muted-foreground">
-            No slides yet. The anime page shows no hero until you add one.
+            No slides yet. The Blueprints page shows no hero until you add one.
           </p>
         );
       case "ready":
@@ -240,11 +243,11 @@ export default function AnimeHeroSlideAdminPage() {
  *
  * THE LINK IS OPTIONAL, and the empty field is meaningful rather than lazy: a slide with no
  * link is decorative, which is the state all four seeded slides are in until there is an
- * anime series to point them at. An empty string is normalized to `null` on submit, because
+ * blueprints to point them at. An empty string is normalized to `null` on submit, because
  * the backend 422s an empty path.
  *
  * There is no destination-KIND choice, unlike the promotional carousel. This surface links
- * only into the site — an external URL on the anime page would be an open door on a content
+ * only into the site — an external URL on the Blueprints page would be an open door on a content
  * surface rather than an ad slot — so the one field is always a path.
  */
 function CreateSlideForm({
@@ -266,7 +269,7 @@ function CreateSlideForm({
   const [destinationPath, setDestinationPath] = useState("");
   const [isActive, setIsActive] = useState(true);
 
-  const isCarouselFull = slideCount >= MAX_ANIME_HERO_SLIDES;
+  const isCarouselFull = slideCount >= MAX_BLUEPRINT_HERO_SLIDES;
 
   return (
     <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
@@ -294,11 +297,11 @@ function CreateSlideForm({
         <div className="space-y-1">
           {/* `htmlFor` still points at a real input; the picker hides it rather than dropping
               it, so clicking the label opens the OS dialog exactly as before. */}
-          <label htmlFor="anime-hero-slide-image" className="block text-sm font-medium">
+          <label htmlFor="blueprint-hero-slide-image" className="block text-sm font-medium">
             Image
           </label>
           <AdminImagePicker
-            inputId="anime-hero-slide-image"
+            inputId="blueprint-hero-slide-image"
             isDisabled={isSubmitting || isCarouselFull}
             selectedFile={imageFile}
             onFileSelected={setImageFile}
@@ -309,11 +312,11 @@ function CreateSlideForm({
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="anime-hero-slide-title" className="block text-sm font-medium">
+          <label htmlFor="blueprint-hero-slide-title" className="block text-sm font-medium">
             Title
           </label>
           <input
-            id="anime-hero-slide-title"
+            id="blueprint-hero-slide-title"
             type="text"
             required
             maxLength={160}
@@ -330,16 +333,16 @@ function CreateSlideForm({
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="anime-hero-slide-destination" className="block text-sm font-medium">
+          <label htmlFor="blueprint-hero-slide-destination" className="block text-sm font-medium">
             Links to <span className="font-normal text-muted-foreground">(optional)</span>
           </label>
           <input
-            id="anime-hero-slide-destination"
+            id="blueprint-hero-slide-destination"
             type="text"
             maxLength={512}
             value={destinationPath}
             onChange={(event) => setDestinationPath(event.target.value)}
-            placeholder="/anime/series/one-piece"
+            placeholder="/blueprints/solar-cold-storage-controller-teardown"
             className="w-full rounded-xl border border-[#CAC4D0]/60 bg-background p-2 text-sm"
           />
           <p className="text-xs text-muted-foreground">
@@ -354,7 +357,7 @@ function CreateSlideForm({
             checked={isActive}
             onChange={(event) => setIsActive(event.target.checked)}
           />
-          Show on the anime page straight away
+          Show on the Blueprints page straight away
         </label>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -367,8 +370,8 @@ function CreateSlideForm({
           </button>
           <p className="text-xs text-muted-foreground">
             {isCarouselFull
-              ? `The hero holds ${String(MAX_ANIME_HERO_SLIDES)} slides. Delete one to add another.`
-              : `${String(slideCount)} of ${String(MAX_ANIME_HERO_SLIDES)} slides used.`}
+              ? `The hero holds ${String(MAX_BLUEPRINT_HERO_SLIDES)} slides. Delete one to add another.`
+              : `${String(slideCount)} of ${String(MAX_BLUEPRINT_HERO_SLIDES)} slides used.`}
           </p>
         </div>
       </form>
@@ -386,7 +389,7 @@ function SlideRow({
   onMove,
   onDelete,
 }: {
-  slide: AdminAnimeHeroSlide;
+  slide: AdminBlueprintHeroSlide;
   index: number;
   slideCount: number;
   isReordering: boolean;
@@ -400,8 +403,8 @@ function SlideRow({
    * banner beside the page heading — often scrolled off the top — while the row itself sat
    * unchanged, and one shared `isMutating` disabled the controls on every row.
    */
-  const updateSlide = useUpdateAnimeHeroSlideMutation();
-  const replaceImage = useReplaceAnimeHeroSlideImageMutation();
+  const updateSlide = useUpdateBlueprintHeroSlideMutation();
+  const replaceImage = useReplaceBlueprintHeroSlideImageMutation();
 
   const isMutating = updateSlide.isPending || replaceImage.isPending;
   const rowError = [replaceImage.error, updateSlide.error].find(
@@ -433,7 +436,7 @@ function SlideRow({
     <li className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
       <div className="flex flex-wrap items-start gap-4">
         {/* `object-cover` on a 16:9 box, NOT `object-contain`: the live carousel covers
-            (`anime-hero-carousel.tsx`), so a letterboxed thumbnail here would show framing
+            (`blueprints-hero-carousel.tsx`), so a letterboxed thumbnail here would show framing
             the visitor never gets. */}
         <Image
           src={slide.imageUrl}
@@ -517,7 +520,7 @@ function SlideRow({
           onClick={() => handleUpdate({ isActive: !slide.isActive })}
           className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {slide.isActive ? "Hide from anime page" : "Show on anime page"}
+          {slide.isActive ? "Hide from Blueprints page" : "Show on Blueprints page"}
         </button>
 
         <button
@@ -586,7 +589,7 @@ function SlideRow({
             </p>
           )}
           <AdminImagePicker
-            inputId={`replace-anime-hero-image-${slide.id}`}
+            inputId={`replace-blueprint-hero-image-${slide.id}`}
             isDisabled={isMutating}
             selectedFile={replacementImageFile}
             onFileSelected={setReplacementImageFile}
@@ -673,7 +676,7 @@ function SlideRow({
             maxLength={512}
             value={draftDestinationPath}
             onChange={(event) => setDraftDestinationPath(event.target.value)}
-            placeholder="/anime/series/one-piece"
+            placeholder="/blueprints/solar-cold-storage-controller-teardown"
             aria-label="Links to"
             className="w-full rounded-xl border border-[#CAC4D0]/60 bg-background p-2 text-sm"
           />

@@ -6,7 +6,7 @@ test.describe("home shell", () => {
   // From any non-root page, clicking the "Qatoto" brand link in the navbar
   // must return the user to "/". Verifies the brand doubles as a Home button.
   test("brand link returns to root", async ({ page, navbar }) => {
-    await page.goto("/anime");
+    await page.goto("/blueprints");
     await navbar.brand.click();
     await expect(page).toHaveURL("/");
   });

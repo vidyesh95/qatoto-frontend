@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useState } from "react";
 import type { StudioStageBadge, StudioVideoType, UploadDraft } from "@/lib/videos/studio-view";
-import AnimeEpisodeFields, { createEmptyAnimeEpisodeDetails } from "./anime-episode-fields";
 import ThumbnailPicker from "@/components/studio/upload/thumbnail-picker";
 import { useFeedCategoriesQuery } from "@/hooks/feed/queries";
 import { useMyPlaylistsQuery } from "@/hooks/playlists";
@@ -19,7 +18,10 @@ const VIDEO_TYPE_OPTIONS: Array<{ value: StudioVideoType; label: string }> = [
   { value: "demo", label: "Demo" },
   { value: "update", label: "Update" },
   { value: "ama", label: "AMA" },
-  { value: "anime_episode", label: "Anime episode" },
+  // NO `anime_episode` OPTION. The vertical was retired with `/anime`, so nothing new is
+  // uploaded as one. The VALUE still exists in `VIDEO_TYPES` because it is a backend pgEnum
+  // label and removing it needs a migration — and `videos-list.tsx` still LABELS it, so any
+  // historical row renders with a type instead of a blank. Stop offering; keep displaying.
 ];
 
 const SECTOR_TAG_OPTIONS = [
@@ -148,13 +150,7 @@ export default function DetailsStep({
   const [isShowMoreSectionOpen, setIsShowMoreSectionOpen] = useState(false);
 
   function handleVideoTypeSelect(videoType: StudioVideoType) {
-    onDraftChange({
-      videoType,
-      animeEpisodeDetails:
-        videoType === "anime_episode"
-          ? (draft.animeEpisodeDetails ?? createEmptyAnimeEpisodeDetails())
-          : draft.animeEpisodeDetails,
-    });
+    onDraftChange({ videoType });
   }
 
   function handleSectorTagToggle(sectorTag: string) {
@@ -224,10 +220,7 @@ export default function DetailsStep({
           />
         </div>
 
-        <PillOptionGroup
-          groupLabel="Video type"
-          helperText="Shapes the watch-page layout. Anime episodes go to admin review."
-        >
+        <PillOptionGroup groupLabel="Video type" helperText="Shapes the watch-page layout.">
           {VIDEO_TYPE_OPTIONS.map((videoTypeOption) => (
             <SelectablePill
               key={videoTypeOption.value}
@@ -557,20 +550,6 @@ export default function DetailsStep({
           </div>
         )}
       </section>
-
-      {draft.videoType === "anime_episode" && draft.animeEpisodeDetails && (
-        <AnimeEpisodeFields
-          episodeDetails={draft.animeEpisodeDetails}
-          onEpisodeDetailsChange={(episodeDetailsPatch) =>
-            onDraftChange({
-              animeEpisodeDetails: {
-                ...(draft.animeEpisodeDetails ?? createEmptyAnimeEpisodeDetails()),
-                ...episodeDetailsPatch,
-              },
-            })
-          }
-        />
-      )}
     </div>
   );
 }

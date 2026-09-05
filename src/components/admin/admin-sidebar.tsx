@@ -43,8 +43,8 @@ const CREATE_ITEM: AdminNavItem = {
 // `moderate_content` over video: "may this go out" is a person waiting, "should this come
 // down" is a page already published.
 //
-// ⚠️ THE GROUPING IS NOT THE CAPABILITY PARTITION, on purpose. `Home · Video & anime` mixes
-// `moderate_content` (the two report queues) with `manage_promotions` (Spotlight, Anime hero),
+// ⚠️ THE GROUPING IS NOT THE CAPABILITY PARTITION, on purpose. `Home · Video & blueprints` mixes
+// `moderate_content` (the two report queues) with `manage_promotions` (Spotlight, Blueprints hero),
 // and `Home · Community & R&D` mixes `moderate_content` with `moderate_taxonomy`. Do not
 // "fix" the sections to match capabilities — the question this nav answers is WHERE A THING
 // LIVES, not whether the viewer may act on it, and every page banners on its own capability.
@@ -66,7 +66,7 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
     title: "Studio · Creator submissions",
     items: [
       {
-        // PRE-publication: an anime episode that has never been public, waiting for a verdict
+        // PRE-publication: an episode that has never been public, waiting for a verdict
         // before anyone sees it. A creator in Studio is blocked until this queue answers, which
         // is what puts it here rather than under Home — see "Video reports" for the other half.
         href: "/admin/review",
@@ -142,7 +142,7 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
     hasDivider: true,
   },
   {
-    title: "Home · Video & anime",
+    title: "Home · Video & blueprints",
     items: [
       {
         // A DIFFERENT SECTION FROM "Review", though both are `moderate_content` and both are
@@ -180,8 +180,8 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
         // Desktop only, same tradeoff as Spotlight and as Promotions in `Home · Store` —
         // uploading art and setting an order is a desk job, and a seventh tab would break the
         // mobile bar.
-        href: "/admin/anime-hero",
-        label: "Anime hero",
+        href: "/admin/blueprints-hero",
+        label: "Blueprints hero",
         activeIcon: "/icons/live_tv_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
         inactiveIcon: "/icons/live_tv_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       },
@@ -220,7 +220,7 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
         // why the page carries a moderation log beside the queue and the video console does not.
         //
         // `feedback`, not `flag` or `report`: those two are taken by the video and profile queues
-        // in `Home · Video & anime`, and a shared glyph would say this page is that page. Only
+        // in `Home · Video & blueprints`, and a shared glyph would say this page is that page. Only
         // its FILL0 and FILL1 pair is committed black, which is what the nav needs.
         href: "/admin/commerce-reports",
         label: "Store reports",

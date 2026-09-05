@@ -15,10 +15,10 @@ const NAV_ITEMS = [
     inactiveIcon: "/icons/home_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
-    href: "/anime",
-    label: "Anime",
-    activeIcon: "/icons/live_tv_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    inactiveIcon: "/icons/live_tv_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    href: "/blueprints",
+    label: "Blueprints",
+    activeIcon: "/icons/architecture_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactiveIcon: "/icons/architecture_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
     href: "/studio",
@@ -41,7 +41,7 @@ const NAV_ITEMS = [
 ] as const;
 
 // Home matches exactly; every other route stays active for itself and any
-// sub-path (e.g. /anime/genre keeps /anime active).
+// sub-path (e.g. /blueprints/<slug> keeps /blueprints active).
 function isRouteActive(pathname: string, href: string) {
   if (href === "/") return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);

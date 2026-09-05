@@ -18,7 +18,7 @@ import type { Page, Locator } from "@playwright/test";
 export const SIDEBAR_ROUTES = {
   Create: "/studio",
   Home: "/",
-  Anime: "/anime",
+  Blueprints: "/blueprints",
   Store: "/store",
   "R&D": "/research-and-development",
   Library: "/library", // session-gated

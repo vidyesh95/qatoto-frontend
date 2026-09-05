@@ -1,5 +1,14 @@
 # Upload Video — Flow & Structure
 
+> ⚠️ **THE ANIME VERTICAL WAS RETIRED; `/anime` IS NOW `/blueprints`.** This document still
+> describes the anime review and catalogue pipeline in the present tense because **that pipeline
+> still exists** — the `anime_series` / `anime_season` / `anime_episode` tables, the
+> `anime_episode` value in `video_type`, the studio's `/series` pages and the admin review queue
+> were all deliberately left in place (removing them needs a migration). What changed: the public
+> hub and its five routes are deleted and 308 to `/blueprints`, the studio no longer OFFERS
+> `anime_episode` on upload, and the hero console moved to `/admin/blueprints-hero`. Read every
+> `/anime` URL below as historical. See CLAUDE.md, "The Blueprints hub replaced /anime".
+
 Spec for the video upload flow in Creator Studio (`/studio`). This is a **planning
 doc** — tweak / delete any step you don't want, then we build only what's left.
 

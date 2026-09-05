@@ -183,16 +183,10 @@ export const ROADMAP_AUDIENCES: readonly RoadmapAudience[] = [
         routes: [{ label: "Search", href: "/search" }],
       },
       {
-        action: "Browse the anime hub",
+        action: "Browse the Blueprints hub",
         summary:
-          "Its own player and rails — what aired today, by genre, ranked by watch signal, and the titles you saved.",
-        routes: [
-          { label: "Anime", href: "/anime" },
-          { label: "Daily", href: "/anime/daily" },
-          { label: "Genre", href: "/anime/genre" },
-          { label: "Ranking", href: "/anime/ranking" },
-          { label: "Favourites", href: "/anime/favorite" },
-        ],
+          "Engineering teardowns, working prototypes and manufacturing case studies — schematics, tolerances and bills of materials, published in the open.",
+        routes: [{ label: "Blueprints", href: "/blueprints" }],
       },
       {
         action: "Keep what you found",

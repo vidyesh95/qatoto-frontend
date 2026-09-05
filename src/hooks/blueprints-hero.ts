@@ -1,28 +1,31 @@
-// TRANSPORT: client-query — React Query over `@/lib/anime/hero.api`. Every hook here is
-// called by `AnimeHeroSlideAdminPage`; the /anime carousel deliberately has NO hook, because
+// TRANSPORT: client-query — React Query over `@/lib/blueprints/hero.api`. Every hook here is
+// called by `BlueprintHeroSlideAdminPage`; the /blueprints carousel deliberately has NO hook, because
 // it reads the public route from a server component.
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  createAnimeHeroSlide,
-  deleteAnimeHeroSlide,
-  listAnimeHeroSlidesForAdmin,
-  reorderAnimeHeroSlides,
-  replaceAnimeHeroSlideImage,
-  updateAnimeHeroSlide,
-} from "@/lib/anime/hero.api";
-import type { CreateAnimeHeroSlideInput, UpdateAnimeHeroSlideInput } from "@/lib/anime/schemas";
+  createBlueprintHeroSlide,
+  deleteBlueprintHeroSlide,
+  listBlueprintHeroSlidesForAdmin,
+  reorderBlueprintHeroSlides,
+  replaceBlueprintHeroSlideImage,
+  updateBlueprintHeroSlide,
+} from "@/lib/blueprints/hero.api";
+import type {
+  CreateBlueprintHeroSlideInput,
+  UpdateBlueprintHeroSlideInput,
+} from "@/lib/blueprints/hero.schemas";
 import { unwrap } from "@/lib/http";
 
 /**
  * Its own key factory rather than an entry in `rndKeys`, which scopes itself to the R&D
  * domain in its own doc comment. Same arrangement as `promotionalSlideKeys`.
  */
-export const animeHeroSlideKeys = {
-  all: ["anime-hero-slides"] as const,
-  adminList: () => ["anime-hero-slides", "admin", "list"] as const,
+export const blueprintHeroSlideKeys = {
+  all: ["blueprint-hero-slides"] as const,
+  adminList: () => ["blueprint-hero-slides", "admin", "list"] as const,
 };
 
 /**
@@ -34,23 +37,23 @@ export const animeHeroSlideKeys = {
  *
  * `retry: false` because a 403 is an answer, not a flake.
  */
-export function useAdminAnimeHeroSlidesQuery(isEnabled: boolean) {
+export function useAdminBlueprintHeroSlidesQuery(isEnabled: boolean) {
   return useQuery({
-    queryKey: animeHeroSlideKeys.adminList(),
-    queryFn: async () => unwrap(await listAnimeHeroSlidesForAdmin()),
+    queryKey: blueprintHeroSlideKeys.adminList(),
+    queryFn: async () => unwrap(await listBlueprintHeroSlidesForAdmin()),
     enabled: isEnabled,
     retry: false,
   });
 }
 
 /** Creates a slide from an uploaded file plus its metadata, in one multipart call. */
-export function useCreateAnimeHeroSlideMutation() {
+export function useCreateBlueprintHeroSlideMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: CreateAnimeHeroSlideInput) =>
-      unwrap(await createAnimeHeroSlide(input)),
+    mutationFn: async (input: CreateBlueprintHeroSlideInput) =>
+      unwrap(await createBlueprintHeroSlide(input)),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: animeHeroSlideKeys.adminList() });
+      void queryClient.invalidateQueries({ queryKey: blueprintHeroSlideKeys.adminList() });
     },
   });
 }
@@ -61,25 +64,25 @@ export function useCreateAnimeHeroSlideMutation() {
  * The toggle deliberately does NOT get its own hook: one control deserves one hook, and a
  * second one wrapping the same route is how an uncalled hook appears.
  */
-export function useUpdateAnimeHeroSlideMutation() {
+export function useUpdateBlueprintHeroSlideMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { slideId: string; patch: UpdateAnimeHeroSlideInput }) =>
-      unwrap(await updateAnimeHeroSlide(input.slideId, input.patch)),
+    mutationFn: async (input: { slideId: string; patch: UpdateBlueprintHeroSlideInput }) =>
+      unwrap(await updateBlueprintHeroSlide(input.slideId, input.patch)),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: animeHeroSlideKeys.adminList() });
+      void queryClient.invalidateQueries({ queryKey: blueprintHeroSlideKeys.adminList() });
     },
   });
 }
 
 /** Replaces the image in place. The returned URL carries a fresh CDN version segment. */
-export function useReplaceAnimeHeroSlideImageMutation() {
+export function useReplaceBlueprintHeroSlideImageMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { slideId: string; imageFile: File }) =>
-      unwrap(await replaceAnimeHeroSlideImage(input.slideId, input.imageFile)),
+      unwrap(await replaceBlueprintHeroSlideImage(input.slideId, input.imageFile)),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: animeHeroSlideKeys.adminList() });
+      void queryClient.invalidateQueries({ queryKey: blueprintHeroSlideKeys.adminList() });
     },
   });
 }
@@ -88,27 +91,27 @@ export function useReplaceAnimeHeroSlideImageMutation() {
  * Sets the whole display order.
  *
  * NOT OPTIMISTIC, and that matters more here than elsewhere: the list re-renders from the
- * server's answer, so what the admin sees after a reorder is exactly what /anime will serve.
+ * server's answer, so what the admin sees after a reorder is exactly what /blueprints will serve.
  * An optimistic reorder that failed would leave the console disagreeing with the live site.
  */
-export function useReorderAnimeHeroSlidesMutation() {
+export function useReorderBlueprintHeroSlidesMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (slideIds: readonly string[]) =>
-      unwrap(await reorderAnimeHeroSlides(slideIds)),
+      unwrap(await reorderBlueprintHeroSlides(slideIds)),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: animeHeroSlideKeys.adminList() });
+      void queryClient.invalidateQueries({ queryKey: blueprintHeroSlideKeys.adminList() });
     },
   });
 }
 
 /** Deletes the slide and its stored image, then re-packs the remaining positions. */
-export function useDeleteAnimeHeroSlideMutation() {
+export function useDeleteBlueprintHeroSlideMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (slideId: string) => unwrap(await deleteAnimeHeroSlide(slideId)),
+    mutationFn: async (slideId: string) => unwrap(await deleteBlueprintHeroSlide(slideId)),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: animeHeroSlideKeys.adminList() });
+      void queryClient.invalidateQueries({ queryKey: blueprintHeroSlideKeys.adminList() });
     },
   });
 }

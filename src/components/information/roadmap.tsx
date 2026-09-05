@@ -150,9 +150,9 @@ export default function Roadmap() {
               ledger. Progress is posted daily, so trust is evidence rather than a deck.
             </p>
             <p>
-              The video feed, the anime hub and the Store are not a second product bolted on — they
-              are how an idea gets found, how a team gets an audience, and how the finished unit
-              gets sold.
+              The video feed, the Blueprints hub and the Store are not a second product bolted on —
+              they are how an idea gets found, how a team gets an audience, and how the finished
+              unit gets sold.
             </p>
           </div>
         </div>

@@ -43,7 +43,7 @@ Note `package.json` script is `fmt`, but `CONTRIBUTING.md` references `pnpm run 
 The App Router is organized into four parenthesized **route groups** — these do not appear in URLs, they exist only to scope layouts:
 
 - `(auth)` — sign-in, sign-up, forgot-password, sign-in-with-password. No shared chrome.
-- `(home)` — the main app shell. `(home)/layout.tsx` wraps children in `SidebarProvider` + `Navbar` + `Sidebar`. All top-level product surfaces (`/anime`, `/cart`, `/library`, `/store`, `/history`, `/listings`, `/sales`, `/research-and-development`, etc.) live here and inherit that chrome.
+- `(home)` — the main app shell. `(home)/layout.tsx` wraps children in `SidebarProvider` + `Navbar` + `Sidebar`. All top-level product surfaces (`/blueprints`, `/cart`, `/library`, `/store`, `/history`, `/listings`, `/sales`, `/research-and-development`, etc.) live here and inherit that chrome.
 - `(disclaimers)` — legal/policy pages with their own layout.
 - `(information)` — marketing pages (about, blogs, careers, contact-us, creator, developers, how-qatoto-works, press). Blogs and press have `[slug]` dynamic routes.
 
@@ -238,6 +238,40 @@ rules at once, not contradicting itself.
 ### Tests — do not write unless explicitly asked
 
 **Do not write, add, or modify tests unless the user explicitly asks for them.** This applies to unit tests (Vitest), E2E tests (Playwright), and any other test files. Do not create test files as part of a feature implementation, bug fix, or refactor. Do not suggest writing tests unless the user requests it.
+
+## The Blueprints hub replaced /anime (mock, deliberately)
+
+`/anime` was RETIRED. It is now `/blueprints` — engineering teardowns (70%), working
+prototypes (20%) and manufacturing case studies (10%) — and `next.config.ts` 308s `/anime`
+and `/anime/:path*` at the routing layer.
+
+**The hub is mock and that is a decision, not an oversight.** `src/mocks/blueprints-mocks.ts`
+holds twelve invented builds. It inherits the caveat `todo.md` recorded against `/anime`
+verbatim — _a vertical you cannot fill should not ship_ — and `src/app/sitemap.ts` announces
+these routes anyway, which is flagged there as the thing to revisit before production.
+
+Three rules specific to this surface:
+
+- **Components never import the fixtures.** Everything goes through `src/lib/blueprints/api.ts`,
+  whose `"use cache"` getters mirror `src/lib/cms.ts`. `/anime` was wired the other way — its
+  components imported `@/mocks/anime-mocks` directly — and that is precisely why swapping it to
+  real data was a component rewrite rather than a one-file edit. Do not reintroduce that.
+- **Costs are integer cents, never display strings.** `billOfMaterialsCostRange` is
+  `{ minimumInCents, maximumInCents, currency } | null`, and the OBJECT is nullable rather than
+  its fields — half a range is an unanswerable question. `null` means nobody costed it; it is
+  not zero. Render it with `formatCentsRangeLabel` (`src/lib/store/format.ts`), which returns
+  `null` rather than inventing a band.
+- **The hero is real.** `GET /blueprints/hero-slides` and the admin console at
+  `/admin/blueprints-hero` are live, backed by four rows. The `anime_hero_slide` TABLE and the
+  five `anime_hero_slide_*` audit pgEnum labels KEEP THEIR NAMES — renaming them costs a
+  migration — and the Cloudinary folder is still `qatoto/anime-hero-slides` because that is the
+  address of the existing images, not a label. A URL is public identity; a table name is not.
+
+`anime_episode` survives in `VIDEO_TYPES` because it is a backend pgEnum label. The studio
+STOPPED OFFERING it (`details-step.tsx`) but `videos-list.tsx` still LABELS it, and
+`studio-view.ts` still round-trips an existing anime block so editing a legacy row does not
+erase it. Do not "finish the cleanup" by deleting either — one is a `Record` over the enum, the
+other is data preservation.
 
 ## Current phase: R&D is wired end to end, reads and writes — nothing is mock
 

@@ -17,9 +17,9 @@ const ICON_PATHS = {
     active: "/icons/home_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/home_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
-  liveTv: {
-    active: "/icons/live_tv_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    inactive: "/icons/live_tv_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  architecture: {
+    active: "/icons/architecture_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/architecture_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   localMall: {
     active: "/icons/local_mall_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
@@ -110,7 +110,7 @@ const ICON_PATHS = {
 const ROUTES = {
   create: "/studio",
   home: "/",
-  anime: "/anime",
+  blueprints: "/blueprints",
   store: "/store",
   storeSearch: "/store/search",
   storeCategories: "/store/categories",
@@ -158,7 +158,7 @@ function joinClassNames(...parts: Array<string | false | null | undefined>) {
 
 /**
  * Two routes match EXACTLY; every other one is active for itself and any sub-path (e.g.
- * /anime/genre keeps /anime active).
+ * /blueprints/<slug> keeps /blueprints active).
  *
  * `projectImmortal` is exact because it names ONE programme inside a generic surface. Under
  * prefix matching it would still be correct for its own page — but the surface around it is not
@@ -169,8 +169,8 @@ function joinClassNames(...parts: Array<string | false | null | undefined>) {
 const EXACT_MATCH_ROUTES: readonly string[] = [ROUTES.projectImmortal];
 
 function isRouteActive(pathname: string, routePath: string) {
-  // Home owns "/" and the top-level watch player ("/watch"). Anime's own
-  // player lives at "/anime/watch", which stays under the Anime route below.
+  // Home owns "/" and the watch player ("/watch"). Blueprints has no player of its own —
+  // the /anime/watch alias went with the vertical — so nothing else needs an exception.
   if (routePath === ROUTES.home) return pathname === routePath || pathname === "/watch";
   if (EXACT_MATCH_ROUTES.includes(routePath)) return pathname === routePath;
   return pathname === routePath || pathname.startsWith(`${routePath}/`);
@@ -351,7 +351,7 @@ const NAVIGATION_CONFIG: NavSection[] = [
   {
     items: [
       { path: ROUTES.home, label: "Home", iconKey: "home" },
-      { path: ROUTES.anime, label: "Anime", iconKey: "liveTv" },
+      { path: ROUTES.blueprints, label: "Blueprints", iconKey: "architecture" },
       { path: ROUTES.store, label: "Store", iconKey: "localMall" },
       { path: ROUTES.researchAndDevelopment, label: "R&D", iconKey: "science" },
     ],
@@ -482,7 +482,7 @@ const FOOTER_LINKS_ROW2 = [
 const COLLAPSED_NAV_CONFIG: NavItem[] = [
   { path: ROUTES.create, label: "Create", iconKey: "videoCall", isEmphasized: true },
   { path: ROUTES.home, label: "Home", iconKey: "home" },
-  { path: ROUTES.anime, label: "Anime", iconKey: "liveTv" },
+  { path: ROUTES.blueprints, label: "Blueprints", iconKey: "architecture" },
   { path: ROUTES.store, label: "Store", iconKey: "localMall" },
   { path: ROUTES.researchAndDevelopment, label: "R&D", iconKey: "science" },
 ];

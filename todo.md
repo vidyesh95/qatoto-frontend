@@ -40,7 +40,7 @@ so.)
 rail, on two new backend tables (migration `0148`). Proved end to end against the live database.
 **One thing still gates it: the terms-of-service rewrite under Decisions needed** — see §12 below.
 
-**Everything else** is either content-blocked (`/anime`), a new backend domain nobody has asked
+**Everything else** is either content-blocked (`/blueprints`), a new backend domain nobody has asked
 for yet (§15, §16, and account-level delegation — `/studio/earn` SHIPPED and is wired to
 `GET /commerce/provider/earnings`;
 `/studio/copyright`, `/studio/pitches` and `/studio/team` all shipped, `/studio/subtitles` is
@@ -296,9 +296,10 @@ somebody writes copy that overclaims.
 
 ### 2. The video domain — two `TRANSPORT: mock` banners remain
 
-`rg -l "TRANSPORT: mock" src/` returns **three** files. Two belong to the video domain and are the
-subject of this section; the third, `src/components/home/anime/anime-page.tsx`, belongs to item 1
-(`/anime`, content-blocked) and is tracked there:
+`rg -l "TRANSPORT: mock" src/` returns **four** files. Two belong to the video domain and are the
+subject of this section; the other two are the Blueprints hub
+(`src/components/home/blueprints/blueprints-page.tsx` and `blueprint-detail-page.tsx`), which
+belong to item 1 (`/blueprints`, content-blocked) and are tracked there:
 
 - `src/components/home/watch/comments.tsx` — `trending` only
 - `src/components/home/watch/watch-content.tsx` — `transcript` and `isPremium` only
@@ -853,7 +854,7 @@ its data never reaches the server render at all"), which is what a finished rout
 the flag stays or goes.
 
 **AND FOUR ROUTES ARE ALREADY IN THE FINISHED STATE, which is worth knowing before anyone counts
-this as 102 units of work.** `(admin)`'s `site-audits`, `profile-reports`, `reports` and `anime-hero`
+this as 102 units of work.** `(admin)`'s `site-audits`, `profile-reports`, `reports` and `blueprints-hero`
 carry `export const instant = false` with NO boilerplate TODO above it — they never entered the
 backlog, and they are what a done route looks like in the group that has the most left.
 
@@ -888,48 +889,36 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
 
 ## Still open, in the order worth taking them
 
-1. **`/anime` end to end — the last fabricated surface on the site.** Five pages read
-   `@/mocks/anime-mocks` and the routes are excluded from `sitemap.ts` for exactly that reason. The
-   backend has the tables — `anime_series` / `anime_season` / `anime_episode`, with `genreTags`,
-   `status` (ongoing/completed/hiatus), `releaseScheduleDay`/`Time` and `premiereDate` — plus
-   `trendingVideoSnapshot` (hourly, ranked) for the ranking page. What does not exist is any PUBLIC
-   catalogue read: all eleven `/series` routes are `requireAuth` and owner-scoped, and the feed has
-   no `videoType` facet, so anime episodes are indistinguishable in it. This is one new public
-   backend module plus five page rewires. Two notes for whoever takes it: **`/anime/favorite` is
-   nearly free** — it is Liked and Bookmarked, which `GET /users/me/liked-videos` and
-   `/saved-videos` already serve, needing only a `videoType` filter — and **`/anime/genre`'s chips
-   and `/anime/ranking`'s sort currently change nothing**, they re-render the same mock array, so
-   wiring them is a behaviour change rather than a data swap.
+1. **`/anime` WAS RETIRED. It is now `/blueprints`, and it is still mock.**
 
-    ⚠️ **THE COST ABOVE IS STALE: THE PUBLIC BACKEND MODULE SHIPPED.**
-    `qatoto-backend/src/modules/home/anime/` is mounted at `app.ts:303` with three bare public reads
-    (`/anime/hero-slides`, `/anime/series`, `/anime/series/:seriesSlug`), the frontend wrappers exist
-    in `src/lib/anime/`, there is a real series-detail page, and `sitemap.ts` announces it. **What is
-    left is five page rewires, not "one new public backend module plus five".** The studio's own
-    `/series` routes are 13, not eleven, and all still `requireAuth` — that half holds.
+    The vertical is gone: `src/app/(home)/anime/**`, `src/components/home/anime/**`,
+    `src/types/anime.ts` and `src/mocks/anime-mocks.ts` are deleted, `next.config.ts` 308s
+    `/anime` and `/anime/:path*`, and the backend module moved to
+    `qatoto-backend/src/modules/home/blueprints/` mounted at `/blueprints`. The two public
+    series reads went with it; the hero carousel survived.
 
-    **⚠️ THE BLOCKER IS CONTENT, NOT CODE — and that reorders this whole list.** Re-probed against
-    the live database on 2026-08-29, unchanged: `anime_series` **0 rows**, `anime_season` **0**,
-    `anime_episode` **0**, and `video WHERE video_type = 'anime_episode'` **0** — while
-    `anime_hero_slide` has **4**, which is exactly why the hero is real and the rails are not. Wiring the five pages today would
-    replace five pages of invented content with five blank ones. **YouTube's own decision is the
-    precedent: it does not ship a vertical it cannot fill** — Movies & Shows launched with licensed
-    inventory, not a browse skeleton. Leaving `/anime` on mocks is therefore a decision, recorded
-    here, and it is revisited when the first series is seeded rather than on a schedule.
+    **THE CONTENT BLOCKER DID NOT GO AWAY — IT CHANGED SUBJECT.** The reason this item existed
+    was that wiring five pages would have replaced five pages of invented content with five
+    blank ones, and the precedent recorded here was that YouTube does not ship a vertical it
+    cannot fill. `/blueprints` is in exactly that position now: twelve fixtures in
+    `src/mocks/blueprints-mocks.ts`, no backend, no real teardowns. The difference is only that
+    nobody has published a real blueprint yet, so there is nothing to be inconsistent with.
 
-    **IT IS ALSO CHEAPER THAN THE PARAGRAPH ABOVE BILLS IT.** No migration — every column exists. The
-    projection discipline is already written: `src/modules/studio/series/public-series.service.ts` is
-    "the ONLY public read of an anime series anywhere on the platform" and already states why the
-    studio's own eleven `/series` routes must stay owner-scoped (they return unreleased episode
-    titles, premiere dates and the production schedule). And `/anime/watch` is already the real watch
-    page, not a mock.
+    ⚠️ **AND UNLIKE `/anime`, IT IS IN THE SITEMAP.** `/blueprints` and `/blueprints/[slug]` are
+    announced while still fabricated — the opposite of the call made for the five `/anime`
+    routes, and deliberately flagged in `src/app/sitemap.ts` rather than done quietly. **Take
+    both entries back out before this ships to production if the fixtures are still fiction.**
 
-    **TWO DECISIONS BLOCK IT, and only one was known.** (a) `genreTags` is a free-text array, so a
-    genre chip row needs a canonical list. (b) **`/anime/ranking`'s period selector cannot be served
-    by `trending_video_snapshot`** — its columns are `as_of`, `rank`, `trending_score_points`,
-    `counted_views_in_window` and the component points, with **no period dimension at all**. It is a
-    rolling HOURLY top-200. "This week" and "this month" are not filters over it; they are a second
-    snapshot cadence, or they are not offered.
+    What is left to make it real: a `blueprint` table and a public read, then point the three
+    getters in `src/lib/blueprints/api.ts` at it. The components never import the fixtures, so
+    that is a one-file change plus adding `withSentinelValues` to the detail route's
+    `generateStaticParams` — which is the whole reason it was built this way round.
+
+    **The DB tables are untouched and still empty.** `anime_series`, `anime_season` and
+    `anime_episode` remain (0 rows each), as do the `anime_audio_mode` / `anime_series_status`
+    pgEnums and `anime_episode` in `video_type`. Removing any of them needs a migration and was
+    ruled out of the retirement. `anime_hero_slide` keeps its 4 rows and its name, and its
+    console moved to `/admin/blueprints-hero`.
 
 2. **The `planned` Studio routes that are left — TWO, not six.** ⚠️ **DO NOT INHERIT A COST FROM
    THIS LINE WITHOUT CHECKING IT** — it has now been wrong about four separate routes, and the
@@ -2516,10 +2505,10 @@ neither `catch` ever runs.
 
 **THE DISCRIMINATOR IS A `loading.tsx` AT OR ABOVE THE SEGMENT, and the correlation is exact:**
 
-| Route                                                                          | `loading.tsx` in ancestry | Status  |
-| ------------------------------------------------------------------------------ | ------------------------- | ------- |
-| `/blogs/nope` · `/press/nope` · `/channel/nope`                                | none                      | **404** |
-| `/store/**` · `/anime/series/**` · every `/research-and-development/**` detail | yes (segment or a parent) | 200     |
+| Route                                                                        | `loading.tsx` in ancestry | Status  |
+| ---------------------------------------------------------------------------- | ------------------------- | ------- |
+| `/blogs/nope` · `/press/nope` · `/channel/nope`                              | none                      | **404** |
+| `/store/**` · `/blueprints/**` · every `/research-and-development/**` detail | yes (segment or a parent) | 200     |
 
 `/store/forum/[threadSlug]` is what proves it is ANCESTRY rather than the segment: it has no
 `loading.tsx` of its own, and still answers 200 because `(home)/store/loading.tsx` sits above it.
@@ -2652,8 +2641,9 @@ for f in $(rg --no-filename -o 'export (?:async )?function (\w+)' -r '$1' \
 `-name '*.api.ts'` missed **`src/lib/products/api.ts`** — the file that owns every seller `/products/*`
 write, and therefore exactly where the biggest gaps were hiding. And the caller search omitted
 `src/lib`, so a wrapper consumed by another `src/lib` module read as dead: it printed a false
-`UNCALLED-API listPublicAnimeSeries`, which is called from `sitemap-sources.ts:134` and from its own
-sibling at `series.api.ts:70`. Both halves are fixed above.
+`UNCALLED-API listPublicAnimeSeries`, which was called from `sitemap-sources.ts` and from its own
+sibling at `series.api.ts`. Both halves are fixed above. (That wrapper is now gone with the
+`/anime` retirement — the lesson about the omitted `src/lib` search still stands.)
 
 **THE GLOB IS NOW `find`, NOT FOUR HAND-LISTED DIRECTORIES**, and that is the third time this has
 bitten. It started as `src/lib/store/*.api.ts` alone, which is why seven R&D wrappers went unnoticed;

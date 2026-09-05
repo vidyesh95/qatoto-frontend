@@ -72,8 +72,8 @@ const SURFACES = [
   },
   {
     icon: "/icons/live_tv_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    title: "Anime inspiration",
-    body: "User-uploaded anime as an R&D feed — fantasy devices, garments, vehicles. Bookmark a frame, brief your team, build the real thing.",
+    title: "Engineering blueprints",
+    body: "Teardowns and schematics as an R&D feed — boards, mechanisms, costed bills of materials. Read the build, brief your team, make the real thing.",
   },
   {
     icon: "/icons/self_improvement_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
@@ -124,8 +124,8 @@ const FAQ = [
     a: "Shipping worldwide, compliance and certifications, returns, customer support, and marketing video production. You stay in product mode; the platform runs operations.",
   },
   {
-    q: "What's the Anime section actually for?",
-    a: "Inspiration. Fantasy devices, garments, and worldbuilding turn into product briefs. Watch, bookmark, hand to your design lead, build the real thing.",
+    q: "What's the Blueprints section actually for?",
+    a: "Evidence. Teardowns, schematics and costed bills of materials turn into product briefs. Read the build, hand it to your design lead, make the real thing.",
   },
   {
     q: "What's Project Immortal?",

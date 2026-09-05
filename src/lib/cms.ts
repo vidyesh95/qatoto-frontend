@@ -139,19 +139,19 @@ const MOCK_BLOGS: BlogPost[] = [
     tags: ["funding", "founders"],
   },
   {
-    slug: "anime-as-r-and-d-input",
-    title: "Why we treat anime as a real R&D input",
+    slug: "teardowns-as-r-and-d-input",
+    title: "Why we treat teardowns as a real R&D input",
     excerpt:
-      "Fictional devices, fictional fashion, fictional cities — every once in a while one of them is a product brief in disguise.",
-    body: `<p>The anime feed on Qatoto isn't entertainment. It's a low-cost, high-bandwidth channel for design fiction.</p>
-<p>A well-tagged frame can become a design brief: silhouette, materials, motion language, payload. Many of our most surprising hardware projects started with a screenshot.</p>
+      "Somebody already solved half your problem and shipped it. Opening it up is the cheapest research you will ever do.",
+    body: `<p>The Blueprints hub on Qatoto isn't a gallery. It's a low-cost, high-bandwidth channel for design intelligence.</p>
+<p>A well-documented teardown is a design brief in reverse: part selection, tolerances, the bill of materials, and the compromises somebody already paid for. Many of our most surprising hardware projects started with a photograph of a board.</p>
 <h2>How to use it</h2>
-<p>Tag clips with the device or garment you noticed. Add a one-line "what would it take to build this?" The platform routes it to teams hunting for product seeds.</p>`,
+<p>Publish the schematic, the CAD, and the costed BOM. Add a one-line "what would it take to build this here?" The platform routes it to teams hunting for product seeds.</p>`,
     category: "story",
-    author: { name: "Nikhil Rao", role: "Anime R&D" },
+    author: { name: "Nikhil Rao", role: "Hardware R&D" },
     publishedAt: "2026-03-12",
     readingMinutes: 5,
-    tags: ["r&d", "anime", "ideation"],
+    tags: ["r&d", "teardowns", "ideation"],
   },
 ];
 

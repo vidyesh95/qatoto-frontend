@@ -1,5 +1,13 @@
 # Qatoto — Project Idea & Research Brief
 
+> ⚠️ **THE ANIME VERTICAL WAS RETIRED.** The anime hub described below became `/blueprints` —
+> engineering teardowns, prototypes and manufacturing case studies — on the reasoning that a
+> product-development platform should source its design input from real hardware rather than
+> fiction, and that a vertical with no inventory should not ship. The DMCA/licensing exposure
+> this document analyses for user-uploaded anime no longer applies; publishing a teardown raises
+> different questions, not the same ones. Read the anime sections as the record of a decision
+> that was reversed.
+
 Purpose of this document: capture what Qatoto currently claims to be (from its own marketing copy), what has actually been built in code so far, and where the open strategic questions are — so you can research comparable products, regulatory constraints, and business models, and decide what direction to take the project in. This is a snapshot as of 2026-07-14, written from the codebase and internal planning docs as they exist today.
 
 ---

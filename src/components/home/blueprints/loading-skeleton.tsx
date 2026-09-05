@@ -1,8 +1,8 @@
-// Minimal route-segment loading placeholder shared by every anime route
+// Minimal route-segment loading placeholder shared by every Blueprints route
 // (landing, ranking, favorite, daily, genre). Pure pulsing blocks
 // approximating a hero banner plus a media row — no props, no data, no logic
 // (UI + mock data phase, see CLAUDE.md).
-export default function AnimeLoadingSkeleton() {
+export default function BlueprintsLoadingSkeleton() {
   return (
     <div className="animate-pulse space-y-4 pb-10">
       <div className="flex justify-center px-4 pt-1 pb-2 lg:px-6">

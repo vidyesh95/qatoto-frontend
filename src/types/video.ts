@@ -80,10 +80,13 @@ export type VideoCardProps = {
   /**
    * The backend row id, when this card came from `GET /feed/videos`.
    *
-   * OPTIONAL BY DESIGN, not by omission. The anime surface still builds `VideoCardProps`
-   * objects from `src/mocks/anime-mocks.ts`, and a required id there would be a compile error
-   * in three mock arrays for no benefit — those cards are not wired to engagement yet. Any
-   * control that needs an id must branch on its absence rather than assume it.
+   * ⚠️ THE REASON THIS IS OPTIONAL NO LONGER EXISTS. It was optional because the anime
+   * surfaces built cards from `src/mocks/anime-mocks.ts` without ids; those mocks and that
+   * surface are deleted, and every remaining producer — `toVideoCardProps` and
+   * `toReelCardProps` — supplies one. It CAN now be made required, which would delete the
+   * absence-branching in `video-card-menu.tsx`. Left optional here only because tightening it
+   * was outside the scope of the anime retirement; do it deliberately, not as a side effect.
+   * Until then, any control that needs an id must still branch on its absence.
    */
   videoId?: string;
   thumbnailSrc: string;
@@ -120,7 +123,7 @@ export type VideoCardProps = {
    * NOT INTERCHANGEABLE WITH `channelHref`. That prop is a PATH built from the creator's
    * handle, and it is omitted entirely when a creator has none — a link to `/channel/null`
    * being worse than no link. The mute route addresses the creator by id, so it needs this.
-   * Optional for the same reason `videoId` is: the anime mocks carry neither.
+   * Optional for the same reason `videoId` is — and, as noted there, that reason is gone.
    */
   creatorId?: string;
   verified?: boolean;

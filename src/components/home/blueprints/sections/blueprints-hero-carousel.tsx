@@ -1,12 +1,12 @@
-// TRANSPORT: props-only — the slides arrive from `anime-hero-carousel-section`, which reads
-// `GET /anime/hero-slides` server-side. This component fetches nothing.
+// TRANSPORT: props-only — the slides arrive from `blueprints-hero-carousel-section`, which reads
+// `GET /blueprints/hero-slides` server-side. This component fetches nothing.
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
-import type { PublicAnimeHeroSlide } from "@/lib/anime/schemas";
+import type { PublicBlueprintHeroSlide } from "@/lib/blueprints/hero.schemas";
 
 /**
  * Five seconds, not the home carousel's two.
@@ -27,7 +27,7 @@ const ROTATION_INTERVAL_MS = 5000;
  * There is no external arm. Unlike the promotional carousel, this surface links only into
  * the site, so there is no `target="_blank"` branch and no `rel="noopener"` to forget.
  */
-function AnimeHeroSlideLink({
+function BlueprintHeroSlideLink({
   destinationPath,
   className,
   children,
@@ -48,7 +48,7 @@ function AnimeHeroSlideLink({
 }
 
 /**
- * The /anime hero carousel.
+ * The /blueprints hero carousel.
  *
  * IT REPLACED A CARD WITH A MUTE BUTTON THAT DID NOTHING. The component this supersedes
  * rendered a single `next/image` with a speaker toggle over it — no `<video>`, no iframe,
@@ -65,10 +65,10 @@ function AnimeHeroSlideLink({
  * keyboard users both stumble over.
  *
  * THERE IS NO CLOSE BUTTON, unlike the home carousel. That one is advertising a visitor may
- * dismiss; this is the anime page's own content, and a dismissed hero leaves a hole at the
+ * dismiss; this is the Blueprints hub's own content, and a dismissed hero leaves a hole at the
  * top of the page with no way to bring it back.
  */
-export default function AnimeHeroCarousel({ slides }: { slides: PublicAnimeHeroSlide[] }) {
+export default function BlueprintsHeroCarousel({ slides }: { slides: PublicBlueprintHeroSlide[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [shouldAutoRotate, setShouldAutoRotate] = useState(true);
 
@@ -119,7 +119,7 @@ export default function AnimeHeroCarousel({ slides }: { slides: PublicAnimeHeroS
   return (
     <section className="flex justify-center px-4 pt-1 pb-2 lg:px-6">
       <div className="group/hero relative aspect-video w-full overflow-hidden rounded-xl md:w-82">
-        <AnimeHeroSlideLink
+        <BlueprintHeroSlideLink
           destinationPath={currentSlide.destinationPath}
           className="absolute inset-0 block"
         >
@@ -156,7 +156,7 @@ export default function AnimeHeroCarousel({ slides }: { slides: PublicAnimeHeroS
               {currentSlide.title}
             </p>
           </div>
-        </AnimeHeroSlideLink>
+        </BlueprintHeroSlideLink>
 
         {slides.length > 1 && (
           <>

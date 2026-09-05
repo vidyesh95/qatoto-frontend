@@ -38,6 +38,22 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        // THE ANIME VERTICAL WAS RETIRED and its hub became /blueprints. Every /anime child
+        // was deleted, so unlike the import-intelligence entry below this one CAN take a
+        // wildcard: there is no descendant left that must survive. Both land on the hub
+        // rather than a mapped equivalent, because no /blueprints sub-page corresponds to
+        // /anime/genre, /daily, /ranking or /favorite — sending a reader to a page that does
+        // not answer their request is worse than sending them to the index.
+        source: "/anime",
+        destination: "/blueprints",
+        permanent: true,
+      },
+      {
+        source: "/anime/:path*",
+        destination: "/blueprints",
+        permanent: true,
+      },
+      {
         // The knowledge hub absorbed import substitution and became Market Research —
         // stage 02 of the pipeline was always called that.
         source: "/research-and-development/knowledge-hub",
