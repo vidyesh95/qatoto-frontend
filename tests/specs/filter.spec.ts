@@ -1,9 +1,15 @@
 import { test, expect } from "../fixtures/test-base";
 
-// Covers the home-page filter chip row (src/components/home/filter.tsx).
+// Covers the home-page filter chip row (src/components/home/feed/filter.tsx).
 // Verifies single-select selection, chevron visibility tied to scroll
 // overflow, drag-to-scroll, drag-suppresses-click, and layout invariants
 // (single row, no vertical overflow, chips inside the visible viewport).
+//
+// SELECTING A CHIP IS A NAVIGATION, NOT A setState. The chips are links and the selection
+// lives in the URL, so every post-click assertion here polls: the click resolves as soon as
+// the anchor is activated, while the selection only changes once the new render lands. The
+// original one-shot `expect(await ...)` read the OLD row and reported a stale selection —
+// which looked like a broken filter rather than a test racing the navigation.
 test.describe("filter chips", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
@@ -19,17 +25,17 @@ test.describe("filter chips", () => {
   // On first paint "All" must be the selected chip. Encoded by the
   // `text-white` class on the selected button.
   test("All chip is selected by default", async ({ filter }) => {
-    expect(await filter.selectedChipLabels()).toEqual(["All"]);
+    await expect.poll(() => filter.selectedChipLabels()).toEqual(["All"]);
   });
 
   // Clicking a different chip must move the selection — exactly one chip
   // stays styled as selected at any time (single-select invariant).
   test("clicking a chip moves selection and keeps single-select", async ({ filter }) => {
     await filter.chip("Trending").click();
-    expect(await filter.selectedChipLabels()).toEqual(["Trending"]);
+    await expect.poll(() => filter.selectedChipLabels()).toEqual(["Trending"]);
 
     await filter.chip("Gaming").click();
-    expect(await filter.selectedChipLabels()).toEqual(["Gaming"]);
+    await expect.poll(() => filter.selectedChipLabels()).toEqual(["Gaming"]);
   });
 
   // At a desktop viewport the chip row must overflow (we render 23 chips).
@@ -81,8 +87,10 @@ test.describe("filter chips", () => {
 
   // A drag must not also select the chip the pointer happened to release on.
   // suppressClickAfterDrag enforces this by stopping the post-drag click.
+  // NOT polled, deliberately, unlike its neighbours: this asserts the selection did NOT move,
+  // and a poll would happily retry until a navigation it is supposed to catch had settled.
   test("drag does not select a chip", async ({ filter }) => {
-    expect(await filter.selectedChipLabels()).toEqual(["All"]);
+    await expect.poll(() => filter.selectedChipLabels()).toEqual(["All"]);
     await filter.dragHorizontally(-200);
     expect(await filter.selectedChipLabels()).toEqual(["All"]);
   });
@@ -92,7 +100,7 @@ test.describe("filter chips", () => {
   test("click still works after a prior drag", async ({ filter }) => {
     await filter.dragHorizontally(-150);
     await filter.chip("Gaming").click();
-    expect(await filter.selectedChipLabels()).toEqual(["Gaming"]);
+    await expect.poll(() => filter.selectedChipLabels()).toEqual(["Gaming"]);
   });
 
   // Layout invariant 1: chip row stays on a single line. We assert the
@@ -129,8 +137,9 @@ test.describe("filter chips", () => {
   // the currently chosen chip.
   test("selection persists when the row is scrolled", async ({ filter }) => {
     await filter.chip("Trending").click();
+    await expect.poll(() => filter.selectedChipLabels()).toEqual(["Trending"]);
     await filter.forwardButton.click();
     await expect.poll(async () => (await filter.scrollMetrics()).scrollLeft).toBeGreaterThan(0);
-    expect(await filter.selectedChipLabels()).toEqual(["Trending"]);
+    await expect.poll(() => filter.selectedChipLabels()).toEqual(["Trending"]);
   });
 });

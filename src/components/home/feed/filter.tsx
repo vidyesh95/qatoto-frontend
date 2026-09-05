@@ -273,6 +273,16 @@ export default function Filter({
               // The chip row sits above the feed; jumping to the top on every filter change
               // would throw away the reader's position for no reason.
               scroll={false}
+              // ⚠️ WITHOUT THIS, DRAG-TO-SCROLL IS BROKEN. An anchor is natively draggable, so
+              // pressing on a chip and moving fires `dragstart` and the browser takes over the
+              // gesture as a link drag — the pointermove stream stops and the row does not
+              // scroll at all. It arrived with the switch from buttons to links, which is why
+              // the interaction survived the refactor everywhere except here.
+              //
+              // Measured, not guessed: with the native drag suppressed a 200px gesture delivers
+              // 21 pointermove events and scrolls the full 200px in both Firefox and Chromium;
+              // with it live, Firefox saw ONE move and scrolled 0px while Chromium scrolled 10.
+              draggable={false}
               aria-current={isSelected ? "true" : undefined}
               tabIndex={chipIndex === focusedChipIndex ? 0 : -1}
               onClick={() => setFocusedChipIndex(chipIndex)}
