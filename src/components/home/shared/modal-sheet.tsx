@@ -48,6 +48,11 @@ import Image from "next/image";
  * form) and the six-step RFQ composer needs it next. It sits before the title because that is
  * where a back affordance is looked for, and it is a slot rather than an `onBack` callback
  * because a composer's back control also has to be able to be disabled on step one.
+ *
+ * `widthClassName` exists for ONE caller and, like `isFixedHeight`, is stated here so nobody adds
+ * a second width prop. `blueprint-document-viewer.tsx` renders an `<embed>` of a schematic PDF: at
+ * the default `sm:w-md` an A4 page is legible only by scrolling it sideways, which is not reading
+ * a drawing. Every other sheet holds a form or a list and is right at `md`.
  */
 export default function ModalSheet({
   title,
@@ -56,6 +61,7 @@ export default function ModalSheet({
   footer,
   isFixedHeight = false,
   leadingAction,
+  widthClassName = "sm:w-md",
 }: {
   title: string;
   onClose: () => void;
@@ -63,6 +69,7 @@ export default function ModalSheet({
   footer?: ReactNode;
   isFixedHeight?: boolean;
   leadingAction?: ReactNode;
+  widthClassName?: string;
 }) {
   // Stable identity so the keydown effect below does not re-wire its listener and thrash
   // `document.body.style.overflow` on every render.
@@ -92,7 +99,7 @@ export default function ModalSheet({
 
       <div
         aria-label={title}
-        className={`fixed inset-x-0 bottom-0 z-60 flex flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:w-md sm:rounded-2xl sm:border sm:border-black/10 ${
+        className={`fixed inset-x-0 bottom-0 z-60 flex flex-col rounded-t-2xl bg-background shadow-lg sm:inset-0 sm:m-auto sm:rounded-2xl sm:border sm:border-black/10 ${widthClassName} ${
           isFixedHeight
             ? "h-[80dvh] sm:h-[80dvh] sm:max-h-160"
             : "max-h-[85dvh] sm:h-max sm:max-h-[80dvh]"

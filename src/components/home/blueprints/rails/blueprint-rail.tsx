@@ -3,6 +3,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRef } from "react";
 
 import BlueprintCard from "@/components/home/blueprints/cards/blueprint-card";
@@ -36,19 +37,24 @@ function ScrollButton({ side, onClick }: { side: "left" | "right"; onClick: () =
 /**
  * One horizontally-scrolling category rail.
  *
- * THERE IS NO "SEE ALL" LINK, unlike the rail this is modelled on. `MediaRail` pointed at
- * `/anime?view=recent`, a query the page never read — the link went nowhere and changed nothing.
- * Blueprints has no category landing page yet, so rather than ship the same dead affordance the
- * heading stands alone. Add the link when there is a route behind it.
+ * THE "SEE ALL" LINK IS BACK, AND ONLY BECAUSE THERE IS A ROUTE BEHIND IT NOW. This component
+ * shipped without one on purpose: the `MediaRail` it replaces pointed at `/anime?view=recent`, a
+ * query that page never read, so the affordance went nowhere and changed nothing. Each category
+ * now has its own list route, which was the stated condition.
+ *
+ * `seeAllHref` is REQUIRED rather than optional for the same reason — an optional one invites the
+ * next caller to omit it and re-create the rail with no way out of it.
  */
 export default function BlueprintRail({
   title,
   blurb,
   blueprints,
+  seeAllHref,
 }: {
   title: string;
   blurb: string;
   blueprints: Blueprint[];
+  seeAllHref: string;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -63,9 +69,24 @@ export default function BlueprintRail({
 
   return (
     <section>
-      <header className="mb-3 px-4 lg:px-6">
-        <h2 className="text-base font-medium text-foreground sm:text-lg lg:text-xl">{title}</h2>
-        <p className="mt-0.5 text-xs text-[#6F7979]">{blurb}</p>
+      <header className="mb-3 flex items-end justify-between gap-4 px-4 lg:px-6">
+        <div>
+          <h2 className="text-base font-medium text-foreground sm:text-lg lg:text-xl">{title}</h2>
+          <p className="mt-0.5 text-xs text-[#6F7979]">{blurb}</p>
+        </div>
+        <Link
+          href={seeAllHref}
+          className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#00696E] hover:underline"
+        >
+          See all
+          <Image
+            src="/icons/arrow_forward_ios_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt=""
+            width={12}
+            height={12}
+            className="size-3"
+          />
+        </Link>
       </header>
 
       <div className="group/row relative">

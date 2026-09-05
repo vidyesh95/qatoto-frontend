@@ -5,6 +5,11 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import QueueButton from "@/components/home/layout/queue-button";
+import {
+  BLUEPRINT_CATEGORY_BY_SEGMENT,
+  BLUEPRINT_CATEGORY_LABELS,
+  buildBlueprintCategoryHref,
+} from "@/lib/blueprints/schemas";
 import { useSidebar } from "@/state/sidebar-context";
 
 const RESEARCH_AND_DEVELOPMENT_SUBPAGES: Record<string, string> = {
@@ -47,14 +52,27 @@ type SubHeader = { title: string; parentHref: string; parentLabel: string };
 // BLUEPRINTS IS PREFIX-MATCHED, NOT A FIXED MAP. The /anime map this replaces listed four
 // literal sub-pages and so gave /anime/series/<slug> no breadcrumb at all. A blueprint's slug
 // is human-readable by construction, so prettifying it is better than omitting the crumb.
+//
+// THE PARENT IS THE CATEGORY, NOT THE HUB, once there is a category in the path. A blueprint now
+// lives at `/blueprints/<segment>/<slug>`, two levels deep, and a back arrow that skipped its own
+// index would drop a reader out of the list they were browsing. The category list itself still
+// points back at the hub, because that IS its parent.
 function getSubHeader(pathname: string): SubHeader | null {
   if (pathname.startsWith("/blueprints/")) {
-    const lastSegment = pathname.split("/").filter(Boolean).at(-1);
+    const segments = pathname.split("/").filter(Boolean);
+    const lastSegment = segments.at(-1);
     if (lastSegment) {
+      // `segments[1]` is the category segment: ["blueprints", "teardowns", "<slug>"].
+      const categorySegment = segments[1];
+      const category =
+        segments.length > 2 && categorySegment !== undefined
+          ? BLUEPRINT_CATEGORY_BY_SEGMENT[categorySegment]
+          : undefined;
+
       return {
         title: prettifySlug(lastSegment),
-        parentHref: "/blueprints",
-        parentLabel: "Blueprints",
+        parentHref: category === undefined ? "/blueprints" : buildBlueprintCategoryHref(category),
+        parentLabel: category === undefined ? "Blueprints" : BLUEPRINT_CATEGORY_LABELS[category],
       };
     }
   }

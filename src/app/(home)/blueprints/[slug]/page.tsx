@@ -1,50 +1,57 @@
+// The flat blueprint URL, from before each category got its own segment.
+//
+// WHY THE REDIRECT LIVES HERE AND NOT IN `next.config.ts`, which is the load-bearing part: the
+// destination depends on the row's CATEGORY, and a config rewrite cannot know it. `/anime` got its
+// 308s in the config precisely because that mapping was static — `/anime/:path*` went to one
+// place. This one needs a lookup, so it needs a route.
+//
+// WHAT IT COSTS, measured and written down at `src/app/(home)/store/[...slug]/page.tsx:25-30`:
+// under `cacheComponents` a redirect from a page component does NOT produce a 308 response
+// header. The static shell has already flushed by the time the dynamic part runs, so Next emits
+// `<meta http-equiv="refresh">` alongside an RSC `NEXT_REDIRECT` — the browser lands on the right
+// URL, after a visible pause. Middleware is the only mechanism that runs earlier, and standing up
+// a global surface to serve a de-indexed mock URL space is not the trade.
+//
+// `permanentRedirect` RATHER THAN `redirect`, unlike the four redirects already in this repo. Each
+// of those is temporary by intent — a route scheduled for deletion, where a 308 cached by
+// browsers and CDNs would be a URL you cannot recall. This is the opposite: the flat shape is
+// never coming back, and a permanent answer is the honest one.
+//
+// NO `generateStaticParams`, matching every other redirect here: there is no content to
+// prerender, only a destination.
+//
+// IT DOES CARRY `noindex`, WHICH THE OTHER FOUR REDIRECTS DO NOT NEED. They answer a real 307 and
+// have no document; this one, per the paragraph above, actually renders a meta-refresh page. On a
+// surface where all seven other routes are deliberately de-indexed, leaving one indexable
+// interstitial behind would be the one gap nobody thinks to look for. That is also why this is a
+// static `metadata` object rather than a `generateMetadata` — the flag does not depend on which
+// blueprint was asked for, and a title would name a page nobody reads.
+
 import type { Metadata } from "next";
+import { notFound, permanentRedirect } from "next/navigation";
 
-import BlueprintDetailPage from "@/components/home/blueprints/blueprint-detail-page";
-import { getBlueprint, listBlueprintSlugs } from "@/lib/blueprints/api";
+import { getBlueprint } from "@/lib/blueprints/api";
+import { buildBlueprintHref } from "@/lib/blueprints/schemas";
 
-/**
- * Prerender every published slug — a dynamic route needs this under `cacheComponents`.
- *
- * NO `withSentinelValues` HERE, unlike every R&D detail route. That helper exists because a
- * failed backend read returns `[]` and an empty list throws `EmptyGenerateStaticParamsError`.
- * This getter reads an in-repo fixture array, which cannot be empty and cannot fail, so the
- * blogs precedent (`src/app/(information)/blogs/[slug]/page.tsx`) applies instead.
- *
- * ADD THE SENTINEL AT THE SAME MOMENT `listBlueprintSlugs` STARTS READING THE BACKEND — not
- * before, and not later. Before, it prerenders a `__none__` page nobody needs; later, the first
- * CI run without a reachable backend fails the build.
- */
-export async function generateStaticParams() {
-  const slugs = await listBlueprintSlugs();
-  return slugs.map((slug) => ({ slug }));
-}
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
 
-/** No session forwarded — metadata is shared by every visitor, including strangers. */
-export async function generateMetadata({
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
+export default async function LegacyBlueprintRedirect({
   params,
 }: {
   params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+}) {
   const { slug } = await params;
   const blueprint = await getBlueprint(slug);
 
-  // `noindex` ON BOTH RETURN PATHS — see the note on the hub route. The miss path needs it too:
-  // returning it only for a resolved blueprint would leave every unknown slug indexable, which
-  // is the opposite of the intent and the easiest half to forget.
-  const robots = { index: false, follow: false } as const;
+  // A hand-edited or long-dead slug ends at a 404 rather than at the hub. Bouncing an unknown URL
+  // to a working page hides the fact that the thing asked for does not exist.
+  if (blueprint === null) notFound();
 
-  if (blueprint === null) return { robots, title: "Blueprints" };
-
-  return {
-    robots,
-    title: `${blueprint.title} · Blueprints`,
-    description: blueprint.summary,
-    alternates: { canonical: `/blueprints/${slug}` },
-  };
-}
-
-export default async function BlueprintRoute({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  return <BlueprintDetailPage slug={slug} />;
+  permanentRedirect(buildBlueprintHref(blueprint));
 }

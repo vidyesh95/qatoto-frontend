@@ -47,13 +47,17 @@ import {
  *
  * - `/watch`, `/search` and `/store/search` are driven by search params (`?v=`, `?query=`).
  *   The bare path renders a placeholder, so announcing it advertises an empty page.
- * - `/blueprints` and `/blueprints/[slug]` are MOCK-BACKED — real UI over twelve invented
- *   builds in `@/mocks/blueprints-mocks` — and are held to exactly the rule the retired
- *   `/anime` routes were held to. Both also carry page-level `noindex`, because the sidebar and
- *   the mobile nav link the hub: dropping it from here is crawl budget, not de-indexing, and on
- *   its own it would have stopped nothing (see the note at the top of `robots.ts`). WHEN REAL
- *   BLUEPRINTS EXIST, restore BOTH halves — the two entries here and the `robots` flag on each
- *   route — or the surface ships invisible.
+ * - THE WHOLE `/blueprints` SURFACE IS MOCK-BACKED — real UI over 22 invented builds in
+ *   `@/mocks/blueprints-mocks` — and is held to exactly the rule the retired `/anime` routes were
+ *   held to. ⚠️ THAT IS SEVEN ROUTES NOW, NOT TWO: the hub, `/teardowns`, `/showcase`,
+ *   `/case-studies`, and a `[slug]` detail under each of those three. Every one carries
+ *   page-level `noindex`, because the sidebar and the mobile nav link the hub: dropping a route
+ *   from here is crawl budget, not de-indexing, and on its own it would have stopped nothing (see
+ *   the note at the top of `robots.ts`). WHEN REAL BLUEPRINTS EXIST, restore BOTH halves — SEVEN
+ *   entries here and the `robots` flag on each of the seven route files — or the surface ships
+ *   part-visible, which is worse than either extreme because nobody notices.
+ *   (The eighth file, `/blueprints/[slug]`, is a redirect resolver: no content, no metadata, and
+ *   it never belongs in a sitemap.)
  * - `/research-and-development/new` and `/programs/new` are wizard forms with nothing to index.
  * - The remaining stub routes render a bare `<h1>` and already carry `noindex`. There are twelve
  *   now rather than sixteen: `/report-history` shipped with video content reporting, and

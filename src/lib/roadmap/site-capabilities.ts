@@ -185,8 +185,13 @@ export const ROADMAP_AUDIENCES: readonly RoadmapAudience[] = [
       {
         action: "Browse the Blueprints hub",
         summary:
-          "Engineering teardowns, working prototypes and manufacturing case studies — schematics, tolerances and bills of materials, published in the open.",
-        routes: [{ label: "Blueprints", href: "/blueprints" }],
+          "Engineering teardowns, working prototypes and manufacturing case studies — schematics, tolerances and bills of materials, published in the open. Each of the three has its own index, because a teardown, a launch and a manufacturing lesson are not browsed the same way.",
+        routes: [
+          { label: "Blueprints", href: "/blueprints" },
+          { label: "Teardowns", href: "/blueprints/teardowns" },
+          { label: "Showcase", href: "/blueprints/showcase" },
+          { label: "Case studies", href: "/blueprints/case-studies" },
+        ],
       },
       {
         action: "Keep what you found",

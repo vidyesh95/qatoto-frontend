@@ -245,6 +245,25 @@ rules at once, not contradicting itself.
 prototypes (20%) and manufacturing case studies (10%) — and `next.config.ts` 308s `/anime`
 and `/anime/:path*` at the routing layer.
 
+**THE SURFACE IS SEVEN ROUTES PLUS A RESOLVER, not two.** Each of the three kinds has its own
+index and its own detail layout, because a teardown, a launch and a manufacturing lesson are not
+browsed the same way:
+
+| Route                                  | Design                                                                  |
+| -------------------------------------- | ----------------------------------------------------------------------- |
+| `/blueprints`                          | Hub — hero, three category links, one teaser rail each with **See all** |
+| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid; detail carries the video and the PDFs                   |
+| `/blueprints/showcase` + `/[slug]`     | Launch feed, newest `launchedAt` first                                  |
+| `/blueprints/case-studies` + `/[slug]` | Numbered index, colour-coded by `discipline`                            |
+| `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                    |
+
+⚠️ **The resolver CANNOT move to `next.config.ts`.** Its destination depends on the row's
+`category`, which a static rewrite rule cannot know — `/anime` got its redirects there precisely
+because that mapping _was_ static. And note what it actually costs: under `cacheComponents` a
+redirect from a page component does **not** emit a 308 header. The static shell has already
+flushed, so Next sends `<meta http-equiv="refresh">` and the browser lands correctly after a
+visible pause. This is measured and written up at `src/app/(home)/store/[...slug]/page.tsx:25-30`.
+
 **The hub is mock and that is a decision, not an oversight.** `src/mocks/blueprints-mocks.ts`
 holds 22 invented builds across three arms — 12 teardowns, 5 showcases, 5 case studies.
 ⚠️ **That is NOT the 70/20/10 split and is not meant to be**: the ratio is a target for real
@@ -277,6 +296,13 @@ Three rules specific to this surface:
   its fields — half a range is an unanswerable question. `null` means nobody costed it; it is
   not zero. Render it with `formatCentsRangeLabel` (`src/lib/store/format.ts`), which returns
   `null` rather than inventing a band.
+- **Media is nullable, and an absence renders NOTHING.** A teardown's `walkthroughVideo` is
+  `null` when nobody filmed it and `documents` is `[]` when nothing was published — both are the
+  common case, and both render no section at all rather than an empty box. Video is a poster plus
+  `preload="none"`, never a player library and never `watch/video-player.tsx` (which reports watch
+  progress, a claim this page has no business making). PDFs open in a `ModalSheet` over
+  `<embed type="application/pdf">` with a download fallback, because a browser with its PDF viewer
+  off renders `<embed>` as a silent blank rectangle.
 - **The hero is real.** `GET /blueprints/hero-slides` and the admin console at
   `/admin/blueprints-hero` are live, backed by four rows. The `anime_hero_slide` TABLE and the
   five `anime_hero_slide_*` audit pgEnum labels KEEP THEIR NAMES — renaming them costs a
@@ -341,8 +367,13 @@ statement, which is a deliberate decision (backend §11h) and is labelled as an 
 **How to tell which one you are in:** every file under
 `src/components/home/research-and-development/` carries a `TRANSPORT:` banner on its
 first line — `server-fetch`, `client-query` or `props-only`. That banner is the answer, and
-`grep -rn "TRANSPORT: mock" src/` now returns NOTHING, which is the check that this section
-is still true. See `docs/R_AND_D_STRUCTURE.md` §18 (phase order) and §19 (transport map).
+`grep -rn "TRANSPORT: mock" src/components/home/research-and-development/` now returns
+NOTHING, which is the check that this section is still true.
+
+⚠️ **The path in that grep is load-bearing.** It used to read `src/`, which made it a whole-repo
+claim that was already false when written: `src/components/home/blueprints/**` is mock-backed on
+purpose and every async file in it is `TRANSPORT: mock`. Scoped to R&D it is a real check; scoped
+to `src/` it fails the first day anyone runs it. See `docs/R_AND_D_STRUCTURE.md` §18 (phase order) and §19 (transport map).
 
 **The audit that keeps the write surface honest**, and note the flag — the version of this
 loop that shipped in `docs/R_AND_D_STRUCTURE.md` omitted `--no-filename`, so `rg` prefixed

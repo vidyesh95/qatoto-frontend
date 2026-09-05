@@ -1,7 +1,18 @@
-// Minimal route-segment loading placeholder shared by every Blueprints route
-// (landing, ranking, favorite, daily, genre). Pure pulsing blocks
-// approximating a hero banner plus a media row — no props, no data, no logic
-// (UI + mock data phase, see CLAUDE.md).
+// TRANSPORT: props-only — a pulsing placeholder. No props, no data, no logic.
+//
+// The segment-level fallback for EVERY Blueprints route: the hub, the three category indexes
+// (`/teardowns`, `/showcase`, `/case-studies`) and the detail page under each. It sits at
+// `blueprints/loading.tsx`, so it covers the nested segments too — which is why the three index
+// routes, all of which read `searchParams` and are therefore dynamic, need no `loading.tsx` of
+// their own.
+//
+// The route names in this comment were previously "landing, ranking, favorite, daily, genre" —
+// stale copy inherited verbatim from the `/anime` page this replaced. None of those routes ever
+// existed here.
+//
+// It approximates the HUB (hero, category links, a rail), which is the heaviest of the six and
+// the one most likely to be a visitor's first paint. An index grid settles slightly differently;
+// a skeleton per route would be five more files to keep honest for a fraction of a second each.
 export default function BlueprintsLoadingSkeleton() {
   return (
     <div className="animate-pulse space-y-4 pb-10">

@@ -1,11 +1,23 @@
+// TRANSPORT: props-only — the categories arrive from `blueprints-page`. This component fetches
+// nothing.
+//
+// THIS FILE WAS DEAD CODE UNTIL THE THREE CATEGORY ROUTES EXISTED. It shipped with the hub and had
+// no importer, because there was nowhere for it to point: every category lived on the same page.
+// It is wired now rather than rewritten, since the shape it already had — icon, label, href — is
+// exactly the shape three segment links need.
+
 import Image from "next/image";
 import Link from "next/link";
 
-type Category = { icon: string; label: string; href: string };
+export interface CategoryLink {
+  readonly icon: string;
+  readonly label: string;
+  readonly href: string;
+}
 
-export default function CategoryLinks({ categories }: { categories: Category[] }) {
+export default function CategoryLinks({ categories }: { categories: readonly CategoryLink[] }) {
   return (
-    <nav className="px-4 py-2 lg:px-6">
+    <nav className="px-4 py-2 lg:px-6" aria-label="Blueprint categories">
       <ul className="flex items-start">
         {categories.map((category) => (
           <li key={category.label} className="flex-1">
