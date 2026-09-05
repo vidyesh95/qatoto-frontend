@@ -246,7 +246,12 @@ prototypes (20%) and manufacturing case studies (10%) — and `next.config.ts` 3
 and `/anime/:path*` at the routing layer.
 
 **The hub is mock and that is a decision, not an oversight.** `src/mocks/blueprints-mocks.ts`
-holds twelve invented builds. It inherits the caveat `todo.md` recorded against `/anime`
+holds 22 invented builds across three arms — 12 teardowns, 5 showcases, 5 case studies.
+⚠️ **That is NOT the 70/20/10 split and is not meant to be**: the ratio is a target for real
+content, and applied to fixtures it gave two showcases and two case studies, which does not
+exercise either design. There are exactly five case studies because there are five
+`BLUEPRINT_DISCIPLINES`, and a discipline with no fixture is a card tint nobody ever sees.
+The surface inherits the caveat `todo.md` recorded against `/anime`
 verbatim — _a vertical you cannot fill should not ship_ — so the surface is **de-indexed**: it is
 absent from `src/app/sitemap.ts` AND both routes carry `robots: { index: false, follow: false }`.
 Both halves are needed, because the sidebar and mobile nav link the hub, so a sitemap omission
@@ -260,6 +265,13 @@ Three rules specific to this surface:
   whose `"use cache"` getters mirror `src/lib/cms.ts`. `/anime` was wired the other way — its
   components imported `@/mocks/anime-mocks` directly — and that is precisely why swapping it to
   real data was a component rewrite rather than a one-file edit. Do not reintroduce that.
+- **`Blueprint` is a DISCRIMINATED UNION on `category`, not one flat shape.** Each arm carries
+  what its surface needs — a teardown's `walkthroughVideo`/`documents[]`, a showcase's
+  `launchedAt`/`team[]`/`upvoteCount`, a case study's `conceptNumber`/`discipline`/
+  `outcomeMetrics[]`. `difficulty`, `cadFormat` and `billOfMaterialsCostRange` stay SHARED
+  because a rail card renders them for every category; arms only add. Build every URL with
+  `buildBlueprintHref` — never by hand. `upvoteCount` is display-only and no vote button ships:
+  a counter a client increments is a business rule on an untrusted layer.
 - **Costs are integer cents, never display strings.** `billOfMaterialsCostRange` is
   `{ minimumInCents, maximumInCents, currency } | null`, and the OBJECT is nullable rather than
   its fields — half a range is an unanswerable question. `null` means nobody costed it; it is

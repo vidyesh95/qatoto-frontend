@@ -5,6 +5,11 @@
 
 import { z } from "zod";
 
+import {
+  createHttpsOrSiteRelativeUrlSchema,
+  createSitePathSchema,
+} from "@/lib/blueprints/url-source.schemas";
+
 /** Mirrors MAX_BLUEPRINT_HERO_SLIDES in the backend's `blueprint-hero.service.ts`. */
 export const MAX_BLUEPRINT_HERO_SLIDES = 12;
 
@@ -12,39 +17,15 @@ export const MAX_BLUEPRINT_HERO_SLIDES = 12;
  * A slide's image source: an https Cloudinary URL for anything an admin uploaded, or a
  * SITE-RELATIVE path for the rows seeded with migration 0149.
  *
- * THE SECOND REFINEMENT IS NOT PARANOIA. This value becomes a `next/image` src on a public
- * page. `//evil.tld/x` starts with "/" — so the obvious `startsWith("/")` check passes it —
- * and a browser reads it as protocol-relative and leaves the site. `z.url()` alone would not
- * help either: it accepts `javascript:alert(1)` as a well-formed URL, which React renders
- * verbatim.
- *
- * THE BACKEND OWNS THIS RULE and re-validates it on every write (CLAUDE.md §1.1); this is
- * the second line of defence. A bad row failing the contract, so the carousel renders
- * nothing, is the correct failure.
+ * THE REFINEMENTS LIVE IN `url-source.schemas.ts` and are shared with the rest of the Blueprints
+ * surface — a teardown's video poster and document links take the same kind of value from the
+ * same backend, and a security check that exists twice is a check that drifts once. That file
+ * carries the argument for why `startsWith("/")` alone is not enough.
  */
-const HeroImageSourceSchema = z
-  .string()
-  .min(1)
-  .max(2048)
-  .refine(
-    (source) => source.startsWith("https://") || source.startsWith("/"),
-    "An image must be an https URL or a path on this site.",
-  )
-  .refine(
-    (source) => !source.startsWith("//") && !source.startsWith("/\\"),
-    "A protocol-relative path leaves the site.",
-  );
+const HeroImageSourceSchema = createHttpsOrSiteRelativeUrlSchema(2048);
 
 /** Same rule minus the https arm — the Blueprints hero never links off-site. */
-const HeroDestinationPathSchema = z
-  .string()
-  .min(1)
-  .max(512)
-  .refine((path) => path.startsWith("/"), "A destination must start with a slash.")
-  .refine(
-    (path) => !path.startsWith("//") && !path.startsWith("/\\"),
-    "A protocol-relative path leaves the site.",
-  );
+const HeroDestinationPathSchema = createSitePathSchema(512);
 
 /**
  * What `GET /blueprints/hero-slides` returns.

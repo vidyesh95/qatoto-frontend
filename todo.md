@@ -900,7 +900,7 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     **THE CONTENT BLOCKER DID NOT GO AWAY — IT CHANGED SUBJECT.** The reason this item existed
     was that wiring five pages would have replaced five pages of invented content with five
     blank ones, and the precedent recorded here was that YouTube does not ship a vertical it
-    cannot fill. `/blueprints` is in exactly that position now: twelve fixtures in
+    cannot fill. `/blueprints` is in exactly that position now: 22 fixtures in
     `src/mocks/blueprints-mocks.ts`, no backend, no real teardowns. The difference is only that
     nobody has published a real blueprint yet, so there is nothing to be inconsistent with.
 
@@ -913,10 +913,114 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     surface ships invisible; miss the `robots` flag and it ships indexed while fabricated.
     `getBlueprintSitemapEntries` was deleted rather than left unreferenced.
 
-    What is left to make it real: a `blueprint` table and a public read, then point the three
+    What is left to make it real: a `blueprint` table and a public read, then point the
     getters in `src/lib/blueprints/api.ts` at it. The components never import the fixtures, so
     that is a one-file change plus adding `withSentinelValues` to the detail route's
-    `generateStaticParams` — which is the whole reason it was built this way round.
+    `generateStaticParams` — which is the whole reason it was built this way round. ⚠️ **When that
+    happens, FILTER THE RESERVED SLUGS FIRST AND WRAP SECOND** — `withSentinelValues(filtered)` is
+    right; filtering the wrapped list can drop the sentinel and throw the exact
+    `EmptyGenerateStaticParamsError` the sentinel exists to prevent.
+
+    ### 1a. The three-surface redesign — PHASE 1 SHIPPED 2026-09-06, phases 2-5 are not built
+
+    The hub was one page: a hero over three horizontal rails, one card design, one detail
+    layout. That is wrong for the content, because the three buckets answer different
+    questions. The agreed target is three routes with three designs — `showcase` as a
+    launch feed (ycombinator.com/launches), `case_study` as a numbered, colour-coded
+    reference index (lawsofux.com), `teardown` as a thumbnail grid whose detail page finally
+    has somewhere to put a schematic. Full plan:
+    `~/.claude/plans/for-showcase-i-want-eager-tulip.md`.
+
+    **PHASE 1 SHIPPED: the contract, the data layer and the fixtures.** `pnpm build` prerenders
+    all 22 detail pages, so every fixture parses through the new union.
+
+    - `BlueprintSchema` is now a `z.discriminatedUnion("category", …)` with three arms. The
+      **shared fields are a spread const**, `.strip()` per arm — `rfqs.schemas.ts:169` and
+      `providers.schemas.ts:221` are the precedents. `difficulty`, `cadFormat` and
+      `billOfMaterialsCostRange` STAYED SHARED on purpose: a rail card renders all three for
+      every category, and moving them into one arm pushes an exhaustive `switch` down into a
+      card. Arms only add.
+    - New per-arm fields: teardown gets `walkthroughVideo` / `documents[]` / `partCount`;
+      showcase gets `tagline` / `launchedAt` / `upvoteCount` / `team[]` /
+      `builtFromBlueprintSlug` / `demoVideo` / `callToAction`; case study gets
+      `conceptNumber` / `discipline` / `oneLineDefinition` / `takeaways[]` /
+      `outcomeMetrics[]` / `furtherReading[]`.
+    - **`upvoteCount` IS DISPLAY-ONLY and no vote button will ship.** A vote is a write, there
+      is no endpoint, and a counter a client increments is a business rule on an untrusted
+      layer. It renders; nothing in this repo changes it.
+    - **Outcome metrics carry a typed value**, `count | money | percentage`, not a string.
+      "$4.12" as text cannot be converted, sorted or localised and fixes the currency at
+      author time — the same argument `billOfMaterialsCostRange` is written in cents for.
+      Percentages are basis points so a fraction survives the integer.
+    - `BLUEPRINT_CATEGORY_SEGMENTS` + `BLUEPRINT_CATEGORY_BY_SEGMENT` + `buildBlueprintHref`.
+      **The reverse map is written out, not derived by `replaceAll("-","_")`** — two of the
+      three segments are plural (`teardowns`, `case-studies`) while the enum is singular, so
+      string munging is wrong for two of three.
+    - **Reserved-slug guard** in `api.ts`, derived from the segment map. A blueprint slugged
+      `showcase` would be permanently unreachable behind the static route and would serve a
+      200 showing the WRONG page. The guard lives in the data layer, not a route file,
+      because `getBlueprint`, `listBlueprintSlugs` and the sitemap reach the data
+      independently.
+    - The https-or-site-relative URL refinements moved out of `hero.schemas.ts` (where they
+      were module-private) into `src/lib/blueprints/url-source.schemas.ts`, and the hero
+      contract now imports them. Same bytes, one copy — a security check that exists twice is
+      a check that drifts once.
+    - **Fixtures are 22 rows at 12 / 5 / 5, NOT 70/20/10.** The ratio is a content target for
+      real builds; applied to fixtures it gave two showcases and two case studies, and a feed
+      of two rows does not exercise its own design. There are exactly five case studies
+      because there are five disciplines, and a discipline with no fixture is a card tint
+      nobody ever sees.
+    - **Placeholder media is real, not invented.** `public/dummy/blueprints/*.pdf` are eight
+      generated one-to-four-page PDFs, and every fixture `byteSize`/`pageCount` is measured
+      from the file on disk. Every fixture video points at the one real clip in the repo
+      (`/dummy/video/Sintel_1080_10s_1MB.mp4`, `durationSeconds: 10` — its TRUE duration).
+      ⚠️ `ffmpeg` on this machine is broken (`Library not loaded: libass.9.dylib`), which is
+      why there is one clip rather than five.
+    - `captionsUrl` is `null` on every fixture, so the `<track>` branch is unexercised. Give
+      one row a real WebVTT when phase 4 lands.
+
+    ⚠️ **PHASE 1 LANDED AHEAD OF ITS CALLERS, AND THAT IS THE DEBT.**
+    `listBlueprintsByCategory`, `getBlueprintByCategory`, `listBlueprintSlugsByCategory`,
+    `buildBlueprintHref`, `buildBlueprintCategoryHref` and everything in
+    `src/lib/blueprints/format.ts` have **no caller yet**. An uncalled wrapper is unverified
+    code. Phase 2 is what calls them; if phase 2 is abandoned, delete them rather than leave
+    them.
+
+    **Phase 2 — routes.** `/blueprints/{teardowns,showcase,case-studies}` list routes plus a
+    nested `[slug]` detail under each, and `/blueprints/[slug]` shrinks to a
+    `permanentRedirect(buildBlueprintHref(…))` resolver. ⚠️ **That 308 CANNOT live in
+    `next.config.ts`** — the target depends on the row's `category`, which a static rewrite
+    rule cannot know. (`/anime` got its redirects there because that mapping WAS static.)
+    Each new route needs `robots: { index: false, follow: false }`, a bare-path
+    `alternates.canonical` (or every chip permutation self-canonicalises), and absence from
+    `STATIC_PUBLIC_PATHS`. **Do NOT add `/blueprints` to `robots.ts`** — a `Disallow` stops
+    the crawl so the crawler never reads the `noindex`, which is the argument `robots.ts`
+    makes at the top.
+
+    **Phase 3 — the three list designs.** Teardown grid, showcase feed (base it on
+    `ForumThreadRow`, `store/forum-index-page.tsx:166` — already the right shape), case-study
+    numbered index (numeral + tint + serif treatment from `pipeline-stages-strip.tsx:85-101`).
+    Chips via `FilterChipRow` + `src/lib/filter-href.ts`, server-side, URL-driven. Also:
+    `blueprint-rail.tsx:36-43` says "add the SEE ALL link when there is a route behind it" —
+    phase 2 is that condition, and `sections/category-links.tsx` is dead code that is already
+    the right `{icon,label,href}` nav for the three segments.
+
+    **Phase 4 — media.** Video block (poster → `<video controls preload="none">`, no player
+    library), document list, and a document viewer over the existing `ModalSheet` +
+    `<embed type="application/pdf">` — `certification-review-page.tsx:453-460` is the only
+    in-repo precedent and there is no PDF dependency to add.
+
+    **Phase 5 — docs.** ⚠️ **The de-index count becomes FIVE routes, not two**, the moment
+    phase 2 lands; `sitemap.ts:51-56` says "the two entries here" and would send whoever
+    un-mocks this surface to restore two and silently ship three invisible. Also
+    `site-roadmap.ts:135-148` and `site-capabilities.ts:186-190` under-report until the new
+    segments are added.
+
+    ⚠️ **A CLAUDE.md claim that is already false, found on the way:** it states
+    `grep -rn "TRANSPORT: mock" src/` "now returns NOTHING". It does not —
+    `blueprints-page.tsx:1` and `blueprint-detail-page.tsx:1` are both `TRANSPORT: mock`. The
+    sentence is about the R&D surface but reads as a whole-repo claim, so it fails as a check
+    the first day anyone runs it. Scope it to `research-and-development/`.
 
     Two smaller things deferred out of the retirement, recorded so they are not rediscovered:
 
