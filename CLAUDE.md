@@ -247,8 +247,12 @@ and `/anime/:path*` at the routing layer.
 
 **The hub is mock and that is a decision, not an oversight.** `src/mocks/blueprints-mocks.ts`
 holds twelve invented builds. It inherits the caveat `todo.md` recorded against `/anime`
-verbatim — _a vertical you cannot fill should not ship_ — and `src/app/sitemap.ts` announces
-these routes anyway, which is flagged there as the thing to revisit before production.
+verbatim — _a vertical you cannot fill should not ship_ — so the surface is **de-indexed**: it is
+absent from `src/app/sitemap.ts` AND both routes carry `robots: { index: false, follow: false }`.
+Both halves are needed, because the sidebar and mobile nav link the hub, so a sitemap omission
+alone stops nothing (`robots.ts` says exactly this at the top). **Restoring both is the launch
+step** when real blueprints exist — miss one and the surface either ships invisible or ships
+indexed-while-fabricated.
 
 Three rules specific to this surface:
 

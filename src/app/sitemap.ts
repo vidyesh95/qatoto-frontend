@@ -4,7 +4,6 @@ import { SITE_URL } from "@/lib/site";
 import { UNRESOLVABLE_PARAM_VALUE } from "@/lib/static-params";
 import {
   getBlogSitemapEntries,
-  getBlueprintSitemapEntries,
   getCatalogSitemapEntries,
   getChannelSitemapEntries,
   getCategorySitemapEntries,
@@ -48,13 +47,13 @@ import {
  *
  * - `/watch`, `/search` and `/store/search` are driven by search params (`?v=`, `?query=`).
  *   The bare path renders a placeholder, so announcing it advertises an empty page.
- * - ⚠️ `/blueprints` AND `/blueprints/[slug]` ARE ANNOUNCED WHILE STILL MOCK-BACKED, which is a
- *   deliberate exception to the rule the retired `/anime` routes were held to, and it should be
- *   revisited rather than inherited. The old exclusion existed because five real pages sat over
- *   fabricated content; the same is true here. The difference is only that Blueprints has no
- *   real arm yet to be inconsistent with. IF THESE FIXTURES ARE STILL FICTION when the site next
- *   ships to production, take both entries back out — announcing invented builds to a crawler is
- *   worse than announcing nothing.
+ * - `/blueprints` and `/blueprints/[slug]` are MOCK-BACKED — real UI over twelve invented
+ *   builds in `@/mocks/blueprints-mocks` — and are held to exactly the rule the retired
+ *   `/anime` routes were held to. Both also carry page-level `noindex`, because the sidebar and
+ *   the mobile nav link the hub: dropping it from here is crawl budget, not de-indexing, and on
+ *   its own it would have stopped nothing (see the note at the top of `robots.ts`). WHEN REAL
+ *   BLUEPRINTS EXIST, restore BOTH halves — the two entries here and the `robots` flag on each
+ *   route — or the surface ships invisible.
  * - `/research-and-development/new` and `/programs/new` are wizard forms with nothing to index.
  * - The remaining stub routes render a bare `<h1>` and already carry `noindex`. There are twelve
  *   now rather than sixteen: `/report-history` shipped with video content reporting, and
@@ -75,9 +74,6 @@ const STATIC_PUBLIC_PATHS: readonly string[] = [
   "/how-qatoto-works",
   "/press",
   "/roadmap",
-
-  // The Blueprints hub. See the mock-backed caveat in the doc comment above.
-  "/blueprints",
 
   // (home) — informational pages that are not part of the app shell.
   "/advertise-with-us",
@@ -146,7 +142,6 @@ function toSitemapUrl(entry: SitemapEntry): MetadataRoute.Sitemap[number] {
  * buys a file whose contents are the same every time.
  */
 const SITEMAP_SOURCES: readonly (() => Promise<SitemapEntry[]>)[] = [
-  getBlueprintSitemapEntries,
   getBlogSitemapEntries,
   getPressSitemapEntries,
   getResearchProgramSitemapEntries,

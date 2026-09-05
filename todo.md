@@ -904,15 +904,48 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     `src/mocks/blueprints-mocks.ts`, no backend, no real teardowns. The difference is only that
     nobody has published a real blueprint yet, so there is nothing to be inconsistent with.
 
-    ⚠️ **AND UNLIKE `/anime`, IT IS IN THE SITEMAP.** `/blueprints` and `/blueprints/[slug]` are
-    announced while still fabricated — the opposite of the call made for the five `/anime`
-    routes, and deliberately flagged in `src/app/sitemap.ts` rather than done quietly. **Take
-    both entries back out before this ships to production if the fixtures are still fiction.**
+    **IT IS DE-INDEXED, AND THAT TOOK TWO CHANGES RATHER THAN ONE.** `/blueprints` and
+    `/blueprints/[slug]` are absent from `src/app/sitemap.ts` AND both carry
+    `robots: { index: false, follow: false }`. The sitemap omission alone would have stopped
+    nothing — the sidebar and mobile nav link the hub, so a crawler arrives anyway, which is the
+    point `robots.ts` makes at the top: `Disallow` is not `noindex`, and the page-level flag is
+    the stronger of the two. **Restoring BOTH is the launch step.** Miss the sitemap and the
+    surface ships invisible; miss the `robots` flag and it ships indexed while fabricated.
+    `getBlueprintSitemapEntries` was deleted rather than left unreferenced.
 
     What is left to make it real: a `blueprint` table and a public read, then point the three
     getters in `src/lib/blueprints/api.ts` at it. The components never import the fixtures, so
     that is a one-file change plus adding `withSentinelValues` to the detail route's
     `generateStaticParams` — which is the whole reason it was built this way round.
+
+    Two smaller things deferred out of the retirement, recorded so they are not rediscovered:
+
+    - **`videoId` AND `creatorId` on `VideoCardProps` are both required now**, which deleted 17
+      absence guards in `video-card-menu.tsx` and fixed a real defect: "Don't recommend channel"
+      used to render inert on every card in the R&D venture reel, because
+      `ProjectVideoRow` (`studio/videos/project-videos.service.ts`) projected
+      `creatorHandle`/`creatorName`/`creatorImageUrl` but never `user.id`, despite already
+      joining on it. The projection now carries `creator.id`.
+
+        ⚠️ **THAT PAIR IS A DEPLOY-ORDER DEPENDENCY — BACKEND FIRST.** `ProjectVideoSchema.creator.id`
+        is REQUIRED, and `.strip()` does not rescue a missing required key (it only ignores unknown
+        extra ones). A frontend running against a backend that predates the projection fails the
+        parse and renders the whole venture reel empty.
+
+        **VERIFIED against real data on 2026-09-05, then reverted.** No project owns a
+        publicly-servable video (all 17 reels return zero rows), so the populated path was
+        exercised by temporarily pointing ONE already-public video's `research_project_id` at
+        `rc-plane` — a single-column update whose prior value was NULL, reverted immediately.
+        `GET /research-projects/rc-plane/videos` returned `creator.id`, and the rendered project
+        page carried that id all the way into the card's menu props, which is the whole fix. The
+        row is back to `research_project_id IS NULL` and the reel returns 0 rows again.
+
+        **The reels are empty in normal operation**, so nothing on this path runs day to day until
+        a project video is actually published. That is why the check above had to be staged.
+
+    - **`/studio/series`** (~1,075 LOC, 13 owner-scoped backend routes) is anime series CRUD with
+      no public surface left to feed. Deprecate it once a replacement workflow exists; it was
+      deliberately not touched during the retirement.
 
     **The DB tables are untouched and still empty.** `anime_series`, `anime_season` and
     `anime_episode` remain (0 rows each), as do the `anime_audio_mode` / `anime_series_status`

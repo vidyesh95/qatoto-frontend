@@ -182,8 +182,8 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
         // mobile bar.
         href: "/admin/blueprints-hero",
         label: "Blueprints hero",
-        activeIcon: "/icons/live_tv_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-        inactiveIcon: "/icons/live_tv_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+        activeIcon: "/icons/architecture_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+        inactiveIcon: "/icons/architecture_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       },
     ],
     hasDivider: true,

@@ -71,7 +71,7 @@ const SURFACES = [
     body: "Produce launch videos, ad creative, and product walkthroughs on the same platform you built the product on.",
   },
   {
-    icon: "/icons/live_tv_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    icon: "/icons/architecture_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     title: "Engineering blueprints",
     body: "Teardowns and schematics as an R&D feed — boards, mechanisms, costed bills of materials. Read the build, brief your team, make the real thing.",
   },

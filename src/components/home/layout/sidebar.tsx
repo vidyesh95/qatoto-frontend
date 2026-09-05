@@ -17,6 +17,15 @@ const ICON_PATHS = {
     active: "/icons/home_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/home_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  // THE TWO FILES ARE BYTE-IDENTICAL, ON PURPOSE — DO NOT "DEDUPE" THEM TO ONE `static` ENTRY.
+  // Google ships no fill variant for `architecture` (nor for `square_foot`); the glyph is
+  // stroke-only, so FILL0 and FILL1 are the same path. Keeping both paths here means the day
+  // Google adds a filled variant, or the icon is swapped for one that has one, is a file drop
+  // rather than a shape change at every call site.
+  //
+  // Blueprints is therefore the one primary nav entry whose ICON does not change on activation.
+  // The active state is still carried three other ways: `ACTIVE_ITEM_STYLE` here, the teal pill
+  // in `mobile-bottom-nav.tsx`, and `aria-current="page"` for anyone not looking at pixels.
   architecture: {
     active: "/icons/architecture_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/architecture_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",

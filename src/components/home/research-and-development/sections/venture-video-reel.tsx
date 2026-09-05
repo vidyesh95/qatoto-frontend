@@ -30,6 +30,7 @@ const REEL_THUMBNAIL_SIZES = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw,
 function toReelCardProps(video: ProjectVideo): VideoCardProps {
   return {
     videoId: video.videoId,
+    creatorId: video.creator.id,
     thumbnailSrc: video.thumbnailUrl ?? FALLBACK_THUMBNAIL_SRC,
     profileSrc: video.creator.imageUrl ?? FALLBACK_AVATAR_SRC,
     title: video.title,

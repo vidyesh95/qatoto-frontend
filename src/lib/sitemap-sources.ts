@@ -23,7 +23,6 @@
 //    though it were the whole catalogue. These loops walk to the end — but a backend that returns a
 //    non-advancing cursor would otherwise spin forever, so each loop is bounded and says so.
 
-import { listBlueprints } from "@/lib/blueprints/api";
 import { listChannels } from "@/lib/channels/api";
 import { getBlogs, getPressList } from "@/lib/cms";
 import { listStoreCategories, searchStore } from "@/lib/store/catalog.api";
@@ -117,25 +116,6 @@ export async function getResearchProjectSitemapEntries(): Promise<SitemapEntry[]
   if (!result.success) return [];
 
   return result.data.map((slug) => ({ path: `/research-and-development/project/${slug}` }));
-}
-
-/**
- * Every published blueprint.
- *
- * NO PAGINATION WALK, unlike the anime-series enumerator this replaces. `listBlueprints` reads
- * an in-repo fixture array and returns all of it in one call, so there is no `totalPages` to
- * follow. Restore the walk at the same time this getter starts reading a paginated endpoint.
- *
- * `createdAt` is the blueprint's own timestamp rather than a crawl artefact, so this surface
- * can honestly carry `lastModified`.
- */
-export async function getBlueprintSitemapEntries(): Promise<SitemapEntry[]> {
-  "use cache";
-  const blueprints = await listBlueprints();
-  return blueprints.map((blueprint) => ({
-    path: `/blueprints/${blueprint.slug}`,
-    lastModified: blueprint.createdAt,
-  }));
 }
 
 /**

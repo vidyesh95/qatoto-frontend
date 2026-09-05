@@ -151,11 +151,11 @@ export default function VideoCard({
           button — it must, because the trigger has to swallow the stretched link's click.
         */}
         <VideoCardMenu
-          {...(videoId === undefined ? {} : { videoId })}
+          videoId={videoId}
           title={title}
           {...(href === undefined ? {} : { shareUrl: href })}
           hasSaved={hasSaved}
-          {...(creatorId === undefined ? {} : { creatorId })}
+          creatorId={creatorId}
           channelName={channelName}
           thumbnailSrc={thumbnailSrc}
         />

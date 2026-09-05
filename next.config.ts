@@ -54,6 +54,16 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        // ONE DOCUMENT, NOT A PREFIX. The retirement renamed this CMS post's slug, and it was a
+        // real prerendered URL — `/blogs/[slug]` enumerates `getBlogs()` — so the old path 404s
+        // for anyone holding a link, an RSS entry or a search result. No `:path*`: `/blogs` has
+        // many other posts and the import-intelligence entry below is the standing warning
+        // about what a careless wildcard does to sibling routes.
+        source: "/blogs/anime-as-r-and-d-input",
+        destination: "/blogs/teardowns-as-r-and-d-input",
+        permanent: true,
+      },
+      {
         // The knowledge hub absorbed import substitution and became Market Research —
         // stage 02 of the pipeline was always called that.
         source: "/research-and-development/knowledge-hub",

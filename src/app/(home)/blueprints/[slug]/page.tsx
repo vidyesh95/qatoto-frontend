@@ -28,9 +28,16 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const blueprint = await getBlueprint(slug);
-  if (blueprint === null) return { title: "Blueprints" };
+
+  // `noindex` ON BOTH RETURN PATHS — see the note on the hub route. The miss path needs it too:
+  // returning it only for a resolved blueprint would leave every unknown slug indexable, which
+  // is the opposite of the intent and the easiest half to forget.
+  const robots = { index: false, follow: false } as const;
+
+  if (blueprint === null) return { robots, title: "Blueprints" };
 
   return {
+    robots,
     title: `${blueprint.title} · Blueprints`,
     description: blueprint.summary,
     alternates: { canonical: `/blueprints/${slug}` },

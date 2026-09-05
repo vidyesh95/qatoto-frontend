@@ -74,11 +74,8 @@ function iconSrc(iconBaseName: string, isFilled = false): string {
 }
 
 type VideoCardMenuProps = {
-  /**
-   * The backend row id. The two wired items branch on its absence rather than assume it —
-   * though no producer omits it any more; see the note on `videoId` in `@/types/video`.
-   */
-  readonly videoId?: string;
+  /** The backend row id. Required — see the note on `videoId` in `@/types/video`. */
+  readonly videoId: string;
   /** The card's title, used for the trigger's accessible name. */
   readonly title: string;
   /**
@@ -93,10 +90,10 @@ type VideoCardMenuProps = {
   /**
    * The creator's row id, for "don't recommend channel".
    *
-   * NOT `channelHref`, which is a path and is omitted entirely for a creator with no handle.
-   * The control branches on it exactly as the `videoId` ones do.
+   * NOT `channelHref`, which is a path and is omitted entirely for a creator with no handle:
+   * the mute route addresses the creator by id, so a display path cannot stand in for it.
    */
-  readonly creatorId?: string;
+  readonly creatorId: string;
   /** The channel's display name — mute confirmation copy, and the queue panel's subtitle. */
   readonly channelName: string;
   /** The card's thumbnail, carried into a queue entry so the panel needs no second fetch. */
@@ -134,15 +131,13 @@ export default function VideoCardMenu({
   const [channelPreference, setChannelPreference] = useState<PreferenceState>({ status: "idle" });
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // `videoId ?? ""` keeps the hook call unconditional — the controls it powers are inert when
-  // there is no id, so the mutation is never fired with the empty string.
-  const saveVideoMutation = useVideoSaveMutation(videoId ?? "");
-  const shareVideoMutation = useVideoShareMutation(videoId ?? "");
-  const notInterestedMutation = useVideoNotInterestedMutation(videoId ?? "");
-  const creatorMuteMutation = useCreatorMuteMutation(creatorId ?? "");
+  const saveVideoMutation = useVideoSaveMutation(videoId);
+  const shareVideoMutation = useVideoShareMutation(videoId);
+  const notInterestedMutation = useVideoNotInterestedMutation(videoId);
+  const creatorMuteMutation = useCreatorMuteMutation(creatorId);
 
   const { addToQueue, removeFromQueue, isQueued } = useQueue();
-  const isAlreadyQueued = videoId !== undefined && isQueued(videoId);
+  const isAlreadyQueued = isQueued(videoId);
 
   /**
    * Add to queue — the one control here that talks to nothing.
@@ -152,7 +147,6 @@ export default function VideoCardMenu({
    * did nothing would be indistinguishable from a first tap that failed.
    */
   const handleQueueClick = () => {
-    if (videoId === undefined) return;
     if (isAlreadyQueued) {
       removeFromQueue(videoId);
       return;
@@ -211,7 +205,6 @@ export default function VideoCardMenu({
    * bookmark pill. A save is cheap and idempotent server-side, so a rollback costs nothing.
    */
   const handleBookmarkClick = () => {
-    if (videoId === undefined) return;
     const shouldBeBookmarked = !isBookmarked;
     setIsBookmarked(shouldBeBookmarked);
     saveVideoMutation.mutate(shouldBeBookmarked, {
@@ -228,7 +221,6 @@ export default function VideoCardMenu({
    * So it goes to "saving", then to whatever the server actually said.
    */
   const handleNotInterestedClick = (shouldBeSet: boolean) => {
-    if (videoId === undefined) return;
     setVideoPreference({ status: "saving" });
     notInterestedMutation.mutate(shouldBeSet, {
       onSuccess: (result) => {
@@ -241,7 +233,6 @@ export default function VideoCardMenu({
 
   /** "Don't recommend channel" and its Undo. Same shape, same reasoning. */
   const handleChannelMuteClick = (shouldBeSet: boolean) => {
-    if (creatorId === undefined) return;
     setChannelPreference({ status: "saving" });
     creatorMuteMutation.mutate(shouldBeSet, {
       onSuccess: (result) => {
@@ -332,7 +323,6 @@ export default function VideoCardMenu({
               type="button"
               role="menuitem"
               onClick={() => {
-                if (videoId === undefined) return;
                 setIsPlaylistSheetOpen(true);
               }}
               className="flex w-full cursor-pointer flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
@@ -368,7 +358,6 @@ export default function VideoCardMenu({
               type="button"
               role="menuitem"
               onClick={() => {
-                if (videoId === undefined) return;
                 setIsShareSheetOpen(true);
               }}
               className="flex w-full cursor-pointer flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
@@ -391,7 +380,7 @@ export default function VideoCardMenu({
               icon="heart_broken"
               actionLabel="Not interested"
               confirmationLabel="We won't recommend this"
-              isAvailable={videoId !== undefined}
+              isAvailable
               onAction={() => handleNotInterestedClick(true)}
               onUndo={() => handleNotInterestedClick(false)}
             />
@@ -401,7 +390,7 @@ export default function VideoCardMenu({
               icon="account_circle_off"
               actionLabel="Don't recommend channel"
               confirmationLabel={`We won't recommend ${channelName}`}
-              isAvailable={creatorId !== undefined}
+              isAvailable
               onAction={() => handleChannelMuteClick(true)}
               onUndo={() => handleChannelMuteClick(false)}
             />
@@ -410,7 +399,6 @@ export default function VideoCardMenu({
               type="button"
               role="menuitem"
               onClick={() => {
-                if (videoId === undefined) return;
                 setIsReportSheetOpen(true);
               }}
               className="flex w-full cursor-pointer flex-row items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
@@ -434,7 +422,7 @@ export default function VideoCardMenu({
         </>
       )}
 
-      {isReportSheetOpen && videoId !== undefined && (
+      {isReportSheetOpen && (
         <ReportVideoSheet
           videoId={videoId}
           title={title}
@@ -445,7 +433,7 @@ export default function VideoCardMenu({
         />
       )}
 
-      {isPlaylistSheetOpen && videoId !== undefined && (
+      {isPlaylistSheetOpen && (
         <SaveToPlaylistSheet
           videoId={videoId}
           onClose={() => {
@@ -464,7 +452,6 @@ export default function VideoCardMenu({
             setIsMenuOpen(false);
           }}
           onShared={(channel) => {
-            if (videoId === undefined) return;
             shareVideoMutation.mutate(channel);
           }}
         />
@@ -479,11 +466,15 @@ export default function VideoCardMenu({
  * The `switch` is exhaustive with a `never` default, so a fourth state cannot be added to
  * `PreferenceState` without this failing to compile — which is the point of the union.
  *
- * `isAvailable` is false for a card carrying neither a `videoId` nor a `creatorId`. It renders
- * the row inert rather than hiding it, matching the four stubs around it: a menu that changes
- * length depending on which page you opened it from is more confusing than one whose rows
- * sometimes do nothing. (The anime surfaces were the only producer that hit this; it is now
- * unreachable in practice, and stays as a guard rather than a live branch.)
+ * `isAvailable` renders a row inert rather than hiding it, matching the four stubs around it: a
+ * menu that changes length depending on which page you opened it from is more confusing than one
+ * whose rows sometimes do nothing.
+ *
+ * NOTHING PASSES `isAvailable={false}` ANY MORE, and the prop is kept anyway. Both `videoId`
+ * and `creatorId` are now required — the last holdout was the R&D venture reel, whose backend
+ * projection gained the creator id — so every wired row is live on every surface. It stays
+ * because the four unwired stub rows beside these two still need it, and because it is the
+ * seam a future card without one of those ids would use rather than hiding the row.
  */
 function PreferenceMenuItem({
   state,

@@ -159,6 +159,16 @@ export const ProjectVideoSchema = z
     durationSeconds: z.number().int().nullable(),
     creator: z
       .object({
+        /**
+         * ⚠️ REQUIRED, AND IT IS A DEPLOY-ORDER DEPENDENCY. The backend only began projecting
+         * this alongside the other creator fields (`project-videos.service.ts`); against an
+         * older backend that omits it, `.strip()` does NOT save us — a MISSING required key is
+         * a parse failure, not an unknown extra — and the whole reel renders empty. Ship the
+         * backend first.
+         *
+         * It exists so the card's overflow menu can address "don't recommend channel" by id.
+         */
+        id: z.string(),
         handle: z.string().nullable(),
         name: z.string(),
         imageUrl: z.string().nullable(),
