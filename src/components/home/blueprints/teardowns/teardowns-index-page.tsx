@@ -1,16 +1,17 @@
-// TRANSPORT: mock — async server component. Reads `listBlueprintsByCategory` from
-// `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
+// TRANSPORT: mock — async server component. Reads `listTeardowns` and `listBlueprintTagFacets`
+// from `@/lib/blueprints/api`, which serve fixtures from `@/mocks/blueprints-mocks`.
 //
-// FILTERING HAPPENS HERE, ON THE SERVER, over the whole set — never in the browser over a fetched
-// page. It reads a fixture array today, so the filter is an in-memory `.filter`; when this reads
-// the backend the same three params become query params on the request and the predicates below
-// are deleted rather than moved into a client component. That direction is the point: a client
-// that filters can only filter what it already downloaded.
+// FILTERING AND PAGING BOTH HAPPEN IN THE GETTER, not here and never in the browser. This page
+// reads three query params, hands them over, and renders what comes back — which is the shape a
+// real endpoint answers, so wiring the backend deletes predicates rather than moving them. A page
+// that filtered its own results could only ever filter the rows it had already downloaded, and one
+// that paged after filtering in the component would have to download every row to find page two.
 
 import TeardownGridCard from "@/components/home/blueprints/cards/teardown-grid-card";
+import CursorPageControl from "@/components/home/shared/cursor-page-control";
 import FacetChipRow, { type FacetBucket } from "@/components/home/shared/facet-chip-row";
 import FilterChipRow, { type FilterChipOption } from "@/components/home/shared/filter-chip-row";
-import { listBlueprintsByCategory } from "@/lib/blueprints/api";
+import { listBlueprintTagFacets, listTeardowns } from "@/lib/blueprints/api";
 import {
   BLUEPRINT_DIFFICULTIES,
   BLUEPRINT_DIFFICULTY_LABELS,
@@ -23,11 +24,9 @@ import {
   readSingleParam,
 } from "@/lib/filter-href";
 
-/** What a teardown published. Snake-shaped like every other enum that could reach a query. */
 const TEARDOWN_MEDIA_FILTERS = ["video", "documents"] as const;
-type TeardownMediaFilter = (typeof TEARDOWN_MEDIA_FILTERS)[number];
 
-const TEARDOWN_MEDIA_FILTER_LABELS: Record<TeardownMediaFilter, string> = {
+const TEARDOWN_MEDIA_FILTER_LABELS: Record<(typeof TEARDOWN_MEDIA_FILTERS)[number], string> = {
   video: "Has walkthrough",
   documents: "Has files",
 };
@@ -40,21 +39,12 @@ const TEARDOWN_MEDIA_FILTER_LABELS: Record<TeardownMediaFilter, string> = {
  */
 type TeardownsViewState =
   | { status: "empty"; appliedFilterCount: number }
-  | { status: "ready"; teardowns: TeardownBlueprint[] };
-
-function countTagOccurrences(teardowns: readonly TeardownBlueprint[]): FacetBucket[] {
-  const countsByTag = new Map<string, number>();
-  for (const teardown of teardowns) {
-    for (const tag of teardown.tags) countsByTag.set(tag, (countsByTag.get(tag) ?? 0) + 1);
-  }
-  return [...countsByTag]
-    .map(([value, count]) => ({ value, count }))
-    .toSorted((left, right) => right.count - left.count || left.value.localeCompare(right.value));
-}
-
-function hasRequestedMedia(teardown: TeardownBlueprint, media: TeardownMediaFilter): boolean {
-  return media === "video" ? teardown.walkthroughVideo !== null : teardown.documents.length > 0;
-}
+  | {
+      status: "ready";
+      teardowns: readonly TeardownBlueprint[];
+      nextCursor: string | null;
+      hasMore: boolean;
+    };
 
 export default async function TeardownsIndexPage({
   searchParams,
@@ -65,26 +55,25 @@ export default async function TeardownsIndexPage({
   const difficulty = readEnumParam(resolvedSearchParams, "difficulty", BLUEPRINT_DIFFICULTIES);
   const media = readEnumParam(resolvedSearchParams, "media", TEARDOWN_MEDIA_FILTERS);
   const tag = readSingleParam(resolvedSearchParams, "tag");
+  const requestedCursor = readSingleParam(resolvedSearchParams, "cursor");
 
-  const allTeardowns = await listBlueprintsByCategory("teardown");
-
-  // The tag facet counts the WHOLE category, not the filtered result. Counts that shrank as you
-  // clicked would make "cold-chain · 3" mean something different on every render.
-  const tagBuckets = countTagOccurrences(allTeardowns);
-
-  const matching = allTeardowns.filter(
-    (teardown) =>
-      (difficulty === undefined || teardown.difficulty === difficulty) &&
-      (media === undefined || hasRequestedMedia(teardown, media)) &&
-      (tag === undefined || teardown.tags.includes(tag)),
-  );
+  const [teardownPage, tagBuckets]: [Awaited<ReturnType<typeof listTeardowns>>, FacetBucket[]] =
+    await Promise.all([
+      listTeardowns({ difficulty, media, tag, cursor: requestedCursor }),
+      listBlueprintTagFacets("teardown"),
+    ]);
 
   const appliedFilterCount = [difficulty, media, tag].filter((value) => value !== undefined).length;
 
   const viewState: TeardownsViewState =
-    matching.length === 0
+    teardownPage.items.length === 0
       ? { status: "empty", appliedFilterCount }
-      : { status: "ready", teardowns: matching };
+      : {
+          status: "ready",
+          teardowns: teardownPage.items,
+          nextCursor: teardownPage.page.nextCursor,
+          hasMore: teardownPage.page.hasMore,
+        };
 
   const difficultyOptions: FilterChipOption[] = [
     {
@@ -121,6 +110,9 @@ export default async function TeardownsIndexPage({
         </p>
       </header>
 
+      {/* Every chip href goes through `buildFilterHref`, which drops `cursor` unless the patch
+          names it — so changing a filter starts the new result set at the top instead of resuming
+          it partway through. Paging SETS a cursor, filtering CLEARS one. */}
       <div className="mt-3 space-y-2 px-4 lg:px-6">
         <FilterChipRow options={difficultyOptions} ariaLabel="Filter teardowns by difficulty" />
         <FilterChipRow options={mediaOptions} ariaLabel="Filter teardowns by published media" />
@@ -135,12 +127,12 @@ export default async function TeardownsIndexPage({
         />
       </div>
 
-      {renderTeardowns(viewState)}
+      {renderTeardowns(viewState, resolvedSearchParams)}
     </div>
   );
 }
 
-function renderTeardowns(viewState: TeardownsViewState) {
+function renderTeardowns(viewState: TeardownsViewState, searchParams: RawSearchParams) {
   switch (viewState.status) {
     case "empty":
       return (
@@ -152,11 +144,19 @@ function renderTeardowns(viewState: TeardownsViewState) {
       );
     case "ready":
       return (
-        <div className="mt-5 grid gap-x-4 gap-y-6 px-4 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
-          {viewState.teardowns.map((teardown) => (
-            <TeardownGridCard key={teardown.id} teardown={teardown} />
-          ))}
-        </div>
+        <>
+          <div className="mt-5 grid gap-x-4 gap-y-6 px-4 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
+            {viewState.teardowns.map((teardown) => (
+              <TeardownGridCard key={teardown.id} teardown={teardown} />
+            ))}
+          </div>
+          <CursorPageControl
+            nextCursor={viewState.nextCursor}
+            hasMore={viewState.hasMore}
+            buildCursorHref={(cursor) => buildFilterHref(searchParams, { cursor })}
+            label="Show more teardowns"
+          />
+        </>
       );
     default: {
       const exhaustiveCheck: never = viewState;

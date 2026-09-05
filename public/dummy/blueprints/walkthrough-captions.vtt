@@ -1,0 +1,22 @@
+WEBVTT
+
+NOTE
+Placeholder captions for the placeholder walkthrough clip. Nothing here is a real
+narration of a real build. They exist so the captions branch in
+blueprint-video-block.tsx renders against real data rather than never running.
+
+1
+00:00:00.000 --> 00:00:02.500
+Placeholder walkthrough captions.
+
+2
+00:00:02.500 --> 00:00:05.000
+This clip is a stand-in, not a real teardown.
+
+3
+00:00:05.000 --> 00:00:07.500
+The captions track is here so its branch renders.
+
+4
+00:00:07.500 --> 00:00:10.000
+Real narration lands with real blueprints.

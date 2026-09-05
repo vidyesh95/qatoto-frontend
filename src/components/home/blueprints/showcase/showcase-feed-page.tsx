@@ -1,39 +1,25 @@
-// TRANSPORT: mock — async server component. Reads `listBlueprintsByCategory` from
-// `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
+// TRANSPORT: mock — async server component. Reads `listShowcases` and `listBlueprintTagFacets`
+// from `@/lib/blueprints/api`, which serve fixtures from `@/mocks/blueprints-mocks`.
 //
-// Filtering is server-side over the whole set, for the reason `teardowns-index-page.tsx` states
-// at length.
+// Filtering, ordering and paging all live in the getter, for the reason
+// `teardowns-index-page.tsx` states at length. The `launchedAt` ordering in particular belongs
+// beside the filter: a cursor into an order the page could re-derive differently is meaningless.
 
 import ShowcaseFeedRow from "@/components/home/blueprints/cards/showcase-feed-row";
+import CursorPageControl from "@/components/home/shared/cursor-page-control";
 import FacetChipRow, { type FacetBucket } from "@/components/home/shared/facet-chip-row";
-import { listBlueprintsByCategory } from "@/lib/blueprints/api";
+import { listBlueprintTagFacets, listShowcases } from "@/lib/blueprints/api";
 import type { ShowcaseBlueprint } from "@/lib/blueprints/schemas";
-import { type RawSearchParams, readSingleParam } from "@/lib/filter-href";
+import { buildFilterHref, type RawSearchParams, readSingleParam } from "@/lib/filter-href";
 
 type ShowcaseViewState =
   | { status: "empty"; appliedFilterCount: number }
-  | { status: "ready"; showcases: ShowcaseBlueprint[] };
-
-/**
- * NEWEST LAUNCH FIRST, BY `launchedAt` AND NOT `createdAt`.
- *
- * A launch is announced on a date its author chose; `createdAt` is when the row was typed. The two
- * differ by days in the fixtures on purpose, so an order built on the wrong field is visible
- * rather than plausible.
- */
-function byMostRecentlyLaunched(left: ShowcaseBlueprint, right: ShowcaseBlueprint): number {
-  return Date.parse(right.launchedAt) - Date.parse(left.launchedAt);
-}
-
-function countTagOccurrences(showcases: readonly ShowcaseBlueprint[]): FacetBucket[] {
-  const countsByTag = new Map<string, number>();
-  for (const showcase of showcases) {
-    for (const tag of showcase.tags) countsByTag.set(tag, (countsByTag.get(tag) ?? 0) + 1);
-  }
-  return [...countsByTag]
-    .map(([value, count]) => ({ value, count }))
-    .toSorted((left, right) => right.count - left.count || left.value.localeCompare(right.value));
-}
+  | {
+      status: "ready";
+      showcases: readonly ShowcaseBlueprint[];
+      nextCursor: string | null;
+      hasMore: boolean;
+    };
 
 export default async function ShowcaseFeedPage({
   searchParams,
@@ -42,18 +28,23 @@ export default async function ShowcaseFeedPage({
 }) {
   const resolvedSearchParams = await searchParams;
   const tag = readSingleParam(resolvedSearchParams, "tag");
+  const requestedCursor = readSingleParam(resolvedSearchParams, "cursor");
 
-  const allShowcases = await listBlueprintsByCategory("showcase");
-  const tagBuckets = countTagOccurrences(allShowcases);
-
-  const matching = allShowcases
-    .filter((showcase) => tag === undefined || showcase.tags.includes(tag))
-    .toSorted(byMostRecentlyLaunched);
+  const [showcasePage, tagBuckets]: [Awaited<ReturnType<typeof listShowcases>>, FacetBucket[]] =
+    await Promise.all([
+      listShowcases({ tag, cursor: requestedCursor }),
+      listBlueprintTagFacets("showcase"),
+    ]);
 
   const viewState: ShowcaseViewState =
-    matching.length === 0
+    showcasePage.items.length === 0
       ? { status: "empty", appliedFilterCount: tag === undefined ? 0 : 1 }
-      : { status: "ready", showcases: matching };
+      : {
+          status: "ready",
+          showcases: showcasePage.items,
+          nextCursor: showcasePage.page.nextCursor,
+          hasMore: showcasePage.page.hasMore,
+        };
 
   return (
     <div className="pb-10">
@@ -73,12 +64,12 @@ export default async function ShowcaseFeedPage({
         />
       </div>
 
-      {renderShowcaseFeed(viewState)}
+      {renderShowcaseFeed(viewState, resolvedSearchParams)}
     </div>
   );
 }
 
-function renderShowcaseFeed(viewState: ShowcaseViewState) {
+function renderShowcaseFeed(viewState: ShowcaseViewState, searchParams: RawSearchParams) {
   switch (viewState.status) {
     case "empty":
       return (
@@ -90,13 +81,21 @@ function renderShowcaseFeed(viewState: ShowcaseViewState) {
       );
     case "ready":
       return (
-        <ul className="mt-4 space-y-3 px-4 lg:px-6">
-          {viewState.showcases.map((showcase) => (
-            <li key={showcase.id}>
-              <ShowcaseFeedRow showcase={showcase} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-4 space-y-3 px-4 lg:px-6">
+            {viewState.showcases.map((showcase) => (
+              <li key={showcase.id}>
+                <ShowcaseFeedRow showcase={showcase} />
+              </li>
+            ))}
+          </ul>
+          <CursorPageControl
+            nextCursor={viewState.nextCursor}
+            hasMore={viewState.hasMore}
+            buildCursorHref={(cursor) => buildFilterHref(searchParams, { cursor })}
+            label="Show more launches"
+          />
+        </>
       );
     default: {
       const exhaustiveCheck: never = viewState;

@@ -23,6 +23,44 @@ import type { BlueprintVideo } from "@/lib/blueprints/schemas";
  * asset is already a finished Cloudinary URL, and re-optimising it spends a transform on an image
  * that has had one.
  */
+/**
+ * The playing `<video>`, in TWO BRANCHES rather than one with a conditional child.
+ *
+ * THE SPLIT IS WHAT LETS THE LINTER DO ITS JOB. `media-has-caption` cannot see a `<track>` inside a
+ * JSX expression container, so a single element with `{captionsUrl === null ? null : <track/>}`
+ * had to suppress the rule for BOTH paths — including the captioned one, which is the path worth
+ * checking. Written this way the captioned branch is linted normally and the suppression covers
+ * only the case where suppressing is correct: there are genuinely no captions to render.
+ *
+ * ⚠️ THE OTHER WAY OUT OF THIS IS A LIE, and the repo already contains it —
+ * `studio/upload/video-preview-card.tsx:95` renders `<track kind="captions" />` with no `src`,
+ * which satisfies the rule and delivers no captions to anyone. Do not do that twice.
+ *
+ * `playerProps` is shared so the two branches cannot drift apart.
+ */
+function renderPlayer(video: BlueprintVideo, title: string) {
+  const playerProps = {
+    src: video.url,
+    poster: video.posterUrl,
+    controls: true,
+    autoPlay: true,
+    preload: "none",
+    className: "size-full",
+    "aria-label": title,
+  } as const;
+
+  if (video.captionsUrl === null) {
+    // oxlint-disable-next-line media-has-caption
+    return <video {...playerProps} />;
+  }
+
+  return (
+    <video {...playerProps}>
+      <track kind="captions" src={video.captionsUrl} srcLang="en" label="English" default />
+    </video>
+  );
+}
+
 export default function BlueprintVideoBlock({
   video,
   title,
@@ -40,26 +78,7 @@ export default function BlueprintVideoBlock({
 
       <div className="relative mt-2 aspect-video max-w-3xl overflow-hidden rounded-xl bg-muted">
         {isPlaying ? (
-          // A `<track>` IS rendered below, but only when the row carries a `captionsUrl`, and the
-          // rule cannot see a conditional child. An unconditional `<track src={null}>` would
-          // satisfy the linter and break the player, which is the wrong way round. Every fixture
-          // is `captionsUrl: null` today, so the caption-less branch is the one that runs — the
-          // gap is the missing captions, not the markup.
-          // oxlint-disable-next-line media-has-caption
-          <video
-            src={video.url}
-            poster={video.posterUrl}
-            controls
-            autoPlay
-            preload="none"
-            className="size-full"
-          >
-            {/* A `<track>` only when the row carries one. Every fixture is `captionsUrl: null`
-                today, and an empty track element is worse than no element at all. */}
-            {video.captionsUrl === null ? null : (
-              <track kind="captions" src={video.captionsUrl} default />
-            )}
-          </video>
+          renderPlayer(video, title)
         ) : (
           <button
             type="button"

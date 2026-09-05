@@ -17,6 +17,7 @@ import {
   createExternalHttpsUrlSchema,
   createHttpsOrSiteRelativeUrlSchema,
 } from "@/lib/blueprints/url-source.schemas";
+import type { CursorPage } from "@/lib/store/shared.schemas";
 
 // --- Enum tuples -------------------------------------------------------------
 //
@@ -383,6 +384,23 @@ export type BlueprintOfCategory<TCategory extends BlueprintCategory> = Extract<
   Blueprint,
   { category: TCategory }
 >;
+
+/**
+ * One keyset page of blueprints.
+ *
+ * THE FOOTER IS REUSED, NOT REDEFINED. `CursorPage` comes from `src/lib/store/shared.schemas.ts`,
+ * whose comment states the one thing that must never drift is the page footer — a domain that
+ * spelled it `{ cursor, more }` would make `CursorPageControl` un-shareable, and this surface
+ * renders that exact control.
+ *
+ * Only the TYPE is imported today, because these pages are BUILT by the fixture getters rather
+ * than parsed off the wire. When a real endpoint answers, the getter parses
+ * `cursorPageOf(TeardownBlueprintSchema)` from the same file and every caller here is unchanged.
+ */
+export interface BlueprintPage<TBlueprint> {
+  readonly items: readonly TBlueprint[];
+  readonly page: CursorPage;
+}
 
 /** Everything a card renders, whichever arm it came from. */
 export type BlueprintCardFields = Pick<

@@ -33,14 +33,30 @@ const UNITED_STATES_DOLLAR = "USD";
 const PLACEHOLDER_VIDEO_URL = "/dummy/video/Sintel_1080_10s_1MB.mp4";
 const PLACEHOLDER_VIDEO_DURATION_SECONDS = 10;
 
-function placeholderVideo(posterUrl: string): BlueprintVideo {
+/**
+ * A real WebVTT, authored for this clip, whose cue text says it is a placeholder.
+ *
+ * ⚠️ NOT `/dummy/video/sintel-thumbnails.vtt`, which sits next to the clip and is a STORYBOARD
+ * track — its cues are `sintel-storyboard.jpg#xywh=…` sprite coordinates for seek-bar previews
+ * (`src/types/video.ts:57`). Mounted as `kind="captions"` it renders image URLs as subtitles.
+ */
+const PLACEHOLDER_CAPTIONS_URL = "/dummy/blueprints/walkthrough-captions.vtt";
+
+/**
+ * TWO OF THE SIX FIXTURE VIDEOS CARRY CAPTIONS, and four do not.
+ *
+ * Deliberately a mix. Captions on every video would let the contract imply that a real upload
+ * always has them, which is false; captions on none left the `<track>` branch in
+ * `blueprint-video-block.tsx` unexercised, which is how it shipped and is what this fixes. One
+ * walkthrough (`bp-001`) and one demo (`bp-009`) carry the track, so both branches render on both
+ * a teardown page and a showcase page.
+ */
+function placeholderVideo(posterUrl: string, captionsUrl: string | null = null): BlueprintVideo {
   return {
     url: PLACEHOLDER_VIDEO_URL,
     posterUrl,
     durationSeconds: PLACEHOLDER_VIDEO_DURATION_SECONDS,
-    // Null throughout: nobody captioned a placeholder, and an absent track is the honest state.
-    // The `<track>` branch is therefore unexercised — noted in `todo.md` against the media phase.
-    captionsUrl: null,
+    captionsUrl,
   };
 }
 
@@ -159,7 +175,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     tags: ["cold-chain", "solar", "power-electronics", "mppt"],
     createdAt: "2026-08-14T09:12:00.000Z",
-    walkthroughVideo: placeholderVideo("/dummy/thumbnail_image01.avif"),
+    walkthroughVideo: placeholderVideo("/dummy/thumbnail_image01.avif", PLACEHOLDER_CAPTIONS_URL),
     documents: [PLACEHOLDER_DOCUMENTS.solarSchematic, PLACEHOLDER_DOCUMENTS.solarBillOfMaterials],
     partCount: 148,
   },
@@ -512,7 +528,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "solar-cold-storage-controller-teardown",
-    demoVideo: placeholderVideo("/dummy/placeholder-freezers.avif"),
+    demoVideo: placeholderVideo("/dummy/placeholder-freezers.avif", PLACEHOLDER_CAPTIONS_URL),
     callToAction: {
       label: "Read the 90-day field log",
       url: "https://example.com/qatoto/nakuru-field-log",

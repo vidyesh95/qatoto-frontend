@@ -296,6 +296,14 @@ Three rules specific to this surface:
   its fields — half a range is an unanswerable question. `null` means nobody costed it; it is
   not zero. Render it with `formatCentsRangeLabel` (`src/lib/store/format.ts`), which returns
   `null` rather than inventing a band.
+- **The three indexes are KEYSET-PAGED, and filtering lives in the getters.** `listTeardowns`,
+  `listShowcases` and `listCaseStudies` (`src/lib/blueprints/api.ts`) each take a filter object
+  and return `BlueprintPage<T>`, whose footer is `CursorPage` imported from
+  `src/lib/store/shared.schemas.ts` rather than redefined. A page cannot page a list it has not
+  finished filtering, so no list component filters its own results. ⚠️ The page limits (8 / 3 / 3)
+  are **fixture-sized on purpose** — a house-sized 24 would mean the paging control never
+  rendered — and rise with real inventory. The cursor is opaque by contract; an unresolvable one
+  is dropped and the first page served.
 - **Media is nullable, and an absence renders NOTHING.** A teardown's `walkthroughVideo` is
   `null` when nobody filmed it and `documents` is `[]` when nothing was published — both are the
   common case, and both render no section at all rather than an empty box. Video is a poster plus

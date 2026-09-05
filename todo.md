@@ -985,20 +985,65 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     ⚠️ `ffmpeg` on this machine is broken (`Library not loaded: libass.9.dylib`), which is why
     there is one clip rather than five; `brew reinstall ffmpeg` fixes it.
 
-    **Three loose ends, each small and each a decision rather than an oversight:**
+    **The two loose ends this shipped with are CLOSED (2026-09-06).**
 
-    - **`captionsUrl` is `null` on every fixture**, so the `<track>` branch in
-      `blueprint-video-block.tsx` has never rendered. It also carries an
-      `oxlint-disable-next-line media-has-caption`, because the rule cannot see a conditional
-      child. Give one fixture a real WebVTT and both go away.
-    - **Tag filtering is SINGLE-select, not multi.** `FacetChipRow` carries the count on each
-      chip, which is what tells a reader whether a click is worth making; a hand-rolled
-      multi-select row would have to give that up or re-derive counts per combination.
-      `toggleMultiParamPatch` (`src/lib/filter-href.ts:120`) is still there if that trade
-      changes.
-    - **No pagination anywhere on the surface.** 22 fixtures are one page. Server-side keyset
-      paging arrives with the backend, at the same commit as the `error` arm that every one of
-      these three view-state unions is deliberately missing.
+    - **Captions render.** `public/dummy/blueprints/walkthrough-captions.vtt` is a real WebVTT
+      whose cue text says it is placeholder narration, attached to two of the six fixture
+      videos — one walkthrough (`bp-001`) and one demo (`bp-009`) — so both the captioned and
+      the caption-less branch render, on both a teardown page and a showcase page. ⚠️ NOT the
+      `sintel-thumbnails.vtt` sitting beside the clip: that is a STORYBOARD track whose cues
+      are sprite coordinates, and mounted as `kind="captions"` it renders image URLs as
+      subtitles.
+
+        `blueprint-video-block.tsx` now renders the player in TWO BRANCHES rather than one with
+        a conditional child, and that is the point rather than a style choice.
+        `media-has-caption` cannot see a `<track>` inside a JSX expression container, so the
+        single-element version had to suppress the rule for BOTH paths — including the
+        captioned one, which is the path worth checking. Split, the captioned branch is linted
+        normally and the suppression covers only the branch where suppressing is correct.
+        **Verified by deleting the `<track>` from the captioned branch: `pnpm lint` fails on it,
+        and passes again when restored.** ⚠️ Do not "simplify" it back, and do not copy
+        `studio/upload/video-preview-card.tsx:95`, which satisfies the same rule with
+        `<track kind="captions" />` — no `src`, no captions, pure lint appeasement.
+
+    - **All three indexes are keyset-paged.** `CursorPageControl` was HOISTED from
+      `store/shared/` to `home/shared/`, with a pure re-export left at the old path so the nine
+      store call sites are untouched — the same move, for the same reason, that
+      `filter-chip-row.tsx` documents. `LoadMoreControl` is NOT interchangeable with it
+      (`cursor-page-control.tsx:5-10`): that one takes an `onLoadNextPage` callback and belongs
+      to a client island, and these three pages are server components whose next page is a URL.
+
+        **Filtering, ordering AND paging all moved into `src/lib/blueprints/api.ts`** —
+        `listTeardowns`, `listShowcases`, `listCaseStudies`, each taking a filter object shaped
+        like `listForumThreads({ board, cursor })`. A page cannot page a list it has not
+        finished filtering, and a cursor into an order the page re-derives is meaningless. When
+        the backend lands these predicates are deleted, not moved. `listBlueprintsByCategory`
+        is now module-private; facet counts have their own getter because a count over the
+        current PAGE is a different and wrong number.
+
+        The page footer is `CursorPage` from `src/lib/store/shared.schemas.ts`, imported rather
+        than redefined — that file states the footer is the one thing that must never drift,
+        and this surface renders the control that depends on it.
+
+        ⚠️ **THE PAGE LIMITS ARE FIXTURE-SIZED AND ARE NOT A PRODUCT DECISION** — 8 teardowns,
+        3 showcases, 3 case studies, against R&D's 24 and the store's "let the backend decide".
+        Twelve teardowns behind a limit of 24 means the paging control never renders, which is
+        shipping unexercised code — the exact thing this surface argues against everywhere
+        else. Raise them when there is real inventory.
+
+        **The cursor is the last row's id, base64url-encoded**, and the encoding is the point
+        rather than the payload: `CursorPageControl` requires an opaque token, and a bare
+        `bp-007` in the query string invites someone to parse or increment it. An unresolvable
+        cursor is DROPPED and the first page served — the house behaviour for a hand-edited
+        query param on a server page (`factory-directory-page.tsx:57-58`), and the only one
+        available while there is no `error` arm to render a 422 into.
+
+    **One loose end remains, and it is still deliberate:** none of the three view-state unions
+    has an `error` arm. The getters read an in-repo fixture array that cannot fail, and an
+    unreachable branch never renders during development, so the first time it ran would be the
+    first time anyone saw it. It joins all three unions the day these getters read the backend,
+    and each `switch` stops compiling until it is handled — which is the whole reason they are
+    written as unions now.
 
     **Still true, and still the launch step:** the whole surface is de-indexed. ⚠️ **That is
     SEVEN routes and seven `noindex` flags now, not two** — the hub, three indexes, three

@@ -1,30 +1,33 @@
-// TRANSPORT: mock — async server component. Reads `listBlueprintsByCategory` from
+// TRANSPORT: mock — async server component. Reads `listCaseStudies` from
 // `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
 //
-// Filtering is server-side over the whole set, for the reason `teardowns-index-page.tsx` states
-// at length.
+// Filtering, ordering and paging all live in the getter, for the reason
+// `teardowns-index-page.tsx` states at length.
 
 import CaseStudyIndexCard from "@/components/home/blueprints/cards/case-study-index-card";
+import CursorPageControl from "@/components/home/shared/cursor-page-control";
 import FilterChipRow, { type FilterChipOption } from "@/components/home/shared/filter-chip-row";
-import { listBlueprintsByCategory } from "@/lib/blueprints/api";
+import { listCaseStudies } from "@/lib/blueprints/api";
 import {
   BLUEPRINT_DISCIPLINE_LABELS,
   BLUEPRINT_DISCIPLINES,
   type CaseStudyBlueprint,
 } from "@/lib/blueprints/schemas";
-import { buildFilterHref, type RawSearchParams, readEnumParam } from "@/lib/filter-href";
+import {
+  buildFilterHref,
+  type RawSearchParams,
+  readEnumParam,
+  readSingleParam,
+} from "@/lib/filter-href";
 
 type CaseStudiesViewState =
   | { status: "empty"; appliedFilterCount: number }
-  | { status: "ready"; caseStudies: CaseStudyBlueprint[] };
-
-/**
- * BY CONCEPT NUMBER, NOT BY DATE. The numeral is the index's spine — a reader who saw 03 yesterday
- * expects it in the same place today, which a newest-first order would break on every publish.
- */
-function byConceptNumber(left: CaseStudyBlueprint, right: CaseStudyBlueprint): number {
-  return left.conceptNumber - right.conceptNumber;
-}
+  | {
+      status: "ready";
+      caseStudies: readonly CaseStudyBlueprint[];
+      nextCursor: string | null;
+      hasMore: boolean;
+    };
 
 export default async function CaseStudiesIndexPage({
   searchParams,
@@ -33,16 +36,19 @@ export default async function CaseStudiesIndexPage({
 }) {
   const resolvedSearchParams = await searchParams;
   const discipline = readEnumParam(resolvedSearchParams, "discipline", BLUEPRINT_DISCIPLINES);
+  const requestedCursor = readSingleParam(resolvedSearchParams, "cursor");
 
-  const allCaseStudies = await listBlueprintsByCategory("case_study");
-  const matching = allCaseStudies
-    .filter((caseStudy) => discipline === undefined || caseStudy.discipline === discipline)
-    .toSorted(byConceptNumber);
+  const caseStudyPage = await listCaseStudies({ discipline, cursor: requestedCursor });
 
   const viewState: CaseStudiesViewState =
-    matching.length === 0
+    caseStudyPage.items.length === 0
       ? { status: "empty", appliedFilterCount: discipline === undefined ? 0 : 1 }
-      : { status: "ready", caseStudies: matching };
+      : {
+          status: "ready",
+          caseStudies: caseStudyPage.items,
+          nextCursor: caseStudyPage.page.nextCursor,
+          hasMore: caseStudyPage.page.hasMore,
+        };
 
   const disciplineOptions: FilterChipOption[] = [
     {
@@ -70,12 +76,12 @@ export default async function CaseStudiesIndexPage({
         <FilterChipRow options={disciplineOptions} ariaLabel="Filter case studies by discipline" />
       </div>
 
-      {renderCaseStudies(viewState)}
+      {renderCaseStudies(viewState, resolvedSearchParams)}
     </div>
   );
 }
 
-function renderCaseStudies(viewState: CaseStudiesViewState) {
+function renderCaseStudies(viewState: CaseStudiesViewState, searchParams: RawSearchParams) {
   switch (viewState.status) {
     case "empty":
       return (
@@ -87,11 +93,19 @@ function renderCaseStudies(viewState: CaseStudiesViewState) {
       );
     case "ready":
       return (
-        <div className="mt-5 grid gap-4 px-4 sm:grid-cols-2 lg:px-6 xl:grid-cols-3">
-          {viewState.caseStudies.map((caseStudy) => (
-            <CaseStudyIndexCard key={caseStudy.id} caseStudy={caseStudy} />
-          ))}
-        </div>
+        <>
+          <div className="mt-5 grid gap-4 px-4 sm:grid-cols-2 lg:px-6 xl:grid-cols-3">
+            {viewState.caseStudies.map((caseStudy) => (
+              <CaseStudyIndexCard key={caseStudy.id} caseStudy={caseStudy} />
+            ))}
+          </div>
+          <CursorPageControl
+            nextCursor={viewState.nextCursor}
+            hasMore={viewState.hasMore}
+            buildCursorHref={(cursor) => buildFilterHref(searchParams, { cursor })}
+            label="Show more case studies"
+          />
+        </>
       );
     default: {
       const exhaustiveCheck: never = viewState;

@@ -15,9 +15,16 @@ import {
   type Blueprint,
   type BlueprintCategory,
   type BlueprintOfCategory,
+  type BlueprintPage,
   BlueprintSchema,
+  type CaseStudyBlueprint,
+  type BlueprintDifficulty,
+  type BlueprintDiscipline,
   RESERVED_BLUEPRINT_SLUGS,
+  type ShowcaseBlueprint,
+  type TeardownBlueprint,
 } from "@/lib/blueprints/schemas";
+import type { FacetBucket } from "@/components/home/shared/facet-chip-row";
 
 /**
  * Parse a fixture through the contract.
@@ -74,8 +81,11 @@ export async function listBlueprints(): Promise<Blueprint[]> {
  * `blueprints.filter((blueprint) => blueprint.category === category)` returns the full union —
  * `.filter` without a type predicate does not narrow the element type — so a showcase feed built
  * that way could not read `launchedAt` without a cast, and CLAUDE.md Pattern 2 forbids the cast.
+ *
+ * MODULE-PRIVATE. The three filtered, paged getters below supersede it for every page on the
+ * surface, and an exported wrapper with no caller is unverified code.
  */
-export async function listBlueprintsByCategory<TCategory extends BlueprintCategory>(
+async function listBlueprintsByCategory<TCategory extends BlueprintCategory>(
   category: TCategory,
 ): Promise<BlueprintOfCategory<TCategory>[]> {
   "use cache";
@@ -111,6 +121,195 @@ export async function getBlueprintByCategory<TCategory extends BlueprintCategory
   const blueprint = await getBlueprint(slug);
   if (blueprint === null) return null;
   return isBlueprintOfCategory(blueprint, category) ? blueprint : null;
+}
+
+// --- Keyset paging ------------------------------------------------------------
+//
+// KEYSET, NOT OFFSET, matching the only navigable paging control in this repo. Offset pages exist
+// on the wire in R&D (`src/lib/rnd/shared.schemas.ts:14`) but nothing renders a next link for one;
+// every server-rendered "show more" in the repo goes through `CursorPageControl`.
+//
+// THE PAGE LIMITS ARE SMALL BECAUSE THE DATA IS FIXTURES. R&D uses 24 (`talent-page.tsx:27`) and
+// the store passes none at all, taking the backend default. Twelve teardowns behind a limit of 24
+// would mean the paging control never rendered — code that ships unexercised, which is the exact
+// failure this surface argues against everywhere else. These rise when there is real inventory;
+// they are not a considered product decision about how many teardowns fit on a page.
+
+/** 12 teardown fixtures → 2 pages. Eight is also two clean rows of the four-column grid. */
+export const TEARDOWNS_PAGE_LIMIT = 8;
+/** 5 showcase fixtures → 2 pages. */
+export const SHOWCASE_PAGE_LIMIT = 3;
+/** 5 case-study fixtures → 2 pages. */
+export const CASE_STUDIES_PAGE_LIMIT = 3;
+
+/**
+ * The cursor is the last row's id, base64url-encoded.
+ *
+ * THE ENCODING IS THE POINT, not the payload. `CursorPageControl` requires an OPAQUE token — never
+ * parsed, compared or incremented — and a bare `bp-007` sitting in the query string invites
+ * exactly that. Encoding makes the opacity real rather than aspirational, and lets the backend
+ * swap in its own encoding (a sort key plus a tie-break id) without a caller noticing.
+ */
+function encodeBlueprintCursor(blueprintId: string): string {
+  return Buffer.from(blueprintId, "utf8").toString("base64url");
+}
+
+/**
+ * Where the requested page starts.
+ *
+ * AN UNRESOLVABLE CURSOR IS DROPPED AND THE FIRST PAGE IS SERVED, rather than erroring. That is
+ * this repo's documented behaviour for a hand-edited query param on a server page — see
+ * `factory-directory-page.tsx:57-58` on `readEnumParam` turning `?capabilityKind=banana` into "no
+ * filter" instead of a 422 page. The backend will answer 422 for a cursor it did not mint, and
+ * handling that is the job of the `error` arm these view states deliberately do not have yet.
+ */
+function resolveStartIndex(rows: readonly { id: string }[], cursor: string | undefined): number {
+  if (cursor === undefined) return 0;
+
+  const decodedId = Buffer.from(cursor, "base64url").toString("utf8");
+  const cursorIndex = rows.findIndex((row) => row.id === decodedId);
+  return cursorIndex === -1 ? 0 : cursorIndex + 1;
+}
+
+/** Slice one keyset page out of an already filtered and sorted list. */
+function toBlueprintPage<TBlueprint extends { id: string }>(
+  rows: readonly TBlueprint[],
+  cursor: string | undefined,
+  limit: number,
+): BlueprintPage<TBlueprint> {
+  const startIndex = resolveStartIndex(rows, cursor);
+  const items = rows.slice(startIndex, startIndex + limit);
+  const lastItem = items.at(-1);
+  const hasMore = startIndex + items.length < rows.length;
+
+  return {
+    items,
+    // Both halves agree or the control renders nothing — `cursor-page-control.tsx:25-27`.
+    page: {
+      nextCursor: hasMore && lastItem !== undefined ? encodeBlueprintCursor(lastItem.id) : null,
+      hasMore,
+    },
+  };
+}
+
+// --- The three list reads -----------------------------------------------------
+//
+// FILTERING AND SORTING LIVE HERE, NOT IN THE PAGE COMPONENTS, and that is a change from how this
+// surface first shipped. A page cannot page a list it has not finished filtering, and the shape
+// below is the one a real endpoint answers — compare `listForumThreads({ board, cursor })` in
+// `src/lib/store/forum.api.ts:46`. When the backend lands, these filters become query params and
+// the predicates are deleted rather than moved into a component.
+
+/** What a teardown published. Its own filter, because "has a video" is not a tag. */
+export type TeardownMediaFilter = "video" | "documents";
+
+export interface ListTeardownsFilter {
+  readonly difficulty?: BlueprintDifficulty;
+  readonly media?: TeardownMediaFilter;
+  readonly tag?: string;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+function hasRequestedMedia(teardown: TeardownBlueprint, media: TeardownMediaFilter): boolean {
+  return media === "video" ? teardown.walkthroughVideo !== null : teardown.documents.length > 0;
+}
+
+export async function listTeardowns(
+  filter: ListTeardownsFilter = {},
+): Promise<BlueprintPage<TeardownBlueprint>> {
+  "use cache";
+  const teardowns = await listBlueprintsByCategory("teardown");
+
+  const matching = teardowns.filter(
+    (teardown) =>
+      (filter.difficulty === undefined || teardown.difficulty === filter.difficulty) &&
+      (filter.media === undefined || hasRequestedMedia(teardown, filter.media)) &&
+      (filter.tag === undefined || teardown.tags.includes(filter.tag)),
+  );
+
+  return toBlueprintPage(matching, filter.cursor, filter.limit ?? TEARDOWNS_PAGE_LIMIT);
+}
+
+export interface ListShowcasesFilter {
+  readonly tag?: string;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/**
+ * NEWEST LAUNCH FIRST, BY `launchedAt` AND NOT `createdAt`.
+ *
+ * A launch is announced on a date its author chose; `createdAt` is when the row was typed. The two
+ * differ by days in the fixtures on purpose, so an order built on the wrong field is visible
+ * rather than plausible. The sort lives beside the filter because a cursor into an unstable order
+ * is meaningless.
+ */
+function byMostRecentlyLaunched(left: ShowcaseBlueprint, right: ShowcaseBlueprint): number {
+  return Date.parse(right.launchedAt) - Date.parse(left.launchedAt);
+}
+
+export async function listShowcases(
+  filter: ListShowcasesFilter = {},
+): Promise<BlueprintPage<ShowcaseBlueprint>> {
+  "use cache";
+  const showcases = await listBlueprintsByCategory("showcase");
+
+  const matching = showcases
+    .filter((showcase) => filter.tag === undefined || showcase.tags.includes(filter.tag))
+    .toSorted(byMostRecentlyLaunched);
+
+  return toBlueprintPage(matching, filter.cursor, filter.limit ?? SHOWCASE_PAGE_LIMIT);
+}
+
+export interface ListCaseStudiesFilter {
+  readonly discipline?: BlueprintDiscipline;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+/**
+ * BY CONCEPT NUMBER, NOT BY DATE. The numeral is the index's spine — a reader who saw 03 yesterday
+ * expects it in the same place today, which a newest-first order would break on every publish.
+ */
+function byConceptNumber(left: CaseStudyBlueprint, right: CaseStudyBlueprint): number {
+  return left.conceptNumber - right.conceptNumber;
+}
+
+export async function listCaseStudies(
+  filter: ListCaseStudiesFilter = {},
+): Promise<BlueprintPage<CaseStudyBlueprint>> {
+  "use cache";
+  const caseStudies = await listBlueprintsByCategory("case_study");
+
+  const matching = caseStudies
+    .filter(
+      (caseStudy) => filter.discipline === undefined || caseStudy.discipline === filter.discipline,
+    )
+    .toSorted(byConceptNumber);
+
+  return toBlueprintPage(matching, filter.cursor, filter.limit ?? CASE_STUDIES_PAGE_LIMIT);
+}
+
+/**
+ * Tag counts for one category's WHOLE set, not for the page being rendered.
+ *
+ * ITS OWN GETTER BECAUSE A FACET COUNT IS AN AGGREGATE, and an aggregate over a page is a
+ * different, wrong number: counts that shrank as a reader clicked through pages would make
+ * "cold-chain · 3" mean something new on every render. On the wire this arrives beside the list
+ * from the backend, which is the other reason it is not derived in a component.
+ */
+export async function listBlueprintTagFacets(category: BlueprintCategory): Promise<FacetBucket[]> {
+  "use cache";
+  const countsByTag = new Map<string, number>();
+  for (const blueprint of MOCK_BLUEPRINTS.map(parseBlueprint)) {
+    if (blueprint.category !== category) continue;
+    for (const tag of blueprint.tags) countsByTag.set(tag, (countsByTag.get(tag) ?? 0) + 1);
+  }
+
+  return [...countsByTag]
+    .map(([value, count]) => ({ value, count }))
+    .toSorted((left, right) => right.count - left.count || left.value.localeCompare(right.value));
 }
 
 /**
