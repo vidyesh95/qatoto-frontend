@@ -102,7 +102,7 @@ export function useWorkshopTaskMutation(projectSlug: string) {
       taskId?: string;
       input?: WorkshopTaskInput;
       patch?: Partial<Omit<WorkshopTaskInput, "columnId">>;
-      move?: { columnId: string; position: number };
+      move?: { columnId: string; afterTaskId?: string; beforeTaskId?: string };
     }) => {
       if (variables.action === "create") {
         if (!variables.input) throw new Error("Missing task input");
@@ -173,8 +173,8 @@ export function useWorkshopFileMutation(projectSlug: string) {
 export function useSendWorkshopChatMessageMutation(projectSlug: string) {
   const invalidateWorkshop = useWorkshopInvalidation(projectSlug);
   return useMutation({
-    mutationFn: async (bodyText: string) =>
-      unwrap(await sendWorkshopChatMessage(projectSlug, { bodyText })),
+    mutationFn: async (messageText: string) =>
+      unwrap(await sendWorkshopChatMessage(projectSlug, { messageText })),
     onSuccess: invalidateWorkshop,
   });
 }
@@ -191,9 +191,11 @@ export function useSendWorkshopChatMessageMutation(projectSlug: string) {
  * could have received it — and an optimistic DELETE is worse, because it would show the
  * author their message gone from a transcript everyone else can still read.
  *
- * THE REQUEST FIELD IS `bodyText` AND THE RESPONSE FIELD IS `messageText`. That asymmetry is
- * already true of `sendWorkshopChatMessage`; the wrapper matches the wire, and this hook
- * matches the wrapper. Do not "fix" it here.
+ * THE FIELD IS `messageText` ON BOTH SIDES. A comment here used to describe a request/
+ * response asymmetry — request `bodyText`, response `messageText` — and treat it as settled
+ * ("do not fix it here"). No such asymmetry ever existed: the backend's `PostChatMessageSchema`
+ * is `.strict()` and has only ever accepted `messageText`, so every send and every edit was
+ * answered 422. The bug had been rationalised into a convention; both are corrected.
  *
  * INVALIDATES THE WHOLE WORKSHOP KEY, not just the chat key: the transcript arrives inside
  * the workshop snapshot the server parent reads, so invalidating chat alone would leave the
@@ -211,7 +213,7 @@ export function useWorkshopChatMessageMutation(projectSlug: string) {
       if (variables.action === "update") {
         return unwrap(
           await updateWorkshopChatMessage(projectSlug, variables.messageId, {
-            bodyText: variables.bodyText ?? "",
+            messageText: variables.bodyText ?? "",
           }),
         );
       }

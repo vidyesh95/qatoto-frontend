@@ -463,8 +463,11 @@ export function createProjectInvite(
   projectSlug: string,
   input: {
     readonly inviteeUserId: string;
+    /**
+     * An open role's ID. There is deliberately no free-text `roleTitle` here — the backend
+     * schema is `.strict()` and takes only an id, so a title was rejected outright.
+     */
     readonly openRoleId?: string;
-    readonly roleTitle?: string;
     readonly message?: string;
   },
   options?: RequestOptions,

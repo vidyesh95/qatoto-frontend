@@ -189,7 +189,23 @@ export default function AddressSheet({
     };
 
     if (editing === null) {
-      createAddress.mutate({ input, idempotencyKey }, { onSuccess: onSettled });
+      /**
+       * CREATE REQUIRES MORE THAN PATCH DOES, and `buildUpsertInput` serves both — on a
+       * patch an omitted key means "leave it alone", but on a create the backend's
+       * `CreateCommerceOrganizationAddressSchema` requires `addressLineOne` and `isDefault`
+       * outright. Omitting them 422'd every address creation.
+       *
+       * `isDefault: false` because this sheet has no control to choose otherwise; it only
+       * ever renders the flag. Sending it explicitly keeps the decision out of the PATCH
+       * schema, where a default would silently overwrite a stored preference.
+       *
+       * `addressLineOne` is carried by the form, which now marks it required — so it is
+       * present here rather than defaulted to an empty string the server would reject.
+       */
+      createAddress.mutate(
+        { input: { ...input, isDefault: false }, idempotencyKey },
+        { onSuccess: onSettled },
+      );
     } else {
       updateAddress.mutate(
         { addressId: editing.id, input, idempotencyKey },
@@ -265,6 +281,9 @@ export default function AddressSheet({
             label="Address line 1"
             value={formValues.addressLineOne}
             onChange={setField("addressLineOne")}
+            // Required by `CreateCommerceOrganizationAddressSchema`, so the form asks for it
+            // rather than letting a blank line reach the server as a guaranteed 422.
+            isRequired
           />
           <TextField
             label="Address line 2"

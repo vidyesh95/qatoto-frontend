@@ -145,16 +145,23 @@ export default function WorkshopBoardControls({
                         taskMutation.mutate({
                           action: "move",
                           taskId: task.id,
-                          // Appended to the end of the target column: a control that let
-                          // someone pick an index would be picking one out of a list the
-                          // server may already have renumbered.
-                          move: {
-                            columnId: changeEvent.target.value,
-                            position:
-                              boardColumns.find(
-                                (candidate) => candidate.id === changeEvent.target.value,
-                              )?.tasks.length ?? 0,
-                          },
+                          // Appended to the end of the target column, expressed as "after
+                          // its current last card" — the server takes neighbour ids, never
+                          // an index, precisely because an index is read off a list it may
+                          // already have renumbered. The moved card is excluded when
+                          // finding that neighbour so a same-column move cannot ask to be
+                          // placed after itself; an empty column sends neither neighbour.
+                          move: (() => {
+                            const targetColumnId = changeEvent.target.value;
+                            const targetTasks =
+                              boardColumns
+                                .find((candidate) => candidate.id === targetColumnId)
+                                ?.tasks.filter((candidate) => candidate.id !== task.id) ?? [];
+                            const lastTask = targetTasks.at(-1);
+                            return lastTask === undefined
+                              ? { columnId: targetColumnId }
+                              : { columnId: targetColumnId, afterTaskId: lastTask.id };
+                          })(),
                         })
                       }
                       className="rounded-lg border border-[#CAC4D0] p-1 text-xs"

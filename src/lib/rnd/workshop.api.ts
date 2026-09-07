@@ -116,7 +116,12 @@ export interface WorkshopTaskInput {
   readonly title: string;
   readonly description?: string;
   readonly priority?: WorkshopTaskPriority;
-  readonly assigneeUserId?: string;
+  /**
+   * A MEMBER id, not a user id — the same identifier the read side already returns and
+   * `workshop-board.tsx` resolves against `team[].memberId`. It was `assigneeUserId` here,
+   * which the backend's `.strict()` schema rejected outright.
+   */
+  readonly assigneeMemberId?: string;
   readonly dueDate?: string;
 }
 
@@ -152,14 +157,24 @@ export function updateWorkshopTask(
 /**
  * Move a task.
  *
- * ITS OWN ENDPOINT, not a `columnId` on the edit: a move carries a POSITION as well as a
+ * ITS OWN ENDPOINT, not a `columnId` on the edit: a move carries a DESTINATION as well as a
  * column, and the server renumbers the neighbours in the same transaction. Editing the
- * column alone would leave the card in a column at whatever index it had in the old one.
+ * column alone would leave the card in a column at whatever rank it had in the old one.
+ *
+ * NEIGHBOUR IDS, NOT AN INDEX. This used to send `{ position }`, which the backend has
+ * never accepted — its schema says "Ids and intent, never a position and never a rank",
+ * because an index is read off a list the server may already have renumbered, so two
+ * clients dragging at once resolve to different cards. Omit both neighbours to land at the
+ * end of an empty column.
  */
 export function moveWorkshopTask(
   projectSlug: string,
   taskId: string,
-  input: { readonly columnId: string; readonly position: number },
+  input: {
+    readonly columnId: string;
+    readonly afterTaskId?: string;
+    readonly beforeTaskId?: string;
+  },
   options?: RequestOptions,
 ): Promise<ActionResponse<WorkshopTask>> {
   return sendJson(
@@ -249,7 +264,7 @@ export function deleteWorkshopFile(
  */
 export function sendWorkshopChatMessage(
   projectSlug: string,
-  input: { readonly bodyText: string },
+  input: { readonly messageText: string },
   options?: RequestOptions,
 ): Promise<ActionResponse<WorkshopChatMessage>> {
   return sendJson(
@@ -264,7 +279,7 @@ export function sendWorkshopChatMessage(
 export function updateWorkshopChatMessage(
   projectSlug: string,
   messageId: string,
-  input: { readonly bodyText: string },
+  input: { readonly messageText: string },
   options?: RequestOptions,
 ): Promise<ActionResponse<WorkshopChatMessage>> {
   return sendJson(

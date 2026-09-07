@@ -86,7 +86,7 @@ export default function TeamManagementIsland({
 
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [inviteeUserId, setInviteeUserId] = useState("");
-  const [inviteRoleTitle, setInviteRoleTitle] = useState("");
+  const [inviteOpenRoleId, setInviteOpenRoleId] = useState("");
   const [inviteMessage, setInviteMessage] = useState("");
   const [newRoleTitle, setNewRoleTitle] = useState("");
   const [newRoleCommitment, setNewRoleCommitment] = useState<RoleCommitment>("part_time");
@@ -273,13 +273,16 @@ export default function TeamManagementIsland({
           inviteMutation.mutate(
             {
               inviteeUserId: inviteeUserId.trim(),
-              roleTitle: inviteRoleTitle.trim() || undefined,
+              // An open role's ID, not a free-text title. The backend only ever accepted
+              // `openRoleId`, so the title this form used to send was rejected outright by
+              // its `.strict()` schema — an invite naming a role could never be sent.
+              openRoleId: inviteOpenRoleId || undefined,
               message: inviteMessage.trim() || undefined,
             },
             {
               onSuccess: () => {
                 setInviteeUserId("");
-                setInviteRoleTitle("");
+                setInviteOpenRoleId("");
                 setInviteMessage("");
               },
             },
@@ -296,12 +299,23 @@ export default function TeamManagementIsland({
             className={INPUT_CLASS}
           />
         </label>
-        <input
-          value={inviteRoleTitle}
-          onChange={(changeEvent) => setInviteRoleTitle(changeEvent.target.value)}
-          placeholder="Role title (optional)"
-          className={INPUT_CLASS}
-        />
+        {openRoles.length > 0 && (
+          <label className="flex flex-col gap-1">
+            <span className={LABEL_CLASS}>Against an open role (optional)</span>
+            <select
+              value={inviteOpenRoleId}
+              onChange={(changeEvent) => setInviteOpenRoleId(changeEvent.target.value)}
+              className={INPUT_CLASS}
+            >
+              <option value="">No particular role</option>
+              {openRoles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.roleTitle}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <textarea
           rows={2}
           value={inviteMessage}

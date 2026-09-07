@@ -554,7 +554,11 @@ export interface ListCommunityContentReportsFilter {
  * saying which one happened.
  */
 export interface DismissCommunityContentReportInput {
-  readonly note: string;
+  /**
+   * `reasonNote`, matching the backend's `DismissCommunityReportSchema`. It was `note`,
+   * which that `.strict()` schema rejected — every dismissal answered 422.
+   */
+  readonly reasonNote: string;
 }
 
 // --- Inferred types ---------------------------------------------------------

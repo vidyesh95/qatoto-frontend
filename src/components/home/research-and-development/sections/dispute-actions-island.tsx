@@ -13,6 +13,7 @@ import {
   useResolveDisputeMutation,
   useWithdrawDisputeMutation,
 } from "@/hooks/rnd/proof-of-effort";
+import { toOptionalIsoInstant } from "@/components/commerce/composer/composer-input";
 import { ApiRequestError } from "@/lib/http";
 import {
   DISPUTE_RESOLUTIONS,
@@ -37,6 +38,22 @@ const RESOLUTION_LABELS: Record<DisputeResolution, string> = {
 
 /** Founder and admin resolve; any active member votes. */
 const RESOLVE_ROLES = ["founder", "admin"];
+
+/**
+ * Spreads a `datetime-local` value as an ISO instant under `field`, or contributes nothing.
+ *
+ * The conversion is `toOptionalIsoInstant`, the same helper the commerce composers use —
+ * `datetime-local` yields `2026-01-01T00:00` with no zone, which `z.iso.datetime()` refuses.
+ * The key is ABSENT rather than `undefined` when blank: both fields are optional, and an
+ * omitted window means "the whole original window".
+ */
+function toScopedWindow(
+  field: "scopedWindowStartsAt" | "scopedWindowEndsAt",
+  localValue: string,
+): Record<string, string> {
+  const instant = toOptionalIsoInstant(localValue);
+  return instant === undefined ? {} : { [field]: instant };
+}
 
 function canResolve(viewerProjectRole: string | null): boolean {
   return viewerProjectRole !== null && RESOLVE_ROLES.includes(viewerProjectRole);
@@ -154,8 +171,8 @@ export default function DisputeActionsIsland({
               input: {
                 resolution,
                 resolutionNote,
-                scopedWindowStart: scopedWindowStart.length > 0 ? scopedWindowStart : undefined,
-                scopedWindowEnd: scopedWindowEnd.length > 0 ? scopedWindowEnd : undefined,
+                ...toScopedWindow("scopedWindowStartsAt", scopedWindowStart),
+                ...toScopedWindow("scopedWindowEndsAt", scopedWindowEnd),
               },
             });
           }}

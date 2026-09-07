@@ -623,8 +623,13 @@ export function withdrawDispute(
 export interface ResolveDisputeInput {
   readonly resolution: DisputeResolution;
   readonly resolutionNote: string;
-  readonly scopedWindowStart?: string;
-  readonly scopedWindowEnd?: string;
+  /**
+   * `…StartsAt`/`…EndsAt`, matching both the backend schema and this module's own read
+   * shapes. They were `…Start`/`…End` here, which the `.strict()` schema rejected — so a
+   * scoped re-verification could never be submitted.
+   */
+  readonly scopedWindowStartsAt?: string;
+  readonly scopedWindowEndsAt?: string;
 }
 
 /**

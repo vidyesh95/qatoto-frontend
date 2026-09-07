@@ -442,7 +442,7 @@ function ContentReportCard({ report }: { report: CommunityContentReport }) {
           className={QUIET_BUTTON_CLASS}
           disabled={note.trim().length === 0 || dismissReport.isPending}
           onClick={() =>
-            dismissReport.mutate({ reportId: report.id, input: { note: note.trim() } })
+            dismissReport.mutate({ reportId: report.id, input: { reasonNote: note.trim() } })
           }
         >
           Dismiss the report
