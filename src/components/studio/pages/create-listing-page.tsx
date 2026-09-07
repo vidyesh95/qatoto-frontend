@@ -20,6 +20,7 @@ import {
   type ListingCategoryChoice,
 } from "@/components/studio/listing/listing-category-picker";
 import { COUNTRY_OPTIONS } from "@/components/home/account/menus/location-menu";
+import { ComposerStepRail } from "@/components/commerce/composer/composer-fields";
 import { toOptionalCountryCode } from "@/components/commerce/composer/composer-input";
 import PathwayCandidatePicker from "@/components/studio/pathways/pathway-candidate-picker";
 import { countryLabelFromCode, formatByteSizeLabel, formatCentsLabel } from "@/lib/store/format";
@@ -4053,60 +4054,14 @@ export default function CreateListingPage({ productId }: { productId?: string })
         List your product on the Qatoto Store to reach buyers, partners, and B2B customers.
       </p>
 
-      {/* Step tabs */}
-      <ol className="mt-8 flex items-center">
-        {LISTING_STEPS.map((step, stepIndex) => {
-          const isCompletedStep = stepIndex < currentStepIndex;
-          const isCurrentStep = stepIndex === currentStepIndex;
-          return (
-            <li key={step.id} className={`flex items-center ${stepIndex > 0 ? "flex-1" : ""}`}>
-              {stepIndex > 0 && (
-                <span
-                  className={`mx-2 h-0.5 flex-1 rounded-full ${
-                    isCompletedStep || isCurrentStep ? "bg-[#1DBDC5]" : "bg-border"
-                  }`}
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => handleGoToStepClick(stepIndex)}
-                disabled={stepIndex >= currentStepIndex}
-                className={`flex shrink-0 items-center gap-2 ${
-                  isCompletedStep ? "cursor-pointer" : "cursor-default"
-                }`}
-              >
-                <span
-                  className={`flex size-8 items-center justify-center rounded-full text-sm font-medium ${
-                    isCurrentStep
-                      ? "bg-primary text-primary-foreground ring-2 ring-[#1DBDC5]"
-                      : isCompletedStep
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-muted-foreground"
-                  }`}
-                >
-                  {isCompletedStep ? (
-                    <Image
-                      src="/icons/check_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                      alt=""
-                      width={16}
-                      height={16}
-                    />
-                  ) : (
-                    stepIndex + 1
-                  )}
-                </span>
-                <span
-                  className={`hidden text-sm md:block ${
-                    isCurrentStep ? "font-medium text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  {step.label}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ol>
+      {/* Step tabs. Wrapping pill rail: 11 long labels overflow a single non-shrinking flex row. */}
+      <div className="mt-8">
+        <ComposerStepRail
+          steps={LISTING_STEPS}
+          currentStepIndex={currentStepIndex}
+          onStepSelect={handleGoToStepClick}
+        />
+      </div>
 
       <div className="mt-6">{renderCurrentStep(currentStep.id)}</div>
 
