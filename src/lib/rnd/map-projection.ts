@@ -29,6 +29,16 @@ const MICRODEGREES_PER_DEGREE = 1_000_000;
 const CANVAS_NORTH_LATITUDE_DEGREES = 83.0;
 const CANVAS_SOUTH_LATITUDE_DEGREES = -71.26;
 
+/**
+ * The canvas's height ÷ its width, from the 2000 × 857 above.
+ *
+ * Exported because `map-pin-layout.ts` needs it: one percent of the canvas's WIDTH and one
+ * percent of its HEIGHT are different distances, so anything measuring how far apart two pins
+ * are has to convert between the two axes, and it must do that with the same number this
+ * projection was calibrated against.
+ */
+export const MAP_CANVAS_ASPECT_RATIO = 857 / 2000;
+
 const CANVAS_LATITUDE_SPAN_DEGREES = CANVAS_NORTH_LATITUDE_DEGREES - CANVAS_SOUTH_LATITUDE_DEGREES;
 
 export interface MapCanvasPosition {

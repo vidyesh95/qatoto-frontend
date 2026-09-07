@@ -13,6 +13,7 @@ import { useState } from "react";
 
 import ProblemClusterList from "@/components/home/research-and-development/sections/problem-report-list";
 import type { ProblemCluster } from "@/lib/rnd/discovery.schemas";
+import { layOutMapPins } from "@/lib/rnd/map-pin-layout";
 import {
   projectMicrodegreesToMapPercent,
   toOpportunityBand,
@@ -76,6 +77,25 @@ export default function ProblemMapCanvas({ clusters }: { clusters: ProblemCluste
     );
   };
 
+  // PROJECT EVERY PIN FIRST, THEN LAY THEM OUT TOGETHER. Projection is per-cluster and could
+  // stay inline in the map below; de-overlapping cannot, because whether a pin needs to move is
+  // a fact about the OTHER pins. Two clusters in neighbouring suburbs project onto the same
+  // pixel — 35km is 0.3% of this canvas — and the one drawn second used to cover the first
+  // completely, swallowing every click aimed at it. `layOutMapPins` fans such a group out around
+  // its shared centre and leaves every non-colliding pin exactly where it projected.
+  //
+  // Not wrapped in `useMemo`: the React Compiler is on (`next.config.ts`), so it memoises this
+  // for us, and a hand-rolled memo here would be a second cache to keep correct.
+  const laidOutPins = layOutMapPins(
+    clusters.map((cluster) => ({
+      id: cluster.id,
+      position: projectMicrodegreesToMapPercent({
+        latitudeMicrodegrees: cluster.centroidLatitudeMicrodegrees,
+        longitudeMicrodegrees: cluster.centroidLongitudeMicrodegrees,
+      }),
+    })),
+  );
+
   return (
     <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
       <div className="relative w-full self-start rounded-2xl bg-[#00696E]/5 p-2 sm:p-4">
@@ -86,13 +106,11 @@ export default function ProblemMapCanvas({ clusters }: { clusters: ProblemCluste
           alt="World map of reported problems"
           className="h-auto w-full"
         />
-        {clusters.map((cluster) => {
+        {clusters.map((cluster, clusterIndex) => {
           const isSelected = cluster.id === selectedClusterId;
           const opportunityBand = toOpportunityBand(cluster.opportunityScorePoints);
-          const pinPosition = projectMicrodegreesToMapPercent({
-            latitudeMicrodegrees: cluster.centroidLatitudeMicrodegrees,
-            longitudeMicrodegrees: cluster.centroidLongitudeMicrodegrees,
-          });
+          // `layOutMapPins` returns its results in input order, so this index lines up.
+          const pinPosition = laidOutPins[clusterIndex].position;
 
           return (
             <button
