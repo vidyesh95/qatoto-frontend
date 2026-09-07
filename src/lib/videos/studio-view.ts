@@ -258,6 +258,28 @@ function optionalText(value: string): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+/**
+ * A stored UTC instant as a `datetime-local` input value, or `""` when there is none.
+ *
+ * `<input type="datetime-local">` requires exactly `YYYY-MM-DDTHH:mm` and renders BLANK for
+ * anything else, with no error. This used to be `scheduledPublishAt?.slice(0, 10)` — a date
+ * with no time — so opening a scheduled video for editing showed an empty schedule field and
+ * hid the "Will publish on …" line, reporting a scheduled video as unscheduled.
+ *
+ * SHIFTED BY THE ZONE OFFSET BEFORE FORMATTING, the same idiom as `toLocalDateKey` in
+ * `src/lib/feed/history-grouping.ts`. Slicing the raw ISO string to 16 would be worse than
+ * the bug it fixes: it puts a UTC wall-clock into a control the browser reads as LOCAL, and
+ * `toUpdateVideoInput` converts it back with `new Date(...)`, so every save would shift the
+ * time by the viewer's offset and compound on each edit.
+ */
+function toDateTimeLocalValue(isoInstant: string | null): string {
+  if (isoInstant === null) return "";
+  const parsedMs = Date.parse(isoInstant);
+  if (Number.isNaN(parsedMs)) return "";
+  const shiftedToLocalMs = parsedMs - new Date(parsedMs).getTimezoneOffset() * 60_000;
+  return new Date(shiftedToLocalMs).toISOString().slice(0, 16);
+}
+
 function toAnimeInput(details: AnimeEpisodeDetails): CreateAnimeEpisodeInput {
   const shared = {
     seasonLabel: details.seasonLabel,
@@ -471,7 +493,7 @@ export function toUploadDraft(video: PublicVideo): UploadDraft {
     collaboratorEmails: video.collaborators.map((collaborator) => collaborator.invitedEmail),
     visibility: video.visibility,
     isNdaRequired: video.isNdaRequired,
-    scheduledPublishDate: video.scheduledPublishAt?.slice(0, 10) ?? "",
+    scheduledPublishDate: toDateTimeLocalValue(video.scheduledPublishAt),
     youtubeUrl: video.youtubeEmbedUrl ?? "",
     animeEpisodeDetails:
       video.animeEpisode === null
