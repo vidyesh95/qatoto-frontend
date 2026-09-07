@@ -2863,3 +2863,76 @@ client weight this repo's thin-client rule does not want), signed-out feedback (
 plus an IP-keyed limiter, and the spam surface grows), wiring `/studio/feedback`'s placeholder page
 to the same hook, notifying anyone on submit, and including feedback in the data export — check
 `smoke-data-export`'s scope when part 2 lands.
+
+## View in 360° — PART 1 SHIPPED 2026-09-07 (backend `0168`), parts 2–3 are not built
+
+The product page has rendered a "View in 360º / Check how this looks from all angles" card since
+Phase 8 — as a static `<div>` in `product-detail.tsx` gated on a `spin_360` gallery slide that no
+seller can upload, with no viewer behind it. It has never rendered in production. The decision,
+taken against dayring-for-kids.vercel.app as the reference (a real three.js orbit, not a photo
+turntable): **a seller may optionally attach ONE `.glb` 3D model per listing**, and the card opens
+a lazily loaded `@google/model-viewer` over it. Backend part 1 shipped in `qatoto-backend`:
+`commerce_product_model`, `POST`/`DELETE /products/:id/model`, and a `threeDimensionalModel`
+field on both product reads (STORE_BACKEND_STRUCTURE.md A47). **Nothing in this repo calls it
+yet** — both read schemas are `.strip()`, so the new key is ignored until part 2 names it.
+
+**Four things about the shape, so they are not re-litigated:**
+
+- **It is a `.glb`, not `spin_360` frames.** The enum label stays — a pgEnum label cannot be
+  dropped, and the photo-turntable design remains a cheaper later path — but the buyer gate MOVES
+  from `images.some(mediaKind === "spin_360")` to `threeDimensionalModel !== null`.
+- **The wire name is `threeDimensionalModel`, not `model` or `model3d`.** The product JSON already
+  carries `modelNumber`, so a flat `model` sibling reads as the model number; `model3d` is an
+  abbreviation with a digit. Multipart field: `model`. Shape:
+  `{ id, url, fileName, byteSize, updatedAt } | null`.
+- **`url` is a public Cloudinary raw URL, CORS-open.** `<model-viewer>` loads it with a browser
+  `fetch()`; the private document bucket has no CORS and a five-minute presigned link can expire
+  before the click. Same exposure class as the nine gallery URLs.
+- **10 MB, magic-byte validated, 201 not 202.** The cap is Cloudinary's raw per-file limit on the
+  free plan. Nothing is scanned and no copy may say it was.
+
+**Part 2 — seller studio upload.** `pnpm add @google/model-viewer@4.3.1 three@0.183.2` and
+`pnpm add -D @types/three@0.183.1` (peer range is `^0.183.0`; `three` ships no types and
+`skipLibCheck` would hide that as `any`). Add `ProductThreeDimensionalModelSchema` (`.strip()`) in
+`src/lib/store/products.schemas.ts` and name `threeDimensionalModel` on BOTH
+`StoreProductDetailSchema` and the seller's `PublicProductSchema` — under `.strip()`, naming the
+key is the whole fix. `uploadProductModel` / `deleteProductModel` in `src/lib/products/api.ts`
+beside the document wrappers (`sendForm` for the POST, `sendJson` for the DELETE, no idempotency
+key — the server converges). In `src/hooks/products.ts`: a `{ phase: "model" }` on
+`SaveProgress`, `modelFile: File | null` on create, and
+`modelChange: { kind: "keep" } | { kind: "upload"; modelFile } | { kind: "remove" }` on update —
+a union, because "remove with nothing to remove" is a state two booleans admit. **Save it LAST,
+right before `publish`, in both mutations**: it is optional so it does not feed the completeness
+gate, it is the one phase with a realistic seller refusal (422 magic bytes) and `unwrap` aborts the
+chain, and it is the largest request. In `create-listing-page.tsx`: no new step — a "3D model
+(optional)" sub-section under the photo grid in the `images` step, a single-slot
+`ListingModelDraft = none | existing | pending | removing` union, client checks on `.glb`
+extension and size ONLY (never `file.type`: browsers report `application/octet-stream` for `.glb`
+as often as `model/gltf-binary`), `accept=".glb,model/gltf-binary"`, hydration from
+`loadedProduct.threeDimensionalModel`, a `describeProgress` case, and a review-step row.
+
+**Part 3 — the buyer control.** `src/types/model-viewer.d.ts` augments `react`'s
+`JSX.IntrinsicElements` with attribute props only — NO `on*` props, because React 19's
+custom-element path subscribes `onLoad` to `"Load"`, which never fires; wire `load`/`error` by
+ref. `three-dimensional-model-viewer.tsx` (`props-only`, `"use client"`) is the ONLY file that
+names `@google/model-viewer` at runtime, via `import()` inside `useEffect` with an `isMounted`
+guard: the package calls `customElements.define` at evaluation, so any top-level import throws
+`HTMLElement is not defined` in SSR, and `next/dynamic` would turn a chunk-load failure into a
+boundary throw rather than an `error` value. State: `loading-library | loading-model | ready |
+error`. Element: `camera-controls auto-rotate interaction-prompt="auto" touch-action="pan-y"
+shadow-intensity="1" exposure="1" environment-image="neutral" loading="eager"`, `poster` from
+`mainImageUrl` when non-null; reset (`cameraOrbit`, `cameraTarget`, `fieldOfView`,
+`resetTurntableRotation()`) and fullscreen on the wrapper. Sheet: `ModalSheet` with
+`isFixedHeight` and the PDF viewer's `widthClassName="sm:w-[min(90vw,56rem)]"`. Opener:
+`view-in-360-opener.tsx`, a copy of `customization-options-opener.tsx`, wrapping the EXISTING card
+markup unchanged. Keep model-viewer's default gstatic Draco decoder (fetched only for
+Draco-compressed files; no CSP today; self-hosting drifts on every `three` upgrade). After
+`pnpm build`, `rg -l 'customElements.define\("model-viewer"' .next/static/chunks` must hit exactly
+one chunk and that chunk must be absent from the product page's script list.
+
+**Not scoped, and each is a decision rather than an oversight:** the `spin_360` photo turntable
+(stays expressible, needs the 9-image cap raised per gallery and a scrubber), per-variant models
+(`commerce_product_model` is unique on `product_id`), AR / USDZ export, self-hosted Draco, a CSP,
+and a server-rendered thumbnail of the model. Deploy part 1 before parts 2–3: once the frontend
+names `threeDimensionalModel` as a required nullable key, an older backend fails every product
+read at parse.
