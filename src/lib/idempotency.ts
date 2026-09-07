@@ -1,11 +1,16 @@
 // TRANSPORT: props-only — pure key generation, no network.
 //
-// Four R&D writes take an `idempotencyKey` in their body: claim submit, receipt upload,
-// dispute raise and payment record. Every one of them creates a row that costs something
-// real — slices, evidence, a contested allocation, an attested payment — and every one is
-// submitted from a phone on a connection that can drop after the request reaches the
-// server but before the response reaches the client. Without a key that retry writes a
-// second row and the member is credited, or paid, twice.
+// Five R&D writes take an `idempotencyKey` in their body: claim submit, receipt upload,
+// dispute raise, payment record and PIE BAKE. Every one of them creates a row that costs
+// something real — slices, evidence, a contested allocation, an attested payment, a frozen
+// cap table — and every one is submitted from a phone on a connection that can drop after
+// the request reaches the server but before the response reaches the client. Without a key
+// that retry writes a second row and the member is credited, or paid, twice.
+//
+// THE BAKE IS THE ONE THAT CANNOT BE UNDONE, and so it is the one where the key earns its
+// keep hardest: on a retry the backend returns the ORIGINAL bake instead of
+// `409 PIE_ALREADY_BAKED`, so a dropped connection reads as "done" rather than as damage.
+// Its key is minted once and never rotated — see `pie-bake-panel.tsx`.
 //
 // COMMENT CREATE USES THE SAME KEY IN A DIFFERENT PLACE. `POST /videos/:videoId/comments`
 // reads an `Idempotency-Key` HTTP HEADER (8..200 chars) rather than a body field — that

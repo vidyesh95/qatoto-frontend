@@ -10,6 +10,7 @@ import {
 } from "@/components/home/research-and-development/sections/mutation-feedback";
 import { useBakePieMutation } from "@/hooks/rnd/proof-of-effort";
 import { ApiRequestError } from "@/lib/http";
+import { newIdempotencyKey } from "@/lib/idempotency";
 import { formatIsoInstant, formatMoneyFromCents } from "@/lib/rnd/format";
 import {
   PIE_BAKE_ACKNOWLEDGEMENT,
@@ -63,6 +64,12 @@ export default function PieBakePanel({
   const [triggerEvidenceNote, setTriggerEvidenceNote] = useState("");
   const [valuationCents, setValuationCents] = useState("");
   const [typedAcknowledgement, setTypedAcknowledgement] = useState("");
+  /**
+   * Minted once and NEVER rotated — unlike the claim composer, which rotates on success.
+   * There is no legitimate second bake, so the same key must survive every retry of this
+   * one attempt; rotating it would turn a retry into a `409 PIE_ALREADY_BAKED`.
+   */
+  const [idempotencyKey] = useState(newIdempotencyKey);
 
   // `restricted` here covers BOTH "not a member" and "never baked" — GET …/pie-bake 404s
   // before the bake — so a project with a dynamic pie lands in the same branch as a
@@ -135,6 +142,7 @@ export default function PieBakePanel({
             valuationCents: valuationCents.length > 0 ? valuationCents : undefined,
             acknowledgement: PIE_BAKE_ACKNOWLEDGEMENT,
             expectedSnapshotId: snapshot.id,
+            idempotencyKey,
           });
         }}
       >

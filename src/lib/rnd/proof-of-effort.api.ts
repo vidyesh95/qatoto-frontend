@@ -727,6 +727,13 @@ export interface BakePieInput {
    * `409 SNAPSHOT_STALE` is only reachable because this field exists.
    */
   readonly expectedSnapshotId: string;
+  /**
+   * In the BODY, like the other four R&D writes — see `src/lib/idempotency.ts`. Retrying a
+   * dropped bake returns the ORIGINAL bake rather than `409 PIE_ALREADY_BAKED`, which is
+   * the difference between "you already did this" and a founder thinking the one
+   * irreversible action in the product went wrong.
+   */
+  readonly idempotencyKey: string;
 }
 
 /**
