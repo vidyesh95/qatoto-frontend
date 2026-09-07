@@ -110,6 +110,27 @@ export default function ProductImageGallery({
                 src={image.url}
                 fill
                 priority={domSlideIndex === 1}
+                // ⚠️ NEITHER CLONE MAY BE LAZY, AND THE REASON IS NOT SYMMETRY.
+                //
+                // The LEADING clone is what the browser actually paints: the track starts at
+                // scrollLeft 0 and the effect above only moves it to the first real slide after
+                // hydration, so DOM index 0 is the LCP element on every product while `priority`
+                // sits on index 1. Lazy there is a genuinely deferred hero fetch.
+                //
+                // The TRAILING clone is a dev-tooling fact. Next records every rendered image in a
+                // module-level `Map` keyed by RESOLVED SRC (`get-img-props.js`, `allImgs.set`),
+                // last write wins, and its LCP PerformanceObserver looks the painted element up by
+                // that same key. A clone carries the same URL as a real slide, so a lazy trailing
+                // clone rendering last overwrites the hero's record and Next warns about an image
+                // that is already eager. Measured: index 0 eager alone did NOT silence it.
+                //
+                // Eager on a clone costs no request — by construction a clone's URL is always also
+                // a real slide's URL, and on a one-image product all three are the same file.
+                // `loading` rather than a second `priority`: the preload link belongs to the slide
+                // the user ends on.
+                {...(domSlideIndex === 0 || domSlideIndex === slidesWithClones.length - 1
+                  ? { loading: "eager" as const }
+                  : {})}
                 sizes="(min-width: 1024px) 50vw, 100vw"
                 alt={image.altText ?? alt}
                 className="object-contain"
