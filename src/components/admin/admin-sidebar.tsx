@@ -251,6 +251,20 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
         activeIcon: "/icons/local_shipping_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
         inactiveIcon: "/icons/local_shipping_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       },
+      {
+        // A CARD-NETWORK CHARGEBACK RESPONSE, NOT "Store reports" ABOVE. That queue is
+        // `moderate_commerce` over buyer flags Qatoto itself decides; this hands one order's
+        // data to a card issuer who decides off-platform, gated on its own narrower
+        // `export_chargeback_evidence` capability because the bundle carries full buyer-seller
+        // chat and PII in one export — not something general commerce moderation should reach.
+        //
+        // Desktop only, same tradeoff as the rest of `Home · Store`: this is a rare, deliberate
+        // action taken from a desk with a chargeback notification open, not a mobile task.
+        href: "/admin/store/orders/chargeback-evidence",
+        label: "Chargeback evidence",
+        activeIcon: "/icons/orders_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+        inactiveIcon: "/icons/orders_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      },
     ],
     hasDivider: true,
   },

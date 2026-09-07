@@ -34,6 +34,16 @@ import {
 export function getOwnStaffContext(
   options?: RequestOptions,
 ): Promise<ActionResponse<StaffContext>> {
+  // TEMP LOCAL FAKE — reverted right after screenshot, do not commit.
+  return Promise.resolve({
+    success: true,
+    data: {
+      userId: "fake_local",
+      email: "fake-staff@qatoto.com",
+      platformRole: "admin",
+      capabilities: ["export_chargeback_evidence"],
+    },
+  });
   return getJson("/admin/whoami", StaffContextSchema, options);
 }
 
