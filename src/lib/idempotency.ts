@@ -1,11 +1,17 @@
 // TRANSPORT: props-only — pure key generation, no network.
 //
-// Five R&D writes take an `idempotencyKey` in their body: claim submit, receipt upload,
-// dispute raise, payment record and PIE BAKE. Every one of them creates a row that costs
-// something real — slices, evidence, a contested allocation, an attested payment, a frozen
-// cap table — and every one is submitted from a phone on a connection that can drop after
-// the request reaches the server but before the response reaches the client. Without a key
-// that retry writes a second row and the member is credited, or paid, twice.
+// Four R&D writes take an `idempotencyKey` in their body: claim submit, receipt upload,
+// payment record and PIE BAKE. Every one of them creates a row that costs something real —
+// slices, evidence, an attested payment, a frozen cap table — and every one is submitted
+// from a phone on a connection that can drop after the request reaches the server but
+// before the response reaches the client. Without a key that retry writes a second row and
+// the member is credited, or paid, twice.
+//
+// DISPUTE RAISE IS NOT ONE OF THEM, despite looking like it should be. Its backend route
+// carries the `idempotency()` middleware and its service takes no key, so that one sends a
+// HEADER like the store writes below. It used to send a body field, which the route's
+// `.strict()` schema rejected — every raise answered 422 until that was corrected. Check
+// which envelope a route actually reads before adding a key to it.
 //
 // THE BAKE IS THE ONE THAT CANNOT BE UNDONE, and so it is the one where the key earns its
 // keep hardest: on a retry the backend returns the ORIGINAL bake instead of

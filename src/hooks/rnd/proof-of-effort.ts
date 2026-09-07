@@ -341,10 +341,14 @@ export function useRaiseDisputeMutation(projectSlug: string) {
       idempotencyKey: string;
     }) =>
       unwrap(
-        await raiseDispute(projectSlug, variables.proposalId, {
-          disputeNote: variables.disputeNote,
-          idempotencyKey: variables.idempotencyKey,
-        }),
+        await raiseDispute(
+          projectSlug,
+          variables.proposalId,
+          { disputeNote: variables.disputeNote },
+          // A HEADER, not a body field — see `raiseDispute` for why this one differs from
+          // its R&D neighbours. Same idiom the store hooks use.
+          { headers: { "Idempotency-Key": variables.idempotencyKey } },
+        ),
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: rndKeys.proofOfEffort(projectSlug) });

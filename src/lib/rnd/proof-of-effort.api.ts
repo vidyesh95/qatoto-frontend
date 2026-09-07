@@ -567,10 +567,17 @@ export function deletePhysicalReceipt(
  * THE GDPR Art. 22 CONTESTABILITY PATH. Freezes the proposal's slices in escrow, reported
  * separately from the snapshot's totals rather than folded into them.
  */
+/**
+ * THE KEY IS A HEADER HERE, NOT A BODY FIELD, unlike its R&D neighbours.
+ *
+ * This route carries `idempotency()` middleware on the backend and its service takes no
+ * key, so the header is the only envelope that does anything. It previously went in the
+ * body, which `RaiseDisputeSchema.strict()` rejected outright — every raise answered 422.
+ */
 export function raiseDispute(
   projectSlug: string,
   proposalId: string,
-  input: { readonly disputeNote: string; readonly idempotencyKey: string },
+  input: { readonly disputeNote: string },
   options?: RequestOptions,
 ): Promise<ActionResponse<Dispute>> {
   return sendJson(
