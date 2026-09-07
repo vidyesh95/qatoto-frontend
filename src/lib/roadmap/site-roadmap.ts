@@ -155,7 +155,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         kind: "route",
         label: "Blueprints — showcase",
         href: "/blueprints/showcase",
-        summary: "A launch feed of working prototypes, newest first.",
+        summary: "A launch feed of working prototypes — newest first, or top by upvotes.",
       },
       {
         kind: "dynamic",

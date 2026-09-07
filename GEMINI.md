@@ -167,7 +167,7 @@ prototypes (20%) and manufacturing case studies (10%) — and `next.config.ts` 3
 and `/anime/:path*` at the routing layer.
 
 **The hub is mock and that is a decision, not an oversight.** `src/mocks/blueprints-mocks.ts`
-holds twelve invented builds. It inherits the caveat `todo.md` recorded against `/anime`
+holds 27 invented builds — 12 teardowns, 10 showcases, 5 case studies. It inherits the caveat `todo.md` recorded against `/anime`
 verbatim — _a vertical you cannot fill should not ship_ — so the surface is **de-indexed**: it is
 absent from `src/app/sitemap.ts` AND both routes carry `robots: { index: false, follow: false }`.
 Both halves are needed, because the sidebar and mobile nav link the hub, so a sitemap omission

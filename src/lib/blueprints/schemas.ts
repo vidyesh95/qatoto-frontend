@@ -147,6 +147,23 @@ export const BLUEPRINT_DIFFICULTY_LABELS: Record<BlueprintDifficulty, string> = 
   advanced: "Advanced",
 };
 
+/**
+ * How the launch feed is ordered — `?sort=` on `/blueprints/showcase`.
+ *
+ * `newest` is `launchedAt` descending and the default (no `?sort=` in the URL); `top` is
+ * `upvoteCount` descending and is an ORDER, not a rank — nothing renders a numeral. Single words,
+ * so snake_case and kebab-case agree. The comparators live in `api.ts` beside the filter, because a
+ * cursor into an order the page could re-derive differently is meaningless.
+ */
+export const SHOWCASE_SORTS = ["newest", "top"] as const;
+export type ShowcaseSort = (typeof SHOWCASE_SORTS)[number];
+export const DEFAULT_SHOWCASE_SORT: ShowcaseSort = "newest";
+
+export const SHOWCASE_SORT_LABELS: Record<ShowcaseSort, string> = {
+  newest: "Newest",
+  top: "Top",
+};
+
 // --- Object shapes -----------------------------------------------------------
 
 /**
@@ -342,7 +359,8 @@ export const ShowcaseBlueprintSchema = z
     /**
      * DISPLAY ONLY. There is no vote endpoint and no vote button — a counter a client can
      * increment is a business rule enforced on an untrusted layer, which CLAUDE.md §1.1 forbids
-     * outright. This renders; nothing in this repo changes it.
+     * outright. This renders — as `ShowcaseVoteBox`, a bare `<span>` in a fixed gutter, never a
+     * `<button>` — and nothing in this repo changes it.
      */
     upvoteCount: z.number().int().nonnegative(),
     team: z.array(BlueprintTeamMemberSchema),

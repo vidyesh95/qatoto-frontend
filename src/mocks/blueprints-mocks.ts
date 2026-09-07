@@ -11,12 +11,19 @@
 // `@/mocks/anime-mocks` was wired — its components imported the arrays directly, so pointing them
 // at a backend meant rewriting the components rather than one getter.
 //
-// THE SPLIT HERE IS 12 / 5 / 5, NOT 70/20/10, and that is deliberate. The 70/20/10 ratio is a
+// THE SPLIT HERE IS 12 / 10 / 5, NOT 70/20/10, and that is deliberate. The 70/20/10 ratio is a
 // content target for REAL builds; applied to fixtures it gave two showcases and two case studies,
 // and a launch feed of two rows or a numbered index of two cards does not exercise its own
 // design — it reads as broken. The two small buckets are over-sampled so the layouts can be built
 // against something that looks like use. There are exactly five case studies because there are
-// five disciplines, and a discipline with no fixture is a card tint nobody ever sees.
+// five disciplines, and a discipline with no fixture is a card tint nobody ever sees. There are
+// TEN showcases rather than five because the launch feed has a Newest | Top toggle, and a toggle
+// has to show two visibly different orders and still page under both — five rows did neither.
+//
+// THE LAUNCH DATES ARE STATIC LITERALS inside the three weeks before 2026-09-08, and they drift
+// into the past one day at a time. Accepted: a `new Date()`-relative fixture would bake a
+// different order into every `"use cache"` entry, and `RelativeTime` renders whatever the gap is.
+// Re-date them when the feed starts to read as abandoned.
 
 import type { Blueprint, BlueprintDocument, BlueprintVideo } from "@/lib/blueprints/schemas";
 
@@ -43,7 +50,7 @@ const PLACEHOLDER_VIDEO_DURATION_SECONDS = 10;
 const PLACEHOLDER_CAPTIONS_URL = "/dummy/blueprints/walkthrough-captions.vtt";
 
 /**
- * TWO OF THE SIX FIXTURE VIDEOS CARRY CAPTIONS, and four do not.
+ * TWO OF THE EIGHT FIXTURE VIDEOS CARRY CAPTIONS, and six do not.
  *
  * Deliberately a mix. Captions on every video would let the contract imply that a real upload
  * always has them, which is false; captions on none left the `<track>` branch in
@@ -134,7 +141,7 @@ const PLACEHOLDER_DOCUMENTS: Record<string, BlueprintDocument> = {
 };
 
 /**
- * Twenty-two builds across the three arms.
+ * Twenty-seven builds across the three arms.
  *
  * DELIBERATE ABSENCES, each one there so its branch renders during development rather than the
  * first time real data arrives:
@@ -147,6 +154,11 @@ const PLACEHOLDER_DOCUMENTS: Record<string, BlueprintDocument> = {
  *   must be ABSENT, not empty boxes.
  * - `builtFromBlueprintSlug: null` on `dairy-chiller-retrofit-pilot` — a launch built from
  *   something that was never published here.
+ * - `cadFormat: null` on `dairy-chiller-retrofit-pilot` and `off-grid-mesh-nodes-kumasi-market` —
+ *   a build with no published CAD, so the spec list must omit the row rather than print "—".
+ * - `upvoteCount: 96` on BOTH `hand-pump-gearbox-replacement-kit` and
+ *   `grain-moisture-meter-field-units` — a deliberate tie, so the `top` comparator's tie-break is
+ *   exercised on the second page of `?sort=top` rather than only described in a comment.
  * - `callToAction: null` and `demoVideo: null` on several showcases — most launches have neither.
  * - `partCount: null` where nobody counted. Not zero: a zero-part teardown is not a teardown.
  */
@@ -509,9 +521,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       currency: UNITED_STATES_DOLLAR,
     },
     tags: ["cold-chain", "solar", "field-trial", "east-africa"],
-    createdAt: "2026-08-20T12:00:00.000Z",
+    createdAt: "2026-08-30T12:00:00.000Z",
     tagline: "Holds 4 °C for 62 hours with no sun, in 41 °C ambient",
-    launchedAt: "2026-08-22T08:00:00.000Z",
+    launchedAt: "2026-09-01T08:00:00.000Z",
     upvoteCount: 214,
     team: [
       {
@@ -557,9 +569,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       currency: UNITED_STATES_DOLLAR,
     },
     tags: ["agriculture", "optics", "instrumentation", "prototype"],
-    createdAt: "2026-08-08T15:26:00.000Z",
+    createdAt: "2026-08-27T15:26:00.000Z",
     tagline: "Nitrogen and organic carbon in 40 seconds, without a lab",
-    launchedAt: "2026-08-09T09:30:00.000Z",
+    launchedAt: "2026-08-28T09:30:00.000Z",
     upvoteCount: 147,
     team: [
       {
@@ -596,9 +608,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       currency: UNITED_STATES_DOLLAR,
     },
     tags: ["mobility", "motors", "logistics", "west-africa"],
-    createdAt: "2026-08-25T10:10:00.000Z",
+    createdAt: "2026-09-04T10:10:00.000Z",
     tagline: "300 kg up a 9% grade, on parts you can buy in Ikeja",
-    launchedAt: "2026-08-26T07:15:00.000Z",
+    launchedAt: "2026-09-05T07:15:00.000Z",
     upvoteCount: 302,
     team: [
       {
@@ -650,9 +662,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       currency: UNITED_STATES_DOLLAR,
     },
     tags: ["agriculture", "instrumentation", "field-trial"],
-    createdAt: "2026-07-30T13:40:00.000Z",
+    createdAt: "2026-08-22T13:40:00.000Z",
     tagline: "Within 0.4% of the lab, in a shed, on a phone charger",
-    launchedAt: "2026-08-01T06:45:00.000Z",
+    launchedAt: "2026-08-24T06:45:00.000Z",
     upvoteCount: 96,
     team: [
       {
@@ -695,9 +707,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       currency: UNITED_STATES_DOLLAR,
     },
     tags: ["cold-chain", "dairy", "retrofit", "energy"],
-    createdAt: "2026-07-06T08:55:00.000Z",
+    createdAt: "2026-08-17T08:55:00.000Z",
     tagline: "23% less energy per litre, without buying a single new chiller",
-    launchedAt: "2026-07-08T11:20:00.000Z",
+    launchedAt: "2026-08-19T11:20:00.000Z",
     upvoteCount: 58,
     team: [
       {
@@ -714,6 +726,242 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       label: "Site-by-site energy figures",
       url: "https://example.com/qatoto/chiller-retrofit-energy",
     },
+  },
+  {
+    id: "bp-023",
+    slug: "latching-valve-drip-irrigation-pilot",
+    title: "Sixty latching valves on a two-hectare drip scheme in Kisumu",
+    category: "showcase",
+    summary:
+      "The latching actuator from the teardown fitted to sixty valves on a drip scheme and run on a schedule from one node for a growing season. Which valves stuck, why the schedule drifted, and the coin cells that did not last.",
+    thumbnailUrl: "/dummy/thumbnail_image12.avif",
+    author: {
+      displayName: "Naledi Dlamini",
+      handle: "naledi-agri",
+      avatarUrl: "/dummy/profile_image_09.avif",
+    },
+    viewCount: 27410,
+    likeCount: 2488,
+    difficulty: "intermediate",
+    cadFormat: "STEP / FreeCAD",
+    billOfMaterialsCostRange: {
+      minimumInCents: 4800,
+      maximumInCents: 6100,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    tags: ["agriculture", "water", "actuators", "field-trial", "east-africa"],
+    createdAt: "2026-09-01T15:45:00.000Z",
+    tagline: "One coin cell per valve, a full season, zero mains",
+    launchedAt: "2026-09-03T08:00:00.000Z",
+    upvoteCount: 129,
+    team: [
+      {
+        displayName: "Naledi Dlamini",
+        handle: "naledi-agri",
+        avatarUrl: "/dummy/profile_image_09.avif",
+        role: "Field deployment",
+      },
+      {
+        displayName: "Fatima Al-Rashid",
+        handle: "fatima-thermal",
+        avatarUrl: "/dummy/profile_image_08.avif",
+        role: "Actuator firmware",
+      },
+    ],
+    builtFromBlueprintSlug: "irrigation-valve-actuator-teardown",
+    demoVideo: placeholderVideo("/dummy/thumbnail_image12.avif"),
+    callToAction: {
+      label: "Watering schedule and soil logs",
+      url: "https://example.com/qatoto/kisumu-drip-logs",
+    },
+  },
+  {
+    id: "bp-024",
+    slug: "seven-cell-pack-for-motorcycle-taxis",
+    title: "A 7S pack that survived 400 charge cycles on Kampala boda-bodas",
+    category: "showcase",
+    summary:
+      "The balancing and protection board from the BMS teardown built into a swappable pack and run by six motorcycle taxis for five months. Cycle-by-cycle capacity, the two cells that were replaced, and the connector that wore first.",
+    thumbnailUrl: "/dummy/thumbnail_image05.avif",
+    author: {
+      displayName: "Tobias Lindqvist",
+      handle: "tobias-cells",
+      avatarUrl: "/dummy/profile_image_05.avif",
+    },
+    viewCount: 51280,
+    likeCount: 5476,
+    difficulty: "advanced",
+    cadFormat: "STEP",
+    billOfMaterialsCostRange: {
+      minimumInCents: 38000,
+      maximumInCents: 46000,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    tags: ["mobility", "batteries", "energy", "east-africa"],
+    createdAt: "2026-08-28T16:05:00.000Z",
+    tagline: "Swappable 1.2 kWh, 400 cycles, 91% capacity left",
+    launchedAt: "2026-08-30T09:30:00.000Z",
+    upvoteCount: 263,
+    team: [
+      {
+        displayName: "Tobias Lindqvist",
+        handle: "tobias-cells",
+        avatarUrl: "/dummy/profile_image_05.avif",
+        role: "Pack and BMS",
+      },
+      {
+        displayName: "Chidi Eze",
+        handle: "chidi-motors",
+        avatarUrl: "/dummy/profile_image_03.avif",
+        role: "Motor integration",
+      },
+      {
+        displayName: "Wanjiku Kamau",
+        handle: "wanjiku-power",
+        avatarUrl: "/dummy/profile_image_10.avif",
+        role: "Field data",
+      },
+    ],
+    builtFromBlueprintSlug: "battery-management-system-teardown",
+    demoVideo: null,
+    callToAction: {
+      label: "Cycle-by-cycle capacity data",
+      url: "https://example.com/qatoto/boda-pack-cycles",
+    },
+  },
+  {
+    id: "bp-025",
+    slug: "hand-pump-gearbox-replacement-kit",
+    title: "A drop-in gearbox kit for the village hand pump, fitted at twelve wells",
+    category: "showcase",
+    summary:
+      "The worn gear train from the teardown redesigned as a kit that drops into the existing casting, and fitted at twelve wells by the county maintenance crew. Fit times, the one casting it did not fit, and what the crew changed.",
+    thumbnailUrl: "/dummy/thumbnail_image09.avif",
+    author: {
+      displayName: "Grace Wanjiru",
+      handle: "grace-mech",
+      avatarUrl: "/dummy/profile_image_04.avif",
+    },
+    viewCount: 15920,
+    likeCount: 1364,
+    difficulty: "beginner",
+    cadFormat: "STEP / Fusion 360",
+    billOfMaterialsCostRange: {
+      minimumInCents: 6500,
+      maximumInCents: 8200,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    tags: ["water", "mechanical", "retrofit", "east-africa"],
+    createdAt: "2026-08-24T13:30:00.000Z",
+    tagline: "Fitted in 40 minutes with the tools already on the truck",
+    launchedAt: "2026-08-26T07:00:00.000Z",
+    // Deliberately ties `grain-moisture-meter-field-units` at 96, so `byMostUpvoted`'s tie-break is
+    // exercised on the second page of `?sort=top` rather than only in a comment.
+    upvoteCount: 96,
+    team: [
+      {
+        displayName: "Grace Wanjiru",
+        handle: "grace-mech",
+        avatarUrl: "/dummy/profile_image_04.avif",
+        role: "Mechanical",
+      },
+    ],
+    builtFromBlueprintSlug: "hand-pump-gearbox-teardown",
+    demoVideo: null,
+    callToAction: null,
+  },
+  {
+    id: "bp-026",
+    slug: "machined-borehole-pump-housings-dry-season",
+    title: "Twenty borehole pumps on a machined housing, one dry season",
+    category: "showcase",
+    summary:
+      "Housings machined to the four tolerances from the teardown, fitted to twenty pumps across two counties and inspected monthly through a dry season. Seal condition per well, the two housings re-machined, and the tolerance that turned out to be loose.",
+    thumbnailUrl: "/dummy/thumbnail_image04.avif",
+    author: {
+      displayName: "Kwame Mensah",
+      handle: "kwame-machining",
+      avatarUrl: "/dummy/profile_image_11.avif",
+    },
+    viewCount: 33640,
+    likeCount: 3012,
+    difficulty: "intermediate",
+    cadFormat: "STEP",
+    billOfMaterialsCostRange: {
+      minimumInCents: 18500,
+      maximumInCents: 23000,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    tags: ["water", "machining", "field-trial", "west-africa"],
+    createdAt: "2026-08-20T09:50:00.000Z",
+    tagline: "Zero seal failures across 20 wells and 3,100 pump-hours",
+    launchedAt: "2026-08-21T10:10:00.000Z",
+    upvoteCount: 188,
+    team: [
+      {
+        displayName: "Kwame Mensah",
+        handle: "kwame-machining",
+        avatarUrl: "/dummy/profile_image_11.avif",
+        role: "Machining",
+      },
+      {
+        displayName: "Grace Wanjiru",
+        handle: "grace-mech",
+        avatarUrl: "/dummy/profile_image_04.avif",
+        role: "Tolerances",
+      },
+    ],
+    builtFromBlueprintSlug: "borehole-pump-housing-tolerances",
+    demoVideo: placeholderVideo("/dummy/thumbnail_image04.avif"),
+    callToAction: {
+      label: "Pump-hour and seal inspection log",
+      url: "https://example.com/qatoto/borehole-seal-log",
+    },
+  },
+  {
+    id: "bp-027",
+    slug: "off-grid-mesh-nodes-kumasi-market",
+    title: "Fourteen mesh nodes across a Kumasi market, running on the rebuilt rail",
+    category: "showcase",
+    summary:
+      "The power rail from the router teardown rebuilt with the panel and cell it should have shipped with, in fourteen nodes strung across a covered market. Uptime per node, the two that browned out in the first week, and the fix.",
+    thumbnailUrl: "/dummy/thumbnail_image11.avif",
+    author: {
+      displayName: "Marco Ferreira",
+      handle: "marco-lowpower",
+      avatarUrl: "/dummy/profile_image_07.avif",
+    },
+    viewCount: 8930,
+    likeCount: 742,
+    difficulty: "intermediate",
+    cadFormat: null,
+    billOfMaterialsCostRange: {
+      minimumInCents: 9800,
+      maximumInCents: 12400,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    tags: ["connectivity", "low-power", "solar", "west-africa"],
+    createdAt: "2026-09-05T14:20:00.000Z",
+    tagline: "Fourteen nodes, 31 days, no mains and no reboot",
+    launchedAt: "2026-09-07T06:30:00.000Z",
+    upvoteCount: 41,
+    team: [
+      {
+        displayName: "Marco Ferreira",
+        handle: "marco-lowpower",
+        avatarUrl: "/dummy/profile_image_07.avif",
+        role: "Power",
+      },
+      {
+        displayName: "Adaeze Nwosu",
+        handle: "adaeze-networks",
+        avatarUrl: "/dummy/profile_image_12.avif",
+        role: "Network",
+      },
+    ],
+    builtFromBlueprintSlug: "off-grid-router-power-rail-teardown",
+    demoVideo: null,
+    callToAction: null,
   },
   {
     id: "bp-012",

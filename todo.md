@@ -900,7 +900,7 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     **THE CONTENT BLOCKER DID NOT GO AWAY — IT CHANGED SUBJECT.** The reason this item existed
     was that wiring five pages would have replaced five pages of invented content with five
     blank ones, and the precedent recorded here was that YouTube does not ship a vertical it
-    cannot fill. `/blueprints` is in exactly that position now: 22 fixtures in
+    cannot fill. `/blueprints` is in exactly that position now: 27 fixtures in
     `src/mocks/blueprints-mocks.ts`, no backend, no real teardowns. The difference is only that
     nobody has published a real blueprint yet, so there is nothing to be inconsistent with.
 
@@ -928,7 +928,7 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     routes with three designs — `showcase` as a launch feed (ycombinator.com/launches),
     `case_study` as a numbered, colour-coded reference index (lawsofux.com), `teardown` as a
     thumbnail grid whose detail page finally has somewhere to put a schematic. Plan:
-    `~/.claude/plans/for-showcase-i-want-eager-tulip.md`. `pnpm build` prerenders 22 detail
+    `~/.claude/plans/for-showcase-i-want-eager-tulip.md`. `pnpm build` prerenders 27 detail
     pages across the three segments.
 
     **The contract.** `BlueprintSchema` is a `z.discriminatedUnion("category", …)` with three
@@ -943,7 +943,8 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
 
     **Four rules on this surface that are not obvious from the code:**
 
-    - **`upvoteCount` IS DISPLAY-ONLY and no vote button ships.** `UpvoteCount` is a `<span>`,
+    - **`upvoteCount` IS DISPLAY-ONLY and no vote button ships.** `ShowcaseVoteBox` (formerly
+      `UpvoteCount`) is a `<span>`,
       not a button. There is no vote endpoint, and a counter a client increments is a business
       rule enforced on an untrusted layer. When a real route exists it becomes a button.
     - **Outcome metrics carry a typed value**, `count | money | percentage`, never a string.
@@ -973,7 +974,7 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     that actually renders a document — leaving an indexable interstitial on an otherwise
     de-indexed surface would be the gap nobody thinks to check.
 
-    **Fixtures are 22 rows at 12 / 5 / 5, NOT 70/20/10.** The ratio is a content target for
+    **Fixtures are 27 rows at 12 / 10 / 5, NOT 70/20/10.** The ratio is a content target for
     real builds; applied to fixtures it gave two showcases and two case studies, and a feed of
     two rows does not exercise its own design. There are exactly five case studies because
     there are five disciplines, and a discipline with no fixture is a card tint nobody sees.
@@ -988,7 +989,7 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     **The two loose ends this shipped with are CLOSED (2026-09-06).**
 
     - **Captions render.** `public/dummy/blueprints/walkthrough-captions.vtt` is a real WebVTT
-      whose cue text says it is placeholder narration, attached to two of the six fixture
+      whose cue text says it is placeholder narration, attached to two of the eight fixture
       videos — one walkthrough (`bp-001`) and one demo (`bp-009`) — so both the captioned and
       the caption-less branch render, on both a teardown page and a showcase page. ⚠️ NOT the
       `sintel-thumbnails.vtt` sitting beside the clip: that is a STORYBOARD track whose cues
@@ -1026,7 +1027,7 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
         and this surface renders the control that depends on it.
 
         ⚠️ **THE PAGE LIMITS ARE FIXTURE-SIZED AND ARE NOT A PRODUCT DECISION** — 8 teardowns,
-        3 showcases, 3 case studies, against R&D's 24 and the store's "let the backend decide".
+        6 showcases, 3 case studies, against R&D's 24 and the store's "let the backend decide".
         Twelve teardowns behind a limit of 24 means the paging control never renders, which is
         shipping unexercised code — the exact thing this surface argues against everywhere
         else. Raise them when there is real inventory.
@@ -1049,6 +1050,44 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     SEVEN routes and seven `noindex` flags now, not two** — the hub, three indexes, three
     detail routes. `sitemap.ts` says so; restore the seven entries and the seven flags
     together, or the surface ships part-visible, which nobody notices.
+
+    ### 1b. Showcase became a Launch-YC-shaped feed — SHIPPED 2026-09-08
+
+    `/blueprints/showcase` and `/blueprints/showcase/[slug]` were redesigned after
+    ycombinator.com/launches (UI) with the Peerlist Launchpad "seen it" affordance, inside the
+    blueprints dialect. Plan: `~/.claude/plans/i-want-similar-to-swirling-charm.md`.
+
+    - **`?sort=newest|top`.** `SHOWCASE_SORTS` / `SHOWCASE_SORT_LABELS` / `DEFAULT_SHOWCASE_SORT`
+      live in `schemas.ts`; the comparators (`byMostRecentlyLaunched`, `byMostUpvoted`) and the
+      `SHOWCASE_SORT_COMPARATORS` record live in `api.ts` beside the filter, never in a component.
+      **Every comparator ends in the id** — `toSorted` is stable only over INPUT order, which is a
+      different field. The id-only cursor is valid under either order, so no second cursor scheme.
+      The default is REMOVED from the URL (the Newest chip clears `?sort=`), so
+      `/blueprints/showcase` stays canonical. `SHOWCASE_PAGE_LIMIT` rose 3 → 6.
+    - **`ShowcaseVoteBox` replaced `UpvoteCount`.** Still a `<span>`, now a bare stacked
+      caret-over-count in a fixed 40×44 LEFT gutter (YC's placement), a SIBLING of the row link so
+      it is out of the click target. ⚠️ `<span role="img" aria-label>` is rejected by
+      `jsx_a11y/prefer-tag-over-role` (deny), so the accessible text is `sr-only` ("214 upvotes").
+      New asset `keyboard_arrow_up_24dp_6F7979_FILL0_…svg` — the exact mirror of the down glyph,
+      pre-tinted like `check_circle_24dp_6F7979_FILL1`; no up-caret existed before.
+    - **Rows lost their border, their two-line summary and the inline pill** (the pill drifted with
+      title length, the summary halved density, the border made a card out of a row) and gained a
+      title-underline hover and `visited:` grey. One teal element per row: the author's name.
+    - **Fixtures 5 → 10 showcases (27 total, 12 / 10 / 5)**, all re-dated into the three weeks
+      before 2026-09-08 so Newest and Top visibly differ on page one and both orders page. The
+      literals drift and that is accepted (see the mocks header). `bp-025` and `bp-018` tie at 96
+      on purpose so the tie-break is exercised on page two of `?sort=top`.
+    - **Detail page**: vote box beside the title block, byline row, "Launched <relative>" with the
+      absolute instant in a tooltip, a **Share on X** intent link (plain `<a>`, zero backend — a
+      share COUNTER would be the client-incremented number this surface refuses), CTA and
+      built-from on one row, a "See all launches" footer. ⚠️ **This fixed a live bug**: the page
+      fed a full ISO instant to `formatIsoDateLabel`, which splits a DATE on `-`, and rendered
+      "Launched Aug NaN, 2026".
+    - **`showcase/loading.tsx` → `ShowcaseFeedSkeleton`** — the first per-route skeleton on the
+      surface; the hub-shaped one was a visible lie over a column of rows. Row count is
+      `SHOWCASE_PAGE_LIMIT`, imported, so it cannot drift. `[slug]/loading.tsx` is a follow-up.
+    - **Still true**: no vote endpoint, no `error` arm, de-indexed (seven flags + sitemap
+      omission), components never import the fixtures, every URL via `buildBlueprintHref`.
 
 2. **The `planned` Studio routes that are left — TWO, not six.** ⚠️ **DO NOT INHERIT A COST FROM
    THIS LINE WITHOUT CHECKING IT** — it has now been wrong about four separate routes, and the

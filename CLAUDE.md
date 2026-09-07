@@ -249,13 +249,13 @@ and `/anime/:path*` at the routing layer.
 index and its own detail layout, because a teardown, a launch and a manufacturing lesson are not
 browsed the same way:
 
-| Route                                  | Design                                                                  |
-| -------------------------------------- | ----------------------------------------------------------------------- |
-| `/blueprints`                          | Hub — hero, three category links, one teaser rail each with **See all** |
-| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid; detail carries the video and the PDFs                   |
-| `/blueprints/showcase` + `/[slug]`     | Launch feed, newest `launchedAt` first                                  |
-| `/blueprints/case-studies` + `/[slug]` | Numbered index, colour-coded by `discipline`                            |
-| `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                    |
+| Route                                  | Design                                                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `/blueprints`                          | Hub — hero, three category links, one teaser rail each with **See all**                                             |
+| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid; detail carries the video and the PDFs                                                               |
+| `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort lives in `listShowcases`; inert vote gutter |
+| `/blueprints/case-studies` + `/[slug]` | Numbered index, colour-coded by `discipline`                                                                        |
+| `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                                                                |
 
 ⚠️ **The resolver CANNOT move to `next.config.ts`.** Its destination depends on the row's
 `category`, which a static rewrite rule cannot know — `/anime` got its redirects there precisely
@@ -265,7 +265,9 @@ flushed, so Next sends `<meta http-equiv="refresh">` and the browser lands corre
 visible pause. This is measured and written up at `src/app/(home)/store/[...slug]/page.tsx:25-30`.
 
 **The hub is mock and that is a decision, not an oversight.** `src/mocks/blueprints-mocks.ts`
-holds 22 invented builds across three arms — 12 teardowns, 5 showcases, 5 case studies.
+holds 27 invented builds across three arms — 12 teardowns, 10 showcases, 5 case studies. The ten
+showcases are dated into the three weeks before 2026-09-08 so that Newest and Top visibly differ and
+both orders page; the literals drift into the past and that is accepted.
 ⚠️ **That is NOT the 70/20/10 split and is not meant to be**: the ratio is a target for real
 content, and applied to fixtures it gave two showcases and two case studies, which does not
 exercise either design. There are exactly five case studies because there are five
@@ -290,7 +292,8 @@ Three rules specific to this surface:
   `outcomeMetrics[]`. `difficulty`, `cadFormat` and `billOfMaterialsCostRange` stay SHARED
   because a rail card renders them for every category; arms only add. Build every URL with
   `buildBlueprintHref` — never by hand. `upvoteCount` is display-only and no vote button ships:
-  a counter a client increments is a business rule on an untrusted layer.
+  a counter a client increments is a business rule on an untrusted layer. It renders as
+  `ShowcaseVoteBox`, a bare stacked caret-over-count `<span>` in a fixed 40×44 gutter.
 - **Costs are integer cents, never display strings.** `billOfMaterialsCostRange` is
   `{ minimumInCents, maximumInCents, currency } | null`, and the OBJECT is nullable rather than
   its fields — half a range is an unanswerable question. `null` means nobody costed it; it is
@@ -300,7 +303,7 @@ Three rules specific to this surface:
   `listShowcases` and `listCaseStudies` (`src/lib/blueprints/api.ts`) each take a filter object
   and return `BlueprintPage<T>`, whose footer is `CursorPage` imported from
   `src/lib/store/shared.schemas.ts` rather than redefined. A page cannot page a list it has not
-  finished filtering, so no list component filters its own results. ⚠️ The page limits (8 / 3 / 3)
+  finished filtering, so no list component filters its own results. ⚠️ The page limits (8 / 6 / 3)
   are **fixture-sized on purpose** — a house-sized 24 would mean the paging control never
   rendered — and rise with real inventory. The cursor is opaque by contract; an unresolvable one
   is dropped and the first page served.

@@ -1,18 +1,20 @@
 // TRANSPORT: props-only — a pulsing placeholder. No props, no data, no logic.
 //
-// The segment-level fallback for EVERY Blueprints route: the hub, the three category indexes
-// (`/teardowns`, `/showcase`, `/case-studies`) and the detail page under each. It sits at
-// `blueprints/loading.tsx`, so it covers the nested segments too — which is why the three index
-// routes, all of which read `searchParams` and are therefore dynamic, need no `loading.tsx` of
-// their own.
+// The segment-level fallback for every Blueprints route EXCEPT `/showcase`: the hub, the
+// `/teardowns` and `/case-studies` indexes and the detail page under each. It sits at
+// `blueprints/loading.tsx`, so it covers the nested segments too — which is why those two index
+// routes, both of which read `searchParams` and are therefore dynamic, need no `loading.tsx` of
+// their own. `/showcase` has its own (`showcase/loading.tsx` → `ShowcaseFeedSkeleton`): a launch
+// feed settles into a column of rows, and a hero-shaped placeholder over it was a visible lie.
 //
 // The route names in this comment were previously "landing, ranking, favorite, daily, genre" —
 // stale copy inherited verbatim from the `/anime` page this replaced. None of those routes ever
 // existed here.
 //
-// It approximates the HUB (hero, category links, a rail), which is the heaviest of the six and
-// the one most likely to be a visitor's first paint. An index grid settles slightly differently;
-// a skeleton per route would be five more files to keep honest for a fraction of a second each.
+// It approximates the HUB (hero, category links, a rail), which is the heaviest of the routes it
+// covers and the one most likely to be a visitor's first paint. An index grid settles slightly
+// differently; a skeleton per remaining route would be four more files to keep honest for a
+// fraction of a second each.
 export default function BlueprintsLoadingSkeleton() {
   return (
     <div className="animate-pulse space-y-4 pb-10">

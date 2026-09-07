@@ -18,10 +18,12 @@ import {
   type BlueprintPage,
   BlueprintSchema,
   type CaseStudyBlueprint,
+  DEFAULT_SHOWCASE_SORT,
   type BlueprintDifficulty,
   type BlueprintDiscipline,
   RESERVED_BLUEPRINT_SLUGS,
   type ShowcaseBlueprint,
+  type ShowcaseSort,
   type TeardownBlueprint,
 } from "@/lib/blueprints/schemas";
 import type { FacetBucket } from "@/components/home/shared/facet-chip-row";
@@ -137,8 +139,8 @@ export async function getBlueprintByCategory<TCategory extends BlueprintCategory
 
 /** 12 teardown fixtures → 2 pages. Eight is also two clean rows of the four-column grid. */
 export const TEARDOWNS_PAGE_LIMIT = 8;
-/** 5 showcase fixtures → 2 pages. */
-export const SHOWCASE_PAGE_LIMIT = 3;
+/** 10 showcase fixtures → 2 pages (6 + 4), under either sort and with no tag applied. */
+export const SHOWCASE_PAGE_LIMIT = 6;
 /** 5 case-study fixtures → 2 pages. */
 export const CASE_STUDIES_PAGE_LIMIT = 3;
 
@@ -149,6 +151,12 @@ export const CASE_STUDIES_PAGE_LIMIT = 3;
  * parsed, compared or incremented — and a bare `bp-007` sitting in the query string invites
  * exactly that. Encoding makes the opacity real rather than aspirational, and lets the backend
  * swap in its own encoding (a sort key plus a tie-break id) without a caller noticing.
+ *
+ * An id-only cursor is valid under EVERY order, which is why the showcase feed can offer two sorts
+ * without a second cursor scheme: a hand-edited `?sort=top&cursor=<cursor minted under newest>`
+ * still resolves (the id exists in both orders) and starts after that row in the `top` order.
+ * The backend will encode the sort key beside the id and 422 a foreign cursor — and there is still
+ * no `error` arm to render that into, deliberately (`todo.md` §1a).
  */
 function encodeBlueprintCursor(blueprintId: string): string {
   return Buffer.from(blueprintId, "utf8").toString("base64url");
@@ -233,6 +241,8 @@ export async function listTeardowns(
 
 export interface ListShowcasesFilter {
   readonly tag?: string;
+  /** Omitted means `DEFAULT_SHOWCASE_SORT`. */
+  readonly sort?: ShowcaseSort;
   readonly cursor?: string;
   readonly limit?: number;
 }
@@ -244,10 +254,35 @@ export interface ListShowcasesFilter {
  * differ by days in the fixtures on purpose, so an order built on the wrong field is visible
  * rather than plausible. The sort lives beside the filter because a cursor into an unstable order
  * is meaningless.
+ *
+ * THE ID IS THE TIE-BREAK, and every comparator on this surface ends in it. `toSorted` is stable,
+ * but stability only preserves INPUT order, and the input here is `byNewestFirst` over `createdAt`
+ * — a different field. A cursor into an order two renders could disagree about would skip or
+ * repeat a row.
  */
 function byMostRecentlyLaunched(left: ShowcaseBlueprint, right: ShowcaseBlueprint): number {
-  return Date.parse(right.launchedAt) - Date.parse(left.launchedAt);
+  return (
+    Date.parse(right.launchedAt) - Date.parse(left.launchedAt) || left.id.localeCompare(right.id)
+  );
 }
+
+/**
+ * MOST UPVOTED FIRST, then most recently launched, then id. Ties on a vote count are real —
+ * `bp-025` and `bp-018` both sit at 96 in the fixtures on purpose — so a tie falls back to the
+ * whole newest order rather than to input order, and `top` is a total order on its own.
+ */
+function byMostUpvoted(left: ShowcaseBlueprint, right: ShowcaseBlueprint): number {
+  return right.upvoteCount - left.upvoteCount || byMostRecentlyLaunched(left, right);
+}
+
+/** A `Record` over the sort enum, so a third sort is a compile error here rather than a silent default. */
+const SHOWCASE_SORT_COMPARATORS: Record<
+  ShowcaseSort,
+  (left: ShowcaseBlueprint, right: ShowcaseBlueprint) => number
+> = {
+  newest: byMostRecentlyLaunched,
+  top: byMostUpvoted,
+};
 
 export async function listShowcases(
   filter: ListShowcasesFilter = {},
@@ -257,7 +292,7 @@ export async function listShowcases(
 
   const matching = showcases
     .filter((showcase) => filter.tag === undefined || showcase.tags.includes(filter.tag))
-    .toSorted(byMostRecentlyLaunched);
+    .toSorted(SHOWCASE_SORT_COMPARATORS[filter.sort ?? DEFAULT_SHOWCASE_SORT]);
 
   return toBlueprintPage(matching, filter.cursor, filter.limit ?? SHOWCASE_PAGE_LIMIT);
 }
