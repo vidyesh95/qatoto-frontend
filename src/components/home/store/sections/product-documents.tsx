@@ -3,14 +3,8 @@
 import Image from "next/image";
 
 import { API_BASE_URL } from "@/lib/api";
+import { formatByteSizeLabel } from "@/lib/store/format";
 import { PRODUCT_DOCUMENT_KIND_LABELS, type ProductDocument } from "@/lib/store/products.schemas";
-
-/** Bytes to something a buyer reads. Same shape the watch page uses for video documents. */
-function formatDocumentSizeLabel(byteSize: number): string {
-  if (byteSize < 1024) return `${String(byteSize)} B`;
-  if (byteSize < 1024 * 1024) return `${(byteSize / 1024).toFixed(0)} KB`;
-  return `${(byteSize / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 /**
  * STORE §21.3. The files a seller published with this listing — datasheet, manual, care guide.
@@ -62,7 +56,7 @@ export default function ProductDocuments({
               {document.fileName}
               <span className="text-[#6F7979]">
                 {PRODUCT_DOCUMENT_KIND_LABELS[document.documentKind]} ·{" "}
-                {formatDocumentSizeLabel(document.byteSize)}
+                {formatByteSizeLabel(document.byteSize)}
               </span>
             </a>
           </li>

@@ -13,6 +13,7 @@ import {
   useUpdateListingMutation,
   type PendingProductDocument,
   type SaveProgress,
+  type ProductModelChange,
 } from "@/hooks/products";
 import {
   ListingCategoryPicker,
@@ -21,7 +22,7 @@ import {
 import { COUNTRY_OPTIONS } from "@/components/home/account/menus/location-menu";
 import { toOptionalCountryCode } from "@/components/commerce/composer/composer-input";
 import PathwayCandidatePicker from "@/components/studio/pathways/pathway-candidate-picker";
-import { countryLabelFromCode, formatCentsLabel } from "@/lib/store/format";
+import { countryLabelFromCode, formatByteSizeLabel, formatCentsLabel } from "@/lib/store/format";
 import {
   PRODUCT_RELATION_KINDS,
   PRODUCT_RELATION_KIND_LABELS,
@@ -67,6 +68,7 @@ import {
   PRODUCT_DOCUMENT_KIND_LABELS,
   PRODUCT_DOCUMENT_KINDS,
   ProductDocumentKindSchema,
+  type ProductThreeDimensionalModel,
 } from "@/lib/store/products.schemas";
 import {
   PRODUCT_SAMPLE_POLICIES,
@@ -86,13 +88,6 @@ import {
 
 /** STORE §21.3. Mirrors `MAX_PRODUCT_DOCUMENTS` in the service; the server is the authority. */
 const PRODUCT_DOCUMENT_MAX_COUNT = 5;
-
-/** Bytes to something a seller reads. Same three-branch shape the watch page uses for videos. */
-function formatDocumentSizeLabel(byteSize: number): string {
-  if (byteSize < 1024) return `${String(byteSize)} B`;
-  if (byteSize < 1024 * 1024) return `${(byteSize / 1024).toFixed(0)} KB`;
-  return `${(byteSize / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 const LISTING_STEPS = [
   { id: "identity", label: "Product Identity" },
@@ -127,6 +122,13 @@ const PRODUCT_CONDITIONS = CONDITION_LABELS;
 
 const PRODUCT_TITLE_MAX_LENGTH = 200;
 const MAX_PRODUCT_IMAGES = 9;
+
+/**
+ * A47. Mirrors `MAX_PRODUCT_MODEL_BYTES` in the service; the server is the authority and re-reads
+ * the bytes. These two checks exist so a seller learns about a 40 MB file before it uploads.
+ */
+const PRODUCT_MODEL_MAX_BYTES = 10 * 1024 * 1024;
+const PRODUCT_MODEL_FILE_EXTENSION = ".glb";
 
 /** Backend bounds on the two free-text identity fields (`productFieldShapes`), mirrored. */
 const PRODUCT_MODEL_NUMBER_MAX_LENGTH = 120;
@@ -493,6 +495,54 @@ interface ExistingImage {
 }
 
 /**
+ * A47. The one 3D-model slot, as a state machine rather than the images' two lists — there is
+ * exactly one slot, and two lists plus a removed-ids array admit states one slot cannot be in.
+ *
+ * `pending` REPLACES whatever is saved; `removing` keeps the saved row visible (struck through)
+ * so the seller can undo before the save that actually deletes it. Nothing uploads on pick.
+ */
+type ListingModelDraft =
+  | { readonly kind: "none" }
+  | { readonly kind: "existing"; readonly model: ProductThreeDimensionalModel }
+  | { readonly kind: "pending"; readonly modelFile: File }
+  | { readonly kind: "removing"; readonly model: ProductThreeDimensionalModel };
+
+/** A47. What the save should do about the model, read off the draft. Exhaustive. */
+function toProductModelChange(draft: ListingModelDraft): ProductModelChange {
+  switch (draft.kind) {
+    case "pending":
+      return { kind: "upload", modelFile: draft.modelFile };
+    case "removing":
+      return { kind: "remove" };
+    case "none":
+    case "existing":
+      return { kind: "keep" };
+    default: {
+      const exhaustiveCheck: never = draft;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+/** A47. The review-step line for the model. Empty renders as unstated. */
+function describeListingModelDraft(draft: ListingModelDraft): string {
+  switch (draft.kind) {
+    case "none":
+      return "";
+    case "existing":
+      return draft.model.fileName;
+    case "pending":
+      return `${draft.modelFile.name} (uploads when you save)`;
+    case "removing":
+      return `${draft.model.fileName} (removed when you save)`;
+    default: {
+      const exhaustiveCheck: never = draft;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+/**
  * One spec-sheet row as typed in the form.
  *
  * `group` is held as a STRING, never as `string | null`, because a text input has no null. The
@@ -583,6 +633,10 @@ export default function CreateListingPage({ productId }: { productId?: string })
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const selectedImagePreviewUrlsRef = useRef<string[]>([]);
+  // A47 — the optional 3D model, one slot. See `ListingModelDraft`.
+  const [listingModelDraft, setListingModelDraft] = useState<ListingModelDraft>({ kind: "none" });
+  const [modelFileRejectionMessage, setModelFileRejectionMessage] = useState<string | null>(null);
+  const modelInputRef = useRef<HTMLInputElement>(null);
 
   // Step 3 — description
   const [productDescription, setProductDescription] = useState("");
@@ -847,6 +901,14 @@ export default function CreateListingPage({ productId }: { productId?: string })
     );
     setRemovedDocumentIds([]);
     setPendingDocuments([]);
+    // A47. A saved model hydrates as a removable row; without this the slot would show empty over
+    // a file the buyer page is already rendering.
+    setListingModelDraft(
+      loadedProduct.threeDimensionalModel === null
+        ? { kind: "none" }
+        : { kind: "existing", model: loadedProduct.threeDimensionalModel },
+    );
+    setModelFileRejectionMessage(null);
     // A27's band lead times ride along now. Before they did, this hydrated without them and the
     // next save wrote null over whatever the seller had declared.
     setPricingTiers(
@@ -1038,6 +1100,144 @@ export default function CreateListingPage({ productId }: { productId?: string })
   function handleImageInputChange(event: React.ChangeEvent<HTMLInputElement>) {
     addImageFiles(event.target.files);
     event.target.value = "";
+  }
+
+  function handleSelectModelClick() {
+    modelInputRef.current?.click();
+  }
+
+  function handleModelFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const pickedFile = event.target.files?.[0];
+    event.target.value = "";
+    if (!pickedFile) return;
+    // Extension and size ONLY — never `file.type`. Browsers report `application/octet-stream` (or
+    // nothing) for a `.glb` as often as `model/gltf-binary`, and the server reads the bytes anyway.
+    if (!pickedFile.name.toLowerCase().endsWith(PRODUCT_MODEL_FILE_EXTENSION)) {
+      setModelFileRejectionMessage("The 3D model must be a binary glTF (.glb) file.");
+      return;
+    }
+    if (pickedFile.size > PRODUCT_MODEL_MAX_BYTES) {
+      setModelFileRejectionMessage(
+        `That file is ${formatByteSizeLabel(pickedFile.size)}; the limit is 10 MB.`,
+      );
+      return;
+    }
+    setModelFileRejectionMessage(null);
+    setListingModelDraft({ kind: "pending", modelFile: pickedFile });
+  }
+
+  function handleRemoveModelClick() {
+    setModelFileRejectionMessage(null);
+    setListingModelDraft((previousDraft) => {
+      switch (previousDraft.kind) {
+        case "existing":
+          return { kind: "removing", model: previousDraft.model };
+        case "pending": {
+          // Dropping an unsaved pick returns to whatever is saved, which the loaded row knows.
+          const savedModel = loadedProduct?.threeDimensionalModel ?? null;
+          return savedModel === null ? { kind: "none" } : { kind: "existing", model: savedModel };
+        }
+        case "none":
+        case "removing":
+          return previousDraft;
+        default: {
+          const exhaustiveCheck: never = previousDraft;
+          return exhaustiveCheck;
+        }
+      }
+    });
+  }
+
+  function handleUndoRemoveModelClick() {
+    setListingModelDraft((previousDraft) =>
+      previousDraft.kind === "removing"
+        ? { kind: "existing", model: previousDraft.model }
+        : previousDraft,
+    );
+  }
+
+  /** A47. The one row under "3D model (optional)", by draft state. Exhaustive. */
+  function renderListingModelRow() {
+    switch (listingModelDraft.kind) {
+      case "none":
+        return (
+          <button
+            type="button"
+            onClick={handleSelectModelClick}
+            className="flex w-fit cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary/50"
+          >
+            Select .glb file
+          </button>
+        );
+      case "existing":
+        return (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+            <span className="min-w-0 text-sm">
+              <span className="block truncate font-medium">{listingModelDraft.model.fileName}</span>
+              <span className="text-xs text-muted-foreground">
+                {formatByteSizeLabel(listingModelDraft.model.byteSize)} · saved
+              </span>
+            </span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleSelectModelClick}
+                className="cursor-pointer text-xs text-primary underline"
+              >
+                Replace
+              </button>
+              {/* Removed on SAVE, not now — the same deferral the gallery and documents use. */}
+              <button
+                type="button"
+                onClick={handleRemoveModelClick}
+                className="cursor-pointer text-xs text-[#8C1D18] underline"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        );
+      case "pending":
+        return (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-border px-3 py-2">
+            <span className="min-w-0 text-sm">
+              <span className="block truncate font-medium">{listingModelDraft.modelFile.name}</span>
+              <span className="text-xs text-muted-foreground">
+                {formatByteSizeLabel(listingModelDraft.modelFile.size)} · uploads when you save
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={handleRemoveModelClick}
+              className="cursor-pointer text-xs text-[#8C1D18] underline"
+            >
+              Remove
+            </button>
+          </div>
+        );
+      case "removing":
+        return (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 opacity-70">
+            <span className="min-w-0 text-sm">
+              <span className="block truncate font-medium line-through">
+                {listingModelDraft.model.fileName}
+              </span>
+              <span className="text-xs text-muted-foreground">Removed when you save</span>
+            </span>
+            <button
+              type="button"
+              onClick={handleUndoRemoveModelClick}
+              className="cursor-pointer text-xs text-primary underline"
+            >
+              Undo
+            </button>
+          </div>
+        );
+      default: {
+        const exhaustiveCheck: never = listingModelDraft;
+        return exhaustiveCheck;
+      }
+    }
   }
 
   function handleRemoveImageClick(imageIndexToRemove: number) {
@@ -1806,6 +2006,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
           removedDocumentIds,
           variants: collectedVariants.variants,
           customizationOptions: collectedCustomizationSlots.slots,
+          modelChange: toProductModelChange(listingModelDraft),
           publish,
           onProgress: setSaveProgress,
         },
@@ -1824,6 +2025,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
         newDocuments: pendingDocuments,
         variants: collectedVariants.variants,
         customizationOptions: collectedCustomizationSlots.slots,
+        modelFile: listingModelDraft.kind === "pending" ? listingModelDraft.modelFile : null,
         publish,
         onProgress: setSaveProgress,
       },
@@ -2352,6 +2554,31 @@ export default function CreateListingPage({ productId }: { productId?: string })
             <p className="text-xs text-muted-foreground">
               {imageCount}/{MAX_PRODUCT_IMAGES} images added
             </p>
+
+            {/*
+              A47. One optional `.glb`, uploaded on SAVE like everything else on this step — after
+              every other write, so a refused file costs only the model. ⚠️ NOTHING HERE SAYS THE
+              FILE IS SCANNED, and no copy added later may: there is no scan on this path.
+            */}
+            <div className="flex flex-col gap-3 rounded-2xl border border-border p-4">
+              <div>
+                <p className="text-sm font-medium text-foreground">3D model (optional)</p>
+                <p className="text-xs text-muted-foreground">
+                  Let buyers spin the product from every angle. One .glb file, up to 10 MB.
+                </p>
+              </div>
+              <input
+                ref={modelInputRef}
+                type="file"
+                accept=".glb,model/gltf-binary"
+                onChange={handleModelFileChange}
+                className="hidden"
+              />
+              {renderListingModelRow()}
+              {modelFileRejectionMessage !== null && (
+                <p className="text-xs text-[#8C1D18]">{modelFileRejectionMessage}</p>
+              )}
+            </div>
           </StepCard>
         );
 
@@ -2992,7 +3219,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                       <span className="block truncate font-medium">{document.fileName}</span>
                       <span className="text-xs text-muted-foreground">
                         {PRODUCT_DOCUMENT_KIND_LABELS[document.documentKind]} ·{" "}
-                        {formatDocumentSizeLabel(document.byteSize)}
+                        {formatByteSizeLabel(document.byteSize)}
                       </span>
                     </span>
                     {/* Removed on SAVE, not now — the same deferral the gallery uses. */}
@@ -3016,7 +3243,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   <span className="min-w-0 text-sm">
                     <span className="block truncate font-medium">{pending.file.name}</span>
                     <span className="text-xs text-muted-foreground">
-                      {formatDocumentSizeLabel(pending.file.size)} · uploads when you save
+                      {formatByteSizeLabel(pending.file.size)} · uploads when you save
                     </span>
                   </span>
                   <div className="flex items-center gap-2">
@@ -3633,6 +3860,7 @@ export default function CreateListingPage({ productId }: { productId?: string })
                   value:
                     imageCount > 0 ? `${imageCount} image${imageCount === 1 ? "" : "s"} added` : "",
                 },
+                { label: "3D model", value: describeListingModelDraft(listingModelDraft) },
               ]}
             />
             <ReviewSection
@@ -4374,6 +4602,8 @@ function describeProgress(progress: SaveProgress): string {
         : `Uploading highlight image ${progress.current}/${progress.total}…`;
     case "documents":
       return `Uploading document ${String(progress.current)}/${String(progress.total)}…`;
+    case "model":
+      return "Saving 3D model…";
     case "publishing":
       return "Publishing…";
     case "idle":

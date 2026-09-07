@@ -27,7 +27,11 @@ import {
   type SellerProductDocument,
   type UpdateProductInput,
 } from "@/lib/products/schemas";
-import type { ProductDocumentKind } from "@/lib/store/products.schemas";
+import {
+  ProductThreeDimensionalModelSchema,
+  type ProductDocumentKind,
+  type ProductThreeDimensionalModel,
+} from "@/lib/store/products.schemas";
 import { z } from "zod";
 
 /**
@@ -174,6 +178,43 @@ export function deleteProductDocument(
     "DELETE",
     undefined,
     z.unknown(),
+  );
+}
+
+/**
+ * A47. Attaches — or replaces — the listing's one `.glb` 3D model. Multipart field `model`.
+ *
+ * ⚠️ THE SERVER ANSWERS 201, NOT 202: nothing happens to the file afterwards — no scan, no
+ * moderation — and no copy in this flow may say it is "being checked".
+ *
+ * NO IDEMPOTENCY KEY, deliberately: the storage id is derived from the product id and the row is
+ * upserted on it, so a retried upload converges on the same asset and the same row. A 422 here is
+ * the magic-byte verdict on the bytes, not the mimetype the browser guessed — `errors.model`
+ * carries the reason.
+ */
+export function uploadProductModel(
+  productId: string,
+  modelFile: File,
+): Promise<ActionResponse<{ threeDimensionalModel: ProductThreeDimensionalModel }>> {
+  const formData = new FormData();
+  formData.append("model", modelFile);
+  return sendForm(
+    `/products/${productId}/model`,
+    "POST",
+    formData,
+    z.object({ threeDimensionalModel: ProductThreeDimensionalModelSchema }).strip(),
+  );
+}
+
+/** A47. Removes the listing's 3D model. The server destroys the asset before the row. */
+export function deleteProductModel(
+  productId: string,
+): Promise<ActionResponse<{ threeDimensionalModel: null }>> {
+  return sendJson(
+    `/products/${productId}/model`,
+    "DELETE",
+    undefined,
+    z.object({ threeDimensionalModel: z.null() }).strip(),
   );
 }
 

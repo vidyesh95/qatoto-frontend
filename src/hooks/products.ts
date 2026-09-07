@@ -6,7 +6,9 @@ import type { ProductDocumentKind } from "@/lib/store/products.schemas";
 import {
   createProduct,
   deleteProductDocument,
+  deleteProductModel,
   uploadProductDocument,
+  uploadProductModel,
   deleteProduct,
   deleteProductImage,
   reorderProductImages,
@@ -77,6 +79,8 @@ export type SaveProgress =
   | { phase: "highlights"; current: number; total: number }
   /** STORE §21.3. One POST per attached PDF, after the listing exists. */
   | { phase: "documents"; current: number; total: number }
+  /** A47. One `.glb` at most, so no counter — the last content write before publish. */
+  | { phase: "model" }
   | { phase: "publishing" }
   | { phase: "done" };
 
@@ -85,6 +89,18 @@ export interface PendingProductDocument {
   readonly file: File;
   readonly documentKind: ProductDocumentKind;
 }
+
+/**
+ * A47. What the seller decided about the listing's one 3D model on this save.
+ *
+ * A union rather than `modelFile | null` plus a `shouldRemove` boolean: those two fields admit
+ * "remove, with nothing to remove" and "remove AND upload", neither of which is a thing a seller
+ * can ask for. `keep` is the ordinary save that never touches the model route.
+ */
+export type ProductModelChange =
+  | { readonly kind: "keep" }
+  | { readonly kind: "upload"; readonly modelFile: File }
+  | { readonly kind: "remove" };
 
 interface CreateListingVariables {
   input: CreateProductInput;
@@ -100,6 +116,8 @@ interface CreateListingVariables {
   variants: readonly ProductVariantInput[];
   /** A18. The customization slots, same shape and same route timing as the variants above. */
   customizationOptions: readonly ProductCustomizationOptionInput[];
+  /** A47. The `.glb` picked in the wizard, or null. Uploaded last — see `saveProductModel`. */
+  modelFile: File | null;
   publish: boolean;
   onProgress?: (progress: SaveProgress) => void;
 }
@@ -171,6 +189,42 @@ async function saveProductHighlights(
   }
 }
 
+/**
+ * A47. The one 3D model, saved LAST among the content writes and before publish.
+ *
+ * WHY LAST. It is optional, so it never counts toward the completeness gate that pins the
+ * highlights early. It is also the one phase with a realistic seller-caused refusal — a 422 from
+ * the magic-byte check on a file that is not a binary glTF — and `unwrap` aborts the chain, so
+ * running it last means a bad file costs the seller only the model, with every other edit already
+ * saved. And at up to 10 MB it is the largest request here; the small JSON writes should not wait
+ * behind it.
+ *
+ * A REFUSED MODEL STILL BLOCKS PUBLISH, deliberately. Publishing silently without the model the
+ * seller just attached would be an optimistic result.
+ */
+async function saveProductModel(
+  productId: string,
+  change: ProductModelChange,
+  onProgress?: (progress: SaveProgress) => void,
+): Promise<void> {
+  switch (change.kind) {
+    case "keep":
+      return;
+    case "upload":
+      onProgress?.({ phase: "model" });
+      unwrap(await uploadProductModel(productId, change.modelFile));
+      return;
+    case "remove":
+      onProgress?.({ phase: "model" });
+      unwrap(await deleteProductModel(productId));
+      return;
+    default: {
+      const exhaustiveCheck: never = change;
+      return exhaustiveCheck;
+    }
+  }
+}
+
 export function useCreateListingMutation() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -183,6 +237,7 @@ export function useCreateListingMutation() {
       newDocuments,
       variants,
       customizationOptions,
+      modelFile,
       publish,
       onProgress,
     }: CreateListingVariables) => {
@@ -221,6 +276,11 @@ export function useCreateListingMutation() {
       // empty on a FRESH listing only, because there is no slot to retire yet.
       if (customizationOptions.length > 0) {
         unwrap(await replaceProductCustomizationOptions(created.id, customizationOptions));
+      }
+
+      // A47. Last, and only when a file was picked — see `saveProductModel` for the ordering.
+      if (modelFile !== null) {
+        await saveProductModel(created.id, { kind: "upload", modelFile }, onProgress);
       }
 
       if (publish) {
@@ -270,6 +330,8 @@ interface UpdateListingVariables {
   variants: readonly ProductVariantInput[];
   /** A18. The slots the seller is KEEPING. Anything absent is retired — see the call site. */
   customizationOptions: readonly ProductCustomizationOptionInput[];
+  /** A47. Keep, replace or remove the one `.glb`. Applied last — see `saveProductModel`. */
+  modelChange: ProductModelChange;
   /** true = ensure the listing ends up active (publish); false = leave as-is. */
   publish: boolean;
   onProgress?: (progress: SaveProgress) => void;
@@ -292,6 +354,7 @@ export function useUpdateListingMutation() {
       removedDocumentIds,
       variants,
       customizationOptions,
+      modelChange,
       publish,
       onProgress,
     }: UpdateListingVariables) => {
@@ -378,6 +441,9 @@ export function useUpdateListingMutation() {
        * than the variant case, not a safe one.
        */
       unwrap(await replaceProductCustomizationOptions(productId, customizationOptions));
+
+      // A47. Last among the content writes, and a no-op on `keep` — see `saveProductModel`.
+      await saveProductModel(productId, modelChange, onProgress);
 
       if (publish) {
         onProgress?.({ phase: "publishing" });

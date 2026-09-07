@@ -201,6 +201,26 @@ export const ProductDocumentSchema = z
   .strip();
 
 /**
+ * A47. The listing's optional `.glb` 3D model — what the "View in 360º" control opens.
+ *
+ * `url` IS ON THE WIRE, unlike a document's `downloadPath`, and the difference is deliberate: a
+ * document is a download a buyer takes away, so it goes back through the gate every time; a model
+ * is rendered in place on this same public page beside the gallery URLs, and `<model-viewer>`
+ * fetches it directly. Same exposure class as `images[].url`. Nothing here says the file was
+ * scanned, because it was not.
+ */
+export const ProductThreeDimensionalModelSchema = z
+  .object({
+    id: z.string(),
+    url: z.string(),
+    fileName: z.string(),
+    byteSize: z.number().int(),
+    updatedAt: z.string(),
+  })
+  .strip();
+export type ProductThreeDimensionalModel = z.infer<typeof ProductThreeDimensionalModelSchema>;
+
+/**
  * A18/A23. A commercial term the buyer is held to, so the buyer must be able to read it.
  *
  * `checkout/prepare` refuses an order that omits a required slot (`REQUIRED_OPTION_MISSING`), and
@@ -307,6 +327,8 @@ export const StoreProductDetailSchema = StoreProductCardSchema.extend({
   variants: z.array(ProductVariantSchema),
   highlights: z.array(ProductHighlightSchema),
   documents: z.array(ProductDocumentSchema),
+  /** A47. Null is "the seller attached none", and the page renders no 360° control for it. */
+  threeDimensionalModel: ProductThreeDimensionalModelSchema.nullable(),
   customizationOptions: z.array(ProductCustomizationOptionSchema),
   specifications: z.array(
     z

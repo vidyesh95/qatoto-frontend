@@ -189,3 +189,15 @@ export function formatIsoInstantLabel(isoInstant: string): string {
 export function formatOptionalIsoInstantLabel(isoInstant: string | null): string | null {
   return isoInstant === null ? null : formatIsoInstantLabel(isoInstant);
 }
+
+/**
+ * Bytes to something a reader scans: `512 B`, `48 KB`, `2.3 MB`.
+ *
+ * Hoisted from `product-documents.tsx` and the listing wizard, which each carried a byte-identical
+ * copy; three more copies remain elsewhere and can move here when those files are next touched.
+ */
+export function formatByteSizeLabel(byteSize: number): string {
+  if (byteSize < 1024) return `${String(byteSize)} B`;
+  if (byteSize < 1024 * 1024) return `${(byteSize / 1024).toFixed(0)} KB`;
+  return `${(byteSize / (1024 * 1024)).toFixed(1)} MB`;
+}

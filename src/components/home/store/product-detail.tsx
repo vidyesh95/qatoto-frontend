@@ -58,6 +58,7 @@ import SimilarAndCompare from "@/components/home/store/sections/similar-and-comp
 import StoreAndChatActions from "@/components/home/store/sections/store-and-chat-actions";
 import VariantPicker from "@/components/home/store/sections/variant-picker";
 import ProductViewBeacon from "@/components/home/store/sections/product-view-beacon";
+import ViewIn360Opener from "@/components/home/store/sections/view-in-360-opener";
 import ReportContentOpener from "@/components/home/store/shared/report-content-opener";
 import { StoreErrorPanel } from "@/components/home/store/shared/store-status-panel";
 import { callerRequestOptions, hasCallerSession } from "@/lib/server-http";
@@ -181,21 +182,32 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
               <div className="lg:sticky lg:top-16">
                 <ProductImageGallery images={product.images} alt={product.title} />
 
-                {/* Shown only when the seller actually uploaded a 360 asset. `mediaKind` is what
-                    makes that expressible; the mock printed this banner over eight flat photos. */}
-                {product.images.some((image) => image.mediaKind === "spin_360") && (
+                {/* A47. Shown only when the seller attached a `.glb` — the row is the affordance.
+                    It used to gate on a `spin_360` gallery slide, which no seller could upload and
+                    which had no viewer behind it; `spin_360` stays a slide kind, this is a mesh.
+                    The card is server markup; the opener holds the one boolean and mounts the
+                    viewer (and its three.js chunk) only after the click. */}
+                {product.threeDimensionalModel !== null && (
                   <div className="px-4 py-2 lg:px-6">
-                    <div className="flex items-center gap-3 rounded p-2 outline -outline-offset-1 outline-[#2A76FD]">
-                      <div className="flex flex-1 flex-col gap-1">
-                        <p className="text-sm font-medium text-[#191C1C]">View in 360º</p>
-                        <p className="text-[11px] font-medium tracking-[0.5px] text-[#6F7979]">
-                          Check how this looks from all angles
-                        </p>
+                    <ViewIn360Opener
+                      model={product.threeDimensionalModel}
+                      posterImageUrl={
+                        product.images.find((image) => image.mediaKind === "photo")?.url ?? null
+                      }
+                      productTitle={product.title}
+                    >
+                      <div className="flex items-center gap-3 rounded p-2 outline -outline-offset-1 outline-[#2A76FD]">
+                        <div className="flex flex-1 flex-col gap-1">
+                          <p className="text-sm font-medium text-[#191C1C]">View in 360º</p>
+                          <p className="text-[11px] font-medium tracking-[0.5px] text-[#6F7979]">
+                            Check how this looks from all angles
+                          </p>
+                        </div>
+                        <span className="grid size-10 place-items-center rounded-full bg-[#D6E3FF]">
+                          <Icon src="360_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" size={24} />
+                        </span>
                       </div>
-                      <span className="grid size-10 place-items-center rounded-full bg-[#D6E3FF]">
-                        <Icon src="360_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg" size={24} />
-                      </span>
-                    </div>
+                    </ViewIn360Opener>
                   </div>
                 )}
               </div>

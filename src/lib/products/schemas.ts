@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   PRODUCT_CUSTOMIZATION_KINDS,
   PRODUCT_DOCUMENT_KINDS,
+  ProductThreeDimensionalModelSchema,
   type ProductCustomizationKind,
 } from "@/lib/store/products.schemas";
 
@@ -438,6 +439,12 @@ export const PublicProductSchema = z
      */
     highlights: z.array(ProductHighlightSchema),
     documents: z.array(SellerProductDocumentSchema),
+    /**
+     * A47. The optional `.glb`, or null. Named here for the reason the block below spells out:
+     * `.strip()` would drop it silently, the wizard would hydrate "no model" over a saved file,
+     * and the seller would see an empty slot instead of a Remove control.
+     */
+    threeDimensionalModel: ProductThreeDimensionalModelSchema.nullable(),
     /**
      * ⚠️ **NAMING THIS KEY IS THE WHOLE FIX, AND THIS FILE HAS BEEN BITTEN TWICE ALREADY** —
      * `moderationState` and then `customizationOptions`, both documented above. `.strip()` discards
