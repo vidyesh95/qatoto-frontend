@@ -249,8 +249,13 @@ export async function parseTeardownAssembly(
       bounds: toBounds(partBoxes.get(part.id) ?? boundingBox),
       authoredDirection: part.explosionDirection,
       authoredDistanceMm: part.explosionDistanceMm,
+      layerIndex: part.layerIndex,
     })),
-    { bounds: toBounds(boundingBox), boundingSphereRadius: boundingSphere.radius },
+    {
+      bounds: toBounds(boundingBox),
+      boundingSphereRadius: boundingSphere.radius,
+      explosionAxis: assembly.explosionAxis,
+    },
   );
   const explosionVectorByPartId = new Map(
     explosionVectors.map((vector) => [vector.partId, vector]),

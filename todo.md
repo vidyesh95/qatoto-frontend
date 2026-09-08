@@ -1131,6 +1131,112 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     Drizzle is DEFERRED until a `blueprint` table exists: a schema for a table that does not
     exist is a second contract that drifts.
 
+    **Part 2 (2026-09-08) — the viewer became a tabbed, light, product-shot surface, and the
+    four dark fields now render.** Part 1's viewer was a dark 21:10 strip with a slider under
+    it, and four contract fields — `fasteners`, `manufacturingFiles`, `assemblySteps`,
+    `repairabilityIndex` — carried fixture data that nothing displayed, which is the
+    unverified-code failure this repo argues against everywhere else. Both are fixed. The shape
+    now follows dayring-for-kids.vercel.app: a light stage filling the column, four tabs
+    (Design, Exploded view, Components, Specifications), an icon rail down the left, a
+    camera-preset menu bottom-left and a zoom readout with fullscreen bottom-right.
+
+    **The single biggest lever was the MODELS, not the code**, and that is worth remembering
+    before any future round of polish. The fixtures were boxes and cylinders; they are now
+    modelled — chamfered shells via `RoundedBoxGeometry`, an enclosure that is a tray with walls
+    and screw bosses extruded from a rounded profile, and a board carrying gold pads, chip
+    packages and a connector as a GROUP of four meshes with four materials. A part may be a
+    `Group`: the loader resolves a `nodeName` to any `Object3D` and traverses it, which is what
+    allows one node to carry several materials. Material separation is by roughness and
+    metalness rather than colour, which is what makes aluminium read as metal beside moulded ABS
+    under the same light.
+
+    ⚠️ **Two arithmetic traps in the generator, both of which shipped once.** `mergeGeometries`
+    refuses a mixed batch, so everything is flattened with `toNonIndexed()` first — and must
+    then be RE-INDEXED with `mergeVertices`, or the controller weighs 2.2 MB instead of 350 KB;
+    `mergeVertices` compares position, normal and uv together, so chamfers survive it. And the
+    enclosure walls are sized from the tallest internal part: the first cut put a 19 mm heatsink
+    inside a 22 mm wall and the fins came through the lid. The stack is written out in a comment
+    beside `WALL_HEIGHT_MM`; shortening any of it without redoing that sum breaks the same way.
+
+    **Layered explosion is opt-in, and exclusive with radial.** `explosionAxis` on the assembly
+    plus `layerIndex` on every part, enforced all-or-nothing by a refinement on each arm — a
+    half-layered assembly is a picture that reads as broken. In layered mode the parent chain is
+    IGNORED: radial composes a child's offset onto its parent's so a sub-assembly travels as a
+    group, layering gives every part an absolute slot on the axis, and composing the two would
+    land a child between planes, which is neither picture. Offsets centre on the midpoint layer
+    so the model opens symmetrically, and the spacing is derived from a fixed total spread so a
+    six-layer and a twelve-layer assembly frame the same. The axis is the PHYSICAL stacking
+    axis, not a screen direction — the reference reads left-to-right because its camera is
+    angled at a front-to-back stack. The controller is layered on Y; the pump is deliberately
+    left radial so that path keeps being exercised.
+
+    **The stage is CSS, not geometry.** A vignette and a faint square grid painted behind a
+    transparent canvas (`alpha: true`), plus a drei `<ContactShadows>` for the ground. That is
+    cheaper than drawing them, does not tie the backdrop to the camera, and — this is the real
+    reason — removes the raycast target that used to sit in front of every callout pin: three's
+    `Raycaster.params.Line.threshold` defaults to ONE METRE against a scene centimetres across,
+    so the old `gridHelper` silently swallowed every occlusion ray and hid all the labels. Any
+    full-stage plane does this; the shadow carries `raycast={() => undefined}` for the same
+    reason.
+
+    ⚠️ **`frames={1}` on the contact shadow is wrong here even though it is cheaper.** Parts
+    move under the slider and vanish under isolation, and a shadow baked once kept painting the
+    whole closed assembly under a single isolated part. It redraws every frame at a reduced
+    resolution instead, which the on-demand loop keeps nearly free.
+
+    **One pin at a time.** Labelling all nine parts at once was measured against the reference
+    and lost — the pills overlapped into an unreadable stack over the model they described. A
+    pin now shows only for the hovered or selected part, and only on the Exploded tab. The
+    reference shows no labels in its exploded view at all and names parts in its component
+    browser; this keeps a pointer affordance without the pile.
+
+    **The store grew a camera bridge, and the direction of travel is the point.** The preset
+    menu and zoom buttons are DOM controls outside the `<Canvas>`; the `CameraControls` instance
+    is inside it. An instruction is published into the store and the rig reacts — the mirror of
+    `setFrameRequester`, which carries `invalidate` the other way. `requestToken` is monotonic
+    because pressing the same preset twice must fire twice and two identical snapshots would
+    not. The zoom percentage is published back OUT by the rig, rounded, so an orbit costs no
+    renders. "Four views" was dropped: a quad viewport needs four scissored passes and its own
+    camera per pane.
+
+    **Isolation hides, X-ray ghosts**, and the difference is deliberate: the part browser
+    answers "what is this component" so the rest leaves the frame, X-ray answers "where does
+    this sit" so the rest stays faint. Ghosting was raised from 0.15 to 0.28 because a pale
+    shell at 0.15 over a WHITE ground is invisible rather than ghosted — every threshold tuned
+    against the obsidian stage had to be re-tuned.
+
+    **`formatVideoTimestampLabel` is not `formatDurationLabel`.** The duration formatter returns
+    `null` at or below zero, correctly — a clip of no length has nothing to show. A step's
+    `timestampSeconds: 0` is the FIRST FRAME, a real place to point at, and it rendered as a
+    bare "at" until it got its own formatter.
+
+    **Two mount points for the same panels.** With a model, the spec list, repairability index
+    and fastener table are the Specifications tab, passed into the client viewer as a
+    `specificationsSlot`; without one there are no tabs, so they render as ordinary page
+    sections. Passing them as a slot keeps them server components either way instead of dragging
+    three panels into the island. Manufacturing files stay a page section in both cases — they
+    are the take-it-away payload and belong after everything that explains what it is. ⚠️ `<a
+ download>` works only because the fixtures are site-relative; browsers ignore it
+    cross-origin, so Cloudinary-hosted files will need `Content-Disposition: attachment`, the
+    same trap `store/sections/product-documents.tsx` already records.
+
+    **The audit that keeps this honest**, and it currently prints nothing:
+
+    ```bash
+    for field in assembly fasteners manufacturingFiles assemblySteps repairabilityIndex \
+                 simulationTelemetry; do
+      rg -q "teardown\.$field\b" src/components/home/blueprints || echo "UNRENDERED $field"
+    done
+    ```
+
+    **NOT IN THIS PART:** the `youtube` arm on `BlueprintVideoSchema` and the step-to-timestamp
+    seek (contract and renderer land together, so neither ships alone); baked thumbnails on the
+    component rail, which the reference has and this does not — the rail carries the part's name
+    and manufacturing method instead, and a render-target bake is the upgrade if it is ever
+    wanted; material swatches, which are a product configurator and mean nothing for a teardown
+    of somebody else's hardware; user upload and authoring with its backend tables; and Drizzle,
+    still deferred until a `blueprint` table exists.
+
     ### 1b. Showcase became a Launch-YC-shaped feed — SHIPPED 2026-09-08
 
     `/blueprints/showcase` and `/blueprints/showcase/[slug]` were redesigned after

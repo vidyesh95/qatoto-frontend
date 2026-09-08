@@ -33,8 +33,12 @@ export interface ExplodedAssemblyProps {
   readonly stiffnessPerSecond: number;
 }
 
-/** Everything but the focused part fades to this under X-ray. */
-const GHOSTED_OPACITY = 0.15;
+/**
+ * Everything but the focused part fades to this under X-ray. HIGHER THAN IT WOULD BE ON A DARK
+ * STAGE: a pale shell at 0.15 over a white ground is invisible rather than ghosted, and the point
+ * of X-ray is to keep the surroundings legible while one part is picked out.
+ */
+const GHOSTED_OPACITY = 0.28;
 /** Above this a part writes depth again, so a solid part is not seen through by a ghost. */
 const OPAQUE_DEPTH_WRITE_THRESHOLD = 0.98;
 /** Below this the assembly counts as collapsed and the pins hide. */
@@ -48,7 +52,7 @@ const NO_EMISSIVE = new Color("#000000");
 const EDGE_MATERIAL = new LineBasicMaterial({
   color: "#FF5500",
   transparent: true,
-  opacity: 0.35,
+  opacity: 0.55,
   depthTest: false,
 });
 
@@ -56,6 +60,22 @@ function resolveTargetOpacity(snapshot: ExplosionSnapshot, partId: string): numb
   if (!snapshot.isXrayEnabled) return 1;
   const isFocused = snapshot.selectedPartId === partId || snapshot.hoveredPartId === partId;
   return isFocused ? 1 : GHOSTED_OPACITY;
+}
+
+/**
+ * ISOLATION HIDES, X-RAY GHOSTS, and the difference is the point. The part browser is answering
+ * "what is this component", so the rest of the assembly leaves the frame entirely; X-ray is
+ * answering "where does this sit", so the rest stays faintly visible around it.
+ */
+function applyIsolation(
+  loadedAssembly: LoadedTeardownAssembly,
+  isIsolationEnabled: boolean,
+  selectedPartId: string | null,
+): void {
+  for (const loadedPart of loadedAssembly.parts) {
+    loadedPart.object.visible =
+      !isIsolationEnabled || selectedPartId === null || selectedPartId === loadedPart.part.id;
+  }
 }
 
 function applyOpacity(loadedPart: LoadedTeardownPart, opacity: number): void {
@@ -123,6 +143,8 @@ interface AppliedFrameState {
   isStressViewApplied: boolean;
   isXrayApplied: boolean;
   hoveredPartIdApplied: string | null;
+  isIsolationApplied: boolean;
+  isolatedPartIdApplied: string | null;
 }
 
 /**
@@ -155,6 +177,14 @@ function advanceExplosionFrame(
   if (snapshot.isXrayEnabled !== applied.isXrayApplied) {
     applyEdgeOverlays(loadedAssembly, snapshot.isXrayEnabled);
     applied.isXrayApplied = snapshot.isXrayEnabled;
+  }
+  if (
+    snapshot.isIsolationEnabled !== applied.isIsolationApplied ||
+    snapshot.selectedPartId !== applied.isolatedPartIdApplied
+  ) {
+    applyIsolation(loadedAssembly, snapshot.isIsolationEnabled, snapshot.selectedPartId);
+    applied.isIsolationApplied = snapshot.isIsolationEnabled;
+    applied.isolatedPartIdApplied = snapshot.selectedPartId;
   }
   if (snapshot.hoveredPartId !== applied.hoveredPartIdApplied) {
     if (applied.hoveredPartIdApplied !== null) {
@@ -205,6 +235,8 @@ export default function ExplodedAssembly({
     isStressViewApplied: false,
     isXrayApplied: false,
     hoveredPartIdApplied: null,
+    isIsolationApplied: false,
+    isolatedPartIdApplied: null,
   });
 
   useEffect(() => {

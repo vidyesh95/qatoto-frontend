@@ -19,10 +19,31 @@
 
 import { useSyncExternalStore } from "react";
 
+import type { TeardownCameraPreset } from "@/lib/blueprints/camera-presets";
+
 /** Mutated in place; read by the frame loop; never notifies React. */
 export interface ExplosionMotion {
   targetFactor: number;
   currentFactor: number;
+}
+
+/**
+ * A camera instruction on its way INTO the canvas.
+ *
+ * The preset menu and the zoom buttons are DOM controls outside the `<Canvas>`, and the
+ * `CameraControls` instance they need to drive lives inside it. Rather than lift a ref out through
+ * the renderer, an instruction is published here and the rig reacts to it — the same direction of
+ * travel as `setFrameRequester`, which carries `invalidate` the other way.
+ *
+ * `requestToken` is monotonic and is the whole reason this is not just a preset name: pressing
+ * "Front" twice, or zooming in twice, must fire twice, and two identical snapshots would not.
+ */
+export interface CameraCommand {
+  readonly kind: "preset" | "dolly";
+  readonly preset: TeardownCameraPreset | null;
+  /** Dolly steps; positive moves closer. Ignored for a preset. */
+  readonly dollySteps: number;
+  readonly requestToken: number;
 }
 
 /** Immutable; every change notifies `useSyncExternalStore` subscribers. */
@@ -31,10 +52,24 @@ export interface ExplosionSnapshot {
   readonly hoveredPartId: string | null;
   readonly isXrayEnabled: boolean;
   readonly isStressViewEnabled: boolean;
+  /**
+   * Non-selected parts are HIDDEN rather than ghosted. The Components tab is a part browser, and a
+   * browser that leaves the rest of the assembly faintly on screen is showing the assembly, not
+   * the part.
+   */
+  readonly isIsolationEnabled: boolean;
+  /** Callout pins only make sense while the assembly is open, so the tab decides. */
+  readonly arePinsEnabled: boolean;
   /** Promoted from `currentFactor` by the frame loop, on a flip only. Pins hide while collapsed. */
   readonly isAssemblyCollapsed: boolean;
   /** Monotonic; the camera rig treats every increment as "go home". */
   readonly viewResetCount: number;
+  readonly cameraCommand: CameraCommand | null;
+  /**
+   * How close the camera is, as a percentage of its fitted distance — published BY the rig for the
+   * zoom readout. Rounded to whole percent so an orbit or a fit transition cannot spray renders.
+   */
+  readonly zoomPercent: number;
 }
 
 // FUNCTION-TYPED PROPERTIES, NOT METHODS. `useSyncExternalStore(store.subscribe, store.getSnapshot)`
@@ -52,8 +87,14 @@ export interface ExplosionStore {
   readonly setStressViewEnabled: (isEnabled: boolean) => void;
   /** Called every frame; publishes only when the value flips. */
   readonly publishCollapsedState: (isCollapsed: boolean) => void;
+  readonly setIsolationEnabled: (isEnabled: boolean) => void;
+  readonly setPinsEnabled: (areEnabled: boolean) => void;
   /** Collapse, deselect and send the camera home. */
   readonly requestViewReset: () => void;
+  readonly requestCameraPreset: (preset: TeardownCameraPreset) => void;
+  /** Positive steps move closer. */
+  readonly requestDolly: (dollySteps: number) => void;
+  readonly publishZoomPercent: (zoomPercent: number) => void;
   /** Registered by the in-canvas component with R3F's `invalidate`; `null` once it unmounts. */
   readonly setFrameRequester: (requestFrame: (() => void) | null) => void;
 }
@@ -63,8 +104,12 @@ const INITIAL_SNAPSHOT: ExplosionSnapshot = {
   hoveredPartId: null,
   isXrayEnabled: false,
   isStressViewEnabled: false,
+  isIsolationEnabled: false,
+  arePinsEnabled: false,
   isAssemblyCollapsed: true,
   viewResetCount: 0,
+  cameraCommand: null,
+  zoomPercent: 100,
 };
 
 function clampUnit(value: number): number {
@@ -76,6 +121,7 @@ export function createExplosionStore(): ExplosionStore {
   const listeners = new Set<() => void>();
   let snapshot = INITIAL_SNAPSHOT;
   let requestFrame: (() => void) | null = null;
+  let cameraRequestToken = 0;
 
   function publish(nextSnapshot: ExplosionSnapshot): void {
     snapshot = nextSnapshot;
@@ -112,6 +158,39 @@ export function createExplosionStore(): ExplosionStore {
       if (isEnabled !== snapshot.isStressViewEnabled) {
         publish({ ...snapshot, isStressViewEnabled: isEnabled });
       }
+    },
+    setIsolationEnabled(isEnabled) {
+      if (isEnabled !== snapshot.isIsolationEnabled) {
+        publish({ ...snapshot, isIsolationEnabled: isEnabled });
+      }
+    },
+    setPinsEnabled(areEnabled) {
+      if (areEnabled !== snapshot.arePinsEnabled) {
+        publish({ ...snapshot, arePinsEnabled: areEnabled });
+      }
+    },
+    requestCameraPreset(preset) {
+      cameraRequestToken += 1;
+      publish({
+        ...snapshot,
+        cameraCommand: { kind: "preset", preset, dollySteps: 0, requestToken: cameraRequestToken },
+      });
+    },
+    requestDolly(dollySteps) {
+      cameraRequestToken += 1;
+      publish({
+        ...snapshot,
+        cameraCommand: {
+          kind: "dolly",
+          preset: null,
+          dollySteps,
+          requestToken: cameraRequestToken,
+        },
+      });
+    },
+    publishZoomPercent(zoomPercent) {
+      const rounded = Math.round(zoomPercent);
+      if (rounded !== snapshot.zoomPercent) publish({ ...snapshot, zoomPercent: rounded });
     },
     publishCollapsedState(isCollapsed) {
       if (isCollapsed !== snapshot.isAssemblyCollapsed) {

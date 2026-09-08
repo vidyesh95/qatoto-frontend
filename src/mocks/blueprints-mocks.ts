@@ -268,9 +268,13 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     partCount: 148,
     assembly: {
       kind: "composite",
+      // THE STACK IS VERTICAL, so the axis is Y: clip, base, board, board-mounted parts, heatsink,
+      // lid. Six planes rather than nine directions, which is what makes an exploded diagram
+      // readable — the camera angle, not the axis, is what makes it read wide on screen.
+      explosionAxis: [0, 1, 0],
       model: {
         url: "/dummy/blueprints/solar-cold-storage-controller.glb",
-        byteSize: 27208,
+        byteSize: 351872,
       },
       // `parentPartId` MIRRORS THE NODE TREE IN THE .glb — the generator nests the meshes the same
       // way. A child explodes away from its parent, so the two trees must agree or the lid moves
@@ -285,6 +289,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           manufacturingMethod: "injection_molded",
           explosionDirection: null,
           explosionDistanceMm: null,
+          layerIndex: 1,
           stressRating: null,
           calloutText: "Two-piece ABS shell; the base carries every mounting boss.",
         },
@@ -298,6 +303,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           // Pinned: the lid lifts straight up. Not unit length on purpose — the engine normalises.
           explosionDirection: [0, 2, 0],
           explosionDistanceMm: 60,
+          layerIndex: 5,
           stressRating: null,
           calloutText: "Lifts straight up once the four M3 cap screws are out.",
         },
@@ -310,6 +316,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           manufacturingMethod: "pcb_assembly",
           explosionDirection: null,
           explosionDistanceMm: null,
+          layerIndex: 2,
           stressRating: 0.2,
           calloutText: "MPPT stage on the left, compressor driver on the right.",
         },
@@ -322,6 +329,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           manufacturingMethod: "cnc_milled",
           explosionDirection: null,
           explosionDistanceMm: null,
+          layerIndex: 4,
           stressRating: 0.55,
           calloutText: "Undersized by the author's own measurement — 38 K rise at rated load.",
         },
@@ -334,6 +342,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           manufacturingMethod: "off_the_shelf",
           explosionDirection: null,
           explosionDistanceMm: null,
+          layerIndex: 3,
           stressRating: 0.85,
           calloutText: "The hottest part on the board.",
         },
@@ -346,6 +355,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           manufacturingMethod: "off_the_shelf",
           explosionDirection: null,
           explosionDistanceMm: null,
+          layerIndex: 3,
           stressRating: 0.8,
           calloutText: null,
         },
@@ -358,6 +368,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           manufacturingMethod: "off_the_shelf",
           explosionDirection: null,
           explosionDistanceMm: null,
+          layerIndex: 3,
           stressRating: null,
           calloutText: "Battery, panel and compressor all land here.",
         },
@@ -370,6 +381,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           manufacturingMethod: "off_the_shelf",
           explosionDirection: null,
           explosionDistanceMm: null,
+          layerIndex: 3,
           stressRating: null,
           calloutText:
             "Placed 40 mm from the evaporator plate — the four percent from the summary.",
@@ -383,6 +395,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           manufacturingMethod: "sheet_metal",
           explosionDirection: [0, -1, 0],
           explosionDistanceMm: 25,
+          layerIndex: 0,
           stressRating: null,
           calloutText: null,
         },
@@ -599,6 +612,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     // out with it, which is also how the pump comes apart on a bench.
     assembly: {
       kind: "individual_parts",
+      // DELIBERATELY RADIAL. One fixture must keep exercising the centroid path, or it becomes
+      // unverified code the day the layered one lands.
+      explosionAxis: null,
       parts: [
         {
           id: "part-010",
@@ -608,9 +624,10 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           manufacturingMethod: "cast",
           explosionDirection: [0, -1, 0],
           explosionDistanceMm: 220,
+          layerIndex: null,
           stressRating: 0.3,
           calloutText: "All four tolerances from the title live on this part.",
-          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/housing.glb`, byteSize: 8344 },
+          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/housing.glb`, byteSize: 48608 },
           placement: null,
         },
         {
@@ -623,9 +640,10 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           // assembly centre would send both the same way and never separate them.
           explosionDirection: [0, 1, 0],
           explosionDistanceMm: null,
+          layerIndex: null,
           stressRating: 0.6,
           calloutText: null,
-          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/shaft.glb`, byteSize: 6620 },
+          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/shaft.glb`, byteSize: 12640 },
           placement: null,
         },
         {
@@ -638,9 +656,10 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           // shaft 140 mm up first, then drops 420 of its own.
           explosionDirection: [0, -1, 0],
           explosionDistanceMm: 420,
+          layerIndex: null,
           stressRating: 0.45,
           calloutText: "Silt wear shows here first.",
-          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/impeller.glb`, byteSize: 8344 },
+          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/impeller.glb`, byteSize: 34636 },
           placement: null,
         },
         {
@@ -651,9 +670,10 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           manufacturingMethod: "fdm_printed",
           explosionDirection: null,
           explosionDistanceMm: null,
+          layerIndex: null,
           stressRating: null,
           calloutText: "Printed to prove the fit before committing to the machined part.",
-          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/seal_carrier.glb`, byteSize: 8352 },
+          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/seal_carrier.glb`, byteSize: 17328 },
           placement: { positionMm: [0, 140, 0], rotationDegrees: [0, 0, 0] },
         },
         {
@@ -664,9 +684,10 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           manufacturingMethod: "off_the_shelf",
           explosionDirection: null,
           explosionDistanceMm: null,
+          layerIndex: null,
           stressRating: 0.7,
           calloutText: null,
-          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/bearing_upper.glb`, byteSize: 8356 },
+          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/bearing_upper.glb`, byteSize: 32120 },
           placement: null,
         },
         {
@@ -677,9 +698,10 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
           manufacturingMethod: "off_the_shelf",
           explosionDirection: [0, -1, 0],
           explosionDistanceMm: 40,
+          layerIndex: null,
           stressRating: 0.75,
           calloutText: "The one that failed — the silt pattern is in the assembly guide.",
-          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/bearing_lower.glb`, byteSize: 8360 },
+          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/bearing_lower.glb`, byteSize: 32124 },
           placement: null,
         },
       ],

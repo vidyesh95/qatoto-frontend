@@ -475,6 +475,12 @@ const TeardownPartBaseShape = {
     "An explosion direction cannot be the zero vector.",
   ).nullable(),
   explosionDistanceMm: z.number().positive().nullable(),
+  /**
+   * Which plane this part lands on in a LAYERED explosion — see `explosionAxis` on the assembly.
+   * Duplicates are legal and useful (three buttons share one plane) and so are gaps. `null` only
+   * when the assembly explodes radially; the arm refinements enforce that all-or-nothing.
+   */
+  layerIndex: z.number().int().nonnegative().nullable(),
   stressRating: z.number().min(0).max(1).nullable(),
   /** One sentence beside the label in the viewport. `null` when the label says it all. */
   calloutText: z.string().nullable(),
@@ -527,6 +533,55 @@ export type IndividualTeardownPart = z.infer<typeof IndividualTeardownPartSchema
 
 /** Either part shape — what the engine and the HUD read; they never need to know which. */
 export type TeardownPart = CompositeTeardownPart | IndividualTeardownPart;
+
+/**
+ * THE STACKING AXIS OF A LAYERED EXPLOSION, or `null` for the radial default.
+ *
+ * A radial explosion pushes every part away from the assembly centre, which needs no authoring and
+ * works on anything — but it scatters. Real exploded diagrams fan along ONE axis in the order the
+ * thing is built, which is what makes them readable, and that ordering is a fact about the product
+ * that only its author knows. So it is opt-in: name the axis here and give every part a
+ * `layerIndex`.
+ *
+ * THIS IS THE PHYSICAL STACKING AXIS, NOT A SCREEN DIRECTION. A controller whose boards stack
+ * vertically has a `[0, 1, 0]` axis however the camera is later placed; the reference designs read
+ * left-to-right because the camera is angled to a front-to-back stack, not because the parts fan
+ * sideways.
+ */
+const TeardownExplosionAxisShape = {
+  explosionAxis: NumberTripleSchema.refine(
+    (axis) => axis.some((component) => component !== 0),
+    "An explosion axis cannot be the zero vector.",
+  ).nullable(),
+};
+
+/**
+ * ALL PARTS LAYERED, OR NONE. A half-layered assembly — some parts on planes along the axis, the
+ * rest fanning radially from the centre — is a picture that reads as broken, and nothing should be
+ * able to express it.
+ */
+function addExplosionLayeringIssues(
+  explosionAxis: readonly number[] | null,
+  parts: readonly { readonly layerIndex: number | null }[],
+  context: z.RefinementCtx,
+): void {
+  parts.forEach((part, index) => {
+    if (explosionAxis !== null && part.layerIndex === null) {
+      context.addIssue({
+        code: "custom",
+        path: ["parts", index, "layerIndex"],
+        message: "This assembly explodes along an axis, so every part needs a layerIndex.",
+      });
+    }
+    if (explosionAxis === null && part.layerIndex !== null) {
+      context.addIssue({
+        code: "custom",
+        path: ["parts", index, "layerIndex"],
+        message: "A layerIndex means nothing without an explosionAxis on the assembly.",
+      });
+    }
+  });
+}
 
 /**
  * The tree is checked HERE, not in the engine. A `parentPartId` that names nothing, a part that is
@@ -596,12 +651,14 @@ function addPartTreeIssues(
 export const CompositeTeardownAssemblySchema = z
   .object({
     kind: z.literal("composite"),
+    ...TeardownExplosionAxisShape,
     model: TeardownModelFileSchema,
     parts: z.array(CompositeTeardownPartSchema).min(1),
   })
   .strip()
   .superRefine((assembly, context) => {
     addPartTreeIssues(assembly.parts, context);
+    addExplosionLayeringIssues(assembly.explosionAxis, assembly.parts, context);
     const nodeNames = new Set<string>();
     assembly.parts.forEach((part, index) => {
       if (nodeNames.has(part.nodeName)) {
@@ -619,11 +676,13 @@ export type CompositeTeardownAssembly = z.infer<typeof CompositeTeardownAssembly
 export const IndividualPartsTeardownAssemblySchema = z
   .object({
     kind: z.literal("individual_parts"),
+    ...TeardownExplosionAxisShape,
     parts: z.array(IndividualTeardownPartSchema).min(1),
   })
   .strip()
   .superRefine((assembly, context) => {
     addPartTreeIssues(assembly.parts, context);
+    addExplosionLayeringIssues(assembly.explosionAxis, assembly.parts, context);
   });
 export type IndividualPartsTeardownAssembly = z.infer<typeof IndividualPartsTeardownAssemblySchema>;
 

@@ -30,11 +30,18 @@ const PIN_Z_INDEX_RANGE = [20, 0];
  * pin while one part is selected — the part panel carries the detail then, not the labels.
  */
 export default function PartCalloutPin({ store, loadedPart }: PartCalloutPinProps) {
-  const { selectedPartId, isAssemblyCollapsed } = useExplosionSnapshot(store);
+  const { selectedPartId, hoveredPartId, isAssemblyCollapsed, arePinsEnabled } =
+    useExplosionSnapshot(store);
   const [isOccluded, setIsOccluded] = useState(false);
   const isSelected = selectedPartId === loadedPart.part.id;
-  const isAnotherPartSelected = selectedPartId !== null && !isSelected;
-  const isHidden = isOccluded || isAnotherPartSelected || (isAssemblyCollapsed && !isSelected);
+  const isHovered = hoveredPartId === loadedPart.part.id;
+  // ONE PIN AT A TIME, on the part being pointed at or picked. Labelling all nine at once was
+  // measured against the reference and lost: the labels overlapped into an unreadable stack and
+  // covered the model they were describing. The reference shows no labels in its exploded view at
+  // all and names parts in its component browser instead; this keeps a pointer affordance without
+  // the pile.
+  const isHidden =
+    !arePinsEnabled || isOccluded || isAssemblyCollapsed || !(isSelected || isHovered);
 
   function handlePinClick(): void {
     store.selectPart(isSelected ? null : loadedPart.part.id);
@@ -56,8 +63,8 @@ export default function PartCalloutPin({ store, loadedPart }: PartCalloutPinProp
         tabIndex={isHidden ? -1 : 0}
         className={`rounded-full border px-2 py-0.5 font-mono text-[10px] tracking-wide whitespace-nowrap transition-opacity duration-200 ${
           isSelected
-            ? "border-[#FF5500] bg-[#FF5500] text-[#08090A]"
-            : "border-white/20 bg-[#0F1115]/90 text-white"
+            ? "border-[#FF5500] bg-[#FF5500] text-white"
+            : "border-black/10 bg-white/90 text-foreground shadow-xs backdrop-blur"
         } ${isHidden ? "pointer-events-none opacity-0" : "pointer-events-auto opacity-100"}`}
       >
         {loadedPart.part.label}

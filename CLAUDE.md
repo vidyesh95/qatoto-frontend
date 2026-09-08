@@ -314,15 +314,31 @@ Three rules specific to this surface:
   progress, a claim this page has no business making). PDFs open in a `ModalSheet` over
   `<embed type="application/pdf">` with a download fallback, because a browser with its PDF viewer
   off renders `<embed>` as a silent blank rectangle.
-- **The exploded view is a SECOND 3D stack, on WebGL2, and it stays lazy.** The teardown
-  engine (`src/components/home/blueprints/teardowns/engine/`, R3F + drei over the stock
+- **The 3D viewer is a SECOND 3D stack, on WebGL2, and it stays lazy.** The teardown engine
+  (`src/components/home/blueprints/teardowns/engine/`, R3F + drei over the stock
   `WebGLRenderer`) sits beside the store's `@google/model-viewer`; both load through
   `await import()` inside an effect and never share a page's chunk graph. `three` stays pinned
   at model-viewer's peer range and NOTHING imports `three/webgpu` or `three/tsl` — WebGPU was
-  considered and rejected (`todo.md` §1a). `assembly` is a discriminated union: one composite
-  `.glb` addressed by node name, or one `.glb` PER PART, which is the shape an upload takes.
-  Telemetry is author-reported; the heat map is a vertex-colour bake of an authored rating, and
-  no copy may call either a simulation this page ran.
+  considered and rejected (`todo.md` §1a). It renders as a TABBED LIGHT STAGE — Design,
+  Exploded view, Components, Specifications — whose backdrop is CSS behind a transparent canvas,
+  never a `gridHelper`: three's `Raycaster.params.Line.threshold` is a metre against a scene
+  centimetres across, so any full-stage plane silently swallows every callout pin's occlusion ray.
+  `assembly` is a discriminated union: one composite `.glb` addressed by node name, or one `.glb`
+  PER PART, which is the shape an upload takes. Explosion is radial by default and LAYERED when
+  the author names an `explosionAxis`, all-or-nothing across the parts. Telemetry is
+  author-reported; the heat map is a vertex-colour bake of an authored rating, and no copy may
+  call either a simulation this page ran.
+- **EVERY teardown-arm field has a renderer, and that is a checked property, not a habit.** A
+  field carrying data nothing displays is the same unverified code the R&D hook audit exists to
+  catch. The equivalent sweep, which must print nothing:
+
+    ```bash
+    for field in assembly fasteners manufacturingFiles assemblySteps repairabilityIndex \
+                 simulationTelemetry; do
+      rg -q "teardown\.$field\b" src/components/home/blueprints || echo "UNRENDERED $field"
+    done
+    ```
+
 - **The hero is real.** `GET /blueprints/hero-slides` and the admin console at
   `/admin/blueprints-hero` are live, backed by four rows. The `anime_hero_slide` TABLE and the
   five `anime_hero_slide_*` audit pgEnum labels KEEP THEIR NAMES — renaming them costs a

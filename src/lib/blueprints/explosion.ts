@@ -27,12 +27,16 @@ export interface ExplosionPartInput {
   readonly authoredDirection: Vector3Tuple | null;
   /** `null` means "derive from the assembly's bounding sphere". */
   readonly authoredDistanceMm: number | null;
+  /** Which plane this part lands on in layered mode. `null` in radial mode. */
+  readonly layerIndex: number | null;
 }
 
 export interface ExplosionAssemblyInput {
   readonly bounds: AxisAlignedBounds;
   /** Scene units. Sets the scale of every auto-derived distance. */
   readonly boundingSphereRadius: number;
+  /** Non-null switches the whole assembly to layered mode. Need not be unit length. */
+  readonly explosionAxis: Vector3Tuple | null;
 }
 
 export interface ExplosionVector {
@@ -66,6 +70,14 @@ export const AUTO_DISTANCE_RADIUS_FRACTION = 0.6;
 export const CHILD_TIER_DISTANCE_FRACTION = 0.5;
 /** Deeper than this is a cycle the contract failed to catch; the walk stops rather than spins. */
 export const MAX_HIERARCHY_DEPTH = 8;
+
+/**
+ * How far the outermost layers sit apart at `factor = 1`, in bounding-sphere radii.
+ *
+ * The spacing is DERIVED FROM THIS TOTAL rather than fixed per step, so a six-layer assembly and a
+ * twelve-layer one both open to about the same size and the camera framing holds for either.
+ */
+export const LAYER_SPREAD_RADII = 2.5;
 
 const DEGENERATE_DIRECTION_RADIUS_FRACTION = 1e-4;
 const FALLBACK_DIRECTION: Vector3Tuple = [0, 1, 0];
@@ -121,6 +133,46 @@ function normalise(vector: Vector3Tuple): Vector3Tuple | null {
 // --- The vectors -----------------------------------------------------------------------------
 
 /**
+ * LAYERED MODE: every part lands on a plane along one axis, spaced by its `layerIndex`.
+ *
+ * THE PARENT CHAIN IS IGNORED HERE, and that is the point rather than an omission. Radial mode
+ * composes a child's offset onto its parent's so a sub-assembly travels as a group; layering
+ * instead gives every part an absolute slot on the axis, which is what produces the clean parallel
+ * planes an exploded diagram is read from. Composing the two would put a child of a layer-1 parent
+ * somewhere between planes, which is neither picture.
+ *
+ * Offsets are centred on the midpoint layer so the assembly opens symmetrically about where it
+ * started instead of drifting off one end. An authored direction or distance still wins per part —
+ * a lid that must lift straight up says so, whatever the axis is.
+ */
+function computeLayeredVectors(
+  parts: readonly ExplosionPartInput[],
+  assembly: ExplosionAssemblyInput,
+  axis: Vector3Tuple,
+): ExplosionVector[] {
+  const layers = parts.map((part) => part.layerIndex ?? 0);
+  const lowestLayer = Math.min(...layers);
+  const highestLayer = Math.max(...layers);
+  const midpointLayer = (lowestLayer + highestLayer) / 2;
+  const layerSpacing =
+    (assembly.boundingSphereRadius * LAYER_SPREAD_RADII) / Math.max(1, highestLayer - lowestLayer);
+
+  return parts.map((part) => {
+    const authoredDirection =
+      part.authoredDirection === null ? null : normalise(part.authoredDirection);
+    const layerOffset = ((part.layerIndex ?? 0) - midpointLayer) * layerSpacing;
+    // A part on the midpoint layer has no travel of its own, so it keeps the axis as its direction
+    // and a zero distance rather than becoming directionless.
+    const direction = authoredDirection ?? (layerOffset < 0 ? scale(axis, -1) : axis);
+    const distance =
+      part.authoredDistanceMm === null
+        ? Math.abs(layerOffset)
+        : part.authoredDistanceMm * GLTF_SCENE_UNITS_PER_MILLIMETRE;
+    return { partId: part.partId, direction, distance };
+  });
+}
+
+/**
  * How many `parentPartId` hops sit above a part. A root part is tier 0. Capped at
  * `MAX_HIERARCHY_DEPTH`, which is also the cycle guard for a tree the contract did not check.
  */
@@ -157,6 +209,9 @@ export function computeExplosionVectors(
   parts: readonly ExplosionPartInput[],
   assembly: ExplosionAssemblyInput,
 ): ExplosionVector[] {
+  const layeredAxis = assembly.explosionAxis === null ? null : normalise(assembly.explosionAxis);
+  if (layeredAxis !== null) return computeLayeredVectors(parts, assembly, layeredAxis);
+
   const partById = new Map(parts.map((part) => [part.partId, part]));
   const parentPartIdById = new Map(parts.map((part) => [part.partId, part.parentPartId]));
   const assemblyCentre = boundsCentre(assembly.bounds);

@@ -8,6 +8,17 @@
 // DETERMINISTIC. No dates, no random ids; `GLTFExporter` writes only names, geometry, materials
 // and a version string, so re-running produces byte-identical files and an empty diff.
 //
+// THESE ARE MODELLED, NOT BLOCKED OUT, and the difference is the whole point of the fixture. A raw
+// `BoxGeometry` corner is the clearest possible "this is a placeholder" signal, so every visible
+// edge is chamfered (`RoundedBoxGeometry`), the enclosure is a TRAY with walls and a cavity rather
+// than a slab, and the board carries pads, chips and a connector. Material separation is by
+// roughness and metalness, not by colour alone — that is what makes aluminium read as metal beside
+// moulded ABS under the same light.
+//
+// A PART MAY BE A GROUP. The loader resolves a `nodeName` to any `Object3D` and traverses it for
+// meshes, so `pcb` is a group of four meshes with four materials. One mesh per material; one node
+// per contract part.
+//
 // TWO ASSEMBLIES, TWO INGESTION MODES. The solar controller is exported as ONE composite file whose
 // node names are the fixture's `nodeName`s. The borehole pump is exported as SIX per-part files —
 // the shape a user upload takes — five of them in assembly coordinates and one (`seal_carrier`) at
@@ -23,17 +34,20 @@ import { mkdir, stat, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 import {
-  BoxGeometry,
   type BufferGeometry,
   CylinderGeometry,
+  ExtrudeGeometry,
   Group,
   Mesh,
   MeshStandardMaterial,
   type Object3D,
+  Path,
   Scene,
+  Shape,
 } from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import { mergeGeometries, mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 // --- FileReader polyfill ------------------------------------------------------------------------
 // The exporter's binary path reads a Blob through `FileReader`, which Node does not have.
@@ -68,130 +82,392 @@ if (typeof FileReader === "undefined") {
   Object.defineProperty(globalThis, "FileReader", { value: NodeFileReader });
 }
 
-// --- Scene helpers ------------------------------------------------------------------------------
+// --- Units and materials ------------------------------------------------------------------------
 
 const MILLIMETRES_PER_METRE = 1000;
 type Millimetres3 = readonly [number, number, number];
 
+/** mm -> scene metres. Every dimension in this file goes through here exactly once. */
+function mm(millimetres: number): number {
+  return millimetres / MILLIMETRES_PER_METRE;
+}
+
+/**
+ * ROUGHNESS AND METALNESS DO THE WORK, not the colour. Two grey parts at the same hue read as
+ * anodised aluminium and moulded ABS only because one is metallic and sharp and the other is
+ * dielectric and soft. Under `RoomEnvironment` that difference is what sells the render.
+ */
 const MATERIALS = {
-  abs_grey: new MeshStandardMaterial({ color: 0x9aa3a8, roughness: 0.6, name: "abs_grey" }),
-  abs_light: new MeshStandardMaterial({ color: 0xb8c0c4, roughness: 0.6, name: "abs_light" }),
-  fr4_green: new MeshStandardMaterial({ color: 0x1f6f3f, roughness: 0.5, name: "fr4_green" }),
+  absShell: new MeshStandardMaterial({
+    color: 0xe8eaec,
+    roughness: 0.55,
+    metalness: 0,
+    name: "abs_shell",
+  }),
+  absShellDark: new MeshStandardMaterial({
+    color: 0xb4bcc2,
+    roughness: 0.6,
+    metalness: 0,
+    name: "abs_shell_dark",
+  }),
+  fr4: new MeshStandardMaterial({
+    color: 0x0f5132,
+    roughness: 0.6,
+    metalness: 0.05,
+    name: "fr4_solder_mask",
+  }),
+  gold: new MeshStandardMaterial({
+    color: 0xd4a017,
+    roughness: 0.3,
+    metalness: 1,
+    name: "enig_gold",
+  }),
+  epoxy: new MeshStandardMaterial({
+    color: 0x1b1d20,
+    roughness: 0.5,
+    metalness: 0,
+    name: "moulded_epoxy",
+  }),
   aluminium: new MeshStandardMaterial({
-    color: 0xc8c8c8,
+    color: 0xc9ccd0,
+    roughness: 0.25,
+    metalness: 0.9,
+    name: "aluminium_6063",
+  }),
+  tinnedSteel: new MeshStandardMaterial({
+    color: 0xb8bec4,
+    roughness: 0.28,
+    metalness: 0.85,
+    name: "tinned_steel",
+  }),
+  springSteel: new MeshStandardMaterial({
+    color: 0x8b9197,
     roughness: 0.35,
     metalness: 0.8,
-    name: "aluminium",
-  }),
-  epoxy_black: new MeshStandardMaterial({ color: 0x202020, roughness: 0.7, name: "epoxy_black" }),
-  pa66_green: new MeshStandardMaterial({ color: 0x2f8f4e, roughness: 0.6, name: "pa66_green" }),
-  pvc_amber: new MeshStandardMaterial({ color: 0xd0a030, roughness: 0.5, name: "pvc_amber" }),
-  spring_steel: new MeshStandardMaterial({
-    color: 0x606060,
-    roughness: 0.4,
-    metalness: 0.7,
     name: "spring_steel",
   }),
+  pa66: new MeshStandardMaterial({
+    color: 0x1f7a4d,
+    roughness: 0.55,
+    metalness: 0,
+    name: "pa66_terminal",
+  }),
+  pvcJacket: new MeshStandardMaterial({
+    color: 0xd8a33a,
+    roughness: 0.45,
+    metalness: 0,
+    name: "pvc_jacket",
+  }),
   stainless: new MeshStandardMaterial({
-    color: 0xb0b4b8,
+    color: 0xb6bbc0,
     roughness: 0.3,
-    metalness: 0.9,
-    name: "stainless",
+    metalness: 0.92,
+    name: "stainless_316",
   }),
   bronze: new MeshStandardMaterial({
     color: 0xb08d57,
-    roughness: 0.45,
-    metalness: 0.8,
-    name: "bronze",
+    roughness: 0.4,
+    metalness: 0.85,
+    name: "cast_bronze",
   }),
-  petg_blue: new MeshStandardMaterial({ color: 0x3b6fd6, roughness: 0.55, name: "petg_blue" }),
+  petg: new MeshStandardMaterial({
+    color: 0x3b6fd6,
+    roughness: 0.5,
+    metalness: 0,
+    name: "petg_printed",
+  }),
 } as const;
 type MaterialKey = keyof typeof MATERIALS;
 
-function toMetres([x, y, z]: Millimetres3): [number, number, number] {
-  return [x / MILLIMETRES_PER_METRE, y / MILLIMETRES_PER_METRE, z / MILLIMETRES_PER_METRE];
+// --- Geometry helpers ---------------------------------------------------------------------------
+
+/** A chamfered box. `radiusMm` is the corner radius; segments 2 is enough at fixture scale. */
+function roundedBoxMm(
+  widthMm: number,
+  heightMm: number,
+  depthMm: number,
+  radiusMm: number,
+): RoundedBoxGeometry {
+  return new RoundedBoxGeometry(mm(widthMm), mm(heightMm), mm(depthMm), 1, mm(radiusMm));
 }
 
-function boxMm(widthMm: number, heightMm: number, depthMm: number): BoxGeometry {
-  return new BoxGeometry(
-    widthMm / MILLIMETRES_PER_METRE,
-    heightMm / MILLIMETRES_PER_METRE,
-    depthMm / MILLIMETRES_PER_METRE,
+function cylinderMm(radiusMm: number, heightMm: number, radialSegments = 20): CylinderGeometry {
+  return new CylinderGeometry(mm(radiusMm), mm(radiusMm), mm(heightMm), radialSegments);
+}
+
+/** A rounded rectangle in the XY plane, centred on the origin — the profile every shell extrudes. */
+function roundedRectShape(widthMm: number, heightMm: number, cornerRadiusMm: number): Shape {
+  const halfWidth = mm(widthMm) / 2;
+  const halfHeight = mm(heightMm) / 2;
+  const radius = mm(cornerRadiusMm);
+  const shape = new Shape();
+  shape.moveTo(-halfWidth + radius, -halfHeight);
+  shape.lineTo(halfWidth - radius, -halfHeight);
+  shape.quadraticCurveTo(halfWidth, -halfHeight, halfWidth, -halfHeight + radius);
+  shape.lineTo(halfWidth, halfHeight - radius);
+  shape.quadraticCurveTo(halfWidth, halfHeight, halfWidth - radius, halfHeight);
+  shape.lineTo(-halfWidth + radius, halfHeight);
+  shape.quadraticCurveTo(-halfWidth, halfHeight, -halfWidth, halfHeight - radius);
+  shape.lineTo(-halfWidth, -halfHeight + radius);
+  shape.quadraticCurveTo(-halfWidth, -halfHeight, -halfWidth + radius, -halfHeight);
+  return shape;
+}
+
+/** The same outline as a `Path`, so it can be punched into a `Shape` as a hole. */
+function roundedRectHole(widthMm: number, heightMm: number, cornerRadiusMm: number): Path {
+  return new Path(roundedRectShape(widthMm, heightMm, cornerRadiusMm).getPoints(8));
+}
+
+/**
+ * `mergeGeometries` refuses a mixed batch: every input must be indexed or none may be.
+ * `ExtrudeGeometry` produces non-indexed geometry while `RoundedBoxGeometry` and
+ * `CylinderGeometry` produce indexed, and every part here mixes the two — so everything is
+ * flattened to non-indexed first.
+ *
+ * ⚠️ THEN RE-INDEXED, and that second step is not optional. Flattening triples the vertex data,
+ * and skipping `mergeVertices` shipped a 2.2 MB controller — a mock that downloads on the page and
+ * lives in git. Re-indexing brings it back under a couple of hundred kilobytes. `mergeVertices`
+ * compares position, normal and uv together, so a chamfer's hard edge survives the deduplication.
+ */
+function mergeOrThrow(geometries: readonly BufferGeometry[], partName: string): BufferGeometry {
+  const unindexed = geometries.map((geometry) =>
+    geometry.index === null ? geometry : geometry.toNonIndexed(),
   );
+  const merged = mergeGeometries(unindexed);
+  if (merged === null) throw new Error(`Geometry for "${partName}" did not merge.`);
+  return mergeVertices(merged);
 }
 
-function cylinderMm(radiusMm: number, heightMm: number, radialSegments = 32): CylinderGeometry {
-  return new CylinderGeometry(
-    radiusMm / MILLIMETRES_PER_METRE,
-    radiusMm / MILLIMETRES_PER_METRE,
-    heightMm / MILLIMETRES_PER_METRE,
-    radialSegments,
-  );
+/**
+ * `ExtrudeGeometry` builds along +Z from a profile in XY. Every shell here is a horizontal plate,
+ * so the result is rotated onto +Y once and shifted so `originYMm` is its underside.
+ */
+function extrudeUpwards(shape: Shape, depthMm: number, originYMm: number): BufferGeometry {
+  const geometry = new ExtrudeGeometry(shape, {
+    depth: mm(depthMm),
+    bevelEnabled: true,
+    bevelThickness: mm(0.4),
+    bevelSize: mm(0.4),
+    bevelSegments: 1,
+    curveSegments: 4,
+  });
+  geometry.rotateX(-Math.PI / 2);
+  geometry.translate(0, mm(originYMm), 0);
+  return geometry;
 }
 
-/** ONE PART IS ONE MESH NODE, named exactly as the fixture's `nodeName`. */
-function addPart(
+function addMesh(
   parent: Object3D,
   nodeName: string,
   geometry: BufferGeometry,
   material: MaterialKey,
-  positionMm: Millimetres3,
+  positionMm: Millimetres3 = [0, 0, 0],
 ): Mesh {
   const mesh = new Mesh(geometry, MATERIALS[material]);
   mesh.name = nodeName;
-  mesh.position.set(...toMetres(positionMm));
+  mesh.position.set(mm(positionMm[0]), mm(positionMm[1]), mm(positionMm[2]));
   parent.add(mesh);
   return mesh;
 }
 
-/**
- * A floor slab plus four walls merged into ONE geometry, so the closed assembly reads as a closed
- * box — the lid sits on the wall tops and the board is hidden until the view explodes.
- */
+// --- The solar cold-storage controller ----------------------------------------------------------
+// Nesting IS the `parentPartId` tree in `blueprints-mocks.ts`. Change one, change both.
+
+const ENCLOSURE_WIDTH_MM = 160;
+const ENCLOSURE_DEPTH_MM = 100;
+const ENCLOSURE_CORNER_MM = 7;
+const WALL_THICKNESS_MM = 3;
+const FLOOR_THICKNESS_MM = 3;
+// THE WALLS ARE SIZED FROM THE TALLEST INTERNAL PART, not picked. The stack is floor 0-3, screw
+// bosses 3-17, board 17-18.6, and the heatsink on top of that reaching 32.6 — so 32 mm of wall
+// clears it with a little air, and the lid's lip lands on the rim at 35. Shortening any of these
+// without redoing the arithmetic puts the heatsink through the lid, which is exactly what the
+// first cut of this file did.
+const WALL_HEIGHT_MM = 32;
+const BOARD_UNDERSIDE_MM = 17;
+const LID_UNDERSIDE_MM = FLOOR_THICKNESS_MM + WALL_HEIGHT_MM + 3;
+
+/** A tray: a floor, a rim of walls punched out of the same profile, and four screw bosses. */
 function enclosureBaseGeometry(): BufferGeometry {
-  const floorSlab = boxMm(160, 20, 100);
-  const wallHeightMm = 18;
-  const wallTopMm = 10 + wallHeightMm; // slab top is +10 mm; the lid's underside sits at +28 mm
-  const wallCentreYMm = (10 + wallTopMm) / 2;
-  const walls = [
-    boxMm(160, wallHeightMm, 4).translate(
-      0,
-      wallCentreYMm / MILLIMETRES_PER_METRE,
-      48 / MILLIMETRES_PER_METRE,
-    ),
-    boxMm(160, wallHeightMm, 4).translate(
-      0,
-      wallCentreYMm / MILLIMETRES_PER_METRE,
-      -48 / MILLIMETRES_PER_METRE,
-    ),
-    boxMm(4, wallHeightMm, 92).translate(
-      78 / MILLIMETRES_PER_METRE,
-      wallCentreYMm / MILLIMETRES_PER_METRE,
-      0,
-    ),
-    boxMm(4, wallHeightMm, 92).translate(
-      -78 / MILLIMETRES_PER_METRE,
-      wallCentreYMm / MILLIMETRES_PER_METRE,
-      0,
-    ),
-  ];
-  const merged = mergeGeometries([floorSlab, ...walls]);
-  if (merged === null) throw new Error("The enclosure base did not merge.");
-  return merged;
-}
+  const outerShape = roundedRectShape(ENCLOSURE_WIDTH_MM, ENCLOSURE_DEPTH_MM, ENCLOSURE_CORNER_MM);
+  const floor = extrudeUpwards(outerShape, FLOOR_THICKNESS_MM, 0);
 
-/** Six fins merged into ONE geometry so the heatsink is one node, not a group of seven. */
-function heatsinkGeometry(): BufferGeometry {
-  const finGeometries = Array.from({ length: 6 }, (_, finIndex) =>
-    boxMm(30, 12, 1.5).translate(0, 0, (-11.25 + finIndex * 4.5) / MILLIMETRES_PER_METRE),
+  const wallShape = roundedRectShape(ENCLOSURE_WIDTH_MM, ENCLOSURE_DEPTH_MM, ENCLOSURE_CORNER_MM);
+  wallShape.holes.push(
+    roundedRectHole(
+      ENCLOSURE_WIDTH_MM - WALL_THICKNESS_MM * 2,
+      ENCLOSURE_DEPTH_MM - WALL_THICKNESS_MM * 2,
+      ENCLOSURE_CORNER_MM - WALL_THICKNESS_MM,
+    ),
   );
-  const merged = mergeGeometries(finGeometries);
-  if (merged === null) throw new Error("The heatsink fins did not merge.");
-  return merged;
+  const walls = extrudeUpwards(wallShape, WALL_HEIGHT_MM, FLOOR_THICKNESS_MM);
+
+  const bossPositions: readonly (readonly [number, number])[] = [
+    [66, 36],
+    [-66, 36],
+    [66, -36],
+    [-66, -36],
+  ];
+  const bosses = bossPositions.map(([x, z]) =>
+    cylinderMm(4.5, 14, 16).translate(mm(x), mm(FLOOR_THICKNESS_MM + 7), mm(z)),
+  );
+
+  return mergeOrThrow([floor, walls, ...bosses], "enclosure_base");
 }
 
-// --- The two assemblies -------------------------------------------------------------------------
-// The nesting below IS the `parentPartId` tree in `blueprints-mocks.ts`. Change one, change both.
+/** The lid, with a moulded lip that drops into the tray. */
+function enclosureLidGeometry(): BufferGeometry {
+  const plate = extrudeUpwards(
+    roundedRectShape(ENCLOSURE_WIDTH_MM, ENCLOSURE_DEPTH_MM, ENCLOSURE_CORNER_MM),
+    4,
+    0,
+  );
+  const lipShape = roundedRectShape(
+    ENCLOSURE_WIDTH_MM - WALL_THICKNESS_MM * 2 - 0.6,
+    ENCLOSURE_DEPTH_MM - WALL_THICKNESS_MM * 2 - 0.6,
+    ENCLOSURE_CORNER_MM - WALL_THICKNESS_MM,
+  );
+  lipShape.holes.push(
+    roundedRectHole(
+      ENCLOSURE_WIDTH_MM - WALL_THICKNESS_MM * 2 - 4,
+      ENCLOSURE_DEPTH_MM - WALL_THICKNESS_MM * 2 - 4,
+      ENCLOSURE_CORNER_MM - WALL_THICKNESS_MM,
+    ),
+  );
+  const lip = extrudeUpwards(lipShape, 3, -3);
+  return mergeOrThrow([plate, lip], "enclosure_lid");
+}
+
+const BOARD_WIDTH_MM = 140;
+const BOARD_DEPTH_MM = 84;
+const BOARD_THICKNESS_MM = 1.6;
+
+/**
+ * The board is a GROUP, not a mesh: four materials — solder mask, ENIG pads, moulded packages and
+ * a tinned connector shell. The loader traverses a part node for its meshes, so a group is a legal
+ * part, and this is what stops the Components tab showing a flat green slab.
+ */
+function buildControlBoard(): Group {
+  const board = new Group();
+  board.name = "pcb";
+
+  const outline = roundedRectShape(BOARD_WIDTH_MM, BOARD_DEPTH_MM, 3);
+  const mountingHoles: readonly (readonly [number, number])[] = [
+    [64, 34],
+    [-64, 34],
+    [64, -34],
+    [-64, -34],
+  ];
+  for (const [x, z] of mountingHoles) {
+    const hole = new Path();
+    hole.absarc(mm(x), mm(z), mm(2.2), 0, Math.PI * 2, true);
+    outline.holes.push(hole);
+  }
+  addMesh(board, "pcb_substrate", extrudeUpwards(outline, BOARD_THICKNESS_MM, 0), "fr4");
+
+  // Plated rings around the mounting holes, plus two rows of pads down the middle.
+  const padGeometries: BufferGeometry[] = mountingHoles.map(([x, z]) =>
+    cylinderMm(3.6, BOARD_THICKNESS_MM + 0.1, 20).translate(
+      mm(x),
+      mm(BOARD_THICKNESS_MM / 2),
+      mm(z),
+    ),
+  );
+  for (let padIndex = 0; padIndex < 8; padIndex += 1) {
+    const x = -42 + padIndex * 12;
+    padGeometries.push(
+      roundedBoxMm(4.5, 0.2, 2, 0.1).translate(mm(x), mm(BOARD_THICKNESS_MM + 0.1), mm(-26)),
+      roundedBoxMm(4.5, 0.2, 2, 0.1).translate(mm(x), mm(BOARD_THICKNESS_MM + 0.1), mm(30)),
+    );
+  }
+  addMesh(board, "pcb_pads", mergeOrThrow(padGeometries, "pcb_pads"), "gold");
+
+  // Moulded packages: one large controller, two mid-size drivers, a scatter of passives.
+  const packageGeometries: BufferGeometry[] = [
+    roundedBoxMm(26, 3.2, 26, 0.5).translate(mm(-8), mm(BOARD_THICKNESS_MM + 1.6), mm(2)),
+    roundedBoxMm(12, 2.4, 12, 0.4).translate(mm(-38), mm(BOARD_THICKNESS_MM + 1.2), mm(14)),
+    roundedBoxMm(12, 2.4, 12, 0.4).translate(mm(-38), mm(BOARD_THICKNESS_MM + 1.2), mm(-12)),
+    roundedBoxMm(9, 2, 6, 0.3).translate(mm(16), mm(BOARD_THICKNESS_MM + 1), mm(-24)),
+    roundedBoxMm(9, 2, 6, 0.3).translate(mm(16), mm(BOARD_THICKNESS_MM + 1), mm(26)),
+  ];
+  for (let passiveIndex = 0; passiveIndex < 8; passiveIndex += 1) {
+    packageGeometries.push(
+      roundedBoxMm(3.2, 1.2, 1.6, 0.2).translate(
+        mm(-54 + passiveIndex * 6),
+        mm(BOARD_THICKNESS_MM + 0.6),
+        mm(passiveIndex % 2 === 0 ? 18 : -18),
+      ),
+    );
+  }
+  addMesh(board, "pcb_packages", mergeOrThrow(packageGeometries, "pcb_packages"), "epoxy");
+
+  // A USB-C shell overhanging the board edge, plus an electrolytic can.
+  const connector = roundedBoxMm(9, 3.2, 7.5, 1.2).translate(
+    mm(-BOARD_WIDTH_MM / 2 - 1),
+    mm(BOARD_THICKNESS_MM + 1.6),
+    mm(0),
+  );
+  const capacitor = cylinderMm(5, 11, 20).translate(mm(34), mm(BOARD_THICKNESS_MM + 5.5), mm(20));
+  addMesh(
+    board,
+    "pcb_connectors",
+    mergeOrThrow([connector, capacitor], "pcb_connectors"),
+    "tinnedSteel",
+  );
+
+  return board;
+}
+
+/** A finned extrusion on a base plate, the way a real clip-on heatsink is made. */
+function heatsinkGeometry(): BufferGeometry {
+  const basePlate = roundedBoxMm(34, 4, 28, 0.8);
+  const fins: BufferGeometry[] = [];
+  for (let finIndex = 0; finIndex < 7; finIndex += 1) {
+    fins.push(roundedBoxMm(30, 10, 1.6, 0.4).translate(0, mm(7), mm(-12 + finIndex * 4)));
+  }
+  return mergeOrThrow([basePlate, ...fins], "heatsink");
+}
+
+/**
+ * A TO-247, LYING FLAT the way one clamped to a heatsink actually sits: moulded body, exposed
+ * tab, three legs bent down to the board. Standing it upright made it the tallest thing in the
+ * enclosure at 27 mm, which is neither how it is fitted nor something the lid could close over.
+ */
+function transistorGeometry(): BufferGeometry {
+  const body = roundedBoxMm(15.5, 5, 20, 0.8);
+  const tab = roundedBoxMm(15.5, 1.4, 6, 0.4).translate(0, mm(1.8), mm(-13));
+  const legs: BufferGeometry[] = [-5.4, 0, 5.4].map((legX) =>
+    roundedBoxMm(1.2, 0.6, 9, 0.2).translate(mm(legX), mm(-2.2), mm(14.5)),
+  );
+  return mergeOrThrow([body, tab, ...legs], "mosfet");
+}
+
+/** A three-way terminal block: moulded housing, three wire ports, three screw heads. */
+function terminalBlockGeometry(): BufferGeometry {
+  const housing = roundedBoxMm(50, 14, 11, 1.2);
+  const parts: BufferGeometry[] = [housing];
+  for (let portIndex = 0; portIndex < 3; portIndex += 1) {
+    const x = -16 + portIndex * 16;
+    parts.push(cylinderMm(2.6, 2.4, 16).translate(mm(x), mm(7.2), 0));
+  }
+  return mergeOrThrow(parts, "terminal_block");
+}
+
+/** Jacketed twisted pair with the moulded bead at the sensing end. */
+function thermistorHarnessGeometry(): BufferGeometry {
+  const jacket = cylinderMm(1.6, 62, 14).rotateZ(Math.PI / 2);
+  const bead = roundedBoxMm(5, 3.4, 3.4, 1.4).translate(mm(-32), 0, 0);
+  return mergeOrThrow([jacket, bead], "thermistor_harness");
+}
+
+/** Formed spring steel: a back plate, a returned lip and the sprung tongue. */
+function dinClipGeometry(): BufferGeometry {
+  const backPlate = roundedBoxMm(36, 1.2, 22, 0.4);
+  const upperLip = roundedBoxMm(36, 5, 1.2, 0.4).translate(0, mm(2.4), mm(10.4));
+  const lowerLip = roundedBoxMm(36, 5, 1.2, 0.4).translate(0, mm(2.4), mm(-10.4));
+  const tongue = roundedBoxMm(14, 1, 8, 0.3).translate(0, mm(-1.6), mm(-7));
+  return mergeOrThrow([backPlate, upperLip, lowerLip, tongue], "din_clip");
+}
 
 function buildSolarColdStorageController(): Scene {
   const scene = new Scene();
@@ -199,31 +475,110 @@ function buildSolarColdStorageController(): Scene {
   root.name = "solar_cold_storage_controller";
   scene.add(root);
 
-  const enclosureBase = addPart(
-    root,
-    "enclosure_base",
-    enclosureBaseGeometry(),
-    "abs_grey",
-    [0, 0, 0],
-  );
-  addPart(root, "enclosure_lid", boxMm(160, 4, 100), "abs_light", [0, 30, 0]);
+  const enclosureBase = addMesh(root, "enclosure_base", enclosureBaseGeometry(), "absShell");
+  addMesh(root, "enclosure_lid", enclosureLidGeometry(), "absShellDark", [0, LID_UNDERSIDE_MM, 0]);
 
-  const controlBoard = addPart(enclosureBase, "pcb", boxMm(140, 1.6, 85), "fr4_green", [0, 12, 0]);
-  addPart(controlBoard, "heatsink", heatsinkGeometry(), "aluminium", [40, 8, 0]);
-  addPart(controlBoard, "mosfet_q1", boxMm(10, 4.5, 15), "epoxy_black", [40, 3, -20]);
-  addPart(controlBoard, "mosfet_q2", boxMm(10, 4.5, 15), "epoxy_black", [40, 3, 20]);
-  addPart(controlBoard, "terminal_block", boxMm(50, 12, 10), "pa66_green", [-40, 6, 35]);
-  // A harness lies flat along the board, so the cylinder is rotated in geometry space.
-  addPart(
+  const controlBoard = buildControlBoard();
+  controlBoard.position.set(0, mm(BOARD_UNDERSIDE_MM), 0);
+  enclosureBase.add(controlBoard);
+
+  // Y is board-relative from here: the substrate occupies 0 to 1.6, so everything sits above 1.6.
+  addMesh(controlBoard, "heatsink", heatsinkGeometry(), "aluminium", [40, 3.6, 0]);
+  addMesh(controlBoard, "mosfet_q1", transistorGeometry(), "epoxy", [40, 4.1, -24]);
+  addMesh(controlBoard, "mosfet_q2", transistorGeometry(), "epoxy", [40, 4.1, 24]);
+  addMesh(controlBoard, "terminal_block", terminalBlockGeometry(), "pa66", [-40, 8.6, 30]);
+  addMesh(
     controlBoard,
     "thermistor_harness",
-    cylinderMm(1.5, 60, 12).rotateZ(Math.PI / 2),
-    "pvc_amber",
-    [-50, 2, -20],
+    thermistorHarnessGeometry(),
+    "pvcJacket",
+    [-38, 3.2, -24],
   );
 
-  addPart(enclosureBase, "din_clip", boxMm(35, 6, 20), "spring_steel", [0, -13, 0]);
+  addMesh(enclosureBase, "din_clip", dinClipGeometry(), "springSteel", [0, -1.2, 0]);
   return scene;
+}
+
+// --- The borehole pump --------------------------------------------------------------------------
+
+/** A ring: a disc profile with a concentric bore punched through it. */
+function ringGeometry(
+  outerRadiusMm: number,
+  boreRadiusMm: number,
+  heightMm: number,
+): BufferGeometry {
+  const shape = new Shape();
+  shape.absarc(0, 0, mm(outerRadiusMm), 0, Math.PI * 2, false);
+  const bore = new Path();
+  bore.absarc(0, 0, mm(boreRadiusMm), 0, Math.PI * 2, true);
+  shape.holes.push(bore);
+  return extrudeUpwards(shape, heightMm, -heightMm / 2);
+}
+
+/** A flanged casting: the barrel, a bolted flange at each end, and the bolt holes in them. */
+function pumpHousingGeometry(): BufferGeometry {
+  const barrel = ringGeometry(60, 52, 300);
+  const flanges = [150, -150].map((flangeY) =>
+    ringGeometry(74, 52, 12).translate(0, mm(flangeY), 0),
+  );
+  const boltHoles: BufferGeometry[] = [];
+  for (let boltIndex = 0; boltIndex < 6; boltIndex += 1) {
+    const angle = (boltIndex / 6) * Math.PI * 2;
+    for (const flangeY of [150, -150]) {
+      boltHoles.push(
+        cylinderMm(3, 14, 12).translate(
+          Math.cos(angle) * mm(67),
+          mm(flangeY),
+          Math.sin(angle) * mm(67),
+        ),
+      );
+    }
+  }
+  return mergeOrThrow([barrel, ...flanges, ...boltHoles], "housing");
+}
+
+/** A shaft with a machined step and a keyway shoulder. */
+function pumpShaftGeometry(): BufferGeometry {
+  const mainShaft = cylinderMm(10, 460, 24);
+  const shoulder = cylinderMm(14, 16, 24).translate(0, mm(-176), 0);
+  const collar = cylinderMm(13, 10, 24).translate(0, mm(120), 0);
+  return mergeOrThrow([mainShaft, shoulder, collar], "shaft");
+}
+
+/** A shrouded impeller: hub, back shroud, and six extruded vanes. */
+function impellerGeometry(): BufferGeometry {
+  const shroud = ringGeometry(45, 11, 6).translate(0, mm(-12), 0);
+  const hub = cylinderMm(16, 30, 24);
+  const vanes: BufferGeometry[] = [];
+  for (let vaneIndex = 0; vaneIndex < 6; vaneIndex += 1) {
+    const angle = (vaneIndex / 6) * Math.PI * 2;
+    const vane = roundedBoxMm(30, 18, 3, 0.8);
+    vane.rotateY(angle);
+    vane.translate(Math.cos(angle) * mm(20), 0, Math.sin(angle) * mm(20));
+    vanes.push(vane);
+  }
+  return mergeOrThrow([hub, shroud, ...vanes], "impeller");
+}
+
+/** A printed carrier: a flanged ring with a lip that registers into the housing bore. */
+function sealCarrierGeometry(): BufferGeometry {
+  const flange = ringGeometry(30, 12, 8);
+  const lip = ringGeometry(24, 12, 12).translate(0, mm(-10), 0);
+  return mergeOrThrow([flange, lip], "seal_carrier");
+}
+
+/** A deep-groove bearing: outer race, inner race, and the ball track between them. */
+function bearingGeometry(): BufferGeometry {
+  const outerRace = ringGeometry(20, 16, 12);
+  const innerRace = ringGeometry(13.5, 10, 12);
+  const balls: BufferGeometry[] = [];
+  for (let ballIndex = 0; ballIndex < 9; ballIndex += 1) {
+    const angle = (ballIndex / 9) * Math.PI * 2;
+    balls.push(
+      cylinderMm(2.4, 5, 10).translate(Math.cos(angle) * mm(14.8), 0, Math.sin(angle) * mm(14.8)),
+    );
+  }
+  return mergeOrThrow([outerRace, innerRace, ...balls], "bearing");
 }
 
 /** The pump, in assembly coordinates. Exported part by part below. */
@@ -233,16 +588,16 @@ function buildBoreholePumpHousing(): Scene {
   root.name = "borehole_pump_housing";
   scene.add(root);
 
-  const housing = addPart(root, "housing", cylinderMm(60, 300), "stainless", [0, 0, 0]);
-  const shaft = addPart(root, "shaft", cylinderMm(10, 460, 24), "stainless", [0, 0, 0]);
-  addPart(shaft, "impeller", cylinderMm(45, 30), "bronze", [0, -200, 0]);
-  addPart(housing, "seal_carrier", cylinderMm(30, 20), "petg_blue", [0, 140, 0]);
-  addPart(housing, "bearing_upper", cylinderMm(20, 12), "spring_steel", [0, 110, 0]);
-  addPart(housing, "bearing_lower", cylinderMm(20, 12), "spring_steel", [0, -110, 0]);
+  addMesh(root, "housing", pumpHousingGeometry(), "stainless");
+  addMesh(root, "shaft", pumpShaftGeometry(), "stainless");
+  addMesh(root, "impeller", impellerGeometry(), "bronze", [0, -200, 0]);
+  addMesh(root, "seal_carrier", sealCarrierGeometry(), "petg", [0, 140, 0]);
+  addMesh(root, "bearing_upper", bearingGeometry(), "springSteel", [0, 110, 0]);
+  addMesh(root, "bearing_lower", bearingGeometry(), "springSteel", [0, -110, 0]);
   return scene;
 }
 
-/** The parts that are exported at their own origin instead of in assembly coordinates. */
+/** The parts exported at their own origin instead of in assembly coordinates. */
 const PARTS_EXPORTED_AT_OWN_ORIGIN: ReadonlySet<string> = new Set(["seal_carrier"]);
 
 /**

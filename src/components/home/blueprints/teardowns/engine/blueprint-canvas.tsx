@@ -9,7 +9,7 @@
 
 "use client";
 
-import { Bvh } from "@react-three/drei";
+import { Bvh, ContactShadows } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
 import { ACESFilmicToneMapping, PMREMGenerator } from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
@@ -30,7 +30,6 @@ export interface BlueprintCanvasProps {
   readonly onRendererFailed: (message: string) => void;
 }
 
-const OBSIDIAN = "#08090A";
 const ENVIRONMENT_INTENSITY = 0.9;
 
 export function BlueprintCanvas({
@@ -66,7 +65,10 @@ export function BlueprintCanvas({
     <Canvas
       gl={{
         antialias: true,
-        alpha: false,
+        // TRANSPARENT, because the stage is painted in CSS behind the canvas rather than by a
+        // clear colour. That is what lets the vignette and the grid be a background image the
+        // renderer never touches — and it is why there is no `gridHelper` here any more.
+        alpha: true,
         powerPreference: "high-performance",
         toneMapping: ACESFilmicToneMapping,
         toneMappingExposure: 1.05,
@@ -83,18 +85,34 @@ export function BlueprintCanvas({
       onPointerMissed={handleCanvasPointerMissed}
       className="size-full"
     >
-      <color attach="background" args={[OBSIDIAN]} />
-      <ambientLight intensity={0.35} />
-      <directionalLight position={[5, 8, 6]} intensity={1.4} />
-      <directionalLight position={[-6, 3, -4]} intensity={0.45} color="#9DB4FF" />
       {/*
-        NOT RAYCASTABLE. three's `Raycaster.params.Line.threshold` defaults to ONE METRE, and this
-        scene is centimetres across, so every ray toward a callout pin would "hit" a grid line first
-        and drei's occlusion test would hide every pin. The grid is decoration; nothing points at it.
+        LIT FOR A WHITE GROUND. `RoomEnvironment` already supplies most of the fill, so the ambient
+        term is low and the key is soft — turn either up and the shells blow out to flat white,
+        which is the failure mode of every product shot on a light stage.
       */}
-      <gridHelper
-        args={[radius * 6, 24, "#1F232B", "#14171C"]}
+      <ambientLight intensity={0.2} />
+      <directionalLight position={[5, 8, 6]} intensity={1.1} />
+      <directionalLight position={[-6, 3, -4]} intensity={0.3} color="#9DB4FF" />
+      {/*
+        The soft ground shadow is what stops the model floating.
+        ⚠️ IT REDRAWS EVERY FRAME, and `frames={1}` is wrong here even though it is cheaper. Parts
+        move under the explosion slider and vanish under isolation, and a shadow baked once kept
+        showing the whole closed assembly beneath a single isolated part — a dark cloud with
+        nothing casting it. The resolution is dropped instead: this is a depth pass over a handful
+        of meshes, and the on-demand loop means it only runs on frames something else already
+        needed.
+        It does not raycast, for the reason the 3D grid it replaced had to go — three's
+        `Raycaster.params.Line.threshold` is ONE METRE against a scene centimetres across, so any
+        full-stage plane swallows every callout pin's occlusion ray.
+      */}
+      <ContactShadows
         position={[0, loadedAssembly.boundingBox.min.y - radius * 0.02, 0]}
+        scale={radius * 3.4}
+        opacity={0.38}
+        blur={2.6}
+        far={radius * 1.6}
+        resolution={256}
+        color="#1F2937"
         raycast={() => undefined}
       />
       <Bvh firstHitOnly>

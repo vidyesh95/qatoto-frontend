@@ -11,7 +11,11 @@ import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-ta
 import SpecificationList, {
   type SpecificationRow,
 } from "@/components/home/blueprints/sections/specification-list";
-import ExplodedViewport from "@/components/home/blueprints/teardowns/engine/exploded-viewport";
+import AssemblyStepList from "@/components/home/blueprints/teardowns/sections/assembly-step-list";
+import FastenerBillOfMaterials from "@/components/home/blueprints/teardowns/sections/fastener-bill-of-materials";
+import ManufacturingFileBundles from "@/components/home/blueprints/teardowns/sections/manufacturing-file-bundles";
+import RepairabilityIndexPanel from "@/components/home/blueprints/teardowns/sections/repairability-index-panel";
+import TeardownExplorer from "@/components/home/blueprints/teardowns/teardown-explorer";
 import { getBlueprintByCategory } from "@/lib/blueprints/api";
 import { BLUEPRINT_DIFFICULTY_LABELS, type TeardownBlueprint } from "@/lib/blueprints/schemas";
 import { formatCentsRangeLabel, formatCountLabel } from "@/lib/store/format";
@@ -80,22 +84,50 @@ export default async function TeardownDetailPage({ slug }: { slug: string }) {
 
         <p className="mt-4 max-w-2xl text-sm leading-6 text-foreground">{teardown.summary}</p>
 
-        <SpecificationList specifications={buildSpecifications(teardown)} />
-
-        {/* The model is the primary media when there is one, so it sits above the walkthrough. */}
-        {teardown.assembly === null ? null : (
-          <ExplodedViewport
+        {/*
+          THE SPEC LIST HAS TWO HOMES, and the same component serves both. With a model it is the
+          Specifications tab of the viewer; without one there are no tabs to put it in, so it
+          renders here as an ordinary section. Passing it in as a SLOT keeps it a server component
+          either way rather than dragging it into the viewer's client island.
+        */}
+        {teardown.assembly === null ? (
+          <>
+            <SpecificationList specifications={buildSpecifications(teardown)} />
+            <RepairabilityIndexPanel repairabilityIndex={teardown.repairabilityIndex} />
+            <FastenerBillOfMaterials fasteners={teardown.fasteners} />
+          </>
+        ) : (
+          <TeardownExplorer
             assembly={teardown.assembly}
             simulationTelemetry={teardown.simulationTelemetry}
+            assemblySteps={teardown.assemblySteps}
             title={teardown.title}
+            specificationsSlot={
+              <div className="space-y-2">
+                <SpecificationList
+                  specifications={buildSpecifications(teardown)}
+                  className="max-w-md"
+                />
+                <RepairabilityIndexPanel repairabilityIndex={teardown.repairabilityIndex} />
+                <FastenerBillOfMaterials fasteners={teardown.fasteners} />
+              </div>
+            }
           />
         )}
+
+        {/* Steps stand alone only when there is no viewer to hold them. */}
+        {teardown.assembly === null ? (
+          <AssemblyStepList steps={teardown.assemblySteps} store={null} />
+        ) : null}
 
         {teardown.walkthroughVideo === null ? null : (
           <BlueprintVideoBlock video={teardown.walkthroughVideo} title="Walkthrough" />
         )}
 
         <BlueprintDocumentList documents={teardown.documents} />
+
+        {/* The take-it-away payload sits last, after everything that explains what it is. */}
+        <ManufacturingFileBundles manufacturingFiles={teardown.manufacturingFiles} />
 
         <BlueprintTagList tags={teardown.tags} />
 
