@@ -14,14 +14,27 @@ export interface PartBrowserRailProps {
   readonly store: ExplosionStore;
   readonly parts: readonly TeardownPart[];
   readonly isInteractive: boolean;
+  /**
+   * Baked once by the engine when this tab first opens, and EMPTY IS A NORMAL STATE — before the
+   * bake runs, if the renderer never loaded, or if the 2D context was refused. A row without a
+   * thumbnail renders as it always did.
+   */
+  readonly thumbnailsByPartId: ReadonlyMap<string, string>;
 }
 
 /**
- * A LIST BESIDE THE STAGE, and the caption for the isolated part below it. The reference puts a
- * rendered thumbnail on every row; this shows the part's name and how it was made, which is the
- * information a reader browsing components is actually after and needs no render pass to produce.
+ * A LIST BESIDE THE STAGE, and the caption for the isolated part below it.
+ *
+ * The thumbnails are RENDERED FROM THE MODEL ALREADY IN MEMORY, at the stage's own viewing angle,
+ * by one offscreen pass the first time this tab opens — never uploaded, never fetched, and never a
+ * second live canvas per row. See `part-thumbnail-baker.tsx` for why that shape.
  */
-export default function PartBrowserRail({ store, parts, isInteractive }: PartBrowserRailProps) {
+export default function PartBrowserRail({
+  store,
+  parts,
+  isInteractive,
+  thumbnailsByPartId,
+}: PartBrowserRailProps) {
   const { selectedPartId } = useExplosionSnapshot(store);
   const selectedPart = parts.find((part) => part.id === selectedPartId);
 
@@ -43,9 +56,17 @@ export default function PartBrowserRail({ store, parts, isInteractive }: PartBro
                     : "border-[#CAC4D0]/60 hover:border-[#00696E]/40"
                 }`}
               >
-                <span className="block truncate text-sm text-foreground">{part.label}</span>
-                <span className="mt-0.5 block truncate text-[11px] text-[#6F7979]">
-                  {manufacturingMethodLabel(part.manufacturingMethod)}
+                <span className="flex items-center gap-2.5">
+                  <PartThumbnail
+                    thumbnailDataUrl={thumbnailsByPartId.get(part.id) ?? null}
+                    label={part.label}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm text-foreground">{part.label}</span>
+                    <span className="mt-0.5 block truncate text-[11px] text-[#6F7979]">
+                      {manufacturingMethodLabel(part.manufacturingMethod)}
+                    </span>
+                  </span>
                 </span>
               </button>
             </li>
@@ -80,5 +101,31 @@ export default function PartBrowserRail({ store, parts, isInteractive }: PartBro
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * ⚠️ A PLAIN `<img>`, NOT `next/image`. The source is a `data:` URL produced in this browser
+ * moments ago — there is no origin to optimise it from, no size known at build time, and routing it
+ * through the image optimiser would be a network round trip to re-encode bytes we already hold.
+ *
+ * The reserved box is rendered even with no thumbnail, so a row does not resize under the reader
+ * when the bake lands.
+ */
+function PartThumbnail({
+  thumbnailDataUrl,
+  label,
+}: {
+  readonly thumbnailDataUrl: string | null;
+  readonly label: string;
+}) {
+  return (
+    <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-md border border-[#CAC4D0]/50 bg-[#F4F6F6]">
+      {thumbnailDataUrl === null ? null : (
+        // oxlint-disable-next-line no-img-element
+        <img src={thumbnailDataUrl} alt="" aria-hidden width={40} height={40} loading="lazy" />
+      )}
+      <span className="sr-only">{label}</span>
+    </span>
   );
 }

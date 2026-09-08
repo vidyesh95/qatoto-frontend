@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 
 import BlueprintDocumentList from "@/components/home/blueprints/media/blueprint-document-list";
 import BlueprintVideoBlock from "@/components/home/blueprints/media/blueprint-video-block";
+import { WalkthroughSeekProvider } from "@/components/home/blueprints/media/walkthrough-seek-context";
 import BlueprintAuthorLine from "@/components/home/blueprints/sections/blueprint-author-line";
 import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-tag-list";
 import SpecificationList, {
@@ -15,10 +16,12 @@ import AssemblyStepList from "@/components/home/blueprints/teardowns/sections/as
 import FastenerBillOfMaterials from "@/components/home/blueprints/teardowns/sections/fastener-bill-of-materials";
 import ManufacturingFileBundles from "@/components/home/blueprints/teardowns/sections/manufacturing-file-bundles";
 import RepairabilityIndexPanel from "@/components/home/blueprints/teardowns/sections/repairability-index-panel";
+import TelemetryReadouts from "@/components/home/blueprints/teardowns/sections/telemetry-readouts";
 import TeardownExplorer from "@/components/home/blueprints/teardowns/teardown-explorer";
+import RelativeTime from "@/components/home/shared/relative-time";
 import { getBlueprintByCategory } from "@/lib/blueprints/api";
 import { BLUEPRINT_DIFFICULTY_LABELS, type TeardownBlueprint } from "@/lib/blueprints/schemas";
-import { formatCentsRangeLabel, formatCountLabel } from "@/lib/store/format";
+import { formatCentsRangeLabel, formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
 
 /**
  * The spec table.
@@ -61,6 +64,91 @@ export default async function TeardownDetailPage({ slug }: { slug: string }) {
   const teardown = await getBlueprintByCategory("teardown", slug);
   if (teardown === null) notFound();
 
+  /**
+   * EVERYTHING BELOW THE HERO, ASSEMBLED ONCE so the provider can wrap it conditionally without a
+   * duplicated subtree.
+   */
+  const detailBody = (
+    <>
+      <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">Teardown</p>
+      <h1 className="mt-1 text-xl font-medium text-foreground lg:text-2xl">{teardown.title}</h1>
+
+      <BlueprintAuthorLine author={teardown.author} />
+
+      <p className="mt-4 max-w-2xl text-sm leading-6 text-foreground">{teardown.summary}</p>
+
+      {/*
+        THE SPEC LIST HAS TWO HOMES, and the same component serves both. With a model it is the
+        Specifications tab of the viewer; without one there are no tabs to put it in, so it
+        renders here as an ordinary section. Passing it in as a SLOT keeps it a server component
+        either way rather than dragging it into the viewer's client island.
+      */}
+      {teardown.assembly === null ? (
+        <>
+          <SpecificationList specifications={buildSpecifications(teardown)} />
+          <RepairabilityIndexPanel repairabilityIndex={teardown.repairabilityIndex} />
+          <FastenerBillOfMaterials fasteners={teardown.fasteners} />
+        </>
+      ) : (
+        <TeardownExplorer
+          assembly={teardown.assembly}
+          assemblySteps={teardown.assemblySteps}
+          title={teardown.title}
+          specificationsSlot={
+            <div className="space-y-2">
+              <SpecificationList
+                specifications={buildSpecifications(teardown)}
+                className="max-w-md"
+              />
+              <RepairabilityIndexPanel repairabilityIndex={teardown.repairabilityIndex} />
+              <FastenerBillOfMaterials fasteners={teardown.fasteners} />
+            </div>
+          }
+        />
+      )}
+
+      {/*
+        MOUNTED HERE RATHER THAN INSIDE THE EXPLORER, which is where it used to live. The contract
+        allows telemetry with no model — a bench test on a product nobody modelled — and inside the
+        viewer that entirely legal payload rendered nothing at all. Only the fixtures happening to
+        put telemetry on the two modelled teardowns hid it. On the modelled path it lands in the
+        same visual place it did before, directly under the viewer.
+      */}
+      <TelemetryReadouts telemetry={teardown.simulationTelemetry} />
+
+      {/* Steps stand alone only when there is no viewer to hold them. */}
+      {teardown.assembly === null ? (
+        <AssemblyStepList steps={teardown.assemblySteps} store={null} />
+      ) : null}
+
+      {teardown.walkthroughVideo === null ? null : (
+        <BlueprintVideoBlock video={teardown.walkthroughVideo} title="Walkthrough" />
+      )}
+
+      <BlueprintDocumentList documents={teardown.documents} />
+
+      {/* The take-it-away payload sits last, after everything that explains what it is. */}
+      <ManufacturingFileBundles manufacturingFiles={teardown.manufacturingFiles} />
+
+      <BlueprintTagList tags={teardown.tags} />
+
+      {/*
+        `createdAt` reached no renderer before this — it sorted the index and then vanished, so a
+        teardown page carried no date at all while a showcase printed its launch date. Same pairing
+        showcase uses: a relative label with the absolute instant on `title`, because "3 weeks ago"
+        is the readable form and the exact date is the checkable one.
+      */}
+      <p className="mt-6 text-[11px] text-[#6F7979]">
+        Published{" "}
+        <span title={formatIsoInstantLabel(teardown.createdAt)}>
+          <RelativeTime isoInstant={teardown.createdAt} />
+        </span>{" "}
+        · {formatCountLabel(teardown.viewCount)} views · {formatCountLabel(teardown.likeCount)}{" "}
+        likes
+      </p>
+    </>
+  );
+
   return (
     <article className="pb-12">
       <div className="relative aspect-video w-full bg-muted lg:aspect-[21/9]">
@@ -74,67 +162,26 @@ export default async function TeardownDetailPage({ slug }: { slug: string }) {
         />
       </div>
 
+      {/*
+        ⚠️ THE PROVIDER IS CONDITIONAL, AND THAT CONDITION IS THE FEATURE. A step renders its
+        timestamp as a "Play from 0:03" button precisely when a seek channel exists, so mounting the
+        provider unconditionally would hand every step of a teardown with NO seekable walkthrough a
+        button that seeks a player that was never mounted.
+
+        THE CONDITION IS THE SOURCE, NOT MERELY THE PRESENCE, and the difference is a product
+        decision rather than a technical one: a YouTube walkthrough already gives the reader
+        chapters and a timeline inside YouTube's own player, so this page does not offer a second
+        set. The contract enforces the same rule from the other end — the teardown arm's refinement
+        rejects a step timestamp beside a YouTube walkthrough — so on that path there is nothing for
+        a channel to carry anyway. Belt and braces, deliberately: the gate here is what a reader
+        sees, and the refinement is what a backend is allowed to send.
+      */}
       <div className="px-4 pt-5 lg:px-6">
-        <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
-          Teardown
-        </p>
-        <h1 className="mt-1 text-xl font-medium text-foreground lg:text-2xl">{teardown.title}</h1>
-
-        <BlueprintAuthorLine author={teardown.author} />
-
-        <p className="mt-4 max-w-2xl text-sm leading-6 text-foreground">{teardown.summary}</p>
-
-        {/*
-          THE SPEC LIST HAS TWO HOMES, and the same component serves both. With a model it is the
-          Specifications tab of the viewer; without one there are no tabs to put it in, so it
-          renders here as an ordinary section. Passing it in as a SLOT keeps it a server component
-          either way rather than dragging it into the viewer's client island.
-        */}
-        {teardown.assembly === null ? (
-          <>
-            <SpecificationList specifications={buildSpecifications(teardown)} />
-            <RepairabilityIndexPanel repairabilityIndex={teardown.repairabilityIndex} />
-            <FastenerBillOfMaterials fasteners={teardown.fasteners} />
-          </>
+        {teardown.walkthroughVideo?.source === "hosted" ? (
+          <WalkthroughSeekProvider>{detailBody}</WalkthroughSeekProvider>
         ) : (
-          <TeardownExplorer
-            assembly={teardown.assembly}
-            simulationTelemetry={teardown.simulationTelemetry}
-            assemblySteps={teardown.assemblySteps}
-            title={teardown.title}
-            specificationsSlot={
-              <div className="space-y-2">
-                <SpecificationList
-                  specifications={buildSpecifications(teardown)}
-                  className="max-w-md"
-                />
-                <RepairabilityIndexPanel repairabilityIndex={teardown.repairabilityIndex} />
-                <FastenerBillOfMaterials fasteners={teardown.fasteners} />
-              </div>
-            }
-          />
+          detailBody
         )}
-
-        {/* Steps stand alone only when there is no viewer to hold them. */}
-        {teardown.assembly === null ? (
-          <AssemblyStepList steps={teardown.assemblySteps} store={null} />
-        ) : null}
-
-        {teardown.walkthroughVideo === null ? null : (
-          <BlueprintVideoBlock video={teardown.walkthroughVideo} title="Walkthrough" />
-        )}
-
-        <BlueprintDocumentList documents={teardown.documents} />
-
-        {/* The take-it-away payload sits last, after everything that explains what it is. */}
-        <ManufacturingFileBundles manufacturingFiles={teardown.manufacturingFiles} />
-
-        <BlueprintTagList tags={teardown.tags} />
-
-        <p className="mt-6 text-[11px] text-[#6F7979]">
-          {formatCountLabel(teardown.viewCount)} views · {formatCountLabel(teardown.likeCount)}{" "}
-          likes
-        </p>
       </div>
     </article>
   );

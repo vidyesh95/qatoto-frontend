@@ -2,27 +2,43 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useImperativeHandle, useRef, useState } from "react";
 
+import BlueprintHostedPlayer from "@/components/home/blueprints/media/blueprint-hosted-player";
+import BlueprintYoutubePlayer from "@/components/home/blueprints/media/blueprint-youtube-player";
+import {
+  useWalkthroughSeek,
+  type WalkthroughPlayerHandle,
+} from "@/components/home/blueprints/media/walkthrough-seek-context";
 import { formatDurationLabel } from "@/lib/blueprints/format";
 import type { BlueprintVideo } from "@/lib/blueprints/schemas";
 
 /**
  * A build's walkthrough or demo video.
  *
- * NO PLAYER LIBRARY, AND NOT `watch/video-player.tsx` EITHER. That component is a dual-engine
- * YouTube/hosted player wired to `useWatchProgressBeacon` — it reports playback progress to the
- * backend for the watch history, which is a claim a blueprint page has no business making. These
- * are hosted mp4 files, and `<video controls>` plays them.
+ * TWO ENGINES BEHIND ONE POSTER. The contract's `source` discriminator decides which; the poster,
+ * the play button and the duration badge are shared, so the two arms look identical until clicked.
+ *
+ * ⚠️ THE SEEK IS HOSTED-ONLY, and this component is where that becomes true at runtime. A YouTube
+ * walkthrough carries no step timestamps at all (the teardown arm's refinement rejects them,
+ * because YouTube's own player already offers chapters), so nothing can ask for a seek into one —
+ * and the handle below is registered only on the hosted arm so nothing could even if it tried.
+ *
+ * NOT `watch/video-player.tsx`. That component is wired to `useWatchProgressBeacon` — it reports
+ * playback progress to the backend for the watch history, which is a claim a blueprint page has no
+ * business making — and its `startTimeSeconds` rebuilds the iframe rather than seeking. Both
+ * reasons are recorded again in `blueprint-youtube-player.tsx`, where the second one bites.
  *
  * POSTER FIRST, SOURCE SECOND. `preload="none"` plus a click-to-start means the megabyte is not
- * fetched by a visitor who came for the schematic. The `<video>` element is not rendered at all
- * until then, so there is nothing for a browser to speculatively buffer.
+ * fetched by a visitor who came for the schematic. Neither player is rendered at all until then,
+ * so there is nothing for a browser to speculatively buffer and no third-party script loaded for
+ * a reader who never presses play.
  *
  * `unoptimized` FOR AN https POSTER, mirroring `blueprints-hero-carousel.tsx:140`: an uploaded
- * asset is already a finished Cloudinary URL, and re-optimising it spends a transform on an image
- * that has had one.
+ * asset is already a finished Cloudinary URL — and a YouTube still is already a finished ytimg
+ * URL — so re-optimising spends a transform on an image that has had one.
  */
+
 /**
  * The playing `<video>`, in TWO BRANCHES rather than one with a conditional child.
  *
@@ -38,28 +54,10 @@ import type { BlueprintVideo } from "@/lib/blueprints/schemas";
  *
  * `playerProps` is shared so the two branches cannot drift apart.
  */
-function renderPlayer(video: BlueprintVideo, title: string) {
-  const playerProps = {
-    src: video.url,
-    poster: video.posterUrl,
-    controls: true,
-    autoPlay: true,
-    preload: "none",
-    className: "size-full",
-    "aria-label": title,
-  } as const;
-
-  if (video.captionsUrl === null) {
-    // oxlint-disable-next-line media-has-caption
-    return <video {...playerProps} />;
-  }
-
-  return (
-    <video {...playerProps}>
-      <track kind="captions" src={video.captionsUrl} srcLang="en" label="English" default />
-    </video>
-  );
-}
+/** `poster` until someone presses play; then the position the arm mounts at. */
+type WalkthroughPlaybackState =
+  | { readonly status: "poster" }
+  | { readonly status: "playing"; readonly startAtSeconds: number };
 
 export default function BlueprintVideoBlock({
   video,
@@ -69,20 +67,83 @@ export default function BlueprintVideoBlock({
   /** Names the video for a screen reader — "Walkthrough", "Demo". */
   readonly title: string;
 }) {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [playback, setPlayback] = useState<WalkthroughPlaybackState>({ status: "poster" });
+  /**
+   * Narrowed once, read twice. The handle registration and the arm dispatch have to agree about
+   * which arm can be commanded, and a single `const` is what keeps them from drifting apart.
+   */
+  const isSeekable = video.source === "hosted";
+  const frameRef = useRef<HTMLDivElement>(null);
+  const armRef = useRef<WalkthroughPlayerHandle | null>(null);
+  // `null` on the showcase page, where a demo video has no step list to be driven by.
+  const seekChannel = useWalkthroughSeek();
+
+  // A null ref is a documented no-op — the mechanism that makes both the showcase path (no
+  // provider) and the YouTube path (no seekable arm) free. Every ref read happens inside this
+  // factory, never while rendering.
+  useImperativeHandle(
+    isSeekable ? (seekChannel?.playerRef ?? null) : null,
+    () => ({
+      seekToSeconds(positionSeconds) {
+        // A null arm means "not mounted yet", never "not ready": both arms queue internally once
+        // they exist. So this branch is only ever about getting past the poster, and the arm picks
+        // the position up through `startAtSeconds`.
+        if (armRef.current === null) {
+          setPlayback({ status: "playing", startAtSeconds: positionSeconds });
+        } else {
+          armRef.current.seekToSeconds(positionSeconds);
+        }
+        // `block: "nearest"` is a no-op when the player is already on screen and the smallest
+        // possible scroll otherwise — which is why it is unconditional rather than measured.
+        frameRef.current?.scrollIntoView({
+          block: "nearest",
+          // Reduced motion turns the glide into a jump, matching the 3D viewer's own probe.
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+        });
+      },
+    }),
+    [],
+  );
+
   const durationLabel = formatDurationLabel(video.durationSeconds);
+
+  function renderPlayer(startAtSeconds: number) {
+    switch (video.source) {
+      case "hosted":
+        return (
+          <BlueprintHostedPlayer
+            video={video}
+            title={title}
+            playerRef={armRef}
+            startAtSeconds={startAtSeconds}
+          />
+        );
+      case "youtube":
+        // No `playerRef` and no `startAtSeconds`: this arm cannot be seeked, so it takes neither.
+        return <BlueprintYoutubePlayer youtubeVideoId={video.youtubeVideoId} title={title} />;
+      default: {
+        const exhaustiveCheck: never = video;
+        return exhaustiveCheck;
+      }
+    }
+  }
 
   return (
     <section className="mt-8">
       <h2 className="text-sm font-medium text-foreground">{title}</h2>
 
-      <div className="relative mt-2 aspect-video max-w-3xl overflow-hidden rounded-xl bg-muted">
-        {isPlaying ? (
-          renderPlayer(video, title)
+      <div
+        ref={frameRef}
+        className="relative mt-2 aspect-video max-w-3xl overflow-hidden rounded-xl bg-muted"
+      >
+        {playback.status === "playing" ? (
+          renderPlayer(playback.startAtSeconds)
         ) : (
           <button
             type="button"
-            onClick={() => setIsPlaying(true)}
+            onClick={() => setPlayback({ status: "playing", startAtSeconds: 0 })}
             aria-label={`Play ${title.toLowerCase()}`}
             className="group/play absolute inset-0 cursor-pointer"
           >

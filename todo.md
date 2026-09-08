@@ -1258,9 +1258,12 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
 
     ```bash
     for field in assembly fasteners manufacturingFiles assemblySteps repairabilityIndex \
-                 simulationTelemetry; do
+                 simulationTelemetry createdAt walkthroughVideo documents tags; do
       rg -q "teardown\.$field\b" src/components/home/blueprints || echo "UNRENDERED $field"
     done
+    # ⚠️ The loop above only sees TOP-LEVEL fields, which is how `telemetry.source` sat unread
+    # through two parts. A sub-field with a promised compile error needs its own line.
+    rg -q "telemetry\.source" src/components/home/blueprints || echo "UNRENDERED telemetry.source"
     ```
 
     **NOT IN THIS PART:** the `youtube` arm on `BlueprintVideoSchema` and the step-to-timestamp
@@ -1269,7 +1272,158 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     and manufacturing method instead, and a render-target bake is the upgrade if it is ever
     wanted; material swatches, which are a product configurator and mean nothing for a teardown
     of somebody else's hardware; user upload and authoring with its backend tables; and Drizzle,
-    still deferred until a `blueprint` table exists.
+    still deferred until a `blueprint` table exists. **The first two shipped in Part 3, below;
+    the third did too.**
+
+    **Part 3 (2026-09-08) — media and the last three dark fields. SHIPPED.** Everything Part 2
+    deferred on the frontend side, plus three "data with no reader" gaps a survey turned up.
+    Plan: `~/.claude/plans/for-teardown-please-do-composed-sutton.md`.
+
+    - **`BlueprintVideoSchema` IS A DISCRIMINATED UNION ON `source` NOW** — `hosted` (its `url`
+      and a nullable `captionsUrl`) and `youtube` (an eleven-character `youtubeVideoId`). Before
+      this a YouTube link parsed cleanly as a plain https URL and was then handed to `<video
+ src>`, which fails silently. **It is an ID, not a URL**, so a malformed link is a PARSE
+      failure at the boundary rather than a render-time one; `extractYoutubeVideoId` from
+      `src/lib/youtube.ts` is the function that produces it, and is what a future upload form
+      calls. The change touches BOTH consumers — a teardown's `walkthroughVideo` and a
+      showcase's `demoVideo` render the same block.
+
+        **`durationSeconds` STAYED SHARED**, though not for the reason recorded at the time. Part 3
+        kept it shared so the refinement could bound a YouTube timestamp; **the follow-up below
+        removed YouTube timestamps entirely, so that reason is gone.** What holds it there now is
+        the poster duration badge, which `blueprint-video-block.tsx` reads off the union with no
+        `source` narrowing and paints over both arms — its only consumer anywhere. `posterUrl` is
+        shared for the ordinary reason: a play button over nothing is a bug either way.
+
+    - **The seek is a CONTEXT CHANNEL, not a lifted store.** `media/walkthrough-seek-context.tsx`
+      holds a `RefObject<WalkthroughPlayerHandle>` and a `requestSeekToSeconds`; the video block
+      registers into it with `useImperativeHandle`, and a step's timestamp button calls it.
+
+        ⚠️ **A CLIENT WRAPPER COMPONENT CANNOT DO THIS, which is why the plan's
+        `TeardownWorkbench` does not exist.** `teardown-detail-page.tsx` is an async SERVER
+        component that CREATES both the step list and the video block; a wrapper placed around
+        them receives them as opaque `children` and cannot inject a callback into either. Context
+        reaches sideways without making either a client component — they render on the server and
+        pass through as `ReactNode`, exactly as `specificationsSlot` already does.
+
+        **A ref, not a second store.** `explosion-store.ts` exists because the thing it commands
+        lives inside `<Canvas>`, in R3F's separate reconciler, where a ref cannot be threaded out
+        — which is why `CameraCommand` needs a monotonic `requestToken` to defeat snapshot
+        de-duplication. A video is an ordinary DOM component in the same reconciler. The provider
+        holds no state, so a step click re-renders nothing at all. The day playback position needs
+        to flow BACK (highlighting the step currently playing) a store becomes right; it is not
+        needed for a one-way command.
+
+        ⚠️ **THE PROVIDER IS MOUNTED CONDITIONALLY, on `walkthroughVideo !== null`.** A step
+        renders a "Play from 0:03" BUTTON exactly when a channel exists, so mounting it always
+        would give every step of a teardown with no walkthrough a button that seeks a player that
+        was never mounted. `useWalkthroughSeek()` returns `null` outside a provider and never
+        throws, the same call the showcase page makes with no step list anywhere near it.
+
+    - **A step row is TWO SIBLING CONTROLS now.** It used to be one button carrying the whole
+      step with the timestamp as inert text inside it. One click target with two meanings is the
+      wrong shape, and a `<button>` inside a `<button>` is invalid HTML that browsers resolve by
+      dropping the inner one — so the row is an `<li>` shell holding a focus button and a seek
+      button side by side. That is also what lets a step with a timestamp but no `focusedPartId`
+      be useful, which is every step on the unmodelled path. ⚠️ The seek button's `ml-15` indent
+      is the numeral's `w-9` plus the row's `px-3` and `gap-3` written out by hand — it is a
+      sibling, so nothing lays it out under the step text for us. Change one and change both.
+
+    - **The YouTube arm is the IFrame API, not a bare `<iframe>`.** Part 3's reason was that a seek
+      needs `seekTo`; **that reason is gone** (see the follow-up below) and the component survived
+      the removal on two others — autoplay straight off the poster click, which a cross-origin
+      iframe can only attempt through `allow="autoplay"`, and `onError`, which turns a deleted or
+      embedding-disabled video into our own in-place panel with a "Watch on YouTube" link rather
+      than YouTube's grey box (verified by blocking `iframe_api`; the rest of the page is
+      unaffected). `media/blueprint-youtube-player.tsx`, `host: youtube-nocookie.com`, state as a
+      discriminated union so a blocked script is an error VALUE. `watch/video-player.tsx` is still
+      refused, over its unconditional `useWatchProgressBeacon` — a blueprint has no feed-row id to
+      report against and must not invent one.
+
+    - **Part thumbnails are BAKED FROM THE MODEL ALREADY IN MEMORY**
+      (`engine/part-thumbnail-baker.tsx`) — one offscreen 256² pass per part, at the stage's own
+      three-quarter angle, the first time the Components tab opens. A rail of nine live canvases
+      would be nine WebGL contexts, and browsers cap that near sixteen and kill the oldest.
+      Three things that silently ruin it, all commented in place: **flip the readback rows** (GL
+      is bottom-left, `ImageData` is top-down — upside-down thumbnails are the tell); **hide the
+      contact shadow**, which is a scene object and otherwise bakes the whole assembly's shadow
+      under one isolated part, the same artefact `frames={1}` caused on the stage; and **force
+      opacity to 1**, because the isolation fade is mid-flight when the tab opens. The alpha
+      channel is a free cut-out — the renderer is `alpha: true` because the stage is CSS. **An
+      empty map is a normal state** and the rail then renders exactly what it did before.
+      ⚠️ The bake mutates a prop and a `useThree()` return, so it is a MODULE-LEVEL function for
+      `react(immutability)`, the same shape as `advanceExplosionFrame` and `applyCanvasCursor`.
+
+    - **The three dark fields.** `createdAt` reached no renderer at all — it sorted the index and
+      vanished, so a teardown page carried no date while a showcase printed one; it is now a
+      "Published <RelativeTime>" line with the absolute instant on `title`. `telemetry.source`
+      had NO reader, which made the schema's promise that widening that literal "is a compile
+      error at every renderer that reads `source`" fictional; it is now a `Record` keyed on the
+      union. And **`TelemetryReadouts` moved out of `TeardownExplorer` onto the page**, because
+      inside the viewer the contract's entirely legal telemetry-without-a-model payload rendered
+      nothing — masked by both telemetried fixtures happening to have models. `bp-003` now
+      carries bench telemetry with `assembly: null` so that path stays exercised; **deleting a
+      model from a fixture would delete the check, not just the model.**
+
+    - **Fixtures.** `bp-001` stays hosted with four timestamped steps (hosted seek, modelled
+      path, steps inside the viewer tab). `bp-003` gained the YouTube arm, four timestamped steps
+      with `focusedPartId: null` — the contract forbids anything else with no assembly — and the
+      telemetry above. The video is Sintel again, reusing the id already in the fixtures, and it
+      is a placeholder for permanence, not subject.
+
+    **Verified in the browser:** hosted seek both cold (mounts from the poster, lands on 6s) and
+    warm (same element, no remount); YouTube seek with the iframe identity unchanged; nine and
+    six thumbnails on the two modelled fixtures, right way up, no ghost shadow (identical parts
+    bake identical images, which is correct); telemetry and a publish date on both paths;
+    showcase `demoVideo` still plays with its caption track and no seek buttons; the 250%/33%
+    zoom band intact; and the engine chunk still reached only through `await import()` — the
+    baker is imported by `blueprint-canvas.tsx` alone.
+
+    **Part 3a (2026-09-08) — STEP TIMESTAMPS BECAME HOSTED-ONLY. SHIPPED.** Part 3 wired the
+    step→walkthrough seek to both video arms, so `bp-003` rendered a "Play from 3:34" button on
+    every step of a YouTube walkthrough. Vidyesh took it out the same day, and the reasoning is the
+    part worth keeping: **YouTube already gives an author chapters and a scrubbable timeline inside
+    its own player**, so a second set of timestamps on this page duplicates a control the reader has
+    — and duplicates it worse, because ours cannot know the chapter titles. It is the same boundary
+    `/studio/subtitles` records above: Qatoto does not reach inside somebody else's player, and what
+    looks like a missing feature is that player's feature.
+
+    - **ENFORCED IN THE CONTRACT, NOT HIDDEN IN THE RENDERER.** The teardown arm's `superRefine`
+      now decides three ways on the walkthrough — absent, YouTube, hosted — and a step timestamp
+      beside a YouTube walkthrough is a PARSE failure at
+      `["assemblySteps", n, "timestampSeconds"]`, exactly as a timestamp with no video already was.
+      A renderer-only fix would have left the field storable and unread, which is the dark-field
+      failure the standing audit exists to catch. An upload form now cannot offer it.
+    - **Two gates, deliberately.** The contract says what a backend may send; the page gate
+      (`teardown-detail-page.tsx`, now `walkthroughVideo?.source === "hosted"`) says what a reader
+      sees, and `blueprint-video-block.tsx` registers the seek handle on the hosted arm alone.
+    - **What came out of the YouTube player:** the `playerRef` and `startAtSeconds` props, the
+      handle, the pending-seek ref and its drain in `onReady`, the conditional `playerVars.start`,
+      and the exhaustive-deps suppression — with no start position read in the effect, the dep list
+      is honestly `[youtubeVideoId]`. ⚠️ `seekTo` and `playVideo` were also **reverted out of
+      `YoutubePlayer`** in `src/lib/youtube-iframe-api.ts`: nothing else in the repo calls either
+      (`watch/video-player.tsx` rebuilds from `playerVars.start` instead of seeking), and an API
+      surface with no caller is unverified code.
+    - **Fixtures moved rather than shrank.** `bp-003` keeps its four steps and loses their
+      timestamps, so it now exercises the row with NEITHER affordance — no part to focus, no moment
+      to seek — which is the honest shape for a YouTube walkthrough on an unmodelled teardown. It
+      was also the only fixture covering **seek on the unmodelled path**, so `bp-005`
+      (`battery-management-system-teardown`: hosted walkthrough, `assembly: null`, no steps) gained
+      three steps timestamped 0/4/8 inside the ten-second placeholder clip. Delete those and that
+      mount path — a step list rendered standalone on the page rather than inside the viewer tab —
+      goes unexercised.
+    - **`assembly-step-list.tsx` needed no code change.** `timestampSeconds !== null && seekChannel
+ !== null` already did the right thing once the contract and the gate moved. Its plain-text
+      fallback is now unreachable from either real page and is KEPT as the honest render for a step
+      list mounted outside a provider.
+
+    **STILL DEFERRED after Part 3:** upload and authoring — the six backend `blueprint_*` tables,
+    the migration, the Express routes and a studio wizard with per-part `.glb` slots — plus
+    pointing `src/lib/blueprints/api.ts` at the backend instead of `@/mocks/blueprints-mocks`,
+    and the `subjectStatus` flag. ⚠️ That migration lands on the SHARED Aiven database, so it
+    needs explicit sign-off rather than being folded into a build step. Arche's sticky 01–04
+    scrollytelling page was DROPPED, not deferred: the Dayring tab bar covers the same four
+    phases, and a backlog item nobody will build reads as unfinished forever.
 
     ### 1b. Showcase became a Launch-YC-shaped feed — SHIPPED 2026-09-08
 

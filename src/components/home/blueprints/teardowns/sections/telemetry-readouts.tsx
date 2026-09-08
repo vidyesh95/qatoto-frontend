@@ -10,6 +10,23 @@ import type { TeardownSimulationTelemetry } from "@/lib/blueprints/schemas";
 const LABEL_CLASS = "font-mono text-[10px] tracking-[0.12em] text-[#6F7979] uppercase";
 
 /**
+ * WHAT MAKES THE SCHEMA'S PROMISED COMPILE ERROR REAL.
+ *
+ * `schemas.ts` declares `source` as a `z.literal` rather than a one-value enum, on the stated
+ * grounds that widening it into a union "is a compile error at every renderer that reads `source`".
+ * Until this existed NO renderer read it, so that error had nowhere to fire and the footer below
+ * asserted "author-reported" over any figure at all — including, one day, a platform-simulated one.
+ * A `Record` keyed on the union is what turns a second arm into a build failure here.
+ *
+ * The provenance is the single most important thing on this panel. A factor of safety carries very
+ * different weight depending on whether a rig measured it or a publisher typed it.
+ */
+const TELEMETRY_SOURCE_NOTES: Record<TeardownSimulationTelemetry["source"], string> = {
+  author_reported:
+    "Author-reported figures from their own analysis or test rig. Nothing on this page computed them.",
+};
+
+/**
  * Darkened from the values a dark instrument panel would use: on a white ground `#22C55E` and
  * `#F59E0B` do not carry enough contrast for a figure a reader is meant to act on.
  */
@@ -66,8 +83,7 @@ export default function TelemetryReadouts({
           ))}
         </dl>
         <p className="mt-3 text-[11px] leading-4 text-[#6F7979]">
-          Author-reported figures from their own analysis or test rig. Nothing on this page computed
-          them.
+          {TELEMETRY_SOURCE_NOTES[telemetry.source]}
         </p>
       </div>
     </section>

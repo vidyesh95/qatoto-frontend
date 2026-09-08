@@ -55,6 +55,28 @@ const PLACEHOLDER_VIDEO_DURATION_SECONDS = 10;
 const PLACEHOLDER_CAPTIONS_URL = "/dummy/blueprints/walkthrough-captions.vtt";
 
 /**
+ * THE ONE YOUTUBE FIXTURE — and it is the SAME FILM as the clip above, delivered the other way.
+ *
+ * `eRsGyueVLvQ` is the Blender Foundation's own upload of Sintel, resolved against YouTube's
+ * oEmbed endpoint when it was added. Using the same placeholder for both video arms is what keeps
+ * this file's "NOTHING HERE IS REAL" doctrine intact: the two arms read as two delivery
+ * mechanisms for one stand-in, rather than one real video smuggled in beside a stand-in.
+ *
+ * WHY AN INSTITUTION'S UPLOAD AND NOT A TEARDOWN CHANNEL. A made-up id parses fine and then gives
+ * a dead player, leaving the whole YouTube arm untestable — the exact failure the clip above
+ * exists to avoid. An individual creator's video breaks the same way the day they delete it;
+ * Blender's has been up since 2010, is CC-BY, and is not going to have embedding switched off by
+ * someone reorganising a channel.
+ *
+ * ⚠️ THE DURATION IS THE FILM'S TRUE RUNTIME, read from the player, not typed from memory — the
+ * rule the header above states. It is load-bearing once: the poster badge shows it. It used to be
+ * load-bearing twice, because the arm's refinement bounded every step timestamp against it, but
+ * step timestamps are hosted-only now and a YouTube walkthrough carries none.
+ */
+const PLACEHOLDER_YOUTUBE_VIDEO_ID = "eRsGyueVLvQ";
+const PLACEHOLDER_YOUTUBE_DURATION_SECONDS = 888;
+
+/**
  * TWO OF THE EIGHT FIXTURE VIDEOS CARRY CAPTIONS, and six do not.
  *
  * Deliberately a mix. Captions on every video would let the contract imply that a real upload
@@ -65,6 +87,7 @@ const PLACEHOLDER_CAPTIONS_URL = "/dummy/blueprints/walkthrough-captions.vtt";
  */
 function placeholderVideo(posterUrl: string, captionsUrl: string | null = null): BlueprintVideo {
   return {
+    source: "hosted",
     url: PLACEHOLDER_VIDEO_URL,
     posterUrl,
     durationSeconds: PLACEHOLDER_VIDEO_DURATION_SECONDS,
@@ -565,15 +588,82 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     tags: ["motors", "bldc", "sourcing", "power-electronics"],
     createdAt: "2026-07-28T11:05:00.000Z",
-    walkthroughVideo: placeholderVideo("/dummy/thumbnail_image03.avif"),
+    // THE YOUTUBE ARM, on a teardown with NO assembly. The steps below render standalone rather
+    // than inside the 3D viewer's tab, and they carry NEITHER affordance — no part to focus and,
+    // per the arm's refinement, no timestamp to seek — which is the row this fixture exists to
+    // exercise. It briefly carried timestamps and a seek button; see the refinement for why a
+    // YouTube walkthrough cannot.
+    walkthroughVideo: {
+      source: "youtube",
+      youtubeVideoId: PLACEHOLDER_YOUTUBE_VIDEO_ID,
+      // `hqdefault` rather than `maxresdefault`: the latter 404s for a large share of videos and
+      // YouTube answers with a grey 120x90 stub. `**.ytimg.com` is already in
+      // `next.config.ts`'s `images.remotePatterns`.
+      posterUrl: `https://i.ytimg.com/vi/${PLACEHOLDER_YOUTUBE_VIDEO_ID}/hqdefault.jpg`,
+      durationSeconds: PLACEHOLDER_YOUTUBE_DURATION_SECONDS,
+    },
     documents: [PLACEHOLDER_DOCUMENTS.brushlessSchematic],
     partCount: 62,
     assembly: null,
     fasteners: [],
     manufacturingFiles: [],
-    assemblySteps: [],
+    // ⚠️ BOTH INTERACTIVE FIELDS ARE NULL ON EVERY STEP, AND BOTH HAVE TO BE. `focusedPartId`
+    // because the contract only allows a part id that exists in `assembly.parts` and this teardown
+    // published no assembly; `timestampSeconds` because the walkthrough is on YouTube, whose own
+    // chapters are the timestamps. A step here is prose, and that is the honest rendering.
+    assemblySteps: [
+      {
+        stepNumber: 1,
+        title: "What the driver has to survive",
+        description:
+          "Stall current, the supply rail it actually sees on a long cable run, and the two failures that follow from getting either wrong.",
+        timestampSeconds: null,
+        focusedPartId: null,
+      },
+      {
+        stepNumber: 2,
+        title: "Choosing the gate driver",
+        description:
+          "Why the obvious part is the one nobody stocks locally, and what the substitution table trades away.",
+        timestampSeconds: null,
+        focusedPartId: null,
+      },
+      {
+        stepNumber: 3,
+        title: "Current sense and the shunt placement",
+        description:
+          "Low-side sensing, the ground bounce it introduces, and the layout that keeps it measurable.",
+        timestampSeconds: null,
+        focusedPartId: null,
+      },
+      {
+        stepNumber: 4,
+        title: "What to check before you order boards",
+        description:
+          "The three footprints worth re-reading against the datasheet, and the one clearance that fails a cheap fab.",
+        timestampSeconds: null,
+        focusedPartId: null,
+      },
+    ],
     repairabilityIndex: null,
-    simulationTelemetry: null,
+    // ⚠️ TELEMETRY WITH NO ASSEMBLY, WHICH IS THE POINT OF PUTTING IT HERE. The contract has always
+    // allowed the combination — a bench test on something nobody modelled is the ordinary case for
+    // a board — but until this fixture existed both telemetried teardowns also had models, which
+    // hid the fact that `TelemetryReadouts` was mounted INSIDE the 3D viewer and therefore rendered
+    // nothing on the unmodelled path. The panel now lives on the detail page; this is what keeps
+    // that honest. Delete the model from a fixture and you lose the check, not just the model.
+    //
+    // These are thermal and electrical bench figures rather than a structural analysis, so the
+    // mechanical readouts are the small numbers you would expect of a PCB: a board flexes microns
+    // under its own connectors and is rated in the tens of newtons of connector insertion force.
+    simulationTelemetry: {
+      factorOfSafety: 1.9,
+      peakVonMisesStressMegapascals: 41.5,
+      maxDisplacementMicrometres: 95,
+      thermalDeltaKelvin: 54,
+      ratedLoadNewtons: 35,
+      source: "author_reported",
+    },
   },
   {
     id: "bp-004",
@@ -752,7 +842,41 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     assembly: null,
     fasteners: [],
     manufacturingFiles: [],
-    assemblySteps: [],
+    // ⚠️ HOSTED WALKTHROUGH + TIMESTAMPS + NO ASSEMBLY, WHICH IS THE ONLY FIXTURE FOR THAT CASE.
+    // `bp-001` covers the seek from inside the viewer's Exploded tab; this one covers it from the
+    // step list rendered standalone on the page, which is a different mount path with a different
+    // parent. `bp-003` used to cover it and cannot any more — its walkthrough is on YouTube, and a
+    // YouTube walkthrough carries no step timestamps. Delete these steps and that path goes
+    // unexercised.
+    //
+    // Every timestamp sits inside the ten-second placeholder clip, because the contract checks it.
+    // `focusedPartId` is null throughout: there is no assembly to focus into.
+    assemblySteps: [
+      {
+        stepNumber: 1,
+        title: "Get the pack off the bench safely",
+        description:
+          "Seven cells in series is 29 V at the connector and no interlock anywhere. What to discharge, what to tape, and the one probe placement that shorts a balance lead.",
+        timestampSeconds: 0,
+        focusedPartId: null,
+      },
+      {
+        stepNumber: 2,
+        title: "Read the balancing topology off the board",
+        description:
+          "Passive bleed resistors beside each cell tap, and how to tell them from the sense divider they sit next to.",
+        timestampSeconds: 4,
+        focusedPartId: null,
+      },
+      {
+        stepNumber: 3,
+        title: "Measure the protection thresholds",
+        description:
+          "Over-voltage, under-voltage and the delay on each, against what the datasheet claims. Two of the three are off.",
+        timestampSeconds: 8,
+        focusedPartId: null,
+      },
+    ],
     repairabilityIndex: null,
     simulationTelemetry: null,
   },

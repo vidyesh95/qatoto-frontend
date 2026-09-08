@@ -309,11 +309,36 @@ Three rules specific to this surface:
   is dropped and the first page served.
 - **Media is nullable, and an absence renders NOTHING.** A teardown's `walkthroughVideo` is
   `null` when nobody filmed it and `documents` is `[]` when nothing was published — both are the
-  common case, and both render no section at all rather than an empty box. Video is a poster plus
-  `preload="none"`, never a player library and never `watch/video-player.tsx` (which reports watch
-  progress, a claim this page has no business making). PDFs open in a `ModalSheet` over
-  `<embed type="application/pdf">` with a download fallback, because a browser with its PDF viewer
-  off renders `<embed>` as a silent blank rectangle.
+  common case, and both render no section at all rather than an empty box. **`BlueprintVideo` is a
+  DISCRIMINATED UNION on `source`** — `hosted` carries a `url` and a nullable `captionsUrl`,
+  `youtube` carries an eleven-character `youtubeVideoId` (an ID, so a bad link fails at PARSE time,
+  not in render). `posterUrl` and `durationSeconds` are SHARED because the poster and its duration
+  badge are shared — `blueprint-video-block.tsx` reads the duration off the union with no `source`
+  narrowing at all, and that badge is its only consumer. Every path starts as a poster with
+  `preload="none"`; the hosted arm is a bare `<video>` and the YouTube arm is the IFrame API
+  (needed for `seekTo`, `youtube-nocookie` host, a blocked script renders an in-place panel).
+  **Never `watch/video-player.tsx`** — it reports watch progress, a claim this page has no business
+  making, and its `startTimeSeconds` is a mount-effect dep, so changing it rebuilds the iframe
+  instead of seeking. PDFs open in a `ModalSheet` over `<embed type="application/pdf">` with a
+  download fallback, because a browser with its PDF viewer off renders `<embed>` as a silent blank
+  rectangle.
+- **A step's timestamp seeks the walkthrough, and the seek is HOSTED-ONLY.** ⚠️ **A YouTube
+  walkthrough carries no step timestamps at all** — the teardown arm's refinement rejects the
+  combination outright, so it cannot even be stored. That is a product decision, not a limit:
+  seeking an embed works, but YouTube already gives an author chapters and a timeline inside its
+  own player, and a second set here duplicates a control the reader has while not knowing the
+  chapter titles. Same boundary `/studio/subtitles` records — Qatoto does not reach inside somebody
+  else's player. It is enforced in the CONTRACT rather than hidden in the renderer so no upload form
+  can store a number nothing reads.
+- **The seek travels by CONTEXT, and the provider is conditional.**
+  `media/walkthrough-seek-context.tsx` carries a player-handle ref sideways between the step list
+  and the video block, whose only common ancestor is an async SERVER component — a client wrapper
+  would get both as opaque `children` and could inject nothing. `useWalkthroughSeek()` returns
+  `null` outside a provider and never throws. ⚠️ The provider is mounted only when
+  `walkthroughVideo?.source === "hosted"`, because a timestamp renders as a BUTTON precisely when a
+  channel exists; mount it always and a teardown with no seekable video gets buttons that seek
+  nothing. The step row is therefore two SIBLING buttons (focus a part, play from a time) — nested
+  buttons are invalid HTML and browsers drop the inner one — and a row may render neither.
 - **The 3D viewer is a SECOND 3D stack, on WebGL2, and it stays lazy.** The teardown engine
   (`src/components/home/blueprints/teardowns/engine/`, R3F + drei over the stock
   `WebGLRenderer`) sits beside the store's `@google/model-viewer`; both load through

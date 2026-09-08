@@ -19,6 +19,9 @@ import CameraRig from "@/components/home/blueprints/teardowns/engine/camera-rig"
 import ExplodedAssembly from "@/components/home/blueprints/teardowns/engine/exploded-assembly";
 import type { ExplosionStore } from "@/components/home/blueprints/teardowns/engine/explosion-store";
 import HoverCursor from "@/components/home/blueprints/teardowns/engine/hover-cursor";
+import PartThumbnailBaker, {
+  CONTACT_SHADOW_OBJECT_NAME,
+} from "@/components/home/blueprints/teardowns/engine/part-thumbnail-baker";
 
 export { parseTeardownAssembly } from "@/components/home/blueprints/teardowns/engine/assembly-loader";
 export type { LoadedTeardownAssembly } from "@/components/home/blueprints/teardowns/engine/assembly-loader";
@@ -28,6 +31,9 @@ export interface BlueprintCanvasProps {
   readonly loadedAssembly: LoadedTeardownAssembly;
   readonly stiffnessPerSecond: number;
   readonly onRendererFailed: (message: string) => void;
+  /** True once the Components tab has been opened. Threaded, not inferred — see the baker. */
+  readonly isThumbnailBakeRequested: boolean;
+  readonly onThumbnailsBaked: (thumbnailsByPartId: ReadonlyMap<string, string>) => void;
 }
 
 const ENVIRONMENT_INTENSITY = 0.9;
@@ -37,6 +43,8 @@ export function BlueprintCanvas({
   loadedAssembly,
   stiffnessPerSecond,
   onRendererFailed,
+  isThumbnailBakeRequested,
+  onThumbnailsBaked,
 }: BlueprintCanvasProps) {
   const radius = loadedAssembly.boundingSphere.radius;
 
@@ -106,6 +114,9 @@ export function BlueprintCanvas({
         full-stage plane swallows every callout pin's occlusion ray.
       */}
       <ContactShadows
+        // Named so the thumbnail baker can hide it for its pass. A shadow of the whole assembly
+        // under one isolated part is the exact artefact this name prevents.
+        name={CONTACT_SHADOW_OBJECT_NAME}
         position={[0, loadedAssembly.boundingBox.min.y - radius * 0.02, 0]}
         scale={radius * 3.4}
         opacity={0.38}
@@ -124,6 +135,11 @@ export function BlueprintCanvas({
       </Bvh>
       <CameraRig store={store} loadedAssembly={loadedAssembly} />
       <HoverCursor store={store} />
+      <PartThumbnailBaker
+        loadedAssembly={loadedAssembly}
+        isRequested={isThumbnailBakeRequested}
+        onThumbnailsBaked={onThumbnailsBaked}
+      />
     </Canvas>
   );
 }

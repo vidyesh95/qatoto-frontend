@@ -23,7 +23,6 @@ import type {
 } from "@/components/home/blueprints/teardowns/engine/assembly-loader";
 import { createExplosionStore } from "@/components/home/blueprints/teardowns/engine/explosion-store";
 import AssemblyStepList from "@/components/home/blueprints/teardowns/sections/assembly-step-list";
-import TelemetryReadouts from "@/components/home/blueprints/teardowns/sections/telemetry-readouts";
 import ExplosionSlider from "@/components/home/blueprints/teardowns/viewer/explosion-slider";
 import PartBrowserRail from "@/components/home/blueprints/teardowns/viewer/part-browser-rail";
 import TeardownStage from "@/components/home/blueprints/teardowns/viewer/teardown-stage";
@@ -34,11 +33,7 @@ import {
   REDUCED_MOTION_STIFFNESS_PER_SECOND,
 } from "@/lib/blueprints/explosion";
 import { formatFileSizeFromBytes } from "@/lib/blueprints/format";
-import type {
-  TeardownAssembly,
-  TeardownAssemblyStep,
-  TeardownSimulationTelemetry,
-} from "@/lib/blueprints/schemas";
+import type { TeardownAssembly, TeardownAssemblyStep } from "@/lib/blueprints/schemas";
 import {
   DEFAULT_TEARDOWN_VIEWER_TAB,
   TEARDOWN_VIEWER_TAB_LABELS,
@@ -63,7 +58,6 @@ type TeardownViewerState =
 
 export interface TeardownExplorerProps {
   readonly assembly: TeardownAssembly;
-  readonly simulationTelemetry: TeardownSimulationTelemetry | null;
   readonly assemblySteps: readonly TeardownAssemblyStep[];
   readonly title: string;
   /**
@@ -135,7 +129,6 @@ function StageErrorPanel({ message }: { readonly message: string }) {
 
 export default function TeardownExplorer({
   assembly,
-  simulationTelemetry,
   assemblySteps,
   title,
   specificationsSlot,
@@ -147,6 +140,30 @@ export default function TeardownExplorer({
   const [viewerState, setViewerState] = useState<TeardownViewerState>({ status: "idle" });
   const [stiffnessPerSecond, setStiffnessPerSecond] = useState(EXPLOSION_STIFFNESS_PER_SECOND);
   const [activeTab, setActiveTab] = useState<TeardownViewerTab>(DEFAULT_TEARDOWN_VIEWER_TAB);
+  /**
+   * Empty until the Components tab has been opened AND the bake has run, and the rail renders
+   * exactly what it rendered before this feature when it is empty. A bake that fails, is skipped or
+   * has not finished degrades to the previous design rather than to a broken one.
+   */
+  const [thumbnailsByPartId, setThumbnailsByPartId] = useState<ReadonlyMap<string, string>>(
+    () => new Map(),
+  );
+  /**
+   * STICKY, not `activeTab === "components"`: switching away must not un-request a bake that has
+   * already been paid for, and the rail keeps its thumbnails when the reader comes back.
+   *
+   * SET FROM THE TAB EVENT rather than from the tab effect below, which is where it first sat. A
+   * `setState` inside an effect is a second render chasing the first, and `react(set-state-in-effect)`
+   * says so. The initialiser covers the case the event cannot: a default tab of "components".
+   */
+  const [isThumbnailBakeRequested, setIsThumbnailBakeRequested] = useState(
+    () => DEFAULT_TEARDOWN_VIEWER_TAB === "components",
+  );
+
+  function handleTabChange(tab: TeardownViewerTab): void {
+    setActiveTab(tab);
+    if (tab === "components") setIsThumbnailBakeRequested(true);
+  }
 
   const modelFiles = listAssemblyModelFiles(assembly);
   const totalModelByteSize = modelFiles.reduce((sum, file) => sum + file.byteSize, 0);
@@ -276,6 +293,8 @@ export default function TeardownExplorer({
             loadedAssembly={viewerState.loadedAssembly}
             stiffnessPerSecond={stiffnessPerSecond}
             onRendererFailed={handleRendererFailed}
+            isThumbnailBakeRequested={isThumbnailBakeRequested}
+            onThumbnailsBaked={setThumbnailsByPartId}
           />
         );
       }
@@ -305,7 +324,14 @@ export default function TeardownExplorer({
           </div>
         );
       case "components":
-        return <PartBrowserRail store={store} parts={assembly.parts} isInteractive={isReady} />;
+        return (
+          <PartBrowserRail
+            store={store}
+            parts={assembly.parts}
+            isInteractive={isReady}
+            thumbnailsByPartId={thumbnailsByPartId}
+          />
+        );
       case "specifications":
         return specificationsSlot;
       default: {
@@ -323,7 +349,7 @@ export default function TeardownExplorer({
         <h2 className="text-sm font-medium text-foreground">3D viewer</h2>
         <TeardownViewerTabs
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
           availableTabs={["design", "exploded", "components", "specifications"]}
         />
       </div>
@@ -354,8 +380,6 @@ export default function TeardownExplorer({
       >
         {renderTabPanel()}
       </div>
-
-      <TelemetryReadouts telemetry={simulationTelemetry} />
     </section>
   );
 }
