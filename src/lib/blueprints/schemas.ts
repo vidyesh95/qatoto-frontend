@@ -136,6 +136,116 @@ export const BLUEPRINT_DOCUMENT_KIND_LABELS: Record<BlueprintDocumentKind, strin
   datasheet: "Datasheet",
 };
 
+/**
+ * How a part was made. The exploded view's part panel prints this; nothing filters by it.
+ * Snake_case for the reason the file header gives — these byte-match a future `pgEnum`.
+ */
+export const TEARDOWN_MANUFACTURING_METHODS = [
+  "cnc_milled",
+  "injection_molded",
+  "sheet_metal",
+  "fdm_printed",
+  "pcb_assembly",
+  "cast",
+  "off_the_shelf",
+] as const;
+export const TeardownManufacturingMethodSchema = z.enum(TEARDOWN_MANUFACTURING_METHODS);
+export type TeardownManufacturingMethod = z.infer<typeof TeardownManufacturingMethodSchema>;
+
+export const TEARDOWN_MANUFACTURING_METHOD_LABELS: Record<TeardownManufacturingMethod, string> = {
+  cnc_milled: "CNC milled",
+  injection_molded: "Injection moulded",
+  sheet_metal: "Sheet metal",
+  fdm_printed: "FDM printed",
+  pcb_assembly: "PCB assembly",
+  cast: "Cast",
+  off_the_shelf: "Off the shelf",
+};
+
+/**
+ * What turns a fastener — or, for the last three, why there is nothing to turn. An adhesive strip
+ * and a moulded snap hold parts together and come apart in a disassembly step, so they are
+ * fasteners for the purpose of a repairability score even though no tool fits them.
+ */
+export const TEARDOWN_FASTENER_DRIVES = [
+  "torx",
+  "hex_socket",
+  "phillips",
+  "slotted",
+  "adhesive",
+  "snap_fit",
+  "press_fit",
+] as const;
+export const TeardownFastenerDriveSchema = z.enum(TEARDOWN_FASTENER_DRIVES);
+export type TeardownFastenerDrive = z.infer<typeof TeardownFastenerDriveSchema>;
+
+export const TEARDOWN_FASTENER_DRIVE_LABELS: Record<TeardownFastenerDrive, string> = {
+  torx: "Torx",
+  hex_socket: "Hex socket",
+  phillips: "Phillips",
+  slotted: "Slotted",
+  adhesive: "Adhesive",
+  snap_fit: "Snap fit",
+  press_fit: "Press fit",
+};
+
+/**
+ * What kind of file a machine shop or a fab house takes. NOT A `BlueprintDocumentKind` — see
+ * `TeardownManufacturingFileSchema` for why the two lists never merge. There is no
+ * `schematic_pdf` here on purpose: a schematic PDF is a `documents[]` row with
+ * `kind: "schematic"`, and an enum value no fixture exercises is unverified code on this surface.
+ */
+export const TEARDOWN_MANUFACTURING_FILE_KINDS = [
+  "step",
+  "stl",
+  "dxf",
+  "gerber",
+  "drill",
+  "pick_and_place",
+  "bill_of_materials_csv",
+] as const;
+export const TeardownManufacturingFileKindSchema = z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS);
+export type TeardownManufacturingFileKind = z.infer<typeof TeardownManufacturingFileKindSchema>;
+
+export const TEARDOWN_MANUFACTURING_FILE_KIND_LABELS: Record<
+  TeardownManufacturingFileKind,
+  string
+> = {
+  step: "STEP",
+  stl: "STL",
+  dxf: "DXF",
+  gerber: "Gerber",
+  drill: "Drill",
+  pick_and_place: "Pick and place",
+  bill_of_materials_csv: "Bill of materials (CSV)",
+};
+
+/** The two download bundles a teardown's files are grouped under. */
+export const TEARDOWN_MANUFACTURING_BUNDLES = ["mechanical", "electronics"] as const;
+export type TeardownManufacturingBundle = (typeof TEARDOWN_MANUFACTURING_BUNDLES)[number];
+
+export const TEARDOWN_MANUFACTURING_BUNDLE_LABELS: Record<TeardownManufacturingBundle, string> = {
+  mechanical: "Mechanical",
+  electronics: "Electronics",
+};
+
+/**
+ * Which bundle each kind belongs to. A `Record` over the kind enum so an added kind is a compile
+ * error HERE rather than a file that renders under neither heading.
+ */
+export const TEARDOWN_MANUFACTURING_FILE_BUNDLES: Record<
+  TeardownManufacturingFileKind,
+  TeardownManufacturingBundle
+> = {
+  step: "mechanical",
+  stl: "mechanical",
+  dxf: "mechanical",
+  gerber: "electronics",
+  drill: "electronics",
+  pick_and_place: "electronics",
+  bill_of_materials_csv: "electronics",
+};
+
 /** How much prior hardware experience a build assumes. */
 export const BLUEPRINT_DIFFICULTIES = ["beginner", "intermediate", "advanced"] as const;
 export const BlueprintDifficultySchema = z.enum(BLUEPRINT_DIFFICULTIES);
@@ -162,6 +272,20 @@ export const DEFAULT_SHOWCASE_SORT: ShowcaseSort = "newest";
 export const SHOWCASE_SORT_LABELS: Record<ShowcaseSort, string> = {
   newest: "Newest",
   top: "Top",
+};
+
+/**
+ * What a teardown published — `?media=` on `/blueprints/teardowns`. Its own filter, because "has
+ * a 3D model" is not a tag. Single words, so snake_case and kebab-case agree. The predicates live
+ * in `api.ts` beside the paging, for the reason the sort comparators do.
+ */
+export const TEARDOWN_MEDIA_FILTERS = ["assembly", "video", "documents"] as const;
+export type TeardownMediaFilter = (typeof TEARDOWN_MEDIA_FILTERS)[number];
+
+export const TEARDOWN_MEDIA_FILTER_LABELS: Record<TeardownMediaFilter, string> = {
+  assembly: "Has 3D model",
+  video: "Has walkthrough",
+  documents: "Has files",
 };
 
 // --- Object shapes -----------------------------------------------------------
@@ -296,6 +420,347 @@ export const BlueprintOutcomeMetricSchema = z
   .strip();
 export type BlueprintOutcomeMetric = z.infer<typeof BlueprintOutcomeMetricSchema>;
 
+// --- Teardown assembly value objects -----------------------------------------
+//
+// EVERY LENGTH IS MILLIMETRES AND EVERY FILE SIZE IS BYTES, integers where a fraction would be
+// noise. The `.glb` itself is in METRES, because glTF §3.6.1 says so; the engine multiplies by
+// 0.001 at the boundary and nothing else in this repo ever sees a metre. Drawings are read in mm,
+// so the contract is written in mm. A file exported in the wrong unit is a known limitation, not a
+// field — a calibration knob for spec-violating exports would be a second unit nobody asked for.
+
+/** A vector or a position: three numbers, in whatever unit the field name says. */
+const NumberTripleSchema = z.tuple([z.number(), z.number(), z.number()]);
+export type NumberTriple = z.infer<typeof NumberTripleSchema>;
+
+/**
+ * One `.glb` the exploded view downloads. `url` is on the wire for the reason
+ * `ProductThreeDimensionalModelSchema` (`src/lib/store/products.schemas.ts:212`) puts it there:
+ * the model is fetched directly by the page, not taken away through a download gate.
+ *
+ * `byteSize` IS POSITIVE, not non-negative like a document's: a zero-byte model is an upload that
+ * failed, and the contract should refuse it rather than mount a viewport over nothing.
+ */
+export const TeardownModelFileSchema = z
+  .object({
+    url: createHttpsOrSiteRelativeUrlSchema(2048),
+    byteSize: z.number().int().positive(),
+  })
+  .strip();
+export type TeardownModelFile = z.infer<typeof TeardownModelFileSchema>;
+
+/**
+ * What every part carries, whichever way its geometry arrives.
+ *
+ * `explosionDirection` AND `explosionDistanceMm` ARE INDEPENDENTLY NULLABLE — an exception to
+ * the house rule that co-required fields share one nullable object. They are not co-required: an
+ * author may pin the direction and let the engine pick a distance from the bounds, or the reverse.
+ * `null` on either means "the engine decides". The direction NEED NOT BE UNIT LENGTH (the engine
+ * normalises) but it may not be zero, because zero has no direction to normalise.
+ *
+ * `stressRating` IS AN AUTHOR-ASSIGNED HEAT-MAP WEIGHT IN [0, 1], NOT A SOLVER RESULT. It tints a
+ * part; it claims nothing about a load case. The solver figures live in
+ * `TeardownSimulationTelemetrySchema`, attributed, and the two must never be conflated.
+ */
+const TeardownPartBaseShape = {
+  id: z.string(),
+  /** What a person reads on the callout pin and in the part panel. */
+  label: z.string(),
+  /** The part this one explodes away from. `null` for a top-level part. Must name a sibling. */
+  parentPartId: z.string().nullable(),
+  /** Free text, e.g. "6063-T5 aluminium, black anodised". */
+  material: z.string(),
+  manufacturingMethod: TeardownManufacturingMethodSchema,
+  explosionDirection: NumberTripleSchema.refine(
+    (direction) => direction.some((component) => component !== 0),
+    "An explosion direction cannot be the zero vector.",
+  ).nullable(),
+  explosionDistanceMm: z.number().positive().nullable(),
+  stressRating: z.number().min(0).max(1).nullable(),
+  /** One sentence beside the label in the viewport. `null` when the label says it all. */
+  calloutText: z.string().nullable(),
+};
+
+/**
+ * A part addressed by name INSIDE one composite `.glb` — what a CAD export of a whole assembly
+ * produces. `nodeName` IS BYTE-MATCHED against `nodes[].name` in the file; `label` is what a
+ * person reads. Two fields because an exporter writes `enclosure_lid` and a caption says
+ * "Enclosure lid", and deriving one from the other in either direction is a guess.
+ */
+export const CompositeTeardownPartSchema = z
+  .object({
+    ...TeardownPartBaseShape,
+    nodeName: z.string().min(1),
+  })
+  .strip();
+export type CompositeTeardownPart = z.infer<typeof CompositeTeardownPartSchema>;
+
+/**
+ * Where a per-part file sits in the assembly, when the file does not already say.
+ *
+ * `null` MEANS "THE FILE WAS EXPORTED IN ASSEMBLY COORDINATES — TRUST IT", which is what a
+ * part-by-part export from one CAD assembly gives. A non-null placement is for the common
+ * hobbyist export where every part sits at its own origin. A NULLABLE OBJECT, not two nullable
+ * fields: a position without a rotation is half an answer.
+ */
+export const TeardownPartPlacementSchema = z
+  .object({
+    positionMm: NumberTripleSchema,
+    /** Euler XYZ, degrees — the unit a CAD tool shows, converted once by the engine. */
+    rotationDegrees: NumberTripleSchema,
+  })
+  .strip();
+export type TeardownPartPlacement = z.infer<typeof TeardownPartPlacementSchema>;
+
+/**
+ * A part that IS its own `.glb` — ONE FILE PER PART, which is the shape an upload takes. This is
+ * the arm a future `blueprint_part` row with a file column maps onto one to one, on the
+ * `commerce_product_model` precedent (Cloudinary raw, magic-byte validated, public CORS-open URL).
+ */
+export const IndividualTeardownPartSchema = z
+  .object({
+    ...TeardownPartBaseShape,
+    model: TeardownModelFileSchema,
+    placement: TeardownPartPlacementSchema.nullable(),
+  })
+  .strip();
+export type IndividualTeardownPart = z.infer<typeof IndividualTeardownPartSchema>;
+
+/** Either part shape — what the engine and the HUD read; they never need to know which. */
+export type TeardownPart = CompositeTeardownPart | IndividualTeardownPart;
+
+/**
+ * The tree is checked HERE, not in the engine. A `parentPartId` that names nothing, a part that is
+ * its own ancestor, or two parts claiming one id is a malformed row — and `parseBlueprint` throws
+ * on a malformed fixture on purpose (`api.ts:32-38`). Left to the engine it would surface as a
+ * blank viewport at render time, on the client, where nobody is watching. The backend re-validates
+ * the same rule on write (CLAUDE.md §1.1); this is the second line, exactly as
+ * `url-source.schemas.ts` is.
+ */
+function addPartTreeIssues(
+  parts: readonly { readonly id: string; readonly parentPartId: string | null }[],
+  context: z.RefinementCtx,
+): void {
+  const partIds = new Set<string>();
+  parts.forEach((part, index) => {
+    if (partIds.has(part.id)) {
+      context.addIssue({
+        code: "custom",
+        path: ["parts", index, "id"],
+        message: `Part id "${part.id}" appears twice.`,
+      });
+    }
+    partIds.add(part.id);
+  });
+
+  const parentIdByPartId = new Map(parts.map((part) => [part.id, part.parentPartId]));
+  parts.forEach((part, index) => {
+    if (part.parentPartId === null) return;
+    if (!partIds.has(part.parentPartId)) {
+      context.addIssue({
+        code: "custom",
+        path: ["parts", index, "parentPartId"],
+        message: `"${part.parentPartId}" is not a part of this assembly.`,
+      });
+      return;
+    }
+    // Walk upward. A walk longer than the part count has looped.
+    let ancestorId: string | null = part.parentPartId;
+    let hopCount = 0;
+    while (ancestorId !== null && hopCount <= parts.length) {
+      if (ancestorId === part.id) {
+        context.addIssue({
+          code: "custom",
+          path: ["parts", index, "parentPartId"],
+          message: `"${part.id}" is its own ancestor.`,
+        });
+        return;
+      }
+      ancestorId = parentIdByPartId.get(ancestorId) ?? null;
+      hopCount += 1;
+    }
+  });
+}
+
+/**
+ * The model plus the parts worth exploding — TWO INGESTION MODES, as a discriminated union.
+ *
+ * `composite` is one `.glb` whose named nodes are the parts. `individual_parts` is one `.glb` PER
+ * PART — the shape a user upload takes. A union rather than nullable `nodeName`/`model` fields
+ * because in per-part mode `nodeName` is meaningless (the file IS the part) and in composite mode
+ * a per-part `model` is a contradiction; neither state should be expressible.
+ *
+ * `parts` IS A SUBSET OF THE TEARDOWN, not the whole of it: `partCount` on the arm is the author's
+ * tally (148 on the solar controller) and the model lists the nine that move. Neither number is
+ * derived from the other.
+ */
+export const CompositeTeardownAssemblySchema = z
+  .object({
+    kind: z.literal("composite"),
+    model: TeardownModelFileSchema,
+    parts: z.array(CompositeTeardownPartSchema).min(1),
+  })
+  .strip()
+  .superRefine((assembly, context) => {
+    addPartTreeIssues(assembly.parts, context);
+    const nodeNames = new Set<string>();
+    assembly.parts.forEach((part, index) => {
+      if (nodeNames.has(part.nodeName)) {
+        context.addIssue({
+          code: "custom",
+          path: ["parts", index, "nodeName"],
+          message: `Two parts claim the node "${part.nodeName}".`,
+        });
+      }
+      nodeNames.add(part.nodeName);
+    });
+  });
+export type CompositeTeardownAssembly = z.infer<typeof CompositeTeardownAssemblySchema>;
+
+export const IndividualPartsTeardownAssemblySchema = z
+  .object({
+    kind: z.literal("individual_parts"),
+    parts: z.array(IndividualTeardownPartSchema).min(1),
+  })
+  .strip()
+  .superRefine((assembly, context) => {
+    addPartTreeIssues(assembly.parts, context);
+  });
+export type IndividualPartsTeardownAssembly = z.infer<typeof IndividualPartsTeardownAssemblySchema>;
+
+export const TeardownAssemblySchema = z.discriminatedUnion("kind", [
+  CompositeTeardownAssemblySchema,
+  IndividualPartsTeardownAssemblySchema,
+]);
+export type TeardownAssembly = z.infer<typeof TeardownAssemblySchema>;
+
+/**
+ * One line of the fastener table.
+ *
+ * `sizeLabel` IS A DESIGNATION, NOT A MEASUREMENT, which is why it is a string on a surface that
+ * refuses display strings for numbers. "M3 × 8", "#6-32 × ½″" and "12 mm × 40 mm" (an adhesive
+ * strip) are names from three different standards and do not reduce to one pair of numbers.
+ *
+ * `standardCode` IS NULL FOR A PROPRIETARY PART — a moulded snap or a 3M strip has no ISO number,
+ * and "N/A" would be the display-string failure again.
+ *
+ * `supplier` REUSES `BlueprintLinkSchema`: a labelled link that may leave the site is exactly what
+ * a supplier row is. `null` when the author named no source.
+ */
+export const TeardownFastenerSchema = z
+  .object({
+    standardCode: z.string().nullable(),
+    sizeLabel: z.string(),
+    drive: TeardownFastenerDriveSchema,
+    quantity: z.number().int().positive(),
+    supplier: BlueprintLinkSchema.nullable(),
+  })
+  .strip();
+export type TeardownFastener = z.infer<typeof TeardownFastenerSchema>;
+
+/**
+ * A file a shop machines from or a fab house builds from — a download, never an embed.
+ *
+ * NOT A `BlueprintDocument`, and the split is the whole point. A document is a PDF that
+ * `BlueprintDocumentViewer` opens inline through `<embed>`; a STEP, a Gerber or a CSV has no
+ * inline reading and a View button over one would embed binary. Folding these into `documents[]`
+ * would grow `BLUEPRINT_DOCUMENT_KIND_LABELS`, put a per-kind `switch` inside the viewer, give a
+ * CSV a `pageCount`, and make the index card's "{n} files" pill count two different claims as one.
+ * Two arrays, two enums, two renderers.
+ */
+export const TeardownManufacturingFileSchema = z
+  .object({
+    id: z.string(),
+    kind: TeardownManufacturingFileKindSchema,
+    title: z.string(),
+    url: createHttpsOrSiteRelativeUrlSchema(2048),
+    byteSize: z.number().int().positive(),
+  })
+  .strip();
+export type TeardownManufacturingFile = z.infer<typeof TeardownManufacturingFileSchema>;
+
+/**
+ * One numbered disassembly step — the "01", "02" of the walkthrough.
+ *
+ * `stepNumber` IS STORED AND ALSO CHECKED AGAINST ARRAY ORDER (see the arm's refinement). It is
+ * redundant on a correct payload, which is the point: it is the numeral the author typed and the
+ * numeral the page prints, and a backend that returned rows out of order would fail the contract
+ * rather than print "01, 03, 02".
+ *
+ * `timestampSeconds` IS NULL when there is no walkthrough video or the author did not mark the
+ * moment. Never zero-for-unknown — zero is the first frame, a real place in a real video.
+ */
+export const TeardownAssemblyStepSchema = z
+  .object({
+    stepNumber: z.number().int().positive(),
+    title: z.string(),
+    description: z.string(),
+    timestampSeconds: z.number().int().nonnegative().nullable(),
+    /** The part the viewport isolates for this step. `null` when the step is about the whole. */
+    focusedPartId: z.string().nullable(),
+  })
+  .strip();
+export type TeardownAssemblyStep = z.infer<typeof TeardownAssemblyStepSchema>;
+
+/** One criterion of the repairability index: a score and the sentence that justifies it. */
+export const TeardownRepairabilityCriterionSchema = z
+  .object({
+    scoreOutOfTen: z.number().int().min(0).max(10),
+    note: z.string(),
+  })
+  .strip();
+export type TeardownRepairabilityCriterion = z.infer<typeof TeardownRepairabilityCriterionSchema>;
+
+/**
+ * Four criteria and an overall.
+ *
+ * `overallScoreOutOfTen` IS STORED, NOT AVERAGED ON THE CLIENT. The four criteria are not equally
+ * weighted — a device class where fastener uniformity matters more than modularity is an
+ * editorial decision, and it belongs to whoever publishes the score. A client that averaged would
+ * print a number the author never stated, and a weighting change would need a frontend release.
+ * The whole object is nullable rather than its criteria: half an index is not an index.
+ */
+export const TeardownRepairabilityIndexSchema = z
+  .object({
+    fastenerUniformity: TeardownRepairabilityCriterionSchema,
+    toolAccessibility: TeardownRepairabilityCriterionSchema,
+    disassemblyStepCount: TeardownRepairabilityCriterionSchema,
+    modularIndependence: TeardownRepairabilityCriterionSchema,
+    overallScoreOutOfTen: z.number().int().min(0).max(10),
+  })
+  .strip();
+export type TeardownRepairabilityIndex = z.infer<typeof TeardownRepairabilityIndexSchema>;
+
+/**
+ * The figures the telemetry panel prints.
+ *
+ * THE CLIENT COMPUTES NONE OF THESE. There is no solver in a browser tab and there is no solver on
+ * the backend; every number here came off the author's own FEA or test rig, and the page renders
+ * it as a claim attributed to them. `stressRating` on a part tints a mesh; it is not an input to
+ * any of these and none of these are derived from it.
+ *
+ * `source` IS A `z.literal`, NOT A ONE-VALUE ENUM, because it is the first arm of a future
+ * discriminated union rather than a flag. A `"platform_simulated"` arm, if a backend solver ever
+ * exists, will carry fields this arm cannot — a run id, a mesh element count, a computed-at — and
+ * `BlueprintMetricValueSchema` above is the precedent for shaping that as
+ * `z.discriminatedUnion("source", […])`. Widening a literal into a union is a compile error at
+ * every renderer that reads `source`, which is exactly the prompt those renderers should get.
+ *
+ * `thermalDeltaKelvin` IS SIGNED — a delta can be a drop — and is Kelvin rather than Celsius so
+ * nobody reads a rise as an absolute. `maxDisplacementMicrometres` is an integer for the reason
+ * cents are: sub-micron is noise on a printed figure.
+ */
+export const TeardownSimulationTelemetrySchema = z
+  .object({
+    factorOfSafety: z.number().positive(),
+    peakVonMisesStressMegapascals: z.number().nonnegative(),
+    maxDisplacementMicrometres: z.number().int().nonnegative(),
+    thermalDeltaKelvin: z.number(),
+    ratedLoadNewtons: z.number().positive(),
+    source: z.literal("author_reported"),
+  })
+  .strip();
+export type TeardownSimulationTelemetry = z.infer<typeof TeardownSimulationTelemetrySchema>;
+
 // --- The blueprint union -----------------------------------------------------
 //
 // ONE SHAPE PER CATEGORY, because the three surfaces ask different questions of a build. A
@@ -340,10 +805,58 @@ export const TeardownBlueprintSchema = z
     walkthroughVideo: BlueprintVideoSchema.nullable(),
     /** `[]` when nothing is published yet — an ARRAY, never null: "no files" is a countable state. */
     documents: z.array(BlueprintDocumentSchema),
-    /** `null` when nobody counted. Not zero — a zero-part teardown is not a teardown. */
+    /**
+     * `null` when nobody counted. Not zero — a zero-part teardown is not a teardown. THE AUTHOR'S
+     * TALLY, NOT `assembly.parts.length`: the model lists the parts worth exploding, not every
+     * screw, so this may be — and on the solar controller is — far larger.
+     */
     partCount: z.number().int().positive().nullable(),
+    /** `null` when no model was published. A NULLABLE OBJECT — a model without parts is not a view. */
+    assembly: TeardownAssemblySchema.nullable(),
+    /** `[]` when the author listed none. Arrays, never null, for the reason `documents` gives. */
+    fasteners: z.array(TeardownFastenerSchema),
+    manufacturingFiles: z.array(TeardownManufacturingFileSchema),
+    assemblySteps: z.array(TeardownAssemblyStepSchema),
+    repairabilityIndex: TeardownRepairabilityIndexSchema.nullable(),
+    simulationTelemetry: TeardownSimulationTelemetrySchema.nullable(),
   })
-  .strip();
+  .strip()
+  // Cross-field rules that span siblings, so they cannot live on the value objects. zod 4 keeps
+  // this a `ZodObject`, which `z.discriminatedUnion` below requires.
+  .superRefine((teardown, context) => {
+    const partIds = new Set(teardown.assembly?.parts.map((part) => part.id) ?? []);
+
+    teardown.assemblySteps.forEach((step, index) => {
+      if (step.stepNumber !== index + 1) {
+        context.addIssue({
+          code: "custom",
+          path: ["assemblySteps", index, "stepNumber"],
+          message: `Steps are numbered from 1 in array order; position ${index} carries ${step.stepNumber}.`,
+        });
+      }
+      if (step.focusedPartId !== null && !partIds.has(step.focusedPartId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["assemblySteps", index, "focusedPartId"],
+          message: `"${step.focusedPartId}" is not a part of this teardown's assembly.`,
+        });
+      }
+      if (step.timestampSeconds === null) return;
+      if (teardown.walkthroughVideo === null) {
+        context.addIssue({
+          code: "custom",
+          path: ["assemblySteps", index, "timestampSeconds"],
+          message: "A step cannot mark a moment in a video that was never published.",
+        });
+      } else if (step.timestampSeconds > teardown.walkthroughVideo.durationSeconds) {
+        context.addIssue({
+          code: "custom",
+          path: ["assemblySteps", index, "timestampSeconds"],
+          message: "A step's timestamp is past the end of the walkthrough.",
+        });
+      }
+    });
+  });
 
 export const ShowcaseBlueprintSchema = z
   .object({

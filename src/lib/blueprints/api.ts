@@ -25,6 +25,7 @@ import {
   type ShowcaseBlueprint,
   type ShowcaseSort,
   type TeardownBlueprint,
+  type TeardownMediaFilter,
 } from "@/lib/blueprints/schemas";
 import type { FacetBucket } from "@/components/home/shared/facet-chip-row";
 
@@ -208,9 +209,6 @@ function toBlueprintPage<TBlueprint extends { id: string }>(
 // `src/lib/store/forum.api.ts:46`. When the backend lands, these filters become query params and
 // the predicates are deleted rather than moved into a component.
 
-/** What a teardown published. Its own filter, because "has a video" is not a tag. */
-export type TeardownMediaFilter = "video" | "documents";
-
 export interface ListTeardownsFilter {
   readonly difficulty?: BlueprintDifficulty;
   readonly media?: TeardownMediaFilter;
@@ -219,9 +217,18 @@ export interface ListTeardownsFilter {
   readonly limit?: number;
 }
 
-function hasRequestedMedia(teardown: TeardownBlueprint, media: TeardownMediaFilter): boolean {
-  return media === "video" ? teardown.walkthroughVideo !== null : teardown.documents.length > 0;
-}
+/**
+ * A `Record` over the media enum, so a fourth filter is a compile error here rather than a value
+ * the index offers and the getter silently ignores — the `SHOWCASE_SORT_COMPARATORS` precedent.
+ */
+const TEARDOWN_MEDIA_PREDICATES: Record<
+  TeardownMediaFilter,
+  (teardown: TeardownBlueprint) => boolean
+> = {
+  assembly: (teardown) => teardown.assembly !== null,
+  video: (teardown) => teardown.walkthroughVideo !== null,
+  documents: (teardown) => teardown.documents.length > 0,
+};
 
 export async function listTeardowns(
   filter: ListTeardownsFilter = {},
@@ -232,7 +239,7 @@ export async function listTeardowns(
   const matching = teardowns.filter(
     (teardown) =>
       (filter.difficulty === undefined || teardown.difficulty === filter.difficulty) &&
-      (filter.media === undefined || hasRequestedMedia(teardown, filter.media)) &&
+      (filter.media === undefined || TEARDOWN_MEDIA_PREDICATES[filter.media](teardown)) &&
       (filter.tag === undefined || teardown.tags.includes(filter.tag)),
   );
 

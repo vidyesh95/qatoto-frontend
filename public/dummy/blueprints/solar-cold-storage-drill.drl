@@ -1,0 +1,8 @@
+M48
+; Placeholder drill file for the Blueprints fixtures
+METRIC,TZ
+T1C0.800
+%
+T1
+X10.0Y10.0
+M30

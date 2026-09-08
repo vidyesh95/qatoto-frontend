@@ -15,6 +15,8 @@ import { listBlueprintTagFacets, listTeardowns } from "@/lib/blueprints/api";
 import {
   BLUEPRINT_DIFFICULTIES,
   BLUEPRINT_DIFFICULTY_LABELS,
+  TEARDOWN_MEDIA_FILTER_LABELS,
+  TEARDOWN_MEDIA_FILTERS,
   type TeardownBlueprint,
 } from "@/lib/blueprints/schemas";
 import {
@@ -23,13 +25,6 @@ import {
   readEnumParam,
   readSingleParam,
 } from "@/lib/filter-href";
-
-const TEARDOWN_MEDIA_FILTERS = ["video", "documents"] as const;
-
-const TEARDOWN_MEDIA_FILTER_LABELS: Record<(typeof TEARDOWN_MEDIA_FILTERS)[number], string> = {
-  video: "Has walkthrough",
-  documents: "Has files",
-};
 
 /**
  * TWO VARIANTS, NOT THREE — no `error` arm, for the reason `blueprints-page.tsx` states: the

@@ -12,6 +12,8 @@ import {
   type BlueprintMetricValue,
   BLUEPRINT_DISCIPLINE_LABELS,
   type BlueprintDiscipline,
+  TEARDOWN_MANUFACTURING_METHOD_LABELS,
+  type TeardownManufacturingMethod,
 } from "@/lib/blueprints/schemas";
 import { formatDurationLabel } from "@/lib/feed/format";
 import { formatFileSizeFromBytes } from "@/lib/rnd/format";
@@ -73,4 +75,30 @@ export const BLUEPRINT_DISCIPLINE_NUMERAL_CLASSES: Record<BlueprintDiscipline, s
 
 export function blueprintDisciplineLabel(discipline: BlueprintDiscipline): string {
   return BLUEPRINT_DISCIPLINE_LABELS[discipline];
+}
+
+export function manufacturingMethodLabel(method: TeardownManufacturingMethod): string {
+  return TEARDOWN_MANUFACTURING_METHOD_LABELS[method];
+}
+
+const TELEMETRY_QUANTITY_FORMAT = new Intl.NumberFormat("en", { maximumFractionDigits: 1 });
+
+/**
+ * `74.2` + `"MPa"` -> `"74.2 MPa"`. One decimal at most: the telemetry HUD prints author-reported
+ * figures, and a third decimal on a rig reading is precision the rig never had.
+ */
+export function formatTelemetryQuantity(value: number, unitSuffix: string): string {
+  return `${TELEMETRY_QUANTITY_FORMAT.format(value)} ${unitSuffix}`;
+}
+
+/** The factor-of-safety colour bands the HUD uses. Boundaries inclusive at the top of each band. */
+export const FACTOR_OF_SAFETY_SAFE_MINIMUM = 2;
+export const FACTOR_OF_SAFETY_MARGINAL_MINIMUM = 1.2;
+
+export type FactorOfSafetyBand = "safe" | "marginal" | "critical";
+
+export function resolveFactorOfSafetyBand(factorOfSafety: number): FactorOfSafetyBand {
+  if (factorOfSafety >= FACTOR_OF_SAFETY_SAFE_MINIMUM) return "safe";
+  if (factorOfSafety >= FACTOR_OF_SAFETY_MARGINAL_MINIMUM) return "marginal";
+  return "critical";
 }

@@ -21,11 +21,12 @@ const MEDIA_BADGE_CLASS =
 /**
  * One teardown in the index grid.
  *
- * IT SHOWS TWO THINGS THE RAIL CARD CANNOT: whether there is a walkthrough video, and how many
- * documents were published. On this surface that is the difference between a teardown worth
- * opening and a summary — most teardowns publish neither, so the absence is the common case and
- * the badge is the signal. Both render nothing when there is nothing, rather than a "0 files"
- * badge, which would be an answer to a question nobody asked.
+ * IT SHOWS THREE THINGS THE RAIL CARD CANNOT: whether there is a 3D model to explode, whether
+ * there is a walkthrough video, and how many documents were published. On this surface that is
+ * the difference between a teardown worth opening and a summary — most teardowns publish none of
+ * them, so the absence is the common case and the badge is the signal. All three render nothing
+ * when there is nothing, rather than a "0 files" badge, which would be an answer to a question
+ * nobody asked. The model pill comes first because the model is the primary media when present.
  */
 export default function TeardownGridCard({ teardown }: { teardown: TeardownBlueprint }) {
   const documentCount = teardown.documents.length;
@@ -36,8 +37,11 @@ export default function TeardownGridCard({ teardown }: { teardown: TeardownBluep
         blueprint={teardown}
         imageSizes="(min-width: 1280px) 300px, (min-width: 1024px) 30vw, (min-width: 640px) 45vw, 92vw"
         badge={
-          teardown.walkthroughVideo === null && documentCount === 0 ? undefined : (
+          teardown.assembly === null &&
+          teardown.walkthroughVideo === null &&
+          documentCount === 0 ? undefined : (
             <>
+              {teardown.assembly === null ? null : <span className={MEDIA_BADGE_CLASS}>3D</span>}
               {teardown.walkthroughVideo === null ? null : (
                 <span className={MEDIA_BADGE_CLASS}>
                   <PlayGlyph />

@@ -25,7 +25,12 @@
 // different order into every `"use cache"` entry, and `RelativeTime` renders whatever the gap is.
 // Re-date them when the feed starts to read as abandoned.
 
-import type { Blueprint, BlueprintDocument, BlueprintVideo } from "@/lib/blueprints/schemas";
+import type {
+  Blueprint,
+  BlueprintDocument,
+  BlueprintVideo,
+  TeardownManufacturingFile,
+} from "@/lib/blueprints/schemas";
 
 /** USD throughout; a real payload would carry the seller's own currency per row. */
 const UNITED_STATES_DOLLAR = "USD";
@@ -141,6 +146,63 @@ const PLACEHOLDER_DOCUMENTS: Record<string, BlueprintDocument> = {
 };
 
 /**
+ * The generated placeholder fabrication files and `.glb` models in `public/dummy/blueprints/`,
+ * written by `scripts/generate-blueprint-fixture-models.mts` (`pnpm fixtures:blueprint-models`).
+ *
+ * EVERY `byteSize` BELOW IS WHAT THE SCRIPT PRINTED, measured off disk, never typed from memory —
+ * the same rule the PDFs above follow. Each text file opens in the tool its extension claims
+ * (a STEP header, a DXF entities section, a Gerber, an Excellon drill, two CSVs) and says
+ * "placeholder" inside; the models are procedural boxes and cylinders whose node names are the
+ * fixture's `nodeName`s, and they are committed exactly as the PDFs were.
+ */
+const PLACEHOLDER_MANUFACTURING_FILES: Record<string, TeardownManufacturingFile> = {
+  solarEnclosureStep: {
+    id: "mfg-001",
+    kind: "step",
+    title: "Enclosure, lid and base",
+    url: "/dummy/blueprints/solar-cold-storage-enclosure.step",
+    byteSize: 308,
+  },
+  solarLidGasketDxf: {
+    id: "mfg-002",
+    kind: "dxf",
+    title: "Lid gasket cut path",
+    url: "/dummy/blueprints/solar-cold-storage-lid-gasket.dxf",
+    byteSize: 132,
+  },
+  solarTopCopperGerber: {
+    id: "mfg-003",
+    kind: "gerber",
+    title: "Top copper",
+    url: "/dummy/blueprints/solar-cold-storage-top-copper.gtl",
+    byteSize: 130,
+  },
+  solarDrill: {
+    id: "mfg-004",
+    kind: "drill",
+    title: "Plated through-holes",
+    url: "/dummy/blueprints/solar-cold-storage-drill.drl",
+    byteSize: 96,
+  },
+  solarPickAndPlace: {
+    id: "mfg-005",
+    kind: "pick_and_place",
+    title: "Pick and place, top side",
+    url: "/dummy/blueprints/solar-cold-storage-pick-and-place.csv",
+    byteSize: 145,
+  },
+  solarBillOfMaterialsCsv: {
+    id: "mfg-006",
+    kind: "bill_of_materials_csv",
+    title: "Bill of materials, 48 line items",
+    url: "/dummy/blueprints/solar-cold-storage-bom.csv",
+    byteSize: 163,
+  },
+};
+
+const PUMP_PART_MODEL_DIRECTORY = "/dummy/blueprints/borehole-pump-housing";
+
+/**
  * Twenty-seven builds across the three arms.
  *
  * DELIBERATE ABSENCES, each one there so its branch renders during development rather than the
@@ -161,6 +223,19 @@ const PLACEHOLDER_DOCUMENTS: Record<string, BlueprintDocument> = {
  *   exercised on the second page of `?sort=top` rather than only described in a comment.
  * - `callToAction: null` and `demoVideo: null` on several showcases — most launches have neither.
  * - `partCount: null` where nobody counted. Not zero: a zero-part teardown is not a teardown.
+ * - `assembly: null` on ten of the twelve teardowns — most published no model, and the exploded
+ *   view must be ABSENT rather than an empty viewport. The two that carry one take DIFFERENT
+ *   modes: `solar-cold-storage-controller-teardown` is ONE composite `.glb` addressed by node
+ *   name; `borehole-pump-housing-tolerances` is SIX per-part files, the shape an upload takes,
+ *   with one part (`seal_carrier`) exported at its own origin so the explicit `placement` branch
+ *   renders too.
+ * - `fasteners: []`, `manufacturingFiles: []`, `assemblySteps: []` and `repairabilityIndex: null`
+ *   TOGETHER on `borehole-pump-housing-tolerances`, which does carry a model and telemetry — a
+ *   teardown with a viewport and nothing else, so every other section proves it can be absent on
+ *   its own.
+ * - `simulationTelemetry` on exactly the two modelled teardowns, at factors of safety 3.1 and 1.6,
+ *   so both the safe and the marginal colour bands render somewhere.
+ * - `calloutText: null` on one MOSFET, so a part with no pin sits beside parts with pins.
  */
 export const MOCK_BLUEPRINTS: Blueprint[] = [
   {
@@ -189,7 +264,239 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     createdAt: "2026-08-14T09:12:00.000Z",
     walkthroughVideo: placeholderVideo("/dummy/thumbnail_image01.avif", PLACEHOLDER_CAPTIONS_URL),
     documents: [PLACEHOLDER_DOCUMENTS.solarSchematic, PLACEHOLDER_DOCUMENTS.solarBillOfMaterials],
+    // The author's tally. Nine of these are modelled below; 148 is not nine and must not become nine.
     partCount: 148,
+    assembly: {
+      kind: "composite",
+      model: {
+        url: "/dummy/blueprints/solar-cold-storage-controller.glb",
+        byteSize: 27208,
+      },
+      // `parentPartId` MIRRORS THE NODE TREE IN THE .glb — the generator nests the meshes the same
+      // way. A child explodes away from its parent, so the two trees must agree or the lid moves
+      // with the board.
+      parts: [
+        {
+          id: "part-001",
+          nodeName: "enclosure_base",
+          label: "Enclosure base",
+          parentPartId: null,
+          material: "ABS, UL94 V-0",
+          manufacturingMethod: "injection_molded",
+          explosionDirection: null,
+          explosionDistanceMm: null,
+          stressRating: null,
+          calloutText: "Two-piece ABS shell; the base carries every mounting boss.",
+        },
+        {
+          id: "part-002",
+          nodeName: "enclosure_lid",
+          label: "Enclosure lid",
+          parentPartId: null,
+          material: "ABS, UL94 V-0",
+          manufacturingMethod: "injection_molded",
+          // Pinned: the lid lifts straight up. Not unit length on purpose — the engine normalises.
+          explosionDirection: [0, 2, 0],
+          explosionDistanceMm: 60,
+          stressRating: null,
+          calloutText: "Lifts straight up once the four M3 cap screws are out.",
+        },
+        {
+          id: "part-003",
+          nodeName: "pcb",
+          label: "Control board",
+          parentPartId: "part-001",
+          material: "FR-4, 1.6 mm, 2 oz copper, four layers",
+          manufacturingMethod: "pcb_assembly",
+          explosionDirection: null,
+          explosionDistanceMm: null,
+          stressRating: 0.2,
+          calloutText: "MPPT stage on the left, compressor driver on the right.",
+        },
+        {
+          id: "part-004",
+          nodeName: "heatsink",
+          label: "Heatsink",
+          parentPartId: "part-003",
+          material: "6063-T5 aluminium extrusion, cut to length and drilled",
+          manufacturingMethod: "cnc_milled",
+          explosionDirection: null,
+          explosionDistanceMm: null,
+          stressRating: 0.55,
+          calloutText: "Undersized by the author's own measurement — 38 K rise at rated load.",
+        },
+        {
+          id: "part-005",
+          nodeName: "mosfet_q1",
+          label: "MOSFET Q1 (high side)",
+          parentPartId: "part-003",
+          material: "IRFP4668, TO-247",
+          manufacturingMethod: "off_the_shelf",
+          explosionDirection: null,
+          explosionDistanceMm: null,
+          stressRating: 0.85,
+          calloutText: "The hottest part on the board.",
+        },
+        {
+          id: "part-006",
+          nodeName: "mosfet_q2",
+          label: "MOSFET Q2 (low side)",
+          parentPartId: "part-003",
+          material: "IRFP4668, TO-247",
+          manufacturingMethod: "off_the_shelf",
+          explosionDirection: null,
+          explosionDistanceMm: null,
+          stressRating: 0.8,
+          calloutText: null,
+        },
+        {
+          id: "part-007",
+          nodeName: "terminal_block",
+          label: "Terminal block",
+          parentPartId: "part-003",
+          material: "PA66 housing, brass contacts, 10 mm pitch",
+          manufacturingMethod: "off_the_shelf",
+          explosionDirection: null,
+          explosionDistanceMm: null,
+          stressRating: null,
+          calloutText: "Battery, panel and compressor all land here.",
+        },
+        {
+          id: "part-008",
+          nodeName: "thermistor_harness",
+          label: "Thermistor harness",
+          parentPartId: "part-003",
+          material: "10 kΩ NTC on twisted pair, PVC jacket",
+          manufacturingMethod: "off_the_shelf",
+          explosionDirection: null,
+          explosionDistanceMm: null,
+          stressRating: null,
+          calloutText:
+            "Placed 40 mm from the evaporator plate — the four percent from the summary.",
+        },
+        {
+          id: "part-009",
+          nodeName: "din_clip",
+          label: "DIN rail clip",
+          parentPartId: "part-001",
+          material: "Zinc-plated spring steel",
+          manufacturingMethod: "sheet_metal",
+          explosionDirection: [0, -1, 0],
+          explosionDistanceMm: 25,
+          stressRating: null,
+          calloutText: null,
+        },
+      ],
+    },
+    fasteners: [
+      {
+        standardCode: "ISO 4762",
+        sizeLabel: "M3 × 8",
+        drive: "hex_socket",
+        quantity: 4,
+        supplier: { label: "McMaster-Carr", url: "https://www.mcmaster.com/91290A113/" },
+      },
+      {
+        standardCode: "ISO 7045",
+        sizeLabel: "M3 × 6",
+        drive: "phillips",
+        quantity: 4,
+        supplier: null,
+      },
+      {
+        standardCode: "ISO 4762",
+        sizeLabel: "M3 × 12",
+        drive: "hex_socket",
+        quantity: 2,
+        supplier: { label: "McMaster-Carr", url: "https://www.mcmaster.com/91290A120/" },
+      },
+      {
+        standardCode: "ISO 14583",
+        sizeLabel: "M3 × 8",
+        drive: "torx",
+        quantity: 2,
+        supplier: { label: "Bossard", url: "https://www.bossard.com/eshop/" },
+      },
+      {
+        standardCode: null,
+        sizeLabel: "12 mm × 40 mm strip",
+        drive: "adhesive",
+        quantity: 1,
+        supplier: { label: "3M VHB 5952", url: "https://www.3m.com/" },
+      },
+      {
+        standardCode: null,
+        sizeLabel: "35 mm DIN",
+        drive: "snap_fit",
+        quantity: 1,
+        supplier: null,
+      },
+    ],
+    manufacturingFiles: [
+      PLACEHOLDER_MANUFACTURING_FILES.solarEnclosureStep,
+      PLACEHOLDER_MANUFACTURING_FILES.solarLidGasketDxf,
+      PLACEHOLDER_MANUFACTURING_FILES.solarTopCopperGerber,
+      PLACEHOLDER_MANUFACTURING_FILES.solarDrill,
+      PLACEHOLDER_MANUFACTURING_FILES.solarPickAndPlace,
+      PLACEHOLDER_MANUFACTURING_FILES.solarBillOfMaterialsCsv,
+    ],
+    // Every timestamp is inside the ten-second placeholder clip, because the contract checks it.
+    assemblySteps: [
+      {
+        stepNumber: 1,
+        title: "Release the lid",
+        description: "Four M3 cap screws, one in each corner. The gasket stays with the lid.",
+        timestampSeconds: 0,
+        focusedPartId: "part-002",
+      },
+      {
+        stepNumber: 2,
+        title: "Lift the board",
+        description:
+          "Four Phillips screws into the standoffs. Unplug the thermistor harness before lifting or it tears at the crimp.",
+        timestampSeconds: 3,
+        focusedPartId: "part-003",
+      },
+      {
+        stepNumber: 3,
+        title: "Unbolt the heatsink",
+        description:
+          "Two M3 × 12 through the board into the extrusion. The MOSFETs stay clamped to it.",
+        timestampSeconds: 6,
+        focusedPartId: "part-004",
+      },
+      {
+        stepNumber: 4,
+        title: "Free the terminal block",
+        description: "Press-fit into the board; lever from the underside, never pull.",
+        timestampSeconds: 9,
+        focusedPartId: "part-007",
+      },
+    ],
+    repairabilityIndex: {
+      fastenerUniformity: { scoreOutOfTen: 8, note: "All metric, all M3, two drive types." },
+      toolAccessibility: {
+        scoreOutOfTen: 7,
+        note: "Nothing hidden under a label; the heatsink screws need a long driver.",
+      },
+      disassemblyStepCount: {
+        scoreOutOfTen: 7,
+        note: "Four steps to the board, nine to the last component.",
+      },
+      modularIndependence: {
+        scoreOutOfTen: 6,
+        note: "MOSFETs clamp rather than solder to the heatsink; the harness is potted.",
+      },
+      overallScoreOutOfTen: 7,
+    },
+    simulationTelemetry: {
+      factorOfSafety: 3.1,
+      peakVonMisesStressMegapascals: 24,
+      maxDisplacementMicrometres: 310,
+      thermalDeltaKelvin: 38,
+      ratedLoadNewtons: 50,
+      source: "author_reported",
+    },
   },
   {
     id: "bp-002",
@@ -214,6 +521,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     walkthroughVideo: null,
     documents: [],
     partCount: null,
+    assembly: null,
+    fasteners: [],
+    manufacturingFiles: [],
+    assemblySteps: [],
+    repairabilityIndex: null,
+    simulationTelemetry: null,
   },
   {
     id: "bp-003",
@@ -242,6 +555,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     walkthroughVideo: placeholderVideo("/dummy/thumbnail_image03.avif"),
     documents: [PLACEHOLDER_DOCUMENTS.brushlessSchematic],
     partCount: 62,
+    assembly: null,
+    fasteners: [],
+    manufacturingFiles: [],
+    assemblySteps: [],
+    repairabilityIndex: null,
+    simulationTelemetry: null,
   },
   {
     id: "bp-004",
@@ -270,6 +589,113 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     walkthroughVideo: null,
     documents: [PLACEHOLDER_DOCUMENTS.boreholeAssembly],
     partCount: 24,
+    // ONE FILE PER PART — the shape an upload takes. Five files were exported in assembly
+    // coordinates and trust `placement: null`; the seal carrier was exported at its own origin
+    // and is put back by an explicit placement, so both branches of the loader render.
+    //
+    // THE INTERNALS ARE CHILDREN OF THE SHAFT, NOT THE HOUSING, and the housing is pinned to drop
+    // straight down: a child rides its parent's explosion, so bearings parented to the housing
+    // would sink with it and stay hidden inside a solid casting. Parented to the shaft they lift
+    // out with it, which is also how the pump comes apart on a bench.
+    assembly: {
+      kind: "individual_parts",
+      parts: [
+        {
+          id: "part-010",
+          label: "Housing",
+          parentPartId: null,
+          material: "Cast 316 stainless, machined bore",
+          manufacturingMethod: "cast",
+          explosionDirection: [0, -1, 0],
+          explosionDistanceMm: 220,
+          stressRating: 0.3,
+          calloutText: "All four tolerances from the title live on this part.",
+          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/housing.glb`, byteSize: 8344 },
+          placement: null,
+        },
+        {
+          id: "part-011",
+          label: "Drive shaft",
+          parentPartId: null,
+          material: "17-4 PH stainless, ground",
+          manufacturingMethod: "cnc_milled",
+          // Pinned upward: the shaft and the housing are coaxial, so an auto direction from the
+          // assembly centre would send both the same way and never separate them.
+          explosionDirection: [0, 1, 0],
+          explosionDistanceMm: null,
+          stressRating: 0.6,
+          calloutText: null,
+          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/shaft.glb`, byteSize: 6620 },
+          placement: null,
+        },
+        {
+          id: "part-012",
+          label: "Impeller",
+          parentPartId: "part-011",
+          material: "Cast bronze, CC480K",
+          manufacturingMethod: "cast",
+          // Far enough to clear the dropped housing rather than end up inside it: it rides the
+          // shaft 140 mm up first, then drops 420 of its own.
+          explosionDirection: [0, -1, 0],
+          explosionDistanceMm: 420,
+          stressRating: 0.45,
+          calloutText: "Silt wear shows here first.",
+          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/impeller.glb`, byteSize: 8344 },
+          placement: null,
+        },
+        {
+          id: "part-013",
+          label: "Seal carrier",
+          parentPartId: "part-011",
+          material: "PETG, printed in place of the machined carrier",
+          manufacturingMethod: "fdm_printed",
+          explosionDirection: null,
+          explosionDistanceMm: null,
+          stressRating: null,
+          calloutText: "Printed to prove the fit before committing to the machined part.",
+          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/seal_carrier.glb`, byteSize: 8352 },
+          placement: { positionMm: [0, 140, 0], rotationDegrees: [0, 0, 0] },
+        },
+        {
+          id: "part-014",
+          label: "Upper bearing",
+          parentPartId: "part-011",
+          material: "6203-2RS",
+          manufacturingMethod: "off_the_shelf",
+          explosionDirection: null,
+          explosionDistanceMm: null,
+          stressRating: 0.7,
+          calloutText: null,
+          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/bearing_upper.glb`, byteSize: 8356 },
+          placement: null,
+        },
+        {
+          id: "part-015",
+          label: "Lower bearing",
+          parentPartId: "part-011",
+          material: "6203-2RS",
+          manufacturingMethod: "off_the_shelf",
+          explosionDirection: [0, -1, 0],
+          explosionDistanceMm: 40,
+          stressRating: 0.75,
+          calloutText: "The one that failed — the silt pattern is in the assembly guide.",
+          model: { url: `${PUMP_PART_MODEL_DIRECTORY}/bearing_lower.glb`, byteSize: 8360 },
+          placement: null,
+        },
+      ],
+    },
+    fasteners: [],
+    manufacturingFiles: [],
+    assemblySteps: [],
+    repairabilityIndex: null,
+    simulationTelemetry: {
+      factorOfSafety: 1.6,
+      peakVonMisesStressMegapascals: 118,
+      maxDisplacementMicrometres: 42,
+      thermalDeltaKelvin: 6.5,
+      ratedLoadNewtons: 3200,
+      source: "author_reported",
+    },
   },
   {
     id: "bp-005",
@@ -301,6 +727,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       PLACEHOLDER_DOCUMENTS.batteryManagementBillOfMaterials,
     ],
     partCount: 91,
+    assembly: null,
+    fasteners: [],
+    manufacturingFiles: [],
+    assemblySteps: [],
+    repairabilityIndex: null,
+    simulationTelemetry: null,
   },
   {
     id: "bp-006",
@@ -329,6 +761,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     walkthroughVideo: null,
     documents: [],
     partCount: 19,
+    assembly: null,
+    fasteners: [],
+    manufacturingFiles: [],
+    assemblySteps: [],
+    repairabilityIndex: null,
+    simulationTelemetry: null,
   },
   {
     id: "bp-007",
@@ -357,6 +795,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     walkthroughVideo: null,
     documents: [PLACEHOLDER_DOCUMENTS.sensorNodeDatasheet],
     partCount: 31,
+    assembly: null,
+    fasteners: [],
+    manufacturingFiles: [],
+    assemblySteps: [],
+    repairabilityIndex: null,
+    simulationTelemetry: null,
   },
   {
     id: "bp-008",
@@ -385,6 +829,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     walkthroughVideo: null,
     documents: [PLACEHOLDER_DOCUMENTS.heatExchangerSchematic],
     partCount: 8,
+    assembly: null,
+    fasteners: [],
+    manufacturingFiles: [],
+    assemblySteps: [],
+    repairabilityIndex: null,
+    simulationTelemetry: null,
   },
   {
     id: "bp-013",
@@ -413,6 +863,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     walkthroughVideo: null,
     documents: [],
     partCount: 17,
+    assembly: null,
+    fasteners: [],
+    manufacturingFiles: [],
+    assemblySteps: [],
+    repairabilityIndex: null,
+    simulationTelemetry: null,
   },
   {
     id: "bp-014",
@@ -441,6 +897,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     walkthroughVideo: placeholderVideo("/dummy/thumbnail_image10.avif"),
     documents: [],
     partCount: 44,
+    assembly: null,
+    fasteners: [],
+    manufacturingFiles: [],
+    assemblySteps: [],
+    repairabilityIndex: null,
+    simulationTelemetry: null,
   },
   {
     id: "bp-015",
@@ -469,6 +931,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     walkthroughVideo: null,
     documents: [],
     partCount: 77,
+    assembly: null,
+    fasteners: [],
+    manufacturingFiles: [],
+    assemblySteps: [],
+    repairabilityIndex: null,
+    simulationTelemetry: null,
   },
   {
     id: "bp-016",
@@ -497,6 +965,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     walkthroughVideo: null,
     documents: [],
     partCount: null,
+    assembly: null,
+    fasteners: [],
+    manufacturingFiles: [],
+    assemblySteps: [],
+    repairabilityIndex: null,
+    simulationTelemetry: null,
   },
   {
     id: "bp-009",

@@ -1051,6 +1051,86 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     detail routes. `sitemap.ts` says so; restore the seven entries and the seven flags
     together, or the surface ships part-visible, which nobody notices.
 
+    **The teardown arm grew (2026-09-08) — exploded-view contracts and a WebGL2 engine, frontend
+    only.** Six fields joined the arm and the shared shape is untouched: `assembly` (a NULLABLE
+    OBJECT — a model plus the parts worth moving; a model with no parts is not a view),
+    `fasteners[]`, `manufacturingFiles[]`, `assemblySteps[]`, `repairabilityIndex` (nullable —
+    the overall is STORED, not averaged, because the weighting is editorial) and
+    `simulationTelemetry` (nullable). What is not obvious from the code, in order of how
+    expensive it would be to relearn:
+
+    **`assembly.parts` ⊂ `partCount`.** The tally is the author's and the model lists nine of
+    148; neither is derived from the other. **Two ingestion modes, a discriminated union on
+    `kind`:** `composite` is one `.glb` addressed by node name; `individual_parts` is ONE FILE
+    PER PART, which is the shape a user upload takes and the shape a future `blueprint_part` row
+    with a file column maps onto one to one (`commerce_product_model` precedent). A per-part
+    file carries `placement: null` (exported in assembly coordinates, trust the file) or an
+    explicit position and rotation. **Telemetry is author-reported and the client computes none
+    of it.** `source` is a literal today and becomes a discriminated union the day a backend
+    solver exists, on the `BlueprintMetricValue` precedent; `stressRating` is a heat-map tint,
+    not an FEA solve, and the two never meet. **`manufacturingFiles` is a separate array from
+    `documents`** because a STEP has no inline reading and a View button over one would embed
+    binary; there is no `schematic_pdf` kind because that is a `documents[]` row. **Referential
+    integrity is a refinement on the contract, not a check in the engine** — `parentPartId`,
+    unique ids and node names, no cycles, `focusedPartId`, contiguous `stepNumber`, timestamps
+    inside the walkthrough — so `parseBlueprint` throws on a bad fixture at `pnpm build`, which
+    is where a bad fixture should fail. **The `.glb` fixtures are procedural**, generated once
+    by `scripts/generate-blueprint-fixture-models.mts` (`pnpm fixtures:blueprint-models`) and
+    committed like the PDFs were; every `byteSize` is what the script printed. The pump is six
+    files, and its `seal_carrier.glb` is exported at its own origin on purpose so the
+    explicit-placement branch renders.
+
+    **The engine (`src/components/home/blueprints/teardowns/engine/`) is WEBGL2 through the
+    stock `WebGLRenderer`, by decision.** WebGPU was planned and dropped: this scene is tens of
+    parts and no compute (stress is a DISPLAY of authored numbers; the live solve belongs to
+    dedicated FEA software), so WebGPU's wins never apply and its costs — a second 624 KB
+    renderer, an async factory, backend detection, TSL materials, browser coverage — all do.
+    Smoothness comes from the frame-loop design, which is the same on either API. Nothing may
+    import `three/webgpu` or `three/tsl`.
+
+    **Zero React renders on a slider tick.** The slider writes `store.motion.targetFactor` and a
+    module-level `advanceExplosionFrame` integrates it in `useFrame` by mutating positions in
+    place; only selection, hover and the toggles go through `useSyncExternalStore`. Friction is
+    `1 − exp(−k·dt)` (frame-rate independent, cannot overshoot), k = 9 per second, 60 under
+    reduced motion. The canvas runs on demand and the loop self-sustains only while something
+    moves. **Node flattening:** every listed part is `attach`ed under an identity root at load,
+    so the per-frame formula is one `addScaledVector` per part. Auto direction is
+    centroid-to-centroid from the parent (or the assembly); auto distance is 0.6 R halved per
+    nesting tier; tiers COMPOSE so a child rides its parent — which is why the pump's bearings
+    are parented to the SHAFT, not the housing: a child of a solid casting sinks with it. **The
+    heat map is a per-vertex colour bake** (`src/lib/blueprints/stress-ramp.ts`) drawn by a
+    stock material with `vertexColors`, no shader anywhere, and the legend draws its chips from
+    the same five stops. **Pins anchor at a part's top CORNER, not its top centre,** because on
+    a coaxial assembly every ring's centre sits on the shaft and a pin there is occluded by the
+    shaft itself.
+
+    **Three things found in the browser, not in review.** The `gridHelper` is `raycast={() =>
+ undefined}` because three's `Raycaster.params.Line.threshold` is ONE METRE and the scene is
+    centimetres across, so every occlusion ray toward a callout pin hit a grid line first and
+    drei hid every pin. `webglcontextlost` is ignored when the canvas is already detached,
+    because R3F forces a loss on unmount and HMR turned that into a false "context lost" error.
+    Drei's `distanceFactor` on pins was tried and rejected — it balloons labels when a part is
+    framed up close — so pins are fixed-size and every OTHER pin hides while a part is selected.
+
+    **The engine chunk loads through `await import()` inside an effect,**
+    IntersectionObserver-gated at 600 px, with the `.glb` bytes fetched in parallel and parsed
+    BEFORE the canvas mounts, so a bad file is an `error` value in the same union as everything
+    else. The store's viewer and this engine are two 3D stacks that never share a page's chunk
+    graph; `three` stays pinned at model-viewer's peer range.
+
+    **NOT IN THIS PART, each a decision:** Step 3, the split-pane 01–04 scrollytelling page
+    (scroll milestones drive `setTargetFactor`); Step 4, the fastener BOM table, repairability
+    rings, manufacturing download bundles and the walkthrough-to-step sync (hosted video
+    `currentTime` plus a `youtube` arm on `BlueprintVideoSchema` over the existing
+    `watch/video-player.tsx` — contract and renderer land together so no arm ships unexercised);
+    fullscreen; **user upload and authoring** — backend `blueprint`, `blueprint_part`,
+    `blueprint_part_model`, `blueprint_fastener`, `blueprint_manufacturing_file` and
+    `blueprint_assembly_step` tables plus a studio wizard with per-part `.glb` slots on the
+    `commerce_product_model` precedent; and a `subjectStatus` flag (existing product versus
+    proposed design) for "yet to be built" products, which needs a renderer before it ships. ⚠️
+    Drizzle is DEFERRED until a `blueprint` table exists: a schema for a table that does not
+    exist is a second contract that drifts.
+
     ### 1b. Showcase became a Launch-YC-shaped feed — SHIPPED 2026-09-08
 
     `/blueprints/showcase` and `/blueprints/showcase/[slug]` were redesigned after

@@ -252,7 +252,7 @@ browsed the same way:
 | Route                                  | Design                                                                                                              |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `/blueprints`                          | Hub — hero, three category links, one teaser rail each with **See all**                                             |
-| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid; detail carries the video and the PDFs                                                               |
+| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid; detail carries the video, the PDFs and, when `assembly` is non-null, the exploded-view engine       |
 | `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort lives in `listShowcases`; inert vote gutter |
 | `/blueprints/case-studies` + `/[slug]` | Numbered index, colour-coded by `discipline`                                                                        |
 | `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                                                                |
@@ -314,6 +314,15 @@ Three rules specific to this surface:
   progress, a claim this page has no business making). PDFs open in a `ModalSheet` over
   `<embed type="application/pdf">` with a download fallback, because a browser with its PDF viewer
   off renders `<embed>` as a silent blank rectangle.
+- **The exploded view is a SECOND 3D stack, on WebGL2, and it stays lazy.** The teardown
+  engine (`src/components/home/blueprints/teardowns/engine/`, R3F + drei over the stock
+  `WebGLRenderer`) sits beside the store's `@google/model-viewer`; both load through
+  `await import()` inside an effect and never share a page's chunk graph. `three` stays pinned
+  at model-viewer's peer range and NOTHING imports `three/webgpu` or `three/tsl` — WebGPU was
+  considered and rejected (`todo.md` §1a). `assembly` is a discriminated union: one composite
+  `.glb` addressed by node name, or one `.glb` PER PART, which is the shape an upload takes.
+  Telemetry is author-reported; the heat map is a vertex-colour bake of an authored rating, and
+  no copy may call either a simulation this page ran.
 - **The hero is real.** `GET /blueprints/hero-slides` and the admin console at
   `/admin/blueprints-hero` are live, backed by four rows. The `anime_hero_slide` TABLE and the
   five `anime_hero_slide_*` audit pgEnum labels KEEP THEIR NAMES — renaming them costs a

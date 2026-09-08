@@ -11,6 +11,7 @@ import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-ta
 import SpecificationList, {
   type SpecificationRow,
 } from "@/components/home/blueprints/sections/specification-list";
+import ExplodedViewport from "@/components/home/blueprints/teardowns/engine/exploded-viewport";
 import { getBlueprintByCategory } from "@/lib/blueprints/api";
 import { BLUEPRINT_DIFFICULTY_LABELS, type TeardownBlueprint } from "@/lib/blueprints/schemas";
 import { formatCentsRangeLabel, formatCountLabel } from "@/lib/store/format";
@@ -21,6 +22,11 @@ import { formatCentsRangeLabel, formatCountLabel } from "@/lib/store/format";
  * ABSENT VALUES ARE OMITTED, NOT DASHED — see `SpecificationList`. `cadFormat: null` means no CAD
  * source was published and `partCount: null` means nobody counted; neither is a zero, and printing
  * one would invent a fact the publisher never stated.
+ *
+ * "Parts modelled" is a COUNT OF THE PAYLOAD, not a claim the author made — the same class of
+ * number as the index card's "{n} files" — which is why it may appear when `partCount` is null:
+ * one is a tally the author typed, the other is how many meshes the model moves. It sits after
+ * "Parts" so the two read as the subset they are ("Parts 148 / Parts modelled 9").
  */
 function buildSpecifications(teardown: TeardownBlueprint): SpecificationRow[] {
   const billOfMaterialsLabel =
@@ -41,6 +47,9 @@ function buildSpecifications(teardown: TeardownBlueprint): SpecificationRow[] {
     ...(teardown.partCount === null
       ? []
       : [{ label: "Parts", value: formatCountLabel(teardown.partCount) }]),
+    ...(teardown.assembly === null
+      ? []
+      : [{ label: "Parts modelled", value: formatCountLabel(teardown.assembly.parts.length) }]),
   ];
 }
 
@@ -72,6 +81,15 @@ export default async function TeardownDetailPage({ slug }: { slug: string }) {
         <p className="mt-4 max-w-2xl text-sm leading-6 text-foreground">{teardown.summary}</p>
 
         <SpecificationList specifications={buildSpecifications(teardown)} />
+
+        {/* The model is the primary media when there is one, so it sits above the walkthrough. */}
+        {teardown.assembly === null ? null : (
+          <ExplodedViewport
+            assembly={teardown.assembly}
+            simulationTelemetry={teardown.simulationTelemetry}
+            title={teardown.title}
+          />
+        )}
 
         {teardown.walkthroughVideo === null ? null : (
           <BlueprintVideoBlock video={teardown.walkthroughVideo} title="Walkthrough" />
