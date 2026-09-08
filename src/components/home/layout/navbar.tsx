@@ -123,7 +123,9 @@ export default function Navbar({
     <nav className="sticky top-0 z-50 bg-background">
       <div className="relative mx-auto flex items-center justify-between px-4 py-2 md:justify-between lg:px-6">
         {/* Brand */}
-        <div className={"flex min-w-0 items-center gap-2.5 lg:gap-4.5"}>
+        <div
+          className={"flex min-w-0 items-center gap-2.5 lg:gap-4.5 xl:max-w-[calc(50%-20.5rem)]"}
+        >
           {sub && (
             <button
               type="button"
@@ -155,7 +157,10 @@ export default function Navbar({
           {sub ? (
             <>
               {/* mobile: page title */}
-              <h1 className="truncate text-xl font-medium text-foreground md:hidden">
+              <h1
+                title={sub.title}
+                className="truncate text-xl font-medium text-foreground md:hidden"
+              >
                 {sub.title}
               </h1>
               {/* desktop: breadcrumb */}
@@ -171,7 +176,12 @@ export default function Navbar({
                   {sub.parentLabel}
                 </Link>
                 <span className="shrink-0 text-muted-foreground">›</span>
-                <span className="truncate text-xl font-medium text-foreground">{sub.title}</span>
+                <span
+                  title={sub.title}
+                  className="min-w-0 truncate text-xl font-medium text-foreground"
+                >
+                  {sub.title}
+                </span>
               </div>
             </>
           ) : (
@@ -235,7 +245,7 @@ export default function Navbar({
           </button>
         </div>
 
-        <div className="flex items-center gap-x-2 text-black">
+        <div className="flex shrink-0 items-center gap-x-2 text-black">
           <Link
             href={"/search"}
             aria-label="Search"
