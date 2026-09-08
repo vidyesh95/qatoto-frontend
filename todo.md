@@ -1217,6 +1217,22 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     screen at every framing without a special case. The band works out at 33%–250%, and 100% now
     means "as framed" everywhere.
 
+    ⚠️ **Zoom has ONE verb — orbit distance about the model's centre — and three things had to
+    change to make that true.** (1) The fit centre was dropped 15% of the radius for HUD
+    clearance; the camera orbits about that point, so the model sat above the pivot and
+    perspective slid it down on every zoom out and up on every zoom in — reported as "tapping
+    zoom moves the model". The pivot is now the content's centre and clearance is headroom
+    alone, which scales with the model instead of displacing it. (2) A macOS trackpad pinch
+    arrives as a wheel event with `ctrlKey`, which camera-controls hard-codes to `ACTION.ZOOM` —
+    a change to `camera.zoom`, not distance — so the band and the readout never saw it: it ran
+    the model into the shell while the readout sat at 100%. A capture-phase `wheel` listener on
+    the canvas converts a `ctrlKey` wheel into `dollyTo` with the same `0.95 ^ (deltaY / 10)`
+    curve camera-controls gives a plain wheel, and `minZoom`/`maxZoom` are pinned to 1 so
+    nothing else can reach that path. (3) `dollyToCursor` is off: it walked the pivot toward the
+    pointer on every scroll zoom, the same drift from another input. The trade — no
+    zoom-toward-the-corner — is recorded in the JSX; clicking a part is how this viewer looks
+    closely at something.
+
     **Isolation hides, X-ray ghosts**, and the difference is deliberate: the part browser
     answers "what is this component" so the rest leaves the frame, X-ray answers "where does
     this sit" so the rest stays faint. Ghosting was raised from 0.15 to 0.28 because a pale

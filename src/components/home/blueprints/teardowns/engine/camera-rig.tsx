@@ -26,17 +26,22 @@ export interface CameraRigProps {
 
 // SPHERES, NOT BOXES. camera-controls' `fitToBox` snaps the view to the nearest axis, which turns
 // the three-quarter view into a flat elevation the moment anything is framed. `fitToSphere` keeps
-// the current angles, so every fit below is a sphere — padded by enlarging its radius, and pushed
-// up the frame by lowering its centre, because the HUD's slider and part panel cover the bottom
-// of the canvas and the toggles cover the top.
+// the current angles, so every fit below is a sphere, padded by enlarging its radius.
+//
+// THE PIVOT IS THE MODEL'S CENTRE, AND NOTHING MAY LOWER IT. An earlier version dropped the fit
+// centre by 15% of the radius to keep the model clear of a slider that overlaid the stage. The
+// camera orbits and dollies about that point, so the model sat ABOVE the pivot on screen — and
+// perspective then slid it down toward the pivot on every zoom out and up on every zoom in. That
+// was reported as "tapping zoom moves the model". Any pivot that is not the content's centre is a
+// parallax drift under every zoom input; clearance comes from the headroom below, which scales
+// with the model instead of displacing it.
 
 /**
- * How much larger than the content the fitted sphere is, and how far its centre drops as a
- * fraction of that radius. Together they leave about a tenth of a radius above the content and
- * half a radius below it — the slider and the part panel sit in that lower band.
+ * How much larger than the content the fitted sphere is. It is what keeps the model clear of the
+ * corner controls at 100%, and because it is a fraction of the radius it stays proportionate at
+ * every framing.
  */
 const FIT_HEADROOM_FRACTION = 0.3;
-const FIT_CENTRE_DROP_FRACTION = 0.15;
 /**
  * The smallest sphere a selected part is framed with, as a fraction of the ASSEMBLY radius.
  *
@@ -68,6 +73,26 @@ const DOLLY_STEP_FRACTION = 0.18;
  */
 const ZOOM_IN_LIMIT_FRACTION = 0.4;
 const ZOOM_OUT_LIMIT_MULTIPLE = 3;
+
+/**
+ * A TRACKPAD PINCH IS A WHEEL EVENT WITH `ctrlKey` SET, and camera-controls hard-codes that to
+ * `ACTION.ZOOM` — a change to `camera.zoom`, not to the orbit distance. The zoom band and the
+ * readout both describe distance, so a pinch was invisible to both: it ran the model far past 250%
+ * while the readout sat at 100%. The route is not configurable, so the pinch is intercepted before
+ * camera-controls sees it and re-issued as a dolly. This divisor reproduces the per-tick curve
+ * camera-controls applies to a plain wheel on macOS (`0.95 ^ (deltaY / 10)`), so a pinch and a
+ * two-finger scroll feel identical.
+ */
+const PINCH_TICK_DIVISOR = 10;
+/**
+ * Ticks closer together than this belong to one gesture. A pinch delivers dozens of wheel events
+ * in well under a second while the camera is still gliding toward the previous tick's target, so
+ * each tick must compound from the TARGET distance, not from wherever the animation has got to —
+ * compounding from the lagging live value made forty pinch-out ticks stall at 55% instead of
+ * reaching the 33% floor. camera-controls' own wheel path compounds from its end value for the same
+ * reason; the end value is private, so the gesture's running target is kept here.
+ */
+const PINCH_GESTURE_GAP_MS = 400;
 
 /**
  * What the camera is currently framing. Mutable and carried by a ref, because the frame loop reads
@@ -126,10 +151,8 @@ function frameSphere(
   framing: CameraFraming,
 ): void {
   const effectiveRadius = sphere.radius * (1 + FIT_HEADROOM_FRACTION);
-  const centre = sphere.center.clone();
-  centre.y -= effectiveRadius * FIT_CENTRE_DROP_FRACTION;
   applyFraming(controls, effectiveRadius, framing);
-  void controls.fitToSphere(new Sphere(centre, effectiveRadius), isAnimated);
+  void controls.fitToSphere(new Sphere(sphere.center.clone(), effectiveRadius), isAnimated);
 }
 
 /** Frame the closed or the exploded bounds. Module-level: no closure over component props. */
@@ -174,6 +197,7 @@ export default function CameraRig({ store, loadedAssembly }: CameraRigProps) {
   // aspect against 1 and uses nothing else about the viewport, so a resize that preserves the
   // shape does not move the fit distance and should not re-derive anything.
   const viewportAspect = useThree((state) => state.size.width / Math.max(1, state.size.height));
+  const canvasElement = useThree((state) => state.gl.domElement);
 
   // The home view: frame the closed assembly once, without a transition, and remember it.
   useEffect(() => {
@@ -241,6 +265,43 @@ export default function CameraRig({ store, loadedAssembly }: CameraRigProps) {
     applyFraming(controls, framedRadius, framingRef.current);
   }, [viewportAspect]);
 
+  // Pinch → dolly. CAPTURE PHASE, on the same element camera-controls listens to, so this runs
+  // first and `stopImmediatePropagation` keeps the event from ever reaching its `ACTION.ZOOM`
+  // branch. Plain wheels are left alone: they were already a dolly, already banded, already read.
+  useEffect(() => {
+    let pinchTargetDistance: number | null = null;
+    let lastPinchTickAt = 0;
+
+    function handleWheelCapture(event: WheelEvent): void {
+      if (!event.ctrlKey) return;
+      const controls = controlsRef.current;
+      if (controls === null) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      const now = event.timeStamp;
+      // Written as one expression so the type narrows: a gesture that has lapsed, or none yet,
+      // starts again from wherever the camera actually is.
+      const baseDistance =
+        pinchTargetDistance === null || now - lastPinchTickAt > PINCH_GESTURE_GAP_MS
+          ? controls.distance
+          : pinchTargetDistance;
+      const dollyScale = Math.pow(0.95, -event.deltaY / PINCH_TICK_DIVISOR);
+      // Clamped here as well as inside `dollyTo`, so the running target cannot wander past the
+      // band and then need several ticks to come back.
+      pinchTargetDistance = Math.min(
+        controls.maxDistance,
+        Math.max(controls.minDistance, baseDistance * dollyScale),
+      );
+      lastPinchTickAt = now;
+      void controls.dollyTo(pinchTargetDistance, true);
+    }
+    canvasElement.addEventListener("wheel", handleWheelCapture, { capture: true, passive: false });
+    return () => {
+      canvasElement.removeEventListener("wheel", handleWheelCapture, { capture: true });
+    };
+  }, [canvasElement]);
+
   // The readout is a percentage of the distance the CURRENT framing was fitted at, published from
   // inside the loop because that is where the live distance is. `publishZoomPercent` rounds and
   // drops no-ops, so an orbit — which does not change distance — costs nothing.
@@ -260,7 +321,16 @@ export default function CameraRig({ store, loadedAssembly }: CameraRigProps) {
       // NO `minDistance`/`maxDistance` PROPS. The band is owned imperatively by `applyFraming`,
       // and this component re-renders on every hover and selection — R3F would reapply a stale
       // prop over the live value each time.
-      dollyToCursor
+      //
+      // `camera.zoom` IS LOCKED AT 1. Distance is the only zoom verb in this viewer; the pinch
+      // intercept above converts the one input that would have reached `ACTION.ZOOM`, and this
+      // guarantees nothing else ever does.
+      minZoom={1}
+      maxZoom={1}
+      // NO `dollyToCursor`. It walks the orbit pivot toward the pointer on every scroll-wheel
+      // zoom, so zooming near an edge moves the model sideways — the same "it moved" as the
+      // lowered pivot, from a different input. The trade is honest: zoom-toward-the-corner is a
+      // CAD convention that is gone; clicking a part is how this viewer looks closely at something.
     />
   );
 }
