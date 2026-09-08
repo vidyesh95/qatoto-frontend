@@ -991,24 +991,17 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
 
     **The two loose ends this shipped with are CLOSED (2026-09-06).**
 
-    - **Captions render.** `public/dummy/blueprints/walkthrough-captions.vtt` is a real WebVTT
-      whose cue text says it is placeholder narration, attached to two of the eight fixture
-      videos — one walkthrough (`bp-001`) and one demo (`bp-009`) — so both the captioned and
-      the caption-less branch render, on both a teardown page and a showcase page. ⚠️ NOT the
-      `sintel-thumbnails.vtt` sitting beside the clip: that is a STORYBOARD track whose cues
-      are sprite coordinates, and mounted as `kind="captions"` it renders image URLs as
-      subtitles.
-
-        `blueprint-video-block.tsx` now renders the player in TWO BRANCHES rather than one with
-        a conditional child, and that is the point rather than a style choice.
-        `media-has-caption` cannot see a `<track>` inside a JSX expression container, so the
-        single-element version had to suppress the rule for BOTH paths — including the
-        captioned one, which is the path worth checking. Split, the captioned branch is linted
-        normally and the suppression covers only the branch where suppressing is correct.
-        **Verified by deleting the `<track>` from the captioned branch: `pnpm lint` fails on it,
-        and passes again when restored.** ⚠️ Do not "simplify" it back, and do not copy
-        `studio/upload/video-preview-card.tsx:95`, which satisfies the same rule with
-        `<track kind="captions" />` — no `src`, no captions, pure lint appeasement.
+    - ~~**Captions render.**~~ **SUPERSEDED by Part 3b** — blueprint video is YouTube-only, and
+      YouTube serves its own captions, so there is no `<track>` on this surface and no
+      `media-has-caption` dance to get right. `public/dummy/blueprints/walkthrough-captions.vtt`
+      survives on disk, referenced by nothing. ⚠️ The warning it carried is still worth keeping for
+      whoever wires captions anywhere else: `public/dummy/video/sintel-thumbnails.vtt` is a
+      STORYBOARD track whose cues are sprite coordinates, and mounted as `kind="captions"` it
+      renders image URLs as subtitles.
+      **Verified by deleting the `<track>` from the captioned branch: `pnpm lint` fails on it,
+      and passes again when restored.** ⚠️ Do not "simplify" it back, and do not copy
+      `studio/upload/video-preview-card.tsx:95`, which satisfies the same rule with
+      `<track kind="captions" />` — no `src`, no captions, pure lint appeasement.
 
     - **All three indexes are keyset-paged.** `CursorPageControl` was HOISTED from
       `store/shared/` to `home/shared/`, with a pure re-export left at the old path so the nine
@@ -1419,6 +1412,54 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
  !== null` already did the right thing once the contract and the gate moved. Its plain-text
       fallback is now unreachable from either real page and is KEPT as the honest render for a step
       list mounted outside a provider.
+
+    **Part 3b (2026-09-08) — THE HOSTED VIDEO ARM WAS DELETED. SHIPPED.** Vidyesh asked where the
+    `<video>` on a teardown page was streaming from, and the answer was the finding: **nowhere.**
+    `/dummy/video/Sintel_1080_10s_1MB.mp4` is a static file he committed himself in `455c038`
+    (2026-06-04) for the vidstack watch player, orphaned when vidstack was removed, and revived here
+    as a fixture because the local `ffmpeg` cannot mint new clips. No Livepeer, no Mux, no Cloudinary
+    video — Livepeer is only a label in `STORAGE_PROVIDERS` and a parked plan.
+
+    ⚠️ **THE HOSTED ARM SHOULD NEVER HAVE EXISTED, and the repo said so before I built it.**
+    `video-card-menu.tsx` states the platform rule: _"Every video on the platform today is a YouTube
+    link. The bytes sit on youtube.com, Qatoto never holds them and has no right to serve them."_
+    Self-hosted video is Studio Appendix A, "⛔ DO NOT BUILD THIS NOW"; the studio's file dropzone is
+    `inert` and says so; `POST /videos` takes a `youtubeUrl` and there is no upload route on the
+    platform. So no authoring path could ever have produced a hosted blueprint video. **This was a
+    correctness fix, not a preference** — the lesson being that a new contract on a mock surface must
+    be checked against the platform decisions the live surfaces already encode.
+
+    - **`BlueprintVideoSchema` is a ONE-ARM union now.** `source: z.literal("youtube")` survives as
+      the seam Appendix A would widen — the same shape `feed/schemas.ts:81` keeps for the pgEnum that
+      genuinely has two labels — and it still byte-matches that enum. `HostedBlueprintVideoSchema`,
+      its `url` and its `captionsUrl` are gone.
+    - **`durationSeconds` became NULLABLE**, mirroring the backend column. ⚠️ oEmbed is the only
+      outbound YouTube call either repo makes and it returns NO duration, which is why
+      `video.duration_seconds` over there is "NULL on every YouTube row". Requiring it here would
+      have forced a future authoring form to ask an author to type a runtime — a guess, and the badge
+      would read "8:12" over a video of another length. Three fixtures carry a measured runtime and
+      five carry `null`, so both badge branches render.
+    - **`timestampSeconds` left `TeardownAssemblyStep` entirely**, and with it the last of the
+      step-seek feature: `walkthrough-seek-context.tsx` and `blueprint-hosted-player.tsx` were
+      deleted, `formatVideoTimestampLabel` was deleted, and **the step row reverted to a single
+      button** — the two-sibling shape existed only so a seek button could sit beside the focus
+      button. The three-turn arc (added in Part 3, restricted to hosted in Part 3a, removed with
+      hosted here) is recorded in the step schema so nobody re-adds it: chapters belong on the
+      YouTube video.
+    - **All 7 hosted fixtures flipped to the one YouTube id**, and `placeholderYoutubeVideo` replaced
+      `placeholderVideo`. ⚠️ It takes NO poster argument on purpose: a served mp4 has no still of its
+      own so each fixture used to pass a Qatoto thumbnail, and keeping that would put a picture of a
+      circuit board over a video of a Blender film. The poster is now derived from the id, exactly as
+      `studio/upload/thumbnail-picker.tsx` derives one for a pasted link. `bp-005`'s three steps were
+      reverted to `[]` — they existed only to cover hosted seek.
+    - **Nothing was deleted from `public/`.** `Sintel_1080_10s_1MB.mp4`, `sintel-storyboard.jpg`,
+      `sintel-thumbnails.vtt` and `walkthrough-captions.vtt` all remain, referenced by nothing. Two
+      of them were already orphaned in July.
+
+    **What this hands the future authoring form**, which is the real payoff: its video input is
+    **one pasted link**, validated with `extractYoutubeVideoId`, stored as the 11-character id, with
+    the poster derived from that id — mirroring `create-studio-page.tsx` exactly. It cannot fill a
+    duration, which is why the field is nullable before anyone builds it rather than after.
 
     **STILL DEFERRED after Part 3:** upload and authoring — the six backend `blueprint_*` tables,
     the migration, the Express routes and a studio wizard with per-part `.glb` slots — plus
