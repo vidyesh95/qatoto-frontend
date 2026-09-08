@@ -1199,6 +1199,24 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     renders. "Four views" was dropped: a quad viewport needs four scissored passes and its own
     camera per pane.
 
+    ⚠️ **The zoom band must be anchored to the CURRENT framing, not to the assembly.** Shipped
+    wrong and fixed the same day: the limits were JSX props off the closed bounding-sphere
+    radius (`minDistance={radius * 0.4}`), and since a fit parks the camera at roughly `4.3 ×
+ radius`, that floor let twelve taps of the zoom button put the camera INSIDE the enclosure —
+    779%, looking at the back of the control board with the shell clipped away. The same
+    load-time anchor made the readout lie: it reported 74% on the Exploded tab and 131% on a
+    selected part with the zoom untouched, because it was comparing the live distance against a
+    framing two changes ago. Both now come from one `frameSphere`, the only place a fit happens,
+    which derives the band and the readout anchor from `getDistanceToFitSphere` — public, and
+    the exact call `fitToSphere` makes internally, so the destination distance is known
+    immediately instead of an animation later. Three things about it that are load-bearing: the
+    band is set BEFORE the fit, because `fitToSphere` dollies through `dollyTo` and a stale band
+    would clamp the very fit meant to define it; the props are GONE from the JSX, because
+    `CameraRig` subscribes to the store and R3F would reapply a stale prop on every hover; and a
+    floor at 0.4 of the fit sits at about 1.3 framed radii, which is outside whatever is on
+    screen at every framing without a special case. The band works out at 33%–250%, and 100% now
+    means "as framed" everywhere.
+
     **Isolation hides, X-ray ghosts**, and the difference is deliberate: the part browser
     answers "what is this component" so the rest leaves the frame, X-ray answers "where does
     this sit" so the rest stays faint. Ghosting was raised from 0.15 to 0.28 because a pale
