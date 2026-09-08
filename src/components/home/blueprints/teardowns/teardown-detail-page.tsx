@@ -6,7 +6,6 @@ import { notFound } from "next/navigation";
 
 import BlueprintDocumentList from "@/components/home/blueprints/media/blueprint-document-list";
 import BlueprintVideoBlock from "@/components/home/blueprints/media/blueprint-video-block";
-import { WalkthroughSeekProvider } from "@/components/home/blueprints/media/walkthrough-seek-context";
 import BlueprintAuthorLine from "@/components/home/blueprints/sections/blueprint-author-line";
 import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-tag-list";
 import SpecificationList, {
@@ -163,26 +162,11 @@ export default async function TeardownDetailPage({ slug }: { slug: string }) {
       </div>
 
       {/*
-        ⚠️ THE PROVIDER IS CONDITIONAL, AND THAT CONDITION IS THE FEATURE. A step renders its
-        timestamp as a "Play from 0:03" button precisely when a seek channel exists, so mounting the
-        provider unconditionally would hand every step of a teardown with NO seekable walkthrough a
-        button that seeks a player that was never mounted.
-
-        THE CONDITION IS THE SOURCE, NOT MERELY THE PRESENCE, and the difference is a product
-        decision rather than a technical one: a YouTube walkthrough already gives the reader
-        chapters and a timeline inside YouTube's own player, so this page does not offer a second
-        set. The contract enforces the same rule from the other end — the teardown arm's refinement
-        rejects a step timestamp beside a YouTube walkthrough — so on that path there is nothing for
-        a channel to carry anyway. Belt and braces, deliberately: the gate here is what a reader
-        sees, and the refinement is what a backend is allowed to send.
+        NO SEEK PROVIDER HERE ANY MORE. A step's timestamp used to seek the walkthrough, which
+        needed a channel wrapped around both this page's step list and its video block. Blueprint
+        video is YouTube-only now, so there is nothing to seek and no channel to mount.
       */}
-      <div className="px-4 pt-5 lg:px-6">
-        {teardown.walkthroughVideo?.source === "hosted" ? (
-          <WalkthroughSeekProvider>{detailBody}</WalkthroughSeekProvider>
-        ) : (
-          detailBody
-        )}
-      </div>
+      <div className="px-4 pt-5 lg:px-6">{detailBody}</div>
     </article>
   );
 }

@@ -981,10 +981,13 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
 
     **Placeholder media is real, not invented.** `public/dummy/blueprints/*.pdf` are eight
     generated one-to-four-page PDFs and every fixture `byteSize`/`pageCount` is measured off
-    disk. Every fixture video points at the one real clip in the repo
-    (`/dummy/video/Sintel_1080_10s_1MB.mp4`, `durationSeconds: 10` — its TRUE duration).
-    ⚠️ `ffmpeg` on this machine is broken (`Library not loaded: libass.9.dylib`), which is why
-    there is one clip rather than five; `brew reinstall ffmpeg` fixes it.
+    disk. Every fixture video is the SAME YouTube id — Blender's own upload of Sintel,
+    `eRsGyueVLvQ`, resolved against oEmbed — for the reason they once all pointed at one local
+    clip: an invented id parses and then gives a dead player. ⚠️ **The local clip is no longer used
+    by anything** (Part 3b, below); `public/dummy/video/*` and
+    `public/dummy/blueprints/walkthrough-captions.vtt` are deliberately orphaned rather than
+    deleted. `ffmpeg` on this machine is broken (`Library not loaded: libass.9.dylib`), which is why
+    there was one clip rather than five; `brew reinstall ffmpeg` fixes it, and nothing needs it now.
 
     **The two loose ends this shipped with are CLOSED (2026-09-06).**
 

@@ -77,21 +77,6 @@ export function blueprintDisciplineLabel(discipline: BlueprintDiscipline): strin
   return BLUEPRINT_DISCIPLINE_LABELS[discipline];
 }
 
-/**
- * `0` -> `"0:00"`, `93` -> `"1:33"`. A POSITION IN A VIDEO, WHICH IS NOT A DURATION, and the
- * distinction is why this is not `formatDurationLabel`: that one returns `null` at or below zero,
- * because a clip of no length has nothing to show. Second zero is the first frame — a real place a
- * step can point at — so it formats like any other.
- */
-export function formatVideoTimestampLabel(timestampSeconds: number): string {
-  const totalSeconds = Math.max(0, Math.trunc(timestampSeconds));
-  const hours = Math.trunc(totalSeconds / 3600);
-  const minutes = Math.trunc((totalSeconds % 3600) / 60);
-  const paddedSeconds = String(totalSeconds % 60).padStart(2, "0");
-  if (hours === 0) return `${minutes}:${paddedSeconds}`;
-  return `${hours}:${String(minutes).padStart(2, "0")}:${paddedSeconds}`;
-}
-
 export function manufacturingMethodLabel(method: TeardownManufacturingMethod): string {
   return TEARDOWN_MANUFACTURING_METHOD_LABELS[method];
 }

@@ -366,7 +366,9 @@ prompt, not an error panel.
   `origin: window.location.origin` are both required; the latter is the thing most often missing
   when a player silently refuses to report state. There are no official types, so the surface we
   touch is hand-declared rather than `any`.
-- **`hosted`** — the native `<video>`, kept for Appendix A. No rows use it today.
+- **`hosted`** — the native `<video>`, kept for Appendix A. No rows use it today, and this is
+  the ONLY hosted player left in the repo: the blueprints surface briefly grew a second one and
+  it was removed (see `todo.md` §1a, Part 3b), because a blueprint video is a YouTube id.
 
 `use-watch-progress-beacon.ts`:
 

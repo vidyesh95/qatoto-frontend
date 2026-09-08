@@ -36,62 +36,45 @@ import type {
 const UNITED_STATES_DOLLAR = "USD";
 
 /**
- * EVERY FIXTURE VIDEO IS THE SAME TEN-SECOND CLIP, because it is the only real video asset in
- * `public/`. Pointing at invented filenames would give a player a 404 and make the "video is
- * present" branch untestable, which is the opposite of what a fixture is for. The duration is the
- * file's true duration, not a prettier invented one — a badge reading "8:12" over a ten-second
- * clip is a lie the first person to click it discovers.
- */
-const PLACEHOLDER_VIDEO_URL = "/dummy/video/Sintel_1080_10s_1MB.mp4";
-const PLACEHOLDER_VIDEO_DURATION_SECONDS = 10;
-
-/**
- * A real WebVTT, authored for this clip, whose cue text says it is a placeholder.
+ * EVERY FIXTURE VIDEO IS THE SAME YOUTUBE VIDEO, and there is only one kind of video to be.
  *
- * ⚠️ NOT `/dummy/video/sintel-thumbnails.vtt`, which sits next to the clip and is a STORYBOARD
- * track — its cues are `sintel-storyboard.jpg#xywh=…` sprite coordinates for seek-bar previews
- * (`src/types/video.ts:57`). Mounted as `kind="captions"` it renders image URLs as subtitles.
- */
-const PLACEHOLDER_CAPTIONS_URL = "/dummy/blueprints/walkthrough-captions.vtt";
-
-/**
- * THE ONE YOUTUBE FIXTURE — and it is the SAME FILM as the clip above, delivered the other way.
+ * `eRsGyueVLvQ` is the Blender Foundation's own upload of Sintel, resolved against YouTube's oEmbed
+ * endpoint when it was added. Reusing one id across all eight is the same discipline the fixtures
+ * kept when they all pointed at one local clip: a made-up id parses fine and then gives a dead
+ * player, leaving the whole surface untestable, and eight invented ids would be eight of those.
  *
- * `eRsGyueVLvQ` is the Blender Foundation's own upload of Sintel, resolved against YouTube's
- * oEmbed endpoint when it was added. Using the same placeholder for both video arms is what keeps
- * this file's "NOTHING HERE IS REAL" doctrine intact: the two arms read as two delivery
- * mechanisms for one stand-in, rather than one real video smuggled in beside a stand-in.
+ * WHY AN INSTITUTION'S UPLOAD AND NOT A TEARDOWN CHANNEL. An individual creator's video breaks the
+ * day they delete it; Blender's has been up since 2010, is CC-BY, and is not going to have
+ * embedding switched off by someone reorganising a channel. It is a stand-in for a walkthrough, not
+ * a claim about the subject — exactly as the Sintel clip was.
  *
- * WHY AN INSTITUTION'S UPLOAD AND NOT A TEARDOWN CHANNEL. A made-up id parses fine and then gives
- * a dead player, leaving the whole YouTube arm untestable — the exact failure the clip above
- * exists to avoid. An individual creator's video breaks the same way the day they delete it;
- * Blender's has been up since 2010, is CC-BY, and is not going to have embedding switched off by
- * someone reorganising a channel.
- *
- * ⚠️ THE DURATION IS THE FILM'S TRUE RUNTIME, read from the player, not typed from memory — the
- * rule the header above states. It is load-bearing once: the poster badge shows it. It used to be
- * load-bearing twice, because the arm's refinement bounded every step timestamp against it, but
- * step timestamps are hosted-only now and a YouTube walkthrough carries none.
+ * ⚠️ THE DURATION IS THE FILM'S TRUE RUNTIME, READ OFF THE PLAYER, not typed from memory. The badge
+ * shows it, and a badge reading "8:12" over a video of another length is a lie the first person to
+ * click it discovers. ⚠️ AND IT IS A LUXURY THIS FILE HAS AND A REAL BACKEND DOES NOT: oEmbed
+ * reports no duration, so `durationSeconds` is nullable and a real row will usually carry `null`.
+ * A fixture that always supplies one would leave the badge-less case unexercised, which is why
+ * `placeholderYoutubeVideo` takes the runtime as an argument that defaults to `null`.
  */
 const PLACEHOLDER_YOUTUBE_VIDEO_ID = "eRsGyueVLvQ";
 const PLACEHOLDER_YOUTUBE_DURATION_SECONDS = 888;
 
 /**
- * TWO OF THE EIGHT FIXTURE VIDEOS CARRY CAPTIONS, and six do not.
+ * THE POSTER IS DERIVED FROM THE ID, WITH NO NETWORK CALL — the same expression
+ * `studio/upload/thumbnail-picker.tsx` uses for a pasted link. `hqdefault` rather than
+ * `maxresdefault`, which 404s on anything not uploaded in HD and answers with a grey 120x90 stub.
+ * `**.ytimg.com` is already allowed by `next.config.ts`'s `images.remotePatterns`.
  *
- * Deliberately a mix. Captions on every video would let the contract imply that a real upload
- * always has them, which is false; captions on none left the `<track>` branch in
- * `blueprint-video-block.tsx` unexercised, which is how it shipped and is what this fixes. One
- * walkthrough (`bp-001`) and one demo (`bp-009`) carry the track, so both branches render on both
- * a teardown page and a showcase page.
+ * ⚠️ NO `posterUrl` ARGUMENT, and that is a change worth noticing: while videos were self-hosted
+ * each fixture passed its own thumbnail, because a served mp4 has no still of its own. A YouTube
+ * video does, so passing a Qatoto image here would put a picture of a circuit board over a video of
+ * a Blender film — a mismatch the old fixtures hid.
  */
-function placeholderVideo(posterUrl: string, captionsUrl: string | null = null): BlueprintVideo {
+function placeholderYoutubeVideo(durationSeconds: number | null = null): BlueprintVideo {
   return {
-    source: "hosted",
-    url: PLACEHOLDER_VIDEO_URL,
-    posterUrl,
-    durationSeconds: PLACEHOLDER_VIDEO_DURATION_SECONDS,
-    captionsUrl,
+    source: "youtube",
+    youtubeVideoId: PLACEHOLDER_YOUTUBE_VIDEO_ID,
+    posterUrl: `https://i.ytimg.com/vi/${PLACEHOLDER_YOUTUBE_VIDEO_ID}/hqdefault.jpg`,
+    durationSeconds,
   };
 }
 
@@ -285,7 +268,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     tags: ["cold-chain", "solar", "power-electronics", "mppt"],
     createdAt: "2026-08-14T09:12:00.000Z",
-    walkthroughVideo: placeholderVideo("/dummy/thumbnail_image01.avif", PLACEHOLDER_CAPTIONS_URL),
+    walkthroughVideo: placeholderYoutubeVideo(PLACEHOLDER_YOUTUBE_DURATION_SECONDS),
     documents: [PLACEHOLDER_DOCUMENTS.solarSchematic, PLACEHOLDER_DOCUMENTS.solarBillOfMaterials],
     // The author's tally. Nine of these are modelled below; 148 is not nine and must not become nine.
     partCount: 148,
@@ -476,13 +459,11 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       PLACEHOLDER_MANUFACTURING_FILES.solarPickAndPlace,
       PLACEHOLDER_MANUFACTURING_FILES.solarBillOfMaterialsCsv,
     ],
-    // Every timestamp is inside the ten-second placeholder clip, because the contract checks it.
     assemblySteps: [
       {
         stepNumber: 1,
         title: "Release the lid",
         description: "Four M3 cap screws, one in each corner. The gasket stays with the lid.",
-        timestampSeconds: 0,
         focusedPartId: "part-002",
       },
       {
@@ -490,7 +471,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
         title: "Lift the board",
         description:
           "Four Phillips screws into the standoffs. Unplug the thermistor harness before lifting or it tears at the crimp.",
-        timestampSeconds: 3,
         focusedPartId: "part-003",
       },
       {
@@ -498,14 +478,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
         title: "Unbolt the heatsink",
         description:
           "Two M3 × 12 through the board into the extrusion. The MOSFETs stay clamped to it.",
-        timestampSeconds: 6,
         focusedPartId: "part-004",
       },
       {
         stepNumber: 4,
         title: "Free the terminal block",
         description: "Press-fit into the board; lever from the underside, never pull.",
-        timestampSeconds: 9,
         focusedPartId: "part-007",
       },
     ],
@@ -588,36 +566,23 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     tags: ["motors", "bldc", "sourcing", "power-electronics"],
     createdAt: "2026-07-28T11:05:00.000Z",
-    // THE YOUTUBE ARM, on a teardown with NO assembly. The steps below render standalone rather
-    // than inside the 3D viewer's tab, and they carry NEITHER affordance — no part to focus and,
-    // per the arm's refinement, no timestamp to seek — which is the row this fixture exists to
-    // exercise. It briefly carried timestamps and a seek button; see the refinement for why a
-    // YouTube walkthrough cannot.
-    walkthroughVideo: {
-      source: "youtube",
-      youtubeVideoId: PLACEHOLDER_YOUTUBE_VIDEO_ID,
-      // `hqdefault` rather than `maxresdefault`: the latter 404s for a large share of videos and
-      // YouTube answers with a grey 120x90 stub. `**.ytimg.com` is already in
-      // `next.config.ts`'s `images.remotePatterns`.
-      posterUrl: `https://i.ytimg.com/vi/${PLACEHOLDER_YOUTUBE_VIDEO_ID}/hqdefault.jpg`,
-      durationSeconds: PLACEHOLDER_YOUTUBE_DURATION_SECONDS,
-    },
+    // ⚠️ THE ONLY FIXTURE WHOSE STEPS CARRY NO AFFORDANCE AT ALL — no part to focus, because it
+    // published no assembly, and no moment to seek, because no blueprint video can be seeked. That
+    // is the row `assembly-step-list.tsx` renders as prose, and this is what exercises it.
+    walkthroughVideo: placeholderYoutubeVideo(PLACEHOLDER_YOUTUBE_DURATION_SECONDS),
     documents: [PLACEHOLDER_DOCUMENTS.brushlessSchematic],
     partCount: 62,
     assembly: null,
     fasteners: [],
     manufacturingFiles: [],
-    // ⚠️ BOTH INTERACTIVE FIELDS ARE NULL ON EVERY STEP, AND BOTH HAVE TO BE. `focusedPartId`
-    // because the contract only allows a part id that exists in `assembly.parts` and this teardown
-    // published no assembly; `timestampSeconds` because the walkthrough is on YouTube, whose own
-    // chapters are the timestamps. A step here is prose, and that is the honest rendering.
+    // `focusedPartId` IS NULL ON EVERY STEP, and it has to be: the contract only allows a part id
+    // that exists in `assembly.parts`, and this teardown published no assembly.
     assemblySteps: [
       {
         stepNumber: 1,
         title: "What the driver has to survive",
         description:
           "Stall current, the supply rail it actually sees on a long cable run, and the two failures that follow from getting either wrong.",
-        timestampSeconds: null,
         focusedPartId: null,
       },
       {
@@ -625,7 +590,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
         title: "Choosing the gate driver",
         description:
           "Why the obvious part is the one nobody stocks locally, and what the substitution table trades away.",
-        timestampSeconds: null,
         focusedPartId: null,
       },
       {
@@ -633,7 +597,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
         title: "Current sense and the shunt placement",
         description:
           "Low-side sensing, the ground bounce it introduces, and the layout that keeps it measurable.",
-        timestampSeconds: null,
         focusedPartId: null,
       },
       {
@@ -641,7 +604,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
         title: "What to check before you order boards",
         description:
           "The three footprints worth re-reading against the datasheet, and the one clearance that fails a cheap fab.",
-        timestampSeconds: null,
         focusedPartId: null,
       },
     ],
@@ -833,7 +795,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     tags: ["batteries", "bms", "safety", "power-electronics"],
     createdAt: "2026-07-11T14:33:00.000Z",
-    walkthroughVideo: placeholderVideo("/dummy/thumbnail_image05.avif"),
+    walkthroughVideo: placeholderYoutubeVideo(),
     documents: [
       PLACEHOLDER_DOCUMENTS.batteryManagementSchematic,
       PLACEHOLDER_DOCUMENTS.batteryManagementBillOfMaterials,
@@ -842,41 +804,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     assembly: null,
     fasteners: [],
     manufacturingFiles: [],
-    // ⚠️ HOSTED WALKTHROUGH + TIMESTAMPS + NO ASSEMBLY, WHICH IS THE ONLY FIXTURE FOR THAT CASE.
-    // `bp-001` covers the seek from inside the viewer's Exploded tab; this one covers it from the
-    // step list rendered standalone on the page, which is a different mount path with a different
-    // parent. `bp-003` used to cover it and cannot any more — its walkthrough is on YouTube, and a
-    // YouTube walkthrough carries no step timestamps. Delete these steps and that path goes
-    // unexercised.
-    //
-    // Every timestamp sits inside the ten-second placeholder clip, because the contract checks it.
-    // `focusedPartId` is null throughout: there is no assembly to focus into.
-    assemblySteps: [
-      {
-        stepNumber: 1,
-        title: "Get the pack off the bench safely",
-        description:
-          "Seven cells in series is 29 V at the connector and no interlock anywhere. What to discharge, what to tape, and the one probe placement that shorts a balance lead.",
-        timestampSeconds: 0,
-        focusedPartId: null,
-      },
-      {
-        stepNumber: 2,
-        title: "Read the balancing topology off the board",
-        description:
-          "Passive bleed resistors beside each cell tap, and how to tell them from the sense divider they sit next to.",
-        timestampSeconds: 4,
-        focusedPartId: null,
-      },
-      {
-        stepNumber: 3,
-        title: "Measure the protection thresholds",
-        description:
-          "Over-voltage, under-voltage and the delay on each, against what the datasheet claims. Two of the three are off.",
-        timestampSeconds: 8,
-        focusedPartId: null,
-      },
-    ],
+    assemblySteps: [],
     repairabilityIndex: null,
     simulationTelemetry: null,
   },
@@ -1040,7 +968,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     tags: ["agriculture", "instrumentation", "analog", "sensors"],
     createdAt: "2026-07-16T09:05:00.000Z",
-    walkthroughVideo: placeholderVideo("/dummy/thumbnail_image10.avif"),
+    walkthroughVideo: placeholderYoutubeVideo(),
     documents: [],
     partCount: 44,
     assembly: null,
@@ -1160,7 +1088,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "solar-cold-storage-controller-teardown",
-    demoVideo: placeholderVideo("/dummy/placeholder-freezers.avif", PLACEHOLDER_CAPTIONS_URL),
+    demoVideo: placeholderYoutubeVideo(PLACEHOLDER_YOUTUBE_DURATION_SECONDS),
     callToAction: {
       label: "Read the 90-day field log",
       url: "https://example.com/qatoto/nakuru-field-log",
@@ -1253,7 +1181,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "brushless-motor-driver-schematic",
-    demoVideo: placeholderVideo("/dummy/thumbnail_image03.avif"),
+    demoVideo: placeholderYoutubeVideo(),
     callToAction: {
       label: "Route and load data",
       url: "https://example.com/qatoto/cargo-trike-routes",
@@ -1389,7 +1317,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "irrigation-valve-actuator-teardown",
-    demoVideo: placeholderVideo("/dummy/thumbnail_image12.avif"),
+    demoVideo: placeholderYoutubeVideo(),
     callToAction: {
       label: "Watering schedule and soil logs",
       url: "https://example.com/qatoto/kisumu-drip-logs",
@@ -1532,7 +1460,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "borehole-pump-housing-tolerances",
-    demoVideo: placeholderVideo("/dummy/thumbnail_image04.avif"),
+    demoVideo: placeholderYoutubeVideo(),
     callToAction: {
       label: "Pump-hour and seal inspection log",
       url: "https://example.com/qatoto/borehole-seal-log",

@@ -333,73 +333,64 @@ export type BlueprintAuthor = z.infer<typeof BlueprintAuthorSchema>;
 /**
  * A video attached to a build — a teardown walkthrough or a showcase demo.
  *
- * TWO ARMS, BECAUSE THE TWO KINDS KNOW DIFFERENT THINGS ABOUT THEMSELVES. A file we host is one we
- * measured and can caption; a YouTube video is one we can only point at. Before this was a union
- * the shape was a bare `url`, which a YouTube link parsed cleanly into and which was then handed
- * to `<video src>` — a silently dead player, the state a discriminator exists to make unsayable.
+ * ⚠️ IT IS A YOUTUBE ID, AND THERE IS NO OTHER KIND. `video-card-menu.tsx` states the platform rule
+ * this follows: "Every video on the platform today is a YouTube link. The bytes sit on youtube.com,
+ * Qatoto never holds them and has no right to serve them." Self-hosted video is
+ * `STUDIO_BACKEND_STRUCTURE.md` Appendix A — "Deferred: self-hosted video (Livepeer direct upload)",
+ * headed "⛔ DO NOT BUILD THIS NOW" — and the studio enforces it today by rendering its file
+ * dropzone `inert` with the copy "Direct video hosting isn't available yet".
  *
- * ONLY `posterUrl` IS SHARED. Both arms need a still to put a play button over, and both can
- * supply one — YouTube's own `i.ytimg.com` thumbnail is already allowed by `images.remotePatterns`.
+ * This shape briefly carried a second `hosted` arm with a served `url` and a WebVTT `captionsUrl`.
+ * It was removed because nothing could ever fill it: `POST /videos` takes a `youtubeUrl` and there
+ * is no file-upload route on the platform. A blueprint author pastes a link, exactly as a studio
+ * author does.
+ *
+ * WHY A ONE-ARM UNION RATHER THAN A BARE OBJECT. `source` still discriminates nothing, and that is
+ * the point — it is the seam Appendix A would widen, kept for the same reason `feed/schemas.ts`
+ * keeps both labels of the `video_source` pgEnum ("Every row is `youtube` today; `hosted` is Studio
+ * Appendix A") and the same reason `TeardownSimulationTelemetrySchema.source` is a `z.literal`.
+ * The label byte-matches that pgEnum, so a real backend needs no translation layer.
  */
 const BlueprintVideoSharedShape = {
-  /** The still shown before playback starts. Required — a play button over nothing is a bug. */
+  /**
+   * The still shown before playback starts. Required — a play button over nothing is a bug — and
+   * free to produce: `https://i.ytimg.com/vi/<id>/hqdefault.jpg` is derivable from the id with no
+   * network call at all, which is what `thumbnail-picker.tsx` already does for the studio.
+   * `hqdefault` rather than `maxresdefault`, which 404s on anything not uploaded in HD.
+   */
   posterUrl: createHttpsOrSiteRelativeUrlSchema(2048),
   /**
    * `durationSeconds` IS AN INTEGER, NOT `"8:12"`. Same argument the cost range makes above about
    * display strings: a stored label cannot be summed, sorted or localised, and it fixes the
-   * formatting at author time. `formatDurationLabel` (`src/lib/feed/format.ts`) turns it into a
-   * badge, and returns `null` rather than "0:00" when there is nothing to show.
+   * formatting at author time. `formatDurationLabel` (`src/lib/feed/format.ts`) turns it into the
+   * poster badge, and returns `null` rather than "0:00" when there is nothing to show.
    *
-   * SHARED BECAUSE THE BADGE IS SHARED. `blueprint-video-block.tsx` reads it off the union with no
-   * narrowing at all and paints the same corner badge over both posters, so the two arms look
-   * identical until the reader clicks. That single consumer is the whole reason the field sits
-   * here rather than on one arm.
+   * ⚠️ NULLABLE, BECAUSE NOTHING ON EITHER SIDE OF THE WIRE CAN MEASURE IT. The backend's only
+   * outbound YouTube call is oEmbed, which returns a title and a thumbnail and NO duration — which
+   * is why `video.duration_seconds` over there is nullable and, in its own words, "NULL on every
+   * YouTube row". The frontend makes no YouTube call at all. Requiring it here would force an
+   * authoring form to ask an author to type a runtime, and a typed runtime is a guess: the badge
+   * would read "8:12" over a video of some other length, which is the lie the fixture header
+   * forbids. `null` means nobody measured it and the badge renders nothing.
    *
-   * ⚠️ IT USED TO HAVE A SECOND, LOAD-BEARING REASON, AND THAT REASON IS GONE. The teardown arm's
-   * refinement once compared every step's `timestampSeconds` against this on BOTH arms; step
-   * timestamps are hosted-only now (see the arm's refinement), so that comparison never reaches a
-   * YouTube video. Recorded because the old comment claimed the field "MUST STAY SHARED" for a
-   * check that no longer exists — if the badge ever moves, nothing holds this here.
-   *
-   * It is a measurement, never a guess: a YouTube runtime is read from the player (or from YouTube
-   * at write time), the same way the hosted clip's was read off the file.
+   * A real value is still a measurement: read off the live IFrame player, or from YouTube at write
+   * time if the Data API is ever wired.
    */
-  durationSeconds: z.number().int().positive(),
+  durationSeconds: z.number().int().positive().nullable(),
 };
 
 /**
- * A file this platform serves.
- *
- * THE ONLY ARM A STEP TIMESTAMP CAN POINT INTO. `timestampSeconds` drives exactly one control — a
- * seek button on a step row — and that control needs a `<video>` element this page owns. See the
- * teardown arm's refinement, which rejects the other combination outright.
- *
- * `durationSeconds` is shared with the YouTube arm; see `BlueprintVideoSharedShape` for why. This
- * arm is the one where we measured it off the file we serve.
- */
-export const HostedBlueprintVideoSchema = z
-  .object({
-    ...BlueprintVideoSharedShape,
-    source: z.literal("hosted"),
-    url: createHttpsOrSiteRelativeUrlSchema(2048),
-    /** A WebVTT track. `null` when nobody captioned it — which is a gap, not a state to hide. */
-    captionsUrl: createHttpsOrSiteRelativeUrlSchema(2048).nullable(),
-  })
-  .strip();
-export type HostedBlueprintVideo = z.infer<typeof HostedBlueprintVideoSchema>;
-
-/**
- * A video hosted on YouTube.
- *
  * AN ID ON THE WIRE, NOT A URL, and the difference is where a bad link fails. `extractYoutubeVideoId`
  * (`src/lib/youtube.ts`) is strict about the eleven-character form and the hostnames it accepts;
  * running it at the boundary makes a malformed link a PARSE failure with a path, while storing the
- * URL would push it into render, where the same bad link is a blank box. The upload form that
- * eventually writes this field is where that function belongs.
+ * URL would push it into render, where the same bad link is a blank box. It is the same function
+ * `create-studio-page.tsx` validates a pasted link with, and the authoring form that eventually
+ * writes this field is where it belongs.
  *
- * NO `captionsUrl`: a WebVTT track can only attach to a `<video>` element, and YouTube serves its
- * own captions — so on this arm the field would be a value nothing could ever render, which is the
- * state the union exists to make unsayable. `durationSeconds` stays shared; see it for why.
+ * NO CAPTIONS FIELD AND NO CHAPTERS FIELD. A WebVTT track can only attach to a `<video>` element,
+ * and YouTube serves its own captions and its own chapters. `todo.md` records the same boundary for
+ * `/studio/subtitles` — "IT IS IMPOSSIBLE ON THIS ARCHITECTURE … Qatoto cannot inject captions into
+ * a YouTube embed" — and it is why an assembly step carries no timestamp either.
  */
 export const YoutubeBlueprintVideoSchema = z
   .object({
@@ -416,17 +407,7 @@ export const YoutubeBlueprintVideoSchema = z
   .strip();
 export type YoutubeBlueprintVideo = z.infer<typeof YoutubeBlueprintVideoSchema>;
 
-/**
- * THE LABELS BYTE-MATCH THE `video_source` pgEnum the feed already uses
- * (`src/lib/feed/schemas.ts`, `["youtube", "hosted"]`), so the day a real backend serves a
- * blueprint video there is no translation layer to get wrong. They are mirrored rather than
- * imported: sharing one enum would couple this contract to the feed's, and the two are free to
- * diverge.
- */
-export const BlueprintVideoSchema = z.discriminatedUnion("source", [
-  HostedBlueprintVideoSchema,
-  YoutubeBlueprintVideoSchema,
-]);
+export const BlueprintVideoSchema = z.discriminatedUnion("source", [YoutubeBlueprintVideoSchema]);
 export type BlueprintVideo = z.infer<typeof BlueprintVideoSchema>;
 
 /**
@@ -825,17 +806,18 @@ export type TeardownManufacturingFile = z.infer<typeof TeardownManufacturingFile
  * numeral the page prints, and a backend that returned rows out of order would fail the contract
  * rather than print "01, 03, 02".
  *
- * `timestampSeconds` IS NULL when there is no walkthrough video, when the walkthrough is on
- * YouTube, or when the author simply did not mark the moment. The first two are ENFORCED by the
- * arm's refinement rather than left to convention — see it for why YouTube is excluded. Never
- * zero-for-unknown: zero is the first frame, a real place in a real video.
+ * ⚠️ A STEP CARRIES NO TIMESTAMP, AND IT IS NOT AN OVERSIGHT. It briefly did: a `timestampSeconds`
+ * drove a "Play from 0:03" button that seeked the walkthrough. That was restricted to hosted video
+ * and then removed with it, because every blueprint video is a YouTube link and **YouTube already
+ * gives an author chapters and a scrubbable timeline inside its own player**. A second set here
+ * would duplicate a control the reader has while not knowing the chapter titles — the same boundary
+ * `/studio/subtitles` records. Do not re-add the field; add chapters to the YouTube video instead.
  */
 export const TeardownAssemblyStepSchema = z
   .object({
     stepNumber: z.number().int().positive(),
     title: z.string(),
     description: z.string(),
-    timestampSeconds: z.number().int().nonnegative().nullable(),
     /** The part the viewport isolates for this step. `null` when the step is about the whole. */
     focusedPartId: z.string().nullable(),
   })
@@ -980,43 +962,6 @@ export const TeardownBlueprintSchema = z
           code: "custom",
           path: ["assemblySteps", index, "focusedPartId"],
           message: `"${step.focusedPartId}" is not a part of this teardown's assembly.`,
-        });
-      }
-      /**
-       * A TIMESTAMP IS ONLY MEANINGFUL AGAINST A VIDEO WE HOST, and the three branches below are
-       * that sentence made unsayable-otherwise.
-       *
-       * ⚠️ THE YOUTUBE BRANCH IS A PRODUCT DECISION, NOT A TECHNICAL LIMIT. Seeking a YouTube
-       * embed works fine — it shipped, briefly. It came out because YouTube already gives an
-       * author CHAPTERS and a scrubbable timeline inside its own player, so a second set of
-       * timestamps on this page duplicates a control the reader already has, and duplicates it
-       * worse: ours cannot know the chapter titles. Same boundary `/studio/subtitles` records
-       * (`todo.md`) — Qatoto does not reach inside somebody else's player. A timestamp here is
-       * therefore not a missing feature, it is YouTube's feature.
-       *
-       * Enforced in the CONTRACT rather than hidden in the renderer so no upload form can ever
-       * store a number nothing reads. A field with data and no reader is the failure the standing
-       * teardown audit exists to catch.
-       */
-      if (step.timestampSeconds === null) return;
-      if (teardown.walkthroughVideo === null) {
-        context.addIssue({
-          code: "custom",
-          path: ["assemblySteps", index, "timestampSeconds"],
-          message: "A step cannot mark a moment in a video that was never published.",
-        });
-      } else if (teardown.walkthroughVideo.source === "youtube") {
-        context.addIssue({
-          code: "custom",
-          path: ["assemblySteps", index, "timestampSeconds"],
-          message:
-            "A YouTube walkthrough carries its own chapters; a step cannot mark a moment in one.",
-        });
-      } else if (step.timestampSeconds > teardown.walkthroughVideo.durationSeconds) {
-        context.addIssue({
-          code: "custom",
-          path: ["assemblySteps", index, "timestampSeconds"],
-          message: "A step's timestamp is past the end of the walkthrough.",
         });
       }
     });

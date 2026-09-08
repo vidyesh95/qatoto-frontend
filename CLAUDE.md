@@ -309,36 +309,31 @@ Three rules specific to this surface:
   is dropped and the first page served.
 - **Media is nullable, and an absence renders NOTHING.** A teardown's `walkthroughVideo` is
   `null` when nobody filmed it and `documents` is `[]` when nothing was published — both are the
-  common case, and both render no section at all rather than an empty box. **`BlueprintVideo` is a
-  DISCRIMINATED UNION on `source`** — `hosted` carries a `url` and a nullable `captionsUrl`,
-  `youtube` carries an eleven-character `youtubeVideoId` (an ID, so a bad link fails at PARSE time,
-  not in render). `posterUrl` and `durationSeconds` are SHARED because the poster and its duration
-  badge are shared — `blueprint-video-block.tsx` reads the duration off the union with no `source`
-  narrowing at all, and that badge is its only consumer. Every path starts as a poster with
-  `preload="none"`; the hosted arm is a bare `<video>` and the YouTube arm is the IFrame API
-  (needed for `seekTo`, `youtube-nocookie` host, a blocked script renders an in-place panel).
-  **Never `watch/video-player.tsx`** — it reports watch progress, a claim this page has no business
-  making, and its `startTimeSeconds` is a mount-effect dep, so changing it rebuilds the iframe
-  instead of seeking. PDFs open in a `ModalSheet` over `<embed type="application/pdf">` with a
-  download fallback, because a browser with its PDF viewer off renders `<embed>` as a silent blank
-  rectangle.
-- **A step's timestamp seeks the walkthrough, and the seek is HOSTED-ONLY.** ⚠️ **A YouTube
-  walkthrough carries no step timestamps at all** — the teardown arm's refinement rejects the
-  combination outright, so it cannot even be stored. That is a product decision, not a limit:
-  seeking an embed works, but YouTube already gives an author chapters and a timeline inside its
-  own player, and a second set here duplicates a control the reader has while not knowing the
-  chapter titles. Same boundary `/studio/subtitles` records — Qatoto does not reach inside somebody
-  else's player. It is enforced in the CONTRACT rather than hidden in the renderer so no upload form
-  can store a number nothing reads.
-- **The seek travels by CONTEXT, and the provider is conditional.**
-  `media/walkthrough-seek-context.tsx` carries a player-handle ref sideways between the step list
-  and the video block, whose only common ancestor is an async SERVER component — a client wrapper
-  would get both as opaque `children` and could inject nothing. `useWalkthroughSeek()` returns
-  `null` outside a provider and never throws. ⚠️ The provider is mounted only when
-  `walkthroughVideo?.source === "hosted"`, because a timestamp renders as a BUTTON precisely when a
-  channel exists; mount it always and a teardown with no seekable video gets buttons that seek
-  nothing. The step row is therefore two SIBLING buttons (focus a part, play from a time) — nested
-  buttons are invalid HTML and browsers drop the inner one — and a row may render neither.
+  common case, and both render no section at all rather than an empty box. PDFs open in a
+  `ModalSheet` over `<embed type="application/pdf">` with a download fallback, because a browser
+  with its PDF viewer off renders `<embed>` as a silent blank rectangle.
+- **A BLUEPRINT VIDEO IS A YOUTUBE ID. THERE IS NO OTHER KIND.** `BlueprintVideoSchema` is a
+  ONE-ARM discriminated union — the `source` literal is the seam Appendix A would widen, kept for
+  the reason `feed/schemas.ts` keeps both pgEnum labels, and it byte-matches that enum. It carried a
+  `hosted` arm with a served `url` and WebVTT captions for two days; that was a mistake, because
+  `video-card-menu.tsx` states the platform rule it broke: _"Every video on the platform today is a
+  YouTube link. The bytes sit on youtube.com, Qatoto never holds them and has no right to serve
+  them."_ Self-hosted video is Studio Appendix A, "⛔ DO NOT BUILD THIS NOW", and the studio's file
+  dropzone is `inert` today because `POST /videos` takes a `youtubeUrl` and no upload route exists.
+  ⚠️ **Do not re-add a `<video>` element to this surface.** The poster is derived from the id with
+  no network call (`i.ytimg.com/vi/<id>/hqdefault.jpg`, `hqdefault` because `maxresdefault` 404s on
+  non-HD uploads), playback is the IFrame API on `youtube-nocookie`, and a blocked script renders an
+  in-place panel with a "Watch on YouTube" link. **Never `watch/video-player.tsx`** — it reports
+  watch progress against a feed row id a blueprint does not have.
+- **`durationSeconds` IS NULLABLE, AND `null` IS THE ORDINARY CASE.** The badge is its only reader.
+  oEmbed — the one outbound YouTube call either repo makes — returns a title and a thumbnail and no
+  duration, which is why the backend's own `duration_seconds` is NULL on every YouTube row. A typed
+  runtime is a guess, so `null` renders no badge rather than a wrong one.
+- **CAPTIONS AND CHAPTERS ARE YOUTUBE'S, AND SO ARE STEP TIMESTAMPS.** A `TeardownAssemblyStep`
+  carries `stepNumber`, `title`, `description` and `focusedPartId` — and deliberately no timestamp.
+  A step row is therefore ONE control, the part it focuses, and a step on an unmodelled teardown
+  renders as prose. This is the boundary `/studio/subtitles` records: Qatoto does not reach inside
+  somebody else's player, and what looks like a missing feature is that player's feature.
 - **The 3D viewer is a SECOND 3D stack, on WebGL2, and it stays lazy.** The teardown engine
   (`src/components/home/blueprints/teardowns/engine/`, R3F + drei over the stock
   `WebGLRenderer`) sits beside the store's `@google/model-viewer`; both load through
