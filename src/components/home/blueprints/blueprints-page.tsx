@@ -54,8 +54,8 @@ const RAIL_TEASER_LIMIT = 8;
 
 const CATEGORY_ICONS: Record<BlueprintCategory, string> = {
   teardown: "/icons/architecture_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-  showcase: "/icons/science_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-  case_study: "/icons/factory_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  showcase: "/icons/social_leaderboard_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  case_study: "/icons/cases_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
 };
 
 const CATEGORY_LINKS: readonly CategoryLink[] = BLUEPRINT_CATEGORIES.map((category) => ({
