@@ -7,6 +7,7 @@
 // `AdminStaffGate`. The read lives inside `NavbarAccountSlot`, under its own `<Suspense>`.
 
 import React, { Suspense } from "react";
+import BetaBanner from "@/components/home/layout/beta-banner";
 import Navbar from "@/components/home/layout/navbar";
 import NavbarAccountCluster from "@/components/home/layout/navbar-account-cluster";
 import NavbarAccountSlot from "@/components/home/layout/navbar-account-slot";
@@ -45,6 +46,10 @@ const Layout = ({ children }: Props) => {
               </Suspense>
             }
           />
+          {/* Between the navbar and the flex row, NOT inside it — inside, it would become a third
+              flex column beside the sidebar and `<main>`. It is in normal flow rather than sticky,
+              so no offset in the group changes; the reasoning is in the component. */}
+          <BetaBanner />
           <div className="flex">
             {/* Same shape and same reasoning as the navbar slot above: the fallback is the
               SIGNED-OUT sidebar, not a skeleton. On a prerendered route it is what ships in the

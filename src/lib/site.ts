@@ -46,6 +46,15 @@ export const SITE_SHARE_IMAGE = {
 } as const;
 
 /**
+ * The live support inbox — general questions, beta feedback, anything without its own address.
+ *
+ * IT IS THE ONE LITERAL. `PRIVACY_CONTACT_EMAIL` below aliases this rather than repeating the
+ * string, because the two were the same address typed twice and the second copy would have drifted
+ * the first time one of them moved.
+ */
+export const SUPPORT_CONTACT_EMAIL = "support@qatoto.com";
+
+/**
  * Where data-subject requests go — access, export, correction and deletion.
  *
  * IT IS SHARED BECAUSE TWO SURFACES MUST NOT DISAGREE. `disclaimers/privacy-policy.tsx` names this
@@ -68,8 +77,14 @@ export const SITE_SHARE_IMAGE = {
  * live support address now. If a dedicated privacy mailbox is ever created, change it here and both
  * surfaces follow. Note that `security@`, `careers@` and `press@` are still hardcoded in four other
  * files and have not been verified the same way — see `todo.md`.
+ *
+ * THE LITERAL MOVED TO `SUPPORT_CONTACT_EMAIL` ABOVE and this is now an alias, because the beta
+ * banner needs the same inbox under a name that is not "privacy". Creating that dedicated privacy
+ * mailbox therefore means replacing the alias with its own literal — the consumers
+ * (`lib/privacy-request.ts`, `disclaimers/privacy-policy.tsx`, `account/panels/data-and-privacy-panel.tsx`,
+ * `account/panels/delete-account-panel.tsx`) import the name and need no edit either way.
  */
-export const PRIVACY_CONTACT_EMAIL = "support@qatoto.com";
+export const PRIVACY_CONTACT_EMAIL = SUPPORT_CONTACT_EMAIL;
 
 // ─── Who Qatoto legally IS ────────────────────────────────────────────────────────────────────
 //
