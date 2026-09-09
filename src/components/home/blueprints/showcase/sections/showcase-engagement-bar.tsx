@@ -45,8 +45,8 @@ export default function ShowcaseEngagementBar({
 }) {
   return (
     <div className="mt-5 grid max-w-2xl grid-cols-3 items-center gap-2 lg:flex lg:flex-row">
+      <BlueprintStatReadout icon="arrow_upward" count={showcase.upvoteCount} noun="upvotes" />
       <BlueprintStatReadout icon="comment" count={showcase.commentCount} noun="comments" />
-      <BlueprintStatReadout icon="keyboard_arrow_up" count={showcase.upvoteCount} noun="upvotes" />
       <BlueprintShareButton blueprint={showcase} />
     </div>
   );

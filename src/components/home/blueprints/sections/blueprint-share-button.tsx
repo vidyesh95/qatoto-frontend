@@ -60,7 +60,7 @@ export default function BlueprintShareButton({
           alt=""
           width={18}
           height={18}
-          className="size-[18px] shrink-0"
+          className="size-4.5 shrink-0"
         />
         Share
       </button>
