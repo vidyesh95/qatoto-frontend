@@ -1,30 +1,47 @@
 // TRANSPORT: mock — async server component. Reads `getBlueprintByCategory` from
 // `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
 //
-// Laid out after a Launch YC post: the vote in a fixed gutter beside the title block, a byline row
-// with a share control, the media, the pitch, then the people and the links.
+// Laid out after a Launch YC post: the vote in a fixed gutter beside the title block, a byline row,
+// the media, the pitch, the engagement row, then the people, the links and the discussion.
 //
-// SHARE IS THE FULL SHEET NOW, not the single X intent link this page used to build itself. The
-// reason recorded for that link ruled out a share COUNTER, not the sheet — and `ShareSheet` takes
+// SHARE IS THE FULL SHEET, not the single X intent link this page used to build itself. The reason
+// recorded for that link ruled out a share COUNTER, not the sheet — and `ShareSheet` takes
 // `onShared` as optional precisely so a surface with no counter route can open it. Omitting the
-// callback is what keeps the rule: nothing here increments. The teardown page opens the same
-// component, so two sibling detail pages no longer offer two different share affordances.
+// callback is what keeps the rule: nothing here increments.
+//
+// IT LIVES IN `ShowcaseEngagementBar` NOW, not in the byline. It sat inline beside the launch date
+// while it was the page's only engagement control; once the comment and like counts needed
+// somewhere to render, one row holding all three beat a share link in one place and two counts in
+// the footer. The teardown page has the same bar in the same position, so a reader moving between
+// two sibling detail pages finds the same shape twice.
+//
+// THE DISCUSSION IS READ-ONLY, AND `BlueprintCommentThread` says why at length. Short version: no
+// blueprints content table exists for a comment row to reference, so there is nothing to post to.
 
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import BlueprintVideoBlock from "@/components/home/blueprints/media/blueprint-video-block";
-import BlueprintShareButton from "@/components/home/blueprints/sections/blueprint-share-button";
+import BlueprintCommentThread from "@/components/home/blueprints/sections/blueprint-comment-thread";
 import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-tag-list";
 import ShowcaseVoteBox from "@/components/home/blueprints/sections/showcase-vote-box";
+import ShowcaseEngagementBar from "@/components/home/blueprints/showcase/sections/showcase-engagement-bar";
 import RelativeTime from "@/components/home/shared/relative-time";
-import { getBlueprintByCategory } from "@/lib/blueprints/api";
+import { getBlueprintByCategory, listShowcaseComments } from "@/lib/blueprints/api";
 import { buildBlueprintCategoryHref, buildBlueprintHref } from "@/lib/blueprints/schemas";
 import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
 
 export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
-  const showcase = await getBlueprintByCategory("showcase", slug);
+  // ALONGSIDE, NOT AFTER — the waterfall argument `watch-page.tsx:42-45` records. The thread is
+  // keyed by the slug this component was already handed, so it does not need the launch to resolve
+  // first. A thread read for a slug that turns out not to be a showcase costs one wasted fixture
+  // pass and is discarded by the `notFound()` below; the serial version costs a round trip on every
+  // page that does resolve.
+  const [showcase, comments] = await Promise.all([
+    getBlueprintByCategory("showcase", slug),
+    listShowcaseComments(slug),
+  ]);
   if (showcase === null) notFound();
 
   const hasActionLinks = showcase.callToAction !== null || showcase.builtFromBlueprintSlug !== null;
@@ -70,7 +87,6 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
             </span>
           </span>
         </p>
-        <BlueprintShareButton blueprint={showcase} variant="inline" />
       </div>
 
       {showcase.demoVideo === null ? (
@@ -89,6 +105,8 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
       )}
 
       <p className="mt-5 max-w-2xl text-sm leading-6 text-foreground">{showcase.summary}</p>
+
+      <ShowcaseEngagementBar showcase={showcase} />
 
       {/* Both links are optional and both render nothing when absent — the row only exists so the
           two sit side by side when both are present. */}
@@ -154,11 +172,12 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
 
       <BlueprintTagList tags={showcase.tags} />
 
+      <BlueprintCommentThread comments={comments} />
+
       <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#CAC4D0]/60 pt-4">
-        <p className="text-[11px] text-[#6F7979]">
-          {formatCountLabel(showcase.viewCount)} views · {formatCountLabel(showcase.likeCount)}{" "}
-          likes
-        </p>
+        {/* Views only. `likeCount` moved into `ShowcaseEngagementBar` above — a view count is not an
+            engagement affordance and does not belong in a row of them. */}
+        <p className="text-[11px] text-[#6F7979]">{formatCountLabel(showcase.viewCount)} views</p>
         <Link
           href={buildBlueprintCategoryHref("showcase")}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-[#00696E] hover:underline"

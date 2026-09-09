@@ -10,10 +10,12 @@
 // and the parse below stops being a fixture check and starts being CLAUDE.md Pattern 2 — an
 // untrusted payload through `.strip()`. The parse is written now so that swap changes one line.
 
-import { MOCK_BLUEPRINTS } from "@/mocks/blueprints-mocks";
+import { MOCK_BLUEPRINTS, MOCK_SHOWCASE_COMMENTS } from "@/mocks/blueprints-mocks";
 import {
   type Blueprint,
   type BlueprintCategory,
+  type BlueprintComment,
+  BlueprintCommentSchema,
   type BlueprintOfCategory,
   type BlueprintPage,
   BlueprintSchema,
@@ -331,6 +333,63 @@ export async function listCaseStudies(
     .toSorted(byConceptNumber);
 
   return toBlueprintPage(matching, filter.cursor, filter.limit ?? CASE_STUDIES_PAGE_LIMIT);
+}
+
+// --- Discussion ---------------------------------------------------------------
+
+/**
+ * One showcase's comment thread, whole.
+ *
+ * NOT PAGED, AND THAT IS DELIBERATE. The three list getters above are keyset-paged because their
+ * indexes render `CursorPageControl`; a thread does not. Hacker News puts the entire discussion on
+ * the page and so does this, which means no `?commentsCursor=` on a detail route that has no query
+ * params today and no paging control that the fixtures — a handful of rows each — could exercise.
+ * The comment above `TEARDOWNS_PAGE_LIMIT` argues against exactly that kind of unexercised code.
+ * When real threads run to hundreds this takes the `filter`/`BlueprintPage` shape its neighbours
+ * already have (`todo.md` §Blueprint discussion).
+ *
+ * THE ORDER IS THE WATCH THREAD'S: top-level newest first, replies oldest first
+ * (`video-comment-thread.tsx`). A reader arriving from a video meets the convention they just left.
+ * Replies read oldest-first because a reply chain is a conversation and a conversation is read
+ * forwards; top-level rows read newest-first because the newest is the reason to come back.
+ *
+ * FLAT, NOT PRE-GROUPED. The renderer buckets replies under their parent in one pass — that is
+ * assembling a layout, not filtering a list, and the flat ordered array is the shape a real
+ * endpoint answers.
+ */
+export async function listShowcaseComments(showcaseSlug: string): Promise<BlueprintComment[]> {
+  "use cache";
+  const comments = (MOCK_SHOWCASE_COMMENTS[showcaseSlug] ?? []).map((candidate) =>
+    BlueprintCommentSchema.parse(candidate),
+  );
+
+  const topLevel = comments
+    .filter((comment) => comment.parentCommentId === null)
+    .toSorted(
+      (left, right) =>
+        Date.parse(right.createdAt) - Date.parse(left.createdAt) ||
+        left.commentId.localeCompare(right.commentId),
+    );
+
+  const repliesByParentId = new Map<string, BlueprintComment[]>();
+  for (const comment of comments) {
+    if (comment.parentCommentId === null) continue;
+    const siblings = repliesByParentId.get(comment.parentCommentId) ?? [];
+    siblings.push(comment);
+    repliesByParentId.set(comment.parentCommentId, siblings);
+  }
+
+  // Interleaved parent-then-its-replies, so the renderer never re-derives the order — and a reply
+  // whose parent is missing is DROPPED here rather than rendered at the top level, where it would
+  // read as an answer to the wrong comment.
+  return topLevel.flatMap((parent) => [
+    parent,
+    ...(repliesByParentId.get(parent.commentId) ?? []).toSorted(
+      (left, right) =>
+        Date.parse(left.createdAt) - Date.parse(right.createdAt) ||
+        left.commentId.localeCompare(right.commentId),
+    ),
+  ]);
 }
 
 /**

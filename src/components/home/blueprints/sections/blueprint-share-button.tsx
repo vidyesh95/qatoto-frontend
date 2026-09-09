@@ -28,47 +28,39 @@ import { buildBlueprintHref, type BlueprintCategory } from "@/lib/blueprints/sch
 import { SITE_URL } from "@/lib/site";
 
 /**
- * Two looks, one behaviour. `pill` is the teardown bar, where the button sits in a row of counts
- * and has to read as the one control among them. `inline` is the showcase byline, where the share
- * affordance has always been a quiet text link beside the launch date and a pill would shout.
+ * ONE LOOK, AND IT USED TO BE TWO. A quiet `inline` text-link variant existed for the showcase
+ * byline, where a pill would have shouted next to the launch date. Share moved into
+ * `ShowcaseEngagementBar` — both detail pages now offer it in the same place, in the same shape —
+ * and the variant lost its only caller. A prop with one value is a decision nobody makes, so it is
+ * gone rather than kept for a hypothetical third surface.
+ *
+ * It matches `StatPill` (`src/components/home/watch/stat-pill.tsx`) deliberately: sized `w-full` so
+ * it fills its grid cell below `lg` and `lg:w-24` beside it, the same widths the watch bar uses, so
+ * the one real control lines up with the inert counts either side of it.
  */
-const TRIGGER_CLASS = {
-  pill: "flex cursor-pointer flex-row items-center justify-center gap-2 rounded-full bg-[#CCE8E9] px-3 py-1.5 text-sm font-medium text-[#041F21] hover:bg-[#bfe0e1]",
-  inline:
-    "inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-[#6F7979] hover:underline",
-} as const;
-
-const TRIGGER_ICON_SIZE_PX = { pill: 18, inline: 14 } as const;
+const TRIGGER_CLASS =
+  "flex w-full cursor-pointer flex-row items-center justify-center gap-2 rounded-full bg-[#CCE8E9] px-3 py-1.5 text-sm font-medium text-[#041F21] hover:bg-[#bfe0e1]";
 
 export default function BlueprintShareButton({
   blueprint,
-  variant = "pill",
 }: {
   readonly blueprint: {
     readonly category: BlueprintCategory;
     readonly slug: string;
     readonly title: string;
   };
-  readonly variant?: keyof typeof TRIGGER_CLASS;
 }) {
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
-  const iconSizePx = TRIGGER_ICON_SIZE_PX[variant];
 
   return (
-    <span
-      className={`relative inline-flex ${variant === "pill" ? "w-full lg:w-24" : ""}`}
-    >
-      <button
-        type="button"
-        onClick={() => setIsShareSheetOpen(true)}
-        className={`${TRIGGER_CLASS[variant]} ${variant === "pill" ? "w-full" : ""}`}
-      >
+    <span className="relative inline-flex w-full lg:w-24">
+      <button type="button" onClick={() => setIsShareSheetOpen(true)} className={TRIGGER_CLASS}>
         <Image
           src="/icons/share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
           alt=""
-          width={iconSizePx}
-          height={iconSizePx}
-          className={variant === "pill" ? "size-[18px] shrink-0" : "size-3.5 shrink-0 opacity-60"}
+          width={18}
+          height={18}
+          className="size-[18px] shrink-0"
         />
         Share
       </button>

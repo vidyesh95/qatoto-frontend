@@ -27,6 +27,7 @@
 
 import type {
   Blueprint,
+  BlueprintComment,
   BlueprintDocument,
   BlueprintVideo,
   TeardownManufacturingFile,
@@ -1097,6 +1098,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tagline: "Holds 4 °C for 62 hours with no sun, in 41 °C ambient",
     launchedAt: "2026-09-01T08:00:00.000Z",
     upvoteCount: 214,
+    commentCount: 7,
     team: [
       {
         displayName: "Amara Okonkwo",
@@ -1145,6 +1147,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tagline: "Nitrogen and organic carbon in 40 seconds, without a lab",
     launchedAt: "2026-08-28T09:30:00.000Z",
     upvoteCount: 147,
+    commentCount: 0,
     team: [
       {
         displayName: "Priya Raghavan",
@@ -1184,6 +1187,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tagline: "300 kg up a 9% grade, on parts you can buy in Ikeja",
     launchedAt: "2026-09-05T07:15:00.000Z",
     upvoteCount: 302,
+    commentCount: 5,
     team: [
       {
         displayName: "Chidi Eze",
@@ -1238,6 +1242,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tagline: "Within 0.4% of the lab, in a shed, on a phone charger",
     launchedAt: "2026-08-24T06:45:00.000Z",
     upvoteCount: 96,
+    commentCount: 0,
     team: [
       {
         displayName: "Rahul Mehta",
@@ -1283,6 +1288,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tagline: "23% less energy per litre, without buying a single new chiller",
     launchedAt: "2026-08-19T11:20:00.000Z",
     upvoteCount: 58,
+    commentCount: 0,
     team: [
       {
         displayName: "Fatima Al-Rashid",
@@ -1326,6 +1332,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tagline: "One coin cell per valve, a full season, zero mains",
     launchedAt: "2026-09-03T08:00:00.000Z",
     upvoteCount: 129,
+    commentCount: 0,
     team: [
       {
         displayName: "Naledi Dlamini",
@@ -1374,6 +1381,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tagline: "Swappable 1.2 kWh, 400 cycles, 91% capacity left",
     launchedAt: "2026-08-30T09:30:00.000Z",
     upvoteCount: 263,
+    commentCount: 0,
     team: [
       {
         displayName: "Tobias Lindqvist",
@@ -1430,6 +1438,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     // Deliberately ties `grain-moisture-meter-field-units` at 96, so `byMostUpvoted`'s tie-break is
     // exercised on the second page of `?sort=top` rather than only in a comment.
     upvoteCount: 96,
+    commentCount: 0,
     team: [
       {
         displayName: "Grace Wanjiru",
@@ -1469,6 +1478,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tagline: "Zero seal failures across 20 wells and 3,100 pump-hours",
     launchedAt: "2026-08-21T10:10:00.000Z",
     upvoteCount: 188,
+    commentCount: 0,
     team: [
       {
         displayName: "Kwame Mensah",
@@ -1517,6 +1527,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tagline: "Fourteen nodes, 31 days, no mains and no reboot",
     launchedAt: "2026-09-07T06:30:00.000Z",
     upvoteCount: 41,
+    commentCount: 1,
     team: [
       {
         displayName: "Marco Ferreira",
@@ -1755,3 +1766,192 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     ],
   },
 ];
+
+/**
+ * Showcase discussion, keyed by showcase slug.
+ *
+ * THREE OF THE TEN LAUNCHES HAVE A THREAD, AND THAT RATIO IS THE POINT. An empty discussion is the
+ * ordinary state of a new launch, not an error, and it has to render — giving every fixture comments
+ * would leave the empty case unexercised, which is the failure `TEARDOWNS_PAGE_LIMIT` argues against
+ * in `api.ts`. The three that do have threads each exercise a different shape:
+ *
+ * - `solar-cold-storage-field-prototype` — four top-level rows, three of them answered. The long
+ *   case, and the only one where the newest-first parent order is visible.
+ * - `brushless-cargo-trike-drivetrain` — THREE REPLIES ON ONE PARENT, none on each other. This is
+ *   the one-level limit rendered rather than asserted: a reply to a reply is not a row that can
+ *   exist here, because the backend this will eventually read from answers 409 to one.
+ * - `off-grid-mesh-nodes-kumasi-market` — a single unanswered comment. The smallest non-empty thread.
+ *
+ * ⚠️ `commentCount` ON EACH SHOWCASE MUST EQUAL THE LENGTH OF ITS THREAD HERE. The count renders in
+ * the engagement bar beside the thread it counts, and a disagreement between the two is the one lie
+ * this surface would be telling on a page that otherwise refuses to invent numbers. There is no
+ * test enforcing it — the count is a wire field a real backend computes, so deriving it from this
+ * map would model the wrong thing.
+ *
+ * EVERY `createdAt` POSTDATES ITS SHOWCASE'S `launchedAt`, and they drift into the past with the
+ * launch dates for the reason the file header records.
+ */
+export const MOCK_SHOWCASE_COMMENTS: Record<string, BlueprintComment[]> = {
+  "solar-cold-storage-field-prototype": [
+    {
+      commentId: "bpc-001",
+      parentCommentId: null,
+      body: "The 62-hour figure is the one worth pushing on. Was that a full box or an empty one? An empty cabinet coasting on its own insulation is a different claim from one holding 4 °C with product in it.",
+      author: {
+        displayName: "Tomas Lindqvist",
+        handle: "tomas-thermal",
+        avatarUrl: "/dummy/profile_image_02.avif",
+      },
+      likeCount: 34,
+      createdAt: "2026-09-02T09:12:00.000Z",
+    },
+    {
+      commentId: "bpc-002",
+      parentCommentId: "bpc-001",
+      body: "Full — 380 L of produce loaded at 6 °C. Empty it runs past 90 hours and the number stops meaning anything, so we stopped reporting it that way after the first week.",
+      author: {
+        displayName: "Amara Okonkwo",
+        handle: "amara-builds",
+        avatarUrl: "/dummy/profile_image_01.avif",
+      },
+      likeCount: 51,
+      createdAt: "2026-09-02T11:40:00.000Z",
+    },
+    {
+      commentId: "bpc-003",
+      parentCommentId: null,
+      body: "Two failures in ninety days on a first field unit is a good result. What were they?",
+      author: {
+        displayName: "Priya Raghunathan",
+        handle: "priya-coldchain",
+        avatarUrl: "/dummy/profile_image_03.avif",
+      },
+      likeCount: 12,
+      createdAt: "2026-09-03T14:05:00.000Z",
+    },
+    {
+      commentId: "bpc-004",
+      parentCommentId: "bpc-003",
+      body: "A compressor start relay at week three, and a door gasket that took a permanent set in the heat. The relay was the interesting one: it was rated for the current but not for 40 starts a day, and nothing in the datasheet says that.",
+      author: {
+        displayName: "Amara Okonkwo",
+        handle: "amara-builds",
+        avatarUrl: "/dummy/profile_image_01.avif",
+      },
+      likeCount: 47,
+      createdAt: "2026-09-03T16:20:00.000Z",
+    },
+    {
+      commentId: "bpc-005",
+      parentCommentId: null,
+      body: "Why lead-acid at this ambient? LiFePO4 would give you the cycle life and stop derating at 41 °C.",
+      author: {
+        displayName: "Kwame Mensah",
+        handle: "kwame-power",
+        avatarUrl: "/dummy/profile_image_05.avif",
+      },
+      likeCount: 8,
+      createdAt: "2026-09-04T07:55:00.000Z",
+    },
+    {
+      commentId: "bpc-006",
+      parentCommentId: "bpc-005",
+      body: "Cost, and the fact that a trader in Nakuru can replace a lead-acid battery the same afternoon from a shop they already know. A pack nobody local can source is a unit that dies the first time it needs one.",
+      author: {
+        displayName: "Grace Wanjiru",
+        handle: "grace-mech",
+        avatarUrl: "/dummy/profile_image_04.avif",
+      },
+      likeCount: 63,
+      createdAt: "2026-09-04T10:30:00.000Z",
+    },
+    {
+      commentId: "bpc-007",
+      parentCommentId: null,
+      body: "Are the raw temperature logs published anywhere? The 90-day series is more useful to anyone building against this than the summary figures are.",
+      author: {
+        displayName: "Ines Ferreira",
+        handle: "ines-data",
+        avatarUrl: "/dummy/profile_image_06.avif",
+      },
+      likeCount: 19,
+      createdAt: "2026-09-06T13:10:00.000Z",
+    },
+  ],
+  "brushless-cargo-trike-drivetrain": [
+    {
+      commentId: "bpc-011",
+      parentCommentId: null,
+      body: "What is the hub motor's continuous rating against what you are actually pulling on a loaded hill? Cargo trikes are where optimistic ratings go to die.",
+      author: {
+        displayName: "Tomas Lindqvist",
+        handle: "tomas-thermal",
+        avatarUrl: "/dummy/profile_image_02.avif",
+      },
+      likeCount: 41,
+      createdAt: "2026-09-05T10:20:00.000Z",
+    },
+    {
+      commentId: "bpc-012",
+      parentCommentId: "bpc-011",
+      body: "750 W continuous on the label. On the 8% grade near the depot, loaded to 180 kg, it sits at about 1.4 kW for ninety seconds. It survives that; it does not survive doing it twice without a gap.",
+      author: {
+        displayName: "Kwame Mensah",
+        handle: "kwame-power",
+        avatarUrl: "/dummy/profile_image_05.avif",
+      },
+      likeCount: 58,
+      createdAt: "2026-09-05T12:00:00.000Z",
+    },
+    {
+      commentId: "bpc-013",
+      parentCommentId: "bpc-011",
+      body: "Worth adding that the controller is the part that gives up first, not the motor. Ours folded on thermal cutback well before the windings were anywhere near their limit.",
+      author: {
+        displayName: "Priya Raghunathan",
+        handle: "priya-coldchain",
+        avatarUrl: "/dummy/profile_image_03.avif",
+      },
+      likeCount: 22,
+      createdAt: "2026-09-05T15:45:00.000Z",
+    },
+    {
+      commentId: "bpc-014",
+      parentCommentId: "bpc-011",
+      body: "This matches what we saw. The honest number for a cargo application is whatever it holds after twenty minutes of stop-start, and almost nobody publishes that one.",
+      author: {
+        displayName: "Ines Ferreira",
+        handle: "ines-data",
+        avatarUrl: "/dummy/profile_image_06.avif",
+      },
+      likeCount: 30,
+      createdAt: "2026-09-06T08:30:00.000Z",
+    },
+    {
+      commentId: "bpc-015",
+      parentCommentId: null,
+      body: "The belt-over-chain decision is buried in the write-up and deserves its own paragraph. Riders who cannot get a belt locally will quietly convert these back.",
+      author: {
+        displayName: "Grace Wanjiru",
+        handle: "grace-mech",
+        avatarUrl: "/dummy/profile_image_04.avif",
+      },
+      likeCount: 15,
+      createdAt: "2026-09-07T09:00:00.000Z",
+    },
+  ],
+  "off-grid-mesh-nodes-kumasi-market": [
+    {
+      commentId: "bpc-021",
+      parentCommentId: null,
+      body: "Curious how the nodes behave once the market fills up — a few hundred bodies between the antennas is a very different link budget from an empty aisle at dawn.",
+      author: {
+        displayName: "Ines Ferreira",
+        handle: "ines-data",
+        avatarUrl: "/dummy/profile_image_06.avif",
+      },
+      likeCount: 6,
+      createdAt: "2026-09-07T18:45:00.000Z",
+    },
+  ],
+};

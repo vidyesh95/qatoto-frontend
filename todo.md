@@ -3415,8 +3415,10 @@ else — the exact thing `ShowcaseVoteBox` refuses.
   `bookmarkedCount` — two names for one concept already exist; this picks the older instead of
   adding a third. Fixture values are invented like every other number on this surface.
 - **Share is the full `ShareSheet` on BOTH detail pages now.** The showcase page's single X-intent
-  `<a>` is gone; `BlueprintShareButton` has a `pill` variant for the teardown bar and an `inline`
-  variant for the showcase byline. `onShared` is OMITTED — that callback records against
+  `<a>` is gone. ⚠️ UPDATED 2026-09-09: `BlueprintShareButton` briefly carried a `pill` and an
+  `inline` variant; share then moved out of the showcase byline into `ShowcaseEngagementBar`, the
+  `inline` variant lost its only caller, and the prop is GONE rather than kept for a hypothetical
+  third surface. One look, sized `w-full lg:w-24` to match `StatPill`. `onShared` is OMITTED — that callback records against
   `video_share.videoId`, which is NOT NULL with no polymorphic target, so there is no row to write.
   `shareUrl` is always passed explicitly, because the sheet's `window.location.href` default would
   hand somebody a `localhost` URL. ⚠️ Note the tension this creates and accept it knowingly: the
@@ -3431,7 +3433,47 @@ else — the exact thing `ShowcaseVoteBox` refuses.
   re-measures once on `document.fonts.ready`, because the clamped box is a fixed two lines tall and
   the ResizeObserver never fires when the webfont swaps in.
 
-**Not scoped:** no comment thread (`video-comment-thread.tsx` hardcodes `/videos/:videoId/comments`
-in every read and write — mirroring it is a parallel api + hook layer, not a prop), no view counter,
-no engagement on the case-study arm, and no vote button on the showcase arm — `ShowcaseVoteBox` stays
-a `<span>`.
+**Not scoped:** no view counter, no engagement on the case-study arm, and no vote button on the
+showcase arm — `ShowcaseVoteBox` stays a `<span>`. ⚠️ UPDATED 2026-09-09: "no comment thread" was in
+this list and is no longer true for the showcase arm — see §Blueprint discussion below. The reason
+recorded here still stands and is exactly why the thread that shipped is READ-ONLY:
+`video-comment-thread.tsx` hardcodes `/videos/:videoId/comments` in every read and write, so
+mirroring its writes is a parallel api + hook layer, not a prop.
+
+## Blueprint discussion — READ-ONLY THREAD SHIPPED 2026-09-09 (showcase arm only)
+
+The showcase detail page renders an HN/Launch-YC-shaped discussion. `BlueprintCommentSchema` +
+`listShowcaseComments` (`src/lib/blueprints/api.ts`) + `BlueprintCommentThread`
+(`src/components/home/blueprints/sections/`), fixtures in `MOCK_SHOWCASE_COMMENTS`. Three of the ten
+launches carry a thread so the empty case stays exercised.
+
+**Three decisions worth not relitigating:**
+
+- **ONE LEVEL OF NESTING, deliberately, and HN nests without limit.** The backend answers 409 to a
+  reply on a reply (`video-comment-thread.tsx:132`), so a deep renderer would be a component the real
+  endpoint cannot feed — the `/anime` mistake. `BlueprintComment` carries no `depth` field and the
+  component has no recursion in it. If the eventual `blueprint_comment` table permits deeper trees,
+  this is the file to revisit and the decision to reverse — not before.
+- **NOT KEYSET-PAGED, unlike the three list getters.** Those page because their indexes render
+  `CursorPageControl`; a thread does not, and HN puts the whole discussion on the page. Paging it now
+  would mean a `?commentsCursor=` on a detail route with no query params and a control no fixture
+  could exercise. It takes the `filter`/`BlueprintPage` shape when real threads run long.
+- **`commentCount` MUST EQUAL the fixture thread length.** It is a wire field a real backend computes,
+  so it is NOT derived from the fixture map — which means the two can drift, and a count that
+  disagrees with the rows beneath it is the one lie this surface would be telling. No test enforces
+  it; `blueprints-mocks.ts` records it as a standing constraint.
+
+**Next, in rough order:**
+
+- **Comment count on the showcase feed row.** `showcase-feed-row.tsx` meta line gets an "N comments"
+  readout. HN's list shows it, and it is the affordance that pulls a reader into the discussion.
+- **`?sort=discussed`.** A third `SHOWCASE_SORTS` entry beside `newest`/`top`, comparator in
+  `listShowcases`. Cheap now that `commentCount` exists — and note that a comparator over a
+  display-only count is fine, because sorting happens in the getter, not the client.
+- **Teardowns reuse the thread.** The teardown arm already carries a display-only `commentCount` with
+  nothing behind it; `BlueprintCommentThread` is props-only and is the renderer it has been missing.
+- **The backend work that makes any of it real.** A blueprints content table for a comment row to
+  reference, then `blueprint_comment` with one-level threading, moderation and a report path. Until
+  that exists the thread is read-only BY RULE, not by omission — and the copy on the page says so
+  ("Read-only for now"), which is the disclosure that must be deleted in the same commit that wires
+  the composer, not before it and not after.

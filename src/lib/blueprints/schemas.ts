@@ -998,6 +998,17 @@ export const ShowcaseBlueprintSchema = z
      * `<button>` — and nothing in this repo changes it.
      */
     upvoteCount: z.number().int().nonnegative(),
+    /**
+     * DISPLAY ONLY, for the reason `upvoteCount` gives directly above, and it is the count of the
+     * thread `BlueprintCommentThread` renders — not an independent number. A count that disagreed
+     * with the rows beside it would be the one lie this surface cannot tell while claiming the
+     * discussion is real.
+     *
+     * ON THE SHOWCASE ARM, NOT `BlueprintSharedShape`. A case study is a numbered lesson with no
+     * discussion surface, and a shared field exists only for what a rail card renders for every
+     * category. The teardown arm carries its own for the same reason.
+     */
+    commentCount: z.number().int().nonnegative(),
     team: z.array(BlueprintTeamMemberSchema),
     /** The teardown this was built from, `null` when it was built from nothing published here. */
     builtFromBlueprintSlug: z.string().nullable(),
@@ -1037,6 +1048,45 @@ export type BlueprintOfCategory<TCategory extends BlueprintCategory> = Extract<
   Blueprint,
   { category: TCategory }
 >;
+
+// --- Discussion --------------------------------------------------------------
+
+/**
+ * One comment on a showcase.
+ *
+ * ⚠️ THREADING IS ONE LEVEL, AND THAT IS A BACKEND FACT, NOT A LAYOUT CHOICE. A `parentCommentId`
+ * points at a top-level comment and nothing else: the video thread this mirrors records the rule at
+ * `video-comment-thread.tsx:132` — "One level only — the backend 409s a reply on a reply". Hacker
+ * News nests without limit, and modelling that here would produce a renderer the eventual endpoint
+ * cannot feed. There is deliberately NO `depth` field, because a depth that can only be 0 or 1 is
+ * `parentCommentId === null` spelled twice.
+ *
+ * NO `viewerState` AND NO `isDeleted`, which the video comment carries. Both answer questions only a
+ * session and a moderation surface can ask, and this surface has neither — every engagement table in
+ * the backend is hard-FK'd to `video.id` or `product.id`, and no blueprints content table exists for
+ * a comment row to reference. `body` is therefore plain `z.string()` rather than nullable: a tombstone
+ * is a state only deletion can create.
+ *
+ * THE AUTHOR SHAPE IS REUSED. `BlueprintAuthorSchema` already spells a person on this surface; a
+ * second one would be a third spelling of the same concept.
+ */
+export const BlueprintCommentSchema = z
+  .object({
+    commentId: z.string(),
+    /** `null` is a top-level comment. A reply's own replies are not a state that exists. */
+    parentCommentId: z.string().nullable(),
+    body: z.string(),
+    author: BlueprintAuthorSchema,
+    /**
+     * DISPLAY ONLY. No comment-like route exists any more than a vote route does, so this renders as
+     * a `<span>` and never as a `<button>`.
+     */
+    likeCount: z.number().int().nonnegative(),
+    /** ISO 8601. */
+    createdAt: z.string(),
+  })
+  .strip();
+export type BlueprintComment = z.infer<typeof BlueprintCommentSchema>;
 
 /**
  * One keyset page of blueprints.
