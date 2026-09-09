@@ -12,7 +12,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [react()],
   // Replaces the `vite-tsconfig-paths` plugin — native as of Vite 8 (`ResolveOptions.tsconfigPaths`),
-  // which is what Vitest 4's startup warning points at. Defaults to false, so it must be explicit.
+  // which is the Vite this repo resolves. Defaults to false, so it must be explicit.
   resolve: { tsconfigPaths: true },
   test: {
     environment: "jsdom",

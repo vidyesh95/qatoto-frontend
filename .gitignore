@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+# Vitest 5 writes every default file output here — blob reporter and --merge-reports
+# (.vitest/blob/), json/junit/html reporter files, and attachments (was .vitest-attachements/).
+/.vitest/
 
 # next.js
 /.next/
