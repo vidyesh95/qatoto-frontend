@@ -1,0 +1,483 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-09T13:22:25.705Z",
+  "title": "Design System: Qatoto",
+  "extensions": {
+    "colorMeta": {
+      "primary-imprint": {
+        "role": "primary",
+        "displayName": "Primary Imprint",
+        "canonical": "oklch(0.4736 0.0805 200.55)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0455 200.55)",
+          "oklch(0.2600 0.0621 200.55)",
+          "oklch(0.3700 0.0734 200.55)",
+          "oklch(0.4800 0.0794 200.55)",
+          "oklch(0.6000 0.0800 200.55)",
+          "oklch(0.7200 0.0742 200.55)",
+          "oklch(0.8400 0.0621 200.55)",
+          "oklch(0.9500 0.0455 200.55)"
+        ]
+      },
+      "primary-imprint-deep": {
+        "role": "primary",
+        "displayName": "Primary Imprint Deep",
+        "canonical": "oklch(0.3133 0.0533 200.58)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0301 200.58)",
+          "oklch(0.2600 0.0411 200.58)",
+          "oklch(0.3700 0.0486 200.58)",
+          "oklch(0.4800 0.0526 200.58)",
+          "oklch(0.6000 0.0529 200.58)",
+          "oklch(0.7200 0.0491 200.58)",
+          "oklch(0.8400 0.0411 200.58)",
+          "oklch(0.9500 0.0301 200.58)"
+        ]
+      },
+      "primary-imprint-bright": {
+        "role": "primary",
+        "displayName": "Primary Imprint Bright",
+        "canonical": "oklch(0.7278 0.1195 200.43)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0676 200.43)",
+          "oklch(0.2600 0.0922 200.43)",
+          "oklch(0.3700 0.1090 200.43)",
+          "oklch(0.4800 0.1179 200.43)",
+          "oklch(0.6000 0.1187 200.43)",
+          "oklch(0.7200 0.1101 200.43)",
+          "oklch(0.8400 0.0922 200.43)",
+          "oklch(0.9500 0.0676 200.43)"
+        ]
+      },
+      "surface-wash": {
+        "role": "secondary",
+        "displayName": "Surface Wash",
+        "canonical": "oklch(0.9109 0.0295 199.2757)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0167 199.28)",
+          "oklch(0.2600 0.0228 199.28)",
+          "oklch(0.3700 0.0269 199.28)",
+          "oklch(0.4800 0.0291 199.28)",
+          "oklch(0.6000 0.0293 199.28)",
+          "oklch(0.7200 0.0272 199.28)",
+          "oklch(0.8400 0.0228 199.28)",
+          "oklch(0.9500 0.0167 199.28)"
+        ]
+      },
+      "secondary-wash": {
+        "role": "secondary",
+        "displayName": "Secondary Wash",
+        "canonical": "oklch(0.9147 0.0408 265.7133)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0231 265.71)",
+          "oklch(0.2600 0.0315 265.71)",
+          "oklch(0.3700 0.0372 265.71)",
+          "oklch(0.4800 0.0403 265.71)",
+          "oklch(0.6000 0.0405 265.71)",
+          "oklch(0.7200 0.0376 265.71)",
+          "oklch(0.8400 0.0315 265.71)",
+          "oklch(0.9500 0.0231 265.71)"
+        ]
+      },
+      "accent-wash": {
+        "role": "tertiary",
+        "displayName": "Accent Wash",
+        "canonical": "oklch(0.9552 0.0127 196.9434)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0072 196.94)",
+          "oklch(0.2600 0.0098 196.94)",
+          "oklch(0.3700 0.0116 196.94)",
+          "oklch(0.4800 0.0125 196.94)",
+          "oklch(0.6000 0.0126 196.94)",
+          "oklch(0.7200 0.0117 196.94)",
+          "oklch(0.8400 0.0098 196.94)",
+          "oklch(0.9500 0.0072 196.94)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.2178 0 0)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0000 0.00)",
+          "oklch(0.2600 0.0000 0.00)",
+          "oklch(0.3700 0.0000 0.00)",
+          "oklch(0.4800 0.0000 0.00)",
+          "oklch(0.6000 0.0000 0.00)",
+          "oklch(0.7200 0.0000 0.00)",
+          "oklch(0.8400 0.0000 0.00)",
+          "oklch(0.9500 0.0000 0.00)"
+        ]
+      },
+      "ink-quiet": {
+        "role": "neutral",
+        "displayName": "Ink Quiet",
+        "canonical": "oklch(0.5452 0 0)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0000 0.00)",
+          "oklch(0.2600 0.0000 0.00)",
+          "oklch(0.3700 0.0000 0.00)",
+          "oklch(0.4800 0.0000 0.00)",
+          "oklch(0.6000 0.0000 0.00)",
+          "oklch(0.7200 0.0000 0.00)",
+          "oklch(0.8400 0.0000 0.00)",
+          "oklch(0.9500 0.0000 0.00)"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Ground",
+        "canonical": "oklch(0.9761 0 0)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0000 0.00)",
+          "oklch(0.2600 0.0000 0.00)",
+          "oklch(0.3700 0.0000 0.00)",
+          "oklch(0.4800 0.0000 0.00)",
+          "oklch(0.6000 0.0000 0.00)",
+          "oklch(0.7200 0.0000 0.00)",
+          "oklch(0.8400 0.0000 0.00)",
+          "oklch(0.9500 0.0000 0.00)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0000 0.00)",
+          "oklch(0.2600 0.0000 0.00)",
+          "oklch(0.3700 0.0000 0.00)",
+          "oklch(0.4800 0.0000 0.00)",
+          "oklch(0.6000 0.0000 0.00)",
+          "oklch(0.7200 0.0000 0.00)",
+          "oklch(0.8400 0.0000 0.00)",
+          "oklch(0.9500 0.0000 0.00)"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(0.9276 0.0058 264.5313)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0033 264.53)",
+          "oklch(0.2600 0.0045 264.53)",
+          "oklch(0.3700 0.0053 264.53)",
+          "oklch(0.4800 0.0057 264.53)",
+          "oklch(0.6000 0.0058 264.53)",
+          "oklch(0.7200 0.0053 264.53)",
+          "oklch(0.8400 0.0045 264.53)",
+          "oklch(0.9500 0.0033 264.53)"
+        ]
+      },
+      "outline-strong": {
+        "role": "neutral",
+        "displayName": "Outline Strong",
+        "canonical": "oklch(0.5677 0.0120 196.82)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0068 196.82)",
+          "oklch(0.2600 0.0093 196.82)",
+          "oklch(0.3700 0.0109 196.82)",
+          "oklch(0.4800 0.0118 196.82)",
+          "oklch(0.6000 0.0119 196.82)",
+          "oklch(0.7200 0.0111 196.82)",
+          "oklch(0.8400 0.0093 196.82)",
+          "oklch(0.9500 0.0068 196.82)"
+        ]
+      },
+      "outline-variant": {
+        "role": "neutral",
+        "displayName": "Outline Variant",
+        "canonical": "oklch(0.8287 0.0178 308.22)",
+        "tonalRamp": [
+          "oklch(0.1500 0.0101 308.22)",
+          "oklch(0.2600 0.0137 308.22)",
+          "oklch(0.3700 0.0162 308.22)",
+          "oklch(0.4800 0.0176 308.22)",
+          "oklch(0.6000 0.0177 308.22)",
+          "oklch(0.7200 0.0164 308.22)",
+          "oklch(0.8400 0.0137 308.22)",
+          "oklch(0.9500 0.0101 308.22)"
+        ]
+      },
+      "destructive": {
+        "role": "neutral",
+        "displayName": "Destructive",
+        "canonical": "oklch(0.6368 0.2078 25.3313)",
+        "tonalRamp": [
+          "oklch(0.1500 0.1175 25.33)",
+          "oklch(0.2600 0.1603 25.33)",
+          "oklch(0.3700 0.1895 25.33)",
+          "oklch(0.4800 0.2050 25.33)",
+          "oklch(0.6000 0.2064 25.33)",
+          "oklch(0.7200 0.1915 25.33)",
+          "oklch(0.8400 0.1603 25.33)",
+          "oklch(0.9500 0.1175 25.33)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Marketing heroes on (information) only. Serif. Roughly 50 uses in the whole codebase and should stay that rare."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headers. Sans on product surfaces, serif on editorial."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Panel and card headings, subsection breaks."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "The real body size of this product, 2,211 uses. Cap running text at 65 to 75 characters."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Captions, units, metadata, stat readouts. Second most common size at 2,183 uses."
+      },
+      "eyebrow": {
+        "displayName": "Eyebrow",
+        "purpose": "Uppercase section kickers at 0.18em tracking. Two to four words, never a sentence."
+      },
+      "prose": {
+        "displayName": "Prose",
+        "purpose": "Serif long-form on blogs, press and disclaimers, in a max-w-3xl measure."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Identifiers, slugs, enum values, cursor tokens. Anything that must be copied exactly."
+      }
+    },
+    "shadows": [
+      {
+        "name": "resting-hairline",
+        "value": "1px solid var(--border)",
+        "purpose": "The default separator, and not a shadow at all. 639 uses against 110 total shadow uses. Named here because it is what a shadow would otherwise be doing."
+      },
+      {
+        "name": "shadow-sm",
+        "value": "0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1)",
+        "purpose": "A panel that has lifted slightly off the flow. Most-used shadow at 39 uses."
+      },
+      {
+        "name": "shadow-lg",
+        "value": "0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1)",
+        "purpose": "Floating menus, comboboxes, the popover layer."
+      },
+      {
+        "name": "shadow-2xl",
+        "value": "0 1px 3px 0px hsl(0 0% 0% / 0.25)",
+        "purpose": "Modal sheets over a scrim."
+      }
+    ],
+    "motion": [
+      {
+        "name": "transition-colors",
+        "value": "background-color 200ms ease-in-out, border-color 200ms ease-in-out, color 200ms ease-in-out",
+        "purpose": "The house transition, 308 uses. Almost every state change in this system is a colour change."
+      },
+      {
+        "name": "transition-opacity",
+        "value": "opacity 200ms ease-in-out",
+        "purpose": "Reveal and dismiss, 76 uses. The only other permitted transition."
+      },
+      {
+        "name": "duration-200",
+        "value": "200ms",
+        "purpose": "Default duration for a state change."
+      },
+      {
+        "name": "duration-300",
+        "value": "300ms",
+        "purpose": "Reserved for the sidebar collapse, which is existing layout-property debt rather than a pattern to copy."
+      },
+      {
+        "name": "animate-live-ring",
+        "value": "live-ring 0.8s ease-in-out infinite",
+        "purpose": "Pulsing ring on a live indicator. Scales 0.8696 to 1. One of only two keyframe animations in the system."
+      },
+      {
+        "name": "animate-live-image",
+        "value": "live-image 0.8s ease-in-out infinite",
+        "purpose": "Counter-pulse on the live indicator thumbnail. Scales 1 to 0.8824."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      },
+      {
+        "name": "2xl",
+        "value": "1536px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The committed action: submit, confirm, record, publish. Full-round pill, Primary Imprint ground, white text.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Record payment</button>",
+      "css": ".ds-btn-primary { font-family: Geist, Roboto, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 0.875rem; font-weight: 500; line-height: 1.25rem; background: #00696E; color: #fff; border: none; border-radius: 9999px; padding: 0.625rem 1.25rem; cursor: pointer; transition: background-color 200ms ease-in-out; } .ds-btn-primary:hover { background: #00393C; } .ds-btn-primary:focus-visible { outline: 2px solid #00696E; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "The secondary of a paired action. Transparent ground, Primary Imprint text and a 40% border of the same hue.",
+      "html": "<button class=\"ds-btn-outline\" type=\"button\">Cancel</button>",
+      "css": ".ds-btn-outline { font-family: Geist, Roboto, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 0.875rem; font-weight: 500; line-height: 1.25rem; background: transparent; color: #00696E; border: 1px solid rgba(0, 105, 110, 0.4); border-radius: 9999px; padding: 0.5rem 1rem; cursor: pointer; transition: background-color 200ms ease-in-out, border-color 200ms ease-in-out; } .ds-btn-outline:hover { background: rgba(0, 105, 110, 0.06); border-color: #00696E; } .ds-btn-outline:focus-visible { outline: 2px solid #00696E; outline-offset: 2px; }"
+    },
+    {
+      "name": "Sidebar Nav Pill",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "The single strongest signal in the visual language. Icon plus sans label in a full-round pill. Active state pairs a Surface Wash ground with a filled Material icon and aria-current, so colour is never the only signal.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><a class=\"ds-nav-item\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 -960 960 960\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Z\"/></svg><span>Blueprints</span></a><a class=\"ds-nav-item ds-nav-item--active\" href=\"#\" aria-current=\"page\"><svg width=\"24\" height=\"24\" viewBox=\"0 -960 960 960\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M160-120v-480l320-240 320 240v480H560v-280H400v280H160Z\"/></svg><span>Research and development</span></a><a class=\"ds-nav-item ds-nav-item--emphasized\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 -960 960 960\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Z\"/></svg><span>Project Immortal</span></a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 0.25rem; width: 20rem; padding: 0.75rem; } .ds-nav-item { display: flex; align-items: center; gap: 0.75rem; border-radius: 9999px; padding: 0.75rem 1rem; font-family: Geist, Roboto, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 0.875rem; font-weight: 500; line-height: 1.25rem; color: var(--foreground, oklch(0.2178 0 0)); text-decoration: none; transition: background-color 200ms ease-in-out; } .ds-nav-item:hover { background: var(--muted, oklch(0.931 0 0)); } .ds-nav-item--active { background: var(--primary, oklch(0.9109 0.0295 199.2757)); color: var(--primary-foreground, oklch(0.2178 0 0)); } .ds-nav-item--emphasized { border-radius: 0.75rem; background: var(--secondary, oklch(0.9147 0.0408 265.7133)); color: var(--secondary-foreground, oklch(0.2178 0 0)); } .ds-nav-item:focus-visible { outline: 2px solid #00696E; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "The canonical field from src/components/ui/field-classes.ts. Label above, transparent ground, Outline Strong border, border shifts to Primary Imprint on focus. The focus-visible outline shown here is the recommended addition, not current shipped behaviour.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Unit cost (cents)</span><input class=\"ds-field-input\" type=\"text\" value=\"14950\" /></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 0.25rem; width: 18rem; font-family: Geist, Roboto, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; } .ds-field-label { font-size: 0.75rem; font-weight: 500; line-height: 1rem; color: #6F7979; } .ds-field-input { width: 100%; border-radius: 0.5rem; border: 1px solid #6F7979; background: transparent; padding: 0.5rem 0.75rem; font-family: inherit; font-size: 0.875rem; font-weight: 500; line-height: 1.25rem; color: var(--foreground, oklch(0.2178 0 0)); outline: none; transition: border-color 200ms ease-in-out; } .ds-field-input:focus { border-color: #00696E; } .ds-field-input:focus-visible { outline: 2px solid #00696E; outline-offset: 2px; } .ds-field-input:disabled { opacity: 0.4; }"
+    },
+    {
+      "name": "Card Panel",
+      "kind": "card",
+      "refersTo": "card-panel",
+      "description": "The working container. Flat Surface ground, 1px Hairline border, 1rem radius, 1rem padding. No shadow: the border is what makes it a card.",
+      "html": "<article class=\"ds-card\"><p class=\"ds-card-eyebrow\">Teardown</p><h3 class=\"ds-card-title\">Solar cold storage compressor</h3><p class=\"ds-card-body\">Twelve parts, exploded view authored. Bill of materials costed at 41,200 to 48,900 cents.</p></article>",
+      "css": ".ds-card { border-radius: 1rem; border: 1px solid var(--border, oklch(0.9276 0.0058 264.5313)); background: var(--card, oklch(1 0 0)); padding: 1rem; width: 22rem; font-family: Geist, Roboto, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--foreground, oklch(0.2178 0 0)); } .ds-card-eyebrow { margin: 0 0 0.5rem; font-size: 0.75rem; font-weight: 500; line-height: 1rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted-foreground, oklch(0.5452 0 0)); } .ds-card-title { margin: 0 0 0.5rem; font-size: 1.25rem; font-weight: 500; line-height: 1.3; } .ds-card-body { margin: 0; font-size: 0.875rem; font-weight: 500; line-height: 1.25rem; color: var(--muted-foreground, oklch(0.5452 0 0)); }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Pill chip at label size. A filter chip carries a caret so it is distinguishable from a metadata chip of the same shape; the selected state takes Primary Imprint at full strength.",
+      "html": "<div class=\"ds-chip-row\"><button class=\"ds-chip\" type=\"button\">Discipline <svg width=\"16\" height=\"16\" viewBox=\"0 -960 960 960\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M480-360 280-560h400L480-360Z\"/></svg></button><button class=\"ds-chip ds-chip--selected\" type=\"button\">Injection moulding <svg width=\"16\" height=\"16\" viewBox=\"0 -960 960 960\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M480-360 280-560h400L480-360Z\"/></svg></button></div>",
+      "css": ".ds-chip-row { display: flex; gap: 0.5rem; font-family: Geist, Roboto, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; } .ds-chip { display: inline-flex; align-items: center; gap: 0.375rem; border-radius: 9999px; border: 1px solid var(--border, oklch(0.9276 0.0058 264.5313)); background: var(--card, oklch(1 0 0)); padding: 0.375rem 0.75rem; font-family: inherit; font-size: 0.75rem; font-weight: 500; line-height: 1rem; color: var(--foreground, oklch(0.2178 0 0)); cursor: pointer; transition: background-color 200ms ease-in-out, border-color 200ms ease-in-out; } .ds-chip:hover { background: var(--muted, oklch(0.931 0 0)); } .ds-chip--selected { background: #00696E; border-color: transparent; color: #fff; } .ds-chip:focus-visible { outline: 2px solid #00696E; outline-offset: 2px; }"
+    },
+    {
+      "name": "Stat Readout",
+      "kind": "custom",
+      "refersTo": "stat-readout",
+      "description": "The signature component. A stacked figure over a unit-bearing label in a fixed gutter, rendered as a span and never a button, because these counts have no backing write. An absent value renders nothing at all, not a dash and not a zero.",
+      "html": "<div class=\"ds-readout-row\"><span class=\"ds-readout\"><span class=\"ds-readout-figure\">1,284</span><span class=\"ds-readout-label\">upvotes</span></span><span class=\"ds-readout\"><span class=\"ds-readout-figure\">37</span><span class=\"ds-readout-label\">comments</span></span><span class=\"ds-readout\"><span class=\"ds-readout-figure\">412</span><span class=\"ds-readout-label\">saves</span></span><button class=\"ds-btn-primary\" type=\"button\">Share</button></div>",
+      "css": ".ds-readout-row { display: flex; align-items: center; gap: 1rem; font-family: Geist, Roboto, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; } .ds-readout { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 40px; min-height: 44px; border-radius: 0.5rem; } .ds-readout-figure { font-size: 0.875rem; font-weight: 500; line-height: 1.25rem; font-variant-numeric: tabular-nums; color: var(--foreground, oklch(0.2178 0 0)); } .ds-readout-label { font-size: 0.75rem; font-weight: 500; line-height: 1rem; color: var(--muted-foreground, oklch(0.5452 0 0)); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Audit You Can Read, anchored by The Bill of Materials",
+    "overview": "The interface is a verifiable record for a skeptic. Every surface exists so that someone who does not trust the claim can check it, which means the reader must never be more than one glance from the underlying value. Visually that produces tight typographic density, flat hairline-delimited layouts and zero decorative ornament. Nothing sits between the reader and the row.\n\nMechanically the system demands the precision of a spec sheet. Explicit units on every value. Strict enforcement of null-is-not-zero, because null is the absence of an answer and zero is an answer. Exact integer handling, because a bill of materials is quoted by a manufacturer and an ambiguous figure is a wrong part in a crate. Tabular data that needs no translation before it can be used. The design of a number is as much a part of this system as the design of a button.\n\nThis system explicitly rejects the generic SaaS landing page: the hero metric with a big number and a small label, three identical icon-and-heading cards, the gradient blob, the testimonial row, the second call to action that repeats the first. That shape is what tells a skeptical backer the product is a deck. Anything that reads as persuasion rather than record is wrong here, however well it is made.",
+    "keyCharacteristics": [
+      "Dense by default. Body copy is 14px at medium weight; labels are 12px. The interface assumes a reader who is working, not browsing.",
+      "Flat and delimited by hairline. Structure comes from 1px borders, not from shadow.",
+      "Pill geometry for anything you press or that indicates state; soft rectangles for anything that holds content.",
+      "Serif is reserved for editorial and long-form surfaces. Product chrome is sans, always.",
+      "Dark mode is a peer theme, not a toggle. Every token ships with its .dark counterpart and both are contrast-checked before merge.",
+      "Motion is confined to color and opacity. The system does not choreograph."
+    ],
+    "rules": [
+      {
+        "name": "The Container Rule",
+        "section": "colors",
+        "body": "A wash is a container tone. It carries dark text and it never carries a call to action. If a control needs to be pressed, it takes Primary Imprint at full strength. If a control needs to show that it is current, it takes Surface Wash. Confusing the two produces a pale mint button that reads as disabled."
+      },
+      {
+        "name": "The One Hue Rule",
+        "section": "colors",
+        "body": "Every meaningful colour in this system lives between 196 and 201 degrees. The blue at 265 is one emphasized nav item and the red at 25 is destruction. A fourth hue requires a role that does not exist yet, not a preference."
+      },
+      {
+        "name": "The Untinted Neutral Debt",
+        "section": "colors",
+        "body": "Every grey in the token scale is chroma 0, and --card, --input and --popover are literally oklch(1 0 0), pure white. This is a departure from the tinting doctrine, not a decision. New neutrals should carry chroma 0.005 to 0.01 toward 199 degrees. Do not fix the existing 32 tokens as a side effect of unrelated work."
+      },
+      {
+        "name": "The Dark Chart Regression",
+        "section": "colors",
+        "body": "--chart-1 through --chart-5 are an ordered blue ramp in light mode and pure greyscale in dark mode. Any chart using them loses hue on theme switch, so a series must never be identified by colour alone. Label the series or shape the mark."
+      },
+      {
+        "name": "The Two-Size Rule",
+        "section": "typography",
+        "body": "This product is written at 14px and 12px. Between them they account for 4,394 of roughly 4,900 type-size declarations. A new size in product chrome is a claim that the existing two cannot express the hierarchy, and that claim is almost always false. Reach for weight, colour or spacing before reaching for a third size."
+      },
+      {
+        "name": "The Medium-Default Rule",
+        "section": "typography",
+        "body": "The resting weight is 500, not 400. font-medium appears 1,986 times against 17 uses of font-normal. Emphasis is therefore 600, and there is effectively no bold in this system: font-bold appears once."
+      },
+      {
+        "name": "The Serif Boundary",
+        "section": "typography",
+        "body": "Serif never enters product chrome, and marketing voice never enters a product screen. A serif heading inside (home), (studio) or (admin) is a bug."
+      },
+      {
+        "name": "The Hairline-First Rule",
+        "section": "elevation",
+        "body": "Before adding a shadow, ask whether a border would say the same thing. It almost always will. A shadow is permitted only when the element leaves the document flow."
+      },
+      {
+        "name": "The Nested Panel Prohibition",
+        "section": "elevation",
+        "body": "A bordered panel inside a bordered panel is forbidden. Two hairlines with 16px between them read as a rendering error, not a hierarchy. Use spacing, an eyebrow label or a rule, and never a second box."
+      },
+      {
+        "name": "The Inert Span Rule",
+        "section": "components",
+        "body": "A count with no backing write renders as a span. The moment it becomes a button it promises a mutation that the backend cannot honour."
+      },
+      {
+        "name": "The Pill Means Pressable Rule",
+        "section": "components",
+        "body": "Full-round geometry marks something you press or something that reports state. Content containers take soft rectangles. A pill-shaped read-only card is a false affordance."
+      }
+    ],
+    "dos": [
+      "Do write product body copy at 0.875rem weight 500 and metadata at 0.75rem weight 500. Two sizes carry this product.",
+      "Do separate surfaces with a 1px Hairline border. Reach for a border before a shadow, every time.",
+      "Do use Primary Imprint (#00696E, oklch(0.4736 0.0805 200.55)) for committed actions and Surface Wash (oklch(0.9109 0.0295 199.2757)) for active state. They are different jobs in the same hue.",
+      "Do put aria-current=\"page\" on the active nav item and switch the Material icon from FILL0 to FILL1. The pill is a reinforcement, not the signal.",
+      "Do spell out the unit next to every figure: delayMs, priceInCents, widthPx. A manufacturer quotes from these.",
+      "Do render an absent value as nothing at all. No media, no section. No cost range, no band.",
+      "Do ship every new token with its .dark counterpart and check contrast in both themes before merge.",
+      "Do confine motion to transition-colors and transition-opacity at 200ms. If a transition is needed at all, that is almost certainly the one.",
+      "Do label a chart series or shape its mark. --chart-1 through --chart-5 are greyscale in dark mode and colour cannot be the only identifier."
+    ],
+    "donts": [
+      "Don't build the generic SaaS landing page. No hero metric with a big number and a small label, no three identical icon-and-heading cards, no gradient blob, no testimonial row, no second call to action that repeats the first. PRODUCT.md names this as the anti-reference because it is the shape that tells a skeptical backer the product is a deck.",
+      "Don't use border-left or border-right greater than 1px as a coloured accent stripe on a card, list item, callout or alert. Rewrite the element with a full border, a background tint, a leading number, or nothing.",
+      "Don't apply background-clip: text over a gradient. Emphasis comes from weight and size.",
+      "Don't use blur or glass decoratively. If a surface is not floating over content that must remain partly visible, it is opaque.",
+      "Don't nest a bordered panel inside a bordered panel.",
+      "Don't repeat an identical card grid. If four cards share an icon, a heading and two lines of text, the content wanted a table or a list.",
+      "Don't reach for a modal first. Exhaust inline and progressive alternatives.",
+      "Don't put a serif face in (home), (studio) or (admin) chrome.",
+      "Don't add a fourth hue. Everything meaningful lives between 196 and 201 degrees, plus one blue for a single emphasized nav item and one red for destruction.",
+      "Don't write a new hardcoded hex. There are 2,119 of them already and each one is a place the theme cannot reach. #00696E appears 636 times, #6F7979 567, #CAC4D0 551, #191C1C 288. New work uses the token; converting an existing file is its own change with its own dark-mode check.",
+      "Don't animate width, height, or any other layout property. The sidebar's transition-all duration-300 across a 320px to 80px collapse is existing debt, not a pattern to copy.",
+      "Don't style body text with Primary Imprint. It marks a decision, never a paragraph. This is why the colour is named Imprint and not Ink.",
+      "Don't ship a control whose write has no backing table, and don't turn an inert count into a button.",
+      "Don't signal anything with colour alone: not a verdict, not a variance flag, not a branch signal, not a chart series."
+    ]
+  }
+}
