@@ -259,6 +259,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 48210,
     likeCount: 3104,
+    commentCount: 218,
+    saveCount: 1147,
     difficulty: "advanced",
     cadFormat: "STEP / KiCad 8",
     billOfMaterialsCostRange: {
@@ -527,6 +529,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 91455,
     likeCount: 7822,
+    commentCount: 604,
+    saveCount: 2960,
     difficulty: "advanced",
     cadFormat: null,
     billOfMaterialsCostRange: null,
@@ -557,6 +561,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 33780,
     likeCount: 2611,
+    commentCount: 143,
+    saveCount: 812,
     difficulty: "intermediate",
     cadFormat: "KiCad 8 / Gerber",
     billOfMaterialsCostRange: {
@@ -642,6 +648,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 27340,
     likeCount: 1988,
+    commentCount: 176,
+    saveCount: 733,
     difficulty: "intermediate",
     cadFormat: "STEP / Fusion 360",
     billOfMaterialsCostRange: {
@@ -786,6 +794,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 62190,
     likeCount: 5471,
+    commentCount: 389,
+    saveCount: 2104,
     difficulty: "advanced",
     cadFormat: "Altium / STEP",
     billOfMaterialsCostRange: {
@@ -823,6 +833,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 19870,
     likeCount: 1642,
+    commentCount: 97,
+    saveCount: 508,
     difficulty: "advanced",
     cadFormat: "STEP / FreeCAD",
     billOfMaterialsCostRange: {
@@ -857,6 +869,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 74920,
     likeCount: 6903,
+    commentCount: 512,
+    saveCount: 2455,
     difficulty: "beginner",
     cadFormat: "KiCad 8",
     billOfMaterialsCostRange: {
@@ -891,6 +905,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 21460,
     likeCount: 1477,
+    commentCount: 131,
+    saveCount: 622,
     difficulty: "intermediate",
     cadFormat: "STEP",
     billOfMaterialsCostRange: {
@@ -925,6 +941,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 15230,
     likeCount: 1204,
+    commentCount: 68,
+    saveCount: 396,
     difficulty: "beginner",
     cadFormat: "STEP",
     billOfMaterialsCostRange: {
@@ -959,6 +977,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 28940,
     likeCount: 2317,
+    commentCount: 204,
+    saveCount: 901,
     difficulty: "intermediate",
     cadFormat: "KiCad 8",
     billOfMaterialsCostRange: {
@@ -993,6 +1013,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 41870,
     likeCount: 3925,
+    commentCount: 271,
+    saveCount: 1533,
     difficulty: "advanced",
     cadFormat: "Altium",
     billOfMaterialsCostRange: {
@@ -1027,6 +1049,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 12680,
     likeCount: 989,
+    commentCount: 54,
+    saveCount: 311,
     difficulty: "beginner",
     cadFormat: null,
     billOfMaterialsCostRange: {

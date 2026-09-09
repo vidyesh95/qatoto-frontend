@@ -924,6 +924,19 @@ export const TeardownBlueprintSchema = z
   .object({
     ...BlueprintSharedShape,
     category: z.literal("teardown"),
+    /**
+     * DISPLAY ONLY, both of them, for the reason the showcase arm's `upvoteCount` gives below.
+     * There is no comment route and no save route for a blueprint — every engagement table in the
+     * backend is hard-FK'd to `video.id` or `product.id` and every route param is `z.uuid()`-gated,
+     * so a kebab slug 422s before a query runs. They render in `TeardownEngagementBar` as bare
+     * `<span>`s beside `likeCount`, never as buttons.
+     *
+     * `saveCount` deliberately takes the watch spelling (`video-engagement-bar.tsx` reads
+     * `stats.saveCount`) rather than the store's `bookmarkedCount`. Two names for one concept
+     * already exist in this repo; this arm picks the older one instead of adding a third.
+     */
+    commentCount: z.number().int().nonnegative(),
+    saveCount: z.number().int().nonnegative(),
     /** `null` when nobody filmed it. Most teardowns are documents only. */
     walkthroughVideo: BlueprintVideoSchema.nullable(),
     /** `[]` when nothing is published yet — an ARRAY, never null: "no files" is a countable state. */

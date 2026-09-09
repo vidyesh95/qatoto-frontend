@@ -294,6 +294,15 @@ Three rules specific to this surface:
   `buildBlueprintHref` — never by hand. `upvoteCount` is display-only and no vote button ships:
   a counter a client increments is a business rule on an untrusted layer. It renders as
   `ShowcaseVoteBox`, a bare stacked caret-over-count `<span>` in a fixed 40×44 gutter.
+  ⚠️ **THE TEARDOWN ARM CARRIES TWO MORE OF THESE**, `commentCount` and `saveCount`, and they are
+  display-only for the same reason — every engagement table in the backend is hard-FK'd to
+  `video.id` or `product.id`, every route param is `z.uuid()`-gated so a kebab slug 422s before a
+  query runs, and no blueprints content table exists for a row to reference. With `likeCount` they
+  render in `TeardownEngagementBar` as `BlueprintStatReadout` spans — three inert counts beside
+  ONE real control, Share, which navigates and writes nothing. **Do not assume they are wired**,
+  and do not turn any of the three into a `<button>` before the tables exist (todo.md §Blueprint
+  engagement). Share opens `ShareSheet` with `onShared` OMITTED: that callback exists to move
+  `video_share.videoId`, which a blueprint has no row for.
 - **Costs are integer cents, never display strings.** `billOfMaterialsCostRange` is
   `{ minimumInCents, maximumInCents, currency } | null`, and the OBJECT is nullable rather than
   its fields — half a range is an unanswerable question. `null` means nobody costed it; it is
@@ -354,7 +363,7 @@ Three rules specific to this surface:
 
     ```bash
     for field in assembly fasteners manufacturingFiles assemblySteps repairabilityIndex \
-                 simulationTelemetry; do
+                 simulationTelemetry commentCount saveCount; do
       rg -q "teardown\.$field\b" src/components/home/blueprints || echo "UNRENDERED $field"
     done
     ```

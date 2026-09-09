@@ -2,44 +2,26 @@
 // `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
 //
 // Laid out after a Launch YC post: the vote in a fixed gutter beside the title block, a byline row
-// with a share link, the media, the pitch, then the people and the links. Share is a plain intent
-// URL — an `<a>` and nothing else — because a share COUNTER would be the client-incremented number
-// this surface refuses everywhere else (see `ShowcaseVoteBox`).
+// with a share control, the media, the pitch, then the people and the links.
+//
+// SHARE IS THE FULL SHEET NOW, not the single X intent link this page used to build itself. The
+// reason recorded for that link ruled out a share COUNTER, not the sheet — and `ShareSheet` takes
+// `onShared` as optional precisely so a surface with no counter route can open it. Omitting the
+// callback is what keeps the rule: nothing here increments. The teardown page opens the same
+// component, so two sibling detail pages no longer offer two different share affordances.
 
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import BlueprintVideoBlock from "@/components/home/blueprints/media/blueprint-video-block";
+import BlueprintShareButton from "@/components/home/blueprints/sections/blueprint-share-button";
 import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-tag-list";
 import ShowcaseVoteBox from "@/components/home/blueprints/sections/showcase-vote-box";
 import RelativeTime from "@/components/home/shared/relative-time";
 import { getBlueprintByCategory } from "@/lib/blueprints/api";
-import {
-  buildBlueprintCategoryHref,
-  buildBlueprintHref,
-  type ShowcaseBlueprint,
-} from "@/lib/blueprints/schemas";
-import { SITE_URL } from "@/lib/site";
+import { buildBlueprintCategoryHref, buildBlueprintHref } from "@/lib/blueprints/schemas";
 import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
-
-/**
- * The X post-intent URL for one launch.
- *
- * `SITE_URL` rather than the request origin, because a shared link must point at production — on
- * localhost it does too, which is the trade `sitemap.ts` makes for the same reason. The path goes
- * through `buildBlueprintHref` like every other blueprint URL. Not `watch/share-sheet.tsx`: that is
- * a client island on the watch palette whose `onShared` callback exists to move a share counter
- * through a real backend route, and this surface has no such route to move one through.
- */
-function buildShareOnXIntentHref(
-  showcase: Pick<ShowcaseBlueprint, "category" | "slug" | "title" | "tagline">,
-): string {
-  const intentUrl = new URL("https://x.com/intent/post");
-  intentUrl.searchParams.set("text", `${showcase.title} — ${showcase.tagline}`);
-  intentUrl.searchParams.set("url", `${SITE_URL}${buildBlueprintHref(showcase)}`);
-  return intentUrl.toString();
-}
 
 export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
   const showcase = await getBlueprintByCategory("showcase", slug);
@@ -88,21 +70,7 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
             </span>
           </span>
         </p>
-        <a
-          href={buildShareOnXIntentHref(showcase)}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6F7979] hover:underline"
-        >
-          <Image
-            src="/icons/share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt=""
-            width={14}
-            height={14}
-            className="size-3.5 opacity-60"
-          />
-          Share on X<span className="sr-only"> (opens in a new tab)</span>
-        </a>
+        <BlueprintShareButton blueprint={showcase} variant="inline" />
       </div>
 
       {showcase.demoVideo === null ? (

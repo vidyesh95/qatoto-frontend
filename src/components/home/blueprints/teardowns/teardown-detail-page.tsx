@@ -15,6 +15,8 @@ import AssemblyStepList from "@/components/home/blueprints/teardowns/sections/as
 import FastenerBillOfMaterials from "@/components/home/blueprints/teardowns/sections/fastener-bill-of-materials";
 import ManufacturingFileBundles from "@/components/home/blueprints/teardowns/sections/manufacturing-file-bundles";
 import RepairabilityIndexPanel from "@/components/home/blueprints/teardowns/sections/repairability-index-panel";
+import TeardownEngagementBar from "@/components/home/blueprints/teardowns/sections/teardown-engagement-bar";
+import TeardownSummary from "@/components/home/blueprints/teardowns/sections/teardown-summary";
 import TelemetryReadouts from "@/components/home/blueprints/teardowns/sections/telemetry-readouts";
 import TeardownExplorer from "@/components/home/blueprints/teardowns/teardown-explorer";
 import RelativeTime from "@/components/home/shared/relative-time";
@@ -74,7 +76,14 @@ export default async function TeardownDetailPage({ slug }: { slug: string }) {
 
       <BlueprintAuthorLine author={teardown.author} />
 
-      <p className="mt-4 max-w-2xl text-sm leading-6 text-foreground">{teardown.summary}</p>
+      <TeardownSummary summary={teardown.summary} />
+
+      {/*
+        THE BAR SITS HERE, ABOVE THE SPEC BRANCH, so both paths below get it identically — and
+        because anything placed after the explorer reads as belonging to the viewer's tab stack
+        rather than to the teardown.
+      */}
+      <TeardownEngagementBar teardown={teardown} />
 
       {/*
         THE SPEC LIST HAS TWO HOMES, and the same component serves both. With a model it is the
@@ -136,14 +145,16 @@ export default async function TeardownDetailPage({ slug }: { slug: string }) {
         teardown page carried no date at all while a showcase printed its launch date. Same pairing
         showcase uses: a relative label with the absolute instant on `title`, because "3 weeks ago"
         is the readable form and the exact date is the checkable one.
+
+        LIKES USED TO PRINT HERE TOO and now do not — `TeardownEngagementBar` carries them. Views
+        stay, because the bar has no view readout and both sibling arms print the same line.
       */}
       <p className="mt-6 text-[11px] text-[#6F7979]">
         Published{" "}
         <span title={formatIsoInstantLabel(teardown.createdAt)}>
           <RelativeTime isoInstant={teardown.createdAt} />
         </span>{" "}
-        · {formatCountLabel(teardown.viewCount)} views · {formatCountLabel(teardown.likeCount)}{" "}
-        likes
+        · {formatCountLabel(teardown.viewCount)} views
       </p>
     </>
   );

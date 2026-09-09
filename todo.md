@@ -3372,3 +3372,66 @@ buyer's `view-in-360-opener.tsx` → `three-dimensional-model-viewer-sheet.tsx` 
 and a server-rendered thumbnail of the model. Migration `0168` must be applied before the frontend
 ships: once `threeDimensionalModel` is a required nullable key, an older backend fails every
 product read at parse.
+
+## Blueprint engagement — SHIPPED DISPLAY-ONLY 2026-09-09, backend deliberately not built
+
+The teardown detail page now carries the watch page's four-up engagement row and a summary that
+clamps to two lines behind a "…more" toggle. **Three of the four controls are not controls.**
+`TeardownEngagementBar` renders `commentCount`, `likeCount` and `saveCount` as `BlueprintStatReadout`
+spans — bare, no border, no hover, no `cursor-pointer` — beside exactly one real button, Share.
+
+**Why the three are inert, so it is not re-litigated.** There is nothing server-side for a teardown
+to be. Every engagement table in `qatoto-backend` is hard-FK'd to one content table — `video_like`,
+`video_save`, `video_comment`, `video_comment_like` to `video.id` (`src/db/schema/home.ts:237-383`),
+`commerce_product_engagement` to `product.id`, `research_program_post_reaction` to
+`research_program_post.id` — and the repo documents polymorphic targets as a REJECTED pattern
+(`store.ts:4949`, `store.ts:9385`). Every video route param is `z.uuid()`-gated
+(`engagement.schemas.ts`), so a kebab slug 422s at the zod boundary before a query runs. And there is
+no blueprints content table of any kind: `GET /blueprints/hero-slides` reads `anime_hero_slide` and
+that is the whole server-side surface. A button here would move a number in the browser and nowhere
+else — the exact thing `ShowcaseVoteBox` refuses.
+
+**What making them real costs**, in order:
+
+1. `blueprint_teardown` (or one table per arm) with a UNIQUE kebab `slug`. Precedents:
+   `research_program.slug` (`rnd.ts:463`), `anime_series`' unique slug index (`home.ts:1079`).
+   This is the piece everything else hangs off, and it ends the surface being mock at the same time.
+2. Counters, in the `video_stats` shape — updated inside the same transaction as the toggle, the way
+   `video-engagement.service.ts:381-392` does it. Not a `COUNT(*)` per read.
+3. `blueprint_like` / `_save` / `_comment` / `_comment_like`, copying `home.ts:237-383` verbatim
+   including the `depth ∈ {0,1}` check pair — one level of replies, a reply-to-a-reply is a 409.
+4. A slug-param router. The template is `commerce-product-engagement.routes.ts`
+   (`PUT`/`DELETE /store/products/:productSlug/like` and `/bookmark`), NOT the `z.uuid()`-gated video
+   routes. Answer the refreshed counters from the write, as both existing surfaces do.
+5. Frontend: `src/lib/blueprints/*.api.ts` writes + `src/hooks/blueprints/` wrappers, then
+   `BlueprintStatReadout` becomes a button. Follow `store/sections/engagement-bar.tsx`, not the watch
+   bar: a null viewer must render `aria-pressed` ABSENT rather than `false`, and nothing is
+   optimistic.
+
+**Three things about what shipped, for the same reason:**
+
+- **`commentCount` and `saveCount` live on the TEARDOWN ARM, not `BlueprintSharedShape`.** No rail
+  card renders them, and arms only add. `saveCount` takes the watch spelling rather than the store's
+  `bookmarkedCount` — two names for one concept already exist; this picks the older instead of
+  adding a third. Fixture values are invented like every other number on this surface.
+- **Share is the full `ShareSheet` on BOTH detail pages now.** The showcase page's single X-intent
+  `<a>` is gone; `BlueprintShareButton` has a `pill` variant for the teardown bar and an `inline`
+  variant for the showcase byline. `onShared` is OMITTED — that callback records against
+  `video_share.videoId`, which is NOT NULL with no polymorphic target, so there is no row to write.
+  `shareUrl` is always passed explicitly, because the sheet's `window.location.href` default would
+  hand somebody a `localhost` URL. ⚠️ Note the tension this creates and accept it knowingly: the
+  surface is de-indexed (`robots: { index: false, follow: false }`) BECAUSE the content is
+  fabricated, and share is the one control that pushes fabricated teardowns outward anyway. It was
+  chosen deliberately; if that trade stops being acceptable before real blueprints land, narrow the
+  sheet to copy-link rather than removing the button.
+- **The summary clamp is MEASURED, and the measurement is skipped while expanded.** Once expanded the
+  clamp is gone, so `scrollHeight === clientHeight`; a resize measured then would report "it fits",
+  hide the toggle and trap the reader open. `teardown-summary.tsx` guards on `isExpanded` AND renders
+  the toggle on `isSummaryOverflowing || isExpanded`, so the trap is impossible twice over. It also
+  re-measures once on `document.fonts.ready`, because the clamped box is a fixed two lines tall and
+  the ResizeObserver never fires when the webfont swaps in.
+
+**Not scoped:** no comment thread (`video-comment-thread.tsx` hardcodes `/videos/:videoId/comments`
+in every read and write — mirroring it is a parallel api + hook layer, not a prop), no view counter,
+no engagement on the case-study arm, and no vote button on the showcase arm — `ShowcaseVoteBox` stays
+a `<span>`.
