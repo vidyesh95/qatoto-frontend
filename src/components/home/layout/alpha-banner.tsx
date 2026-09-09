@@ -11,12 +11,12 @@ import { SUPPORT_CONTACT_EMAIL } from "@/lib/site";
  * than an untitled one. `encodeURIComponent` for the same reason `lib/privacy-request.ts` uses it:
  * a `mailto:` query is a URL, and a raw space ends the href in some clients.
  */
-const BETA_FEEDBACK_MAILTO_HREF = `mailto:${SUPPORT_CONTACT_EMAIL}?subject=${encodeURIComponent(
-  "Qatoto beta feedback",
+const ALPHA_FEEDBACK_MAILTO_HREF = `mailto:${SUPPORT_CONTACT_EMAIL}?subject=${encodeURIComponent(
+  "Qatoto alpha feedback",
 )}`;
 
 /**
- * The standing "this is a beta" notice, directly under the `(home)` navbar.
+ * The standing "this is an alpha" notice, directly under the `(home)` navbar.
  *
  * IT SCROLLS AWAY RATHER THAN STICKING, and that is the whole reason this is a three-file change.
  * The navbar's 56px height has no height class — it is emergent from `py-2` plus a 40px content
@@ -26,25 +26,25 @@ const BETA_FEEDBACK_MAILTO_HREF = `mailto:${SUPPORT_CONTACT_EMAIL}?subject=${enc
  * `fixed top-15`. A sticky banner of height H is wrong in all eight until every one is edited.
  * In normal document flow it is wrong in none of them.
  *
- * IT IS AN `<aside>`, NOT `role="alert"`. This is context that is true for the whole beta, not an
+ * IT IS AN `<aside>`, NOT `role="alert"`. This is context that is true for the whole alpha, not an
  * event that just happened — the repo's other `role="alert"` nodes are all refused-write notices,
  * which is a different thing. An alert here would interrupt every screen reader on every page load.
  *
  * The copy wraps rather than truncating. Its only control is the last four words, so a `truncate`
  * that ate the tail would leave an informational sentence with no way to act on it.
  */
-export default function BetaBanner() {
+export default function AlphaBanner() {
   return (
     <aside
-      aria-label="Beta notice"
+      aria-label="Alpha notice"
       className="bg-[#00696E] px-4 py-2 text-center text-sm text-white lg:px-6"
     >
       {/* Decorative. Announced it would read "rocket" before the sentence it decorates. */}
-      <span aria-hidden="true">🚀</span> Qatoto is currently in Beta: We&apos;re actively building
-      and rolling out new features. Encountered an issue?{" "}
+      <span aria-hidden="true">🚀</span> Qatoto is currently in Alpha: the site is incomplete and
+      data may be wiped before launch. Encountered an issue?{" "}
       {/* A plain anchor, not `next/link`. `mailto:` is handed to the OS, not routed — the same
           choice `information/careers.tsx` and `disclaimers/privacy-policy.tsx` already make. */}
-      <a href={BETA_FEEDBACK_MAILTO_HREF} className="font-medium underline underline-offset-2">
+      <a href={ALPHA_FEEDBACK_MAILTO_HREF} className="font-medium underline underline-offset-2">
         Let us know.
       </a>
     </aside>
