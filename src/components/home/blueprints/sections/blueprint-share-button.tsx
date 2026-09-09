@@ -55,11 +55,13 @@ export default function BlueprintShareButton({
   const iconSizePx = TRIGGER_ICON_SIZE_PX[variant];
 
   return (
-    <span className="relative inline-flex">
+    <span
+      className={`relative inline-flex ${variant === "pill" ? "w-full lg:w-24" : ""}`}
+    >
       <button
         type="button"
         onClick={() => setIsShareSheetOpen(true)}
-        className={TRIGGER_CLASS[variant]}
+        className={`${TRIGGER_CLASS[variant]} ${variant === "pill" ? "w-full" : ""}`}
       >
         <Image
           src="/icons/share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"

@@ -26,7 +26,7 @@ export default function TeardownEngagementBar({
   readonly teardown: TeardownBlueprint;
 }) {
   return (
-    <div className="mt-4 flex max-w-2xl flex-wrap items-center gap-x-1 gap-y-2">
+    <div className="mt-4 grid max-w-2xl grid-cols-4 items-center gap-2 lg:flex lg:flex-row">
       <BlueprintStatReadout icon="comment" count={teardown.commentCount} noun="comments" />
       <BlueprintStatReadout icon="favorite" count={teardown.likeCount} noun="likes" />
       <BlueprintStatReadout icon="bookmark" count={teardown.saveCount} noun="saves" />
