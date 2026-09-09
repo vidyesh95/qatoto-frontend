@@ -14,10 +14,23 @@
 // The two are read from the same fixture set and must agree; `blueprints-mocks.ts` records that as
 // the standing constraint on the fixtures.
 //
-// THE VOTE GUTTER IS NOT PART OF THIS BAR AND MUST NOT BE FOLDED INTO IT. `ShowcaseVoteBox` is the
-// fixed 40×44 stacked caret beside the title — the Launch YC shape that distinguishes a showcase
-// from a teardown at a glance. Squaring it into a row pill would flatten the one piece of layout
-// this arm does not share with the other two.
+// THE MIDDLE CELL IS THE UPVOTE, NOT A LIKE, AND IT IS THE PAGE'S ONLY COPY OF THAT NUMBER. The
+// detail page used to carry `ShowcaseVoteBox` — the fixed 40×44 stacked caret in a gutter beside
+// the title — and moving the upvote here retires it FROM THIS PAGE, because one launch showing
+// `upvoteCount` twice, 200px apart, is two readings of one number that a reader has to reconcile
+// for no reason. `ShowcaseVoteBox` still renders on `showcase-feed-row.tsx`, where it is the list
+// shape and has no competitor. Restoring the gutter is one import and one line if the Launch YC
+// silhouette turns out to matter more than the duplication.
+//
+// `likeCount` WENT BACK TO THE FOOTER when the upvote took this slot. It is a shared field with a
+// renderer on every arm, so it cannot simply be dropped, and a launch that showed both a like count
+// and an upvote count would be asking a reader to tell two approval numbers apart.
+//
+// ⚠️ IT IS STILL A `<span>`, AND CALLING IT AN UPVOTE DOES NOT CHANGE THAT. There is no vote route:
+// `upvoteCount`'s own schema comment says so — "a counter a client can increment is a business rule
+// enforced on an untrusted layer, which CLAUDE.md §1.1 forbids outright". The pill chrome is
+// deliberate and matches the counts either side of it; the click handler is the part that cannot
+// exist yet. Wiring one is `todo.md` §Blueprint discussion, and it needs a table first.
 //
 // A SERVER COMPONENT. Only the share trigger needs JavaScript, and it is its own island.
 
@@ -33,7 +46,7 @@ export default function ShowcaseEngagementBar({
   return (
     <div className="mt-5 grid max-w-2xl grid-cols-3 items-center gap-2 lg:flex lg:flex-row">
       <BlueprintStatReadout icon="comment" count={showcase.commentCount} noun="comments" />
-      <BlueprintStatReadout icon="favorite" count={showcase.likeCount} noun="likes" />
+      <BlueprintStatReadout icon="keyboard_arrow_up" count={showcase.upvoteCount} noun="upvotes" />
       <BlueprintShareButton blueprint={showcase} />
     </div>
   );

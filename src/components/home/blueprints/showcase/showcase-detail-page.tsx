@@ -1,8 +1,13 @@
 // TRANSPORT: mock — async server component. Reads `getBlueprintByCategory` from
 // `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
 //
-// Laid out after a Launch YC post: the vote in a fixed gutter beside the title block, a byline row,
-// the media, the pitch, the engagement row, then the people, the links and the discussion.
+// Laid out after a Launch YC post: title block, byline row, the media, the pitch, the engagement
+// row, then the people, the links and the discussion.
+//
+// THE VOTE NO LONGER SITS IN A GUTTER BESIDE THE TITLE. It did — a 40px column holding
+// `ShowcaseVoteBox`, mirroring the feed row — until the upvote moved into `ShowcaseEngagementBar`
+// beneath the pitch. Keeping both would print `upvoteCount` twice on one page. The feed row keeps
+// the gutter box, which is where that shape earns its place.
 //
 // SHARE IS THE FULL SHEET, not the single X intent link this page used to build itself. The reason
 // recorded for that link ruled out a share COUNTER, not the sheet — and `ShareSheet` takes
@@ -25,7 +30,6 @@ import { notFound } from "next/navigation";
 import BlueprintVideoBlock from "@/components/home/blueprints/media/blueprint-video-block";
 import BlueprintCommentThread from "@/components/home/blueprints/sections/blueprint-comment-thread";
 import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-tag-list";
-import ShowcaseVoteBox from "@/components/home/blueprints/sections/showcase-vote-box";
 import ShowcaseEngagementBar from "@/components/home/blueprints/showcase/sections/showcase-engagement-bar";
 import RelativeTime from "@/components/home/shared/relative-time";
 import { getBlueprintByCategory, listShowcaseComments } from "@/lib/blueprints/api";
@@ -48,22 +52,19 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
 
   return (
     <article className="px-4 pt-5 pb-12 lg:px-6">
-      {/* The same 40px gutter the feed uses, so the vote sits where a reader just saw it. YC pulls
-          its vote into the left page margin; the `(home)` main column has no margin to pull into,
-          so it is in flow, and only the title block shares the gutter. */}
-      <div className="grid grid-cols-[40px_minmax(0,1fr)] items-start gap-x-3 sm:gap-x-4">
-        <ShowcaseVoteBox count={showcase.upvoteCount} />
-        <div className="min-w-0">
-          <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
-            Showcase
-          </p>
-          <h1 className="mt-1 text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
-            {showcase.title}
-          </h1>
-          <p className="mt-2 max-w-2xl text-base leading-6 text-foreground/80">
-            {showcase.tagline}
-          </p>
-        </div>
+      {/* NO VOTE GUTTER HERE ANY MORE. This was a `grid-cols-[40px_minmax(0,1fr)]` with
+          `ShowcaseVoteBox` in the 40px column, mirroring the feed row so the vote sat where a
+          reader had just seen it. The upvote moved into `ShowcaseEngagementBar` below, and keeping
+          the gutter too would print `upvoteCount` twice on one page. The feed row still uses the
+          box — that is the list shape and nothing there competes with it. */}
+      <div className="min-w-0">
+        <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
+          Showcase
+        </p>
+        <h1 className="mt-1 text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+          {showcase.title}
+        </h1>
+        <p className="mt-2 max-w-2xl text-base leading-6 text-foreground/80">{showcase.tagline}</p>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#CAC4D0]/60 pb-3">
@@ -175,9 +176,14 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
       <BlueprintCommentThread comments={comments} />
 
       <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#CAC4D0]/60 pt-4">
-        {/* Views only. `likeCount` moved into `ShowcaseEngagementBar` above — a view count is not an
-            engagement affordance and does not belong in a row of them. */}
-        <p className="text-[11px] text-[#6F7979]">{formatCountLabel(showcase.viewCount)} views</p>
+        {/* `likeCount` is BACK HERE, quietly, because the upvote took its slot in the engagement bar
+            and a shared field with no renderer is unverified code. Two approval numbers in one row
+            would also be one too many to ask a reader to tell apart — the upvote is the one that
+            means something on a launch. */}
+        <p className="text-[11px] text-[#6F7979]">
+          {formatCountLabel(showcase.viewCount)} views · {formatCountLabel(showcase.likeCount)}{" "}
+          likes
+        </p>
         <Link
           href={buildBlueprintCategoryHref("showcase")}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-[#00696E] hover:underline"

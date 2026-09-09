@@ -3434,7 +3434,11 @@ else — the exact thing `ShowcaseVoteBox` refuses.
   the ResizeObserver never fires when the webfont swaps in.
 
 **Not scoped:** no view counter, no engagement on the case-study arm, and no vote button on the
-showcase arm — `ShowcaseVoteBox` stays a `<span>`. ⚠️ UPDATED 2026-09-09: "no comment thread" was in
+showcase arm — the upvote is still a `<span>`. ⚠️ UPDATED 2026-09-09: the upvote moved OFF the
+detail page's 40px title gutter and INTO `ShowcaseEngagementBar` as a pill, so `ShowcaseVoteBox`
+now renders on `showcase-feed-row.tsx` ONLY. Keeping both printed `upvoteCount` twice on one page.
+`likeCount` went back to the detail footer beside views when the upvote took its slot — a shared
+field with no renderer is unverified code, and two approval numbers in one row is one too many. ⚠️ UPDATED 2026-09-09: "no comment thread" was in
 this list and is no longer true for the showcase arm — see §Blueprint discussion below. The reason
 recorded here still stands and is exactly why the thread that shipped is READ-ONLY:
 `video-comment-thread.tsx` hardcodes `/videos/:videoId/comments` in every read and write, so
