@@ -3,8 +3,19 @@
 //
 // Filtering, ordering and paging all live in the getter, for the reason
 // `teardowns-index-page.tsx` states at length.
+//
+// ⚠️ A LIST, NOT A GRID. This page was a grid of discipline-tinted, serif-titled, numbered cards on
+// the lawsofux.com model; `case-study-lesson-row.tsx` records the three `docs/Design.md` rules that
+// broke. The short version: a lesson is a sentence, and a column of sentences is scannable in a way
+// that a grid of equal tiles is not — the reader is looking for the one that matches their problem,
+// not browsing.
+//
+// THE ROWS CARRY THEIR OWN HAIRLINE (`border-t`), so the wrapper closes the list with a single
+// `border-b` rather than `divide-y`. Each row is a `<details>` that grows when open, and `divide-y`
+// on a container whose children change height puts the rule in the right place but makes the open
+// row's own boundary ambiguous.
 
-import CaseStudyIndexCard from "@/components/home/blueprints/cards/case-study-index-card";
+import CaseStudyLessonRow from "@/components/home/blueprints/cards/case-study-lesson-row";
 import CursorPageControl from "@/components/home/shared/cursor-page-control";
 import FilterChipRow, { type FilterChipOption } from "@/components/home/shared/filter-chip-row";
 import { listCaseStudies } from "@/lib/blueprints/api";
@@ -68,7 +79,8 @@ export default async function CaseStudiesIndexPage({
       <header className="px-4 pt-4 lg:px-6">
         <h1 className="text-xl font-medium text-foreground lg:text-2xl">Case studies</h1>
         <p className="mt-1 max-w-2xl text-sm text-[#6F7979]">
-          What happened after the build — volumes, unit economics, go-to-market.
+          What somebody learned the expensive way. Open a lesson to see what they did, or read the
+          full record for the figures and where they came from.
         </p>
       </header>
 
@@ -94,9 +106,9 @@ function renderCaseStudies(viewState: CaseStudiesViewState, searchParams: RawSea
     case "ready":
       return (
         <>
-          <div className="mt-5 grid gap-4 px-4 sm:grid-cols-2 lg:px-6 xl:grid-cols-3">
+          <div className="mt-5 border-b border-black/5">
             {viewState.caseStudies.map((caseStudy) => (
-              <CaseStudyIndexCard key={caseStudy.id} caseStudy={caseStudy} />
+              <CaseStudyLessonRow key={caseStudy.id} caseStudy={caseStudy} />
             ))}
           </div>
           <CursorPageControl

@@ -931,6 +931,11 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     `~/.claude/plans/for-showcase-i-want-eager-tulip.md`. `pnpm build` prerenders 27 detail
     pages across the three segments.
 
+    ⚠️ **THE `case_study` HALF OF THAT SENTENCE IS NO LONGER TRUE — see §1c below.** The numbered,
+    colour-coded index shipped 2026-09-06 and was replaced 2026-09-10. It is left standing here
+    because the other two arms' designs are unchanged and because a reader who finds the tint map
+    in git history should find the reason it went, not a doc that pretends it never existed.
+
     **The contract.** `BlueprintSchema` is a `z.discriminatedUnion("category", …)` with three
     arms. The **shared fields are a spread const**, `.strip()` per arm — `rfqs.schemas.ts:169`
     and `providers.schemas.ts:221` are the precedents. `difficulty`, `cadFormat` and
@@ -974,10 +979,13 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     that actually renders a document — leaving an indexable interstitial on an otherwise
     de-indexed surface would be the gap nobody thinks to check.
 
-    **Fixtures are 27 rows at 12 / 10 / 5, NOT 70/20/10.** The ratio is a content target for
+    **Fixtures are 32 rows at 12 / 10 / 10, NOT 70/20/10.** The ratio is a content target for
     real builds; applied to fixtures it gave two showcases and two case studies, and a feed of
-    two rows does not exercise its own design. There are exactly five case studies because
-    there are five disciplines, and a discipline with no fixture is a card tint nobody sees.
+    two rows does not exercise its own design. ⚠️ The case-study count WAS five, one per
+    discipline, because each card carried a discipline tint and a discipline with no fixture was
+    a colour nobody saw. The tint went in §1c; the count is now two per discipline, which is what
+    makes a filtered view show more than one row and what makes the paging control render against
+    a limit of six.
 
     **Placeholder media is real, not invented.** `public/dummy/blueprints/*.pdf` are eight
     generated one-to-four-page PDFs and every fixture `byteSize`/`pageCount` is measured off
@@ -1506,6 +1514,102 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
       `SHOWCASE_PAGE_LIMIT`, imported, so it cannot drift. `[slug]/loading.tsx` is a follow-up.
     - **Still true**: no vote endpoint, no `error` arm, de-indexed (seven flags + sitemap
       omission), components never import the fixtures, every URL via `buildBlueprintHref`.
+
+    ### 1c. Case studies became a lesson list — SHIPPED 2026-09-10, part 1 of 4
+
+    `/blueprints/case-studies` and `/blueprints/case-studies/[slug]` were rebuilt from a design
+    brief that read the surface as three tools rather than one feed: teardowns answer _can I make
+    this and what does it cost_, case studies answer _what did somebody learn the expensive way_,
+    showcase answers _what just launched_. Plan:
+    `~/.claude/plans/linked-stargazing-pascal.md`.
+
+    ⚠️ **THIS PART REVERSED A DESIGN THAT WAS FOUR DAYS OLD**, and the reason is that the design
+    was against the house rules rather than merely out of favour. The lawsofux-shaped index broke
+    three `docs/Design.md` sections at once:
+
+    - **§6** — "Don't repeat an identical card grid. If four cards share an icon, a heading and two
+      lines of text, the content wanted a table or a list." Five tinted tiles of eyebrow + numeral +
+      title + sentence is exactly the shape that names, and the content did want a list.
+    - **§3, The Serif Boundary** — "A serif heading inside `(home)` is a bug." There were four:
+      the index numeral and `<h3>`, the detail numeral and the detail lede. A fifth turned up on the
+      teardown arm (`assembly-step-list.tsx`'s step numeral) and went with them; `tabular-nums` was
+      what the serif had really been buying.
+    - **§2, The One Hue Rule** — "Every meaningful colour in this system lives between 196 and 201
+      degrees." `BLUEPRINT_DISCIPLINE_TINT_CLASSES` carried five hues, four invented for that grid.
+
+    **The contract changed, not just the CSS.** `CaseStudyBlueprintSchema` retired
+    `conceptNumber`, `oneLineDefinition`, `takeaways[]` and `furtherReading[]`, and gained
+    `oneLineAction`, `outcomeSummary`, `sector`, `evidenceCompanies[]`, `problem`, `context`,
+    `actionSteps[]`, `pitfalls[]`, `timelineLabel`, `capitalRaised`, `sources[]` and
+    `relatedLessonSlugs[]`. `discipline` and `outcomeMetrics[]` survived unchanged.
+
+    - **The shared `title` IS the lesson**, and it is an imperative sentence. No `lessonTitle` was
+      added: two titles that can disagree is worse than one field with a strong convention.
+    - **`conceptNumber` was DELETED, not kept as a legacy field with a TODO.** The brief asked for
+      the TODO; a field nothing renders is the unverified code the field sweep exists to catch, so
+      the sweep in CLAUDE.md grew a case-study half rather than an exception.
+      `formatConceptNumberLabel` survived under the name `formatTwoDigitLabel` because
+      `assembly-step-list.tsx` was always its other caller.
+    - ⚠️ **NO OUTCOME ENUM, AND THIS WAS THE CONTESTED CALL.** The brief specified a
+      `scaled | failed | pivoted` badge and argued it was urgent because it would become a pgEnum
+      label. It would not have: there is no `blueprint` table in the backend at all, so nothing was
+      being locked. `cofounders.schemas.ts:186-188` already carries the identical field and the
+      argument against typing it — "a renderer that requires one invites people to invent one" —
+      and a three-value verdict is an unattributed JUDGMENT, which PRODUCT.md bans more strongly
+      than an unattributed number. The deciding case: the brief also wanted `evidenceCompanies[]`
+      and fixtures exercising every badge, which is a row naming a company and badging it _failed_.
+      `outcomeSummary` is a nullable free clause instead.
+    - **`capitalRaised` reuses `BlueprintMoneySchema`**, factored out of the metric union's money
+      arm rather than written twice. The OBJECT is nullable, not its fields. One fixture is INR so
+      the currency comes off the row rather than a hardcoded symbol. ⚠️ ₹1 crore is 1_000_000_000
+      paise, not 10^8 — the brief's own arithmetic was out by a factor of ten and the first fixture
+      inherited it, which `pnpm build` accepted without complaint because a wrong integer is still
+      an integer. Caught by reading the prerendered HTML, which is the only place it showed.
+    - **The row is a native `<details>`**, the house pattern from eight `store/sections/*` blocks
+      and `daily-log-card.tsx`. Click and Enter both toggle, `aria-expanded` is the element's, no
+      layout property animates (§6), and the file ships zero JavaScript. ⚠️ The detail link lives
+      in the panel, never in `<summary>` — a link inside a summary is nested interactive content.
+    - **Empty `sources[]` renders copy**, "No public source for this one". That is the ONE
+      deliberate departure from Principle 2 on this surface: silence would let a page of specific
+      figures read as sourced.
+    - **`CASE_STUDIES_PAGE_LIMIT` rose 3 → 6** and the fixtures went 5 → 10, two per discipline.
+      Ordering moved off `byConceptNumber` (deleted with the numeral) to `byNewestFirst`.
+    - **`listRelatedCaseStudies` is new** and goes through `isReservedSlug` like every other read;
+      an unresolvable slug is dropped rather than rendered as a dead row.
+    - **Still true**: de-indexed, components never import the fixtures, every URL via
+      `buildBlueprintHref`, no `error` arm while the getter reads fixtures.
+
+    #### Parts 2 to 4 of that brief — NOT BUILT
+
+    Specified in full in the plan file, deliberately left out of the diff. Taken in this order:
+
+    - **Part 2, the hub.** `CategoryLinks` is three identical icon-and-heading cells above three
+      identical rails — `docs/Design.md` §6 bans both shapes by name, and it is the most literal
+      instance of each on the surface. It goes, and each arm previews in its own shape: a 4-up
+      thumbnail grid for teardowns, four lesson rows for case studies, five launch rows for
+      showcase, each lane stating the question it answers. ⚠️ **`BlueprintRail` goes with it** —
+      the horizontal scroll rail is the YouTube shape the redesign exists to remove and is the only
+      client JavaScript on the hub path, so the hub becomes fully server-rendered.
+      **The hero is NOT demoted.** It is 328×184 centred from `md` up (`md:w-82`), not a banner,
+      and it is the only real network read on the surface (`TRANSPORT: server-fetch`). It moves
+      below the header and gains a mobile height cap. `anime_hero_slide` carries no dimensions, so
+      that is CSS only and needs no admin-side change.
+    - **Part 3, the teardown card.** It renders `BlueprintCardBody` today — thumbnail, title,
+      author avatar, difficulty — which is a video card. It should lead with the decision set: BOM
+      band, part count, which file kinds exist, difficulty. The test is a teardown with
+      `assembly: null`, `walkthroughVideo: null` and `documents: []`, which is the common case.
+      A "get it made" link to `/store/factories` goes on the DETAIL page, not the card.
+      ⚠️ **With no derived query.** `TEARDOWN_MANUFACTURING_METHODS` (a per-part process) and
+      `FACTORY_CAPABILITY_KINDS` (a commercial relationship) answer different questions, and
+      mapping one onto the other ships a wrong filter dressed up as a smart one.
+    - **Part 4, showcase.** Keep the feed shape; reserve the positions a real vote control and
+      comment count will occupy so wiring is a swap. ⚠️ **Do not add the brief's "Comments aren't
+      open on launches yet" copy** — `blueprint-comment-thread.tsx` renders a real one-level thread
+      and the engagement bar counts it. The missing affordance is a COMPOSER, not comments.
+
+    Out of scope throughout: a11y sweep, dark-mode token pass, pixel spacing, i18n, and the
+    hardcoded hexes (`#6F7979`, `#00696E`, `#CAC4D0`) that Design.md logs as the Untinted Neutral
+    Debt.
 
 2. **The `planned` Studio routes that are left — TWO, not six.** ⚠️ **DO NOT INHERIT A COST FROM
    THIS LINE WITHOUT CHECKING IT** — it has now been wrong about four separate routes, and the

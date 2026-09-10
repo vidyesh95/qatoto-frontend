@@ -44,34 +44,17 @@ export function formatBlueprintMetricValue(value: BlueprintMetricValue): string 
   }
 }
 
-/** `3` -> `"03"`. The index numeral, zero-padded so a column of cards aligns. */
-export function formatConceptNumberLabel(conceptNumber: number): string {
-  return String(conceptNumber).padStart(2, "0");
-}
-
 /**
- * The tint one discipline's card carries.
+ * `3` -> `"03"`. Zero-padded so a column of numerals aligns on its own left edge.
  *
- * LITERAL CLASS STRINGS, NEVER INTERPOLATED. Tailwind scans source text, so a computed
- * `bg-${name}-50` compiles to nothing at all — the same trap `pipeline-stages-strip.tsx:68`
- * records for its stage ramp. Each value here is written out in full for that reason.
+ * It was `formatConceptNumberLabel` and it was named for the case-study numeral, which is gone —
+ * the numbered card grid was replaced by a lesson list. `assembly-step-list.tsx` was always the
+ * other caller, so the function stayed and took a name that describes what it does rather than the
+ * one caller it used to have.
  */
-export const BLUEPRINT_DISCIPLINE_TINT_CLASSES: Record<BlueprintDiscipline, string> = {
-  tooling: "bg-[#00696E]/8 border-[#00696E]/25",
-  supply_chain: "bg-[#4A5B92]/8 border-[#4A5B92]/25",
-  quality: "bg-[#7A5B00]/8 border-[#7A5B00]/25",
-  distribution: "bg-[#3F6B3F]/8 border-[#3F6B3F]/25",
-  unit_economics: "bg-[#8A4B5C]/8 border-[#8A4B5C]/25",
-};
-
-/** The numeral's ink, matched to the card tint so the two read as one object. */
-export const BLUEPRINT_DISCIPLINE_NUMERAL_CLASSES: Record<BlueprintDiscipline, string> = {
-  tooling: "text-[#00696E]/35",
-  supply_chain: "text-[#4A5B92]/35",
-  quality: "text-[#7A5B00]/35",
-  distribution: "text-[#3F6B3F]/35",
-  unit_economics: "text-[#8A4B5C]/35",
-};
+export function formatTwoDigitLabel(value: number): string {
+  return String(value).padStart(2, "0");
+}
 
 export function blueprintDisciplineLabel(discipline: BlueprintDiscipline): string {
   return BLUEPRINT_DISCIPLINE_LABELS[discipline];

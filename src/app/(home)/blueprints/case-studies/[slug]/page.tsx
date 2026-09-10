@@ -24,7 +24,7 @@ export async function generateMetadata({
   return {
     robots,
     title: `${caseStudy.title} · Case studies`,
-    description: caseStudy.oneLineDefinition,
+    description: caseStudy.oneLineAction,
     alternates: { canonical: `/blueprints/case-studies/${slug}` },
   };
 }

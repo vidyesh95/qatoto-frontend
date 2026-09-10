@@ -11,14 +11,30 @@
 // `@/mocks/anime-mocks` was wired — its components imported the arrays directly, so pointing them
 // at a backend meant rewriting the components rather than one getter.
 //
-// THE SPLIT HERE IS 12 / 10 / 5, NOT 70/20/10, and that is deliberate. The 70/20/10 ratio is a
+// THE SPLIT HERE IS 12 / 10 / 10, NOT 70/20/10, and that is deliberate. The 70/20/10 ratio is a
 // content target for REAL builds; applied to fixtures it gave two showcases and two case studies,
-// and a launch feed of two rows or a numbered index of two cards does not exercise its own
+// and a launch feed of two rows or a lesson list of two rows does not exercise its own
 // design — it reads as broken. The two small buckets are over-sampled so the layouts can be built
-// against something that looks like use. There are exactly five case studies because there are
-// five disciplines, and a discipline with no fixture is a card tint nobody ever sees. There are
-// TEN showcases rather than five because the launch feed has a Newest | Top toggle, and a toggle
-// has to show two visibly different orders and still page under both — five rows did neither.
+// against something that looks like use. There are TEN showcases rather than five because the
+// launch feed has a Newest | Top toggle, and a toggle has to show two visibly different orders and
+// still page under both — five rows did neither.
+//
+// ⚠️ THERE ARE TEN CASE STUDIES, TWO PER DISCIPLINE, and the reason changed when the index did. It
+// used to be exactly five, one per discipline, because each card carried a discipline TINT and a
+// discipline with no fixture was a colour nobody ever saw. The tint is gone — a colour-coded card
+// grid was two `docs/Design.md` §6 violations at once — so the count is now set by the list: two
+// per discipline is what makes a filtered view show more than one row, and ten against a page
+// limit of six is what makes the paging control render at all.
+//
+// ⚠️ EVERY COMPANY NAME IN THESE ROWS IS INVENTED AND MUST STAY INVENTED. Fabricating a teardown is
+// covered by the surface's de-indexing; attaching a fabricated failure to a real company's name is
+// not the same thing and is not covered by anything. `sources[]` URLs stay on `example.com` for the
+// same reason — a real URL beside an invented figure claims that URL says it.
+//
+// TWO ROWS HAVE `sources: []`, THREE HAVE `outcomeSummary: null` AND FOUR HAVE `capitalRaised: null`,
+// which is not sampling noise. Each is a distinct renderer branch: an empty source list is the one
+// absence on this surface that renders COPY rather than nothing, and the other two must render
+// nothing at all rather than "Unknown" or a zero.
 //
 // THE LAUNCH DATES ARE STATIC LITERALS inside the three weeks before 2026-09-08, and they drift
 // into the past one day at a time. Accepted: a `new Date()`-relative fixture would bake a
@@ -35,6 +51,25 @@ import type {
 
 /** USD throughout; a real payload would carry the seller's own currency per row. */
 const UNITED_STATES_DOLLAR = "USD";
+
+/**
+ * The one non-USD currency in the fixtures, and it is here to be exercised rather than for flavour.
+ *
+ * A money field that only ever holds one currency lets a renderer hardcode the symbol and stay
+ * green. `capitalRaised` on the Chennai and Coimbatore rows is INR, so `formatCentsLabel` has to
+ * take the currency from the row — which is the entire argument for storing integer minor units
+ * plus a code instead of the display string "₹1 Cr".
+ *
+ * ⚠️ THE MINOR UNIT IS THE PAISE, so ₹1 crore is 1_000_000_000. A crore is 10^7 rupees and a rupee
+ * is 100 paise; the first draft of this fixture wrote 10^8 and rendered ten lakh, which the build
+ * accepted silently because a wrong integer is still an integer.
+ *
+ * ⚠️ IT GROUPS AS ₹10,000,000 AND NOT ₹1,00,00,000. `formatCentsLabel` is pinned to `en-US`, so
+ * every currency in the repo takes Western grouping. That is a house-wide decision in
+ * `src/lib/store/format.ts` rather than a bug in this row, and changing it moves every money label
+ * in the product.
+ */
+const INDIAN_RUPEE = "INR";
 
 /**
  * EVERY FIXTURE VIDEO IS THE SAME YOUTUBE VIDEO, and there is only one kind of video to be.
@@ -1548,11 +1583,11 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
   },
   {
     id: "bp-012",
-    slug: "sensor-node-first-thousand-units",
-    title: "The first thousand sensor nodes: what the unit economics did",
+    slug: "find-the-step-that-stopped-scaling",
+    title: "Find the step that stopped scaling before you cut the bill of materials.",
     category: "case_study",
     summary:
-      "Cost per node across four production runs, where the curve flattened, and the assembly step that turned out to dominate everything else.",
+      "Four production runs of a sensor node. Cost per unit fell 41% between runs one and three, then 3% between three and four, and the team spent two months quoting cheaper parts before they looked at assembly.",
     thumbnailUrl: "/dummy/thumbnail_image07.avif",
     author: {
       displayName: "Marco Ferreira",
@@ -1568,17 +1603,30 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       maximumInCents: 940,
       currency: UNITED_STATES_DOLLAR,
     },
-    tags: ["manufacturing", "unit-economics", "iot", "scaling"],
-    createdAt: "2026-08-27T11:18:00.000Z",
-    conceptNumber: 1,
+    tags: ["manufacturing", "unit-economics", "assembly"],
+    createdAt: "2026-09-05T11:18:00.000Z",
     discipline: "unit_economics",
-    oneLineDefinition:
-      "Per-unit cost stops falling long before volume does; find the step that has stopped scaling.",
-    takeaways: [
-      "Cost per node fell 41% between run one and run three, then 3% between run three and run four.",
-      "Hand-placed connectors were 38% of assembly time at every volume — the step that never scaled.",
-      "The cheapest BOM was not the cheapest unit: the low-cost regulator added a test step.",
+    oneLineAction: "Time each assembly step at two volumes before you requote a single component.",
+    outcomeSummary: "Shipped batch four at 512 cents a unit",
+    sector: "Hardware",
+    evidenceCompanies: [{ name: "Verdant Sensing", locationLabel: "Porto", yearLabel: "2024" }],
+    problem:
+      "Cost per node had stopped falling and nobody could say which part of the build was responsible. The instinct was to requote the bill of materials, because that is the number a spreadsheet shows.",
+    context:
+      "A four-person team building a soil-moisture node for smallholder farms. Runs of 100, 250, 250 and 400 units, all through the same contract assembler, over eleven months.",
+    actionSteps: [
+      "Stopwatched every assembly step on run three and again on run four, at the bench, rather than reading the assembler's quoted line rate.",
+      "Split the unit cost into parts, assembly labour and test, and tracked the three separately across all four runs.",
+      "Requoted only the components whose share of the total had grown, which was two of thirty-one.",
+      "Redesigned the connector interface so the hand-placement step became a single drop-in.",
     ],
+    pitfalls: [
+      "The cheapest bill of materials was not the cheapest unit. A regulator that saved 18 cents added a test step worth 41.",
+      "Quoted line rates flattered assembly by about a third. The bench numbers and the assembler's numbers disagreed for four runs before anybody checked.",
+      "Two months went into component requotes that moved the unit cost by under 2%.",
+    ],
+    timelineLabel: "11 months, four production runs",
+    capitalRaised: null,
     outcomeMetrics: [
       { label: "Units shipped", value: { kind: "count", amount: 1000 } },
       {
@@ -1586,184 +1634,576 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
         value: { kind: "money", amountInCents: 512, currency: UNITED_STATES_DOLLAR },
       },
       { label: "Cost reduction, runs 1-4", value: { kind: "percentage", basisPoints: 4380 } },
+      {
+        label: "Assembly time in hand placement",
+        value: { kind: "percentage", basisPoints: 3800 },
+      },
     ],
-    furtherReading: [
+    sources: [
       {
         label: "Run-by-run cost breakdown",
+        publisherLabel: "Verdant Sensing build log",
         url: "https://example.com/qatoto/sensor-node-cost-runs",
       },
+      {
+        label: "Bench timings, runs three and four",
+        publisherLabel: "Verdant Sensing build log",
+        url: "https://example.com/qatoto/sensor-node-bench-timings",
+      },
     ],
+    relatedLessonSlugs: ["keep-forty-percent-for-batch-two", "budget-for-the-second-mould"],
   },
   {
-    id: "bp-011",
-    slug: "nairobi-injection-molding-case-study",
-    title: "Moving a moulded enclosure from Shenzhen to Nairobi",
+    id: "bp-028",
+    slug: "keep-forty-percent-for-batch-two",
+    title: "Keep 40% of the raise for batch two.",
     category: "case_study",
     summary:
-      "What changed when the tool moved: lead time, scrap rate, per-unit cost, and the two design edits the local moulder needed before quoting.",
-    thumbnailUrl: "/dummy/placeholder-cartons.avif",
+      "A cookware brand put its whole seed round into one production run, sold it out in nine weeks, and then could not pay for the second run until the first had collected.",
+    thumbnailUrl: "/dummy/thumbnail_image03.avif",
     author: {
-      displayName: "Grace Wanjiru",
-      handle: "grace-mech",
-      avatarUrl: "/dummy/profile_image_04.avif",
+      displayName: "Priya Raghunathan",
+      handle: "priya-builds",
+      avatarUrl: "/dummy/profile_image_03.avif",
     },
-    viewCount: 44780,
-    likeCount: 4102,
-    difficulty: "intermediate",
-    cadFormat: null,
-    billOfMaterialsCostRange: null,
-    tags: ["injection-molding", "manufacturing", "east-africa", "unit-economics"],
-    createdAt: "2026-07-25T09:40:00.000Z",
-    conceptNumber: 2,
-    discipline: "tooling",
-    oneLineDefinition:
-      "A tool is designed for one moulder's machine; moving it is a redesign, not a shipment.",
-    takeaways: [
-      "Two draft-angle edits were needed before any local moulder would quote the part.",
-      "Lead time fell from 34 days to 9; per-unit cost rose 12% and was still the better trade.",
-      "The tool survived the move; the gate design did not, and was recut locally.",
-    ],
-    outcomeMetrics: [
-      { label: "Lead time, after", value: { kind: "count", amount: 9 } },
-      { label: "Per-unit cost change", value: { kind: "percentage", basisPoints: 1200 } },
-      {
-        label: "Recut tooling cost",
-        value: { kind: "money", amountInCents: 940000, currency: UNITED_STATES_DOLLAR },
-      },
-    ],
-    furtherReading: [
-      {
-        label: "The two design edits, in CAD",
-        url: "https://example.com/qatoto/draft-angle-edits",
-      },
-      { label: "Quote comparison sheet", url: "https://example.com/qatoto/moulder-quotes" },
-    ],
-  },
-  {
-    id: "bp-020",
-    slug: "contract-assembly-switch-case-study",
-    title: "Switching contract assemblers mid-run",
-    category: "case_study",
-    summary:
-      "Six weeks of overlap between two assemblers, what the handover documentation missed, and the yield gap that closed only after a site visit.",
-    thumbnailUrl: "/dummy/thumbnail_image11.avif",
-    author: {
-      displayName: "Tobias Lindqvist",
-      handle: "tobias-cells",
-      avatarUrl: "/dummy/profile_image_05.avif",
-    },
-    viewCount: 29410,
-    likeCount: 2604,
-    difficulty: "intermediate",
-    cadFormat: null,
-    billOfMaterialsCostRange: null,
-    tags: ["manufacturing", "supply-chain", "assembly", "quality"],
-    createdAt: "2026-08-11T10:05:00.000Z",
-    conceptNumber: 3,
-    discipline: "supply_chain",
-    oneLineDefinition:
-      "The knowledge that makes a line work is not in the documentation the line hands over.",
-    takeaways: [
-      "First-pass yield at the new assembler was 71% against 94%, on identical documentation.",
-      "The gap closed in one site visit: a reflow profile nobody had written down.",
-      "Six weeks of overlap cost less than one week of a stopped line would have.",
-    ],
-    outcomeMetrics: [
-      { label: "First-pass yield, week 1", value: { kind: "percentage", basisPoints: 7100 } },
-      { label: "First-pass yield, week 8", value: { kind: "percentage", basisPoints: 9550 } },
-      { label: "Overlap period, weeks", value: { kind: "count", amount: 6 } },
-    ],
-    furtherReading: [
-      {
-        label: "Handover checklist we now use",
-        url: "https://example.com/qatoto/handover-checklist",
-      },
-    ],
-  },
-  {
-    id: "bp-021",
-    slug: "chiller-warranty-returns-case-study",
-    title: "What eleven warranty returns actually told us",
-    category: "case_study",
-    summary:
-      "Every returned unit stripped and logged, the failure that accounted for eight of eleven, and the incoming-inspection step that would have caught it.",
-    thumbnailUrl: "/dummy/placeholder-compressors.avif",
-    author: {
-      displayName: "Fatima Al-Rashid",
-      handle: "fatima-thermal",
-      avatarUrl: "/dummy/profile_image_08.avif",
-    },
-    viewCount: 17920,
-    likeCount: 1688,
-    difficulty: "advanced",
-    cadFormat: null,
-    billOfMaterialsCostRange: null,
-    tags: ["quality", "warranty", "cold-chain", "failure-analysis"],
-    createdAt: "2026-07-14T12:25:00.000Z",
-    conceptNumber: 4,
-    discipline: "quality",
-    oneLineDefinition:
-      "A return rate is a summary; the failure mode behind it is almost always a single supplier lot.",
-    takeaways: [
-      "Eight of eleven returns traced to one crimp tool out of calibration at the assembler.",
-      "A 30-second pull test on incoming looms would have caught every one of them.",
-      "Field failure clustered by build week, not by site or climate — which is how it was found.",
-    ],
-    outcomeMetrics: [
-      { label: "Units returned", value: { kind: "count", amount: 11 } },
-      { label: "Return rate, affected batch", value: { kind: "percentage", basisPoints: 340 } },
-      {
-        label: "Cost of the returns",
-        value: { kind: "money", amountInCents: 1870000, currency: UNITED_STATES_DOLLAR },
-      },
-    ],
-    furtherReading: [
-      {
-        label: "Failure analysis photographs",
-        url: "https://example.com/qatoto/crimp-failure-log",
-      },
-    ],
-  },
-  {
-    id: "bp-022",
-    slug: "last-mile-cold-chain-distribution",
-    title: "Getting cold boxes to 60 collection points without a depot",
-    category: "case_study",
-    summary:
-      "Distribution built on existing dairy collection routes rather than a new network, the two weeks it did not work, and what the drivers changed.",
-    thumbnailUrl: "/dummy/placeholder-cartons.avif",
-    author: {
-      displayName: "Amara Okonkwo",
-      handle: "amara-builds",
-      avatarUrl: "/dummy/profile_image_01.avif",
-    },
-    viewCount: 24560,
-    likeCount: 2189,
+    viewCount: 38210,
+    likeCount: 3902,
     difficulty: "beginner",
     cadFormat: null,
     billOfMaterialsCostRange: null,
-    tags: ["distribution", "logistics", "cold-chain", "east-africa"],
-    createdAt: "2026-06-26T09:15:00.000Z",
-    conceptNumber: 5,
-    discipline: "distribution",
-    oneLineDefinition:
-      "The cheapest distribution network is usually one that already exists for something else.",
-    takeaways: [
-      "Riding on dairy collection routes cut delivery cost per unit by 64% against a courier.",
-      "It failed for two weeks because the route ran at 05:00 and nobody was there to sign.",
-      "Drivers redesigned the handover themselves once they were asked rather than instructed.",
+    tags: ["unit-economics", "working-capital", "consumer"],
+    createdAt: "2026-09-02T09:40:00.000Z",
+    discipline: "unit_economics",
+    oneLineAction: "Size batch one so the raise still covers batch two at the same unit cost.",
+    outcomeSummary: "Recovered on batch three, nine months later than planned",
+    sector: "Consumer hardware",
+    evidenceCompanies: [
+      { name: "Anvil & Ash Cookware", locationLabel: "Chennai", yearLabel: "2023" },
     ],
+    problem:
+      "Selling out is indistinguishable from succeeding right up to the moment you try to reorder. The money from batch one was in transit, in returns reserve and in retailer terms, and none of it was available to pay a foundry deposit.",
+    context:
+      "Two founders, one product, a cast iron pan made by a foundry outside Coimbatore. Raised ₹1 crore, spent ₹94 lakh of it on the first run and the tooling that run needed.",
+    actionSteps: [
+      "Rebuilt the plan around a cash conversion cycle rather than a margin, counting the days between paying the foundry and collecting from the retailer.",
+      "Cut batch two to a third of batch one so it fit inside collected revenue.",
+      "Moved two retailers from 90-day terms to 45 by giving up four points of margin.",
+      "Held the remainder of the raise against the batch three deposit rather than spending it on the shortfall.",
+    ],
+    pitfalls: [
+      "Tooling was counted as a one-off and then needed a repair before batch two, which nobody had reserved for.",
+      "Selling out was read as demand proof and used to justify a larger batch two, which the cash could not have covered either way.",
+      "The returns reserve was not modelled at all in the first plan.",
+    ],
+    timelineLabel: "18 months, three production runs",
+    capitalRaised: { amountInCents: 1000000000, currency: INDIAN_RUPEE },
     outcomeMetrics: [
-      { label: "Collection points served", value: { kind: "count", amount: 60 } },
+      { label: "Batch one sell-through", value: { kind: "percentage", basisPoints: 10000 } },
+      { label: "Weeks to sell out", value: { kind: "count", amount: 9 } },
+      { label: "Cash conversion cycle, batch one", value: { kind: "count", amount: 127 } },
+      { label: "Cash conversion cycle, batch three", value: { kind: "count", amount: 61 } },
+    ],
+    sources: [
       {
-        label: "Delivery cost per unit",
-        value: { kind: "money", amountInCents: 210, currency: UNITED_STATES_DOLLAR },
+        label: "Batch-one cash timeline",
+        publisherLabel: "Anvil & Ash founder write-up",
+        url: "https://example.com/qatoto/anvil-ash-cash-timeline",
       },
-      { label: "Cost reduction vs courier", value: { kind: "percentage", basisPoints: 6400 } },
     ],
-    furtherReading: [
-      { label: "Route overlay map", url: "https://example.com/qatoto/dairy-route-overlay" },
+    relatedLessonSlugs: ["find-the-step-that-stopped-scaling", "one-city-until-reorders-hold"],
+  },
+  {
+    id: "bp-011",
+    slug: "budget-for-the-second-mould",
+    title: "Budget for a second mould, not a perfect first one.",
+    category: "case_study",
+    summary:
+      "An injection-moulding programme in Nairobi spent four months and two revisions trying to get one tool right, and shipped six weeks after switching to a cheap tool it expected to replace.",
+    thumbnailUrl: "/dummy/thumbnail_image05.avif",
+    author: {
+      displayName: "Wanjiru Kamau",
+      handle: "wanjiru-tooling",
+      avatarUrl: "/dummy/profile_image_05.avif",
+    },
+    viewCount: 29870,
+    likeCount: 2611,
+    difficulty: "intermediate",
+    cadFormat: "STEP",
+    billOfMaterialsCostRange: {
+      minimumInCents: 210,
+      maximumInCents: 340,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    tags: ["tooling", "injection-molding", "manufacturing"],
+    createdAt: "2026-08-29T14:05:00.000Z",
+    discipline: "tooling",
+    oneLineAction:
+      "Price the first tool as a prototype you will throw away, and hold the difference for the replacement.",
+    outcomeSummary: "Shipped on the second tool, four months late",
+    sector: "Consumer hardware",
+    evidenceCompanies: [{ name: "Rafiki Housewares", locationLabel: "Nairobi", yearLabel: "2023" }],
+    problem:
+      "The team specified a hardened steel tool for a part whose geometry was still moving. Every design change became a tool change, and a tool change on hardened steel is a welding job.",
+    context:
+      "A five-person team making a water filter housing. First tool quoted at 8,400 USD with a six-week lead time; two revisions took it past four months.",
+    actionSteps: [
+      "Cut a soft aluminium tool for the same part at roughly a fifth of the cost and a third of the lead time.",
+      "Ran 400 shots off the aluminium tool and froze the geometry against real parts rather than drawings.",
+      "Ordered the steel tool only after two consecutive runs needed no change.",
+      "Kept the aluminium tool as the backup for short colour runs instead of scrapping it.",
     ],
+    pitfalls: [
+      "Two of the three geometry changes came from assembly, not from the moulded part, and would not have been caught by more CAD review.",
+      "The steel tool's quoted lead time did not include the tryout loop, which added three weeks each time.",
+      "Nobody costed the idle line while the tool was away being modified.",
+    ],
+    timelineLabel: "9 months from first tool order to shipping",
+    capitalRaised: null,
+    outcomeMetrics: [
+      {
+        label: "First tool cost",
+        value: { kind: "money", amountInCents: 840000, currency: UNITED_STATES_DOLLAR },
+      },
+      {
+        label: "Aluminium tool cost",
+        value: { kind: "money", amountInCents: 168000, currency: UNITED_STATES_DOLLAR },
+      },
+      { label: "Shots off the aluminium tool", value: { kind: "count", amount: 400 } },
+    ],
+    sources: [
+      {
+        label: "Tooling quotes and revision log",
+        publisherLabel: "Rafiki Housewares programme notes",
+        url: "https://example.com/qatoto/rafiki-tooling-log",
+      },
+    ],
+    relatedLessonSlugs: ["aluminium-tool-before-steel", "find-the-step-that-stopped-scaling"],
+  },
+  {
+    id: "bp-029",
+    slug: "aluminium-tool-before-steel",
+    title: "Cut the tool in aluminium before you cut it in steel.",
+    category: "case_study",
+    summary:
+      "The same argument as the Nairobi programme, run deliberately rather than by accident: a bracket maker planned two tools from the start and used the first to find eleven changes.",
+    thumbnailUrl: "/dummy/thumbnail_image09.avif",
+    author: {
+      displayName: "Tomas Bergqvist",
+      handle: "tomas-moulds",
+      avatarUrl: "/dummy/profile_image_09.avif",
+    },
+    viewCount: 17420,
+    likeCount: 1588,
+    difficulty: "advanced",
+    cadFormat: "STEP / Fusion 360",
+    billOfMaterialsCostRange: {
+      minimumInCents: 95,
+      maximumInCents: 160,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    tags: ["tooling", "injection-molding", "design-for-manufacture"],
+    createdAt: "2026-08-24T08:12:00.000Z",
+    discipline: "tooling",
+    oneLineAction:
+      "Plan the bridge tool into the schedule so the first parts are a test rather than a commitment.",
+    outcomeSummary: null,
+    sector: "Industrial components",
+    evidenceCompanies: [
+      { name: "Norrfall Bracketworks", locationLabel: "Gothenburg", yearLabel: "2024" },
+      { name: "Kvist Mould", locationLabel: "Gothenburg", yearLabel: "2024" },
+    ],
+    problem:
+      "A cable bracket had eleven mounting variants and no way to know which ones the market wanted before parts existed. Committing to steel meant committing to a variant list.",
+    context:
+      "A three-person spin-out from a larger bracket manufacturer, working with a local mould shop that had never quoted a bridge tool before.",
+    actionSteps: [
+      "Wrote the bridge tool into the first quote as a line item rather than treating it as a contingency.",
+      "Ran 1,200 parts across the eleven variants and put them in front of four installers.",
+      "Dropped six variants on the evidence and cut the steel tool for five.",
+      "Reused the bridge tool's runner layout in the steel tool, which the mould shop had not expected to be possible.",
+    ],
+    pitfalls: [
+      "The mould shop initially quoted the bridge tool as a discount on the steel tool, which hid its real cost and made the comparison meaningless.",
+      "Aluminium tools flash sooner than the team expected and the last 200 parts needed hand trimming.",
+    ],
+    timelineLabel: "7 months, two tools",
+    capitalRaised: { amountInCents: 4200000, currency: UNITED_STATES_DOLLAR },
+    outcomeMetrics: [
+      { label: "Variants tooled in steel", value: { kind: "count", amount: 5 } },
+      { label: "Variants dropped after the bridge run", value: { kind: "count", amount: 6 } },
+      { label: "Parts off the bridge tool", value: { kind: "count", amount: 1200 } },
+    ],
+    sources: [],
+    relatedLessonSlugs: ["budget-for-the-second-mould"],
+  },
+  {
+    id: "bp-020",
+    slug: "qualify-the-second-supplier-early",
+    title: "Qualify the second supplier before you need one.",
+    category: "case_study",
+    summary:
+      "A contract assembler went from responsive to unreachable in three weeks. The switch took four months, and three of them were qualification the team could have done a year earlier.",
+    thumbnailUrl: "/dummy/thumbnail_image02.avif",
+    author: {
+      displayName: "Adaeze Okoro",
+      handle: "adaeze-networks",
+      avatarUrl: "/dummy/profile_image_12.avif",
+    },
+    viewCount: 44190,
+    likeCount: 4110,
+    difficulty: "intermediate",
+    cadFormat: null,
+    billOfMaterialsCostRange: {
+      minimumInCents: 1840,
+      maximumInCents: 2600,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    tags: ["supply-chain", "contract-manufacturing", "risk"],
+    createdAt: "2026-08-20T16:30:00.000Z",
+    discipline: "supply_chain",
+    oneLineAction: "Run one paid pilot batch a year with a supplier you are not using.",
+    outcomeSummary: "Switched assemblers with a seven-week gap in shipments",
+    sector: "Networking hardware",
+    evidenceCompanies: [{ name: "Mesh & Mortar", locationLabel: "Lagos", yearLabel: "2023" }],
+    problem:
+      "The only assembler who had ever built the product stopped answering. There was no second source, no transferable test fixture, and no documentation that was not in that assembler's head.",
+    context:
+      "A router for community networks, built in batches of 500. Single-sourced from the start because the first assembler had been generous with a small team.",
+    actionSteps: [
+      "Rebuilt the test fixture from the schematic rather than asking for the original back.",
+      "Wrote the assembly instructions from a filmed build rather than from memory.",
+      "Paid a second assembler for a 50-unit pilot before committing a production batch.",
+      "Kept the pilot going at 50 units a quarter after the switch, so a third source was never a cold start.",
+    ],
+    pitfalls: [
+      "The test fixture turned out to encode three undocumented calibration constants, found only when the new assembler's yields came back wrong.",
+      "The first assembler's quoted price had been below cost for two years, which nobody discovered until they got a market quote.",
+      "Qualification was scoped as a purchasing task and took an engineer full-time for six weeks.",
+    ],
+    timelineLabel: "4 months to switch, 7 weeks with no shipments",
+    capitalRaised: null,
+    outcomeMetrics: [
+      { label: "Weeks without shipments", value: { kind: "count", amount: 7 } },
+      {
+        label: "Unit cost change after the switch",
+        value: { kind: "percentage", basisPoints: 2200 },
+      },
+      { label: "Pilot units before committing", value: { kind: "count", amount: 50 } },
+    ],
+    sources: [
+      {
+        label: "Assembler transition post-mortem",
+        publisherLabel: "Mesh & Mortar engineering notes",
+        url: "https://example.com/qatoto/mesh-mortar-transition",
+      },
+    ],
+    relatedLessonSlugs: ["order-long-lead-parts-early", "read-the-returns-first"],
+  },
+  {
+    id: "bp-030",
+    slug: "order-long-lead-parts-early",
+    title: "Order the long-lead part before the design is finished.",
+    category: "case_study",
+    summary:
+      "A compressor with a 22-week lead time set the whole schedule, and the team discovered that four months after freezing everything else.",
+    thumbnailUrl: "/dummy/thumbnail_image11.avif",
+    author: {
+      displayName: "Nadia Haddad",
+      handle: "nadia-cold",
+      avatarUrl: "/dummy/profile_image_02.avif",
+    },
+    viewCount: 22350,
+    likeCount: 1974,
+    difficulty: "intermediate",
+    cadFormat: "STEP",
+    billOfMaterialsCostRange: {
+      minimumInCents: 21400,
+      maximumInCents: 29800,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    tags: ["supply-chain", "lead-times", "cold-chain"],
+    createdAt: "2026-08-16T10:55:00.000Z",
+    discipline: "supply_chain",
+    oneLineAction:
+      "List every part over 12 weeks lead time in week one and order the top three on a best guess.",
+    outcomeSummary: null,
+    sector: "Cold chain",
+    evidenceCompanies: [{ name: "Sahel Cold Systems", locationLabel: "Tunis", yearLabel: "2024" }],
+    problem:
+      "Everything else was ready. The compressor was not, and no amount of engineering effort shortened a 22-week queue at a supplier who had never heard of the company.",
+    context:
+      "A solar cold-storage unit for market traders. Six-person team, first production run of 40 units, working backwards from a harvest season that does not move.",
+    actionSteps: [
+      "Built a lead-time list before the bill of materials was complete, ordered by weeks rather than by cost.",
+      "Placed a deposit on 40 compressors against a specification that was still 80% settled.",
+      "Designed the housing around the compressor that was coming rather than the one that was ideal.",
+      "Negotiated a partial-cancellation clause instead of trying to delay the order.",
+    ],
+    pitfalls: [
+      "The 22-week figure was the supplier's standard quote and turned out to be 31 weeks for a first-time buyer, which nobody asked about.",
+      "Committing early to the compressor forced two housing changes that cost less than the delay would have, but were not free.",
+    ],
+    timelineLabel: "One harvest season, 40 units",
+    capitalRaised: { amountInCents: 18000000, currency: UNITED_STATES_DOLLAR },
+    outcomeMetrics: [
+      { label: "Quoted lead time, weeks", value: { kind: "count", amount: 22 } },
+      { label: "Actual lead time, weeks", value: { kind: "count", amount: 31 } },
+      { label: "Units in the first run", value: { kind: "count", amount: 40 } },
+    ],
+    sources: [
+      {
+        label: "Lead-time register, first production run",
+        publisherLabel: "Sahel Cold Systems",
+        url: "https://example.com/qatoto/sahel-lead-time-register",
+      },
+    ],
+    relatedLessonSlugs: ["qualify-the-second-supplier-early"],
+  },
+  {
+    id: "bp-021",
+    slug: "read-the-returns-first",
+    title: "Read the returns before you read the reviews.",
+    category: "case_study",
+    summary:
+      "A chiller manufacturer had four-star reviews and an 11% return rate. The reviews described the product; the returns described one gasket.",
+    thumbnailUrl: "/dummy/thumbnail_image08.avif",
+    author: {
+      displayName: "Ines Duarte",
+      handle: "ines-quality",
+      avatarUrl: "/dummy/profile_image_08.avif",
+    },
+    viewCount: 33640,
+    likeCount: 3055,
+    difficulty: "beginner",
+    cadFormat: null,
+    billOfMaterialsCostRange: {
+      minimumInCents: 8900,
+      maximumInCents: 12400,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    tags: ["quality", "warranty", "returns"],
+    createdAt: "2026-08-12T13:20:00.000Z",
+    discipline: "quality",
+    oneLineAction: "Open ten returned units before you commission any customer research.",
+    outcomeSummary: "Return rate fell to 3% within two quarters",
+    sector: "Appliances",
+    evidenceCompanies: [{ name: "Brightwell Chillers", locationLabel: "Porto", yearLabel: "2024" }],
+    problem:
+      "Reviews were good and returns were expensive, and the two data sets disagreed. Review text talked about noise and looks; nobody who returned a unit wrote a review at all.",
+    context:
+      "A beverage chiller sold through two retailers. Roughly 2,800 units a year, warranty handled by the retailer and reimbursed monthly, which is why the failures were invisible for three quarters.",
+    actionSteps: [
+      "Asked the retailer for ten physical returns rather than the return reason codes.",
+      "Opened all ten and found the same door gasket deformed on seven.",
+      "Traced the gasket to a supplier change made eight months earlier for a 40-cent saving.",
+      "Reverted the gasket and added an incoming compression check that takes eleven seconds a unit.",
+    ],
+    pitfalls: [
+      "Return reason codes said customer changed mind on five of the seven gasket failures, because that is the fastest box for a retailer to tick.",
+      "The warranty cost was reimbursed as a lump sum and never allocated per unit, so the finance view showed a line item rather than a defect.",
+      "The 40-cent saving had been reported as a win and was still in the cost model.",
+    ],
+    timelineLabel: "3 quarters before the defect was found, 2 to clear it",
+    capitalRaised: null,
+    outcomeMetrics: [
+      { label: "Return rate before", value: { kind: "percentage", basisPoints: 1100 } },
+      { label: "Return rate after", value: { kind: "percentage", basisPoints: 300 } },
+      {
+        label: "Warranty cost per unit, before",
+        value: { kind: "money", amountInCents: 1840, currency: UNITED_STATES_DOLLAR },
+      },
+      { label: "Units a year", value: { kind: "count", amount: 2800 } },
+    ],
+    sources: [
+      {
+        label: "Return teardown notes, ten units",
+        publisherLabel: "Brightwell Chillers quality log",
+        url: "https://example.com/qatoto/brightwell-return-teardowns",
+      },
+      {
+        label: "Gasket supplier change record",
+        publisherLabel: "Brightwell Chillers quality log",
+        url: "https://example.com/qatoto/brightwell-gasket-change",
+      },
+    ],
+    relatedLessonSlugs: ["test-the-failure-you-fear", "qualify-the-second-supplier-early"],
+  },
+  {
+    id: "bp-031",
+    slug: "test-the-failure-you-fear",
+    title: "Test the failure you are afraid of, not the one that is easy to test.",
+    category: "case_study",
+    summary:
+      "Six months of drop testing on a battery pack that had never failed by being dropped. It failed by being charged in a hot van, which nobody had a rig for.",
+    thumbnailUrl: "/dummy/thumbnail_image06.avif",
+    author: {
+      displayName: "Samuel Adeyemi",
+      handle: "samuel-packs",
+      avatarUrl: "/dummy/profile_image_06.avif",
+    },
+    viewCount: 26180,
+    likeCount: 2440,
+    difficulty: "advanced",
+    cadFormat: "STEP",
+    billOfMaterialsCostRange: {
+      minimumInCents: 4200,
+      maximumInCents: 6100,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    tags: ["quality", "testing", "batteries"],
+    createdAt: "2026-08-08T07:45:00.000Z",
+    discipline: "quality",
+    oneLineAction:
+      "Write down the failure that would end the company, then build the rig for that one first.",
+    outcomeSummary: "Two field failures, no injuries, product withdrawn for five weeks",
+    sector: "Energy storage",
+    evidenceCompanies: [{ name: "Kestrel Power Packs", locationLabel: "Accra", yearLabel: "2023" }],
+    problem:
+      "The test plan was inherited from a consumer electronics template. It was thorough about drops and vibration and silent about charging at 48 °C, which is the ordinary condition for a pack that lives in a delivery van.",
+    context:
+      "A swappable battery pack for delivery motorcycles. Eight-person team, 600 packs in the field, charging infrastructure owned by the customer.",
+    actionSteps: [
+      "Listed the three failures that would end the company and ranked the test plan against that list rather than against a standard.",
+      "Built a thermal chamber from a chest freezer and a heat gun for under 400 USD.",
+      "Reproduced the field failure in nine days once the rig existed.",
+      "Added an ambient cutoff in firmware and shipped it to the fleet before restarting sales.",
+    ],
+    pitfalls: [
+      "The inherited test plan was comprehensive enough to feel like diligence, which delayed the question of whether it tested the right thing.",
+      "The first two field reports were logged as user error because the failure was not in the test matrix.",
+      "Nobody owned the test plan; it had been written by a contractor who had left.",
+    ],
+    timelineLabel: "6 months of testing, 9 days to reproduce once the rig existed",
+    capitalRaised: { amountInCents: 95000000, currency: UNITED_STATES_DOLLAR },
+    outcomeMetrics: [
+      { label: "Packs in the field at the time", value: { kind: "count", amount: 600 } },
+      { label: "Field failures", value: { kind: "count", amount: 2 } },
+      { label: "Weeks withdrawn from sale", value: { kind: "count", amount: 5 } },
+      {
+        label: "Cost of the thermal rig",
+        value: { kind: "money", amountInCents: 39500, currency: UNITED_STATES_DOLLAR },
+      },
+    ],
+    sources: [
+      {
+        label: "Field failure report and firmware fix",
+        publisherLabel: "Kestrel Power Packs incident log",
+        url: "https://example.com/qatoto/kestrel-field-failure",
+      },
+    ],
+    relatedLessonSlugs: ["read-the-returns-first"],
+  },
+  {
+    id: "bp-022",
+    slug: "sell-to-the-installer",
+    title: "Sell to the installer, not the end user.",
+    category: "case_study",
+    summary:
+      "A dairy chiller sold badly to farmers and well to the technicians who service them. The product did not change; the person being asked to say yes did.",
+    thumbnailUrl: "/dummy/thumbnail_image10.avif",
+    author: {
+      displayName: "Kofi Mensah",
+      handle: "kofi-routes",
+      avatarUrl: "/dummy/profile_image_10.avif",
+    },
+    viewCount: 41020,
+    likeCount: 3688,
+    difficulty: "beginner",
+    cadFormat: null,
+    billOfMaterialsCostRange: {
+      minimumInCents: 32000,
+      maximumInCents: 41000,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    tags: ["distribution", "channel", "cold-chain"],
+    createdAt: "2026-08-04T12:00:00.000Z",
+    discipline: "distribution",
+    oneLineAction:
+      "Find the person who already visits your customer monthly and make them the channel.",
+    outcomeSummary: "Sales moved from 4 units a month to 31",
+    sector: "Agricultural equipment",
+    evidenceCompanies: [{ name: "Kumasi Cold Rooms", locationLabel: "Kumasi", yearLabel: "2024" }],
+    problem:
+      "Farmers would not buy a chiller from a company they had never heard of, and the sales cycle ran to eleven visits. The technicians who maintained their existing equipment were trusted and were visiting anyway.",
+    context:
+      "A 200-litre milk chiller for smallholder dairy. Direct sales for fourteen months before the channel changed.",
+    actionSteps: [
+      "Mapped who already had a monthly relationship with the customer, which was the cooperative's service technicians.",
+      "Rebuilt the commercial terms so the technician earned on installation and on the service contract, not on the unit margin.",
+      "Simplified the install so one technician could do it alone in under two hours.",
+      "Published the service manual publicly rather than gating it behind a dealer agreement.",
+    ],
+    pitfalls: [
+      "The first commission structure paid on the sale and produced installs the technicians did not stand behind.",
+      "Two cooperatives read the direct sales history as competition with their own technicians and had to be walked back.",
+    ],
+    timelineLabel: "14 months direct, then 8 months through technicians",
+    capitalRaised: { amountInCents: 26000000, currency: UNITED_STATES_DOLLAR },
+    outcomeMetrics: [
+      { label: "Units a month, direct", value: { kind: "count", amount: 4 } },
+      { label: "Units a month, through technicians", value: { kind: "count", amount: 31 } },
+      { label: "Visits to close, direct", value: { kind: "count", amount: 11 } },
+      { label: "Visits to close, through technicians", value: { kind: "count", amount: 2 } },
+    ],
+    sources: [
+      {
+        label: "Channel comparison, 22 months",
+        publisherLabel: "Kumasi Cold Rooms sales record",
+        url: "https://example.com/qatoto/kumasi-channel-comparison",
+      },
+    ],
+    relatedLessonSlugs: ["one-city-until-reorders-hold"],
+  },
+  {
+    id: "bp-032",
+    slug: "one-city-until-reorders-hold",
+    title: "Ship to one city until the reorder rate holds.",
+    category: "case_study",
+    summary:
+      "A packaged foods brand launched in six cities on the strength of one good month, and spent the next year discovering that only one of the six reordered.",
+    thumbnailUrl: "/dummy/thumbnail_image01.avif",
+    author: {
+      displayName: "Leila Fasih",
+      handle: "leila-distribution",
+      avatarUrl: "/dummy/profile_image_04.avif",
+    },
+    viewCount: 19560,
+    likeCount: 1702,
+    difficulty: "beginner",
+    cadFormat: null,
+    billOfMaterialsCostRange: null,
+    tags: ["distribution", "retail", "consumer"],
+    createdAt: "2026-07-30T15:35:00.000Z",
+    discipline: "distribution",
+    oneLineAction:
+      "Hold at one city until the same stores reorder three times without a promotion.",
+    outcomeSummary: null,
+    sector: "Packaged food",
+    evidenceCompanies: [{ name: "Harar Pantry", locationLabel: "Addis Ababa", yearLabel: "2023" }],
+    problem:
+      "First-order volume looks identical to demand. Six cities of first orders produced a revenue chart that pointed up and a warehouse full of returns nine months later.",
+    context:
+      "A shelf-stable spice paste sold through independent grocers. Expanded from 40 stores in one city to 260 stores in six within a quarter.",
+    actionSteps: [
+      "Stopped opening new cities and let the existing shelves run without promotional support.",
+      "Tracked reorder rate per store rather than orders per month.",
+      "Withdrew from four cities where the reorder rate stayed under 20% after two cycles.",
+      "Reinvested the freed working capital in depth in the two cities that held.",
+    ],
+    pitfalls: [
+      "Promotions ran continuously during the expansion, so no month measured unsupported demand.",
+      "Returns from the withdrawn cities arrived over five months and were booked against the months they arrived in, which flattered the expansion quarter twice.",
+    ],
+    timelineLabel: "One quarter expanding, four contracting",
+    capitalRaised: { amountInCents: 3800000, currency: UNITED_STATES_DOLLAR },
+    outcomeMetrics: [
+      { label: "Stores at peak", value: { kind: "count", amount: 260 } },
+      { label: "Stores after contraction", value: { kind: "count", amount: 96 } },
+      { label: "Reorder rate, retained cities", value: { kind: "percentage", basisPoints: 6400 } },
+      { label: "Reorder rate, withdrawn cities", value: { kind: "percentage", basisPoints: 1700 } },
+    ],
+    sources: [],
+    relatedLessonSlugs: ["sell-to-the-installer", "keep-forty-percent-for-batch-two"],
   },
 ];
 

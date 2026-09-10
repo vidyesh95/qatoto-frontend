@@ -144,8 +144,8 @@ export async function getBlueprintByCategory<TCategory extends BlueprintCategory
 export const TEARDOWNS_PAGE_LIMIT = 8;
 /** 10 showcase fixtures → 2 pages (6 + 4), under either sort and with no tag applied. */
 export const SHOWCASE_PAGE_LIMIT = 6;
-/** 5 case-study fixtures → 2 pages. */
-export const CASE_STUDIES_PAGE_LIMIT = 3;
+/** 10 case-study fixtures → 2 pages (6 + 4), with no discipline applied. */
+export const CASE_STUDIES_PAGE_LIMIT = 6;
 
 /**
  * The cursor is the last row's id, base64url-encoded.
@@ -312,14 +312,6 @@ export interface ListCaseStudiesFilter {
   readonly limit?: number;
 }
 
-/**
- * BY CONCEPT NUMBER, NOT BY DATE. The numeral is the index's spine — a reader who saw 03 yesterday
- * expects it in the same place today, which a newest-first order would break on every publish.
- */
-function byConceptNumber(left: CaseStudyBlueprint, right: CaseStudyBlueprint): number {
-  return left.conceptNumber - right.conceptNumber;
-}
-
 export async function listCaseStudies(
   filter: ListCaseStudiesFilter = {},
 ): Promise<BlueprintPage<CaseStudyBlueprint>> {
@@ -330,9 +322,39 @@ export async function listCaseStudies(
     .filter(
       (caseStudy) => filter.discipline === undefined || caseStudy.discipline === filter.discipline,
     )
-    .toSorted(byConceptNumber);
+    .toSorted(byNewestFirst);
 
   return toBlueprintPage(matching, filter.cursor, filter.limit ?? CASE_STUDIES_PAGE_LIMIT);
+}
+
+/**
+ * The case studies a lesson points at, in the order it names them.
+ *
+ * IT RESOLVES SLUGS; IT DOES NOT RANK. `relatedLessonSlugs` is an authored list, so the author's
+ * order is the answer and a "relevance" sort here would be this layer inventing an opinion the row
+ * does not carry.
+ *
+ * ⚠️ IT GOES THROUGH `isReservedSlug` LIKE EVERY OTHER READ. That guard is in this module rather
+ * than a route file precisely because each getter reaches the data independently — a fourth entry
+ * point that skipped it would be the leak the comment above `isReservedSlug` warns about.
+ *
+ * AN UNRESOLVABLE SLUG IS DROPPED, not rendered as a dead row. It is the same call `resolveStartIndex`
+ * makes for a cursor that no longer matches: a stale reference is an absence, and absence renders
+ * nothing.
+ */
+export async function listRelatedCaseStudies(
+  slugs: readonly string[],
+): Promise<CaseStudyBlueprint[]> {
+  "use cache";
+  if (slugs.length === 0) return [];
+
+  const caseStudies = await listBlueprintsByCategory("case_study");
+  const caseStudiesBySlug = new Map(caseStudies.map((caseStudy) => [caseStudy.slug, caseStudy]));
+
+  return slugs
+    .filter((slug) => !isReservedSlug(slug))
+    .map((slug) => caseStudiesBySlug.get(slug))
+    .filter((caseStudy) => caseStudy !== undefined);
 }
 
 // --- Discussion ---------------------------------------------------------------

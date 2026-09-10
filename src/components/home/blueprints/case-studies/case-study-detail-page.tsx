@@ -1,106 +1,83 @@
-// TRANSPORT: mock — async server component. Reads `getBlueprintByCategory` from
-// `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
+// TRANSPORT: mock — async server component. Reads `getBlueprintByCategory` and
+// `listRelatedCaseStudies` from `@/lib/blueprints/api`, which serve fixtures from
+// `@/mocks/blueprints-mocks`.
+//
+// A REPORT, NOT AN ESSAY, AND THE SECTION ORDER IS FIXED. Problem, context, what they did, what to
+// avoid, the business facts, sources, related lessons — every case study, every time, so a reader
+// learns the shape once and can then skip straight to the part they came for. The anchor is an
+// accident report: what happened, what was done, what to avoid, sources listed. It reads as a
+// record and never as persuasion, which is the lane "startup lessons" reflexively falls into.
+//
+// ⚠️ NO SERIF ANYWHERE. This page carried two serif blocks — a 5xl numeral and a 2xl lede —
+// and `docs/Design.md` §3 is unambiguous: "A serif heading inside `(home)` is a bug." The numeral
+// went with the concept number it rendered; the lede is now `oneLineAction`, set in the house sans
+// at body size with weight doing the work the face used to.
+//
+// EVERY OPTIONAL SECTION ABSENT RENDERS NOTHING AT ALL — no heading, no empty box. That is
+// PRODUCT.md Principle 2, and the one deliberate exception is documented on `sources` below.
 
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import BlueprintAuthorLine from "@/components/home/blueprints/sections/blueprint-author-line";
 import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-tag-list";
-import { getBlueprintByCategory } from "@/lib/blueprints/api";
+import SpecificationList, {
+  type SpecificationRow,
+} from "@/components/home/blueprints/sections/specification-list";
+import { getBlueprintByCategory, listRelatedCaseStudies } from "@/lib/blueprints/api";
+import { formatBlueprintMetricValue } from "@/lib/blueprints/format";
 import {
-  BLUEPRINT_DISCIPLINE_NUMERAL_CLASSES,
-  formatBlueprintMetricValue,
-  formatConceptNumberLabel,
-} from "@/lib/blueprints/format";
-import { BLUEPRINT_DISCIPLINE_LABELS } from "@/lib/blueprints/schemas";
-import { formatCountLabel } from "@/lib/store/format";
+  BLUEPRINT_DISCIPLINE_LABELS,
+  buildBlueprintHref,
+  type CaseStudyBlueprint,
+} from "@/lib/blueprints/schemas";
+import { formatCentsLabel, formatCountLabel } from "@/lib/store/format";
 
 export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
   const caseStudy = await getBlueprintByCategory("case_study", slug);
   if (caseStudy === null) notFound();
 
+  const relatedLessons = await listRelatedCaseStudies(caseStudy.relatedLessonSlugs);
+
   return (
     <article className="px-4 pt-5 pb-12 lg:px-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-medium tracking-[0.2em] text-[#6F7979] uppercase">
-            {BLUEPRINT_DISCIPLINE_LABELS[caseStudy.discipline]}
-          </p>
-          <h1 className="mt-1 max-w-2xl text-xl font-medium text-foreground lg:text-2xl">
-            {caseStudy.title}
-          </h1>
-        </div>
-        <p
-          className={`font-serif text-5xl leading-none ${BLUEPRINT_DISCIPLINE_NUMERAL_CLASSES[caseStudy.discipline]}`}
-        >
-          {formatConceptNumberLabel(caseStudy.conceptNumber)}
+      <header>
+        <p className="text-[11px] font-medium tracking-[0.2em] text-[#6F7979] uppercase">
+          {caseStudy.sector} · {BLUEPRINT_DISCIPLINE_LABELS[caseStudy.discipline]}
         </p>
-      </div>
+        <h1 className="mt-1 max-w-2xl text-xl font-medium text-foreground lg:text-2xl">
+          {caseStudy.title}
+        </h1>
 
-      {/* The lede — the single sentence the index card carries, set larger here because it is the
-          claim the rest of the page argues for. */}
-      <p className="mt-5 max-w-2xl font-serif text-2xl leading-snug text-foreground">
-        {caseStudy.oneLineDefinition}
-      </p>
+        {/* The imperative the reader can act on. It is the claim the rest of the page argues for,
+            so it is set at body size in medium weight rather than given a size of its own — the
+            Two-Size Rule, `docs/Design.md` §3. */}
+        <p className="mt-4 max-w-2xl text-sm leading-6 font-medium text-foreground">
+          {caseStudy.oneLineAction}
+        </p>
+
+        {caseStudy.outcomeSummary === null ? null : (
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6F7979]">
+            {caseStudy.outcomeSummary}
+          </p>
+        )}
+      </header>
 
       <BlueprintAuthorLine author={caseStudy.author} />
 
       <p className="mt-4 max-w-2xl text-sm leading-6 text-foreground">{caseStudy.summary}</p>
 
-      {caseStudy.takeaways.length === 0 ? null : (
-        <section className="mt-8 max-w-2xl">
-          <h2 className="text-sm font-medium text-foreground">Takeaways</h2>
-          <ul className="mt-2 space-y-2">
-            {caseStudy.takeaways.map((takeaway) => (
-              <li
-                key={takeaway}
-                className="border-l-2 border-[#00696E]/30 pl-3 text-sm leading-6 text-foreground"
-              >
-                {takeaway}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <CaseStudyProse heading="Problem" body={caseStudy.problem} />
+      <CaseStudyProse heading="Context" body={caseStudy.context} />
 
-      {caseStudy.outcomeMetrics.length === 0 ? null : (
-        <section className="mt-8">
-          <h2 className="text-sm font-medium text-foreground">Outcome</h2>
-          {/* Each value is formatted by its own kind — a count, an amount in cents and a basis-point
-              percentage are three different renderings, which is why the wire carries the kind. */}
-          <dl className="mt-2 grid max-w-2xl gap-4 sm:grid-cols-3">
-            {caseStudy.outcomeMetrics.map((metric) => (
-              <div key={metric.label} className="rounded-xl border border-[#CAC4D0]/60 px-3 py-2.5">
-                <dt className="text-[11px] tracking-[0.5px] text-[#6F7979] uppercase">
-                  {metric.label}
-                </dt>
-                <dd className="mt-1 text-lg font-medium text-foreground">
-                  {formatBlueprintMetricValue(metric.value)}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
+      <CaseStudySteps heading="What they did" items={caseStudy.actionSteps} isOrdered />
+      <CaseStudySteps heading="What to avoid" items={caseStudy.pitfalls} isOrdered={false} />
 
-      {caseStudy.furtherReading.length === 0 ? null : (
-        <section className="mt-8 max-w-2xl">
-          <h2 className="text-sm font-medium text-foreground">Further reading</h2>
-          <ul className="mt-2 space-y-1.5">
-            {caseStudy.furtherReading.map((link) => (
-              <li key={link.url}>
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-[#00696E] hover:underline"
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <BusinessFacts caseStudy={caseStudy} />
+
+      <Sources caseStudy={caseStudy} />
+
+      <RelatedLessons lessons={relatedLessons} />
 
       <BlueprintTagList tags={caseStudy.tags} />
 
@@ -109,5 +86,174 @@ export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
         likes
       </p>
     </article>
+  );
+}
+
+/** One prose section. An empty body renders nothing, heading included. */
+function CaseStudyProse({ heading, body }: { heading: string; body: string }) {
+  if (body.length === 0) return null;
+
+  return (
+    <section className="mt-8 max-w-2xl">
+      <h2 className="text-sm font-medium text-foreground">{heading}</h2>
+      <p className="mt-2 text-sm leading-6 text-foreground">{body}</p>
+    </section>
+  );
+}
+
+/**
+ * The two step lists.
+ *
+ * ORDERED FOR WHAT THEY DID, UNORDERED FOR WHAT TO AVOID, and the difference is a claim rather
+ * than a style: the actions happened in that sequence, the pitfalls did not. Numbering a list of
+ * mistakes would assert an order nobody recorded.
+ */
+function CaseStudySteps({
+  heading,
+  items,
+  isOrdered,
+}: {
+  heading: string;
+  items: readonly string[];
+  isOrdered: boolean;
+}) {
+  if (items.length === 0) return null;
+
+  const rows = items.map((item, index) => (
+    <li key={item} className="flex gap-3 text-sm leading-6 text-foreground">
+      <span className="shrink-0 text-[#6F7979] tabular-nums" aria-hidden="true">
+        {isOrdered ? `${index + 1}.` : "·"}
+      </span>
+      <span>{item}</span>
+    </li>
+  ));
+
+  return (
+    <section className="mt-8 max-w-2xl">
+      <h2 className="text-sm font-medium text-foreground">{heading}</h2>
+      {isOrdered ? (
+        <ol className="mt-2 space-y-2">{rows}</ol>
+      ) : (
+        <ul className="mt-2 space-y-2">{rows}</ul>
+      )}
+    </section>
+  );
+}
+
+/**
+ * The business facts, as a readout rather than prose.
+ *
+ * ⚠️ IT REUSES `SpecificationList`, which is already the hairline `<dl>` every other detail layout
+ * on this surface renders and which already returns `null` on an empty list. Building a second one
+ * here would be two components that must agree about what an absence looks like — the exact reason
+ * that file was hoisted in the first place.
+ *
+ * ROWS ARE FILTERED BEFORE MAPPING, never styled around. A null `timelineLabel` or `capitalRaised`
+ * produces no row at all; printing a dash against the label would invent a fact.
+ *
+ * ⚠️ `capitalRaised` IS AN AMOUNT SOMEBODY RAISED ELSEWHERE. No copy near it may say paid,
+ * collected, held, escrowed or processed — Qatoto operates no money rail, and this page is not a
+ * record of one.
+ */
+function BusinessFacts({ caseStudy }: { caseStudy: CaseStudyBlueprint }) {
+  const specifications: (SpecificationRow | undefined)[] = [
+    caseStudy.timelineLabel === null
+      ? undefined
+      : { label: "Timeline", value: caseStudy.timelineLabel },
+    caseStudy.capitalRaised === null
+      ? undefined
+      : {
+          label: "Capital raised",
+          value: formatCentsLabel(
+            caseStudy.capitalRaised.amountInCents,
+            caseStudy.capitalRaised.currency,
+          ),
+        },
+    ...caseStudy.evidenceCompanies.map((company) => ({
+      label: company.name,
+      value: `${company.locationLabel}, ${company.yearLabel}`,
+    })),
+    // Each value is formatted by its own kind — a count, an amount in cents and a basis-point
+    // percentage are three different renderings, which is why the wire carries the kind.
+    ...caseStudy.outcomeMetrics.map((metric) => ({
+      label: metric.label,
+      value: formatBlueprintMetricValue(metric.value),
+    })),
+  ];
+
+  const rows = specifications.filter((row) => row !== undefined);
+  if (rows.length === 0) return null;
+
+  return (
+    <section className="mt-8">
+      <h2 className="text-sm font-medium text-foreground">The business facts</h2>
+      <SpecificationList specifications={rows} className="mt-2 max-w-2xl sm:columns-2 sm:gap-8" />
+    </section>
+  );
+}
+
+/**
+ * Where the figures came from.
+ *
+ * ⚠️ THE ONE ABSENCE ON THIS SURFACE THAT RENDERS COPY, AND IT IS A KNOWING DEPARTURE FROM
+ * PRODUCT.md PRINCIPLE 2. Everywhere else an empty list renders nothing; here, saying nothing would
+ * leave a page of specific figures looking sourced when it is not. PRODUCT.md's own rule is the
+ * reason: "An unattributed figure reads as invented on this product, because on comparable products
+ * it usually is." Silence is the shape that lets that happen, so the absence is stated out loud.
+ */
+function Sources({ caseStudy }: { caseStudy: CaseStudyBlueprint }) {
+  return (
+    <section className="mt-8 max-w-2xl">
+      <h2 className="text-sm font-medium text-foreground">Sources</h2>
+
+      {caseStudy.sources.length === 0 ? (
+        <p className="mt-2 text-sm leading-6 text-[#6F7979]">No public source for this one.</p>
+      ) : (
+        <ul className="mt-2 space-y-2">
+          {caseStudy.sources.map((source) => (
+            <li key={source.url} className="text-sm leading-5">
+              <a
+                href={source.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[#00696E] transition-colors hover:underline"
+              >
+                {source.label}
+              </a>
+              <span className="block text-xs text-[#6F7979]">{source.publisherLabel}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Other lessons this one points at.
+ *
+ * THE SLUGS ARE RESOLVED BY THE GETTER, not here — `listRelatedCaseStudies` drops the ones that no
+ * longer exist, so a stale reference is an absence rather than a dead row. This component receives
+ * rows or receives nothing.
+ */
+function RelatedLessons({ lessons }: { lessons: readonly CaseStudyBlueprint[] }) {
+  if (lessons.length === 0) return null;
+
+  return (
+    <section className="mt-8 max-w-2xl">
+      <h2 className="text-sm font-medium text-foreground">Related lessons</h2>
+      <ul className="mt-2">
+        {lessons.map((lesson) => (
+          <li key={lesson.id} className="border-t border-black/5">
+            <Link
+              href={buildBlueprintHref(lesson)}
+              className="block py-2.5 text-sm leading-5 text-foreground transition-colors hover:text-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+            >
+              {lesson.title}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

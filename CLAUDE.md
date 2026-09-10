@@ -254,7 +254,7 @@ browsed the same way:
 | `/blueprints`                          | Hub — hero, three category links, one teaser rail each with **See all**                                             |
 | `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid; detail carries the video, the PDFs and, when `assembly` is non-null, the exploded-view engine       |
 | `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort lives in `listShowcases`; inert vote gutter |
-| `/blueprints/case-studies` + `/[slug]` | Numbered index, colour-coded by `discipline`                                                                        |
+| `/blueprints/case-studies` + `/[slug]` | Hairline lesson list, each row an expandable `<details>`; detail is a fixed-order report                            |
 | `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                                                                |
 
 ⚠️ **The resolver CANNOT move to `next.config.ts`.** Its destination depends on the row's
@@ -265,13 +265,17 @@ flushed, so Next sends `<meta http-equiv="refresh">` and the browser lands corre
 visible pause. This is measured and written up at `src/app/(home)/store/[...slug]/page.tsx:25-30`.
 
 **The hub is mock and that is a decision, not an oversight.** `src/mocks/blueprints-mocks.ts`
-holds 27 invented builds across three arms — 12 teardowns, 10 showcases, 5 case studies. The ten
+holds 32 invented builds across three arms — 12 teardowns, 10 showcases, 10 case studies. The ten
 showcases are dated into the three weeks before 2026-09-08 so that Newest and Top visibly differ and
 both orders page; the literals drift into the past and that is accepted.
 ⚠️ **That is NOT the 70/20/10 split and is not meant to be**: the ratio is a target for real
 content, and applied to fixtures it gave two showcases and two case studies, which does not
-exercise either design. There are exactly five case studies because there are five
-`BLUEPRINT_DISCIPLINES`, and a discipline with no fixture is a card tint nobody ever sees.
+exercise either design. ⚠️ **There are TEN case studies, two per discipline, and that count replaced
+an older rule.** It used to be exactly five, one per `BLUEPRINT_DISCIPLINES` entry, because each card
+carried a discipline TINT and a discipline with no fixture was a colour nobody ever saw. The tint is
+gone — see the case-study row below — so the count is set by the list instead: two per discipline is
+what makes a filtered view show more than one row, and ten against a page limit of six is what makes
+the paging control render.
 The surface inherits the caveat `todo.md` recorded against `/anime`
 verbatim — _a vertical you cannot fill should not ship_ — so the surface is **de-indexed**: it is
 absent from `src/app/sitemap.ts` AND both routes carry `robots: { index: false, follow: false }`.
@@ -280,7 +284,8 @@ alone stops nothing (`robots.ts` says exactly this at the top). **Restoring both
 step** when real blueprints exist — miss one and the surface either ships invisible or ships
 indexed-while-fabricated.
 
-Three rules specific to this surface:
+Rules specific to this surface — it says "three" nowhere any more because there are seven, and a
+count in a heading is a thing that goes stale the first time somebody adds one:
 
 - **Components never import the fixtures.** Everything goes through `src/lib/blueprints/api.ts`,
   whose `"use cache"` getters mirror `src/lib/cms.ts`. `/anime` was wired the other way — its
@@ -288,8 +293,8 @@ Three rules specific to this surface:
   real data was a component rewrite rather than a one-file edit. Do not reintroduce that.
 - **`Blueprint` is a DISCRIMINATED UNION on `category`, not one flat shape.** Each arm carries
   what its surface needs — a teardown's `walkthroughVideo`/`documents[]`, a showcase's
-  `launchedAt`/`team[]`/`upvoteCount`, a case study's `conceptNumber`/`discipline`/
-  `outcomeMetrics[]`. `difficulty`, `cadFormat` and `billOfMaterialsCostRange` stay SHARED
+  `launchedAt`/`team[]`/`upvoteCount`, a case study's `oneLineAction`/`problem`/`actionSteps[]`/
+  `pitfalls[]`/`sources[]`/`outcomeMetrics[]`. `difficulty`, `cadFormat` and `billOfMaterialsCostRange` stay SHARED
   because a rail card renders them for every category; arms only add. Build every URL with
   `buildBlueprintHref` — never by hand. `upvoteCount` is display-only and no vote button ships:
   a counter a client increments is a business rule on an untrusted layer. It renders as
@@ -303,6 +308,23 @@ Three rules specific to this surface:
   and do not turn any of the three into a `<button>` before the tables exist (todo.md §Blueprint
   engagement). Share opens `ShareSheet` with `onShared` OMITTED: that callback exists to move
   `video_share.videoId`, which a blueprint has no row for.
+- **THE CASE-STUDY ARM IS A RECORD, AND IT CARRIES NO VERDICT.** The index was a grid of
+  discipline-tinted, serif-titled, numbered cards on the lawsofux.com model, and that was three
+  `docs/Design.md` violations standing together — §6's identical-card-grid ban, §3's Serif Boundary
+  ("a serif heading inside `(home)` is a bug"), and §2's One Hue Rule against a tint map carrying
+  five hues. It is now a hairline list of `<details>` rows, each led by an IMPERATIVE `title` the
+  reader can act on. `conceptNumber` and the tint maps were DELETED rather than kept as legacy — a
+  field nothing renders is what the sweep below exists to catch.
+  ⚠️ **There is no outcome enum and there must not be one.** A `scaled | failed | pivoted` badge was
+  specified and rejected: `cofounders.schemas.ts:186-188` already records why for the identical
+  field — "a renderer that requires one invites people to invent one" — and a three-value verdict is
+  an unattributed JUDGMENT, which PRODUCT.md bans harder than an unattributed number.
+  `outcomeSummary` is a nullable free clause and `null` renders NOTHING, not "Unknown".
+  **Every company name in the fixtures is invented and must stay invented**, and `sources[]` URLs
+  stay on `example.com`: the de-index covers a fabricated teardown, not a fabricated failure pinned
+  to a real business. Empty `sources[]` is the ONE absence on this surface that renders copy ("No
+  public source for this one") — a knowing departure from Principle 2, because silence would let a
+  page of specific figures read as sourced.
 - **Costs are integer cents, never display strings.** `billOfMaterialsCostRange` is
   `{ minimumInCents, maximumInCents, currency } | null`, and the OBJECT is nullable rather than
   its fields — half a range is an unanswerable question. `null` means nobody costed it; it is
@@ -312,7 +334,7 @@ Three rules specific to this surface:
   `listShowcases` and `listCaseStudies` (`src/lib/blueprints/api.ts`) each take a filter object
   and return `BlueprintPage<T>`, whose footer is `CursorPage` imported from
   `src/lib/store/shared.schemas.ts` rather than redefined. A page cannot page a list it has not
-  finished filtering, so no list component filters its own results. ⚠️ The page limits (8 / 6 / 3)
+  finished filtering, so no list component filters its own results. ⚠️ The page limits (8 / 6 / 6)
   are **fixture-sized on purpose** — a house-sized 24 would mean the paging control never
   rendered — and rise with real inventory. The cursor is opaque by contract; an unresolvable one
   is dropped and the first page served.
@@ -366,6 +388,17 @@ Three rules specific to this surface:
                  simulationTelemetry commentCount saveCount; do
       rg -q "teardown\.$field\b" src/components/home/blueprints || echo "UNRENDERED $field"
     done
+
+    # The case-study arm has the same property, and it is why `conceptNumber` was deleted rather
+    # than kept as a legacy field with a TODO beside it.
+    for field in oneLineAction outcomeSummary sector discipline evidenceCompanies problem context \
+                 actionSteps pitfalls timelineLabel capitalRaised outcomeMetrics sources \
+                 relatedLessonSlugs; do
+      rg -q "caseStudy\.$field\b" src/components/home/blueprints || echo "UNRENDERED $field"
+    done
+
+    # And the Serif Boundary, which this surface broke in three places before the redesign.
+    rg -n "font-serif" src/components/home/blueprints
     ```
 
 - **The hero is real.** `GET /blueprints/hero-slides` and the admin console at

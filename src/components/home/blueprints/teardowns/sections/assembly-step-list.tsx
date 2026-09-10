@@ -7,7 +7,7 @@ import {
   type ExplosionStore,
   useExplosionSnapshot,
 } from "@/components/home/blueprints/teardowns/engine/explosion-store";
-import { formatConceptNumberLabel } from "@/lib/blueprints/format";
+import { formatTwoDigitLabel } from "@/lib/blueprints/format";
 import type { TeardownAssemblyStep } from "@/lib/blueprints/schemas";
 
 export interface AssemblyStepListProps {
@@ -23,7 +23,11 @@ export interface AssemblyStepListProps {
 
 const ROW_SHELL_CLASS = "rounded-xl border transition-colors";
 const ROW_BODY_CLASS = "flex w-full gap-3 px-3 py-2.5 text-left";
-const NUMERAL_CLASS = "w-9 shrink-0 font-serif text-3xl leading-none";
+// SANS, TABULAR, NOT SERIF. This numeral was set in the serif face from the day the case-study
+// index was, and
+// `docs/Design.md` §3 says the same thing about both: "A serif heading inside `(home)` is a bug."
+// `tabular-nums` is what the serif was really buying — a column of step numbers that aligns.
+const NUMERAL_CLASS = "w-9 shrink-0 text-2xl leading-none font-medium tabular-nums";
 
 /**
  * TWO COMPONENTS RATHER THAN ONE WITH A CONDITIONAL HOOK. The interactive list subscribes to the
@@ -116,7 +120,7 @@ function StepRow({
       aria-hidden
       className={`${NUMERAL_CLASS} ${isCurrent ? "text-[#00696E]" : "text-[#00696E]/30"}`}
     >
-      {formatConceptNumberLabel(step.stepNumber)}
+      {formatTwoDigitLabel(step.stepNumber)}
     </span>
   );
   const body = (

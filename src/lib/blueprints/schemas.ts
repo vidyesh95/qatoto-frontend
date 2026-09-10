@@ -451,6 +451,26 @@ export const BlueprintTeamMemberSchema = z
 export type BlueprintTeamMember = z.infer<typeof BlueprintTeamMemberSchema>;
 
 /**
+ * An amount of money, in integer minor units.
+ *
+ * FACTORED OUT OF `BlueprintMetricValueSchema`'s money arm rather than written twice. Both spell
+ * the pair `amountInCents` + `currency`, and two independent copies of a money shape drift into
+ * two spellings of one concept — the failure the wire-casing rule exists to prevent.
+ *
+ * INTEGER MINOR UNITS, NEVER A DISPLAY STRING, for the reason `BlueprintCostRangeSchema` states at
+ * length. "₹1 Cr" is 1_000_000_000 paise — a crore is 10^7 rupees at 100 paise each — and stored as
+ * text it cannot be sorted, converted or localised, and it fixes the currency at author time.
+ */
+const BlueprintMoneyShape = {
+  amountInCents: z.number().int(),
+  /** ISO 4217, e.g. "USD". Spelled `currency` to match every other money shape in `src/lib`. */
+  currency: z.string(),
+};
+
+export const BlueprintMoneySchema = z.object({ ...BlueprintMoneyShape }).strip();
+export type BlueprintMoney = z.infer<typeof BlueprintMoneySchema>;
+
+/**
  * A number a case study reports, carrying WHAT KIND OF NUMBER IT IS.
  *
  * "3,400 units", "$4.12 landed cost" and "18% scrap" are three different things and only one of
@@ -462,13 +482,7 @@ export type BlueprintTeamMember = z.infer<typeof BlueprintTeamMemberSchema>;
  */
 export const BlueprintMetricValueSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("count"), amount: z.number().int() }).strip(),
-  z
-    .object({
-      kind: z.literal("money"),
-      amountInCents: z.number().int(),
-      currency: z.string(),
-    })
-    .strip(),
+  z.object({ kind: z.literal("money"), ...BlueprintMoneyShape }).strip(),
   z.object({ kind: z.literal("percentage"), basisPoints: z.number().int() }).strip(),
 ]);
 export type BlueprintMetricValue = z.infer<typeof BlueprintMetricValueSchema>;
@@ -480,6 +494,44 @@ export const BlueprintOutcomeMetricSchema = z
   })
   .strip();
 export type BlueprintOutcomeMetric = z.infer<typeof BlueprintOutcomeMetricSchema>;
+
+/**
+ * A company a case study is drawn from.
+ *
+ * ⚠️ EVERY NAME IN THE FIXTURES IS INVENTED, AND MUST STAY INVENTED. A fabricated record attached
+ * to a real company's name is a different thing from a fabricated teardown: the surface's
+ * de-indexing covers the second and not the first. When real case studies land, a name here is a
+ * claim somebody made about a business and the backend owns whether it may be published.
+ *
+ * `locationLabel` and `yearLabel` are FREE TEXT and not a place id or a date. "Chennai, 2023" is
+ * what a founder writing this down actually knows; parsing it into a typed region would invent a
+ * precision the source does not have.
+ */
+export const CaseStudyEvidenceCompanySchema = z
+  .object({
+    name: z.string(),
+    locationLabel: z.string(),
+    yearLabel: z.string(),
+  })
+  .strip();
+export type CaseStudyEvidenceCompany = z.infer<typeof CaseStudyEvidenceCompanySchema>;
+
+/**
+ * Where a figure in a case study came from.
+ *
+ * `BlueprintLinkSchema` PLUS A PUBLISHER, which is the whole reason this is not just that schema.
+ * PRODUCT.md: "Name the source of a number. An unattributed figure reads as invented on this
+ * product, because on comparable products it usually is." A bare labelled URL names a destination,
+ * not a publisher, and "read more" over a link is exactly the unattributed shape that rule bans.
+ */
+export const BlueprintSourceSchema = z
+  .object({
+    label: z.string(),
+    publisherLabel: z.string(),
+    url: createExternalHttpsUrlSchema(2048),
+  })
+  .strip();
+export type BlueprintSource = z.infer<typeof BlueprintSourceSchema>;
 
 // --- Teardown assembly value objects -----------------------------------------
 //
@@ -1017,18 +1069,75 @@ export const ShowcaseBlueprintSchema = z
   })
   .strip();
 
+/**
+ * A case study — what somebody learned the expensive way, written as a record rather than an essay.
+ *
+ * ⚠️ THE SHARED `title` IS THE LESSON, AND IT IS AN IMPERATIVE SENTENCE. "Keep 40% of the raise for
+ * batch two", not "Batch-two capital planning". There is deliberately NO separate `lessonTitle`:
+ * two titles that can disagree is a worse problem than one field carrying a strong convention, and
+ * the rail card, the index row and the detail head must all say the same thing.
+ *
+ * ⚠️ `conceptNumber` AND THE DISCIPLINE TINT ARE GONE. The index used to be a numbered, colour-coded
+ * card grid on the lawsofux.com model, which was two violations of `docs/Design.md` at once: §6
+ * "Don't repeat an identical card grid" and §3's Serif Boundary — "a serif heading inside `(home)`
+ * is a bug". The numeral rendered nowhere else, and a field nothing displays is the unverified code
+ * the field sweep in CLAUDE.md exists to catch, so it was deleted rather than kept as legacy.
+ *
+ * `discipline` SURVIVED because it earns its place twice over: it is the index's filter facet
+ * (`listCaseStudies` takes it) and a chip on the row. `sector` is not a duplicate of it — one is a
+ * typed axis that filters, the other is free text that describes, and
+ * `cofounders.schemas.ts:175` makes the argument for the free-text half: "Not an enum: the long
+ * tail here is the whole point."
+ *
+ * ⚠️ THERE IS NO OUTCOME ENUM, AND THAT IS A DECISION. A `scaled | failed | pivoted` badge was
+ * specified and rejected. `cofounders.schemas.ts:186-188` states the reason for the identical field
+ * it already carries: "Plenty of ventures have no tidy outcome, and a renderer that requires one
+ * invites people to invent one." A three-value verdict is also an unattributed JUDGMENT, which
+ * PRODUCT.md's "an unattributed figure reads as invented" bans more strongly than it bans an
+ * unattributed number — and badging a named `evidenceCompanies[]` entry "failed" on fabricated
+ * fixtures is not the same kind of invention as fabricating a teardown. `outcomeSummary` is a free
+ * clause, and `null` renders NOTHING rather than "Unknown".
+ */
 export const CaseStudyBlueprintSchema = z
   .object({
     ...BlueprintSharedShape,
     category: z.literal("case_study"),
-    /** The numeral on the card. Unique across case studies; the index is ordered by it. */
-    conceptNumber: z.number().int().positive(),
+    /** The typed axis the index filters on, and a chip on the row. */
     discipline: BlueprintDisciplineSchema,
-    /** The single sentence the index card carries under the title. */
-    oneLineDefinition: z.string(),
-    takeaways: z.array(z.string()),
+    /** The imperative the reader can act on, one line, under the title. */
+    oneLineAction: z.string(),
+    /** What happened after. `null` = nobody can say tidily; it is not "Unknown" and not a failure. */
+    outcomeSummary: z.string().nullable(),
+    /** Free text, e.g. "Hardware". Not an enum — see the note above. */
+    sector: z.string(),
+    evidenceCompanies: z.array(CaseStudyEvidenceCompanySchema),
+    problem: z.string(),
+    context: z.string(),
+    /** What they did, in order. */
+    actionSteps: z.array(z.string()),
+    /** What to avoid. Not the inverse of `actionSteps` — these are the things that went wrong. */
+    pitfalls: z.array(z.string()),
+    /** Free text, e.g. "14 months, two production runs". `null` when nobody recorded it. */
+    timelineLabel: z.string().nullable(),
+    /**
+     * What they raised, in integer minor units.
+     *
+     * THE OBJECT IS NULLABLE, NOT ITS FIELDS, for the reason `billOfMaterialsCostRange` is: an
+     * amount without a currency is an unanswerable question. `null` MEANS NOT DISCLOSED and it is
+     * NOT ZERO — the row must say nothing about money rather than say a number.
+     *
+     * ⚠️ NO COPY BESIDE THIS FIGURE MAY SAY paid, collected, held, escrowed or processed.
+     * Qatoto operates no money rail (`src/lib/rnd/pitches.schemas.ts`).
+     */
+    capitalRaised: BlueprintMoneySchema.nullable(),
     outcomeMetrics: z.array(BlueprintOutcomeMetricSchema),
-    furtherReading: z.array(BlueprintLinkSchema),
+    /**
+     * Where the figures came from. EMPTY IS THE ONE ABSENCE ON THIS SURFACE THAT RENDERS SOMETHING
+     * — see `case-study-detail-page.tsx`, which explains the departure from Principle 2.
+     */
+    sources: z.array(BlueprintSourceSchema),
+    /** Slugs of other case studies. Resolved by `listRelatedCaseStudies`, never by a component. */
+    relatedLessonSlugs: z.array(z.string()),
   })
   .strip();
 
