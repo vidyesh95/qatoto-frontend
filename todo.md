@@ -3926,6 +3926,45 @@ disclosures where `business` opens none, the default view's own link is a bare `
 slug produces the identical breadcrumb to the pending one — so a withheld row leaks nothing beyond
 what the visitor typed.
 
+### Part 1b — the brief audit and its four fixes — SHIPPED 2026-09-10
+
+Part 1 was audited against the design brief AND against the implementation spec, line by line. The
+substance held; four things did not, and all four are now fixed. Recorded because two of them were
+defects rather than placement calls, and the reasoning is what stops them coming back.
+
+- **The provenance kinds were collapsed two-into-one and are now three.** `authorized_or_open_source`
+  merged `licensed_open_source` and `authorized_by_manufacturer` on the reasoning that the chip only
+  showed two ordinary states. Wrong: a licence is a public document a founder can read and rely on,
+  an authorisation is a private arrangement they can neither verify nor inherit. The merge also
+  carried a **latent bug** — `licence` was refined non-null for the merged kind, so a
+  manufacturer-authorised teardown was forced to name a licence it may not hold, a field invented to
+  satisfy a refinement.
+  ⚠️ **THE CHIP VOCABULARY DID NOT GROW WITH IT AND MUST NOT.** Still exactly three chips; both
+  authorized kinds map through `PROVENANCE_CHIP_BY_KIND` to one. The refinement now enumerates all
+  three arms from a `Record`, and **it is tested**: corrupting the manufacturer fixture with a
+  `licence` fails `pnpm build` with "Only an open-source survey carries a licence."
+- **The BOM cost band rendered ABOVE the origin block.** The rule is "origin block above files and
+  BOM"; the decision row's first cell is "Parts cost", which is the BOM band, and it sat above the
+  provenance block. Fixed by `TeardownSubjectStrip` — the facts half, mounted above the decision
+  row. `TeardownProvenanceBlock` keeps the sentences half and was renamed "What you may do with
+  this". Verified in a browser: `Survey of` → `Parts cost` → `What you may do`, and "Survey of"
+  appears exactly once per page.
+- **The report control reached the header band.** Two controls now, and they are not a duplicate:
+  one beside the chip (the claim a reader might dispute), one in the rights block (the prose it
+  belongs to). Both link `/copyright-policy` until Part 3. **Not** on index cards, by decision.
+- **`process` / `finish` stay nullable**, against the spec's Required list, and CLAUDE.md now says
+  so as a deviation rather than letting it read as compliance.
+
+**Deferred out of this pass:** `designation` is still a free `z.string()` rather than the typed list
+with a free-text escape the brief specified. That is a PUBLISH-TIME control — a `creatable-combobox`
+like the R&D wizard's — and building the vocabulary before the form that selects from it would ship
+a list nothing reads. It is a Part 2 input.
+
+⚠️ **Also unbuilt and not drift:** there is no per-file rights claim. `BlueprintDocumentSchema` and
+`TeardownManufacturingFileSchema` carry no licence or origin field; rights are declared once for the
+whole teardown. If per-file rights are ever wanted, they need a reason a whole-teardown declaration
+cannot serve — a bundle mixing differently-licensed files is the case, and no fixture has one.
+
 ### Part 2 — the publish flow — NOT BUILT, blocked on the `blueprint_*` tables
 
 Entry at `/blueprints/teardowns/new`, management at `/studio/blueprints`, ONE wizard component
@@ -3945,6 +3984,10 @@ publishes.
 - **Submit answers 202 and is NOT a result.** Render "Submitted, we are checking" and poll. The
   idempotency key is minted once per attempt in component state. Nothing optimistic; a 409 is a
   finding, not a retry. Same four rules as every R&D write.
+- **The typed designation vocabulary belongs to the materials step** (Part 1b deferral above): a
+  combobox over a controlled list with a free-text escape, on the `creatable-combobox` precedent.
+  The free-text escape is not optional — the long tail of alloy and polymer designations is the
+  whole point, the same argument `cofounders.schemas.ts` makes for `sector`.
 - **Missing states to name BEFORE any of this is built**, because the scope guard says so:
   wizard-step validation error, attestation ungated (submit disabled WITH the reason stated),
   submitting, 202-accepted-and-polling, rejected with the moderator's own reason, published,

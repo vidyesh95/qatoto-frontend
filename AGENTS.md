@@ -141,7 +141,9 @@ Four rules specific to this surface — `CLAUDE.md` carries the long form:
   is enforced in the getters (`src/lib/blueprints/api.ts`) — a list carries `published` + `flagged`,
   a detail read adds `quarantined`, and `draft` / `pending_review` / `removed` reach nobody.
   ⚠️ Declared data never renders as measured data: the designation SOURCE prints on every material
-  row and never behind a disclosure.
+  row and never behind a disclosure. ⚠️ Three provenance KINDS, three CHIPS, and the mismatch is
+  deliberate — `licensed_open_source` and `authorized_by_manufacturer` share one chip because a
+  licence and a private authorisation are different permissions but the same shorthand.
 - **The hero is real.** `GET /blueprints/hero-slides` and the admin console at
   `/admin/blueprints-hero` are live, backed by four rows. The `anime_hero_slide` TABLE and the
   five `anime_hero_slide_*` audit pgEnum labels KEEP THEIR NAMES — renaming them costs a

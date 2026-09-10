@@ -3,6 +3,7 @@
 // `@/mocks/blueprints-mocks`.
 
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import BlueprintDocumentList from "@/components/home/blueprints/media/blueprint-document-list";
@@ -28,6 +29,7 @@ import TeardownModerationNotice, {
 } from "@/components/home/blueprints/teardowns/sections/teardown-moderation-notice";
 import TeardownProvenanceBlock from "@/components/home/blueprints/teardowns/sections/teardown-provenance-block";
 import TeardownProvenanceChipBadge from "@/components/home/blueprints/teardowns/sections/teardown-provenance-chip";
+import TeardownSubjectStrip from "@/components/home/blueprints/teardowns/sections/teardown-subject-strip";
 import TeardownSummary from "@/components/home/blueprints/teardowns/sections/teardown-summary";
 import TelemetryReadouts from "@/components/home/blueprints/teardowns/sections/telemetry-readouts";
 import TeardownViewSwitch from "@/components/home/blueprints/teardowns/sections/teardown-view-switch";
@@ -252,9 +254,35 @@ export default async function TeardownDetailPage({
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2">
           <h1 className="text-xl font-medium text-foreground lg:text-2xl">{teardown.title}</h1>
           <TeardownProvenanceChipBadge chip={provenanceChip} />
+          {/*
+            THE SECOND OF TWO REPORT CONTROLS, and the two are not a duplicate. This one sits with
+            the CHIP, because the chip is the claim a reader might dispute and the dispute route
+            should be within reach of it. The other sits in the provenance block, with the rights
+            prose it belongs to. `ms-auto` pushes it to the end of the flex row on a wide viewport
+            and lets it wrap under the title on a narrow one, rather than floating it.
+
+            It links to `/copyright-policy`, a REAL page, not a claim form: the form has no table to
+            write to until `todo.md` §Blueprint rights claims lands, and a control whose write has
+            no backing table is the one thing this surface refuses everywhere else.
+          */}
+          <Link
+            href="/copyright-policy"
+            className="text-xs font-medium text-muted-foreground transition-colors hover:text-destructive hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive lg:ms-auto"
+          >
+            Report an IP concern
+          </Link>
         </div>
 
         <BlueprintAuthorLine author={teardown.author} />
+
+        {/*
+          ⚠️ THE ORIGIN CLAIM PRECEDES THE COST BAND, and that is the whole reason this component
+          exists rather than the facts staying in the provenance block. `TeardownDecisionRow`'s
+          first cell is "Parts cost" — the bill-of-materials band — and the standing rule is that
+          the origin block renders above the files AND above the BOM. Moving the strip below the
+          decision row silently breaks that rule, so do not reorder these two.
+        */}
+        <TeardownSubjectStrip provenance={teardown.provenance} />
 
         <TeardownModerationNotice moderationState={teardown.moderationState} />
 

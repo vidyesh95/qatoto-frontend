@@ -1068,15 +1068,31 @@ export const TEARDOWN_SUBJECT_KIND_LABELS: Record<TeardownSubjectKind, string> =
 export const PUBLISHABLE_TEARDOWN_SUBJECT_KIND = "existing_physical_product" as const;
 
 /**
- * What licence the survey sits under, DECLARED BY THE PUBLISHER.
+ * WHAT PERMISSION THE SURVEY SITS UNDER, DECLARED BY THE PUBLISHER.
  *
- * TWO VALUES, NOT THREE. The third chip a reader sees — "IP concern reported" — is NOT a
- * provenance kind: it is `moderationState` in `flagged` or `quarantined`. Two fields that could
- * each claim a state the other contradicts is exactly the bag of loose flags Pattern 1 rules out,
- * so the chip is DERIVED from both by `resolveTeardownProvenanceChip` and neither field guesses.
+ * ⚠️ THREE KINDS, AND THE FIRST TWO WERE ONCE ONE. `authorized_or_open_source` merged them, on the
+ * reasoning that the chip only ever showed two ordinary states and a third enum value with no
+ * distinct render looked like an unrendered field. THAT WAS WRONG ON THE SUBSTANCE. "Published
+ * under CERN-OHL-S" and "the original manufacturer authorised this teardown" are different
+ * permissions carrying different risk: a licence is a PUBLIC DOCUMENT a founder can read and rely
+ * on, an authorisation is a PRIVATE ARRANGEMENT between two parties that a third party can neither
+ * verify nor inherit. Telling a founder those are the same thing is precisely the class of claim
+ * this surface exists to keep honest.
+ *
+ * ⚠️ THE CHIP VOCABULARY DID NOT GROW WITH IT, AND MUST NOT. There are still exactly THREE chips —
+ * see `TEARDOWN_PROVENANCE_CHIPS` — and both authorized kinds resolve to one of them. The data
+ * distinguishes the two; the reader's shorthand does not. A fourth badge on a card is a fourth
+ * thing to learn before you can read the index, and the distinction only becomes actionable on the
+ * detail page, which is where it is drawn.
+ *
+ * The remaining chip a reader sees — "IP concern reported" — is NOT a provenance kind: it is
+ * `moderationState` in `flagged` or `quarantined`. Two fields that could each claim a state the
+ * other contradicts is the bag of loose flags Pattern 1 rules out, so the chip is DERIVED from both
+ * by `resolveTeardownProvenanceChip` and neither field guesses.
  */
 export const BLUEPRINT_PROVENANCE_KINDS = [
-  "authorized_or_open_source",
+  "licensed_open_source",
+  "authorized_by_manufacturer",
   "community_reverse_engineered",
 ] as const;
 export const BlueprintProvenanceKindSchema = z.enum(BLUEPRINT_PROVENANCE_KINDS);
@@ -1145,9 +1161,19 @@ export type BlueprintLicence = z.infer<typeof BlueprintLicenceSchema>;
  * a rule rather than a layout taste: the files are the thing a reader might redistribute, and a
  * provenance claim that arrives after them is a disclaimer rather than a heading.
  *
- * `licence` IS NON-NULL EXACTLY WHEN `kind` IS `authorized_or_open_source`, enforced by the
- * refinement below. "Authorized" with nothing naming the authorization is the one state on this
- * object that would be worth more than it can prove.
+ * ⚠️ EACH KIND HAS EXACTLY ONE LEGAL SHAPE, and the refinement below enumerates all three rather
+ * than testing two and letting the remainder through:
+ *
+ * | kind                         | `licence` | `authorizationNote` |
+ * | ---------------------------- | --------- | ------------------- |
+ * | `licensed_open_source`       | NON-NULL  | `null`              |
+ * | `authorized_by_manufacturer` | `null`    | NON-NULL            |
+ * | `community_reverse_engineered` | `null`  | `null`              |
+ *
+ * The earlier version required `licence` for a merged authorized kind, which FORCED a
+ * manufacturer-authorised teardown to name a licence it may not hold — a field invented to satisfy
+ * a refinement, which is the same defect as a rendered figure nobody measured. Splitting the kind
+ * fixed the contract and the bug together.
  */
 export const TeardownProvenanceSchema = z
   .object({
@@ -1161,6 +1187,17 @@ export const TeardownProvenanceSchema = z
     surveyedAt: z.string(),
     licence: BlueprintLicenceSchema.nullable(),
     /**
+     * WHO AUTHORISED THIS SURVEY AND ON WHAT TERMS, in the publisher's own words. Non-null only on
+     * `authorized_by_manufacturer`.
+     *
+     * ⚠️ IT IS NOT A LICENCE AND NO RENDERER MAY DRESS IT AS ONE. A licence is a public document
+     * with a name a reader can look up; this is one party's account of a private permission, and
+     * the reader inherits nothing from it. Free text rather than a link for exactly that reason —
+     * there is usually no public URL to give, and offering the field would invite somebody to point
+     * it at a page that says something else.
+     */
+    authorizationNote: z.string().nullable(),
+    /**
      * ISO 8601. WHEN THE PUBLISHER ACCEPTED THE ATTESTATION — legal acquisition, non-destructive or
      * standard method, no NDA or vendor-confidential material, independent discovery. The clauses
      * themselves live in the wizard; this is the record that they were accepted, and it renders,
@@ -1172,19 +1209,50 @@ export const TeardownProvenanceSchema = z
   })
   .strip()
   .superRefine((provenance, context) => {
-    if (provenance.kind === "authorized_or_open_source" && provenance.licence === null) {
+    /**
+     * WHICH OF THE TWO PERMISSION FIELDS EACH KIND MUST CARRY, and which it must leave null. A
+     * `Record` over the enum rather than a chain of `if`s, so a fourth kind is a compile error here
+     * — the same reason `TEARDOWN_MEDIA_PREDICATES` and `SHOWCASE_SORT_COMPARATORS` are records.
+     */
+    const requiredPermissionFieldByKind: Record<
+      BlueprintProvenanceKind,
+      "licence" | "authorizationNote" | null
+    > = {
+      licensed_open_source: "licence",
+      authorized_by_manufacturer: "authorizationNote",
+      community_reverse_engineered: null,
+    };
+
+    const requiredField = requiredPermissionFieldByKind[provenance.kind];
+
+    if (requiredField === "licence" && provenance.licence === null) {
       context.addIssue({
         code: "custom",
         path: ["licence"],
-        message: "An authorized or open-source survey must name the licence that authorizes it.",
+        message: "An open-source survey must name the licence it is published under.",
       });
     }
-    if (provenance.kind === "community_reverse_engineered" && provenance.licence !== null) {
+    if (requiredField === "authorizationNote" && provenance.authorizationNote === null) {
+      context.addIssue({
+        code: "custom",
+        path: ["authorizationNote"],
+        message:
+          "A manufacturer-authorized survey must say who authorized it and on what terms. An authorization nobody can read is worth less than it appears.",
+      });
+    }
+    if (requiredField !== "licence" && provenance.licence !== null) {
       context.addIssue({
         code: "custom",
         path: ["licence"],
         message:
-          "A community survey carries no licence from the original manufacturer; name it as authorized instead.",
+          "Only an open-source survey carries a licence. A private authorization is not a licence and must not be recorded as one.",
+      });
+    }
+    if (requiredField !== "authorizationNote" && provenance.authorizationNote !== null) {
+      context.addIssue({
+        code: "custom",
+        path: ["authorizationNote"],
+        message: "Only a manufacturer-authorized survey carries an authorization note.",
       });
     }
   });
@@ -1192,6 +1260,14 @@ export type TeardownProvenance = z.infer<typeof TeardownProvenanceSchema>;
 
 /**
  * The three chips a reader can see beside the title, DERIVED from provenance and moderation state.
+ *
+ * ⚠️ THREE, AND IT STAYS THREE EVEN THOUGH THERE ARE NOW FOUR THINGS TO SAY. `BLUEPRINT_PROVENANCE_KINDS`
+ * grew from two to three and this tuple deliberately did NOT follow it: both authorized kinds map to
+ * `authorized_or_open_source` here. A chip is the shorthand a reader learns once and then reads at a
+ * glance on every card in an index; a fourth badge is a fourth thing to learn before the index is
+ * legible, and the licence-versus-authorisation distinction is only actionable on the detail page.
+ * So the DATA distinguishes them and the SHORTHAND does not — see `TEARDOWN_PROVENANCE_KIND_NOTES`,
+ * which is where the distinction is actually drawn.
  *
  * ⚠️ THE TEXT LABEL IS CANONICAL AND THE COLOUR IS SECONDARY. `docs/Design.md` §6 forbids
  * signalling anything with colour alone, and this is the most consequential signal on the surface —
@@ -1221,12 +1297,27 @@ export const TEARDOWN_PROVENANCE_CHIP_LABELS: Record<TeardownProvenanceChip, str
  * unattributed legal opinion.
  */
 export const TEARDOWN_PROVENANCE_CHIP_NOTES: Record<TeardownProvenanceChip, string> = {
+  // COVERS BOTH AUTHORIZED KINDS, so it cannot say "names a licence" — a manufacturer-authorized
+  // survey has none. Which of the two it is, and what that is worth to the reader, is
+  // `TEARDOWN_PROVENANCE_KIND_NOTES` on the detail page.
   authorized_or_open_source:
-    "The publisher names a licence that permits commercial replication. Read it before you rely on it.",
+    "The publisher declares permission to replicate this commercially. Check what that permission actually covers before you rely on it.",
   community_reverse_engineered:
     "Empirical survey of public hardware. Review patent claims and trade dress in your manufacturing jurisdiction before commercial production.",
   ip_concern_reported:
     "Somebody has reported an intellectual-property concern against this teardown. Nothing here has been ruled on.",
+};
+
+/**
+ * Which chip each provenance kind wears. THE TWO AUTHORIZED KINDS SHARE ONE — see the tuple above.
+ *
+ * A `Record` rather than a comparison inside the resolver, so adding a fourth kind forces a decision
+ * about which shorthand it takes instead of falling through to whatever the last branch said.
+ */
+const PROVENANCE_CHIP_BY_KIND: Record<BlueprintProvenanceKind, TeardownProvenanceChip> = {
+  licensed_open_source: "authorized_or_open_source",
+  authorized_by_manufacturer: "authorized_or_open_source",
+  community_reverse_engineered: "community_reverse_engineered",
 };
 
 /**
@@ -1242,8 +1333,27 @@ export function resolveTeardownProvenanceChip(teardown: {
   if (teardown.moderationState === "flagged" || teardown.moderationState === "quarantined") {
     return "ip_concern_reported";
   }
-  return teardown.provenance.kind;
+  return PROVENANCE_CHIP_BY_KIND[teardown.provenance.kind];
 }
+
+/**
+ * WHAT EACH PERMISSION ACTUALLY GIVES THE READER — the distinction the chip deliberately does not
+ * draw, spelled out where there is room for it.
+ *
+ * ⚠️ THE MANUFACTURER SENTENCE MUST NEVER PROMISE INHERITANCE. An authorisation is a permission
+ * granted to ONE publisher by ONE counterparty. It does not travel with the files and it gives a
+ * reader nothing — a reader who assumes otherwise because the chip said "Authorized" is the exact
+ * misreading this record exists to prevent. Read by `TeardownProvenanceBlock`, and only there:
+ * the strip states the permission, this states its limit.
+ */
+export const TEARDOWN_PROVENANCE_KIND_NOTES: Record<BlueprintProvenanceKind, string> = {
+  licensed_open_source:
+    "Published under an open-hardware licence. The licence is a public document and its terms are what you may rely on, so read it before you commit tooling.",
+  authorized_by_manufacturer:
+    "The original manufacturer authorized this publisher. That permission was given to them and does not transfer to you with these files; you would need your own.",
+  community_reverse_engineered:
+    "No licence and no authorization. The survey is the publisher's own measurement of hardware they bought, and any patent or trade-dress question in your manufacturing jurisdiction is still yours to answer.",
+};
 
 /** What a material IS, before anything is said about how it was made. */
 export const TEARDOWN_MATERIAL_CLASSES = [

@@ -4,30 +4,37 @@ import Link from "next/link";
 
 import TeardownProvenanceChipBadge from "@/components/home/blueprints/teardowns/sections/teardown-provenance-chip";
 import {
+  TEARDOWN_PROVENANCE_KIND_NOTES,
   TEARDOWN_SURVEY_METHOD_LABELS,
   TEARDOWN_SURVEY_METHOD_NOTES,
   TEARDOWN_SURVEY_METHODS,
-  TEARDOWN_UNIT_ACQUISITION_LABELS,
   type TeardownProvenance,
   type TeardownProvenanceChip,
 } from "@/lib/blueprints/schemas";
 import { formatIsoDateLabel } from "@/lib/store/format";
 
 /**
- * THE ORIGIN BLOCK. What unit was surveyed, how it was obtained, by what methods, and under whose
- * attestation.
+ * THE RIGHTS HALF of the provenance claim: what the permission is worth, what the publisher swore,
+ * and how to contest it.
  *
- * ⚠️ IT RENDERS ABOVE THE BILL OF MATERIALS AND ABOVE EVERY FILE, and that ordering is the feature
- * rather than a layout taste. The files are the thing a reader might take away and send to a
- * factory; a provenance claim that arrives after them is a disclaimer, and a disclaimer is what a
- * reader has already scrolled past. Put in front of them it is a heading — it says what kind of
- * document this is before the reader decides what to do with it.
+ * ⚠️ IT USED TO BE THE WHOLE ORIGIN BLOCK AND IS NOW HALF OF ONE. `TeardownSubjectStrip` carries
+ * the FACTS — subject, acquisition, survey date, methods, the permission's name — above the
+ * decision row, because the decision row's first cell is the bill-of-materials band and the rule is
+ * that the origin claim precedes it. What is left here is everything that needs a SENTENCE rather
+ * than a label, which is also everything that qualifies the payload it now sits beside.
+ * **Neither section may print the other's facts.** Two sections repeating each other is how a
+ * reader learns to skip both.
+ *
+ * ⚠️ THE METHODS STILL RENDER HERE, WITH THEIR NOTES, AND THAT IS NOT A DUPLICATE OF THE STRIP. The
+ * strip NAMES the three methods; this says what each one does and does not prove. A reader who has
+ * decided to care should not have to scroll back up to see which methods were used while reading
+ * what those methods mean.
  *
  * ⚠️ NOTHING HERE SAYS QATOTO CHECKED ANYTHING. Qatoto runs no patent search, no clearance opinion
  * and no verification of the publisher's account of their own bench. Every line is attributed to
- * the publisher, and the one sentence about jurisdiction tells the reader what THEY still have to
- * do. PRODUCT.md's rule that an unattributed figure reads as invented applies with more force to an
- * unattributed legal opinion.
+ * the publisher, and the sentences about transfer and jurisdiction tell the reader what THEY still
+ * have to do. PRODUCT.md's rule that an unattributed figure reads as invented applies with more
+ * force to an unattributed legal opinion.
  *
  * ⚠️ THE SURVEY METHODS ARE PRINTED IN ENUM ORDER, NEVER IN THE ORDER THE PUBLISHER LISTED THEM.
  * Same call `TEARDOWN_MANUFACTURING_FILE_KIND_SHORT_LABELS` makes on the index card: the order is a
@@ -54,60 +61,56 @@ export default function TeardownProvenanceBlock({
   return (
     <section className="mt-8 border-t border-border pt-5" aria-labelledby="teardown-provenance">
       <h2 id="teardown-provenance" className="text-sm font-medium text-foreground">
-        Where this came from
+        What you may do with this
       </h2>
 
       <div className="mt-3">
         <TeardownProvenanceChipBadge chip={chip} shouldShowNote />
       </div>
 
-      <dl className="mt-4 max-w-2xl">
-        <div className="border-t border-black/5 py-2">
-          <dt className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">
-            Unit surveyed
-          </dt>
-          <dd className="mt-0.5 text-sm text-foreground">{provenance.subjectProductName}</dd>
-        </div>
-        <div className="border-t border-black/5 py-2">
-          <dt className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">
-            How it was obtained
-          </dt>
-          <dd className="mt-0.5 text-sm text-foreground">
-            {TEARDOWN_UNIT_ACQUISITION_LABELS[provenance.unitAcquisition]}
-          </dd>
-        </div>
-        <div className="border-t border-black/5 py-2">
-          <dt className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">Surveyed</dt>
-          <dd className="mt-0.5 text-sm text-foreground">
-            {formatIsoDateLabel(provenance.surveyedAt)}
-          </dd>
-        </div>
-        {provenance.licence === null ? null : (
-          <div className="border-t border-black/5 py-2">
-            <dt className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">
-              Licence
-            </dt>
-            <dd className="mt-0.5 text-sm">
-              {/*
-                THE LICENCE IS A LINK BECAUSE THE CHIP TELLS THE READER TO READ IT. A named licence
-                the reader cannot open is the same unverifiable claim as an unattributed number.
-                `rel="noreferrer"` and a new tab: it is somebody else's document.
-              */}
-              <a
-                href={provenance.licence.url}
-                target="_blank"
-                rel="noreferrer"
-                className="font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
-              >
-                {provenance.licence.name}
-              </a>
-            </dd>
-          </div>
-        )}
-      </dl>
+      {/*
+        ⚠️ THE LIMIT OF THE PERMISSION, AND THE REASON THE CHIP CAN STAY AT THREE STATES. Both
+        authorized kinds wear one chip; this sentence is where they stop being the same thing. The
+        manufacturer arm's copy says outright that the permission does NOT transfer with the files —
+        a reader who assumed otherwise because the badge said "Authorized" is the exact misreading
+        this line exists to prevent.
+      */}
+      <p className="mt-3 max-w-prose text-sm leading-6 text-muted-foreground">
+        {TEARDOWN_PROVENANCE_KIND_NOTES[provenance.kind]}
+      </p>
+
+      {provenance.licence === null ? null : (
+        <p className="mt-2 text-sm">
+          {/*
+            THE LICENCE IS A LINK BECAUSE THE SENTENCE ABOVE TELLS THE READER TO READ IT. A named
+            licence the reader cannot open is the same unverifiable claim as an unattributed number.
+            `rel="noreferrer"` and a new tab: it is somebody else's document.
+          */}
+          <a
+            href={provenance.licence.url}
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          >
+            Read {provenance.licence.name}
+          </a>
+        </p>
+      )}
+
+      {/*
+        THE PUBLISHER'S ACCOUNT OF THE AUTHORISATION, IN THEIR OWN WORDS, and deliberately NOT
+        styled as a licence: no link, no emphasis, quoted as the claim of one party that it is. The
+        contract already refuses this field on any other kind.
+      */}
+      {provenance.authorizationNote === null ? null : (
+        <p className="mt-2 max-w-prose text-sm leading-6 text-muted-foreground">
+          <span className="text-foreground">The publisher states:</span>{" "}
+          {provenance.authorizationNote}
+        </p>
+      )}
 
       <h3 className="mt-5 text-[11px] font-medium tracking-[0.5px] text-muted-foreground uppercase">
-        Methods
+        What the methods prove
       </h3>
       <ul className="mt-2 max-w-2xl">
         {orderedSurveyMethods.map((method) => (

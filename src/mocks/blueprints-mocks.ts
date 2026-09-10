@@ -457,6 +457,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       surveyMethods: ["dimensional_survey", "empirical_teardown", "material_spectroscopy"],
       surveyedAt: "2026-07-29T00:00:00.000Z",
       licence: null,
+      authorizationNote: null,
       attestationAcceptedAt: "2026-08-14T09:10:00.000Z",
       notes: "Two units bought; the second was left assembled as a reference.",
     },
@@ -818,6 +819,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       surveyMethods: ["empirical_teardown"],
       surveyedAt: "2026-06-11T00:00:00.000Z",
       licence: null,
+      authorizationNote: null,
       attestationAcceptedAt: "2026-06-18T00:00:00.000Z",
       notes: null,
     },
@@ -859,16 +861,18 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     // wrote in their own words because no standard designation fits. NOT the same as the legacy
     // state below: this row knows what the material IS, it just cannot name it to a standard.
     //
-    // Also the AUTHORIZED / OPEN SOURCE provenance arm, which is why it carries a licence at all.
+    // Also the LICENSED / OPEN SOURCE provenance arm — a public licence with a name and a URL a
+    // reader can open, which is exactly what the manufacturer-authorized arm below does NOT have.
     moderationState: "published",
     subjectKind: "existing_physical_product",
     provenance: {
-      kind: "authorized_or_open_source",
+      kind: "licensed_open_source",
       subjectProductName: "Open-hardware three-phase driver board (invented unit)",
       unitAcquisition: "retail_purchase",
       surveyMethods: ["empirical_teardown"],
       surveyedAt: "2026-05-30T00:00:00.000Z",
       licence: { name: "CERN-OHL-S v2", url: "https://example.com/licences/cern-ohl-s-2" },
+      authorizationNote: null,
       attestationAcceptedAt: "2026-06-02T00:00:00.000Z",
       notes: "Published under the original design's own licence; the licence text is unmodified.",
     },
@@ -990,6 +994,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       surveyMethods: ["dimensional_survey", "material_spectroscopy"],
       surveyedAt: "2026-07-02T00:00:00.000Z",
       licence: null,
+      authorizationNote: null,
       attestationAcceptedAt: "2026-07-08T00:00:00.000Z",
       notes: null,
     },
@@ -1239,6 +1244,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       surveyMethods: ["empirical_teardown"],
       surveyedAt: "2026-06-25T00:00:00.000Z",
       licence: null,
+      authorizationNote: null,
       attestationAcceptedAt: "2026-06-30T00:00:00.000Z",
       notes: null,
     },
@@ -1323,6 +1329,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       surveyMethods: ["empirical_teardown"],
       surveyedAt: "2026-04-18T00:00:00.000Z",
       licence: null,
+      authorizationNote: null,
       attestationAcceptedAt: "2026-04-20T00:00:00.000Z",
       notes: null,
     },
@@ -1387,18 +1394,25 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "esp32-sensor-node-power-budget",
     title: "An ESP32 sensor node that lasts a year on two AAs",
     category: "teardown",
-    // The SECOND authorized / open-source row, and a second `materials: []`. An empty composition
-    // list is the ORDINARY case and it should look ordinary rather than appearing once on the
-    // deliberately-bare floor row.
+    // THE MANUFACTURER-AUTHORIZED ARM, and it is the row that proves the split was worth making.
+    // It wears the same "Authorized / open source" chip as the licensed row above — the shorthand
+    // does not distinguish them — and the detail page then says the thing that matters: the
+    // permission was granted to THIS publisher and does not travel to a reader with the files.
+    // `licence` is null, which the old merged contract made impossible to express.
+    //
+    // Also a second `materials: []`. An empty composition list is the ORDINARY case and it should
+    // look ordinary rather than appearing once on the deliberately-bare floor row.
     moderationState: "published",
     subjectKind: "existing_physical_product",
     provenance: {
-      kind: "authorized_or_open_source",
-      subjectProductName: "Open-hardware ESP32 sensor node (invented unit)",
-      unitAcquisition: "retail_purchase",
+      kind: "authorized_by_manufacturer",
+      subjectProductName: "ESP32 field sensor node (invented unit)",
+      unitAcquisition: "manufacturer_supplied",
       surveyMethods: ["empirical_teardown"],
       surveyedAt: "2026-05-02T00:00:00.000Z",
-      licence: { name: "TAPR OHL v1.0", url: "https://example.com/licences/tapr-ohl-1" },
+      licence: null,
+      authorizationNote:
+        "The maker gave written permission to publish this teardown after the product was discontinued. Permission covers this write-up only, not reuse of the design.",
       attestationAcceptedAt: "2026-05-05T00:00:00.000Z",
       notes: null,
     },
@@ -1455,6 +1469,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       surveyMethods: ["dimensional_survey", "empirical_teardown"],
       surveyedAt: "2026-03-14T00:00:00.000Z",
       licence: null,
+      authorizationNote: null,
       attestationAcceptedAt: "2026-03-20T00:00:00.000Z",
       notes: "Unit was scrap; the plate pack had already been split when it was acquired.",
     },
@@ -1529,6 +1544,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       surveyMethods: ["dimensional_survey", "empirical_teardown"],
       surveyedAt: "2026-02-08T00:00:00.000Z",
       licence: null,
+      authorizationNote: null,
       attestationAcceptedAt: "2026-02-12T00:00:00.000Z",
       notes: null,
     },
@@ -1599,6 +1615,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       surveyMethods: ["empirical_teardown", "material_spectroscopy"],
       surveyedAt: "2026-01-22T00:00:00.000Z",
       licence: null,
+      authorizationNote: null,
       attestationAcceptedAt: "2026-01-25T00:00:00.000Z",
       notes: null,
     },
@@ -1668,6 +1685,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       surveyMethods: ["empirical_teardown"],
       surveyedAt: "2026-01-09T00:00:00.000Z",
       licence: null,
+      authorizationNote: null,
       attestationAcceptedAt: "2026-01-14T00:00:00.000Z",
       notes: null,
     },
@@ -1734,6 +1752,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       surveyMethods: ["dimensional_survey", "empirical_teardown"],
       surveyedAt: "2026-08-30T00:00:00.000Z",
       licence: null,
+      authorizationNote: null,
       attestationAcceptedAt: "2026-09-01T00:00:00.000Z",
       notes: null,
     },

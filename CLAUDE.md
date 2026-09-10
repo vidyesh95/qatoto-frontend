@@ -353,12 +353,32 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   the files are what a reader takes away, and a provenance claim after them is a disclaimer, which
   is a thing readers have already scrolled past. **Nothing in it says Qatoto checked anything** — no
   patent search, no clearance opinion, no verification of the publisher's account of their own bench.
+  ⚠️ **THE ORIGIN BLOCK IS TWO COMPONENTS AND THE ORDER BETWEEN THEM IS LOAD-BEARING.**
+  `TeardownSubjectStrip` carries the FACTS — subject, acquisition, survey date, methods, the
+  permission's name — and sits ABOVE `TeardownDecisionRow`, whose first cell is "Parts cost", which
+  IS the BOM band. Everything the strip holds used to live only in `TeardownProvenanceBlock` below
+  that row, which broke the rule while appearing to follow it. `TeardownProvenanceBlock` keeps what
+  needs SENTENCES: the limit of the permission, the publisher's notes, the attestation, the standing
+  line and a report control. **Neither may print the other's facts** — two sections repeating each
+  other is how a reader learns to skip both. Do not reorder the strip below the decision row.
   ⚠️ **THE PROVENANCE CHIP IS DERIVED FROM `(provenance.kind, moderationState)` BY
   `resolveTeardownProvenanceChip`, NEVER STORED.** Two fields that can contradict each other is the
   bag of loose flags Pattern 1 rules out. ⚠️ **IT IS NOT A TRAFFIC LIGHT.** Green and amber are two
   new hues against the One Hue Rule, and `docs/Design.md` §6 forbids colour-alone signalling, so the
   two ordinary states differ by FILL and only the reported state takes `Destructive`. Every chip
   carries a word and a glyph and **the text label is canonical**.
+  ⚠️ **THERE ARE THREE PROVENANCE KINDS AND ONLY THREE CHIPS, AND THAT MISMATCH IS DELIBERATE.**
+  `licensed_open_source` and `authorized_by_manufacturer` both wear "Authorized / open source"
+  (`PROVENANCE_CHIP_BY_KIND`). They were ONE kind for a day and that was wrong: a licence is a
+  PUBLIC DOCUMENT a founder can read and rely on, an authorisation is a PRIVATE ARRANGEMENT they can
+  neither verify nor inherit, and the merged contract also FORCED a manufacturer-authorised row to
+  name a licence it may not hold. The data now distinguishes them; the chip does not, because a
+  fourth badge is a fourth thing to learn before an index is legible and the distinction is only
+  actionable on the detail page. **Each kind has exactly one legal shape** —
+  `licensed_open_source` carries `licence` and no `authorizationNote`, `authorized_by_manufacturer`
+  the reverse, `community_reverse_engineered` neither — enforced by a `Record` in the refinement so
+  a fourth kind is a compile error. `TEARDOWN_PROVENANCE_KIND_NOTES` is where the difference is
+  stated, and the manufacturer sentence **must never promise inheritance**.
   ⚠️ **`subjectKind` IS `z.literal("existing_physical_product")` ON THE PUBLIC ARM**, which makes a
   `proposed_design` teardown unconstructible rather than merely discouraged. It is the ONE
   teardown-arm field with no renderer and that is correct — a literal with one inhabitant carries no
@@ -385,7 +405,12 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   are `Record`s so a new value must declare which it is; the source prints on EVERY material row,
   never behind a disclosure. Composition hangs off the TEARDOWN, not off `assembly.parts`, because
   most teardowns publish no model. Required: `designation`, `designationSource`, `materialClass`;
-  `process` and `finish` are NULLABLE INSIDE that required set. **Element percentages are never
+  `process` and `finish` are NULLABLE INSIDE that required set.
+  ⚠️ **THAT NULLABILITY IS A STATED DEVIATION FROM THE SPEC, NOT AN OVERSIGHT.** The implementation
+  brief listed all five as Required. A publisher who read an alloy off a moulding mark usually knows
+  neither how the part was made nor its surface treatment, and requiring a value there produces a
+  guess carrying the same type as a measured fact — the exact failure `designationSource` exists to
+  prevent. Four fixtures hold `null` on both; that is the state being modelled, not missing data. **Element percentages are never
   required** — `elements: []` is ordinary and renders a row with no disclosure control.
   `weightPercentRange: null` means IDENTIFIED BUT NOT QUANTIFIED, which is not zero.
   ⚠️ **`synthetic_example` IS A WIRE VALUE, NOT A FIXTURE HACK**, and every element figure in the
@@ -518,6 +543,12 @@ count in a heading is a thing that goes stale the first time somebody adds one:
                  simulationTelemetry commentCount saveCount provenance materials \
                  moderationState storeProductClass; do
       rg -q "teardown\.$field\b" src/components/home/blueprints || echo "UNRENDERED $field"
+    done
+
+    # The provenance object's own fields, which the loop above cannot see through.
+    for field in kind subjectProductName unitAcquisition surveyMethods surveyedAt licence \
+                 authorizationNote attestationAcceptedAt notes; do
+      rg -q "provenance\.$field\b" src/components/home/blueprints || echo "UNRENDERED provenance.$field"
     done
 
     # The case-study arm has the same property, and it is why `conceptNumber` was deleted rather
