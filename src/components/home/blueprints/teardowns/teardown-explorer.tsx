@@ -313,7 +313,8 @@ export default function TeardownExplorer({
         return (
           <p className="text-sm leading-6 text-[#6F7979]">
             {formatCountLabel(assembly.parts.length)} parts modelled ·{" "}
-            {formatFileSizeFromBytes(totalModelByteSize)} · drag to orbit, scroll to zoom.
+            {formatFileSizeFromBytes(totalModelByteSize)} · drag to orbit · pinch, ctrl + scroll or
+            the zoom buttons to zoom.
           </p>
         );
       case "exploded":

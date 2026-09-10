@@ -1,9 +1,13 @@
 // TRANSPORT: props-only — the orbit controls and the auto-framing. Reacts to selection and to the
 // reset counter; the drag itself is handled by `camera-controls` with its own smoothing.
+//
+// WHEEL AND TOUCH ARE NOT ITS DRAG, AND THEY ARE NOT ITS ROUTES EITHER: both are switched off
+// below and re-issued by `useCameraGestures`, so that a plain wheel and a one-finger swipe belong
+// to the page. The reasoning is written out there.
 
 "use client";
 
-import { CameraControls } from "@react-three/drei";
+import { CameraControls, CameraControlsImpl } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Box3, MathUtils, type Object3D, Sphere } from "three";
@@ -14,6 +18,7 @@ import {
 } from "@/lib/blueprints/camera-presets";
 
 import type { LoadedTeardownAssembly } from "@/components/home/blueprints/teardowns/engine/assembly-loader";
+import { useCameraGestures } from "@/components/home/blueprints/teardowns/engine/use-camera-gestures";
 import {
   type ExplosionStore,
   useExplosionSnapshot,
@@ -73,26 +78,6 @@ const DOLLY_STEP_FRACTION = 0.18;
  */
 const ZOOM_IN_LIMIT_FRACTION = 0.4;
 const ZOOM_OUT_LIMIT_MULTIPLE = 3;
-
-/**
- * A TRACKPAD PINCH IS A WHEEL EVENT WITH `ctrlKey` SET, and camera-controls hard-codes that to
- * `ACTION.ZOOM` — a change to `camera.zoom`, not to the orbit distance. The zoom band and the
- * readout both describe distance, so a pinch was invisible to both: it ran the model far past 250%
- * while the readout sat at 100%. The route is not configurable, so the pinch is intercepted before
- * camera-controls sees it and re-issued as a dolly. This divisor reproduces the per-tick curve
- * camera-controls applies to a plain wheel on macOS (`0.95 ^ (deltaY / 10)`), so a pinch and a
- * two-finger scroll feel identical.
- */
-const PINCH_TICK_DIVISOR = 10;
-/**
- * Ticks closer together than this belong to one gesture. A pinch delivers dozens of wheel events
- * in well under a second while the camera is still gliding toward the previous tick's target, so
- * each tick must compound from the TARGET distance, not from wherever the animation has got to —
- * compounding from the lagging live value made forty pinch-out ticks stall at 55% instead of
- * reaching the 33% floor. camera-controls' own wheel path compounds from its end value for the same
- * reason; the end value is private, so the gesture's running target is kept here.
- */
-const PINCH_GESTURE_GAP_MS = 400;
 
 /**
  * What the camera is currently framing. Mutable and carried by a ref, because the frame loop reads
@@ -197,7 +182,6 @@ export default function CameraRig({ store, loadedAssembly }: CameraRigProps) {
   // aspect against 1 and uses nothing else about the viewport, so a resize that preserves the
   // shape does not move the fit distance and should not re-derive anything.
   const viewportAspect = useThree((state) => state.size.width / Math.max(1, state.size.height));
-  const canvasElement = useThree((state) => state.gl.domElement);
 
   // The home view: frame the closed assembly once, without a transition, and remember it.
   useEffect(() => {
@@ -265,42 +249,21 @@ export default function CameraRig({ store, loadedAssembly }: CameraRigProps) {
     applyFraming(controls, framedRadius, framingRef.current);
   }, [viewportAspect]);
 
-  // Pinch → dolly. CAPTURE PHASE, on the same element camera-controls listens to, so this runs
-  // first and `stopImmediatePropagation` keeps the event from ever reaching its `ACTION.ZOOM`
-  // branch. Plain wheels are left alone: they were already a dolly, already banded, already read.
+  // EVERY LIBRARY ROUTE THAT WOULD SWALLOW A SCROLL, OFF. Imperative for the same reason the zoom
+  // band is: this component re-renders on every hover and selection, and R3F would reapply the
+  // prop over whatever the live value had become. `mouseButtons.wheel` covers the wheel and the
+  // trackpad pinch — both arrive at the same handler — and `touches.*` covers the rest, though on
+  // its own it is not enough for touch; see the hook.
   useEffect(() => {
-    let pinchTargetDistance: number | null = null;
-    let lastPinchTickAt = 0;
+    const controls = controlsRef.current;
+    if (controls === null) return;
+    controls.mouseButtons.wheel = CameraControlsImpl.ACTION.NONE;
+    controls.touches.one = CameraControlsImpl.ACTION.NONE;
+    controls.touches.two = CameraControlsImpl.ACTION.NONE;
+    controls.touches.three = CameraControlsImpl.ACTION.NONE;
+  }, []);
 
-    function handleWheelCapture(event: WheelEvent): void {
-      if (!event.ctrlKey) return;
-      const controls = controlsRef.current;
-      if (controls === null) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-
-      const now = event.timeStamp;
-      // Written as one expression so the type narrows: a gesture that has lapsed, or none yet,
-      // starts again from wherever the camera actually is.
-      const baseDistance =
-        pinchTargetDistance === null || now - lastPinchTickAt > PINCH_GESTURE_GAP_MS
-          ? controls.distance
-          : pinchTargetDistance;
-      const dollyScale = Math.pow(0.95, -event.deltaY / PINCH_TICK_DIVISOR);
-      // Clamped here as well as inside `dollyTo`, so the running target cannot wander past the
-      // band and then need several ticks to come back.
-      pinchTargetDistance = Math.min(
-        controls.maxDistance,
-        Math.max(controls.minDistance, baseDistance * dollyScale),
-      );
-      lastPinchTickAt = now;
-      void controls.dollyTo(pinchTargetDistance, true);
-    }
-    canvasElement.addEventListener("wheel", handleWheelCapture, { capture: true, passive: false });
-    return () => {
-      canvasElement.removeEventListener("wheel", handleWheelCapture, { capture: true });
-    };
-  }, [canvasElement]);
+  useCameraGestures({ controlsRef });
 
   // The readout is a percentage of the distance the CURRENT framing was fitted at, published from
   // inside the loop because that is where the live distance is. `publishZoomPercent` rounds and
@@ -322,9 +285,9 @@ export default function CameraRig({ store, loadedAssembly }: CameraRigProps) {
       // and this component re-renders on every hover and selection — R3F would reapply a stale
       // prop over the live value each time.
       //
-      // `camera.zoom` IS LOCKED AT 1. Distance is the only zoom verb in this viewer; the pinch
-      // intercept above converts the one input that would have reached `ACTION.ZOOM`, and this
-      // guarantees nothing else ever does.
+      // `camera.zoom` IS LOCKED AT 1. Distance is the only zoom verb in this viewer — the readout
+      // and the band both describe distance — and every zoom input is re-issued as a dolly by
+      // `useCameraGestures`, so this guarantees nothing reaches `camera.zoom` by another door.
       minZoom={1}
       maxZoom={1}
       // NO `dollyToCursor`. It walks the orbit pivot toward the pointer on every scroll-wheel

@@ -8,6 +8,7 @@ import type { ReactNode, RefObject } from "react";
 import type { ExplosionStore } from "@/components/home/blueprints/teardowns/engine/explosion-store";
 import CameraPresetMenu from "@/components/home/blueprints/teardowns/viewer/camera-preset-menu";
 import StressLegend from "@/components/home/blueprints/teardowns/viewer/stress-legend";
+import ViewportGestureHint from "@/components/home/blueprints/teardowns/viewer/viewport-gesture-hint";
 import ViewportToolRail from "@/components/home/blueprints/teardowns/viewer/viewport-tool-rail";
 import ViewportZoomControl from "@/components/home/blueprints/teardowns/viewer/viewport-zoom-control";
 
@@ -52,6 +53,12 @@ export default function TeardownStage({
       style={STAGE_BACKGROUND_STYLE}
     >
       {children}
+
+      {/*
+        Under the controls but over the canvas, and it never takes a pointer — see the component
+        for why it listens here rather than on the canvas.
+      */}
+      <ViewportGestureHint stageRef={stageRef} isInteractive={isInteractive} />
 
       <ViewportToolRail
         store={store}

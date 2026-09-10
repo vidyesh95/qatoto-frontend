@@ -91,7 +91,12 @@ export function BlueprintCanvas({
       }}
       onCreated={handleCanvasCreated}
       onPointerMissed={handleCanvasPointerMissed}
-      className="size-full"
+      // `touch-pan-y!` IS THE PAGE'S SCROLL, AND THE `!` IS LOAD-BEARING. camera-controls writes
+      // `touch-action: none` inline on this wrapper in `connect()` and again every time its
+      // `enabled` flag flips, so a plain class loses to it and a phone could not scroll past the
+      // stage. `pan-y` leaves the browser the one-finger vertical swipe; the viewer's own gestures
+      // are two-fingered and cancel themselves (`use-camera-gestures`).
+      className="size-full touch-pan-y!"
     >
       {/*
         LIT FOR A WHITE GROUND. `RoomEnvironment` already supplies most of the fill, so the ambient
