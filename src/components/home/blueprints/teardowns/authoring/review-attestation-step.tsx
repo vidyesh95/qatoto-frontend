@@ -9,6 +9,16 @@ import {
 } from "@/lib/blueprints/schemas";
 import { formatIsoDateLabel } from "@/lib/store/format";
 
+/**
+ * ⚠️ ZERO IS "NONE", NOT "NOT ANSWERED", and the difference is the whole point of this screen.
+ * An empty survey date is a question the publisher SKIPPED; zero documents is a question they
+ * ANSWERED — most teardowns publish none. Rendering both as "Not answered" would send somebody
+ * hunting back through four steps for a field that was never wrong.
+ */
+function countedLabel(count: number, singular: string, plural: string): string {
+  return count === 0 ? "None" : `${count} ${count === 1 ? singular : plural}`;
+}
+
 /** One read-back line. An unanswered field says so rather than rendering blank. */
 function ReviewRow({ label, value }: { readonly label: string; readonly value: string | null }) {
   return (
@@ -53,15 +63,6 @@ export default function ReviewAttestationStep({ draft, onDraftChange }: Teardown
           ? null
           : "Authorized by the manufacturer"
         : "No licence and no authorization";
-
-  /**
-   * ⚠️ ZERO IS "NONE", NOT "NOT ANSWERED", and the difference is the whole point of this screen.
-   * An empty survey date is a question the publisher SKIPPED; zero documents is a question they
-   * ANSWERED — most teardowns publish none. Rendering both as "Not answered" would send somebody
-   * hunting back through four steps for a field that was never wrong.
-   */
-  const countedLabel = (count: number, singular: string, plural: string) =>
-    count === 0 ? "None" : `${count} ${count === 1 ? singular : plural}`;
 
   return (
     <div className="space-y-6">

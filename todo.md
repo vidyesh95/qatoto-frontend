@@ -4082,7 +4082,78 @@ publishes.
   quarantined-after-publish as seen by its own author, and the studio list's empty state. Eight,
   and none of them is a spinner.
 
-### Part 3 — the rights-claim route — NOT BUILT, blocked on a table
+### Part 3 — the rights-claim route — SHIPPED 2026-09-10, and NOT as a mock write
+
+`/blueprints/teardowns/[slug]/report` is live. ⚠️ **IT PREPARES A NOTICE AND THE CLAIMANT SENDS IT**,
+which is a different answer from Part 2's, on purpose. A publisher rehearsing a submission loses
+their own draft; a rights holder who believes they gave legal notice and did not may miss a deadline
+or think the platform is on notice when it is not. Repeating the mock-write-plus-disclosure shape
+would have meant showing "your claim has been received" and then taking it back — a much stronger
+implication to undo than "your draft is saved".
+
+So the flow inverts instead of disclosing: the form validates for real, gates on three sworn
+clauses, and ends on a finished notice addressed to `SUPPORT_CONTACT_EMAIL`, offered as a `mailto:`
+and as copyable text. **The notice genuinely gets given** — by the claimant, from their own client,
+to a real inbox. There is **no submit, no 202 and no receipt**, and that absence is the feature. A
+side effect worth keeping: the claimant's name, organisation and email never reach a Qatoto server.
+
+⚠️ **THE DEFECT THIS PART FOUND IN WHAT PART 1 SHIPPED.** Both "Report an IP concern" controls
+pointed at `/copyright-policy`, described at the time as "a real destination" — and that page told
+readers to "submit a takedown notice" while naming **no address, no form and no link anywhere in
+it**. Real, and useless for its one purpose. It now carries a "How to give notice" section with the
+address, the five things a notice must contain (matching the form's fields, so the two agree), a
+"Teardowns and reverse engineering" section, and a widened scope line: it had described Qatoto as
+"a video sharing platform", which predates the store, R&D and blueprints.
+
+⚠️ **NO COPY CLAIMS A STATUTORY FILING.** Qatoto has designated no DMCA agent. §Video copyright
+reporting lists five things a safe-harbour process lacks — claimant disclosure, a sworn statement, a
+counter-notice path, a repeat-infringer policy, a designated agent — and the three sworn clauses
+close exactly one. Both the route and the policy page say this reaches a person.
+
+**Design calls worth keeping:**
+
+- `RightsClaimTargetSchema` is a DISCRIMINATED UNION over `whole_teardown` / `document` /
+  `manufacturing_file` / `part`. A free-text "which file" against a survey that published six is the
+  one vague answer that makes a notice unactionable. The picker lists the REAL payload by id, and
+  **no option is pre-selected** so the broadest claim cannot be sent by scrolling past it.
+- ONE PAGE, NOT STEPPED, departing from `factory-inquiry-composer.tsx` on the same route shape: a
+  legal notice is a document somebody signs, and stepping it puts the sworn clauses behind a Next
+  button with the claim scrolled off-screen.
+- **A quarantined teardown still accepts a claim** — a second rights holder may object differently.
+  `draft` / `pending_review` / `rejected` / `removed` 404, as everywhere.
+- `generateStaticParams` returns `withSentinelValues([])`: a write surface, not a document, per the
+  `inquire` route's own words. An empty array fails the build under `cacheComponents`.
+
+**Two copy defects the browser found, both fixed:** the notice printed `2026-09-10T15:17:35.100Z`
+verbatim — machine output in a letter, milliseconds and all, now `formatIsoInstantLabel` which also
+names the zone, and this line is the claimant's own record of when they gave notice. And the third
+sworn clause ended "I have said who below" while the standing field sits **above** it in both the
+form and the email; the positional word is gone. Copy that describes a layout breaks when the layout
+has two geometries.
+
+**Also fixed, unrelated to teardowns:** `contact-us.tsx` hardcoded a personal Gmail address as the
+public contact channel in four places. It now imports `SUPPORT_CONTACT_EMAIL`, which `site.ts`
+already calls "THE ONE LITERAL". ⚠️ **`admin-staff.ts:18` KEEPS THAT ADDRESS DELIBERATELY** — it is
+the identity of a person the admin console recognises, not a contact channel, and pointing it at a
+shared inbox would assert a mailbox is a member of staff. The GitHub URL in `account-menu.tsx` stays
+too; it resolves.
+
+**Verified in a browser:** the picker listing the solar controller's real 2 documents / 6 fabrication
+files / 9 parts; prepare disabled first on an unchosen target and then on unsworn clauses, naming
+the exact clause left ("1 of 3 statements still unsworn: …"); the schema refusing a missing email
+both inline and in the summary; the finished notice carrying the absolute URL, the target label AND
+its id, and all three statements in full; the `mailto:` decoding correctly to `support@qatoto.com`;
+the no-payload teardown offering only the whole-teardown arm; `flagged` and `quarantined` accepting
+claims and `pending_review` 404ing. Console clean.
+
+**What the backend still owes:** the `blueprint_rights_claim` table, a route, and the
+`flagged`/`quarantined` transitions. ⚠️ **This file does not go away when they land** — a prepared
+notice stays the fallback for the reason `privacy-request.ts` survived two of its rights getting
+endpoints: a legal notice must not depend on a job queue being up.
+
+### ~~Part 3 — the original sketch~~ — superseded above
+
+`/blueprints/teardowns/[slug]/report`, a ROUTE and not a dialog, blocked on a table
 
 `/blueprints/teardowns/[slug]/report`, a ROUTE and not a dialog, on the
 `/store/factories/[factorySlug]/inquire` precedent — claim kind, claimant identity, and the

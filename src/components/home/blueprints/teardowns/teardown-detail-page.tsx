@@ -40,6 +40,7 @@ import {
   BLUEPRINT_DIFFICULTY_LABELS,
   TEARDOWN_MANUFACTURING_FILE_KIND_SHORT_LABELS,
   TEARDOWN_MANUFACTURING_FILE_KINDS,
+  buildBlueprintHref,
   resolveTeardownProvenanceChip,
   type TeardownBlueprint,
 } from "@/lib/blueprints/schemas";
@@ -163,6 +164,9 @@ export default async function TeardownDetailPage({
     DEFAULT_TEARDOWN_VIEW;
 
   const provenanceChip = resolveTeardownProvenanceChip(teardown);
+  // Built once and shared with the provenance block, so the two report controls cannot point at
+  // different places. `buildBlueprintHref` is the only thing that mints a blueprint URL.
+  const teardownHref = buildBlueprintHref(teardown);
   const isPayloadVisible = canRenderTeardownPayload(teardown.moderationState);
   const shouldOpenDetailTables = TEARDOWN_VIEW_OPENS_DETAIL_TABLES[activeView];
 
@@ -261,12 +265,15 @@ export default async function TeardownDetailPage({
             prose it belongs to. `ms-auto` pushes it to the end of the flex row on a wide viewport
             and lets it wrap under the title on a narrow one, rather than floating it.
 
-            It links to `/copyright-policy`, a REAL page, not a claim form: the form has no table to
-            write to until `todo.md` §Blueprint rights claims lands, and a control whose write has
-            no backing table is the one thing this surface refuses everywhere else.
+            It now reaches the CLAIM ROUTE rather than the policy page. It pointed at
+            `/copyright-policy` while no claim surface existed — and that page turned out to tell a
+            claimant to "submit a takedown notice" while naming no address, so the honest-looking
+            destination was useless for its one purpose. The route it goes to now stores nothing
+            either; it WRITES THE NOTICE and the claimant sends it, which is why there is no
+            unbacked write behind this link.
           */}
           <Link
-            href="/copyright-policy"
+            href={`${teardownHref}/report`}
             className="text-xs font-medium text-muted-foreground transition-colors hover:text-destructive hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive lg:ms-auto"
           >
             Report an IP concern
@@ -307,7 +314,7 @@ export default async function TeardownDetailPage({
         <TeardownProvenanceBlock
           provenance={teardown.provenance}
           chip={provenanceChip}
-          teardownSlug={teardown.slug}
+          reportHref={`${teardownHref}/report`}
         />
 
         {/*

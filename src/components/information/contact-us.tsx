@@ -1,7 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const EMAIL = "vidyesh95@gmail.com";
+import { SUPPORT_CONTACT_EMAIL } from "@/lib/site";
+
+/**
+ * ⚠️ THE SHARED CONSTANT, NOT A LOCAL LITERAL. This was a personal Gmail address hardcoded here and
+ * used in four places on a public marketing page. `src/lib/site.ts` already argues the general case
+ * for why it belongs there — `SUPPORT_CONTACT_EMAIL` is "THE ONE LITERAL", and
+ * `PRIVACY_CONTACT_EMAIL` aliases it rather than repeating the string, because the two had already
+ * been typed twice and the second copy would have drifted the first time one of them moved.
+ *
+ * The owner's personal address still appears in `src/lib/admin-staff.ts`, deliberately: that is the
+ * IDENTITY of a person the admin console recognises, not a contact channel, and pointing it at a
+ * shared inbox would assert that a mailbox is a member of staff.
+ */
+const EMAIL = SUPPORT_CONTACT_EMAIL;
 const PHONE_DISPLAY = "+91 99704 50462";
 const PHONE_E164 = "+919970450462";
 const ADDRESS_LINES = [

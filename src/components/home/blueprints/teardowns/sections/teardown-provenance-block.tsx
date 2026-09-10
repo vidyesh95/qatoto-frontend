@@ -47,11 +47,17 @@ import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
 export default function TeardownProvenanceBlock({
   provenance,
   chip,
-  teardownSlug,
+  reportHref,
 }: {
   readonly provenance: TeardownProvenance;
   readonly chip: TeardownProvenanceChip;
-  readonly teardownSlug: string;
+  /**
+   * The claim route for this teardown, built by the page with `buildBlueprintHref`.
+   *
+   * PASSED IN RATHER THAN BUILT HERE, so the header-band control and this one cannot point at
+   * different places — and so nothing mints a blueprint URL outside `buildBlueprintHref`.
+   */
+  readonly reportHref: string;
 }) {
   // Enum order, deduped by construction: the contract allows a repeat and the vocabulary does not.
   const orderedSurveyMethods = TEARDOWN_SURVEY_METHODS.filter((method) =>
@@ -142,21 +148,22 @@ export default function TeardownProvenanceBlock({
 
       <p className="mt-3 text-sm">
         {/*
-          A REAL DESTINATION, NOT A FORM WITH NO ENDPOINT. `/copyright-policy` is a live page that
-          states how a claim is made, and linking to it promises exactly what Qatoto can do today.
-          The expedited claim route — claim kind, claimant identity, the specific file or part —
-          needs a table to write to, so it ships with that table and not before (`todo.md`
-          §Blueprint rights claims). Shipping the form first would be a control whose write has no
-          backing table, which is the one thing this surface refuses everywhere else.
+          ⚠️ THIS USED TO POINT AT `/copyright-policy` AND THE REASONING WAS HALF RIGHT. It said a
+          claim form would be a control whose write has no backing table — true, and still true —
+          and concluded that a policy page was therefore the honest destination. It was not: that
+          page tells a reader to "submit a takedown notice" and names no address, no form and no
+          link, so the honest-looking destination could not do the one thing it was there for.
+          The route it reaches now resolves that without inventing a write. It PREPARES a notice
+          and the claimant sends it from their own mail client, so there is no unbacked write, no
+          fabricated receipt, and nothing that claims Qatoto has received anything.
         */}
         <Link
-          href="/copyright-policy"
+          href={reportHref}
           className="inline-flex items-center gap-1 font-medium text-destructive transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive"
         >
           Report an IP concern about this teardown
           <span aria-hidden="true">&rarr;</span>
         </Link>
-        <span className="sr-only"> ({teardownSlug})</span>
       </p>
 
       <p className="mt-3 text-xs text-muted-foreground">

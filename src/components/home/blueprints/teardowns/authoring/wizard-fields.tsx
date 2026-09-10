@@ -135,7 +135,16 @@ export function LabeledEnumSelect<TValue extends string>({
       <span className={LABEL_CLASS}>{label}</span>
       <select
         value={value}
-        onChange={(changeEvent) => onValueChange(changeEvent.target.value as TValue | "")}
+        /*
+          ⚠️ THE SELECTED VALUE IS CHECKED AGAINST THE OPTIONS, NOT ASSERTED INTO THE TYPE. `as TValue`
+          was the obvious spelling and it is the assertion CLAUDE.md Pattern 2 rules out: a `<select>`
+          hands back a `string`, and claiming it is one of the enum members without looking is the
+          same unchecked promise as `as MyType` on a network payload. `.find` is one comparison over a
+          list that never exceeds ten, and it makes the empty option the only other reachable value.
+        */
+        onChange={(changeEvent) =>
+          onValueChange(options.find((option) => option === changeEvent.target.value) ?? "")
+        }
         className={`${INPUT_CLASS} mt-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]`}
       >
         {emptyOptionLabel === undefined ? null : <option value="">{emptyOptionLabel}</option>}

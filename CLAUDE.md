@@ -445,6 +445,26 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   links to it. The two do not join, because `submitTeardownForReview` persists nothing; joining them
   would need fake in-memory persistence that loses work on reload, or a second `localStorage` key,
   which is forbidden.
+- **THE RIGHTS-CLAIM ROUTE PREPARES A NOTICE; IT DOES NOT FILE ONE.**
+  `/blueprints/teardowns/[slug]/report` collects the claim kind, the target, the claimant and three
+  sworn statements, then hands over a finished notice addressed to `SUPPORT_CONTACT_EMAIL` as a
+  `mailto:` plus copy-to-clipboard. ⚠️ **IT DELIBERATELY DOES NOT REPEAT THE WIZARD'S MOCK-WRITE
+  SHAPE.** A publisher rehearsing a submission loses their own draft; a rights holder who believes
+  they gave legal notice and did not may miss a deadline or think the platform is on notice when it
+  is not. So there is **no submit, no 202 and no receipt**, and that absence is the feature — no
+  state on the route claims Qatoto holds anything. A side effect worth keeping: the claimant's name
+  and email never reach a Qatoto server.
+  ⚠️ **NO COPY MAY IMPLY A STATUTORY FILING.** Qatoto has designated no DMCA agent; `todo.md`'s
+  video-copyright section lists the five things a safe-harbour process lacks and the three sworn
+  clauses close exactly one. The route and `/copyright-policy` both say this reaches a person.
+  ⚠️ **FILING CHANGES NOTHING ON THE SURFACE**, and must not be made to. Moving the row to `flagged`
+  is the backend's job; faking it would show the claimant a state change that reverts on reload.
+  **A QUARANTINED TEARDOWN STILL ACCEPTS A CLAIM** — a second rights holder may have a different
+  objection, and refusing them would be this surface deciding one claim settles a row.
+  **`RightsClaimTargetSchema` is a DISCRIMINATED UNION** over `whole_teardown` / `document` /
+  `manufacturing_file` / `part`, and the picker lists the teardown's REAL payload: a free-text
+  "which file" against a survey that published six is the one vague answer that makes a notice
+  unactionable. No option is pre-selected, so the broadest claim cannot be sent by scrolling past.
 - **THE DENSITY SWITCH IS A QUERY PARAM, NOT CLIENT STATE.** `?view=business|engineering|factory`,
   default `business`, and the default is written OUT of the URL so the canonical path stays
   canonical. `?view=factory` is a URL a founder sends to the shop that will make the thing.
