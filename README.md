@@ -1,6 +1,8 @@
-# Qatoto Frontend
+# [Qatoto](https://qatoto.com/) : Qatoto is a B2B pipeline that carries a physical product from an idea to a shipped unit:
+pitch, form a team, raise, build under a daily-update protocol, ship through the platform's
+store and logistics. One identity, one ledger, one audience across all five stages.
 
-Qatoto is a platform for product research, development and support.
+# Qatoto Frontend
 
 ### Prerequisites
 
