@@ -7,8 +7,8 @@ store and logistics. One identity, one ledger, one audience across all five stag
 
 ### Prerequisites
 
-- Node.js >= 24.13.1
-- pnpm >= 10.29.3
+- Node.js >= 24.21.0
+- pnpm >= 12.3.4
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
