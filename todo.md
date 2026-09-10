@@ -900,7 +900,7 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     **THE CONTENT BLOCKER DID NOT GO AWAY — IT CHANGED SUBJECT.** The reason this item existed
     was that wiring five pages would have replaced five pages of invented content with five
     blank ones, and the precedent recorded here was that YouTube does not ship a vertical it
-    cannot fill. `/blueprints` is in exactly that position now: 27 fixtures in
+    cannot fill. `/blueprints` is in exactly that position now: 32 fixtures in
     `src/mocks/blueprints-mocks.ts`, no backend, no real teardowns. The difference is only that
     nobody has published a real blueprint yet, so there is nothing to be inconsistent with.
 
@@ -928,8 +928,8 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     routes with three designs — `showcase` as a launch feed (ycombinator.com/launches),
     `case_study` as a numbered, colour-coded reference index (lawsofux.com), `teardown` as a
     thumbnail grid whose detail page finally has somewhere to put a schematic. Plan:
-    `~/.claude/plans/for-showcase-i-want-eager-tulip.md`. `pnpm build` prerenders 27 detail
-    pages across the three segments.
+    `~/.claude/plans/for-showcase-i-want-eager-tulip.md`. `pnpm build` now prerenders 32 detail
+    pages across the three segments (27 when this shipped; §1c added five case studies).
 
     ⚠️ **THE `case_study` HALF OF THAT SENTENCE IS NO LONGER TRUE — see §1c below.** The numbered,
     colour-coded index shipped 2026-09-06 and was replaced 2026-09-10. It is left standing here
@@ -1515,7 +1515,7 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     - **Still true**: no vote endpoint, no `error` arm, de-indexed (seven flags + sitemap
       omission), components never import the fixtures, every URL via `buildBlueprintHref`.
 
-    ### 1c. The blueprints hub stopped being three rails — SHIPPED 2026-09-10, parts 1 to 3 of 4
+    ### 1c. The blueprints hub stopped being three rails — SHIPPED 2026-09-10, all four parts
 
     `/blueprints/case-studies` and `/blueprints/case-studies/[slug]` were rebuilt from a design
     brief that read the surface as three tools rather than one feed: teardowns answer _can I make
@@ -1656,9 +1656,45 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
       attaching files to it would have deleted the only row proving every other section can be
       absent on its own. Do not attach anything to it.
 
-    #### Part 4 of that brief — NOT BUILT
+    #### Part 4, showcase — SHIPPED 2026-09-10
 
-    Specified in full in the plan file, deliberately left out of the diff.
+    The smallest part, because the feed was already the right shape and most of what the brief
+    asked for was already standing.
+
+    - **The feed row gained a comment count**, the one engagement position that was NOT reserved.
+      It sits immediately after the date, and that placement is the substance of the change:
+      "built from a teardown" and the tags are both conditional, so anything after them lands
+      somewhere different on every row and a reader scanning the column has to find it again each
+      time. A slot that moves is not a reserved slot.
+    - **It is text inside the row's one link**, not an element of its own — the link already goes to
+      the page holding the thread it counts. When a per-launch anchor exists it becomes a link to
+      it and nothing else moves.
+    - **Zero renders nothing.** Three of the ten fixture launches have a thread (7, 5, 1); the other
+      seven show no count rather than "0 comments". All ten `commentCount` values were re-checked
+      against `MOCK_SHOWCASE_COMMENTS` — zero mismatches, which is the standing fixture constraint.
+    - ⚠️ **"Wiring it later is a swap, not a rebuild" is now MEASURED.** Replacing the vote
+      `<span>` with a `<button>` carrying the same classes, in the live page, leaves the box at an
+      identical rect (40x44 at the same x/y) — Tailwind's preflight already strips a button's
+      border, background and font. That claim had been asserted in three files and tested in none.
+    - **NOTHING was added about comments being closed**, which is what the brief asked for and what
+      the code contradicts. `BlueprintCommentThread` renders a real one-level thread and the
+      engagement bar counts it; the missing affordance is a COMPOSER, and `blueprint-comment-thread`
+      already discloses exactly that, once, above the thread. Verified absent from every feed row.
+
+    #### What the brief asked for and did not get
+
+    Recorded so the next reader does not think they were missed:
+
+    - **An outcome enum** (`scaled | failed | pivoted`) — rejected in Part 1, reasoning above.
+    - **`conceptNumber` and `discipline` kept as legacy fields with TODO markers** — `conceptNumber`
+      was deleted instead; a field nothing renders is what the sweeps exist to catch. `discipline`
+      stayed because it earns its place as the index filter.
+    - **The hero demoted** — it was capped on mobile and moved below the header, not demoted. It is
+      328x184 on desktop and the only real network read on the surface.
+    - **"Comments aren't open on launches yet" copy** — contradicted by shipped code.
+    - **The first lane beside the hero** (§5's literal suggestion) — it sits below. A two-column hub
+      would fight each lane's own full-width grid, and the goal that suggestion served (first lane
+      above the fold) is met without it: measured at 405px on a 1000px viewport.
     - **Part 4, showcase.** Keep the feed shape; reserve the positions a real vote control and
       comment count will occupy so wiring is a swap. ⚠️ **Do not add the brief's "Comments aren't
       open on launches yet" copy** — `blueprint-comment-thread.tsx` renders a real one-level thread

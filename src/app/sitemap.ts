@@ -47,7 +47,7 @@ import {
  *
  * - `/watch`, `/search` and `/store/search` are driven by search params (`?v=`, `?query=`).
  *   The bare path renders a placeholder, so announcing it advertises an empty page.
- * - THE WHOLE `/blueprints` SURFACE IS MOCK-BACKED — real UI over 27 invented builds in
+ * - THE WHOLE `/blueprints` SURFACE IS MOCK-BACKED — real UI over 32 invented builds in
  *   `@/mocks/blueprints-mocks` — and is held to exactly the rule the retired `/anime` routes were
  *   held to. ⚠️ THAT IS SEVEN ROUTES NOW, NOT TWO: the hub, `/teardowns`, `/showcase`,
  *   `/case-studies`, and a `[slug]` detail under each of those three. Every one carries

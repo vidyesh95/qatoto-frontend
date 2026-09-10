@@ -249,13 +249,13 @@ and `/anime/:path*` at the routing layer.
 index and its own detail layout, because a teardown, a launch and a manufacturing lesson are not
 browsed the same way:
 
-| Route                                  | Design                                                                                                              |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `/blueprints`                          | Hub — header, hero, then three lanes in three DIFFERENT shapes, each with its question and one **See all**          |
-| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid of DECISION-SET cards; detail carries the media, the files, the exploded-view engine and the handoff |
-| `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort lives in `listShowcases`; inert vote gutter |
-| `/blueprints/case-studies` + `/[slug]` | Hairline lesson list, each row an expandable `<details>`; detail is a fixed-order report                            |
-| `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                                                                |
+| Route                                  | Design                                                                                                               |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `/blueprints`                          | Hub — header, hero, then three lanes in three DIFFERENT shapes, each with its question and one **See all**           |
+| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid of DECISION-SET cards; detail carries the media, the files, the exploded-view engine and the handoff  |
+| `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort in `listShowcases`; TWO reserved inert slots |
+| `/blueprints/case-studies` + `/[slug]` | Hairline lesson list, each row an expandable `<details>`; detail is a fixed-order report                             |
+| `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                                                                 |
 
 ⚠️ **The resolver CANNOT move to `next.config.ts`.** Its destination depends on the row's
 `category`, which a static rewrite rule cannot know — `/anime` got its redirects there precisely
@@ -327,6 +327,20 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   on a phone). `anime_hero_slide` carries no dimensions, so that is CSS only.
   ⚠️ **`loading-skeleton.tsx` mirrors this order and must move with it** — it drew four circles for
   the deleted icon row, which is a skeleton promising a control that no longer exists.
+- **THE SHOWCASE ROW RESERVES TWO ENGAGEMENT POSITIONS AND BUILDS NEITHER.** The vote is a fixed
+  40x44 gutter holding a `<span>`; the comment count is a fixed slot in the meta line, sitting
+  immediately after the date because everything below it on that line ("built from a teardown", the
+  tags) is CONDITIONAL — a slot that lands somewhere different on every row is not a reserved slot.
+  Neither is a control and no endpoint exists for either.
+  ⚠️ **"Wiring is a swap, not a rebuild" is MEASURED, not assumed**: exchanging the vote `<span>`
+  for a `<button>` with the same classes leaves the box at an identical rect, because Tailwind's
+  preflight already strips a button's border, background and font. Do not turn either into a
+  `<button>` before the tables exist (todo.md §Blueprint engagement).
+  **Zero renders nothing**, not "0 comments" — seven of the ten fixture launches have no discussion
+  and that is the ordinary state of a new launch.
+  ⚠️ **DO NOT ADD COPY SAYING COMMENTS ARE CLOSED.** They are not: `BlueprintCommentThread` renders
+  a real one-level thread and `ShowcaseEngagementBar` counts it. The missing affordance is a
+  COMPOSER, and that is disclosed ONCE, above the thread on the detail page, never per row.
 - **THE TEARDOWN CARD IS A DECISION SET, NOT A VIDEO CARD.** It rendered `BlueprintCardBody` —
   thumbnail, category pill, title, author avatar, difficulty — which is the YouTube shape, and a
   founder asking "can I make this, and what will it cost" cannot answer either question from it.

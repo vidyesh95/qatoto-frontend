@@ -7,7 +7,7 @@ import Link from "next/link";
 import ShowcaseVoteBox from "@/components/home/blueprints/sections/showcase-vote-box";
 import RelativeTime from "@/components/home/shared/relative-time";
 import { buildBlueprintHref, type ShowcaseBlueprint } from "@/lib/blueprints/schemas";
-import { formatIsoInstantLabel } from "@/lib/store/format";
+import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
 
 /**
  * One launch in the feed.
@@ -27,6 +27,14 @@ import { formatIsoInstantLabel } from "@/lib/store/format";
  *
  * THE VOTE BOX IS A SIBLING OF THE LINK, NOT A CHILD. It is inert (see `ShowcaseVoteBox`), so it
  * stays out of the click target and out of the link's accessible name.
+ *
+ * ⚠️ BOTH ENGAGEMENT POSITIONS ON THIS ROW ARE RESERVED RATHER THAN BUILT, which is the whole of
+ * what this row owes a future backend. The vote is a fixed 40x44 gutter holding a `<span>`; the
+ * comment count is a fixed slot in the meta line. Neither is a control, no endpoint exists for
+ * either, and wiring them later is a swap in place rather than a re-layout — measured, not assumed:
+ * exchanging the vote `<span>` for a `<button>` carrying the same classes leaves the box at the
+ * same rect, because Tailwind's preflight already strips a button's border, background and font.
+ * Do not turn either into a `<button>` before the tables exist (todo.md §Blueprint engagement).
  *
  * `visited:` on the link greys the title — Peerlist's "seen it" affordance, for one utility.
  */
@@ -66,6 +74,36 @@ export default function ShowcaseFeedRow({ showcase }: { showcase: ShowcaseBluepr
             <span title={formatIsoInstantLabel(showcase.launchedAt)}>
               <RelativeTime isoInstant={showcase.launchedAt} />
             </span>
+            {/*
+              THE COMMENT COUNT SITS HERE, IMMEDIATELY AFTER THE DATE, AND THE POSITION IS THE
+              POINT. It is the last thing on this row that is FIXED — "built from a teardown" and
+              the tags below it are both conditional, so anything placed after them lands in a
+              different spot on every row and a reader scanning the column has to find it again
+              each time. A slot that moves is not a reserved slot.
+
+              ⚠️ INERT, AND IT IS NOT EVEN ITS OWN ELEMENT. It is text inside the row's one link,
+              which already goes to the page holding the thread it counts — so it needs no
+              affordance of its own and cannot become a second competing control. When a real
+              per-launch anchor exists this becomes a link to it and nothing else moves.
+
+              ZERO RENDERS NOTHING, not "0 comments". Seven of the ten fixture launches have no
+              discussion and that is the ordinary state of a new launch, not a number worth
+              printing. The slot is still reserved: it is in the markup, conditionally, the same
+              way the two beside it are.
+
+              EXACT, NOT COMPACT, unlike `ShowcaseVoteBox`. That one compacts because a real
+              upvote count has to fit a 40px gutter; this line wraps freely, and a thread with
+              12,400 comments is a number worth reading in full.
+            */}
+            {showcase.commentCount === 0 ? null : (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>
+                  {formatCountLabel(showcase.commentCount)}{" "}
+                  {showcase.commentCount === 1 ? "comment" : "comments"}
+                </span>
+              </>
+            )}
             {/* `null` means it was built from something never published here — say nothing rather
                 than implying a source that does not exist. */}
             {showcase.builtFromBlueprintSlug === null ? null : (
