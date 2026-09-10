@@ -994,6 +994,501 @@ export const TeardownSimulationTelemetrySchema = z
   .strip();
 export type TeardownSimulationTelemetry = z.infer<typeof TeardownSimulationTelemetrySchema>;
 
+// --- Provenance, moderation and composition ----------------------------------
+//
+// THE CLEAN-ROOM LAYER. A teardown on this surface is an EMPIRICAL SURVEY OF A LEGALLY ACQUIRED,
+// OFF-THE-SHELF COMMERCIAL UNIT, and the contract is written so that nothing else can be
+// expressed. There is no field for a vendor's own drawing, no field for an internal document and
+// no field for a file somebody was given under an NDA — a shape that cannot hold leaked material
+// is a stronger guarantee than a policy page saying not to upload it.
+//
+// ⚠️ THE APPROVED VOCABULARY IS IN THE LABEL RECORDS BELOW AND NOWHERE ELSE. "OEM CAD", "Original
+// blueprints", "Factory drawings" and "Proprietary specs" are BANNED STRINGS on this surface: each
+// one describes material this pipeline must never carry, and a label is what a reader believes.
+
+/**
+ * Where a row sits between typed and public.
+ *
+ * SNAKE_CASE, byte-matching a future `pgEnum`, for the reason the file header gives.
+ *
+ * The states are not a preference ladder — each one is a different render:
+ * - `draft` / `pending_review` — invisible to the public. The detail read returns `null` and the
+ *   route 404s. Its author sees it in studio (§Blueprint publishing, `todo.md`).
+ * - `published` — the ordinary state.
+ * - `flagged` — somebody has REPORTED an IP concern and nobody has ruled on it. The public view is
+ *   UNCHANGED apart from a stated notice: a report is an allegation, and hiding a row on the
+ *   strength of one would make the report button a takedown button.
+ * - `quarantined` — substantiated, or raised by a verified rights holder. The page still resolves
+ *   and states why; the files, the model and the composition are WITHELD rather than deleted.
+ * - `removed` — gone. Reads as a 404, identical to a slug that never existed, on the store's
+ *   `draft`/`retired` category precedent: a stranger must not be able to probe which rows were
+ *   taken down.
+ */
+export const BLUEPRINT_MODERATION_STATES = [
+  "draft",
+  "pending_review",
+  "published",
+  "flagged",
+  "quarantined",
+  "removed",
+] as const;
+export const BlueprintModerationStateSchema = z.enum(BLUEPRINT_MODERATION_STATES);
+export type BlueprintModerationState = z.infer<typeof BlueprintModerationStateSchema>;
+
+export const BLUEPRINT_MODERATION_STATE_LABELS: Record<BlueprintModerationState, string> = {
+  draft: "Draft",
+  pending_review: "Pending review",
+  published: "Published",
+  flagged: "IP concern reported",
+  quarantined: "Quarantined",
+  removed: "Removed",
+};
+
+/**
+ * What the survey was performed on.
+ *
+ * ⚠️ MINIMAL BY DESIGN, AND THE PUBLIC ARM CARRIES ONLY ONE OF THE TWO. This exists for the publish
+ * and moderation path: a contributor picks a subject kind in the wizard, and `proposed_design` is
+ * REFUSED there with a stated reason. A proposed design is not a teardown — there is no unit to
+ * measure, so provenance, acquisition and spectroscopy have nothing to describe — and giving it a
+ * full shape here would be building the blueprint type this part deliberately does not build.
+ * `TeardownBlueprintSchema` therefore pins `subjectKind` to the one publishable literal, which
+ * makes the illegal row unconstructible rather than merely discouraged (CLAUDE.md Pattern 1).
+ */
+export const TEARDOWN_SUBJECT_KINDS = ["existing_physical_product", "proposed_design"] as const;
+export const TeardownSubjectKindSchema = z.enum(TEARDOWN_SUBJECT_KINDS);
+export type TeardownSubjectKind = z.infer<typeof TeardownSubjectKindSchema>;
+
+export const TEARDOWN_SUBJECT_KIND_LABELS: Record<TeardownSubjectKind, string> = {
+  existing_physical_product: "Existing physical product",
+  proposed_design: "Proposed design",
+};
+
+/** The one subject kind this flow publishes. Anything else is refused before a row is written. */
+export const PUBLISHABLE_TEARDOWN_SUBJECT_KIND = "existing_physical_product" as const;
+
+/**
+ * What licence the survey sits under, DECLARED BY THE PUBLISHER.
+ *
+ * TWO VALUES, NOT THREE. The third chip a reader sees — "IP concern reported" — is NOT a
+ * provenance kind: it is `moderationState` in `flagged` or `quarantined`. Two fields that could
+ * each claim a state the other contradicts is exactly the bag of loose flags Pattern 1 rules out,
+ * so the chip is DERIVED from both by `resolveTeardownProvenanceChip` and neither field guesses.
+ */
+export const BLUEPRINT_PROVENANCE_KINDS = [
+  "authorized_or_open_source",
+  "community_reverse_engineered",
+] as const;
+export const BlueprintProvenanceKindSchema = z.enum(BLUEPRINT_PROVENANCE_KINDS);
+export type BlueprintProvenanceKind = z.infer<typeof BlueprintProvenanceKindSchema>;
+
+/** How the publisher came by the unit. Every value is a lawful acquisition; there is no other kind. */
+export const TEARDOWN_UNIT_ACQUISITIONS = [
+  "retail_purchase",
+  "secondary_market",
+  "manufacturer_supplied",
+  "donated_unit",
+] as const;
+export const TeardownUnitAcquisitionSchema = z.enum(TEARDOWN_UNIT_ACQUISITIONS);
+export type TeardownUnitAcquisition = z.infer<typeof TeardownUnitAcquisitionSchema>;
+
+export const TEARDOWN_UNIT_ACQUISITION_LABELS: Record<TeardownUnitAcquisition, string> = {
+  retail_purchase: "Bought at retail",
+  secondary_market: "Bought on the secondary market",
+  manufacturer_supplied: "Supplied by the manufacturer",
+  donated_unit: "Donated unit",
+};
+
+/**
+ * HOW THE DATA WAS GATHERED, in the approved clean-room vocabulary.
+ *
+ * ⚠️ THESE LABELS ARE THE POINT OF THE ENUM. Every one of them names a MEASUREMENT the publisher
+ * performed. None of them can be read as "the manufacturer's own file", which is what the banned
+ * strings in this section's header would imply. Do not add a value that describes a document
+ * somebody was handed.
+ */
+export const TEARDOWN_SURVEY_METHODS = [
+  "dimensional_survey",
+  "empirical_teardown",
+  "material_spectroscopy",
+] as const;
+export const TeardownSurveyMethodSchema = z.enum(TEARDOWN_SURVEY_METHODS);
+export type TeardownSurveyMethod = z.infer<typeof TeardownSurveyMethodSchema>;
+
+export const TEARDOWN_SURVEY_METHOD_LABELS: Record<TeardownSurveyMethod, string> = {
+  dimensional_survey: "Independent dimensional survey",
+  empirical_teardown: "Empirical teardown analysis",
+  material_spectroscopy: "Material spectroscopy & alloy analysis",
+};
+
+/** The one-line explanation under each method, so a founder knows what it does and does not prove. */
+export const TEARDOWN_SURVEY_METHOD_NOTES: Record<TeardownSurveyMethod, string> = {
+  dimensional_survey: "Dimensions measured off the unit, then redrawn from those measurements.",
+  empirical_teardown: "The unit disassembled and recorded part by part.",
+  material_spectroscopy: "Materials identified by compositional analysis of the unit's own parts.",
+};
+
+/** An open-hardware or authorizing licence, named and linked. */
+export const BlueprintLicenceSchema = z
+  .object({
+    /** The licence as it is properly written, e.g. "CERN-OHL-S v2". Never an abbreviation. */
+    name: z.string(),
+    url: createExternalHttpsUrlSchema(2048),
+  })
+  .strip();
+export type BlueprintLicence = z.infer<typeof BlueprintLicenceSchema>;
+
+/**
+ * THE ORIGIN BLOCK — what was surveyed, how it was obtained, and by what methods.
+ *
+ * It renders ABOVE the bill of materials and above every file on the detail page. That ordering is
+ * a rule rather than a layout taste: the files are the thing a reader might redistribute, and a
+ * provenance claim that arrives after them is a disclaimer rather than a heading.
+ *
+ * `licence` IS NON-NULL EXACTLY WHEN `kind` IS `authorized_or_open_source`, enforced by the
+ * refinement below. "Authorized" with nothing naming the authorization is the one state on this
+ * object that would be worth more than it can prove.
+ */
+export const TeardownProvenanceSchema = z
+  .object({
+    kind: BlueprintProvenanceKindSchema,
+    /** The commercial unit surveyed, as the publisher identifies it. Free text: it is somebody else's product name. */
+    subjectProductName: z.string(),
+    unitAcquisition: TeardownUnitAcquisitionSchema,
+    /** At least one — a survey with no method is not a survey. */
+    surveyMethods: z.array(TeardownSurveyMethodSchema).min(1),
+    /** ISO 8601. When the unit was measured, which is not when the write-up was posted. */
+    surveyedAt: z.string(),
+    licence: BlueprintLicenceSchema.nullable(),
+    /**
+     * ISO 8601. WHEN THE PUBLISHER ACCEPTED THE ATTESTATION — legal acquisition, non-destructive or
+     * standard method, no NDA or vendor-confidential material, independent discovery. The clauses
+     * themselves live in the wizard; this is the record that they were accepted, and it renders,
+     * because an attestation nobody can see is an attestation nobody made.
+     */
+    attestationAcceptedAt: z.string(),
+    /** Anything the publisher wants to qualify. `null` renders nothing. */
+    notes: z.string().nullable(),
+  })
+  .strip()
+  .superRefine((provenance, context) => {
+    if (provenance.kind === "authorized_or_open_source" && provenance.licence === null) {
+      context.addIssue({
+        code: "custom",
+        path: ["licence"],
+        message: "An authorized or open-source survey must name the licence that authorizes it.",
+      });
+    }
+    if (provenance.kind === "community_reverse_engineered" && provenance.licence !== null) {
+      context.addIssue({
+        code: "custom",
+        path: ["licence"],
+        message:
+          "A community survey carries no licence from the original manufacturer; name it as authorized instead.",
+      });
+    }
+  });
+export type TeardownProvenance = z.infer<typeof TeardownProvenanceSchema>;
+
+/**
+ * The three chips a reader can see beside the title, DERIVED from provenance and moderation state.
+ *
+ * ⚠️ THE TEXT LABEL IS CANONICAL AND THE COLOUR IS SECONDARY. `docs/Design.md` §6 forbids
+ * signalling anything with colour alone, and this is the most consequential signal on the surface —
+ * a reader deciding whether they may manufacture something. Renderers pair each chip with a word
+ * and a glyph, and the palette stays inside the One Hue Rule: the hue family for the two ordinary
+ * states, `Destructive` for the reported one. There is no green and no amber.
+ */
+export const TEARDOWN_PROVENANCE_CHIPS = [
+  "authorized_or_open_source",
+  "community_reverse_engineered",
+  "ip_concern_reported",
+] as const;
+export type TeardownProvenanceChip = (typeof TEARDOWN_PROVENANCE_CHIPS)[number];
+
+export const TEARDOWN_PROVENANCE_CHIP_LABELS: Record<TeardownProvenanceChip, string> = {
+  authorized_or_open_source: "Authorized / open source",
+  community_reverse_engineered: "Community reverse-engineered",
+  ip_concern_reported: "IP concern reported",
+};
+
+/**
+ * What each chip actually promises, in a founder's language rather than a lawyer's.
+ *
+ * ⚠️ NONE OF THESE SENTENCES SAYS QATOTO CHECKED ANYTHING. Qatoto runs no patent search and makes
+ * no clearance claim; the reader is told what the publisher declared and what they must still do
+ * themselves. PRODUCT.md's rule about unattributed figures applies with more force to an
+ * unattributed legal opinion.
+ */
+export const TEARDOWN_PROVENANCE_CHIP_NOTES: Record<TeardownProvenanceChip, string> = {
+  authorized_or_open_source:
+    "The publisher names a licence that permits commercial replication. Read it before you rely on it.",
+  community_reverse_engineered:
+    "Empirical survey of public hardware. Review patent claims and trade dress in your manufacturing jurisdiction before commercial production.",
+  ip_concern_reported:
+    "Somebody has reported an intellectual-property concern against this teardown. Nothing here has been ruled on.",
+};
+
+/**
+ * THE ONE PLACE THE CHIP IS DECIDED.
+ *
+ * Moderation outranks provenance: a reported row reads as reported whatever its publisher
+ * declared, because that is the fact a reader most needs and the one they cannot check themselves.
+ */
+export function resolveTeardownProvenanceChip(teardown: {
+  readonly provenance: TeardownProvenance;
+  readonly moderationState: BlueprintModerationState;
+}): TeardownProvenanceChip {
+  if (teardown.moderationState === "flagged" || teardown.moderationState === "quarantined") {
+    return "ip_concern_reported";
+  }
+  return teardown.provenance.kind;
+}
+
+/** What a material IS, before anything is said about how it was made. */
+export const TEARDOWN_MATERIAL_CLASSES = [
+  "metal_alloy",
+  "polymer",
+  "elastomer",
+  "composite",
+  "ceramic",
+  "glass",
+  "laminate",
+  "semiconductor_package",
+  "coating",
+  "other",
+] as const;
+export const TeardownMaterialClassSchema = z.enum(TEARDOWN_MATERIAL_CLASSES);
+export type TeardownMaterialClass = z.infer<typeof TeardownMaterialClassSchema>;
+
+export const TEARDOWN_MATERIAL_CLASS_LABELS: Record<TeardownMaterialClass, string> = {
+  metal_alloy: "Metal alloy",
+  polymer: "Polymer",
+  elastomer: "Elastomer",
+  composite: "Composite",
+  ceramic: "Ceramic",
+  glass: "Glass",
+  laminate: "Laminate",
+  semiconductor_package: "Semiconductor package",
+  coating: "Coating",
+  other: "Other",
+};
+
+/**
+ * WHERE THE DESIGNATION CAME FROM, and the single most important field in this section.
+ *
+ * ⚠️ DECLARED DATA MUST NEVER RENDER AS MEASURED DATA. "6063-T5" read off a supplier's invoice and
+ * "6063-T5" concluded from an OES burn are the same eleven characters and completely different
+ * claims — one is hearsay about a part, the other is a measurement of it. A manufacturer quoting
+ * from the first and a manufacturer quoting from the second are taking different risks, so the
+ * source travels with the designation everywhere the designation renders, and no renderer may drop
+ * it to save a line.
+ */
+export const TEARDOWN_DESIGNATION_SOURCES = [
+  "measured_spectroscopy",
+  "manufacturer_marking",
+  "public_datasheet",
+  "supplier_declared",
+  "contributor_freetext",
+] as const;
+export const TeardownDesignationSourceSchema = z.enum(TEARDOWN_DESIGNATION_SOURCES);
+export type TeardownDesignationSource = z.infer<typeof TeardownDesignationSourceSchema>;
+
+export const TEARDOWN_DESIGNATION_SOURCE_LABELS: Record<TeardownDesignationSource, string> = {
+  measured_spectroscopy: "Measured by spectroscopy",
+  manufacturer_marking: "Read off the part's own marking",
+  public_datasheet: "From a public datasheet",
+  supplier_declared: "Declared by a supplier",
+  contributor_freetext: "Publisher's own description",
+};
+
+/** Whether a designation source is a MEASUREMENT of this unit or a claim about it from elsewhere. */
+export const TEARDOWN_DESIGNATION_SOURCE_IS_MEASURED: Record<TeardownDesignationSource, boolean> = {
+  measured_spectroscopy: true,
+  manufacturer_marking: true,
+  public_datasheet: false,
+  supplier_declared: false,
+  contributor_freetext: false,
+};
+
+/**
+ * How one element row was determined.
+ *
+ * ⚠️ THE LAST TWO ARE NOT INSTRUMENTS AND THAT IS DELIBERATE. `declared_not_measured` is the honest
+ * value for a percentage copied from a datasheet, and `synthetic_example` is the honest value for a
+ * number that was invented — which is what every figure in `@/mocks/blueprints-mocks` is. A table of
+ * element percentages is the most measurement-shaped thing on this surface, so it needs a way to
+ * say "this was not measured" that a renderer cannot skip. Both values survive into production:
+ * real contributors paste datasheet figures too.
+ */
+export const TEARDOWN_COMPOSITION_ANALYSIS_METHODS = [
+  "xrf",
+  "oes",
+  "eds",
+  "icp_oes",
+  "declared_not_measured",
+  "synthetic_example",
+] as const;
+export const TeardownCompositionAnalysisMethodSchema = z.enum(
+  TEARDOWN_COMPOSITION_ANALYSIS_METHODS,
+);
+export type TeardownCompositionAnalysisMethod = z.infer<
+  typeof TeardownCompositionAnalysisMethodSchema
+>;
+
+export const TEARDOWN_COMPOSITION_ANALYSIS_METHOD_LABELS: Record<
+  TeardownCompositionAnalysisMethod,
+  string
+> = {
+  xrf: "XRF",
+  oes: "OES",
+  eds: "EDS",
+  icp_oes: "ICP-OES",
+  declared_not_measured: "Declared, not measured",
+  synthetic_example: "Synthetic example",
+};
+
+/** Which analysis methods are an actual measurement of the surveyed unit. */
+export const TEARDOWN_COMPOSITION_ANALYSIS_METHOD_IS_MEASURED: Record<
+  TeardownCompositionAnalysisMethod,
+  boolean
+> = {
+  xrf: true,
+  oes: true,
+  eds: true,
+  icp_oes: true,
+  declared_not_measured: false,
+  synthetic_example: false,
+};
+
+/**
+ * One element in a material's composition.
+ *
+ * `weightPercentRange` IS A NULLABLE OBJECT rather than two nullable numbers, on the
+ * `billOfMaterialsCostRange` precedent: half a range is an unanswerable question. `null` means the
+ * element was IDENTIFIED but not QUANTIFIED, which is the ordinary result of a handheld XRF pass on
+ * a trace element and is a different statement from zero percent.
+ */
+export const TeardownCompositionElementSchema = z
+  .object({
+    /** The element symbol as chemistry writes it, e.g. "Al", "Mg", "Si". */
+    symbol: z.string().min(1).max(3),
+    weightPercentRange: z
+      .object({
+        minimumPercent: z.number().min(0).max(100),
+        maximumPercent: z.number().min(0).max(100),
+      })
+      .strip()
+      .refine(
+        (range) => range.maximumPercent >= range.minimumPercent,
+        "A weight-percent range cannot end below where it starts.",
+      )
+      .nullable(),
+    analysisMethod: TeardownCompositionAnalysisMethodSchema,
+    /** The instrument, when one was used. `null` for a declared or synthetic row, and refined below. */
+    instrumentLabel: z.string().nullable(),
+    /** Whatever the operator wants a reader to know about this row. `null` renders nothing. */
+    operatorNote: z.string().nullable(),
+  })
+  .strip()
+  .superRefine((element, context) => {
+    if (
+      !TEARDOWN_COMPOSITION_ANALYSIS_METHOD_IS_MEASURED[element.analysisMethod] &&
+      element.instrumentLabel !== null
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["instrumentLabel"],
+        message: "A row that was not measured cannot name the instrument that measured it.",
+      });
+    }
+  });
+export type TeardownCompositionElement = z.infer<typeof TeardownCompositionElementSchema>;
+
+/**
+ * ONE MATERIAL RECORD, and the unit the composition section is built out of.
+ *
+ * ⚠️ IT HANGS OFF THE TEARDOWN, NOT OFF `assembly.parts`. Most teardowns publish no model at all —
+ * `thermal-camera-module-teardown` has `assembly: null` — and a composition layer reachable only
+ * through a `.glb` would be unavailable on exactly the rows that have nothing else to offer.
+ * `partId` LINKS one to a modelled part when there is one, and `appliesToLabel` carries the
+ * publisher's own words when there is not.
+ *
+ * THE REQUIRED SET IS `designation`, `designationSource` AND `materialClass`. `process` and
+ * `finish` are NULLABLE INSIDE that set rather than absent from it: a publisher who identified an
+ * alloy off a marking usually cannot say how the part was made or what the surface treatment was,
+ * and forcing them to would produce a guess wearing the same type as a fact.
+ *
+ * ELEMENT PERCENTAGES ARE NEVER REQUIRED. `elements: []` is the common case and it renders as a
+ * designation row with no disclosure control, not as an empty table.
+ */
+export const TeardownMaterialSchema = z
+  .object({
+    id: z.string(),
+    /** What this material is the material OF, in the publisher's words, e.g. "Heatsink extrusion". */
+    appliesToLabel: z.string(),
+    /** A part of this teardown's assembly, when one is modelled. Checked against the parts below. */
+    partId: z.string().nullable(),
+    /** The standards designation, e.g. "6063-T5", "ABS UL94 V-0", "FR-4". */
+    designation: z.string(),
+    designationSource: TeardownDesignationSourceSchema,
+    materialClass: TeardownMaterialClassSchema,
+    /** How the part was made, reusing the method enum the exploded view already prints. `null` = unknown. */
+    process: TeardownManufacturingMethodSchema.nullable(),
+    /** Surface treatment as the publisher recorded it, e.g. "Clear anodised, 10 µm". `null` = unknown. */
+    finish: z.string().nullable(),
+    elements: z.array(TeardownCompositionElementSchema),
+  })
+  .strip();
+export type TeardownMaterial = z.infer<typeof TeardownMaterialSchema>;
+
+/** True when any row in a material's element table was invented rather than measured or declared. */
+export function hasSyntheticCompositionRow(material: TeardownMaterial): boolean {
+  return material.elements.some((element) => element.analysisMethod === "synthetic_example");
+}
+
+/**
+ * THE PRODUCT CLASS THIS TEARDOWN'S SUBJECT BELONGS TO, which is what the market signal is
+ * looked up by.
+ *
+ * `categorySlug` is a STORE CATEGORY SLUG — kebab, server-generated, the same identity
+ * `/store/categories/:slug` answers on. `label` is what a reader sees, and it is stored rather than
+ * derived because un-kebabbing a slug into a heading is the wrong move the segment maps at the top
+ * of this file already refuse. `null` when the publisher did not place the subject in a class, and
+ * `null` means the store half of the market signal is simply absent.
+ */
+export const TeardownStoreProductClassSchema = z
+  .object({
+    categorySlug: z.string(),
+    label: z.string(),
+  })
+  .strip();
+export type TeardownStoreProductClass = z.infer<typeof TeardownStoreProductClassSchema>;
+
+/**
+ * ONE LIVE STORE LISTING, as the market-signal band renders it.
+ *
+ * ⚠️ A DELIBERATE SUBSET OF `StoreSearchHitSchema` (`src/lib/store/catalog.schemas.ts`), field for
+ * field, so that pointing this at `searchStore({ categorySlug })` is a `.map` rather than a
+ * redesign. `priceInCents` and `currency` TRAVEL TOGETHER AND ARE BOTH NULLABLE for the reason that
+ * schema gives: a quote-only offering has neither, and a price without its currency is
+ * unrenderable.
+ */
+export const TeardownStoreListingSignalSchema = z
+  .object({
+    productSlug: z.string(),
+    title: z.string(),
+    organizationDisplayName: z.string(),
+    priceInCents: z.number().int().nullable(),
+    currency: z.string().nullable(),
+  })
+  .strip()
+  .refine(
+    (listing) => (listing.priceInCents === null) === (listing.currency === null),
+    "A price and its currency travel together; neither is renderable without the other.",
+  );
+export type TeardownStoreListingSignal = z.infer<typeof TeardownStoreListingSignalSchema>;
+
 // --- The blueprint union -----------------------------------------------------
 //
 // ONE SHAPE PER CATEGORY, because the three surfaces ask different questions of a build. A
@@ -1034,6 +1529,29 @@ export const TeardownBlueprintSchema = z
   .object({
     ...BlueprintSharedShape,
     category: z.literal("teardown"),
+    /**
+     * WHERE THIS ROW SITS BETWEEN TYPED AND PUBLIC. The public getters decide which states they
+     * will hand out at all (`src/lib/blueprints/api.ts`); the detail page decides what each one
+     * that reaches it looks like. Both halves are needed: a getter that returned a draft would
+     * publish an unreviewed row, and a page that rendered a quarantined row identically to a
+     * published one would serve withheld files.
+     */
+    moderationState: BlueprintModerationStateSchema,
+    /**
+     * PINNED TO THE ONE PUBLISHABLE VALUE, and that is the whole of the subject-kind feature on
+     * the read side. `proposed_design` is refused in the wizard with a stated reason; here it is
+     * simply not expressible, which is the stronger guarantee. See `TEARDOWN_SUBJECT_KINDS`.
+     */
+    subjectKind: z.literal(PUBLISHABLE_TEARDOWN_SUBJECT_KIND),
+    /** The origin block. NOT NULLABLE — a teardown with no stated provenance may not exist. */
+    provenance: TeardownProvenanceSchema,
+    /**
+     * The composition records. `[]` is ORDINARY, not a defect: most publishers can identify a
+     * housing and a board and nothing else, and an empty array renders no section at all.
+     */
+    materials: z.array(TeardownMaterialSchema),
+    /** Which store class the surveyed product belongs to. `null` = the publisher did not place it. */
+    storeProductClass: TeardownStoreProductClassSchema.nullable(),
     /**
      * DISPLAY ONLY, both of them, for the reason the showcase arm's `upvoteCount` gives below.
      * There is no comment route and no save route for a blueprint — every engagement table in the
@@ -1085,6 +1603,19 @@ export const TeardownBlueprintSchema = z
           code: "custom",
           path: ["assemblySteps", index, "focusedPartId"],
           message: `"${step.focusedPartId}" is not a part of this teardown's assembly.`,
+        });
+      }
+    });
+
+    // A material may name the modelled part it belongs to, and a name that resolves to nothing is
+    // the same class of error a step's `focusedPartId` is: it renders as a link to a part the
+    // viewer cannot focus. `null` is always legal — most materials describe an unmodelled part.
+    teardown.materials.forEach((material, index) => {
+      if (material.partId !== null && !partIds.has(material.partId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["materials", index, "partId"],
+          message: `"${material.partId}" is not a part of this teardown's assembly.`,
         });
       }
     });

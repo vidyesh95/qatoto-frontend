@@ -249,13 +249,13 @@ and `/anime/:path*` at the routing layer.
 index and its own detail layout, because a teardown, a launch and a manufacturing lesson are not
 browsed the same way:
 
-| Route                                  | Design                                                                                                               |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `/blueprints`                          | Hub — header, hero, then three lanes in three DIFFERENT shapes, each with its question and one **See all**           |
-| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid of DECISION-SET cards; detail carries the media, the files, the exploded-view engine and the handoff  |
-| `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort in `listShowcases`; TWO reserved inert slots |
-| `/blueprints/case-studies` + `/[slug]` | Hairline lesson list, each row an expandable `<details>`; detail is a fixed-order report                             |
-| `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                                                                 |
+| Route                                  | Design                                                                                                                                                                                                  |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/blueprints`                          | Hub — header, hero, then three lanes in three DIFFERENT shapes, each with its question and one **See all**                                                                                              |
+| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid of DECISION-SET cards; detail carries provenance, composition, the market signal, the media, the files, the exploded-view engine and the handoff. `?view=business\|engineering\|factory` |
+| `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort in `listShowcases`; TWO reserved inert slots                                                                                    |
+| `/blueprints/case-studies` + `/[slug]` | Hairline lesson list, each row an expandable `<details>`; detail is a fixed-order report                                                                                                                |
+| `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                                                                                                                                                    |
 
 ⚠️ **The resolver CANNOT move to `next.config.ts`.** Its destination depends on the row's
 `category`, which a static rewrite rule cannot know — `/anime` got its redirects there precisely
@@ -341,6 +341,70 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   ⚠️ **DO NOT ADD COPY SAYING COMMENTS ARE CLOSED.** They are not: `BlueprintCommentThread` renders
   a real one-level thread and `ShowcaseEngagementBar` counts it. The missing affordance is a
   COMPOSER, and that is disclosed ONCE, above the thread on the detail page, never per row.
+- **THE TEARDOWN ARM IS A CLEAN-ROOM RECORD, AND THE CONTRACT IS THE GUARANTEE.** A teardown is an
+  EMPIRICAL SURVEY OF A LEGALLY ACQUIRED, OFF-THE-SHELF COMMERCIAL UNIT. There is no field for a
+  vendor's drawing, an internal document or a file handed over under an NDA — a shape that cannot
+  express a leak is stronger than a policy page asking for one not to be uploaded.
+  ⚠️ **THE APPROVED VOCABULARY IS `Independent dimensional survey`, `Empirical teardown analysis`
+  and `Material spectroscopy & alloy analysis`, and `OEM CAD`, `Original blueprints`,
+  `Factory drawings` and `Proprietary specs` ARE BANNED STRINGS.** Each names material this pipeline
+  must never carry, and a label is what a reader believes.
+  **The origin block renders ABOVE the bill of materials and above every file**, in all three views:
+  the files are what a reader takes away, and a provenance claim after them is a disclaimer, which
+  is a thing readers have already scrolled past. **Nothing in it says Qatoto checked anything** — no
+  patent search, no clearance opinion, no verification of the publisher's account of their own bench.
+  ⚠️ **THE PROVENANCE CHIP IS DERIVED FROM `(provenance.kind, moderationState)` BY
+  `resolveTeardownProvenanceChip`, NEVER STORED.** Two fields that can contradict each other is the
+  bag of loose flags Pattern 1 rules out. ⚠️ **IT IS NOT A TRAFFIC LIGHT.** Green and amber are two
+  new hues against the One Hue Rule, and `docs/Design.md` §6 forbids colour-alone signalling, so the
+  two ordinary states differ by FILL and only the reported state takes `Destructive`. Every chip
+  carries a word and a glyph and **the text label is canonical**.
+  ⚠️ **`subjectKind` IS `z.literal("existing_physical_product")` ON THE PUBLIC ARM**, which makes a
+  `proposed_design` teardown unconstructible rather than merely discouraged. It is the ONE
+  teardown-arm field with no renderer and that is correct — a literal with one inhabitant carries no
+  information to display — which is why the sweep below excludes it by name. If it ever widens to
+  the enum it needs a renderer that same day. Do not grow a proposed-design blueprint type off it.
+- **MODERATION IS ENFORCED IN THE GETTERS, AND A LIST AND A DETAIL READ DISAGREE ON PURPOSE.**
+  `BLUEPRINT_MODERATION_STATES` is `draft`, `pending_review`, `published`, `flagged`, `quarantined`,
+  `removed`. Lists carry `published` + `flagged`; a detail read adds `quarantined`. An index is a
+  RECOMMENDATION, so a quarantined row is absent from every one of them; a detail read is a DIRECT
+  REQUEST, and a reader who followed an existing link is owed the reason rather than a 404 that reads
+  as a broken bookmark. `draft` and `pending_review` are in neither — that is "moderator approval
+  before public display", enforced in the one place every read passes through — and `removed` 404s,
+  indistinguishable from a slug that never existed. ⚠️ **`listBlueprintSlugsByCategory` USES THE
+  READABLE GATE** so a quarantined slug is still prerendered; filtering it there loses the notice on
+  the one URL that needs it.
+  ⚠️ **`flagged` CHANGES NOTHING BUT ADDS A NOTICE.** Delisting on an unexamined report would make
+  the report control a takedown control. `quarantined` withholds the files, the model, the
+  composition, the fastener BOM, the telemetry, the steps, the video and the cost band, through
+  `canRenderTeardownPayload` — **but NOT the market signal**, because a quarantine is a claim about
+  the publisher's FILES and says nothing about whether a market exists.
+- **⚠️ DECLARED DATA NEVER RENDERS AS MEASURED DATA.** "6063-T5" off a supplier's invoice and
+  "6063-T5" off an OES burn are the same eleven characters and completely different claims.
+  `TEARDOWN_DESIGNATION_SOURCE_IS_MEASURED` and `TEARDOWN_COMPOSITION_ANALYSIS_METHOD_IS_MEASURED`
+  are `Record`s so a new value must declare which it is; the source prints on EVERY material row,
+  never behind a disclosure. Composition hangs off the TEARDOWN, not off `assembly.parts`, because
+  most teardowns publish no model. Required: `designation`, `designationSource`, `materialClass`;
+  `process` and `finish` are NULLABLE INSIDE that required set. **Element percentages are never
+  required** — `elements: []` is ordinary and renders a row with no disclosure control.
+  `weightPercentRange: null` means IDENTIFIED BUT NOT QUANTIFIED, which is not zero.
+  ⚠️ **`synthetic_example` IS A WIRE VALUE, NOT A FIXTURE HACK**, and every element figure in the
+  mocks carries it. A table containing one renders a stated banner, because a grid of element
+  symbols and weight percents is the most measurement-shaped thing on the surface.
+- **THE MARKET SIGNAL IS THE ONLY DEMAND EVIDENCE, AND ATTENTION IS NOT DEMAND.** Primary: live
+  store listings in the same `storeProductClass`. Secondary: showcases whose
+  `builtFromBlueprintSlug` matches. `viewCount`, `likeCount` and `saveCount` are excluded by name.
+  ⚠️ **NO SIGNAL SUPPRESSES THE WHOLE BLOCK** — `getTeardownMarketSignal` returns `null` rather than
+  an empty pair, so no component can render "No builds yet", "No listings" or an empty zero-state
+  card. An empty state here would read as a VERDICT on the product.
+- **THE DENSITY SWITCH IS A QUERY PARAM, NOT CLIENT STATE.** `?view=business|engineering|factory`,
+  default `business`, and the default is written OUT of the URL so the canonical path stays
+  canonical. `?view=factory` is a URL a founder sends to the shop that will make the thing.
+  ⚠️ **NO VIEW HIDES A FACT THE OTHERS SHOW.** It reorders two blocks and decides whether the
+  composition disclosures start open, and that is all — a view that withheld something would turn a
+  reading preference into an access control. It also seeds the explorer's `initialTab`, an INITIAL
+  value only: a controlled tab would make the tab bar rewrite a URL that already means something
+  else. Reading `searchParams` is why `[slug]/page.tsx` carries `instant = false`.
 - **THE TEARDOWN CARD IS A DECISION SET, NOT A VIDEO CARD.** It rendered `BlueprintCardBody` —
   thumbnail, category pill, title, author avatar, difficulty — which is the YouTube shape, and a
   founder asking "can I make this, and what will it cost" cannot answer either question from it.
@@ -447,8 +511,12 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   catch. The equivalent sweep, which must print nothing:
 
     ```bash
+    # `subjectKind` IS DELIBERATELY ABSENT FROM THIS LIST. It is a `z.literal` with one inhabitant,
+    # so there is nothing for a renderer to display; if it ever widens to `TEARDOWN_SUBJECT_KINDS`,
+    # add it back here on the same day.
     for field in assembly fasteners manufacturingFiles assemblySteps repairabilityIndex \
-                 simulationTelemetry commentCount saveCount; do
+                 simulationTelemetry commentCount saveCount provenance materials \
+                 moderationState storeProductClass; do
       rg -q "teardown\.$field\b" src/components/home/blueprints || echo "UNRENDERED $field"
     done
 

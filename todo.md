@@ -805,7 +805,7 @@ correct; changing it now risks a regression for no user-visible gain.
 
 ---
 
-## Cache Components opt-outs — 102 routes left
+## Cache Components opt-outs — 102 routes left (156 files carry the opt-out as of 2026-09-10)
 
 `export const instant = false` plus a boilerplate `// TODO: Cache Components adoption` was applied
 **wholesale** during the migration and never revisited. All 18 in `(disclaimers)` and
@@ -813,7 +813,9 @@ correct; changing it now risks a regression for no user-visible gain.
 
 ⚠️ **THE NUMBERS IN THIS SECTION WERE WRONG AND ARE NOW MEASURED.** It read "18 removed, 96 routes
 left" over a breakdown that summed to **95**, against "114 carried the TODO, 159 carry the opt-out".
-Counted 2026-08-29: **147 files carried the opt-out and 101 still carried the boilerplate TODO** —
+Recounted 2026-09-10: **156 files carry the opt-out and 101 still carry the boilerplate TODO** —
+the teardown detail route joined the list when it took `?view=` (§Teardowns as a clean-room
+replication surface). Counted 2026-08-29: **147 files carried the opt-out and 101 still carried the boilerplate TODO** —
 `(home)` 61, `(studio)` 24, `(admin)` 11, `(auth)` 4, plus `src/app/layout.tsx`.
 ⚠️ **RE-MEASURED 2026-08-31: the opt-out count is now 155, not 147.** Both numbers drift with every
 route added, which is the argument for the command below over any figure written here.
@@ -3742,3 +3744,248 @@ idempotency keys, not-optimistic. Copy it; do not reinvent it.
   read as a pitch deck. Concretely, the second one bans a highlighted "top comment", a maker-reply
   badge, pull-quotes and any stat band in the write-up. A comment section that decorates its best
   comment is a testimonial row wearing a thread's clothes.
+
+## Teardowns as a clean-room replication surface — PART 1 SHIPPED 2026-09-10, parts 2–4 blocked on tables
+
+The premise, in the words it was asked in: Taiwan, Korea and China built manufacturing capability
+by making known products first and researching immediately after. A founder with little capital
+should be able to open a teardown of a product that already sells, see what one unit costs in
+parts, see that somebody is already selling it, and start — rather than spend the capital they do
+not have discovering whether a market exists. The teardown surface is where that decision is made,
+so it stopped being a read-only fixture gallery and became a record with a provenance layer, a
+composition layer and a demand signal.
+
+**⚠️ THE WHOLE FEATURE IS ONE LEGAL ARGUMENT WEARING A UI.** A surface that invites strangers to
+upload reverse-engineered drawings and alloy specs of NAMED COMMERCIAL PRODUCTS is a takedown
+target, and the design answer is not a disclaimer in a footer. It is: a contract that cannot
+express a leaked file, an origin block above the payload rather than below it, a moderation gate
+before public display, and copy that never claims Qatoto checked anything. Every one of those is
+load-bearing and none of them is decoration.
+
+### Part 1 — the public read surface — SHIPPED 2026-09-10
+
+Everything below is in the diff and verified in a browser against the fixtures. No backend was
+needed: the arm was already mock and stayed mock.
+
+- **The contract grew a clean-room layer** (`src/lib/blueprints/schemas.ts`).
+  `BLUEPRINT_MODERATION_STATES`, `TEARDOWN_SUBJECT_KINDS`, `BLUEPRINT_PROVENANCE_KINDS`,
+  `TEARDOWN_UNIT_ACQUISITIONS`, `TEARDOWN_SURVEY_METHODS`, `TEARDOWN_MATERIAL_CLASSES`,
+  `TEARDOWN_DESIGNATION_SOURCES`, `TEARDOWN_COMPOSITION_ANALYSIS_METHODS` — all snake_case,
+  all byte-matching a future `pgEnum`, each with a `Record` label map so a new value is a compile
+  error rather than an unlabelled chip.
+- **There is no field for somebody else's document, and that is the guarantee.** The approved
+  vocabulary is `Independent dimensional survey`, `Empirical teardown analysis` and
+  `Material spectroscopy & alloy analysis`. ⚠️ **`OEM CAD`, `Original blueprints`,
+  `Factory drawings` and `Proprietary specs` are BANNED STRINGS on this surface** — each names
+  material the pipeline must never carry, and a label is what a reader believes. A shape that
+  cannot hold a leak is stronger than a policy page asking for one not to be uploaded.
+- **`subjectKind` is minimal on purpose and the public arm pins it.**
+  `TeardownBlueprintSchema` carries `z.literal("existing_physical_product")`, so a
+  `proposed_design` teardown is UNCONSTRUCTIBLE rather than merely discouraged. The two-value
+  tuple exists for the wizard's refusal message. **Do not grow a proposed-design blueprint type
+  off the back of it** — that was named a non-goal, and the field is one literal precisely so
+  nobody reads it as the start of one.
+- **The provenance chip is DERIVED, never stored.** `resolveTeardownProvenanceChip` reads
+  `(provenance.kind, moderationState)` and returns one of three display states. Two fields that
+  could each claim a state the other contradicts is the bag of loose flags CLAUDE.md Pattern 1
+  rules out. Moderation outranks provenance: a reported row reads as reported whatever its
+  publisher declared.
+  ⚠️ **IT IS NOT A TRAFFIC LIGHT AND MUST NOT BECOME ONE.** Green / amber / red was specified and
+  is implemented in palette instead — `docs/Design.md` §2's One Hue Rule allows one family between
+  196 and 201 degrees plus one blue and one red, and §6 forbids signalling anything with colour
+  alone. The two ordinary states differ by FILL, not hue; only the reported state reaches for
+  `Destructive`. Every chip carries a word and a glyph, and **the text label is canonical**.
+- **The origin block renders ABOVE the bill of materials and above every file**, in all three
+  views (`teardown-provenance-block.tsx`). That ordering is the feature: the files are what a
+  reader takes away, and a provenance claim placed after them is a disclaimer, which is a thing
+  readers have already scrolled past. It carries the unit surveyed, how it was obtained, the
+  methods in ENUM ORDER, the licence when there is one, the publisher's attestation date, and the
+  standing sentence that everything here is the publisher's own measurement of a legally acquired,
+  off-the-shelf unit.
+  ⚠️ **NOTHING IN IT SAYS QATOTO CHECKED ANYTHING.** No patent search, no clearance opinion, no
+  verification of the publisher's account of their own bench. PRODUCT.md's rule that an
+  unattributed figure reads as invented applies harder to an unattributed legal opinion.
+- **Moderation is enforced in the getters, not in the pages** (`src/lib/blueprints/api.ts`).
+  `PUBLICLY_LISTABLE_MODERATION_STATES` is `published` + `flagged`;
+  `PUBLICLY_READABLE_MODERATION_STATES` adds `quarantined`. ⚠️ **A LIST AND A DETAIL READ DISAGREE
+  ON PURPOSE.** An index is a recommendation, so a quarantined row is absent from every one of
+  them; a detail read is a direct request, and a reader who followed an existing link is owed the
+  reason rather than a 404 that reads as a broken bookmark. `draft` and `pending_review` are in
+  neither, which is the "moderator approval before public display" rule enforced in the one place
+  every read passes through. `removed` answers 404, indistinguishable from a slug that never
+  existed.
+  ⚠️ **`listBlueprintSlugsByCategory` USES THE READABLE GATE**, so a quarantined slug is still
+  prerendered. Filtering it there would lose the notice on the one URL that needs it.
+  ⚠️ **`isBlueprintVisible` READS THE TEARDOWN ARM AND SHORT-CIRCUITS FOR THE OTHER TWO** —
+  showcases and case studies carry no `moderationState` yet. When they gain one, delete the
+  `category` check rather than adding a second gate.
+- **The three moderation renders are distinct and must not be collapsed**
+  (`teardown-moderation-notice.tsx`). `flagged` renders a notice and CHANGES NOTHING ELSE —
+  delisting on an unexamined report would make the report control a takedown control, which is the
+  failure every notice-and-takedown system is judged on. `quarantined` withholds the files, the
+  model, the composition, the fastener BOM, the telemetry, the steps, the video and the cost band,
+  and says so. `canRenderTeardownPayload` is exported from that file so the same decision is not
+  re-derived in eight places.
+  ⚠️ **THE MARKET SIGNAL IS DELIBERATELY NOT WITHHELD ON A QUARANTINED ROW.** A quarantine is a
+  claim about the publisher's FILES; it says nothing about whether a market exists, and
+  suppressing the band would let a moderation action quietly delete an unrelated fact.
+- **Composition hangs off the teardown, not off `assembly.parts`.** Most teardowns publish no
+  model, and a composition layer reachable only through a `.glb` would be missing from exactly the
+  rows with nothing else to offer. `partId` links to a modelled part when there is one and is
+  refined against `assembly.parts` in the same `superRefine` that checks `focusedPartId`.
+  Required: `designation`, `designationSource`, `materialClass`. **`process` and `finish` are
+  NULLABLE INSIDE that required set** — a publisher who read an alloy off a marking usually knows
+  neither, and forcing them would produce a guess wearing the same type as a fact.
+  ⚠️ **ELEMENT PERCENTAGES ARE NEVER REQUIRED.** `elements: []` is ORDINARY and renders a row with
+  no disclosure control, never an empty table and never "no data".
+- **⚠️ DECLARED DATA NEVER RENDERS AS MEASURED DATA, and this is the most important rule in the
+  composition layer.** "6063-T5" off a supplier's invoice and "6063-T5" off an OES burn are the
+  same eleven characters and completely different claims, and a founder committing tooling money
+  is taking a different risk under each. `TEARDOWN_DESIGNATION_SOURCE_IS_MEASURED` and
+  `TEARDOWN_COMPOSITION_ANALYSIS_METHOD_IS_MEASURED` are `Record`s so a new value has to declare
+  which it is; the source prints on EVERY material row and never behind a disclosure, and an
+  unmeasured designation carries an explicit "declared, not measured" clause. The contract also
+  REFUSES an `instrumentLabel` on an unmeasured element row.
+- **`synthetic_example` is a wire value, not a fixture hack.** Every element figure in
+  `blueprints-mocks.ts` carries it, and a table containing one renders a stated banner. A grid of
+  element symbols and weight percents is the most measurement-shaped thing on the surface and the
+  shape alone is persuasive enough to need contradicting. The value survives into production
+  because real contributors paste numbers they did not measure too; `declared_not_measured` is its
+  honest sibling for datasheet figures.
+- **`weightPercentRange: null` means IDENTIFIED BUT NOT QUANTIFIED** and renders "Not quantified",
+  not a dash and not a zero. A trace element found by XRF and an element measured at 0 % are
+  opposite findings.
+- **The market signal answers "does anybody want this"** (`getTeardownMarketSignal`,
+  `teardown-market-signal.tsx`). Primary: live store listings in the same product class, via a new
+  nullable `storeProductClass` on the arm. Secondary: showcases whose `builtFromBlueprintSlug`
+  matches, which is a reverse lookup on a field the contract already had.
+  ⚠️ **NO SIGNAL SUPPRESSES THE WHOLE BLOCK** — the getter returns `null` rather than an empty
+  pair, so the component cannot get it wrong. There is no "No builds yet", no "No listings" and no
+  empty zero-state card; an empty state here would read as a VERDICT on the product.
+  ⚠️ **ATTENTION IS NOT DEMAND.** `viewCount`, `likeCount` and `saveCount` are excluded by name,
+  and the band says so in one line.
+- **The density switch is a QUERY PARAM, not client state** (`src/lib/blueprints/teardown-views.ts`,
+  `teardown-view-switch.tsx`). `?view=business|engineering|factory`, default `business`, and the
+  default is written OUT of the URL rather than into it so the canonical path stays canonical.
+  `?view=factory` is a URL a founder sends to the shop that will make the thing.
+  ⚠️ **NO VIEW HIDES A FACT THE OTHERS SHOW.** The switch reorders two blocks and decides whether
+  the composition disclosures start open, and that is all it does — a view that withheld something
+  would turn a reading preference into an access control. Business reads market → explorer →
+  composition; engineering and factory read composition → explorer → market, because a
+  manufacturer's first question about a part is what it is made of.
+  It also seeds the explorer's opening tab through a new `initialTab` prop, which is an INITIAL
+  value only: a controlled tab would make the tab bar rewrite the URL, and the URL already means
+  something else here.
+- **The decision row** (`teardown-decision-row.tsx`) puts parts cost, part count, published
+  fabrication formats and difficulty above the prose. ⚠️ **IT IS NOT THE HERO-METRIC TEMPLATE** —
+  four peers at body size in a hairline `<dl>`, not one big number with supporting stats. An
+  absent fact drops the whole cell; the floor is difficulty alone, which is what
+  `thermal-camera-module-teardown` actually renders.
+- **The route took `searchParams` and therefore `instant = false`**, the same Cache Components
+  opt-out the two filtered index routes on this surface already carry. It is on the list in
+  §Cache Components opt-outs like every other one.
+- **The index card gained the chip and nothing else.** It says whether a reader may manufacture
+  what they are about to open, which changes whether the card is worth opening — a different job
+  from the category pill that was removed, which said "Teardown" on a page called Teardowns. No
+  note on the card: the sentence belongs above the files it qualifies.
+- **The `Report an IP concern` control links to `/copyright-policy`, a real page**, and that is
+  the honest shape until a table exists. The expedited claim route — claim kind (patent, trade
+  secret, copyright-CAD, trademark), claimant identity, the specific file or part — is Part 3
+  below. Shipping the form first would be a control whose write has no backing table, which is the
+  one thing this surface refuses everywhere else.
+
+**The fixture states, enumerated rather than sampled.** Twelve teardowns, and each of these is a
+distinct renderer branch that would otherwise ship unexercised:
+
+| Fixture                                                            | State                                                                               |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `solar-cold-storage-controller-teardown`                           | `designation_scanned_full` — three materials, element tables, both signals          |
+| `borehole-pump-housing-tolerances`                                 | `designation_scanned_partial` — two scanned, two not                                |
+| `battery-management-system-teardown`                               | `designation_only` — `process` and `finish` both null; showcase-only signal         |
+| `milk-chiller-heat-exchanger-teardown`                             | `designation_process_finish` — all five, no elements; listings-only signal          |
+| `brushless-motor-driver-schematic`, `hand-pump-gearbox-teardown`   | `designation_freetext` — real class and process, non-standard designation           |
+| `low-cost-spectrometer-optical-path`                               | `legacy_free_text` — the unmigrated string, `materialClass: "other"`                |
+| `thermal-camera-module-teardown`, `esp32-sensor-node-power-budget` | `no_designation_held` — `materials: []`; the first also has NO market signal at all |
+| `grain-moisture-meter-teardown`                                    | `disputed_quarantined`                                                              |
+| `off-grid-router-power-rail-teardown`                              | `flagged`                                                                           |
+| `irrigation-valve-actuator-teardown`                               | `pending_review` — every public read returns null                                   |
+
+⚠️ **`designation_freetext` AND `legacy_free_text` ARE NOT THE SAME STATE.** The first knows the
+class and the process and only lacks a standard name; the second is an old per-part `material`
+string migrated verbatim with `materialClass: "other"` and nothing else. Two fixtures apiece is
+what makes the difference visible.
+
+⚠️ **THE CHEMISTRY IS NOT SPREAD ACROSS EVERY FIXTURE, deliberately.** Two rows carry element
+tables and ten do not, because the ordinary state of a teardown is that nobody owned an analyser.
+Making every fixture rich would design the section against a population that will not exist.
+
+**Verified in a browser at `pnpm dev`**, not inferred: the quarantined row renders its notice with
+no composition and no cost band, the pending row 404s (200 with the not-found body in dev, per the
+`notFound()` section above), the index lists ten of twelve, `?view=engineering` opens two
+disclosures where `business` opens none, the default view's own link is a bare `?`, and a nonsense
+slug produces the identical breadcrumb to the pending one — so a withheld row leaks nothing beyond
+what the visitor typed.
+
+### Part 2 — the publish flow — NOT BUILT, blocked on the `blueprint_*` tables
+
+Entry at `/blueprints/teardowns/new`, management at `/studio/blueprints`, ONE wizard component
+mounted twice. Steps: subject and provenance, media and files, parts, materials and composition,
+review and attestation. Submission creates `pending_review`; only a `moderate_content` holder
+publishes.
+
+- **The precedents are already in the repo.** `/research-and-development/programs/new`
+  (`new-program-wizard-page.tsx`) is the anyone-proposes / moderator-publishes flow, and
+  `paper-moderation-queue.tsx` is the queue. Follow both rather than inventing a third shape.
+- **`proposed_design` is REFUSED at the subject step**, with a stated reason rather than a hidden
+  option. A disabled radio nobody can explain is worse than one that says why.
+- **The attestation is four separately-checked clauses** — lawful acquisition; non-destructive or
+  standard-disassembly methodology; no NDA or vendor-confidential material; independent discovery
+  under clean-room principles — re-accepted per submission and never remembered. `attestationAcceptedAt`
+  already renders on the detail page, so the record has a reader before it has a writer.
+- **Submit answers 202 and is NOT a result.** Render "Submitted, we are checking" and poll. The
+  idempotency key is minted once per attempt in component state. Nothing optimistic; a 409 is a
+  finding, not a retry. Same four rules as every R&D write.
+- **Missing states to name BEFORE any of this is built**, because the scope guard says so:
+  wizard-step validation error, attestation ungated (submit disabled WITH the reason stated),
+  submitting, 202-accepted-and-polling, rejected with the moderator's own reason, published,
+  quarantined-after-publish as seen by its own author, and the studio list's empty state. Eight,
+  and none of them is a spinner.
+
+### Part 3 — the rights-claim route — NOT BUILT, blocked on a table
+
+`/blueprints/teardowns/[slug]/report`, a ROUTE and not a dialog, on the
+`/store/factories/[factorySlug]/inquire` precedent — claim kind, claimant identity, and the
+specific file or part is too much for a modal, and `docs/Design.md` §6 says exhaust inline and
+progressive first. Answers 202. Filing moves the row to `flagged`; a substantiated claim or a
+verified rights holder moves it to `quarantined`, which is why both states already render.
+Until the table exists the control links to `/copyright-policy`, which is a real page.
+
+### Part 4 — pointing the market signal at real commerce — NOT BUILT, and blocked on CONTENT
+
+`MOCK_STORE_LISTING_SIGNALS_BY_CATEGORY_SLUG` is the one mock in `getTeardownMarketSignal` that is
+mock on purpose rather than by default. `searchStore({ categorySlug })` is live and wired, and
+`TeardownStoreListingSignalSchema` is a field-for-field subset of `StoreSearchHitSchema` so the
+swap is a `.map`. ⚠️ **It stays mock because every teardown on this surface is INVENTED** — the
+class each one names is invented too, and joining real listings onto a fabricated product would
+present real commerce as evidence about something that does not exist. Swap it when the teardowns
+are real, in `api.ts`, and nothing above it changes.
+
+### The migration, when Parts 2 and 3 are built
+
+`blueprint`, `blueprint_part`, `blueprint_part_model`, `blueprint_fastener`,
+`blueprint_manufacturing_file`, `blueprint_assembly_step` — already listed in §1a — plus
+`blueprint_provenance`, `blueprint_material`, `blueprint_material_element` and
+`blueprint_rights_claim`, and the `blueprint_moderation_state` pgEnum whose labels this frontend
+already byte-matches.
+
+⚠️ **IT LANDS ON THE SHARED AIVEN DATABASE.** Generate the Drizzle migration, commit the SQL,
+verify nullability against the contract above (`process`, `finish`, `weightPercentRange`,
+`licence`, `storeProductClass` and `partId` are all nullable and each for a stated reason), test
+locally, then request manual sign-off. **Do not wire migration execution into automated
+deployment**, and do not fold the apply into a build step.
+
+### Non-goals, recorded so they are not rediscovered as gaps
+
+Mechanical and thermal property specs, tolerance callouts, an RFQ pipeline off a teardown,
+automatic costing, any patent or clearance check, a proposed-design blueprint type, and analytics
+on any of it. Each was named and each is out.

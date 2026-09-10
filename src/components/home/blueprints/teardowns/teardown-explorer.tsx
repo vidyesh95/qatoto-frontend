@@ -57,6 +57,14 @@ type TeardownViewerState =
   | { readonly status: "error"; readonly message: string };
 
 export interface TeardownExplorerProps {
+  /**
+   * WHICH TAB THE STAGE OPENS ON, chosen by the page's density switch: a founder wants the product
+   * shot, an engineer wants the parts, a factory wants the numbers. It is an INITIAL value only —
+   * the tab bar owns the tab from the first click onwards — which is why it seeds `useState` rather
+   * than being read on every render. A controlled tab would make the tab bar rewrite the URL, and
+   * the URL already means something else here.
+   */
+  readonly initialTab?: TeardownViewerTab;
   readonly assembly: TeardownAssembly;
   readonly assemblySteps: readonly TeardownAssemblyStep[];
   readonly title: string;
@@ -128,6 +136,7 @@ function StageErrorPanel({ message }: { readonly message: string }) {
 }
 
 export default function TeardownExplorer({
+  initialTab = DEFAULT_TEARDOWN_VIEWER_TAB,
   assembly,
   assemblySteps,
   title,
@@ -139,7 +148,7 @@ export default function TeardownExplorer({
   const [store] = useState(() => createExplosionStore());
   const [viewerState, setViewerState] = useState<TeardownViewerState>({ status: "idle" });
   const [stiffnessPerSecond, setStiffnessPerSecond] = useState(EXPLOSION_STIFFNESS_PER_SECOND);
-  const [activeTab, setActiveTab] = useState<TeardownViewerTab>(DEFAULT_TEARDOWN_VIEWER_TAB);
+  const [activeTab, setActiveTab] = useState<TeardownViewerTab>(initialTab);
   /**
    * Empty until the Components tab has been opened AND the bake has run, and the rail renders
    * exactly what it rendered before this feature when it is empty. A bake that fails, is skipped or

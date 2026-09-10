@@ -4,8 +4,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import TeardownProvenanceChipBadge from "@/components/home/blueprints/teardowns/sections/teardown-provenance-chip";
 import {
   BLUEPRINT_DIFFICULTY_LABELS,
+  resolveTeardownProvenanceChip,
   TEARDOWN_MANUFACTURING_FILE_KIND_SHORT_LABELS,
   TEARDOWN_MANUFACTURING_FILE_KINDS,
   buildBlueprintHref,
@@ -121,6 +123,20 @@ export default function TeardownGridCard({ teardown }: { teardown: TeardownBluep
       <h3 className="mt-2 line-clamp-2 text-sm leading-5 font-medium text-foreground">
         {teardown.title}
       </h3>
+
+      {/*
+        THE PROVENANCE CHIP IS THE ONE THING ADDED BACK AFTER THE CATEGORY PILL WAS REMOVED, and the
+        difference is what it answers. The pill said "Teardown" on a page called Teardowns; this says
+        whether the reader may manufacture what they are about to open, which changes whether the
+        card is worth opening at all. NO NOTE HERE — a card is a label a reader acts on later, and
+        the sentence belongs on the detail page above the files it qualifies.
+
+        A flagged teardown carries the reported chip here too. The index excludes quarantined rows
+        entirely (`src/lib/blueprints/api.ts`), so that state never reaches this card.
+      */}
+      <div className="mt-1.5">
+        <TeardownProvenanceChipBadge chip={resolveTeardownProvenanceChip(teardown)} />
+      </div>
 
       {/* THE LABEL IS NOT DECORATION. A bare "$45 - $60" on a card reads as the price of the
           teardown rather than the cost of the parts, which is the kind of ambiguity PRODUCT.md

@@ -10,12 +10,17 @@
 // and the parse below stops being a fixture check and starts being CLAUDE.md Pattern 2 — an
 // untrusted payload through `.strip()`. The parse is written now so that swap changes one line.
 
-import { MOCK_BLUEPRINTS, MOCK_SHOWCASE_COMMENTS } from "@/mocks/blueprints-mocks";
+import {
+  MOCK_BLUEPRINTS,
+  MOCK_SHOWCASE_COMMENTS,
+  MOCK_STORE_LISTING_SIGNALS_BY_CATEGORY_SLUG,
+} from "@/mocks/blueprints-mocks";
 import {
   type Blueprint,
   type BlueprintCategory,
   type BlueprintComment,
   BlueprintCommentSchema,
+  type BlueprintModerationState,
   type BlueprintOfCategory,
   type BlueprintPage,
   BlueprintSchema,
@@ -28,6 +33,8 @@ import {
   type ShowcaseSort,
   type TeardownBlueprint,
   type TeardownMediaFilter,
+  type TeardownStoreListingSignal,
+  TeardownStoreListingSignalSchema,
 } from "@/lib/blueprints/schemas";
 import type { FacetBucket } from "@/components/home/shared/facet-chip-row";
 
@@ -74,9 +81,55 @@ function isBlueprintOfCategory<TCategory extends BlueprintCategory>(
   return blueprint.category === category;
 }
 
+/**
+ * WHICH MODERATION STATES A LIST MAY CONTAIN.
+ *
+ * A LIST AND A DETAIL READ DISAGREE ON PURPOSE, and the difference is the whole moderation
+ * feature. An index is a recommendation — putting a quarantined row in one is Qatoto suggesting a
+ * teardown it has just withheld the files from — so a list carries `published` and `flagged` only.
+ * A DETAIL READ IS A DIRECT REQUEST for one row, and a reader who followed a link that already
+ * exists is owed the reason it changed rather than a 404 that reads as a broken bookmark.
+ *
+ * `flagged` IS IN BOTH. A report is an allegation nobody has ruled on; delisting on the strength of
+ * one would turn the report control into a takedown control, which is the failure mode every
+ * notice-and-takedown system is judged on.
+ *
+ * `draft` AND `pending_review` ARE IN NEITHER, and that is the "moderator approval before public
+ * display" rule enforced in the one place every read passes through. `removed` is in neither
+ * either: it answers 404, indistinguishable from a slug that never existed, on the store category
+ * precedent (`src/lib/store/catalog.api.ts`) — a stranger must not be able to probe which rows were
+ * taken down.
+ */
+const PUBLICLY_LISTABLE_MODERATION_STATES: readonly BlueprintModerationState[] = [
+  "published",
+  "flagged",
+];
+const PUBLICLY_READABLE_MODERATION_STATES: readonly BlueprintModerationState[] = [
+  "published",
+  "flagged",
+  "quarantined",
+];
+
+/**
+ * Whether one blueprint may be handed to the public at all.
+ *
+ * ⚠️ ONLY THE TEARDOWN ARM CARRIES `moderationState` TODAY, so this reads it off the arm rather
+ * than off the union. Showcases and case studies are unmoderated fixtures and stay listable; when
+ * they gain the field this switches to reading the shared shape and the `category` check goes.
+ */
+function isBlueprintVisible(
+  blueprint: Blueprint,
+  allowedStates: readonly BlueprintModerationState[],
+): boolean {
+  if (blueprint.category !== "teardown") return true;
+  return allowedStates.includes(blueprint.moderationState);
+}
+
 export async function listBlueprints(): Promise<Blueprint[]> {
   "use cache";
-  return MOCK_BLUEPRINTS.map(parseBlueprint).toSorted(byNewestFirst);
+  return MOCK_BLUEPRINTS.map(parseBlueprint)
+    .filter((blueprint) => isBlueprintVisible(blueprint, PUBLICLY_LISTABLE_MODERATION_STATES))
+    .toSorted(byNewestFirst);
 }
 
 /**
@@ -97,10 +150,11 @@ async function listBlueprintsByCategory<TCategory extends BlueprintCategory>(
   // The callback carries the predicate signature explicitly rather than leaning on TS 5.5's
   // inferred predicates — an inferred one through a delegating call is not something to bet the
   // arm fields of three list routes on.
-  const matching = MOCK_BLUEPRINTS.map(parseBlueprint).filter(
-    (blueprint): blueprint is BlueprintOfCategory<TCategory> =>
+  const matching = MOCK_BLUEPRINTS.map(parseBlueprint)
+    .filter((blueprint) => isBlueprintVisible(blueprint, PUBLICLY_LISTABLE_MODERATION_STATES))
+    .filter((blueprint): blueprint is BlueprintOfCategory<TCategory> =>
       isBlueprintOfCategory(blueprint, category),
-  );
+    );
   return matching.toSorted(byNewestFirst);
 }
 
@@ -108,7 +162,13 @@ export async function getBlueprint(slug: string): Promise<Blueprint | null> {
   "use cache";
   if (isReservedSlug(slug)) return null;
   const match = MOCK_BLUEPRINTS.find((blueprint) => blueprint.slug === slug);
-  return match ? parseBlueprint(match) : null;
+  if (match === undefined) return null;
+
+  // A DRAFT, A PENDING SUBMISSION AND A REMOVED ROW ARE ALL `null` HERE, which the route turns
+  // into a 404. The author's own view of an unpublished row is a studio read, not this one — an
+  // owner check on a public getter is an authorization decision, and this is the untrusted layer.
+  const blueprint = parseBlueprint(match);
+  return isBlueprintVisible(blueprint, PUBLICLY_READABLE_MODERATION_STATES) ? blueprint : null;
 }
 
 /**
@@ -414,6 +474,65 @@ export async function listShowcaseComments(showcaseSlug: string): Promise<Bluepr
   ]);
 }
 
+// --- Market signal ------------------------------------------------------------
+//
+// THE ONE QUESTION A TEARDOWN CANNOT ANSWER BY ITSELF: does anybody want the thing. The whole
+// argument for building a known product rather than an invention is that the demand question is
+// already settled — so a teardown that shows the reader nothing about demand has dropped the half
+// of the pitch that made it worth reading.
+//
+// ⚠️ ONLY REAL ROWS COUNT, AND ATTENTION IS NOT DEMAND. `viewCount`, `likeCount` and `saveCount`
+// are on the row and are deliberately NOT part of this: forty thousand people reading a teardown
+// is forty thousand people reading a teardown. What counts is somebody having listed the product
+// for sale, or somebody having shipped a build from these files.
+//
+// ⚠️ NO SIGNAL SUPPRESSES THE WHOLE BLOCK. There is no "no builds yet", no "no listings" and no
+// empty card, and that is `docs/PRODUCT.md` Principle 2 applied at the section level rather than
+// the field level. An empty state here would read as a verdict on the product — a founder does not
+// need Qatoto's fixtures telling them nobody wants a thing.
+
+export interface TeardownMarketSignal {
+  /** Live listings of the same product class. The PRIMARY signal; commerce is the strongest one held. */
+  readonly storeListings: readonly TeardownStoreListingSignal[];
+  /** Builds published from this teardown. Secondary: evidence of feasibility as much as of demand. */
+  readonly showcases: readonly ShowcaseBlueprint[];
+}
+
+/**
+ * What the market-signal band renders, or `null` when there is nothing real to say.
+ *
+ * ⚠️ THE STORE HALF IS THE ONE MOCK IN THIS GETTER THAT IS NOT MOCK BY ACCIDENT. `searchStore` and
+ * `getStoreCategory` (`src/lib/store/catalog.api.ts`) are live, wired reads against the Express
+ * backend, and pointing this at them is a `.map` — `TeardownStoreListingSignalSchema` is a
+ * field-for-field subset of `StoreSearchHitSchema` precisely so that it is. It stays mock for one
+ * reason: every teardown on this surface is INVENTED, so the class its `storeProductClass` names is
+ * invented too, and joining real listings onto a fabricated product would present real commerce as
+ * evidence about something that does not exist. The swap happens when the teardowns are real, in
+ * this file, and nothing above it changes (`todo.md` §Blueprint market signal).
+ *
+ * THE SHOWCASE HALF IS ALREADY REAL IN THE ONLY SENSE THAT MATTERS: it is a reverse lookup on
+ * `builtFromBlueprintSlug`, a field the contract already carries, so it will keep working unchanged
+ * against a backend.
+ */
+export async function getTeardownMarketSignal(
+  teardown: TeardownBlueprint,
+): Promise<TeardownMarketSignal | null> {
+  "use cache";
+  const storeListings =
+    teardown.storeProductClass === null
+      ? []
+      : (
+          MOCK_STORE_LISTING_SIGNALS_BY_CATEGORY_SLUG[teardown.storeProductClass.categorySlug] ?? []
+        ).map((candidate) => TeardownStoreListingSignalSchema.parse(candidate));
+
+  const showcases = (await listBlueprintsByCategory("showcase")).filter(
+    (showcase) => showcase.builtFromBlueprintSlug === teardown.slug,
+  );
+
+  if (storeListings.length === 0 && showcases.length === 0) return null;
+  return { storeListings, showcases };
+}
+
 /**
  * Tag counts for one category's WHOLE set, not for the page being rendered.
  *
@@ -427,6 +546,9 @@ export async function listBlueprintTagFacets(category: BlueprintCategory): Promi
   const countsByTag = new Map<string, number>();
   for (const blueprint of MOCK_BLUEPRINTS.map(parseBlueprint)) {
     if (blueprint.category !== category) continue;
+    // The facet counts the list, so it obeys the list's gate — a chip promising three rows that
+    // resolves to two is a count the reader can see is wrong.
+    if (!isBlueprintVisible(blueprint, PUBLICLY_LISTABLE_MODERATION_STATES)) continue;
     for (const tag of blueprint.tags) countsByTag.set(tag, (countsByTag.get(tag) ?? 0) + 1);
   }
 
@@ -448,13 +570,28 @@ export async function listBlueprintTagFacets(category: BlueprintCategory): Promi
  */
 export async function listBlueprintSlugs(): Promise<string[]> {
   "use cache";
-  return MOCK_BLUEPRINTS.map((blueprint) => blueprint.slug).filter((slug) => !isReservedSlug(slug));
+  return MOCK_BLUEPRINTS.map(parseBlueprint)
+    .filter((blueprint) => isBlueprintVisible(blueprint, PUBLICLY_READABLE_MODERATION_STATES))
+    .map((blueprint) => blueprint.slug)
+    .filter((slug) => !isReservedSlug(slug));
 }
 
-/** One category's slugs, for that category's nested `generateStaticParams`. */
+/**
+ * One category's slugs, for that category's nested `generateStaticParams`.
+ *
+ * ⚠️ IT USES THE **READABLE** GATE, NOT THE LISTABLE ONE. A quarantined teardown is absent from
+ * every index and still answers on its own URL with a stated notice, so its slug must be
+ * prerendered — filtering it out here would give an existing link a 404 and lose the notice, which
+ * is the one thing a reader who followed that link needs.
+ */
 export async function listBlueprintSlugsByCategory(category: BlueprintCategory): Promise<string[]> {
   "use cache";
-  return MOCK_BLUEPRINTS.filter((blueprint) => blueprint.category === category)
+  return MOCK_BLUEPRINTS.map(parseBlueprint)
+    .filter(
+      (blueprint) =>
+        blueprint.category === category &&
+        isBlueprintVisible(blueprint, PUBLICLY_READABLE_MODERATION_STATES),
+    )
     .map((blueprint) => blueprint.slug)
     .filter((slug) => !isReservedSlug(slug));
 }

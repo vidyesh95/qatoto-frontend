@@ -349,12 +349,192 @@ const PUMP_PART_MODEL_DIRECTORY = "/dummy/blueprints/borehole-pump-housing";
  *   so both the safe and the marginal colour bands render somewhere.
  * - `calloutText: null` on one MOSFET, so a part with no pin sits beside parts with pins.
  */
+/**
+ * LIVE STORE LISTINGS OF THE SAME PRODUCT CLASS, keyed by `storeProductClass.categorySlug`.
+ *
+ * ⚠️ THIS IS THE PRIMARY MARKET SIGNAL AND IT IS THE ONE THAT IS MOCK ON PURPOSE RATHER THAN BY
+ * DEFAULT. `searchStore({ categorySlug })` (`src/lib/store/catalog.api.ts`) is a live, wired read,
+ * and `TeardownStoreListingSignalSchema` is a field-for-field subset of `StoreSearchHitSchema` so
+ * that pointing at it is a `.map`. It stays here because every teardown in this file is INVENTED —
+ * the class each one names is invented too, and joining real listings onto a product that does not
+ * exist would present real commerce as evidence about a fabrication. Swap it when the teardowns are
+ * real, in `api.ts`, and nothing above changes.
+ *
+ * A CLASS WITH NO ENTRY IS AN ABSENT HALF, NOT AN EMPTY LIST TO RENDER.
+ * `battery-management-modules` is deliberately missing so one teardown's signal comes from its
+ * showcase alone, and `dairy-cooling` has no showcase so one comes from listings alone. A third
+ * teardown has neither and suppresses the whole block.
+ *
+ * `priceInCents` AND `currency` TRAVEL TOGETHER. The last row here has neither, which is what a
+ * quote-only offering looks like, and the renderer must print the row without inventing a price.
+ */
+export const MOCK_STORE_LISTING_SIGNALS_BY_CATEGORY_SLUG: Record<
+  string,
+  readonly {
+    readonly productSlug: string;
+    readonly title: string;
+    readonly organizationDisplayName: string;
+    readonly priceInCents: number | null;
+    readonly currency: string | null;
+  }[]
+> = {
+  "solar-refrigeration": [
+    {
+      productSlug: "kilimo-240l-solar-chest-freezer",
+      title: "240 L solar chest freezer, 24 V",
+      organizationDisplayName: "Kilimo Cold",
+      priceInCents: 89900,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    {
+      productSlug: "sunbank-400l-off-grid-freezer",
+      title: "400 L off-grid freezer with MPPT controller",
+      organizationDisplayName: "Sunbank Appliances",
+      priceInCents: 134500,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    {
+      productSlug: "harvest-line-solar-cold-room-controller",
+      title: "Solar cold-room controller, retrofit",
+      organizationDisplayName: "Harvest Line",
+      priceInCents: 21900,
+      currency: UNITED_STATES_DOLLAR,
+    },
+  ],
+  "borehole-pumps": [
+    {
+      productSlug: "deepwell-4in-solar-borehole-pump",
+      title: "4-inch solar borehole pump, 750 W",
+      organizationDisplayName: "Deepwell Systems",
+      priceInCents: 47500,
+      currency: UNITED_STATES_DOLLAR,
+    },
+    {
+      productSlug: "annapurna-stainless-pump-wet-end",
+      title: "Stainless pump wet end, spares only",
+      organizationDisplayName: "Annapurna Pumps",
+      priceInCents: 18200,
+      currency: UNITED_STATES_DOLLAR,
+    },
+  ],
+  "dairy-cooling": [
+    {
+      // Quote-only: no price, no currency, and the row still renders.
+      productSlug: "milkline-500l-bulk-cooler",
+      title: "500 L bulk milk cooler",
+      organizationDisplayName: "Milkline Dairy Equipment",
+      priceInCents: null,
+      currency: null,
+    },
+  ],
+  "agricultural-instruments": [
+    {
+      productSlug: "fieldsense-grain-moisture-meter",
+      title: "Handheld grain moisture meter",
+      organizationDisplayName: "Fieldsense Instruments",
+      priceInCents: 12900,
+      currency: UNITED_STATES_DOLLAR,
+    },
+  ],
+};
+
 export const MOCK_BLUEPRINTS: Blueprint[] = [
   {
     id: "bp-001",
     slug: "solar-cold-storage-controller-teardown",
     title: "Solar cold-storage controller, board and all",
     category: "teardown",
+    // STATE: designation_scanned_full. Every material carries an element table, and every row in
+    // every one of them is `synthetic_example` — see the file header. This is the richest row on
+    // the surface and therefore the one most able to masquerade as lab output, so it is the row
+    // that has to say loudest that it is not.
+    moderationState: "published",
+    subjectKind: "existing_physical_product",
+    provenance: {
+      kind: "community_reverse_engineered",
+      subjectProductName: "400 L off-grid chest freezer control board (invented unit)",
+      unitAcquisition: "retail_purchase",
+      surveyMethods: ["dimensional_survey", "empirical_teardown", "material_spectroscopy"],
+      surveyedAt: "2026-07-29T00:00:00.000Z",
+      licence: null,
+      attestationAcceptedAt: "2026-08-14T09:10:00.000Z",
+      notes: "Two units bought; the second was left assembled as a reference.",
+    },
+    storeProductClass: { categorySlug: "solar-refrigeration", label: "Solar refrigeration" },
+    materials: [
+      {
+        id: "mat-001",
+        appliesToLabel: "Enclosure base and lid",
+        partId: "part-001",
+        designation: "ABS, UL94 V-0",
+        designationSource: "manufacturer_marking",
+        materialClass: "polymer",
+        process: "injection_molded",
+        finish: "Moulded texture, no secondary finish",
+        elements: [],
+      },
+      {
+        id: "mat-002",
+        appliesToLabel: "Heatsink extrusion",
+        partId: "part-004",
+        designation: "6063-T5",
+        designationSource: "measured_spectroscopy",
+        materialClass: "metal_alloy",
+        process: "cnc_milled",
+        finish: "Clear anodised",
+        elements: [
+          {
+            symbol: "Al",
+            weightPercentRange: { minimumPercent: 97.5, maximumPercent: 99.35 },
+            analysisMethod: "synthetic_example",
+            instrumentLabel: null,
+            operatorNote: "Invented figure. Nobody ran this scan.",
+          },
+          {
+            symbol: "Mg",
+            weightPercentRange: { minimumPercent: 0.45, maximumPercent: 0.9 },
+            analysisMethod: "synthetic_example",
+            instrumentLabel: null,
+            operatorNote: null,
+          },
+          {
+            symbol: "Si",
+            weightPercentRange: { minimumPercent: 0.2, maximumPercent: 0.6 },
+            analysisMethod: "synthetic_example",
+            instrumentLabel: null,
+            operatorNote: null,
+          },
+          {
+            // IDENTIFIED BUT NOT QUANTIFIED — the ordinary result on a trace element, and a
+            // different statement from zero percent.
+            symbol: "Fe",
+            weightPercentRange: null,
+            analysisMethod: "synthetic_example",
+            instrumentLabel: null,
+            operatorNote: "Present as a trace; not quantified.",
+          },
+        ],
+      },
+      {
+        id: "mat-003",
+        appliesToLabel: "Control board substrate",
+        partId: "part-003",
+        designation: "FR-4, 1.6 mm, four layers",
+        designationSource: "public_datasheet",
+        materialClass: "laminate",
+        process: "pcb_assembly",
+        finish: "ENIG",
+        elements: [
+          {
+            symbol: "Cu",
+            weightPercentRange: { minimumPercent: 28, maximumPercent: 34 },
+            analysisMethod: "synthetic_example",
+            instrumentLabel: null,
+            operatorNote: "Invented figure, quoted here to exercise the table.",
+          },
+        ],
+      },
+    ],
     summary:
       "The full control board from a 400 L off-grid chest freezer: MPPT stage, compressor driver, and why the thermistor placement costs it four percent of its duty cycle.",
     thumbnailUrl: "/dummy/thumbnail_image01.avif",
@@ -625,6 +805,24 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "thermal-camera-module-teardown",
     title: "What is actually inside a $180 thermal camera module",
     category: "teardown",
+    // STATE: no_designation_held. The floor row of the whole surface — no BOM, no part count, no
+    // media — and it holds no composition either. `materials: []` renders NO SECTION: not "no data",
+    // not an empty table. It is also the row with NO MARKET SIGNAL of any kind, which suppresses
+    // that entire block rather than printing "no listings".
+    moderationState: "published",
+    subjectKind: "existing_physical_product",
+    provenance: {
+      kind: "community_reverse_engineered",
+      subjectProductName: "Handheld thermal camera module (invented unit)",
+      unitAcquisition: "secondary_market",
+      surveyMethods: ["empirical_teardown"],
+      surveyedAt: "2026-06-11T00:00:00.000Z",
+      licence: null,
+      attestationAcceptedAt: "2026-06-18T00:00:00.000Z",
+      notes: null,
+    },
+    storeProductClass: null,
+    materials: [],
     summary:
       "Desoldering the sensor package to find a two-generation-old microbolometer behind a new part number, plus the calibration table it ships with.",
     thumbnailUrl: "/dummy/thumbnail_image02.avif",
@@ -657,6 +855,37 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "brushless-motor-driver-schematic",
     title: "A 24 V brushless driver you can actually source in Lagos",
     category: "teardown",
+    // STATE: designation_freetext — a real class and process, with a designation the publisher
+    // wrote in their own words because no standard designation fits. NOT the same as the legacy
+    // state below: this row knows what the material IS, it just cannot name it to a standard.
+    //
+    // Also the AUTHORIZED / OPEN SOURCE provenance arm, which is why it carries a licence at all.
+    moderationState: "published",
+    subjectKind: "existing_physical_product",
+    provenance: {
+      kind: "authorized_or_open_source",
+      subjectProductName: "Open-hardware three-phase driver board (invented unit)",
+      unitAcquisition: "retail_purchase",
+      surveyMethods: ["empirical_teardown"],
+      surveyedAt: "2026-05-30T00:00:00.000Z",
+      licence: { name: "CERN-OHL-S v2", url: "https://example.com/licences/cern-ohl-s-2" },
+      attestationAcceptedAt: "2026-06-02T00:00:00.000Z",
+      notes: "Published under the original design's own licence; the licence text is unmodified.",
+    },
+    storeProductClass: null,
+    materials: [
+      {
+        id: "mat-010",
+        appliesToLabel: "Gate-driver potting compound",
+        partId: null,
+        designation: "Soft grey two-part silicone, unbranded",
+        designationSource: "contributor_freetext",
+        materialClass: "elastomer",
+        process: "cast",
+        finish: null,
+        elements: [],
+      },
+    ],
     summary:
       "Schematic and layout for a 15 A BLDC driver built entirely from parts with three or more local distributors — the substitution table is the interesting half.",
     thumbnailUrl: "/dummy/thumbnail_image03.avif",
@@ -749,6 +978,105 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "borehole-pump-housing-tolerances",
     title: "Borehole pump housing: the four tolerances that matter",
     category: "teardown",
+    // STATE: designation_scanned_partial. Four materials, two scanned and two not, which is what a
+    // real survey looks like: a publisher runs the analyser on the parts they doubt and reads the
+    // rest off a marking. The section must not make the unscanned rows look like failures.
+    moderationState: "published",
+    subjectKind: "existing_physical_product",
+    provenance: {
+      kind: "community_reverse_engineered",
+      subjectProductName: "4-inch borehole pump wet end (invented unit)",
+      unitAcquisition: "retail_purchase",
+      surveyMethods: ["dimensional_survey", "material_spectroscopy"],
+      surveyedAt: "2026-07-02T00:00:00.000Z",
+      licence: null,
+      attestationAcceptedAt: "2026-07-08T00:00:00.000Z",
+      notes: null,
+    },
+    storeProductClass: { categorySlug: "borehole-pumps", label: "Borehole pumps" },
+    materials: [
+      {
+        id: "mat-020",
+        appliesToLabel: "Housing casting",
+        partId: "part-010",
+        designation: "316 stainless",
+        designationSource: "measured_spectroscopy",
+        materialClass: "metal_alloy",
+        process: "cast",
+        finish: "As-cast, bore machined",
+        elements: [
+          {
+            symbol: "Cr",
+            weightPercentRange: { minimumPercent: 16, maximumPercent: 18 },
+            analysisMethod: "synthetic_example",
+            instrumentLabel: null,
+            operatorNote: "Invented figure.",
+          },
+          {
+            symbol: "Ni",
+            weightPercentRange: { minimumPercent: 10, maximumPercent: 14 },
+            analysisMethod: "synthetic_example",
+            instrumentLabel: null,
+            operatorNote: null,
+          },
+          {
+            symbol: "Mo",
+            weightPercentRange: { minimumPercent: 2, maximumPercent: 3 },
+            analysisMethod: "synthetic_example",
+            instrumentLabel: null,
+            operatorNote: null,
+          },
+        ],
+      },
+      {
+        id: "mat-021",
+        appliesToLabel: "Drive shaft",
+        partId: "part-011",
+        designation: "17-4 PH, H900",
+        designationSource: "supplier_declared",
+        materialClass: "metal_alloy",
+        process: "cnc_milled",
+        finish: "Ground",
+        elements: [],
+      },
+      {
+        id: "mat-022",
+        appliesToLabel: "Impeller",
+        partId: "part-012",
+        designation: "CC480K bronze",
+        designationSource: "measured_spectroscopy",
+        materialClass: "metal_alloy",
+        process: "cast",
+        finish: null,
+        elements: [
+          {
+            symbol: "Cu",
+            weightPercentRange: { minimumPercent: 84, maximumPercent: 88 },
+            analysisMethod: "synthetic_example",
+            instrumentLabel: null,
+            operatorNote: "Invented figure.",
+          },
+          {
+            symbol: "Sn",
+            weightPercentRange: { minimumPercent: 9, maximumPercent: 11 },
+            analysisMethod: "synthetic_example",
+            instrumentLabel: null,
+            operatorNote: null,
+          },
+        ],
+      },
+      {
+        id: "mat-023",
+        appliesToLabel: "Seal carrier, as replaced by the publisher",
+        partId: "part-013",
+        designation: "PETG",
+        designationSource: "contributor_freetext",
+        materialClass: "polymer",
+        process: "fdm_printed",
+        finish: null,
+        elements: [],
+      },
+    ],
     summary:
       "CAD breakdown of a submersible pump housing, with the fits that decide whether it survives a season of silt and the three that do not matter at all.",
     thumbnailUrl: "/dummy/thumbnail_image04.avif",
@@ -895,6 +1223,53 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "battery-management-system-teardown",
     title: "A 7S BMS teardown, cell by cell",
     category: "teardown",
+    // STATE: designation_only. The required three are present and `process` and `finish` are BOTH
+    // null — the publisher identified the materials off their markings and could not say how the
+    // parts were made. That is the point of those two being nullable inside a required set: the
+    // alternative is a guess wearing the same type as a fact.
+    //
+    // MARKET SIGNAL: showcase only. Its store class holds no listings, so the store half is absent
+    // and the block still renders on the showcase alone.
+    moderationState: "published",
+    subjectKind: "existing_physical_product",
+    provenance: {
+      kind: "community_reverse_engineered",
+      subjectProductName: "16S lithium battery management board (invented unit)",
+      unitAcquisition: "retail_purchase",
+      surveyMethods: ["empirical_teardown"],
+      surveyedAt: "2026-06-25T00:00:00.000Z",
+      licence: null,
+      attestationAcceptedAt: "2026-06-30T00:00:00.000Z",
+      notes: null,
+    },
+    storeProductClass: {
+      categorySlug: "battery-management-modules",
+      label: "Battery management modules",
+    },
+    materials: [
+      {
+        id: "mat-030",
+        appliesToLabel: "Cell-tap harness insulation",
+        partId: null,
+        designation: "PVC, 105 °C",
+        designationSource: "manufacturer_marking",
+        materialClass: "polymer",
+        process: null,
+        finish: null,
+        elements: [],
+      },
+      {
+        id: "mat-031",
+        appliesToLabel: "Balance-resistor board",
+        partId: null,
+        designation: "FR-4",
+        designationSource: "manufacturer_marking",
+        materialClass: "laminate",
+        process: null,
+        finish: null,
+        elements: [],
+      },
+    ],
     summary:
       "Balancing topology, the MOSFET selection nobody explains, and a measured comparison of the protection thresholds against what the datasheet claims.",
     thumbnailUrl: "/dummy/thumbnail_image05.avif",
@@ -934,6 +1309,48 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "low-cost-spectrometer-optical-path",
     title: "Folding a spectrometer's optical path into 60 mm",
     category: "teardown",
+    // STATE: legacy_free_text. A row that predates the composition contract: its material knowledge
+    // was one unstructured string per part and it was migrated verbatim rather than re-typed by
+    // somebody who never held the unit. `materialClass: "other"`, everything else null, and the
+    // source says whose words these are. DISTINCT FROM designation_freetext, which knows the class
+    // and the process and only lacks a standard name.
+    moderationState: "published",
+    subjectKind: "existing_physical_product",
+    provenance: {
+      kind: "community_reverse_engineered",
+      subjectProductName: "Benchtop visible-range spectrometer (invented unit)",
+      unitAcquisition: "donated_unit",
+      surveyMethods: ["empirical_teardown"],
+      surveyedAt: "2026-04-18T00:00:00.000Z",
+      licence: null,
+      attestationAcceptedAt: "2026-04-20T00:00:00.000Z",
+      notes: null,
+    },
+    storeProductClass: null,
+    materials: [
+      {
+        id: "mat-040",
+        appliesToLabel: "Slit assembly",
+        partId: null,
+        designation: "thin stainless shim stock, unknown grade, laser cut",
+        designationSource: "contributor_freetext",
+        materialClass: "other",
+        process: null,
+        finish: null,
+        elements: [],
+      },
+      {
+        id: "mat-041",
+        appliesToLabel: "Body",
+        partId: null,
+        designation: "black printed plastic, matte, smells like PLA when sanded",
+        designationSource: "contributor_freetext",
+        materialClass: "other",
+        process: null,
+        finish: null,
+        elements: [],
+      },
+    ],
     summary:
       "The grating mount, the slit, and the printed baffle that took stray light from unusable to tolerable. Includes the alignment jig.",
     thumbnailUrl: "/dummy/thumbnail_image06.avif",
@@ -970,6 +1387,23 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "esp32-sensor-node-power-budget",
     title: "An ESP32 sensor node that lasts a year on two AAs",
     category: "teardown",
+    // The SECOND authorized / open-source row, and a second `materials: []`. An empty composition
+    // list is the ORDINARY case and it should look ordinary rather than appearing once on the
+    // deliberately-bare floor row.
+    moderationState: "published",
+    subjectKind: "existing_physical_product",
+    provenance: {
+      kind: "authorized_or_open_source",
+      subjectProductName: "Open-hardware ESP32 sensor node (invented unit)",
+      unitAcquisition: "retail_purchase",
+      surveyMethods: ["empirical_teardown"],
+      surveyedAt: "2026-05-02T00:00:00.000Z",
+      licence: { name: "TAPR OHL v1.0", url: "https://example.com/licences/tapr-ohl-1" },
+      attestationAcceptedAt: "2026-05-05T00:00:00.000Z",
+      notes: null,
+    },
+    storeProductClass: null,
+    materials: [],
     summary:
       "Measured current in every state, the regulator swap that mattered more than the firmware, and the deep-sleep figure the datasheet does not give you.",
     thumbnailUrl: "/dummy/thumbnail_image07.avif",
@@ -1006,6 +1440,49 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "milk-chiller-heat-exchanger-teardown",
     title: "Heat exchanger from a dairy chiller, cut in half",
     category: "teardown",
+    // STATE: designation_process_finish. All five required fields non-null and NO element table —
+    // the state a competent publisher reaches without owning an analyser, and the one the section
+    // must render as complete rather than as a table with its numbers missing.
+    //
+    // MARKET SIGNAL: store listings only. No showcase was ever built from it, so the block renders
+    // on the commerce half alone.
+    moderationState: "published",
+    subjectKind: "existing_physical_product",
+    provenance: {
+      kind: "community_reverse_engineered",
+      subjectProductName: "500 L bulk milk cooler plate pack (invented unit)",
+      unitAcquisition: "secondary_market",
+      surveyMethods: ["dimensional_survey", "empirical_teardown"],
+      surveyedAt: "2026-03-14T00:00:00.000Z",
+      licence: null,
+      attestationAcceptedAt: "2026-03-20T00:00:00.000Z",
+      notes: "Unit was scrap; the plate pack had already been split when it was acquired.",
+    },
+    storeProductClass: { categorySlug: "dairy-cooling", label: "Dairy cooling" },
+    materials: [
+      {
+        id: "mat-050",
+        appliesToLabel: "Heat-exchanger plates",
+        partId: null,
+        designation: "316L stainless, 0.5 mm",
+        designationSource: "manufacturer_marking",
+        materialClass: "metal_alloy",
+        process: "sheet_metal",
+        finish: "Pressed, pickled and passivated",
+        elements: [],
+      },
+      {
+        id: "mat-051",
+        appliesToLabel: "Plate gaskets",
+        partId: null,
+        designation: "NBR, food contact",
+        designationSource: "supplier_declared",
+        materialClass: "elastomer",
+        process: "injection_molded",
+        finish: "Glue-free clip-in",
+        elements: [],
+      },
+    ],
     summary:
       "Plate spacing, braze quality and the fouling pattern after eighteen months in service — with the pressure-drop measurements that explain the pump sizing.",
     thumbnailUrl: "/dummy/thumbnail_image08.avif",
@@ -1042,6 +1519,33 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "hand-pump-gearbox-teardown",
     title: "The gearbox in a village hand pump, after nine years",
     category: "teardown",
+    // A second designation_freetext row, on a mechanical subject rather than an electronic one.
+    moderationState: "published",
+    subjectKind: "existing_physical_product",
+    provenance: {
+      kind: "community_reverse_engineered",
+      subjectProductName: "Village hand-pump gearbox (invented unit)",
+      unitAcquisition: "donated_unit",
+      surveyMethods: ["dimensional_survey", "empirical_teardown"],
+      surveyedAt: "2026-02-08T00:00:00.000Z",
+      licence: null,
+      attestationAcceptedAt: "2026-02-12T00:00:00.000Z",
+      notes: null,
+    },
+    storeProductClass: null,
+    materials: [
+      {
+        id: "mat-060",
+        appliesToLabel: "Gear pair",
+        partId: null,
+        designation: "Case-hardened plain carbon steel, grade not marked",
+        designationSource: "contributor_freetext",
+        materialClass: "metal_alloy",
+        process: "cnc_milled",
+        finish: "Black oxide, mostly worn off",
+        elements: [],
+      },
+    ],
     summary:
       "Wear patterns on a cast bronze worm drive that outlived its rated life by six years, and the two bearings that did not.",
     thumbnailUrl: "/dummy/thumbnail_image09.avif",
@@ -1082,6 +1586,39 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "grain-moisture-meter-teardown",
     title: "A grain moisture meter and the capacitance bridge inside it",
     category: "teardown",
+    // STATE: disputed_quarantined. A rights holder raised a claim and it was substantiated, so the
+    // row is WITHHELD RATHER THAN DELETED: absent from every index, still answering on its own URL
+    // with a stated notice, and its files, model and composition unreachable. The composition below
+    // is present in the fixture precisely so that the renderer has something it must refuse to show.
+    moderationState: "quarantined",
+    subjectKind: "existing_physical_product",
+    provenance: {
+      kind: "community_reverse_engineered",
+      subjectProductName: "Capacitive grain moisture meter (invented unit)",
+      unitAcquisition: "retail_purchase",
+      surveyMethods: ["empirical_teardown", "material_spectroscopy"],
+      surveyedAt: "2026-01-22T00:00:00.000Z",
+      licence: null,
+      attestationAcceptedAt: "2026-01-25T00:00:00.000Z",
+      notes: null,
+    },
+    storeProductClass: {
+      categorySlug: "agricultural-instruments",
+      label: "Agricultural instruments",
+    },
+    materials: [
+      {
+        id: "mat-070",
+        appliesToLabel: "Sensing plate",
+        partId: null,
+        designation: "Tinned brass",
+        designationSource: "measured_spectroscopy",
+        materialClass: "metal_alloy",
+        process: "sheet_metal",
+        finish: "Bright tin",
+        elements: [],
+      },
+    ],
     summary:
       "Why the calibration is per-crop rather than universal, where the temperature compensation happens, and the op-amp choice that sets the whole error budget.",
     thumbnailUrl: "/dummy/thumbnail_image10.avif",
@@ -1118,6 +1655,36 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "off-grid-router-power-rail-teardown",
     title: "The power rail in an off-grid mesh router",
     category: "teardown",
+    // STATE: flagged. Somebody has reported an IP concern and NOBODY HAS RULED ON IT, so the public
+    // view is UNCHANGED apart from a stated notice — the files, the model and the composition all
+    // still render. Delisting on the strength of an unexamined report would turn the report control
+    // into a takedown control, which is the failure every notice-and-takedown system is judged on.
+    moderationState: "flagged",
+    subjectKind: "existing_physical_product",
+    provenance: {
+      kind: "community_reverse_engineered",
+      subjectProductName: "Solar-powered outdoor router (invented unit)",
+      unitAcquisition: "retail_purchase",
+      surveyMethods: ["empirical_teardown"],
+      surveyedAt: "2026-01-09T00:00:00.000Z",
+      licence: null,
+      attestationAcceptedAt: "2026-01-14T00:00:00.000Z",
+      notes: null,
+    },
+    storeProductClass: null,
+    materials: [
+      {
+        id: "mat-080",
+        appliesToLabel: "Enclosure",
+        partId: null,
+        designation: "ASA, UV stabilised",
+        designationSource: "manufacturer_marking",
+        materialClass: "polymer",
+        process: "injection_molded",
+        finish: "Grained, UV stable",
+        elements: [],
+      },
+    ],
     summary:
       "Three buck stages, one of them doing nothing useful, and the brownout behaviour that explains a year of unexplained reboots in the field.",
     thumbnailUrl: "/dummy/thumbnail_image11.avif",
@@ -1154,6 +1721,24 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "irrigation-valve-actuator-teardown",
     title: "A latching irrigation valve that runs on one coin cell a season",
     category: "teardown",
+    // STATE: pending_review. Submitted by a contributor and not yet cleared by a `moderate_content`
+    // holder, so EVERY public read returns null and the route 404s. It is in this file rather than
+    // omitted because the gate in `src/lib/blueprints/api.ts` is the rule "moderator approval before
+    // public display", and a rule with no row that tests it is a rule nobody has run.
+    moderationState: "pending_review",
+    subjectKind: "existing_physical_product",
+    provenance: {
+      kind: "community_reverse_engineered",
+      subjectProductName: "Latching irrigation valve actuator (invented unit)",
+      unitAcquisition: "retail_purchase",
+      surveyMethods: ["dimensional_survey", "empirical_teardown"],
+      surveyedAt: "2026-08-30T00:00:00.000Z",
+      licence: null,
+      attestationAcceptedAt: "2026-09-01T00:00:00.000Z",
+      notes: null,
+    },
+    storeProductClass: null,
+    materials: [],
     summary:
       "The latching solenoid, the drive pulse it actually needs versus the one the controller sends, and where the remaining energy goes.",
     thumbnailUrl: "/dummy/thumbnail_image12.avif",

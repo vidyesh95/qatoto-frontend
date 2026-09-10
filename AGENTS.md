@@ -114,7 +114,7 @@ prototypes (20%) and manufacturing case studies (10%) — and `next.config.ts` 3
 and `/anime/:path*` at the routing layer.
 
 **The hub is mock and that is a decision, not an oversight.** `src/mocks/blueprints-mocks.ts`
-holds 27 invented builds — 12 teardowns, 10 showcases, 5 case studies. It inherits the caveat `todo.md` recorded against `/anime`
+holds 32 invented builds — 12 teardowns, 10 showcases, 10 case studies. It inherits the caveat `todo.md` recorded against `/anime`
 verbatim — _a vertical you cannot fill should not ship_ — so the surface is **de-indexed**: it is
 absent from `src/app/sitemap.ts` AND both routes carry `robots: { index: false, follow: false }`.
 Both halves are needed, because the sidebar and mobile nav link the hub, so a sitemap omission
@@ -122,7 +122,7 @@ alone stops nothing (`robots.ts` says exactly this at the top). **Restoring both
 step** when real blueprints exist — miss one and the surface either ships invisible or ships
 indexed-while-fabricated.
 
-Three rules specific to this surface:
+Four rules specific to this surface — `CLAUDE.md` carries the long form:
 
 - **Components never import the fixtures.** Everything goes through `src/lib/blueprints/api.ts`,
   whose `"use cache"` getters mirror `src/lib/cms.ts`. `/anime` was wired the other way — its
@@ -133,6 +133,15 @@ Three rules specific to this surface:
   its fields — half a range is an unanswerable question. `null` means nobody costed it; it is
   not zero. Render it with `formatCentsRangeLabel` (`src/lib/store/format.ts`), which returns
   `null` rather than inventing a band.
+- **A teardown is a CLEAN-ROOM RECORD, and the contract is the guarantee.** It is an empirical
+  survey of a legally acquired, off-the-shelf commercial unit, and there is no field for a vendor's
+  drawing, an internal document or an NDA'd file. ⚠️ `OEM CAD`, `Original blueprints`,
+  `Factory drawings` and `Proprietary specs` are BANNED STRINGS. The origin block renders ABOVE the
+  bill of materials and above every file; nothing in it claims Qatoto checked anything. Moderation
+  is enforced in the getters (`src/lib/blueprints/api.ts`) — a list carries `published` + `flagged`,
+  a detail read adds `quarantined`, and `draft` / `pending_review` / `removed` reach nobody.
+  ⚠️ Declared data never renders as measured data: the designation SOURCE prints on every material
+  row and never behind a disclosure.
 - **The hero is real.** `GET /blueprints/hero-slides` and the admin console at
   `/admin/blueprints-hero` are live, backed by four rows. The `anime_hero_slide` TABLE and the
   five `anime_hero_slide_*` audit pgEnum labels KEEP THEIR NAMES — renaming them costs a
