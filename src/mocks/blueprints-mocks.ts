@@ -1210,6 +1210,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tags: ["cold-chain", "solar", "field-trial", "east-africa"],
     createdAt: "2026-08-30T12:00:00.000Z",
     tagline: "Holds 4 °C for 62 hours with no sun, in 41 °C ambient",
+    writeUp:
+      "We put the controller from the teardown into a 400 L chest unit and left it in Nakuru market for ninety days. The trader who runs the stall kept it loaded the whole time, which is the only version of this test worth reporting: an empty cabinet coasting on its own insulation holds a number nobody can use.\n\n" +
+      "The headline is 62 hours at 4 °C with no sun, measured with 380 L of produce loaded at 6 °C and an ambient that peaked at 41 °C. Empty, the same cabinet runs past 90 hours. We stopped quoting that figure after the first week because it flatters the design and tells a buyer nothing.\n\n" +
+      "Two things failed. A compressor start relay went at week three: it was rated for the current and not for forty starts a day, and nothing in its datasheet distinguishes the two. A door gasket took a permanent set in the heat and stopped sealing at the top corner, which cost about four hours of hold time before anyone noticed it.\n\n" +
+      "The battery is lead-acid, and that is the decision people argue with most. LiFePO4 would give better cycle life and would not derate at 41 °C. It would also mean a trader whose pack dies has a unit out of service until something ships, where a lead-acid battery is a same-afternoon walk to a shop they already use. A pack nobody local can source is a cold store that dies the first time it needs one.\n\n" +
+      "Next is the gasket, in a material that does not take a set, and a start relay chosen on cycles rather than amps. Neither moves the bill of materials by more than a few dollars.",
     launchedAt: "2026-09-01T08:00:00.000Z",
     upvoteCount: 214,
     commentCount: 7,
@@ -1259,6 +1265,8 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tags: ["agriculture", "optics", "instrumentation", "prototype"],
     createdAt: "2026-08-27T15:26:00.000Z",
     tagline: "Nitrogen and organic carbon in 40 seconds, without a lab",
+    writeUp:
+      "Third prototype, and the first one an agronomist can carry all day. Nitrogen and organic carbon in about forty seconds, against a district lab reference on the same samples.",
     launchedAt: "2026-08-28T09:30:00.000Z",
     upvoteCount: 147,
     commentCount: 0,
@@ -1299,6 +1307,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tags: ["mobility", "motors", "logistics", "west-africa"],
     createdAt: "2026-09-04T10:10:00.000Z",
     tagline: "300 kg up a 9% grade, on parts you can buy in Ikeja",
+    writeUp: null,
     launchedAt: "2026-09-05T07:15:00.000Z",
     upvoteCount: 302,
     commentCount: 5,
@@ -1354,6 +1363,10 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tags: ["agriculture", "instrumentation", "field-trial"],
     createdAt: "2026-08-22T13:40:00.000Z",
     tagline: "Within 0.4% of the lab, in a shed, on a phone charger",
+    writeUp:
+      "Twenty units went out to buying agents at four collection points. The comparison is against the district lab, on split samples from the same bag.\n\n" +
+      "Across 640 readings the units sat within 0.4% of the lab figure. The outliers were not the electronics: they were maize that had been sitting in a truck in the sun, where the surface is dry and the core is not, and a single probe reads whichever one it is touching. Two readings thirty seconds apart at different depths closes most of that gap.\n\n" +
+      "The unit runs off a phone charger because every collection point already has one. It was going to be a battery pack until an agent pointed out that the shed loses power for six hours a day, and the charger is what everyone already plugs into a generator.",
     launchedAt: "2026-08-24T06:45:00.000Z",
     upvoteCount: 96,
     commentCount: 0,
@@ -1400,6 +1413,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tags: ["cold-chain", "dairy", "retrofit", "energy"],
     createdAt: "2026-08-17T08:55:00.000Z",
     tagline: "23% less energy per litre, without buying a single new chiller",
+    writeUp: null,
     launchedAt: "2026-08-19T11:20:00.000Z",
     upvoteCount: 58,
     commentCount: 0,
@@ -1444,6 +1458,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tags: ["agriculture", "water", "actuators", "field-trial", "east-africa"],
     createdAt: "2026-09-01T15:45:00.000Z",
     tagline: "One coin cell per valve, a full season, zero mains",
+    writeUp:
+      "Forty valves across two hectares, latching solenoids on a CR2032 each, no mains and no solar. A latching valve draws current only while it changes state, so a season of twice-daily switching comes to a few hundred milliamp-seconds and the cell is oversized for it.\n\n" +
+      "The part that took the time was not the valve. It was building a controller that fails closed when a cell finally does go, because a drip line stuck open overnight costs more water than the whole season saves.",
     launchedAt: "2026-09-03T08:00:00.000Z",
     upvoteCount: 129,
     commentCount: 0,
@@ -1493,6 +1510,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tags: ["mobility", "batteries", "energy", "east-africa"],
     createdAt: "2026-08-28T16:05:00.000Z",
     tagline: "Swappable 1.2 kWh, 400 cycles, 91% capacity left",
+    writeUp: null,
     launchedAt: "2026-08-30T09:30:00.000Z",
     upvoteCount: 263,
     commentCount: 0,
@@ -1548,6 +1566,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tags: ["water", "mechanical", "retrofit", "east-africa"],
     createdAt: "2026-08-24T13:30:00.000Z",
     tagline: "Fitted in 40 minutes with the tools already on the truck",
+    writeUp: null,
     launchedAt: "2026-08-26T07:00:00.000Z",
     // Deliberately ties `grain-moisture-meter-field-units` at 96, so `byMostUpvoted`'s tie-break is
     // exercised on the second page of `?sort=top` rather than only in a comment.
@@ -1590,6 +1609,10 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tags: ["water", "machining", "field-trial", "west-africa"],
     createdAt: "2026-08-20T09:50:00.000Z",
     tagline: "Zero seal failures across 20 wells and 3,100 pump-hours",
+    writeUp:
+      "Twenty wells, one dry season, 3,100 recorded pump-hours, no seal failure. The previous housings were failing at roughly one in four before a full season was out, which is what started this.\n\n" +
+      "The change is a tolerance, not a redesign. The seal carrier bore was drawn at a fit the shop could not hold on a manual lathe, so every housing landed somewhere in a band, and the ones at the loose end wept fine sand into the seal face. Reaming the bore as a separate operation costs about ninety seconds a part and pulls the whole band inside the range the seal was designed for.\n\n" +
+      "Nothing about this is clever, and that is the part worth taking away. The drawing was right and the process could not hold it, which is a failure that looks exactly like a bad design until somebody measures the parts that came back.",
     launchedAt: "2026-08-21T10:10:00.000Z",
     upvoteCount: 188,
     commentCount: 0,
@@ -1639,6 +1662,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tags: ["connectivity", "low-power", "solar", "west-africa"],
     createdAt: "2026-09-05T14:20:00.000Z",
     tagline: "Fourteen nodes, 31 days, no mains and no reboot",
+    writeUp:
+      "Fourteen nodes over about six hundred metres of market, thirty-one days, no mains anywhere on the run, and no node needed a reboot. Each one is a solar panel, a small pack and a radio in a housing a stallholder can hose down.\n\n" +
+      "Link quality does move with the crowd. An empty aisle at dawn and a full market at eleven are different propagation problems, and the mesh reroutes rather than degrades, which is most of why the uptime figure holds. What nobody has yet is a month in the rainy season.",
     launchedAt: "2026-09-07T06:30:00.000Z",
     upvoteCount: 41,
     commentCount: 1,

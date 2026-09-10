@@ -1097,6 +1097,23 @@ export const ShowcaseBlueprintSchema = z
     /** One line beside the title in the feed. Not the summary — this is the pitch. */
     tagline: z.string(),
     /**
+     * The maker's write-up. `null` when nobody wrote one, which is the ordinary state of a launch
+     * posted the day it shipped — and `null` renders NOTHING, not an empty section and not a
+     * prompt to write one.
+     *
+     * ⚠️ PLAIN TEXT, SPLIT ON BLANK LINES AT RENDER. Not markdown, and that was a decision rather
+     * than a shortcut: a markdown subset needs a parser and a sanitiser, and user-generated HTML
+     * rendered by a thin untrusted layer is the highest-risk thing this surface could carry. The
+     * renderer emits `<p>` and nothing else — there is no `dangerouslySetInnerHTML` on this path
+     * and none may be added to it.
+     *
+     * THE THIRD DESCRIPTION-ISH FIELD ON THIS ARM, and the three do different jobs. `tagline` is
+     * the pitch on the feed row, `summary` is the one-paragraph "what is this" and doubles as the
+     * hub lane's copy, and this is the depth. They are sized apart on the detail page precisely so
+     * a reader can tell three things from one paragraph that got long.
+     */
+    writeUp: z.string().nullable(),
+    /**
      * ISO 8601. THE FEED SORTS BY THIS, NOT `createdAt`. A launch is announced on a date its
      * author chose; the row's creation timestamp is an implementation detail of when it was typed.
      */

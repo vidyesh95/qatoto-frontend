@@ -31,6 +31,7 @@ import BlueprintVideoBlock from "@/components/home/blueprints/media/blueprint-vi
 import BlueprintCommentThread from "@/components/home/blueprints/sections/blueprint-comment-thread";
 import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-tag-list";
 import ShowcaseEngagementBar from "@/components/home/blueprints/showcase/sections/showcase-engagement-bar";
+import ShowcaseWriteUp from "@/components/home/blueprints/showcase/sections/showcase-write-up";
 import RelativeTime from "@/components/home/shared/relative-time";
 import { getBlueprintByCategory, listShowcaseComments } from "@/lib/blueprints/api";
 import { buildBlueprintCategoryHref, buildBlueprintHref } from "@/lib/blueprints/schemas";
@@ -105,7 +106,24 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
         <BlueprintVideoBlock video={showcase.demoVideo} title="Demo" />
       )}
 
-      <p className="mt-5 max-w-2xl text-sm leading-6 text-foreground">{showcase.summary}</p>
+      {/* THE STANDFIRST, AND IT MOVED UP A SIZE WHEN THE WRITE-UP LANDED UNDER IT. Three
+          description-ish fields now sit on this arm — `tagline` above the media, `summary` here,
+          `writeUp` below — and at one size the last two read as a single paragraph that got long.
+          `text-base` is not a new size on this surface: the tagline and the feed row already use
+          it, and the media between them means the two never appear adjacent. */}
+      <p className="mt-5 max-w-2xl text-base leading-7 text-foreground">{showcase.summary}</p>
+
+      {/* `null` renders NOTHING — no heading, no empty box, no invitation to write one. Most
+          launches are posted the day they ship and never get a write-up, which is the ordinary
+          state and not a gap to fill. */}
+      {/* ⚠️ KEYED BY SLUG ON PURPOSE. Two showcase pages are the same component tree in the same
+          position, so React reuses the instance across a client navigation and the write-up would
+          arrive as a changed prop on a component still holding the previous launch's overflow
+          measurement. The key makes it a new instance, which is what `showcase-write-up.tsx`
+          relies on instead of an effect dependency. */}
+      {showcase.writeUp === null ? null : (
+        <ShowcaseWriteUp key={showcase.slug} writeUp={showcase.writeUp} />
+      )}
 
       <ShowcaseEngagementBar showcase={showcase} />
 
