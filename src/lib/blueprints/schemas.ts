@@ -1245,11 +1245,24 @@ export type BlueprintOfCategory<TCategory extends BlueprintCategory> = Extract<
  * cannot feed. There is deliberately NO `depth` field, because a depth that can only be 0 or 1 is
  * `parentCommentId === null` spelled twice.
  *
- * NO `viewerState` AND NO `isDeleted`, which the video comment carries. Both answer questions only a
- * session and a moderation surface can ask, and this surface has neither — every engagement table in
- * the backend is hard-FK'd to `video.id` or `product.id`, and no blueprints content table exists for
- * a comment row to reference. `body` is therefore plain `z.string()` rather than nullable: a tombstone
- * is a state only deletion can create.
+ * NO `viewerState`, which the video comment carries. It answers questions only a session can ask —
+ * has this reader liked it, may they edit it, may they delete it — and this surface has no session
+ * to ask them of. Every engagement table in the backend is hard-FK'd to `video.id` or `product.id`,
+ * and no blueprints content table exists for a comment row to reference. It arrives with the write
+ * surface (todo.md §Blueprint discussion, Part 2) and not before.
+ *
+ * ⚠️ `body` AND `author` ARE NULLABLE TOGETHER, AND BOTH `null` IS A TOMBSTONE. This file previously
+ * argued the opposite — "a tombstone is a state only deletion can create" — and that was true about
+ * the WRITE and wrong about the RENDER. The fixtures exercise the render ahead of the delete route,
+ * because the layout it has to hold up is the one thing the eventual backend cannot change its mind
+ * about: a deleted comment's row SURVIVES so its replies keep their anchor, and a renderer that
+ * drops the node would orphan replies the server still returns. There is deliberately NO `isDeleted`
+ * flag beside them, because a boolean that can only agree with `body === null` is the same fact
+ * spelled twice and the video comment's own pair is the drift this avoids.
+ *
+ * `author` GOES WITH `body` RATHER THAN SURVIVING IT. A tombstone that kept its byline would still
+ * be attributing a comment that was removed, which is worse than saying nothing: the reader learns
+ * who said the thing they are not allowed to read.
  *
  * THE AUTHOR SHAPE IS REUSED. `BlueprintAuthorSchema` already spells a person on this surface; a
  * second one would be a third spelling of the same concept.
@@ -1259,8 +1272,10 @@ export const BlueprintCommentSchema = z
     commentId: z.string(),
     /** `null` is a top-level comment. A reply's own replies are not a state that exists. */
     parentCommentId: z.string().nullable(),
-    body: z.string(),
-    author: BlueprintAuthorSchema,
+    /** `null` is a tombstone, and `author` is `null` with it. Never an empty string. */
+    body: z.string().nullable(),
+    /** `null` on a tombstone only. See the note above. */
+    author: BlueprintAuthorSchema.nullable(),
     /**
      * DISPLAY ONLY. No comment-like route exists any more than a vote route does, so this renders as
      * a `<span>` and never as a `<button>`.

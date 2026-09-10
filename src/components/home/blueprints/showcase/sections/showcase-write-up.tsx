@@ -22,6 +22,8 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
+import LinkedPlainText from "@/components/home/shared/linked-plain-text";
+
 /**
  * The collapsed crop: `max-h-36` is 9rem, which is exactly six lines of `leading-6`.
  *
@@ -93,7 +95,9 @@ export default function ShowcaseWriteUp({ writeUp }: { readonly writeUp: string 
         {paragraphs.map((paragraph, paragraphIndex) => (
           // The index is the key because the text is the content: two identical paragraphs are a
           // thing a person can legitimately write, and this list is never reordered or filtered.
-          <p key={paragraphIndex}>{paragraph}</p>
+          <p key={paragraphIndex}>
+            <LinkedPlainText text={paragraph} />
+          </p>
         ))}
       </div>
 

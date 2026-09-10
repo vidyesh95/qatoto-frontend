@@ -2316,32 +2316,57 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
  * Showcase discussion, keyed by showcase slug.
  *
  * THREE OF THE TEN LAUNCHES HAVE A THREAD, AND THAT RATIO IS THE POINT. An empty discussion is the
- * ordinary state of a new launch, not an error, and it has to render — giving every fixture comments
- * would leave the empty case unexercised, which is the failure `TEARDOWNS_PAGE_LIMIT` argues against
- * in `api.ts`. The three that do have threads each exercise a different shape:
+ * ordinary state of a new launch, not an error, and it has to render, so giving every fixture
+ * comments would leave the empty case unexercised.
  *
- * - `solar-cold-storage-field-prototype` — four top-level rows, three of them answered. The long
- *   case, and the only one where the newest-first parent order is visible.
- * - `brushless-cargo-trike-drivetrain` — THREE REPLIES ON ONE PARENT, none on each other. This is
- *   the one-level limit rendered rather than asserted: a reply to a reply is not a row that can
- *   exist here, because the backend this will eventually read from answers 409 to one.
- * - `off-grid-mesh-nodes-kumasi-market` — a single unanswered comment. The smallest non-empty thread.
+ * ⚠️ THIS MAP IS A STATE MATRIX, NOT A BODY OF WRITING. Every row below exists to put one render
+ * branch on screen, and the list is CLOSED: eight states, and a ninth comment earns its place only
+ * by exercising something none of these do. "More discussion" is not a reason to add one, because
+ * a fixture nobody can point at a branch for is prose that has to be maintained forever.
  *
- * ⚠️ `commentCount` ON EACH SHOWCASE MUST EQUAL THE LENGTH OF ITS THREAD HERE. The count renders in
- * the engagement bar beside the thread it counts, and a disagreement between the two is the one lie
- * this surface would be telling on a page that otherwise refuses to invent numbers. There is no
- * test enforcing it — the count is a wire field a real backend computes, so deriving it from this
- * map would model the wrong thing.
+ *   1. A one-line comment            `off-grid-mesh-nodes-kumasi-market`, the only row there
+ *   2. A long comment                `bpc-001`, which is what wraps the row past three lines
+ *   3. A parent with one reply       `bpc-001` / `bpc-002`
+ *   4. A reply carrying an @mention  `bpc-014`, and see the note on it below
+ *   5. A tombstone with a live reply `bpc-003` / `bpc-004`
+ *   6. A body containing a bare URL  `bpc-005`
+ *   7. An empty thread               the seven launches absent from this map
+ *   8. A thread on a null write-up   `brushless-cargo-trike-drivetrain`, whose `writeUp` is `null`
+ *
+ * ⚠️ STATE 8 IS A PAIR ACROSS TWO FILES AND BREAKS SILENTLY. `brushless-cargo-trike-drivetrain`
+ * carries `writeUp: null` in `MOCK_BLUEPRINTS` above AND a thread here, which is the combination
+ * that proves a discussion renders on a launch nobody wrote up. Giving that launch a write-up would
+ * cost nothing visible and would quietly retire the state.
+ *
+ * ⚠️ STATE 5 DEPENDS ON THE TOMBSTONE STAYING A ROW. `listShowcaseComments` DROPS a reply whose
+ * parent is missing from this array, so deleting `bpc-003` rather than nulling it would take
+ * `bpc-004` off the page too. That is the whole argument for tombstoning instead of deleting,
+ * rendered rather than asserted: `body` and `author` are both `null`, and the row survives.
+ *
+ * ⚠️ STATE 4 IS AN @MENTION AND NOT A SECOND LEVEL OF NESTING. `bpc-014` answers `bpc-013`, which is
+ * itself a reply, and it does so as a reply to their shared PARENT with the handle naming who it
+ * addresses. That is the shape a one-level backend forces and the shape the eventual composer will
+ * write. `brushless-cargo-trike-drivetrain` also keeps THREE REPLIES ON ONE PARENT with none on each
+ * other, which is that limit rendered rather than asserted, so do not flatten it into three parents.
+ *
+ * ⚠️ `commentCount` ON EACH SHOWCASE MUST EQUAL THE LENGTH OF ITS THREAD HERE, and the tombstone
+ * COUNTS because the row exists. The count renders in the engagement bar beside the thread it
+ * counts, and a disagreement between the two is the one lie this surface would be telling on a page
+ * that otherwise refuses to invent numbers. There is no test enforcing it: the count is a wire field
+ * a real backend computes, so deriving it from this map would model the wrong thing.
  *
  * EVERY `createdAt` POSTDATES ITS SHOWCASE'S `launchedAt`, and they drift into the past with the
- * launch dates for the reason the file header records.
+ * launch dates for the reason the file header records. `listShowcaseComments` orders PARENTS
+ * newest-first, so the reading order on screen is not this array's order.
  */
 export const MOCK_SHOWCASE_COMMENTS: Record<string, BlueprintComment[]> = {
   "solar-cold-storage-field-prototype": [
     {
+      // STATE 2: the long one. Three questions in a row is what pushes a comment past the height
+      // where the avatar column stops being the tallest thing in it.
       commentId: "bpc-001",
       parentCommentId: null,
-      body: "The 62-hour figure is the one worth pushing on. Was that a full box or an empty one? An empty cabinet coasting on its own insulation is a different claim from one holding 4 °C with product in it.",
+      body: "The 62-hour figure is the one worth pushing on, and the write-up almost answers it. Was that a full box or an empty one? An empty cabinet coasting on its own insulation is a completely different claim from one holding 4 °C with product in it, and the two get quoted interchangeably by people selling cold storage. The other number I would want stated beside it is the pull-down: how long from ambient to 4 °C on a full load, because that is what decides whether a trader can use it on the day they buy stock.",
       author: {
         displayName: "Tomas Lindqvist",
         handle: "tomas-thermal",
@@ -2351,9 +2376,10 @@ export const MOCK_SHOWCASE_COMMENTS: Record<string, BlueprintComment[]> = {
       createdAt: "2026-09-02T09:12:00.000Z",
     },
     {
+      // STATE 3: the parent above has exactly one reply.
       commentId: "bpc-002",
       parentCommentId: "bpc-001",
-      body: "Full — 380 L of produce loaded at 6 °C. Empty it runs past 90 hours and the number stops meaning anything, so we stopped reporting it that way after the first week.",
+      body: "Full: 380 L of produce loaded at 6 °C. Empty it runs past 90 hours and the number stops meaning anything, so we stopped reporting it that way after the first week. Pull-down on a full load is about nine hours from 30 °C, which is a night, and that is how the stall actually uses it.",
       author: {
         displayName: "Amara Okonkwo",
         handle: "amara-builds",
@@ -2363,21 +2389,22 @@ export const MOCK_SHOWCASE_COMMENTS: Record<string, BlueprintComment[]> = {
       createdAt: "2026-09-02T11:40:00.000Z",
     },
     {
+      // STATE 5, first half: A TOMBSTONE. `body` and `author` are both null and the row STAYS, which
+      // is what keeps `bpc-004` below it on the page. `likeCount` is 0 rather than a number nobody
+      // can check against text nobody can read; nothing renders it either way.
       commentId: "bpc-003",
       parentCommentId: null,
-      body: "Two failures in ninety days on a first field unit is a good result. What were they?",
-      author: {
-        displayName: "Priya Raghunathan",
-        handle: "priya-coldchain",
-        avatarUrl: "/dummy/profile_image_03.avif",
-      },
-      likeCount: 12,
+      body: null,
+      author: null,
+      likeCount: 0,
       createdAt: "2026-09-03T14:05:00.000Z",
     },
     {
+      // STATE 5, second half: the live reply under the tombstone. It reads on its own, because a
+      // reply whose question has been removed is exactly what a reader meets here.
       commentId: "bpc-004",
       parentCommentId: "bpc-003",
-      body: "A compressor start relay at week three, and a door gasket that took a permanent set in the heat. The relay was the interesting one: it was rated for the current but not for 40 starts a day, and nothing in the datasheet says that.",
+      body: "Answering anyway, because the numbers are worth having. Two failures in ninety days: a compressor start relay at week three, and a door gasket that took a permanent set in the heat. The relay was the interesting one, since it was rated for the current but not for forty starts a day, and nothing in its datasheet distinguishes those two things.",
       author: {
         displayName: "Amara Okonkwo",
         handle: "amara-builds",
@@ -2387,7 +2414,22 @@ export const MOCK_SHOWCASE_COMMENTS: Record<string, BlueprintComment[]> = {
       createdAt: "2026-09-03T16:20:00.000Z",
     },
     {
+      // STATE 6: a bare URL, with a full stop immediately after it. The trailing period is the part
+      // worth keeping: `LinkedPlainText` has to leave it out of the href, and a fixture whose URL
+      // ends the string would never test that.
       commentId: "bpc-005",
+      parentCommentId: null,
+      body: "Raw logs, since a few people asked: https://example.com/qatoto/nakuru/temperature-log.csv. One row a minute for ninety days, cabinet and ambient in the same file. Both failure windows are in there and neither is smoothed out.",
+      author: {
+        displayName: "Amara Okonkwo",
+        handle: "amara-builds",
+        avatarUrl: "/dummy/profile_image_01.avif",
+      },
+      likeCount: 62,
+      createdAt: "2026-09-05T08:15:00.000Z",
+    },
+    {
+      commentId: "bpc-006",
       parentCommentId: null,
       body: "Why lead-acid at this ambient? LiFePO4 would give you the cycle life and stop derating at 41 °C.",
       author: {
@@ -2396,11 +2438,11 @@ export const MOCK_SHOWCASE_COMMENTS: Record<string, BlueprintComment[]> = {
         avatarUrl: "/dummy/profile_image_05.avif",
       },
       likeCount: 8,
-      createdAt: "2026-09-04T07:55:00.000Z",
+      createdAt: "2026-09-06T07:55:00.000Z",
     },
     {
-      commentId: "bpc-006",
-      parentCommentId: "bpc-005",
+      commentId: "bpc-007",
+      parentCommentId: "bpc-006",
       body: "Cost, and the fact that a trader in Nakuru can replace a lead-acid battery the same afternoon from a shop they already know. A pack nobody local can source is a unit that dies the first time it needs one.",
       author: {
         displayName: "Grace Wanjiru",
@@ -2408,21 +2450,11 @@ export const MOCK_SHOWCASE_COMMENTS: Record<string, BlueprintComment[]> = {
         avatarUrl: "/dummy/profile_image_04.avif",
       },
       likeCount: 63,
-      createdAt: "2026-09-04T10:30:00.000Z",
-    },
-    {
-      commentId: "bpc-007",
-      parentCommentId: null,
-      body: "Are the raw temperature logs published anywhere? The 90-day series is more useful to anyone building against this than the summary figures are.",
-      author: {
-        displayName: "Ines Ferreira",
-        handle: "ines-data",
-        avatarUrl: "/dummy/profile_image_06.avif",
-      },
-      likeCount: 19,
-      createdAt: "2026-09-06T13:10:00.000Z",
+      createdAt: "2026-09-06T10:30:00.000Z",
     },
   ],
+  // STATE 8: this launch's `writeUp` is `null` in `MOCK_BLUEPRINTS`, so its detail page renders a
+  // discussion under a title, a tagline and a summary and nothing else. Do not give it a write-up.
   "brushless-cargo-trike-drivetrain": [
     {
       commentId: "bpc-011",
@@ -2461,9 +2493,12 @@ export const MOCK_SHOWCASE_COMMENTS: Record<string, BlueprintComment[]> = {
       createdAt: "2026-09-05T15:45:00.000Z",
     },
     {
+      // STATE 4: this answers `bpc-013`, which is itself a reply. It is stored as a THIRD reply to
+      // `bpc-011` and names its target with a handle, because a reply to a reply is not a row that
+      // can exist. Do not "fix" this by pointing `parentCommentId` at `bpc-013`.
       commentId: "bpc-014",
       parentCommentId: "bpc-011",
-      body: "This matches what we saw. The honest number for a cargo application is whatever it holds after twenty minutes of stop-start, and almost nobody publishes that one.",
+      body: "@priya-coldchain that matches what we saw, and it is why the honest number for a cargo application is whatever the controller holds after twenty minutes of stop-start. Almost nobody publishes that one.",
       author: {
         displayName: "Ines Ferreira",
         handle: "ines-data",
@@ -2475,7 +2510,7 @@ export const MOCK_SHOWCASE_COMMENTS: Record<string, BlueprintComment[]> = {
     {
       commentId: "bpc-015",
       parentCommentId: null,
-      body: "The belt-over-chain decision is buried in the write-up and deserves its own paragraph. Riders who cannot get a belt locally will quietly convert these back.",
+      body: "The belt-over-chain decision deserves its own paragraph somewhere. Riders who cannot get a belt locally will quietly convert these back.",
       author: {
         displayName: "Grace Wanjiru",
         handle: "grace-mech",
@@ -2487,9 +2522,11 @@ export const MOCK_SHOWCASE_COMMENTS: Record<string, BlueprintComment[]> = {
   ],
   "off-grid-mesh-nodes-kumasi-market": [
     {
+      // STATE 1: one line, and the smallest non-empty thread. A row this short is what proves the
+      // avatar column sets the row height rather than the text does.
       commentId: "bpc-021",
       parentCommentId: null,
-      body: "Curious how the nodes behave once the market fills up — a few hundred bodies between the antennas is a very different link budget from an empty aisle at dawn.",
+      body: "Does the link budget hold once the market actually fills up?",
       author: {
         displayName: "Ines Ferreira",
         handle: "ines-data",

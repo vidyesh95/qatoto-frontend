@@ -14,12 +14,20 @@
 // mistake CLAUDE.md documents. `BlueprintComment` therefore carries no `depth` field and this file
 // has no recursion in it.
 //
+// ⚠️ THE TOMBSTONE RENDERS AHEAD OF THE DELETE ROUTE THAT WILL CREATE ONE, deliberately. `body` and
+// `author` are both `null` on a deleted comment and the row SURVIVES so its replies keep their
+// anchor; that layout is the one thing the eventual backend cannot change its mind about, because
+// dropping the node would orphan replies the server still returns. The fixtures carry one so the
+// shape is exercised rather than assumed. There is no composer and no delete control here, so
+// nothing on this page can produce a tombstone — it arrives in the data or not at all.
+//
 // THE COUNT IS NOT RENDERED HERE. `showcase.commentCount` renders in `ShowcaseEngagementBar`, beside
 // the other engagement figures where a reader looks for it; a second copy over the thread would be
 // two numbers that could disagree.
 
 import Image from "next/image";
 
+import LinkedPlainText from "@/components/home/shared/linked-plain-text";
 import RelativeTime from "@/components/home/shared/relative-time";
 import type { BlueprintComment } from "@/lib/blueprints/schemas";
 import { formatCompactCountLabel } from "@/lib/feed/format";
@@ -73,6 +81,18 @@ function BlueprintCommentRow({
 }) {
   const avatarSizePx = isReply ? 20 : 24;
 
+  // A TOMBSTONE. The row survives so its replies keep their anchor — that is the entire reason a
+  // backend tombstones instead of deleting, and a renderer that dropped the node here would orphan
+  // replies the server still returns. It renders as one grey line and NOTHING else: no avatar, no
+  // byline, no like count. Attributing a comment nobody is allowed to read is worse than silence,
+  // and a like count on it is a number about text that is gone. This matches
+  // `video-comment-thread.tsx:224`, which is the same decision against a real backend.
+  if (comment.body === null || comment.author === null) {
+    return (
+      <p className={`${isReply ? "text-[11px]" : "text-xs"} text-[#6F7979] italic`}>[deleted]</p>
+    );
+  }
+
   return (
     <div className="flex gap-2.5">
       <Image
@@ -106,7 +126,12 @@ function BlueprintCommentRow({
             <span className="sr-only">{formatCountLabel(comment.likeCount)} likes</span>
           </span>
         </p>
-        <p className="mt-1 text-sm leading-6 text-foreground">{comment.body}</p>
+        {/* Through the tokeniser, so a bare URL is clickable and an @handle reads as a person. The
+            @mention is how a reply-to-a-reply is written on a one-level thread: the row is still a
+            reply to the PARENT, and the handle says who it is answering. */}
+        <p className="mt-1 text-sm leading-6 text-foreground">
+          <LinkedPlainText text={comment.body} />
+        </p>
       </div>
     </div>
   );
