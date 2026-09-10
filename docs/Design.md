@@ -2,155 +2,155 @@
 name: Qatoto
 description: A verifiable record for a skeptic. Dense typography, hairline structure, no ornament between the reader and the row.
 colors:
-  primary-imprint: "oklch(0.4736 0.0805 200.55)"
-  primary-imprint-deep: "oklch(0.3133 0.0533 200.58)"
-  primary-imprint-bright: "oklch(0.7278 0.1195 200.43)"
-  on-imprint: "oklch(1 0 0)"
-  surface-wash: "oklch(0.9109 0.0295 199.2757)"
-  surface-wash-dark: "oklch(0.3351 0.033 198.7355)"
-  accent-wash: "oklch(0.9552 0.0127 196.9434)"
-  secondary-wash: "oklch(0.9147 0.0408 265.7133)"
-  ground: "oklch(0.9761 0 0)"
-  ground-dark: "oklch(0.2178 0 0)"
-  surface: "oklch(1 0 0)"
-  surface-dark: "oklch(0.252 0 0)"
-  ink: "oklch(0.2178 0 0)"
-  ink-quiet: "oklch(0.5452 0 0)"
-  hairline: "oklch(0.9276 0.0058 264.5313)"
-  hairline-dark: "oklch(0.36 0 0)"
-  outline-strong: "oklch(0.5677 0.0120 196.82)"
-  outline-variant: "oklch(0.8287 0.0178 308.22)"
-  muted-field: "oklch(0.931 0 0)"
-  destructive: "oklch(0.6368 0.2078 25.3313)"
-  chart-1: "oklch(0.4203 0.0688 248.4323)"
-  chart-2: "oklch(0.5632 0.073 236.7296)"
-  chart-3: "oklch(0.6788 0.0765 238.3401)"
-  chart-4: "oklch(0.7875 0.0715 234.0535)"
-  chart-5: "oklch(0.8519 0.0561 240.2457)"
+    primary-imprint: "oklch(0.4736 0.0805 200.55)"
+    primary-imprint-deep: "oklch(0.3133 0.0533 200.58)"
+    primary-imprint-bright: "oklch(0.7278 0.1195 200.43)"
+    on-imprint: "oklch(1 0 0)"
+    surface-wash: "oklch(0.9109 0.0295 199.2757)"
+    surface-wash-dark: "oklch(0.3351 0.033 198.7355)"
+    accent-wash: "oklch(0.9552 0.0127 196.9434)"
+    secondary-wash: "oklch(0.9147 0.0408 265.7133)"
+    ground: "oklch(0.9761 0 0)"
+    ground-dark: "oklch(0.2178 0 0)"
+    surface: "oklch(1 0 0)"
+    surface-dark: "oklch(0.252 0 0)"
+    ink: "oklch(0.2178 0 0)"
+    ink-quiet: "oklch(0.5452 0 0)"
+    hairline: "oklch(0.9276 0.0058 264.5313)"
+    hairline-dark: "oklch(0.36 0 0)"
+    outline-strong: "oklch(0.5677 0.0120 196.82)"
+    outline-variant: "oklch(0.8287 0.0178 308.22)"
+    muted-field: "oklch(0.931 0 0)"
+    destructive: "oklch(0.6368 0.2078 25.3313)"
+    chart-1: "oklch(0.4203 0.0688 248.4323)"
+    chart-2: "oklch(0.5632 0.073 236.7296)"
+    chart-3: "oklch(0.6788 0.0765 238.3401)"
+    chart-4: "oklch(0.7875 0.0715 234.0535)"
+    chart-5: "oklch(0.8519 0.0561 240.2457)"
 typography:
-  display:
-    fontFamily: "Roboto Serif, ui-serif, Georgia, Cambria, Times New Roman, Times, serif"
-    fontSize: "clamp(3rem, 8vw, 6rem)"
-    fontWeight: 600
-    lineHeight: 1
-    letterSpacing: "normal"
-  headline:
-    fontFamily: "Geist, Roboto, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(1.875rem, 4vw, 2.25rem)"
-    fontWeight: 600
-    lineHeight: 1.15
-    letterSpacing: "normal"
-  title:
-    fontFamily: "Geist, Roboto, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(1.25rem, 2vw, 1.5rem)"
-    fontWeight: 500
-    lineHeight: 1.3
-    letterSpacing: "normal"
-  body:
-    fontFamily: "Geist, Roboto, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "0.875rem"
-    fontWeight: 500
-    lineHeight: 1.25rem
-    letterSpacing: "normal"
-  label:
-    fontFamily: "Geist, Roboto, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "0.75rem"
-    fontWeight: 500
-    lineHeight: 1rem
-    letterSpacing: "normal"
-  eyebrow:
-    fontFamily: "Geist, Roboto, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "0.75rem"
-    fontWeight: 500
-    lineHeight: 1rem
-    letterSpacing: "0.18em"
-  prose:
-    fontFamily: "Roboto Serif, ui-serif, Georgia, Cambria, Times New Roman, Times, serif"
-    fontSize: "1.125rem"
-    fontWeight: 400
-    lineHeight: 1.625
-    letterSpacing: "normal"
-  code:
-    fontFamily: "Geist Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
-    fontSize: "0.875rem"
-    fontWeight: 500
-    lineHeight: 1.25rem
-    letterSpacing: "normal"
+    display:
+        fontFamily: "Roboto Serif, ui-serif, Georgia, Cambria, Times New Roman, Times, serif"
+        fontSize: "clamp(3rem, 8vw, 6rem)"
+        fontWeight: 600
+        lineHeight: 1
+        letterSpacing: "normal"
+    headline:
+        fontFamily: "Geist, Roboto, ui-sans-serif, system-ui, sans-serif"
+        fontSize: "clamp(1.875rem, 4vw, 2.25rem)"
+        fontWeight: 600
+        lineHeight: 1.15
+        letterSpacing: "normal"
+    title:
+        fontFamily: "Geist, Roboto, ui-sans-serif, system-ui, sans-serif"
+        fontSize: "clamp(1.25rem, 2vw, 1.5rem)"
+        fontWeight: 500
+        lineHeight: 1.3
+        letterSpacing: "normal"
+    body:
+        fontFamily: "Geist, Roboto, ui-sans-serif, system-ui, sans-serif"
+        fontSize: "0.875rem"
+        fontWeight: 500
+        lineHeight: 1.25rem
+        letterSpacing: "normal"
+    label:
+        fontFamily: "Geist, Roboto, ui-sans-serif, system-ui, sans-serif"
+        fontSize: "0.75rem"
+        fontWeight: 500
+        lineHeight: 1rem
+        letterSpacing: "normal"
+    eyebrow:
+        fontFamily: "Geist, Roboto, ui-sans-serif, system-ui, sans-serif"
+        fontSize: "0.75rem"
+        fontWeight: 500
+        lineHeight: 1rem
+        letterSpacing: "0.18em"
+    prose:
+        fontFamily: "Roboto Serif, ui-serif, Georgia, Cambria, Times New Roman, Times, serif"
+        fontSize: "1.125rem"
+        fontWeight: 400
+        lineHeight: 1.625
+        letterSpacing: "normal"
+    code:
+        fontFamily: "Geist Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+        fontSize: "0.875rem"
+        fontWeight: 500
+        lineHeight: 1.25rem
+        letterSpacing: "normal"
 rounded:
-  base: "0.5rem"
-  lg: "0.5rem"
-  xl: "0.75rem"
-  2xl: "1rem"
-  3xl: "1.5rem"
-  pill: "9999px"
+    base: "0.5rem"
+    lg: "0.5rem"
+    xl: "0.75rem"
+    2xl: "1rem"
+    3xl: "1.5rem"
+    pill: "9999px"
 spacing:
-  hairspace: "0.25rem"
-  tight: "0.5rem"
-  snug: "0.75rem"
-  panel: "1rem"
-  roomy: "1.5rem"
-  editorial: "2.5rem"
-  section: "6rem"
+    hairspace: "0.25rem"
+    tight: "0.5rem"
+    snug: "0.75rem"
+    panel: "1rem"
+    roomy: "1.5rem"
+    editorial: "2.5rem"
+    section: "6rem"
 components:
-  button-primary:
-    backgroundColor: "{colors.primary-imprint}"
-    textColor: "{colors.on-imprint}"
-    typography: "{typography.body}"
-    rounded: "{rounded.pill}"
-    padding: "0.625rem 1.25rem"
-  button-primary-hover:
-    backgroundColor: "{colors.primary-imprint-deep}"
-    textColor: "{colors.on-imprint}"
-  button-outline:
-    backgroundColor: "transparent"
-    textColor: "{colors.primary-imprint}"
-    typography: "{typography.body}"
-    rounded: "{rounded.pill}"
-    padding: "0.5rem 1rem"
-  button-quiet:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.pill}"
-    padding: "0.5rem 1rem"
-  nav-item:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.pill}"
-    padding: "0.75rem 1rem"
-  nav-item-active:
-    backgroundColor: "{colors.surface-wash}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.pill}"
-  nav-item-emphasized:
-    backgroundColor: "{colors.secondary-wash}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.xl}"
-    padding: "0.75rem 1rem"
-  input-field:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.lg}"
-    padding: "0.5rem 0.75rem"
-  card-panel:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.2xl}"
-    padding: "1rem"
-  chip:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "0.375rem 0.75rem"
-  stat-readout:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink-quiet}"
-    typography: "{typography.label}"
-    rounded: "{rounded.base}"
-    padding: "0"
+    button-primary:
+        backgroundColor: "{colors.primary-imprint}"
+        textColor: "{colors.on-imprint}"
+        typography: "{typography.body}"
+        rounded: "{rounded.pill}"
+        padding: "0.625rem 1.25rem"
+    button-primary-hover:
+        backgroundColor: "{colors.primary-imprint-deep}"
+        textColor: "{colors.on-imprint}"
+    button-outline:
+        backgroundColor: "transparent"
+        textColor: "{colors.primary-imprint}"
+        typography: "{typography.body}"
+        rounded: "{rounded.pill}"
+        padding: "0.5rem 1rem"
+    button-quiet:
+        backgroundColor: "transparent"
+        textColor: "{colors.ink}"
+        typography: "{typography.body}"
+        rounded: "{rounded.pill}"
+        padding: "0.5rem 1rem"
+    nav-item:
+        backgroundColor: "transparent"
+        textColor: "{colors.ink}"
+        typography: "{typography.body}"
+        rounded: "{rounded.pill}"
+        padding: "0.75rem 1rem"
+    nav-item-active:
+        backgroundColor: "{colors.surface-wash}"
+        textColor: "{colors.ink}"
+        rounded: "{rounded.pill}"
+    nav-item-emphasized:
+        backgroundColor: "{colors.secondary-wash}"
+        textColor: "{colors.ink}"
+        rounded: "{rounded.xl}"
+        padding: "0.75rem 1rem"
+    input-field:
+        backgroundColor: "transparent"
+        textColor: "{colors.ink}"
+        typography: "{typography.body}"
+        rounded: "{rounded.lg}"
+        padding: "0.5rem 0.75rem"
+    card-panel:
+        backgroundColor: "{colors.surface}"
+        textColor: "{colors.ink}"
+        rounded: "{rounded.2xl}"
+        padding: "1rem"
+    chip:
+        backgroundColor: "{colors.surface}"
+        textColor: "{colors.ink}"
+        typography: "{typography.label}"
+        rounded: "{rounded.pill}"
+        padding: "0.375rem 0.75rem"
+    stat-readout:
+        backgroundColor: "transparent"
+        textColor: "{colors.ink-quiet}"
+        typography: "{typography.label}"
+        rounded: "{rounded.base}"
+        padding: "0"
 ---
 
 # Design System: Qatoto
@@ -401,7 +401,7 @@ through visual machinery.
 ### Navigation
 
 - **Style:** pill rows. `flex items-center gap-3 rounded-full px-4 py-3 text-sm
-  transition-colors`, with a 24dp Material SVG icon and a sans label.
+transition-colors`, with a 24dp Material SVG icon and a sans label.
 - **Default:** `Ink` text on transparent, `hover:bg-muted/50`.
 - **Active:** `Surface Wash` ground with `Ink` text, plus `aria-current="page"`. The pill is
   never the only signal; the icon also switches from Material `FILL0` outline to `FILL1` solid.
