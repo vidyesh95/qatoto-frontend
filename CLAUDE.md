@@ -251,7 +251,7 @@ browsed the same way:
 
 | Route                                  | Design                                                                                                              |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `/blueprints`                          | Hub — hero, three category links, one teaser rail each with **See all**                                             |
+| `/blueprints`                          | Hub — header, hero, then three lanes in three DIFFERENT shapes, each with its question and one **See all**          |
 | `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid; detail carries the video, the PDFs and, when `assembly` is non-null, the exploded-view engine       |
 | `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort lives in `listShowcases`; inert vote gutter |
 | `/blueprints/case-studies` + `/[slug]` | Hairline lesson list, each row an expandable `<details>`; detail is a fixed-order report                            |
@@ -308,6 +308,25 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   and do not turn any of the three into a `<button>` before the tables exist (todo.md §Blueprint
   engagement). Share opens `ShareSheet` with `onShared` OMITTED: that callback exists to move
   `video_share.videoId`, which a blueprint has no row for.
+- **THE HUB RENDERS THREE ARMS THREE WAYS, AND NEVER AGAIN AS THREE RAILS.** It used to be an icon
+  row (`CategoryLinks`, three identical icon-and-heading cells) over three `BlueprintRail`s of
+  identical `BlueprintCard`s — the two shapes `docs/Design.md` §6 bans by name, one after the other.
+  All three components are DELETED. A teardown previews as a thumbnail grid because "what is it" is
+  a picture, a case study as a line of text because "what did they learn" is a sentence, a showcase
+  as a dated row because "what's new" is a chronology; `BlueprintLane` carries the heading, the
+  question that arm answers (`BLUEPRINT_CATEGORY_QUESTIONS`) and the single way through.
+  ⚠️ **The lanes read the THREE TYPED GETTERS, never `listBlueprints` plus a group-by.** That is a
+  correctness rule, not a preference: the old hub sorted every arm by `createdAt`, so its showcase
+  rail was in a different order from the feed it linked to, which sorts by `launchedAt`. One arm in
+  two orders, and the hub had the wrong one.
+  ⚠️ **The hub ships no client JavaScript of its own** now that the rail's `useRef` scroller is
+  gone. Only the hero is a client component. Do not reintroduce a horizontal scroller here.
+  **The hero was NOT demoted.** It is 328x184 centred from `md` up and was never a banner there;
+  it is also the only real network read on the surface. It moved BELOW the header and gained a
+  mobile height cap (`h-44`, since `aspect-video w-full` is 225px of rotating image above the fold
+  on a phone). `anime_hero_slide` carries no dimensions, so that is CSS only.
+  ⚠️ **`loading-skeleton.tsx` mirrors this order and must move with it** — it drew four circles for
+  the deleted icon row, which is a skeleton promising a control that no longer exists.
 - **THE CASE-STUDY ARM IS A RECORD, AND IT CARRIES NO VERDICT.** The index was a grid of
   discipline-tinted, serif-titled, numbered cards on the lawsofux.com model, and that was three
   `docs/Design.md` violations standing together — §6's identical-card-grid ban, §3's Serif Boundary

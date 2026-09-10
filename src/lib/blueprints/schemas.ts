@@ -46,11 +46,42 @@ export const BLUEPRINT_CATEGORY_LABELS: Record<BlueprintCategory, string> = {
   case_study: "Case study",
 };
 
-/** One-line framing for each rail heading. Kept beside the labels so the two never drift. */
-export const BLUEPRINT_CATEGORY_BLURBS: Record<BlueprintCategory, string> = {
-  teardown: "Schematics, CAD breakdowns and bills of materials, pulled apart part by part.",
-  showcase: "Working prototypes and finished builds, made from the blueprints above.",
-  case_study: "What happened after the build — volumes, unit economics, go-to-market.",
+/**
+ * The HUB LANE HEADING for each arm — plural, because a lane holds several.
+ *
+ * SEPARATE FROM `BLUEPRINT_CATEGORY_LABELS`, WHICH IS SINGULAR AND STAYS SINGULAR. That record
+ * names ONE blueprint: the navbar breadcrumb over a detail page (`navbar.tsx:75`) and the category
+ * pill on a card (`blueprint-card-body.tsx:56`). "Teardowns" is wrong in both. Two records rather
+ * than one plus a pluralising helper, because "Case study" pluralises to "Case studies" and
+ * "Showcase" does not pluralise at all — the lane is called Showcase whatever is in it.
+ *
+ * WRITTEN OUT, NOT DERIVED FROM `BLUEPRINT_CATEGORY_SEGMENTS`, for the reason the reverse segment
+ * map beneath it is written out: a URL token is not display text, and un-kebabbing one into a
+ * heading is the same wrong move in the other direction.
+ */
+export const BLUEPRINT_CATEGORY_LANE_HEADINGS: Record<BlueprintCategory, string> = {
+  teardown: "Teardowns",
+  showcase: "Showcase",
+  case_study: "Case studies",
+};
+
+/**
+ * THE QUESTION EACH ARM ANSWERS, which is the one line under its lane heading.
+ *
+ * ⚠️ IT REPLACED `BLUEPRINT_CATEGORY_BLURBS`, AND THE CHANGE IS THE POINT RATHER THAN THE COPY. The
+ * blurbs described what each arm contained — "schematics, CAD breakdowns and bills of materials" —
+ * which is what a rail heading says when three rails look identical and the words are the only
+ * thing distinguishing them. The hub no longer renders three identical rails, so the words stop
+ * doing that job and start doing this one: a reader arrives with a question, and the lane that
+ * answers it should say so.
+ *
+ * A QUESTION MARK IS NOT AN EXCLAMATION MARK. PRODUCT.md bans urgency theatre, not punctuation, and
+ * these are literally interrogative.
+ */
+export const BLUEPRINT_CATEGORY_QUESTIONS: Record<BlueprintCategory, string> = {
+  teardown: "Can I make this, and what will it cost?",
+  showcase: "What did people just launch?",
+  case_study: "What did somebody learn the expensive way?",
 };
 
 /**

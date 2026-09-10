@@ -1515,7 +1515,7 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     - **Still true**: no vote endpoint, no `error` arm, de-indexed (seven flags + sitemap
       omission), components never import the fixtures, every URL via `buildBlueprintHref`.
 
-    ### 1c. Case studies became a lesson list — SHIPPED 2026-09-10, part 1 of 4
+    ### 1c. The blueprints hub stopped being three rails — SHIPPED 2026-09-10, parts 1 and 2 of 4
 
     `/blueprints/case-studies` and `/blueprints/case-studies/[slug]` were rebuilt from a design
     brief that read the surface as three tools rather than one feed: teardowns answer _can I make
@@ -1579,26 +1579,62 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     - **Still true**: de-indexed, components never import the fixtures, every URL via
       `buildBlueprintHref`, no `error` arm while the getter reads fixtures.
 
-    #### Parts 2 to 4 of that brief — NOT BUILT
+    #### Part 2, the hub — SHIPPED 2026-09-10
+
+    Three components DELETED: `sections/category-links.tsx` (three identical icon-and-heading
+    cells), `rails/blueprint-rail.tsx` and `cards/blueprint-card.tsx` (the fixed-width rail card).
+    `docs/Design.md` §6 bans both shapes by name and the hub committed each once, stacked.
+
+    - **`BlueprintLane` is the shell**: heading, the question that arm answers, one way through.
+      The children are the arm's own shape and the shell does not constrain them — a 4-up thumbnail
+      grid for teardowns, four `CaseStudyLessonLink` rows, five `ShowcaseFeedRow`s. The teaser
+      limits differ (4 / 4 / 5) because the shapes do; one shared constant would have made three
+      lanes of visibly different heights for no reason a reader could see.
+    - **`BLUEPRINT_CATEGORY_BLURBS` became `BLUEPRINT_CATEGORY_QUESTIONS`**, and the rename is the
+      change. Blurbs described what an arm contained, which is what a heading says when three rails
+      look identical and the words are all that distinguish them. New record
+      `BLUEPRINT_CATEGORY_LANE_HEADINGS` carries the PLURAL heading; `BLUEPRINT_CATEGORY_LABELS`
+      stays singular because the navbar breadcrumb and the card pill both name one blueprint.
+    - ⚠️ **The lanes read `listTeardowns` / `listCaseStudies` / `listShowcases`, not
+      `listBlueprints` plus a group-by, AND THAT FIXED A BUG.** The old hub sorted every arm by
+      `createdAt`, so its showcase rail was in a different order from the showcase feed it linked
+      to, which sorts by `launchedAt`. Verified against the running server: the hub's five launches
+      now match the feed's first five, in order.
+    - **The hub ships no client JavaScript of its own.** `BlueprintRail`'s `useRef` scroller was the
+      last `"use client"` on the path. Only the hero is a client component now.
+    - **The hero moved below the header, gained a mobile cap and stopped being centred.** `h-44`
+      under `md`, unchanged 328x184 from `md` up, and `justify-center` dropped — centring a 328px
+      card was right while it was the first thing on the page and had nothing to align to, but under
+      a left-aligned `<h1>` it left ~400px of empty ground beside it and read as an orphan. Hero,
+      `<h1>` and every lane heading now start on one gutter (measured: all three at 344px on a
+      1440px viewport). ⚠️ Caught by LOOKING at it — every DOM assertion passed before this. It was never a banner on desktop; it was one on a phone, at 225px of
+      rotating image before the page said what it is. `anime_hero_slide` carries no dimensions, so
+      this is CSS only — open question §10.1 answered, no admin-side change.
+    - ⚠️ **The Suspense fallback was already wrong and is now right.** It was full-width at every
+      breakpoint against a hero that is 328px from `md` up, so the desktop layout jumped when the
+      slides resolved. It and `loading-skeleton.tsx` both mirror the carousel frame exactly; all
+      three move together or the page jumps.
+    - **`loading-skeleton.tsx` follows the new order** — header first, hero second, first lane
+      third. It drew four circles for the deleted icon row, which is a skeleton promising a control
+      that no longer exists.
+    - **Orphaned, deliberately**: `public/icons/social_leaderboard_24dp_…svg` and
+      `cases_24dp_…svg` were `CategoryLinks`' icons and nothing references them now.
+      `architecture_24dp_…svg` is still used by the sidebar, the mobile nav and `how-qatoto-works`.
+      Left on disk rather than deleted, on the `public/dummy/video/*` precedent.
+
+    #### Parts 3 and 4 of that brief — NOT BUILT
 
     Specified in full in the plan file, deliberately left out of the diff. Taken in this order:
 
-    - **Part 2, the hub.** `CategoryLinks` is three identical icon-and-heading cells above three
-      identical rails — `docs/Design.md` §6 bans both shapes by name, and it is the most literal
-      instance of each on the surface. It goes, and each arm previews in its own shape: a 4-up
-      thumbnail grid for teardowns, four lesson rows for case studies, five launch rows for
-      showcase, each lane stating the question it answers. ⚠️ **`BlueprintRail` goes with it** —
-      the horizontal scroll rail is the YouTube shape the redesign exists to remove and is the only
-      client JavaScript on the hub path, so the hub becomes fully server-rendered.
-      **The hero is NOT demoted.** It is 328×184 centred from `md` up (`md:w-82`), not a banner,
-      and it is the only real network read on the surface (`TRANSPORT: server-fetch`). It moves
-      below the header and gains a mobile height cap. `anime_hero_slide` carries no dimensions, so
-      that is CSS only and needs no admin-side change.
     - **Part 3, the teardown card.** It renders `BlueprintCardBody` today — thumbnail, title,
       author avatar, difficulty — which is a video card. It should lead with the decision set: BOM
       band, part count, which file kinds exist, difficulty. The test is a teardown with
       `assembly: null`, `walkthroughVideo: null` and `documents: []`, which is the common case.
       A "get it made" link to `/store/factories` goes on the DETAIL page, not the card.
+      ⚠️ **Part 2 left it rendering a redundant pill.** `BlueprintCardBody` stamps the category
+      ("Teardown") on every card, which made sense when one card design served three rails. The
+      teardown grid is now the only caller, and the pill sits inside a lane already headed
+      "Teardowns".
       ⚠️ **With no derived query.** `TEARDOWN_MANUFACTURING_METHODS` (a per-part process) and
       `FACTORY_CAPABILITY_KINDS` (a commercial relationship) answer different questions, and
       mapping one onto the other ships a wrong filter dressed up as a smart one.
