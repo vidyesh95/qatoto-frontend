@@ -1,8 +1,9 @@
-# [Qatoto](https://qatoto.com/) : Qatoto is a B2B pipeline that carries a physical product from an idea to a shipped unit:
+# [Qatoto](https://qatoto.com/) : Qatoto is a B2B pipeline that carries a physical product from an idea to a shipped unit
+
 pitch, form a team, raise, build under a daily-update protocol, ship through the platform's
 store and logistics. One identity, one ledger, one audience across all five stages.
 
-# Qatoto Frontend
+## Qatoto Frontend
 
 ### Prerequisites
 
@@ -70,7 +71,9 @@ Auto generate tests with Codegen.
 
 We suggest that you begin by typing:
 
-    pnpm exec playwright test
+```bash
+pnpm exec playwright test
+```
 
 And check out the following files:
 
