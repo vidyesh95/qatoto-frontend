@@ -1,0 +1,4 @@
+line,designator,quantity,manufacturer_part,description
+1,Q1-Q6,6,IRFS7530TRLPBF,60 V N-channel MOSFET
+2,U1,1,DRV8323RSRGZR,Three-phase gate driver
+3,C1-C4,4,GRM32ER71H105KA88L,1 uF 50 V X7R 1210

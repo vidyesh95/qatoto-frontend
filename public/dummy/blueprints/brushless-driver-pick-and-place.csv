@@ -1,0 +1,4 @@
+designator,x_mm,y_mm,rotation_deg,side,value
+Q1,12.400,9.100,0,top,IRFS7530
+Q2,18.600,9.100,0,top,IRFS7530
+U1,31.000,14.250,90,top,DRV8323

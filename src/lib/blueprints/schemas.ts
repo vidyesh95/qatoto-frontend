@@ -252,6 +252,33 @@ export const TEARDOWN_MANUFACTURING_FILE_KIND_LABELS: Record<
   bill_of_materials_csv: "Bill of materials (CSV)",
 };
 
+/**
+ * The same seven formats, short enough for a card.
+ *
+ * TWO RECORDS, ON THE `FACTORY_CAPABILITY_SHORT_LABELS` PRECEDENT
+ * (`src/lib/store/factories.schemas.ts`). The long labels above head a download bundle on the
+ * detail page, where "Bill of materials (CSV)" is exactly right; the index card lists up to four of
+ * them on ONE 12px line, where the same string wraps the card and pushes the grid row taller than
+ * its neighbours. Measured: the four electronics kinds ran to 56 characters and wrapped.
+ *
+ * ⚠️ ONLY `bill_of_materials_csv` ACTUALLY SHORTENS. The other six are already as short as they get
+ * without becoming initialisms nobody reads — "P&P" for pick and place saves eleven characters and
+ * costs a reader who has not seen it before, which is a bad trade on the surface whose whole job is
+ * telling a non-expert what it would take to build something.
+ */
+export const TEARDOWN_MANUFACTURING_FILE_KIND_SHORT_LABELS: Record<
+  TeardownManufacturingFileKind,
+  string
+> = {
+  step: "STEP",
+  stl: "STL",
+  dxf: "DXF",
+  gerber: "Gerber",
+  drill: "Drill",
+  pick_and_place: "Pick and place",
+  bill_of_materials_csv: "BOM CSV",
+};
+
 /** The two download bundles a teardown's files are grouped under. */
 export const TEARDOWN_MANUFACTURING_BUNDLES = ["mechanical", "electronics"] as const;
 export type TeardownManufacturingBundle = (typeof TEARDOWN_MANUFACTURING_BUNDLES)[number];
@@ -1245,15 +1272,9 @@ export interface BlueprintPage<TBlueprint> {
   readonly page: CursorPage;
 }
 
-/** Everything a card renders, whichever arm it came from. */
-export type BlueprintCardFields = Pick<
-  Blueprint,
-  | "slug"
-  | "title"
-  | "category"
-  | "summary"
-  | "thumbnailUrl"
-  | "author"
-  | "difficulty"
-  | "billOfMaterialsCostRange"
->;
+// `BlueprintCardFields` USED TO LIVE HERE and was deleted with `BlueprintCardBody`, its only
+// consumer. It was the "everything a card renders, whichever arm it came from" projection, which
+// stopped being a real idea the moment the three arms stopped sharing one card: a teardown card
+// leads with a BOM band and a part count, a case study is a row of text with no thumbnail at all,
+// and a showcase carries an upvote gutter. An exported type nothing imports is the same unverified
+// code the field sweeps in CLAUDE.md exist to catch, so it went rather than being kept "in case".

@@ -1515,7 +1515,7 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     - **Still true**: no vote endpoint, no `error` arm, de-indexed (seven flags + sitemap
       omission), components never import the fixtures, every URL via `buildBlueprintHref`.
 
-    ### 1c. The blueprints hub stopped being three rails — SHIPPED 2026-09-10, parts 1 and 2 of 4
+    ### 1c. The blueprints hub stopped being three rails — SHIPPED 2026-09-10, parts 1 to 3 of 4
 
     `/blueprints/case-studies` and `/blueprints/case-studies/[slug]` were rebuilt from a design
     brief that read the surface as three tools rather than one feed: teardowns answer _can I make
@@ -1622,22 +1622,43 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
       `architecture_24dp_…svg` is still used by the sidebar, the mobile nav and `how-qatoto-works`.
       Left on disk rather than deleted, on the `public/dummy/video/*` precedent.
 
-    #### Parts 3 and 4 of that brief — NOT BUILT
+    #### Part 3, the teardown card and the handoff — SHIPPED 2026-09-10
 
-    Specified in full in the plan file, deliberately left out of the diff. Taken in this order:
+    `BlueprintCardBody` DELETED, and with it the category pill and the author byline. The card is
+    now thumbnail, title, BOM band, `{n} parts · Difficulty`, then the fabrication formats.
 
-    - **Part 3, the teardown card.** It renders `BlueprintCardBody` today — thumbnail, title,
-      author avatar, difficulty — which is a video card. It should lead with the decision set: BOM
-      band, part count, which file kinds exist, difficulty. The test is a teardown with
-      `assembly: null`, `walkthroughVideo: null` and `documents: []`, which is the common case.
-      A "get it made" link to `/store/factories` goes on the DETAIL page, not the card.
-      ⚠️ **Part 2 left it rendering a redundant pill.** `BlueprintCardBody` stamps the category
-      ("Teardown") on every card, which made sense when one card design served three rails. The
-      teardown grid is now the only caller, and the pill sits inside a lane already headed
-      "Teardowns".
-      ⚠️ **With no derived query.** `TEARDOWN_MANUFACTURING_METHODS` (a per-part process) and
-      `FACTORY_CAPABILITY_KINDS` (a commercial relationship) answer different questions, and
-      mapping one onto the other ships a wrong filter dressed up as a smart one.
+    - **`TEARDOWN_MANUFACTURING_FILE_KIND_SHORT_LABELS` is a second label record**, on the
+      `FACTORY_CAPABILITY_SHORT_LABELS` precedent. ⚠️ Caught by LOOKING, not by a DOM assertion: the
+      four electronics kinds ran to 56 characters, wrapped, and made that grid row 272px against its
+      neighbours' 238px. Only `bill_of_materials_csv` actually shortens — "P&P" saves eleven
+      characters and costs a reader who has not seen it, which is a bad trade on the one surface
+      whose job is telling a non-expert what a build takes.
+    - **Formats are deduped and emitted in ENUM order, capped at four with a `+N`.** Six files can
+      be three formats; "STEP · STEP · DXF" would be counting files while appearing to list formats.
+      Enum order also means a reader scanning a column compares the same positions.
+    - ⚠️ **THE FLOOR IS A TITLE AND A DIFFICULTY**, which `thermal-camera-module-teardown` actually
+      is — null BOM, null `partCount`, no media, no files. Verified on screen. It looks thin and it
+      should: inventing a figure to fill the card is the one thing this surface refuses.
+    - **`TeardownFactoryHandoff` sits after `ManufacturingFileBundles`** and renders on EVERY
+      teardown, including one that published nothing — the handoff is about the pipeline, not the
+      row's payload. `/store/factories` answered 200; the copy names no quote, price or timeline and
+      says a factory will ask for **your own** files, because this teardown's are somebody else's
+      drawings of somebody else's product.
+    - **Fixtures: `manufacturingFiles` went from ONE teardown to THREE**, in three mixes, because
+      the card names formats and one row in twelve left the feature unexercised on eleven cards.
+      Seven new placeholder files on disk, real and measured off it per the standing rule —
+      `solar` all six kinds (the only row that overflows the cap and renders `+2`), `brushless` four
+      ELECTRONICS kinds, `hand-pump-gearbox` three MECHANICAL. All three `ManufacturingFileBundles`
+      branches now render: Electronics only, Mechanical only, both.
+      ⚠️ **The mechanical set was going to `borehole-pump-housing-tolerances` and was moved.** That
+      row is the documented "a viewport and nothing else" fixture — `fasteners`,
+      `manufacturingFiles`, `assemblySteps` empty and `repairabilityIndex` null TOGETHER — and
+      attaching files to it would have deleted the only row proving every other section can be
+      absent on its own. Do not attach anything to it.
+
+    #### Part 4 of that brief — NOT BUILT
+
+    Specified in full in the plan file, deliberately left out of the diff.
     - **Part 4, showcase.** Keep the feed shape; reserve the positions a real vote control and
       comment count will occupy so wiring is a swap. ⚠️ **Do not add the brief's "Comments aren't
       open on launches yet" copy** — `blueprint-comment-thread.tsx` renders a real one-level thread

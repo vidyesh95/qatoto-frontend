@@ -252,7 +252,7 @@ browsed the same way:
 | Route                                  | Design                                                                                                              |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `/blueprints`                          | Hub — header, hero, then three lanes in three DIFFERENT shapes, each with its question and one **See all**          |
-| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid; detail carries the video, the PDFs and, when `assembly` is non-null, the exploded-view engine       |
+| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid of DECISION-SET cards; detail carries the media, the files, the exploded-view engine and the handoff |
 | `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort lives in `listShowcases`; inert vote gutter |
 | `/blueprints/case-studies` + `/[slug]` | Hairline lesson list, each row an expandable `<details>`; detail is a fixed-order report                            |
 | `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                                                                |
@@ -327,6 +327,36 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   on a phone). `anime_hero_slide` carries no dimensions, so that is CSS only.
   ⚠️ **`loading-skeleton.tsx` mirrors this order and must move with it** — it drew four circles for
   the deleted icon row, which is a skeleton promising a control that no longer exists.
+- **THE TEARDOWN CARD IS A DECISION SET, NOT A VIDEO CARD.** It rendered `BlueprintCardBody` —
+  thumbnail, category pill, title, author avatar, difficulty — which is the YouTube shape, and a
+  founder asking "can I make this, and what will it cost" cannot answer either question from it.
+  It now leads with the BOM band, the part count, which fabrication formats were published and the
+  difficulty. `BlueprintCardBody` is DELETED (its stated reason was "so the rail and the grid cannot
+  diverge", and the rail went with the hub redesign), and the category pill and author byline went
+  with it — both callers show teardowns only, and four facts about the build plus one about the
+  builder do not fit a 12px grid cell.
+  ⚠️ **THE FLOOR IS A TITLE AND A DIFFICULTY.** `thermal-camera-module-teardown` has a null BOM, a
+  null `partCount` and no media, so its card is exactly that, and the title carries it. Do not
+  invent a number to fill the space and do not print "$0" or a dash — `formatCentsRangeLabel`
+  returns `null` and `null` renders NO LINE.
+  **The card uses `TEARDOWN_MANUFACTURING_FILE_KIND_SHORT_LABELS`**, a second record on the
+  `FACTORY_CAPABILITY_SHORT_LABELS` precedent. The long labels head a download bundle on the detail
+  page; on a card the four electronics kinds ran to 56 characters and wrapped the grid row taller
+  than its neighbours. Formats are deduped and emitted in ENUM order, never publish order, and
+  capped at four with a `+N` — six files can be three formats, and "STEP · STEP · DXF" would be
+  counting files while appearing to list formats.
+- **THE TEARDOWN DETAIL PAGE HANDS OFF TO `/store/factories`.** `TeardownFactoryHandoff` sits after
+  `ManufacturingFileBundles` and renders on EVERY teardown, including one that published nothing —
+  the handoff is about the pipeline, not this row's payload (PRODUCT.md Principle 5, continuity over
+  polish; the directory and its inquiry flow are live and wired).
+  ⚠️ **It links with NO DERIVED QUERY, and that is not laziness.** `TEARDOWN_MANUFACTURING_METHODS`
+  (`cnc_milled`, `injection_molded`, `pcb_assembly`, …) and `FACTORY_CAPABILITY_KINDS` (`odm`,
+  `oem`, `tooling_and_moulds`, …) look adjacent and answer different questions — one is the process
+  a PART was made by, the other the commercial relationship a FACTORY offers. `injection_molded` is
+  not `tooling_and_moulds`; the shop that cuts the mould and the shop that runs it are frequently
+  different businesses. A derived filter would be wrong and would read as authoritative.
+  **The copy promises nothing Qatoto does not do** — no quote, no price, no timeline, and no
+  suggestion that this teardown's files can be sent onward. They are somebody else's drawings.
 - **THE CASE-STUDY ARM IS A RECORD, AND IT CARRIES NO VERDICT.** The index was a grid of
   discipline-tinted, serif-titled, numbered cards on the lawsofux.com model, and that was three
   `docs/Design.md` violations standing together — §6's identical-card-grid ban, §3's Serif Boundary

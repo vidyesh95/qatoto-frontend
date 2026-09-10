@@ -240,6 +240,68 @@ const PLACEHOLDER_MANUFACTURING_FILES: Record<string, TeardownManufacturingFile>
     url: "/dummy/blueprints/solar-cold-storage-bom.csv",
     byteSize: 163,
   },
+
+  // ELECTRONICS ONLY, on `brushless-motor-driver-schematic`. `TEARDOWN_MANUFACTURING_FILE_BUNDLES`
+  // sorts these four into the Electronics bundle and none into Mechanical, so the bundle list
+  // renders ONE heading — the branch that returns `null` for an unpublished bundle.
+  brushlessTopCopperGerber: {
+    id: "mfg-007",
+    kind: "gerber",
+    title: "Top copper",
+    url: "/dummy/blueprints/brushless-driver-top-copper.gtl",
+    byteSize: 129,
+  },
+  brushlessDrill: {
+    id: "mfg-008",
+    kind: "drill",
+    title: "Plated through-holes",
+    url: "/dummy/blueprints/brushless-driver-drill.drl",
+    byteSize: 104,
+  },
+  brushlessPickAndPlace: {
+    id: "mfg-009",
+    kind: "pick_and_place",
+    title: "Pick and place, top side",
+    url: "/dummy/blueprints/brushless-driver-pick-and-place.csv",
+    byteSize: 139,
+  },
+  brushlessBillOfMaterialsCsv: {
+    id: "mfg-010",
+    kind: "bill_of_materials_csv",
+    title: "Bill of materials, 22 line items",
+    url: "/dummy/blueprints/brushless-driver-bom.csv",
+    byteSize: 195,
+  },
+
+  // MECHANICAL ONLY, on `hand-pump-gearbox-teardown` — the mirror of the set above, and the three
+  // kinds a machinist actually receives.
+  //
+  // ⚠️ NOT ON `borehole-pump-housing-tolerances`, WHICH WAS THE OBVIOUS HOME AND IS SPOKEN FOR.
+  // That fixture is the documented "a viewport and nothing else" case: `fasteners`,
+  // `manufacturingFiles`, `assemblySteps` all empty and `repairabilityIndex` null TOGETHER, on a
+  // teardown that does carry a model and telemetry. Attaching files to it would delete the one row
+  // that proves every other section can be absent on its own.
+  gearboxCaseStep: {
+    id: "mfg-011",
+    kind: "step",
+    title: "Gearbox case, upper and lower",
+    url: "/dummy/blueprints/hand-pump-gearbox-case.step",
+    byteSize: 305,
+  },
+  gearboxIdlerStl: {
+    id: "mfg-012",
+    kind: "stl",
+    title: "Idler gear, printable",
+    url: "/dummy/blueprints/hand-pump-gearbox-idler.stl",
+    byteSize: 203,
+  },
+  gearboxShimDxf: {
+    id: "mfg-013",
+    kind: "dxf",
+    title: "Shim stack cut path",
+    url: "/dummy/blueprints/hand-pump-gearbox-shim.dxf",
+    byteSize: 129,
+  },
 };
 
 const PUMP_PART_MODEL_DIRECTORY = "/dummy/blueprints/borehole-pump-housing";
@@ -274,7 +336,15 @@ const PUMP_PART_MODEL_DIRECTORY = "/dummy/blueprints/borehole-pump-housing";
  * - `fasteners: []`, `manufacturingFiles: []`, `assemblySteps: []` and `repairabilityIndex: null`
  *   TOGETHER on `borehole-pump-housing-tolerances`, which does carry a model and telemetry — a
  *   teardown with a viewport and nothing else, so every other section proves it can be absent on
- *   its own.
+ *   its own. ⚠️ DO NOT ATTACH FILES TO THIS ROW to exercise something; it is the only one holding
+ *   that combination, and the mechanical file set went to `hand-pump-gearbox-teardown` for exactly
+ *   this reason.
+ * - `manufacturingFiles` ON THREE OF TWELVE, in three different mixes, because the index card now
+ *   NAMES the formats rather than counting files. `solar-cold-storage-controller-teardown` has all
+ *   six kinds, which is the only row that overflows the card's four-name cap and renders its "+2";
+ *   `brushless-motor-driver-schematic` has four ELECTRONICS kinds and `hand-pump-gearbox-teardown`
+ *   three MECHANICAL ones, so `ManufacturingFileBundles` renders a single-bundle page both ways
+ *   round. One row out of twelve would have left all three branches unexercised on eleven cards.
  * - `simulationTelemetry` on exactly the two modelled teardowns, at factors of safety 3.1 and 1.6,
  *   so both the safe and the marginal colour bands render somewhere.
  * - `calloutText: null` on one MOSFET, so a part with no pin sits beside parts with pins.
@@ -616,7 +686,12 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     partCount: 62,
     assembly: null,
     fasteners: [],
-    manufacturingFiles: [],
+    manufacturingFiles: [
+      PLACEHOLDER_MANUFACTURING_FILES.brushlessTopCopperGerber,
+      PLACEHOLDER_MANUFACTURING_FILES.brushlessDrill,
+      PLACEHOLDER_MANUFACTURING_FILES.brushlessPickAndPlace,
+      PLACEHOLDER_MANUFACTURING_FILES.brushlessBillOfMaterialsCsv,
+    ],
     // `focusedPartId` IS NULL ON EVERY STEP, and it has to be: the contract only allows a part id
     // that exists in `assembly.parts`, and this teardown published no assembly.
     assemblySteps: [
@@ -993,7 +1068,11 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     partCount: 17,
     assembly: null,
     fasteners: [],
-    manufacturingFiles: [],
+    manufacturingFiles: [
+      PLACEHOLDER_MANUFACTURING_FILES.gearboxCaseStep,
+      PLACEHOLDER_MANUFACTURING_FILES.gearboxIdlerStl,
+      PLACEHOLDER_MANUFACTURING_FILES.gearboxShimDxf,
+    ],
     assemblySteps: [],
     repairabilityIndex: null,
     simulationTelemetry: null,

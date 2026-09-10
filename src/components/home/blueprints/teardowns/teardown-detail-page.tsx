@@ -16,6 +16,7 @@ import FastenerBillOfMaterials from "@/components/home/blueprints/teardowns/sect
 import ManufacturingFileBundles from "@/components/home/blueprints/teardowns/sections/manufacturing-file-bundles";
 import RepairabilityIndexPanel from "@/components/home/blueprints/teardowns/sections/repairability-index-panel";
 import TeardownEngagementBar from "@/components/home/blueprints/teardowns/sections/teardown-engagement-bar";
+import TeardownFactoryHandoff from "@/components/home/blueprints/teardowns/sections/teardown-factory-handoff";
 import TeardownSummary from "@/components/home/blueprints/teardowns/sections/teardown-summary";
 import TelemetryReadouts from "@/components/home/blueprints/teardowns/sections/telemetry-readouts";
 import TeardownExplorer from "@/components/home/blueprints/teardowns/teardown-explorer";
@@ -137,6 +138,10 @@ export default async function TeardownDetailPage({ slug }: { slug: string }) {
 
       {/* The take-it-away payload sits last, after everything that explains what it is. */}
       <ManufacturingFileBundles manufacturingFiles={teardown.manufacturingFiles} />
+
+      {/* And the handoff sits after the payload, because "who makes this" is the question a reader
+          has once they have seen what there is to send. */}
+      <TeardownFactoryHandoff />
 
       <BlueprintTagList tags={teardown.tags} />
 

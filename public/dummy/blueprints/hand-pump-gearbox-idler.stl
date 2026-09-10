@@ -1,0 +1,9 @@
+solid placeholder_idler_gear
+  facet normal 0.0 0.0 1.0
+    outer loop
+      vertex 0.0 0.0 0.0
+      vertex 42.0 0.0 0.0
+      vertex 0.0 42.0 0.0
+    endloop
+  endfacet
+endsolid placeholder_idler_gear
