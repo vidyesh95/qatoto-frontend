@@ -3965,7 +3965,95 @@ a list nothing reads. It is a Part 2 input.
 whole teardown. If per-file rights are ever wanted, they need a reason a whole-teardown declaration
 cannot serve — a bundle mixing differently-licensed files is the case, and no fixture has one.
 
-### Part 2 — the publish flow — NOT BUILT, blocked on the `blueprint_*` tables
+### Part 2 — the publish flow — SHIPPED MOCK-BACKED 2026-09-10
+
+`/blueprints/teardowns/new` is a real five-step wizard and `/studio/blueprints` lists the author's
+own submissions. **Nothing persists**, by decision: there is no `blueprint` table and this part did
+not add one.
+
+⚠️ **TWO THINGS THE SKETCH BELOW GOT WRONG, kept because the reasoning matters.**
+
+1. **"ONE wizard component mounted twice" — it is mounted ONCE.** Studio is MANAGEMENT, a list, not
+   a second entry point; it links to the wizard. That also keeps `src/components/studio/**` from
+   importing `src/components/home/**`, a cross-group import with no precedent in the repo.
+2. **"Render 'we are checking' and poll" — THERE IS NOTHING TO POLL.** The repo's polling pattern
+   (`useImportCommodityQuery`, `refetchInterval` as a function of `query.state.data`, bounded by a
+   give-up deadline) must NOT be copied here: against a mock it re-reads one fixture forever while
+   implying a moderator is working. The receipt states the accepted verdict and says no queue exists.
+
+**What honesty costs and where it is paid.** Everything except persistence is real — Zod validation,
+the four-clause gate, an idempotency key per attempt, a tagged `ActionResponse`, a 202-shaped
+receipt. The disclosure lives in exactly ONE place, `submission-receipt.tsx`, after a submit: a
+banner on all five steps is a warning nobody finishes reading, and no banner at all is a ghost
+control. ⚠️ **The wizard and the studio list DO NOT JOIN**, and the receipt says so. The alternatives
+were a module-level array that dies on reload (fake persistence, loses work with no explanation) or
+a second `localStorage` key, which CLAUDE.md forbids because `privacy-policy.tsx` and
+`data-and-privacy-panel.tsx` both claim there is exactly one.
+
+**Contract.** `rejected` joined `BLUEPRINT_MODERATION_STATES` — distinct from `draft`, which was
+never submitted — and the exhaustive `switch` in `teardown-moderation-notice.tsx` caught it
+immediately, which is what that `never` default is for. `authoring.schemas.ts` is `.strict()`, NOT
+`.strip()`, on the `src/lib/products/schemas.ts:98-107` precedent. It reuses `TeardownProvenanceSchema`
+and `TeardownMaterialSchema` whole, so the three-arm licence/authorisation refinement guards the
+write path for free.
+
+⚠️ **THE MOCK ENFORCES ONE REAL RULE** — a duplicate `subjectProductName` answers 409 — because
+without it the failure branch of every caller is unreachable, which is unverified code by the
+standard the uncalled-hook audit applies. Verified in a browser: it renders through
+`MutationErrorNotice` with the backend's own message and `Code 409`.
+
+**No uploads, so no dropzone.** Every file is a pasted https URL; the walkthrough is a YouTube link
+through `extractYoutubeVideoId`, stored as the 11-character id with the poster derived from it. The
+parts step states that a teardown submitted now cannot carry a 3D model, rather than omitting the
+feature silently. ⚠️ **THERE IS NO ELEMENT-TABLE EDITOR AND THERE MUST NOT BE ONE** until a file from
+an analyser can be attached: a free-text percent field invites a datasheet figure, and the read
+page renders element tables looking exactly like measurements. `collectTeardownSubmission` always
+emits `elements: []`.
+
+**Six defects found by walking it in a browser, all fixed.** Recorded because five of them are
+invisible to `tsc`, `lint` and `build`:
+
+- ⚠️ **`formatIsoDateLabel` fed an ISO INSTANT renders "Sep NaN, 2026".** It splits on `-` and gets
+  `day = "09T16:40:00.000Z"`. THREE call sites had it and **two were Part 1 code** — the Part 1b
+  verification grepped for copy strings and never looked at a rendered date.
+  ⚠️ **THE REPO ALREADY KNEW**: `showcase-detail-page.tsx:83` documents the identical bug being fixed
+  once before. New helper `formatIsoInstantAsDateLabel` exists so the next caller cannot repeat it.
+- The review read-back **omitted the summary**, a required field with a length rule — so the
+  contract could refuse a submission for a field that screen never showed.
+- Zero counts read **"Not answered"**; they are now **"None"**. An empty date is a question SKIPPED,
+  zero documents is a question ANSWERED, and conflating them sends somebody hunting through four
+  steps for a field that was never wrong.
+- **A stale verdict survived an edit.** Fixing the named field left the complaint on screen, which
+  reads as the fix not having worked. Any draft change now clears both `fieldErrors` and the
+  mutation error.
+- The attestation gap **lowercased clause labels**, producing "i obtained this unit lawfully".
+- ⚠️ **An empty survey date was ACCEPTED.** `TeardownProvenanceSchema.surveyedAt` is `z.string()` —
+  the house ISO convention — which passes `""`. Harmless for fixtures, wrong for a form. Refused now
+  in the write schema's `superRefine`; the read side stays loose per convention.
+
+**Registration, all three points.** `STUDIO_ROUTES` + `STUDIO_NAVIGATION_CONFIG` in
+`studio-sidebar.tsx` (placed FIRST in "Product journey", above Pitches, because you survey something
+that already sells and then pitch building it), and `site-roadmap.ts`. ⚠️ **NOT
+`COLLAPSED_NAV_CONFIG`** — a separate, deliberately shorter array that Pitches, Team and Funding are
+all absent from. The roadmap summary says submissions are not open, because they are not.
+
+⚠️ **ONE BRANCH SHIPS UNEXERCISED**: the studio empty state. The fixtures are never empty, so nothing
+renders it. It stays because it is what every real first-time author sees, and faking it behind a
+query param would be test scaffolding in production code.
+
+**Verified in a browser, not inferred:** all five steps forward and back, the disabled
+`proposed_design` option with its reason, the gate refusing at 4-of-4 and again at 1-of-4 with the
+count named, submit enabling on the fourth tick, the contract's own refusal following the publisher
+back to the step holding the field, the 409, the 409 clearing on edit, the receipt with its
+idempotency-derived submission id and the not-stored disclosure, and all six studio rows with their
+chips, author notes and the moderator's reason. Console clean.
+
+**What the real backend must provide to join the two halves:** `POST /blueprints/teardowns`
+answering 202 with `{ submissionId, moderationState, receivedAt }`, and
+`GET /blueprints/teardowns/mine`. Both already have their schemas; `authoring.api.ts` becomes one
+`sendJson` and one `getJson` and nothing above it changes.
+
+### ~~Part 2 — the original sketch~~ — superseded by the section above, kept for the state list
 
 Entry at `/blueprints/teardowns/new`, management at `/studio/blueprints`, ONE wizard component
 mounted twice. Steps: subject and provenance, media and files, parts, materials and composition,

@@ -11,7 +11,7 @@ import {
   type TeardownProvenance,
   type TeardownProvenanceChip,
 } from "@/lib/blueprints/schemas";
-import { formatIsoDateLabel } from "@/lib/store/format";
+import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
 
 /**
  * THE RIGHTS HALF of the provenance claim: what the permission is worth, what the publisher swore,
@@ -160,9 +160,9 @@ export default function TeardownProvenanceBlock({
       </p>
 
       <p className="mt-3 text-xs text-muted-foreground">
-        Publisher attested on {formatIsoDateLabel(provenance.attestationAcceptedAt)} that the unit
-        was lawfully obtained, that the data was gathered by measurement and standard disassembly,
-        and that no vendor-confidential material was used.
+        Publisher attested on {formatIsoInstantAsDateLabel(provenance.attestationAcceptedAt)} that
+        the unit was lawfully obtained, that the data was gathered by measurement and standard
+        disassembly, and that no vendor-confidential material was used.
       </p>
     </section>
   );

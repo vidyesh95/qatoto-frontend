@@ -385,8 +385,10 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   information to display — which is why the sweep below excludes it by name. If it ever widens to
   the enum it needs a renderer that same day. Do not grow a proposed-design blueprint type off it.
 - **MODERATION IS ENFORCED IN THE GETTERS, AND A LIST AND A DETAIL READ DISAGREE ON PURPOSE.**
-  `BLUEPRINT_MODERATION_STATES` is `draft`, `pending_review`, `published`, `flagged`, `quarantined`,
-  `removed`. Lists carry `published` + `flagged`; a detail read adds `quarantined`. An index is a
+  `BLUEPRINT_MODERATION_STATES` is `draft`, `pending_review`, `published`, `rejected`, `flagged`,
+  `quarantined`, `removed`. ⚠️ **`rejected` IS NOT `draft`** — a draft was never submitted, a
+  rejected submission was reviewed and turned down and carries the moderator's reason. It is
+  never-public like the first two, so the public gates did not change when it was added. Lists carry `published` + `flagged`; a detail read adds `quarantined`. An index is a
   RECOMMENDATION, so a quarantined row is absent from every one of them; a detail read is a DIRECT
   REQUEST, and a reader who followed an existing link is owed the reason rather than a 404 that reads
   as a broken bookmark. `draft` and `pending_review` are in neither — that is "moderator approval
@@ -422,6 +424,27 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   ⚠️ **NO SIGNAL SUPPRESSES THE WHOLE BLOCK** — `getTeardownMarketSignal` returns `null` rather than
   an empty pair, so no component can render "No builds yet", "No listings" or an empty zero-state
   card. An empty state here would read as a VERDICT on the product.
+- **THE PUBLISH FLOW IS A REHEARSAL AND SAYS SO ONCE.** `/blueprints/teardowns/new` is a real
+  five-step wizard — real Zod validation, a real four-clause attestation gate, a real idempotency key
+  minted per attempt — over `authoring.api.ts`, which **stores nothing**, because there is no
+  `blueprint` table. ⚠️ **THE DISCLOSURE IS NOT OPTIONAL COPY AND LIVES IN EXACTLY ONE PLACE**:
+  `submission-receipt.tsx`, after a submit. A banner on every step is a warning nobody finishes
+  reading; no banner at all is a ghost control.
+  ⚠️ **DO NOT ADD A POLL.** The R&D surfaces poll a 202 to a verdict (`refetchInterval` as a function
+  of `query.state.data`); against a mock that re-reads the same fixture forever while implying a
+  moderator is working. There is no queue and the receipt says so.
+  ⚠️ **THE MOCK ENFORCES ONE REAL RULE ON PURPOSE** — a duplicate `subjectProductName` answers 409 —
+  because without it the failure branch of every caller is unreachable, which is unverified code by
+  the same standard the uncalled-hook audit applies.
+  **Uploads do not exist**, so every file is a pasted https URL and the walkthrough is a YouTube link
+  through `extractYoutubeVideoId`; there is no dropzone and the step says why. **There is no
+  element-table editor and there must not be one** until a file from an analyser can be attached: a
+  free-text percent field invites somebody to type a datasheet figure, which the composition table
+  then renders looking exactly like a measurement.
+  **`/studio/blueprints` is management only** — the wizard is mounted once, in `(home)`, and studio
+  links to it. The two do not join, because `submitTeardownForReview` persists nothing; joining them
+  would need fake in-memory persistence that loses work on reload, or a second `localStorage` key,
+  which is forbidden.
 - **THE DENSITY SWITCH IS A QUERY PARAM, NOT CLIENT STATE.** `?view=business|engineering|factory`,
   default `business`, and the default is written OUT of the URL so the canonical path stays
   canonical. `?view=factory` is a URL a founder sends to the shop that will make the thing.

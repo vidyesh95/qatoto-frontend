@@ -1012,8 +1012,11 @@ export type TeardownSimulationTelemetry = z.infer<typeof TeardownSimulationTelem
  * SNAKE_CASE, byte-matching a future `pgEnum`, for the reason the file header gives.
  *
  * The states are not a preference ladder — each one is a different render:
- * - `draft` / `pending_review` — invisible to the public. The detail read returns `null` and the
- *   route 404s. Its author sees it in studio (§Blueprint publishing, `todo.md`).
+ * - `draft` / `pending_review` / `rejected` — invisible to the public. The detail read returns
+ *   `null` and the route 404s. The author sees all three in `/studio/blueprints`.
+ *   ⚠️ `rejected` IS NOT `draft`. A draft was never submitted; a rejected submission was reviewed
+ *   and turned down, and it carries the moderator's reason, which is the whole reason the author
+ *   needs a separate state rather than finding their work silently back in drafts.
  * - `published` — the ordinary state.
  * - `flagged` — somebody has REPORTED an IP concern and nobody has ruled on it. The public view is
  *   UNCHANGED apart from a stated notice: a report is an allegation, and hiding a row on the
@@ -1028,6 +1031,7 @@ export const BLUEPRINT_MODERATION_STATES = [
   "draft",
   "pending_review",
   "published",
+  "rejected",
   "flagged",
   "quarantined",
   "removed",
@@ -1039,6 +1043,7 @@ export const BLUEPRINT_MODERATION_STATE_LABELS: Record<BlueprintModerationState,
   draft: "Draft",
   pending_review: "Pending review",
   published: "Published",
+  rejected: "Not accepted",
   flagged: "IP concern reported",
   quarantined: "Quarantined",
   removed: "Removed",
@@ -1470,6 +1475,39 @@ export const TEARDOWN_COMPOSITION_ANALYSIS_METHOD_IS_MEASURED: Record<
   declared_not_measured: false,
   synthetic_example: false,
 };
+
+/**
+ * COMMON DESIGNATIONS THE AUTHORING COMBOBOX OFFERS — SUGGESTIONS, NOT AN ENUM.
+ *
+ * ⚠️ `TeardownMaterialSchema.designation` STAYS `z.string()` AND MUST. This tuple seeds a
+ * `CreatableCombobox` so that two publishers spelling the same alloy do not produce two entries
+ * nobody can group; the FREE-TEXT ESCAPE IS THE POINT, exactly as `cofounders.schemas.ts` argues
+ * for `sector` — "the long tail here is the whole point". A closed enum here would refuse the first
+ * unusual polymer somebody actually measured, which is the material most worth recording.
+ *
+ * Ordered by how often a small hardware build meets them, not alphabetically: the list is read
+ * top-down in a dropdown, not scanned.
+ */
+export const TEARDOWN_DESIGNATION_SUGGESTIONS = [
+  "6061-T6",
+  "6063-T5",
+  "5052-H32",
+  "304 stainless",
+  "316L stainless",
+  "17-4 PH",
+  "Mild steel, zinc plated",
+  "CC480K bronze",
+  "ABS, UL94 V-0",
+  "PC/ABS",
+  "PA66, 30% glass filled",
+  "POM (acetal)",
+  "PETG",
+  "TPU, 95A",
+  "NBR",
+  "Silicone, 60A",
+  "FR-4",
+  "Aluminium-core PCB",
+] as const;
 
 /**
  * One element in a material's composition.

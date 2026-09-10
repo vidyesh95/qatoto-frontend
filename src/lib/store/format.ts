@@ -180,6 +180,29 @@ export function formatIsoInstantLabel(isoInstant: string): string {
 }
 
 /**
+ * An ISO INSTANT rendered as a DATE ONLY — `"Sep 9, 2026"`.
+ *
+ * ⚠️ IT EXISTS BECAUSE PASSING AN INSTANT TO `formatIsoDateLabel` SILENTLY PRODUCES `"Sep NaN, 2026"`.
+ * That function splits on `-` and expects three parts, so an instant hands it
+ * `day = "09T16:40:00.000Z"` and `Number(day)` is `NaN`. Nothing throws, nothing fails a type check,
+ * and the page renders a date with the word NaN in it. Three call sites on the blueprints surface
+ * shipped exactly that before this helper existed.
+ *
+ * ⚠️ THE LABEL IS THE UTC CALENDAR DATE, and no zone is shown. That is right for the values this
+ * formats — a survey date, an attestation date, a submission date — which are stamps on a record
+ * rather than deadlines two parties must agree on. `formatIsoInstantLabel` is the one that names the
+ * zone, and it does so because every instant IT formats is a commercial deadline. Do not use this
+ * for one of those.
+ *
+ * Same no-`new Date()`, no-`Intl` discipline as its neighbours: these render on the server and again
+ * in the browser, and anything reading the ambient timezone produces a hydration mismatch.
+ */
+export function formatIsoInstantAsDateLabel(isoInstant: string): string {
+  const [datePart] = isoInstant.split("T");
+  return datePart === undefined ? isoInstant : formatIsoDateLabel(datePart);
+}
+
+/**
  * The same, keeping `null` as `null`.
  *
  * `DefinitionList` renders a null value as an explicit absence, so the null must SURVIVE formatting rather

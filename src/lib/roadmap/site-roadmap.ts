@@ -924,6 +924,17 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
           "Publish a venture to people who might fund it. Funding links out; Qatoto holds no funds.",
       },
       {
+        // ⚠️ THE SUMMARY SAYS SUBMISSIONS ARE NOT OPEN, because they are not. The wizard behind this
+        // validates a real payload and stores nothing — there is no `blueprint` table — and a
+        // roadmap entry that read "publish a teardown" would be the one place on the site claiming
+        // otherwise. Change this line on the same day the backend lands, not before.
+        kind: "route",
+        label: "My Teardowns",
+        href: "/studio/blueprints",
+        summary:
+          "Surveys you have submitted, and where each one has got to. Submissions are not open yet.",
+      },
+      {
         // ⚠️ THIS ENTRY HAS NOW BEEN WRONG TWICE, IN OPPOSITE DIRECTIONS, and the history is worth
         // keeping. It first read "Who else can act on this account" — account-level DELEGATION,
         // which does not exist. It was then corrected to describe collaborator credits, which is

@@ -121,6 +121,10 @@ const STUDIO_ROUTES = {
   myProducts: "/studio/products",
   playlists: "/studio/playlists",
   analytics: "/studio/analytics",
+  // Surveys the signed-in publisher has submitted. UPSTREAM OF PITCHES in the section below, and
+  // that ordering is the product thesis rather than alphabetical: you survey something that already
+  // sells, then pitch building it.
+  myTeardowns: "/studio/blueprints",
   pitches: "/studio/pitches",
   // The PRODUCT team — the pipeline stage between Pitches and Funding, and what the
   // "Product journey" section below has always promised. Until now this path served
@@ -369,6 +373,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
   {
     title: "Product journey",
     items: [
+      { path: STUDIO_ROUTES.myTeardowns, label: "My Teardowns", iconKey: "category" },
       { path: STUDIO_ROUTES.pitches, label: "Pitches", iconKey: "slideshow" },
       { path: STUDIO_ROUTES.team, label: "Team", iconKey: "group" },
       { path: STUDIO_ROUTES.funding, label: "Funding", iconKey: "requestQuote" },

@@ -6,7 +6,7 @@ import {
   TEARDOWN_UNIT_ACQUISITION_LABELS,
   type TeardownProvenance,
 } from "@/lib/blueprints/schemas";
-import { formatIsoDateLabel } from "@/lib/store/format";
+import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
 
 /**
  * WHAT UNIT THIS IS A SURVEY OF, and under what permission — the origin claim, above the fold.
@@ -70,7 +70,7 @@ export default function TeardownSubjectStrip({
 
       <p className="mt-1 text-xs text-muted-foreground">
         {TEARDOWN_UNIT_ACQUISITION_LABELS[provenance.unitAcquisition]} &middot; surveyed{" "}
-        {formatIsoDateLabel(provenance.surveyedAt)}
+        {formatIsoInstantAsDateLabel(provenance.surveyedAt)}
         {/*
           `null` PRINTS NOTHING — no "unlicensed", no "none". A community survey carries no
           permission and saying so twice (here and in the chip a few pixels up) would be nagging

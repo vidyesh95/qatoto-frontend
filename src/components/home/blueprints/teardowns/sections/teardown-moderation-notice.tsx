@@ -61,9 +61,14 @@ export default function TeardownModerationNotice({
         </aside>
       );
 
+    // NONE OF THESE RENDER A PUBLIC NOTICE. `published` has nothing to say; the other four never
+    // reach a public page at all — `getBlueprint` returns `null` for them and the route 404s. They
+    // are listed rather than defaulted so that a seventh state is a compile error here, which is
+    // exactly how `rejected` was caught when it was added to the enum.
     case "published":
     case "draft":
     case "pending_review":
+    case "rejected":
     case "removed":
       return null;
 
