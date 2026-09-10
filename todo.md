@@ -3679,11 +3679,12 @@ launches carry a thread so the empty case stays exercised.
 
 ---
 
-## Launch write-up and real discussion — SHAPED 2026-09-10, NOT BUILT
+## Joining the discussion on a launch — SPECCED 2026-09-10, BLOCKED ON A TABLE
 
-`/blueprints/showcase/[slug]` is a launch page that is two sentences long and a thread nobody can
-answer. This is the shape for turning it into the page a maker announces on and other builders
-argue on. Three parts, three diffs, each revertable on its own.
+`/blueprints/showcase/[slug]` carries a maker's write-up and a discussion that renders every state
+a real thread has, including a tombstone. What it does not carry is any way to join that
+discussion, and it cannot until a table exists for a comment row to reference. This is the shape
+for the composer and everything that comes with it.
 
 **⚠️ THE ANCHOR IS YOUTUBE, NOT REDDIT, AND THE ASK STARTED SOMEWHERE ELSE.** The request named
 HackerRank and Peerlist, then "like reddit, hackernews, youtube". The three answers that actually
@@ -3691,69 +3692,7 @@ constrain the build — ONE level of nesting, a Top/Newest toggle rather than sc
 signed-in identity — are the YouTube watch page's model in every case. Launch YC keeps the page
 silhouette it already has. Hacker News contributes comment DENSITY and the argument shape, and
 nothing else: not its unlimited nesting, not its score sort. Do not reintroduce either by reading
-"like hackernews" literally off this heading.
-
-### Part 1 — the launch write-up (ships first, needs no backend)
-
-One new field on `ShowcaseBlueprintSchema`:
-
-```ts
-/** The maker's write-up. Plain text, blank-line separated. `null` when nobody wrote one. */
-writeUp: z.string().nullable(),
-```
-
-- **PLAIN TEXT, AND THAT WAS A DECISION.** Stored raw, split on blank lines at render, emitted as
-  `<p>`. No markdown, no parser, no sanitiser, no `dangerouslySetInnerHTML`. A markdown subset was
-  specified and rejected: user-generated HTML rendered on a thin untrusted layer is the highest-risk
-  thing this surface could carry, and the write-up does not need headings to do its job.
-- **`summary` STAYS, AS THE STANDFIRST.** Three description-ish fields now sit on one arm — `tagline`
-  (the feed row's line), `summary` (the one-paragraph "what is this") and `writeUp` (the depth) — and
-  the size difference is what tells a reader they are three things rather than one paragraph that got
-  long: `summary` at `text-base`, `writeUp` at `text-sm/6` in a `max-w-2xl` measure. `summary` also
-  feeds the hub lanes, so it could not be dropped even if the detail page stopped rendering it.
-- **`null` RENDERS NOTHING.** No heading, no box, no "no description". Principle 2, and it is the
-  common case on a launch nobody wrote up.
-- **The collapse is a real button.** `line-clamp-6`, then `<button aria-expanded>` reading `…more` /
-  `Show less`, and the button does not render at all under the clamp threshold.
-  ⚠️ **Do NOT copy `video-description.tsx`.** It wraps an `<h1>` and the whole meta line inside one
-  giant `<button>`, which is interactive content swallowing a heading — an a11y defect, not a
-  pattern. And no height transition: `docs/Design.md` bans animating layout properties.
-- **Its own client island.** The detail page is a server component and stays one. The collapse is the
-  only thing here that needs JavaScript.
-
-### Part 1b — state coverage on the comment fixtures (separate diff)
-
-**NOT a richness pass, and the distinction is the point.** "Longer, better arguments" is an
-open-ended writing task with no finish line. This is eight named states, and it is done when all
-eight render. Three threads carry them; no fourth launch gets threaded.
-
-| Launch                               | `writeUp`  | States it carries                                                                                          |
-| ------------------------------------ | ---------- | ---------------------------------------------------------------------------------------------------------- |
-| `solar-cold-storage-field-prototype` | present    | long comment · parent with one reply · **tombstone with a live reply underneath** · bare URL               |
-| `brushless-cargo-trike-drivetrain`   | **`null`** | thread on a null-write-up launch · reply with an @mention · keeps its existing three-replies-on-one-parent |
-| `off-grid-mesh-nodes-kumasi-market`  | present    | one-line comment                                                                                           |
-| the other seven                      | mixed      | empty thread                                                                                               |
-
-⚠️ **`brushless-cargo-trike-drivetrain` KEEPS ITS THREE REPLIES ON ONE PARENT.** That shape is the
-one-level limit RENDERED rather than asserted, which is the reason `blueprints-mocks.ts` gives for
-it. Restructuring the thread must not flatten it into three separate parents.
-
-Two things Part 1b pulls forward, both deliberately:
-
-- **`body` AND `author` GO NULLABLE.** A `[deleted]` tombstone cannot exist otherwise, and faking one
-  with the literal string `"[deleted]"` is out — a real backend distinguishes a null body from a user
-  who typed those characters. `author` goes with it: a tombstone that keeps its byline still
-  attributes a comment that was removed, and `video-comment-thread.tsx` nulls both for that reason.
-  `BlueprintCommentSchema`'s current "a tombstone is a state only deletion can create" comment is
-  REWRITTEN, not deleted — it becomes the note that the fixtures exercise the render ahead of the
-  write that will create it.
-- **One shared plain-text tokeniser.** Splits a string on a regex and emits `<a>` for bare URLs and a
-  teal `<span>` for `@handle`. No parser, no sanitiser. Serves the write-up and the comment body
-  both, so Part 1 and Part 1b share one function. Without it, the bare-URL and @mention fixtures
-  exercise nothing on screen — the body renders as `{comment.body}` in a `<p>` today.
-
-⚠️ **`commentCount` ON ALL THREE LAUNCHES MOVES WITH THE THREAD.** It is the standing constraint
-`blueprints-mocks.ts` records and no test enforces it. The tombstone COUNTS: the row exists.
+"like reddit, hackernews" literally off the original ask.
 
 ### Part 2 — the real discussion (blocked on the backend)
 
@@ -3768,7 +3707,8 @@ idempotency keys, not-optimistic. Copy it; do not reinvent it.
   questions becomes askable the moment the table exists.
 - **Reply-to-a-reply is an @mention, not a node.** The reply control on a reply opens a composer
   prefilled `@handle ` targeting the PARENT. That is how the conversational feel arrives without the
-  tree, and it is why Part 1b bothers to render an @mention at all.
+  tree, and `bpc-014` in `MOCK_SHOWCASE_COMMENTS` is that shape already rendering: a third reply
+  to a shared parent, naming who it answers.
 - ⚠️ **TOP / NEWEST IS NET-NEW BACKEND WORK, NOT A FRONTEND TOGGLE.** `GET /videos/:id/comments` has
   NO sort parameter — the backend fixes the order, and the old mock's Top/New pills sorted nothing
   and were deleted for it ("a control that cannot do what it says is worse than no control",
@@ -3790,7 +3730,10 @@ idempotency keys, not-optimistic. Copy it; do not reinvent it.
   component the real endpoint cannot feed. That is the `/anime` mistake `CLAUDE.md` documents.
 - **Score-reordering was rejected in favour of Top/Newest.** Two server-side orders the reader picks,
   not a ranking the votes rearrange.
-- **A markdown body was rejected.** See Part 1.
+- **A markdown body was rejected.** Plain text, tokenised for links and mentions, no parser and no
+  sanitiser. `linked-plain-text.tsx` and `ShowcaseBlueprintSchema.writeUp` both record why, and
+  the reason is that user-generated HTML on a thin untrusted layer is the worst thing this
+  surface could carry. A composer does not change that; it sharpens it.
 - **NO RESERVED-BUT-INERT CONTROLS INSIDE THE THREAD.** Every control in Part 2 ships in the same
   commit as its route. The reserved-slot pattern is real on this surface — the feed row's 40×44 vote
   gutter and its comment slot, both measured — but it belongs to a LIST ROW showing a count, not to a
@@ -3799,9 +3742,3 @@ idempotency keys, not-optimistic. Copy it; do not reinvent it.
   read as a pitch deck. Concretely, the second one bans a highlighted "top comment", a maker-reply
   badge, pull-quotes and any stat band in the write-up. A comment section that decorates its best
   comment is a testimonial row wearing a thread's clothes.
-
-### Open names
-
-Both are placeholders and neither is good. `writeUp` for the field; `AutolinkedText` for the shared
-tokeniser. Rename on the way in if something better turns up — they are unshipped, so this is the
-last cheap moment.
