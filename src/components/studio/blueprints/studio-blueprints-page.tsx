@@ -69,7 +69,10 @@ export default function StudioBlueprintsPage() {
 
   return (
     <div className="px-4 py-6 lg:px-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* `max-w-3xl`, THE SAME AS THE LIST, so the publish button's right edge lines up with the
+          status chips below it. Full width, it sat at the far edge of the page, 300px past the
+          column it belongs to. */}
+      <div className="flex max-w-3xl flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-medium text-foreground">My teardowns</h1>
           <p className="mt-1 max-w-prose text-sm text-muted-foreground">
@@ -84,8 +87,27 @@ export default function StudioBlueprintsPage() {
         </Link>
       </div>
 
+      {/* A SKELETON IN THE LIST'S OWN SHAPE, not a "Loading…" line: `product.md` asks for skeletons
+          over spinners, and three rows of title, meta line and chip is what the list resolves into,
+          so nothing jumps when it arrives. The real words are for screen readers. */}
       {submissionsQuery.isPending ? (
-        <p className="mt-6 text-sm text-muted-foreground">Loading…</p>
+        <div className="mt-6 max-w-3xl">
+          <p className="sr-only">Loading your teardowns</p>
+          <ul aria-hidden="true" className="animate-pulse">
+            {[0, 1, 2].map((placeholderIndex) => (
+              <li
+                key={placeholderIndex}
+                className="flex items-start justify-between gap-4 border-t border-border py-4"
+              >
+                <div className="w-full max-w-md space-y-2">
+                  <div className="h-4 w-3/4 rounded-full bg-muted" />
+                  <div className="h-3 w-1/2 rounded-full bg-muted" />
+                </div>
+                <div className="h-6 w-20 shrink-0 rounded-full bg-muted" />
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
 
       {submissionsQuery.isError ? (
@@ -121,7 +143,11 @@ export default function StudioBlueprintsPage() {
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground">{submission.title}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {submission.subjectProductName} &middot; submitted{" "}
+                      {/* ⚠️ A DRAFT WAS NEVER SUBMITTED, so its date is when it was started. The
+                          row used to read "submitted Sep 9, 2026" directly above its own note
+                          "Not submitted yet", which is the page contradicting itself. */}
+                      {submission.subjectProductName} &middot;{" "}
+                      {submission.moderationState === "draft" ? "started" : "submitted"}{" "}
                       {formatIsoInstantAsDateLabel(submission.submittedAt)}
                     </p>
                   </div>
