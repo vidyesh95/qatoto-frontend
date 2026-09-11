@@ -26,7 +26,7 @@
 import { Suspense } from "react";
 
 import CaseStudyLessonLink from "@/components/home/blueprints/cards/case-study-lesson-link";
-import ShowcaseFeedRow from "@/components/home/blueprints/cards/showcase-feed-row";
+import ShowcaseLaunchLink from "@/components/home/blueprints/cards/showcase-launch-link";
 import TeardownGridCard from "@/components/home/blueprints/cards/teardown-grid-card";
 import BlueprintLane from "@/components/home/blueprints/sections/blueprint-lane";
 import BlueprintsHeroCarouselSection from "@/components/home/blueprints/sections/blueprints-hero-carousel-section";
@@ -91,32 +91,42 @@ export default async function BlueprintsPage() {
       };
 
   return (
-    <div className="pb-10">
-      {/* THE HEADER COMES FIRST. The hero used to sit above it, so the page opened with a rotating
-          image and only then said what it was. It is also the one real read on this surface, which
-          is an argument for keeping it and not for leading with it. */}
-      <header className="px-4 pt-4 lg:px-6">
-        <h1 className="text-xl font-medium text-foreground lg:text-2xl">Blueprints</h1>
-        <p className="mt-1 max-w-2xl text-sm text-[#6F7979]">
-          Engineering teardowns, working prototypes and what happened when they went to manufacture.
-          Schematics, tolerances and bills of materials, published in the open.
-        </p>
-      </header>
+    <div className="pb-12">
+      {/*
+        THE MASTHEAD: THE HEADER LEFT, THE HERO RIGHT, FROM `lg` UP. The header still comes first in
+        source and reading order — the hero used to sit above it, so the page opened with a rotating
+        image and only then said what it was. What changed is the ground beside the hero: left-aligned
+        under the header it was a 328px card with ~870px of empty page to its right at 1440, which read
+        as an orphan rather than a feature. Beside the header, bottom-aligned to the description, the
+        two close one band. Below `lg` they stack exactly as before.
 
-      {/* The fallback matches the carousel's own frame exactly — `blueprints-hero-carousel.tsx:121`
-          and `loading-skeleton.tsx`. It used to be full-width at every breakpoint against a hero
-          that is 328px from `md` up, so the desktop layout jumped when the slides resolved. */}
-      <Suspense
-        fallback={
-          <div className="flex px-4 pt-3 pb-2 lg:px-6">
+        If the hero renders nothing (backend down, or every slide deactivated), the auto column
+        collapses to zero and the header simply has the row to itself.
+      */}
+      <div className="grid gap-5 px-4 pt-6 pb-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-10 lg:px-6 lg:pt-8 lg:pb-10">
+        <header className="min-w-0">
+          <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+            Blueprints
+          </h1>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground lg:text-base lg:leading-7">
+            Engineering teardowns, working prototypes and what happened when they went to
+            manufacture. Schematics, tolerances and bills of materials, published in the open.
+          </p>
+        </header>
+
+        {/* The fallback matches the carousel's own frame exactly — `blueprints-hero-carousel.tsx`
+            and `loading-skeleton.tsx`. It used to be full-width at every breakpoint against a hero
+            that is 328px from `md` up, so the desktop layout jumped when the slides resolved. */}
+        <Suspense
+          fallback={
             <div className="h-44 w-full rounded-xl bg-muted md:aspect-video md:h-auto md:w-82" />
-          </div>
-        }
-      >
-        <BlueprintsHeroCarouselSection />
-      </Suspense>
+          }
+        >
+          <BlueprintsHeroCarouselSection />
+        </Suspense>
+      </div>
 
-      <div className="mt-4 space-y-8">{renderLanes(viewState)}</div>
+      <div className="space-y-12">{renderLanes(viewState)}</div>
     </div>
   );
 }
@@ -140,12 +150,15 @@ function renderLanes(viewState: BlueprintsViewState) {
           No blueprints have been published yet.
         </p>
       );
-    case "ready":
+    case "ready": {
+      const hasCaseStudies = viewState.caseStudies.length > 0;
+      const hasShowcases = viewState.showcases.length > 0;
+
       return (
         <>
           {viewState.teardowns.length === 0 ? null : (
             <BlueprintLane category="teardown" seeAllLabel="See all teardowns">
-              <div className="grid gap-x-4 gap-y-6 px-4 sm:grid-cols-2 lg:px-6 xl:grid-cols-4">
+              <div className="grid gap-x-4 gap-y-8 sm:grid-cols-2 xl:grid-cols-4">
                 {viewState.teardowns.map((teardown) => (
                   <TeardownGridCard key={teardown.id} teardown={teardown} />
                 ))}
@@ -153,33 +166,53 @@ function renderLanes(viewState: BlueprintsViewState) {
             </BlueprintLane>
           )}
 
-          {viewState.caseStudies.length === 0 ? null : (
-            <BlueprintLane category="case_study" seeAllLabel="See all case studies">
-              {/* The rows carry their own `border-t`, so the list closes with one `border-b` —
-                  the same construction the index uses, for the same reason. */}
-              <div className="border-b border-black/5">
-                {viewState.caseStudies.map((caseStudy) => (
-                  <CaseStudyLessonLink key={caseStudy.id} caseStudy={caseStudy} />
-                ))}
-              </div>
-            </BlueprintLane>
-          )}
+          {/*
+            THE TWO TEXT LANES SHARE A ROW FROM `xl` UP. Both are lists of sentences, and stacked
+            full-width at 1440 each line ran to ~1100px with the right two-thirds of every row empty.
+            Side by side they read as one ledger in two columns, and the page loses a screen of
+            scroll. Reading order is unchanged: case studies first, launches second.
 
-          {viewState.showcases.length === 0 ? null : (
-            <BlueprintLane category="showcase" seeAllLabel="See all launches">
-              {/* No dividers between launch rows — the gap is the separator, which is the feed's
-                  own construction (`showcase-feed-page.tsx`) and not a hub decision. */}
-              <ul className="space-y-6 px-4 lg:px-6">
-                {viewState.showcases.map((showcase) => (
-                  <li key={showcase.id}>
-                    <ShowcaseFeedRow showcase={showcase} />
-                  </li>
-                ))}
-              </ul>
-            </BlueprintLane>
-          )}
+            Only when BOTH have rows. One lane alone keeps the full width rather than leaving an empty
+            half-column that reads as something failed to load (PRODUCT.md Principle 2).
+          */}
+          {hasCaseStudies || hasShowcases ? (
+            <div
+              className={`grid gap-y-12 ${hasCaseStudies && hasShowcases ? "xl:grid-cols-2" : ""}`}
+            >
+              {hasCaseStudies ? (
+                <BlueprintLane category="case_study" seeAllLabel="See all case studies">
+                  {/* The list owns the hairlines between rows and the lane owns the rule above
+                      them, so no row carries a border of its own. `divide-border` rather than
+                      `black/5`, which is invisible on the dark ground. */}
+                  <ul className="divide-y divide-border">
+                    {viewState.caseStudies.map((caseStudy) => (
+                      <li key={caseStudy.id}>
+                        <CaseStudyLessonLink caseStudy={caseStudy} />
+                      </li>
+                    ))}
+                  </ul>
+                </BlueprintLane>
+              ) : null}
+
+              {hasShowcases ? (
+                <BlueprintLane category="showcase" seeAllLabel="See all launches">
+                  {/* No dividers between launch rows — the gap is the separator, which is the
+                      feed's own construction (`showcase-feed-page.tsx`), and it is also what keeps
+                      this column visibly a different shape from the ruled lessons beside it. */}
+                  <ul className="space-y-1">
+                    {viewState.showcases.map((showcase) => (
+                      <li key={showcase.id}>
+                        <ShowcaseLaunchLink showcase={showcase} />
+                      </li>
+                    ))}
+                  </ul>
+                </BlueprintLane>
+              ) : null}
+            </div>
+          ) : null}
         </>
       );
+    }
     default: {
       const exhaustiveCheck: never = viewState;
       return exhaustiveCheck;

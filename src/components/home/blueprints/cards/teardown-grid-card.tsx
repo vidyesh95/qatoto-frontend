@@ -88,8 +88,13 @@ export default function TeardownGridCard({ teardown }: { teardown: TeardownBluep
   const fileKindLabels = buildFileKindLabels(teardown);
 
   return (
-    <Link href={buildBlueprintHref(teardown)} className="group/card block">
-      <div className="relative aspect-video overflow-hidden rounded bg-muted">
+    // The focus outline is offset past the image's rounded corner so a keyboard reader sees the
+    // whole card selected, not a ring drawn over the photograph. The link had none at all before.
+    <Link
+      href={buildBlueprintHref(teardown)}
+      className="group/card block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#00696E]"
+    >
+      <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
         <Image
           src={teardown.thumbnailUrl}
           alt={teardown.title}
@@ -143,7 +148,8 @@ export default function TeardownGridCard({ teardown }: { teardown: TeardownBluep
           calls a wrong part in a crate. One size throughout, hierarchy from weight and colour. */}
       {billOfMaterialsLabel === null ? null : (
         <p className="mt-1.5 text-sm leading-5 text-[#6F7979]">
-          BOM <span className="font-medium text-foreground">{billOfMaterialsLabel}</span>
+          BOM{" "}
+          <span className="font-medium text-foreground tabular-nums">{billOfMaterialsLabel}</span>
         </p>
       )}
 

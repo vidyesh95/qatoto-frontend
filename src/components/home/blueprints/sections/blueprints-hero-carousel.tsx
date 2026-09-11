@@ -122,11 +122,11 @@ export default function BlueprintsHeroCarousel({ slides }: { slides: PublicBluep
     // `aspect-video w-full` on a 400px phone is 225px of rotating image above the fold, before the
     // page had said what it is. `h-44` caps that at 176px; `object-cover` on the image already
     // handles the crop, and the slide's own caption sits on the same bottom edge either way.
-    // ⚠️ LEFT-ALIGNED, NOT CENTRED, AND THAT FOLLOWED THE HERO MOVING. Centring a 328px card made
-    // sense while it was the first thing on the page and had nothing to align to. Under a
-    // left-aligned header it left ~400px of empty ground on one side and read as an orphan. It now
-    // starts on the same gutter as the `<h1>` above it and the lane headings below it.
-    <section className="flex px-4 pt-3 pb-2 lg:px-6">
+    // ⚠️ NO PADDING OF ITS OWN. The hub's masthead grid owns the gutter and places this: under the
+    // header below `lg`, starting on the same gutter as the `<h1>`, and in the right-hand column
+    // beside the header from `lg` up. Left-aligned under the header at desktop width it had ~870px
+    // of empty ground beside it and read as an orphan, which is the same failure centring it had.
+    <section className="flex">
       <div className="group/hero relative h-44 w-full overflow-hidden rounded-xl md:aspect-video md:h-auto md:w-82">
         <BlueprintHeroSlideLink
           destinationPath={currentSlide.destinationPath}

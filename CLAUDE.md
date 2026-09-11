@@ -321,10 +321,16 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   two orders, and the hub had the wrong one.
   ⚠️ **The hub ships no client JavaScript of its own** now that the rail's `useRef` scroller is
   gone. Only the hero is a client component. Do not reintroduce a horizontal scroller here.
-  **The hero was NOT demoted.** It is 328x184 centred from `md` up and was never a banner there;
-  it is also the only real network read on the surface. It moved BELOW the header and gained a
-  mobile height cap (`h-44`, since `aspect-video w-full` is 225px of rotating image above the fold
-  on a phone). `anime_hero_slide` carries no dimensions, so that is CSS only.
+  **The hero was NOT demoted.** It is 328x184 from `md` up and was never a banner there; it is
+  also the only real network read on the surface. It comes AFTER the header in source order and
+  has a mobile height cap (`h-44`, since `aspect-video w-full` is 225px of rotating image above the
+  fold on a phone). From `lg` up the header and hero share ONE MASTHEAD ROW, hero on the right,
+  because left-aligned under the header it had ~870px of empty ground beside it at 1440.
+  `anime_hero_slide` carries no dimensions, so that is CSS only.
+  **Each lane opens on an inset hairline and owns the gutter**, so lane children carry no `px`.
+  From `xl` the case-study and showcase lanes share a row, but only when BOTH have rows. The hub's
+  launch rows are `ShowcaseLaunchLink`, a compact sibling of `ShowcaseFeedRow` on the
+  `CaseStudyLessonLink` precedent; it keeps both reserved engagement positions unchanged.
   ⚠️ **`loading-skeleton.tsx` mirrors this order and must move with it** — it drew four circles for
   the deleted icon row, which is a skeleton promising a control that no longer exists.
 - **THE SHOWCASE ROW RESERVES TWO ENGAGEMENT POSITIONS AND BUILDS NEITHER.** The vote is a fixed
