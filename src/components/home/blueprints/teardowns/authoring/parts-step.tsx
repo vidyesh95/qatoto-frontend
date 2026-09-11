@@ -48,7 +48,7 @@ export default function PartsStep({ draft, onDraftChange }: TeardownWizardStepPr
 
       <RepeatableRowsShell
         heading="Parts"
-        description="What came out when you opened it, in the order you took it apart. Rough is fine — a reader wants the map, not an inventory."
+        description="What came out when you opened it, in the order you took it apart. Rough is fine: a reader wants the map, not an inventory."
         emptyMessage="No parts listed. The page will show your summary and your files without a parts list."
         addLabel="Add a part"
         rowCount={draft.parts.length}

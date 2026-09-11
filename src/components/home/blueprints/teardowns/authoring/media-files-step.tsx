@@ -93,7 +93,7 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
         <h2 className="text-sm font-medium text-foreground">Files are links, for now</h2>
         <p className="mt-2 max-w-prose text-sm leading-6 text-muted-foreground">
           Qatoto cannot host your files yet, so paste a link to wherever they already live. Nothing
-          here is uploaded and nothing is copied — a reader follows the link you give.
+          here is uploaded and nothing is copied; a reader follows the link you give.
         </p>
       </div>
 
@@ -121,7 +121,7 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
 
       <RepeatableRowsShell
         heading="Documents"
-        description="Schematics, bills of materials, assembly guides, datasheets — anything a reader would open to follow your survey."
+        description="Schematics, bills of materials, assembly guides, datasheets: anything a reader would open to follow your survey."
         emptyMessage="No documents. Most teardowns publish none, and the page simply shows no document section."
         addLabel="Add a document"
         rowCount={draft.documents.length}
@@ -133,7 +133,7 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
       <RepeatableRowsShell
         heading="Fabrication files"
         description="The files somebody would send to a factory. These are the ones a reader may take away, so be sure they are yours to share."
-        emptyMessage="No fabrication files. A teardown without them is still worth publishing — the measurements are the point."
+        emptyMessage="No fabrication files. A teardown without them is still worth publishing; the measurements are the point."
         addLabel="Add a fabrication file"
         rowCount={draft.manufacturingFiles.length}
         onAddRow={() =>

@@ -92,7 +92,7 @@ export default function MaterialRowEditor({
   return (
     <RepeatableRowsShell
       heading="Materials"
-      description="One row per material you can name. Most publishers can name two or three, and that is a useful teardown — a row you are unsure of is worse than no row."
+      description="One row per material you can name. Most publishers can name two or three, and that is a useful teardown. A row you are unsure of is worse than no row."
       emptyMessage="No materials recorded. The page will show no materials section at all, which is the ordinary state of a teardown."
       addLabel="Add a material"
       rowCount={materialRows.length}

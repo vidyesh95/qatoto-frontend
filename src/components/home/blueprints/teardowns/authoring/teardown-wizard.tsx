@@ -14,6 +14,8 @@ import SubjectProvenanceStep from "@/components/home/blueprints/teardowns/author
 import SubmissionReceipt from "@/components/home/blueprints/teardowns/authoring/submission-receipt";
 import {
   collectTeardownSubmission,
+  compareTeardownFieldPathsByStep,
+  describeTeardownFieldPath,
   EMPTY_TEARDOWN_WIZARD_DRAFT,
   isWalkthroughLinkUsable,
   TEARDOWN_WIZARD_STEPS,
@@ -128,7 +130,11 @@ export default function TeardownWizard() {
     ? "The walkthrough link on the media step cannot be read. Fix it or clear the field."
     : attestationGap;
 
-  const fieldErrorEntries = Object.entries(fieldErrors);
+  // Sorted by step, so the list reads in the order a publisher walks the wizard.
+  const fieldErrorEntries = Object.entries(fieldErrors).toSorted(
+    ([firstFieldPath], [secondFieldPath]) =>
+      compareTeardownFieldPathsByStep(firstFieldPath, secondFieldPath),
+  );
   const submitError =
     submitMutation.error instanceof ApiRequestError ? submitMutation.error : undefined;
 
@@ -215,7 +221,10 @@ export default function TeardownWizard() {
           <ul className="list-inside list-disc text-xs">
             {fieldErrorEntries.map(([fieldPath, messages]) => (
               <li key={fieldPath}>
-                <span className="font-medium">{fieldPath}</span>: {messages.join(" ")}
+                {/* The field's own label and step, not the contract path — see
+                    `describeTeardownFieldPath`. */}
+                <span className="font-medium">{describeTeardownFieldPath(fieldPath)}</span>:{" "}
+                {messages.join(" ")}
               </li>
             ))}
           </ul>

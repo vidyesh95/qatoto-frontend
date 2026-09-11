@@ -18,6 +18,14 @@
 
 import { z } from "zod";
 
+/**
+ * THE LENGTH CHECKS CARRY WORDS, because the teardown wizard shows these messages to a publisher. A
+ * bare `.min(1)` surfaced as Zod's default "Too small: expected string to have >=1 characters", glued
+ * in front of the refinement's own sentence, under an empty "Link" field.
+ */
+const EMPTY_LINK_MESSAGE = "Paste a link.";
+const TOO_LONG_LINK_MESSAGE = "That link is too long.";
+
 /** A protocol-relative path — `//evil.tld` or the backslash variant browsers also accept. */
 function isProtocolRelative(source: string): boolean {
   return source.startsWith("//") || source.startsWith("/\\");
@@ -30,10 +38,12 @@ function isProtocolRelative(source: string): boolean {
 export function createHttpsOrSiteRelativeUrlSchema(maximumLength: number) {
   return z
     .string()
-    .min(1)
-    .max(maximumLength)
+    .min(1, EMPTY_LINK_MESSAGE)
+    .max(maximumLength, TOO_LONG_LINK_MESSAGE)
     .refine(
-      (source) => source.startsWith("https://") || source.startsWith("/"),
+      // An empty string is already refused by `.min(1)` above; passing it here keeps the publisher
+      // from reading two complaints about one blank field. Nothing invalid gets through.
+      (source) => source === "" || source.startsWith("https://") || source.startsWith("/"),
       "An asset must be an https URL or a path on this site.",
     )
     .refine((source) => !isProtocolRelative(source), "A protocol-relative path leaves the site.");
@@ -43,9 +53,9 @@ export function createHttpsOrSiteRelativeUrlSchema(maximumLength: number) {
 export function createSitePathSchema(maximumLength: number) {
   return z
     .string()
-    .min(1)
-    .max(maximumLength)
-    .refine((path) => path.startsWith("/"), "A destination must start with a slash.")
+    .min(1, EMPTY_LINK_MESSAGE)
+    .max(maximumLength, TOO_LONG_LINK_MESSAGE)
+    .refine((path) => path === "" || path.startsWith("/"), "A destination must start with a slash.")
     .refine((path) => !isProtocolRelative(path), "A protocol-relative path leaves the site.");
 }
 
@@ -59,7 +69,10 @@ export function createSitePathSchema(maximumLength: number) {
 export function createExternalHttpsUrlSchema(maximumLength: number) {
   return z
     .string()
-    .min(1)
-    .max(maximumLength)
-    .refine((url) => url.startsWith("https://"), "An external link must be an https URL.");
+    .min(1, EMPTY_LINK_MESSAGE)
+    .max(maximumLength, TOO_LONG_LINK_MESSAGE)
+    .refine(
+      (url) => url === "" || url.startsWith("https://"),
+      "An external link must be an https URL.",
+    );
 }

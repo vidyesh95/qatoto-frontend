@@ -275,3 +275,164 @@ export function collectTeardownSubmission(
   }
   return { ok: false, fieldErrors };
 }
+
+/** Where a single, non-repeating field lives: the label the publisher sees and the step holding it. */
+interface WizardFieldLocation {
+  readonly label: string;
+  readonly stepId: TeardownWizardStepId;
+}
+
+/**
+ * Every scalar path the contract can name, keyed by the dotted path `collectTeardownSubmission`
+ * builds. The labels are the on-screen labels, word for word, so a publisher can find the field by
+ * reading.
+ */
+const SCALAR_FIELD_LOCATIONS = new Map<string, WizardFieldLocation>([
+  ["subjectKind", { label: "What are you surveying?", stepId: "subject" }],
+  ["title", { label: "Title", stepId: "subject" }],
+  ["summary", { label: "Summary", stepId: "subject" }],
+  ["provenance", { label: "Do you have permission from anyone?", stepId: "subject" }],
+  ["provenance.kind", { label: "Do you have permission from anyone?", stepId: "subject" }],
+  ["provenance.subjectProductName", { label: "The unit you took apart", stepId: "subject" }],
+  ["provenance.unitAcquisition", { label: "How you got the unit", stepId: "subject" }],
+  ["provenance.surveyMethods", { label: "How you looked inside", stepId: "subject" }],
+  ["provenance.surveyedAt", { label: "When you surveyed it", stepId: "subject" }],
+  ["provenance.licence", { label: "Licence", stepId: "subject" }],
+  ["provenance.licence.name", { label: "Licence name", stepId: "subject" }],
+  ["provenance.licence.url", { label: "Link to the licence", stepId: "subject" }],
+  [
+    "provenance.authorizationNote",
+    { label: "Who authorised it, and on what terms", stepId: "subject" },
+  ],
+  ["provenance.notes", { label: "Anything you want to qualify", stepId: "subject" }],
+  ["provenance.attestationAcceptedAt", { label: "Before you submit", stepId: "review" }],
+  ["walkthroughVideo", { label: "YouTube link", stepId: "media" }],
+  ["tags", { label: "Tags", stepId: "review" }],
+  ["acceptedAttestationClauseIds", { label: "Before you submit", stepId: "review" }],
+]);
+
+/** A repeatable list: what one row is called, where the list lives, and its fields' labels. */
+interface WizardRowListLocation {
+  readonly rowNoun: string;
+  readonly stepId: TeardownWizardStepId;
+  readonly fieldLabels: ReadonlyMap<string, string>;
+}
+
+const ROW_LIST_LOCATIONS = new Map<string, WizardRowListLocation>([
+  [
+    "documents",
+    {
+      rowNoun: "Document",
+      stepId: "media",
+      fieldLabels: new Map([
+        ["title", "Name"],
+        ["kind", "Kind"],
+        ["url", "Link"],
+      ]),
+    },
+  ],
+  [
+    "manufacturingFiles",
+    {
+      rowNoun: "Fabrication file",
+      stepId: "media",
+      fieldLabels: new Map([
+        ["title", "Name"],
+        ["kind", "Kind"],
+        ["url", "Link"],
+      ]),
+    },
+  ],
+  [
+    "parts",
+    {
+      rowNoun: "Part",
+      stepId: "parts",
+      fieldLabels: new Map([
+        ["label", "Part"],
+        ["material", "What it seems to be made of"],
+      ]),
+    },
+  ],
+  [
+    "materials",
+    {
+      rowNoun: "Material",
+      stepId: "materials",
+      fieldLabels: new Map([
+        ["appliesToLabel", "What it is the material of"],
+        ["designation", "Designation"],
+        ["designationSource", "How you know"],
+        ["materialClass", "What kind of material"],
+        ["process", "How the part was made"],
+        ["finish", "Surface finish"],
+      ]),
+    },
+  ],
+]);
+
+function describeStep(stepId: TeardownWizardStepId): string {
+  return `step ${TEARDOWN_WIZARD_STEPS.findIndex((step) => step.id === stepId) + 1}`;
+}
+
+/**
+ * A contract path, as the words a publisher can act on: the field's own label and the step it is on.
+ *
+ * ⚠️ IT EXISTS BECAUSE THE ERROR BOX PRINTED THE RAW PATH. Submitting the empty form showed
+ * "provenance.surveyedAt: Say when you surveyed the unit…" — the message was written for a founder,
+ * and the name in front of it was written for the schema. "When you surveyed it, step 1" says which
+ * box to fill and where it is.
+ *
+ * AN UNMAPPED PATH FALLS BACK TO ITSELF rather than to nothing, so a rule added to the contract
+ * without a label here still tells the publisher something, and the gap is visible in review.
+ */
+export function describeTeardownFieldPath(fieldPath: string): string {
+  const scalarLocation = SCALAR_FIELD_LOCATIONS.get(fieldPath);
+  if (scalarLocation !== undefined) {
+    return `${scalarLocation.label}, ${describeStep(scalarLocation.stepId)}`;
+  }
+
+  const [listKey = "", rowIndexText = "", fieldKey] = fieldPath.split(".");
+  const rowListLocation = ROW_LIST_LOCATIONS.get(listKey);
+  const rowIndex = Number.parseInt(rowIndexText, 10);
+  if (rowListLocation === undefined || Number.isNaN(rowIndex)) {
+    return fieldPath === "form" ? "The submission" : fieldPath;
+  }
+
+  const rowName = `${rowListLocation.rowNoun} ${rowIndex + 1}`;
+  const fieldLabel = fieldKey === undefined ? undefined : rowListLocation.fieldLabels.get(fieldKey);
+  return fieldLabel === undefined
+    ? `${rowName}, ${describeStep(rowListLocation.stepId)}`
+    : `${rowName}, ${fieldLabel}, ${describeStep(rowListLocation.stepId)}`;
+}
+
+/** The step a contract path belongs to, or `null` for a path no step owns. */
+function resolveTeardownFieldStepId(fieldPath: string): TeardownWizardStepId | null {
+  const scalarLocation = SCALAR_FIELD_LOCATIONS.get(fieldPath);
+  if (scalarLocation !== undefined) return scalarLocation.stepId;
+
+  const [listKey = ""] = fieldPath.split(".");
+  return ROW_LIST_LOCATIONS.get(listKey)?.stepId ?? null;
+}
+
+/**
+ * Orders two contract paths by the step they are on, for sorting the error list.
+ *
+ * ⚠️ THE CONTRACT REPORTS IN SCHEMA ORDER, NOT STEP ORDER. An empty submission listed a step-3 part
+ * before a step-2 document and put "When you surveyed it, step 1" last, so a publisher working
+ * through the list jumped forwards and back. `Array.prototype.sort` is stable, so two errors on the
+ * same step keep the order the contract gave them; an unowned path sorts after every step.
+ */
+export function compareTeardownFieldPathsByStep(
+  firstFieldPath: string,
+  secondFieldPath: string,
+): number {
+  const findStepPosition = (fieldPath: string): number => {
+    const stepId = resolveTeardownFieldStepId(fieldPath);
+    return stepId === null
+      ? TEARDOWN_WIZARD_STEPS.length
+      : TEARDOWN_WIZARD_STEPS.findIndex((step) => step.id === stepId);
+  };
+
+  return findStepPosition(firstFieldPath) - findStepPosition(secondFieldPath);
+}

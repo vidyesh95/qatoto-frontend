@@ -61,8 +61,8 @@ export default function SubmissionReceipt({
         </h2>
         <p className="mt-2 text-sm leading-6 text-foreground">
           Qatoto cannot accept teardowns yet. There is no database behind this form and no queue of
-          moderators reading submissions. Everything you typed was checked against the real rules —
-          the same ones a published teardown obeys — and then discarded when you pressed submit.
+          moderators reading submissions. Everything you typed was checked against the real rules
+          (the same ones a published teardown obeys) and then discarded when you pressed submit.
           Keep your own copy.
         </p>
         <p className="mt-2 text-sm leading-6 text-foreground">

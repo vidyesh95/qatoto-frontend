@@ -1,6 +1,7 @@
 // TRANSPORT: props-only — a dumb view over the wizard draft.
 
 import AttestationGate from "@/components/home/blueprints/teardowns/authoring/attestation-gate";
+import { LabeledTextInput } from "@/components/home/blueprints/teardowns/authoring/wizard-fields";
 import type { TeardownWizardStepProps } from "@/components/home/blueprints/teardowns/authoring/wizard-shared";
 import {
   TEARDOWN_SURVEY_METHOD_LABELS,
@@ -22,7 +23,7 @@ function countedLabel(count: number, singular: string, plural: string): string {
 /** One read-back line. An unanswered field says so rather than rendering blank. */
 function ReviewRow({ label, value }: { readonly label: string; readonly value: string | null }) {
   return (
-    <div className="border-t border-black/5 py-2">
+    <div className="border-t border-border py-2">
       <dt className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">{label}</dt>
       <dd className="mt-0.5 text-sm text-foreground">
         {/*
@@ -113,20 +114,16 @@ export default function ReviewAttestationStep({ draft, onDraftChange }: Teardown
         </dl>
       </section>
 
+      {/* The shared field, not a hand-copied one: the same label, border, focus ring and hint as
+          every other input in the wizard, so a change to the field recipe reaches this one too. */}
       <div className="max-w-2xl">
-        <label className="block">
-          <span className="text-xs font-medium text-[#6F7979]">Tags</span>
-          <input
-            type="text"
-            value={draft.tagsText}
-            onChange={(changeEvent) => onDraftChange({ tagsText: changeEvent.target.value })}
-            placeholder="cold-chain, solar, power-electronics"
-            className="mt-1 w-full rounded-lg border border-[#6F7979] bg-transparent px-3 py-2 text-sm outline-none focus:border-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
-          />
-          <span className="mt-1 block text-xs text-muted-foreground">
-            Separated by commas. These are how somebody browsing finds you.
-          </span>
-        </label>
+        <LabeledTextInput
+          label="Tags"
+          value={draft.tagsText}
+          onValueChange={(tagsText) => onDraftChange({ tagsText })}
+          placeholder="cold-chain, solar, power-electronics"
+          hint="Separated by commas. These are how somebody browsing finds you."
+        />
       </div>
 
       <AttestationGate
