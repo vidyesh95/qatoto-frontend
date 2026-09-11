@@ -119,10 +119,12 @@ function CaseStudySteps({
 }) {
   if (items.length === 0) return null;
 
+  // A BULLET, NOT A MIDDLE DOT, for the unordered list. The `·` was a one-pixel grey speck at 14px
+  // and read as no marker at all, so the pitfalls looked like one wrapped paragraph.
   const rows = items.map((item, index) => (
     <li key={item} className="flex gap-3 text-sm leading-6 text-foreground">
       <span className="shrink-0 text-[#6F7979] tabular-nums" aria-hidden="true">
-        {isOrdered ? `${index + 1}.` : "·"}
+        {isOrdered ? `${index + 1}.` : "•"}
       </span>
       <span>{item}</span>
     </li>
@@ -187,7 +189,13 @@ function BusinessFacts({ caseStudy }: { caseStudy: CaseStudyBlueprint }) {
   return (
     <section className="mt-8">
       <h2 className="text-sm font-medium text-foreground">The business facts</h2>
-      <SpecificationList specifications={rows} className="mt-2 max-w-2xl sm:columns-2 sm:gap-8" />
+      {/* `break-inside-avoid` on each row: CSS columns balance by height and would otherwise break
+          INSIDE a row, leaving a label at the foot of one column and its value at the head of the
+          next ("Kvist Mould" / "Gothenburg, 2024" on `aluminium-tool-before-steel`). */}
+      <SpecificationList
+        specifications={rows}
+        className="mt-2 max-w-2xl sm:columns-2 sm:gap-8 [&>div]:break-inside-avoid"
+      />
     </section>
   );
 }
@@ -247,9 +255,14 @@ function RelatedLessons({ lessons }: { lessons: readonly CaseStudyBlueprint[] })
           <li key={lesson.id} className="border-t border-black/5">
             <Link
               href={buildBlueprintHref(lesson)}
-              className="block py-2.5 text-sm leading-5 text-foreground transition-colors hover:text-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+              className="flex items-center justify-between gap-4 py-2.5 text-sm leading-5 text-foreground transition-colors hover:text-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
             >
               {lesson.title}
+              {/* The arrow says the row goes somewhere; decorative, so hidden from screen readers,
+                  which already announce the row as a link. */}
+              <span aria-hidden="true" className="shrink-0 text-[#6F7979]">
+                &rarr;
+              </span>
             </Link>
           </li>
         ))}
