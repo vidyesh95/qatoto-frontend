@@ -91,107 +91,138 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
         </p>
       </div>
 
-      {showcase.demoVideo === null ? (
-        <div className="relative mt-5 aspect-video max-w-3xl overflow-hidden rounded-xl bg-muted">
-          <Image
-            src={showcase.thumbnailUrl}
-            alt={showcase.title}
-            fill
-            sizes="(min-width: 768px) 768px, 100vw"
-            priority
-            className="object-cover"
-          />
-        </div>
-      ) : (
-        <BlueprintVideoBlock video={showcase.demoVideo} title="Demo" />
-      )}
+      {/*
+        FROM 1400px THE LAUNCH SPLITS INTO A READING COLUMN AND A RAIL. As one column it left ~300px
+        of empty ground to the right of the media at 1440, beside a header rule that ran the full
+        width. The column is capped at 48rem, which is exactly the `max-w-3xl` the media already
+        had, so the still and the demo keep their size AND their shape; only the ground beside them
+        is used. Links, team and tags move into the rail, which sticks while the column scrolls.
 
-      {/* THE STANDFIRST, AND IT MOVED UP A SIZE WHEN THE WRITE-UP LANDED UNDER IT. Three
-          description-ish fields now sit on this arm — `tagline` above the media, `summary` here,
-          `writeUp` below — and at one size the last two read as a single paragraph that got long.
-          `text-base` is not a new size on this surface: the tagline and the feed row already use
-          it, and the media between them means the two never appear adjacent. */}
-      <p className="mt-5 max-w-2xl text-base leading-7 text-foreground">{showcase.summary}</p>
+        ⚠️ 1400px, NOT `xl`. At 1280 with the sidebar open a rail would have squeezed the media from
+        768px to ~620px, and this surface does not resize or reshape its media to make room.
 
-      {/* `null` renders NOTHING — no heading, no empty box, no invitation to write one. Most
-          launches are posted the day they ship and never get a write-up, which is the ordinary
-          state and not a gap to fill. */}
-      {/* ⚠️ KEYED BY SLUG ON PURPOSE. Two showcase pages are the same component tree in the same
-          position, so React reuses the instance across a client navigation and the write-up would
-          arrive as a changed prop on a component still holding the previous launch's overflow
-          measurement. The key makes it a new instance, which is what `showcase-write-up.tsx`
-          relies on instead of an effect dependency. */}
-      {showcase.writeUp === null ? null : (
-        <ShowcaseWriteUp key={showcase.slug} writeUp={showcase.writeUp} />
-      )}
+        ⚠️ THE ENGAGEMENT BAR STAYS IN THE COLUMN, under the pitch, which is where the teardown page
+        puts its own bar; the two sibling detail pages keep the same shape there.
 
-      <ShowcaseEngagementBar showcase={showcase} />
-
-      {/* Both links are optional and both render nothing when absent — the row only exists so the
-          two sit side by side when both are present. */}
-      {hasActionLinks ? (
-        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
-          {showcase.callToAction === null ? null : (
-            <a
-              href={showcase.callToAction.url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-block rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
-            >
-              {showcase.callToAction.label}
-            </a>
-          )}
-          {/* `null` means it was built from something never published here — say nothing rather
-              than linking a slug that resolves to a 404. */}
-          {showcase.builtFromBlueprintSlug === null ? null : (
-            <Link
-              href={buildBlueprintHref({
-                category: "teardown",
-                slug: showcase.builtFromBlueprintSlug,
-              })}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#00696E] hover:underline"
-            >
-              Built from this teardown
+        DOM ORDER IS THE PHONE ORDER, UNCHANGED: media, pitch, write-up, bar, links, team, tags,
+        discussion. The grid only places those blocks side by side; it never reorders them, so a
+        screen reader and a narrow screen read the page exactly as before.
+      */}
+      <div className="min-[1400px]:grid min-[1400px]:grid-cols-[minmax(0,48rem)_minmax(16rem,1fr)] min-[1400px]:gap-x-8">
+        <div className="min-w-0 min-[1400px]:col-start-1 min-[1400px]:row-start-1">
+          {showcase.demoVideo === null ? (
+            <div className="relative mt-5 aspect-video max-w-3xl overflow-hidden rounded-xl bg-muted">
               <Image
-                src="/icons/arrow_forward_ios_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                alt=""
-                width={14}
-                height={14}
-                className="size-3.5"
+                src={showcase.thumbnailUrl}
+                alt={showcase.title}
+                fill
+                sizes="(min-width: 768px) 768px, 100vw"
+                priority
+                className="object-cover"
               />
-            </Link>
+            </div>
+          ) : (
+            // Eager, because the demo is the first media on the page and its poster is the LCP.
+            <BlueprintVideoBlock video={showcase.demoVideo} title="Demo" shouldLoadPosterEagerly />
           )}
+
+          {/* THE STANDFIRST, AND IT MOVED UP A SIZE WHEN THE WRITE-UP LANDED UNDER IT. Three
+              description-ish fields now sit on this arm — `tagline` above the media, `summary`
+              here, `writeUp` below — and at one size the last two read as a single paragraph that
+              got long. `text-base` is not a new size on this surface: the tagline and the feed row
+              already use it, and the media between them means the two never appear adjacent. */}
+          <p className="mt-5 max-w-2xl text-base leading-7 text-foreground">{showcase.summary}</p>
+
+          {/* `null` renders NOTHING — no heading, no empty box, no invitation to write one. Most
+              launches are posted the day they ship and never get a write-up, which is the ordinary
+              state and not a gap to fill. */}
+          {/* ⚠️ KEYED BY SLUG ON PURPOSE. Two showcase pages are the same component tree in the
+              same position, so React reuses the instance across a client navigation and the
+              write-up would arrive as a changed prop on a component still holding the previous
+              launch's overflow measurement. The key makes it a new instance, which is what
+              `showcase-write-up.tsx` relies on instead of an effect dependency. */}
+          {showcase.writeUp === null ? null : (
+            <ShowcaseWriteUp key={showcase.slug} writeUp={showcase.writeUp} />
+          )}
+
+          <ShowcaseEngagementBar showcase={showcase} />
         </div>
-      ) : null}
 
-      {/* A launch always has at least one person on it, but the empty guard costs one line and a
+        <aside
+          aria-label="About this launch"
+          className="min-w-0 min-[1400px]:sticky min-[1400px]:top-20 min-[1400px]:col-start-2 min-[1400px]:row-span-2 min-[1400px]:row-start-1 min-[1400px]:self-start"
+        >
+          {/* Both links are optional and both render nothing when absent — the row only exists so the
+          two sit side by side when both are present. */}
+          {hasActionLinks ? (
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
+              {showcase.callToAction === null ? null : (
+                <a
+                  href={showcase.callToAction.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+                >
+                  {showcase.callToAction.label}
+                </a>
+              )}
+              {/* `null` means it was built from something never published here — say nothing rather
+              than linking a slug that resolves to a 404. */}
+              {showcase.builtFromBlueprintSlug === null ? null : (
+                <Link
+                  href={buildBlueprintHref({
+                    category: "teardown",
+                    slug: showcase.builtFromBlueprintSlug,
+                  })}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-[#00696E] hover:underline"
+                >
+                  Built from this teardown
+                  <Image
+                    src="/icons/arrow_forward_ios_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+                    alt=""
+                    width={14}
+                    height={14}
+                    className="size-3.5"
+                  />
+                </Link>
+              )}
+            </div>
+          ) : null}
+
+          {/* A launch always has at least one person on it, but the empty guard costs one line and a
           team-less row would otherwise render a bare heading. */}
-      {showcase.team.length === 0 ? null : (
-        <section className="mt-8">
-          <h2 className="text-sm font-medium text-foreground">Team</h2>
-          <ul className="mt-2 flex flex-wrap gap-4">
-            {showcase.team.map((member) => (
-              <li key={member.handle} className="flex items-center gap-2">
-                <Image
-                  src={member.avatarUrl}
-                  alt=""
-                  width={32}
-                  height={32}
-                  className="size-8 rounded-full object-cover"
-                />
-                <div>
-                  <p className="text-sm text-foreground">{member.displayName}</p>
-                  <p className="text-[11px] text-[#6F7979]">{member.role}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+          {showcase.team.length === 0 ? null : (
+            <section className="mt-8">
+              <h2 className="text-sm font-medium text-foreground">Team</h2>
+              {/* A row on a narrow screen, a column in the rail, where 16rem holds one person per line
+              and a wrapped row would strand the second name under the first avatar. */}
+              <ul className="mt-2 flex flex-wrap gap-4 min-[1400px]:flex-col min-[1400px]:gap-3">
+                {showcase.team.map((member) => (
+                  <li key={member.handle} className="flex items-center gap-2">
+                    <Image
+                      src={member.avatarUrl}
+                      alt=""
+                      width={32}
+                      height={32}
+                      className="size-8 rounded-full object-cover"
+                    />
+                    <div>
+                      <p className="text-sm text-foreground">{member.displayName}</p>
+                      <p className="text-[11px] text-[#6F7979]">{member.role}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-      <BlueprintTagList tags={showcase.tags} />
+          <BlueprintTagList tags={showcase.tags} />
+        </aside>
 
-      <BlueprintCommentThread comments={comments} />
+        <div className="min-w-0 min-[1400px]:col-start-1 min-[1400px]:row-start-2">
+          <BlueprintCommentThread comments={comments} />
+        </div>
+      </div>
 
       <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#CAC4D0]/60 pt-4">
         {/* `likeCount` is BACK HERE, quietly, because the upvote took its slot in the engagement bar

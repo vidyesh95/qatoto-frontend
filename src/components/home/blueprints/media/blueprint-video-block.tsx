@@ -30,10 +30,19 @@ import type { BlueprintVideo } from "@/lib/blueprints/schemas";
 export default function BlueprintVideoBlock({
   video,
   title,
+  shouldLoadPosterEagerly = false,
 }: {
   readonly video: BlueprintVideo;
   /** Names the video for a screen reader — "Walkthrough", "Demo". */
   readonly title: string;
+  /**
+   * True only where the poster is the first media on the page. On a showcase the demo sits directly
+   * under the byline and its poster WAS the largest contentful paint, loaded `lazy` and painted at
+   * ~490ms against ~150ms for the eager still a demo-less launch shows in the same slot. No console
+   * warning flagged it: the poster is an unoptimised ytimg URL, which Next's LCP check skips. The
+   * teardown walkthrough sits far below the fold and keeps the lazy default.
+   */
+  readonly shouldLoadPosterEagerly?: boolean;
 }) {
   // A BOOLEAN, NOT A UNION. It was a union while a seek could mount the player at a position; with
   // no seek the only thing left to say is whether the poster has been clicked, and a two-arm union
@@ -64,6 +73,8 @@ export default function BlueprintVideoBlock({
               alt=""
               fill
               sizes="(min-width: 768px) 768px, 100vw"
+              loading={shouldLoadPosterEagerly ? "eager" : "lazy"}
+              fetchPriority={shouldLoadPosterEagerly ? "high" : "auto"}
               unoptimized={video.posterUrl.startsWith("https://")}
               className="object-cover"
             />

@@ -150,7 +150,7 @@ export default function BlueprintCommentThread({
       {/* Without this line a thread with no composer reads as broken rather than as unbuilt, and a
           reader cannot tell which. It is the same disclosure the studio's `inert` dropzone makes. */}
       <p className="mt-1 text-[11px] text-[#6F7979]">
-        Read-only for now — commenting opens when blueprints are published for real.
+        Read-only for now. Commenting opens when blueprints are published for real.
       </p>
 
       {threadGroups.length === 0 ? (
