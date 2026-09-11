@@ -477,7 +477,11 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   true; the backend and a moderator stay the gate. The list preview is the real `CaseStudyLessonRow`
   with `recordHref: null`, never a copy of its classes. **`/studio/case-studies` is management only**,
   like My Launches, and its `flagged` chip reads "Report received" because a report on a case study is
-  rarely an IP concern.
+  rarely an IP concern. **`/admin/case-studies` is the practice review queue** (`moderate_content`,
+  over `case-study-moderation.api.ts`): sample submissions, the disclosure once in its header, Publish
+  behind a confirm, Send back only with a note, and a 409 with "Refresh the queue". ⚠️ Its rows use
+  `case-study-moderation.schemas.ts`, the ONE schema that carries a withheld company's real name, and
+  nothing under `src/components/home` or `src/components/studio` may import it.
 - **THE RIGHTS-CLAIM ROUTE PREPARES A NOTICE; IT DOES NOT FILE ONE.**
   `/blueprints/teardowns/[slug]/report` collects the claim kind, the target, the claimant and three
   sworn statements, then hands over a finished notice addressed to `SUPPORT_CONTACT_EMAIL` as a

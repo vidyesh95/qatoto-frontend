@@ -20,4 +20,9 @@ export const blueprintKeys = {
   myShowcaseSubmissions: () => ["blueprints", "showcase", "mine"] as const,
   /** The signed-in writer's own case studies. Unpaged and person-scoped, for the reason above. */
   myCaseStudySubmissions: () => ["blueprints", "case-studies", "mine"] as const,
+  /**
+   * The moderator's case-study review queue. No cursor in the key: `useKeysetList` holds the pages
+   * under this one key, and a decision invalidates the whole queue.
+   */
+  caseStudyReviewQueue: () => ["blueprints", "case-studies", "admin", "review-queue"] as const,
 };

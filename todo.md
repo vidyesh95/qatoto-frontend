@@ -3996,6 +3996,25 @@ except storage, on the launch form's precedent.
 - **Shared**: `BLUEPRINT_SUBMISSION_DISPLAY_STATES` moved into `schemas.ts`, and the unknown-aware
   studio chip maps into `moderation-state-chip.ts`, for both studio lists.
 
+### Part 1b — the practice review queue — SHIPPED 2026-09-11
+
+- **`/admin/case-studies`**, "Case studies" under "Studio · Creator submissions" in the admin sidebar,
+  gated on `moderate_content` through `useOwnStaffContextQuery`, on the `pathway-moderation-page.tsx`
+  shape: keyset "Load more", one card per submission showing the whole case study in the record's
+  order, the writer's answer and the statements they ticked, and a note to the writer.
+- **Moderator contract** in its own file, `src/lib/blueprints/case-study-moderation.schemas.ts`, with
+  a REQUIRED company name plus `isNameWithheld`; a withheld company shows its real name and a
+  "Withheld from readers" chip. `rg "case-study-moderation" src/components/home src/components/studio`
+  must print nothing.
+- **Decisions**: Publish behind an inline confirm, Send back only with a note (the decision schema
+  refuses an empty one too), `published` / `rejected` on the wire. One attempt key per card that
+  rotates on a note edit, on a changed decision and after success, which is the fix for the pathway
+  queue's reused key. A 409 shows `MutationErrorNotice` and "Refresh the queue".
+- **Mock** (`case-study-moderation.api.ts`, fixtures in `blueprints-case-study-review-mocks.ts`): four
+  sample submissions, one per card state, page limit 3, and one row that always answers 409. Nothing is
+  stored, so a decided card returns on reload; the page header says so once. The 403 for a moderator
+  deciding their own case study is backend-only.
+
 ### Part 2 — backend, wiring and approval — NOT STARTED
 
 - **Contract**: `POST /blueprints/case-studies` (JSON, `Idempotency-Key` required) answering the
@@ -4025,14 +4044,23 @@ except storage, on the launch form's precedent.
   `isBlueprintVisible` (`src/lib/blueprints/api.ts`), so case studies gate like teardowns. Decide
   before the migration whether `thumbnailUrl`, `difficulty`, `cadFormat` and
   `billOfMaterialsCostRange` leave the case-study arm or get server defaults.
-- **Moderation**: an admin review queue on the launch queue's shape. Publishing mints the slug and
-  refuses `new` and the other reserved slugs; a rejection requires a note; a report moves a published
-  row to `flagged` with a note the writer sees.
+- **Moderation routes** (the page exists, see Part 1b):
+    - `GET /blueprints/admin/case-studies/review-queue`: `requireAuth`, `moderate_content` checked
+      first in the controller; answers `{ items, page }` (`cursorPageOf`), oldest first, each company
+      with its real `name` and `isNameWithheld`.
+    - `POST /blueprints/admin/case-studies/:submissionId/moderate`: `requireAuth → moderation limiter →
+requireIdentifiedUser → compactBody → idempotency({ required: true })`. Body `decision`
+      `published` (note optional) or `rejected` (note required, at most 2,000 characters); answers
+      `{ submissionId, moderationState, publicSlug, decidedAt }`. 409 when the row is already decided,
+      403 when the moderator is the writer. Publishing mints the slug and refuses `new` and the other
+      reserved slugs, and writes the audit entry.
+    - A report moves a published row to `flagged` with a note the writer sees.
 - **Erasure**: `case_study.author_user_id` → `delete_rows`, the reviewer → `retain`.
 - **Frontend wiring**: swap the two mock functions for `sendJson` and `getJson`; a refusal union on the
   launch one's shape (401, 403, 409 title, 409 replay, 422 fields, 429, unreadable reply, network);
   the receipt and My Case Studies stop saying nothing is stored; `site-roadmap.ts` "Writing is not
-  open yet" changes the same day.
+  open yet" changes the same day. The queue's two mock functions become `getJson` and `sendJson` with
+  the `Idempotency-Key` header, and the practice sentence in the queue page header is deleted.
 
 **Still open:** editing and resubmitting; tying a first-hand claim to a verified employer.
 

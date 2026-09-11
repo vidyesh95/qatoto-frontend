@@ -74,6 +74,18 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
         activeIcon: "/icons/reviews_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
         inactiveIcon: "/icons/reviews_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       },
+      {
+        // Case studies a writer has sent, never yet public, under `moderate_content`. A writer is
+        // blocked until this queue answers, which is what puts it in this section. A PRACTICE QUEUE
+        // today, and its page header says so.
+        //
+        // `school`, because a case study is a lesson, and both fills are committed. The studio uses
+        // it for Learn, a different console, so it names no other page here.
+        href: "/admin/case-studies",
+        label: "Case studies",
+        activeIcon: "/icons/school_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+        inactiveIcon: "/icons/school_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      },
     ],
     hasDivider: true,
   },
