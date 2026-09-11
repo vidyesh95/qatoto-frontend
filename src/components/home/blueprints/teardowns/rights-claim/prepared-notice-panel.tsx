@@ -59,7 +59,7 @@ export default function PreparedNoticePanel({
         <h2 className="text-sm font-medium text-foreground">Nothing has been sent yet</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           Qatoto has not received this and does not have a copy. Nothing you typed left your
-          browser. Sending it is the next step, and it is yours to take — use the button below or
+          browser. Sending it is the next step, and it is yours to take: use the button below or
           copy the text into your own email.
         </p>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">

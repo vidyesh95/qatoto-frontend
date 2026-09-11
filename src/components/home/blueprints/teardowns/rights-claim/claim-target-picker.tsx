@@ -1,6 +1,5 @@
 // TRANSPORT: props-only — the options are the teardown's own payload, passed down.
 
-import { LABEL_CLASS } from "@/components/ui/field-classes";
 import type { RightsClaimTarget } from "@/lib/blueprints/rights-claim.schemas";
 import type { TeardownBlueprint } from "@/lib/blueprints/schemas";
 
@@ -116,7 +115,8 @@ export default function ClaimTargetPicker({
 
   return (
     <fieldset>
-      <legend className={LABEL_CLASS}>What are you objecting to?</legend>
+      {/* Section-heading type, matching the claim-kind question and "What you are swearing". */}
+      <legend className="text-sm font-medium text-foreground">What are you objecting to?</legend>
       {/*
         ⚠️ NO OPTION IS PRE-SELECTED, and that is deliberate rather than an oversight. Defaulting to
         "the whole teardown" would let a claimant who scrolled past this send the broadest possible

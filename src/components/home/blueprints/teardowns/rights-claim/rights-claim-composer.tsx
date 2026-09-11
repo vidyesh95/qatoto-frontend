@@ -64,6 +64,42 @@ const EMPTY_FORM_STATE: RightsClaimFormState = {
 };
 
 /**
+ * The on-screen label for every path `RightsClaimDraftSchema` can name, IN THE ORDER THE PAGE ASKS.
+ *
+ * ⚠️ IT EXISTS BECAUSE THE ERROR BOX PRINTED THE SCHEMA'S NAMES. "claimantFullName: A notice has to
+ * say who is making it." puts a variable name in front of a sentence written for a rights holder, and
+ * the list came in schema order, so the claim text the page asks for first was reported last. The
+ * teardown wizard's `describeTeardownFieldPath` fixes the same thing there.
+ */
+const RIGHTS_CLAIM_FIELD_LABELS_IN_PAGE_ORDER: readonly (readonly [string, string])[] = [
+  ["claimKind", "What kind of right are you claiming?"],
+  ["target", "What are you objecting to?"],
+  ["claimSubstance", "What do you own, and what here copies it?"],
+  ["claimantFullName", "Your name"],
+  ["claimantOrganizationName", "Organisation"],
+  ["claimantEmail", "Email we can reply to"],
+  ["relationshipToRightsHolder", "Your standing"],
+  ["acceptedSwornClauseIds", "What you are swearing"],
+];
+
+/** Where a path's field sits on the page; a nested path (`target.documentId`) sits with its parent. */
+function findRightsClaimFieldPosition(fieldPath: string): number {
+  const [topLevelKey] = fieldPath.split(".");
+  const position = RIGHTS_CLAIM_FIELD_LABELS_IN_PAGE_ORDER.findIndex(
+    ([fieldKey]) => fieldKey === topLevelKey,
+  );
+  return position === -1 ? RIGHTS_CLAIM_FIELD_LABELS_IN_PAGE_ORDER.length : position;
+}
+
+/** A path as the label the claimant sees; an unmapped path falls back to itself rather than nothing. */
+function describeRightsClaimFieldPath(fieldPath: string): string {
+  const labelEntry =
+    RIGHTS_CLAIM_FIELD_LABELS_IN_PAGE_ORDER[findRightsClaimFieldPosition(fieldPath)];
+  if (labelEntry !== undefined) return labelEntry[1];
+  return fieldPath === "form" ? "The notice" : fieldPath;
+}
+
+/**
  * Report an intellectual property concern about a teardown.
  *
  * ⚠️ ONE PAGE, NOT STEPPED, which departs from the three-step `factory-inquiry-composer.tsx` on the
@@ -104,7 +140,11 @@ export default function RightsClaimComposer({
   const prepareBlockedReason =
     formState.target === null ? "Pick what you are objecting to above." : swornClauseGap;
 
-  const fieldErrorEntries = Object.entries(fieldErrors);
+  // In page order, so the list reads top to bottom the way the form does.
+  const fieldErrorEntries = Object.entries(fieldErrors).toSorted(
+    ([firstFieldPath], [secondFieldPath]) =>
+      findRightsClaimFieldPosition(firstFieldPath) - findRightsClaimFieldPosition(secondFieldPath),
+  );
 
   function handlePrepareClick(): void {
     const parsed = RightsClaimDraftSchema.safeParse({
@@ -185,14 +225,16 @@ export default function RightsClaimComposer({
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           Qatoto cannot yet receive claims through the site. This page turns your answers into a
-          complete notice, and then you send it from your own email — so nothing depends on us
-          having stored it, and you keep the record of when you gave notice.
+          complete notice, and then you send it from your own email, so nothing depends on us having
+          stored it and you keep the record of when you gave notice.
         </p>
       </div>
 
       <section className="mt-6">
         <fieldset>
-          <legend className="text-xs font-medium text-[#6F7979]">
+          {/* A section heading, like "What you are swearing" below, not a 12px grey field label:
+              this and the target picker are the two main questions the notice turns on. */}
+          <legend className="text-sm font-medium text-foreground">
             What kind of right are you claiming?
           </legend>
           <div className="mt-2 space-y-2">
@@ -279,7 +321,7 @@ export default function RightsClaimComposer({
         <h2 className="text-sm font-medium text-foreground">What you are swearing</h2>
         <p className="mt-1 max-w-prose text-xs text-muted-foreground">
           These three statements go into the notice above your name. Qatoto has not checked any of
-          them — they are what you are telling us, and they are what would let anyone act on this.
+          them. They are what you are telling us, and they are what would let anyone act on this.
         </p>
         <div className="mt-3">
           {RIGHTS_CLAIM_SWORN_CLAUSES.map((clause) => (
@@ -303,7 +345,11 @@ export default function RightsClaimComposer({
           <ul className="list-inside list-disc text-xs">
             {fieldErrorEntries.map(([fieldPath, messages]) => (
               <li key={fieldPath}>
-                <span className="font-medium">{fieldPath}</span>: {messages.join(" ")}
+                {/* A label that is already a question takes no colon: "copies it?: Say what" read as
+                    a typo. Every other label keeps one. */}
+                <span className="font-medium">{describeRightsClaimFieldPath(fieldPath)}</span>
+                {describeRightsClaimFieldPath(fieldPath).endsWith("?") ? " " : ": "}
+                {messages.join(" ")}
               </li>
             ))}
           </ul>

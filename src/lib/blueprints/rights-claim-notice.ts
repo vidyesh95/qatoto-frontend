@@ -96,7 +96,8 @@ export function buildRightsClaimNotice(input: {
 }): RightsClaimNotice {
   const { draft, teardownTitle, teardownUrl, targetLabel, preparedAtIsoInstant } = input;
 
-  const subject = `Intellectual property notice — ${RIGHTS_CLAIM_KIND_LABELS[draft.claimKind]} — ${teardownTitle}`;
+  // " · " separators, the ones the site's own page titles use, not em dashes (PRODUCT.md copy rule).
+  const subject = `Intellectual property notice · ${RIGHTS_CLAIM_KIND_LABELS[draft.claimKind]} · ${teardownTitle}`;
 
   const bodyLines = [
     "To whoever handles intellectual property notices at Qatoto,",
