@@ -4,6 +4,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import BlueprintMetaLine, {
+  BlueprintMetaItem,
+} from "@/components/home/blueprints/sections/blueprint-meta-line";
 import ShowcaseVoteBox from "@/components/home/blueprints/sections/showcase-vote-box";
 import RelativeTime from "@/components/home/shared/relative-time";
 import { buildBlueprintHref, type ShowcaseBlueprint } from "@/lib/blueprints/schemas";
@@ -50,33 +53,34 @@ export default function ShowcaseLaunchLink({ showcase }: { showcase: ShowcaseBlu
           </h3>
           <p className="line-clamp-1 text-sm leading-5 text-muted-foreground">{showcase.tagline}</p>
 
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs leading-4 text-muted-foreground">
-            <span className="font-medium text-[#00696E]">{showcase.author.displayName}</span>
-            <span aria-hidden="true">·</span>
-            <span title={formatIsoInstantLabel(showcase.launchedAt)}>
-              <RelativeTime isoInstant={showcase.launchedAt} />
-            </span>
+          {/* `BlueprintMetaLine` rather than bare flex siblings, so a wrap never leaves a `·` at
+              the end of a line — the component records the measurement. */}
+          <BlueprintMetaLine className="mt-0.5 text-xs leading-4 text-muted-foreground">
+            <BlueprintMetaItem hasSeparator={false}>
+              <span className="font-medium text-[#00696E]">{showcase.author.displayName}</span>
+            </BlueprintMetaItem>
+            <BlueprintMetaItem>
+              <span title={formatIsoInstantLabel(showcase.launchedAt)}>
+                <RelativeTime isoInstant={showcase.launchedAt} />
+              </span>
+            </BlueprintMetaItem>
             {showcase.commentCount === 0 ? null : (
-              <>
-                <span aria-hidden="true">·</span>
+              <BlueprintMetaItem>
                 <span>
                   {formatCountLabel(showcase.commentCount)}{" "}
                   {showcase.commentCount === 1 ? "comment" : "comments"}
                 </span>
-              </>
+              </BlueprintMetaItem>
             )}
             {/* The one link between arms on this row, so it stays; from `sm` up only, because on a
                 phone the line has room for the person and the date. `null` says nothing rather than
                 implying a source that was never published here. */}
             {showcase.builtFromBlueprintSlug === null ? null : (
-              <>
-                <span aria-hidden="true" className="hidden sm:inline">
-                  ·
-                </span>
-                <span className="hidden sm:inline">built from a teardown</span>
-              </>
+              <BlueprintMetaItem shouldHideBelowSm>
+                <span>built from a teardown</span>
+              </BlueprintMetaItem>
             )}
-          </p>
+          </BlueprintMetaLine>
         </div>
       </Link>
     </article>

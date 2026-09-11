@@ -4,6 +4,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import BlueprintMetaLine, {
+  BlueprintMetaItem,
+} from "@/components/home/blueprints/sections/blueprint-meta-line";
 import ShowcaseVoteBox from "@/components/home/blueprints/sections/showcase-vote-box";
 import RelativeTime from "@/components/home/shared/relative-time";
 import { buildBlueprintHref, type ShowcaseBlueprint } from "@/lib/blueprints/schemas";
@@ -61,19 +64,27 @@ export default function ShowcaseFeedRow({ showcase }: { showcase: ShowcaseBluepr
             {showcase.tagline}
           </p>
 
-          <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-4 text-[#6F7979]">
-            <Image
-              src={showcase.author.avatarUrl}
-              alt=""
-              width={20}
-              height={20}
-              className="size-5 rounded-full object-cover"
-            />
-            <span className="font-medium text-[#00696E]">{showcase.author.displayName}</span>
-            <span aria-hidden="true">·</span>
-            <span title={formatIsoInstantLabel(showcase.launchedAt)}>
-              <RelativeTime isoInstant={showcase.launchedAt} />
-            </span>
+          {/* ⚠️ `BlueprintMetaLine`, NOT BARE FLEX SIBLINGS. At 400px this line wrapped on five of
+              seven launches and left a `·` stranded at the end of the first line; the component
+              records the measurement and why the fix is geometry. Every child is an item. */}
+          <BlueprintMetaLine className="mt-1.5 text-[11px] leading-4 text-[#6F7979]">
+            <BlueprintMetaItem hasSeparator={false}>
+              <span className="flex items-center gap-x-2">
+                <Image
+                  src={showcase.author.avatarUrl}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="size-5 rounded-full object-cover"
+                />
+                <span className="font-medium text-[#00696E]">{showcase.author.displayName}</span>
+              </span>
+            </BlueprintMetaItem>
+            <BlueprintMetaItem>
+              <span title={formatIsoInstantLabel(showcase.launchedAt)}>
+                <RelativeTime isoInstant={showcase.launchedAt} />
+              </span>
+            </BlueprintMetaItem>
             {/*
               THE COMMENT COUNT SITS HERE, IMMEDIATELY AFTER THE DATE, AND THE POSITION IS THE
               POINT. It is the last thing on this row that is FIXED — "built from a teardown" and
@@ -96,35 +107,30 @@ export default function ShowcaseFeedRow({ showcase }: { showcase: ShowcaseBluepr
               12,400 comments is a number worth reading in full.
             */}
             {showcase.commentCount === 0 ? null : (
-              <>
-                <span aria-hidden="true">·</span>
+              <BlueprintMetaItem>
                 <span>
                   {formatCountLabel(showcase.commentCount)}{" "}
                   {showcase.commentCount === 1 ? "comment" : "comments"}
                 </span>
-              </>
+              </BlueprintMetaItem>
             )}
             {/* `null` means it was built from something never published here — say nothing rather
                 than implying a source that does not exist. */}
             {showcase.builtFromBlueprintSlug === null ? null : (
-              <>
-                <span aria-hidden="true">·</span>
+              <BlueprintMetaItem>
                 <span>built from a teardown</span>
-              </>
+              </BlueprintMetaItem>
             )}
             {/* Tags are plain text, as on YC, and only from `sm` up — on a phone the meta line has
-                room for the person and the date, not a vocabulary. */}
-            {visibleTags.length === 0 ? null : (
-              <span aria-hidden="true" className="hidden sm:inline">
-                ·
-              </span>
-            )}
-            {visibleTags.map((tag) => (
-              <span key={tag} className="hidden sm:inline">
-                {tag}
-              </span>
+                room for the person and the date, not a vocabulary. ONE dot before the run of tags,
+                none between them, as before; the rest keep the blank gutter so a tag that wraps to
+                the start of a line is clipped by exactly its gutter and not by its first letters. */}
+            {visibleTags.map((tag, tagIndex) => (
+              <BlueprintMetaItem key={tag} hasSeparator={tagIndex === 0} shouldHideBelowSm>
+                <span>{tag}</span>
+              </BlueprintMetaItem>
             ))}
-          </p>
+          </BlueprintMetaLine>
         </div>
       </Link>
     </article>

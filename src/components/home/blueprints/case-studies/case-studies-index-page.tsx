@@ -10,10 +10,12 @@
 // that a grid of equal tiles is not — the reader is looking for the one that matches their problem,
 // not browsing.
 //
-// THE ROWS CARRY THEIR OWN HAIRLINE (`border-t`), so the wrapper closes the list with a single
-// `border-b` rather than `divide-y`. Each row is a `<details>` that grows when open, and `divide-y`
-// on a container whose children change height puts the rule in the right place but makes the open
-// row's own boundary ambiguous.
+// THE LIST DRAWS THE HAIRLINES AND STOPS AT THE GUTTER. The rows used to carry their own full-bleed
+// `border-t` over a `border-b` wrapper, because `divide-y` on rows that grow when opened made the
+// open row's boundary ambiguous. That ambiguity is gone now that an open row has a rounded fill of
+// its own inset between the rules, so the list is `divide-y` inside `border-y` — the same
+// construction as the hub's case-study lane, with the rules ending where the heading starts rather
+// than running under the sidebar edge.
 
 import CaseStudyLessonRow from "@/components/home/blueprints/cards/case-study-lesson-row";
 import CursorPageControl from "@/components/home/shared/cursor-page-control";
@@ -106,11 +108,13 @@ function renderCaseStudies(viewState: CaseStudiesViewState, searchParams: RawSea
     case "ready":
       return (
         <>
-          <div className="mt-5 border-b border-black/5">
+          <ul className="mx-4 mt-5 divide-y divide-border border-y border-border lg:mx-6">
             {viewState.caseStudies.map((caseStudy) => (
-              <CaseStudyLessonRow key={caseStudy.id} caseStudy={caseStudy} />
+              <li key={caseStudy.id}>
+                <CaseStudyLessonRow caseStudy={caseStudy} />
+              </li>
             ))}
-          </div>
+          </ul>
           <CursorPageControl
             nextCursor={viewState.nextCursor}
             hasMore={viewState.hasMore}
