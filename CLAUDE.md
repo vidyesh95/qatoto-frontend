@@ -347,7 +347,7 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   **Zero renders nothing**, not "0 comments" — seven of the ten fixture launches have no discussion
   and that is the ordinary state of a new launch.
   ⚠️ **DO NOT ADD COPY SAYING COMMENTS ARE CLOSED.** They are not: `BlueprintCommentThread` renders
-  a real one-level thread and `ShowcaseEngagementBar` counts it. The missing affordance is a
+  a real one-level thread and the launch byline counts it, as a link to `#discussion`. The missing affordance is a
   COMPOSER, and that is disclosed ONCE, above the thread on the detail page, never per row.
 - **THE TEARDOWN ARM IS A CLEAN-ROOM RECORD, AND THE CONTRACT IS THE GUARANTEE.** A teardown is an
   EMPIRICAL SURVEY OF A LEGALLY ACQUIRED, OFF-THE-SHELF COMMERCIAL UNIT. There is no field for a
@@ -568,6 +568,16 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   non-HD uploads), playback is the IFrame API on `youtube-nocookie`, and a blocked script renders an
   in-place panel with a "Watch on YouTube" link. **Never `watch/video-player.tsx`** — it reports
   watch progress against a feed row id a blueprint does not have.
+- **A LAUNCH WRITE-UP IS GITHUB-STYLE MARKDOWN, AND ITS RENDERER IS THE SECURITY BOUNDARY.**
+  `ShowcaseWriteUp` renders it with `react-markdown` + `remark-gfm`, `skipHtml`, an element
+  allowlist and a URL transform that keeps only http(s), site-relative and anchor addresses.
+  ⚠️ **No `rehype-raw` and no `dangerouslySetInnerHTML` on that path, ever.** A YouTube link alone
+  on a line becomes `BlueprintVideoBlock`, the same click-to-load player, so a launch still holds no
+  video bytes; the separate `demoVideo` field is gone. Images render only from site-relative paths
+  or `res.cloudinary.com`, where uploads land; an image hosted anywhere else shows a one-line note,
+  because every reader's browser would otherwise call that host. The launch page's upvote is
+  `ShowcaseVoteBox` in a 40px gutter beside the head, the comment count is a byline link, and Share
+  ends the byline; there is no showcase engagement row.
 - **`durationSeconds` IS NULLABLE, AND `null` IS THE ORDINARY CASE.** The badge is its only reader.
   oEmbed — the one outbound YouTube call either repo makes — returns a title and a thumbnail and no
   duration, which is why the backend's own `duration_seconds` is NULL on every YouTube row. A typed

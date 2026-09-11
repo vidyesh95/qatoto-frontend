@@ -17,11 +17,7 @@
 
 import { z } from "zod";
 
-import {
-  BLUEPRINT_DIFFICULTIES,
-  BLUEPRINT_MODERATION_STATES,
-  BlueprintVideoSchema,
-} from "@/lib/blueprints/schemas";
+import { BLUEPRINT_DIFFICULTIES, BLUEPRINT_MODERATION_STATES } from "@/lib/blueprints/schemas";
 import { buildWellTypedInputsPredicate } from "@/lib/blueprints/refinement-inputs";
 import {
   createExternalHttpsUrlSchema,
@@ -165,8 +161,11 @@ export const ShowcaseSubmissionDraftSchema = z
         `Keep the pitch to ${SHOWCASE_TAGLINE_MAXIMUM_CHARACTERS} characters so it fits one feed row.`,
       ),
     summary: z.string().min(40, "One paragraph: what it is, and what it proved."),
-    /** Plain text, split on blank lines at render. `null` when the maker wrote none. */
-    writeUp: z.string().nullable(),
+    /**
+     * GitHub-style Markdown, rendered by `ShowcaseWriteUp`. A YouTube link on its own line becomes
+     * the video. `null` when the maker wrote none. 10,000 characters is the server's limit too.
+     */
+    writeUp: z.string().max(10_000, "Keep the write-up under 10,000 characters.").nullable(),
     /** ISO 8601, chosen by the maker. The feed sorts on this. */
     launchedAt: z
       .string()
@@ -178,7 +177,6 @@ export const ShowcaseSubmissionDraftSchema = z
     tags: z.array(z.string().min(1)),
     team: z.array(ShowcaseTeamMemberDraftSchema),
     builtFromBlueprintSlug: z.string().min(1).nullable(),
-    demoVideo: BlueprintVideoSchema.nullable(),
     callToAction: ShowcaseCallToActionDraftSchema.nullable(),
     acceptedLaunchStatementIds: z.array(z.enum(SHOWCASE_LAUNCH_STATEMENT_IDS)),
   })

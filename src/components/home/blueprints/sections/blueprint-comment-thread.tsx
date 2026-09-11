@@ -21,9 +21,9 @@
 // shape is exercised rather than assumed. There is no composer and no delete control here, so
 // nothing on this page can produce a tombstone — it arrives in the data or not at all.
 //
-// THE COUNT IS NOT RENDERED HERE. `showcase.commentCount` renders in `ShowcaseEngagementBar`, beside
-// the other engagement figures where a reader looks for it; a second copy over the thread would be
-// two numbers that could disagree.
+// THE COUNT IS NOT RENDERED HERE. `showcase.commentCount` renders in the launch byline, as a link to
+// this section's `#discussion` anchor; a second copy over the thread would be two numbers that could
+// disagree.
 
 import Image from "next/image";
 
@@ -145,7 +145,8 @@ export default function BlueprintCommentThread({
   const threadGroups = groupIntoThreads(comments);
 
   return (
-    <section className="mt-10 border-t border-[#CAC4D0]/60 pt-6">
+    // `scroll-mt-20` keeps the heading clear of the 56px sticky navbar when the byline link jumps here.
+    <section id="discussion" className="mt-10 scroll-mt-20 border-t border-[#CAC4D0]/60 pt-6">
       <h2 className="text-sm font-medium text-foreground">Discussion</h2>
       {/* Without this line a thread with no composer reads as broken rather than as unbuilt, and a
           reader cannot tell which. It is the same disclosure the studio's `inert` dropzone makes. */}

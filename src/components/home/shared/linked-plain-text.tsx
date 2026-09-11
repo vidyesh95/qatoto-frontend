@@ -4,15 +4,15 @@
 // a bare URL becomes a link, an @handle becomes a marked span. Everything else is text.
 //
 // NO `"use client"` DIRECTIVE, AND THAT IS LOAD-BEARING. `BlueprintCommentThread` is a server
-// component and `ShowcaseWriteUp` is a client one, and both render this. A component with no hooks
-// and no browser API belongs to whichever tree imports it; adding the directive would drag the
-// comment thread's whole subtree into the client bundle to gain nothing.
+// component and renders this. A component with no hooks and no browser API belongs to whichever tree
+// imports it; adding the directive would drag the comment thread's whole subtree into the client
+// bundle to gain nothing.
 //
 // ⚠️ THIS IS A TOKENISER, NOT A MARKDOWN RENDERER, AND THE DIFFERENCE IS THE POINT. It splits a
 // string on one regex and emits React elements. There is no parser, no HTML, and no
-// `dangerouslySetInnerHTML` on this path — the whole reason a markdown subset was rejected for the
-// launch write-up is that user-generated HTML rendered by a thin untrusted layer is the highest-risk
-// thing this surface could carry. Do not add one here later "just for links": links already work.
+// `dangerouslySetInnerHTML` on this path. The launch write-up did become Markdown, and it carries its
+// own renderer with every escape hatch shut (`showcase-write-up.tsx`); comments stay plain text here.
+// Do not add a parser to this file later "just for links": links already work.
 //
 // ⚠️ AN @HANDLE IS A `<span>`, NOT A `<Link>`. There is no public profile route for a blueprints
 // author to point at, and a mention that navigated to a 404 would be the ghost control this surface

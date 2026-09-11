@@ -4,7 +4,6 @@
 // The launch form's shared vocabulary, on the `wizard-shared.ts` precedent: the form holds text, and
 // `collectShowcaseSubmission` converts it ONCE, at post time, then lets the contract decide.
 
-import { buildYoutubeBlueprintVideo } from "@/components/home/blueprints/authoring/youtube-link-field";
 import type { BlueprintDifficulty } from "@/lib/blueprints/schemas";
 import {
   ShowcaseSubmissionDraftSchema,
@@ -29,8 +28,8 @@ export interface ShowcaseLaunchFormDraft {
   readonly title: string;
   readonly tagline: string;
   readonly summary: string;
+  /** Markdown, as typed. YouTube links and images live inside it. */
   readonly writeUp: string;
-  readonly demoYoutubeUrl: string;
   readonly callToActionLabel: string;
   readonly callToActionUrl: string;
   readonly teamRows: readonly TeamMemberDraftRow[];
@@ -51,7 +50,6 @@ export const EMPTY_SHOWCASE_LAUNCH_FORM_DRAFT: ShowcaseLaunchFormDraft = {
   tagline: "",
   summary: "",
   writeUp: "",
-  demoYoutubeUrl: "",
   callToActionLabel: "",
   callToActionUrl: "",
   teamRows: [],
@@ -173,7 +171,6 @@ export function collectShowcaseSubmission(
     })),
     builtFromBlueprintSlug:
       formDraft.builtFromBlueprintSlug === "" ? null : formDraft.builtFromBlueprintSlug,
-    demoVideo: buildYoutubeBlueprintVideo(formDraft.demoYoutubeUrl),
     callToAction: isCallToActionEmpty
       ? null
       : { label: formDraft.callToActionLabel.trim(), url: formDraft.callToActionUrl.trim() },
@@ -204,7 +201,6 @@ const SHOWCASE_FIELD_LABELS_IN_PAGE_ORDER: readonly (readonly [string, string])[
   ["summary", "What is it?"],
   ["headingImage", "Heading image"],
   ["writeUp", "Write-up"],
-  ["demoVideo", "YouTube demo"],
   ["callToAction", "Link"],
   ["team", "Team"],
   ["builtFromBlueprintSlug", "Built from a teardown"],

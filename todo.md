@@ -3749,8 +3749,8 @@ idempotency keys, not-optimistic. Copy it; do not reinvent it.
 
 A maker can post a launch at `/blueprints/showcase/new` (linked from the showcase feed header and
 from studio), and see their launches at `/studio/launches` ("My Launches" in the sidebar). The shape
-follows Launch YC and Peerlist Launchpad: one page, a square heading image, a plain-text write-up
-with an optional YouTube demo, a link, the team, details and two statements. The form's save, My
+follows Launch YC and Peerlist Launchpad: one page, a square heading image, a Markdown write-up
+with embedded YouTube videos and images, a link, the team, details and two statements. The form's save, My
 Launches and the public showcase pages all still run on fixtures.
 
 ### Part 1 — the rehearsal — SHIPPED 2026-09-11
@@ -3772,13 +3772,20 @@ Launches and the public showcase pages all still run on fixtures.
 
 ### Part 2a — the detail page and form polish — SHIPPED 2026-09-11
 
-- **A square heading image beside the name** on `/blueprints/showcase/[slug]` (48px, 72px from
-  `lg`). The 16:9 still is gone: it rendered only when a launch had no demo, and cropped a square
-  image into a wide one.
-- **The demo sits after the first write-up paragraph.** Paragraph one and the demo are never cropped;
-  "…more" covers paragraphs two onward, and `ShowcaseWriteUp` takes the demo as a slot. With no
-  write-up the demo follows the summary. The split is `splitWriteUpAtFirstParagraph` in
-  `src/lib/blueprints/format.ts`.
+- **The head of a launch page**, after owner review. The upvote is `ShowcaseVoteBox` in a 40px left
+  gutter; beside it the square heading image (48px, 72px from `lg`), then the name and pitch, then
+  the byline with an "N comments" link to `#discussion` and Share at its end. The showcase engagement
+  row is deleted, and the footer no longer prints `likeCount` (a launch's approval number is its
+  upvote; teardowns and case studies keep likes). The 16:9 still is gone too.
+- **The write-up is GitHub-style Markdown** (`react-markdown` + `remark-gfm` in `ShowcaseWriteUp`):
+  headings, lists, links, code, tables and images, with raw HTML skipped, an element allowlist and a
+  URL transform. A YouTube link on a line of its own embeds the click-to-load player. Images render
+  only from site-relative paths or Cloudinary, since uploads land there; others show a one-line
+  note. The write-up renders whole, with no "…more" crop, so media is never hidden. The form has
+  Write / Preview buttons using the same renderer.
+- **The separate demo field is gone** from the read contract, the draft, the form and the fixtures.
+  The solar, latching-valve and borehole demos moved into their write-ups; the brushless demo was
+  dropped because that launch must keep a `null` write-up for thread state 8.
 - **The form fields moved** to `src/components/home/blueprints/authoring/form-fields.tsx`, and the
   YouTube helpers to `youtube-link-field.ts` beside it (`isWalkthroughLinkUsable` is now
   `isYoutubeLinkFieldUsable`).
@@ -3812,8 +3819,9 @@ error codes on the wire, so the frontend branches on the HTTP status.
 
 - **Server limits the form must mirror:** title 8..120, tagline 10..80, summary 40..1000, write-up
   ≤10000; tags ≤10, each 1..32; team ≤12 (name 1..80, role 1..60, handle ≤64, unique ignoring case);
-  link label 1..40, URL ≤2048; demo `durationSeconds` null; `launchedAt` a full ISO instant with
-  about five minutes of clock skew allowed.
+  link label 1..40, URL ≤2048; `launchedAt` a full ISO instant with about five minutes of clock
+  skew allowed. The write-up is Markdown, and every image address in it must be one of this
+  launch's own uploads (the server parses the Markdown and refuses any other image host).
 - **Title uniqueness** covers pending and published launches only, so a rejected maker can resubmit.
 - **Refusals:** title taken is 409 with `errors.title`; a launch already decided is 409; a moderator
   deciding their own launch is 403; image refusals are 422 under `errors.headingImage`.
@@ -3826,13 +3834,17 @@ error codes on the wire, so the frontend branches on the HTTP status.
     - `author_user_id` NOT NULL, cascade. `heading_image_url` plus `heading_image_public_id`.
     - Generated `title_normalized` with a partial unique index for pending and published (precedent
       `modelNumberNormalized` in `store.ts`; watch the escaped `\\s`).
-    - `tags text[]`; cost, demo YouTube id and link columns; `reviewed_by_user_id` (restrict),
+    - `tags text[]`; cost and link columns; `write_up` Markdown text (no demo column: videos live in
+      the write-up); `reviewed_by_user_id` (restrict),
       `reviewed_at`, `moderator_note`; unique nullable `public_slug`; `created_at` precision 3 for the
       keyset cursor. Every CHECK declared in Drizzle `check()`, never hand-edited into the SQL.
     - Team rows on the `video_chapter` precedent, with a generated `handle_normalized` unique per
       launch. A nullable `user_id` and a verified badge are deferred.
     - Audit labels `showcase_launch_published` and `showcase_launch_rejected` in `platform.ts`.
-2. **Cloudinary helpers** for `qatoto/showcase-images/<id>/heading`.
+2. **Cloudinary helpers** for `qatoto/showcase-images/<id>/heading`, and **write-up images** at
+   `qatoto/showcase-images/<id>/write-up/<n>` through their own upload route (one image per request,
+   same sharp re-encode, returns the stored URL for the form to insert as `![alt](url)`). An image
+   uploaded before the launch exists needs a draft id or a staging folder the sweeper cleans.
 3. **Limiters.** `LimiterSpec` in `src/middleware/rate-limit.ts` has no `skipFailedRequests` today:
    add it and pass it through in `createLimiter`. Submit: 5 per 15 minutes, skipping failed requests.
    Moderation: 200 per 15 minutes. Both keep the default user-id key (`userKey`).
@@ -3861,7 +3873,9 @@ error codes on the wire, so the frontend branches on the HTTP status.
 
 1. **Contract and api.** The draft schema mirrors the server limits. `showcase-authoring.api.ts` uses
    `sendForm` (`draft` first, then `headingImage`, with the `Idempotency-Key` header) and `getJson`
-   for the mine array. Delete `src/mocks/blueprints-showcase-authoring-mocks.ts`.
+   for the mine array. Delete `src/mocks/blueprints-showcase-authoring-mocks.ts`. Add an image button
+   to the write-up field that uploads through the write-up image route and inserts `![alt](url)` at
+   the cursor, and drop the "Images arrive with image upload" hint.
 2. **Refusals**, as one union in `showcase-launch-shared.ts` with a notice component:
     - `signInRequired` 401 (sign-in link opens a new tab, so the draft and image survive)
     - `accountIncomplete` 403
@@ -3889,6 +3903,37 @@ error codes on the wire, so the frontend branches on the HTTP status.
 409 with and without `errors.title`; 422 image errors; 413 with a non-JSON body; an unknown moderation
 state; the key unchanged on a plain retry and new after an edit; erasure removing the launch images;
 the sweeper deleting orphans only.
+
+**E. Upvotes, specified with the owner 2026-09-11, built in this round.** The vote box stays a plain
+`<span>` count until then, per the inert-span rule.
+
+- ⚠️ **Blocked on real launch rows.** The ten sample launches are frontend fixtures, not database
+  rows, so nothing can hold a vote on them. Votes work only on launches the public pages read from
+  the table, which is the "public getters" item under "Still open" below.
+- **Table** `showcase_launch_vote`: `launch_id` (FK, cascade), `user_id` (FK), `created_at`
+  (precision 3), primary key `(launch_id, user_id)` so one person holds one vote.
+  `showcase_launch.upvote_count` is updated in the same transaction as the insert or delete, the
+  `video-engagement.service.ts` counter precedent, never a `COUNT(*)` per read.
+- **Routes** on the `/blueprints` router, slug- or id-keyed like `commerce-product-engagement.routes.ts`:
+    - `PUT /blueprints/showcases/:launchId/vote`: idempotent upvote.
+    - `DELETE /blueprints/showcases/:launchId/vote`: allowed only within **10 minutes** of the vote's
+      `created_at`, measured on the server clock. After that, 409 with a message saying upvotes can be
+      removed for 10 minutes. The client never decides the window.
+    - A maker cannot upvote their own launch (403). Signed-out is 401. One rate limiter keyed by user.
+    - Both answer `{ upvoteCount, viewerVote: { votedAt, removableUntil } | null }` from the write.
+- **Public reads** return `viewerVote` for a signed-in viewer (null otherwise), so the page can draw
+  the right state on load.
+- **Erasure:** `showcase_launch_vote.user_id` → `delete_rows` in the anonymization manifest, and the
+  launch's `upvote_count` is decremented in the same scrub transaction.
+- **Frontend states for the vote box** (feed row, hub launch link and detail page share it):
+    - **Signed out:** the count with a quiet caret; pressing it links to sign-in. `aria-pressed` is
+      ABSENT for a null viewer, the `store/sections/engagement-bar.tsx` precedent, not `false`.
+    - **Not voted:** a real `<button>`, `aria-pressed="false"`, caret and count in `Ink Quiet`.
+    - **Voted, removable:** caret and count in **Primary Imprint** (`#00696E`), `aria-pressed="true"`;
+      pressing removes the vote. A tooltip or label says it can be removed until `removableUntil`.
+    - **Voted, locked:** still Primary Imprint, no longer pressable, and it says the vote is locked.
+    - **Pending:** disabled while the request runs. Nothing is optimistic: the count shown is the one
+      the server returned.
 
 **Still open after 2b:** public getters read the table and gate on `moderationState`
 (`isBlueprintVisible` passes every showcase today) and the fixture launches retire; notifying makers

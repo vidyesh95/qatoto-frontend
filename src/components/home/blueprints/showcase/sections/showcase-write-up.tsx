@@ -1,130 +1,273 @@
-"use client";
+// TRANSPORT: props-only — the write-up arrives on the showcase from `getBlueprintByCategory`, or
+// from the launch form's own text while a maker previews it.
+//
+// A LAUNCH WRITE-UP IS GITHUB-STYLE MARKDOWN, the Launch YC and README shape: headings, emphasis,
+// lists, links, code, tables, images, and a YouTube link on a line of its own becomes the video.
+//
+// ⚠️ USER-WRITTEN MARKDOWN ON A THIN, UNTRUSTED LAYER, SO EVERY ESCAPE HATCH IS SHUT HERE:
+// - `skipHtml`: raw HTML in the source is dropped, never rendered and never escaped into view.
+//   There is no `rehype-raw` and no `dangerouslySetInnerHTML` on this path, and none may be added.
+// - `allowedElements`: anything markdown can produce outside the list (task-list checkboxes,
+//   footnote sections) is unwrapped to its text rather than rendered.
+// - `urlTransform`: a link or image address is kept only when it is http(s), site-relative or an
+//   in-page anchor, so `javascript:` and `data:` cannot reach an `href` or a `src`.
+// - Images render only from where Qatoto stores uploads. An image hosted anywhere else would make
+//   every reader's browser call that host, the reason GitHub proxies README images, and
+//   `next/image` refuses unknown hosts anyway. Such an image shows a one-line note instead.
+//
+// ⚠️ NO "…more" CROP. The plain-text write-up used to collapse to six lines; with videos and images
+// inline, a crop would hide the most convincing part of a launch behind a button, so the write-up
+// renders whole, the way a README does.
+//
+// NO `"use client"` DIRECTIVE. There are no hooks here: the detail page renders it on the server and
+// the launch form renders it in its preview tab, the same both-trees arrangement `LinkedPlainText`
+// records. The video block is its own client island.
 
-// TRANSPORT: props-only — the write-up arrives already split, from `ShowcaseDetailPage`.
-//
-// THE ONE CLIENT ISLAND THIS PAGE GAINS, and it is here for a measurement rather than for an
-// interaction. Whether the collapse control renders at all depends on whether the text actually
-// overflows six lines, which is a layout fact no server knows: it turns on the container width, the
-// font, and whether the font has loaded. Guessing it from a character count would print "…more"
-// over text that is already fully visible, which is a control that does nothing — the exact thing
-// this surface refuses everywhere else.
-//
-// ⚠️ PARAGRAPH ONE AND THE DEMO ARE NEVER CROPPED. The demo sits after the first paragraph, where the
-// maker's own words introduce it, and a crop able to hide the video would put the most convincing
-// thing on the page behind "…more". So the six-line crop, and the measurement that decides whether
-// "…more" exists, cover paragraphs two onward only. The demo arrives as a slot rather than a
-// `demoVideo` prop so the page keeps its title and its eager-loading decision, and this file imports
-// no video code.
-//
-// `ShowcaseDetailPage` STAYS A SERVER COMPONENT. A client child does not make its parent client,
-// the same way `BrowserPreferencesProvider` does not make `app/layout.tsx`'s children client, and a
-// server-rendered element passed through a prop is fine.
-//
-// ⚠️ DO NOT COPY `watch/video-description.tsx`. It wraps an `<h1>` and the whole meta line inside
-// one giant `<button>`, so a screen reader meets a heading nested in interactive content and a
-// pointer user can toggle the description by clicking the title. That is a defect, not the house
-// pattern. The control here is one button, after the text, naming what it does.
-//
-// NO HEIGHT TRANSITION. `docs/Design.md` bans animating layout properties, and there is no honest
-// way to animate to `height: auto` regardless. The text is cropped or it is not.
+import Image from "next/image";
+import Markdown, { defaultUrlTransform, type Components, type ExtraProps } from "react-markdown";
+import remarkGfm from "remark-gfm";
 
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { buildYoutubeBlueprintVideo } from "@/components/home/blueprints/authoring/youtube-link-field";
+import BlueprintVideoBlock from "@/components/home/blueprints/media/blueprint-video-block";
 
-import LinkedPlainText from "@/components/home/shared/linked-plain-text";
+/** The elements a write-up may produce. Everything else is unwrapped to its text. */
+const ALLOWED_WRITE_UP_ELEMENTS = [
+  "p",
+  "a",
+  "strong",
+  "em",
+  "del",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "ul",
+  "ol",
+  "li",
+  "blockquote",
+  "code",
+  "pre",
+  "hr",
+  "br",
+  "img",
+  "table",
+  "thead",
+  "tbody",
+  "tr",
+  "th",
+  "td",
+];
+
+const SAFE_URL_PATTERN = /^(https?:\/\/|\/(?!\/)|#)/i;
+
+/** Keeps http(s), site-relative and in-page addresses; anything else becomes an empty string. */
+function keepOnlyWebAddresses(url: string): string {
+  const transformedUrl = defaultUrlTransform(url);
+  return SAFE_URL_PATTERN.test(transformedUrl) ? transformedUrl : "";
+}
 
 /**
- * The collapsed crop: `max-h-36` is 9rem, which is exactly six lines of `leading-6`.
- *
- * ⚠️ THE PARAGRAPH GAP IS 1.5rem FOR THIS REASON AND NOT FOR RHYTHM. `space-y-6` is one whole
- * line-height, so every paragraph boundary lands on the same grid the lines do and the crop can
- * never slice a line in half. A 1rem gap would read fine and cut the last visible line through
- * the middle of its x-height.
+ * Whether an image address points at storage Qatoto controls: a site-relative file, or an upload in
+ * Cloudinary, the host `next.config.ts` already allows for everything the backend uploads.
  */
-const COLLAPSED_CROP_CLASS = "max-h-36";
+function isUploadedImageAddress(imageAddress: string): boolean {
+  if (imageAddress.startsWith("/") && !imageAddress.startsWith("//")) return true;
+  try {
+    const parsedAddress = new URL(imageAddress);
+    return parsedAddress.protocol === "https:" && parsedAddress.hostname === "res.cloudinary.com";
+  } catch {
+    return false;
+  }
+}
 
-export default function ShowcaseWriteUp({
-  firstParagraph,
-  remainingParagraphs,
-  contentAfterFirstParagraph,
-}: {
-  readonly firstParagraph: string;
-  readonly remainingParagraphs: readonly string[];
-  /** What sits between paragraph one and the rest: the demo, or `null`. Never cropped. */
-  readonly contentAfterFirstParagraph: ReactNode;
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isOverflowingCollapsedCrop, setIsOverflowingCollapsedCrop] = useState(false);
-  const bodyElementRef = useRef<HTMLDivElement | null>(null);
-  const bodyElementId = useId();
+/**
+ * The first image or embedded video in the write-up, in source order.
+ *
+ * ⚠️ IT EXISTS FOR THE LARGEST CONTENTFUL PAINT. At desktop width the first media in a write-up
+ * starts inside the first viewport and out-paints the text around it, so it loads eagerly; every
+ * later one stays lazy. Found by scanning the source rather than by counting inside the renderers,
+ * because a counter mutated during render is the thing the React Compiler refuses. A line-based scan
+ * can be fooled by a link inside a code block, and the cost of that is one lazy poster, not a bug.
+ */
+type FirstWriteUpMedia =
+  | { readonly kind: "none" }
+  | { readonly kind: "video"; readonly youtubeVideoId: string }
+  | { readonly kind: "image"; readonly imageAddress: string };
 
-  useEffect(() => {
-    const bodyElement = bodyElementRef.current;
-    // MEASURING WHILE EXPANDED WOULD ANSWER THE WRONG QUESTION. With the crop lifted,
-    // `scrollHeight === clientHeight` on any text at all, so the flag would fall back to false and
-    // take "Show less" off the screen with it, leaving a reader expanded with no way back. With no
-    // paragraphs after the first there is no crop to measure, and the ref is null.
-    if (isExpanded || bodyElement === null) return undefined;
+const MARKDOWN_IMAGE_PATTERN = /!\[[^\]]*\]\(\s*<?([^\s)>]+)/;
 
-    const measureCollapsedOverflow = () => {
-      setIsOverflowingCollapsedCrop(bodyElement.scrollHeight > bodyElement.clientHeight);
-    };
-    measureCollapsedOverflow();
+function findFirstWriteUpMedia(markdown: string): FirstWriteUpMedia {
+  for (const sourceLine of markdown.split("\n")) {
+    const trimmedLine = sourceLine.trim();
 
-    // Width changes, and so does the answer: a write-up that fits six lines on a desktop column
-    // runs to twelve on a phone. Observing the element covers the sidebar collapsing and the web
-    // font swapping in, neither of which fires a window resize.
-    const cropResizeObserver = new ResizeObserver(measureCollapsedOverflow);
-    cropResizeObserver.observe(bodyElement);
-    return () => cropResizeObserver.disconnect();
-    // THE PARAGRAPHS ARE DELIBERATELY NOT DEPENDENCIES, and the caller carries the other half of
-    // that: it keys this component by slug, so a different launch is a different instance rather
-    // than the same one holding a stale measurement. The observer cannot cover it — the crop's border
-    // box stays at 9rem whatever the text does inside it, so new text fires no resize.
-  }, [isExpanded]);
+    const imageAddress = MARKDOWN_IMAGE_PATTERN.exec(trimmedLine)?.[1];
+    if (imageAddress !== undefined) return { kind: "image", imageAddress };
+
+    const bareLink = trimmedLine.replace(/^<|>$/g, "");
+    if (bareLink !== "" && !/\s/.test(bareLink)) {
+      const video = buildYoutubeBlueprintVideo(bareLink);
+      if (video !== null) return { kind: "video", youtubeVideoId: video.youtubeVideoId };
+    }
+  }
+  return { kind: "none" };
+}
+
+/**
+ * The YouTube id when a paragraph is nothing but one pasted link, the README convention for "put the
+ * video here". A sentence that merely links a word to YouTube stays a link: only a link whose visible
+ * text is its own address counts as pasted.
+ */
+function readStandaloneYoutubeVideoId(paragraphNode: ExtraProps["node"]): string | null {
+  if (paragraphNode === undefined) return null;
+
+  const meaningfulChildren = paragraphNode.children.filter(
+    (childNode) => !(childNode.type === "text" && childNode.value.trim() === ""),
+  );
+  const onlyChild = meaningfulChildren.length === 1 ? meaningfulChildren[0] : undefined;
+  if (onlyChild === undefined || onlyChild.type !== "element" || onlyChild.tagName !== "a") {
+    return null;
+  }
+
+  const linkAddress = onlyChild.properties.href;
+  if (typeof linkAddress !== "string") return null;
+
+  const visibleLinkText = onlyChild.children
+    .map((childNode) => (childNode.type === "text" ? childNode.value : ""))
+    .join("")
+    .trim();
+  const addressWithoutScheme = linkAddress.replace(/^https?:\/\//i, "");
+  if (visibleLinkText !== linkAddress && visibleLinkText !== addressWithoutScheme) return null;
+
+  return buildYoutubeBlueprintVideo(linkAddress)?.youtubeVideoId ?? null;
+}
+
+/**
+ * THE HEADING LEVELS SHIFT DOWN ONE. The page already has its `<h1>` (the launch name) and its own
+ * `<h2>` sections, so a maker's `#` becomes an `<h2>` and everything deeper an `<h3>`. Two sizes, the
+ * product's two, rather than a six-step scale inside one write-up.
+ */
+const MAJOR_HEADING_CLASS = "max-w-prose pt-2 text-base font-semibold text-foreground";
+const MINOR_HEADING_CLASS = "max-w-prose pt-1 text-sm font-semibold text-foreground";
+
+/** The renderers that never depend on where the first media sits. */
+const STATIC_WRITE_UP_COMPONENTS: Components = {
+  a: ({ href, children }) =>
+    // A LINK WHOSE ADDRESS THE URL TRANSFORM STRIPPED (a `javascript:` link, say) IS PLAIN TEXT. An
+    // `<a href="">` would still look clickable and would reload the page when pressed.
+    href === undefined || href === "" ? (
+      <span>{children}</span>
+    ) : (
+      // `nofollow ugc` because a maker wrote this link, not Qatoto.
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer nofollow ugc"
+        className="font-medium text-[#00696E] underline underline-offset-2 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+      >
+        {children}
+      </a>
+    ),
+  h1: ({ children }) => <h2 className={MAJOR_HEADING_CLASS}>{children}</h2>,
+  h2: ({ children }) => <h2 className={MAJOR_HEADING_CLASS}>{children}</h2>,
+  h3: ({ children }) => <h3 className={MINOR_HEADING_CLASS}>{children}</h3>,
+  h4: ({ children }) => <h3 className={MINOR_HEADING_CLASS}>{children}</h3>,
+  h5: ({ children }) => <h3 className={MINOR_HEADING_CLASS}>{children}</h3>,
+  h6: ({ children }) => <h3 className={MINOR_HEADING_CLASS}>{children}</h3>,
+  ul: ({ children }) => <ul className="max-w-prose list-disc space-y-1 pl-5">{children}</ul>,
+  ol: ({ children }) => <ol className="max-w-prose list-decimal space-y-1 pl-5">{children}</ol>,
+  // A 1px rule, not an accent stripe: the quote is set off by its tone and indent.
+  blockquote: ({ children }) => (
+    <blockquote className="max-w-prose space-y-2 border-l border-border pl-3 text-muted-foreground">
+      {children}
+    </blockquote>
+  ),
+  code: ({ children }) => <code className="font-mono text-[0.92em]">{children}</code>,
+  pre: ({ children }) => (
+    <pre className="max-w-3xl overflow-x-auto rounded-xl border border-border bg-card p-3 text-xs leading-5">
+      {children}
+    </pre>
+  ),
+  hr: () => <hr className="max-w-prose border-border" />,
+  table: ({ children }) => (
+    <div className="max-w-3xl overflow-x-auto">
+      <table className="w-full border-collapse text-xs">{children}</table>
+    </div>
+  ),
+  th: ({ children }) => (
+    <th className="border border-border px-2 py-1 text-left font-medium">{children}</th>
+  ),
+  td: ({ children }) => <td className="border border-border px-2 py-1 align-top">{children}</td>,
+};
+
+/** The full renderer set, with the paragraph and image renderers told which media is first. */
+function buildWriteUpComponents(firstMedia: FirstWriteUpMedia): Components {
+  return {
+    ...STATIC_WRITE_UP_COMPONENTS,
+    p: ({ node, children }) => {
+      const standaloneYoutubeVideoId = readStandaloneYoutubeVideoId(node);
+      const video =
+        standaloneYoutubeVideoId === null
+          ? null
+          : buildYoutubeBlueprintVideo(standaloneYoutubeVideoId);
+      if (video !== null) {
+        return (
+          <BlueprintVideoBlock
+            video={video}
+            title="Video"
+            isTitleVisible={false}
+            shouldLoadPosterEagerly={
+              firstMedia.kind === "video" && firstMedia.youtubeVideoId === video.youtubeVideoId
+            }
+          />
+        );
+      }
+      return <p className="max-w-prose">{children}</p>;
+    },
+    img: ({ src, alt }) => {
+      if (typeof src !== "string" || src === "" || !isUploadedImageAddress(src)) {
+        return (
+          <span className="block text-xs text-muted-foreground">
+            Image not shown. Images in a launch have to be uploaded to Qatoto.
+          </span>
+        );
+      }
+      const isFirstMedia = firstMedia.kind === "image" && firstMedia.imageAddress === src;
+      return (
+        <Image
+          src={src}
+          alt={alt ?? ""}
+          width={0}
+          height={0}
+          sizes="(min-width: 768px) 768px, 100vw"
+          loading={isFirstMedia ? "eager" : "lazy"}
+          fetchPriority={isFirstMedia ? "high" : "auto"}
+          className="block h-auto w-full max-w-3xl rounded-xl bg-muted"
+        />
+      );
+    },
+  };
+}
+
+export default function ShowcaseWriteUp({ markdown }: { readonly markdown: string }) {
+  // Whitespace only is `null` wearing a string, and absence renders nothing.
+  if (markdown.trim() === "") return null;
+
+  const writeUpComponents = buildWriteUpComponents(findFirstWriteUpMedia(markdown));
 
   return (
-    <div className="mt-4">
-      <p className="max-w-prose text-sm leading-6 text-foreground">
-        <LinkedPlainText text={firstParagraph} />
-      </p>
-
-      {contentAfterFirstParagraph}
-
-      {remainingParagraphs.length === 0 ? null : (
-        <div className="mt-6">
-          <div
-            id={bodyElementId}
-            ref={bodyElementRef}
-            className={`max-w-prose space-y-6 overflow-hidden text-sm leading-6 text-foreground ${
-              isExpanded ? "" : COLLAPSED_CROP_CLASS
-            }`}
-          >
-            {remainingParagraphs.map((paragraph, paragraphIndex) => (
-              // The index is the key because the text is the content: two identical paragraphs are a
-              // thing a person can legitimately write, and this list is never reordered or filtered.
-              <p key={paragraphIndex}>
-                <LinkedPlainText text={paragraph} />
-              </p>
-            ))}
-          </div>
-
-          {/* THE CONTROL RENDERS ONLY WHEN IT HAS SOMETHING TO DO. Paragraphs under the crop show no
-              button at all, so "…more" is never a promise of text that is already on screen. It is
-              absent on the server render and appears after the measurement, which is the right way
-              round: a control that flickers in is better than one that lies for a frame. */}
-          {isOverflowingCollapsedCrop || isExpanded ? (
-            <button
-              type="button"
-              aria-expanded={isExpanded}
-              aria-controls={bodyElementId}
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="mt-2 rounded-sm text-sm font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
-            >
-              {isExpanded ? "Show less" : "…more"}
-            </button>
-          ) : null}
-        </div>
-      )}
+    <div className="mt-4 space-y-4 text-sm leading-6 text-foreground">
+      <Markdown
+        remarkPlugins={[remarkGfm]}
+        skipHtml
+        allowedElements={ALLOWED_WRITE_UP_ELEMENTS}
+        unwrapDisallowed
+        urlTransform={keepOnlyWebAddresses}
+        components={writeUpComponents}
+      >
+        {markdown}
+      </Markdown>
     </div>
   );
 }

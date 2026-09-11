@@ -1788,11 +1788,13 @@ export const ShowcaseBlueprintSchema = z
      * posted the day it shipped — and `null` renders NOTHING, not an empty section and not a
      * prompt to write one.
      *
-     * ⚠️ PLAIN TEXT, SPLIT ON BLANK LINES AT RENDER. Not markdown, and that was a decision rather
-     * than a shortcut: a markdown subset needs a parser and a sanitiser, and user-generated HTML
-     * rendered by a thin untrusted layer is the highest-risk thing this surface could carry. The
-     * renderer emits `<p>` and nothing else — there is no `dangerouslySetInnerHTML` on this path
-     * and none may be added to it.
+     * ⚠️ GITHUB-STYLE MARKDOWN, AND `ShowcaseWriteUp` IS THE SECURITY BOUNDARY. User-written markup
+     * rendered by a thin untrusted layer is the highest-risk thing this surface carries, so that
+     * renderer skips raw HTML, allows a fixed set of elements, keeps only http(s), site-relative and
+     * anchor addresses, and shows images only from where Qatoto stores uploads. There is no
+     * `dangerouslySetInnerHTML` and no `rehype-raw` on this path, and none may be added. A YouTube
+     * link on a line of its own becomes the video, which is why this arm has no separate demo
+     * field: a maker places videos where the text needs them.
      *
      * THE THIRD DESCRIPTION-ISH FIELD ON THIS ARM, and the three do different jobs. `tagline` is
      * the pitch on the feed row, `summary` is the one-paragraph "what is this" and doubles as the
@@ -1826,7 +1828,6 @@ export const ShowcaseBlueprintSchema = z
     team: z.array(BlueprintTeamMemberSchema),
     /** The teardown this was built from, `null` when it was built from nothing published here. */
     builtFromBlueprintSlug: z.string().nullable(),
-    demoVideo: BlueprintVideoSchema.nullable(),
     callToAction: BlueprintLinkSchema.nullable(),
   })
   .strip();

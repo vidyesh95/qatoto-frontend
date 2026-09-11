@@ -325,7 +325,8 @@ const PUMP_PART_MODEL_DIRECTORY = "/dummy/blueprints/borehole-pump-housing";
  * - `upvoteCount: 96` on BOTH `hand-pump-gearbox-replacement-kit` and
  *   `grain-moisture-meter-field-units` — a deliberate tie, so the `top` comparator's tie-break is
  *   exercised on the second page of `?sort=top` rather than only described in a comment.
- * - `callToAction: null` and `demoVideo: null` on several showcases — most launches have neither.
+ * - `callToAction: null` on several showcases — most launches link nowhere. A launch's videos live
+ *   inside its Markdown `writeUp`, as a YouTube link on its own line; there is no separate demo field.
  * - `partCount: null` where nobody counted. Not zero: a zero-part teardown is not a teardown.
  * - `assembly: null` on ten of the twelve teardowns — most published no model, and the exploded
  *   view must be ABSENT rather than an empty viewport. The two that carry one take DIFFERENT
@@ -1815,9 +1816,15 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     createdAt: "2026-08-30T12:00:00.000Z",
     tagline: "Holds 4 °C for 62 hours with no sun, in 41 °C ambient",
     writeUp:
+      // THE ONE FIXTURE THAT EXERCISES THE MARKDOWN RENDERER'S BLOCKS: a pasted YouTube link on its own
+      // line (the embedded video), a heading, a list with bold, and a site-relative image.
       "We put the controller from the teardown into a 400 L chest unit and left it in Nakuru market for ninety days. The trader who runs the stall kept it loaded the whole time, which is the only version of this test worth reporting: an empty cabinet coasting on its own insulation holds a number nobody can use.\n\n" +
+      `https://www.youtube.com/watch?v=${PLACEHOLDER_YOUTUBE_VIDEO_ID}\n\n` +
       "The headline is 62 hours at 4 °C with no sun, measured with 380 L of produce loaded at 6 °C and an ambient that peaked at 41 °C. Empty, the same cabinet runs past 90 hours. We stopped quoting that figure after the first week because it flatters the design and tells a buyer nothing.\n\n" +
-      "Two things failed. A compressor start relay went at week three: it was rated for the current and not for forty starts a day, and nothing in its datasheet distinguishes the two. A door gasket took a permanent set in the heat and stopped sealing at the top corner, which cost about four hours of hold time before anyone noticed it.\n\n" +
+      "![The chest unit loaded at the Nakuru stall](/dummy/placeholder-freezers.avif)\n\n" +
+      "## What failed\n\n" +
+      "- **A compressor start relay**, at week three. It was rated for the current and not for forty starts a day, and nothing in its datasheet distinguishes the two.\n" +
+      "- **A door gasket** took a permanent set in the heat and stopped sealing at the top corner, which cost about four hours of hold time before anyone noticed it.\n\n" +
       "The battery is lead-acid, and that is the decision people argue with most. LiFePO4 would give better cycle life and would not derate at 41 °C. It would also mean a trader whose pack dies has a unit out of service until something ships, where a lead-acid battery is a same-afternoon walk to a shop they already use. A pack nobody local can source is a cold store that dies the first time it needs one.\n\n" +
       "Next is the gasket, in a material that does not take a set, and a start relay chosen on cycles rather than amps. Neither moves the bill of materials by more than a few dollars.",
     launchedAt: "2026-09-01T08:00:00.000Z",
@@ -1838,7 +1845,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "solar-cold-storage-controller-teardown",
-    demoVideo: placeholderYoutubeVideo(PLACEHOLDER_YOUTUBE_DURATION_SECONDS),
     callToAction: {
       label: "Read the 90-day field log",
       url: "https://example.com/qatoto/nakuru-field-log",
@@ -1883,7 +1889,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "low-cost-spectrometer-optical-path",
-    demoVideo: null,
     callToAction: null,
   },
   {
@@ -1936,7 +1941,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "brushless-motor-driver-schematic",
-    demoVideo: placeholderYoutubeVideo(),
     callToAction: {
       label: "Route and load data",
       url: "https://example.com/qatoto/cargo-trike-routes",
@@ -1989,7 +1993,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "grain-moisture-meter-teardown",
-    demoVideo: null,
     callToAction: null,
   },
   {
@@ -2031,7 +2034,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     ],
     // Built from equipment that was never published here as a teardown.
     builtFromBlueprintSlug: null,
-    demoVideo: null,
     callToAction: {
       label: "Site-by-site energy figures",
       url: "https://example.com/qatoto/chiller-retrofit-energy",
@@ -2064,6 +2066,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tagline: "One coin cell per valve, a full season, zero mains",
     writeUp:
       "Forty valves across two hectares, latching solenoids on a CR2032 each, no mains and no solar. A latching valve draws current only while it changes state, so a season of twice-daily switching comes to a few hundred milliamp-seconds and the cell is oversized for it.\n\n" +
+      `https://youtu.be/${PLACEHOLDER_YOUTUBE_VIDEO_ID}\n\n` +
       "The part that took the time was not the valve. It was building a controller that fails closed when a cell finally does go, because a drip line stuck open overnight costs more water than the whole season saves.",
     launchedAt: "2026-09-03T08:00:00.000Z",
     upvoteCount: 129,
@@ -2083,7 +2086,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "irrigation-valve-actuator-teardown",
-    demoVideo: placeholderYoutubeVideo(),
     callToAction: {
       label: "Watering schedule and soil logs",
       url: "https://example.com/qatoto/kisumu-drip-logs",
@@ -2139,7 +2141,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "battery-management-system-teardown",
-    demoVideo: null,
     callToAction: {
       label: "Cycle-by-cycle capacity data",
       url: "https://example.com/qatoto/boda-pack-cycles",
@@ -2185,7 +2186,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "hand-pump-gearbox-teardown",
-    demoVideo: null,
     callToAction: null,
   },
   {
@@ -2215,6 +2215,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tagline: "Zero seal failures across 20 wells and 3,100 pump-hours",
     writeUp:
       "Twenty wells, one dry season, 3,100 recorded pump-hours, no seal failure. The previous housings were failing at roughly one in four before a full season was out, which is what started this.\n\n" +
+      `https://www.youtube.com/watch?v=${PLACEHOLDER_YOUTUBE_VIDEO_ID}\n\n` +
       "The change is a tolerance, not a redesign. The seal carrier bore was drawn at a fit the shop could not hold on a manual lathe, so every housing landed somewhere in a band, and the ones at the loose end wept fine sand into the seal face. Reaming the bore as a separate operation costs about ninety seconds a part and pulls the whole band inside the range the seal was designed for.\n\n" +
       "Nothing about this is clever, and that is the part worth taking away. The drawing was right and the process could not hold it, which is a failure that looks exactly like a bad design until somebody measures the parts that came back.",
     launchedAt: "2026-08-21T10:10:00.000Z",
@@ -2235,7 +2236,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "borehole-pump-housing-tolerances",
-    demoVideo: placeholderYoutubeVideo(),
     callToAction: {
       label: "Pump-hour and seal inspection log",
       url: "https://example.com/qatoto/borehole-seal-log",
@@ -2287,7 +2287,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       },
     ],
     builtFromBlueprintSlug: "off-grid-router-power-rail-teardown",
-    demoVideo: null,
     callToAction: null,
   },
   {

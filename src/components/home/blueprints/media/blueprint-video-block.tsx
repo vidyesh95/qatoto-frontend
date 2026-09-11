@@ -30,17 +30,23 @@ import type { BlueprintVideo } from "@/lib/blueprints/schemas";
 export default function BlueprintVideoBlock({
   video,
   title,
+  isTitleVisible = true,
   shouldLoadPosterEagerly = false,
 }: {
   readonly video: BlueprintVideo;
-  /** Names the video for a screen reader — "Walkthrough", "Demo". */
+  /** Names the video for a screen reader — "Walkthrough", "Video". */
   readonly title: string;
   /**
-   * True only where the poster is the first large media on the page. On a showcase the demo follows
-   * the summary, or the write-up's first paragraph, and on desktop its poster is still the largest
-   * contentful paint: loaded `lazy` it painted at ~490ms against ~150ms eager. No console warning
-   * flagged it: the poster is an unoptimised ytimg URL, which Next's LCP check skips. The teardown
-   * walkthrough sits far below the fold and keeps the lazy default.
+   * False inside a launch write-up, where a visible "Video" heading over every pasted link would
+   * interrupt the text. The heading stays for a screen reader, and the write-up's own spacing
+   * replaces the section margin.
+   */
+  readonly isTitleVisible?: boolean;
+  /**
+   * True only for the first media in a launch write-up. At desktop width it starts inside the first
+   * viewport and its poster is the largest contentful paint; loaded `lazy`, Next warns and the paint
+   * lands late (~490ms against ~150ms eager, measured when this poster sat under the byline). The
+   * teardown walkthrough sits far below the fold and keeps the lazy default.
    */
   readonly shouldLoadPosterEagerly?: boolean;
 }) {
@@ -55,10 +61,14 @@ export default function BlueprintVideoBlock({
   const durationLabel = formatDurationLabel(video.durationSeconds);
 
   return (
-    <section className="mt-8">
-      <h2 className="text-sm font-medium text-foreground">{title}</h2>
+    <section className={isTitleVisible ? "mt-8" : undefined}>
+      <h2 className={isTitleVisible ? "text-sm font-medium text-foreground" : "sr-only"}>
+        {title}
+      </h2>
 
-      <div className="relative mt-2 aspect-video max-w-3xl overflow-hidden rounded-xl bg-muted">
+      <div
+        className={`relative aspect-video max-w-3xl overflow-hidden rounded-xl bg-muted ${isTitleVisible ? "mt-2" : ""}`}
+      >
         {isPlaying ? (
           <BlueprintYoutubePlayer youtubeVideoId={video.youtubeVideoId} title={title} />
         ) : (

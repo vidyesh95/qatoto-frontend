@@ -162,7 +162,8 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         kind: "dynamic",
         label: "Blueprints — one launch",
         pathPattern: "/blueprints/showcase/[slug]",
-        summary: "The pitch, the team, an optional demo and the teardown it was built from.",
+        summary:
+          "The pitch, the upvotes, the team, a write-up with videos and images, and the teardown it was built from.",
         reachedFrom: "A row on /blueprints/showcase or in the hub's showcase rail.",
       },
       {

@@ -1,25 +1,21 @@
 // TRANSPORT: mock — async server component. Reads `getBlueprintByCategory` from
 // `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
 //
-// Laid out after a Launch YC post: a square heading image beside the title block, the byline row,
-// the pitch, the write-up with the demo after its first paragraph, the engagement row, then the
-// people, the links and the discussion.
+// Laid out after a Launch YC post: the upvote in a left gutter beside the head of the launch (the
+// square heading image, the name, the pitch, and the byline with Share), then the summary, the
+// Markdown write-up with its videos and images, the people, the links and the discussion.
 //
-// THE VOTE NO LONGER SITS IN A GUTTER BESIDE THE TITLE. It did — a 40px column holding
-// `ShowcaseVoteBox`, mirroring the feed row — until the upvote moved into `ShowcaseEngagementBar`
-// beneath the pitch. Keeping both would print `upvoteCount` twice on one page. The feed row keeps
-// the gutter box, which is where that shape earns its place.
+// THE UPVOTE IS BACK IN THE GUTTER, AS `ShowcaseVoteBox`, THE SAME SHAPE THE FEED ROW USES. It spent
+// a while as a pill in an engagement row under the pitch, beside a comment count and Share; that row
+// is gone. The count now sits where a reader who clicked through from the feed just saw it, the
+// comment count moved into the byline as a link to the thread, and Share sits at the end of the
+// byline. It is still a `<span>`: there is no vote route, and a vote box that looked clickable and
+// did nothing would be the ghost control this surface refuses.
 //
 // SHARE IS THE FULL SHEET, not the single X intent link this page used to build itself. The reason
 // recorded for that link ruled out a share COUNTER, not the sheet — and `ShareSheet` takes
 // `onShared` as optional precisely so a surface with no counter route can open it. Omitting the
 // callback is what keeps the rule: nothing here increments.
-//
-// IT LIVES IN `ShowcaseEngagementBar` NOW, not in the byline. It sat inline beside the launch date
-// while it was the page's only engagement control; once the comment and like counts needed
-// somewhere to render, one row holding all three beat a share link in one place and two counts in
-// the footer. The teardown page has the same bar in the same position, so a reader moving between
-// two sibling detail pages finds the same shape twice.
 //
 // THE DISCUSSION IS READ-ONLY, AND `BlueprintCommentThread` says why at length. Short version: no
 // blueprints content table exists for a comment row to reference, so there is nothing to post to.
@@ -28,14 +24,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import BlueprintVideoBlock from "@/components/home/blueprints/media/blueprint-video-block";
 import BlueprintCommentThread from "@/components/home/blueprints/sections/blueprint-comment-thread";
+import BlueprintShareButton from "@/components/home/blueprints/sections/blueprint-share-button";
 import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-tag-list";
-import ShowcaseEngagementBar from "@/components/home/blueprints/showcase/sections/showcase-engagement-bar";
+import ShowcaseVoteBox from "@/components/home/blueprints/sections/showcase-vote-box";
 import ShowcaseWriteUp from "@/components/home/blueprints/showcase/sections/showcase-write-up";
 import RelativeTime from "@/components/home/shared/relative-time";
 import { getBlueprintByCategory, listShowcaseComments } from "@/lib/blueprints/api";
-import { splitWriteUpAtFirstParagraph } from "@/lib/blueprints/format";
 import { buildBlueprintCategoryHref, buildBlueprintHref } from "@/lib/blueprints/schemas";
 import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
 
@@ -53,41 +48,30 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
 
   const hasActionLinks = showcase.callToAction !== null || showcase.builtFromBlueprintSlug !== null;
 
-  // Split on the server: `null` means there is nothing to read, and the demo then follows the summary.
-  const writeUpSplit = splitWriteUpAtFirstParagraph(showcase.writeUp);
-  // Eager, because on desktop the demo is still the first large media on the page and its poster is
-  // the largest contentful paint, whether it follows the summary or the write-up's first paragraph.
-  const demoBlock =
-    showcase.demoVideo === null ? null : (
-      <BlueprintVideoBlock video={showcase.demoVideo} title="Demo" shouldLoadPosterEagerly />
-    );
-
   return (
     <article className="px-4 pt-5 pb-12 lg:px-6">
-      {/* NO VOTE GUTTER HERE ANY MORE. This was a `grid-cols-[40px_minmax(0,1fr)]` with
-          `ShowcaseVoteBox` in the 40px column, mirroring the feed row so the vote sat where a
-          reader had just seen it. The upvote moved into `ShowcaseEngagementBar` below, and keeping
-          the gutter too would print `upvoteCount` twice on one page. The feed row still uses the
-          box — that is the list shape and nothing there competes with it. */}
-      {/* THE HEADING IMAGE IS A SQUARE BESIDE THE NAME, the Launch YC and Peerlist shape and the same
-          square the feed row shows. It replaced a 16:9 still that rendered only when a launch had no
-          demo, cropping a square image into a wide one and vanishing whenever a demo existed.
-          `alt=""` because the name sits right beside it. `priority` because it is the first image
-          above the fold on every launch; it is NOT the LCP, since the demo poster or the summary
-          out-paints a 72px square, which is why the demo keeps its own eager poster. */}
-      <div className="flex min-w-0 items-start gap-3 lg:gap-4">
-        <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-muted lg:size-18">
-          <Image
-            src={showcase.thumbnailUrl}
-            alt=""
-            fill
-            sizes="(min-width: 1024px) 72px, 48px"
-            priority
-            className="object-cover"
-          />
-        </div>
+      {/* THE HEAD OF THE LAUNCH, IN A 40px GUTTER GRID. The vote box holds the gutter; everything else
+          stacks in the column beside it: the square heading image, the name and pitch under it, and
+          the byline with Share. The body and footer below are indented by the same 52px (56px from
+          `lg`, where the gap grows) so the whole launch reads down one left edge, the title's. */}
+      <header className="grid grid-cols-[40px_minmax(0,1fr)] gap-x-3 lg:gap-x-4">
+        <ShowcaseVoteBox count={showcase.upvoteCount} />
+
         <div className="min-w-0">
-          <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
+          {/* The same square the feed row shows. `alt=""` because the name sits right under it;
+              `priority` because it is the first image above the fold on every launch. */}
+          <div className="relative size-12 overflow-hidden rounded-lg bg-muted lg:size-18">
+            <Image
+              src={showcase.thumbnailUrl}
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 72px, 48px"
+              priority
+              className="object-cover"
+            />
+          </div>
+
+          <p className="mt-3 text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
             Showcase
           </p>
           <h1 className="mt-1 text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
@@ -96,84 +80,83 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
           <p className="mt-2 max-w-2xl text-base leading-6 text-foreground/80">
             {showcase.tagline}
           </p>
-        </div>
-      </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#CAC4D0]/60 pb-3">
-        <p className="flex items-center gap-2 text-xs text-[#6F7979]">
-          <Image
-            src={showcase.author.avatarUrl}
-            alt=""
-            width={24}
-            height={24}
-            className="size-6 rounded-full object-cover"
-          />
-          <span className="font-medium text-foreground">{showcase.author.displayName}</span>
-          <span aria-hidden="true">·</span>
-          {/* Relative, with the absolute instant in the tooltip — the Launch YC pattern. This
-              replaced `formatIsoDateLabel(launchedAt)`, which splits a DATE on "-" and rendered a
-              full instant as "Aug NaN, 2026". */}
-          <span>
-            Launched{" "}
-            <span title={formatIsoInstantLabel(showcase.launchedAt)}>
-              <RelativeTime isoInstant={showcase.launchedAt} />
-            </span>
-          </span>
-        </p>
-      </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#CAC4D0]/60 pb-3">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#6F7979]">
+              <Image
+                src={showcase.author.avatarUrl}
+                alt=""
+                width={24}
+                height={24}
+                className="size-6 rounded-full object-cover"
+              />
+              <span className="font-medium text-foreground">{showcase.author.displayName}</span>
+              {/* EACH SEPARATOR TRAVELS WITH THE ITEM AFTER IT, in one non-wrapping span, so a
+                  narrow screen wraps "· 7 comments" as a unit instead of stranding a dot at the end
+                  of the line above. */}
+              <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                <span aria-hidden="true">·</span>
+                {/* Relative, with the absolute instant in the tooltip — the Launch YC pattern. */}
+                <span>
+                  Launched{" "}
+                  <span title={formatIsoInstantLabel(showcase.launchedAt)}>
+                    <RelativeTime isoInstant={showcase.launchedAt} />
+                  </span>
+                </span>
+              </span>
+              {/* THE COMMENT COUNT IS A LINK TO THE THREAD IT COUNTS, further down this page. Zero
+                  renders nothing, not "0 comments": most new launches have no discussion yet. */}
+              {showcase.commentCount === 0 ? null : (
+                <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                  <span aria-hidden="true">·</span>
+                  <a
+                    href="#discussion"
+                    className="rounded-sm hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                  >
+                    {formatCountLabel(showcase.commentCount)}{" "}
+                    {showcase.commentCount === 1 ? "comment" : "comments"}
+                  </a>
+                </span>
+              )}
+            </p>
+            <BlueprintShareButton blueprint={showcase} variant="inline" />
+          </div>
+        </div>
+      </header>
 
       {/*
-        FROM 1400px THE LAUNCH SPLITS INTO A READING COLUMN AND A RAIL. As one column it left ~300px
-        of empty ground to the right of the media at 1440, beside a header rule that ran the full
-        width. The column is capped at 48rem, which is exactly the `max-w-3xl` the demo already has,
-        so the demo keeps its size AND its shape; only the ground beside it is used. Links, team and
-        tags move into the rail, which sticks while the column scrolls.
+        FROM 1440px THE LAUNCH SPLITS INTO A READING COLUMN AND A RAIL. As one column it left ~300px
+        of empty ground to the right of the media, beside a header rule that ran the full width. The
+        column is capped at 48rem, which is exactly the `max-w-3xl` every video and image in the
+        write-up already has, so media keeps its size AND its shape; only the ground beside it is
+        used. Links, team and tags move into the rail, which sticks while the column scrolls.
 
-        ⚠️ 1400px, NOT `xl`. At 1280 with the sidebar open a rail would have squeezed the media from
-        768px to ~620px, and this surface does not resize or reshape its media to make room.
+        ⚠️ THE BREAKPOINT AND THE RAIL WIDTH ARE ARITHMETIC, NOT TASTE. With the sidebar open at 1440
+        the article has 1072px, the gutter indent takes 56 and leaves 1016, which is exactly the 768px
+        column plus a 24px gap plus a 14rem (224px) rail. It was 1400px with a 16rem rail and a 32px
+        gap before the body took the indent; kept, that would squeeze the media below 768px, and this
+        surface does not resize or reshape its media to make room.
+        BELOW `sm` THERE IS NO INDENT: at 400px the gutter would take 52px out of a 368px column.
 
-        ⚠️ THE ENGAGEMENT BAR STAYS IN THE COLUMN, under the pitch, which is where the teardown page
-        puts its own bar; the two sibling detail pages keep the same shape there.
-
-        DOM ORDER IS THE PHONE ORDER: pitch, write-up (with the demo after its first paragraph, or
-        the demo alone when there is no write-up), bar, links, team, tags, discussion. The grid only
+        DOM ORDER IS THE PHONE ORDER: summary, write-up, links, team, tags, discussion. The grid only
         places those blocks side by side; it never reorders them, so a screen reader and a narrow
         screen read the page in the same order.
       */}
-      <div className="min-[1400px]:grid min-[1400px]:grid-cols-[minmax(0,48rem)_minmax(16rem,1fr)] min-[1400px]:gap-x-8">
-        <div className="min-w-0 min-[1400px]:col-start-1 min-[1400px]:row-start-1">
-          {/* THE STANDFIRST, AND IT MOVED UP A SIZE WHEN THE WRITE-UP LANDED UNDER IT. Three
-              description-ish fields sit on this arm — `tagline` in the title block, `summary` here,
-              `writeUp` below — and at one size the last two read as a single paragraph that got
-              long. `text-base` is not a new size on this surface: the tagline and the feed row
-              already use it, and the byline row sits between the tagline and this line. */}
+      <div className="min-[1440px]:grid min-[1440px]:grid-cols-[minmax(0,48rem)_minmax(14rem,1fr)] min-[1440px]:gap-x-6 sm:pl-[52px] lg:pl-[56px]">
+        <div className="min-w-0 min-[1440px]:col-start-1 min-[1440px]:row-start-1">
+          {/* THE STANDFIRST. Three description-ish fields sit on this arm — `tagline` in the head,
+              `summary` here, `writeUp` below — and the summary is a size up from the write-up so
+              the two do not read as one paragraph that got long. */}
           <p className="mt-5 max-w-2xl text-base leading-7 text-foreground">{showcase.summary}</p>
 
-          {/* NO WRITE-UP RENDERS NO WRITE-UP — no heading, no empty box, no invitation to write one.
-              Most launches are posted the day they ship and never get one, which is the ordinary
-              state and not a gap to fill; the demo, when there is one, then follows the summary. */}
-          {/* ⚠️ KEYED BY SLUG ON PURPOSE. Two showcase pages are the same component tree in the
-              same position, so React reuses the instance across a client navigation and the
-              write-up would arrive as a changed prop on a component still holding the previous
-              launch's overflow measurement. The key makes it a new instance, which is what
-              `showcase-write-up.tsx` relies on instead of an effect dependency. */}
-          {writeUpSplit === null ? (
-            demoBlock
-          ) : (
-            <ShowcaseWriteUp
-              key={showcase.slug}
-              firstParagraph={writeUpSplit.firstParagraph}
-              remainingParagraphs={writeUpSplit.remainingParagraphs}
-              contentAfterFirstParagraph={demoBlock}
-            />
-          )}
-
-          <ShowcaseEngagementBar showcase={showcase} />
+          {/* NO WRITE-UP RENDERS NO WRITE-UP: no heading, no empty box, no invitation to write one.
+              Most launches are posted the day they ship and never get one. */}
+          {showcase.writeUp === null ? null : <ShowcaseWriteUp markdown={showcase.writeUp} />}
         </div>
 
         <aside
           aria-label="About this launch"
-          className="min-w-0 min-[1400px]:sticky min-[1400px]:top-20 min-[1400px]:col-start-2 min-[1400px]:row-span-2 min-[1400px]:row-start-1 min-[1400px]:self-start"
+          className="min-w-0 min-[1440px]:sticky min-[1440px]:top-20 min-[1440px]:col-start-2 min-[1440px]:row-span-2 min-[1440px]:row-start-1 min-[1440px]:self-start"
         >
           {/* Both links are optional and both render nothing when absent — the row only exists so the
           two sit side by side when both are present. */}
@@ -217,9 +200,9 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
           {showcase.team.length === 0 ? null : (
             <section className="mt-8">
               <h2 className="text-sm font-medium text-foreground">Team</h2>
-              {/* A row on a narrow screen, a column in the rail, where 16rem holds one person per line
+              {/* A row on a narrow screen, a column in the rail, where 14rem holds one person per line
               and a wrapped row would strand the second name under the first avatar. */}
-              <ul className="mt-2 flex flex-wrap gap-4 min-[1400px]:flex-col min-[1400px]:gap-3">
+              <ul className="mt-2 flex flex-wrap gap-4 min-[1440px]:flex-col min-[1440px]:gap-3">
                 {showcase.team.map((member) => (
                   <li key={member.handle} className="flex items-center gap-2">
                     <Image
@@ -242,20 +225,16 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
           <BlueprintTagList tags={showcase.tags} />
         </aside>
 
-        <div className="min-w-0 min-[1400px]:col-start-1 min-[1400px]:row-start-2">
+        <div className="min-w-0 min-[1440px]:col-start-1 min-[1440px]:row-start-2">
           <BlueprintCommentThread comments={comments} />
         </div>
       </div>
 
-      <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#CAC4D0]/60 pt-4">
-        {/* `likeCount` is BACK HERE, quietly, because the upvote took its slot in the engagement bar
-            and a shared field with no renderer is unverified code. Two approval numbers in one row
-            would also be one too many to ask a reader to tell apart — the upvote is the one that
-            means something on a launch. */}
-        <p className="text-[11px] text-[#6F7979]">
-          {formatCountLabel(showcase.viewCount)} views · {formatCountLabel(showcase.likeCount)}{" "}
-          likes
-        </p>
+      <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#CAC4D0]/60 pt-4 sm:ml-[52px] lg:ml-[56px]">
+        {/* VIEWS ONLY. `likeCount` is a field every blueprint shares, and teardowns and case studies
+            still print it, but a launch's approval number is its upvote, in the gutter at the top.
+            Printing likes here as well asked a reader to tell two approval numbers apart. */}
+        <p className="text-[11px] text-[#6F7979]">{formatCountLabel(showcase.viewCount)} views</p>
         <Link
           href={buildBlueprintCategoryHref("showcase")}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-[#00696E] hover:underline"

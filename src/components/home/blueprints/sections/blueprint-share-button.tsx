@@ -28,33 +28,51 @@ import { buildBlueprintHref, type BlueprintCategory } from "@/lib/blueprints/sch
 import { SITE_URL } from "@/lib/site";
 
 /**
- * ONE LOOK, AND IT USED TO BE TWO. A quiet `inline` text-link variant existed for the showcase
- * byline, where a pill would have shouted next to the launch date. Share moved into
- * `ShowcaseEngagementBar` — both detail pages now offer it in the same place, in the same shape —
- * and the variant lost its only caller. A prop with one value is a decision nobody makes, so it is
- * gone rather than kept for a hypothetical third surface.
+ * TWO LOOKS, EACH WITH A CALLER.
  *
- * It matches `StatPill` (`src/components/home/watch/stat-pill.tsx`) deliberately: sized `w-full` so
- * it fills its grid cell below `lg` and `lg:w-24` beside it, the same widths the watch bar uses, so
- * the one real control lines up with the inert counts either side of it.
+ * - `cell`: fills a grid cell in `TeardownEngagementBar`. It matches `StatPill`
+ *   (`src/components/home/watch/stat-pill.tsx`) deliberately: `w-full` below `lg` and `lg:w-24`
+ *   beside it, the widths the watch bar uses, so the one real control lines up with the inert counts
+ *   either side of it.
+ * - `inline`: sized to its label, at the end of the showcase byline. The showcase engagement row was
+ *   removed when the upvote moved back to the gutter, and a full-width cell there would have pushed
+ *   the byline onto two lines.
  */
-const TRIGGER_CLASS =
-  "flex w-full cursor-pointer flex-row items-center justify-center gap-2 rounded-full bg-[#CCE8E9] px-3 py-1.5 text-sm font-medium text-[#041F21] hover:bg-[#bfe0e1]";
+type ShareButtonVariant = "cell" | "inline";
+
+const TRIGGER_BASE_CLASS =
+  "flex cursor-pointer flex-row items-center justify-center gap-2 rounded-full bg-[#CCE8E9] text-sm font-medium text-[#041F21] hover:bg-[#bfe0e1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]";
+
+const TRIGGER_CLASS_BY_VARIANT: Record<ShareButtonVariant, string> = {
+  cell: `${TRIGGER_BASE_CLASS} w-full px-3 py-1.5`,
+  inline: `${TRIGGER_BASE_CLASS} px-3 py-1`,
+};
+
+const WRAPPER_CLASS_BY_VARIANT: Record<ShareButtonVariant, string> = {
+  cell: "relative inline-flex w-full lg:w-24",
+  inline: "relative inline-flex shrink-0",
+};
 
 export default function BlueprintShareButton({
   blueprint,
+  variant = "cell",
 }: {
   readonly blueprint: {
     readonly category: BlueprintCategory;
     readonly slug: string;
     readonly title: string;
   };
+  readonly variant?: ShareButtonVariant;
 }) {
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
 
   return (
-    <span className="relative inline-flex w-full lg:w-24">
-      <button type="button" onClick={() => setIsShareSheetOpen(true)} className={TRIGGER_CLASS}>
+    <span className={WRAPPER_CLASS_BY_VARIANT[variant]}>
+      <button
+        type="button"
+        onClick={() => setIsShareSheetOpen(true)}
+        className={TRIGGER_CLASS_BY_VARIANT[variant]}
+      >
         <Image
           src="/icons/share_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
           alt=""

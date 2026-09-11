@@ -10,6 +10,7 @@ import LaunchStatements, {
 } from "@/components/home/blueprints/showcase/authoring/launch-statements";
 import ShowcaseLaunchReceipt from "@/components/home/blueprints/showcase/authoring/showcase-launch-receipt";
 import ShowcaseLaunchRowPreview from "@/components/home/blueprints/showcase/authoring/showcase-launch-row-preview";
+import ShowcaseWriteUp from "@/components/home/blueprints/showcase/sections/showcase-write-up";
 import {
   buildMiddayInstantForDate,
   collectShowcaseSubmission,
@@ -28,7 +29,6 @@ import {
   LabeledTextInput,
   RepeatableRowShell,
 } from "@/components/home/blueprints/authoring/form-fields";
-import { isYoutubeLinkFieldUsable } from "@/components/home/blueprints/authoring/youtube-link-field";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import { useSubmitShowcaseMutation } from "@/hooks/blueprints/showcase-authoring";
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
@@ -48,6 +48,16 @@ import { ApiRequestError } from "@/lib/http";
 type ShowcaseLaunchViewState =
   | { readonly status: "editing" }
   | { readonly status: "submitted"; readonly receipt: ShowcaseSubmissionReceipt };
+
+/**
+ * Which half of the write-up field is showing: the textarea, or the rendered Markdown. The preview
+ * uses `ShowcaseWriteUp`, the same renderer the launch page uses, so what a maker previews is what a
+ * reader gets.
+ */
+type WriteUpPane = "write" | "preview";
+
+const WRITE_UP_PANE_LABELS: Record<WriteUpPane, string> = { write: "Write", preview: "Preview" };
+const WRITE_UP_PANES: readonly WriteUpPane[] = ["write", "preview"];
 
 /** The id the heading image's hidden file input carries; the section label points at it. */
 const HEADING_IMAGE_INPUT_ID = "showcase-heading-image";
@@ -97,6 +107,7 @@ export default function ShowcaseLaunchComposer({
   );
   const [viewState, setViewState] = useState<ShowcaseLaunchViewState>({ status: "editing" });
   const [fieldErrors, setFieldErrors] = useState<Readonly<Record<string, string[]>>>({});
+  const [writeUpPane, setWriteUpPane] = useState<WriteUpPane>("write");
   const headingImagePick = useHeadingImagePick();
   const submitMutation = useSubmitShowcaseMutation();
   // The lazy, ref-backed key: a `useState(crypto.randomUUID())` initializer would run during the
@@ -147,21 +158,18 @@ export default function ShowcaseLaunchComposer({
     );
   }
 
-  const isDemoLinkUsable = isYoutubeLinkFieldUsable(formDraft.demoYoutubeUrl);
   const isPosting = submitMutation.isPending;
 
   /**
    * Why Post is unavailable, in words beside the button, or `null`.
    *
-   * ORDER: the image and the demo link first, because they are fields further up the page; the
-   * statements last, because they sit right above the button and are the obvious last step.
+   * ORDER: the image first, because it is further up the page; the statements last, because they
+   * sit right above the button and are the obvious last step.
    */
   const postBlockedReason =
     headingImagePickState.status !== "ready"
       ? "Add a square heading image under Heading image."
-      : !isDemoLinkUsable
-        ? "The YouTube demo link can't be read. Fix it or clear the field."
-        : describeLaunchStatementGap(formDraft.acceptedLaunchStatementIds);
+      : describeLaunchStatementGap(formDraft.acceptedLaunchStatementIds);
 
   const fieldErrorEntries = Object.entries(fieldErrors).toSorted(
     ([firstFieldPath], [secondFieldPath]) =>
@@ -275,31 +283,54 @@ export default function ShowcaseLaunchComposer({
           </div>
         </FormSection>
 
-        <FormSection title="The story">
-          <LabeledTextArea
-            label="Write-up"
-            value={formDraft.writeUp}
-            onValueChange={(writeUp) => applyFormPatch({ writeUp })}
-            rowCount={8}
-            hint="Optional. Plain text: a blank line starts a new paragraph. If you add a YouTube demo below, it sits after your first paragraph."
-            errorMessage={readFieldError("writeUp")}
-          />
+        <FormSection
+          title="The story"
+          description="Optional. Markdown, as on GitHub: ## for a heading, **bold**, - for a list, [words](https://…) for a link. Paste a YouTube link on a line of its own to embed the video. Images arrive with image upload, once posting opens."
+        >
+          {/* WRITE AND PREVIEW, THE GITHUB SHAPE. Two pressed-state buttons rather than a tab widget:
+              there are two views of one field, and a pill that reports state is the house control
+              for that. */}
+          <fieldset className="flex gap-1">
+            <legend className="sr-only">Write-up view</legend>
+            {WRITE_UP_PANES.map((pane) => (
+              <button
+                key={pane}
+                type="button"
+                aria-pressed={writeUpPane === pane}
+                onClick={() => setWriteUpPane(pane)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] ${
+                  writeUpPane === pane
+                    ? "bg-[#CCE8E9] text-[#041F21]"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {WRITE_UP_PANE_LABELS[pane]}
+              </button>
+            ))}
+          </fieldset>
+          {writeUpPane === "write" ? (
+            <LabeledTextArea
+              label="Write-up"
+              value={formDraft.writeUp}
+              onValueChange={(writeUp) => applyFormPatch({ writeUp })}
+              rowCount={12}
+              errorMessage={readFieldError("writeUp")}
+            />
+          ) : (
+            <div
+              aria-label="Write-up preview"
+              className="min-h-40 rounded-xl border border-border bg-card px-4 pb-4"
+            >
+              {formDraft.writeUp.trim() === "" ? (
+                <p className="pt-4 text-sm text-muted-foreground">Nothing to preview yet.</p>
+              ) : (
+                <ShowcaseWriteUp markdown={formDraft.writeUp} />
+              )}
+            </div>
+          )}
         </FormSection>
 
-        <FormSection title="Demo and link">
-          <LabeledTextInput
-            label="YouTube demo"
-            inputType="url"
-            value={formDraft.demoYoutubeUrl}
-            onValueChange={(demoYoutubeUrl) => applyFormPatch({ demoYoutubeUrl })}
-            placeholder="https://www.youtube.com/watch?v=…"
-            hint="Optional. A YouTube link only: Qatoto never holds the video itself."
-            errorMessage={
-              isDemoLinkUsable
-                ? readFieldError("demoVideo")
-                : "That is not a YouTube link we can read. Paste the address from the browser bar, or clear the field."
-            }
-          />
+        <FormSection title="Link">
           <div className="grid gap-4 sm:grid-cols-2">
             <LabeledTextInput
               label="Link label"
