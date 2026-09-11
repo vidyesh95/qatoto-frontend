@@ -3782,7 +3782,17 @@ Launches and the public showcase pages all still run on fixtures.
   URL transform. A YouTube link on a line of its own embeds the click-to-load player. Images render
   only from site-relative paths or Cloudinary, since uploads land there; others show a one-line
   note. The write-up renders whole, with no "…more" crop, so media is never hidden. The form has
-  Write / Preview buttons using the same renderer.
+  Write / Preview buttons using the same renderer. Images and videos share one media column
+  (`BLUEPRINT_MEDIA_COLUMN_CLASS`, 768px): a video fills it, and an image is capped by it and never
+  enlarged past its upload's width (the Launch YC and GitHub README behavior, measured as
+  `max-width: 100%` on both), so a small screenshot stays sharp. Each image renders with its recorded width, height
+  and `aspect-ratio` from the launch's `writeUpImages`, so nothing below it jumps as it loads. An image with no recorded size is not shown (the same
+  one-line note as an image from another host), so no path can shift the page. Rejected ways to stop
+  the jump: a fixed-shape box for every image (crops or letterboxes a maker's media), the size in the
+  image address or Markdown title (maker-editable, so it can be wrong), and a blurred placeholder on
+  its own (it still needs the size to hold its box). The blur is now layered on top of the stored
+  sizes: each image carries a server-made 16px WebP `blurDataUrl` that fills its reserved box until
+  the file loads.
 - **The separate demo field is gone** from the read contract, the draft, the form and the fixtures.
   The solar, latching-valve and borehole demos moved into their write-ups; the brushless demo was
   dropped because that launch must keep a `null` write-up for thread state 8.
@@ -3821,7 +3831,8 @@ error codes on the wire, so the frontend branches on the HTTP status.
   ≤10000; tags ≤10, each 1..32; team ≤12 (name 1..80, role 1..60, handle ≤64, unique ignoring case);
   link label 1..40, URL ≤2048; `launchedAt` a full ISO instant with about five minutes of clock
   skew allowed. The write-up is Markdown, and every image address in it must be one of this
-  launch's own uploads (the server parses the Markdown and refuses any other image host).
+  launch's own uploads (the server parses the Markdown and refuses any other image host). The read returns `writeUpImages: [{ url, widthPx, heightPx, blurDataUrl }]`
+  for every image in it, so the page reserves each image's box before the file loads.
 - **Title uniqueness** covers pending and published launches only, so a rejected maker can resubmit.
 - **Refusals:** title taken is 409 with `errors.title`; a launch already decided is 409; a moderator
   deciding their own launch is 403; image refusals are 422 under `errors.headingImage`.
@@ -3843,8 +3854,15 @@ error codes on the wire, so the frontend branches on the HTTP status.
     - Audit labels `showcase_launch_published` and `showcase_launch_rejected` in `platform.ts`.
 2. **Cloudinary helpers** for `qatoto/showcase-images/<id>/heading`, and **write-up images** at
    `qatoto/showcase-images/<id>/write-up/<n>` through their own upload route (one image per request,
-   same sharp re-encode, returns the stored URL for the form to insert as `![alt](url)`). An image
-   uploaded before the launch exists needs a draft id or a staging folder the sweeper cleans.
+   same sharp re-encode, returns the stored URL with the re-encoded file's `widthPx` and `heightPx`, read from sharp's
+   output and never from the client, plus a 16px WebP `blurDataUrl` (base64, about 120 bytes)
+   made with sharp from that same output, for the form to insert as `![alt](url)`). The re-encode may
+   shrink an oversized image but must never enlarge a small one (`withoutEnlargement`): the renderer
+   shows an image at its recorded width, so an upscaled file is a blurry screenshot at a bigger size. An image
+   uploaded before the launch exists needs a draft id or a staging folder the sweeper cleans. Each upload is a
+   `showcase_launch_write_up_image` row (`launch_id`, `url`, `width_px`, `height_px`, `blur_data_url`, CHECK both
+   positive); the public read returns them as `writeUpImages`, and a write-up may only reference its
+   own launch's rows.
 3. **Limiters.** `LimiterSpec` in `src/middleware/rate-limit.ts` has no `skipFailedRequests` today:
    add it and pass it through in `createLimiter`. Submit: 5 per 15 minutes, skipping failed requests.
    Moderation: 200 per 15 minutes. Both keep the default user-id key (`userKey`).
@@ -3875,7 +3893,9 @@ error codes on the wire, so the frontend branches on the HTTP status.
    `sendForm` (`draft` first, then `headingImage`, with the `Idempotency-Key` header) and `getJson`
    for the mine array. Delete `src/mocks/blueprints-showcase-authoring-mocks.ts`. Add an image button
    to the write-up field that uploads through the write-up image route and inserts `![alt](url)` at
-   the cursor, and drop the "Images arrive with image upload" hint.
+   the cursor, and drop the "Images arrive with image upload" hint. Keep each upload's
+   `{ url, widthPx, heightPx, blurDataUrl }` in the form state and pass them to the preview as `imageSizes`, so
+   the preview reserves image space the way the published page does.
 2. **Refusals**, as one union in `showcase-launch-shared.ts` with a notice component:
     - `signInRequired` 401 (sign-in link opens a new tab, so the draft and image survive)
     - `accountIncomplete` 403

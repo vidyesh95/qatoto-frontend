@@ -575,7 +575,16 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   on a line becomes `BlueprintVideoBlock`, the same click-to-load player, so a launch still holds no
   video bytes; the separate `demoVideo` field is gone. Images render only from site-relative paths
   or `res.cloudinary.com`, where uploads land; an image hosted anywhere else shows a one-line note,
-  because every reader's browser would otherwise call that host. The launch page's upvote is
+  because every reader's browser would otherwise call that host. Each image renders with the width
+  and height its upload recorded (`writeUpImages` on the read, measured by the server) plus an
+  `aspect-ratio`, capped by the same 768px media column as videos (`BLUEPRINT_MEDIA_COLUMN_CLASS`) and never
+  enlarged past its upload's width, the Launch YC and GitHub README behavior (`max-w-full`, no `w-full`). ⚠️ An image with
+  no recorded size is not shown at all, the same note as a foreign host, because it is the one image
+  that would shift the page. Do not reintroduce a sizeless fallback, a fixed-shape box (it crops or
+  letterboxes), or sizes read from the maker's own Markdown (editable, so they can be wrong). Each image also
+  carries a server-made 16px `blurDataUrl` that fills its reserved box until the file loads; the
+  schema accepts only an image-type base64 data URL, because `next/image` writes it into an inline
+  CSS `url()`. The launch page's upvote is
   `ShowcaseVoteBox` in a 40px gutter beside the head, the comment count is a byline link, and Share
   ends the byline; there is no showcase engagement row.
 - **`durationSeconds` IS NULLABLE, AND `null` IS THE ORDINARY CASE.** The badge is its only reader.

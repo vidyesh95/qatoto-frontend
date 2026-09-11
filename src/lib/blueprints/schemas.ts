@@ -1777,6 +1777,38 @@ export const TeardownBlueprintSchema = z
     });
   });
 
+/**
+ * One uploaded image a launch write-up uses, with the size the upload measured.
+ *
+ * ⚠️ THE SIZE IS MEASURED AT UPLOAD, BY THE SERVER, FROM THE RE-ENCODED FILE, never taken from the
+ * client or guessed at render. Markdown's `![alt](url)` carries no dimensions, so without this the
+ * page cannot reserve an image's box and the text below it jumps when the file arrives. The renderer
+ * sets `width`, `height` and `aspect-ratio` from these numbers, and fills the reserved box with
+ * `blurDataUrl` until the file loads.
+ */
+export const BlueprintWriteUpImageSchema = z
+  .object({
+    url: createHttpsOrSiteRelativeUrlSchema(2048),
+    widthPx: z.number().int().positive(),
+    heightPx: z.number().int().positive(),
+    /**
+     * A tiny blurred copy (16px WebP, base64, about 120 bytes), made by the server from the same
+     * re-encoded file, shown inside the image's reserved box until the real file arrives. `null` for
+     * an image uploaded without one, which still renders at its size, just without the blur.
+     *
+     * ⚠️ THE PATTERN IS A SECURITY BOUNDARY, NOT FORMAT PEDANTRY. `next/image` writes this value into
+     * an inline CSS `url()`, so only an image MIME type and base64 characters may pass: no quote, no
+     * bracket, nothing that could close the `url()` and start a second declaration.
+     */
+    blurDataUrl: z
+      .string()
+      .max(2048)
+      .regex(/^data:image\/(webp|png|jpeg|avif);base64,[A-Za-z0-9+/]+={0,2}$/)
+      .nullable(),
+  })
+  .strip();
+export type BlueprintWriteUpImage = z.infer<typeof BlueprintWriteUpImageSchema>;
+
 export const ShowcaseBlueprintSchema = z
   .object({
     ...BlueprintSharedShape,
@@ -1802,6 +1834,13 @@ export const ShowcaseBlueprintSchema = z
      * a reader can tell three things from one paragraph that got long.
      */
     writeUp: z.string().nullable(),
+    /**
+     * The recorded size of every uploaded image in `writeUp`. `[]` when the write-up has no images,
+     * which is most of them. An image in the Markdown with no entry here is NOT shown (the renderer
+     * prints a one-line note instead), because without a size it cannot reserve its space; the
+     * backend refuses to store one anyway (`todo.md`, Part 2b).
+     */
+    writeUpImages: z.array(BlueprintWriteUpImageSchema),
     /**
      * ISO 8601. THE FEED SORTS BY THIS, NOT `createdAt`. A launch is announced on a date its
      * author chose; the row's creation timestamp is an implementation detail of when it was typed.

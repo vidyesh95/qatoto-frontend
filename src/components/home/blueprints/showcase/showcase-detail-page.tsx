@@ -145,7 +145,9 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
 
           {/* NO WRITE-UP RENDERS NO WRITE-UP: no heading, no empty box, no invitation to write one.
               Most launches are posted the day they ship and never get one. */}
-          {showcase.writeUp === null ? null : <ShowcaseWriteUp markdown={showcase.writeUp} />}
+          {showcase.writeUp === null ? null : (
+            <ShowcaseWriteUp markdown={showcase.writeUp} imageSizes={showcase.writeUpImages} />
+          )}
         </div>
 
         <aside

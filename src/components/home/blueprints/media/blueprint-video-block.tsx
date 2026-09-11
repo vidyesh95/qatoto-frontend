@@ -4,6 +4,7 @@
 import Image from "next/image";
 import { useState } from "react";
 
+import { BLUEPRINT_MEDIA_COLUMN_CLASS } from "@/components/home/blueprints/media/media-column";
 import BlueprintYoutubePlayer from "@/components/home/blueprints/media/blueprint-youtube-player";
 import { formatDurationLabel } from "@/lib/blueprints/format";
 import type { BlueprintVideo } from "@/lib/blueprints/schemas";
@@ -67,7 +68,7 @@ export default function BlueprintVideoBlock({
       </h2>
 
       <div
-        className={`relative aspect-video max-w-3xl overflow-hidden rounded-xl bg-muted ${isTitleVisible ? "mt-2" : ""}`}
+        className={`relative aspect-video ${BLUEPRINT_MEDIA_COLUMN_CLASS} overflow-hidden rounded-xl bg-muted ${isTitleVisible ? "mt-2" : ""}`}
       >
         {isPlaying ? (
           <BlueprintYoutubePlayer youtubeVideoId={video.youtubeVideoId} title={title} />

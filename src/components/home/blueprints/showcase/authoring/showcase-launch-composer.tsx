@@ -324,7 +324,10 @@ export default function ShowcaseLaunchComposer({
               {formDraft.writeUp.trim() === "" ? (
                 <p className="pt-4 text-sm text-muted-foreground">Nothing to preview yet.</p>
               ) : (
-                <ShowcaseWriteUp markdown={formDraft.writeUp} />
+                // No recorded sizes yet: the form uploads nothing, so an image the maker types by
+                // path shows the "Image not shown" note, exactly as it would on the published page.
+                // Uploads bring their sizes (todo.md 2b).
+                <ShowcaseWriteUp markdown={formDraft.writeUp} imageSizes={[]} />
               )}
             </div>
           )}

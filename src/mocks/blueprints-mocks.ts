@@ -1827,6 +1827,17 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       "- **A door gasket** took a permanent set in the heat and stopped sealing at the top corner, which cost about four hours of hold time before anyone noticed it.\n\n" +
       "The battery is lead-acid, and that is the decision people argue with most. LiFePO4 would give better cycle life and would not derate at 41 °C. It would also mean a trader whose pack dies has a unit out of service until something ships, where a lead-acid battery is a same-afternoon walk to a shop they already use. A pack nobody local can source is a cold store that dies the first time it needs one.\n\n" +
       "Next is the gasket, in a material that does not take a set, and a start relay chosen on cycles rather than amps. Neither moves the bill of materials by more than a few dollars.",
+    // Sizes measured from the file on disk (800 by 800), as an upload would record them.
+    // The blur is a 16px WebP made from the same file with sharp, the way the upload route will.
+    writeUpImages: [
+      {
+        url: "/dummy/placeholder-freezers.avif",
+        widthPx: 800,
+        heightPx: 800,
+        blurDataUrl:
+          "data:image/webp;base64,UklGRjgAAABXRUJQVlA4ICwAAACwAQCdASoQABAAA4BaJZwAAlxV5ySAAP72E80teuzDQqpnssmU9aqtiZwIAA==",
+      },
+    ],
     launchedAt: "2026-09-01T08:00:00.000Z",
     upvoteCount: 214,
     commentCount: 7,
@@ -1877,6 +1888,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     tagline: "Nitrogen and organic carbon in 40 seconds, without a lab",
     writeUp:
       "Third prototype, and the first one an agronomist can carry all day. Nitrogen and organic carbon in about forty seconds, against a district lab reference on the same samples.",
+    writeUpImages: [],
     launchedAt: "2026-08-28T09:30:00.000Z",
     upvoteCount: 147,
     commentCount: 0,
@@ -1917,6 +1929,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     createdAt: "2026-09-04T10:10:00.000Z",
     tagline: "300 kg up a 9% grade, on parts you can buy in Ikeja",
     writeUp: null,
+    writeUpImages: [],
     launchedAt: "2026-09-05T07:15:00.000Z",
     upvoteCount: 302,
     commentCount: 5,
@@ -1975,6 +1988,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       "Twenty units went out to buying agents at four collection points. The comparison is against the district lab, on split samples from the same bag.\n\n" +
       "Across 640 readings the units sat within 0.4% of the lab figure. The outliers were not the electronics: they were maize that had been sitting in a truck in the sun, where the surface is dry and the core is not, and a single probe reads whichever one it is touching. Two readings thirty seconds apart at different depths closes most of that gap.\n\n" +
       "The unit runs off a phone charger because every collection point already has one. It was going to be a battery pack until an agent pointed out that the shed loses power for six hours a day, and the charger is what everyone already plugs into a generator.",
+    writeUpImages: [],
     launchedAt: "2026-08-24T06:45:00.000Z",
     upvoteCount: 96,
     commentCount: 0,
@@ -2021,6 +2035,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     createdAt: "2026-08-17T08:55:00.000Z",
     tagline: "23% less energy per litre, without buying a single new chiller",
     writeUp: null,
+    writeUpImages: [],
     launchedAt: "2026-08-19T11:20:00.000Z",
     upvoteCount: 58,
     commentCount: 0,
@@ -2068,6 +2083,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       "Forty valves across two hectares, latching solenoids on a CR2032 each, no mains and no solar. A latching valve draws current only while it changes state, so a season of twice-daily switching comes to a few hundred milliamp-seconds and the cell is oversized for it.\n\n" +
       `https://youtu.be/${PLACEHOLDER_YOUTUBE_VIDEO_ID}\n\n` +
       "The part that took the time was not the valve. It was building a controller that fails closed when a cell finally does go, because a drip line stuck open overnight costs more water than the whole season saves.",
+    writeUpImages: [],
     launchedAt: "2026-09-03T08:00:00.000Z",
     upvoteCount: 129,
     commentCount: 0,
@@ -2117,6 +2133,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     createdAt: "2026-08-28T16:05:00.000Z",
     tagline: "Swappable 1.2 kWh, 400 cycles, 91% capacity left",
     writeUp: null,
+    writeUpImages: [],
     launchedAt: "2026-08-30T09:30:00.000Z",
     upvoteCount: 263,
     commentCount: 0,
@@ -2172,6 +2189,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     createdAt: "2026-08-24T13:30:00.000Z",
     tagline: "Fitted in 40 minutes with the tools already on the truck",
     writeUp: null,
+    writeUpImages: [],
     launchedAt: "2026-08-26T07:00:00.000Z",
     // Deliberately ties `grain-moisture-meter-field-units` at 96, so `byMostUpvoted`'s tie-break is
     // exercised on the second page of `?sort=top` rather than only in a comment.
@@ -2218,6 +2236,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       `https://www.youtube.com/watch?v=${PLACEHOLDER_YOUTUBE_VIDEO_ID}\n\n` +
       "The change is a tolerance, not a redesign. The seal carrier bore was drawn at a fit the shop could not hold on a manual lathe, so every housing landed somewhere in a band, and the ones at the loose end wept fine sand into the seal face. Reaming the bore as a separate operation costs about ninety seconds a part and pulls the whole band inside the range the seal was designed for.\n\n" +
       "Nothing about this is clever, and that is the part worth taking away. The drawing was right and the process could not hold it, which is a failure that looks exactly like a bad design until somebody measures the parts that came back.",
+    writeUpImages: [],
     launchedAt: "2026-08-21T10:10:00.000Z",
     upvoteCount: 188,
     commentCount: 0,
@@ -2278,9 +2297,10 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       "- **A 10 W panel** clamped to the stall roof rail, angled for the gap between the canopies.\n" +
       "- **A 2S 18650 pack** (7.2 V, 3,000 mAh) on the rebuilt rail from the router teardown, with the undervoltage cutoff the original never had.\n" +
       "- **A 2.4 GHz mesh radio** and a 5 dBi omni antenna, in an IP65 box with a drip loop on every cable.\n\n" +
-      "![A node on a stall roof rail: panel, sealed box and antenna](/dummy/placeholder-instruments.avif)\n\n" +
+      "![A node on a stall roof rail: panel, sealed box and antenna](/dummy/placeholder-instruments-wide.avif)\n\n" +
       "## The rail, rebuilt\n\n" +
       "The router in the teardown ran its regulator straight off the panel input with no storage, so it dropped out every time a cloud passed. The rebuild adds the pack and a buck converter sized for the radio's transmit peaks rather than its average draw.\n\n" +
+      "![The undervoltage cutoff board on the rebuilt rail](/dummy/placeholder-compressors-small.avif)\n\n" +
       "| Measure | Original rail | Rebuilt rail |\n" +
       "| --- | --- | --- |\n" +
       "| Storage | None | 2S pack, 21.6 Wh |\n" +
@@ -2291,11 +2311,43 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       `https://youtu.be/${PLACEHOLDER_YOUTUBE_VIDEO_ID}\n\n` +
       "## What went wrong\n\n" +
       "Two nodes browned out in the first week. Both sat under the fish section's tarpaulin, which shaded their panels until mid-morning, and both packs fell below the cutoff overnight. The rebuilt rail brought them back on its own once the sun reached them, so neither needed a visit, but each was dark for about four hours. Moving the two panels to the edge of the tarpaulin fixed it, and neither has dropped since.\n\n" +
-      "![The two shaded nodes, before and after the panels moved](/dummy/placeholder-cartons.avif)\n\n" +
+      "![The two shaded nodes, before and after the panels moved](/dummy/placeholder-cartons-tall.avif)\n\n" +
       "## What is next\n\n" +
       "- **A month in the rainy season**, which nobody has run yet.\n" +
       "- **A second market with metal roofing**, which reflects the signal rather than absorbing it.\n" +
       "- **The rebuilt rail's schematic**, published beside the original teardown.",
+    // Sizes measured from the files on disk, as an upload would record them. ONE IMAGE PER SIZING
+    // STATE, so the page shows an upload keeping its shape the way Launch YC and a GitHub README do
+    // (the solar launch holds the square one):
+    // - wide, 1600 by 900: shrinks to the 768px column as 768 by 432
+    // - small, 480 by 360: narrower than the column, so it stays 480 wide and is not enlarged
+    // - tall, 900 by 1200: shrinks to 768 by 1024, with no height cap
+    // The files are the labelled placeholders padded out on their own flat background, not cropped,
+    // so the icon and label stay whole.
+    writeUpImages: [
+      // Blurs are 16px-wide WebPs made from the same files with sharp, the way the upload route will.
+      {
+        url: "/dummy/placeholder-instruments-wide.avif",
+        widthPx: 1600,
+        heightPx: 900,
+        blurDataUrl:
+          "data:image/webp;base64,UklGRiwAAABXRUJQVlA4ICAAAAAwAQCdASoQAAkAA4BaJZwAA3AA/vIJ2Sogv/AzgQAAAA==",
+      },
+      {
+        url: "/dummy/placeholder-compressors-small.avif",
+        widthPx: 480,
+        heightPx: 360,
+        blurDataUrl:
+          "data:image/webp;base64,UklGRjIAAABXRUJQVlA4ICYAAADQAQCdASoQAAwAA4BaJZwAAu19vBy1AAD+9hKqPM+/7DOlGcCAAA==",
+      },
+      {
+        url: "/dummy/placeholder-cartons-tall.avif",
+        widthPx: 900,
+        heightPx: 1200,
+        blurDataUrl:
+          "data:image/webp;base64,UklGRj4AAABXRUJQVlA4IDIAAACwAgCdASoQABUAPu1iqU2ppaOiMAgBMB2JaQAAeyAA/u+xz2I8IFUVO7csmmjFE0RQAA==",
+      },
+    ],
     launchedAt: "2026-09-07T06:30:00.000Z",
     upvoteCount: 41,
     commentCount: 1,
