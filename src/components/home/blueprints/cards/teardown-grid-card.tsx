@@ -63,7 +63,25 @@ const NAMED_FILE_KIND_LIMIT = 4;
  * `thermal-camera-module-teardown` actually is, and the title is doing the work there. Inventing a
  * number to fill the space is the one thing this surface refuses.
  */
-export default function TeardownGridCard({ teardown }: { teardown: TeardownBlueprint }) {
+/**
+ * How many cards at the head of a grid load their thumbnail eagerly.
+ *
+ * FOUR IS THE FIRST ROW AT `xl`, and it covers the first row at every narrower breakpoint too. On
+ * both callers that row is above the fold at desktop height, and `next/image` defaults to
+ * `loading="lazy"`, so the largest visible image on `/blueprints/teardowns` waited on an
+ * IntersectionObserver before it could start — Next flagged it as a lazy LCP element. Past the
+ * first row, lazy is right. One export so the hub and the index cannot disagree about the row.
+ */
+export const EAGER_TEARDOWN_CARD_COUNT = 4;
+
+export default function TeardownGridCard({
+  teardown,
+  shouldLoadImageEagerly = false,
+}: {
+  teardown: TeardownBlueprint;
+  /** True for the first `EAGER_TEARDOWN_CARD_COUNT` cards of a grid; the caller knows the position. */
+  shouldLoadImageEagerly?: boolean;
+}) {
   const documentCount = teardown.documents.length;
   const hasNoMedia =
     teardown.assembly === null && teardown.walkthroughVideo === null && documentCount === 0;
@@ -99,6 +117,7 @@ export default function TeardownGridCard({ teardown }: { teardown: TeardownBluep
           src={teardown.thumbnailUrl}
           alt={teardown.title}
           fill
+          loading={shouldLoadImageEagerly ? "eager" : "lazy"}
           sizes="(min-width: 1280px) 300px, (min-width: 1024px) 30vw, (min-width: 640px) 45vw, 92vw"
           className="object-cover transition-transform duration-300 group-hover/card:scale-105"
         />

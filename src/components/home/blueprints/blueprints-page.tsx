@@ -27,7 +27,9 @@ import { Suspense } from "react";
 
 import CaseStudyLessonLink from "@/components/home/blueprints/cards/case-study-lesson-link";
 import ShowcaseLaunchLink from "@/components/home/blueprints/cards/showcase-launch-link";
-import TeardownGridCard from "@/components/home/blueprints/cards/teardown-grid-card";
+import TeardownGridCard, {
+  EAGER_TEARDOWN_CARD_COUNT,
+} from "@/components/home/blueprints/cards/teardown-grid-card";
 import BlueprintLane from "@/components/home/blueprints/sections/blueprint-lane";
 import BlueprintsHeroCarouselSection from "@/components/home/blueprints/sections/blueprints-hero-carousel-section";
 import { listCaseStudies, listShowcases, listTeardowns } from "@/lib/blueprints/api";
@@ -159,8 +161,12 @@ function renderLanes(viewState: BlueprintsViewState) {
           {viewState.teardowns.length === 0 ? null : (
             <BlueprintLane category="teardown" seeAllLabel="See all teardowns">
               <div className="grid gap-x-4 gap-y-8 sm:grid-cols-2 xl:grid-cols-4">
-                {viewState.teardowns.map((teardown) => (
-                  <TeardownGridCard key={teardown.id} teardown={teardown} />
+                {viewState.teardowns.map((teardown, teardownIndex) => (
+                  <TeardownGridCard
+                    key={teardown.id}
+                    teardown={teardown}
+                    shouldLoadImageEagerly={teardownIndex < EAGER_TEARDOWN_CARD_COUNT}
+                  />
                 ))}
               </div>
             </BlueprintLane>

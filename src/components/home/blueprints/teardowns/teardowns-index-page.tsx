@@ -7,7 +7,9 @@
 // that filtered its own results could only ever filter the rows it had already downloaded, and one
 // that paged after filtering in the component would have to download every row to find page two.
 
-import TeardownGridCard from "@/components/home/blueprints/cards/teardown-grid-card";
+import TeardownGridCard, {
+  EAGER_TEARDOWN_CARD_COUNT,
+} from "@/components/home/blueprints/cards/teardown-grid-card";
 import CursorPageControl from "@/components/home/shared/cursor-page-control";
 import FacetChipRow, { type FacetBucket } from "@/components/home/shared/facet-chip-row";
 import FilterChipRow, { type FilterChipOption } from "@/components/home/shared/filter-chip-row";
@@ -141,8 +143,12 @@ function renderTeardowns(viewState: TeardownsViewState, searchParams: RawSearchP
       return (
         <>
           <div className="mt-5 grid gap-x-4 gap-y-6 px-4 sm:grid-cols-2 lg:grid-cols-3 lg:px-6 xl:grid-cols-4">
-            {viewState.teardowns.map((teardown) => (
-              <TeardownGridCard key={teardown.id} teardown={teardown} />
+            {viewState.teardowns.map((teardown, teardownIndex) => (
+              <TeardownGridCard
+                key={teardown.id}
+                teardown={teardown}
+                shouldLoadImageEagerly={teardownIndex < EAGER_TEARDOWN_CARD_COUNT}
+              />
             ))}
           </div>
           <CursorPageControl
