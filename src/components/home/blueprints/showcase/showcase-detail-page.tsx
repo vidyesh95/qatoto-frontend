@@ -2,7 +2,7 @@
 // `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
 //
 // Laid out after a Launch YC post: the upvote in a left gutter beside the head of the launch (the
-// square heading image, the name, the pitch, and the byline with Share), then the summary, the
+// name, the pitch, and the byline with Share), then the square heading image, the summary, the
 // Markdown write-up with its videos and images, the people, the links and the discussion.
 //
 // THE UPVOTE IS BACK IN THE GUTTER, AS `ShowcaseVoteBox`, THE SAME SHAPE THE FEED ROW USES. It spent
@@ -50,28 +50,15 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
 
   return (
     <article className="px-4 pt-5 pb-12 lg:px-6">
-      {/* THE HEAD OF THE LAUNCH, IN A 40px GUTTER GRID. The vote box holds the gutter; everything else
-          stacks in the column beside it: the square heading image, the name and pitch under it, and
-          the byline with Share. The body and footer below are indented by the same 52px (56px from
-          `lg`, where the gap grows) so the whole launch reads down one left edge, the title's. */}
+      {/* THE HEAD OF THE LAUNCH, IN A 40px GUTTER GRID. The vote box holds the gutter; the column
+          beside it holds the name, the pitch and the byline with Share. The body and footer below are
+          indented by the same 52px (56px from `lg`, where the gap grows) so the whole launch reads
+          down one left edge, the title's. */}
       <header className="grid grid-cols-[40px_minmax(0,1fr)] gap-x-3 lg:gap-x-4">
         <ShowcaseVoteBox count={showcase.upvoteCount} />
 
         <div className="min-w-0">
-          {/* The same square the feed row shows. `alt=""` because the name sits right under it;
-              `priority` because it is the first image above the fold on every launch. */}
-          <div className="relative size-12 overflow-hidden rounded-lg bg-muted lg:size-18">
-            <Image
-              src={showcase.thumbnailUrl}
-              alt=""
-              fill
-              sizes="(min-width: 1024px) 72px, 48px"
-              priority
-              className="object-cover"
-            />
-          </div>
-
-          <p className="mt-3 text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
+          <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
             Showcase
           </p>
           <h1 className="mt-1 text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
@@ -144,6 +131,22 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
       */}
       <div className="min-[1440px]:grid min-[1440px]:grid-cols-[minmax(0,48rem)_minmax(14rem,1fr)] min-[1440px]:gap-x-6 sm:pl-[52px] lg:pl-[56px]">
         <div className="min-w-0 min-[1440px]:col-start-1 min-[1440px]:row-start-1">
+          {/* THE SQUARE HEADING IMAGE OPENS THE READING COLUMN, under the byline rule, at the same
+              size and shape the feed row shows. It sits inside the column rather than above the
+              grid, so from 1440px the rail's top lines up with it. `alt=""` because it illustrates
+              the launch named just above; `priority` because it is still the first image on the
+              page. */}
+          <div className="relative mt-5 size-12 overflow-hidden rounded-lg bg-muted lg:size-18">
+            <Image
+              src={showcase.thumbnailUrl}
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 72px, 48px"
+              priority
+              className="object-cover"
+            />
+          </div>
+
           {/* THE STANDFIRST. Three description-ish fields sit on this arm — `tagline` in the head,
               `summary` here, `writeUp` below — and the summary is a size up from the write-up so
               the two do not read as one paragraph that got long. */}
