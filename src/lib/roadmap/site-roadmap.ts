@@ -170,14 +170,16 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         kind: "route",
         label: "Blueprints — case studies",
         href: "/blueprints/case-studies",
-        summary: "A numbered index of manufacturing lessons, colour-coded by discipline.",
+        summary:
+          "Lessons somebody learned the expensive way, filtered by discipline, with a form to write one. Writing is not open yet.",
       },
       {
         kind: "dynamic",
         label: "Blueprints — one case study",
         pathPattern: "/blueprints/case-studies/[slug]",
-        summary: "The lesson in one sentence, its takeaways and the outcome figures.",
-        reachedFrom: "A card on /blueprints/case-studies or in the hub's case-study rail.",
+        summary:
+          "The lesson in one sentence, how the writer knows it, what they did, what to avoid, and the figures with their sources.",
+        reachedFrom: "A row on /blueprints/case-studies or in the hub's case-study lane.",
       },
       {
         kind: "route",
@@ -943,6 +945,15 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         label: "My Launches",
         href: "/studio/launches",
         summary: "Builds you have posted, and where each one has got to. Posting is not open yet.",
+      },
+      {
+        // ⚠️ SAME RULE AGAIN: the case-study form checks a real payload and stores nothing, because
+        // there is no case-study table. Change the last sentence the day it lands.
+        kind: "route",
+        label: "My Case Studies",
+        href: "/studio/case-studies",
+        summary:
+          "Lessons you have written, and where each one has got to. Writing is not open yet.",
       },
       {
         // ⚠️ THIS ENTRY HAS NOW BEEN WRONG TWICE, IN OPPOSITE DIRECTIONS, and the history is worth

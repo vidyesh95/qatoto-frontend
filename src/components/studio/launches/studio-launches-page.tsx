@@ -6,10 +6,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 import StatusPanel from "@/components/home/shared/status-panel";
-import { MODERATION_STATE_CHIP_CLASS } from "@/components/studio/blueprints/moderation-state-chip";
+import {
+  SUBMISSION_STATE_CHIP_CLASS,
+  SUBMISSION_STATE_LABELS,
+} from "@/components/studio/blueprints/moderation-state-chip";
 import { useMyShowcaseSubmissionsQuery } from "@/hooks/blueprints/showcase-authoring";
-import { BLUEPRINT_MODERATION_STATE_LABELS, buildBlueprintHref } from "@/lib/blueprints/schemas";
-import type { ShowcaseSubmissionDisplayState } from "@/lib/blueprints/showcase-authoring.schemas";
+import { buildBlueprintHref, type BlueprintSubmissionDisplayState } from "@/lib/blueprints/schemas";
 import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
 
 /**
@@ -17,7 +19,7 @@ import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
  * teardown notes, because "not in the feed" and "not public and cannot be found by searching" are
  * different sentences for different surfaces.
  */
-const LAUNCH_STATE_AUTHOR_NOTES: Record<ShowcaseSubmissionDisplayState, string | null> = {
+const LAUNCH_STATE_AUTHOR_NOTES: Record<BlueprintSubmissionDisplayState, string | null> = {
   draft: "Not posted yet. Nobody else can see it.",
   pending_review: "With a moderator. It is not in the feed yet.",
   published: null,
@@ -26,20 +28,6 @@ const LAUNCH_STATE_AUTHOR_NOTES: Record<ShowcaseSubmissionDisplayState, string |
   quarantined: null,
   removed: "Taken down. The page is gone and the address answers as though it never existed.",
   unknown: "This launch has a status this app does not know yet. Refresh the page.",
-};
-
-/**
- * The shared chip look and labels, plus `unknown`. A status this build does not recognise wears the
- * quietest chip there is, the draft one, because it is a gap in this app and not a verdict on the
- * launch. The shared `MODERATION_STATE_CHIP_CLASS` stays keyed by real states only.
- */
-const LAUNCH_STATE_CHIP_CLASS: Record<ShowcaseSubmissionDisplayState, string> = {
-  ...MODERATION_STATE_CHIP_CLASS,
-  unknown: MODERATION_STATE_CHIP_CLASS.draft,
-};
-const LAUNCH_STATE_LABELS: Record<ShowcaseSubmissionDisplayState, string> = {
-  ...BLUEPRINT_MODERATION_STATE_LABELS,
-  unknown: "Unknown status",
 };
 
 /**
@@ -151,9 +139,9 @@ export default function StudioLaunchesPage() {
                       </p>
                     </div>
                     <span
-                      className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${LAUNCH_STATE_CHIP_CLASS[submission.moderationState]}`}
+                      className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${SUBMISSION_STATE_CHIP_CLASS[submission.moderationState]}`}
                     >
-                      {LAUNCH_STATE_LABELS[submission.moderationState]}
+                      {SUBMISSION_STATE_LABELS[submission.moderationState]}
                     </span>
                   </div>
 

@@ -3961,6 +3961,63 @@ of a decision; team members linked to real accounts with avatars and a verified 
 select still lists fixture teardowns; editing and resubmitting a launch; flagging and removing after
 publish; the pathway moderation page reusing one idempotency key across different bodies.
 
+## Writing a case study — PART 1 SHIPPED MOCK-BACKED 2026-09-11, part 2 (backend, wiring, approval) NOT STARTED
+
+Anyone could read a case study and nobody could write one. Part 1 makes the flow real everywhere
+except storage, on the launch form's precedent.
+
+### Part 1 — the rehearsal — SHIPPED 2026-09-11
+
+- **`/blueprints/case-studies/new`**: one page in the detail page's fixed order, a real Zod contract
+  (`src/lib/blueprints/case-study-authoring.schemas.ts`), a real idempotency key per attempt, and a
+  mock that answers 409 on a lesson title that already exists and stores nothing. The disclosure is
+  said once, in `case-study-receipt.tsx`.
+- **How the writer knows it**: `authorRelationship` (`first_hand` | `public_sources`) is on the draft
+  AND on the read arm; the detail page prints it under the byline. Each answer has its own two
+  statements, changing it clears the ticks, and a `public_sources` case study must link at least one
+  source. Fixtures: six first-hand (both rows with `sources: []` among them), four public-sources.
+- **Duplicate rules** on company names, figure labels (and a figure label equal to a company name),
+  source addresses, steps, pitfalls and related lessons, because the detail page keys those lists by
+  content.
+- **Preview**: `CaseStudyLessonRow` now takes only the fields it renders plus `recordHref`, so the form
+  previews with the real index row and no record link.
+- **Entry points**: "Write a case study" in the index header; My Case Studies at
+  `/studio/case-studies` in the studio sidebar under Product journey, five fixture rows, one per
+  reachable state. Its `flagged` chip reads "Report received", not "IP concern reported".
+- **Not collected**: thumbnail, difficulty, CAD format and parts cost. The read arm inherits all four
+  and renders none on a case study.
+- **Shared**: `BLUEPRINT_SUBMISSION_DISPLAY_STATES` moved into `schemas.ts`, and the unknown-aware
+  studio chip maps into `moderation-state-chip.ts`, for both studio lists.
+
+### Part 2 — backend, wiring and approval — NOT STARTED
+
+- **Contract**: `POST /blueprints/case-studies` (JSON, `Idempotency-Key` required) answering the
+  receipt, and `GET /blueprints/case-studies/mine`. Server limits mirror the draft: lesson 12..140,
+  one-line action 10..140, outcome at most 120, sector 1..60, summary 40..600, problem and context
+  20..2000, 1..12 steps and 0..12 pitfalls (each at most 300), 0..5 companies, 0..8 figures, 0..10
+  sources, 0..3 related lessons, 0..10 tags, currencies `USD` and `INR`. Lesson titles are unique over
+  pending and published rows after normalising; a clash is 409 with `errors.title`.
+- **Tables**: `case_study` with an `author_relationship` pgEnum, plus child tables for steps, pitfalls,
+  companies, figures (kind plus amount, currency or basis points, with CHECKs per kind) and sources;
+  `moderation_state`, `moderator_note`, `public_slug`. The service refuses a `public_sources` row
+  with no source, and a related slug that is not a published case study.
+- **Read arm**: add `moderationState` to `CaseStudyBlueprintSchema` and delete the category bypass in
+  `isBlueprintVisible` (`src/lib/blueprints/api.ts`), so case studies gate like teardowns. Decide
+  before the migration whether `thumbnailUrl`, `difficulty`, `cadFormat` and
+  `billOfMaterialsCostRange` leave the case-study arm or get server defaults.
+- **Moderation**: an admin review queue on the launch queue's shape. Publishing mints the slug and
+  refuses `new` and the other reserved slugs; a rejection requires a note; a report moves a published
+  row to `flagged` with a note the writer sees.
+- **Erasure**: `case_study.author_user_id` → `delete_rows`, the reviewer → `retain`.
+- **Frontend wiring**: swap the two mock functions for `sendJson` and `getJson`; a refusal union on the
+  launch one's shape (401, 403, 409 title, 409 replay, 422 fields, 429, unreadable reply, network);
+  the receipt and My Case Studies stop saying nothing is stored; `site-roadmap.ts` "Writing is not
+  open yet" changes the same day.
+
+**Still open:** letting a first-hand writer withhold a company's name (an NDA is the ordinary case),
+which needs a nullable name on the read arm and a renderer for it; editing and resubmitting; tying a
+first-hand claim to a verified employer.
+
 ## Teardowns as a clean-room replication surface — PART 1 SHIPPED 2026-09-10, parts 2–4 blocked on tables
 
 The premise, in the words it was asked in: Taiwan, Korea and China built manufacturing capability

@@ -185,6 +185,27 @@ export async function listTeardownOptions(): Promise<TeardownOption[]> {
     .toSorted((firstOption, secondOption) => firstOption.title.localeCompare(secondOption.title));
 }
 
+/** One choice in the case-study form's "Related lessons" selects. */
+export interface CaseStudyOption {
+  readonly slug: string;
+  readonly title: string;
+}
+
+/**
+ * Every LISTABLE case study as a slug and a title, sorted by title, for the case-study form.
+ *
+ * THE LIST GATE, for `listTeardownOptions`' reason: a related lesson is a recommendation, and a
+ * lesson a moderator has withheld from every index must not come back through a new one's links.
+ * Unpaged, and narrowed to two strings before it crosses to a client component.
+ */
+export async function listCaseStudyOptions(): Promise<CaseStudyOption[]> {
+  "use cache";
+  const caseStudies = await listBlueprintsByCategory("case_study");
+  return caseStudies
+    .map((caseStudy) => ({ slug: caseStudy.slug, title: caseStudy.title }))
+    .toSorted((firstOption, secondOption) => firstOption.title.localeCompare(secondOption.title));
+}
+
 export async function getBlueprint(slug: string): Promise<Blueprint | null> {
   "use cache";
   if (isReservedSlug(slug)) return null;

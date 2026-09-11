@@ -17,7 +17,10 @@
 
 import { z } from "zod";
 
-import { BLUEPRINT_DIFFICULTIES, BLUEPRINT_MODERATION_STATES } from "@/lib/blueprints/schemas";
+import {
+  BLUEPRINT_DIFFICULTIES,
+  BLUEPRINT_SUBMISSION_DISPLAY_STATES,
+} from "@/lib/blueprints/schemas";
 import { buildWellTypedInputsPredicate } from "@/lib/blueprints/refinement-inputs";
 import {
   createExternalHttpsUrlSchema,
@@ -268,19 +271,6 @@ export const ShowcaseSubmissionReceiptSchema = z
 export type ShowcaseSubmissionReceipt = z.infer<typeof ShowcaseSubmissionReceiptSchema>;
 
 /**
- * Every state a row in `/studio/launches` can show: the moderation states, plus `unknown`.
- *
- * ⚠️ `unknown` IS NOT A STATE A LAUNCH CAN BE IN. It is what this app shows when the server sends a
- * state newer than this build knows. Without it one such row would fail the whole list's parse and
- * the maker would see an error instead of every launch they can read.
- */
-export const SHOWCASE_SUBMISSION_DISPLAY_STATES = [
-  ...BLUEPRINT_MODERATION_STATES,
-  "unknown",
-] as const;
-export type ShowcaseSubmissionDisplayState = (typeof SHOWCASE_SUBMISSION_DISPLAY_STATES)[number];
-
-/**
  * One row in `/studio/launches`, the maker's own view of something they posted.
  *
  * `headingImageUrl` is what the published launch calls `thumbnailUrl`: the square heading image,
@@ -294,7 +284,7 @@ export const ShowcaseSubmissionSchema = z
     tagline: z.string(),
     headingImageUrl: createHttpsOrSiteRelativeUrlSchema(2048),
     // `.catch`, so a state this build does not know reads as `unknown` rather than refusing the row.
-    moderationState: z.enum(SHOWCASE_SUBMISSION_DISPLAY_STATES).catch("unknown"),
+    moderationState: z.enum(BLUEPRINT_SUBMISSION_DISPLAY_STATES).catch("unknown"),
     submittedAt: z.string(),
     publicSlug: z.string().nullable(),
     moderatorNote: z.string().nullable(),

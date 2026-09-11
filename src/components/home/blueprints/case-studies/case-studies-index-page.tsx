@@ -17,6 +17,8 @@
 // construction as the hub's case-study lane, with the rules ending where the heading starts rather
 // than running under the sidebar edge.
 
+import Link from "next/link";
+
 import CaseStudyLessonRow from "@/components/home/blueprints/cards/case-study-lesson-row";
 import CursorPageControl from "@/components/home/shared/cursor-page-control";
 import FilterChipRow, { type FilterChipOption } from "@/components/home/shared/filter-chip-row";
@@ -24,6 +26,7 @@ import { listCaseStudies } from "@/lib/blueprints/api";
 import {
   BLUEPRINT_DISCIPLINE_LABELS,
   BLUEPRINT_DISCIPLINES,
+  buildBlueprintHref,
   type CaseStudyBlueprint,
 } from "@/lib/blueprints/schemas";
 import {
@@ -78,12 +81,22 @@ export default async function CaseStudiesIndexPage({
 
   return (
     <div className="pb-10">
-      <header className="px-4 pt-4 lg:px-6">
-        <h1 className="text-xl font-medium text-foreground lg:text-2xl">Case studies</h1>
-        <p className="mt-1 max-w-2xl text-sm text-[#6F7979]">
-          What somebody learned the expensive way. Open a lesson to see what they did, or read the
-          full record for the figures and where they came from.
-        </p>
+      {/* THE SHOWCASE FEED'S HEADER ROW, for the same reason: one way to write, beside the title,
+          as an outline pill because this page is for reading. It wraps under the title on a phone. */}
+      <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 px-4 pt-4 lg:px-6">
+        <div className="min-w-0">
+          <h1 className="text-xl font-medium text-foreground lg:text-2xl">Case studies</h1>
+          <p className="mt-1 max-w-2xl text-sm text-[#6F7979]">
+            What somebody learned the expensive way. Open a lesson to see what they did, or read the
+            full record for the figures and where they came from.
+          </p>
+        </div>
+        <Link
+          href="/blueprints/case-studies/new"
+          className="shrink-0 rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+        >
+          Write a case study
+        </Link>
       </header>
 
       <div className="mt-3 px-4 lg:px-6">
@@ -111,7 +124,7 @@ function renderCaseStudies(viewState: CaseStudiesViewState, searchParams: RawSea
           <ul className="mx-4 mt-5 divide-y divide-border border-y border-border lg:mx-6">
             {viewState.caseStudies.map((caseStudy) => (
               <li key={caseStudy.id}>
-                <CaseStudyLessonRow caseStudy={caseStudy} />
+                <CaseStudyLessonRow lesson={caseStudy} recordHref={buildBlueprintHref(caseStudy)} />
               </li>
             ))}
           </ul>

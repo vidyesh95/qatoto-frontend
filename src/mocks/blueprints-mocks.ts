@@ -36,6 +36,11 @@
 // absence on this surface that renders COPY rather than nothing, and the other two must render
 // nothing at all rather than "Unknown" or a zero.
 //
+// SIX CASE STUDIES ARE `authorRelationship: "first_hand"` AND FOUR ARE `"public_sources"`, so both
+// reader notes render. ⚠️ THE TWO ROWS WITH `sources: []` ARE AMONG THE SIX: a case study written from
+// public sources has to link them (`case-study-authoring.schemas.ts`), so an empty source list on one
+// would be a row the write contract could never have produced.
+//
 // THE LAUNCH DATES ARE STATIC LITERALS inside the three weeks before 2026-09-08, and they drift
 // into the past one day at a time. Accepted: a `new Date()`-relative fixture would bake a
 // different order into every `"use cache"` entry, and `RelativeTime` renders whatever the gap is.
@@ -2394,6 +2399,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     createdAt: "2026-09-05T11:18:00.000Z",
     discipline: "unit_economics",
     oneLineAction: "Time each assembly step at two volumes before you requote a single component.",
+    authorRelationship: "first_hand",
     outcomeSummary: "Shipped batch four at 512 cents a unit",
     sector: "Hardware",
     evidenceCompanies: [{ name: "Verdant Sensing", locationLabel: "Porto", yearLabel: "2024" }],
@@ -2462,6 +2468,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     createdAt: "2026-09-02T09:40:00.000Z",
     discipline: "unit_economics",
     oneLineAction: "Size batch one so the raise still covers batch two at the same unit cost.",
+    authorRelationship: "public_sources",
     outcomeSummary: "Recovered on batch three, nine months later than planned",
     sector: "Consumer hardware",
     evidenceCompanies: [
@@ -2526,6 +2533,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     discipline: "tooling",
     oneLineAction:
       "Price the first tool as a prototype you will throw away, and hold the difference for the replacement.",
+    authorRelationship: "first_hand",
     outcomeSummary: "Shipped on the second tool, four months late",
     sector: "Consumer hardware",
     evidenceCompanies: [{ name: "Rafiki Housewares", locationLabel: "Nairobi", yearLabel: "2023" }],
@@ -2593,6 +2601,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     discipline: "tooling",
     oneLineAction:
       "Plan the bridge tool into the schedule so the first parts are a test rather than a commitment.",
+    authorRelationship: "first_hand",
     outcomeSummary: null,
     sector: "Industrial components",
     evidenceCompanies: [
@@ -2649,6 +2658,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     createdAt: "2026-08-20T16:30:00.000Z",
     discipline: "supply_chain",
     oneLineAction: "Run one paid pilot batch a year with a supplier you are not using.",
+    authorRelationship: "first_hand",
     outcomeSummary: "Switched assemblers with a seven-week gap in shipments",
     sector: "Networking hardware",
     evidenceCompanies: [{ name: "Mesh & Mortar", locationLabel: "Lagos", yearLabel: "2023" }],
@@ -2713,6 +2723,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     discipline: "supply_chain",
     oneLineAction:
       "List every part over 12 weeks lead time in week one and order the top three on a best guess.",
+    authorRelationship: "public_sources",
     outcomeSummary: null,
     sector: "Cold chain",
     evidenceCompanies: [{ name: "Sahel Cold Systems", locationLabel: "Tunis", yearLabel: "2024" }],
@@ -2772,6 +2783,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     createdAt: "2026-08-12T13:20:00.000Z",
     discipline: "quality",
     oneLineAction: "Open ten returned units before you commission any customer research.",
+    authorRelationship: "public_sources",
     outcomeSummary: "Return rate fell to 3% within two quarters",
     sector: "Appliances",
     evidenceCompanies: [{ name: "Brightwell Chillers", locationLabel: "Porto", yearLabel: "2024" }],
@@ -2842,6 +2854,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     discipline: "quality",
     oneLineAction:
       "Write down the failure that would end the company, then build the rig for that one first.",
+    authorRelationship: "first_hand",
     outcomeSummary: "Two field failures, no injuries, product withdrawn for five weeks",
     sector: "Energy storage",
     evidenceCompanies: [{ name: "Kestrel Power Packs", locationLabel: "Accra", yearLabel: "2023" }],
@@ -2907,6 +2920,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     discipline: "distribution",
     oneLineAction:
       "Find the person who already visits your customer monthly and make them the channel.",
+    authorRelationship: "public_sources",
     outcomeSummary: "Sales moved from 4 units a month to 31",
     sector: "Agricultural equipment",
     evidenceCompanies: [{ name: "Kumasi Cold Rooms", locationLabel: "Kumasi", yearLabel: "2024" }],
@@ -2964,6 +2978,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     discipline: "distribution",
     oneLineAction:
       "Hold at one city until the same stores reorder three times without a promotion.",
+    authorRelationship: "first_hand",
     outcomeSummary: null,
     sector: "Packaged food",
     evidenceCompanies: [{ name: "Harar Pantry", locationLabel: "Addis Ababa", yearLabel: "2023" }],

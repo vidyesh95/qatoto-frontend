@@ -101,9 +101,10 @@ export const BLUEPRINT_CATEGORY_SEGMENTS: Record<BlueprintCategory, string> = {
 /**
  * The segments a blueprint slug may NOT take, because a static route already owns them.
  *
- * `new` IS HERE TOO, for the routes one level down. `/blueprints/teardowns/new` and
- * `/blueprints/showcase/new` are static folders beside `[slug]`, so a teardown or a launch slugged
- * `new` would be shadowed by the create form and unreachable forever. The backend must refuse it when
+ * `new` IS HERE TOO, for the routes one level down. `/blueprints/teardowns/new`,
+ * `/blueprints/showcase/new` and `/blueprints/case-studies/new` are static folders beside `[slug]`,
+ * so a teardown, a launch or a case study slugged `new` would be shadowed by its create form and
+ * unreachable forever. The backend must refuse it when
  * it mints a slug; this guard keeps the read side from ever answering on one.
  */
 export const RESERVED_BLUEPRINT_SLUGS: readonly string[] = [
@@ -583,6 +584,29 @@ export const CaseStudyEvidenceCompanySchema = z
 export type CaseStudyEvidenceCompany = z.infer<typeof CaseStudyEvidenceCompanySchema>;
 
 /**
+ * How the writer of a case study knows what it says: they were part of it, or they wrote it up from
+ * what was published.
+ *
+ * ⚠️ A CASE STUDY IS A CLAIM ABOUT A BUSINESS, OFTEN SOMEBODY ELSE'S, and the two kinds are different
+ * claims. "I watched the unit cost stall" and "their build log says the unit cost stalled" can print
+ * the same figure, and a reader weighing it is owed the difference, so the detail page states it.
+ * The write side ties each kind to its own statements, and a public-sources case study must link
+ * what it drew on (`case-study-authoring.schemas.ts`).
+ */
+export const CASE_STUDY_AUTHOR_RELATIONSHIPS = ["first_hand", "public_sources"] as const;
+export const CaseStudyAuthorRelationshipSchema = z.enum(CASE_STUDY_AUTHOR_RELATIONSHIPS);
+export type CaseStudyAuthorRelationship = z.infer<typeof CaseStudyAuthorRelationshipSchema>;
+
+/** The line a reader sees under the byline. A sentence about the writer, never about the company. */
+export const CASE_STUDY_AUTHOR_RELATIONSHIP_READER_NOTES: Record<
+  CaseStudyAuthorRelationship,
+  string
+> = {
+  first_hand: "Written by someone who worked on it.",
+  public_sources: "Written from the public sources listed below.",
+};
+
+/**
  * Where a figure in a case study came from.
  *
  * `BlueprintLinkSchema` PLUS A PUBLISHER, which is the whole reason this is not just that schema.
@@ -1056,6 +1080,22 @@ export const BLUEPRINT_MODERATION_STATE_LABELS: Record<BlueprintModerationState,
   quarantined: "Quarantined",
   removed: "Removed",
 };
+
+/**
+ * Every state a row in an author's own studio list can show: the moderation states, plus `unknown`.
+ *
+ * ⚠️ `unknown` IS NOT A STATE A SUBMISSION CAN BE IN. It is what this app shows when the server sends
+ * a state newer than this build knows. Without it one such row would fail the whole list's parse and
+ * the author would see an error instead of every row they can read.
+ *
+ * ONE TUPLE FOR EVERY STUDIO LIST. It lived in `showcase-authoring.schemas.ts` while My Launches was
+ * its only reader; My Case Studies needs the same states, and two copies of it drift.
+ */
+export const BLUEPRINT_SUBMISSION_DISPLAY_STATES = [
+  ...BLUEPRINT_MODERATION_STATES,
+  "unknown",
+] as const;
+export type BlueprintSubmissionDisplayState = (typeof BLUEPRINT_SUBMISSION_DISPLAY_STATES)[number];
 
 /**
  * What the survey was performed on.
@@ -1912,6 +1952,8 @@ export const CaseStudyBlueprintSchema = z
     outcomeSummary: z.string().nullable(),
     /** Free text, e.g. "Hardware". Not an enum — see the note above. */
     sector: z.string(),
+    /** How the writer knows this. Rendered under the byline, see `CaseStudyAuthorRelationshipSchema`. */
+    authorRelationship: CaseStudyAuthorRelationshipSchema,
     evidenceCompanies: z.array(CaseStudyEvidenceCompanySchema),
     problem: z.string(),
     context: z.string(),

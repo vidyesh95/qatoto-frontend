@@ -4,11 +4,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import {
-  BLUEPRINT_DISCIPLINE_LABELS,
-  buildBlueprintHref,
-  type CaseStudyBlueprint,
-} from "@/lib/blueprints/schemas";
+import { BLUEPRINT_DISCIPLINE_LABELS, type CaseStudyBlueprint } from "@/lib/blueprints/schemas";
 
 /**
  * One lesson in the case-study index.
@@ -55,20 +51,42 @@ import {
  * `outcomeSummary` NULL RENDERS NOTHING — not "Unknown", not a dash. There is no outcome enum on
  * this surface and the schema records the argument at length.
  */
-export default function CaseStudyLessonRow({ caseStudy }: { caseStudy: CaseStudyBlueprint }) {
-  const evidenceLabel = buildEvidenceLabel(caseStudy);
+export type CaseStudyLessonRowFields = Pick<
+  CaseStudyBlueprint,
+  | "title"
+  | "sector"
+  | "discipline"
+  | "evidenceCompanies"
+  | "outcomeSummary"
+  | "oneLineAction"
+  | "summary"
+>;
+
+/**
+ * ⚠️ THE ROW TAKES ONLY THE FIELDS IT RENDERS, PLUS ITS LINK, so the case-study form can preview a
+ * lesson with this exact component rather than a copy of its classes. A preview has no record to
+ * open, so `recordHref` is `null` there and the panel carries no link; the index always passes one.
+ */
+export default function CaseStudyLessonRow({
+  lesson,
+  recordHref,
+}: {
+  readonly lesson: CaseStudyLessonRowFields;
+  readonly recordHref: string | null;
+}) {
+  const evidenceLabel = buildEvidenceLabel(lesson);
 
   return (
     <details className="group/lesson -mx-3 my-1 rounded-lg px-3 transition-colors open:bg-muted/40 hover:bg-muted/50">
       <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] sm:grid-cols-[minmax(0,36rem)_16rem_minmax(0,1fr)_auto] sm:gap-x-6 [&::-webkit-details-marker]:hidden">
         <div className="col-start-1 row-start-1 min-w-0">
-          <h3 className="text-sm leading-5 font-medium text-foreground">{caseStudy.title}</h3>
+          <h3 className="text-sm leading-5 font-medium text-foreground">{lesson.title}</h3>
           <p className="mt-1 text-xs leading-4 text-[#6F7979]">{evidenceLabel}</p>
         </div>
 
-        {caseStudy.outcomeSummary === null ? null : (
+        {lesson.outcomeSummary === null ? null : (
           <span className="col-start-2 row-start-1 hidden pt-0.5 text-xs leading-4 font-medium text-foreground/70 sm:block">
-            {caseStudy.outcomeSummary}
+            {lesson.outcomeSummary}
           </span>
         )}
 
@@ -85,17 +103,19 @@ export default function CaseStudyLessonRow({ caseStudy }: { caseStudy: CaseStudy
 
       <div className="pb-4">
         <p className="max-w-2xl text-sm leading-5 font-medium text-foreground">
-          {caseStudy.oneLineAction}
+          {lesson.oneLineAction}
         </p>
-        <p className="mt-2 max-w-2xl text-sm leading-5 text-[#6F7979]">{caseStudy.summary}</p>
+        <p className="mt-2 max-w-2xl text-sm leading-5 text-[#6F7979]">{lesson.summary}</p>
 
-        <Link
-          href={buildBlueprintHref(caseStudy)}
-          className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
-        >
-          Read the full record
-          <span aria-hidden="true">&rarr;</span>
-        </Link>
+        {recordHref === null ? null : (
+          <Link
+            href={recordHref}
+            className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          >
+            Read the full record
+            <span aria-hidden="true">&rarr;</span>
+          </Link>
+        )}
       </div>
     </details>
   );
@@ -112,16 +132,17 @@ export default function CaseStudyLessonRow({ caseStudy }: { caseStudy: CaseStudy
  * three names in a 12px line is a list where the reader wanted a label — the detail page carries
  * the full set as a readout, which is where a list belongs.
  */
-function buildEvidenceLabel(caseStudy: CaseStudyBlueprint): string {
-  const [firstCompany] = caseStudy.evidenceCompanies;
+function buildEvidenceLabel(lesson: CaseStudyLessonRowFields): string {
+  const [firstCompany] = lesson.evidenceCompanies;
 
   const parts = [
-    caseStudy.sector,
+    lesson.sector,
     firstCompany === undefined
       ? undefined
       : `${firstCompany.locationLabel}, ${firstCompany.yearLabel}`,
-    BLUEPRINT_DISCIPLINE_LABELS[caseStudy.discipline],
+    BLUEPRINT_DISCIPLINE_LABELS[lesson.discipline],
   ];
 
-  return parts.filter((part) => part !== undefined).join(" · ");
+  // An empty sector is dropped too: the form's preview renders this row while the field is blank.
+  return parts.filter((part) => part !== undefined && part !== "").join(" · ");
 }

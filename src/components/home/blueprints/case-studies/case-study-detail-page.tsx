@@ -29,6 +29,7 @@ import { formatBlueprintMetricValue } from "@/lib/blueprints/format";
 import {
   BLUEPRINT_DISCIPLINE_LABELS,
   buildBlueprintHref,
+  CASE_STUDY_AUTHOR_RELATIONSHIP_READER_NOTES,
   type CaseStudyBlueprint,
 } from "@/lib/blueprints/schemas";
 import { formatCentsLabel, formatCountLabel } from "@/lib/store/format";
@@ -64,6 +65,11 @@ export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
       </header>
 
       <BlueprintAuthorLine author={caseStudy.author} />
+      {/* HOW THE WRITER KNOWS THIS, said once under their name, because a figure from somebody who
+          was there and a figure retold from a build log are different claims. */}
+      <p className="mt-1 text-xs text-[#6F7979]">
+        {CASE_STUDY_AUTHOR_RELATIONSHIP_READER_NOTES[caseStudy.authorRelationship]}
+      </p>
 
       <p className="mt-4 max-w-2xl text-sm leading-6 text-foreground">{caseStudy.summary}</p>
 

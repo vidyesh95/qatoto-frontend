@@ -18,4 +18,6 @@ export const blueprintKeys = {
   myTeardownSubmissions: () => ["blueprints", "teardowns", "mine"] as const,
   /** The signed-in maker's own launches. Unpaged and person-scoped, for the reason above. */
   myShowcaseSubmissions: () => ["blueprints", "showcase", "mine"] as const,
+  /** The signed-in writer's own case studies. Unpaged and person-scoped, for the reason above. */
+  myCaseStudySubmissions: () => ["blueprints", "case-studies", "mine"] as const,
 };

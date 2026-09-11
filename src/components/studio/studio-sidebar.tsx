@@ -117,6 +117,13 @@ const ICON_PATHS = {
     active: "/icons/rocket_launch_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/rocket_launch_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  // `description`, a written page, for My Case Studies: `school` is already Learn's. ⚠️ ONLY THE
+  // OUTLINE FILL IS COMMITTED, so both states use it and the active item is marked by the row's own
+  // highlight. Add the FILL1 file and point `active` at it when one is committed.
+  description: {
+    active: "/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
 } as const;
 
 /* ---------- Route paths (outside component) ---------- */
@@ -136,6 +143,9 @@ const STUDIO_ROUTES = {
   // teardown entry leads the section: survey something that sells, build and launch your own, then
   // pitch it.
   myLaunches: "/studio/launches",
+  // Case studies the signed-in writer has sent. AFTER LAUNCHES: a lesson is written once something has
+  // been built and sold long enough to go wrong.
+  myCaseStudies: "/studio/case-studies",
   pitches: "/studio/pitches",
   // The PRODUCT team — the pipeline stage between Pitches and Funding, and what the
   // "Product journey" section below has always promised. Until now this path served
@@ -386,6 +396,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
     items: [
       { path: STUDIO_ROUTES.myTeardowns, label: "My Teardowns", iconKey: "category" },
       { path: STUDIO_ROUTES.myLaunches, label: "My Launches", iconKey: "rocketLaunch" },
+      { path: STUDIO_ROUTES.myCaseStudies, label: "My Case Studies", iconKey: "description" },
       { path: STUDIO_ROUTES.pitches, label: "Pitches", iconKey: "slideshow" },
       { path: STUDIO_ROUTES.team, label: "Team", iconKey: "group" },
       { path: STUDIO_ROUTES.funding, label: "Funding", iconKey: "requestQuote" },

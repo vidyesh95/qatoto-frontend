@@ -247,7 +247,7 @@ and `/anime/:path*` at the routing layer.
 
 **THE SURFACE IS SEVEN READING ROUTES PLUS A RESOLVER, not two, with forms beside them.** Each of
 the three kinds has its own index and its own detail layout, because a teardown, a launch and a
-manufacturing lesson are not browsed the same way. The forms (`teardowns/new`, `showcase/new` and a
+manufacturing lesson are not browsed the same way. The forms (`teardowns/new`, `showcase/new`, `case-studies/new` and a
 teardown's `report`) are covered by the rules below the table:
 
 | Route                                  | Design                                                                                                                                                                                                  |
@@ -256,6 +256,7 @@ teardown's `report`) are covered by the rules below the table:
 | `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid of DECISION-SET cards; detail carries provenance, composition, the market signal, the media, the files, the exploded-view engine and the handoff. `?view=business\|engineering\|factory` |
 | `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort in `listShowcases`; TWO reserved inert slots                                                                                    |
 | `/blueprints/showcase/new`             | Post a launch: one page of sections, a square heading image checked in the browser and never uploaded, two statements. Mock-backed, see the rehearsal rule                                              |
+| `/blueprints/case-studies/new`         | Write a case study: one page in the record's fixed order, how the writer knows it, and the two statements that answer requires. Mock-backed, see the rehearsal rule                                     |
 | `/blueprints/case-studies` + `/[slug]` | Hairline lesson list, each row an expandable `<details>`; detail is a fixed-order report                                                                                                                |
 | `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                                                                                                                                                    |
 
@@ -462,6 +463,17 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   `File` rides beside the draft into a mock that drops it. That check is UX only; the upload route
   must repeat every rule. **`/studio/launches` is management only** for the `/studio/blueprints`
   reason, and its rows are a fixture set that never includes a launch posted this session.
+  **`/blueprints/case-studies/new` IS THE SAME REHEARSAL FOR A CASE STUDY**, over
+  `case-study-authoring.api.ts`: one page in the detail page's fixed order, a 409 on a lesson title
+  that already exists, and the disclosure once, in `case-study-receipt.tsx`. ⚠️ **THE WRITER SAYS HOW
+  THEY KNOW IT.** `authorRelationship` is `first_hand` or `public_sources` on the draft AND on the read
+  arm, and the detail page prints it under the byline. Each answer has its own two statements,
+  changing the answer clears the ticks, and a `public_sources` case study must link at least one
+  source, which is why both fixture rows with `sources: []` are `first_hand`. None of it makes a claim
+  true; the backend and a moderator stay the gate. The list preview is the real `CaseStudyLessonRow`
+  with `recordHref: null`, never a copy of its classes. **`/studio/case-studies` is management only**,
+  like My Launches, and its `flagged` chip reads "Report received" because a report on a case study is
+  rarely an IP concern.
 - **THE RIGHTS-CLAIM ROUTE PREPARES A NOTICE; IT DOES NOT FILE ONE.**
   `/blueprints/teardowns/[slug]/report` collects the claim kind, the target, the claimant and three
   sworn statements, then hands over a finished notice addressed to `SUPPORT_CONTACT_EMAIL` as a
@@ -632,7 +644,7 @@ count in a heading is a thing that goes stale the first time somebody adds one:
 
     # The case-study arm has the same property, and it is why `conceptNumber` was deleted rather
     # than kept as a legacy field with a TODO beside it.
-    for field in oneLineAction outcomeSummary sector discipline evidenceCompanies problem context \
+    for field in oneLineAction outcomeSummary sector authorRelationship discipline evidenceCompanies problem context \
                  actionSteps pitfalls timelineLabel capitalRaised outcomeMetrics sources \
                  relatedLessonSlugs; do
       rg -q "caseStudy\.$field\b" src/components/home/blueprints || echo "UNRENDERED $field"
