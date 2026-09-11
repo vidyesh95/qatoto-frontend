@@ -3976,6 +3976,13 @@ except storage, on the launch form's precedent.
   AND on the read arm; the detail page prints it under the byline. Each answer has its own two
   statements, changing it clears the ticks, and a `public_sources` case study must link at least one
   source. Fixtures: six first-hand (both rows with `sources: []` among them), four public-sources.
+- **A first-hand writer may withhold a company's name from readers** (an NDA is the ordinary reason),
+  and moderators still see it. The draft always carries the real `name` plus `isNameWithheld`; the
+  public read arm's `name` is `null` when withheld. The form offers "Withhold this company's name from
+  readers" only after "I worked on this", keeps the name field relabelled "Name, seen only by
+  moderators", and the contract refuses withholding on a public-sources case study. The detail page
+  labels the row "Name withheld" (numbered when there are several, because the fact list keys by label)
+  and keeps the place and year. Fixture: the mould shop on `aluminium-tool-before-steel`.
 - **Duplicate rules** on company names, figure labels (and a figure label equal to a company name),
   source addresses, steps, pitfalls and related lessons, because the detail page keys those lists by
   content.
@@ -3999,8 +4006,21 @@ except storage, on the launch form's precedent.
   pending and published rows after normalising; a clash is 409 with `errors.title`.
 - **Tables**: `case_study` with an `author_relationship` pgEnum, plus child tables for steps, pitfalls,
   companies, figures (kind plus amount, currency or basis points, with CHECKs per kind) and sources;
-  `moderation_state`, `moderator_note`, `public_slug`. The service refuses a `public_sources` row
-  with no source, and a related slug that is not a published case study.
+  `moderation_state`, `moderator_note`, `public_slug`. The company row has `name` NOT NULL and
+  `is_name_withheld boolean NOT NULL DEFAULT false`. The service refuses a `public_sources` row with no
+  source or with a withheld company name, and a related slug that is not a published case study.
+- **A withheld name is moderator-only, and the backend enforces it in one place.**
+    - ONE public serializer for case studies writes `name: null` when `is_name_withheld`, used by the
+      list, the detail read, related lessons and the hub. A test asserts the withheld name's bytes
+      appear in no public response.
+    - `GET …/mine` returns the writer's own names (they typed them). The admin review queue and report
+      handling (`moderate_content`) return the name with `isNameWithheld: true`, and the queue card
+      shows it with a "Withheld from readers" marker.
+    - The name never goes into logs, error messages, audit summaries, OpenAPI examples, a search index
+      or a shared cache key. The idempotency replay store holds the request body, so it gets the same
+      expiry and erasure as the row.
+    - The frontend keeps `CaseStudyEvidenceCompanySchema.name` nullable for public reads and gets a
+      separate moderator read schema with a required name; no public component may import it.
 - **Read arm**: add `moderationState` to `CaseStudyBlueprintSchema` and delete the category bypass in
   `isBlueprintVisible` (`src/lib/blueprints/api.ts`), so case studies gate like teardowns. Decide
   before the migration whether `thumbnailUrl`, `difficulty`, `cadFormat` and
@@ -4014,9 +4034,7 @@ except storage, on the launch form's precedent.
   the receipt and My Case Studies stop saying nothing is stored; `site-roadmap.ts` "Writing is not
   open yet" changes the same day.
 
-**Still open:** letting a first-hand writer withhold a company's name (an NDA is the ordinary case),
-which needs a nullable name on the read arm and a renderer for it; editing and resubmitting; tying a
-first-hand claim to a verified employer.
+**Still open:** editing and resubmitting; tying a first-hand claim to a verified employer.
 
 ## Teardowns as a clean-room replication surface — PART 1 SHIPPED 2026-09-10, parts 2–4 blocked on tables
 

@@ -30,6 +30,7 @@ import {
   BLUEPRINT_DISCIPLINE_LABELS,
   buildBlueprintHref,
   CASE_STUDY_AUTHOR_RELATIONSHIP_READER_NOTES,
+  CASE_STUDY_WITHHELD_COMPANY_LABEL,
   type CaseStudyBlueprint,
 } from "@/lib/blueprints/schemas";
 import { formatCentsLabel, formatCountLabel } from "@/lib/store/format";
@@ -149,6 +150,25 @@ function CaseStudySteps({
 }
 
 /**
+ * The label for a company whose writer withheld its name.
+ *
+ * ⚠️ NUMBERED WHEN THERE IS MORE THAN ONE, and not for decoration: `SpecificationList` keys its rows by
+ * label, so two rows both reading "Name withheld" would collide. One withheld company needs no number.
+ */
+function buildWithheldCompanyLabel(
+  companies: CaseStudyBlueprint["evidenceCompanies"],
+  companyIndex: number,
+): string {
+  const withheldCompanyCount = companies.filter((company) => company.name === null).length;
+  if (withheldCompanyCount <= 1) return CASE_STUDY_WITHHELD_COMPANY_LABEL;
+
+  const withheldOrdinal = companies
+    .slice(0, companyIndex + 1)
+    .filter((company) => company.name === null).length;
+  return `${CASE_STUDY_WITHHELD_COMPANY_LABEL} (${withheldOrdinal})`;
+}
+
+/**
  * The business facts, as a readout rather than prose.
  *
  * ⚠️ IT REUSES `SpecificationList`, which is already the hairline `<dl>` every other detail layout
@@ -177,8 +197,8 @@ function BusinessFacts({ caseStudy }: { caseStudy: CaseStudyBlueprint }) {
             caseStudy.capitalRaised.currency,
           ),
         },
-    ...caseStudy.evidenceCompanies.map((company) => ({
-      label: company.name,
+    ...caseStudy.evidenceCompanies.map((company, companyIndex) => ({
+      label: company.name ?? buildWithheldCompanyLabel(caseStudy.evidenceCompanies, companyIndex),
       value: `${company.locationLabel}, ${company.yearLabel}`,
     })),
     // Each value is formatted by its own kind — a count, an amount in cents and a basis-point
@@ -197,7 +217,7 @@ function BusinessFacts({ caseStudy }: { caseStudy: CaseStudyBlueprint }) {
       <h2 className="text-sm font-medium text-foreground">The business facts</h2>
       {/* `break-inside-avoid` on each row: CSS columns balance by height and would otherwise break
           INSIDE a row, leaving a label at the foot of one column and its value at the head of the
-          next ("Kvist Mould" / "Gothenburg, 2024" on `aluminium-tool-before-steel`). */}
+          next ("Norrfall Bracketworks" / "Gothenburg, 2024" on `aluminium-tool-before-steel`). */}
       <SpecificationList
         specifications={rows}
         className="mt-2 max-w-2xl sm:columns-2 sm:gap-8 [&>div]:break-inside-avoid"

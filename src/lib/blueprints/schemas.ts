@@ -573,15 +573,30 @@ export type BlueprintOutcomeMetric = z.infer<typeof BlueprintOutcomeMetricSchema
  * `locationLabel` and `yearLabel` are FREE TEXT and not a place id or a date. "Chennai, 2023" is
  * what a founder writing this down actually knows; parsing it into a typed region would invent a
  * precision the source does not have.
+ *
+ * ⚠️ `name` IS `null` WHEN A FIRST-HAND WRITER WITHHELD IT. Somebody who worked at a company is often
+ * bound not to name it, and a lesson is still worth reading without the name. A case study written
+ * from public sources may not withhold one, because an unnamed company there is a source nobody can
+ * check; the write contract refuses it and the backend must too. The detail page labels the row
+ * `CASE_STUDY_WITHHELD_COMPANY_LABEL` and still shows the place and year.
+ *
+ * ⚠️ WITHHELD FROM READERS, NOT FROM MODERATORS. The writer sends the real name with
+ * `isNameWithheld: true` (`case-study-authoring.schemas.ts`), and only the moderator review read may
+ * return it. EVERY PUBLIC READ, this schema's, carries `null`: the name must never reach a list, a
+ * detail page, a related-lesson link or a cache a reader can hit, and this is the untrusted layer, so
+ * the backend's public serializer is what enforces it rather than a component that hides a string.
  */
 export const CaseStudyEvidenceCompanySchema = z
   .object({
-    name: z.string(),
+    name: z.string().nullable(),
     locationLabel: z.string(),
     yearLabel: z.string(),
   })
   .strip();
 export type CaseStudyEvidenceCompany = z.infer<typeof CaseStudyEvidenceCompanySchema>;
+
+/** What the detail page prints in place of a withheld company's name. */
+export const CASE_STUDY_WITHHELD_COMPANY_LABEL = "Name withheld";
 
 /**
  * How the writer of a case study knows what it says: they were part of it, or they wrote it up from

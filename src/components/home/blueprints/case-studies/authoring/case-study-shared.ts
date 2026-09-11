@@ -23,7 +23,13 @@ export interface TextItemDraftRow {
 
 export interface EvidenceCompanyDraftRow {
   readonly rowId: string;
+  /** Always the real name. Withheld or not it is sent, so a moderator can check it. */
   readonly name: string;
+  /**
+   * Hides the name from READERS only. Only a first-hand writer is offered it, and the contract refuses
+   * it on any other answer.
+   */
+  readonly isNameWithheld: boolean;
   readonly locationLabel: string;
   readonly yearLabel: string;
 }
@@ -200,6 +206,7 @@ export function collectCaseStudySubmission(
     pitfalls: formDraft.pitfallRows.map((pitfallRow) => pitfallRow.text.trim()),
     evidenceCompanies: formDraft.companyRows.map((companyRow) => ({
       name: companyRow.name.trim(),
+      isNameWithheld: companyRow.isNameWithheld,
       locationLabel: companyRow.locationLabel.trim(),
       yearLabel: companyRow.yearLabel.trim(),
     })),
@@ -258,7 +265,8 @@ export function buildLessonRowPreview(
           companyRow.locationLabel.trim() !== "" && companyRow.yearLabel.trim() !== "",
       )
       .map((companyRow) => ({
-        name: companyRow.name.trim(),
+        // The preview is the READER'S row, so a withheld name is `null` here as it is on the page.
+        name: companyRow.isNameWithheld ? null : companyRow.name.trim(),
         locationLabel: companyRow.locationLabel.trim(),
         yearLabel: companyRow.yearLabel.trim(),
       })),
@@ -309,6 +317,7 @@ const REPEATABLE_ROW_LABELS = new Map<
       rowNoun: "Company",
       fieldLabels: new Map([
         ["name", "Name"],
+        ["isNameWithheld", "Withhold name"],
         ["locationLabel", "Place"],
         ["yearLabel", "Year"],
       ]),

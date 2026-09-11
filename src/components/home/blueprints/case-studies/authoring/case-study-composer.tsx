@@ -358,11 +358,16 @@ export default function CaseStudyComposer({
 
         <FormSection
           title="Companies"
-          description="Optional. The businesses this happened at, with where and when. Name each one the way its sources name it."
+          description={
+            formDraft.authorRelationship === "first_hand"
+              ? "Optional. The businesses this happened at, with where and when. If you are not free to name one in public, you can withhold its name from readers."
+              : "Optional. The businesses this happened at, with where and when. Name each one the way its sources name it."
+          }
         >
           <EvidenceCompanyRowsEditor
             rows={formDraft.companyRows}
             onRowsChange={(companyRows) => applyFormPatch({ companyRows })}
+            canWithholdNames={formDraft.authorRelationship === "first_hand"}
             readFieldError={readFieldError}
           />
           <SectionError message={readFieldError("evidenceCompanies")} />

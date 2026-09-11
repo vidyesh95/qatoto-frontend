@@ -4,6 +4,7 @@
 // are minted in the add button's click handler, never during render.
 
 import {
+  CheckboxRow,
   LabeledEnumSelect,
   LabeledTextArea,
   LabeledTextInput,
@@ -22,6 +23,7 @@ import {
   CASE_STUDY_CURRENCIES,
   CASE_STUDY_CURRENCY_LABELS,
 } from "@/lib/blueprints/case-study-authoring.schemas";
+import { CASE_STUDY_WITHHELD_COMPANY_LABEL } from "@/lib/blueprints/schemas";
 
 /** Reads the contract's message for one field path, or `null`. */
 type FieldErrorReader = (fieldPath: string) => string | null;
@@ -112,13 +114,27 @@ export function TextItemRowsEditor({
   );
 }
 
+/**
+ * Companies, each with a name, a place and a year.
+ *
+ * ⚠️ THE WITHHOLD OPTION SHOWS ONLY FOR A FIRST-HAND WRITER, and stays visible on a row that already
+ * uses it after the answer changes. Hiding it then would leave a refusal the writer has no control to
+ * fix; the contract names the problem and the box is right there to untick.
+ *
+ * ⚠️ THE NAME FIELD STAYS WHEN THE NAME IS WITHHELD, relabelled to say who sees it. Withholding hides
+ * the name from readers and sends it to moderators, so the form must still ask for it, and must say
+ * plainly that somebody at Qatoto will read it.
+ */
 export function EvidenceCompanyRowsEditor({
   rows,
   onRowsChange,
+  canWithholdNames,
   readFieldError,
 }: {
   readonly rows: readonly EvidenceCompanyDraftRow[];
   readonly onRowsChange: (nextRows: readonly EvidenceCompanyDraftRow[]) => void;
+  /** True when the writer said they worked on this. */
+  readonly canWithholdNames: boolean;
   readonly readFieldError: FieldErrorReader;
 }) {
   function updateRow(rowId: string, rowPatch: Partial<EvidenceCompanyDraftRow>): void {
@@ -131,39 +147,58 @@ export function EvidenceCompanyRowsEditor({
         <EmptyRowsMessage message="No company named. The case study will show no company line." />
       ) : (
         <div className="space-y-3">
-          {rows.map((row, rowIndex) => (
-            <RepeatableRowShell
-              key={row.rowId}
-              rowLabel={`Company ${rowIndex + 1}`}
-              onRemoveRow={() =>
-                onRowsChange(rows.filter((existingRow) => existingRow.rowId !== row.rowId))
-              }
-            >
-              <div className="sm:col-span-2">
+          {rows.map((row, rowIndex) => {
+            const withholdErrorMessage = readFieldError(
+              `evidenceCompanies.${rowIndex}.isNameWithheld`,
+            );
+            const isWithholdOptionShown = canWithholdNames || row.isNameWithheld;
+            return (
+              <RepeatableRowShell
+                key={row.rowId}
+                rowLabel={`Company ${rowIndex + 1}`}
+                onRemoveRow={() =>
+                  onRowsChange(rows.filter((existingRow) => existingRow.rowId !== row.rowId))
+                }
+              >
+                <div className="sm:col-span-2">
+                  <LabeledTextInput
+                    label={row.isNameWithheld ? "Name, seen only by moderators" : "Name"}
+                    value={row.name}
+                    onValueChange={(name) => updateRow(row.rowId, { name })}
+                    placeholder="Verdant Sensing"
+                    errorMessage={readFieldError(`evidenceCompanies.${rowIndex}.name`)}
+                  />
+                </div>
+                {isWithholdOptionShown ? (
+                  <div className="sm:col-span-2">
+                    <CheckboxRow
+                      label="Withhold this company's name from readers"
+                      detail={`For a company you are not free to name in public. Readers see "${CASE_STUDY_WITHHELD_COMPANY_LABEL}" beside its place and year, so keep those broad enough not to identify it either. Qatoto's moderators still see the name, so they can check the case study.`}
+                      isChecked={row.isNameWithheld}
+                      onCheckedChange={(isNameWithheld) => updateRow(row.rowId, { isNameWithheld })}
+                    />
+                    {withholdErrorMessage === null ? null : (
+                      <p className="text-xs text-destructive">{withholdErrorMessage}</p>
+                    )}
+                  </div>
+                ) : null}
                 <LabeledTextInput
-                  label="Name"
-                  value={row.name}
-                  onValueChange={(name) => updateRow(row.rowId, { name })}
-                  placeholder="Verdant Sensing"
-                  errorMessage={readFieldError(`evidenceCompanies.${rowIndex}.name`)}
+                  label="Place"
+                  value={row.locationLabel}
+                  onValueChange={(locationLabel) => updateRow(row.rowId, { locationLabel })}
+                  placeholder="Porto"
+                  errorMessage={readFieldError(`evidenceCompanies.${rowIndex}.locationLabel`)}
                 />
-              </div>
-              <LabeledTextInput
-                label="Place"
-                value={row.locationLabel}
-                onValueChange={(locationLabel) => updateRow(row.rowId, { locationLabel })}
-                placeholder="Porto"
-                errorMessage={readFieldError(`evidenceCompanies.${rowIndex}.locationLabel`)}
-              />
-              <LabeledTextInput
-                label="Year"
-                value={row.yearLabel}
-                onValueChange={(yearLabel) => updateRow(row.rowId, { yearLabel })}
-                placeholder="2024"
-                errorMessage={readFieldError(`evidenceCompanies.${rowIndex}.yearLabel`)}
-              />
-            </RepeatableRowShell>
-          ))}
+                <LabeledTextInput
+                  label="Year"
+                  value={row.yearLabel}
+                  onValueChange={(yearLabel) => updateRow(row.rowId, { yearLabel })}
+                  placeholder="2024"
+                  errorMessage={readFieldError(`evidenceCompanies.${rowIndex}.yearLabel`)}
+                />
+              </RepeatableRowShell>
+            );
+          })}
         </div>
       )}
       <AddRowButton
@@ -171,7 +206,13 @@ export function EvidenceCompanyRowsEditor({
         onAddRow={() =>
           onRowsChange([
             ...rows,
-            { rowId: crypto.randomUUID(), name: "", locationLabel: "", yearLabel: "" },
+            {
+              rowId: crypto.randomUUID(),
+              name: "",
+              isNameWithheld: false,
+              locationLabel: "",
+              yearLabel: "",
+            },
           ])
         }
       />

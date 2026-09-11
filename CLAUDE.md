@@ -469,7 +469,11 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   THEY KNOW IT.** `authorRelationship` is `first_hand` or `public_sources` on the draft AND on the read
   arm, and the detail page prints it under the byline. Each answer has its own two statements,
   changing the answer clears the ticks, and a `public_sources` case study must link at least one
-  source, which is why both fixture rows with `sources: []` are `first_hand`. None of it makes a claim
+  source, which is why both fixture rows with `sources: []` are `first_hand`. Only a `first_hand` writer
+  may withhold a company's name, and ⚠️ **ONLY FROM READERS**: the draft still sends the real `name`
+  with `isNameWithheld: true` so a moderator can check it, and every public read carries `name: null`
+  ("Name withheld" on the page, place and year kept). The backend's public serializer enforces that,
+  never a component hiding a string. The contract refuses withholding on `public_sources`. None of it makes a claim
   true; the backend and a moderator stay the gate. The list preview is the real `CaseStudyLessonRow`
   with `recordHref: null`, never a copy of its classes. **`/studio/case-studies` is management only**,
   like My Launches, and its `flagged` chip reads "Report received" because a report on a case study is

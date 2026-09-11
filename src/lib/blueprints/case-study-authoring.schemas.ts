@@ -23,6 +23,7 @@ import {
   BLUEPRINT_DISCIPLINES,
   BLUEPRINT_SUBMISSION_DISPLAY_STATES,
   CASE_STUDY_AUTHOR_RELATIONSHIPS,
+  CASE_STUDY_WITHHELD_COMPANY_LABEL,
   type CaseStudyAuthorRelationship,
 } from "@/lib/blueprints/schemas";
 import { buildWellTypedInputsPredicate } from "@/lib/blueprints/refinement-inputs";
@@ -112,10 +113,19 @@ export const CASE_STUDY_OUTCOME_SUMMARY_MAXIMUM_CHARACTERS = 120;
 
 const CaseStudyEvidenceCompanyDraftSchema = z
   .object({
+    /**
+     * ⚠️ ALWAYS THE REAL NAME, WITHHELD OR NOT. A withheld name is withheld from READERS, not from
+     * Qatoto: it travels to the backend so a moderator can check the case study against it, and every
+     * public read returns `null` in its place (`CaseStudyEvidenceCompanySchema`). A withheld company a
+     * moderator cannot see is a claim nobody can check, which is the reason public sources may not
+     * withhold one either.
+     */
     name: z
       .string()
-      .min(1, "Give the company's name, as its sources name it.")
+      .min(1, "Give the company's name.")
       .max(80, "Keep the name under 80 characters."),
+    /** Only a first-hand case study may set this; the refinement on the draft enforces that. */
+    isNameWithheld: z.boolean(),
     locationLabel: z
       .string()
       .min(1, "Say where it happened, like Porto.")
@@ -232,8 +242,12 @@ const SourcesRequiredRefinementInputsSchema = z.object({
   authorRelationship: z.enum(CASE_STUDY_AUTHOR_RELATIONSHIPS),
   sources: z.array(z.unknown()),
 });
+const WithheldCompanyNameRefinementInputsSchema = z.object({
+  authorRelationship: z.enum(CASE_STUDY_AUTHOR_RELATIONSHIPS),
+  evidenceCompanies: z.array(z.object({ isNameWithheld: z.boolean() })),
+});
 const FactLabelRefinementInputsSchema = z.object({
-  evidenceCompanies: z.array(z.object({ name: z.string() })),
+  evidenceCompanies: z.array(z.object({ name: z.string(), isNameWithheld: z.boolean() })),
   outcomeMetrics: z.array(z.object({ label: z.string() })),
 });
 const SourceAddressRefinementInputsSchema = z.object({
@@ -384,10 +398,39 @@ export const CaseStudySubmissionDraftSchema = z
   )
   .superRefine(
     (draft, context) => {
+      const refinementInputs = WithheldCompanyNameRefinementInputsSchema.safeParse(draft);
+      if (!refinementInputs.success) return;
+      if (refinementInputs.data.authorRelationship === "first_hand") return;
+
+      // A withheld name in a case study from public sources hides a company its readers could check.
+      refinementInputs.data.evidenceCompanies.forEach((company, companyIndex) => {
+        if (!company.isNameWithheld) return;
+        context.addIssue({
+          code: "custom",
+          path: ["evidenceCompanies", companyIndex, "isNameWithheld"],
+          message:
+            "Only someone who worked on this can withhold a company's name. From public sources, name it the way the sources do.",
+        });
+      });
+    },
+    { when: buildWellTypedInputsPredicate(WithheldCompanyNameRefinementInputsSchema) },
+  )
+  .superRefine(
+    (draft, context) => {
       const refinementInputs = FactLabelRefinementInputsSchema.safeParse(draft);
       if (!refinementInputs.success) return;
 
+      // REPEATS ARE CHECKED ACROSS EVERY NAME, withheld ones included: one company listed twice is the
+      // same mistake whether or not readers see its name, and a moderator would see both rows.
       const companyNames = refinementInputs.data.evidenceCompanies.map((company) => company.name);
+      const hasWithheldCompanyName = refinementInputs.data.evidenceCompanies.some(
+        (company) => company.isNameWithheld,
+      );
+      // Only a SHOWN name labels a row on the detail page, so only a shown name can clash with a figure.
+      const shownCompanyNames = refinementInputs.data.evidenceCompanies
+        .filter((company) => !company.isNameWithheld)
+        .map((company) => company.name);
+      const normalizedWithheldCompanyLabel = CASE_STUDY_WITHHELD_COMPANY_LABEL.toLowerCase();
       for (const companyIndex of findRepeatedValueIndexes(companyNames)) {
         context.addIssue({
           code: "custom",
@@ -399,7 +442,9 @@ export const CaseStudySubmissionDraftSchema = z
       const metricLabels = refinementInputs.data.outcomeMetrics.map((metric) => metric.label);
       const repeatedMetricIndexes = new Set(findRepeatedValueIndexes(metricLabels));
       const normalizedCompanyNames = new Set(
-        companyNames.map((companyName) => companyName.trim().toLowerCase()),
+        shownCompanyNames
+          .map((companyName) => companyName.trim().toLowerCase())
+          .filter((normalizedCompanyName) => normalizedCompanyName !== ""),
       );
       metricLabels.forEach((metricLabel, metricIndex) => {
         if (repeatedMetricIndexes.has(metricIndex)) {
@@ -416,6 +461,19 @@ export const CaseStudySubmissionDraftSchema = z
             code: "custom",
             path: ["outcomeMetrics", metricIndex, "label"],
             message: "A company above already uses this name. Give the figure a label of its own.",
+          });
+          return;
+        }
+        // The detail page labels a withheld company's row this way, in the same list as the figures.
+        if (
+          hasWithheldCompanyName &&
+          normalizedMetricLabel.startsWith(normalizedWithheldCompanyLabel)
+        ) {
+          context.addIssue({
+            code: "custom",
+            path: ["outcomeMetrics", metricIndex, "label"],
+            message:
+              "That label is how the page shows a withheld company. Give the figure a label of its own.",
           });
         }
       });

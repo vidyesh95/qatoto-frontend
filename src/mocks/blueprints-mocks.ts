@@ -41,6 +41,9 @@
 // public sources has to link them (`case-study-authoring.schemas.ts`), so an empty source list on one
 // would be a row the write contract could never have produced.
 //
+// ONE COMPANY HAS `name: null`, the mould shop on `aluminium-tool-before-steel`, so the withheld-name
+// row renders. It sits on a first-hand case study because only a first-hand writer may withhold one.
+//
 // THE LAUNCH DATES ARE STATIC LITERALS inside the three weeks before 2026-09-08, and they drift
 // into the past one day at a time. Accepted: a `new Date()`-relative fixture would bake a
 // different order into every `"use cache"` entry, and `RelativeTime` renders whatever the gap is.
@@ -2606,7 +2609,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     sector: "Industrial components",
     evidenceCompanies: [
       { name: "Norrfall Bracketworks", locationLabel: "Gothenburg", yearLabel: "2024" },
-      { name: "Kvist Mould", locationLabel: "Gothenburg", yearLabel: "2024" },
+      // THE ONE WITHHELD NAME IN THE FIXTURES: the mould shop, which the writer worked with and did
+      // not name. First-hand and `sources: []`, so no source names it either.
+      { name: null, locationLabel: "Gothenburg", yearLabel: "2024" },
     ],
     problem:
       "A cable bracket had eleven mounting variants and no way to know which ones the market wanted before parts existed. Committing to steel meant committing to a variant list.",
