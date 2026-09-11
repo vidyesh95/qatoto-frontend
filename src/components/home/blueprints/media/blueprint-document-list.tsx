@@ -36,12 +36,11 @@ export default function BlueprintDocumentList({
     <section className="mt-8">
       <h2 className="text-sm font-medium text-foreground">Documents</h2>
 
-      <ul className="mt-2 max-w-2xl space-y-2">
+      {/* One panel with hairlines between rows, not a bordered box per document — the same
+          construction as `ManufacturingFileBundles` below it, so the two lists read as one kind. */}
+      <ul className="mt-2 max-w-2xl divide-y divide-[#CAC4D0]/60 rounded-xl border border-[#CAC4D0]/60">
         {documents.map((blueprintDocument) => (
-          <li
-            key={blueprintDocument.id}
-            className="flex items-center gap-3 rounded-xl border border-[#CAC4D0]/60 px-3 py-2.5"
-          >
+          <li key={blueprintDocument.id} className="flex items-center gap-3 px-3 py-2.5">
             <Image
               src="/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
               alt=""

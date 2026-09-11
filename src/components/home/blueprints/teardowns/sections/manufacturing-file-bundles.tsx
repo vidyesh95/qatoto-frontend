@@ -49,12 +49,12 @@ export default function ManufacturingFileBundles({
               <h3 className="font-mono text-[10px] tracking-[0.12em] text-[#6F7979] uppercase">
                 {TEARDOWN_MANUFACTURING_BUNDLE_LABELS[bundle]}
               </h3>
-              <ul className="mt-1.5 space-y-2">
+              {/* ONE PANEL PER BUNDLE WITH HAIRLINES BETWEEN FILES, not a bordered box per file. Six
+                  stacked boxes was the repeated-card shape `docs/Design.md` §6 bans, and it read as
+                  six things rather than one bundle a board house receives together. */}
+              <ul className="mt-1.5 divide-y divide-[#CAC4D0]/60 rounded-xl border border-[#CAC4D0]/60">
                 {bundleFiles.map((file) => (
-                  <li
-                    key={file.id}
-                    className="flex items-center gap-3 rounded-xl border border-[#CAC4D0]/60 px-3 py-2.5"
-                  >
+                  <li key={file.id} className="flex items-center gap-3 px-3 py-2.5">
                     <Image
                       src="/icons/description_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
                       alt=""

@@ -66,10 +66,19 @@ import { formatCentsRangeLabel, formatCountLabel, formatIsoInstantLabel } from "
  * number as the index card's "{n} files" — which is why it may appear when `partCount` is null:
  * one is a tally the author typed, the other is how many meshes the model moves. It sits after
  * "Parts" so the two read as the subset they are ("Parts 148 / Parts modelled 9").
+ *
+ * ⚠️ A QUARANTINED ROW GETS NO COST BAND AND NO MODEL COUNT HERE EITHER. `buildDecisionFacts`
+ * withheld the band, but this list did not, and a quarantined teardown always takes the no-explorer
+ * branch below — so the band the decision row hid printed again at the foot of the same page
+ * ("Bill of materials $21 – $33" on `grain-moisture-meter-teardown`). "Parts modelled" goes with it:
+ * it is a count OF the withheld model. Parts, difficulty and CAD format stay, because none of them is
+ * the payload.
  */
 function buildSpecifications(teardown: TeardownBlueprint): SpecificationRow[] {
+  const isPayloadVisible = canRenderTeardownPayload(teardown.moderationState);
+
   const billOfMaterialsLabel =
-    teardown.billOfMaterialsCostRange === null
+    teardown.billOfMaterialsCostRange === null || !isPayloadVisible
       ? null
       : formatCentsRangeLabel(
           teardown.billOfMaterialsCostRange.minimumInCents,
@@ -86,7 +95,7 @@ function buildSpecifications(teardown: TeardownBlueprint): SpecificationRow[] {
     ...(teardown.partCount === null
       ? []
       : [{ label: "Parts", value: formatCountLabel(teardown.partCount) }]),
-    ...(teardown.assembly === null
+    ...(teardown.assembly === null || !isPayloadVisible
       ? []
       : [{ label: "Parts modelled", value: formatCountLabel(teardown.assembly.parts.length) }]),
   ];
