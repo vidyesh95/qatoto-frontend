@@ -146,7 +146,9 @@ export default function BlueprintCommentThread({
 
   return (
     // `scroll-mt-20` keeps the heading clear of the 56px sticky navbar when the byline link jumps here.
-    <section id="discussion" className="mt-10 scroll-mt-20 border-t border-[#CAC4D0]/60 pt-6">
+    // NO TOP MARGIN: the page decides the gap above the thread, because what sits above it (the
+    // reading column, or the rail on a narrow screen) changes with the layout.
+    <section id="discussion" className="scroll-mt-20 border-t border-[#CAC4D0]/60 pt-6">
       <h2 className="text-sm font-medium text-foreground">Discussion</h2>
       {/* Without this line a thread with no composer reads as broken rather than as unbuilt, and a
           reader cannot tell which. It is the same disclosure the studio's `inert` dropzone makes. */}

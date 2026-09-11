@@ -2267,8 +2267,35 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     createdAt: "2026-09-05T14:20:00.000Z",
     tagline: "Fourteen nodes, 31 days, no mains and no reboot",
     writeUp:
+      // A FULL MARKDOWN WRITE-UP: headings, lists, a table, two images and two videos, the shape a
+      // maker who documents properly produces. ⚠️ THE IMAGES ARE THE LABELLED PLACEHOLDERS ON
+      // PURPOSE. Nothing in `/dummy` shows a market mesh node, and a real photo of something else
+      // captioned as this build would be a fabricated record; the alt text says what belongs there.
+      // Both videos are the one placeholder clip every fixture uses.
       "Fourteen nodes over about six hundred metres of market, thirty-one days, no mains anywhere on the run, and no node needed a reboot. Each one is a solar panel, a small pack and a radio in a housing a stallholder can hose down.\n\n" +
-      "Link quality does move with the crowd. An empty aisle at dawn and a full market at eleven are different propagation problems, and the mesh reroutes rather than degrades, which is most of why the uptime figure holds. What nobody has yet is a month in the rainy season.",
+      `https://www.youtube.com/watch?v=${PLACEHOLDER_YOUTUBE_VIDEO_ID}\n\n` +
+      "## What is in a node\n\n" +
+      "- **A 10 W panel** clamped to the stall roof rail, angled for the gap between the canopies.\n" +
+      "- **A 2S 18650 pack** (7.2 V, 3,000 mAh) on the rebuilt rail from the router teardown, with the undervoltage cutoff the original never had.\n" +
+      "- **A 2.4 GHz mesh radio** and a 5 dBi omni antenna, in an IP65 box with a drip loop on every cable.\n\n" +
+      "![A node on a stall roof rail: panel, sealed box and antenna](/dummy/placeholder-instruments.avif)\n\n" +
+      "## The rail, rebuilt\n\n" +
+      "The router in the teardown ran its regulator straight off the panel input with no storage, so it dropped out every time a cloud passed. The rebuild adds the pack and a buck converter sized for the radio's transmit peaks rather than its average draw.\n\n" +
+      "| Measure | Original rail | Rebuilt rail |\n" +
+      "| --- | --- | --- |\n" +
+      "| Storage | None | 2S pack, 21.6 Wh |\n" +
+      "| Running with no sun | Under a second | About 19 hours |\n" +
+      "| After a brownout | Manual power cycle | Back on by itself at 6.4 V |\n\n" +
+      "## When the market fills up\n\n" +
+      "The question in the discussion is the right one. An empty aisle at dawn and a full market at eleven are different propagation problems, because people and wet produce absorb 2.4 GHz. Across the month the median link margin fell from 18 dB at 06:00 to 9 dB at 11:00, and the mesh routed around the three weakest hops instead of losing them, which is most of why the uptime figure holds.\n\n" +
+      `https://youtu.be/${PLACEHOLDER_YOUTUBE_VIDEO_ID}\n\n` +
+      "## What went wrong\n\n" +
+      "Two nodes browned out in the first week. Both sat under the fish section's tarpaulin, which shaded their panels until mid-morning, and both packs fell below the cutoff overnight. The rebuilt rail brought them back on its own once the sun reached them, so neither needed a visit, but each was dark for about four hours. Moving the two panels to the edge of the tarpaulin fixed it, and neither has dropped since.\n\n" +
+      "![The two shaded nodes, before and after the panels moved](/dummy/placeholder-cartons.avif)\n\n" +
+      "## What is next\n\n" +
+      "- **A month in the rainy season**, which nobody has run yet.\n" +
+      "- **A second market with metal roofing**, which reflects the signal rather than absorbing it.\n" +
+      "- **The rebuilt rail's schematic**, published beside the original teardown.",
     launchedAt: "2026-09-07T06:30:00.000Z",
     upvoteCount: 41,
     commentCount: 1,

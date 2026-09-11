@@ -2,8 +2,12 @@
 // `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
 //
 // Laid out after a Launch YC post: the upvote in a left gutter beside the head of the launch (the
-// name, the pitch, and the byline with Share), then the square heading image, the summary, the
-// Markdown write-up with its videos and images, the people, the links and the discussion.
+// name, the pitch, and the byline with Share), then the summary, the Markdown write-up with its
+// videos and images, the people, the links and the discussion.
+//
+// THE SQUARE HEADING IMAGE IS NOT ON THIS PAGE. `thumbnailUrl` renders in the feed row and the hub
+// launch link, where it identifies a launch in a list; here the write-up's own images and videos
+// carry the build, and a small square above them added nothing a reader could use.
 //
 // THE UPVOTE IS BACK IN THE GUTTER, AS `ShowcaseVoteBox`, THE SAME SHAPE THE FEED ROW USES. It spent
 // a while as a pill in an engagement row under the pitch, beside a comment count and Share; that row
@@ -130,23 +134,10 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
         screen read the page in the same order.
       */}
       <div className="min-[1440px]:grid min-[1440px]:grid-cols-[minmax(0,48rem)_minmax(14rem,1fr)] min-[1440px]:gap-x-6 sm:pl-[52px] lg:pl-[56px]">
-        <div className="min-w-0 min-[1440px]:col-start-1 min-[1440px]:row-start-1">
-          {/* THE SQUARE HEADING IMAGE OPENS THE READING COLUMN, under the byline rule, at the same
-              size and shape the feed row shows. It sits inside the column rather than above the
-              grid, so from 1440px the rail's top lines up with it. `alt=""` because it illustrates
-              the launch named just above; `priority` because it is still the first image on the
-              page. */}
-          <div className="relative mt-5 size-12 overflow-hidden rounded-lg bg-muted lg:size-18">
-            <Image
-              src={showcase.thumbnailUrl}
-              alt=""
-              fill
-              sizes="(min-width: 1024px) 72px, 48px"
-              priority
-              className="object-cover"
-            />
-          </div>
-
+        {/* THE GAP ABOVE THE DISCUSSION BELONGS TO WHATEVER SITS ABOVE IT. From 1440px that is this
+            column, so it carries the 40px as bottom padding; below 1440px the rail sits between
+            them, so the discussion wrapper takes the gap as its own top margin there instead. */}
+        <div className="min-w-0 min-[1440px]:col-start-1 min-[1440px]:row-start-1 min-[1440px]:pb-10">
           {/* THE STANDFIRST. Three description-ish fields sit on this arm — `tagline` in the head,
               `summary` here, `writeUp` below — and the summary is a size up from the write-up so
               the two do not read as one paragraph that got long. */}
@@ -228,7 +219,7 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
           <BlueprintTagList tags={showcase.tags} />
         </aside>
 
-        <div className="min-w-0 min-[1440px]:col-start-1 min-[1440px]:row-start-2">
+        <div className="mt-10 min-w-0 min-[1440px]:col-start-1 min-[1440px]:row-start-2 min-[1440px]:mt-0">
           <BlueprintCommentThread comments={comments} />
         </div>
       </div>
