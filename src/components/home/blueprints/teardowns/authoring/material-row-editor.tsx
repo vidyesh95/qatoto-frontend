@@ -9,7 +9,7 @@ import {
   LabeledTextInput,
   RepeatableRowShell,
   RepeatableRowsShell,
-} from "@/components/home/blueprints/teardowns/authoring/wizard-fields";
+} from "@/components/home/blueprints/authoring/form-fields";
 import type { MaterialDraftRow } from "@/components/home/blueprints/teardowns/authoring/wizard-shared";
 import {
   TEARDOWN_DESIGNATION_SOURCE_IS_MEASURED,

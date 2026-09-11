@@ -27,8 +27,8 @@ import {
   LabeledTextArea,
   LabeledTextInput,
   RepeatableRowShell,
-} from "@/components/home/blueprints/teardowns/authoring/wizard-fields";
-import { isWalkthroughLinkUsable } from "@/components/home/blueprints/teardowns/authoring/wizard-shared";
+} from "@/components/home/blueprints/authoring/form-fields";
+import { isYoutubeLinkFieldUsable } from "@/components/home/blueprints/authoring/youtube-link-field";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import { useSubmitShowcaseMutation } from "@/hooks/blueprints/showcase-authoring";
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
@@ -100,10 +100,18 @@ export default function ShowcaseLaunchComposer({
   const headingImagePick = useHeadingImagePick();
   const submitMutation = useSubmitShowcaseMutation();
   // The lazy, ref-backed key: a `useState(crypto.randomUUID())` initializer would run during the
-  // server prerender, which `cacheComponents` refuses. It rotates only after a success.
+  // server prerender, which `cacheComponents` refuses.
+  //
+  // ⚠️ ONE KEY PER ATTEMPT, AND AN ATTEMPT IS ONE DRAFT. The key is read once, when Post is pressed,
+  // and that value rides with the request. It rotates after a success, and whenever the idle draft or
+  // image actually changes, so a retry of an unchanged draft carries the same key while an edited one
+  // never reuses it with a different body (which a real server answers with a 409). An edit cannot
+  // land mid-flight: the whole form is a disabled fieldset while posting.
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
 
   function applyFormPatch(formPatch: Partial<ShowcaseLaunchFormDraft>): void {
+    if (submitMutation.isPending) return;
+    resetIdempotencyKey();
     setFormDraft((previousFormDraft) => ({ ...previousFormDraft, ...formPatch }));
     // EDITING ANYTHING CLEARS THE LAST VERDICT: the errors describe a draft that no longer exists, and
     // a 409 about a name is about a name nobody is posting any more.
@@ -139,7 +147,8 @@ export default function ShowcaseLaunchComposer({
     );
   }
 
-  const isDemoLinkUsable = isWalkthroughLinkUsable(formDraft.demoYoutubeUrl);
+  const isDemoLinkUsable = isYoutubeLinkFieldUsable(formDraft.demoYoutubeUrl);
+  const isPosting = submitMutation.isPending;
 
   /**
    * Why Post is unavailable, in words beside the button, or `null`.
@@ -208,7 +217,9 @@ export default function ShowcaseLaunchComposer({
         show it, and name the people who made it with you.
       </p>
 
-      <div className="mt-8 space-y-8">
+      {/* A DISABLED FIELDSET WHILE POSTING locks every input, select and button inside in one place,
+          so nothing can change the draft a running request was built from. */}
+      <fieldset disabled={isPosting} className="mt-8 min-w-0 space-y-8">
         <FormSection title="The build">
           <LabeledTextInput
             label="Name"
@@ -241,8 +252,16 @@ export default function ShowcaseLaunchComposer({
           <SquareImagePicker
             inputId={HEADING_IMAGE_INPUT_ID}
             pickState={headingImagePickState}
-            onFilePicked={(file) => void headingImagePick.pickFile(file)}
-            onRemove={headingImagePick.clearPick}
+            isDisabled={isPosting}
+            onFilePicked={(file) => {
+              // A different image is a different attempt, for the reason the key's comment gives.
+              resetIdempotencyKey();
+              void headingImagePick.pickFile(file);
+            }}
+            onRemove={() => {
+              resetIdempotencyKey();
+              headingImagePick.clearPick();
+            }}
           />
           {/* THE LIVE PREVIEW SITS WITH THE IMAGE, because the image is the one field a maker cannot
               judge from the form alone: what matters is how it reads beside the name at 64px. */}
@@ -305,7 +324,7 @@ export default function ShowcaseLaunchComposer({
 
         <FormSection
           title="Team"
-          description="The people who built it, you included. Each person's photo comes from their own account once posting opens; for now their initials stand in."
+          description="The people who built it, you included. Handles are free text and are not verified, so each person shows as their initials rather than a photo."
         >
           {formDraft.teamRows.length === 0 ? (
             <p className="text-sm text-muted-foreground">
@@ -465,7 +484,7 @@ export default function ShowcaseLaunchComposer({
             }
           />
         </FormSection>
-      </div>
+      </fieldset>
 
       {/*
         THE CONTRACT'S OWN REFUSALS, named by the label a maker can see and listed in page order, the

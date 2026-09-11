@@ -5,11 +5,11 @@ import {
   LabeledTextInput,
   RepeatableRowShell,
   RepeatableRowsShell,
-} from "@/components/home/blueprints/teardowns/authoring/wizard-fields";
-import {
-  isWalkthroughLinkUsable,
-  type FileDraftRow,
-  type TeardownWizardStepProps,
+} from "@/components/home/blueprints/authoring/form-fields";
+import { isYoutubeLinkFieldUsable } from "@/components/home/blueprints/authoring/youtube-link-field";
+import type {
+  FileDraftRow,
+  TeardownWizardStepProps,
 } from "@/components/home/blueprints/teardowns/authoring/wizard-shared";
 import {
   TEARDOWN_MANUFACTURING_FILE_KIND_LABELS,
@@ -36,7 +36,7 @@ function newFileDraftRow(): FileDraftRow {
  * be a guess shown as a badge over a video of some other length.
  */
 export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardStepProps) {
-  const isWalkthroughUsable = isWalkthroughLinkUsable(draft.walkthroughYoutubeUrl);
+  const isWalkthroughUsable = isYoutubeLinkFieldUsable(draft.walkthroughYoutubeUrl);
 
   function updateFileRow(
     listKey: "documents" | "manufacturingFiles",

@@ -64,6 +64,38 @@ export function manufacturingMethodLabel(method: TeardownManufacturingMethod): s
   return TEARDOWN_MANUFACTURING_METHOD_LABELS[method];
 }
 
+/**
+ * A write-up as paragraphs: blank-line separated, the way somebody types into a textarea.
+ *
+ * Trailing whitespace and a run of three newlines both collapse to one break, because a maker
+ * pasting from a document should not be able to open a 4rem hole in the middle of their own launch
+ * page. An entry that is nothing but whitespace yields no paragraphs at all.
+ */
+export function splitWriteUpIntoParagraphs(writeUp: string): string[] {
+  return writeUp
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph) => paragraph.length > 0);
+}
+
+/**
+ * The write-up split where a launch's demo goes: after the first paragraph.
+ *
+ * `null` for no write-up AND for one that is only whitespace, which is `null` wearing a string. The
+ * detail page needs that answer on the server, because a launch with nothing to read still shows its
+ * demo, right after the summary.
+ */
+export function splitWriteUpAtFirstParagraph(writeUp: string | null): {
+  readonly firstParagraph: string;
+  readonly remainingParagraphs: readonly string[];
+} | null {
+  if (writeUp === null) return null;
+  const paragraphs = splitWriteUpIntoParagraphs(writeUp);
+  const firstParagraph = paragraphs.at(0);
+  if (firstParagraph === undefined) return null;
+  return { firstParagraph, remainingParagraphs: paragraphs.slice(1) };
+}
+
 const TELEMETRY_QUANTITY_FORMAT = new Intl.NumberFormat("en", { maximumFractionDigits: 1 });
 
 /**

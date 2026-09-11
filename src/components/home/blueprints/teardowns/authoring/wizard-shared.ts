@@ -6,12 +6,12 @@
 // machinery with the other — they share a SHAPE, copied deliberately, which is cheaper than an
 // abstraction three callers would each need an escape hatch from.
 
+import { buildYoutubeBlueprintVideo } from "@/components/home/blueprints/authoring/youtube-link-field";
 import {
   TeardownSubmissionDraftSchema,
   type TeardownAttestationClauseId,
   type TeardownSubmissionDraft,
 } from "@/lib/blueprints/authoring.schemas";
-import { extractYoutubeVideoId } from "@/lib/youtube";
 import type {
   BlueprintProvenanceKind,
   TeardownDesignationSource,
@@ -132,51 +132,8 @@ export const EMPTY_TEARDOWN_WIZARD_DRAFT: TeardownWizardDraft = {
   acceptedAttestationClauseIds: [],
 };
 
-/**
- * A pasted YouTube link becomes the video arm, or `null` when the field is empty.
- *
- * ⚠️ AN ID ON THE WIRE, NOT A URL — `extractYoutubeVideoId` at the boundary, exactly as
- * `create-studio-page.tsx` does, so a malformed link fails here rather than rendering as a blank box
- * later.
- *
- * ⚠️ THIS FUNCTION CANNOT REPORT A BAD LINK AND MUST NOT TRY. It returns `null` both for an empty
- * field and for text that does not parse, and the contract never sees the raw string, so a typo
- * would otherwise drop somebody's video silently. `isWalkthroughLinkUsable` below is what the step
- * checks before letting the publisher move on; keeping the two apart is what lets this stay total.
- *
- * ⚠️ `durationSeconds: null`, ALWAYS, AND THE WIZARD NEVER ASKS. Neither side of the wire can measure
- * it: the backend's only outbound YouTube call is oEmbed, which returns no duration. A typed runtime
- * would be a guess rendered as a badge over a video of some other length. `posterUrl` is DERIVED from
- * the id with no network call, `hqdefault` because `maxresdefault` 404s on non-HD uploads.
- */
-export function buildYoutubeBlueprintVideo(
-  youtubeUrl: string,
-): { source: "youtube"; youtubeVideoId: string; posterUrl: string; durationSeconds: null } | null {
-  // EXPORTED UNDER A NEUTRAL NAME when the launch form needed the same conversion for its demo. It
-  // was `buildWalkthroughVideo`, and a showcase demo is not a walkthrough.
-  const youtubeVideoId = extractYoutubeVideoId(youtubeUrl);
-  if (youtubeVideoId === null) return null;
-
-  return {
-    source: "youtube",
-    youtubeVideoId,
-    posterUrl: `https://i.ytimg.com/vi/${youtubeVideoId}/hqdefault.jpg`,
-    durationSeconds: null,
-  };
-}
-
-/**
- * Whether the walkthrough field is in a state the publisher can submit from.
- *
- * TRUE FOR EMPTY — most teardowns have no video and the field is optional. FALSE only for text that
- * is present and does not parse, which is the one case a step must surface: silently dropping a link
- * somebody pasted would lose their video with no explanation.
- */
-export function isWalkthroughLinkUsable(walkthroughYoutubeUrl: string): boolean {
-  return (
-    walkthroughYoutubeUrl.trim() === "" || extractYoutubeVideoId(walkthroughYoutubeUrl) !== null
-  );
-}
+// The YouTube link conversion and its usability check live in
+// `@/components/home/blueprints/authoring/youtube-link-field`, shared with the launch form.
 
 /** `""` → `null`, trimmed. The wizard's empty text field means "not stated", never an empty value. */
 function toNullableText(rawValue: string): string | null {

@@ -14,7 +14,7 @@ import {
   CheckboxRow,
   LabeledTextArea,
   LabeledTextInput,
-} from "@/components/home/blueprints/teardowns/authoring/wizard-fields";
+} from "@/components/home/blueprints/authoring/form-fields";
 import {
   buildRightsClaimNotice,
   describeClaimTarget,

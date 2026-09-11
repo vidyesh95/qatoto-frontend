@@ -1,6 +1,6 @@
 // TRANSPORT: props-only — a dumb view over the wizard draft.
 
-import { CheckboxRow } from "@/components/home/blueprints/teardowns/authoring/wizard-fields";
+import { CheckboxRow } from "@/components/home/blueprints/authoring/form-fields";
 import { TEARDOWN_ATTESTATION_CLAUSES } from "@/lib/blueprints/authoring.schemas";
 import type { TeardownAttestationClauseId } from "@/lib/blueprints/authoring.schemas";
 

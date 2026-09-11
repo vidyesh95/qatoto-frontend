@@ -1,8 +1,9 @@
 // TRANSPORT: mock — async server component. Reads `getBlueprintByCategory` from
 // `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
 //
-// Laid out after a Launch YC post: title block, byline row, the media, the pitch, the engagement
-// row, then the people, the links and the discussion.
+// Laid out after a Launch YC post: a square heading image beside the title block, the byline row,
+// the pitch, the write-up with the demo after its first paragraph, the engagement row, then the
+// people, the links and the discussion.
 //
 // THE VOTE NO LONGER SITS IN A GUTTER BESIDE THE TITLE. It did — a 40px column holding
 // `ShowcaseVoteBox`, mirroring the feed row — until the upvote moved into `ShowcaseEngagementBar`
@@ -34,6 +35,7 @@ import ShowcaseEngagementBar from "@/components/home/blueprints/showcase/section
 import ShowcaseWriteUp from "@/components/home/blueprints/showcase/sections/showcase-write-up";
 import RelativeTime from "@/components/home/shared/relative-time";
 import { getBlueprintByCategory, listShowcaseComments } from "@/lib/blueprints/api";
+import { splitWriteUpAtFirstParagraph } from "@/lib/blueprints/format";
 import { buildBlueprintCategoryHref, buildBlueprintHref } from "@/lib/blueprints/schemas";
 import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
 
@@ -51,6 +53,15 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
 
   const hasActionLinks = showcase.callToAction !== null || showcase.builtFromBlueprintSlug !== null;
 
+  // Split on the server: `null` means there is nothing to read, and the demo then follows the summary.
+  const writeUpSplit = splitWriteUpAtFirstParagraph(showcase.writeUp);
+  // Eager, because on desktop the demo is still the first large media on the page and its poster is
+  // the largest contentful paint, whether it follows the summary or the write-up's first paragraph.
+  const demoBlock =
+    showcase.demoVideo === null ? null : (
+      <BlueprintVideoBlock video={showcase.demoVideo} title="Demo" shouldLoadPosterEagerly />
+    );
+
   return (
     <article className="px-4 pt-5 pb-12 lg:px-6">
       {/* NO VOTE GUTTER HERE ANY MORE. This was a `grid-cols-[40px_minmax(0,1fr)]` with
@@ -58,14 +69,34 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
           reader had just seen it. The upvote moved into `ShowcaseEngagementBar` below, and keeping
           the gutter too would print `upvoteCount` twice on one page. The feed row still uses the
           box — that is the list shape and nothing there competes with it. */}
-      <div className="min-w-0">
-        <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
-          Showcase
-        </p>
-        <h1 className="mt-1 text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
-          {showcase.title}
-        </h1>
-        <p className="mt-2 max-w-2xl text-base leading-6 text-foreground/80">{showcase.tagline}</p>
+      {/* THE HEADING IMAGE IS A SQUARE BESIDE THE NAME, the Launch YC and Peerlist shape and the same
+          square the feed row shows. It replaced a 16:9 still that rendered only when a launch had no
+          demo, cropping a square image into a wide one and vanishing whenever a demo existed.
+          `alt=""` because the name sits right beside it. `priority` because it is the first image
+          above the fold on every launch; it is NOT the LCP, since the demo poster or the summary
+          out-paints a 72px square, which is why the demo keeps its own eager poster. */}
+      <div className="flex min-w-0 items-start gap-3 lg:gap-4">
+        <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-muted lg:size-18">
+          <Image
+            src={showcase.thumbnailUrl}
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 72px, 48px"
+            priority
+            className="object-cover"
+          />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
+            Showcase
+          </p>
+          <h1 className="mt-1 text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+            {showcase.title}
+          </h1>
+          <p className="mt-2 max-w-2xl text-base leading-6 text-foreground/80">
+            {showcase.tagline}
+          </p>
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#CAC4D0]/60 pb-3">
@@ -94,9 +125,9 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
       {/*
         FROM 1400px THE LAUNCH SPLITS INTO A READING COLUMN AND A RAIL. As one column it left ~300px
         of empty ground to the right of the media at 1440, beside a header rule that ran the full
-        width. The column is capped at 48rem, which is exactly the `max-w-3xl` the media already
-        had, so the still and the demo keep their size AND their shape; only the ground beside them
-        is used. Links, team and tags move into the rail, which sticks while the column scrolls.
+        width. The column is capped at 48rem, which is exactly the `max-w-3xl` the demo already has,
+        so the demo keeps its size AND its shape; only the ground beside it is used. Links, team and
+        tags move into the rail, which sticks while the column scrolls.
 
         ⚠️ 1400px, NOT `xl`. At 1280 with the sidebar open a rail would have squeezed the media from
         768px to ~620px, and this surface does not resize or reshape its media to make room.
@@ -104,45 +135,37 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
         ⚠️ THE ENGAGEMENT BAR STAYS IN THE COLUMN, under the pitch, which is where the teardown page
         puts its own bar; the two sibling detail pages keep the same shape there.
 
-        DOM ORDER IS THE PHONE ORDER, UNCHANGED: media, pitch, write-up, bar, links, team, tags,
-        discussion. The grid only places those blocks side by side; it never reorders them, so a
-        screen reader and a narrow screen read the page exactly as before.
+        DOM ORDER IS THE PHONE ORDER: pitch, write-up (with the demo after its first paragraph, or
+        the demo alone when there is no write-up), bar, links, team, tags, discussion. The grid only
+        places those blocks side by side; it never reorders them, so a screen reader and a narrow
+        screen read the page in the same order.
       */}
       <div className="min-[1400px]:grid min-[1400px]:grid-cols-[minmax(0,48rem)_minmax(16rem,1fr)] min-[1400px]:gap-x-8">
         <div className="min-w-0 min-[1400px]:col-start-1 min-[1400px]:row-start-1">
-          {showcase.demoVideo === null ? (
-            <div className="relative mt-5 aspect-video max-w-3xl overflow-hidden rounded-xl bg-muted">
-              <Image
-                src={showcase.thumbnailUrl}
-                alt={showcase.title}
-                fill
-                sizes="(min-width: 768px) 768px, 100vw"
-                priority
-                className="object-cover"
-              />
-            </div>
-          ) : (
-            // Eager, because the demo is the first media on the page and its poster is the LCP.
-            <BlueprintVideoBlock video={showcase.demoVideo} title="Demo" shouldLoadPosterEagerly />
-          )}
-
           {/* THE STANDFIRST, AND IT MOVED UP A SIZE WHEN THE WRITE-UP LANDED UNDER IT. Three
-              description-ish fields now sit on this arm — `tagline` above the media, `summary`
-              here, `writeUp` below — and at one size the last two read as a single paragraph that
-              got long. `text-base` is not a new size on this surface: the tagline and the feed row
-              already use it, and the media between them means the two never appear adjacent. */}
+              description-ish fields sit on this arm — `tagline` in the title block, `summary` here,
+              `writeUp` below — and at one size the last two read as a single paragraph that got
+              long. `text-base` is not a new size on this surface: the tagline and the feed row
+              already use it, and the byline row sits between the tagline and this line. */}
           <p className="mt-5 max-w-2xl text-base leading-7 text-foreground">{showcase.summary}</p>
 
-          {/* `null` renders NOTHING — no heading, no empty box, no invitation to write one. Most
-              launches are posted the day they ship and never get a write-up, which is the ordinary
-              state and not a gap to fill. */}
+          {/* NO WRITE-UP RENDERS NO WRITE-UP — no heading, no empty box, no invitation to write one.
+              Most launches are posted the day they ship and never get one, which is the ordinary
+              state and not a gap to fill; the demo, when there is one, then follows the summary. */}
           {/* ⚠️ KEYED BY SLUG ON PURPOSE. Two showcase pages are the same component tree in the
               same position, so React reuses the instance across a client navigation and the
               write-up would arrive as a changed prop on a component still holding the previous
               launch's overflow measurement. The key makes it a new instance, which is what
               `showcase-write-up.tsx` relies on instead of an effect dependency. */}
-          {showcase.writeUp === null ? null : (
-            <ShowcaseWriteUp key={showcase.slug} writeUp={showcase.writeUp} />
+          {writeUpSplit === null ? (
+            demoBlock
+          ) : (
+            <ShowcaseWriteUp
+              key={showcase.slug}
+              firstParagraph={writeUpSplit.firstParagraph}
+              remainingParagraphs={writeUpSplit.remainingParagraphs}
+              contentAfterFirstParagraph={demoBlock}
+            />
           )}
 
           <ShowcaseEngagementBar showcase={showcase} />

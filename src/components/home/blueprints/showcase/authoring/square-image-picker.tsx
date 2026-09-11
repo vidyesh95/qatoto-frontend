@@ -36,12 +36,18 @@ function formatFileSizeLabel(byteSize: number): string {
 export default function SquareImagePicker({
   inputId,
   pickState,
+  isDisabled = false,
   onFilePicked,
   onRemove,
 }: {
   /** Unique on the page; the section heading's label points at it. */
   readonly inputId: string;
   readonly pickState: HeadingImagePickState;
+  /**
+   * True while the launch is posting. A disabled fieldset already disables the buttons and the file
+   * input, but a DROP lands on a plain `<div>` that no fieldset reaches, so this is what refuses it.
+   */
+  readonly isDisabled?: boolean;
   readonly onFilePicked: (file: File) => void;
   readonly onRemove: () => void;
 }) {
@@ -49,6 +55,7 @@ export default function SquareImagePicker({
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   function handleIncomingFiles(incomingFiles: FileList | null): void {
+    if (isDisabled) return;
     // ONE FILE. A multi-file drop that quietly kept the first would be a coin flip over which image
     // heads the launch.
     const firstFile = incomingFiles?.[0];
@@ -92,7 +99,7 @@ export default function SquareImagePicker({
           onDrop={handleDrop}
           onDragOver={(dragOverEvent) => {
             dragOverEvent.preventDefault();
-            setIsDraggingOver(true);
+            if (!isDisabled) setIsDraggingOver(true);
           }}
           onDragLeave={handleDragLeave}
           className={`relative grid size-32 shrink-0 place-items-center overflow-hidden rounded-xl border transition-colors ${

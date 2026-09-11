@@ -3745,12 +3745,13 @@ idempotency keys, not-optimistic. Copy it; do not reinvent it.
   badge, pull-quotes and any stat band in the write-up. A comment section that decorates its best
   comment is a testimonial row wearing a thread's clothes.
 
-## Posting a launch — PART 1 SHIPPED MOCK-BACKED 2026-09-11, part 2 blocked on a showcase table
+## Posting a launch — PART 1 AND 2a SHIPPED MOCK-BACKED 2026-09-11, part 2b (backend, wiring, approval) NOT STARTED
 
-A maker can now post a launch at `/blueprints/showcase/new` (linked from the showcase feed header
-and from studio), and see their launches at `/studio/launches` ("My Launches" in the sidebar). The
-shape follows Launch YC and Peerlist Launchpad: one page, a square heading image, a plain-text
-write-up with an optional YouTube demo, a link, the team, details and two statements.
+A maker can post a launch at `/blueprints/showcase/new` (linked from the showcase feed header and
+from studio), and see their launches at `/studio/launches` ("My Launches" in the sidebar). The shape
+follows Launch YC and Peerlist Launchpad: one page, a square heading image, a plain-text write-up
+with an optional YouTube demo, a link, the team, details and two statements. The form's save, My
+Launches and the public showcase pages all still run on fixtures.
 
 ### Part 1 — the rehearsal — SHIPPED 2026-09-11
 
@@ -3769,27 +3770,131 @@ write-up with an optional YouTube demo, a link, the team, details and two statem
 - **`/studio/launches`** reads five fixture rows, one per reachable state. ⚠️ **The empty list
   ships unexercised**: the fixtures are never empty, and it is what every first-time maker sees.
 
-### Part 2 — the backend and the detail page — NOT STARTED
+### Part 2a — the detail page and form polish — SHIPPED 2026-09-11
 
-1. **A `showcase` table with `moderationState`**, and the public getters gate on it. ⚠️ Today the
-   showcase arm has no moderation state, so `isBlueprintVisible` lets every showcase through; that
-   must change the same day posting opens, or a posted launch is public before review.
-2. **`POST /blueprints/showcases`** as multipart (the draft JSON plus a `headingImage` file) with an
-   `Idempotency-Key`, answering 202 with the receipt shape; **`GET /blueprints/showcases/mine`**
-   with the `ShowcaseSubmissionSchema` row shape.
-3. **The image goes to `qatoto/showcase-images/<id>/heading`** through `createSingleFileUpload` and
-   sharp: re-encode, refuse non-square and under 256px server-side. The browser check is UX only.
-4. **The author comes from the session**, never the body. Team rows carry no avatar today; the read
-   side needs a nullable avatar with initials as the fallback.
-5. **The server re-checks what the form only suggests**: `builtFromBlueprintSlug` must name a
-   listable teardown, `launchedAt` may not be in the future, the slug may not be `new`. `cadFormat`
-   is not collected and the backend writes `null`.
-6. **Detail page**: the public arm already carries `tagline`, `writeUp`, `callToAction` and `team`.
-   What changes is the square heading image beside the name, and the demo video placed after the
-   first paragraph of the write-up, which the form's hint already promises.
-7. **Hoist `wizard-fields.tsx`** to a shared blueprints folder: three forms import it now.
-8. **When wired**: delete the receipt disclosure, flip the `TRANSPORT: mock` banners, and change
-   "Posting is not open yet" in both `site-roadmap.ts` entries.
+- **A square heading image beside the name** on `/blueprints/showcase/[slug]` (48px, 72px from
+  `lg`). The 16:9 still is gone: it rendered only when a launch had no demo, and cropped a square
+  image into a wide one.
+- **The demo sits after the first write-up paragraph.** Paragraph one and the demo are never cropped;
+  "…more" covers paragraphs two onward, and `ShowcaseWriteUp` takes the demo as a slot. With no
+  write-up the demo follows the summary. The split is `splitWriteUpAtFirstParagraph` in
+  `src/lib/blueprints/format.ts`.
+- **The form fields moved** to `src/components/home/blueprints/authoring/form-fields.tsx`, and the
+  YouTube helpers to `youtube-link-field.ts` beside it (`isWalkthroughLinkUsable` is now
+  `isYoutubeLinkFieldUsable`).
+- **Cross-field errors arrive in one round.** Zod 4 skipped an object's refinements whenever a field
+  aborted (an unchosen select, a `NaN` cost), so "tick both statements" and the duplicate-handle and
+  future-date messages waited for a second press. The launch, teardown and rights-claim contracts now
+  gate each refinement with `when` through `buildWellTypedInputsPredicate`
+  (`src/lib/blueprints/refinement-inputs.ts`).
+- **Three review fixes that apply before the backend:** the Team section says handles are free text
+  and not verified; a moderation state this build does not know reads as `unknown` on My Launches
+  instead of failing the whole list; and the form is a disabled fieldset while posting (the image
+  picker refuses drops too), with the idempotency key rotating only after a success or when an idle
+  draft or image actually changes.
+
+### Part 2b — backend, wiring and approval — NOT STARTED
+
+Decided with the owner 2026-09-11. **Built as ONE round**, so nothing ships that cannot be tested
+against a real server. The migration is **generated only; the owner runs it**. The public showcase
+pages **keep the fixtures** this round. **Deleting an account deletes its launches** and their
+Cloudinary images.
+
+**A. Contract.** House envelope `{ status, statusCode, message, data, errors? }`. There are no machine
+error codes on the wire, so the frontend branches on the HTTP status.
+
+| Route                                                                                 | Chain                                                                                                      | Success                                                                         |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `POST /blueprints/showcases` (multipart: `headingImage` file, `draft` JSON text part) | `requireAuth → submit limiter → requireIdentifiedUser → upload parser → idempotency({ required: true })`   | 201, `data` is the receipt                                                      |
+| `GET /blueprints/showcases/mine`                                                      | `requireAuth`                                                                                              | 200, `data` is an array, newest first                                           |
+| `GET /blueprints/admin/showcases/review-queue`                                        | `requireAuth`, `moderate_content` checked first in the controller                                          | 200, `data` plus `nextCursor`, oldest first, with `author` and team handles     |
+| `POST /blueprints/admin/showcases/:submissionId/moderate`                             | `requireAuth → moderation limiter → requireIdentifiedUser → compactBody → idempotency({ required: true })` | 200. Body `decision`: `published` (note optional) or `rejected` (note required) |
+
+- **Server limits the form must mirror:** title 8..120, tagline 10..80, summary 40..1000, write-up
+  ≤10000; tags ≤10, each 1..32; team ≤12 (name 1..80, role 1..60, handle ≤64, unique ignoring case);
+  link label 1..40, URL ≤2048; demo `durationSeconds` null; `launchedAt` a full ISO instant with
+  about five minutes of clock skew allowed.
+- **Title uniqueness** covers pending and published launches only, so a rejected maker can resubmit.
+- **Refusals:** title taken is 409 with `errors.title`; a launch already decided is 409; a moderator
+  deciding their own launch is 403; image refusals are 422 under `errors.headingImage`.
+
+**B. Backend** (`qatoto-backend`, every route on the existing `/blueprints` router).
+
+1. **Schema.** `showcase_launch` and `showcase_launch_team_member` in `src/db/schema/home.ts`.
+    - Enums `showcase_launch_moderation_state` (`pending_review | published | rejected`) and
+      `showcase_launch_difficulty` (byte-matching `BLUEPRINT_DIFFICULTIES`).
+    - `author_user_id` NOT NULL, cascade. `heading_image_url` plus `heading_image_public_id`.
+    - Generated `title_normalized` with a partial unique index for pending and published (precedent
+      `modelNumberNormalized` in `store.ts`; watch the escaped `\\s`).
+    - `tags text[]`; cost, demo YouTube id and link columns; `reviewed_by_user_id` (restrict),
+      `reviewed_at`, `moderator_note`; unique nullable `public_slug`; `created_at` precision 3 for the
+      keyset cursor. Every CHECK declared in Drizzle `check()`, never hand-edited into the SQL.
+    - Team rows on the `video_chapter` precedent, with a generated `handle_normalized` unique per
+      launch. A nullable `user_id` and a verified badge are deferred.
+    - Audit labels `showcase_launch_published` and `showcase_launch_rejected` in `platform.ts`.
+2. **Cloudinary helpers** for `qatoto/showcase-images/<id>/heading`.
+3. **Limiters.** `LimiterSpec` in `src/middleware/rate-limit.ts` has no `skipFailedRequests` today:
+   add it and pass it through in `createLimiter`. Submit: 5 per 15 minutes, skipping failed requests.
+   Moderation: 200 per 15 minutes. Both keep the default user-id key (`userKey`).
+4. **Upload parser** (`fieldName: "headingImage"`, 5 MB, `textFieldLimit: 1`).
+5. **Services.**
+    - Submit: normalise the link URL, pre-check the title in SQL, normalise the image with sharp and
+      check square within 1% and at least 256px, upload, then insert the launch and team rows in one
+      transaction. On a title race, delete the image best-effort and log its public id if that fails.
+    - Mine list; keyset review queue joined to the author, team rows in one `IN` query.
+    - Moderation: `FOR UPDATE`, refuse an already-decided launch and self-moderation, mint the slug in
+      savepoints, write the audit entry with ids only.
+6. **Error mapper.** Title taken becomes 409 with `errors.title`; image refusals become 422 with
+   `errors.headingImage`.
+7. **OpenAPI body entries**, and one upload import in `src/middleware/json-body-budget.test.ts`. No
+   new test files.
+8. **Erasure.** Manifest: `showcase_launch.author_user_id` → `delete_rows`,
+   `showcase_launch.reviewed_by_user_id` → `retain`. Also add the missing
+   `anime_hero_slide.*_user_id` → `null_out` keys, which make the coverage script fail today. In
+   `anonymize-account.service.ts`, delete the author's launch images from Cloudinary before the
+   cascade, on the `deleteUserAvatar` precedent imported there.
+9. **Sweeper**, on the `src/jobs/scheduled-ticks.ts` precedent: delete `qatoto/showcase-images` assets
+   older than 24 hours with no matching row.
+10. **Migration:** `pnpm db:generate` only (0169). The owner runs `db:migrate`.
+
+**C. Frontend wiring.**
+
+1. **Contract and api.** The draft schema mirrors the server limits. `showcase-authoring.api.ts` uses
+   `sendForm` (`draft` first, then `headingImage`, with the `Idempotency-Key` header) and `getJson`
+   for the mine array. Delete `src/mocks/blueprints-showcase-authoring-mocks.ts`.
+2. **Refusals**, as one union in `showcase-launch-shared.ts` with a notice component:
+    - `signInRequired` 401 (sign-in link opens a new tab, so the draft and image survive)
+    - `accountIncomplete` 403
+    - `launchNameConflict` 409 with `errors.title`
+    - `submissionAlreadyReceived` 409 without it: "Check My Launches before you post it again."
+    - `headingImageTooLarge` 413, by status even for a non-JSON body (`http.ts` already keeps the status
+      as the code)
+    - `headingImageRefused` 422 with `errors.headingImage`, showing the server's message
+    - `fieldsRefused` 422 with draft field errors
+    - `rateLimited` 429, `replyUnreadable` for PARSE, `unexpected` otherwise
+3. **Receipt.** Remove "Nothing was actually stored". New copy: "Your launch is saved and waiting for a
+   moderator. It is not in the feed, and nobody else can see it while it is in review."
+4. **My Launches.** Say once, in the header: "Approved launches do not appear on the public showcase
+   pages yet. Those pages still show sample launches." Chips: In review, Approved, Not accepted,
+   unknown. No "View the launch" link.
+5. **Admin `/admin/showcase-launches`**, on `pathway-moderation-page.tsx`: gated on `moderate_content`,
+   keyset queue, each card with the square image, the whole launch, team handles and "Handles are
+   free text and are not verified.", a note, Publish behind an inline confirm, Send back only with a
+   note, "Refresh the queue" on a 409, and one key per card. Sidebar "Launches" under "Studio ·
+   Creator submissions".
+6. **Docs:** the `CLAUDE.md` rehearsal paragraph, both "Posting is not open yet" lines in
+   `site-roadmap.ts`, and the `TRANSPORT` banners.
+
+**D. Verification for 2b.** `pnpm gate`; `pnpm db:verify-anonymization-coverage` after the migration;
+409 with and without `errors.title`; 422 image errors; 413 with a non-JSON body; an unknown moderation
+state; the key unchanged on a plain retry and new after an edit; erasure removing the launch images;
+the sweeper deleting orphans only.
+
+**Still open after 2b:** public getters read the table and gate on `moderationState`
+(`isBlueprintVisible` passes every showcase today) and the fixture launches retire; notifying makers
+of a decision; team members linked to real accounts with avatars and a verified badge; the built-from
+select still lists fixture teardowns; editing and resubmitting a launch; flagging and removing after
+publish; the pathway moderation page reusing one idempotency key across different bodies.
 
 ## Teardowns as a clean-room replication surface — PART 1 SHIPPED 2026-09-10, parts 2–4 blocked on tables
 

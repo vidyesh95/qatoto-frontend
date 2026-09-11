@@ -36,11 +36,11 @@ export default function BlueprintVideoBlock({
   /** Names the video for a screen reader — "Walkthrough", "Demo". */
   readonly title: string;
   /**
-   * True only where the poster is the first media on the page. On a showcase the demo sits directly
-   * under the byline and its poster WAS the largest contentful paint, loaded `lazy` and painted at
-   * ~490ms against ~150ms for the eager still a demo-less launch shows in the same slot. No console
-   * warning flagged it: the poster is an unoptimised ytimg URL, which Next's LCP check skips. The
-   * teardown walkthrough sits far below the fold and keeps the lazy default.
+   * True only where the poster is the first large media on the page. On a showcase the demo follows
+   * the summary, or the write-up's first paragraph, and on desktop its poster is still the largest
+   * contentful paint: loaded `lazy` it painted at ~490ms against ~150ms eager. No console warning
+   * flagged it: the poster is an unoptimised ytimg URL, which Next's LCP check skips. The teardown
+   * walkthrough sits far below the fold and keeps the lazy default.
    */
   readonly shouldLoadPosterEagerly?: boolean;
 }) {

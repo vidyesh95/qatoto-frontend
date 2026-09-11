@@ -22,6 +22,7 @@ import {
   BLUEPRINT_MODERATION_STATES,
   BlueprintVideoSchema,
 } from "@/lib/blueprints/schemas";
+import { buildWellTypedInputsPredicate } from "@/lib/blueprints/refinement-inputs";
 import {
   createExternalHttpsUrlSchema,
   createHttpsOrSiteRelativeUrlSchema,
@@ -91,6 +92,12 @@ const ShowcaseCallToActionDraftSchema = z
   })
   .strict();
 
+/** The two numbers the range comparison reads. `z.number()` refuses `NaN`, so an unreadable one skips it. */
+const CostRangeComparisonInputsSchema = z.object({
+  minimumInCents: z.number(),
+  maximumInCents: z.number(),
+});
+
 /**
  * What one unit's parts cost, as a range. STRICTER THAN `BlueprintCostRangeSchema` for the same
  * reason as the link: a write must refuse a range whose floor is above its ceiling.
@@ -112,10 +119,32 @@ const ShowcaseCostRangeDraftSchema = z
     currency: z.literal("USD"),
   })
   .strict()
-  .refine((costRange) => costRange.minimumInCents <= costRange.maximumInCents, {
-    path: ["maximumInCents"],
-    message: "The highest cost can't be lower than the lowest.",
-  });
+  .refine(
+    (costRange) => {
+      const comparisonInputs = CostRangeComparisonInputsSchema.safeParse(costRange);
+      return (
+        !comparisonInputs.success ||
+        comparisonInputs.data.minimumInCents <= comparisonInputs.data.maximumInCents
+      );
+    },
+    {
+      path: ["maximumInCents"],
+      message: "The highest cost can't be lower than the lowest.",
+      // A SMALL GAIN, STATED AS SUCH: an unreadable floor already skipped this correctly. What
+      // changes is that a wrong `currency` no longer hides the range message, and the dependency
+      // is written down. See `refinement-inputs.ts`.
+      when: buildWellTypedInputsPredicate(CostRangeComparisonInputsSchema),
+    },
+  );
+
+/** The fields each cross-field rule on the draft reads, and nothing else. */
+const LaunchStatementRefinementInputsSchema = z.object({
+  acceptedLaunchStatementIds: z.array(z.enum(SHOWCASE_LAUNCH_STATEMENT_IDS)),
+});
+const TeamHandleRefinementInputsSchema = z.object({
+  team: z.array(z.object({ handle: z.string() })),
+});
+const LaunchDateRefinementInputsSchema = z.object({ launchedAt: z.string() });
 
 /**
  * What a maker submits.
@@ -154,52 +183,76 @@ export const ShowcaseSubmissionDraftSchema = z
     acceptedLaunchStatementIds: z.array(z.enum(SHOWCASE_LAUNCH_STATEMENT_IDS)),
   })
   .strict()
-  .superRefine((draft, context) => {
-    const acceptedStatementIds = new Set(draft.acceptedLaunchStatementIds);
-    const missingStatementIds = SHOWCASE_LAUNCH_STATEMENT_IDS.filter(
-      (statementId) => !acceptedStatementIds.has(statementId),
-    );
-    if (missingStatementIds.length > 0) {
-      context.addIssue({
-        code: "custom",
-        path: ["acceptedLaunchStatementIds"],
-        message: `Both statements have to be ticked before this can be posted. Still unticked: ${missingStatementIds
-          .map((statementId) => SHOWCASE_LAUNCH_STATEMENTS[statementId].label)
-          .join("; ")}.`,
-      });
-    }
+  // ⚠️ THREE REFINEMENTS, NOT ONE, EACH GATED BY `when` ON THE FIELDS IT READS. As one refinement
+  // it was skipped whenever any field aborted, and the form starts with difficulty unchosen, so the
+  // statements, duplicate-handle and future-date messages only appeared on a second press. Each body
+  // re-parses its own inputs schema and reads nothing else; see `refinement-inputs.ts`.
+  .superRefine(
+    (draft, context) => {
+      const refinementInputs = LaunchStatementRefinementInputsSchema.safeParse(draft);
+      if (!refinementInputs.success) return;
 
-    // ⚠️ ONE PERSON, ONE ROW. The detail page keys team members by handle, so two rows with the
-    // same handle would collide there rather than failing here.
-    const seenHandles = new Set<string>();
-    draft.team.forEach((teamMember, teamMemberIndex) => {
-      const normalizedHandle = teamMember.handle.toLowerCase();
-      if (normalizedHandle === "") return;
-      if (seenHandles.has(normalizedHandle)) {
+      const acceptedStatementIds = new Set(refinementInputs.data.acceptedLaunchStatementIds);
+      const missingStatementIds = SHOWCASE_LAUNCH_STATEMENT_IDS.filter(
+        (statementId) => !acceptedStatementIds.has(statementId),
+      );
+      if (missingStatementIds.length > 0) {
         context.addIssue({
           code: "custom",
-          path: ["team", teamMemberIndex, "handle"],
-          message: "This handle is already on the team. Each person appears once.",
+          path: ["acceptedLaunchStatementIds"],
+          message: `Both statements have to be ticked before this can be posted. Still unticked: ${missingStatementIds
+            .map((statementId) => SHOWCASE_LAUNCH_STATEMENTS[statementId].label)
+            .join("; ")}.`,
         });
       }
-      seenHandles.add(normalizedHandle);
-    });
+    },
+    { when: buildWellTypedInputsPredicate(LaunchStatementRefinementInputsSchema) },
+  )
+  .superRefine(
+    (draft, context) => {
+      const refinementInputs = TeamHandleRefinementInputsSchema.safeParse(draft);
+      if (!refinementInputs.success) return;
 
-    /**
-     * ⚠️ `Date.now()` LIVES INSIDE THIS REFINE AND NOWHERE AT MODULE OR RENDER SCOPE. A refine runs
-     * only when a submission is parsed, on a click; a clock read during a server prerender is a build
-     * error under `cacheComponents`. The feed sorts on `launchedAt`, so a future date would pin a
-     * launch to the top of it.
-     */
-    const launchedAtMs = Date.parse(draft.launchedAt);
-    if (!Number.isNaN(launchedAtMs) && launchedAtMs > Date.now()) {
-      context.addIssue({
-        code: "custom",
-        path: ["launchedAt"],
-        message: "A launch date can't be in the future. Pick the day it went out.",
+      // ⚠️ ONE PERSON, ONE ROW. The detail page keys team members by handle, so two rows with the
+      // same handle would collide there rather than failing here.
+      const seenHandles = new Set<string>();
+      refinementInputs.data.team.forEach((teamMember, teamMemberIndex) => {
+        const normalizedHandle = teamMember.handle.toLowerCase();
+        if (normalizedHandle === "") return;
+        if (seenHandles.has(normalizedHandle)) {
+          context.addIssue({
+            code: "custom",
+            path: ["team", teamMemberIndex, "handle"],
+            message: "This handle is already on the team. Each person appears once.",
+          });
+        }
+        seenHandles.add(normalizedHandle);
       });
-    }
-  });
+    },
+    { when: buildWellTypedInputsPredicate(TeamHandleRefinementInputsSchema) },
+  )
+  .superRefine(
+    (draft, context) => {
+      const refinementInputs = LaunchDateRefinementInputsSchema.safeParse(draft);
+      if (!refinementInputs.success) return;
+
+      /**
+       * ⚠️ `Date.now()` LIVES INSIDE THIS REFINE AND NOWHERE AT MODULE OR RENDER SCOPE. A refine runs
+       * only when a submission is parsed, on a click; a clock read during a server prerender is a
+       * build error under `cacheComponents`. The feed sorts on `launchedAt`, so a future date would
+       * pin a launch to the top of it.
+       */
+      const launchedAtMs = Date.parse(refinementInputs.data.launchedAt);
+      if (!Number.isNaN(launchedAtMs) && launchedAtMs > Date.now()) {
+        context.addIssue({
+          code: "custom",
+          path: ["launchedAt"],
+          message: "A launch date can't be in the future. Pick the day it went out.",
+        });
+      }
+    },
+    { when: buildWellTypedInputsPredicate(LaunchDateRefinementInputsSchema) },
+  );
 export type ShowcaseSubmissionDraft = z.infer<typeof ShowcaseSubmissionDraftSchema>;
 
 /**
@@ -217,6 +270,19 @@ export const ShowcaseSubmissionReceiptSchema = z
 export type ShowcaseSubmissionReceipt = z.infer<typeof ShowcaseSubmissionReceiptSchema>;
 
 /**
+ * Every state a row in `/studio/launches` can show: the moderation states, plus `unknown`.
+ *
+ * ⚠️ `unknown` IS NOT A STATE A LAUNCH CAN BE IN. It is what this app shows when the server sends a
+ * state newer than this build knows. Without it one such row would fail the whole list's parse and
+ * the maker would see an error instead of every launch they can read.
+ */
+export const SHOWCASE_SUBMISSION_DISPLAY_STATES = [
+  ...BLUEPRINT_MODERATION_STATES,
+  "unknown",
+] as const;
+export type ShowcaseSubmissionDisplayState = (typeof SHOWCASE_SUBMISSION_DISPLAY_STATES)[number];
+
+/**
  * One row in `/studio/launches`, the maker's own view of something they posted.
  *
  * `headingImageUrl` is what the published launch calls `thumbnailUrl`: the square heading image,
@@ -229,7 +295,8 @@ export const ShowcaseSubmissionSchema = z
     title: z.string(),
     tagline: z.string(),
     headingImageUrl: createHttpsOrSiteRelativeUrlSchema(2048),
-    moderationState: z.enum(BLUEPRINT_MODERATION_STATES),
+    // `.catch`, so a state this build does not know reads as `unknown` rather than refusing the row.
+    moderationState: z.enum(SHOWCASE_SUBMISSION_DISPLAY_STATES).catch("unknown"),
     submittedAt: z.string(),
     publicSlug: z.string().nullable(),
     moderatorNote: z.string().nullable(),

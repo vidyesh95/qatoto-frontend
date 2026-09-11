@@ -4,7 +4,7 @@ import {
   LabeledTextInput,
   RepeatableRowShell,
   RepeatableRowsShell,
-} from "@/components/home/blueprints/teardowns/authoring/wizard-fields";
+} from "@/components/home/blueprints/authoring/form-fields";
 import type {
   PartDraftRow,
   TeardownWizardStepProps,

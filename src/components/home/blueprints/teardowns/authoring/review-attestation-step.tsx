@@ -1,7 +1,7 @@
 // TRANSPORT: props-only — a dumb view over the wizard draft.
 
 import AttestationGate from "@/components/home/blueprints/teardowns/authoring/attestation-gate";
-import { LabeledTextInput } from "@/components/home/blueprints/teardowns/authoring/wizard-fields";
+import { LabeledTextInput } from "@/components/home/blueprints/authoring/form-fields";
 import type { TeardownWizardStepProps } from "@/components/home/blueprints/teardowns/authoring/wizard-shared";
 import {
   TEARDOWN_SURVEY_METHOD_LABELS,

@@ -21,6 +21,8 @@
 
 import { z } from "zod";
 
+import { buildWellTypedInputsPredicate } from "@/lib/blueprints/refinement-inputs";
+
 /**
  * What KIND of right is claimed.
  *
@@ -135,6 +137,11 @@ export const RIGHTS_CLAIM_SWORN_CLAUSE_IDS = RIGHTS_CLAIM_SWORN_CLAUSES.map(
   (clause) => clause.id,
 ) as readonly RightsClaimSwornClauseId[];
 
+/** The one field the sworn-clause rule reads. */
+const SwornClauseRefinementInputsSchema = z.object({
+  acceptedSwornClauseIds: z.array(z.enum(RIGHTS_CLAIM_SWORN_CLAUSE_IDS)),
+});
+
 /**
  * The whole notice, before it is turned into text.
  *
@@ -167,20 +174,29 @@ export const RightsClaimDraftSchema = z
     acceptedSwornClauseIds: z.array(z.enum(RIGHTS_CLAIM_SWORN_CLAUSE_IDS)),
   })
   .strict()
-  .superRefine((draft, context) => {
-    const acceptedClauseIds = new Set(draft.acceptedSwornClauseIds);
-    const missingClauses = RIGHTS_CLAIM_SWORN_CLAUSES.filter(
-      (clause) => !acceptedClauseIds.has(clause.id),
-    );
+  // ⚠️ GATED BY `when` ON THE ONE FIELD IT READS. Without it an unpicked claim kind or target (nothing
+  // is pre-selected, on purpose) aborted the object and hid this message until a second press. See
+  // `refinement-inputs.ts`.
+  .superRefine(
+    (draft, context) => {
+      const refinementInputs = SwornClauseRefinementInputsSchema.safeParse(draft);
+      if (!refinementInputs.success) return;
 
-    if (missingClauses.length > 0) {
-      context.addIssue({
-        code: "custom",
-        path: ["acceptedSwornClauseIds"],
-        message: `All three statements have to be sworn before this notice can be prepared. Still unchecked: ${missingClauses
-          .map((clause) => clause.label)
-          .join("; ")}.`,
-      });
-    }
-  });
+      const acceptedClauseIds = new Set(refinementInputs.data.acceptedSwornClauseIds);
+      const missingClauses = RIGHTS_CLAIM_SWORN_CLAUSES.filter(
+        (clause) => !acceptedClauseIds.has(clause.id),
+      );
+
+      if (missingClauses.length > 0) {
+        context.addIssue({
+          code: "custom",
+          path: ["acceptedSwornClauseIds"],
+          message: `All three statements have to be sworn before this notice can be prepared. Still unchecked: ${missingClauses
+            .map((clause) => clause.label)
+            .join("; ")}.`,
+        });
+      }
+    },
+    { when: buildWellTypedInputsPredicate(SwornClauseRefinementInputsSchema) },
+  );
 export type RightsClaimDraft = z.infer<typeof RightsClaimDraftSchema>;

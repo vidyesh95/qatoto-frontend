@@ -12,12 +12,12 @@ import PartsStep from "@/components/home/blueprints/teardowns/authoring/parts-st
 import ReviewAttestationStep from "@/components/home/blueprints/teardowns/authoring/review-attestation-step";
 import SubjectProvenanceStep from "@/components/home/blueprints/teardowns/authoring/subject-provenance-step";
 import SubmissionReceipt from "@/components/home/blueprints/teardowns/authoring/submission-receipt";
+import { isYoutubeLinkFieldUsable } from "@/components/home/blueprints/authoring/youtube-link-field";
 import {
   collectTeardownSubmission,
   compareTeardownFieldPathsByStep,
   describeTeardownFieldPath,
   EMPTY_TEARDOWN_WIZARD_DRAFT,
-  isWalkthroughLinkUsable,
   TEARDOWN_WIZARD_STEPS,
   type TeardownWizardDraft,
   type TeardownWizardStepId,
@@ -117,7 +117,7 @@ export default function TeardownWizard() {
   const isLastStep = viewState.currentStepIndex === TEARDOWN_WIZARD_STEPS.length - 1;
 
   const attestationGap = describeAttestationGap(draft.acceptedAttestationClauseIds);
-  const isWalkthroughUsable = isWalkthroughLinkUsable(draft.walkthroughYoutubeUrl);
+  const isWalkthroughUsable = isYoutubeLinkFieldUsable(draft.walkthroughYoutubeUrl);
 
   /**
    * Why submit is unavailable, or `null`.

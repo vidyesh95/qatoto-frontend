@@ -5,7 +5,7 @@ import {
   LabeledEnumSelect,
   LabeledTextArea,
   LabeledTextInput,
-} from "@/components/home/blueprints/teardowns/authoring/wizard-fields";
+} from "@/components/home/blueprints/authoring/form-fields";
 import type { TeardownWizardStepProps } from "@/components/home/blueprints/teardowns/authoring/wizard-shared";
 import {
   TEARDOWN_SUBJECT_KIND_REFUSALS,

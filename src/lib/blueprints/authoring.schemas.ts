@@ -13,6 +13,7 @@
 
 import { z } from "zod";
 
+import { buildWellTypedInputsPredicate } from "@/lib/blueprints/refinement-inputs";
 import {
   BLUEPRINT_MODERATION_STATES,
   BlueprintVideoSchema,
@@ -108,6 +109,17 @@ export const TeardownSubmissionPartSchema = z
 export type TeardownSubmissionPart = z.infer<typeof TeardownSubmissionPartSchema>;
 
 /**
+ * The fields each cross-field rule on the draft reads, and nothing else. A plain `z.object` ignores
+ * the other provenance keys, so an unselected provenance kind no longer hides the survey-date message.
+ */
+const SurveyDateRefinementInputsSchema = z.object({
+  provenance: z.object({ surveyedAt: z.string() }),
+});
+const AttestationRefinementInputsSchema = z.object({
+  acceptedAttestationClauseIds: z.array(z.enum(TEARDOWN_ATTESTATION_CLAUSE_IDS)),
+});
+
+/**
  * THE WHOLE PAYLOAD, as it would go over the wire.
  *
  * `subjectKind` IS PINNED to the one publishable literal, matching `TeardownBlueprintSchema`. The
@@ -143,38 +155,54 @@ export const TeardownSubmissionDraftSchema = z
     acceptedAttestationClauseIds: z.array(z.enum(TEARDOWN_ATTESTATION_CLAUSE_IDS)),
   })
   .strict()
-  .superRefine((draft, context) => {
-    /**
-     * ⚠️ AN EMPTY SURVEY DATE HAS TO BE REFUSED HERE, because the READ schema cannot refuse it.
-     * `TeardownProvenanceSchema.surveyedAt` is `z.string()` — the house convention for an ISO value
-     * (`IsoDateTimeSchema`) — which accepts `""`. That is harmless for fixtures, every one of which
-     * has a date, and wrong for a form, where "" is exactly what a publisher who skipped the field
-     * produces. Without this the submission is accepted and the page renders an empty date.
-     */
-    if (draft.provenance.surveyedAt.trim() === "") {
-      context.addIssue({
-        code: "custom",
-        path: ["provenance", "surveyedAt"],
-        message:
-          "Say when you surveyed the unit. A survey with no date cannot be checked against anything.",
-      });
-    }
+  // ⚠️ TWO REFINEMENTS, EACH GATED BY `when` ON THE FIELDS IT READS. As one refinement it was skipped
+  // whenever any field aborted (an unselected provenance kind, a literal miss), so the survey-date
+  // and statement messages only appeared on a second press. See `refinement-inputs.ts`.
+  .superRefine(
+    (draft, context) => {
+      const refinementInputs = SurveyDateRefinementInputsSchema.safeParse(draft);
+      if (!refinementInputs.success) return;
 
-    const acceptedClauseIds = new Set(draft.acceptedAttestationClauseIds);
-    const missingClauses = TEARDOWN_ATTESTATION_CLAUSES.filter(
-      (clause) => !acceptedClauseIds.has(clause.id),
-    );
+      /**
+       * ⚠️ AN EMPTY SURVEY DATE HAS TO BE REFUSED HERE, because the READ schema cannot refuse it.
+       * `TeardownProvenanceSchema.surveyedAt` is `z.string()` — the house convention for an ISO value
+       * (`IsoDateTimeSchema`) — which accepts `""`. That is harmless for fixtures, every one of which
+       * has a date, and wrong for a form, where "" is exactly what a publisher who skipped the field
+       * produces. Without this the submission is accepted and the page renders an empty date.
+       */
+      if (refinementInputs.data.provenance.surveyedAt.trim() === "") {
+        context.addIssue({
+          code: "custom",
+          path: ["provenance", "surveyedAt"],
+          message:
+            "Say when you surveyed the unit. A survey with no date cannot be checked against anything.",
+        });
+      }
+    },
+    { when: buildWellTypedInputsPredicate(SurveyDateRefinementInputsSchema) },
+  )
+  .superRefine(
+    (draft, context) => {
+      const refinementInputs = AttestationRefinementInputsSchema.safeParse(draft);
+      if (!refinementInputs.success) return;
 
-    if (missingClauses.length > 0) {
-      context.addIssue({
-        code: "custom",
-        path: ["acceptedAttestationClauseIds"],
-        message: `Every statement has to be accepted before this can be submitted. Still unchecked: ${missingClauses
-          .map((clause) => clause.label)
-          .join("; ")}.`,
-      });
-    }
-  });
+      const acceptedClauseIds = new Set(refinementInputs.data.acceptedAttestationClauseIds);
+      const missingClauses = TEARDOWN_ATTESTATION_CLAUSES.filter(
+        (clause) => !acceptedClauseIds.has(clause.id),
+      );
+
+      if (missingClauses.length > 0) {
+        context.addIssue({
+          code: "custom",
+          path: ["acceptedAttestationClauseIds"],
+          message: `Every statement has to be accepted before this can be submitted. Still unchecked: ${missingClauses
+            .map((clause) => clause.label)
+            .join("; ")}.`,
+        });
+      }
+    },
+    { when: buildWellTypedInputsPredicate(AttestationRefinementInputsSchema) },
+  );
 export type TeardownSubmissionDraft = z.infer<typeof TeardownSubmissionDraftSchema>;
 
 /**

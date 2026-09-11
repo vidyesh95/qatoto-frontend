@@ -1,17 +1,16 @@
-// TRANSPORT: props-only — presentational field primitives for the teardown wizard. No network.
+// TRANSPORT: props-only — presentational field primitives for the Blueprints forms. No network.
 //
 // ⚠️ A SHARED MODULE RATHER THAN FILE-SCOPED HELPERS, WHICH IS A DELIBERATE DEPARTURE FROM
 // `details-step.tsx`. That file declares `LabeledTextInput`, `LabeledSelect` and `CheckboxRow`
-// file-scoped "per repo convention" — and it is ONE file, so the convention costs nothing there.
-// This wizard is five step files, and five copies of a labelled input is five places for a focus
+// file-scoped "per repo convention", and it is ONE file, so the convention costs nothing there. The
+// Blueprints forms are many files, and a copy of a labelled input per file is a place for a focus
 // ring or an error slot to drift. The convention exists to stop premature abstraction across
-// FEATURES; these five files are one feature.
+// FEATURES; these forms are one surface.
 //
-// Still not `src/components/ui/`: that directory holds primitives more than one feature imports.
-// ⚠️ THREE BLUEPRINTS FORMS NOW IMPORT THESE (the teardown wizard, the rights-claim composer and the
-// launch composer), which is the point this comment used to name for hoisting. They stay here for
-// now because all three are one surface and the path is imported from seven files; moving them to a
-// shared blueprints folder is recorded in `todo.md` rather than done inside a feature change.
+// ⚠️ IT LIVES IN `blueprints/authoring/` BECAUSE THREE FORMS IMPORT IT: the teardown wizard, the
+// rights-claim composer and the launch composer. It sat inside the teardown wizard's folder while
+// the wizard was its only caller. Still not `src/components/ui/`: that directory holds primitives
+// more than one SURFACE imports, and all three callers are Blueprints.
 //
 // Everything here builds on `INPUT_CLASS` / `LABEL_CLASS` so the fields match every other form in
 // the product rather than inventing a second field vocabulary.
@@ -82,7 +81,7 @@ export function LabeledTextInput({
   readonly hint?: string;
   readonly errorMessage?: string | null;
   readonly placeholder?: string;
-  /** `text`, `url` or `date`. No `number`: every scalar is text until `collectTeardownSubmission`. */
+  /** `text`, `url` or `date`. No `number`: every scalar is text until the form's collector. */
   readonly inputType?: "text" | "url" | "date";
   /** A soft limit with a live count under the field. Omit for no counter. */
   readonly characterLimit?: number;

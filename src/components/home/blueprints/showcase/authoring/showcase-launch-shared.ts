@@ -4,7 +4,7 @@
 // The launch form's shared vocabulary, on the `wizard-shared.ts` precedent: the form holds text, and
 // `collectShowcaseSubmission` converts it ONCE, at post time, then lets the contract decide.
 
-import { buildYoutubeBlueprintVideo } from "@/components/home/blueprints/teardowns/authoring/wizard-shared";
+import { buildYoutubeBlueprintVideo } from "@/components/home/blueprints/authoring/youtube-link-field";
 import type { BlueprintDifficulty } from "@/lib/blueprints/schemas";
 import {
   ShowcaseSubmissionDraftSchema,

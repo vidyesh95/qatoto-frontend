@@ -1,6 +1,6 @@
 // TRANSPORT: props-only — a dumb view over the form's accepted statement ids.
 
-import { CheckboxRow } from "@/components/home/blueprints/teardowns/authoring/wizard-fields";
+import { CheckboxRow } from "@/components/home/blueprints/authoring/form-fields";
 import {
   SHOWCASE_LAUNCH_STATEMENT_IDS,
   SHOWCASE_LAUNCH_STATEMENTS,
