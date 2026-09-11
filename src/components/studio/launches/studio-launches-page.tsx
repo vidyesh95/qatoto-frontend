@@ -1,5 +1,5 @@
-// TRANSPORT: client-query — `GET /blueprints/showcase/mine` through
-// `@/hooks/blueprints/showcase-authoring`, which is mock-backed today.
+// TRANSPORT: client-query — `GET /blueprints/showcases/mine` through
+// `@/hooks/blueprints/showcase-authoring`.
 "use client";
 
 import Image from "next/image";
@@ -11,8 +11,20 @@ import {
   SUBMISSION_STATE_LABELS,
 } from "@/components/studio/blueprints/moderation-state-chip";
 import { useMyShowcaseSubmissionsQuery } from "@/hooks/blueprints/showcase-authoring";
-import { buildBlueprintHref, type BlueprintSubmissionDisplayState } from "@/lib/blueprints/schemas";
+import type { BlueprintSubmissionDisplayState } from "@/lib/blueprints/schemas";
 import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
+
+/**
+ * A launch's chip wording. Overrides three of the shared labels, which My Teardowns and My Case
+ * Studies keep: a maker reads "In review" and "Approved" more plainly than "Pending review" and
+ * "Published", and "Published" would promise a public page that does not show launches yet.
+ */
+const LAUNCH_SUBMISSION_STATE_LABELS: Record<BlueprintSubmissionDisplayState, string> = {
+  ...SUBMISSION_STATE_LABELS,
+  pending_review: "In review",
+  published: "Approved",
+  unknown: "Unknown status",
+};
 
 /**
  * What each state means to the MAKER of a launch. A second record rather than a reuse of the
@@ -37,8 +49,8 @@ const LAUNCH_STATE_AUTHOR_NOTES: Record<BlueprintSubmissionDisplayState, string 
  * `/blueprints/showcase/new`, and this page links to it rather than embedding it. No home feature
  * component is imported here; shared pieces like `StatusPanel` are.
  *
- * ⚠️ THE LIST DOES NOT SEE ANYTHING POSTED THIS SESSION, and the launch receipt is where that is
- * disclosed. `submitShowcaseForReview` stores nothing, so these rows are a fixed fixture set.
+ * ⚠️ NO "VIEW THE LAUNCH" LINK, EVEN ON AN APPROVED ONE. The public showcase pages still read sample
+ * launches, so an approved launch's address has no page behind it yet. The header says so once.
  *
  * NO CAPABILITY GATING. It is somebody's own list; auth alone is the gate.
  */
@@ -53,6 +65,10 @@ export default function StudioLaunchesPage() {
           <h1 className="text-xl font-medium text-foreground">My launches</h1>
           <p className="mt-1 max-w-prose text-sm text-muted-foreground">
             Builds you have posted, and where each one has got to.
+          </p>
+          <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+            Approved launches do not appear on the public showcase pages yet. Those pages still show
+            sample launches.
           </p>
         </div>
         <Link
@@ -93,10 +109,7 @@ export default function StudioLaunchesPage() {
         </div>
       ) : null}
 
-      {/*
-        AN EMPTY LIST IS NOT AN ERROR. ⚠️ UNEXERCISED TODAY: the fixtures are never empty. It ships
-        because it is what every real first-time maker sees, and it is recorded in `todo.md`.
-      */}
+      {/* AN EMPTY LIST IS NOT AN ERROR. It is what every first-time maker sees. */}
       {submissionsQuery.isSuccess && submissionsQuery.data.length === 0 ? (
         <div className="mt-6 max-w-xl">
           <h2 className="text-sm font-medium text-foreground">Nothing here yet</h2>
@@ -141,7 +154,7 @@ export default function StudioLaunchesPage() {
                     <span
                       className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${SUBMISSION_STATE_CHIP_CLASS[submission.moderationState]}`}
                     >
-                      {SUBMISSION_STATE_LABELS[submission.moderationState]}
+                      {LAUNCH_SUBMISSION_STATE_LABELS[submission.moderationState]}
                     </span>
                   </div>
 
@@ -154,19 +167,6 @@ export default function StudioLaunchesPage() {
                     <p className="mt-2 max-w-prose rounded-xl border border-border bg-card p-3 text-sm leading-6 text-foreground">
                       {submission.moderatorNote}
                     </p>
-                  )}
-
-                  {/* Only a launch with a public address links to it. */}
-                  {submission.publicSlug === null ? null : (
-                    <Link
-                      href={buildBlueprintHref({
-                        category: "showcase",
-                        slug: submission.publicSlug,
-                      })}
-                      className="mt-2 inline-block text-sm font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
-                    >
-                      View the launch
-                    </Link>
                   )}
                 </div>
               </li>

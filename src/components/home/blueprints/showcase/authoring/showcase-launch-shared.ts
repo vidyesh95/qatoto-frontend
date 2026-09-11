@@ -1,15 +1,19 @@
-// TRANSPORT: props-only — the launch form's draft shape, one pure collector and the field labels.
-// No React, no network.
+// TRANSPORT: props-only — the launch form's draft shape, one pure collector, the field labels, the
+// server's refusals as a union, and the write-up image helpers. No React, no network.
 //
 // The launch form's shared vocabulary, on the `wizard-shared.ts` precedent: the form holds text, and
 // `collectShowcaseSubmission` converts it ONCE, at post time, then lets the contract decide.
 
-import type { BlueprintDifficulty } from "@/lib/blueprints/schemas";
+import { z } from "zod";
+
+import type { BlueprintDifficulty, BlueprintWriteUpImage } from "@/lib/blueprints/schemas";
 import {
   ShowcaseSubmissionDraftSchema,
   type ShowcaseLaunchStatementId,
   type ShowcaseSubmissionDraft,
 } from "@/lib/blueprints/showcase-authoring.schemas";
+import type { ApiError } from "@/lib/http";
+import { formatMegabytes, type ImageFileCheckFailure } from "@/lib/image-file-check";
 
 /** One team row while it is being edited. `rowId` is client-only, for a stable React key. */
 export interface TeamMemberDraftRow {
@@ -43,6 +47,15 @@ export interface ShowcaseLaunchFormDraft {
   readonly costMaximumText: string;
   readonly tagsText: string;
   readonly acceptedLaunchStatementIds: readonly ShowcaseLaunchStatementId[];
+  /**
+   * Every image uploaded into the write-up this session, with the size the server measured.
+   *
+   * ⚠️ NEVER COPIED INTO THE DRAFT. The contract is `.strict()` and has no such key: the server finds
+   * the images by reading the Markdown, and these exist only so the preview can reserve each image's
+   * box the way the published page does. An image deleted from the text stays listed here, which is
+   * harmless: the preview only looks up addresses the Markdown still contains.
+   */
+  readonly uploadedWriteUpImages: readonly BlueprintWriteUpImage[];
 }
 
 export const EMPTY_SHOWCASE_LAUNCH_FORM_DRAFT: ShowcaseLaunchFormDraft = {
@@ -60,6 +73,7 @@ export const EMPTY_SHOWCASE_LAUNCH_FORM_DRAFT: ShowcaseLaunchFormDraft = {
   costMaximumText: "",
   tagsText: "",
   acceptedLaunchStatementIds: [],
+  uploadedWriteUpImages: [],
 };
 
 /** Comma-separated tags, trimmed, empties dropped. Shared by the collector and the live preview. */
@@ -212,6 +226,8 @@ const SHOWCASE_FIELD_LABELS_IN_PAGE_ORDER: readonly (readonly [string, string])[
 ];
 
 const NESTED_FIELD_LABELS = new Map<string, string>([
+  // The server's key for a draft it could not read at all, which only a broken client sends.
+  ["draft", "The launch"],
   ["callToAction.label", "Link label"],
   ["callToAction.url", "Link address"],
   ["billOfMaterialsCostRange.minimumInCents", "Parts cost, lowest"],
@@ -251,4 +267,197 @@ export function describeShowcaseFieldPath(fieldPath: string): string {
   const labelEntry = SHOWCASE_FIELD_LABELS_IN_PAGE_ORDER[findShowcaseFieldPosition(fieldPath)];
   if (labelEntry !== undefined) return labelEntry[1];
   return fieldPath === "form" ? "The launch" : fieldPath;
+}
+
+/**
+ * EVERY WAY THE SERVER CAN REFUSE A LAUNCH, as a union the composer renders exhaustively.
+ *
+ * ⚠️ BRANCHED ON THE HTTP STATUS, because the house envelope carries no machine error code. Two 409s
+ * look alike and mean different things: a name that is taken carries `errors.title`; the idempotency
+ * middleware's "this key was already used for a different request" carries nothing. The first is the
+ * maker's to fix by renaming; the second means a launch from this attempt may already exist.
+ *
+ * ⚠️ A 422 FROM THE SERVER NAMES TOP-LEVEL FIELDS ONLY (`team`, not `team.0.handle`), because the
+ * backend flattens its validation errors. The summary box names the field; a per-row slot stays empty.
+ */
+export type ShowcaseLaunchRefusal =
+  | { readonly kind: "signInRequired" }
+  | { readonly kind: "accountIncomplete"; readonly message: string }
+  | { readonly kind: "launchNameConflict"; readonly message: string }
+  | { readonly kind: "submissionAlreadyReceived" }
+  | { readonly kind: "headingImageTooLarge" }
+  | { readonly kind: "headingImageRefused"; readonly message: string }
+  | {
+      readonly kind: "fieldsRefused";
+      readonly fieldErrors: Readonly<Record<string, string[]>>;
+    }
+  | { readonly kind: "rateLimited" }
+  | { readonly kind: "replyUnreadable" }
+  | { readonly kind: "unexpected"; readonly code: string; readonly message: string };
+
+/**
+ * `fieldErrors` IS PARSED, NOT TRUSTED. `http.ts` hands the envelope's `errors` over without
+ * checking its shape, so a malformed one becomes "no field errors" here rather than a crash.
+ */
+const RefusalFieldErrorsSchema = z.record(z.string(), z.array(z.string()));
+
+export function classifyShowcaseLaunchRefusal(apiError: ApiError): ShowcaseLaunchRefusal {
+  const parsedFieldErrors = RefusalFieldErrorsSchema.safeParse(apiError.fieldErrors ?? {});
+  const fieldErrors: Readonly<Record<string, string[]>> = parsedFieldErrors.success
+    ? parsedFieldErrors.data
+    : {};
+
+  switch (apiError.code) {
+    case "401":
+      return { kind: "signInRequired" };
+    case "403":
+      return { kind: "accountIncomplete", message: apiError.message };
+    case "409": {
+      const titleMessages = fieldErrors["title"] ?? [];
+      return titleMessages.length > 0
+        ? { kind: "launchNameConflict", message: titleMessages.join(" ") }
+        : { kind: "submissionAlreadyReceived" };
+    }
+    // By status alone, because a 413 from a proxy may arrive without a JSON body.
+    case "413":
+      return { kind: "headingImageTooLarge" };
+    case "422": {
+      const headingImageMessages = fieldErrors["headingImage"] ?? [];
+      if (headingImageMessages.length > 0) {
+        return { kind: "headingImageRefused", message: headingImageMessages.join(" ") };
+      }
+      return Object.keys(fieldErrors).length > 0
+        ? { kind: "fieldsRefused", fieldErrors }
+        : { kind: "unexpected", code: apiError.code, message: apiError.message };
+    }
+    case "429":
+      return { kind: "rateLimited" };
+    case "PARSE":
+      return { kind: "replyUnreadable" };
+    default:
+      return { kind: "unexpected", code: apiError.code, message: apiError.message };
+  }
+}
+
+/**
+ * The field-level messages a refusal carries, keyed the way the composer's summary box reads them, or
+ * `null` for a refusal that belongs to the launch as a whole.
+ */
+export function readShowcaseLaunchRefusalFieldErrors(
+  refusal: ShowcaseLaunchRefusal,
+): Readonly<Record<string, string[]>> | null {
+  switch (refusal.kind) {
+    case "launchNameConflict":
+      return { title: [refusal.message] };
+    case "headingImageRefused":
+      return { headingImage: [refusal.message] };
+    case "fieldsRefused":
+      return refusal.fieldErrors;
+    case "signInRequired":
+    case "accountIncomplete":
+    case "submissionAlreadyReceived":
+    case "headingImageTooLarge":
+    case "rateLimited":
+    case "replyUnreadable":
+    case "unexpected":
+      return null;
+    default: {
+      const exhaustiveCheck: never = refusal;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+/** Where the write-up's cursor was when "Add an image" was pressed. */
+export interface WriteUpTextSelection {
+  readonly startOffset: number;
+  readonly endOffset: number;
+}
+
+/**
+ * Alt text from a file name: extension dropped, and the characters that would break the Markdown
+ * image syntax replaced. A maker can edit it in the text afterwards.
+ */
+export function buildWriteUpImageAltText(fileName: string): string {
+  const altText = fileName
+    .replace(/\.[A-Za-z0-9]+$/, "")
+    .replace(/[[\]()\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return altText === "" ? "Image" : altText;
+}
+
+/**
+ * Puts `![alt](url)` where the cursor was, replacing any selected text, AS A PARAGRAPH OF ITS OWN.
+ *
+ * ⚠️ THE BLANK LINES ARE LOAD-BEARING. `ShowcaseWriteUp` gives an image the media column only when it
+ * stands alone in its paragraph; an image mid-sentence renders inline and small.
+ */
+export function insertMarkdownImageAtSelection(
+  markdown: string,
+  selection: WriteUpTextSelection,
+  altText: string,
+  imageUrl: string,
+): string {
+  const startOffset = Math.min(Math.max(selection.startOffset, 0), markdown.length);
+  const endOffset = Math.min(Math.max(selection.endOffset, startOffset), markdown.length);
+  const textBefore = markdown.slice(0, startOffset);
+  const textAfter = markdown.slice(endOffset);
+
+  const leadingBreak =
+    textBefore === "" || textBefore.endsWith("\n\n")
+      ? ""
+      : textBefore.endsWith("\n")
+        ? "\n"
+        : "\n\n";
+  const trailingBreak =
+    textAfter === "" || textAfter.startsWith("\n\n")
+      ? ""
+      : textAfter.startsWith("\n")
+        ? "\n"
+        : "\n\n";
+
+  return `${textBefore}${leadingBreak}![${altText}](${imageUrl})${trailingBreak}${textAfter}`;
+}
+
+/** Why a write-up image was refused in the browser, before any upload. */
+export function describeWriteUpImageCheckFailure(failure: ImageFileCheckFailure): string {
+  switch (failure.reason) {
+    case "unsupported_type":
+      return "That file isn't a JPEG, PNG, WebP or AVIF image.";
+    case "file_too_large":
+      return `That image is ${formatMegabytes(failure.byteSize)}. The limit is 5 MB.`;
+    case "undecodable":
+      return "Couldn't read that image. If it came from an iPhone it may be HEIC; export it as JPEG first.";
+    case "below_minimum_dimensions":
+      return `That image is ${failure.widthPx} × ${failure.heightPx}. An image needs at least ${failure.minimumDimensionPx} pixels on each side.`;
+    case "above_maximum_dimensions":
+      return `That image is ${failure.widthPx} × ${failure.heightPx}. Neither side may be larger than ${failure.maximumDimensionPx} pixels.`;
+    default: {
+      const exhaustiveCheck: never = failure;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+/** Why the server refused a write-up image, in words beside the write-up field. */
+export function describeWriteUpImageUploadRefusal(apiError: ApiError): string {
+  switch (apiError.code) {
+    case "401":
+      return "Your session ended. Sign in again in another tab, then add the image again.";
+    case "413":
+      return "That image is over the 5 MB limit.";
+    // The server's own sentence: a full-account refusal, the unused-uploads ceiling, or what is
+    // wrong with the file.
+    case "403":
+    case "409":
+    case "422":
+      return apiError.message;
+    case "429":
+      return "You have uploaded a lot of images in a short time. Wait a few minutes, then try again.";
+    case "NETWORK":
+      return "The image could not be uploaded. Check your connection and try again.";
+    default:
+      return "The image could not be uploaded. Try again.";
+  }
 }

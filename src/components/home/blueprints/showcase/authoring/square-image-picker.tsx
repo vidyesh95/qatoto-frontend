@@ -27,8 +27,8 @@ function formatFileSizeLabel(byteSize: number): string {
  * PROPS-ONLY. The state and the object URL live in `useHeadingImagePick`, owned by the composer, for
  * the reason that hook gives. This file draws the slot and hands up files.
  *
- * ⚠️ THE HINT LISTS REQUIREMENTS ONLY. It does not say the image is not uploaded: that is said once,
- * on the receipt, and a second copy here would be the repeated warning nobody finishes reading.
+ * ⚠️ THE HINT LISTS REQUIREMENTS ONLY. The server repeats every check when the launch is posted, and a
+ * refusal it gives is listed in the composer's summary box under "Heading image", not here.
  *
  * THE SLOT IS SQUARE BECAUSE THE IMAGE IS, and `object-cover` matches the feed row's own square media
  * slot, so what the maker sees here is how the feed will crop it.

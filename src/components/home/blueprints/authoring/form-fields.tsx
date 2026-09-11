@@ -15,7 +15,7 @@
 // Everything here builds on `INPUT_CLASS` / `LABEL_CLASS` so the fields match every other form in
 // the product rather than inventing a second field vocabulary.
 
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 
@@ -112,6 +112,8 @@ export function LabeledTextArea({
   hint,
   errorMessage = null,
   rowCount = 4,
+  textAreaRef,
+  isReadOnly = false,
 }: {
   readonly label: string;
   readonly value: string;
@@ -119,12 +121,18 @@ export function LabeledTextArea({
   readonly hint?: string;
   readonly errorMessage?: string | null;
   readonly rowCount?: number;
+  /** For a caller that needs the cursor position — the launch write-up inserts images at it. */
+  readonly textAreaRef?: Ref<HTMLTextAreaElement>;
+  /** Read-only rather than disabled, so the text stays selectable while something is inserted. */
+  readonly isReadOnly?: boolean;
 }) {
   return (
     <label className="block">
       <span className={LABEL_CLASS}>{label}</span>
       <textarea
+        ref={textAreaRef}
         value={value}
+        readOnly={isReadOnly}
         rows={rowCount}
         onChange={(changeEvent) => onValueChange(changeEvent.target.value)}
         className={`${INPUT_CLASS} mt-1 resize-y focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]`}

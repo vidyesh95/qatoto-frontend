@@ -1,5 +1,6 @@
-// TRANSPORT: props-only — browser-side state for one picked image. No network: in Part 1 the image is
-// checked and previewed and never sent.
+// TRANSPORT: props-only — browser-side state for one picked image. No network of its own: the image
+// is checked and previewed here, and the composer sends the `File` with the launch, where the server
+// repeats every check.
 "use client";
 
 import { useEffect, useRef, useState } from "react";

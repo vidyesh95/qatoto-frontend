@@ -86,6 +86,16 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
         activeIcon: "/icons/school_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
         inactiveIcon: "/icons/school_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       },
+      {
+        // Showcase launches a maker has posted, never yet public, under `moderate_content`. A maker
+        // is blocked until this queue answers, which is what puts it in this section.
+        //
+        // `rocket_launch`, and both fills are committed.
+        href: "/admin/showcase-launches",
+        label: "Launches",
+        activeIcon: "/icons/rocket_launch_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+        inactiveIcon: "/icons/rocket_launch_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      },
     ],
     hasDivider: true,
   },

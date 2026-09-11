@@ -25,4 +25,6 @@ export const blueprintKeys = {
    * under this one key, and a decision invalidates the whole queue.
    */
   caseStudyReviewQueue: () => ["blueprints", "case-studies", "admin", "review-queue"] as const,
+  /** The moderator's launch review queue, for the same reason as the case-study queue above. */
+  showcaseReviewQueue: () => ["blueprints", "showcase", "admin", "review-queue"] as const,
 };

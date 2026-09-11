@@ -1,7 +1,7 @@
 // Fixtures for the writer's own view of `/studio/case-studies`.
 //
-// NOTHING HERE IS REAL, in the sense `blueprints-showcase-authoring-mocks.ts` states: there is no
-// case-study table, no endpoint to send one to, and no moderator who has looked at any of these.
+// NOTHING HERE IS REAL: there is no case-study table, no endpoint to send one to, and no moderator
+// who has looked at any of these.
 //
 // ⚠️ ONE ROW PER STATE A CASE STUDY CAN ACTUALLY REACH, AND THAT IS THE WHOLE SELECTION RULE: `draft`,
 // `pending_review`, `published`, `rejected`, `flagged`. Every one is a separate renderer branch.

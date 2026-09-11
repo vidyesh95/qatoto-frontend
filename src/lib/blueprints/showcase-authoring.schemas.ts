@@ -10,10 +10,12 @@
 // on a write path). An unknown key on the way IN is a backend minor release, which CLAUDE.md Pattern
 // 2 says to ignore rather than crash on.
 //
-// ⚠️ THE HEADING IMAGE IS NOT IN THE DRAFT, and that is the shape of the eventual request rather
-// than an omission. The image travels as a file beside this JSON (a multipart body), and the server
-// answers with the stored URL. In Part 1 the file is checked in the browser and never sent; see
+// ⚠️ THE HEADING IMAGE IS NOT IN THE DRAFT. It travels as the `headingImage` file part beside this
+// JSON (the `draft` text part of a multipart body), and the server stores it; see
 // `showcase-authoring.api.ts`.
+//
+// ⚠️ THE LIMITS BELOW MIRROR THE SERVER'S (`showcase-launch.schemas.ts` in qatoto-backend). They exist
+// here so a maker is told before posting; the server is what refuses, and it would refuse the same.
 
 import { z } from "zod";
 
@@ -71,12 +73,19 @@ export const SHOWCASE_TAGLINE_MAXIMUM_CHARACTERS = 80;
  */
 const ShowcaseTeamMemberDraftSchema = z
   .object({
-    displayName: z.string().min(1, "Give this person's name."),
+    displayName: z
+      .string()
+      .min(1, "Give this person's name.")
+      .max(80, "Keep the name under 80 characters."),
     handle: z
       .string()
       .min(1, "Give their handle.")
+      .max(64, "A handle is at most 64 characters.")
       .regex(/^[A-Za-z0-9_.-]+$/, "A handle has no spaces and no @, like amara-builds."),
-    role: z.string().min(1, "Say what they did on the build."),
+    role: z
+      .string()
+      .min(1, "Say what they did on the build.")
+      .max(60, "Keep the role under 60 characters."),
   })
   .strict();
 
@@ -86,7 +95,10 @@ const ShowcaseTeamMemberDraftSchema = z
  */
 const ShowcaseCallToActionDraftSchema = z
   .object({
-    label: z.string().min(1, "Give the link a label, like Order a unit."),
+    label: z
+      .string()
+      .min(1, "Give the link a label, like Order a unit.")
+      .max(40, "Keep the link label under 40 characters."),
     url: createExternalHttpsUrlSchema(2048),
   })
   .strict();
@@ -155,7 +167,10 @@ const LaunchDateRefinementInputsSchema = z.object({ launchedAt: z.string() });
  */
 export const ShowcaseSubmissionDraftSchema = z
   .object({
-    title: z.string().min(8, "A name short enough to skim and specific enough to search."),
+    title: z
+      .string()
+      .min(8, "A name short enough to skim and specific enough to search.")
+      .max(120, "Keep the name under 120 characters."),
     tagline: z
       .string()
       .min(10, "One line that says what it does.")
@@ -163,22 +178,28 @@ export const ShowcaseSubmissionDraftSchema = z
         SHOWCASE_TAGLINE_MAXIMUM_CHARACTERS,
         `Keep the pitch to ${SHOWCASE_TAGLINE_MAXIMUM_CHARACTERS} characters so it fits one feed row.`,
       ),
-    summary: z.string().min(40, "One paragraph: what it is, and what it proved."),
+    summary: z
+      .string()
+      .min(40, "One paragraph: what it is, and what it proved.")
+      .max(1000, "Keep the summary under 1,000 characters."),
     /**
      * GitHub-style Markdown, rendered by `ShowcaseWriteUp`. A YouTube link on its own line becomes
      * the video. `null` when the maker wrote none. 10,000 characters is the server's limit too.
      */
     writeUp: z.string().max(10_000, "Keep the write-up under 10,000 characters.").nullable(),
-    /** ISO 8601, chosen by the maker. The feed sorts on this. */
-    launchedAt: z
-      .string()
-      .refine((isoInstant) => !Number.isNaN(Date.parse(isoInstant)), "Pick the day it launched."),
+    /**
+     * A full ISO 8601 instant in UTC, chosen by the maker. The feed sorts on this. `z.iso.datetime()`
+     * rather than `Date.parse`, which also accepts a bare `2026-09-11` the server refuses.
+     */
+    launchedAt: z.iso.datetime({ error: "Pick the day it launched." }),
     difficulty: z.enum(BLUEPRINT_DIFFICULTIES, {
       error: "Say how hard it would be to build again.",
     }),
     billOfMaterialsCostRange: ShowcaseCostRangeDraftSchema.nullable(),
-    tags: z.array(z.string().min(1)),
-    team: z.array(ShowcaseTeamMemberDraftSchema),
+    tags: z
+      .array(z.string().min(1).max(32, "A tag is at most 32 characters."))
+      .max(10, "Up to 10 tags."),
+    team: z.array(ShowcaseTeamMemberDraftSchema).max(12, "Up to 12 people."),
     builtFromBlueprintSlug: z.string().min(1).nullable(),
     callToAction: ShowcaseCallToActionDraftSchema.nullable(),
     acceptedLaunchStatementIds: z.array(z.enum(SHOWCASE_LAUNCH_STATEMENT_IDS)),
@@ -259,6 +280,8 @@ export type ShowcaseSubmissionDraft = z.infer<typeof ShowcaseSubmissionDraftSche
 /**
  * WHAT COMES BACK FROM POSTING, a receipt and not a row. No slug and no public URL, for the reason
  * `TeardownSubmissionReceiptSchema` gives: neither exists until a moderator publishes it.
+ *
+ * The post answers 201: the launch row exists when it answers, and `pending_review` is its state.
  */
 export const ShowcaseSubmissionReceiptSchema = z
   .object({

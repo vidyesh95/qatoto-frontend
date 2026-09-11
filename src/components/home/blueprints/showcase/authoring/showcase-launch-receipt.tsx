@@ -8,16 +8,13 @@ import type { ShowcaseSubmissionReceipt } from "@/lib/blueprints/showcase-author
 import { formatIsoInstantLabel } from "@/lib/store/format";
 
 /**
- * THE TERMINAL SCREEN, and the one place the launch flow admits what it is.
+ * THE TERMINAL SCREEN, after the launch is stored.
  *
- * ⚠️ A 202 IS NOT A RESULT. The launch was accepted; the verdict does not exist. Nothing here names an
- * outcome, promises a timescale or links to a public page, because the receipt carries no slug.
+ * ⚠️ STORED IS NOT DECIDED. The launch exists and waits for a moderator; the verdict does not exist.
+ * Nothing here names an outcome, promises a timescale or links to a public page, because the receipt
+ * carries no slug.
  *
- * ⚠️ THE DISCLOSURE IS NOT OPTIONAL COPY AND LIVES ONLY HERE, as on `submission-receipt.tsx`. Said
- * once, after posting, it is read; repeated across the form it is not. It also says the heading image
- * never left the browser, which the picker deliberately does not repeat.
- *
- * ⚠️ AND IT DOES NOT POLL. There is no queue to poll.
+ * ⚠️ AND IT DOES NOT POLL. A person decides, and My Launches shows the decision when it loads.
  */
 export default function ShowcaseLaunchReceipt({
   receipt,
@@ -33,7 +30,7 @@ export default function ShowcaseLaunchReceipt({
       <h1 className="text-xl font-medium text-foreground lg:text-2xl">Posted for review</h1>
 
       <div className="mt-4">
-        <MutationAcceptedNotice message="Your launch has been accepted for review. It is not in the feed, and a moderator decides whether it appears there." />
+        <MutationAcceptedNotice message="Your launch is saved and waiting for a moderator. It is not in the feed, and nobody else can see it while it is in review." />
       </div>
 
       <dl className="mt-4">
@@ -56,22 +53,6 @@ export default function ShowcaseLaunchReceipt({
         <div className="mt-3">
           <ShowcaseLaunchRowPreview {...rowPreviewProps} />
         </div>
-      </div>
-
-      <div className="mt-5 rounded-xl border border-destructive/40 bg-destructive/5 p-4">
-        <h2 className="text-sm font-medium text-destructive">
-          Nothing was actually stored, and you should know that before you close this
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-foreground">
-          Qatoto cannot accept launches yet. There is no database behind this form and no queue of
-          moderators reading launches. Everything you typed was checked against the real rules and
-          then discarded when you pressed Post. Your heading image never left your browser. Keep
-          your own copy.
-        </p>
-        <p className="mt-2 text-sm leading-6 text-foreground">
-          This exists so the process can be walked and argued with before it is real. This launch
-          will not appear in My Launches.
-        </p>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">

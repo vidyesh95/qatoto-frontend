@@ -3745,7 +3745,7 @@ idempotency keys, not-optimistic. Copy it; do not reinvent it.
   badge, pull-quotes and any stat band in the write-up. A comment section that decorates its best
   comment is a testimonial row wearing a thread's clothes.
 
-## Posting a launch — PART 1 AND 2a SHIPPED MOCK-BACKED 2026-09-11, part 2b (backend, wiring, approval) NOT STARTED
+## Posting a launch — PART 1 AND 2a SHIPPED 2026-09-11, part 2b (backend, wiring, approval) BUILT 2026-09-11, migration 0169 NOT YET APPLIED
 
 A maker can post a launch at `/blueprints/showcase/new` (linked from the showcase feed header and
 from studio), and see their launches at `/studio/launches` ("My Launches" in the sidebar). The shape
@@ -3810,7 +3810,42 @@ Launches and the public showcase pages all still run on fixtures.
   picker refuses drops too), with the idempotency key rotating only after a success or when an idle
   draft or image actually changes.
 
-### Part 2b — backend, wiring and approval — NOT STARTED
+### Part 2b — backend, wiring and approval — BUILT 2026-09-11, UNCOMMITTED, MIGRATION NOT APPLIED
+
+**Status.** Backend routes, tables, sweeper, erasure step and frontend wiring are written in both
+repos and uncommitted. `drizzle/0169_showcase_launch.sql` is generated only; the owner applies it to
+the shared database and runs `pnpm jobs:install`. End-to-end verification (section D) waits on that.
+
+**Where the build departs from the spec below, and why.**
+
+1. **Shared pgEnums `blueprint_moderation_state` (all seven labels) and `blueprint_difficulty`**, not
+   `showcase_launch_moderation_state` / `showcase_launch_difficulty`. A CHECK limits a launch to
+   `pending_review | published | rejected`. Case studies and teardowns reuse both, and Postgres
+   refuses a label added by `ALTER TYPE … ADD VALUE` inside the transaction that uses it, which a
+   batched `db:migrate` is.
+2. **One unique `public_slug` per table, no cross-kind slug registry.** `/blueprints/[slug]` only
+   redirects the old flat fixture URLs; real addresses are kind-scoped. Reserved by CHECK: `new`,
+   `mine`, `write-up-images`.
+3. **Write-up images are staged before the launch exists**: a row with `launch_id NULL`, stored at
+   `qatoto/showcase-images/write-up/<imageId>` (the spec's `<id>/write-up/<n>` has no launch id to use
+   and `<n>` races). Submit claims them under `FOR UPDATE`. Caps: 20 images per write-up, 30 unclaimed
+   per maker.
+4. **The server parses the write-up with `mdast-util-from-markdown` + `micromark-extension-gfm`**, the
+   parser `react-markdown` uses, so reference-style images and escapes cannot slip past the
+   own-uploads rule and code spans are not refused.
+5. **Upvotes (section E) moved to the public-reads part.** No page reads the table yet, so a vote
+   route would be uncallable.
+6. **The review queue answers `data: { items, page: { nextCursor, hasMore } }`**, matching
+   `cursorPageOf` and the case-study queue, not "data plus nextCursor".
+7. **`builtFromBlueprintSlug` is kebab-checked text with no existence check**, because the select still
+   lists fixture teardowns.
+8. **The audit entry carries ids and `hasModeratorNote` only**, never the note: the chain is permanent.
+9. **Erasure uses a logged step before the delete loop** (`purge_showcase_launch_images`, shaped like
+   `purge_video_document_objects`), not the `deleteUserAvatar` precedent: launch images cannot be found
+   from the user id once their rows cascade away.
+10. **drizzle-kit truncates a CHECK at its first `;`.** The blur-placeholder CHECK compares its
+    `data:image/webp;base64,` prefix using `chr(59)` for that reason. Any future CHECK holding a
+    semicolon needs the same treatment; read the generated SQL.
 
 Decided with the owner 2026-09-11. **Built as ONE round**, so nothing ships that cannot be tested
 against a real server. The migration is **generated only; the owner runs it**. The public showcase
@@ -3956,10 +3991,34 @@ the sweeper deleting orphans only.
       the server returned.
 
 **Still open after 2b:** public getters read the table and gate on `moderationState`
-(`isBlueprintVisible` passes every showcase today) and the fixture launches retire; notifying makers
-of a decision; team members linked to real accounts with avatars and a verified badge; the built-from
-select still lists fixture teardowns; editing and resubmitting a launch; flagging and removing after
-publish; the pathway moderation page reusing one idempotency key across different bodies.
+(`isBlueprintVisible` passes every showcase today) and the fixture launches retire; upvotes (section
+E); launches in the data export (`data-export.service.ts` lists its tables by hand and has none);
+notifying makers of a decision; team members linked to real accounts with avatars and a verified
+badge; the built-from select still lists fixture teardowns; editing and resubmitting a launch;
+flagging and removing after publish; the pathway moderation page reusing one idempotency key across
+different bodies.
+
+### Blueprints backend roadmap — the parts after launch 2b
+
+Planned one part at a time, in this order. Each reuses what the part before it built.
+
+1. **Case studies, Part 2** (the section below): JSON submit, My Case Studies, the existing admin
+   queue wired, and the one public serializer that writes `name: null` for a withheld company. Reuses
+   `blueprint_moderation_state`, the moderation service shape and the error-map pattern from 2b.
+   Decide first whether `thumbnailUrl`, `difficulty`, `cadFormat` and `billOfMaterialsCostRange` leave
+   the case-study read arm or get server defaults.
+2. **Public reads for launches and case studies**: keyset lists, detail reads, tag facets, option
+   lists, gated on `moderationState`; the fixtures for those two kinds retire; upvotes land here; the
+   hub lanes read the typed getters. The `/showcases/:slug` route must sit below the literal routes.
+3. **Teardowns**: `blueprint` and its part, model, fastener, file, step, provenance, material, element
+   tables; a 202 submit; My Teardowns; an admin teardown queue page that does not exist yet; public
+   reads; the market signal, which needs a product-class decision because the backend has no such
+   column.
+4. **Engagement and claims**: `blueprint_comment` and the composer (report reasons still need their own
+   pass), teardown likes and saves, the report path to `flagged` / `quarantined`, and
+   `blueprint_rights_claim`.
+5. **The launch step**: the sitemap entries and the seven `robots` flags restored together, only once
+   real content exists.
 
 ## Writing a case study — PART 1 SHIPPED MOCK-BACKED 2026-09-11, part 2 (backend, wiring, approval) NOT STARTED
 

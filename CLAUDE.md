@@ -250,15 +250,15 @@ the three kinds has its own index and its own detail layout, because a teardown,
 manufacturing lesson are not browsed the same way. The forms (`teardowns/new`, `showcase/new`, `case-studies/new` and a
 teardown's `report`) are covered by the rules below the table:
 
-| Route                                  | Design                                                                                                                                                                                                  |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/blueprints`                          | Hub — header, hero, then three lanes in three DIFFERENT shapes, each with its question and one **See all**                                                                                              |
-| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid of DECISION-SET cards; detail carries provenance, composition, the market signal, the media, the files, the exploded-view engine and the handoff. `?view=business\|engineering\|factory` |
-| `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort in `listShowcases`; TWO reserved inert slots                                                                                    |
-| `/blueprints/showcase/new`             | Post a launch: one page of sections, a square heading image checked in the browser and never uploaded, two statements. Mock-backed, see the rehearsal rule                                              |
-| `/blueprints/case-studies/new`         | Write a case study: one page in the record's fixed order, how the writer knows it, and the two statements that answer requires. Mock-backed, see the rehearsal rule                                     |
-| `/blueprints/case-studies` + `/[slug]` | Hairline lesson list, each row an expandable `<details>`; detail is a fixed-order report                                                                                                                |
-| `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                                                                                                                                                    |
+| Route                                  | Design                                                                                                                                                                                                            |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/blueprints`                          | Hub — header, hero, then three lanes in three DIFFERENT shapes, each with its question and one **See all**                                                                                                        |
+| `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid of DECISION-SET cards; detail carries provenance, composition, the market signal, the media, the files, the exploded-view engine and the handoff. `?view=business\|engineering\|factory`           |
+| `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort in `listShowcases`; TWO reserved inert slots                                                                                              |
+| `/blueprints/showcase/new`             | Post a launch: one page of sections, a square heading image sent with the launch, write-up images uploaded as they are added, two statements. Wired to the backend; the public showcase pages still read fixtures |
+| `/blueprints/case-studies/new`         | Write a case study: one page in the record's fixed order, how the writer knows it, and the two statements that answer requires. Mock-backed, see the rehearsal rule                                               |
+| `/blueprints/case-studies` + `/[slug]` | Hairline lesson list, each row an expandable `<details>`; detail is a fixed-order report                                                                                                                          |
+| `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                                                                                                                                                              |
 
 ⚠️ **The resolver CANNOT move to `next.config.ts`.** Its destination depends on the row's
 `category`, which a static rewrite rule cannot know — `/anime` got its redirects there precisely
@@ -447,7 +447,8 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   the same standard the uncalled-hook audit applies.
   **Uploads do not exist**, so every teardown file is a pasted https URL and the walkthrough is a
   YouTube link through `extractYoutubeVideoId`; there is no dropzone and the step says why. The
-  launch form's image picker is not an exception: it checks a file and uploads nothing (below). **There is no
+  launch form is the exception: it uploads its heading image with the launch and each write-up image as
+  it is added (below). **There is no
   element-table editor and there must not be one** until a file from an analyser can be attached: a
   free-text percent field invites somebody to type a datasheet figure, which the composition table
   then renders looking exactly like a measurement.
@@ -455,14 +456,24 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   links to it. The two do not join, because `submitTeardownForReview` persists nothing; joining them
   would need fake in-memory persistence that loses work on reload, or a second `localStorage` key,
   which is forbidden.
-  **`/blueprints/showcase/new` IS THE SAME REHEARSAL FOR A LAUNCH**, over `showcase-authoring.api.ts`:
-  one page, two statements, a 409 on a launch name that already exists, and the disclosure once, in
-  `showcase-launch-receipt.tsx`. ⚠️ **ITS HEADING IMAGE IS CHECKED AND PREVIEWED, NEVER UPLOADED.**
-  `use-heading-image-pick.ts` decodes the file in the browser (type, 5 MB, square within 1%, at
-  least 256px, through `src/lib/image-file-check.ts`, which the admin hero picker shares) and the
-  `File` rides beside the draft into a mock that drops it. That check is UX only; the upload route
-  must repeat every rule. **`/studio/launches` is management only** for the `/studio/blueprints`
-  reason, and its rows are a fixture set that never includes a launch posted this session.
+  **`/blueprints/showcase/new` IS WIRED, NOT A REHEARSAL**, over `showcase-authoring.api.ts`: one
+  multipart `POST /blueprints/showcases` (the `draft` JSON part first, then `headingImage`, with an
+  `Idempotency-Key`) answering 201 with a `pending_review` receipt, and "Add an image" uploads each
+  write-up image to `POST /blueprints/showcases/write-up-images`, whose measured size feeds the
+  preview's `imageSizes`. `use-heading-image-pick.ts` still decodes the file in the browser (type,
+  5 MB, square within 1%, at least 256px, through `src/lib/image-file-check.ts`, which the admin hero
+  picker shares); that check is UX only and the server repeats every rule. A refusal is
+  `ShowcaseLaunchRefusal`, classified BY STATUS in `showcase-launch-shared.ts` because the envelope
+  carries no error code: a 409 with `errors.title` is a taken name, a bare 409 is a reused
+  idempotency key. ⚠️ **SERVER 422s NAME TOP-LEVEL FIELDS ONLY** (`team`, not `team.0.handle`), so
+  the summary box names the field and a per-row slot stays empty. **`/studio/launches` is management
+  only** for the `/studio/blueprints` reason; it reads `GET /blueprints/showcases/mine` and says once,
+  in its header, that approved launches do not appear on the public pages yet. ⚠️ **THE PUBLIC
+  SHOWCASE PAGES STILL READ FIXTURES**, so nothing links to a published launch's address — not My
+  Launches, not the moderator's decided card. **`/admin/showcase-launches` is the launch review
+  queue** (`moderate_content`, over `showcase-moderation.api.ts`): Publish behind a confirm, Send back
+  only with a note, a 409 with "Refresh the queue", a 403 for deciding your own launch, and nothing
+  under `src/components/home` or `src/components/studio` may import `showcase-moderation.*`.
   **`/blueprints/case-studies/new` IS THE SAME REHEARSAL FOR A CASE STUDY**, over
   `case-study-authoring.api.ts`: one page in the detail page's fixed order, a 409 on a lesson title
   that already exists, and the disclosure once, in `case-study-receipt.tsx`. ⚠️ **THE WRITER SAYS HOW

@@ -1,25 +1,34 @@
-// TRANSPORT: client-query — the one "use client" file that owns the launch flow. Calls
-// `useSubmitShowcaseMutation`, which is mock-backed today.
+// TRANSPORT: client-query — the one "use client" file that owns the launch flow. Posts through
+// `useSubmitShowcaseMutation` and uploads write-up images through
+// `useUploadShowcaseWriteUpImageMutation`, both against the Express backend.
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
 import LaunchStatements, {
   describeLaunchStatementGap,
 } from "@/components/home/blueprints/showcase/authoring/launch-statements";
 import ShowcaseLaunchReceipt from "@/components/home/blueprints/showcase/authoring/showcase-launch-receipt";
+import ShowcaseLaunchRefusalNotice from "@/components/home/blueprints/showcase/authoring/showcase-launch-refusal-notice";
 import ShowcaseLaunchRowPreview from "@/components/home/blueprints/showcase/authoring/showcase-launch-row-preview";
 import ShowcaseWriteUp from "@/components/home/blueprints/showcase/sections/showcase-write-up";
 import {
   buildMiddayInstantForDate,
+  buildWriteUpImageAltText,
+  classifyShowcaseLaunchRefusal,
   collectShowcaseSubmission,
   describeShowcaseFieldPath,
+  describeWriteUpImageCheckFailure,
+  describeWriteUpImageUploadRefusal,
   EMPTY_SHOWCASE_LAUNCH_FORM_DRAFT,
   findShowcaseFieldPosition,
+  insertMarkdownImageAtSelection,
+  readShowcaseLaunchRefusalFieldErrors,
   splitTagsText,
   type ShowcaseLaunchFormDraft,
+  type ShowcaseLaunchRefusal,
   type TeamMemberDraftRow,
+  type WriteUpTextSelection,
 } from "@/components/home/blueprints/showcase/authoring/showcase-launch-shared";
 import SquareImagePicker from "@/components/home/blueprints/showcase/authoring/square-image-picker";
 import { useHeadingImagePick } from "@/components/home/blueprints/showcase/authoring/use-heading-image-pick";
@@ -30,7 +39,10 @@ import {
   RepeatableRowShell,
 } from "@/components/home/blueprints/authoring/form-fields";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
-import { useSubmitShowcaseMutation } from "@/hooks/blueprints/showcase-authoring";
+import {
+  useSubmitShowcaseMutation,
+  useUploadShowcaseWriteUpImageMutation,
+} from "@/hooks/blueprints/showcase-authoring";
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
 import type { TeardownOption } from "@/lib/blueprints/api";
 import { BLUEPRINT_DIFFICULTIES, BLUEPRINT_DIFFICULTY_LABELS } from "@/lib/blueprints/schemas";
@@ -40,6 +52,7 @@ import {
 } from "@/lib/blueprints/showcase-authoring.schemas";
 import { buildInitialsFromName } from "@/lib/format-initials";
 import { ApiRequestError } from "@/lib/http";
+import { ACCEPTED_IMAGE_INPUT_ACCEPT, checkImageFile } from "@/lib/image-file-check";
 
 /**
  * THE COMPOSER'S OWN STATE, AS A UNION: editing, or submitted with a receipt. Never "editing and
@@ -48,6 +61,22 @@ import { ApiRequestError } from "@/lib/http";
 type ShowcaseLaunchViewState =
   | { readonly status: "editing" }
   | { readonly status: "submitted"; readonly receipt: ShowcaseSubmissionReceipt };
+
+/** Where the post request stands, derived from the mutation each render. */
+type ShowcaseLaunchSubmitState =
+  | { readonly status: "idle" }
+  | { readonly status: "posting" }
+  | { readonly status: "refused"; readonly refusal: ShowcaseLaunchRefusal };
+
+/**
+ * One write-up image at a time: checked in the browser, then uploaded, then inserted. The button is
+ * disabled outside `idle` and `refused`, so two uploads can never race each other into the text.
+ */
+type WriteUpImageUploadState =
+  | { readonly status: "idle" }
+  | { readonly status: "checking"; readonly fileName: string }
+  | { readonly status: "uploading"; readonly fileName: string }
+  | { readonly status: "refused"; readonly message: string };
 
 /**
  * Which half of the write-up field is showing: the textarea, or the rendered Markdown. The preview
@@ -88,14 +117,43 @@ function FormSection({
   );
 }
 
+/** The line under the write-up field for the current upload, or `null` when there is nothing to say. */
+function WriteUpImageUploadStatus({
+  uploadState,
+}: {
+  readonly uploadState: WriteUpImageUploadState;
+}) {
+  switch (uploadState.status) {
+    case "idle":
+      return null;
+    case "checking":
+    case "uploading":
+      return (
+        <output aria-live="polite" className="block text-xs text-muted-foreground">
+          Uploading {uploadState.fileName}…
+        </output>
+      );
+    case "refused":
+      return (
+        <p role="alert" className="text-xs text-destructive">
+          {uploadState.message}
+        </p>
+      );
+    default: {
+      const exhaustiveCheck: never = uploadState;
+      return exhaustiveCheck;
+    }
+  }
+}
+
 /**
  * Post a launch: one page, one set of statements, one Post button.
  *
  * ⚠️ ONE PAGE, NOT STEPPED, as the maker chose. A launch is about a dozen fields, far lighter than a
  * teardown, and the live row preview only helps if the name, pitch and image are on screen together.
  *
- * ⚠️ NOTHING IS OPTIMISTIC AND NOTHING POLLS. The write answers 202 and the verdict does not exist;
- * `showcase-launch-receipt.tsx` says what is true instead, once.
+ * ⚠️ NOTHING IS OPTIMISTIC AND NOTHING POLLS. The post answers 201 with a `pending_review` receipt; a
+ * moderator decides, and `showcase-launch-receipt.tsx` says so.
  */
 export default function ShowcaseLaunchComposer({
   teardownOptions,
@@ -108,26 +166,44 @@ export default function ShowcaseLaunchComposer({
   const [viewState, setViewState] = useState<ShowcaseLaunchViewState>({ status: "editing" });
   const [fieldErrors, setFieldErrors] = useState<Readonly<Record<string, string[]>>>({});
   const [writeUpPane, setWriteUpPane] = useState<WriteUpPane>("write");
+  const [writeUpImageUploadState, setWriteUpImageUploadState] = useState<WriteUpImageUploadState>({
+    status: "idle",
+  });
   const headingImagePick = useHeadingImagePick();
   const submitMutation = useSubmitShowcaseMutation();
+  const uploadWriteUpImageMutation = useUploadShowcaseWriteUpImageMutation();
+  // Read and written only in handlers, never during render.
+  const writeUpTextAreaRef = useRef<HTMLTextAreaElement>(null);
+  const writeUpImageInputRef = useRef<HTMLInputElement>(null);
+  const pendingImageSelectionRef = useRef<WriteUpTextSelection | null>(null);
   // The lazy, ref-backed key: a `useState(crypto.randomUUID())` initializer would run during the
   // server prerender, which `cacheComponents` refuses.
   //
   // ⚠️ ONE KEY PER ATTEMPT, AND AN ATTEMPT IS ONE DRAFT. The key is read once, when Post is pressed,
   // and that value rides with the request. It rotates after a success, and whenever the idle draft or
   // image actually changes, so a retry of an unchanged draft carries the same key while an edited one
-  // never reuses it with a different body (which a real server answers with a 409). An edit cannot
+  // never reuses it with a different body (which the server answers with a 409). An edit cannot
   // land mid-flight: the whole form is a disabled fieldset while posting.
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
 
-  function applyFormPatch(formPatch: Partial<ShowcaseLaunchFormDraft>): void {
+  /**
+   * THE ONE WAY THE DRAFT CHANGES, as a function of the previous draft. Functional, so an image that
+   * finishes uploading inserts into the text as it is NOW, not as it was when the upload started.
+   */
+  function applyFormUpdate(
+    buildNextFormDraft: (previousFormDraft: ShowcaseLaunchFormDraft) => ShowcaseLaunchFormDraft,
+  ): void {
     if (submitMutation.isPending) return;
     resetIdempotencyKey();
-    setFormDraft((previousFormDraft) => ({ ...previousFormDraft, ...formPatch }));
+    setFormDraft(buildNextFormDraft);
     // EDITING ANYTHING CLEARS THE LAST VERDICT: the errors describe a draft that no longer exists, and
     // a 409 about a name is about a name nobody is posting any more.
     setFieldErrors({});
     if (submitMutation.error !== null) submitMutation.reset();
+  }
+
+  function applyFormPatch(formPatch: Partial<ShowcaseLaunchFormDraft>): void {
+    applyFormUpdate((previousFormDraft) => ({ ...previousFormDraft, ...formPatch }));
   }
 
   const headingImagePickState = headingImagePick.pickState;
@@ -150,6 +226,7 @@ export default function ShowcaseLaunchComposer({
         onPostAnother={() => {
           setFormDraft(EMPTY_SHOWCASE_LAUNCH_FORM_DRAFT);
           setFieldErrors({});
+          setWriteUpImageUploadState({ status: "idle" });
           submitMutation.reset();
           headingImagePick.clearPick();
           setViewState({ status: "editing" });
@@ -158,28 +235,46 @@ export default function ShowcaseLaunchComposer({
     );
   }
 
-  const isPosting = submitMutation.isPending;
+  const submitState: ShowcaseLaunchSubmitState = submitMutation.isPending
+    ? { status: "posting" }
+    : submitMutation.error === null
+      ? { status: "idle" }
+      : {
+          status: "refused",
+          refusal:
+            submitMutation.error instanceof ApiRequestError
+              ? classifyShowcaseLaunchRefusal(submitMutation.error.apiError)
+              : { kind: "unexpected", code: "CLIENT", message: submitMutation.error.message },
+        };
+  const isPosting = submitState.status === "posting";
+  const isWriteUpImageBusy =
+    writeUpImageUploadState.status === "checking" || writeUpImageUploadState.status === "uploading";
 
   /**
    * Why Post is unavailable, in words beside the button, or `null`.
    *
-   * ORDER: the image first, because it is further up the page; the statements last, because they
-   * sit right above the button and are the obvious last step.
+   * ORDER: an upload in flight first, because posting now would send a write-up missing its image;
+   * then the heading image, further up the page; the statements last, because they sit right above
+   * the button and are the obvious last step.
    */
-  const postBlockedReason =
-    headingImagePickState.status !== "ready"
+  const postBlockedReason = isWriteUpImageBusy
+    ? "Wait for the image to finish uploading into the write-up."
+    : headingImagePickState.status !== "ready"
       ? "Add a square heading image under Heading image."
       : describeLaunchStatementGap(formDraft.acceptedLaunchStatementIds);
 
-  const fieldErrorEntries = Object.entries(fieldErrors).toSorted(
+  // The server's field refusals replace the client's, which were cleared when Post was pressed.
+  const displayedFieldErrors =
+    (submitState.status === "refused"
+      ? readShowcaseLaunchRefusalFieldErrors(submitState.refusal)
+      : null) ?? fieldErrors;
+  const fieldErrorEntries = Object.entries(displayedFieldErrors).toSorted(
     ([firstFieldPath], [secondFieldPath]) =>
       findShowcaseFieldPosition(firstFieldPath) - findShowcaseFieldPosition(secondFieldPath),
   );
-  const submitError =
-    submitMutation.error instanceof ApiRequestError ? submitMutation.error : undefined;
 
   function readFieldError(fieldPath: string): string | null {
-    return fieldErrors[fieldPath]?.join(" ") ?? null;
+    return displayedFieldErrors[fieldPath]?.join(" ") ?? null;
   }
 
   function updateTeamRow(rowId: string, teamRowPatch: Partial<TeamMemberDraftRow>): void {
@@ -187,6 +282,66 @@ export default function ShowcaseLaunchComposer({
       teamRows: formDraft.teamRows.map((teamRow) =>
         teamRow.rowId === rowId ? { ...teamRow, ...teamRowPatch } : teamRow,
       ),
+    });
+  }
+
+  function handleAddWriteUpImageClick(): void {
+    // Captured now, because opening the file dialog takes focus from the textarea.
+    const writeUpTextArea = writeUpTextAreaRef.current;
+    const writeUpLength = formDraft.writeUp.length;
+    pendingImageSelectionRef.current =
+      writeUpTextArea === null
+        ? { startOffset: writeUpLength, endOffset: writeUpLength }
+        : { startOffset: writeUpTextArea.selectionStart, endOffset: writeUpTextArea.selectionEnd };
+    writeUpImageInputRef.current?.click();
+  }
+
+  async function handleWriteUpImageFilePicked(imageFile: File): Promise<void> {
+    const writeUpLength = formDraft.writeUp.length;
+    const insertionSelection = pendingImageSelectionRef.current ?? {
+      startOffset: writeUpLength,
+      endOffset: writeUpLength,
+    };
+    pendingImageSelectionRef.current = null;
+
+    setWriteUpImageUploadState({ status: "checking", fileName: imageFile.name });
+    const fileCheck = await checkImageFile(imageFile);
+    if (!fileCheck.success) {
+      setWriteUpImageUploadState({
+        status: "refused",
+        message: describeWriteUpImageCheckFailure(fileCheck.failure),
+      });
+      return;
+    }
+
+    setWriteUpImageUploadState({ status: "uploading", fileName: imageFile.name });
+    uploadWriteUpImageMutation.mutate(imageFile, {
+      onSuccess: (uploadResult) => {
+        if (!uploadResult.success) {
+          setWriteUpImageUploadState({
+            status: "refused",
+            message: describeWriteUpImageUploadRefusal(uploadResult.error),
+          });
+          return;
+        }
+        const uploadedImage = uploadResult.data;
+        applyFormUpdate((previousFormDraft) => ({
+          ...previousFormDraft,
+          writeUp: insertMarkdownImageAtSelection(
+            previousFormDraft.writeUp,
+            insertionSelection,
+            buildWriteUpImageAltText(imageFile.name),
+            uploadedImage.url,
+          ),
+          uploadedWriteUpImages: [...previousFormDraft.uploadedWriteUpImages, uploadedImage],
+        }));
+        setWriteUpImageUploadState({ status: "idle" });
+      },
+      onError: () =>
+        setWriteUpImageUploadState({
+          status: "refused",
+          message: "The image could not be uploaded. Check your connection and try again.",
+        }),
     });
   }
 
@@ -285,35 +440,65 @@ export default function ShowcaseLaunchComposer({
 
         <FormSection
           title="The story"
-          description="Optional. Markdown, as on GitHub: ## for a heading, **bold**, - for a list, [words](https://…) for a link. Paste a YouTube link on a line of its own to embed the video. Images arrive with image upload, once posting opens."
+          description="Optional. Markdown, as on GitHub: ## for a heading, **bold**, - for a list, [words](https://…) for a link. Paste a YouTube link on a line of its own to embed the video. Add an image to place it where your cursor is."
         >
-          {/* WRITE AND PREVIEW, THE GITHUB SHAPE. Two pressed-state buttons rather than a tab widget:
-              there are two views of one field, and a pill that reports state is the house control
-              for that. */}
-          <fieldset className="flex gap-1">
-            <legend className="sr-only">Write-up view</legend>
-            {WRITE_UP_PANES.map((pane) => (
+          <div className="flex flex-wrap items-center gap-2">
+            {/* WRITE AND PREVIEW, THE GITHUB SHAPE. Two pressed-state buttons rather than a tab
+                widget: there are two views of one field, and a pill that reports state is the house
+                control for that. */}
+            <fieldset className="flex gap-1">
+              <legend className="sr-only">Write-up view</legend>
+              {WRITE_UP_PANES.map((pane) => (
+                <button
+                  key={pane}
+                  type="button"
+                  aria-pressed={writeUpPane === pane}
+                  onClick={() => setWriteUpPane(pane)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] ${
+                    writeUpPane === pane
+                      ? "bg-[#CCE8E9] text-[#041F21]"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {WRITE_UP_PANE_LABELS[pane]}
+                </button>
+              ))}
+            </fieldset>
+            {/* Only beside the textarea, because an image goes where the cursor is. */}
+            {writeUpPane === "write" ? (
               <button
-                key={pane}
                 type="button"
-                aria-pressed={writeUpPane === pane}
-                onClick={() => setWriteUpPane(pane)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] ${
-                  writeUpPane === pane
-                    ? "bg-[#CCE8E9] text-[#041F21]"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                onClick={handleAddWriteUpImageClick}
+                disabled={isWriteUpImageBusy}
+                className="ml-auto rounded-full border border-[#00696E]/40 px-3 py-1 text-xs font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {WRITE_UP_PANE_LABELS[pane]}
+                {isWriteUpImageBusy ? "Uploading…" : "Add an image"}
               </button>
-            ))}
-          </fieldset>
+            ) : null}
+            <input
+              ref={writeUpImageInputRef}
+              type="file"
+              accept={ACCEPTED_IMAGE_INPUT_ACCEPT}
+              tabIndex={-1}
+              aria-hidden="true"
+              className="sr-only"
+              onChange={(changeEvent) => {
+                const pickedFile = changeEvent.target.files?.[0];
+                // Cleared, so picking the same file twice still fires a change.
+                changeEvent.target.value = "";
+                if (pickedFile !== undefined) void handleWriteUpImageFilePicked(pickedFile);
+              }}
+            />
+          </div>
           {writeUpPane === "write" ? (
             <LabeledTextArea
               label="Write-up"
               value={formDraft.writeUp}
               onValueChange={(writeUp) => applyFormPatch({ writeUp })}
               rowCount={12}
+              textAreaRef={writeUpTextAreaRef}
+              // Read-only while an image uploads, so the cursor the image will land at stays put.
+              isReadOnly={isWriteUpImageBusy}
               errorMessage={readFieldError("writeUp")}
             />
           ) : (
@@ -324,13 +509,17 @@ export default function ShowcaseLaunchComposer({
               {formDraft.writeUp.trim() === "" ? (
                 <p className="pt-4 text-sm text-muted-foreground">Nothing to preview yet.</p>
               ) : (
-                // No recorded sizes yet: the form uploads nothing, so an image the maker types by
-                // path shows the "Image not shown" note, exactly as it would on the published page.
-                // Uploads bring their sizes (todo.md 2b).
-                <ShowcaseWriteUp markdown={formDraft.writeUp} imageSizes={[]} />
+                // The uploads' recorded sizes, so the preview reserves each image's box exactly as
+                // the published page will. An image typed in by address has no size and shows the
+                // "Image not shown" note, as it would there.
+                <ShowcaseWriteUp
+                  markdown={formDraft.writeUp}
+                  imageSizes={formDraft.uploadedWriteUpImages}
+                />
               )}
             </div>
           )}
+          <WriteUpImageUploadStatus uploadState={writeUpImageUploadState} />
         </FormSection>
 
         <FormSection title="Link">
@@ -521,8 +710,8 @@ export default function ShowcaseLaunchComposer({
       </fieldset>
 
       {/*
-        THE CONTRACT'S OWN REFUSALS, named by the label a maker can see and listed in page order, the
-        fix the teardown wizard and the rights-claim composer both carry.
+        THE REFUSALS THAT NAME A FIELD — the contract's own in the browser, and the server's after a
+        post — named by the label a maker can see and listed in page order.
       */}
       {fieldErrorEntries.length > 0 ? (
         <div
@@ -541,20 +730,20 @@ export default function ShowcaseLaunchComposer({
         </div>
       ) : null}
 
-      {submitError === undefined ? null : (
-        <div className="mt-8">
-          <MutationErrorNotice error={submitError.apiError} />
+      {submitState.status === "refused" ? (
+        <div className="mt-8 empty:hidden">
+          <ShowcaseLaunchRefusalNotice refusal={submitState.refusal} />
         </div>
-      )}
+      ) : null}
 
       <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-border pt-5">
         <button
           type="button"
           onClick={handlePostClick}
-          disabled={postBlockedReason !== null || submitMutation.isPending}
+          disabled={postBlockedReason !== null || isPosting}
           className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {submitMutation.isPending ? "Posting…" : "Post launch"}
+          {isPosting ? "Posting…" : "Post launch"}
         </button>
         {/* A DISABLED BUTTON SAYS WHY, beside itself. */}
         {postBlockedReason === null ? null : (
