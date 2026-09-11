@@ -6,6 +6,8 @@
 // comparator behind `newest` and `top` is `SHOWCASE_SORT_COMPARATORS` in the getter, because a
 // cursor into an order the page could re-derive differently is meaningless.
 
+import Link from "next/link";
+
 import ShowcaseFeedRow from "@/components/home/blueprints/cards/showcase-feed-row";
 import CursorPageControl from "@/components/home/shared/cursor-page-control";
 import FacetChipRow, { type FacetBucket } from "@/components/home/shared/facet-chip-row";
@@ -79,13 +81,24 @@ export default async function ShowcaseFeedPage({
       {/* One type step above the sibling indexes — a launch feed opens on its title the way
           Launch YC does — but sans and left-aligned: serif is the case-study signature on this
           surface, and the `(home)` shell has no centred column to put a hero in. */}
-      <header className="px-4 pt-6 lg:px-6 lg:pt-8">
-        <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
-          Showcase
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-[#6F7979] lg:text-base">
-          Working prototypes and finished builds, launched from the teardowns.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 px-4 pt-6 lg:px-6 lg:pt-8">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+            Showcase
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-[#6F7979] lg:text-base">
+            Working prototypes and finished builds, launched from the teardowns.
+          </p>
+        </div>
+        {/* AN OUTLINE PILL, NOT A FILLED ONE: the feed is for reading, and the committed action on
+            this page is choosing a launch to open, not posting one. It wraps under the title on a
+            phone rather than squeezing it. */}
+        <Link
+          href="/blueprints/showcase/new"
+          className="shrink-0 rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+        >
+          Post a launch
+        </Link>
       </header>
 
       <div className="mt-4 space-y-2 px-4 lg:px-6">

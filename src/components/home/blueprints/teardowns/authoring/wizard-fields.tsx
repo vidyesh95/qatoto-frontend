@@ -7,9 +7,11 @@
 // ring or an error slot to drift. The convention exists to stop premature abstraction across
 // FEATURES; these five files are one feature.
 //
-// Still not `src/components/ui/`: that directory holds primitives more than one feature imports,
-// and nothing outside this wizard should reach for these. If a third wizard wants them, that is the
-// moment to hoist, not before.
+// Still not `src/components/ui/`: that directory holds primitives more than one feature imports.
+// ⚠️ THREE BLUEPRINTS FORMS NOW IMPORT THESE (the teardown wizard, the rights-claim composer and the
+// launch composer), which is the point this comment used to name for hoisting. They stay here for
+// now because all three are one surface and the path is imported from seven files; moving them to a
+// shared blueprints folder is recorded in `todo.md` rather than done inside a feature change.
 //
 // Everything here builds on `INPUT_CLASS` / `LABEL_CLASS` so the fields match every other form in
 // the product rather than inventing a second field vocabulary.
@@ -38,6 +40,32 @@ function FieldHint({ hint }: { readonly hint: string | undefined }) {
   return <p className="mt-1 text-xs text-muted-foreground">{hint}</p>;
 }
 
+/**
+ * A live character count under a field with a soft limit.
+ *
+ * ⚠️ SOFT, NOT `maxLength`. A hard cap silently drops the end of a paste, and the words that vanish
+ * are usually the ones the person meant to keep; the schema's `.max()` is the real gate. Over the
+ * limit the count says so IN WORDS ("83 of 80, 3 over"), because a colour change alone is not a
+ * signal (`docs/Design.md` §6).
+ */
+function FieldCharacterCount({
+  characterCount,
+  characterLimit,
+}: {
+  readonly characterCount: number;
+  readonly characterLimit: number;
+}) {
+  const overLimitCount = characterCount - characterLimit;
+  return (
+    <p
+      className={`mt-1 text-xs tabular-nums ${overLimitCount > 0 ? "text-destructive" : "text-muted-foreground"}`}
+    >
+      {characterCount} of {characterLimit}
+      {overLimitCount > 0 ? `, ${overLimitCount} over` : null}
+    </p>
+  );
+}
+
 export function LabeledTextInput({
   label,
   value,
@@ -46,6 +74,7 @@ export function LabeledTextInput({
   errorMessage = null,
   placeholder,
   inputType = "text",
+  characterLimit,
 }: {
   readonly label: string;
   readonly value: string;
@@ -55,6 +84,8 @@ export function LabeledTextInput({
   readonly placeholder?: string;
   /** `text`, `url` or `date`. No `number`: every scalar is text until `collectTeardownSubmission`. */
   readonly inputType?: "text" | "url" | "date";
+  /** A soft limit with a live count under the field. Omit for no counter. */
+  readonly characterLimit?: number;
 }) {
   return (
     <label className="block">
@@ -67,6 +98,9 @@ export function LabeledTextInput({
         className={`${INPUT_CLASS} mt-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]`}
       />
       <FieldHint hint={hint} />
+      {characterLimit === undefined ? null : (
+        <FieldCharacterCount characterCount={value.length} characterLimit={characterLimit} />
+      )}
       <FieldError message={errorMessage} />
     </label>
   );

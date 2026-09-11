@@ -155,7 +155,8 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         kind: "route",
         label: "Blueprints — showcase",
         href: "/blueprints/showcase",
-        summary: "A launch feed of working prototypes — newest first, or top by upvotes.",
+        summary:
+          "A launch feed of working prototypes, newest first or top by upvotes, with a form to post one. Posting is not open yet.",
       },
       {
         kind: "dynamic",
@@ -933,6 +934,14 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         href: "/studio/blueprints",
         summary:
           "Surveys you have submitted, and where each one has got to. Submissions are not open yet.",
+      },
+      {
+        // ⚠️ SAME RULE AS MY TEARDOWNS ABOVE: the launch form checks a real payload and stores
+        // nothing, because there is no showcase table. Change the last sentence the day it lands.
+        kind: "route",
+        label: "My Launches",
+        href: "/studio/launches",
+        summary: "Builds you have posted, and where each one has got to. Posting is not open yet.",
       },
       {
         // ⚠️ THIS ENTRY HAS NOW BEEN WRONG TWICE, IN OPPOSITE DIRECTIONS, and the history is worth

@@ -25,6 +25,10 @@ import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
  * used to carry are gone for that reason: the pill drifted with title length, the summary halved
  * the density, and the border made a card out of a row.
  *
+ * ⚠️ `ShowcaseLaunchRowPreview` COPIES THIS ROW'S MEDIA SLOT, TYPE SIZES AND META LINE for the launch
+ * form's live preview, and cannot import them (it has no link, vote box or author). Change a class
+ * here and change it there, or the preview stops showing what the feed will.
+ *
  * ONE TEAL ELEMENT PER ROW — the author's name, where YC puts its orange company name. The tagline
  * is body ink, not accent.
  *

@@ -110,6 +110,13 @@ const ICON_PATHS = {
     active: "/icons/category_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
     inactive: "/icons/category_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
+  // `rocket_launch`, not `flag`: the flag glyph already means "report" across the app (video
+  // reports, disputes, the problem map), and on My Launches it would read as the `flagged` state its
+  // own status chips show. Both fills are committed from Material Symbols.
+  rocketLaunch: {
+    active: "/icons/rocket_launch_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+    inactive: "/icons/rocket_launch_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+  },
 } as const;
 
 /* ---------- Route paths (outside component) ---------- */
@@ -125,6 +132,10 @@ const STUDIO_ROUTES = {
   // that ordering is the product thesis rather than alphabetical: you survey something that already
   // sells, then pitch building it.
   myTeardowns: "/studio/blueprints",
+  // Launches the signed-in maker has posted. BETWEEN TEARDOWNS AND PITCHES for the same reason the
+  // teardown entry leads the section: survey something that sells, build and launch your own, then
+  // pitch it.
+  myLaunches: "/studio/launches",
   pitches: "/studio/pitches",
   // The PRODUCT team — the pipeline stage between Pitches and Funding, and what the
   // "Product journey" section below has always promised. Until now this path served
@@ -374,6 +385,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
     title: "Product journey",
     items: [
       { path: STUDIO_ROUTES.myTeardowns, label: "My Teardowns", iconKey: "category" },
+      { path: STUDIO_ROUTES.myLaunches, label: "My Launches", iconKey: "rocketLaunch" },
       { path: STUDIO_ROUTES.pitches, label: "Pitches", iconKey: "slideshow" },
       { path: STUDIO_ROUTES.team, label: "Team", iconKey: "group" },
       { path: STUDIO_ROUTES.funding, label: "Funding", iconKey: "requestQuote" },

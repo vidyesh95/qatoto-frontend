@@ -245,15 +245,17 @@ rules at once, not contradicting itself.
 prototypes (20%) and manufacturing case studies (10%) — and `next.config.ts` 308s `/anime`
 and `/anime/:path*` at the routing layer.
 
-**THE SURFACE IS SEVEN ROUTES PLUS A RESOLVER, not two.** Each of the three kinds has its own
-index and its own detail layout, because a teardown, a launch and a manufacturing lesson are not
-browsed the same way:
+**THE SURFACE IS SEVEN READING ROUTES PLUS A RESOLVER, not two, with forms beside them.** Each of
+the three kinds has its own index and its own detail layout, because a teardown, a launch and a
+manufacturing lesson are not browsed the same way. The forms (`teardowns/new`, `showcase/new` and a
+teardown's `report`) are covered by the rules below the table:
 
 | Route                                  | Design                                                                                                                                                                                                  |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/blueprints`                          | Hub — header, hero, then three lanes in three DIFFERENT shapes, each with its question and one **See all**                                                                                              |
 | `/blueprints/teardowns` + `/[slug]`    | Thumbnail grid of DECISION-SET cards; detail carries provenance, composition, the market signal, the media, the files, the exploded-view engine and the handoff. `?view=business\|engineering\|factory` |
 | `/blueprints/showcase` + `/[slug]`     | Launch feed — `?sort=newest\|top`, newest `launchedAt` by default; sort in `listShowcases`; TWO reserved inert slots                                                                                    |
+| `/blueprints/showcase/new`             | Post a launch: one page of sections, a square heading image checked in the browser and never uploaded, two statements. Mock-backed, see the rehearsal rule                                              |
 | `/blueprints/case-studies` + `/[slug]` | Hairline lesson list, each row an expandable `<details>`; detail is a fixed-order report                                                                                                                |
 | `/blueprints/[slug]`                   | **Redirect resolver only** — no content, no metadata                                                                                                                                                    |
 
@@ -442,8 +444,9 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   ⚠️ **THE MOCK ENFORCES ONE REAL RULE ON PURPOSE** — a duplicate `subjectProductName` answers 409 —
   because without it the failure branch of every caller is unreachable, which is unverified code by
   the same standard the uncalled-hook audit applies.
-  **Uploads do not exist**, so every file is a pasted https URL and the walkthrough is a YouTube link
-  through `extractYoutubeVideoId`; there is no dropzone and the step says why. **There is no
+  **Uploads do not exist**, so every teardown file is a pasted https URL and the walkthrough is a
+  YouTube link through `extractYoutubeVideoId`; there is no dropzone and the step says why. The
+  launch form's image picker is not an exception: it checks a file and uploads nothing (below). **There is no
   element-table editor and there must not be one** until a file from an analyser can be attached: a
   free-text percent field invites somebody to type a datasheet figure, which the composition table
   then renders looking exactly like a measurement.
@@ -451,6 +454,14 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   links to it. The two do not join, because `submitTeardownForReview` persists nothing; joining them
   would need fake in-memory persistence that loses work on reload, or a second `localStorage` key,
   which is forbidden.
+  **`/blueprints/showcase/new` IS THE SAME REHEARSAL FOR A LAUNCH**, over `showcase-authoring.api.ts`:
+  one page, two statements, a 409 on a launch name that already exists, and the disclosure once, in
+  `showcase-launch-receipt.tsx`. ⚠️ **ITS HEADING IMAGE IS CHECKED AND PREVIEWED, NEVER UPLOADED.**
+  `use-heading-image-pick.ts` decodes the file in the browser (type, 5 MB, square within 1%, at
+  least 256px, through `src/lib/image-file-check.ts`, which the admin hero picker shares) and the
+  `File` rides beside the draft into a mock that drops it. That check is UX only; the upload route
+  must repeat every rule. **`/studio/launches` is management only** for the `/studio/blueprints`
+  reason, and its rows are a fixture set that never includes a launch posted this session.
 - **THE RIGHTS-CLAIM ROUTE PREPARES A NOTICE; IT DOES NOT FILE ONE.**
   `/blueprints/teardowns/[slug]/report` collects the claim kind, the target, the claimant and three
   sworn statements, then hands over a finished notice addressed to `SUPPORT_CONTACT_EMAIL` as a

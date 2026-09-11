@@ -149,10 +149,12 @@ export const EMPTY_TEARDOWN_WIZARD_DRAFT: TeardownWizardDraft = {
  * would be a guess rendered as a badge over a video of some other length. `posterUrl` is DERIVED from
  * the id with no network call, `hqdefault` because `maxresdefault` 404s on non-HD uploads.
  */
-function buildWalkthroughVideo(
-  walkthroughYoutubeUrl: string,
+export function buildYoutubeBlueprintVideo(
+  youtubeUrl: string,
 ): { source: "youtube"; youtubeVideoId: string; posterUrl: string; durationSeconds: null } | null {
-  const youtubeVideoId = extractYoutubeVideoId(walkthroughYoutubeUrl);
+  // EXPORTED UNDER A NEUTRAL NAME when the launch form needed the same conversion for its demo. It
+  // was `buildWalkthroughVideo`, and a showcase demo is not a walkthrough.
+  const youtubeVideoId = extractYoutubeVideoId(youtubeUrl);
   if (youtubeVideoId === null) return null;
 
   return {
@@ -255,7 +257,7 @@ export function collectTeardownSubmission(
       title: fileRow.title.trim(),
       url: fileRow.url.trim(),
     })),
-    walkthroughVideo: buildWalkthroughVideo(draft.walkthroughYoutubeUrl),
+    walkthroughVideo: buildYoutubeBlueprintVideo(draft.walkthroughYoutubeUrl),
     tags: draft.tagsText
       .split(",")
       .map((tag) => tag.trim())

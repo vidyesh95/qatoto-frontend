@@ -98,10 +98,18 @@ export const BLUEPRINT_CATEGORY_SEGMENTS: Record<BlueprintCategory, string> = {
   case_study: "case-studies",
 };
 
-/** The segments a blueprint slug may NOT take, because a static route already owns them. */
-export const RESERVED_BLUEPRINT_SLUGS: readonly string[] = Object.values(
-  BLUEPRINT_CATEGORY_SEGMENTS,
-);
+/**
+ * The segments a blueprint slug may NOT take, because a static route already owns them.
+ *
+ * `new` IS HERE TOO, for the routes one level down. `/blueprints/teardowns/new` and
+ * `/blueprints/showcase/new` are static folders beside `[slug]`, so a teardown or a launch slugged
+ * `new` would be shadowed by the create form and unreachable forever. The backend must refuse it when
+ * it mints a slug; this guard keeps the read side from ever answering on one.
+ */
+export const RESERVED_BLUEPRINT_SLUGS: readonly string[] = [
+  ...Object.values(BLUEPRINT_CATEGORY_SEGMENTS),
+  "new",
+];
 
 export const BLUEPRINT_CATEGORY_BY_SEGMENT: Record<string, BlueprintCategory> = {
   teardowns: "teardown",

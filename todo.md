@@ -3745,6 +3745,52 @@ idempotency keys, not-optimistic. Copy it; do not reinvent it.
   badge, pull-quotes and any stat band in the write-up. A comment section that decorates its best
   comment is a testimonial row wearing a thread's clothes.
 
+## Posting a launch — PART 1 SHIPPED MOCK-BACKED 2026-09-11, part 2 blocked on a showcase table
+
+A maker can now post a launch at `/blueprints/showcase/new` (linked from the showcase feed header
+and from studio), and see their launches at `/studio/launches` ("My Launches" in the sidebar). The
+shape follows Launch YC and Peerlist Launchpad: one page, a square heading image, a plain-text
+write-up with an optional YouTube demo, a link, the team, details and two statements.
+
+### Part 1 — the rehearsal — SHIPPED 2026-09-11
+
+- **The contract is real and stores nothing.** `ShowcaseSubmissionDraftSchema` (`.strict()`) in
+  `src/lib/blueprints/showcase-authoring.schemas.ts`; `showcase-authoring.api.ts` is
+  `TRANSPORT: mock`, answers a 409 when the launch name matches an existing showcase, and otherwise
+  returns a `pending_review` receipt. The "nothing was stored" disclosure is said once, in
+  `showcase-launch-receipt.tsx`. No poll, nothing optimistic, one idempotency key per attempt.
+- **The heading image is checked and previewed, never uploaded.** `use-heading-image-pick.ts`
+  refuses a wrong type, over 5 MB, not square within 1%, or under 256px, and the `File` rides beside
+  the draft into the mock. The check moved to `src/lib/image-file-check.ts`, shared with the admin
+  hero picker, whose messages are unchanged.
+- **`"new"` is a reserved slug** (`RESERVED_BLUEPRINT_SLUGS`): a launch slugged `new` would be
+  shadowed by the static route. `teardowns/new` had the same gap.
+- **`listTeardownOptions`** feeds the "Built from a teardown" select through the list gate.
+- **`/studio/launches`** reads five fixture rows, one per reachable state. ⚠️ **The empty list
+  ships unexercised**: the fixtures are never empty, and it is what every first-time maker sees.
+
+### Part 2 — the backend and the detail page — NOT STARTED
+
+1. **A `showcase` table with `moderationState`**, and the public getters gate on it. ⚠️ Today the
+   showcase arm has no moderation state, so `isBlueprintVisible` lets every showcase through; that
+   must change the same day posting opens, or a posted launch is public before review.
+2. **`POST /blueprints/showcases`** as multipart (the draft JSON plus a `headingImage` file) with an
+   `Idempotency-Key`, answering 202 with the receipt shape; **`GET /blueprints/showcases/mine`**
+   with the `ShowcaseSubmissionSchema` row shape.
+3. **The image goes to `qatoto/showcase-images/<id>/heading`** through `createSingleFileUpload` and
+   sharp: re-encode, refuse non-square and under 256px server-side. The browser check is UX only.
+4. **The author comes from the session**, never the body. Team rows carry no avatar today; the read
+   side needs a nullable avatar with initials as the fallback.
+5. **The server re-checks what the form only suggests**: `builtFromBlueprintSlug` must name a
+   listable teardown, `launchedAt` may not be in the future, the slug may not be `new`. `cadFormat`
+   is not collected and the backend writes `null`.
+6. **Detail page**: the public arm already carries `tagline`, `writeUp`, `callToAction` and `team`.
+   What changes is the square heading image beside the name, and the demo video placed after the
+   first paragraph of the write-up, which the form's hint already promises.
+7. **Hoist `wizard-fields.tsx`** to a shared blueprints folder: three forms import it now.
+8. **When wired**: delete the receipt disclosure, flip the `TRANSPORT: mock` banners, and change
+   "Posting is not open yet" in both `site-roadmap.ts` entries.
+
 ## Teardowns as a clean-room replication surface — PART 1 SHIPPED 2026-09-10, parts 2–4 blocked on tables
 
 The premise, in the words it was asked in: Taiwan, Korea and China built manufacturing capability

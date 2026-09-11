@@ -1,0 +1,513 @@
+// TRANSPORT: client-query — the one "use client" file that owns the launch flow. Calls
+// `useSubmitShowcaseMutation`, which is mock-backed today.
+"use client";
+
+import { useState } from "react";
+
+import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
+import LaunchStatements, {
+  describeLaunchStatementGap,
+} from "@/components/home/blueprints/showcase/authoring/launch-statements";
+import ShowcaseLaunchReceipt from "@/components/home/blueprints/showcase/authoring/showcase-launch-receipt";
+import ShowcaseLaunchRowPreview from "@/components/home/blueprints/showcase/authoring/showcase-launch-row-preview";
+import {
+  buildMiddayInstantForDate,
+  collectShowcaseSubmission,
+  describeShowcaseFieldPath,
+  EMPTY_SHOWCASE_LAUNCH_FORM_DRAFT,
+  findShowcaseFieldPosition,
+  splitTagsText,
+  type ShowcaseLaunchFormDraft,
+  type TeamMemberDraftRow,
+} from "@/components/home/blueprints/showcase/authoring/showcase-launch-shared";
+import SquareImagePicker from "@/components/home/blueprints/showcase/authoring/square-image-picker";
+import { useHeadingImagePick } from "@/components/home/blueprints/showcase/authoring/use-heading-image-pick";
+import {
+  LabeledEnumSelect,
+  LabeledTextArea,
+  LabeledTextInput,
+  RepeatableRowShell,
+} from "@/components/home/blueprints/teardowns/authoring/wizard-fields";
+import { isWalkthroughLinkUsable } from "@/components/home/blueprints/teardowns/authoring/wizard-shared";
+import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
+import { useSubmitShowcaseMutation } from "@/hooks/blueprints/showcase-authoring";
+import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
+import type { TeardownOption } from "@/lib/blueprints/api";
+import { BLUEPRINT_DIFFICULTIES, BLUEPRINT_DIFFICULTY_LABELS } from "@/lib/blueprints/schemas";
+import {
+  SHOWCASE_TAGLINE_MAXIMUM_CHARACTERS,
+  type ShowcaseSubmissionReceipt,
+} from "@/lib/blueprints/showcase-authoring.schemas";
+import { buildInitialsFromName } from "@/lib/format-initials";
+import { ApiRequestError } from "@/lib/http";
+
+/**
+ * THE COMPOSER'S OWN STATE, AS A UNION: editing, or submitted with a receipt. Never "editing and
+ * already submitted", which a step index beside a nullable receipt could express.
+ */
+type ShowcaseLaunchViewState =
+  | { readonly status: "editing" }
+  | { readonly status: "submitted"; readonly receipt: ShowcaseSubmissionReceipt };
+
+/** The id the heading image's hidden file input carries; the section label points at it. */
+const HEADING_IMAGE_INPUT_ID = "showcase-heading-image";
+
+function newTeamMemberDraftRow(): TeamMemberDraftRow {
+  // Client-side key only, minted in a click handler, never during render.
+  return { rowId: crypto.randomUUID(), displayName: "", handle: "", role: "" };
+}
+
+/** One titled part of the form. A hairline above every section after the first, so the page scans. */
+function FormSection({
+  title,
+  description,
+  children,
+}: {
+  readonly title: string;
+  readonly description?: string;
+  readonly children: React.ReactNode;
+}) {
+  return (
+    <section className="border-t border-border pt-6 first:border-t-0 first:pt-0">
+      <h2 className="text-sm font-medium text-foreground">{title}</h2>
+      {description === undefined ? null : (
+        <p className="mt-1 max-w-prose text-xs text-muted-foreground">{description}</p>
+      )}
+      <div className="mt-4 space-y-4">{children}</div>
+    </section>
+  );
+}
+
+/**
+ * Post a launch: one page, one set of statements, one Post button.
+ *
+ * ⚠️ ONE PAGE, NOT STEPPED, as the maker chose. A launch is about a dozen fields, far lighter than a
+ * teardown, and the live row preview only helps if the name, pitch and image are on screen together.
+ *
+ * ⚠️ NOTHING IS OPTIMISTIC AND NOTHING POLLS. The write answers 202 and the verdict does not exist;
+ * `showcase-launch-receipt.tsx` says what is true instead, once.
+ */
+export default function ShowcaseLaunchComposer({
+  teardownOptions,
+}: {
+  readonly teardownOptions: readonly TeardownOption[];
+}) {
+  const [formDraft, setFormDraft] = useState<ShowcaseLaunchFormDraft>(
+    EMPTY_SHOWCASE_LAUNCH_FORM_DRAFT,
+  );
+  const [viewState, setViewState] = useState<ShowcaseLaunchViewState>({ status: "editing" });
+  const [fieldErrors, setFieldErrors] = useState<Readonly<Record<string, string[]>>>({});
+  const headingImagePick = useHeadingImagePick();
+  const submitMutation = useSubmitShowcaseMutation();
+  // The lazy, ref-backed key: a `useState(crypto.randomUUID())` initializer would run during the
+  // server prerender, which `cacheComponents` refuses. It rotates only after a success.
+  const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
+
+  function applyFormPatch(formPatch: Partial<ShowcaseLaunchFormDraft>): void {
+    setFormDraft((previousFormDraft) => ({ ...previousFormDraft, ...formPatch }));
+    // EDITING ANYTHING CLEARS THE LAST VERDICT: the errors describe a draft that no longer exists, and
+    // a 409 about a name is about a name nobody is posting any more.
+    setFieldErrors({});
+    if (submitMutation.error !== null) submitMutation.reset();
+  }
+
+  const headingImagePickState = headingImagePick.pickState;
+  const rowPreviewProps = {
+    title: formDraft.title,
+    tagline: formDraft.tagline,
+    headingImageUrl:
+      headingImagePickState.status === "ready" ? headingImagePickState.previewUrl : null,
+    launchedAtIsoInstant:
+      formDraft.launchedOnDate === "" ? null : buildMiddayInstantForDate(formDraft.launchedOnDate),
+    isBuiltFromTeardown: formDraft.builtFromBlueprintSlug !== "",
+    tags: splitTagsText(formDraft.tagsText),
+  };
+
+  if (viewState.status === "submitted") {
+    return (
+      <ShowcaseLaunchReceipt
+        receipt={viewState.receipt}
+        rowPreviewProps={rowPreviewProps}
+        onPostAnother={() => {
+          setFormDraft(EMPTY_SHOWCASE_LAUNCH_FORM_DRAFT);
+          setFieldErrors({});
+          submitMutation.reset();
+          headingImagePick.clearPick();
+          setViewState({ status: "editing" });
+        }}
+      />
+    );
+  }
+
+  const isDemoLinkUsable = isWalkthroughLinkUsable(formDraft.demoYoutubeUrl);
+
+  /**
+   * Why Post is unavailable, in words beside the button, or `null`.
+   *
+   * ORDER: the image and the demo link first, because they are fields further up the page; the
+   * statements last, because they sit right above the button and are the obvious last step.
+   */
+  const postBlockedReason =
+    headingImagePickState.status !== "ready"
+      ? "Add a square heading image under Heading image."
+      : !isDemoLinkUsable
+        ? "The YouTube demo link can't be read. Fix it or clear the field."
+        : describeLaunchStatementGap(formDraft.acceptedLaunchStatementIds);
+
+  const fieldErrorEntries = Object.entries(fieldErrors).toSorted(
+    ([firstFieldPath], [secondFieldPath]) =>
+      findShowcaseFieldPosition(firstFieldPath) - findShowcaseFieldPosition(secondFieldPath),
+  );
+  const submitError =
+    submitMutation.error instanceof ApiRequestError ? submitMutation.error : undefined;
+
+  function readFieldError(fieldPath: string): string | null {
+    return fieldErrors[fieldPath]?.join(" ") ?? null;
+  }
+
+  function updateTeamRow(rowId: string, teamRowPatch: Partial<TeamMemberDraftRow>): void {
+    applyFormPatch({
+      teamRows: formDraft.teamRows.map((teamRow) =>
+        teamRow.rowId === rowId ? { ...teamRow, ...teamRowPatch } : teamRow,
+      ),
+    });
+  }
+
+  function handlePostClick(): void {
+    if (headingImagePickState.status !== "ready") return;
+
+    const collected = collectShowcaseSubmission(formDraft);
+    if (!collected.ok) {
+      // The contract refused it. Show every field it named and stay put.
+      setFieldErrors(collected.fieldErrors);
+      return;
+    }
+
+    setFieldErrors({});
+    submitMutation.mutate(
+      {
+        draft: collected.submission,
+        headingImageFile: headingImagePickState.file,
+        idempotencyKey: getIdempotencyKey(),
+      },
+      {
+        onSuccess: (receipt) => {
+          resetIdempotencyKey();
+          setViewState({ status: "submitted", receipt });
+        },
+      },
+    );
+  }
+
+  return (
+    <div className="max-w-2xl">
+      <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">Showcase</p>
+      <h1 className="mt-1 text-xl font-medium text-foreground lg:text-2xl">Post a launch</h1>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+        A launch is a working prototype or a finished build, and what it proved. Say what you made,
+        show it, and name the people who made it with you.
+      </p>
+
+      <div className="mt-8 space-y-8">
+        <FormSection title="The build">
+          <LabeledTextInput
+            label="Name"
+            value={formDraft.title}
+            onValueChange={(title) => applyFormPatch({ title })}
+            placeholder="Solar cold store running for 90 days in Nakuru"
+            hint="What it is, the way somebody would search for it."
+            errorMessage={readFieldError("title")}
+          />
+          <LabeledTextInput
+            label="One-line pitch"
+            value={formDraft.tagline}
+            onValueChange={(tagline) => applyFormPatch({ tagline })}
+            placeholder="Holds 4 °C for 62 hours with no sun"
+            hint="The line under the name in the feed. Lead with what it does or what it proved."
+            characterLimit={SHOWCASE_TAGLINE_MAXIMUM_CHARACTERS}
+            errorMessage={readFieldError("tagline")}
+          />
+          <LabeledTextArea
+            label="What is it?"
+            value={formDraft.summary}
+            onValueChange={(summary) => applyFormPatch({ summary })}
+            rowCount={3}
+            hint="One paragraph: what it is, and what it proved."
+            errorMessage={readFieldError("summary")}
+          />
+        </FormSection>
+
+        <FormSection title="Heading image">
+          <SquareImagePicker
+            inputId={HEADING_IMAGE_INPUT_ID}
+            pickState={headingImagePickState}
+            onFilePicked={(file) => void headingImagePick.pickFile(file)}
+            onRemove={headingImagePick.clearPick}
+          />
+          {/* THE LIVE PREVIEW SITS WITH THE IMAGE, because the image is the one field a maker cannot
+              judge from the form alone: what matters is how it reads beside the name at 64px. */}
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-[11px] tracking-[0.5px] text-muted-foreground uppercase">
+              How it will look in the feed
+            </p>
+            <div className="mt-3">
+              <ShowcaseLaunchRowPreview {...rowPreviewProps} />
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection title="The story">
+          <LabeledTextArea
+            label="Write-up"
+            value={formDraft.writeUp}
+            onValueChange={(writeUp) => applyFormPatch({ writeUp })}
+            rowCount={8}
+            hint="Optional. Plain text: a blank line starts a new paragraph. If you add a YouTube demo below, it sits after your first paragraph."
+            errorMessage={readFieldError("writeUp")}
+          />
+        </FormSection>
+
+        <FormSection title="Demo and link">
+          <LabeledTextInput
+            label="YouTube demo"
+            inputType="url"
+            value={formDraft.demoYoutubeUrl}
+            onValueChange={(demoYoutubeUrl) => applyFormPatch({ demoYoutubeUrl })}
+            placeholder="https://www.youtube.com/watch?v=…"
+            hint="Optional. A YouTube link only: Qatoto never holds the video itself."
+            errorMessage={
+              isDemoLinkUsable
+                ? readFieldError("demoVideo")
+                : "That is not a YouTube link we can read. Paste the address from the browser bar, or clear the field."
+            }
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <LabeledTextInput
+              label="Link label"
+              value={formDraft.callToActionLabel}
+              onValueChange={(callToActionLabel) => applyFormPatch({ callToActionLabel })}
+              placeholder="Order a unit"
+              errorMessage={readFieldError("callToAction.label")}
+            />
+            <LabeledTextInput
+              label="Link address"
+              inputType="url"
+              value={formDraft.callToActionUrl}
+              onValueChange={(callToActionUrl) => applyFormPatch({ callToActionUrl })}
+              placeholder="https://…"
+              errorMessage={readFieldError("callToAction.url")}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Optional. Where somebody can order one, buy one or read more. Leave both empty for none.
+          </p>
+        </FormSection>
+
+        <FormSection
+          title="Team"
+          description="The people who built it, you included. Each person's photo comes from their own account once posting opens; for now their initials stand in."
+        >
+          {formDraft.teamRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No one added yet. A launch with no team shows only the person who posted it.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {formDraft.teamRows.map((teamRow, teamRowIndex) => {
+                const initials = buildInitialsFromName(teamRow.displayName);
+                return (
+                  <RepeatableRowShell
+                    key={teamRow.rowId}
+                    rowLabel={`Team member ${teamRowIndex + 1}`}
+                    onRemoveRow={() =>
+                      applyFormPatch({
+                        teamRows: formDraft.teamRows.filter(
+                          (existingTeamRow) => existingTeamRow.rowId !== teamRow.rowId,
+                        ),
+                      })
+                    }
+                  >
+                    <div className="flex items-center gap-2 sm:col-span-2">
+                      <span
+                        aria-hidden="true"
+                        className="grid size-8 shrink-0 place-items-center rounded-full bg-[#D6E3FF] text-xs font-medium text-[#00696E]"
+                      >
+                        {initials}
+                      </span>
+                      <span className="truncate text-sm text-foreground">
+                        {teamRow.displayName.trim() === "" ? (
+                          <span className="text-muted-foreground">New team member</span>
+                        ) : (
+                          teamRow.displayName
+                        )}
+                      </span>
+                    </div>
+                    <LabeledTextInput
+                      label="Name"
+                      value={teamRow.displayName}
+                      onValueChange={(displayName) => updateTeamRow(teamRow.rowId, { displayName })}
+                      errorMessage={readFieldError(`team.${teamRowIndex}.displayName`)}
+                    />
+                    <LabeledTextInput
+                      label="Handle"
+                      value={teamRow.handle}
+                      onValueChange={(handle) => updateTeamRow(teamRow.rowId, { handle })}
+                      placeholder="amara-builds"
+                      errorMessage={readFieldError(`team.${teamRowIndex}.handle`)}
+                    />
+                    <div className="sm:col-span-2">
+                      <LabeledTextInput
+                        label="Role"
+                        value={teamRow.role}
+                        onValueChange={(role) => updateTeamRow(teamRow.rowId, { role })}
+                        placeholder="Electronics"
+                        errorMessage={readFieldError(`team.${teamRowIndex}.role`)}
+                      />
+                    </div>
+                  </RepeatableRowShell>
+                );
+              })}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() =>
+              applyFormPatch({ teamRows: [...formDraft.teamRows, newTeamMemberDraftRow()] })
+            }
+            className="rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E] transition-colors hover:bg-[#00696E]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+          >
+            Add a team member
+          </button>
+        </FormSection>
+
+        <FormSection title="Built from a teardown">
+          <label className="block">
+            <span className={LABEL_CLASS}>Teardown</span>
+            <select
+              value={formDraft.builtFromBlueprintSlug}
+              onChange={(changeEvent) =>
+                applyFormPatch({
+                  // Checked against the real options rather than trusted: a `<select>` hands back a
+                  // string, and only a listed slug or "" may reach the draft.
+                  builtFromBlueprintSlug:
+                    teardownOptions.find(
+                      (teardownOption) => teardownOption.slug === changeEvent.target.value,
+                    )?.slug ?? "",
+                })
+              }
+              className={`${INPUT_CLASS} mt-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]`}
+            >
+              <option value="">Not built from a teardown on Qatoto</option>
+              {teardownOptions.map((teardownOption) => (
+                <option key={teardownOption.slug} value={teardownOption.slug}>
+                  {teardownOption.title}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              Optional. Pick the teardown you worked from, if it is published here.
+            </span>
+          </label>
+        </FormSection>
+
+        <FormSection title="Details">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <LabeledTextInput
+              label="Launch date"
+              inputType="date"
+              value={formDraft.launchedOnDate}
+              onValueChange={(launchedOnDate) => applyFormPatch({ launchedOnDate })}
+              hint="Leave it empty to use today."
+              errorMessage={readFieldError("launchedAt")}
+            />
+            <LabeledEnumSelect
+              label="How hard to build again"
+              value={formDraft.difficulty}
+              options={BLUEPRINT_DIFFICULTIES}
+              optionLabels={BLUEPRINT_DIFFICULTY_LABELS}
+              onValueChange={(difficulty) => applyFormPatch({ difficulty })}
+              emptyOptionLabel="Choose one"
+              errorMessage={readFieldError("difficulty")}
+            />
+            <LabeledTextInput
+              label="Parts cost, lowest (US dollars)"
+              value={formDraft.costMinimumText}
+              onValueChange={(costMinimumText) => applyFormPatch({ costMinimumText })}
+              placeholder="45"
+              errorMessage={readFieldError("billOfMaterialsCostRange.minimumInCents")}
+            />
+            <LabeledTextInput
+              label="Parts cost, highest (US dollars)"
+              value={formDraft.costMaximumText}
+              onValueChange={(costMaximumText) => applyFormPatch({ costMaximumText })}
+              placeholder="60"
+              errorMessage={readFieldError("billOfMaterialsCostRange.maximumInCents")}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Parts cost is optional: what one unit&apos;s parts cost, as a range. Leave both empty if
+            nobody costed it.
+          </p>
+          <LabeledTextInput
+            label="Tags"
+            value={formDraft.tagsText}
+            onValueChange={(tagsText) => applyFormPatch({ tagsText })}
+            placeholder="cold-chain, solar, field-trial"
+            hint="Separated by commas. These are how somebody browsing finds you."
+          />
+        </FormSection>
+
+        <FormSection title="Before you post">
+          <LaunchStatements
+            acceptedStatementIds={formDraft.acceptedLaunchStatementIds}
+            onAcceptedStatementIdsChange={(acceptedLaunchStatementIds) =>
+              applyFormPatch({ acceptedLaunchStatementIds })
+            }
+          />
+        </FormSection>
+      </div>
+
+      {/*
+        THE CONTRACT'S OWN REFUSALS, named by the label a maker can see and listed in page order, the
+        fix the teardown wizard and the rights-claim composer both carry.
+      */}
+      {fieldErrorEntries.length > 0 ? (
+        <div
+          role="alert"
+          className="mt-8 space-y-1 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+        >
+          <p>This launch can&apos;t be posted yet:</p>
+          <ul className="list-inside list-disc text-xs">
+            {fieldErrorEntries.map(([fieldPath, messages]) => (
+              <li key={fieldPath}>
+                <span className="font-medium">{describeShowcaseFieldPath(fieldPath)}</span>:{" "}
+                {messages.join(" ")}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {submitError === undefined ? null : (
+        <div className="mt-8">
+          <MutationErrorNotice error={submitError.apiError} />
+        </div>
+      )}
+
+      <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-border pt-5">
+        <button
+          type="button"
+          onClick={handlePostClick}
+          disabled={postBlockedReason !== null || submitMutation.isPending}
+          className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {submitMutation.isPending ? "Posting…" : "Post launch"}
+        </button>
+        {/* A DISABLED BUTTON SAYS WHY, beside itself. */}
+        {postBlockedReason === null ? null : (
+          <p className="max-w-md text-xs text-muted-foreground">{postBlockedReason}</p>
+        )}
+      </div>
+    </div>
+  );
+}

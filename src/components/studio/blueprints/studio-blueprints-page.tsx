@@ -5,6 +5,7 @@
 import Link from "next/link";
 
 import StatusPanel from "@/components/home/shared/status-panel";
+import { MODERATION_STATE_CHIP_CLASS } from "@/components/studio/blueprints/moderation-state-chip";
 import { useMyTeardownSubmissionsQuery } from "@/hooks/blueprints/authoring";
 import {
   BLUEPRINT_MODERATION_STATE_LABELS,
@@ -12,28 +13,6 @@ import {
   type BlueprintModerationState,
 } from "@/lib/blueprints/schemas";
 import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
-
-/**
- * Chip chrome per state.
- *
- * ⚠️ A `Record` OVER THE WHOLE ENUM, so an eighth moderation state is a compile error here rather
- * than an unstyled chip somebody notices in production. It is also why `rejected` was caught
- * everywhere the moment it was added to the tuple.
- *
- * ⚠️ THE PALETTE STAYS INSIDE THE ONE HUE RULE. Four of the seven are neutral, `published` takes the
- * imprint wash and the two adverse states take `Destructive`. No green for published and no amber
- * for pending: `docs/Design.md` §2 allows one hue family plus one blue and one red, and a status
- * list is exactly where a rainbow gets introduced by accident.
- */
-const MODERATION_STATE_CHIP_CLASS: Record<BlueprintModerationState, string> = {
-  draft: "border-border bg-card text-muted-foreground",
-  pending_review: "border-border bg-card text-foreground",
-  published: "border-transparent bg-[#00696E] text-white",
-  rejected: "border-destructive/40 bg-destructive/10 text-destructive",
-  flagged: "border-destructive/40 bg-destructive/10 text-destructive",
-  quarantined: "border-destructive/40 bg-destructive/10 text-destructive",
-  removed: "border-border bg-card text-muted-foreground",
-};
 
 /**
  * What each state means to the AUTHOR, which is not what it means to a reader.

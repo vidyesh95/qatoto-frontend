@@ -62,7 +62,8 @@ function byNewestFirst(left: Blueprint, right: Blueprint): number {
  * unreachable, and a visitor would get a 200 showing the WRONG page — worse than a 404. The
  * guard lives here rather than in a route file because `getBlueprint`, `listBlueprintSlugs` and
  * the sitemap each reach the data independently, and a guard in one of them leaks through the
- * other two. Derived from `BLUEPRINT_CATEGORY_SEGMENTS` so the segments and the guard cannot drift.
+ * other two. Derived from `BLUEPRINT_CATEGORY_SEGMENTS` so the segments and the guard cannot drift,
+ * plus `new`, which the static create routes under `teardowns/` and `showcase/` own.
  */
 function isReservedSlug(slug: string): boolean {
   return RESERVED_BLUEPRINT_SLUGS.includes(slug);
@@ -141,7 +142,8 @@ export async function listBlueprints(): Promise<Blueprint[]> {
  * that way could not read `launchedAt` without a cast, and CLAUDE.md Pattern 2 forbids the cast.
  *
  * MODULE-PRIVATE. The three filtered, paged getters below supersede it for every page on the
- * surface, and an exported wrapper with no caller is unverified code.
+ * surface, and an exported wrapper with no caller is unverified code. `listTeardownOptions` is the
+ * one other reader, and it narrows what it hands out to a slug and a title.
  */
 async function listBlueprintsByCategory<TCategory extends BlueprintCategory>(
   category: TCategory,
@@ -156,6 +158,31 @@ async function listBlueprintsByCategory<TCategory extends BlueprintCategory>(
       isBlueprintOfCategory(blueprint, category),
     );
   return matching.toSorted(byNewestFirst);
+}
+
+/** One choice in the launch form's "Built from a teardown" select. */
+export interface TeardownOption {
+  readonly slug: string;
+  readonly title: string;
+}
+
+/**
+ * Every LISTABLE teardown as a slug and a title, sorted by title, for the launch form's select.
+ *
+ * THE LIST GATE, NOT THE READABLE ONE. A launch names the teardown it was built from as a
+ * recommendation to its readers, and offering a quarantined teardown here would let a maker point at
+ * files Qatoto has just withheld. `listBlueprintSlugsByCategory` uses the readable gate on purpose,
+ * for prerendering, which is exactly why it is not reused.
+ *
+ * UNPAGED, and deliberately so: a select needs every option, and this narrows each row to two
+ * strings before it crosses to a client component.
+ */
+export async function listTeardownOptions(): Promise<TeardownOption[]> {
+  "use cache";
+  const teardowns = await listBlueprintsByCategory("teardown");
+  return teardowns
+    .map((teardown) => ({ slug: teardown.slug, title: teardown.title }))
+    .toSorted((firstOption, secondOption) => firstOption.title.localeCompare(secondOption.title));
 }
 
 export async function getBlueprint(slug: string): Promise<Blueprint | null> {

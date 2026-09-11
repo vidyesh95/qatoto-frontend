@@ -13,42 +13,15 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-/**
- * What the OS file picker may offer, mirroring ALLOWED_INPUT_FORMATS in the backend's
- * `src/lib/image.ts`. Without it the picker offers files the server will refuse, and the
- * admin only finds out after an upload round trip.
- *
- * BOTH MIME TYPES AND EXTENSIONS: some pickers filter on UTI/extension rather than MIME, and
- * macOS Finder in particular greys files out when only MIME types are listed.
- *
- * `image/heic` IS DELIBERATELY ABSENT. The server cannot decode HEVC-coded HEIC — libheif is
- * built with the AV1 decoder only — and on iOS an accept list with no HEIC entry makes Safari
- * hand over a transcoded JPEG instead. Omitting it is the fix, not an oversight.
- */
-const ACCEPTED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"] as const;
-
-/**
- * The `accept` attribute value: the MIME types above plus their extensions.
- *
- * SEPARATE FROM THE ARRAY ON PURPOSE. `accept` is a hint the OS dialog may ignore and a
- * dragged file never consults at all, so the extensions belong here while the JS check
- * belongs to the MIME array — one is a filter, the other is the actual gate.
- */
-const ACCEPTED_IMAGE_TYPES = [
-  ...ACCEPTED_IMAGE_MIME_TYPES,
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".webp",
-  ".avif",
-].join(",");
-
-/** `limits.fileSize` in the backend's `upload-promotional-slide-image` middleware. */
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-
-/** MIN_DIMENSION_PX / MAX_DIMENSION_PX in the backend's `src/lib/image.ts`. */
-const MIN_IMAGE_DIMENSION_PX = 64;
-const MAX_IMAGE_DIMENSION_PX = 8192;
+// THE CHECK ITSELF LIVES IN `@/lib/image-file-check` since the showcase heading image needed it
+// too: the accepted types, the 5 MB cap, the 64/8192 px bounds and the HEIC decode catch. This file
+// keeps what is admin-specific, which is the wording (`describeAdminImageCheckFailure` below).
+import {
+  ACCEPTED_IMAGE_INPUT_ACCEPT,
+  checkImageFile,
+  formatMegabytes,
+  type ImageFileCheckFailure,
+} from "@/lib/image-file-check";
 
 /** The drag-active accent already used by the studio listing dropzone. */
 const DRAG_ACTIVE_BORDER_CLASS = "border-[#1DBDC5] bg-muted/40";
@@ -66,78 +39,30 @@ type ImagePickState =
   | { status: "rejected"; message: string }
   | { status: "ready"; previewUrl: string; widthPx: number; heightPx: number };
 
-/** Failure is a value, not an exception — the caller branches on `success`. */
-type ImageCheckResult =
-  | { success: true; widthPx: number; heightPx: number }
-  | { success: false; message: string };
-
-function formatMegabytes(byteCount: number): string {
-  return `${(byteCount / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 /**
- * Everything the server checks about the bytes, checked here first.
+ * The admin console's own wording for each refusal `checkImageFile` can return.
  *
- * NOT A TRUST BOUNDARY. The Express backend re-validates format, size and dimensions and is
- * the only authority; this exists so a 5 MB upload is not the way an admin discovers their
- * screenshot is 40 pixels tall.
- *
- * ORDER IS CHEAPEST-FIRST: a string compare, then a number compare, then a decode. The decode
- * is last because it is the only step that costs real work.
+ * ⚠️ BYTE-FOR-BYTE THE MESSAGES THIS PICKER SHOWED BEFORE THE CHECK WAS HOISTED, the em dash in
+ * the HEIC line included. This is admin chrome, and changing its copy was not part of moving the
+ * check; the showcase launch form words its own messages.
  */
-async function checkImageFile(file: File): Promise<ImageCheckResult> {
-  const isAcceptedMimeType = (ACCEPTED_IMAGE_MIME_TYPES as readonly string[]).includes(file.type);
-  if (!isAcceptedMimeType) {
-    return {
-      success: false,
-      message: "That file isn't a JPEG, PNG, WebP or AVIF image.",
-    };
+function describeAdminImageCheckFailure(failure: ImageFileCheckFailure): string {
+  switch (failure.reason) {
+    case "unsupported_type":
+      return "That file isn't a JPEG, PNG, WebP or AVIF image.";
+    case "file_too_large":
+      return `That image is ${formatMegabytes(failure.byteSize)}. The limit is 5 MB.`;
+    case "undecodable":
+      return "Couldn't read that image. If it came from an iPhone it may be HEIC — export it as JPEG first.";
+    case "below_minimum_dimensions":
+      return `That image is ${String(failure.widthPx)} × ${String(failure.heightPx)}. Both sides must be at least ${String(failure.minimumDimensionPx)} pixels.`;
+    case "above_maximum_dimensions":
+      return `That image is ${String(failure.widthPx)} × ${String(failure.heightPx)}. Neither side may exceed ${String(failure.maximumDimensionPx)} pixels.`;
+    default: {
+      const exhaustiveCheck: never = failure;
+      return exhaustiveCheck;
+    }
   }
-
-  if (file.size > MAX_IMAGE_BYTES) {
-    return {
-      success: false,
-      message: `That image is ${formatMegabytes(file.size)}. The limit is 5 MB.`,
-    };
-  }
-
-  /**
-   * THE DECODE IS THE HEIC CATCH. An iPhone photo renamed to `.jpg` passes the MIME check on
-   * some platforms and then fails server-side with an unhelpful format error; here the
-   * browser simply cannot decode it, and the admin gets told what to do about it.
-   */
-  let decodedBitmap: ImageBitmap;
-  try {
-    decodedBitmap = await createImageBitmap(file);
-  } catch {
-    return {
-      success: false,
-      message:
-        "Couldn't read that image. If it came from an iPhone it may be HEIC — export it as JPEG first.",
-    };
-  }
-
-  const widthPx = decodedBitmap.width;
-  const heightPx = decodedBitmap.height;
-  // Frees the decoded pixels immediately rather than waiting for GC — an 8192² bitmap is
-  // ~268 MB of RGBA.
-  decodedBitmap.close();
-
-  if (widthPx < MIN_IMAGE_DIMENSION_PX || heightPx < MIN_IMAGE_DIMENSION_PX) {
-    return {
-      success: false,
-      message: `That image is ${String(widthPx)} × ${String(heightPx)}. Both sides must be at least ${String(MIN_IMAGE_DIMENSION_PX)} pixels.`,
-    };
-  }
-
-  if (widthPx > MAX_IMAGE_DIMENSION_PX || heightPx > MAX_IMAGE_DIMENSION_PX) {
-    return {
-      success: false,
-      message: `That image is ${String(widthPx)} × ${String(heightPx)}. Neither side may exceed ${String(MAX_IMAGE_DIMENSION_PX)} pixels.`,
-    };
-  }
-
-  return { success: true, widthPx, heightPx };
 }
 
 /**
@@ -248,7 +173,11 @@ export function AdminImagePicker({
         reportedFileRef.current = file;
         onFileSelectedRef.current(file);
       } else {
-        setCheckOutcome({ status: "rejected", file, message: imageCheckResult.message });
+        setCheckOutcome({
+          status: "rejected",
+          file,
+          message: describeAdminImageCheckFailure(imageCheckResult.failure),
+        });
       }
     }
     void runCheck(fileToCheck);
@@ -325,7 +254,7 @@ export function AdminImagePicker({
         ref={fileInputRef}
         id={inputId}
         type="file"
-        accept={ACCEPTED_IMAGE_TYPES}
+        accept={ACCEPTED_IMAGE_INPUT_ACCEPT}
         disabled={isDisabled}
         className="hidden"
         onChange={(event) => {

@@ -16,4 +16,6 @@ export const blueprintKeys = {
    * there is no id to pass — so a filter argument here would be a parameter nothing sends.
    */
   myTeardownSubmissions: () => ["blueprints", "teardowns", "mine"] as const,
+  /** The signed-in maker's own launches. Unpaged and person-scoped, for the reason above. */
+  myShowcaseSubmissions: () => ["blueprints", "showcase", "mine"] as const,
 };
