@@ -22,17 +22,14 @@ import {
   type BlueprintPage,
   BlueprintSchema,
   type CaseStudyBlueprint,
-  type BlueprintDifficulty,
   type BlueprintDiscipline,
   RESERVED_BLUEPRINT_SLUGS,
   type ShowcaseBlueprint,
   type ShowcaseSort,
   type TeardownBlueprint,
-  type TeardownMediaFilter,
   type TeardownStoreListingSignal,
   TeardownStoreListingSignalSchema,
 } from "@/lib/blueprints/schemas";
-import type { FacetBucket } from "@/components/home/shared/facet-chip-row";
 
 /**
  * Parse a fixture through the contract.
@@ -154,31 +151,6 @@ async function listBlueprintsByCategory<TCategory extends BlueprintCategory>(
       isBlueprintOfCategory(blueprint, category),
     );
   return matching.toSorted(byNewestFirst);
-}
-
-/** One choice in the launch form's "Built from a teardown" select. */
-export interface TeardownOption {
-  readonly slug: string;
-  readonly title: string;
-}
-
-/**
- * Every LISTABLE teardown as a slug and a title, sorted by title, for the launch form's select.
- *
- * THE LIST GATE, NOT THE READABLE ONE. A launch names the teardown it was built from as a
- * recommendation to its readers, and offering a quarantined teardown here would let a maker point at
- * files Qatoto has just withheld. `listBlueprintSlugsByCategory` uses the readable gate on purpose,
- * for prerendering, which is exactly why it is not reused.
- *
- * UNPAGED, and deliberately so: a select needs every option, and this narrows each row to two
- * strings before it crosses to a client component.
- */
-export async function listTeardownOptions(): Promise<TeardownOption[]> {
-  "use cache";
-  const teardowns = await listBlueprintsByCategory("teardown");
-  return teardowns
-    .map((teardown) => ({ slug: teardown.slug, title: teardown.title }))
-    .toSorted((firstOption, secondOption) => firstOption.title.localeCompare(secondOption.title));
 }
 
 /** One choice in the case-study form's "Related lessons" selects. */
@@ -315,43 +287,6 @@ function toBlueprintPage<TBlueprint extends { id: string }>(
 // `src/lib/store/forum.api.ts:46`. When the backend lands, these filters become query params and
 // the predicates are deleted rather than moved into a component.
 
-export interface ListTeardownsFilter {
-  readonly difficulty?: BlueprintDifficulty;
-  readonly media?: TeardownMediaFilter;
-  readonly tag?: string;
-  readonly cursor?: string;
-  readonly limit?: number;
-}
-
-/**
- * A `Record` over the media enum, so a fourth filter is a compile error here rather than a value
- * the index offers and the getter silently ignores — the `SHOWCASE_SORT_COMPARATORS` precedent.
- */
-const TEARDOWN_MEDIA_PREDICATES: Record<
-  TeardownMediaFilter,
-  (teardown: TeardownBlueprint) => boolean
-> = {
-  assembly: (teardown) => teardown.assembly !== null,
-  video: (teardown) => teardown.walkthroughVideo !== null,
-  documents: (teardown) => teardown.documents.length > 0,
-};
-
-export async function listTeardowns(
-  filter: ListTeardownsFilter = {},
-): Promise<BlueprintPage<TeardownBlueprint>> {
-  "use cache";
-  const teardowns = await listBlueprintsByCategory("teardown");
-
-  const matching = teardowns.filter(
-    (teardown) =>
-      (filter.difficulty === undefined || teardown.difficulty === filter.difficulty) &&
-      (filter.media === undefined || TEARDOWN_MEDIA_PREDICATES[filter.media](teardown)) &&
-      (filter.tag === undefined || teardown.tags.includes(filter.tag)),
-  );
-
-  return toBlueprintPage(matching, filter.cursor, filter.limit ?? TEARDOWNS_PAGE_LIMIT);
-}
-
 export interface ListShowcasesFilter {
   readonly tag?: string;
   /** Omitted means `DEFAULT_SHOWCASE_SORT`. */
@@ -470,29 +405,21 @@ export async function getTeardownMarketSignal(
   return { storeListings, showcases };
 }
 
-/**
- * Tag counts for one category's WHOLE set, not for the page being rendered.
+/*
+ * `listTeardowns`, `listTeardownOptions`, `TeardownOption`, `TEARDOWN_MEDIA_PREDICATES` and
+ * `listBlueprintTagFacets` WERE DELETED HERE, not kept as a fallback.
  *
- * ITS OWN GETTER BECAUSE A FACET COUNT IS AN AGGREGATE, and an aggregate over a page is a
- * different, wrong number: counts that shrank as a reader clicked through pages would make
- * "cold-chain · 3" mean something new on every render. On the wire this arrives beside the list
- * from the backend, which is the other reason it is not derived in a component.
+ * The teardown reads now come from `@/lib/blueprints/teardown-public.api`, which calls the backend
+ * and returns `ActionResponse`. Keeping these beside it would recreate the exact failure that file's
+ * header argues against: a caller reaching for the fixture version would turn "the backend is down"
+ * back into "there is nothing here", showing a visitor invented teardowns under a real heading.
+ *
+ * `listBlueprintTagFacets` went with them because the facets now arrive IN the index payload — they
+ * are counted over the same population the list filters, and a separate call could 200 while the
+ * list failed. Its last caller was the teardown index, which no longer makes a second call.
+ *
+ * The case-study getters below stay: that arm has no tables yet.
  */
-export async function listBlueprintTagFacets(category: BlueprintCategory): Promise<FacetBucket[]> {
-  "use cache";
-  const countsByTag = new Map<string, number>();
-  for (const blueprint of MOCK_BLUEPRINTS.map(parseBlueprint)) {
-    if (blueprint.category !== category) continue;
-    // The facet counts the list, so it obeys the list's gate — a chip promising three rows that
-    // resolves to two is a count the reader can see is wrong.
-    if (!isBlueprintVisible(blueprint, PUBLICLY_LISTABLE_MODERATION_STATES)) continue;
-    for (const tag of blueprint.tags) countsByTag.set(tag, (countsByTag.get(tag) ?? 0) + 1);
-  }
-
-  return [...countsByTag]
-    .map(([value, count]) => ({ value, count }))
-    .toSorted((left, right) => right.count - left.count || left.value.localeCompare(right.value));
-}
 
 /**
  * Every published slug, for `generateStaticParams`.

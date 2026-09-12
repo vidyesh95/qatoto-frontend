@@ -1,6 +1,15 @@
-// TRANSPORT: mock — async server component. Reads `getBlueprintByCategory` and
-// `getTeardownMarketSignal` from `@/lib/blueprints/api`, which serve fixtures from
-// `@/mocks/blueprints-mocks`.
+// TRANSPORT: mixed — async server component. The teardown itself comes from the Express backend
+// via `getPublicTeardown`; `getTeardownMarketSignal` is still a fixture read, because the market
+// signal has no table yet.
+//
+// ⚠️ THE QUARANTINE WITHHOLDING IS THE SERVER'S NOW. A quarantined teardown arrives with
+// `assembly`, `documents`, `manufacturingFiles`, `materials`, `assemblySteps`, `fasteners`,
+// `simulationTelemetry`, `walkthroughVideo`, `billOfMaterialsCostRange` and `repairabilityIndex`
+// already empty or null — the disputed bytes never reach this component. The
+// `canRenderTeardownPayload` calls below are now BELT AND BRACES, not the control; they stay
+// because they also keep the page's own derived labels honest (a cost band assembled from three
+// nulls, a "parts modelled" count of a withheld model), and because a component that assumes a
+// server guarantee reads as one that enforces it.
 
 import Image from "next/image";
 import Link from "next/link";
@@ -35,7 +44,8 @@ import TelemetryReadouts from "@/components/home/blueprints/teardowns/sections/t
 import TeardownViewSwitch from "@/components/home/blueprints/teardowns/sections/teardown-view-switch";
 import TeardownExplorer from "@/components/home/blueprints/teardowns/teardown-explorer";
 import RelativeTime from "@/components/home/shared/relative-time";
-import { getBlueprintByCategory, getTeardownMarketSignal } from "@/lib/blueprints/api";
+import { getTeardownMarketSignal } from "@/lib/blueprints/api";
+import { getPublicTeardown } from "@/lib/blueprints/teardown-public.api";
 import {
   BLUEPRINT_DIFFICULTY_LABELS,
   TEARDOWN_MANUFACTURING_FILE_KIND_SHORT_LABELS,
@@ -162,8 +172,12 @@ export default async function TeardownDetailPage({
   readonly slug: string;
   readonly searchParams: Promise<RawSearchParams>;
 }) {
-  const teardown = await getBlueprintByCategory("teardown", slug);
-  if (teardown === null) notFound();
+  const teardownResponse = await getPublicTeardown(slug);
+  // A teardown awaiting review is a 404 here, identical to a slug that never existed — the two are
+  // indistinguishable on purpose, so a stranger cannot probe what is waiting for review. A
+  // QUARANTINED one is not in that set: it answers 200 with its notice and its files withheld.
+  if (!teardownResponse.success) notFound();
+  const teardown = teardownResponse.data;
 
   const rawSearchParams = await searchParams;
   // A hand-edited `?view=banana` is DROPPED to the default rather than erroring, which is this

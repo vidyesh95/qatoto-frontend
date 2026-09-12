@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 import TeardownDetailPage from "@/components/home/blueprints/teardowns/teardown-detail-page";
-import { getBlueprintByCategory, listBlueprintSlugsByCategory } from "@/lib/blueprints/api";
+import { getPublicTeardown, listPublicTeardownSlugs } from "@/lib/blueprints/teardown-public.api";
+import { withSentinelValues } from "@/lib/static-params";
 import type { RawSearchParams } from "@/lib/filter-href";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
@@ -13,19 +14,24 @@ import type { RawSearchParams } from "@/lib/filter-href";
 export const instant = false;
 
 /**
- * Prerender every published teardown slug — a dynamic route needs this under `cacheComponents`.
+ * Prerender every readable teardown slug — a dynamic route needs this under `cacheComponents`.
  *
- * NO `withSentinelValues` HERE, for the reason `src/lib/blueprints/api.ts` records: the getter
- * reads an in-repo fixture array, which cannot be empty and cannot fail. Add the sentinel at the
- * same moment it starts reading the backend, and filter the reserved slugs BEFORE wrapping.
+ * THE SENTINEL IS HERE NOW, and this file's previous comment said to add it at exactly this moment:
+ * the list comes from the backend, so it can be empty — a database with nothing seeded yet, or a
+ * server that is down. An empty array makes Next treat the route as having no paths at all, which
+ * is not the same as having none today.
+ *
+ * ⚠️ THE SERVER USES THE READABLE GATE HERE, NOT THE LISTABLE ONE, so a quarantined teardown IS
+ * prerendered even though it appears in no index — eleven slugs where the index shows ten. Its URL
+ * still has to answer with the notice; dropping it would give an existing link a 404 and lose the
+ * one thing the reader who followed it needs.
  */
 export async function generateStaticParams() {
-  // ⚠️ `listBlueprintSlugsByCategory` USES THE PUBLICLY-READABLE GATE, NOT THE LISTABLE ONE, so a
-  // quarantined teardown is prerendered here even though it appears in no index. Its URL still has
-  // to answer with the notice; dropping it would give an existing link a 404 and lose the one thing
-  // the reader who followed it needs.
-  const slugs = await listBlueprintSlugsByCategory("teardown");
-  return slugs.map((slug) => ({ slug }));
+  const slugsResponse = await listPublicTeardownSlugs();
+  // `?? []` is right here and nowhere else on this surface: Next's contract is an array, and a
+  // failed prerender list must not take the build down.
+  const slugs = slugsResponse.success ? slugsResponse.data : [];
+  return withSentinelValues(slugs).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -34,13 +40,14 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const teardown = await getBlueprintByCategory("teardown", slug);
+  const teardownResponse = await getPublicTeardown(slug);
 
   // `noindex` ON BOTH RETURN PATHS. The miss path needs it too: returning it only for a resolved
   // teardown would leave every unknown slug indexable, which is the easiest half to forget.
   const robots = { index: false, follow: false } as const;
 
-  if (teardown === null) return { robots, title: "Teardowns · Blueprints" };
+  if (!teardownResponse.success) return { robots, title: "Teardowns · Blueprints" };
+  const teardown = teardownResponse.data;
 
   return {
     robots,

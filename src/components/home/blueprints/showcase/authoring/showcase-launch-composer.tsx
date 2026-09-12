@@ -44,8 +44,11 @@ import {
   useUploadShowcaseWriteUpImageMutation,
 } from "@/hooks/blueprints/showcase-authoring";
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
-import type { TeardownOption } from "@/lib/blueprints/api";
-import { BLUEPRINT_DIFFICULTIES, BLUEPRINT_DIFFICULTY_LABELS } from "@/lib/blueprints/schemas";
+import {
+  BLUEPRINT_DIFFICULTIES,
+  BLUEPRINT_DIFFICULTY_LABELS,
+  type TeardownOption,
+} from "@/lib/blueprints/schemas";
 import {
   SHOWCASE_TAGLINE_MAXIMUM_CHARACTERS,
   type ShowcaseSubmissionReceipt,

@@ -2132,3 +2132,58 @@ export type ShowcaseFeedPage = z.infer<typeof ShowcaseFeedPageSchema>;
 
 /** Every published slug, for `generateStaticParams`. */
 export const ShowcaseSlugListSchema = z.array(z.string());
+
+/**
+ * The public teardown index's payload: a keyset page plus the tag counts beside it.
+ *
+ * THE FACETS ARRIVE IN THE SAME PAYLOAD, which collapses what used to be a two-call `Promise.all`
+ * on the index page. They are counted over the same population the list filters, so two calls could
+ * disagree — chips promising teardowns the list never returns — and the second could fail alone.
+ *
+ * `.strip()` because this is a READ shape: an unknown key from a newer server is dropped, not a
+ * parse failure that blanks the page.
+ */
+export const TeardownIndexPageSchema = z
+  .object({
+    items: z.array(TeardownBlueprintSchema),
+    page: CursorPageSchema,
+    tagFacets: z.array(z.object({ value: z.string(), count: z.number().int().min(0) }).strip()),
+  })
+  .strip();
+export type TeardownIndexPage = z.infer<typeof TeardownIndexPageSchema>;
+
+/**
+ * Every READABLE slug, for `generateStaticParams` — which includes the quarantined one.
+ *
+ * ⚠️ ELEVEN, NOT TEN. A quarantine withholds a publisher's files; it does not delete the address,
+ * and the quarantined page is the one that explains why the files are gone. Leaving its slug out of
+ * the prerender would demote an existing link to a runtime miss.
+ */
+export const TeardownSlugListSchema = z.array(z.string());
+
+/** One choice in the launch composer's "Built from a teardown" select. */
+export const TeardownOptionListSchema = z.array(
+  z.object({ slug: z.string(), title: z.string() }).strip(),
+);
+export type TeardownOption = z.infer<typeof TeardownOptionListSchema>[number];
+
+/**
+ * What a rights claim can be ABOUT: ids and titles, and provably no URLs.
+ *
+ * ⚠️ THIS IS A SEPARATE READ BECAUSE THE DETAIL READ WITHHOLDS. A quarantined teardown still
+ * accepts a claim — a second rights holder may have an entirely different objection from the first
+ * — and the picker builds its radio list out of exactly the arrays a quarantine empties. Without
+ * this, that claimant could only name "the whole teardown", which would use one quarantine to blunt
+ * the control that produced it.
+ *
+ * The server's select lists carry no column that could hold a link, so asking this route is not a
+ * way around the withholding.
+ */
+export const TeardownClaimTargetsSchema = z
+  .object({
+    documents: z.array(z.object({ id: z.string(), title: z.string() }).strip()),
+    manufacturingFiles: z.array(z.object({ id: z.string(), title: z.string() }).strip()),
+    parts: z.array(z.object({ id: z.string(), label: z.string() }).strip()),
+  })
+  .strip();
+export type TeardownClaimTargets = z.infer<typeof TeardownClaimTargetsSchema>;

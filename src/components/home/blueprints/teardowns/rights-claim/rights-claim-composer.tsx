@@ -1,6 +1,10 @@
-// TRANSPORT: props-only — the teardown arrives from the route, which reads
-// `@/lib/blueprints/api`. THIS COMPONENT SENDS NOTHING AND FETCHES NOTHING: it composes a document
-// the claimant sends themselves.
+// TRANSPORT: props-only — the teardown and its claim targets both arrive from the route, which
+// reads them from the backend. THIS COMPONENT SENDS NOTHING AND FETCHES NOTHING: it composes a
+// document the claimant sends themselves.
+//
+// ⚠️ THE CLAIM TARGETS ARE A SEPARATE PROP BECAUSE THEY ARE A SEPARATE READ. A quarantined teardown
+// reaches this page with its files withheld by the server, and the picker's options are exactly
+// what a quarantine empties — see `claim-target-picker.tsx`.
 "use client";
 
 import Link from "next/link";
@@ -31,7 +35,11 @@ import {
   type RightsClaimSwornClauseId,
   type RightsClaimTarget,
 } from "@/lib/blueprints/rights-claim.schemas";
-import { buildBlueprintHref, type TeardownBlueprint } from "@/lib/blueprints/schemas";
+import {
+  buildBlueprintHref,
+  type TeardownBlueprint,
+  type TeardownClaimTargets,
+} from "@/lib/blueprints/schemas";
 import { SITE_URL } from "@/lib/site";
 
 /**
@@ -114,8 +122,10 @@ function describeRightsClaimFieldPath(fieldPath: string): string {
  */
 export default function RightsClaimComposer({
   teardown,
+  claimTargets,
 }: {
   readonly teardown: TeardownBlueprint;
+  readonly claimTargets: TeardownClaimTargets;
 }) {
   const [formState, setFormState] = useState<RightsClaimFormState>(EMPTY_FORM_STATE);
   const [preparedNotice, setPreparedNotice] = useState<RightsClaimNotice | null>(null);
@@ -176,7 +186,7 @@ export default function RightsClaimComposer({
         // ABSOLUTE, because a relative path in an email is useless to whoever opens it.
         teardownUrl: `${SITE_URL}${teardownHref}`,
         targetLabel: describeClaimTarget(parsed.data.target, (target) =>
-          resolveClaimTargetLabel(teardown, target),
+          resolveClaimTargetLabel(claimTargets, target),
         ),
         // Read here rather than inside the builder, which stays pure and deterministic.
         preparedAtIsoInstant: new Date().toISOString(),
@@ -268,7 +278,7 @@ export default function RightsClaimComposer({
 
       <section className="mt-6">
         <ClaimTargetPicker
-          teardown={teardown}
+          claimTargets={claimTargets}
           selectedOptionKey={formState.targetOptionKey}
           onTargetSelect={(targetOptionKey, target) => applyFormPatch({ targetOptionKey, target })}
         />

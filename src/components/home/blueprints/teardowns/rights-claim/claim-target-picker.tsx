@@ -1,7 +1,17 @@
-// TRANSPORT: props-only — the options are the teardown's own payload, passed down.
+// TRANSPORT: props-only — the options arrive from the route, which reads them from
+// `GET /blueprints/teardowns/:teardownSlug/claim-targets`.
+//
+// ⚠️ THE OPTIONS COME FROM THEIR OWN READ, NOT FROM THE TEARDOWN PAYLOAD, and that is the whole
+// point of that route existing. A quarantined teardown arrives with `documents`,
+// `manufacturingFiles` and `assembly` withheld by the server — which are exactly the three arrays
+// this picker used to flatten. Building from the payload would silently reduce a second rights
+// holder to "the whole teardown", using one quarantine to blunt the control that produced it.
+//
+// The claim-target read carries ids and titles and no URLs, so the disputed bytes stay withheld
+// while the claimant can still name the file they mean.
 
 import type { RightsClaimTarget } from "@/lib/blueprints/rights-claim.schemas";
-import type { TeardownBlueprint } from "@/lib/blueprints/schemas";
+import type { TeardownClaimTargets } from "@/lib/blueprints/schemas";
 
 /**
  * One selectable target, flattened out of the teardown so the radio list can render in one pass.
@@ -29,7 +39,7 @@ interface ClaimTargetOption {
  * as one against a survey that published everything, because the objection is to the survey
  * existing. An empty picker would refuse the claimant with no explanation.
  */
-export function buildClaimTargetOptions(teardown: TeardownBlueprint): ClaimTargetOption[] {
+export function buildClaimTargetOptions(claimTargets: TeardownClaimTargets): ClaimTargetOption[] {
   return [
     {
       optionKey: "whole_teardown",
@@ -37,13 +47,13 @@ export function buildClaimTargetOptions(teardown: TeardownBlueprint): ClaimTarge
       groupLabel: "Everything",
       target: { kind: "whole_teardown" },
     },
-    ...teardown.documents.map((document) => ({
+    ...claimTargets.documents.map((document) => ({
       optionKey: `document:${document.id}`,
       label: document.title,
       groupLabel: "Documents",
       target: { kind: "document" as const, documentId: document.id },
     })),
-    ...teardown.manufacturingFiles.map((manufacturingFile) => ({
+    ...claimTargets.manufacturingFiles.map((manufacturingFile) => ({
       optionKey: `manufacturing_file:${manufacturingFile.id}`,
       label: manufacturingFile.title,
       groupLabel: "Fabrication files",
@@ -52,8 +62,8 @@ export function buildClaimTargetOptions(teardown: TeardownBlueprint): ClaimTarge
         manufacturingFileId: manufacturingFile.id,
       },
     })),
-    // Parts only exist when a model was published; `assembly: null` is the common case.
-    ...(teardown.assembly?.parts ?? []).map((part) => ({
+    // Parts only exist when a model was published; an empty list is the common case.
+    ...claimTargets.parts.map((part) => ({
       optionKey: `part:${part.id}`,
       label: part.label,
       groupLabel: "Parts",
@@ -64,7 +74,7 @@ export function buildClaimTargetOptions(teardown: TeardownBlueprint): ClaimTarge
 
 /** The label for a chosen target, for the notice body. Resolved here because this owns the options. */
 export function resolveClaimTargetLabel(
-  teardown: TeardownBlueprint,
+  claimTargets: TeardownClaimTargets,
   target: RightsClaimTarget,
 ): string | null {
   switch (target.kind) {
@@ -72,18 +82,16 @@ export function resolveClaimTargetLabel(
       return null;
     case "document":
       return (
-        teardown.documents.find((document) => document.id === target.documentId)?.title ?? null
+        claimTargets.documents.find((document) => document.id === target.documentId)?.title ?? null
       );
     case "manufacturing_file":
       return (
-        teardown.manufacturingFiles.find(
+        claimTargets.manufacturingFiles.find(
           (manufacturingFile) => manufacturingFile.id === target.manufacturingFileId,
         )?.title ?? null
       );
     case "part":
-      return (
-        (teardown.assembly?.parts ?? []).find((part) => part.id === target.partId)?.label ?? null
-      );
+      return claimTargets.parts.find((part) => part.id === target.partId)?.label ?? null;
     default: {
       const exhaustiveCheck: never = target;
       return exhaustiveCheck;
@@ -92,16 +100,16 @@ export function resolveClaimTargetLabel(
 }
 
 export default function ClaimTargetPicker({
-  teardown,
+  claimTargets,
   selectedOptionKey,
   onTargetSelect,
 }: {
-  readonly teardown: TeardownBlueprint;
+  readonly claimTargets: TeardownClaimTargets;
   /** `null` until the claimant chooses. There is deliberately no default — see below. */
   readonly selectedOptionKey: string | null;
   readonly onTargetSelect: (optionKey: string, target: RightsClaimTarget) => void;
 }) {
-  const options = buildClaimTargetOptions(teardown);
+  const options = buildClaimTargetOptions(claimTargets);
 
   // Grouped for reading, in the order the page presents them: everything, then documents, then
   // files, then parts. `Map` rather than an object so insertion order is guaranteed.

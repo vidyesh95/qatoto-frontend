@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import RightsClaimComposer from "@/components/home/blueprints/teardowns/rights-claim/rights-claim-composer";
-import { getBlueprintByCategory } from "@/lib/blueprints/api";
+import { getPublicTeardown, getTeardownClaimTargets } from "@/lib/blueprints/teardown-public.api";
 import { withSentinelValues } from "@/lib/static-params";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
@@ -36,22 +36,35 @@ export default async function TeardownRightsClaimRoute({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const teardown = await getBlueprintByCategory("teardown", slug);
 
   /**
-   * ⚠️ A QUARANTINED TEARDOWN STILL ACCEPTS A CLAIM, and `getBlueprint`'s readable gate is what
-   * makes that work — it hands back `published`, `flagged` and `quarantined` alike. A second rights
-   * holder may have an entirely different objection from the first, and refusing them because
-   * somebody else got there first would be this surface deciding that one claim settles a row.
+   * ⚠️ TWO READS, AND THE SECOND IS WHY THE WITHHOLDING DOES NOT BREAK THIS PAGE.
    *
-   * `draft`, `pending_review`, `rejected` and `removed` return `null` and 404 here, as everywhere:
-   * there is nothing public to object to.
+   * A QUARANTINED TEARDOWN STILL ACCEPTS A CLAIM, and the server's READABLE gate is what makes that
+   * work — it serves `published`, `flagged` and `quarantined` alike. A second rights holder may
+   * have an entirely different objection from the first, and refusing them because somebody else
+   * got there first would be this surface deciding that one claim settles a row.
+   *
+   * But the detail read WITHHOLDS a quarantined teardown's documents, fabrication files and model,
+   * which are exactly the three lists the picker offers. `claim-targets` serves their ids and
+   * titles — and no URLs — so the claimant can still name the specific file they mean while the
+   * disputed bytes stay withheld.
+   *
+   * `draft`, `pending_review`, `rejected` and `removed` 404 here, as everywhere: there is nothing
+   * public to object to.
    */
-  if (teardown === null) notFound();
+  const [teardownResponse, claimTargetsResponse] = await Promise.all([
+    getPublicTeardown(slug),
+    getTeardownClaimTargets(slug),
+  ]);
+  if (!teardownResponse.success || !claimTargetsResponse.success) notFound();
 
   return (
     <div className="px-4 pt-5 pb-12 lg:px-6">
-      <RightsClaimComposer teardown={teardown} />
+      <RightsClaimComposer
+        teardown={teardownResponse.data}
+        claimTargets={claimTargetsResponse.data}
+      />
     </div>
   );
 }

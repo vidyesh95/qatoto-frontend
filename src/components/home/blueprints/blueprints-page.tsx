@@ -1,5 +1,6 @@
-// TRANSPORT: mixed — `listTeardowns` and `listCaseStudies` are still fixtures; the showcase rail
-// reads the backend through `listPublicShowcases`. See the note on the read below. Originally:
+// TRANSPORT: mixed — `listCaseStudies` is still a fixture; the teardown and showcase rails read the
+// backend through `listPublicTeardowns` and `listPublicShowcases`. See the note on the read below.
+// Originally:
 // TRANSPORT: mock — reads `listTeardowns`, `listCaseStudies` and `listShowcases` from
 // `@/lib/blueprints/api`, which serve fixtures. The HERO does not: it is a real server-fetch of
 // `GET /blueprints/hero-slides`, rendered by `BlueprintsHeroCarouselSection` below.
@@ -34,8 +35,9 @@ import TeardownGridCard, {
 } from "@/components/home/blueprints/cards/teardown-grid-card";
 import BlueprintLane from "@/components/home/blueprints/sections/blueprint-lane";
 import BlueprintsHeroCarouselSection from "@/components/home/blueprints/sections/blueprints-hero-carousel-section";
-import { listCaseStudies, listTeardowns } from "@/lib/blueprints/api";
+import { listCaseStudies } from "@/lib/blueprints/api";
 import { listPublicShowcases } from "@/lib/blueprints/showcase-public.api";
+import { listPublicTeardowns } from "@/lib/blueprints/teardown-public.api";
 import type {
   CaseStudyBlueprint,
   ShowcaseBlueprint,
@@ -75,29 +77,31 @@ const CASE_STUDY_TEASER_LIMIT = 4;
 const SHOWCASE_TEASER_LIMIT = 5;
 
 export default async function BlueprintsPage() {
-  const [teardownPage, caseStudyPage, showcaseResponse] = await Promise.all([
-    listTeardowns({ limit: TEARDOWN_TEASER_LIMIT }),
+  const [teardownResponse, caseStudyPage, showcaseResponse] = await Promise.all([
+    listPublicTeardowns({ limit: TEARDOWN_TEASER_LIMIT }),
     listCaseStudies({ limit: CASE_STUDY_TEASER_LIMIT }),
     listPublicShowcases({ limit: SHOWCASE_TEASER_LIMIT }),
   ]);
 
   /*
-   * ONE ARM FAILING DOES NOT TAKE THE HUB DOWN. The showcase rail is the only one reading a
-   * backend; the other two are still fixtures. Dropping the whole page because that one read failed
-   * would hide two arms that are perfectly renderable, so a failed showcase read renders as no
-   * showcase rail — the same as having posted nothing yet, which on a teaser rail is the same
-   * thing to the reader. The feed page itself tells the two apart, because there it matters.
+   * ONE ARM FAILING DOES NOT TAKE THE HUB DOWN. Two of the three rails now read a backend; case
+   * studies are still fixtures. Dropping the whole page because one read failed would hide arms
+   * that are perfectly renderable, so a failed read renders as no rail — the same as having posted
+   * nothing yet, which on a TEASER rail is the same thing to the reader. The arm's own index page
+   * tells the two apart, because there it matters: that is where a visitor went to see everything,
+   * and there "we could not load this" and "there is nothing" are different answers.
    */
+  const teardowns = teardownResponse.success ? teardownResponse.data.items : [];
   const showcases = showcaseResponse.success ? showcaseResponse.data.items : [];
 
   const isEveryArmEmpty =
-    teardownPage.items.length === 0 && caseStudyPage.items.length === 0 && showcases.length === 0;
+    teardowns.length === 0 && caseStudyPage.items.length === 0 && showcases.length === 0;
 
   const viewState: BlueprintsViewState = isEveryArmEmpty
     ? { status: "empty" }
     : {
         status: "ready",
-        teardowns: teardownPage.items,
+        teardowns,
         caseStudies: caseStudyPage.items,
         showcases,
       };

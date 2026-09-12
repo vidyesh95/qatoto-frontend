@@ -1,5 +1,5 @@
-// TRANSPORT: mock — async server component. Reads `listTeardowns` and `listBlueprintTagFacets`
-// from `@/lib/blueprints/api`, which serve fixtures from `@/mocks/blueprints-mocks`.
+// TRANSPORT: server-fetch — async server component. Reads `listPublicTeardowns` from
+// `@/lib/blueprints/teardown-public.api`, which calls the Express backend.
 //
 // FILTERING AND PAGING BOTH HAPPEN IN THE GETTER, not here and never in the browser. This page
 // reads three query params, hands them over, and renders what comes back — which is the shape a
@@ -13,7 +13,7 @@ import TeardownGridCard, {
 import CursorPageControl from "@/components/home/shared/cursor-page-control";
 import FacetChipRow, { type FacetBucket } from "@/components/home/shared/facet-chip-row";
 import FilterChipRow, { type FilterChipOption } from "@/components/home/shared/filter-chip-row";
-import { listBlueprintTagFacets, listTeardowns } from "@/lib/blueprints/api";
+import { listPublicTeardowns } from "@/lib/blueprints/teardown-public.api";
 import {
   BLUEPRINT_DIFFICULTIES,
   BLUEPRINT_DIFFICULTY_LABELS,
@@ -29,18 +29,24 @@ import {
 } from "@/lib/filter-href";
 
 /**
- * TWO VARIANTS, NOT THREE — no `error` arm, for the reason `blueprints-page.tsx` states: the
- * source is an in-repo fixture array that cannot fail the way a network read can, and an
- * unreachable branch never renders during development. The moment this getter reads the backend,
- * `error` joins the union and this `switch` stops compiling until it is handled.
+ * THE `error` ARM EXISTS BECAUSE THIS PAGE NOW READS A REAL BACKEND — the arm this file's own
+ * comment said would arrive the moment the getter stopped being a fixture. Before, every failure
+ * resolved to fixtures, so "the server is down" and "no teardown matches these filters" rendered
+ * the same page: a visitor saw invented teardowns under a real heading with nothing to say so.
+ *
+ * ⚠️ THE LIST IS GATED ON `published` AND `flagged`, so a teardown missing from every page here is
+ * NOT a teardown whose address 404s — a quarantined one is withheld from the index and still
+ * reachable. Nothing on this page may infer "gone" from "absent".
  */
 type TeardownsViewState =
   | { status: "empty"; appliedFilterCount: number }
+  | { status: "error"; message: string }
   | {
       status: "ready";
       teardowns: readonly TeardownBlueprint[];
       nextCursor: string | null;
       hasMore: boolean;
+      tagBuckets: readonly FacetBucket[];
     };
 
 export default async function TeardownsIndexPage({
@@ -54,22 +60,28 @@ export default async function TeardownsIndexPage({
   const tag = readSingleParam(resolvedSearchParams, "tag");
   const requestedCursor = readSingleParam(resolvedSearchParams, "cursor");
 
-  const [teardownPage, tagBuckets]: [Awaited<ReturnType<typeof listTeardowns>>, FacetBucket[]] =
-    await Promise.all([
-      listTeardowns({ difficulty, media, tag, cursor: requestedCursor }),
-      listBlueprintTagFacets("teardown"),
-    ]);
+  // ONE CALL, not two: the tag counts arrive in the index payload because they are counted over
+  // the same population it filters. Two calls could disagree — chips promising teardowns the list
+  // never returns — and the second could 200 while the first failed.
+  const indexResponse = await listPublicTeardowns({
+    difficulty,
+    media,
+    tag,
+    cursor: requestedCursor,
+  });
 
   const appliedFilterCount = [difficulty, media, tag].filter((value) => value !== undefined).length;
 
-  const viewState: TeardownsViewState =
-    teardownPage.items.length === 0
+  const viewState: TeardownsViewState = !indexResponse.success
+    ? { status: "error", message: indexResponse.error.message }
+    : indexResponse.data.items.length === 0
       ? { status: "empty", appliedFilterCount }
       : {
           status: "ready",
-          teardowns: teardownPage.items,
-          nextCursor: teardownPage.page.nextCursor,
-          hasMore: teardownPage.page.hasMore,
+          teardowns: indexResponse.data.items,
+          nextCursor: indexResponse.data.page.nextCursor,
+          hasMore: indexResponse.data.page.hasMore,
+          tagBuckets: indexResponse.data.tagFacets,
         };
 
   const difficultyOptions: FilterChipOption[] = [
@@ -116,11 +128,14 @@ export default async function TeardownsIndexPage({
         {/* Single-select rather than multi, deliberately: `FacetChipRow` carries the COUNT on each
             chip, which is what tells a reader whether a click is worth making. A hand-rolled
             multi-select row would have to give that up or re-derive it per combination. */}
+        {/* The chips come from the payload, so on an error there are no counts to show rather than
+            stale ones — a chip promising seven teardowns beside an error message is a worse answer
+            than no chip. */}
         <FacetChipRow
           searchParams={resolvedSearchParams}
           queryKey="tag"
           ariaLabel="Filter teardowns by tag"
-          buckets={tagBuckets}
+          buckets={viewState.status === "ready" ? [...viewState.tagBuckets] : []}
         />
       </div>
 
@@ -138,6 +153,15 @@ function renderTeardowns(viewState: TeardownsViewState, searchParams: RawSearchP
             ? "No teardowns have been published yet."
             : "No teardown matches these filters."}
         </p>
+      );
+    /* NAMED AS A FAILURE, never as an empty shelf. The message is the server's own, and the reader
+       is told to retry rather than left to conclude the surface is bare. */
+    case "error":
+      return (
+        <div className="mt-8 px-4 lg:px-6">
+          <p className="text-sm text-foreground">Teardowns could not be loaded.</p>
+          <p className="mt-1 max-w-2xl text-sm text-[#6F7979]">{viewState.message}</p>
+        </div>
       );
     case "ready":
       return (
