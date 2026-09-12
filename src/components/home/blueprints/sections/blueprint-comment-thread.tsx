@@ -27,6 +27,8 @@
 
 import Image from "next/image";
 
+import BlueprintAvatar from "@/components/home/blueprints/sections/blueprint-avatar";
+
 import LinkedPlainText from "@/components/home/shared/linked-plain-text";
 import RelativeTime from "@/components/home/shared/relative-time";
 import type { BlueprintComment } from "@/lib/blueprints/schemas";
@@ -95,16 +97,19 @@ function BlueprintCommentRow({
 
   return (
     <div className="flex gap-2.5">
-      <Image
-        src={comment.author.avatarUrl}
-        alt=""
-        width={avatarSizePx}
-        height={avatarSizePx}
-        className={`${isReply ? "size-5" : "size-6"} mt-0.5 shrink-0 rounded-full object-cover`}
+      <BlueprintAvatar
+        displayName={comment.author.displayName}
+        avatarUrl={comment.author.avatarUrl}
+        sizePx={avatarSizePx}
+        className={`${isReply ? "size-5" : "size-6"} mt-0.5`}
       />
       <div className="min-w-0">
         <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[#6F7979]">
-          <span className="font-medium text-[#00696E]">@{comment.author.handle}</span>
+          <span className="font-medium text-[#00696E]">
+            {comment.author.handle === null
+              ? comment.author.displayName
+              : `@${comment.author.handle}`}
+          </span>
           {/* The byline pattern this page already uses: relative in the text, the absolute instant
               in the tooltip. */}
           <span title={formatIsoInstantLabel(comment.createdAt)}>

@@ -1,3 +1,5 @@
+// TRANSPORT: mixed — `listTeardowns` and `listCaseStudies` are still fixtures; the showcase rail
+// reads the backend through `listPublicShowcases`. See the note on the read below. Originally:
 // TRANSPORT: mock — reads `listTeardowns`, `listCaseStudies` and `listShowcases` from
 // `@/lib/blueprints/api`, which serve fixtures. The HERO does not: it is a real server-fetch of
 // `GET /blueprints/hero-slides`, rendered by `BlueprintsHeroCarouselSection` below.
@@ -32,7 +34,8 @@ import TeardownGridCard, {
 } from "@/components/home/blueprints/cards/teardown-grid-card";
 import BlueprintLane from "@/components/home/blueprints/sections/blueprint-lane";
 import BlueprintsHeroCarouselSection from "@/components/home/blueprints/sections/blueprints-hero-carousel-section";
-import { listCaseStudies, listShowcases, listTeardowns } from "@/lib/blueprints/api";
+import { listCaseStudies, listTeardowns } from "@/lib/blueprints/api";
+import { listPublicShowcases } from "@/lib/blueprints/showcase-public.api";
 import type {
   CaseStudyBlueprint,
   ShowcaseBlueprint,
@@ -72,16 +75,23 @@ const CASE_STUDY_TEASER_LIMIT = 4;
 const SHOWCASE_TEASER_LIMIT = 5;
 
 export default async function BlueprintsPage() {
-  const [teardownPage, caseStudyPage, showcasePage] = await Promise.all([
+  const [teardownPage, caseStudyPage, showcaseResponse] = await Promise.all([
     listTeardowns({ limit: TEARDOWN_TEASER_LIMIT }),
     listCaseStudies({ limit: CASE_STUDY_TEASER_LIMIT }),
-    listShowcases({ limit: SHOWCASE_TEASER_LIMIT }),
+    listPublicShowcases({ limit: SHOWCASE_TEASER_LIMIT }),
   ]);
 
+  /*
+   * ONE ARM FAILING DOES NOT TAKE THE HUB DOWN. The showcase rail is the only one reading a
+   * backend; the other two are still fixtures. Dropping the whole page because that one read failed
+   * would hide two arms that are perfectly renderable, so a failed showcase read renders as no
+   * showcase rail — the same as having posted nothing yet, which on a teaser rail is the same
+   * thing to the reader. The feed page itself tells the two apart, because there it matters.
+   */
+  const showcases = showcaseResponse.success ? showcaseResponse.data.items : [];
+
   const isEveryArmEmpty =
-    teardownPage.items.length === 0 &&
-    caseStudyPage.items.length === 0 &&
-    showcasePage.items.length === 0;
+    teardownPage.items.length === 0 && caseStudyPage.items.length === 0 && showcases.length === 0;
 
   const viewState: BlueprintsViewState = isEveryArmEmpty
     ? { status: "empty" }
@@ -89,7 +99,7 @@ export default async function BlueprintsPage() {
         status: "ready",
         teardowns: teardownPage.items,
         caseStudies: caseStudyPage.items,
-        showcases: showcasePage.items,
+        showcases,
       };
 
   return (

@@ -1853,13 +1853,11 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       {
         displayName: "Amara Okonkwo",
         handle: "amara-builds",
-        avatarUrl: "/dummy/profile_image_01.avif",
         role: "Electronics",
       },
       {
         displayName: "Grace Wanjiru",
         handle: "grace-mech",
-        avatarUrl: "/dummy/profile_image_04.avif",
         role: "Mechanical",
       },
     ],
@@ -1904,7 +1902,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       {
         displayName: "Priya Raghavan",
         handle: "priya-optics",
-        avatarUrl: "/dummy/profile_image_06.avif",
         role: "Optics and firmware",
       },
     ],
@@ -1945,19 +1942,16 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       {
         displayName: "Chidi Eze",
         handle: "chidi-motors",
-        avatarUrl: "/dummy/profile_image_03.avif",
         role: "Drivetrain",
       },
       {
         displayName: "Tobias Lindqvist",
         handle: "tobias-cells",
-        avatarUrl: "/dummy/profile_image_05.avif",
         role: "Pack and BMS",
       },
       {
         displayName: "Marco Ferreira",
         handle: "marco-lowpower",
-        avatarUrl: "/dummy/profile_image_07.avif",
         role: "Telemetry",
       },
     ],
@@ -2004,13 +1998,11 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       {
         displayName: "Rahul Mehta",
         handle: "rahul-teardown",
-        avatarUrl: "/dummy/profile_image_02.avif",
         role: "Hardware",
       },
       {
         displayName: "Priya Raghavan",
         handle: "priya-optics",
-        avatarUrl: "/dummy/profile_image_06.avif",
         role: "Calibration",
       },
     ],
@@ -2051,7 +2043,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       {
         displayName: "Fatima Al-Rashid",
         handle: "fatima-thermal",
-        avatarUrl: "/dummy/profile_image_08.avif",
         role: "Thermal",
       },
     ],
@@ -2099,13 +2090,11 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       {
         displayName: "Naledi Dlamini",
         handle: "naledi-agri",
-        avatarUrl: "/dummy/profile_image_09.avif",
         role: "Field deployment",
       },
       {
         displayName: "Fatima Al-Rashid",
         handle: "fatima-thermal",
-        avatarUrl: "/dummy/profile_image_08.avif",
         role: "Actuator firmware",
       },
     ],
@@ -2149,19 +2138,16 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       {
         displayName: "Tobias Lindqvist",
         handle: "tobias-cells",
-        avatarUrl: "/dummy/profile_image_05.avif",
         role: "Pack and BMS",
       },
       {
         displayName: "Chidi Eze",
         handle: "chidi-motors",
-        avatarUrl: "/dummy/profile_image_03.avif",
         role: "Motor integration",
       },
       {
         displayName: "Wanjiku Kamau",
         handle: "wanjiku-power",
-        avatarUrl: "/dummy/profile_image_10.avif",
         role: "Field data",
       },
     ],
@@ -2207,7 +2193,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       {
         displayName: "Grace Wanjiru",
         handle: "grace-mech",
-        avatarUrl: "/dummy/profile_image_04.avif",
         role: "Mechanical",
       },
     ],
@@ -2252,13 +2237,11 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       {
         displayName: "Kwame Mensah",
         handle: "kwame-machining",
-        avatarUrl: "/dummy/profile_image_11.avif",
         role: "Machining",
       },
       {
         displayName: "Grace Wanjiru",
         handle: "grace-mech",
-        avatarUrl: "/dummy/profile_image_04.avif",
         role: "Tolerances",
       },
     ],
@@ -2363,13 +2346,11 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       {
         displayName: "Marco Ferreira",
         handle: "marco-lowpower",
-        avatarUrl: "/dummy/profile_image_07.avif",
         role: "Power",
       },
       {
         displayName: "Adaeze Nwosu",
         handle: "adaeze-networks",
-        avatarUrl: "/dummy/profile_image_12.avif",
         role: "Network",
       },
     ],

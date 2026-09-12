@@ -2,6 +2,8 @@
 // `@/lib/blueprints/api`. This component fetches nothing.
 
 import Image from "next/image";
+
+import BlueprintAvatar from "@/components/home/blueprints/sections/blueprint-avatar";
 import Link from "next/link";
 
 import BlueprintMetaLine, {
@@ -74,12 +76,11 @@ export default function ShowcaseFeedRow({ showcase }: { showcase: ShowcaseBluepr
           <BlueprintMetaLine className="mt-1.5 text-[11px] leading-4 text-[#6F7979]">
             <BlueprintMetaItem hasSeparator={false}>
               <span className="flex items-center gap-x-2">
-                <Image
-                  src={showcase.author.avatarUrl}
-                  alt=""
-                  width={20}
-                  height={20}
-                  className="size-5 rounded-full object-cover"
+                <BlueprintAvatar
+                  displayName={showcase.author.displayName}
+                  avatarUrl={showcase.author.avatarUrl}
+                  sizePx={20}
+                  className="size-5"
                 />
                 <span className="font-medium text-[#00696E]">{showcase.author.displayName}</span>
               </span>

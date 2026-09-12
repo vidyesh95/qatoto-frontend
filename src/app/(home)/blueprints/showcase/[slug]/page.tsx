@@ -1,12 +1,25 @@
 import type { Metadata } from "next";
 
 import ShowcaseDetailPage from "@/components/home/blueprints/showcase/showcase-detail-page";
-import { getBlueprintByCategory, listBlueprintSlugsByCategory } from "@/lib/blueprints/api";
+import { getPublicShowcase, listPublicShowcaseSlugs } from "@/lib/blueprints/showcase-public.api";
+import { withSentinelValues } from "@/lib/static-params";
 
-/** See the note in `teardowns/[slug]/page.tsx` about the deliberately absent sentinel. */
+/**
+ * Prerender every published slug.
+ *
+ * THE SENTINEL IS HERE NOW, and `api.ts` said to add it at exactly this moment: the list comes from
+ * the backend, so it can be empty — a database with nothing published yet, or a server that is
+ * down. An empty array makes Next treat the route as having no paths at all, which is not the same
+ * as having none today.
+ *
+ * FILTERED FIRST, WRAPPED SECOND. Wrapping and then filtering can drop the sentinel itself.
+ */
 export async function generateStaticParams() {
-  const slugs = await listBlueprintSlugsByCategory("showcase");
-  return slugs.map((slug) => ({ slug }));
+  const slugsResponse = await listPublicShowcaseSlugs();
+  // `?? []` is right here and nowhere else on this surface: Next's contract is an array, and a
+  // failed prerender list must not take the build down.
+  const slugs = slugsResponse.success ? slugsResponse.data : [];
+  return withSentinelValues(slugs).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -15,11 +28,12 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const showcase = await getBlueprintByCategory("showcase", slug);
+  const showcaseResponse = await getPublicShowcase(slug);
 
   const robots = { index: false, follow: false } as const;
 
-  if (showcase === null) return { robots, title: "Showcase · Blueprints" };
+  if (!showcaseResponse.success) return { robots, title: "Showcase · Blueprints" };
+  const showcase = showcaseResponse.data;
 
   return {
     robots,

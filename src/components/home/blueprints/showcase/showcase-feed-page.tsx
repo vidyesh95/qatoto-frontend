@@ -1,4 +1,4 @@
-// TRANSPORT: mock — async server component. Reads `listShowcases` and `listBlueprintTagFacets`
+// TRANSPORT: server-fetch — async server component. Reads `listPublicShowcases`
 // from `@/lib/blueprints/api`, which serve fixtures from `@/mocks/blueprints-mocks`.
 //
 // Filtering, ORDERING and paging all live in the getter, for the reason
@@ -12,7 +12,7 @@ import ShowcaseFeedRow from "@/components/home/blueprints/cards/showcase-feed-ro
 import CursorPageControl from "@/components/home/shared/cursor-page-control";
 import FacetChipRow, { type FacetBucket } from "@/components/home/shared/facet-chip-row";
 import FilterChipRow, { type FilterChipOption } from "@/components/home/shared/filter-chip-row";
-import { listBlueprintTagFacets, listShowcases } from "@/lib/blueprints/api";
+import { listPublicShowcases } from "@/lib/blueprints/showcase-public.api";
 import {
   DEFAULT_SHOWCASE_SORT,
   SHOWCASE_SORT_LABELS,
@@ -26,13 +26,21 @@ import {
   readSingleParam,
 } from "@/lib/filter-href";
 
+/**
+ * THE `error` ARM EXISTS BECAUSE THIS PAGE NOW READS A REAL BACKEND. Before, every failure resolved
+ * to fixtures, so "the server is down" and "there are no launches yet" rendered the same page — a
+ * visitor saw invented builds under a real heading with nothing to say so. The two are now told
+ * apart, and the `switch` below stops compiling if a third outcome ever appears.
+ */
 type ShowcaseViewState =
   | { status: "empty"; appliedFilterCount: number }
+  | { status: "error"; message: string }
   | {
       status: "ready";
       showcases: readonly ShowcaseBlueprint[];
       nextCursor: string | null;
       hasMore: boolean;
+      tagBuckets: readonly FacetBucket[];
     };
 
 export default async function ShowcaseFeedPage({
@@ -47,22 +55,22 @@ export default async function ShowcaseFeedPage({
   const sort = readEnumParam(resolvedSearchParams, "sort", SHOWCASE_SORTS) ?? DEFAULT_SHOWCASE_SORT;
   const requestedCursor = readSingleParam(resolvedSearchParams, "cursor");
 
-  const [showcasePage, tagBuckets]: [Awaited<ReturnType<typeof listShowcases>>, FacetBucket[]] =
-    await Promise.all([
-      listShowcases({ tag, sort, cursor: requestedCursor }),
-      listBlueprintTagFacets("showcase"),
-    ]);
+  // ONE CALL, not two: the tag counts arrive in the feed payload because they are counted over the
+  // same population it filters. Two calls could disagree, and the second could fail on its own.
+  const feedResponse = await listPublicShowcases({ tag, sort, cursor: requestedCursor });
 
   // A sort is an order, not a filter: `?sort=top` on its own can never produce "No launch matches
   // that tag", so the applied-filter count stays a count of FILTERS.
-  const viewState: ShowcaseViewState =
-    showcasePage.items.length === 0
+  const viewState: ShowcaseViewState = !feedResponse.success
+    ? { status: "error", message: feedResponse.error.message }
+    : feedResponse.data.items.length === 0
       ? { status: "empty", appliedFilterCount: tag === undefined ? 0 : 1 }
       : {
           status: "ready",
-          showcases: showcasePage.items,
-          nextCursor: showcasePage.page.nextCursor,
-          hasMore: showcasePage.page.hasMore,
+          showcases: feedResponse.data.items,
+          nextCursor: feedResponse.data.page.nextCursor,
+          hasMore: feedResponse.data.page.hasMore,
+          tagBuckets: feedResponse.data.tagFacets,
         };
 
   // The `store-search-page.tsx` sort-row recipe, with one difference: the default sort is REMOVED
@@ -103,12 +111,14 @@ export default async function ShowcaseFeedPage({
 
       <div className="mt-4 space-y-2 px-4 lg:px-6">
         <FilterChipRow options={sortOptions} ariaLabel="Sort launches" />
-        <FacetChipRow
-          searchParams={resolvedSearchParams}
-          queryKey="tag"
-          ariaLabel="Filter launches by tag"
-          buckets={tagBuckets}
-        />
+        {viewState.status === "ready" && (
+          <FacetChipRow
+            searchParams={resolvedSearchParams}
+            queryKey="tag"
+            ariaLabel="Filter launches by tag"
+            buckets={[...viewState.tagBuckets]}
+          />
+        )}
       </div>
 
       {renderShowcaseFeed(viewState, resolvedSearchParams)}
@@ -124,6 +134,17 @@ function renderShowcaseFeed(viewState: ShowcaseViewState, searchParams: RawSearc
           {viewState.appliedFilterCount === 0
             ? "Nothing has been launched yet."
             : "No launch matches that tag."}
+        </p>
+      );
+    case "error":
+      /*
+       * THE FAILURE IS SHOWN, NOT SWALLOWED. Rendering fixtures here — which is what this page did
+       * before it read a backend — would put invented builds under a real heading with nothing to
+       * tell a visitor they are looking at nothing.
+       */
+      return (
+        <p className="mt-8 px-4 text-sm text-[#6F7979] lg:px-6">
+          Launches couldn&apos;t be loaded. Please try again. {viewState.message}
         </p>
       );
     case "ready":

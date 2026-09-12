@@ -12,20 +12,16 @@
 
 import {
   MOCK_BLUEPRINTS,
-  MOCK_SHOWCASE_COMMENTS,
   MOCK_STORE_LISTING_SIGNALS_BY_CATEGORY_SLUG,
 } from "@/mocks/blueprints-mocks";
 import {
   type Blueprint,
   type BlueprintCategory,
-  type BlueprintComment,
-  BlueprintCommentSchema,
   type BlueprintModerationState,
   type BlueprintOfCategory,
   type BlueprintPage,
   BlueprintSchema,
   type CaseStudyBlueprint,
-  DEFAULT_SHOWCASE_SORT,
   type BlueprintDifficulty,
   type BlueprintDiscipline,
   RESERVED_BLUEPRINT_SLUGS,
@@ -364,56 +360,6 @@ export interface ListShowcasesFilter {
   readonly limit?: number;
 }
 
-/**
- * NEWEST LAUNCH FIRST, BY `launchedAt` AND NOT `createdAt`.
- *
- * A launch is announced on a date its author chose; `createdAt` is when the row was typed. The two
- * differ by days in the fixtures on purpose, so an order built on the wrong field is visible
- * rather than plausible. The sort lives beside the filter because a cursor into an unstable order
- * is meaningless.
- *
- * THE ID IS THE TIE-BREAK, and every comparator on this surface ends in it. `toSorted` is stable,
- * but stability only preserves INPUT order, and the input here is `byNewestFirst` over `createdAt`
- * — a different field. A cursor into an order two renders could disagree about would skip or
- * repeat a row.
- */
-function byMostRecentlyLaunched(left: ShowcaseBlueprint, right: ShowcaseBlueprint): number {
-  return (
-    Date.parse(right.launchedAt) - Date.parse(left.launchedAt) || left.id.localeCompare(right.id)
-  );
-}
-
-/**
- * MOST UPVOTED FIRST, then most recently launched, then id. Ties on a vote count are real —
- * `bp-025` and `bp-018` both sit at 96 in the fixtures on purpose — so a tie falls back to the
- * whole newest order rather than to input order, and `top` is a total order on its own.
- */
-function byMostUpvoted(left: ShowcaseBlueprint, right: ShowcaseBlueprint): number {
-  return right.upvoteCount - left.upvoteCount || byMostRecentlyLaunched(left, right);
-}
-
-/** A `Record` over the sort enum, so a third sort is a compile error here rather than a silent default. */
-const SHOWCASE_SORT_COMPARATORS: Record<
-  ShowcaseSort,
-  (left: ShowcaseBlueprint, right: ShowcaseBlueprint) => number
-> = {
-  newest: byMostRecentlyLaunched,
-  top: byMostUpvoted,
-};
-
-export async function listShowcases(
-  filter: ListShowcasesFilter = {},
-): Promise<BlueprintPage<ShowcaseBlueprint>> {
-  "use cache";
-  const showcases = await listBlueprintsByCategory("showcase");
-
-  const matching = showcases
-    .filter((showcase) => filter.tag === undefined || showcase.tags.includes(filter.tag))
-    .toSorted(SHOWCASE_SORT_COMPARATORS[filter.sort ?? DEFAULT_SHOWCASE_SORT]);
-
-  return toBlueprintPage(matching, filter.cursor, filter.limit ?? SHOWCASE_PAGE_LIMIT);
-}
-
 export interface ListCaseStudiesFilter {
   readonly discipline?: BlueprintDiscipline;
   readonly cursor?: string;
@@ -463,63 +409,6 @@ export async function listRelatedCaseStudies(
     .filter((slug) => !isReservedSlug(slug))
     .map((slug) => caseStudiesBySlug.get(slug))
     .filter((caseStudy) => caseStudy !== undefined);
-}
-
-// --- Discussion ---------------------------------------------------------------
-
-/**
- * One showcase's comment thread, whole.
- *
- * NOT PAGED, AND THAT IS DELIBERATE. The three list getters above are keyset-paged because their
- * indexes render `CursorPageControl`; a thread does not. Hacker News puts the entire discussion on
- * the page and so does this, which means no `?commentsCursor=` on a detail route that has no query
- * params today and no paging control that the fixtures — a handful of rows each — could exercise.
- * The comment above `TEARDOWNS_PAGE_LIMIT` argues against exactly that kind of unexercised code.
- * When real threads run to hundreds this takes the `filter`/`BlueprintPage` shape its neighbours
- * already have (`todo.md` §Blueprint discussion).
- *
- * THE ORDER IS THE WATCH THREAD'S: top-level newest first, replies oldest first
- * (`video-comment-thread.tsx`). A reader arriving from a video meets the convention they just left.
- * Replies read oldest-first because a reply chain is a conversation and a conversation is read
- * forwards; top-level rows read newest-first because the newest is the reason to come back.
- *
- * FLAT, NOT PRE-GROUPED. The renderer buckets replies under their parent in one pass — that is
- * assembling a layout, not filtering a list, and the flat ordered array is the shape a real
- * endpoint answers.
- */
-export async function listShowcaseComments(showcaseSlug: string): Promise<BlueprintComment[]> {
-  "use cache";
-  const comments = (MOCK_SHOWCASE_COMMENTS[showcaseSlug] ?? []).map((candidate) =>
-    BlueprintCommentSchema.parse(candidate),
-  );
-
-  const topLevel = comments
-    .filter((comment) => comment.parentCommentId === null)
-    .toSorted(
-      (left, right) =>
-        Date.parse(right.createdAt) - Date.parse(left.createdAt) ||
-        left.commentId.localeCompare(right.commentId),
-    );
-
-  const repliesByParentId = new Map<string, BlueprintComment[]>();
-  for (const comment of comments) {
-    if (comment.parentCommentId === null) continue;
-    const siblings = repliesByParentId.get(comment.parentCommentId) ?? [];
-    siblings.push(comment);
-    repliesByParentId.set(comment.parentCommentId, siblings);
-  }
-
-  // Interleaved parent-then-its-replies, so the renderer never re-derives the order — and a reply
-  // whose parent is missing is DROPPED here rather than rendered at the top level, where it would
-  // read as an answer to the wrong comment.
-  return topLevel.flatMap((parent) => [
-    parent,
-    ...(repliesByParentId.get(parent.commentId) ?? []).toSorted(
-      (left, right) =>
-        Date.parse(left.createdAt) - Date.parse(right.createdAt) ||
-        left.commentId.localeCompare(right.commentId),
-    ),
-  ]);
 }
 
 // --- Market signal ------------------------------------------------------------

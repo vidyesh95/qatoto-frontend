@@ -25,6 +25,8 @@
 // blueprints content table exists for a comment row to reference, so there is nothing to post to.
 
 import Image from "next/image";
+
+import BlueprintAvatar from "@/components/home/blueprints/sections/blueprint-avatar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -34,21 +36,28 @@ import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-ta
 import ShowcaseVoteBox from "@/components/home/blueprints/sections/showcase-vote-box";
 import ShowcaseWriteUp from "@/components/home/blueprints/showcase/sections/showcase-write-up";
 import RelativeTime from "@/components/home/shared/relative-time";
-import { getBlueprintByCategory, listShowcaseComments } from "@/lib/blueprints/api";
-import { buildBlueprintCategoryHref, buildBlueprintHref } from "@/lib/blueprints/schemas";
+import { getPublicShowcase } from "@/lib/blueprints/showcase-public.api";
+import {
+  buildBlueprintCategoryHref,
+  buildBlueprintHref,
+  type BlueprintComment,
+} from "@/lib/blueprints/schemas";
 import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
 
 export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
-  // ALONGSIDE, NOT AFTER — the waterfall argument `watch-page.tsx:42-45` records. The thread is
-  // keyed by the slug this component was already handed, so it does not need the launch to resolve
-  // first. A thread read for a slug that turns out not to be a showcase costs one wasted fixture
-  // pass and is discarded by the `notFound()` below; the serial version costs a round trip on every
-  // page that does resolve.
-  const [showcase, comments] = await Promise.all([
-    getBlueprintByCategory("showcase", slug),
-    listShowcaseComments(slug),
-  ]);
-  if (showcase === null) notFound();
+  /*
+   * ONE READ, AND NO COMMENT THREAD. The discussion used to arrive alongside this from a fixture
+   * map; now that the launch itself is a real row, an invented thread would sit under a real
+   * person's build attributed to people who never wrote it. There is no comment table for a launch
+   * to be referenced by and no composer anywhere in the UI, so the honest thread is the empty one —
+   * and `commentCount` comes back 0 from the server, which is true rather than a placeholder.
+   */
+  const showcaseResponse = await getPublicShowcase(slug);
+  // A launch that is not published is a 404 here, identical to a slug that never existed — the two
+  // are indistinguishable on purpose, so a stranger cannot probe what is waiting for review.
+  if (!showcaseResponse.success) notFound();
+  const showcase = showcaseResponse.data;
+  const comments: readonly BlueprintComment[] = [];
 
   const hasActionLinks = showcase.callToAction !== null || showcase.builtFromBlueprintSlug !== null;
 
@@ -74,12 +83,11 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[#CAC4D0]/60 pb-3">
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#6F7979]">
-              <Image
-                src={showcase.author.avatarUrl}
-                alt=""
-                width={24}
-                height={24}
-                className="size-6 rounded-full object-cover"
+              <BlueprintAvatar
+                displayName={showcase.author.displayName}
+                avatarUrl={showcase.author.avatarUrl}
+                sizePx={24}
+                className="size-6"
               />
               <span className="font-medium text-foreground">{showcase.author.displayName}</span>
               {/* EACH SEPARATOR TRAVELS WITH THE ITEM AFTER IT, in one non-wrapping span, so a
@@ -201,12 +209,13 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
               <ul className="mt-2 flex flex-wrap gap-4 min-[1440px]:flex-col min-[1440px]:gap-3">
                 {showcase.team.map((member) => (
                   <li key={member.handle} className="flex items-center gap-2">
-                    <Image
-                      src={member.avatarUrl}
-                      alt=""
-                      width={32}
-                      height={32}
-                      className="size-8 rounded-full object-cover"
+                    {/* Initials, never a photo: a team row is free text a maker typed, not a link
+                        to an account, so there is no photo to fetch. */}
+                    <BlueprintAvatar
+                      displayName={member.displayName}
+                      avatarUrl={null}
+                      sizePx={32}
+                      className="size-8"
                     />
                     <div>
                       <p className="text-sm text-foreground">{member.displayName}</p>

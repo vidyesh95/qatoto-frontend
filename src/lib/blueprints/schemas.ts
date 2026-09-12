@@ -18,7 +18,7 @@ import {
   createHttpsOrSiteRelativeUrlSchema,
 } from "@/lib/blueprints/url-source.schemas";
 import { extractYoutubeVideoId } from "@/lib/youtube";
-import type { CursorPage } from "@/lib/store/shared.schemas";
+import { CursorPageSchema, type CursorPage } from "@/lib/store/shared.schemas";
 
 // --- Enum tuples -------------------------------------------------------------
 //
@@ -385,12 +385,25 @@ export const BlueprintCostRangeSchema = z
   .strip();
 export type BlueprintCostRange = z.infer<typeof BlueprintCostRangeSchema>;
 
+/**
+ * Whoever posted the blueprint.
+ *
+ * ⚠️ `handle` AND `avatarUrl` ARE NULLABLE, and neither is an oversight. `user.handle` and
+ * `user.image` are both nullable columns on the server and nothing upstream fills them: the identity
+ * gate on posting proves the account is not anonymous and holds a credential, which says nothing
+ * about a handle or a photo. So a launch can be posted, moderated and published by an account with
+ * neither, and the read carries that through rather than inventing a placeholder URL or substituting
+ * the user id — which would leak an internal identifier into a public "@" mention.
+ *
+ * `BlueprintAvatar` renders initials when there is no photo; the byline renders no "@" line at all
+ * rather than a bare "@".
+ */
 export const BlueprintAuthorSchema = z
   .object({
     displayName: z.string(),
     /** The channel handle, without a leading "@" — the "@" is added at render time. */
-    handle: z.string(),
-    avatarUrl: z.string(),
+    handle: z.string().nullable(),
+    avatarUrl: z.string().nullable(),
   })
   .strip();
 export type BlueprintAuthor = z.infer<typeof BlueprintAuthorSchema>;
@@ -505,12 +518,19 @@ export const BlueprintLinkSchema = z
   .strip();
 export type BlueprintLink = z.infer<typeof BlueprintLinkSchema>;
 
-/** One person on a showcase build. Shaped like `BlueprintAuthor` plus what they did. */
+/**
+ * One person on a showcase build.
+ *
+ * ⚠️ NO `avatarUrl`, and it is absent rather than nullable. A team row is free text a maker typed —
+ * a display name, an unverified handle and what that person did — not a link to an account, so there
+ * is no photo to fetch and never was. A field that would be null on every row invites someone to
+ * fill it by joining the handle to an account, which is the verified-identity badge this surface
+ * deliberately does not have yet. The composer already renders these people as initials.
+ */
 export const BlueprintTeamMemberSchema = z
   .object({
     displayName: z.string(),
     handle: z.string(),
-    avatarUrl: createHttpsOrSiteRelativeUrlSchema(2048),
     /** Free text, e.g. "Firmware". Not an enum — a two-person build invents its own titles. */
     role: z.string(),
   })
@@ -2094,3 +2114,21 @@ export interface BlueprintPage<TBlueprint> {
 // leads with a BOM band and a part count, a case study is a row of text with no thumbnail at all,
 // and a showcase carries an upvote gutter. An exported type nothing imports is the same unverified
 // code the field sweeps in CLAUDE.md exist to catch, so it went rather than being kept "in case".
+
+/**
+ * The public showcase feed's payload: a keyset page of launches plus the tag counts beside it.
+ *
+ * `.strip()` because this is a READ shape — an unknown key from a newer server is dropped, not a
+ * parse failure that blanks the page.
+ */
+export const ShowcaseFeedPageSchema = z
+  .object({
+    items: z.array(ShowcaseBlueprintSchema),
+    page: CursorPageSchema,
+    tagFacets: z.array(z.object({ value: z.string(), count: z.number().int().min(0) }).strip()),
+  })
+  .strip();
+export type ShowcaseFeedPage = z.infer<typeof ShowcaseFeedPageSchema>;
+
+/** Every published slug, for `generateStaticParams`. */
+export const ShowcaseSlugListSchema = z.array(z.string());
