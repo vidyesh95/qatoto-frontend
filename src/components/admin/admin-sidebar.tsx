@@ -96,6 +96,19 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
         activeIcon: "/icons/rocket_launch_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
         inactiveIcon: "/icons/rocket_launch_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       },
+      {
+        // Teardowns a publisher has sent, never yet public, under `moderate_content`. It belongs
+        // here rather than under "Home · Video & blueprints" for the reason the two entries above
+        // do: that section moderates what is ALREADY published, and these have no public address at
+        // all until somebody in this queue gives them one.
+        //
+        // `factory`, because a teardown is a survey of something a factory made, and both fills are
+        // committed. `architecture` is taken by the hero carousel.
+        href: "/admin/teardowns",
+        label: "Teardowns",
+        activeIcon: "/icons/factory_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+        inactiveIcon: "/icons/factory_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      },
     ],
     hasDivider: true,
   },

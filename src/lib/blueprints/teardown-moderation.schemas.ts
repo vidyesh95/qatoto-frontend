@@ -7,7 +7,13 @@
 // ⚠️ A SEPARATE FILE ON PURPOSE. These rows carry a survey nobody outside the queue may read — a
 // pending teardown has no public address at all, so this console is the only surface it exists on.
 // Nothing under `src/components/home` or `src/components/studio` may import this file, and the check
-// is `rg "teardown-moderation" src/components/home src/components/studio`, which must print nothing.
+// is `rg "blueprints/teardown-moderation" src/components/home src/components/studio`, which must
+// print nothing.
+//
+// ⚠️ THE PATH PREFIX IN THAT CHECK IS LOAD-BEARING. A bare `teardown-moderation` also matches
+// `teardowns/sections/teardown-moderation-notice`, the PUBLIC quarantine banner — so the loose
+// spelling reports a hit on a file that imports nothing from here, and a check that always fails is
+// a check nobody runs.
 //
 // `.strip()` ON WHAT COMES BACK, `.strict()` ON THE DECISION THAT GOES OUT, as everywhere here.
 

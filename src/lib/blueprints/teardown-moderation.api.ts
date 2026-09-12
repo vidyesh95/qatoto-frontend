@@ -4,8 +4,10 @@
 // ⚠️ SEPARATE FROM `authoring.api.ts`, AND THAT IS A SECURITY BOUNDARY. A pending teardown has no
 // public address at all — it is a survey of another company's product that nobody outside this
 // queue may read. Nothing under `src/components/home` or `src/components/studio` may import this
-// file, and the check is `rg "teardown-moderation" src/components/home src/components/studio`,
-// which must print nothing.
+// file, and the check is
+// `rg "blueprints/teardown-moderation" src/components/home src/components/studio`, which must print
+// nothing. The path prefix matters: a bare `teardown-moderation` also matches the public quarantine
+// banner, `teardowns/sections/teardown-moderation-notice`.
 //
 // ⚠️ SO THESE RESPONSES MUST NEVER BE CACHED SHARED. Every other read on this surface is
 // caller-independent and deliberately cacheable; these two depend entirely on who is asking.
