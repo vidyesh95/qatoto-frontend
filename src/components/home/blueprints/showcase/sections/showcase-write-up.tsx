@@ -55,6 +55,10 @@ import { buildYoutubeBlueprintVideo } from "@/components/home/blueprints/authori
 import BlueprintVideoBlock from "@/components/home/blueprints/media/blueprint-video-block";
 import { BLUEPRINT_MEDIA_COLUMN_CLASS } from "@/components/home/blueprints/media/media-column";
 import type { BlueprintWriteUpImage } from "@/lib/blueprints/schemas";
+import {
+  deepestWriteUpNestingDepth,
+  MAX_SHOWCASE_WRITE_UP_NESTING_DEPTH,
+} from "@/lib/blueprints/showcase-write-up-nesting";
 
 /** The elements a write-up may produce. Everything else is unwrapped to its text. */
 const ALLOWED_WRITE_UP_ELEMENTS = [
@@ -339,6 +343,28 @@ export default function ShowcaseWriteUp({
 }) {
   // Whitespace only is `null` wearing a string, and absence renders nothing.
   if (markdown.trim() === "") return null;
+
+  /*
+   * THE GUARD THAT KEEPS A WRITE-UP FROM TAKING THE PAGE DOWN WITH IT.
+   *
+   * `remark-gfm` walks the parsed tree RECURSIVELY, and past a few thousand levels of nested quotes
+   * or lists that walk throws `RangeError: Maximum call stack size exceeded`. This component is the
+   * one place three different surfaces meet it: the public launch page, which renders on the SERVER
+   * (so a throw is a 500, not one broken tab), the moderator's review card, and the composer's own
+   * Preview tab — which renders what the maker has typed BEFORE any schema has looked at it, so a
+   * pasted document would otherwise take the form down and everything typed into it.
+   *
+   * The authoring schema refuses this shape on both sides, which stops it being stored. This is the
+   * half that covers text arriving any other way: a seed, an importer, a row written before the cap
+   * existed, or a server running a version that disagrees. One linear scan of at most 10 KB.
+   */
+  if (deepestWriteUpNestingDepth(markdown) > MAX_SHOWCASE_WRITE_UP_NESTING_DEPTH) {
+    return (
+      <p className="mt-4 text-xs text-muted-foreground">
+        Write-up not shown. Its lists and quotes are nested too deeply to render.
+      </p>
+    );
+  }
 
   const imageSizeByAddress = new Map(imageSizes.map((imageSize) => [imageSize.url, imageSize]));
   const writeUpComponents = buildWriteUpComponents(

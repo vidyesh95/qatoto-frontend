@@ -25,6 +25,10 @@ import {
 } from "@/lib/blueprints/schemas";
 import { buildWellTypedInputsPredicate } from "@/lib/blueprints/refinement-inputs";
 import {
+  deepestWriteUpNestingDepth,
+  MAX_SHOWCASE_WRITE_UP_NESTING_DEPTH,
+} from "@/lib/blueprints/showcase-write-up-nesting";
+import {
   createExternalHttpsUrlSchema,
   createHttpsOrSiteRelativeUrlSchema,
 } from "@/lib/blueprints/url-source.schemas";
@@ -63,6 +67,35 @@ export const SHOWCASE_LAUNCH_STATEMENTS: Record<
  * run 47 to 62 characters, so this leaves room without letting a pitch become a paragraph.
  */
 export const SHOWCASE_TAGLINE_MAXIMUM_CHARACTERS = 80;
+
+/**
+ * How many MARKUP characters — `*`, `_`, `[`, `]` — one write-up may hold.
+ *
+ * ⚠️ MIRRORS `MAX_SHOWCASE_WRITE_UP_MARKUP_CHARACTERS` ON THE SERVER, which is what actually
+ * refuses. Matching emphasis and link delimiters is quadratic in the number of delimiters, and the
+ * server parses every write-up on the submit path to check its images: at the 10,000-character
+ * limit alone, 9,800 delimiters cost it ~800ms of synchronous parse against ~32ms for 1,188.
+ *
+ * The number is not arbitrary. A deliberately over-formatted build write-up — bold or italic in
+ * every sentence, bulleted specs, block quotes, an image and two links, repeated to the character
+ * limit — measures 1,188 of these characters, already 12% of the document, so 3,000 leaves 2.5x
+ * headroom. Reaching it needs about one delimiter every three characters, which is not prose.
+ *
+ * It counts all four characters rather than the emphasis pair alone because brackets take part in
+ * the same matching, and a write-up's links and images contribute only a handful each.
+ */
+export const MAX_SHOWCASE_WRITE_UP_MARKUP_CHARACTERS = 3000;
+
+/** `*`, `_`, `[` and `]` — the characters micromark matches into emphasis and link runs. */
+function countWriteUpMarkupCharacters(writeUp: string): number {
+  let markupCharacterCount = 0;
+  for (const character of writeUp) {
+    if (character === "*" || character === "_" || character === "[" || character === "]") {
+      markupCharacterCount += 1;
+    }
+  }
+  return markupCharacterCount;
+}
 
 /**
  * One person on the build, as the maker types them.
@@ -117,16 +150,22 @@ const CostRangeComparisonInputsSchema = z.object({
  * a value it could not read arrives as `NaN`, which is what the per-field message below is for.
  * USD only in Part 1, stated beside the fields.
  */
+/** The server's ceiling on either end of the range — a million dollars, in cents. */
+const SHOWCASE_COST_MAXIMUM_IN_CENTS = 100_000_000;
+const SHOWCASE_COST_TOO_LARGE_MESSAGE = "Keep the cost under $1,000,000.";
+
 const ShowcaseCostRangeDraftSchema = z
   .object({
     minimumInCents: z
       .number({ error: "Give the lowest cost as a number, like 45 or 45.50." })
       .int()
-      .nonnegative(),
+      .nonnegative()
+      .max(SHOWCASE_COST_MAXIMUM_IN_CENTS, SHOWCASE_COST_TOO_LARGE_MESSAGE),
     maximumInCents: z
       .number({ error: "Give the highest cost as a number, like 60 or 60.50." })
       .int()
-      .nonnegative(),
+      .nonnegative()
+      .max(SHOWCASE_COST_MAXIMUM_IN_CENTS, SHOWCASE_COST_TOO_LARGE_MESSAGE),
     currency: z.literal("USD"),
   })
   .strict()
@@ -185,8 +224,28 @@ export const ShowcaseSubmissionDraftSchema = z
     /**
      * GitHub-style Markdown, rendered by `ShowcaseWriteUp`. A YouTube link on its own line becomes
      * the video. `null` when the maker wrote none. 10,000 characters is the server's limit too.
+     *
+     * THE TWO SHAPE RULES BELOW ARE NOT ABOUT LENGTH, and the character cap cannot stand in for
+     * either — the worst input for both sits comfortably under 10,000 characters. One bounds what
+     * the markdown parser is asked to match, the other how deeply it has to recurse. Both mirror
+     * the server byte for byte; without them a maker types happily and is refused on Post by a rule
+     * this form never mentioned. `showcase-write-up-nesting.ts` carries the measurements.
      */
-    writeUp: z.string().max(10_000, "Keep the write-up under 10,000 characters.").nullable(),
+    writeUp: z
+      .string()
+      .max(10_000, "Keep the write-up under 10,000 characters.")
+      // Markup first, then nesting: a genuinely over-formatted write-up hits the markup cap, and
+      // that is the message worth listing first when a maker trips both.
+      .refine(
+        (writeUp) =>
+          countWriteUpMarkupCharacters(writeUp) <= MAX_SHOWCASE_WRITE_UP_MARKUP_CHARACTERS,
+        `Simplify the formatting — a write-up can hold at most ${String(MAX_SHOWCASE_WRITE_UP_MARKUP_CHARACTERS)} of the characters *, _, [ and ].`,
+      )
+      .refine(
+        (writeUp) => deepestWriteUpNestingDepth(writeUp) <= MAX_SHOWCASE_WRITE_UP_NESTING_DEPTH,
+        `Simplify the structure — a write-up can nest lists and quotes at most ${String(MAX_SHOWCASE_WRITE_UP_NESTING_DEPTH)} levels deep.`,
+      )
+      .nullable(),
     /**
      * A full ISO 8601 instant in UTC, chosen by the maker. The feed sorts on this. `z.iso.datetime()`
      * rather than `Date.parse`, which also accepts a bare `2026-09-11` the server refuses.
@@ -198,11 +257,30 @@ export const ShowcaseSubmissionDraftSchema = z
     billOfMaterialsCostRange: ShowcaseCostRangeDraftSchema.nullable(),
     tags: z
       .array(z.string().min(1).max(32, "A tag is at most 32 characters."))
-      .max(10, "Up to 10 tags."),
+      .max(10, "Up to 10 tags.")
+      // Case-insensitively, matching the server. The field is a comma-separated box, so
+      // `Solar, solar` is one keystroke away and would otherwise be refused only on Post.
+      .refine(
+        (tags) => new Set(tags.map((tag) => tag.toLowerCase())).size === tags.length,
+        "Each tag appears once.",
+      ),
     team: z.array(ShowcaseTeamMemberDraftSchema).max(12, "Up to 12 people."),
-    builtFromBlueprintSlug: z.string().min(1).nullable(),
+    // The server stores this as an address, so it has the shape of one: lowercase, digits and
+    // single hyphens. `z.string().min(1)` let a maker type `Not_A_Slug` and learn only on Post, in
+    // a summary box, because this field has no input slot of its own.
+    builtFromBlueprintSlug: z
+      .string()
+      .min(3, "A teardown address is at least 3 characters.")
+      .max(120, "A teardown address is at most 120 characters.")
+      .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "That teardown address is not valid.")
+      .nullable(),
     callToAction: ShowcaseCallToActionDraftSchema.nullable(),
-    acceptedLaunchStatementIds: z.array(z.enum(SHOWCASE_LAUNCH_STATEMENT_IDS)),
+    // `.max` as well as the superRefine below: the server caps the array at the number of
+    // statements there are, so `["built_it_ourselves", "built_it_ourselves"]` is refused there and
+    // has to be refused here too, even though it ticks neither box twice in the UI.
+    acceptedLaunchStatementIds: z
+      .array(z.enum(SHOWCASE_LAUNCH_STATEMENT_IDS))
+      .max(SHOWCASE_LAUNCH_STATEMENT_IDS.length),
   })
   .strict()
   // ⚠️ THREE REFINEMENTS, NOT ONE, EACH GATED BY `when` ON THE FIELDS IT READS. As one refinement
