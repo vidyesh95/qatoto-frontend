@@ -1464,6 +1464,25 @@ export function resolveTeardownProvenanceChip(teardown: {
  * misreading this record exists to prevent. Read by `TeardownProvenanceBlock`, and only there:
  * the strip states the permission, this states its limit.
  */
+/**
+ * The three kinds NAMED APART — the distinction `TEARDOWN_PROVENANCE_CHIP_LABELS` deliberately
+ * fuses.
+ *
+ * ⚠️ THE CHIP VOCABULARY IS THE WRONG ONE FOR A MODERATOR, and the fusion is why. A reader is told
+ * "Authorized" for both an open-hardware licence and a private permission, because the practical
+ * answer to "may I use this?" is the same shape either way. A moderator's job is the opposite: a
+ * licence is a public document anybody can read, and an authorisation is one publisher's account of
+ * a conversation with a manufacturer. Deciding whether to publish somebody's survey of another
+ * company's product turns on exactly that difference.
+ *
+ * Read by the admin teardown queue, and only there.
+ */
+export const TEARDOWN_PROVENANCE_KIND_LABELS: Record<BlueprintProvenanceKind, string> = {
+  licensed_open_source: "Open-source licence",
+  authorized_by_manufacturer: "Manufacturer authorization",
+  community_reverse_engineered: "Community reverse-engineered",
+};
+
 export const TEARDOWN_PROVENANCE_KIND_NOTES: Record<BlueprintProvenanceKind, string> = {
   licensed_open_source:
     "Published under an open-hardware licence. The licence is a public document and its terms are what you may rely on, so read it before you commit tooling.",
