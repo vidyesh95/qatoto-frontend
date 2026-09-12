@@ -197,6 +197,17 @@ const CaseStudyOutcomeMetricDraftSchema = z
   })
   .strict();
 
+/**
+ * ⚠️ 512 CHARACTERS, NOT THE 2,048 EVERY OTHER OUTBOUND LINK HERE ALLOWS, and the reason is on the
+ * server. A case study may link ten sources; at the four-bytes-per-character worst case the
+ * backend's body-budget check computes, ten 2,048-character URLs put `POST /blueprints/case-studies`
+ * above the platform's 128 KB body ceiling. The backend's `CASE_STUDY_SOURCE_URL_MAXIMUM_CHARACTERS`
+ * carries the same 512, so the form and the server still agree — a form that accepted a URL the
+ * server would 413 is the mismatch this contract exists to prevent. A citation longer than this is
+ * a tracking-parameter-laden mess rather than an address; trim it.
+ */
+export const CASE_STUDY_SOURCE_URL_MAXIMUM_CHARACTERS = 512;
+
 /** STRICTER THAN `BlueprintSourceSchema` for the launch link's reason: a write refuses empty labels. */
 const CaseStudySourceDraftSchema = z
   .object({
@@ -208,7 +219,7 @@ const CaseStudySourceDraftSchema = z
       .string()
       .min(1, "Say who published it.")
       .max(80, "Keep the publisher under 80 characters."),
-    url: createExternalHttpsUrlSchema(2048),
+    url: createExternalHttpsUrlSchema(CASE_STUDY_SOURCE_URL_MAXIMUM_CHARACTERS),
   })
   .strict();
 
