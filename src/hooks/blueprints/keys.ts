@@ -27,4 +27,6 @@ export const blueprintKeys = {
   caseStudyReviewQueue: () => ["blueprints", "case-studies", "admin", "review-queue"] as const,
   /** The moderator's launch review queue, for the same reason as the case-study queue above. */
   showcaseReviewQueue: () => ["blueprints", "showcase", "admin", "review-queue"] as const,
+  /** The moderator's teardown review queue, for the same reason as the two queues above. */
+  teardownReviewQueue: () => ["blueprints", "teardowns", "admin", "review-queue"] as const,
 };
