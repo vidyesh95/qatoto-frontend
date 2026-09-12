@@ -9,6 +9,10 @@ import {
   TEARDOWN_REVIEW_FILE_KIND_LABELS,
   TEARDOWN_REVIEW_FILE_KINDS,
 } from "./teardown-moderation.schemas";
+import {
+  BLUEPRINT_DOCUMENT_KINDS,
+  TEARDOWN_MANUFACTURING_FILE_KINDS,
+} from "@/lib/blueprints/schemas";
 
 /**
  * The moderator contract for the teardown arm.
@@ -180,9 +184,10 @@ describe("TeardownReviewItemSchema", () => {
   });
 
   /**
-   * ⚠️ THE REGRESSION ALREADY IN THE DATABASE. The wizard once labelled every document with a
-   * fabrication kind, so these rows exist; the backend files each link by its own label at publish,
-   * and the card has to name it rather than rendering an empty chip.
+   * ⚠️ A SHAPE THIS CONSOLE STILL HAS TO READ. The wizard once labelled every document with a
+   * fabrication kind; it was split and no such submission was ever stored, but the backend still
+   * accepts the old shape from a caller on a cached bundle and files each link by its own label at
+   * publish. So the card has to name it rather than rendering an empty chip.
    */
   it("reads a document carrying a fabrication label, and can name it", () => {
     const parsed = TeardownReviewItemSchema.safeParse(
@@ -278,6 +283,24 @@ describe("the merged file vocabulary", () => {
   it("sorts the two vocabularies apart", () => {
     expect(isTeardownManufacturingFileKind("step")).toBe(true);
     expect(isTeardownManufacturingFileKind("schematic")).toBe(false);
+  });
+
+  /**
+   * ⚠️ AN OVERLAP WOULD BREAK THIS MAP SILENTLY, AND DIFFERENTLY FROM THE BACKEND.
+   *
+   * `TEARDOWN_REVIEW_FILE_KIND_LABELS` is built by spreading both label maps, so a value appearing
+   * in both vocabularies does not raise anything — the SECOND spread simply wins, and a moderator
+   * reads a fabrication noun over a reader's document or the reverse. The backend's copy of this
+   * rule guards its routing; this one guards the label.
+   */
+  it("keeps the two file vocabularies disjoint", () => {
+    const sharedKinds = BLUEPRINT_DOCUMENT_KINDS.filter((documentKind) =>
+      TEARDOWN_MANUFACTURING_FILE_KINDS.some(
+        (manufacturingKind) => String(manufacturingKind) === String(documentKind),
+      ),
+    );
+
+    expect(sharedKinds).toEqual([]);
   });
 });
 

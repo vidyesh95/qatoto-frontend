@@ -591,11 +591,12 @@ function PartsTable({ parts }: { readonly parts: TeardownReviewPayload["parts"] 
 /**
  * One file list, used for both arrays.
  *
- * ⚠️ THE LABEL COMES FROM THE MERGED MAP, NEVER FROM ONE VOCABULARY'S. Submissions carrying a
- * fabrication label in `documents[]` are already in the database, and indexing the document map
- * would render `undefined` into the chip. A mis-vocabularied row is labelled CORRECTLY and marked —
- * the moderator is the only person who can see it, and the marker says the backend files each link
- * by its own label anyway, so it is not grounds for a send-back.
+ * ⚠️ THE LABEL COMES FROM THE MERGED MAP, NEVER FROM ONE VOCABULARY'S. A `documents[]` row may carry
+ * a fabrication label — the wizard sent that shape until it was split, and the backend still accepts
+ * it from a caller on a cached bundle — and indexing the document map would render `undefined` into
+ * the chip. A mis-vocabularied row is labelled CORRECTLY and marked: the moderator is the only person
+ * who can see it, and the marker says the backend files each link by its own label anyway, so it is
+ * not grounds for a send-back.
  */
 function ReviewFileList({
   heading,

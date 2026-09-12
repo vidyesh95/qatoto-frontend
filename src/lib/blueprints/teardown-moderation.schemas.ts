@@ -44,10 +44,11 @@ import { cursorPageOf, IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * BOTH FILE VOCABULARIES, MERGED — and the merge is what keeps a label lookup total.
  *
  * ⚠️ A SUBMISSION MAY CARRY EITHER KIND IN EITHER ARRAY. The wizard once served both file lists from
- * one schema whose `kind` was the manufacturing enum, so submissions sent before that was split have
- * fabrication labels sitting in `documents[]`, and they are already in the database. The backend
- * accepts both on purpose and files each link by its OWN label at publish, so those rows are correct
- * data rather than corrupt data.
+ * one schema whose `kind` was the manufacturing enum, and although that was split — with an audit
+ * confirming no submission carrying the mixed shape was ever stored — the backend still ACCEPTS both
+ * and files each link by its OWN label at publish. A caller on a cached pre-fix bundle can still post
+ * one, and the server treats it as correct data rather than refusing it, so this console has to be
+ * able to read it.
  *
  * ⚠️ SO THE CARD MUST NEVER INDEX ONE SOURCE MAP. `BLUEPRINT_DOCUMENT_KIND_LABELS[file.kind]` for a
  * `step` is `undefined` rendered into the DOM. This record spreads both, so the lookup is total by

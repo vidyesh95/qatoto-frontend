@@ -450,10 +450,11 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   unexplained 409. The `isPending` guard beside the rotation is what stops a keystroke mid-flight
   turning one duplicate-safe request into two real submissions.
   ⚠️ **THE TWO FILE VOCABULARIES ARE NOT INTERCHANGEABLE.** `documents[]` takes the four-value
-  document enum and `manufacturingFiles[]` the seven-value fabrication one; the wizard once served
-  both from one schema, so submissions with a fab label in `documents[]` are already stored. The
-  backend accepts both on purpose and files each link by its OWN label at publish, so those rows are
-  correct data — the admin card labels them from a merged map and marks them rather than refusing.
+  document enum and `manufacturingFiles[]` the seven-value fabrication one. The wizard once served
+  both from one schema; it was split, and no submission carrying the mixed shape was ever stored. The
+  backend still accepts both on purpose — a caller on a cached bundle posts the old shape — and files
+  each link by its OWN label at publish, so such a row is correct data. The admin card labels it from
+  a merged map and marks it rather than refusing.
   **Uploads do not exist**, so every teardown file is a pasted https URL and the walkthrough is a
   YouTube link through `extractYoutubeVideoId`; there is no dropzone and the step says why. The
   launch form is the exception: it uploads its heading image with the launch and each write-up image as
