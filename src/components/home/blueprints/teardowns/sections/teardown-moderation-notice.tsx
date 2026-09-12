@@ -54,9 +54,9 @@ export default function TeardownModerationNotice({
             This teardown is quarantined pending review
           </h2>
           <p className="mt-2 text-sm leading-6 text-foreground">
-            A rights holder has raised a claim against it. The files, the 3D model and the material
-            composition are withheld while it is reviewed. The page stays up so that anyone holding
-            a link knows why, and the publisher keeps their work.
+            A rights holder has raised a claim against it. The files, the 3D model, the parts list
+            and the material composition are withheld while it is reviewed. The page stays up so
+            that anyone holding a link knows why, and the publisher keeps their work.
           </p>
         </aside>
       );

@@ -705,6 +705,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
         },
       ],
     },
+    partsList: [],
     fasteners: [
       {
         standardCode: "ISO 4762",
@@ -855,6 +856,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     documents: [],
     partCount: null,
     assembly: null,
+    partsList: [],
     fasteners: [],
     manufacturingFiles: [],
     assemblySteps: [],
@@ -927,6 +929,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     documents: [PLACEHOLDER_DOCUMENTS.brushlessSchematic],
     partCount: 62,
     assembly: null,
+    partsList: [],
     fasteners: [],
     manufacturingFiles: [
       PLACEHOLDER_MANUFACTURING_FILES.brushlessTopCopperGerber,
@@ -1219,6 +1222,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
         },
       ],
     },
+    partsList: [],
     fasteners: [],
     manufacturingFiles: [],
     assemblySteps: [],
@@ -1313,6 +1317,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     ],
     partCount: 91,
     assembly: null,
+    partsList: [],
     fasteners: [],
     manufacturingFiles: [],
     assemblySteps: [],
@@ -1392,6 +1397,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     documents: [],
     partCount: 19,
     assembly: null,
+    partsList: [],
     fasteners: [],
     manufacturingFiles: [],
     assemblySteps: [],
@@ -1452,6 +1458,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     documents: [PLACEHOLDER_DOCUMENTS.sensorNodeDatasheet],
     partCount: 31,
     assembly: null,
+    partsList: [],
     fasteners: [],
     manufacturingFiles: [],
     assemblySteps: [],
@@ -1532,6 +1539,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     documents: [PLACEHOLDER_DOCUMENTS.heatExchangerSchematic],
     partCount: 8,
     assembly: null,
+    partsList: [],
     fasteners: [],
     manufacturingFiles: [],
     assemblySteps: [],
@@ -1596,6 +1604,36 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     documents: [],
     partCount: 17,
     assembly: null,
+    partsList: [
+      {
+        label: "Gearbox housing",
+        material: "Cast aluminium, sand-cast and unfinished",
+      },
+      {
+        label: "Input shaft",
+        material: "Case-hardened steel, 12 mm",
+      },
+      {
+        label: "Reduction gear, 41 tooth",
+        material: "Sintered steel",
+      },
+      {
+        label: "Reduction gear, 13 tooth",
+        material: "Sintered steel",
+      },
+      {
+        label: "Thrust washer",
+        material: "Bronze",
+      },
+      {
+        label: "Lip seal",
+        material: "Nitrile rubber",
+      },
+      {
+        label: "Housing bolts",
+        material: "Zinc-plated steel, M8",
+      },
+    ],
     fasteners: [],
     manufacturingFiles: [
       PLACEHOLDER_MANUFACTURING_FILES.gearboxCaseStep,
@@ -1670,6 +1708,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     documents: [],
     partCount: 44,
     assembly: null,
+    partsList: [],
     fasteners: [],
     manufacturingFiles: [],
     assemblySteps: [],
@@ -1737,6 +1776,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     documents: [],
     partCount: 77,
     assembly: null,
+    partsList: [],
     fasteners: [],
     manufacturingFiles: [],
     assemblySteps: [],
@@ -1792,6 +1832,36 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     documents: [],
     partCount: null,
     assembly: null,
+    partsList: [
+      {
+        label: "Actuator shell, upper",
+        material: "Glass-filled nylon",
+      },
+      {
+        label: "Actuator shell, lower",
+        material: "Glass-filled nylon",
+      },
+      {
+        label: "Solenoid coil",
+        material: "Enamelled copper on a steel bobbin",
+      },
+      {
+        label: "Plunger",
+        material: "Stainless steel, magnetised",
+      },
+      {
+        label: "Return spring",
+        material: "Music wire",
+      },
+      {
+        label: "Diaphragm",
+        material: "EPDM",
+      },
+      {
+        label: "Control board",
+        material: "FR-4, single sided",
+      },
+    ],
     fasteners: [],
     manufacturingFiles: [],
     assemblySteps: [],

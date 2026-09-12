@@ -24,6 +24,7 @@ import SpecificationList, {
 } from "@/components/home/blueprints/sections/specification-list";
 import AssemblyStepList from "@/components/home/blueprints/teardowns/sections/assembly-step-list";
 import FastenerBillOfMaterials from "@/components/home/blueprints/teardowns/sections/fastener-bill-of-materials";
+import TeardownPartsList from "@/components/home/blueprints/teardowns/sections/teardown-parts-list";
 import ManufacturingFileBundles from "@/components/home/blueprints/teardowns/sections/manufacturing-file-bundles";
 import RepairabilityIndexPanel from "@/components/home/blueprints/teardowns/sections/repairability-index-panel";
 import TeardownDecisionRow, {
@@ -221,6 +222,12 @@ export default async function TeardownDetailPage({
       <>
         <SpecificationList specifications={buildSpecifications(teardown)} />
         <RepairabilityIndexPanel repairabilityIndex={teardown.repairabilityIndex} />
+        {/*
+          THE PARTS LIST SITS ABOVE THE FASTENERS, because it is the contents page and they are a
+          line-item table about specific hardware. It renders on BOTH paths — a teardown may carry a
+          listing and a model at once — and is withheld with the rest of the payload.
+        */}
+        {isPayloadVisible ? <TeardownPartsList partsList={teardown.partsList} /> : null}
         {isPayloadVisible ? <FastenerBillOfMaterials fasteners={teardown.fasteners} /> : null}
       </>
     ) : (
@@ -236,6 +243,7 @@ export default async function TeardownDetailPage({
               className="max-w-md"
             />
             <RepairabilityIndexPanel repairabilityIndex={teardown.repairabilityIndex} />
+            <TeardownPartsList partsList={teardown.partsList} />
             <FastenerBillOfMaterials fasteners={teardown.fasteners} />
           </div>
         }

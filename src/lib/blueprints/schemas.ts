@@ -494,7 +494,12 @@ export type BlueprintVideo = z.infer<typeof BlueprintVideoSchema>;
  * One published file on a teardown: the schematic, the BOM, the assembly guide.
  *
  * `byteSize` is INTEGER BYTES for the same reason the duration is seconds. `formatFileSizeFromBytes`
- * (`src/lib/rnd/format.ts`) renders it.
+ * (`src/lib/rnd/format.ts`) renders it, and renders an em dash for `null`.
+ *
+ * ⚠️ NULLABLE SINCE AUTHORING LANDED, unlike a model's. A publisher pastes a link to a file that
+ * lives somewhere else, so nobody measured it: the server would have had to make a network request
+ * inside the publish transaction, or ask a moderator to type a number about a file they never
+ * opened. `null` says unmeasured. A seeded teardown still carries a figure, measured off disk.
  */
 export const BlueprintDocumentSchema = z
   .object({
@@ -502,7 +507,7 @@ export const BlueprintDocumentSchema = z
     kind: BlueprintDocumentKindSchema,
     title: z.string(),
     url: createHttpsOrSiteRelativeUrlSchema(2048),
-    byteSize: z.number().int().nonnegative(),
+    byteSize: z.number().int().nonnegative().nullable(),
     /** `null` when the backend never counted the pages. Not zero — a zero-page PDF is not a file. */
     pageCount: z.number().int().positive().nullable(),
   })
@@ -675,8 +680,10 @@ export type NumberTriple = z.infer<typeof NumberTripleSchema>;
  * `ProductThreeDimensionalModelSchema` (`src/lib/store/products.schemas.ts:212`) puts it there:
  * the model is fetched directly by the page, not taken away through a download gate.
  *
- * `byteSize` IS POSITIVE, not non-negative like a document's: a zero-byte model is an upload that
- * failed, and the contract should refuse it rather than mount a viewport over nothing.
+ * `byteSize` IS POSITIVE AND NON-NULL, where a document's and a fabrication file's are neither: a
+ * model is an UPLOAD, so a zero-byte one is a failure the contract should refuse rather than mount a
+ * viewport over, and there is no case where nobody measured it. A pasted link is the opposite on
+ * both counts.
  */
 export const TeardownModelFileSchema = z
   .object({
@@ -963,6 +970,10 @@ export type TeardownFastener = z.infer<typeof TeardownFastenerSchema>;
  * would grow `BLUEPRINT_DOCUMENT_KIND_LABELS`, put a per-kind `switch` inside the viewer, give a
  * CSV a `pageCount`, and make the index card's "{n} files" pill count two different claims as one.
  * Two arrays, two enums, two renderers.
+ *
+ * `byteSize` is nullable for the reason a document's is — a pasted link is a file nobody here
+ * measured — while a MODEL's stays positive and non-null, because a model is an upload and a
+ * zero-byte one is a failure rather than an unknown.
  */
 export const TeardownManufacturingFileSchema = z
   .object({
@@ -970,10 +981,29 @@ export const TeardownManufacturingFileSchema = z
     kind: TeardownManufacturingFileKindSchema,
     title: z.string(),
     url: createHttpsOrSiteRelativeUrlSchema(2048),
-    byteSize: z.number().int().positive(),
+    byteSize: z.number().int().positive().nullable(),
   })
   .strip();
 export type TeardownManufacturingFile = z.infer<typeof TeardownManufacturingFileSchema>;
+
+/**
+ * One part an author LISTED, as a table of contents rather than as a model.
+ *
+ * ⚠️ NOT `TeardownPart`, AND NOT PART OF AN ASSEMBLY. The authoring wizard collects a label and a
+ * material and nothing else — there is no upload route, so there is no geometry, no node name and
+ * no `.glb` — and its own parts step promises the author that listing them means "your teardown
+ * reads as a list rather than a model". This is where that promise is kept.
+ *
+ * It is not the bill of materials (`fasteners`) and not the composition (`materials`): it is what
+ * came out when somebody opened the unit, in the order they took it apart.
+ */
+export const TeardownListedPartSchema = z
+  .object({
+    label: z.string(),
+    material: z.string(),
+  })
+  .strip();
+export type TeardownListedPart = z.infer<typeof TeardownListedPartSchema>;
 
 /**
  * One numbered disassembly step — the "01", "02" of the walkthrough.
@@ -1822,6 +1852,21 @@ export const TeardownBlueprintSchema = z
     partCount: z.number().int().positive().nullable(),
     /** `null` when no model was published. A NULLABLE OBJECT — a model without parts is not a view. */
     assembly: TeardownAssemblySchema.nullable(),
+    /**
+     * The parts the author listed. `[]` for every teardown published before authoring existed, and
+     * for every one whose author listed none.
+     *
+     * ⚠️ IT COEXISTS WITH `assembly` RATHER THAN SUBSTITUTING FOR IT. Today a submission produces
+     * one or the other, because a wizard cannot upload a model — but when uploads land, a teardown
+     * may carry a listing AND an assembly ("twelve parts listed, nine of them modelled") with no
+     * conversion. Neither is derived from the other, exactly as `partCount` is derived from
+     * neither.
+     *
+     * ⚠️ WITHHELD BY A QUARANTINE, beside `materials`. It carries no file, so the "it withholds
+     * files" shorthand does not decide it — but what a rights claim disputes is the survey, and this
+     * is the survey's findings about somebody else's product in the plainest form they take.
+     */
+    partsList: z.array(TeardownListedPartSchema),
     /** `[]` when the author listed none. Arrays, never null, for the reason `documents` gives. */
     fasteners: z.array(TeardownFastenerSchema),
     manufacturingFiles: z.array(TeardownManufacturingFileSchema),

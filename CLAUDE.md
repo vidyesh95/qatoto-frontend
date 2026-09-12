@@ -649,7 +649,7 @@ count in a heading is a thing that goes stale the first time somebody adds one:
     # `subjectKind` IS DELIBERATELY ABSENT FROM THIS LIST. It is a `z.literal` with one inhabitant,
     # so there is nothing for a renderer to display; if it ever widens to `TEARDOWN_SUBJECT_KINDS`,
     # add it back here on the same day.
-    for field in assembly fasteners manufacturingFiles assemblySteps repairabilityIndex \
+    for field in assembly partsList fasteners manufacturingFiles assemblySteps repairabilityIndex \
                  simulationTelemetry commentCount saveCount provenance materials \
                  moderationState storeProductClass; do
       rg -q "teardown\.$field\b" src/components/home/blueprints || echo "UNRENDERED $field"
