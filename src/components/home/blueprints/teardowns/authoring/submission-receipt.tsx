@@ -7,7 +7,7 @@ import type { TeardownSubmissionReceipt } from "@/lib/blueprints/authoring.schem
 import { formatIsoInstantLabel } from "@/lib/store/format";
 
 /**
- * THE TERMINAL SCREEN, and the one place this surface admits what it is.
+ * THE TERMINAL SCREEN.
  *
  * ⚠️ A 202 IS NOT A RESULT. The submission was accepted; the verdict does not exist. Nothing here
  * may name an outcome, promise a timescale, or hand back a public link — `TeardownSubmissionReceipt`
@@ -15,15 +15,15 @@ import { formatIsoInstantLabel } from "@/lib/store/format";
  * lost. `MutationAcceptedNotice` is the repo's component for exactly this branch and it says so in
  * its own doc: "accepted, not decided."
  *
- * ⚠️ THE SECOND PARAGRAPH IS THE HONEST DISCLOSURE AND IT IS NOT OPTIONAL COPY. Nothing was stored.
- * There is no `blueprint` table, no submission endpoint and no review queue, so this validated a
- * real payload against the real contract and then let it go. Saying that once, here, is what makes
- * the whole wizard something other than a ghost control — and it is said HERE rather than as a
- * banner on every step, because a warning repeated five times is a warning nobody finishes reading.
+ * ⚠️ THIS SCREEN USED TO CARRY A DESTRUCTIVE PANEL SAYING NOTHING WAS STORED, and it was the right
+ * copy for as long as it was true: there was no table, no route and no queue, and saying so once
+ * here is what kept the wizard from being a ghost control. All three exist now, so the panel is
+ * gone rather than softened. What replaced it is the two things that are still true, in plain
+ * prose, because neither is alarming.
  *
- * ⚠️ AND IT DOES NOT POLL. The R&D surfaces poll a 202 to a verdict, and copying that here would
- * re-read the same fixture forever while implying somebody is reviewing. There is no queue. The
- * copy says that rather than a spinner implying otherwise.
+ * ⚠️ AND IT DOES NOT POLL. The R&D surfaces poll a 202 to a verdict; copying that here would put a
+ * spinner in front of an author implying somebody is reading their survey this minute. A moderator
+ * reads it when they read it, and My teardowns is where the answer appears.
  */
 export default function SubmissionReceipt({
   receipt,
@@ -55,19 +55,15 @@ export default function SubmissionReceipt({
         </div>
       </dl>
 
-      <div className="mt-5 rounded-xl border border-destructive/40 bg-destructive/5 p-4">
-        <h2 className="text-sm font-medium text-destructive">
-          Nothing was actually stored, and you should know that before you close this
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-foreground">
-          Qatoto cannot accept teardowns yet. There is no database behind this form and no queue of
-          moderators reading submissions. Everything you typed was checked against the real rules
-          (the same ones a published teardown obeys) and then discarded when you pressed submit.
-          Keep your own copy.
+      <div className="mt-5 max-w-prose">
+        <h2 className="text-sm font-medium text-foreground">What happens next</h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          A moderator reads it. There is no queue position to watch and nothing will email you — the
+          decision shows up on My teardowns, whenever you next look.
         </p>
-        <p className="mt-2 text-sm leading-6 text-foreground">
-          This exists so the process can be walked and argued with before it is real. When
-          submissions open, this screen will hand you a way to track yours.
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          Qatoto stored your survey, not your files. Every file here is a link to where it already
+          lives, so keep those links working.
         </p>
       </div>
 

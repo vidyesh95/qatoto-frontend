@@ -77,11 +77,30 @@ export default function TeardownWizard() {
   const submitMutation = useSubmitTeardownMutation();
   // ⚠️ THE LAZY, REF-BACKED HOOK, NOT `useState(newIdempotencyKey())`. `crypto.randomUUID()` in a
   // `useState` initializer runs during the server prerender and `cacheComponents` refuses a
-  // non-deterministic value produced there — it fails the build, not a test. The key rotates only
-  // after a success; a retry of a failed attempt must carry the original.
+  // non-deterministic value produced there — it fails the build, not a test.
+  //
+  // The key is read once when Submit is pressed, rotated on any edit and after a success, and KEPT
+  // across a retry of a failed attempt.
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
 
   function applyDraftPatch(draftPatch: Partial<TeardownWizardDraft>): void {
+    /*
+     * ⚠️ AN EDIT LANDING MID-FLIGHT IS IGNORED, AND THIS GUARD IS WHAT MAKES THE ROTATION BELOW
+     * SAFE. Without it a keystroke arriving while a submission is in flight would rotate the key out
+     * from under it, so a retry of that same attempt would carry a different one — turning one
+     * duplicate-safe request into two real submissions, which is the failure the mechanism exists to
+     * prevent.
+     */
+    if (submitMutation.isPending) return;
+
+    /*
+     * ⚠️ ANY EDIT ROTATES THE IDEMPOTENCY KEY, because the server FINGERPRINTS THE BODY. Reusing a
+     * key with an edited draft answers 409, so without this the wizard's dominant failure mode would
+     * be: submit, read a 422 naming a field, fix that field, submit again, and get an unexplained
+     * "already used" refusal. The case-study composer rotates in the same place for the same reason.
+     */
+    resetIdempotencyKey();
+
     setDraft((previousDraft) => ({ ...previousDraft, ...draftPatch }));
 
     /**
