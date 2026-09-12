@@ -433,18 +433,27 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   ⚠️ **NO SIGNAL SUPPRESSES THE WHOLE BLOCK** — `getTeardownMarketSignal` returns `null` rather than
   an empty pair, so no component can render "No builds yet", "No listings" or an empty zero-state
   card. An empty state here would read as a VERDICT on the product.
-- **THE PUBLISH FLOW IS A REHEARSAL AND SAYS SO ONCE.** `/blueprints/teardowns/new` is a real
-  five-step wizard — real Zod validation, a real four-clause attestation gate, a real idempotency key
-  minted per attempt — over `authoring.api.ts`, which **stores nothing**, because there is no
-  `blueprint` table. ⚠️ **THE DISCLOSURE IS NOT OPTIONAL COPY AND LIVES IN EXACTLY ONE PLACE**:
-  `submission-receipt.tsx`, after a submit. A banner on every step is a warning nobody finishes
-  reading; no banner at all is a ghost control.
+- **THE PUBLISH FLOW IS WIRED, AND THIS BULLET USED TO SAY THE OPPOSITE.** `/blueprints/teardowns/new`
+  is a real five-step wizard — real Zod validation, a real four-clause attestation gate, a real
+  idempotency key minted per attempt — over `authoring.api.ts`, which is now one `sendJson` against
+  `POST /blueprints/teardowns` and answers **202** with `{submissionId, moderationState, receivedAt}`.
+  ⚠️ **THE "NOTHING WAS STORED" DISCLOSURE IS GONE FROM `submission-receipt.tsx`**, and deleting it
+  was the point rather than a tidy-up: there is a table, a route and a queue, so the copy was simply
+  false. What replaced it is what is still true — a moderator reads it, nothing will email you, and
+  Qatoto stored the survey but not the files.
   ⚠️ **DO NOT ADD A POLL.** The R&D surfaces poll a 202 to a verdict (`refetchInterval` as a function
-  of `query.state.data`); against a mock that re-reads the same fixture forever while implying a
-  moderator is working. There is no queue and the receipt says so.
-  ⚠️ **THE MOCK ENFORCES ONE REAL RULE ON PURPOSE** — a duplicate `subjectProductName` answers 409 —
-  because without it the failure branch of every caller is unreachable, which is unverified code by
-  the same standard the uncalled-hook audit applies.
+  of `query.state.data`). The reason not to copy that here has changed and the rule has not: a
+  spinner in front of an author implies somebody is reading their survey this minute, and a moderator
+  reads a queue on their own schedule. My teardowns is where the answer appears.
+  ⚠️ **THE IDEMPOTENCY KEY ROTATES ON ANY EDIT**, because the server fingerprints the body — without
+  it the dominant failure is: submit, read a 422, fix the named field, resubmit, and get an
+  unexplained 409. The `isPending` guard beside the rotation is what stops a keystroke mid-flight
+  turning one duplicate-safe request into two real submissions.
+  ⚠️ **THE TWO FILE VOCABULARIES ARE NOT INTERCHANGEABLE.** `documents[]` takes the four-value
+  document enum and `manufacturingFiles[]` the seven-value fabrication one; the wizard once served
+  both from one schema, so submissions with a fab label in `documents[]` are already stored. The
+  backend accepts both on purpose and files each link by its OWN label at publish, so those rows are
+  correct data — the admin card labels them from a merged map and marks them rather than refusing.
   **Uploads do not exist**, so every teardown file is a pasted https URL and the walkthrough is a
   YouTube link through `extractYoutubeVideoId`; there is no dropzone and the step says why. The
   launch form is the exception: it uploads its heading image with the launch and each write-up image as
@@ -453,9 +462,15 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   free-text percent field invites somebody to type a datasheet figure, which the composition table
   then renders looking exactly like a measurement.
   **`/studio/blueprints` is management only** — the wizard is mounted once, in `(home)`, and studio
-  links to it. The two do not join, because `submitTeardownForReview` persists nothing; joining them
-  would need fake in-memory persistence that loses work on reload, or a second `localStorage` key,
-  which is forbidden.
+  links to it. A submission made this session DOES appear there, because the mutation invalidates
+  that query's key; the old note saying the two could not join belonged to the mock.
+  **`/admin/teardowns` is the review queue** (`moderate_content`, oldest first), and it is the only
+  surface a pending teardown exists on — there is no public address until somebody publishes it, so
+  the card carries everything the publisher sent. Publishing asks the moderator for a `thumbnailUrl`
+  and a `difficulty` the wizard never collects, because the read contract requires both. Import
+  boundary: `rg "blueprints/teardown-moderation" src/components/home src/components/studio` must
+  print nothing — and the path prefix is load-bearing, since a bare `teardown-moderation` also
+  matches the public quarantine banner.
   **`/blueprints/showcase/new` IS WIRED, NOT A REHEARSAL**, over `showcase-authoring.api.ts`: one
   multipart `POST /blueprints/showcases` (the `draft` JSON part first, then `headingImage`, with an
   `Idempotency-Key`) answering 201 with a `pending_review` receipt, and "Add an image" uploads each
