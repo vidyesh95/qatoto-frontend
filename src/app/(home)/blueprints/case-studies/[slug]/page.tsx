@@ -1,12 +1,26 @@
 import type { Metadata } from "next";
 
 import CaseStudyDetailPage from "@/components/home/blueprints/case-studies/case-study-detail-page";
-import { getBlueprintByCategory, listBlueprintSlugsByCategory } from "@/lib/blueprints/api";
+import {
+  getPublicCaseStudy,
+  listPublicCaseStudySlugs,
+} from "@/lib/blueprints/case-study-public.api";
+import { withSentinelValues } from "@/lib/static-params";
 
-/** See the note in `teardowns/[slug]/page.tsx` about the deliberately absent sentinel. */
+/**
+ * Prerender every visible slug.
+ *
+ * THE SENTINEL IS HERE NOW, and the note this replaced said to add it at exactly this moment: the
+ * list comes from the backend, so it can be empty — a database with nothing published yet, or a
+ * server that is down. An empty array makes Next treat the route as having no paths at all, which
+ * is not the same as having none today.
+ */
 export async function generateStaticParams() {
-  const slugs = await listBlueprintSlugsByCategory("case_study");
-  return slugs.map((slug) => ({ slug }));
+  const slugsResponse = await listPublicCaseStudySlugs();
+  // `?? []` is right here and nowhere else on this surface: Next's contract is an array, and a
+  // failed prerender list must not take the build down.
+  const slugs = slugsResponse.success ? slugsResponse.data : [];
+  return withSentinelValues(slugs).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -15,11 +29,12 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const caseStudy = await getBlueprintByCategory("case_study", slug);
+  const detailResponse = await getPublicCaseStudy(slug);
 
   const robots = { index: false, follow: false } as const;
 
-  if (caseStudy === null) return { robots, title: "Case studies · Blueprints" };
+  if (!detailResponse.success) return { robots, title: "Case studies · Blueprints" };
+  const caseStudy = detailResponse.data.caseStudy;
 
   return {
     robots,

@@ -1,14 +1,28 @@
-// TRANSPORT: mock — every getter below serves `@/mocks/blueprints-mocks`. No network call is
-// made yet, and there is no `/blueprints` read on the Express backend to make one against.
+// TRANSPORT: mock — ONE getter is left, and it is the last mock on this surface.
 //
-// THE GETTER IS THE POINT. `src/lib/cms.ts` is the precedent: import sites see only these
-// functions, never the fixture array, so wiring a real endpoint later is an edit to this file
-// rather than a rewrite of every component. `@/mocks/anime-mocks` was wired the other way — its
-// components imported the arrays directly — and that is exactly why the surface stayed mock.
+// ⚠️ WHAT THIS FILE USED TO BE. Every list, detail, slug-list, option-list and facet read for all
+// three blueprint arms. They are gone, arm by arm, to `teardown-public.api.ts`,
+// `showcase-public.api.ts` and `case-study-public.api.ts` — DELETED rather than kept as a fallback,
+// because the `remote ?? MOCK` shape this header used to promise is the exact failure those files
+// argue against: it makes "the backend is down" and "there is nothing here" the same page, which on
+// a public surface means a visitor is shown invented builds under real headings with nothing to say
+// so. `catalog.api.ts` is the model instead, and every page branches on `ActionResponse`.
 //
-// WHEN THE BACKEND ARRIVES, each getter becomes the `remote ?? MOCK` shape `cms.ts:48-71` uses,
-// and the parse below stops being a fixture check and starts being CLAUDE.md Pattern 2 — an
-// untrusted payload through `.strip()`. The parse is written now so that swap changes one line.
+// Deleted here, in order: `listTeardowns`, `listTeardownOptions`, `listBlueprintTagFacets` (the
+// teardown round); then `listBlueprints`, `listCaseStudies`, `listCaseStudyOptions`,
+// `listRelatedCaseStudies`, `getBlueprint`, `getBlueprintByCategory`, `listBlueprintSlugs`,
+// `listBlueprintSlugsByCategory`, the three page-limit constants the getters used, and the whole
+// fixture cursor implementation (`encodeBlueprintCursor`, `resolveStartIndex`, `toBlueprintPage`).
+//
+// ⚠️ `listRelatedCaseStudies` HAS NO REPLACEMENT HERE ON PURPOSE. Resolving an authored slug list is
+// a VISIBILITY decision, so it belongs to the server: the detail read returns
+// `{ caseStudy, relatedLessons }` with the invisible edges already dropped and the author's order
+// kept. A separate call could have answered 200 while the detail 404'd.
+//
+// WHAT SURVIVES, and why: `getTeardownMarketSignal`, because the market signal has no table on
+// either side and its store half would otherwise join REAL listings onto an invented product — see
+// its own docblock. `SHOWCASE_PAGE_LIMIT`, because the showcase feed skeleton draws that many
+// placeholder rows and a literal there could drift from the page it stands in for.
 
 import {
   MOCK_BLUEPRINTS,
@@ -19,13 +33,8 @@ import {
   type BlueprintCategory,
   type BlueprintModerationState,
   type BlueprintOfCategory,
-  type BlueprintPage,
   BlueprintSchema,
-  type CaseStudyBlueprint,
-  type BlueprintDiscipline,
-  RESERVED_BLUEPRINT_SLUGS,
   type ShowcaseBlueprint,
-  type ShowcaseSort,
   type TeardownBlueprint,
   type TeardownStoreListingSignal,
   TeardownStoreListingSignalSchema,
@@ -46,20 +55,6 @@ function parseBlueprint(candidate: unknown): Blueprint {
 /** Newest first — the order every rail and the hub index rely on. */
 function byNewestFirst(left: Blueprint, right: Blueprint): number {
   return Date.parse(right.createdAt) - Date.parse(left.createdAt);
-}
-
-/**
- * A slug a static route already owns, so no blueprint may answer on it.
- *
- * `/blueprints/showcase` is a list route; a blueprint slugged `showcase` would be permanently
- * unreachable, and a visitor would get a 200 showing the WRONG page — worse than a 404. The
- * guard lives here rather than in a route file because `getBlueprint`, `listBlueprintSlugs` and
- * the sitemap each reach the data independently, and a guard in one of them leaks through the
- * other two. Derived from `BLUEPRINT_CATEGORY_SEGMENTS` so the segments and the guard cannot drift,
- * plus `new`, which the static create routes under `teardowns/` and `showcase/` own.
- */
-function isReservedSlug(slug: string): boolean {
-  return RESERVED_BLUEPRINT_SLUGS.includes(slug);
 }
 
 /**
@@ -98,32 +93,22 @@ const PUBLICLY_LISTABLE_MODERATION_STATES: readonly BlueprintModerationState[] =
   "published",
   "flagged",
 ];
-const PUBLICLY_READABLE_MODERATION_STATES: readonly BlueprintModerationState[] = [
-  "published",
-  "flagged",
-  "quarantined",
-];
 
 /**
  * Whether one blueprint may be handed to the public at all.
  *
- * ⚠️ ONLY THE TEARDOWN ARM CARRIES `moderationState` TODAY, so this reads it off the arm rather
- * than off the union. Showcases and case studies are unmoderated fixtures and stay listable; when
- * they gain the field this switches to reading the shared shape and the `category` check goes.
+ * ⚠️ THE `category` BYPASS IS GONE. It read "only the teardown arm carries `moderationState` today
+ * … when they gain the field this switches to reading the shared shape and the `category` check
+ * goes", and case studies have now gained it. The remaining bypass is the SHOWCASE arm's, which is
+ * served entirely by `showcase-public.api.ts` and never reaches this function — this file's
+ * showcase getters were deleted when that landed.
  */
 function isBlueprintVisible(
   blueprint: Blueprint,
   allowedStates: readonly BlueprintModerationState[],
 ): boolean {
-  if (blueprint.category !== "teardown") return true;
+  if (blueprint.category === "showcase") return true;
   return allowedStates.includes(blueprint.moderationState);
-}
-
-export async function listBlueprints(): Promise<Blueprint[]> {
-  "use cache";
-  return MOCK_BLUEPRINTS.map(parseBlueprint)
-    .filter((blueprint) => isBlueprintVisible(blueprint, PUBLICLY_LISTABLE_MODERATION_STATES))
-    .toSorted(byNewestFirst);
 }
 
 /**
@@ -153,57 +138,6 @@ async function listBlueprintsByCategory<TCategory extends BlueprintCategory>(
   return matching.toSorted(byNewestFirst);
 }
 
-/** One choice in the case-study form's "Related lessons" selects. */
-export interface CaseStudyOption {
-  readonly slug: string;
-  readonly title: string;
-}
-
-/**
- * Every LISTABLE case study as a slug and a title, sorted by title, for the case-study form.
- *
- * THE LIST GATE, for `listTeardownOptions`' reason: a related lesson is a recommendation, and a
- * lesson a moderator has withheld from every index must not come back through a new one's links.
- * Unpaged, and narrowed to two strings before it crosses to a client component.
- */
-export async function listCaseStudyOptions(): Promise<CaseStudyOption[]> {
-  "use cache";
-  const caseStudies = await listBlueprintsByCategory("case_study");
-  return caseStudies
-    .map((caseStudy) => ({ slug: caseStudy.slug, title: caseStudy.title }))
-    .toSorted((firstOption, secondOption) => firstOption.title.localeCompare(secondOption.title));
-}
-
-export async function getBlueprint(slug: string): Promise<Blueprint | null> {
-  "use cache";
-  if (isReservedSlug(slug)) return null;
-  const match = MOCK_BLUEPRINTS.find((blueprint) => blueprint.slug === slug);
-  if (match === undefined) return null;
-
-  // A DRAFT, A PENDING SUBMISSION AND A REMOVED ROW ARE ALL `null` HERE, which the route turns
-  // into a 404. The author's own view of an unpublished row is a studio read, not this one — an
-  // owner check on a public getter is an authorization decision, and this is the untrusted layer.
-  const blueprint = parseBlueprint(match);
-  return isBlueprintVisible(blueprint, PUBLICLY_READABLE_MODERATION_STATES) ? blueprint : null;
-}
-
-/**
- * One blueprint, but only if it lives under the category that was asked for.
- *
- * A teardown slug requested at `/blueprints/showcase/<slug>` must 404. Returning it would render
- * a teardown through the launch-feed layout, reading arm fields that are not there — so the
- * category is part of the lookup, not a thing the page checks afterwards and forgets to.
- */
-export async function getBlueprintByCategory<TCategory extends BlueprintCategory>(
-  category: TCategory,
-  slug: string,
-): Promise<BlueprintOfCategory<TCategory> | null> {
-  "use cache";
-  const blueprint = await getBlueprint(slug);
-  if (blueprint === null) return null;
-  return isBlueprintOfCategory(blueprint, category) ? blueprint : null;
-}
-
 // --- Keyset paging ------------------------------------------------------------
 //
 // KEYSET, NOT OFFSET, matching the only navigable paging control in this repo. Offset pages exist
@@ -216,68 +150,8 @@ export async function getBlueprintByCategory<TCategory extends BlueprintCategory
 // failure this surface argues against everywhere else. These rise when there is real inventory;
 // they are not a considered product decision about how many teardowns fit on a page.
 
-/** 12 teardown fixtures → 2 pages. Eight is also two clean rows of the four-column grid. */
-export const TEARDOWNS_PAGE_LIMIT = 8;
 /** 10 showcase fixtures → 2 pages (6 + 4), under either sort and with no tag applied. */
 export const SHOWCASE_PAGE_LIMIT = 6;
-/** 10 case-study fixtures → 2 pages (6 + 4), with no discipline applied. */
-export const CASE_STUDIES_PAGE_LIMIT = 6;
-
-/**
- * The cursor is the last row's id, base64url-encoded.
- *
- * THE ENCODING IS THE POINT, not the payload. `CursorPageControl` requires an OPAQUE token — never
- * parsed, compared or incremented — and a bare `bp-007` sitting in the query string invites
- * exactly that. Encoding makes the opacity real rather than aspirational, and lets the backend
- * swap in its own encoding (a sort key plus a tie-break id) without a caller noticing.
- *
- * An id-only cursor is valid under EVERY order, which is why the showcase feed can offer two sorts
- * without a second cursor scheme: a hand-edited `?sort=top&cursor=<cursor minted under newest>`
- * still resolves (the id exists in both orders) and starts after that row in the `top` order.
- * The backend will encode the sort key beside the id and 422 a foreign cursor — and there is still
- * no `error` arm to render that into, deliberately (`todo.md` §1a).
- */
-function encodeBlueprintCursor(blueprintId: string): string {
-  return Buffer.from(blueprintId, "utf8").toString("base64url");
-}
-
-/**
- * Where the requested page starts.
- *
- * AN UNRESOLVABLE CURSOR IS DROPPED AND THE FIRST PAGE IS SERVED, rather than erroring. That is
- * this repo's documented behaviour for a hand-edited query param on a server page — see
- * `factory-directory-page.tsx:57-58` on `readEnumParam` turning `?capabilityKind=banana` into "no
- * filter" instead of a 422 page. The backend will answer 422 for a cursor it did not mint, and
- * handling that is the job of the `error` arm these view states deliberately do not have yet.
- */
-function resolveStartIndex(rows: readonly { id: string }[], cursor: string | undefined): number {
-  if (cursor === undefined) return 0;
-
-  const decodedId = Buffer.from(cursor, "base64url").toString("utf8");
-  const cursorIndex = rows.findIndex((row) => row.id === decodedId);
-  return cursorIndex === -1 ? 0 : cursorIndex + 1;
-}
-
-/** Slice one keyset page out of an already filtered and sorted list. */
-function toBlueprintPage<TBlueprint extends { id: string }>(
-  rows: readonly TBlueprint[],
-  cursor: string | undefined,
-  limit: number,
-): BlueprintPage<TBlueprint> {
-  const startIndex = resolveStartIndex(rows, cursor);
-  const items = rows.slice(startIndex, startIndex + limit);
-  const lastItem = items.at(-1);
-  const hasMore = startIndex + items.length < rows.length;
-
-  return {
-    items,
-    // Both halves agree or the control renders nothing — `cursor-page-control.tsx:25-27`.
-    page: {
-      nextCursor: hasMore && lastItem !== undefined ? encodeBlueprintCursor(lastItem.id) : null,
-      hasMore,
-    },
-  };
-}
 
 // --- The three list reads -----------------------------------------------------
 //
@@ -286,65 +160,6 @@ function toBlueprintPage<TBlueprint extends { id: string }>(
 // below is the one a real endpoint answers — compare `listForumThreads({ board, cursor })` in
 // `src/lib/store/forum.api.ts:46`. When the backend lands, these filters become query params and
 // the predicates are deleted rather than moved into a component.
-
-export interface ListShowcasesFilter {
-  readonly tag?: string;
-  /** Omitted means `DEFAULT_SHOWCASE_SORT`. */
-  readonly sort?: ShowcaseSort;
-  readonly cursor?: string;
-  readonly limit?: number;
-}
-
-export interface ListCaseStudiesFilter {
-  readonly discipline?: BlueprintDiscipline;
-  readonly cursor?: string;
-  readonly limit?: number;
-}
-
-export async function listCaseStudies(
-  filter: ListCaseStudiesFilter = {},
-): Promise<BlueprintPage<CaseStudyBlueprint>> {
-  "use cache";
-  const caseStudies = await listBlueprintsByCategory("case_study");
-
-  const matching = caseStudies
-    .filter(
-      (caseStudy) => filter.discipline === undefined || caseStudy.discipline === filter.discipline,
-    )
-    .toSorted(byNewestFirst);
-
-  return toBlueprintPage(matching, filter.cursor, filter.limit ?? CASE_STUDIES_PAGE_LIMIT);
-}
-
-/**
- * The case studies a lesson points at, in the order it names them.
- *
- * IT RESOLVES SLUGS; IT DOES NOT RANK. `relatedLessonSlugs` is an authored list, so the author's
- * order is the answer and a "relevance" sort here would be this layer inventing an opinion the row
- * does not carry.
- *
- * ⚠️ IT GOES THROUGH `isReservedSlug` LIKE EVERY OTHER READ. That guard is in this module rather
- * than a route file precisely because each getter reaches the data independently — a fourth entry
- * point that skipped it would be the leak the comment above `isReservedSlug` warns about.
- *
- * AN UNRESOLVABLE SLUG IS DROPPED, not rendered as a dead row. It is the same call `resolveStartIndex`
- * makes for a cursor that no longer matches: a stale reference is an absence, and absence renders
- * nothing.
- */
-export async function listRelatedCaseStudies(
-  slugs: readonly string[],
-): Promise<CaseStudyBlueprint[]> {
-  "use cache";
-  if (slugs.length === 0) return [];
-
-  const caseStudies = await listBlueprintsByCategory("case_study");
-  const caseStudiesBySlug = new Map(caseStudies.map((caseStudy) => [caseStudy.slug, caseStudy]));
-
-  return slugs
-    .filter((slug) => !isReservedSlug(slug))
-    .map((slug) => caseStudiesBySlug.get(slug))
-    .filter((caseStudy) => caseStudy !== undefined);
-}
 
 // --- Market signal ------------------------------------------------------------
 //
@@ -420,42 +235,3 @@ export async function getTeardownMarketSignal(
  *
  * The case-study getters below stay: that arm has no tables yet.
  */
-
-/**
- * Every published slug, for `generateStaticParams`.
- *
- * NO `withSentinelValues` HERE, and that is deliberate rather than an oversight. The sentinel
- * exists because a failed backend read returns `[]` and `cacheComponents` throws
- * `EmptyGenerateStaticParamsError` on an empty list. A fixture array cannot be empty, so the
- * blogs precedent (`src/app/(information)/blogs/[slug]/page.tsx`) applies instead. Add the
- * sentinel at the same moment this starts reading a real endpoint, not before — and when you do,
- * FILTER FIRST AND WRAP SECOND. `withSentinelValues(filtered)` is right; filtering the wrapped
- * list can drop the sentinel itself, which is the exact throw the sentinel exists to prevent.
- */
-export async function listBlueprintSlugs(): Promise<string[]> {
-  "use cache";
-  return MOCK_BLUEPRINTS.map(parseBlueprint)
-    .filter((blueprint) => isBlueprintVisible(blueprint, PUBLICLY_READABLE_MODERATION_STATES))
-    .map((blueprint) => blueprint.slug)
-    .filter((slug) => !isReservedSlug(slug));
-}
-
-/**
- * One category's slugs, for that category's nested `generateStaticParams`.
- *
- * ⚠️ IT USES THE **READABLE** GATE, NOT THE LISTABLE ONE. A quarantined teardown is absent from
- * every index and still answers on its own URL with a stated notice, so its slug must be
- * prerendered — filtering it out here would give an existing link a 404 and lose the notice, which
- * is the one thing a reader who followed that link needs.
- */
-export async function listBlueprintSlugsByCategory(category: BlueprintCategory): Promise<string[]> {
-  "use cache";
-  return MOCK_BLUEPRINTS.map(parseBlueprint)
-    .filter(
-      (blueprint) =>
-        blueprint.category === category &&
-        isBlueprintVisible(blueprint, PUBLICLY_READABLE_MODERATION_STATES),
-    )
-    .map((blueprint) => blueprint.slug)
-    .filter((slug) => !isReservedSlug(slug));
-}

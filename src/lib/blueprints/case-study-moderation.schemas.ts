@@ -46,8 +46,16 @@ export const CaseStudyReviewItemSchema = z
   .object({
     submissionId: z.string(),
     submittedAt: IsoDateTimeSchema,
-    /** Who sent it. The backend refuses a moderator deciding their own (403). */
-    author: z.object({ displayName: z.string(), handle: z.string() }).strip(),
+    /**
+     * Who sent it. The backend refuses a moderator deciding their own (403).
+     *
+     * ⚠️ `handle` IS NULLABLE, and it was not. `user.handle` is nullable — nothing guarantees an
+     * account has one — so the review queue can legitimately produce `null`, and a non-nullable
+     * field here would have made the whole ROW refuse to parse: a moderator would see a card
+     * vanish rather than a byline without a handle. `BlueprintAuthorSchema` and the showcase
+     * queue's own author shape are both nullable for the same reason.
+     */
+    author: z.object({ displayName: z.string(), handle: z.string().nullable() }).strip(),
     authorRelationship: z.enum(CASE_STUDY_AUTHOR_RELATIONSHIPS),
     /** What the writer vouched for, so a moderator can hold the case study to it. */
     acceptedStatementIds: z.array(z.enum(CASE_STUDY_STATEMENT_IDS)),

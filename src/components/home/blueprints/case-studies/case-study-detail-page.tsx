@@ -1,5 +1,14 @@
-// TRANSPORT: mock — async server component. Reads `getBlueprintByCategory` and
-// `listRelatedCaseStudies` from `@/lib/blueprints/api`, which serve fixtures from
+// TRANSPORT: server-fetch — async server component. Reads `getPublicCaseStudy` from
+// `@/lib/blueprints/case-study-public.api`, which calls the Express backend and returns the case
+// study WITH its related lessons already resolved.
+//
+// ⚠️ A COMPANY WITH `name: null` IS A WITHHELD NAME, AND THE SERVER DID THAT. A first-hand writer
+// may keep a company's name from readers; the backend's one serializer nulls it on every public
+// read, and `buildWithheldCompanyLabel` below is what a reader sees instead. There is nothing here
+// to recover and nothing to work around.
+//
+// Superseded — this file previously read `getBlueprintByCategory` and
+// `listRelatedCaseStudies` from `@/lib/blueprints/api`, which served fixtures from
 // `@/mocks/blueprints-mocks`.
 //
 // A REPORT, NOT AN ESSAY, AND THE SECTION ORDER IS FIXED. Problem, context, what they did, what to
@@ -24,7 +33,7 @@ import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-ta
 import SpecificationList, {
   type SpecificationRow,
 } from "@/components/home/blueprints/sections/specification-list";
-import { getBlueprintByCategory, listRelatedCaseStudies } from "@/lib/blueprints/api";
+import { getPublicCaseStudy } from "@/lib/blueprints/case-study-public.api";
 import { formatBlueprintMetricValue } from "@/lib/blueprints/format";
 import {
   BLUEPRINT_DISCIPLINE_LABELS,
@@ -32,14 +41,18 @@ import {
   CASE_STUDY_AUTHOR_RELATIONSHIP_READER_NOTES,
   CASE_STUDY_WITHHELD_COMPANY_LABEL,
   type CaseStudyBlueprint,
+  type CaseStudyOption,
 } from "@/lib/blueprints/schemas";
 import { formatCentsLabel, formatCountLabel } from "@/lib/store/format";
 
 export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
-  const caseStudy = await getBlueprintByCategory("case_study", slug);
-  if (caseStudy === null) notFound();
-
-  const relatedLessons = await listRelatedCaseStudies(caseStudy.relatedLessonSlugs);
+  const detailResponse = await getPublicCaseStudy(slug);
+  /*
+   * A case study awaiting review or sent back is a 404 here, identical to a slug that never
+   * existed — the two are indistinguishable on purpose, so a stranger cannot probe the queue.
+   */
+  if (!detailResponse.success) notFound();
+  const { caseStudy, relatedLessons } = detailResponse.data;
 
   return (
     <article className="px-4 pt-5 pb-12 lg:px-6">
@@ -266,11 +279,15 @@ function Sources({ caseStudy }: { caseStudy: CaseStudyBlueprint }) {
 /**
  * Other lessons this one points at.
  *
- * THE SLUGS ARE RESOLVED BY THE GETTER, not here — `listRelatedCaseStudies` drops the ones that no
- * longer exist, so a stale reference is an absence rather than a dead row. This component receives
- * rows or receives nothing.
+ * THE SLUGS ARE RESOLVED BY THE SERVER, not here — the detail read drops the ones that are no
+ * longer visible, so a stale reference is an absence rather than a dead row, and it keeps the
+ * AUTHOR's order because the list is authored. This component receives rows or receives nothing.
+ *
+ * ⚠️ IT TAKES A SLUG AND A TITLE, NOT A WHOLE CASE STUDY, which is what the server sends. Nothing
+ * here renders more than those two, and asking for a whole blueprint would mean the detail read had
+ * to carry N full case studies to draw N links.
  */
-function RelatedLessons({ lessons }: { lessons: readonly CaseStudyBlueprint[] }) {
+function RelatedLessons({ lessons }: { lessons: readonly CaseStudyOption[] }) {
   if (lessons.length === 0) return null;
 
   return (
@@ -278,9 +295,11 @@ function RelatedLessons({ lessons }: { lessons: readonly CaseStudyBlueprint[] })
       <h2 className="text-sm font-medium text-foreground">Related lessons</h2>
       <ul className="mt-2">
         {lessons.map((lesson) => (
-          <li key={lesson.id} className="border-t border-black/5">
+          <li key={lesson.slug} className="border-t border-black/5">
             <Link
-              href={buildBlueprintHref(lesson)}
+              // `buildBlueprintHref` is the only thing that mints a blueprint URL, and it needs
+              // exactly the two fields the server sends.
+              href={buildBlueprintHref({ category: "case_study", slug: lesson.slug })}
               className="flex items-center justify-between gap-4 py-2.5 text-sm leading-5 text-foreground transition-colors hover:text-[#00696E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
             >
               {lesson.title}

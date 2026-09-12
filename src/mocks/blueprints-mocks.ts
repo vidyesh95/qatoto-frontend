@@ -2362,9 +2362,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "find-the-step-that-stopped-scaling",
     title: "Find the step that stopped scaling before you cut the bill of materials.",
     category: "case_study",
+    moderationState: "published",
     summary:
       "Four production runs of a sensor node. Cost per unit fell 41% between runs one and three, then 3% between three and four, and the team spent two months quoting cheaper parts before they looked at assembly.",
-    thumbnailUrl: "/dummy/thumbnail_image07.avif",
     author: {
       displayName: "Marco Ferreira",
       handle: "marco-lowpower",
@@ -2372,13 +2372,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 51240,
     likeCount: 4863,
-    difficulty: "beginner",
-    cadFormat: null,
-    billOfMaterialsCostRange: {
-      minimumInCents: 480,
-      maximumInCents: 940,
-      currency: UNITED_STATES_DOLLAR,
-    },
     tags: ["manufacturing", "unit-economics", "assembly"],
     createdAt: "2026-09-05T11:18:00.000Z",
     discipline: "unit_economics",
@@ -2435,9 +2428,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "keep-forty-percent-for-batch-two",
     title: "Keep 40% of the raise for batch two.",
     category: "case_study",
+    moderationState: "published",
     summary:
       "A cookware brand put its whole seed round into one production run, sold it out in nine weeks, and then could not pay for the second run until the first had collected.",
-    thumbnailUrl: "/dummy/thumbnail_image03.avif",
     author: {
       displayName: "Priya Raghunathan",
       handle: "priya-builds",
@@ -2445,9 +2438,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 38210,
     likeCount: 3902,
-    difficulty: "beginner",
-    cadFormat: null,
-    billOfMaterialsCostRange: null,
     tags: ["unit-economics", "working-capital", "consumer"],
     createdAt: "2026-09-02T09:40:00.000Z",
     discipline: "unit_economics",
@@ -2495,9 +2485,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "budget-for-the-second-mould",
     title: "Budget for a second mould, not a perfect first one.",
     category: "case_study",
+    moderationState: "published",
     summary:
       "An injection-moulding programme in Nairobi spent four months and two revisions trying to get one tool right, and shipped six weeks after switching to a cheap tool it expected to replace.",
-    thumbnailUrl: "/dummy/thumbnail_image05.avif",
     author: {
       displayName: "Wanjiru Kamau",
       handle: "wanjiru-tooling",
@@ -2505,13 +2495,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 29870,
     likeCount: 2611,
-    difficulty: "intermediate",
-    cadFormat: "STEP",
-    billOfMaterialsCostRange: {
-      minimumInCents: 210,
-      maximumInCents: 340,
-      currency: UNITED_STATES_DOLLAR,
-    },
     tags: ["tooling", "injection-molding", "manufacturing"],
     createdAt: "2026-08-29T14:05:00.000Z",
     discipline: "tooling",
@@ -2563,9 +2546,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "aluminium-tool-before-steel",
     title: "Cut the tool in aluminium before you cut it in steel.",
     category: "case_study",
+    moderationState: "published",
     summary:
       "The same argument as the Nairobi programme, run deliberately rather than by accident: a bracket maker planned two tools from the start and used the first to find eleven changes.",
-    thumbnailUrl: "/dummy/thumbnail_image09.avif",
     author: {
       displayName: "Tomas Bergqvist",
       handle: "tomas-moulds",
@@ -2573,13 +2556,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 17420,
     likeCount: 1588,
-    difficulty: "advanced",
-    cadFormat: "STEP / Fusion 360",
-    billOfMaterialsCostRange: {
-      minimumInCents: 95,
-      maximumInCents: 160,
-      currency: UNITED_STATES_DOLLAR,
-    },
     tags: ["tooling", "injection-molding", "design-for-manufacture"],
     createdAt: "2026-08-24T08:12:00.000Z",
     discipline: "tooling",
@@ -2623,9 +2599,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "qualify-the-second-supplier-early",
     title: "Qualify the second supplier before you need one.",
     category: "case_study",
+    moderationState: "published",
     summary:
       "A contract assembler went from responsive to unreachable in three weeks. The switch took four months, and three of them were qualification the team could have done a year earlier.",
-    thumbnailUrl: "/dummy/thumbnail_image02.avif",
     author: {
       displayName: "Adaeze Okoro",
       handle: "adaeze-networks",
@@ -2633,13 +2609,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 44190,
     likeCount: 4110,
-    difficulty: "intermediate",
-    cadFormat: null,
-    billOfMaterialsCostRange: {
-      minimumInCents: 1840,
-      maximumInCents: 2600,
-      currency: UNITED_STATES_DOLLAR,
-    },
     tags: ["supply-chain", "contract-manufacturing", "risk"],
     createdAt: "2026-08-20T16:30:00.000Z",
     discipline: "supply_chain",
@@ -2687,9 +2656,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "order-long-lead-parts-early",
     title: "Order the long-lead part before the design is finished.",
     category: "case_study",
+    moderationState: "published",
     summary:
       "A compressor with a 22-week lead time set the whole schedule, and the team discovered that four months after freezing everything else.",
-    thumbnailUrl: "/dummy/thumbnail_image11.avif",
     author: {
       displayName: "Nadia Haddad",
       handle: "nadia-cold",
@@ -2697,13 +2666,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 22350,
     likeCount: 1974,
-    difficulty: "intermediate",
-    cadFormat: "STEP",
-    billOfMaterialsCostRange: {
-      minimumInCents: 21400,
-      maximumInCents: 29800,
-      currency: UNITED_STATES_DOLLAR,
-    },
     tags: ["supply-chain", "lead-times", "cold-chain"],
     createdAt: "2026-08-16T10:55:00.000Z",
     discipline: "supply_chain",
@@ -2748,9 +2710,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "read-the-returns-first",
     title: "Read the returns before you read the reviews.",
     category: "case_study",
+    moderationState: "published",
     summary:
       "A chiller manufacturer had four-star reviews and an 11% return rate. The reviews described the product; the returns described one gasket.",
-    thumbnailUrl: "/dummy/thumbnail_image08.avif",
     author: {
       displayName: "Ines Duarte",
       handle: "ines-quality",
@@ -2758,13 +2720,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 33640,
     likeCount: 3055,
-    difficulty: "beginner",
-    cadFormat: null,
-    billOfMaterialsCostRange: {
-      minimumInCents: 8900,
-      maximumInCents: 12400,
-      currency: UNITED_STATES_DOLLAR,
-    },
     tags: ["quality", "warranty", "returns"],
     createdAt: "2026-08-12T13:20:00.000Z",
     discipline: "quality",
@@ -2818,9 +2773,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "test-the-failure-you-fear",
     title: "Test the failure you are afraid of, not the one that is easy to test.",
     category: "case_study",
+    moderationState: "published",
     summary:
       "Six months of drop testing on a battery pack that had never failed by being dropped. It failed by being charged in a hot van, which nobody had a rig for.",
-    thumbnailUrl: "/dummy/thumbnail_image06.avif",
     author: {
       displayName: "Samuel Adeyemi",
       handle: "samuel-packs",
@@ -2828,13 +2783,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 26180,
     likeCount: 2440,
-    difficulty: "advanced",
-    cadFormat: "STEP",
-    billOfMaterialsCostRange: {
-      minimumInCents: 4200,
-      maximumInCents: 6100,
-      currency: UNITED_STATES_DOLLAR,
-    },
     tags: ["quality", "testing", "batteries"],
     createdAt: "2026-08-08T07:45:00.000Z",
     discipline: "quality",
@@ -2884,9 +2832,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "sell-to-the-installer",
     title: "Sell to the installer, not the end user.",
     category: "case_study",
+    moderationState: "published",
     summary:
       "A dairy chiller sold badly to farmers and well to the technicians who service them. The product did not change; the person being asked to say yes did.",
-    thumbnailUrl: "/dummy/thumbnail_image10.avif",
     author: {
       displayName: "Kofi Mensah",
       handle: "kofi-routes",
@@ -2894,13 +2842,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 41020,
     likeCount: 3688,
-    difficulty: "beginner",
-    cadFormat: null,
-    billOfMaterialsCostRange: {
-      minimumInCents: 32000,
-      maximumInCents: 41000,
-      currency: UNITED_STATES_DOLLAR,
-    },
     tags: ["distribution", "channel", "cold-chain"],
     createdAt: "2026-08-04T12:00:00.000Z",
     discipline: "distribution",
@@ -2946,9 +2887,9 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     slug: "one-city-until-reorders-hold",
     title: "Ship to one city until the reorder rate holds.",
     category: "case_study",
+    moderationState: "published",
     summary:
       "A packaged foods brand launched in six cities on the strength of one good month, and spent the next year discovering that only one of the six reordered.",
-    thumbnailUrl: "/dummy/thumbnail_image01.avif",
     author: {
       displayName: "Leila Fasih",
       handle: "leila-distribution",
@@ -2956,9 +2897,6 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
     },
     viewCount: 19560,
     likeCount: 1702,
-    difficulty: "beginner",
-    cadFormat: null,
-    billOfMaterialsCostRange: null,
     tags: ["distribution", "retail", "consumer"],
     createdAt: "2026-07-30T15:35:00.000Z",
     discipline: "distribution",

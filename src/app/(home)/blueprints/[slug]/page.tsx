@@ -30,8 +30,10 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 
-import { getBlueprint } from "@/lib/blueprints/api";
-import { buildBlueprintHref } from "@/lib/blueprints/schemas";
+import { listPublicCaseStudySlugs } from "@/lib/blueprints/case-study-public.api";
+import { buildBlueprintHref, type BlueprintCategory } from "@/lib/blueprints/schemas";
+import { listPublicShowcaseSlugs } from "@/lib/blueprints/showcase-public.api";
+import { listPublicTeardownSlugs } from "@/lib/blueprints/teardown-public.api";
 
 // TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
 // See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
@@ -41,17 +43,44 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/**
+ * Which arm claims this slug, or `null`.
+ *
+ * ⚠️ THREE SLUG LISTS RATHER THAN THREE DETAIL READS, and it used to be one fixture lookup. The
+ * three arms now live in three tables with one unique slug each and no cross-kind registry, so
+ * "which category owns this address" is a question only the three lists can answer. They are the
+ * cheapest form of the probe — one short string per row, the same payload the prerender step
+ * already fetches — where three detail reads would pull three whole case studies to learn one word.
+ *
+ * A FAILED READ IS TREATED AS "NOT THIS ARM" rather than propagated. This route exists to bounce a
+ * de-indexed legacy URL; answering 404 because one of three probes was unreachable is the same
+ * answer a reader gets today from the old shape, and the alternative is a 500 on a URL nobody is
+ * supposed to be using.
+ */
+async function findOwningCategory(slug: string): Promise<BlueprintCategory | null> {
+  const [teardownSlugs, caseStudySlugs, showcaseSlugs] = await Promise.all([
+    listPublicTeardownSlugs(),
+    listPublicCaseStudySlugs(),
+    listPublicShowcaseSlugs(),
+  ]);
+
+  if (teardownSlugs.success && teardownSlugs.data.includes(slug)) return "teardown";
+  if (caseStudySlugs.success && caseStudySlugs.data.includes(slug)) return "case_study";
+  if (showcaseSlugs.success && showcaseSlugs.data.includes(slug)) return "showcase";
+  return null;
+}
+
 export default async function LegacyBlueprintRedirect({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const blueprint = await getBlueprint(slug);
+  const category = await findOwningCategory(slug);
 
   // A hand-edited or long-dead slug ends at a 404 rather than at the hub. Bouncing an unknown URL
   // to a working page hides the fact that the thing asked for does not exist.
-  if (blueprint === null) notFound();
+  if (category === null) notFound();
 
-  permanentRedirect(buildBlueprintHref(blueprint));
+  permanentRedirect(buildBlueprintHref({ category, slug }));
 }

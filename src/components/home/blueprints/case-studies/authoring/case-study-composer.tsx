@@ -32,7 +32,7 @@ import { MutationErrorNotice } from "@/components/home/research-and-development/
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import { useSubmitCaseStudyMutation } from "@/hooks/blueprints/case-study-authoring";
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
-import type { CaseStudyOption } from "@/lib/blueprints/api";
+import type { CaseStudyOption } from "@/lib/blueprints/schemas";
 import {
   CASE_STUDY_AUTHOR_RELATIONSHIP_CHOICES,
   CASE_STUDY_CURRENCIES,

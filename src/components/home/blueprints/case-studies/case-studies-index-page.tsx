@@ -1,5 +1,5 @@
-// TRANSPORT: mock — async server component. Reads `listCaseStudies` from
-// `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
+// TRANSPORT: server-fetch — async server component. Reads `listPublicCaseStudies` from
+// `@/lib/blueprints/case-study-public.api`, which calls the Express backend.
 //
 // Filtering, ordering and paging all live in the getter, for the reason
 // `teardowns-index-page.tsx` states at length.
@@ -22,7 +22,7 @@ import Link from "next/link";
 import CaseStudyLessonRow from "@/components/home/blueprints/cards/case-study-lesson-row";
 import CursorPageControl from "@/components/home/shared/cursor-page-control";
 import FilterChipRow, { type FilterChipOption } from "@/components/home/shared/filter-chip-row";
-import { listCaseStudies } from "@/lib/blueprints/api";
+import { listPublicCaseStudies } from "@/lib/blueprints/case-study-public.api";
 import {
   BLUEPRINT_DISCIPLINE_LABELS,
   BLUEPRINT_DISCIPLINES,
@@ -36,8 +36,19 @@ import {
   readSingleParam,
 } from "@/lib/filter-href";
 
+/**
+ * THE `error` ARM EXISTS BECAUSE THIS PAGE NOW READS A REAL BACKEND. Before, every failure resolved
+ * to fixtures, so "the server is down" and "no case study covers that discipline" rendered the same
+ * page: a visitor saw invented lessons under a real heading with nothing to say so.
+ *
+ * ⚠️ THE LIST IS GATED ON `published` AND `flagged`, so a case study missing from every page here is
+ * not necessarily one that 404s — but unlike the teardown arm, nothing on this one is withheld by
+ * state, so absent really does mean unreachable. What IS withheld is a company's NAME, per row, and
+ * the server does that before the payload leaves.
+ */
 type CaseStudiesViewState =
   | { status: "empty"; appliedFilterCount: number }
+  | { status: "error"; message: string }
   | {
       status: "ready";
       caseStudies: readonly CaseStudyBlueprint[];
@@ -54,16 +65,17 @@ export default async function CaseStudiesIndexPage({
   const discipline = readEnumParam(resolvedSearchParams, "discipline", BLUEPRINT_DISCIPLINES);
   const requestedCursor = readSingleParam(resolvedSearchParams, "cursor");
 
-  const caseStudyPage = await listCaseStudies({ discipline, cursor: requestedCursor });
+  const indexResponse = await listPublicCaseStudies({ discipline, cursor: requestedCursor });
 
-  const viewState: CaseStudiesViewState =
-    caseStudyPage.items.length === 0
+  const viewState: CaseStudiesViewState = !indexResponse.success
+    ? { status: "error", message: indexResponse.error.message }
+    : indexResponse.data.items.length === 0
       ? { status: "empty", appliedFilterCount: discipline === undefined ? 0 : 1 }
       : {
           status: "ready",
-          caseStudies: caseStudyPage.items,
-          nextCursor: caseStudyPage.page.nextCursor,
-          hasMore: caseStudyPage.page.hasMore,
+          caseStudies: indexResponse.data.items,
+          nextCursor: indexResponse.data.page.nextCursor,
+          hasMore: indexResponse.data.page.hasMore,
         };
 
   const disciplineOptions: FilterChipOption[] = [
@@ -117,6 +129,15 @@ function renderCaseStudies(viewState: CaseStudiesViewState, searchParams: RawSea
             ? "No case studies have been published yet."
             : "No case study covers that discipline yet."}
         </p>
+      );
+    /* NAMED AS A FAILURE, never as an empty shelf. The message is the server's own, and the reader
+       is told to retry rather than left to conclude nobody has written anything. */
+    case "error":
+      return (
+        <div className="mt-8 px-4 lg:px-6">
+          <p className="text-sm text-foreground">Case studies could not be loaded.</p>
+          <p className="mt-1 max-w-2xl text-sm text-[#6F7979]">{viewState.message}</p>
+        </div>
       );
     case "ready":
       return (

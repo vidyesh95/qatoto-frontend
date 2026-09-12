@@ -1733,9 +1733,13 @@ export type TeardownStoreListingSignal = z.infer<typeof TeardownStoreListingSign
 // `src/lib/store/rfqs.schemas.ts:169` and `src/lib/store/providers.schemas.ts:221` are the two
 // precedents this copies.
 //
-// `difficulty`, `cadFormat` AND `billOfMaterialsCostRange` STAY SHARED even though they read as
-// teardown concerns. A rail card renders all three for every category, and moving them into one
-// arm would push an exhaustive `switch` down into a card — the wrong place for one. Arms only add.
+// ⚠️ `thumbnailUrl`, `difficulty`, `cadFormat` AND `billOfMaterialsCostRange` ARE *NOT* SHARED, and
+// this note used to say the opposite. The reason it gave — "a rail card renders all three for every
+// category" — was true of `BlueprintCardBody`, which the redesign DELETED when each arm got its own
+// row. Nothing on the case-study side has read any of the four since: not the index row, not the
+// lane link, not the detail page, and the composer collects none of them. Four fields nothing
+// writes and nothing shows are the unverified code the field sweeps in CLAUDE.md exist to catch, so
+// they live on the two arms that genuinely render them.
 
 const BlueprintSharedShape = {
   id: z.string(),
@@ -1743,22 +1747,32 @@ const BlueprintSharedShape = {
   slug: z.string(),
   title: z.string(),
   summary: z.string(),
-  thumbnailUrl: createHttpsOrSiteRelativeUrlSchema(2048),
   author: BlueprintAuthorSchema,
   viewCount: z.number().int().nonnegative(),
   likeCount: z.number().int().nonnegative(),
-  difficulty: BlueprintDifficultySchema,
-  /** e.g. "STEP / Fusion 360". `null` when no CAD source is published. */
-  cadFormat: z.string().nullable(),
-  billOfMaterialsCostRange: BlueprintCostRangeSchema.nullable(),
   tags: z.array(z.string()),
   /** ISO 8601. */
   createdAt: z.string(),
 };
 
+/**
+ * The four fields a teardown and a showcase share and a case study does not.
+ *
+ * A SECOND SPREAD RATHER THAN A `.extend()`, for `BlueprintSharedShape`'s reason: the discriminated
+ * union needs `.strip()` to land on the final object.
+ */
+const BlueprintMediaShape = {
+  thumbnailUrl: createHttpsOrSiteRelativeUrlSchema(2048),
+  difficulty: BlueprintDifficultySchema,
+  /** e.g. "STEP / Fusion 360". `null` when no CAD source is published. */
+  cadFormat: z.string().nullable(),
+  billOfMaterialsCostRange: BlueprintCostRangeSchema.nullable(),
+};
+
 export const TeardownBlueprintSchema = z
   .object({
     ...BlueprintSharedShape,
+    ...BlueprintMediaShape,
     category: z.literal("teardown"),
     /**
      * WHERE THIS ROW SITS BETWEEN TYPED AND PUBLIC. The public getters decide which states they
@@ -1887,6 +1901,7 @@ export type BlueprintWriteUpImage = z.infer<typeof BlueprintWriteUpImageSchema>;
 export const ShowcaseBlueprintSchema = z
   .object({
     ...BlueprintSharedShape,
+    ...BlueprintMediaShape,
     category: z.literal("showcase"),
     /** One line beside the title in the feed. Not the summary — this is the pitch. */
     tagline: z.string(),
@@ -1979,6 +1994,18 @@ export const CaseStudyBlueprintSchema = z
   .object({
     ...BlueprintSharedShape,
     category: z.literal("case_study"),
+    /**
+     * WHERE THIS ROW SITS BETWEEN TYPED AND PUBLIC, the same field the teardown arm carries and for
+     * the same reason. It arrived when this arm got real tables: `isBlueprintVisible` used to bypass
+     * the check for case studies entirely — "showcases and case studies are unmoderated fixtures" —
+     * and that bypass is now deleted.
+     *
+     * ⚠️ ONLY TWO OF THE SEVEN STATES CAN REACH A READER HERE, and the backend narrows it: a case
+     * study has no files, so there is no `quarantined` on this arm and nothing is withheld by
+     * state. What IS withheld is a company's name, per row, and the SERVER does that — see
+     * `CaseStudyEvidenceCompanySchema`.
+     */
+    moderationState: BlueprintModerationStateSchema,
     /** The typed axis the index filters on, and a chip on the row. */
     discipline: BlueprintDisciplineSchema,
     /** The imperative the reader can act on, one line, under the title. */
@@ -2187,3 +2214,49 @@ export const TeardownClaimTargetsSchema = z
   })
   .strip();
 export type TeardownClaimTargets = z.infer<typeof TeardownClaimTargetsSchema>;
+
+/**
+ * The public case-study index's payload.
+ *
+ * NO TAG FACETS, unlike the showcase feed's — this index offers one typed discipline filter and no
+ * tag chips, so there is nothing to count.
+ *
+ * `.strip()` because this is a READ shape: an unknown key from a newer server is dropped, not a
+ * parse failure that blanks the page.
+ */
+export const CaseStudyIndexPageSchema = z
+  .object({
+    items: z.array(CaseStudyBlueprintSchema),
+    page: CursorPageSchema,
+  })
+  .strip();
+export type CaseStudyIndexPage = z.infer<typeof CaseStudyIndexPageSchema>;
+
+/** Every visible slug, for `generateStaticParams`. */
+export const CaseStudySlugListSchema = z.array(z.string());
+
+/** One choice in the composer's "Related lessons" select. */
+export const CaseStudyOptionListSchema = z.array(
+  z.object({ slug: z.string(), title: z.string() }).strip(),
+);
+export type CaseStudyOption = z.infer<typeof CaseStudyOptionListSchema>[number];
+
+/**
+ * The detail read's payload: the case study, and its related lessons already resolved.
+ *
+ * ⚠️ AN ENVELOPE RATHER THAN A WIDENED `CaseStudyBlueprintSchema`, and the server shapes it this way
+ * on purpose. Putting `relatedLessons` on the blueprint would also put it on every index row, where
+ * nothing renders it — forcing `relatedLessons: []` on rows that have them, a lie the type would
+ * make unavoidable. `relatedLessonSlugs` stays on the case study, because it says what the AUTHOR
+ * named; `relatedLessons` is what survived the visibility gate, in the author's order.
+ *
+ * This is what retires `listRelatedCaseStudies`: the resolution is a visibility decision, so it
+ * belongs to the server, and a second call could 200 while the detail 404s.
+ */
+export const CaseStudyDetailSchema = z
+  .object({
+    caseStudy: CaseStudyBlueprintSchema,
+    relatedLessons: CaseStudyOptionListSchema,
+  })
+  .strip();
+export type CaseStudyDetail = z.infer<typeof CaseStudyDetailSchema>;
