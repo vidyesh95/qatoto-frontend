@@ -1,17 +1,16 @@
 // TRANSPORT: client-query — `GET /blueprints/teardowns/mine` through
-// `@/hooks/blueprints/authoring`, which is mock-backed today.
+// `@/hooks/blueprints/authoring`.
 "use client";
 
 import Link from "next/link";
 
 import StatusPanel from "@/components/home/shared/status-panel";
-import { MODERATION_STATE_CHIP_CLASS } from "@/components/studio/blueprints/moderation-state-chip";
-import { useMyTeardownSubmissionsQuery } from "@/hooks/blueprints/authoring";
 import {
-  BLUEPRINT_MODERATION_STATE_LABELS,
-  buildBlueprintHref,
-  type BlueprintModerationState,
-} from "@/lib/blueprints/schemas";
+  SUBMISSION_STATE_CHIP_CLASS,
+  SUBMISSION_STATE_LABELS,
+} from "@/components/studio/blueprints/moderation-state-chip";
+import { useMyTeardownSubmissionsQuery } from "@/hooks/blueprints/authoring";
+import { buildBlueprintHref, type BlueprintSubmissionDisplayState } from "@/lib/blueprints/schemas";
 import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
 
 /**
@@ -21,7 +20,7 @@ import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
  * not been deleted. Same row, different audience, so this is a second record rather than a reuse of
  * the public chip notes.
  */
-const MODERATION_STATE_AUTHOR_NOTES: Record<BlueprintModerationState, string | null> = {
+const MODERATION_STATE_AUTHOR_NOTES: Record<BlueprintSubmissionDisplayState, string | null> = {
   draft: "Not submitted yet. Nobody else can see it.",
   pending_review: "With a moderator. It is not public and cannot be found by searching.",
   published: null,
@@ -29,6 +28,7 @@ const MODERATION_STATE_AUTHOR_NOTES: Record<BlueprintModerationState, string | n
   flagged: null,
   quarantined: null,
   removed: "Taken down. The page is gone and the address answers as though it never existed.",
+  unknown: "This teardown has a status this app does not know yet. Refresh the page.",
 };
 
 /**
@@ -38,10 +38,13 @@ const MODERATION_STATE_AUTHOR_NOTES: Record<BlueprintModerationState, string | n
  * content behind a capability — auth alone is the gate, and the `(admin)` `staffContext` pattern
  * would be borrowing a permission check from a moderation queue this page is not.
  *
- * ⚠️ THE LIST DOES NOT SEE ANYTHING SUBMITTED THIS SESSION, and the wizard's receipt is where that
- * is disclosed rather than here. `submitTeardownForReview` stores nothing — there is no table — so
- * these rows are a fixed fixture set covering every state. Joining the two would need fake
- * persistence that loses an author's work on reload, or a second storage key CLAUDE.md forbids.
+ * ⚠️ A SUBMISSION MADE THIS SESSION APPEARS HERE, because the wizard's mutation invalidates this
+ * query's key on success. That was not true while the arm was mock-backed, and the receipt screen
+ * carried the disclosure instead; both are gone now.
+ *
+ * ⚠️ THE STATE MAY BE ONE THIS BUILD DOES NOT KNOW. `TeardownSubmissionSchema` catches an
+ * unrecognised state as `unknown` rather than failing the array, so every map keyed on it here is
+ * the display record with its `unknown` arm, not the seven-state one.
  */
 export default function StudioBlueprintsPage() {
   const submissionsQuery = useMyTeardownSubmissionsQuery();
@@ -131,9 +134,9 @@ export default function StudioBlueprintsPage() {
                     </p>
                   </div>
                   <span
-                    className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${MODERATION_STATE_CHIP_CLASS[submission.moderationState]}`}
+                    className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${SUBMISSION_STATE_CHIP_CLASS[submission.moderationState]}`}
                   >
-                    {BLUEPRINT_MODERATION_STATE_LABELS[submission.moderationState]}
+                    {SUBMISSION_STATE_LABELS[submission.moderationState]}
                   </span>
                 </div>
 

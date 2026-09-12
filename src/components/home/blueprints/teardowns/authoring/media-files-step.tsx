@@ -8,16 +8,31 @@ import {
 } from "@/components/home/blueprints/authoring/form-fields";
 import { isYoutubeLinkFieldUsable } from "@/components/home/blueprints/authoring/youtube-link-field";
 import type {
-  FileDraftRow,
+  DocumentDraftRow,
+  ManufacturingFileDraftRow,
   TeardownWizardStepProps,
 } from "@/components/home/blueprints/teardowns/authoring/wizard-shared";
 import {
+  BLUEPRINT_DOCUMENT_KIND_LABELS,
+  BLUEPRINT_DOCUMENT_KINDS,
   TEARDOWN_MANUFACTURING_FILE_KIND_LABELS,
   TEARDOWN_MANUFACTURING_FILE_KINDS,
 } from "@/lib/blueprints/schemas";
 
-/** A new empty file row. `crypto.randomUUID()` for a stable React key — never sent. */
-function newFileDraftRow(): FileDraftRow {
+/**
+ * A new empty row, per list. `crypto.randomUUID()` for a stable React key — never sent.
+ *
+ * ⚠️ TWO FUNCTIONS, NOT ONE WITH A PARAMETER, AND THE DEFAULT IS THE POINT. One shared helper
+ * returned `kind: "step"` for both lists, so every document a publisher added started life with a
+ * fabrication label — a `documents[]` row the published page cannot render. The default for a
+ * document is the first document kind, which is also the one its own section description leads
+ * with.
+ */
+function newDocumentDraftRow(): DocumentDraftRow {
+  return { rowId: crypto.randomUUID(), kind: "schematic", title: "", url: "" };
+}
+
+function newManufacturingFileDraftRow(): ManufacturingFileDraftRow {
   return { rowId: crypto.randomUUID(), kind: "step", title: "", url: "" };
 }
 
@@ -38,31 +53,86 @@ function newFileDraftRow(): FileDraftRow {
 export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardStepProps) {
   const isWalkthroughUsable = isYoutubeLinkFieldUsable(draft.walkthroughYoutubeUrl);
 
-  function updateFileRow(
-    listKey: "documents" | "manufacturingFiles",
-    rowId: string,
-    patch: Partial<FileDraftRow>,
-  ): void {
+  /*
+   * ⚠️ TWO SETS OF HELPERS, DELIBERATELY DUPLICATED. A shared pair parameterised over
+   * `"documents" | "manufacturingFiles"` would type its patch as `Partial<DocumentDraftRow |
+   * ManufacturingFileDraftRow>`, which collapses `kind` to `never` — the two vocabularies share no
+   * label. Recovering it needs an `as`, which CLAUDE.md Pattern 2 bans. Twenty duplicated lines buy
+   * a `kind` that is honest in both directions.
+   */
+  function updateDocumentRow(rowId: string, patch: Partial<DocumentDraftRow>): void {
     onDraftChange({
-      [listKey]: draft[listKey].map((row) => (row.rowId === rowId ? { ...row, ...patch } : row)),
+      documents: draft.documents.map((row) => (row.rowId === rowId ? { ...row, ...patch } : row)),
     });
   }
 
-  function removeFileRow(listKey: "documents" | "manufacturingFiles", rowId: string): void {
-    onDraftChange({ [listKey]: draft[listKey].filter((row) => row.rowId !== rowId) });
+  function updateManufacturingFileRow(
+    rowId: string,
+    patch: Partial<ManufacturingFileDraftRow>,
+  ): void {
+    onDraftChange({
+      manufacturingFiles: draft.manufacturingFiles.map((row) =>
+        row.rowId === rowId ? { ...row, ...patch } : row,
+      ),
+    });
   }
 
-  function renderFileRows(listKey: "documents" | "manufacturingFiles") {
-    return draft[listKey].map((row, rowIndex) => (
+  function removeDocumentRow(rowId: string): void {
+    onDraftChange({ documents: draft.documents.filter((row) => row.rowId !== rowId) });
+  }
+
+  function removeManufacturingFileRow(rowId: string): void {
+    onDraftChange({
+      manufacturingFiles: draft.manufacturingFiles.filter((row) => row.rowId !== rowId),
+    });
+  }
+
+  function renderDocumentRows() {
+    return draft.documents.map((row, rowIndex) => (
       <RepeatableRowShell
         key={row.rowId}
-        rowLabel={`File ${rowIndex + 1}`}
-        onRemoveRow={() => removeFileRow(listKey, row.rowId)}
+        rowLabel={`Document ${rowIndex + 1}`}
+        onRemoveRow={() => removeDocumentRow(row.rowId)}
       >
         <LabeledTextInput
           label="Name"
           value={row.title}
-          onValueChange={(title) => updateFileRow(listKey, row.rowId, { title })}
+          onValueChange={(title) => updateDocumentRow(row.rowId, { title })}
+          placeholder="Control board schematic"
+        />
+        <LabeledEnumSelect
+          label="Kind"
+          value={row.kind}
+          options={BLUEPRINT_DOCUMENT_KINDS}
+          optionLabels={BLUEPRINT_DOCUMENT_KIND_LABELS}
+          onValueChange={(kind) =>
+            kind === "" ? undefined : updateDocumentRow(row.rowId, { kind })
+          }
+        />
+        <div className="sm:col-span-2">
+          <LabeledTextInput
+            label="Link"
+            inputType="url"
+            value={row.url}
+            onValueChange={(url) => updateDocumentRow(row.rowId, { url })}
+            placeholder="https://…"
+          />
+        </div>
+      </RepeatableRowShell>
+    ));
+  }
+
+  function renderManufacturingFileRows() {
+    return draft.manufacturingFiles.map((row, rowIndex) => (
+      <RepeatableRowShell
+        key={row.rowId}
+        rowLabel={`File ${rowIndex + 1}`}
+        onRemoveRow={() => removeManufacturingFileRow(row.rowId)}
+      >
+        <LabeledTextInput
+          label="Name"
+          value={row.title}
+          onValueChange={(title) => updateManufacturingFileRow(row.rowId, { title })}
           placeholder="Enclosure, STEP"
         />
         <LabeledEnumSelect
@@ -71,7 +141,7 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
           options={TEARDOWN_MANUFACTURING_FILE_KINDS}
           optionLabels={TEARDOWN_MANUFACTURING_FILE_KIND_LABELS}
           onValueChange={(kind) =>
-            kind === "" ? undefined : updateFileRow(listKey, row.rowId, { kind })
+            kind === "" ? undefined : updateManufacturingFileRow(row.rowId, { kind })
           }
         />
         <div className="sm:col-span-2">
@@ -79,7 +149,7 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
             label="Link"
             inputType="url"
             value={row.url}
-            onValueChange={(url) => updateFileRow(listKey, row.rowId, { url })}
+            onValueChange={(url) => updateManufacturingFileRow(row.rowId, { url })}
             placeholder="https://…"
           />
         </div>
@@ -125,9 +195,9 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
         emptyMessage="No documents. Most teardowns publish none, and the page simply shows no document section."
         addLabel="Add a document"
         rowCount={draft.documents.length}
-        onAddRow={() => onDraftChange({ documents: [...draft.documents, newFileDraftRow()] })}
+        onAddRow={() => onDraftChange({ documents: [...draft.documents, newDocumentDraftRow()] })}
       >
-        {renderFileRows("documents")}
+        {renderDocumentRows()}
       </RepeatableRowsShell>
 
       <RepeatableRowsShell
@@ -137,10 +207,12 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
         addLabel="Add a fabrication file"
         rowCount={draft.manufacturingFiles.length}
         onAddRow={() =>
-          onDraftChange({ manufacturingFiles: [...draft.manufacturingFiles, newFileDraftRow()] })
+          onDraftChange({
+            manufacturingFiles: [...draft.manufacturingFiles, newManufacturingFileDraftRow()],
+          })
         }
       >
-        {renderFileRows("manufacturingFiles")}
+        {renderManufacturingFileRows()}
       </RepeatableRowsShell>
     </div>
   );

@@ -5,26 +5,34 @@
 // value objects rather than restating them — a second definition of a material or a provenance
 // block is a second thing to keep in step, and they would drift on the first backend change.
 //
-// ⚠️ `.strict()` HERE, NOT `.strip()`, AND THE DIFFERENCE IS NOT STYLE. Read shapes strip so that a
-// backend minor release adding a field is a no-op. A WRITE shape must do the opposite:
+// ⚠️ `.strict()` ON THE DRAFT, `.strip()` ON THE RESPONSES, AND THE DIFFERENCE IS NOT STYLE.
 // `src/lib/products/schemas.ts:98-107` records what stripping cost on a write path — a stripped
-// field silently destroyed sellers' declared lead times on every edit, and nothing failed. An
-// unknown key on the way out is a bug in this repo, and it should be loud.
+// field silently destroyed sellers' declared lead times on every edit, and nothing failed. So an
+// unknown key on the way OUT is a bug in this repo and should be loud.
+//
+// An unknown key on the way IN is the opposite: a backend minor release. The receipt and the
+// submission row below therefore strip, exactly as both sibling arms do
+// (`case-study-authoring.schemas.ts`, `showcase-authoring.schemas.ts`). This file used to strict
+// them too, which would have turned an ACCEPTED submission into a parse failure telling the author
+// their work was lost, the first time anybody added a field to the 202 body.
 
 import { z } from "zod";
 
 import { buildWellTypedInputsPredicate } from "@/lib/blueprints/refinement-inputs";
 import {
-  BLUEPRINT_MODERATION_STATES,
+  BLUEPRINT_DOCUMENT_KINDS,
+  BLUEPRINT_SUBMISSION_DISPLAY_STATES,
   BlueprintVideoSchema,
   PUBLISHABLE_TEARDOWN_SUBJECT_KIND,
+  TeardownCompositionElementSchema,
   TeardownMaterialSchema,
   TeardownProvenanceSchema,
+  TeardownSurveyMethodSchema,
   TEARDOWN_MANUFACTURING_FILE_KINDS,
   TEARDOWN_SUBJECT_KINDS,
   type TeardownSubjectKind,
 } from "@/lib/blueprints/schemas";
-import { createHttpsOrSiteRelativeUrlSchema } from "@/lib/blueprints/url-source.schemas";
+import { createExternalHttpsUrlSchema } from "@/lib/blueprints/url-source.schemas";
 
 /**
  * THE FOUR CLAUSES A PUBLISHER ACCEPTS, and the reason the whole surface can call itself
@@ -75,22 +83,61 @@ export const TEARDOWN_ATTESTATION_CLAUSE_IDS = TEARDOWN_ATTESTATION_CLAUSES.map(
   (clause) => clause.id,
 ) as readonly TeardownAttestationClauseId[];
 
+const TEARDOWN_FILE_TITLE_MESSAGE = "Give the file a name a stranger would recognise.";
+
 /**
- * One file a submission points at.
+ * The address of a file a submission points at.
+ *
+ * ⚠️ EXTERNAL AND 512, WHERE THE READ SIDE IS SITE-RELATIVE-OR-HTTPS AND 2048. Both narrowings are
+ * the server's, and mirroring them here is the difference between a refusal the publisher can act
+ * on and a 422 in words this wizard never wrote:
+ *
+ *   - The site-relative branch exists for addresses this platform minted. A link a publisher pastes
+ *     is external by definition, and the write gate refuses `/…` outright — without this, the form
+ *     would happily accept `/enclosure.step` and the server would not.
+ *   - 512 is the server's cap, and the same one `e157171` put on case-study sources for the same
+ *     reason. A link longer than that is a tracking-parameter-laden mess rather than a citation.
+ */
+const TeardownSubmissionFileUrlSchema = createExternalHttpsUrlSchema(512);
+
+/**
+ * One file a submission points at — in TWO shapes, because there are two kinds of file.
+ *
+ * ⚠️ THIS WAS ONE SCHEMA CARRYING THE MANUFACTURING ENUM, AND BOTH ARRAYS USED IT. That is why the
+ * media step defaulted every new document row to `step`: a fab label on a reader's document. The
+ * read contract has said these are two things for longer than the write contract existed —
+ * `TeardownManufacturingFileSchema`'s doc in `schemas.ts` closes with "Two arrays, two enums, two
+ * renderers" — and the published detail page parses `documents[].kind` against the four-value enum,
+ * so a `step` there is a row the page refuses to render.
+ *
+ * ⚠️ AND THE SERVER CANNOT CATCH IT. Its write gate accepts both vocabularies in both arrays on
+ * purpose, so that a fix here needs no backend release and a submission sent before that fix still
+ * files each file by the label its author chose. **This is the only gate that exists for it.**
  *
  * ⚠️ A URL, NOT AN UPLOAD, AND THAT IS THE HONEST SHAPE TODAY. There is no upload route for a
  * blueprint and no Cloudinary folder behind one, so a file picker here would be a control that
  * cannot do its job. `create-studio-page.tsx` already takes a pasted link for video for the same
  * reason. When an upload route exists this field keeps its name and gains a sibling.
  */
-export const TeardownSubmissionFileSchema = z
+export const TeardownSubmissionDocumentSchema = z
   .object({
-    kind: z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS),
-    title: z.string().min(1, "Give the file a name a stranger would recognise."),
-    url: createHttpsOrSiteRelativeUrlSchema(2048),
+    kind: z.enum(BLUEPRINT_DOCUMENT_KINDS),
+    title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
+    url: TeardownSubmissionFileUrlSchema,
   })
   .strict();
-export type TeardownSubmissionFile = z.infer<typeof TeardownSubmissionFileSchema>;
+export type TeardownSubmissionDocument = z.infer<typeof TeardownSubmissionDocumentSchema>;
+
+export const TeardownSubmissionManufacturingFileSchema = z
+  .object({
+    kind: z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS),
+    title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
+    url: TeardownSubmissionFileUrlSchema,
+  })
+  .strict();
+export type TeardownSubmissionManufacturingFile = z.infer<
+  typeof TeardownSubmissionManufacturingFileSchema
+>;
 
 /**
  * One part a publisher lists.
@@ -107,6 +154,68 @@ export const TeardownSubmissionPartSchema = z
   })
   .strict();
 export type TeardownSubmissionPart = z.infer<typeof TeardownSubmissionPartSchema>;
+
+/**
+ * A material, as a publisher may send one: the read shape MINUS the two fields they do not own.
+ *
+ * ⚠️ DERIVED, NOT RESTATED. Nine of eleven fields still resolve to one definition, so a backend
+ * change to a designation source or a material class still lands on both arms — which is the reuse
+ * this file's header defends. What is restated is exactly the delta the write contract declares.
+ *
+ * ⚠️ `id` IS OMITTED BECAUSE IT IS NOT THE EDITOR'S TO MINT. `teardown_material.id` is a global
+ * primary key with no default, so the wizard's `mat-1` would collide with the second author ever to
+ * submit two materials. The server mints one when a moderator publishes.
+ *
+ * ⚠️ THE TRAILING `.strict()` IS LOAD-BEARING, and it is the `products/schemas.ts:98-107` incident
+ * in miniature. `.omit()` keeps the base's strip mode, so without it a leftover `id` would be
+ * dropped SILENTLY on the way out — a stripped field on a write path, which is the exact failure
+ * that destroyed sellers' declared lead times. With it, a leftover is a parse failure the wizard
+ * shows.
+ *
+ * ⚠️ `partId` IS `z.null()`, NOT `.nullable()`. A submission has no assembly, so there is no part
+ * for a material to attach to and the server's two-hop foreign key could never resolve one. A
+ * literal says that in the type; a nullable would say it in a comment and discover it in a
+ * transaction. Linking a material to a modelled part must widen this deliberately.
+ */
+export const TeardownSubmissionMaterialSchema = TeardownMaterialSchema.omit({ id: true })
+  .extend({
+    partId: z.null(),
+    /**
+     * Capped even though the wizard sends none today: element rows arrive with a file from an
+     * analyser, and the cap should meet that path here rather than as a 422.
+     */
+    elements: z
+      .array(TeardownCompositionElementSchema)
+      .max(8, "Eight elements is the most a composition can carry."),
+  })
+  .strict();
+
+/**
+ * Provenance, as a publisher may send it: the read shape with the server's four bounds applied.
+ *
+ * ⚠️ `.safeExtend`, NOT `.extend`. All four keys are overwrites, and Zod 4 throws on an overwrite
+ * of a refined object ("Use .safeExtend() instead"). `.safeExtend` keeps the three-arm
+ * licence/authorisation `superRefine` — which is the whole reason the write path reuses this shape,
+ * and why a manufacturer-authorised survey that also names a licence is unconstructible here.
+ */
+const TeardownSubmissionProvenanceSchema = TeardownProvenanceSchema.safeExtend({
+  subjectProductName: z
+    .string()
+    .min(1, "Name the unit you took apart.")
+    .max(200, "That is longer than a product name; put the detail in your summary."),
+  surveyMethods: z
+    .array(TeardownSurveyMethodSchema)
+    .min(1, "Say how you surveyed it.")
+    .max(3, "There are only three methods."),
+  authorizationNote: z
+    .string()
+    .max(4000, "Four thousand characters is the most this note can carry.")
+    .nullable(),
+  notes: z
+    .string()
+    .max(4000, "Four thousand characters is the most these notes can carry.")
+    .nullable(),
+}).strict();
 
 /**
  * The fields each cross-field rule on the draft reads, and nothing else. A plain `z.object` ignores
@@ -136,14 +245,28 @@ export const TeardownSubmissionDraftSchema = z
     subjectKind: z.literal(PUBLISHABLE_TEARDOWN_SUBJECT_KIND),
     title: z.string().min(8, "A title short enough to skim and specific enough to search."),
     summary: z.string().min(40, "One paragraph: what it is, and what you found."),
-    provenance: TeardownProvenanceSchema,
-    materials: z.array(TeardownMaterialSchema),
-    parts: z.array(TeardownSubmissionPartSchema),
-    documents: z.array(TeardownSubmissionFileSchema),
-    manufacturingFiles: z.array(TeardownSubmissionFileSchema),
+    provenance: TeardownSubmissionProvenanceSchema,
+    /*
+     * ⚠️ EVERY LIST IS CAPPED, AND THE NUMBERS ARE THE SERVER'S. Uncapped, an over-long list is a
+     * 413 or a 422 arriving after the publisher has written the whole thing; capped, it is a
+     * refusal beside the "Add a…" button that produced it. Each of these is something somebody
+     * does by pressing a button, which is the test for mirroring a server rule at all.
+     */
+    materials: z.array(TeardownSubmissionMaterialSchema).max(8, "Eight materials is the most."),
+    parts: z.array(TeardownSubmissionPartSchema).max(40, "Forty listed parts is the most."),
+    documents: z.array(TeardownSubmissionDocumentSchema).max(8, "Eight documents is the most."),
+    manufacturingFiles: z
+      .array(TeardownSubmissionManufacturingFileSchema)
+      .max(8, "Eight fabrication files is the most."),
     /** `null` when nobody filmed it, which is the ordinary case. */
     walkthroughVideo: BlueprintVideoSchema.nullable(),
-    tags: z.array(z.string()),
+    /**
+     * Tags are comma-split free text, so a 41-character tag is typed rather than generated — which
+     * is why the per-tag bound is here and not only the list's.
+     */
+    tags: z
+      .array(z.string().min(1, "A tag needs a word.").max(40, "That tag is too long."))
+      .max(12, "Twelve tags is the most."),
     /**
      * Every clause id, and the contract checks that rather than trusting a boolean.
      *
@@ -176,6 +299,24 @@ export const TeardownSubmissionDraftSchema = z
           path: ["provenance", "surveyedAt"],
           message:
             "Say when you surveyed the unit. A survey with no date cannot be checked against anything.",
+        });
+        return;
+      }
+
+      /*
+       * ⚠️ `Date.now()` IS READ HERE, INSIDE THE REFINEMENT, AND NOWHERE ELSE. A clock read at
+       * module or render scope is a BUILD error under `cacheComponents`, not a test failure — the
+       * same trap `use-attempt-idempotency-key.ts` keeps the key lazy for.
+       *
+       * A future survey date is either a typo or a claim about a unit nobody has opened yet, and
+       * the server refuses it either way.
+       */
+      const surveyedAtMilliseconds = Date.parse(refinementInputs.data.provenance.surveyedAt);
+      if (!Number.isNaN(surveyedAtMilliseconds) && surveyedAtMilliseconds > Date.now()) {
+        context.addIssue({
+          code: "custom",
+          path: ["provenance", "surveyedAt"],
+          message: "A survey cannot be dated in the future.",
         });
       }
     },
@@ -224,7 +365,7 @@ export const TeardownSubmissionReceiptSchema = z
     /** ISO 8601, server-stamped. When the submission was accepted, not when it was decided. */
     receivedAt: z.string(),
   })
-  .strict();
+  .strip();
 export type TeardownSubmissionReceipt = z.infer<typeof TeardownSubmissionReceiptSchema>;
 
 /**
@@ -242,12 +383,18 @@ export const TeardownSubmissionSchema = z
     submissionId: z.string(),
     title: z.string(),
     subjectProductName: z.string(),
-    moderationState: z.enum(BLUEPRINT_MODERATION_STATES),
+    /**
+     * ⚠️ `.catch("unknown")`, AS BOTH SIBLING LISTS DO, AND IT IS NOT DEFENSIVENESS. This list is
+     * ONE array parse: a single row in a state this build does not know yet fails the whole array,
+     * and the author is shown "Couldn't load your teardowns" instead of the nine rows they can
+     * read. A state added by a backend release should cost one unfamiliar chip, not the page.
+     */
+    moderationState: z.enum(BLUEPRINT_SUBMISSION_DISPLAY_STATES).catch("unknown"),
     submittedAt: z.string(),
     publicSlug: z.string().nullable(),
     moderatorNote: z.string().nullable(),
   })
-  .strict()
+  .strip()
   .superRefine((submission, context) => {
     if (submission.moderationState === "rejected" && submission.moderatorNote === null) {
       context.addIssue({

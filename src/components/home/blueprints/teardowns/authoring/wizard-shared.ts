@@ -13,6 +13,7 @@ import {
   type TeardownSubmissionDraft,
 } from "@/lib/blueprints/authoring.schemas";
 import type {
+  BlueprintDocumentKind,
   BlueprintProvenanceKind,
   TeardownDesignationSource,
   TeardownManufacturingFileKind,
@@ -62,8 +63,26 @@ export interface PartDraftRow {
   readonly material: string;
 }
 
-/** One file row while it is being edited. */
-export interface FileDraftRow {
+/**
+ * One file row while it is being edited — in TWO shapes, because there are two vocabularies.
+ *
+ * ⚠️ THIS WAS ONE TYPE CARRYING THE MANUFACTURING KIND, AND BOTH LISTS USED IT. That is how every
+ * new document row came to default to `step`: a fab label on a reader's document, which the
+ * published detail page then refuses to render. Two types make that a compile error in the editor
+ * rather than a refusal at the far end of a submission.
+ *
+ * They differ in one field, and a generic over `kind` would be worse than the duplication: the
+ * helpers that patch a row would collapse `patch.kind` to `never` and need an `as` to recover it,
+ * which CLAUDE.md Pattern 2 bans outright.
+ */
+export interface DocumentDraftRow {
+  readonly rowId: string;
+  readonly kind: BlueprintDocumentKind;
+  readonly title: string;
+  readonly url: string;
+}
+
+export interface ManufacturingFileDraftRow {
   readonly rowId: string;
   readonly kind: TeardownManufacturingFileKind;
   readonly title: string;
@@ -96,8 +115,8 @@ export interface TeardownWizardDraft {
   readonly authorizationNote: string;
   readonly provenanceNotes: string;
   readonly walkthroughYoutubeUrl: string;
-  readonly documents: readonly FileDraftRow[];
-  readonly manufacturingFiles: readonly FileDraftRow[];
+  readonly documents: readonly DocumentDraftRow[];
+  readonly manufacturingFiles: readonly ManufacturingFileDraftRow[];
   readonly parts: readonly PartDraftRow[];
   readonly materials: readonly MaterialDraftRow[];
   readonly tagsText: string;
@@ -184,9 +203,11 @@ export function collectTeardownSubmission(
       attestationAcceptedAt: new Date().toISOString(),
       notes: toNullableText(draft.provenanceNotes),
     },
-    materials: draft.materials.map((materialRow, materialIndex) => ({
-      // Ids are the wire's, not the editor's: the row id exists only to key React.
-      id: `mat-${materialIndex + 1}`,
+    materials: draft.materials.map((materialRow) => ({
+      // ⚠️ NO `id`. There is none on the wire at all: `teardown_material.id` is a global primary key
+      // with no default, so an editor-minted `mat-1` would collide with the second author ever to
+      // submit two materials. The server mints one when a moderator publishes. The row id here
+      // exists only to key React.
       appliesToLabel: materialRow.appliesToLabel.trim(),
       partId: null,
       designation: materialRow.designation.trim(),
@@ -266,6 +287,16 @@ const SCALAR_FIELD_LOCATIONS = new Map<string, WizardFieldLocation>([
   ["provenance.notes", { label: "Anything you want to qualify", stepId: "subject" }],
   ["provenance.attestationAcceptedAt", { label: "Before you submit", stepId: "review" }],
   ["walkthroughVideo", { label: "YouTube link", stepId: "media" }],
+  /*
+   * ⚠️ THE FOUR BARE LIST PATHS, WHICH LOOK REDUNDANT BESIDE `ROW_LIST_LOCATIONS` AND ARE NOT.
+   * A per-row issue arrives as `documents.0.kind` and that map resolves it; a LIST-LEVEL issue —
+   * which is what an array `.max()` produces — arrives as bare `documents`, matches no row pattern,
+   * and would be printed to the publisher as the raw path. These four are checked first.
+   */
+  ["documents", { label: "Documents", stepId: "media" }],
+  ["manufacturingFiles", { label: "Fabrication files", stepId: "media" }],
+  ["parts", { label: "Parts", stepId: "parts" }],
+  ["materials", { label: "Materials", stepId: "materials" }],
   ["tags", { label: "Tags", stepId: "review" }],
   ["acceptedAttestationClauseIds", { label: "Before you submit", stepId: "review" }],
 ]);
