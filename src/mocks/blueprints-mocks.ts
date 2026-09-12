@@ -2859,7 +2859,7 @@ export const MOCK_BLUEPRINTS: Blueprint[] = [
       "The first two field reports were logged as user error because the failure was not in the test matrix.",
       "Nobody owned the test plan; it had been written by a contractor who had left.",
     ],
-    timelineLabel: "6 months of testing, 9 days to reproduce once the rig existed",
+    timelineLabel: "6 months testing, 9 days to reproduce once the rig existed",
     capitalRaised: { amountInCents: 95000000, currency: UNITED_STATES_DOLLAR },
     outcomeMetrics: [
       { label: "Packs in the field at the time", value: { kind: "count", amount: 600 } },
