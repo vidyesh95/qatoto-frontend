@@ -96,8 +96,17 @@ export default function StudioCaseStudiesPage() {
         </div>
       ) : null}
 
-      {/* AN EMPTY LIST IS NOT AN ERROR. ⚠️ UNEXERCISED TODAY: the fixtures are never empty. */}
-      {submissionsQuery.isSuccess && submissionsQuery.data.length === 0 ? (
+      {/*
+        AN EMPTY LIST IS NOT AN ERROR — and it is reachable now that this reads the backend, where
+        it was unexercised against fixtures that were never empty. A writer who has sent nothing
+        sees this.
+
+        ⚠️ `data.items`, NOT `data`: the read is keyset-paged, because a prolific writer's list is
+        unbounded. There is no "Load more" control here yet, so a writer with more than the page
+        limit sees only the newest — worth adding `CursorPageControl` the day that is plausible,
+        and `data.page` already carries what it needs.
+      */}
+      {submissionsQuery.isSuccess && submissionsQuery.data.items.length === 0 ? (
         <div className="mt-6 max-w-xl">
           <h2 className="text-sm font-medium text-foreground">Nothing here yet</h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -107,9 +116,9 @@ export default function StudioCaseStudiesPage() {
         </div>
       ) : null}
 
-      {submissionsQuery.isSuccess && submissionsQuery.data.length > 0 ? (
+      {submissionsQuery.isSuccess && submissionsQuery.data.items.length > 0 ? (
         <ul className="mt-6 max-w-3xl">
-          {submissionsQuery.data.map((submission) => {
+          {submissionsQuery.data.items.map((submission) => {
             const authorNote = CASE_STUDY_STATE_AUTHOR_NOTES[submission.moderationState];
 
             return (

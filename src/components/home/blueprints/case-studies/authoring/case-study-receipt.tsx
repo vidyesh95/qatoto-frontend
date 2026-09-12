@@ -45,20 +45,21 @@ export default function CaseStudyReceipt({
         </div>
       </dl>
 
-      <div className="mt-5 rounded-xl border border-destructive/40 bg-destructive/5 p-4">
-        <h2 className="text-sm font-medium text-destructive">
-          Nothing was actually stored, and you should know that before you close this
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-foreground">
-          Qatoto cannot accept case studies yet. There is no database behind this form and no queue
-          of moderators reading them. Everything you wrote was checked against the real rules and
-          then discarded when you pressed Send. Keep your own copy.
-        </p>
-        <p className="mt-2 text-sm leading-6 text-foreground">
-          This exists so the process can be walked and argued with before it is real. This case
-          study will not appear in My Case Studies.
-        </p>
-      </div>
+      {/*
+        ⚠️ THE "NOTHING WAS STORED" PANEL IS GONE, and it had to go the same day the route landed.
+        It said Qatoto could not accept case studies, that there was no database behind the form and
+        no queue of moderators reading them, and that everything was discarded on Send. All four
+        statements are now false, and a disclosure that is false is worse than none: a writer who
+        believed it would keep no copy of nothing, or would send the same case study twice.
+
+        Nothing replaces it, deliberately. What is true now — it is waiting for review, it will
+        appear in My Case Studies, a moderator decides — is already said by the lines above and by
+        the link below.
+      */}
+      <p className="mt-5 max-w-prose text-sm leading-6 text-muted-foreground">
+        A moderator reads it next. You will see the decision, and any note they send back, in My
+        Case Studies.
+      </p>
 
       <div className="mt-5 flex flex-wrap gap-2">
         <button

@@ -1,108 +1,84 @@
-// TRANSPORT: mock — no network call is made. There is no case-study table on the Express backend and
-// no route to send one to, so nothing here persists and nothing here pretends to.
+// TRANSPORT: client-query — the writer's side of case studies, against the Express backend: sending
+// one for review, and listing the writer's own.
 //
-// ⚠️ THE HONESTY RULE OF `showcase-authoring.api.ts` APPLIES UNCHANGED: EVERYTHING EXCEPT PERSISTENCE
-// IS REAL. The payload is validated against the real write contract before it gets here, the
-// idempotency key travels, the result is a tagged `ActionResponse` and the receipt has the shape a 202
-// would answer with. What does not happen is storage, and the receipt says so once.
+// ⚠️ SEPARATE FROM `case-study-moderation.api.ts`, and that separation is a security boundary rather
+// than tidiness: the moderator read carries a company name its writer withheld from readers, and
+// nothing under `components/home` or `components/studio` may import that file.
 //
-// ⚠️ DO NOT ADD A POLL AGAINST THIS FILE. There is no queue, and a spinner re-reading the same fixture
-// forever would imply a moderator is working.
+// ⚠️ NOTHING HERE IS OPTIMISTIC AND NOTHING POLLS. A sent case study is `pending_review`; a moderator
+// decides, and the writer sees the decision the next time My Case Studies loads. A spinner
+// re-reading the queue would imply somebody is working on it this minute.
 //
-// WHEN THE BACKEND ARRIVES: `submitCaseStudyForReview` becomes one JSON POST and
-// `listMyCaseStudySubmissions` one `getJson`, against the same schemas. No caller changes.
+// ⚠️ AND THE RECEIPT IS THREE SCALARS ON PURPOSE. `idempotency` on the backend stores whole 2xx
+// bodies for replay, so a route that echoed the submission back would put a company name into a
+// cache keyed by a header the client chose. Do not widen it.
+
+import { z } from "zod";
 
 import {
+  CaseStudySubmissionReceiptSchema,
   CaseStudySubmissionSchema,
-  type CaseStudySubmission,
   type CaseStudySubmissionDraft,
   type CaseStudySubmissionReceipt,
 } from "@/lib/blueprints/case-study-authoring.schemas";
-import type { ActionResponse } from "@/lib/http";
-import { MOCK_BLUEPRINTS } from "@/mocks/blueprints-mocks";
-import { MOCK_MY_CASE_STUDY_SUBMISSIONS } from "@/mocks/blueprints-case-study-authoring-mocks";
-
-/** How long the mock takes to "answer", so the sending state is visible rather than theoretical. */
-const MOCK_SUBMIT_LATENCY_MS = 600;
-
-function wait(delayMs: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, delayMs));
-}
-
-/** Trimmed, inner whitespace collapsed, lower-cased, so a stray space is not a different lesson. */
-function normalizeLessonTitle(lessonTitle: string): string {
-  return lessonTitle.trim().replace(/\s+/g, " ").toLowerCase();
-}
+import { cursorPageOf } from "@/lib/store/shared.schemas";
+import { getJson, sendJson, type ActionResponse, type RequestOptions } from "@/lib/http";
 
 /**
- * The title of an existing case study with the same lesson, or `null`.
+ * `POST /blueprints/case-studies` — send a case study for review. Answers 202 with a receipt.
  *
- * ⚠️ THE ONE REAL RULE THIS MOCK ENFORCES, for the launch mock's reason: two case studies with one
- * title are indistinguishable in the list, and without it the composer's failure branch
- * (`MutationErrorNotice`) could never render.
- */
-function findConflictingLessonTitle(lessonTitle: string): string | null {
-  const normalizedLessonTitle = normalizeLessonTitle(lessonTitle);
-  if (normalizedLessonTitle === "") return null;
-
-  const conflictingCaseStudy = MOCK_BLUEPRINTS.find(
-    (blueprint) =>
-      blueprint.category === "case_study" &&
-      normalizeLessonTitle(blueprint.title) === normalizedLessonTitle,
-  );
-
-  return conflictingCaseStudy?.title ?? null;
-}
-
-/**
- * `POST /blueprints/case-studies` — send a case study for review.
+ * ⚠️ A 202 IS NOT A RESULT. The case study lands `pending_review`, appears in no index, and has no
+ * public address until a moderator publishes it — which is why the receipt carries no slug.
  *
- * ⚠️ A 202 IS NOT A RESULT. The case study lands `pending_review`, appears in no list, and a moderator
- * decides. The receipt carries no public slug. `idempotencyKey` is minted once per attempt by the
- * caller and survives a retry of that attempt.
+ * ⚠️ `idempotencyKey` IS THE CALLER'S, minted once per attempt and kept across a retry of that
+ * attempt. The server fingerprints the body, so the same key with an edited draft is a 409 — which
+ * is why the composer rotates it on any edit.
+ *
+ * THE REFUSALS WORTH KNOWING, each already shaped by the server: **409 with `errors.title`** when
+ * another case study teaches the same lesson (the server names the field and deliberately not the
+ * clashing row, so a probe cannot enumerate the queue); **422 with `errors.relatedLessonSlugs`**
+ * when a linked lesson is not one a reader can reach; and **422** keyed to any field the write gate
+ * refuses — including one rule the form does not have, that a withheld company's name may not appear
+ * in the prose a reader can see.
  */
-export async function submitCaseStudyForReview(submissionRequest: {
-  readonly draft: CaseStudySubmissionDraft;
-  readonly idempotencyKey: string;
-}): Promise<ActionResponse<CaseStudySubmissionReceipt>> {
-  await wait(MOCK_SUBMIT_LATENCY_MS);
-
-  const conflictingLessonTitle = findConflictingLessonTitle(submissionRequest.draft.title);
-  if (conflictingLessonTitle !== null) {
-    // Names the existing case study, so the writer can see what to change rather than retry.
-    return {
-      success: false,
-      error: {
-        code: "409",
-        message: `A case study with this lesson is already on Qatoto: "${conflictingLessonTitle}". Write yours as the lesson your story teaches that this one does not.`,
-      },
-    };
-  }
-
-  return {
-    success: true,
-    data: {
-      // Derived from the attempt key, so a retry of the same attempt is visibly the same case study.
-      submissionId: `case-study-${submissionRequest.idempotencyKey.slice(0, 8)}`,
-      moderationState: "pending_review",
-      receivedAt: new Date().toISOString(),
+export function submitCaseStudyForReview(
+  submissionRequest: {
+    readonly draft: CaseStudySubmissionDraft;
+    readonly idempotencyKey: string;
+  },
+  options?: RequestOptions,
+): Promise<ActionResponse<CaseStudySubmissionReceipt>> {
+  return sendJson(
+    "/blueprints/case-studies",
+    "POST",
+    submissionRequest.draft,
+    CaseStudySubmissionReceiptSchema,
+    {
+      ...options,
+      headers: { ...options?.headers, "Idempotency-Key": submissionRequest.idempotencyKey },
     },
-  };
+  );
 }
+
+/**
+ * The writer's own case studies, newest first, in every state.
+ *
+ * KEYSET-PAGED, where the mock this replaced answered a flat array. The backend pages it because a
+ * prolific writer's list is unbounded, and `cursorPageOf` is the shared footer every other paged
+ * read on this surface uses — the page control is shareable only because nothing redefines it.
+ */
+export const MyCaseStudyPageSchema = cursorPageOf(CaseStudySubmissionSchema);
+export type MyCaseStudyPage = z.infer<typeof MyCaseStudyPageSchema>;
 
 /**
  * `GET /blueprints/case-studies/mine` — the writer's own case studies.
  *
- * ⚠️ IT DOES NOT SEE ANYTHING SENT THIS SESSION, and the receipt is where that is disclosed. These
- * fixture rows are a fixed set, one per state, for the launch list's reason.
+ * ⚠️ IT CARRIES NO COMPANIES, and that is not an omission. The row renders a title, an action line,
+ * a discipline, a state, a slug and the moderator's note; returning companies would make this a
+ * second route able to serve a real name, for no consumer. The name reaches exactly one route.
  */
-export async function listMyCaseStudySubmissions(): Promise<ActionResponse<CaseStudySubmission[]>> {
-  await wait(MOCK_SUBMIT_LATENCY_MS);
-
-  return {
-    success: true,
-    data: MOCK_MY_CASE_STUDY_SUBMISSIONS.map((candidate) =>
-      CaseStudySubmissionSchema.parse(candidate),
-    ),
-  };
+export function listMyCaseStudySubmissions(
+  options?: RequestOptions,
+): Promise<ActionResponse<MyCaseStudyPage>> {
+  return getJson("/blueprints/case-studies/mine", MyCaseStudyPageSchema, options);
 }

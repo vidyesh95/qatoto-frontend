@@ -47,9 +47,16 @@ export default function CaseStudyModerationPage() {
           Case studies writers have sent, oldest first. Read each one against how the writer says
           they know it, and against the statements they ticked.
         </p>
+        {/*
+          ⚠️ THE PRACTICE SENTENCE IS GONE. It said these were sample submissions and that decisions
+          were discarded — "nothing is published and no writer is told". Both halves are now false:
+          publishing mints a public address and a send-back carries a note the writer reads in My
+          Case Studies. Leaving it would have told a moderator their decision was a rehearsal while
+          it took effect.
+        */}
         <p className="text-sm text-muted-foreground">
-          These are sample submissions. Decisions are checked against the real rules and then
-          discarded: nothing is published and no writer is told.
+          A decision takes effect immediately. Publishing gives the case study a public address; a
+          send-back carries your note to the writer, and it is the only thing they see.
         </p>
       </header>
 

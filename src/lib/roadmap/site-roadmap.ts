@@ -171,7 +171,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         label: "Blueprints — case studies",
         href: "/blueprints/case-studies",
         summary:
-          "Lessons somebody learned the expensive way, filtered by discipline, with a form to write one. Writing is not open yet.",
+          "Lessons somebody learned the expensive way, filtered by discipline, with a form to write one.",
       },
       {
         kind: "dynamic",
@@ -950,8 +950,7 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         kind: "route",
         label: "My Case Studies",
         href: "/studio/case-studies",
-        summary:
-          "Lessons you have written, and where each one has got to. Writing is not open yet.",
+        summary: "Lessons you have written, and where each one has got to.",
       },
       {
         // ⚠️ THIS ENTRY HAS NOW BEEN WRONG TWICE, IN OPPOSITE DIRECTIONS, and the history is worth

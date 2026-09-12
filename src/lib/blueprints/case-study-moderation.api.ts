@@ -1,156 +1,81 @@
-// TRANSPORT: mock — no network call is made. There is no case-study table and no moderation route on
-// the Express backend, so nothing here persists and nothing here pretends to.
+// TRANSPORT: client-query — the moderator's side of case studies, against the Express backend:
+// reading the review queue and deciding one case study.
 //
-// ⚠️ SEPARATE FROM `case-study-authoring.api.ts`, on the pathways precedent, so moderation calls and
-// the moderator rows (which carry withheld company names) never land in a studio or public bundle.
+// ⚠️ SEPARATE FROM `case-study-authoring.api.ts`, AND THAT IS A SECURITY BOUNDARY. These rows carry
+// a company name its writer withheld from READERS, which only a `moderate_content` holder may see.
+// Nothing under `src/components/home` or `src/components/studio` may import this file, and the
+// check is `rg "case-study-moderation" src/components/home src/components/studio`, which must
+// print nothing.
 //
-// ⚠️ EVERYTHING EXCEPT PERSISTENCE IS REAL, as in the author-side mock: the queue pages with an opaque
-// cursor, the decision is parsed against the real contract, the idempotency key travels, a decided
-// submission answers 409 and the result has the shape the route would answer with. What does not
-// happen is storage, so a decided card returns when the page reloads, and the page header says so once.
+// ⚠️ SO THESE RESPONSES MUST NEVER BE CACHED SHARED. Every other read on this surface is
+// caller-independent and deliberately cacheable; these two depend entirely on who is asking.
 //
-// ⚠️ A MODERATOR DECIDING THEIR OWN CASE STUDY IS A 403 THE MOCK CANNOT PRODUCE: it has no idea who is
-// signed in. The backend enforces it; the card already renders any refusal the route sends.
+// ⚠️ NOTHING HERE IS OPTIMISTIC. The card waits for the answer, and a 409 means another moderator
+// got there first — which the card says with a way to refresh rather than a retry.
 //
-// WHEN THE BACKEND ARRIVES: `listCaseStudyReviewQueue` becomes one `getJson` and
-// `moderateCaseStudySubmission` one `sendJson` with the `Idempotency-Key` header, against the same
-// schemas, and the header disclosure on the page is deleted.
+// A MODERATOR DECIDING THEIR OWN CASE STUDY IS A 403, which the backend enforces and the mock this
+// replaced could not produce: it had no idea who was signed in.
 
 import {
-  CaseStudyModerationDecisionSchema,
   CaseStudyModerationResultSchema,
-  CaseStudyReviewItemSchema,
+  CaseStudyReviewQueuePageSchema,
   type CaseStudyModerationDecision,
   type CaseStudyModerationResult,
   type CaseStudyReviewQueuePage,
 } from "@/lib/blueprints/case-study-moderation.schemas";
-import type { ActionResponse } from "@/lib/http";
 import {
-  MOCK_ALREADY_DECIDED_CASE_STUDY_SUBMISSION_IDS,
-  MOCK_CASE_STUDY_REVIEW_QUEUE,
-} from "@/mocks/blueprints-case-study-review-mocks";
-
-/** How long the mock takes to "answer", so loading and deciding states are visible. */
-const MOCK_LATENCY_MS = 600;
-
-/** Fixture-sized on purpose, so the four sample rows need a second page. */
-const REVIEW_QUEUE_PAGE_LIMIT = 3;
-
-const BASE64_PATTERN = /^[A-Za-z0-9+/]+={0,2}$/;
-
-function wait(delayMs: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, delayMs));
-}
-
-/** The opaque cursor: the last row's id, base64-encoded. Opaque by contract, readable by nobody else. */
-function encodeQueueCursor(submissionId: string): string {
-  return btoa(submissionId);
-}
-
-/** The id a cursor points after, or `null` when it is not one this mock issued. */
-function decodeQueueCursor(cursor: string): string | null {
-  return BASE64_PATTERN.test(cursor) ? atob(cursor) : null;
-}
-
-/** Lower-case words joined by hyphens, as the backend mints a slug from a title on publish. */
-function buildSlugFromTitle(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60)
-    .replace(/-+$/g, "");
-}
+  buildQueryString,
+  getJson,
+  sendJson,
+  type ActionResponse,
+  type RequestOptions,
+} from "@/lib/http";
 
 /**
  * `GET /blueprints/admin/case-studies/review-queue` — case studies waiting for a decision, oldest
- * first. An unresolvable cursor serves the first page, the house rule for every keyset list here.
+ * first.
+ *
+ * Oldest first because newest-first starves its own tail, and the submission that has waited longest
+ * is the one owed an answer.
+ *
+ * ⚠️ A MALFORMED CURSOR IS A 422 FROM THE SERVER, NOT A SILENT FIRST PAGE, which is a change from the
+ * mock this replaced (it served the first page, the house rule for a reader-facing keyset list). A
+ * queue that quietly restarts shows a moderator case studies they already decided.
  */
-export async function listCaseStudyReviewQueue(filter: {
-  readonly cursor?: string;
-}): Promise<ActionResponse<CaseStudyReviewQueuePage>> {
-  await wait(MOCK_LATENCY_MS);
-
-  const queueRows = MOCK_CASE_STUDY_REVIEW_QUEUE.map((candidate) =>
-    CaseStudyReviewItemSchema.parse(candidate),
-  );
-  const afterSubmissionId = filter.cursor === undefined ? null : decodeQueueCursor(filter.cursor);
-  // `findIndex` answers -1 for an id this queue does not hold, and -1 + 1 is the first page.
-  const startIndex =
-    afterSubmissionId === null
-      ? 0
-      : queueRows.findIndex((row) => row.submissionId === afterSubmissionId) + 1;
-  const pageRows = queueRows.slice(startIndex, startIndex + REVIEW_QUEUE_PAGE_LIMIT);
-  const hasMore = startIndex + REVIEW_QUEUE_PAGE_LIMIT < queueRows.length;
-  const lastPageRow = pageRows.at(-1);
-
-  return {
-    success: true,
-    data: {
-      items: pageRows,
-      page: {
-        nextCursor:
-          hasMore && lastPageRow !== undefined ? encodeQueueCursor(lastPageRow.submissionId) : null,
-        hasMore,
-      },
-    },
-  };
+export function listCaseStudyReviewQueue(
+  filter: { readonly cursor?: string; readonly limit?: number } = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<CaseStudyReviewQueuePage>> {
+  const path = `/blueprints/admin/case-studies/review-queue${buildQueryString({ ...filter })}`;
+  return getJson(path, CaseStudyReviewQueuePageSchema, options);
 }
 
 /**
  * `POST /blueprints/admin/case-studies/:submissionId/moderate` — publish or send back.
  *
- * ⚠️ NOTHING IS OPTIMISTIC. The card waits for this answer, and a 409 means another moderator got
- * there first, which the card says with a way to refresh rather than a retry.
+ * `idempotencyKey` is the caller's, minted once per card and rotated on a note edit, a changed
+ * decision and after success — the fix for the pathway queue's reused key. The server fingerprints
+ * the body, so the same key with a different decision is a 409.
+ *
+ * PUBLISHING MINTS THE SLUG SERVER-SIDE and the result carries it; a send-back answers with
+ * `publicSlug: null`, because a case study that was sent back has no public address.
  */
-export async function moderateCaseStudySubmission(moderationRequest: {
-  readonly submissionId: string;
-  readonly decision: CaseStudyModerationDecision;
-  readonly idempotencyKey: string;
-}): Promise<ActionResponse<CaseStudyModerationResult>> {
-  await wait(MOCK_LATENCY_MS);
-
-  const submission = MOCK_CASE_STUDY_REVIEW_QUEUE.find(
-    (row) => row.submissionId === moderationRequest.submissionId,
+export function moderateCaseStudySubmission(
+  moderationRequest: {
+    readonly submissionId: string;
+    readonly decision: CaseStudyModerationDecision;
+    readonly idempotencyKey: string;
+  },
+  options?: RequestOptions,
+): Promise<ActionResponse<CaseStudyModerationResult>> {
+  return sendJson(
+    `/blueprints/admin/case-studies/${encodeURIComponent(moderationRequest.submissionId)}/moderate`,
+    "POST",
+    moderationRequest.decision,
+    CaseStudyModerationResultSchema,
+    {
+      ...options,
+      headers: { ...options?.headers, "Idempotency-Key": moderationRequest.idempotencyKey },
+    },
   );
-  if (submission === undefined) {
-    return {
-      success: false,
-      error: { code: "404", message: "This case study is no longer in the queue." },
-    };
-  }
-
-  // The route parses the body itself; a client-side check is only ever a mirror of this.
-  const parsedDecision = CaseStudyModerationDecisionSchema.safeParse(moderationRequest.decision);
-  if (!parsedDecision.success) {
-    return {
-      success: false,
-      error: {
-        code: "422",
-        message: parsedDecision.error.issues[0]?.message ?? "That decision could not be read.",
-      },
-    };
-  }
-
-  if (MOCK_ALREADY_DECIDED_CASE_STUDY_SUBMISSION_IDS.has(submission.submissionId)) {
-    return {
-      success: false,
-      error: {
-        code: "409",
-        message:
-          "Another moderator already decided this case study. Refresh the queue to see what is still waiting.",
-      },
-    };
-  }
-
-  return {
-    success: true,
-    data: CaseStudyModerationResultSchema.parse({
-      submissionId: submission.submissionId,
-      moderationState: parsedDecision.data.decision,
-      publicSlug:
-        parsedDecision.data.decision === "published" ? buildSlugFromTitle(submission.title) : null,
-      decidedAt: new Date().toISOString(),
-    }),
-  };
 }
