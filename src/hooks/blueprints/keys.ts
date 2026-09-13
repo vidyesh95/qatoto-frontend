@@ -29,4 +29,31 @@ export const blueprintKeys = {
   showcaseReviewQueue: () => ["blueprints", "showcase", "admin", "review-queue"] as const,
   /** The moderator's teardown review queue, for the same reason as the two queues above. */
   teardownReviewQueue: () => ["blueprints", "teardowns", "admin", "review-queue"] as const,
+  /**
+   * One blueprint's discussion thread.
+   *
+   * KEYED BY ARM AND SLUG, because that is what the route is keyed by. No cursor: `useKeysetList`
+   * holds every page under this one key, so posting a comment invalidates the whole thread rather
+   * than trying to splice a row into the right page.
+   */
+  commentThread: (arm: string, slug: string) => ["blueprints", arm, slug, "comments"] as const,
+  /**
+   * What this viewer has already done to a named set of blueprints.
+   *
+   * ⚠️ THE SLUGS ARE IN THE KEY, sorted, because they are the QUERY. Two detail pages asking about
+   * different rows must not share a cache entry — and sorting means the same set asked for in a
+   * different order is still one entry.
+   */
+  viewerState: (slugs: readonly string[]) =>
+    ["blueprints", "engagement", "state", [...slugs].toSorted().join(",")] as const,
+  /** The reporter's own list of reports. Person-scoped server-side, so no id in the key. */
+  myReports: () => ["blueprints", "reports", "mine"] as const,
+  /**
+   * The moderator's content-report queue.
+   *
+   * ⚠️ `status` IS IN THE KEY AND THE CURSOR IS NOT. The status is a SERVER filter — it changes
+   * which rows come back — while the cursor is paging within one filter, which `useKeysetList`
+   * already holds under a single key.
+   */
+  reportQueue: (status: string) => ["blueprints", "admin", "content-reports", status] as const,
 };

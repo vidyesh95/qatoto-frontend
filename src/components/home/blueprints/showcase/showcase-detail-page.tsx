@@ -30,18 +30,15 @@ import BlueprintAvatar from "@/components/home/blueprints/sections/blueprint-ava
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import BlueprintCommentThread from "@/components/home/blueprints/sections/blueprint-comment-thread";
+import BlueprintDiscussion from "@/components/home/blueprints/sections/blueprint-discussion";
 import BlueprintShareButton from "@/components/home/blueprints/sections/blueprint-share-button";
 import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-tag-list";
-import ShowcaseVoteBox from "@/components/home/blueprints/sections/showcase-vote-box";
+import ShowcaseVoteGutter from "@/components/home/blueprints/sections/showcase-vote-gutter";
 import ShowcaseWriteUp from "@/components/home/blueprints/showcase/sections/showcase-write-up";
 import RelativeTime from "@/components/home/shared/relative-time";
 import { getPublicShowcase } from "@/lib/blueprints/showcase-public.api";
-import {
-  buildBlueprintCategoryHref,
-  buildBlueprintHref,
-  type BlueprintComment,
-} from "@/lib/blueprints/schemas";
+import { hasCallerSession } from "@/lib/server-http";
+import { buildBlueprintCategoryHref, buildBlueprintHref } from "@/lib/blueprints/schemas";
 import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
 
 export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
@@ -52,12 +49,19 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
    * to be referenced by and no composer anywhere in the UI, so the honest thread is the empty one —
    * and `commentCount` comes back 0 from the server, which is true rather than a placeholder.
    */
-  const showcaseResponse = await getPublicShowcase(slug);
+  /*
+   * ⚠️ THE SESSION IS READ HERE ONLY TO SEED A CLIENT ISLAND, never to change this payload. The
+   * public showcase read stays bare and identical for every visitor — which is what buys it a cache
+   * and no limiter — and `ShowcaseVoteGutter` asks the one authenticated route about viewer state.
+   */
+  const [showcaseResponse, isViewerSignedIn] = await Promise.all([
+    getPublicShowcase(slug),
+    hasCallerSession(),
+  ]);
   // A launch that is not published is a 404 here, identical to a slug that never existed — the two
   // are indistinguishable on purpose, so a stranger cannot probe what is waiting for review.
   if (!showcaseResponse.success) notFound();
   const showcase = showcaseResponse.data;
-  const comments: readonly BlueprintComment[] = [];
 
   const hasActionLinks = showcase.callToAction !== null || showcase.builtFromBlueprintSlug !== null;
 
@@ -68,7 +72,11 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
           indented by the same 52px (56px from `lg`, where the gap grows) so the whole launch reads
           down one left edge, the title's. */}
       <header className="grid grid-cols-[40px_minmax(0,1fr)] gap-x-3 lg:gap-x-4">
-        <ShowcaseVoteBox count={showcase.upvoteCount} />
+        <ShowcaseVoteGutter
+          slug={showcase.slug}
+          count={showcase.upvoteCount}
+          isViewerSignedIn={isViewerSignedIn}
+        />
 
         <div className="min-w-0">
           <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">
@@ -231,7 +239,17 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
         </aside>
 
         <div className="mt-10 min-w-0 min-[1440px]:col-start-1 min-[1440px]:row-start-2 min-[1440px]:mt-0">
-          <BlueprintCommentThread comments={comments} />
+          <BlueprintDiscussion
+            arm="showcase"
+            slug={showcase.slug}
+            isViewerSignedIn={isViewerSignedIn}
+            /*
+             * A launch is only ever readable while `published` — this arm has no `flagged` or
+             * `quarantined` state — so anything this page can render can also be commented on.
+             * The prop exists because the teardown arm's answer is not always yes.
+             */
+            canComment
+          />
         </div>
       </div>
 

@@ -9,12 +9,18 @@ import { formatCountLabel } from "@/lib/store/format";
  * A launch's upvote count, stacked caret-over-number in a fixed 40×44 gutter — the Launch YC
  * shape, in the blueprints palette.
  *
- * A `<span>`, NEVER A BUTTON, AND THAT IS NOT AN OVERSIGHT. There is no vote endpoint on the
- * backend, and a control that incremented a number in the browser would be a business rule
- * enforced on a layer the user controls — the exact thing CLAUDE.md §1.1 forbids. It is BARE —
- * no border, no background, no hover, no `cursor-pointer` — because a bordered box reads as a
- * button, and this one does nothing. When a real vote route exists this becomes a button and this
- * comment goes away; until then it displays.
+ * A `<span>`, NEVER A BUTTON — AND THE REASON HAS CHANGED, so this paragraph is rewritten rather
+ * than deleted.
+ *
+ * It used to be a `<span>` because there was no vote endpoint at all. There is one now:
+ * `PUT|DELETE /blueprints/showcases/:launchSlug/upvote`, and `showcase-vote-button.tsx` is the
+ * control that calls it. This stays a `<span>` because of WHERE IT IS RENDERED — the feed row and
+ * the launch link, both LIST surfaces. A real control needs to know whether THIS viewer has already
+ * upvoted, and reading that per row would mean one authenticated lookup per card on the page. The
+ * detail page already pays for one batched viewer-state read, so that is where the button lives.
+ *
+ * It stays BARE — no border, no background, no hover, no `cursor-pointer` — because a bordered box
+ * reads as a button, and this one still does nothing.
  *
  * NO `role="img"`: `jsx_a11y/prefer-tag-over-role` (deny in `.oxlintrc.json`) maps that role to
  * `<img>`. The accessible text is the exact count plus a visually-hidden noun instead, which a

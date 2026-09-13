@@ -2182,8 +2182,10 @@ export type BlueprintOfCategory<TCategory extends BlueprintCategory> = Extract<
  * NO `viewerState`, which the video comment carries. It answers questions only a session can ask —
  * has this reader liked it, may they edit it, may they delete it — and this surface has no session
  * to ask them of. Every engagement table in the backend is hard-FK'd to `video.id` or `product.id`,
- * and no blueprints content table exists for a comment row to reference. It arrives with the write
- * surface (todo.md §Blueprint discussion, Part 2) and not before.
+ * and no blueprints content table existed for a comment row to reference. ⚠️ BOTH HAVE LANDED:
+ * `showcase_launch_comment` and `teardown_comment` are real tables with a real write path, and this
+ * shape is what those routes answer with. The case-study arm still has no thread, and that is the
+ * contract rather than a gap — it is a numbered lesson with no discussion surface.
  *
  * ⚠️ `body` AND `author` ARE NULLABLE TOGETHER, AND BOTH `null` IS A TOMBSTONE. This file previously
  * argued the opposite — "a tombstone is a state only deletion can create" — and that was true about
@@ -2211,15 +2213,33 @@ export const BlueprintCommentSchema = z
     /** `null` on a tombstone only. See the note above. */
     author: BlueprintAuthorSchema.nullable(),
     /**
-     * DISPLAY ONLY. No comment-like route exists any more than a vote route does, so this renders as
-     * a `<span>` and never as a `<button>`.
+     * ⚠️ NO LONGER DISPLAY-ONLY. This used to render as a `<span>` because no comment-like route
+     * existed; `PUT|DELETE /blueprints/comments/:commentId/like` does now, and the count moves.
      */
     likeCount: z.number().int().nonnegative(),
+    /** How many replies hang off this row. Always 0 on a reply — the depth cap is one level. */
+    replyCount: z.number().int().nonnegative(),
     /** ISO 8601. */
     createdAt: z.string(),
+    /**
+     * ⚠️ ARRIVES WITH THE THREAD, unlike the blueprint-level viewer state, which is its own batched
+     * call. The difference is that the thread read is ALREADY per-viewer — it is the one blueprints
+     * read that resolves an optional session — so folding this in costs nothing, where folding
+     * viewer state into the bare public reads would have cost them their cacheability.
+     */
+    viewerState: z.object({ hasLiked: z.boolean() }),
   })
   .strip();
 export type BlueprintComment = z.infer<typeof BlueprintCommentSchema>;
+
+/** One keyset page of a thread, oldest first — a discussion reads in the order it happened. */
+export const BlueprintCommentPageSchema = z
+  .object({
+    rows: BlueprintCommentSchema.array(),
+    nextCursor: z.string().nullable(),
+  })
+  .strip();
+export type BlueprintCommentPage = z.infer<typeof BlueprintCommentPageSchema>;
 
 /**
  * One keyset page of blueprints.
