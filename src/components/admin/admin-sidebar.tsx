@@ -109,6 +109,24 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
         activeIcon: "/icons/factory_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
         inactiveIcon: "/icons/factory_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       },
+      {
+        // A FIFTH `moderate_content` QUEUE, and the only one about blueprints that are ALREADY
+        // PUBLIC. The three above it — Launches, Case studies, Teardowns — hold submissions waiting
+        // for a first decision, and `teardown-moderation-page.tsx` says "THIS CONSOLE IS THE ONLY
+        // PLACE A PENDING TEARDOWN EXISTS". These rows have passed that decision and have readers.
+        //
+        // Different population, different verbs (flag / quarantine / restore / dismiss, not publish
+        // / send back), and on the server a different index entirely — those queues are keyed on
+        // `moderation_state = 'pending_review'`.
+        //
+        // `copyright`, because the sharpest verb on this queue exists for exactly one reason: a
+        // quarantine withholds a publisher's files under an unresolved rights claim, and
+        // `rights_claim` is the only report reason that can reach it.
+        href: "/admin/blueprint-reports",
+        label: "Blueprint reports",
+        activeIcon: "/icons/copyright_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
+        inactiveIcon: "/icons/copyright_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      },
     ],
     hasDivider: true,
   },
