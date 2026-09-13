@@ -1,5 +1,5 @@
 // TRANSPORT: mock — async server component. Reads `getBlueprintByCategory` from
-// `@/lib/blueprints/api`, which serves fixtures from `@/mocks/blueprints-mocks`.
+// `@/lib/blueprints/showcase-public.api`, which reads the Express backend.
 //
 // Laid out after a Launch YC post: the upvote in a left gutter beside the head of the launch (the
 // name, the pitch, and the byline with Share), then the summary, the Markdown write-up with its

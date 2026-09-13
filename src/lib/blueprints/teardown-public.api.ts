@@ -2,9 +2,11 @@
 // `RequestOptions` is threaded anyway so a client island can call one later without the signature
 // changing.
 //
-// WIRED. These five reads call the Express backend. They are the teardown half of
-// `@/lib/blueprints/api`, which still serves case studies and the market signal from fixtures
-// because those have no tables yet — so the two files sit side by side on purpose until they do.
+// WIRED. Every read here calls the Express backend. This file used to be "the teardown half of
+// `@/lib/blueprints/api`, which still serves case studies and the market signal from fixtures" —
+// both of those have tables now, `@/lib/blueprints/api` is gone, and the market signal moved HERE
+// rather than to a file of its own because it is addressed by a teardown slug like the five reads
+// above it.
 //
 // `@/lib/blueprints/api` IS NOT A MODEL FOR THIS FILE, and neither is `@/lib/cms`. Those getters
 // return a bare value and fall back to fixtures when a fetch fails, which makes "the backend is
@@ -17,6 +19,7 @@
 
 import {
   TeardownBlueprintSchema,
+  TeardownMarketSignalSchema,
   TeardownClaimTargetsSchema,
   TeardownIndexPageSchema,
   TeardownOptionListSchema,
@@ -25,6 +28,7 @@ import {
   type TeardownBlueprint,
   type TeardownClaimTargets,
   type TeardownIndexPage,
+  type TeardownMarketSignal,
   type TeardownMediaFilter,
   type TeardownOption,
 } from "@/lib/blueprints/schemas";
@@ -130,4 +134,27 @@ export function getTeardownClaimTargets(
     TeardownClaimTargetsSchema,
     options,
   );
+}
+
+/**
+ * The market-signal band: is anybody selling this, and has anybody built one?
+ *
+ * ⚠️ THIS REPLACED THE LAST MOCK ON THE BLUEPRINTS SURFACE. The fixture version joined invented
+ * store listings onto an invented product class, and its own docblock said it would stay mock until
+ * "the teardowns are real". They are: the twelve are seeded rows, the authoring wizard writes more,
+ * and the five product classes they name are real store categories.
+ *
+ * ⚠️ IT SURVIVES A QUARANTINE, like the detail read beside it. A rights claim is a claim about the
+ * publisher's FILES and says nothing about whether a market for the product exists — so suppressing
+ * this band would let a moderation action quietly delete an unrelated fact.
+ *
+ * ⚠️ THE SERVER SENDS TWO ARRAYS AND NEVER `null`. "No signal suppresses the whole block" is still
+ * the rule, but it is a RENDERING rule and the page applies it — see `teardown-detail-page.tsx`.
+ */
+export function getTeardownMarketSignal(
+  teardownSlug: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<TeardownMarketSignal>> {
+  const path = `/blueprints/teardowns/${encodeURIComponent(teardownSlug)}/market-signal`;
+  return getJson(path, TeardownMarketSignalSchema, options);
 }

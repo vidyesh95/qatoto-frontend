@@ -9,7 +9,7 @@
 //
 // Superseded — this file previously read `getBlueprintByCategory` and
 // `listRelatedCaseStudies` from `@/lib/blueprints/api`, which served fixtures from
-// `@/mocks/blueprints-mocks`.
+// the Express backend, via `@/lib/blueprints/case-study-public.api`.
 //
 // A REPORT, NOT AN ESSAY, AND THE SECTION ORDER IS FIXED. Problem, context, what they did, what to
 // avoid, the business facts, sources, related lessons — every case study, every time, so a reader

@@ -25,6 +25,19 @@ import {
   type ShowcaseSort,
 } from "@/lib/blueprints/schemas";
 
+/**
+ * How many showcase rows one page holds.
+ *
+ * ⚠️ IT LIVES BESIDE THE READ IT BOUNDS, and it used to live in `@/lib/blueprints/api` — the mock
+ * transport, whose only other surviving export was the teardown market signal. That file is gone;
+ * this constant is not a mock and never was.
+ *
+ * The skeleton draws this many placeholder rows, so a literal there could drift from the page it
+ * stands in for. It byte-matches `SHOWCASE_FEED_DEFAULT_LIMIT` on the server, which says so in its
+ * own comment.
+ */
+export const SHOWCASE_PAGE_LIMIT = 6;
+
 export interface ListPublicShowcasesFilter {
   readonly tag?: string;
   readonly sort?: ShowcaseSort;

@@ -1,10 +1,10 @@
-// TRANSPORT: props-only — the signal is assembled by `getTeardownMarketSignal` in
-// `@/lib/blueprints/api` and handed down. This component joins nothing and counts nothing.
+// TRANSPORT: props-only — the signal comes from `getTeardownMarketSignal` in
+// `@/lib/blueprints/teardown-public.api`, which reads the backend. This component joins nothing and
+// counts nothing.
 
 import Link from "next/link";
 
-import type { TeardownMarketSignal } from "@/lib/blueprints/api";
-import { buildBlueprintHref } from "@/lib/blueprints/schemas";
+import { buildBlueprintHref, type TeardownMarketSignal } from "@/lib/blueprints/schemas";
 import { formatCentsLabel } from "@/lib/store/format";
 
 /**
@@ -96,16 +96,21 @@ export default function TeardownMarketSignalBand({
           <ul className="mt-1">
             {marketSignal.showcases.map((showcase) => (
               <li
-                key={showcase.id}
+                key={showcase.slug}
                 className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 border-t border-black/5 py-2"
               >
                 <Link
-                  href={buildBlueprintHref(showcase)}
+                  /*
+                   * The category is a literal because this list is showcases by definition — the
+                   * endpoint answers a teardown's reverse lookup, so there is no other kind of row
+                   * it could contain.
+                   */
+                  href={buildBlueprintHref({ category: "showcase", slug: showcase.slug })}
                   className="text-sm font-medium text-foreground transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
                 >
                   {showcase.title}
                 </Link>
-                <span className="text-xs text-muted-foreground">{showcase.author.displayName}</span>
+                <span className="text-xs text-muted-foreground">{showcase.authorDisplayName}</span>
               </li>
             ))}
           </ul>

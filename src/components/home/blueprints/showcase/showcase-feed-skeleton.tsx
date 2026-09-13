@@ -9,7 +9,7 @@
 // from the page it stands in for — `catalog-results-skeleton.tsx` makes the case that a skeleton
 // must match the layout it resolves into.
 
-import { SHOWCASE_PAGE_LIMIT } from "@/lib/blueprints/api";
+import { SHOWCASE_PAGE_LIMIT } from "@/lib/blueprints/showcase-public.api";
 
 export default function ShowcaseFeedSkeleton() {
   return (

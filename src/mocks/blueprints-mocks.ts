@@ -6,10 +6,20 @@
 // so this file is a decision to be revisited when the first real teardown is published, not a
 // staging area that quietly becomes production.
 //
-// IMPORT SITES NEVER SEE THIS FILE. Everything goes through `@/lib/blueprints/api`, which parses
-// each fixture through `BlueprintSchema` before returning it. That is the difference from how
-// `@/mocks/anime-mocks` was wired — its components imported the arrays directly, so pointing them
-// at a backend meant rewriting the components rather than one getter.
+// ⚠️ NOTHING IN THIS APP IMPORTS THIS FILE ANY MORE, AND IT MUST NOT BE DELETED.
+//
+// Every blueprints read now calls the Express backend, and `@/lib/blueprints/api` — the transport
+// that used to serve these arrays — is gone. A grep for importers inside `src/` therefore returns
+// nothing, which looks exactly like dead code and is not.
+//
+// THIS FILE IS THE SEED SOURCE FOR THE BACKEND. `scripts/seed-blueprint-teardowns.ts` and
+// `scripts/seed-blueprint-case-studies.ts` in `qatoto-backend` import `MOCK_BLUEPRINTS` from this
+// exact path (overridable with `QATOTO_FRONTEND_MOCKS_PATH`) and parse each fixture through the
+// same import gate the authoring routes use. Deleting it does not remove a mock; it removes the
+// twelve teardowns and ten case studies from every freshly seeded environment.
+//
+// That the consumer lives in another repository is why the two used to sit side by side: these
+// arrays were the design fixtures AND the seed corpus. They are only the second thing now.
 //
 // THE SPLIT HERE IS 12 / 10 / 10, NOT 70/20/10, and that is deliberate. The 70/20/10 ratio is a
 // content target for REAL builds; applied to fixtures it gave two showcases and two case studies,

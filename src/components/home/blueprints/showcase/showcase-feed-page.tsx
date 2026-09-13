@@ -1,5 +1,5 @@
 // TRANSPORT: server-fetch — async server component. Reads `listPublicShowcases`
-// from `@/lib/blueprints/api`, which serve fixtures from `@/mocks/blueprints-mocks`.
+// from `@/lib/blueprints/showcase-public.api`, which reads the Express backend.
 //
 // Filtering, ORDERING and paging all live in the getter, for the reason
 // `teardowns-index-page.tsx` states at length. The `?sort=` chips below only rewrite the URL: the

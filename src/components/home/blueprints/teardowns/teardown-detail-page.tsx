@@ -45,8 +45,7 @@ import TelemetryReadouts from "@/components/home/blueprints/teardowns/sections/t
 import TeardownViewSwitch from "@/components/home/blueprints/teardowns/sections/teardown-view-switch";
 import TeardownExplorer from "@/components/home/blueprints/teardowns/teardown-explorer";
 import RelativeTime from "@/components/home/shared/relative-time";
-import { getTeardownMarketSignal } from "@/lib/blueprints/api";
-import { getPublicTeardown } from "@/lib/blueprints/teardown-public.api";
+import { getPublicTeardown, getTeardownMarketSignal } from "@/lib/blueprints/teardown-public.api";
 import {
   BLUEPRINT_DIFFICULTY_LABELS,
   TEARDOWN_MANUFACTURING_FILE_KIND_SHORT_LABELS,
@@ -200,7 +199,25 @@ export default async function TeardownDetailPage({
    * the product exists, and suppressing the band would let a moderation action quietly delete an
    * unrelated fact. `null` means there was nothing real to show, and `null` renders no section.
    */
-  const marketSignal = await getTeardownMarketSignal(teardown);
+  const marketSignalResponse = await getTeardownMarketSignal(teardown.slug);
+  /*
+   * ⚠️ THE BOTH-EMPTY RULE IS APPLIED HERE, NOT ON THE WIRE. The server answers two arrays and
+   * never `null`: an empty list is a fact, while `null` would make "nothing is selling" and "the
+   * backend answered" the same shape. Suppressing the band is a RENDERING decision — Principle 2
+   * at the section level — and this is the renderer.
+   *
+   * ⚠️ AND A FAILED READ RENDERS NOTHING RATHER THAN AN ERROR, which is the one place on this
+   * surface that is right. Everywhere else a failed read is surfaced, because a visitor shown
+   * invented content under a real heading is the failure this codebase argues against. Here the
+   * band is supplementary: the honest answer to "we could not reach the store" is to say nothing
+   * about the market, not to put an error where a founder expects evidence.
+   */
+  const marketSignal =
+    marketSignalResponse.success &&
+    (marketSignalResponse.data.storeListings.length > 0 ||
+      marketSignalResponse.data.showcases.length > 0)
+      ? marketSignalResponse.data
+      : null;
 
   /**
    * THE COMPOSITION SECTION, ASSEMBLED ONCE because the three views place it differently. Business

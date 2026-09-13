@@ -1769,6 +1769,45 @@ export const TeardownStoreListingSignalSchema = z
   );
 export type TeardownStoreListingSignal = z.infer<typeof TeardownStoreListingSignalSchema>;
 
+/**
+ * One build published FROM a teardown — the secondary half of the market signal.
+ *
+ * ⚠️ THREE FIELDS, NOT A WHOLE `ShowcaseBlueprint`. The band renders a title, a byline and a link,
+ * and nothing else. Serving the full showcase contract here would ship about twenty fields nothing
+ * renders and would couple this endpoint to every future showcase field — which is the unverified
+ * code the field sweeps exist to catch. The link is built from the slug plus a literal category at
+ * the call site.
+ */
+export const TeardownShowcaseSignalSchema = z
+  .object({
+    slug: z.string(),
+    title: z.string(),
+    authorDisplayName: z.string(),
+  })
+  .strip();
+export type TeardownShowcaseSignal = z.infer<typeof TeardownShowcaseSignalSchema>;
+
+/**
+ * What the market-signal band renders.
+ *
+ * ⚠️ TWO ARRAYS, AND THE SERVER NEVER SENDS `null`. "No signal suppresses the whole block" is still
+ * the rule — it is just a RENDERING rule now, applied by the page, where it belongs. On the wire an
+ * empty list is a fact; `null` would make "nothing is selling" and "the backend answered" the same
+ * shape, and nobody reading the response could tell them apart.
+ *
+ * ⚠️ AND ATTENTION IS STILL NOT DEMAND. `viewCount`, `likeCount` and `saveCount` are on the teardown
+ * row and are deliberately not part of this. Forty thousand people reading a teardown is forty
+ * thousand people reading a teardown. What counts is somebody having listed the product for sale,
+ * or somebody having shipped a build from these files.
+ */
+export const TeardownMarketSignalSchema = z
+  .object({
+    storeListings: TeardownStoreListingSignalSchema.array(),
+    showcases: TeardownShowcaseSignalSchema.array(),
+  })
+  .strip();
+export type TeardownMarketSignal = z.infer<typeof TeardownMarketSignalSchema>;
+
 // --- The blueprint union -----------------------------------------------------
 //
 // ONE SHAPE PER CATEGORY, because the three surfaces ask different questions of a build. A
