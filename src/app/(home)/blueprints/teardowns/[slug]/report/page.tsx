@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import Link from "next/link";
+
 import RightsClaimComposer from "@/components/home/blueprints/teardowns/rights-claim/rights-claim-composer";
 import { getPublicTeardown, getTeardownClaimTargets } from "@/lib/blueprints/teardown-public.api";
 import { withSentinelValues } from "@/lib/static-params";
@@ -65,6 +67,27 @@ export default async function TeardownRightsClaimRoute({
         teardown={teardownResponse.data}
         claimTargets={claimTargetsResponse.data}
       />
+
+      {/*
+        ⚠️ THE SIGNPOST BACK TO THE ORDINARY REPORT CONTROL, AND IT EARNS ITS PLACE.
+        This page is titled "report" and is the first thing a reader looking for one finds — but it
+        is an IP NOTICE: three sworn clauses, a named right, a claimant with standing, and one
+        specific file. Somebody who came here to say "the measurements look made up" would either
+        abandon it or swear to something they did not mean. Neither is a good outcome, and a link is
+        cheaper than either.
+      */}
+      <p className="mx-auto mt-8 max-w-2xl border-t border-[#CAC4D0]/60 pt-4 text-sm text-muted-foreground">
+        Not a rights holder? If something about this write-up looks wrong — figures that look made
+        up, a step that would injure someone, or a survey of a different product — use{" "}
+        <Link
+          href={`/blueprints/teardowns/${encodeURIComponent(slug)}`}
+          className="font-medium text-[#00696E] underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+        >
+          Report this
+        </Link>{" "}
+        at the foot of the teardown instead. It reaches a moderator rather than preparing a legal
+        notice.
+      </p>
     </div>
   );
 }

@@ -32,6 +32,7 @@ import TeardownDecisionRow, {
 } from "@/components/home/blueprints/teardowns/sections/teardown-decision-row";
 import BlueprintDiscussion from "@/components/home/blueprints/sections/blueprint-discussion";
 import BlueprintViewBeacon from "@/components/home/blueprints/sections/blueprint-view-beacon";
+import ReportBlueprintOpener from "@/components/home/blueprints/sections/report-blueprint-opener";
 import TeardownEngagementBar from "@/components/home/blueprints/teardowns/sections/teardown-engagement-bar";
 import TeardownFactoryHandoff from "@/components/home/blueprints/teardowns/sections/teardown-factory-handoff";
 import TeardownMarketSignalBand from "@/components/home/blueprints/teardowns/sections/teardown-market-signal";
@@ -432,6 +433,16 @@ export default async function TeardownDetailPage({
         <TeardownFactoryHandoff />
 
         <BlueprintTagList tags={teardown.tags} />
+
+        {/*
+          ⚠️ THE READER'S REPORT CONTROL, AND IT IS NOT THE RIGHTS-CLAIM LINK. The provenance block
+          above links to `/report`, which builds a legal notice with sworn clauses and a named file.
+          This is "this looks wrong". A reader wanting to report spam would otherwise find the legal
+          form first and either abandon it or swear to something they did not mean.
+        */}
+        <div className="mt-6 flex justify-end">
+          <ReportBlueprintOpener arm="teardown" slug={teardown.slug} targetTitle={teardown.title} />
+        </div>
 
         {/*
           THE DISCUSSION, AFTER EVERYTHING THAT EXPLAINS WHAT THE TEARDOWN IS. A thread placed above

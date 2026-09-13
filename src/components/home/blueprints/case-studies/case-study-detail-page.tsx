@@ -34,6 +34,7 @@ import SpecificationList, {
   type SpecificationRow,
 } from "@/components/home/blueprints/sections/specification-list";
 import BlueprintViewBeacon from "@/components/home/blueprints/sections/blueprint-view-beacon";
+import ReportBlueprintOpener from "@/components/home/blueprints/sections/report-blueprint-opener";
 import { getPublicCaseStudy } from "@/lib/blueprints/case-study-public.api";
 import { formatBlueprintMetricValue } from "@/lib/blueprints/format";
 import {
@@ -108,10 +109,23 @@ export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
 
       <BlueprintTagList tags={caseStudy.tags} />
 
-      <p className="mt-6 text-[11px] text-[#6F7979]">
-        {formatCountLabel(caseStudy.viewCount)} views · {formatCountLabel(caseStudy.likeCount)}{" "}
-        likes
-      </p>
+      <div className="mt-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p className="text-[11px] text-[#6F7979]">
+          {formatCountLabel(caseStudy.viewCount)} views · {formatCountLabel(caseStudy.likeCount)}{" "}
+          likes
+        </p>
+        {/*
+          ⚠️ A REPORT CONTROL AND NO LIKE CONTROL, WHICH IS NOT AN INCONSISTENCY. `case_study_stats`
+          has two counters and no `comment_count`; the arm is a numbered lesson with no discussion
+          surface, so the counts stay readouts. Reporting is not engagement — it is the one thing a
+          reader can do about a lesson that is wrong.
+        */}
+        <ReportBlueprintOpener
+          arm="case_study"
+          slug={caseStudy.slug}
+          targetTitle={caseStudy.title}
+        />
+      </div>
     </article>
   );
 }
