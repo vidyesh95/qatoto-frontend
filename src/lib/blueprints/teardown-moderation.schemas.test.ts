@@ -294,10 +294,10 @@ describe("the merged file vocabulary", () => {
    * rule guards its routing; this one guards the label.
    */
   it("keeps the two file vocabularies disjoint", () => {
+    const manufacturingKindNames: readonly string[] = TEARDOWN_MANUFACTURING_FILE_KINDS;
+
     const sharedKinds = BLUEPRINT_DOCUMENT_KINDS.filter((documentKind) =>
-      TEARDOWN_MANUFACTURING_FILE_KINDS.some(
-        (manufacturingKind) => String(manufacturingKind) === String(documentKind),
-      ),
+      manufacturingKindNames.includes(documentKind),
     );
 
     expect(sharedKinds).toEqual([]);

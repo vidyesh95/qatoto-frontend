@@ -28,6 +28,7 @@ import {
 import {
   BLUEPRINT_DIFFICULTIES,
   BLUEPRINT_DIFFICULTY_LABELS,
+  BlueprintDifficultySchema,
   TEARDOWN_DESIGNATION_SOURCE_LABELS,
   TEARDOWN_MANUFACTURING_METHOD_LABELS,
   TEARDOWN_MATERIAL_CLASS_LABELS,
@@ -753,9 +754,12 @@ function PublishFields({
           Difficulty
           <select
             value={difficulty}
-            onChange={(changeEvent) =>
-              onDifficultyChange(changeEvent.target.value as BlueprintDifficulty | "")
-            }
+            onChange={(changeEvent) => {
+              const parsedDifficulty = BlueprintDifficultySchema.safeParse(
+                changeEvent.target.value,
+              );
+              onDifficultyChange(parsedDifficulty.success ? parsedDifficulty.data : "");
+            }}
             disabled={isBusy}
             className={FIELD_CLASS}
           >
