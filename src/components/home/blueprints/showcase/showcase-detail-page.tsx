@@ -31,6 +31,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import BlueprintDiscussion from "@/components/home/blueprints/sections/blueprint-discussion";
+import BlueprintViewBeacon from "@/components/home/blueprints/sections/blueprint-view-beacon";
 import BlueprintShareButton from "@/components/home/blueprints/sections/blueprint-share-button";
 import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-tag-list";
 import ShowcaseVoteGutter from "@/components/home/blueprints/sections/showcase-vote-gutter";
@@ -71,6 +72,8 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
           beside it holds the name, the pitch and the byline with Share. The body and footer below are
           indented by the same 52px (56px from `lg`, where the gap grows) so the whole launch reads
           down one left edge, the title's. */}
+      <BlueprintViewBeacon arm="showcase" slug={showcase.slug} />
+
       <header className="grid grid-cols-[40px_minmax(0,1fr)] gap-x-3 lg:gap-x-4">
         <ShowcaseVoteGutter
           slug={showcase.slug}

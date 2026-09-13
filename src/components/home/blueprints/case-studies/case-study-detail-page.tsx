@@ -33,6 +33,7 @@ import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-ta
 import SpecificationList, {
   type SpecificationRow,
 } from "@/components/home/blueprints/sections/specification-list";
+import BlueprintViewBeacon from "@/components/home/blueprints/sections/blueprint-view-beacon";
 import { getPublicCaseStudy } from "@/lib/blueprints/case-study-public.api";
 import { formatBlueprintMetricValue } from "@/lib/blueprints/format";
 import {
@@ -56,6 +57,12 @@ export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
 
   return (
     <article className="px-4 pt-5 pb-12 lg:px-6">
+      {/*
+        ⚠️ THE BEACON, AND NOTHING ELSE. This arm takes no like control and no thread: `case_study_stats`
+        has two counters, and the contract calls a case study "a numbered lesson with no discussion
+        surface". A control here would be a button whose counter does not exist.
+      */}
+      <BlueprintViewBeacon arm="case_study" slug={caseStudy.slug} />
       <header>
         <p className="text-[11px] font-medium tracking-[0.2em] text-[#6F7979] uppercase">
           {caseStudy.sector} · {BLUEPRINT_DISCIPLINE_LABELS[caseStudy.discipline]}

@@ -30,6 +30,8 @@ import RepairabilityIndexPanel from "@/components/home/blueprints/teardowns/sect
 import TeardownDecisionRow, {
   type TeardownDecisionFact,
 } from "@/components/home/blueprints/teardowns/sections/teardown-decision-row";
+import BlueprintDiscussion from "@/components/home/blueprints/sections/blueprint-discussion";
+import BlueprintViewBeacon from "@/components/home/blueprints/sections/blueprint-view-beacon";
 import TeardownEngagementBar from "@/components/home/blueprints/teardowns/sections/teardown-engagement-bar";
 import TeardownFactoryHandoff from "@/components/home/blueprints/teardowns/sections/teardown-factory-handoff";
 import TeardownMarketSignalBand from "@/components/home/blueprints/teardowns/sections/teardown-market-signal";
@@ -46,6 +48,7 @@ import TeardownViewSwitch from "@/components/home/blueprints/teardowns/sections/
 import TeardownExplorer from "@/components/home/blueprints/teardowns/teardown-explorer";
 import RelativeTime from "@/components/home/shared/relative-time";
 import { getPublicTeardown, getTeardownMarketSignal } from "@/lib/blueprints/teardown-public.api";
+import { hasCallerSession } from "@/lib/server-http";
 import {
   BLUEPRINT_DIFFICULTY_LABELS,
   TEARDOWN_MANUFACTURING_FILE_KIND_SHORT_LABELS,
@@ -199,7 +202,15 @@ export default async function TeardownDetailPage({
    * the product exists, and suppressing the band would let a moderation action quietly delete an
    * unrelated fact. `null` means there was nothing real to show, and `null` renders no section.
    */
-  const marketSignalResponse = await getTeardownMarketSignal(teardown.slug);
+  /*
+   * ⚠️ THE SESSION IS READ ONLY TO SEED CLIENT ISLANDS, never to change this page's payload. The
+   * public teardown read stays bare and identical for every visitor — that is what buys it a cache
+   * and no limiter — and the islands ask the one authenticated route about viewer state.
+   */
+  const [marketSignalResponse, isViewerSignedIn] = await Promise.all([
+    getTeardownMarketSignal(teardown.slug),
+    hasCallerSession(),
+  ]);
   /*
    * ⚠️ THE BOTH-EMPTY RULE IS APPLIED HERE, NOT ON THE WIRE. The server answers two arrays and
    * never `null`: an empty list is a fact, while `null` would make "nothing is selling" and "the
@@ -337,6 +348,14 @@ export default async function TeardownDetailPage({
           the origin block renders above the files AND above the BOM. Moving the strip below the
           decision row silently breaks that rule, so do not reorder these two.
         */}
+        {/*
+          ⚠️ THE BEACON FIRES ON A QUARANTINED TEARDOWN TOO. Its page IS served — with its notice and
+          its files withheld — so recording that it was opened is the honest record of something that
+          really happened. The server gates it on READABLE rather than on `published` for exactly
+          this reason; suppressing it here would make `viewCount` mean "views while undisputed".
+        */}
+        <BlueprintViewBeacon arm="teardown" slug={teardown.slug} />
+
         <TeardownSubjectStrip provenance={teardown.provenance} />
 
         <TeardownModerationNotice moderationState={teardown.moderationState} />
@@ -352,7 +371,7 @@ export default async function TeardownDetailPage({
           because anything placed after the explorer reads as belonging to the viewer's tab stack
           rather than to the teardown.
         */}
-        <TeardownEngagementBar teardown={teardown} />
+        <TeardownEngagementBar teardown={teardown} isViewerSignedIn={isViewerSignedIn} />
 
         {/*
           ⚠️ PROVENANCE RENDERS ABOVE THE BILL OF MATERIALS AND ABOVE EVERY FILE, in all three
@@ -413,6 +432,23 @@ export default async function TeardownDetailPage({
         <TeardownFactoryHandoff />
 
         <BlueprintTagList tags={teardown.tags} />
+
+        {/*
+          THE DISCUSSION, AFTER EVERYTHING THAT EXPLAINS WHAT THE TEARDOWN IS. A thread placed above
+          the files would be commentary on something the reader has not seen yet.
+
+          ⚠️ THE THREAD RENDERS ON A QUARANTINED TEARDOWN AND THE COMPOSER DOES NOT. A quarantine
+          withholds the publisher's FILES under an unresolved rights claim; it does not delete the
+          conversation that already happened, and `withheldPayload()` on the server does not list
+          it. But nothing NEW may be added while the claim stands, which is why `canComment` follows
+          the same `published`-only gate the server enforces on the write.
+        */}
+        <BlueprintDiscussion
+          arm="teardown"
+          slug={teardown.slug}
+          isViewerSignedIn={isViewerSignedIn}
+          canComment={teardown.moderationState === "published"}
+        />
 
         {/*
           `createdAt` reached no renderer before this — it sorted the index and then vanished, so a
