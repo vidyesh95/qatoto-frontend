@@ -16,6 +16,7 @@ import { getJson, sendJson, type ActionResponse, type RequestOptions } from "@/l
 const REPORT_ARM_SEGMENTS = {
   teardown: "teardowns",
   case_study: "case-studies",
+  showcase: "showcases",
 } as const satisfies Record<BlueprintReportArm, string>;
 
 /**

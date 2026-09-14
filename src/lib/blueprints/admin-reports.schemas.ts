@@ -11,16 +11,16 @@ import { BLUEPRINT_REPORT_REASONS } from "@/lib/blueprints/reports.schemas";
 export const BLUEPRINT_REPORT_STATUSES = ["open", "actioned", "dismissed"] as const;
 export type BlueprintReportStatus = (typeof BLUEPRINT_REPORT_STATUSES)[number];
 
-/** The two arms a moderation verb can reach. ⚠️ NO `showcase` — see the verb list below. */
-export type BlueprintReportArmFilter = "teardown" | "case_study";
+/** The three arms a moderation verb can reach. */
+export type BlueprintReportArmFilter = "teardown" | "case_study" | "showcase";
 
 /**
  * The three verbs.
  *
- * ⚠️ `quarantine` IS TEARDOWN-ONLY. `case_study_moderation_state_ck` has no such label, because a
- * case study has no files to withhold — the server answers 409 with a sentence saying so, rather
+ * ⚠️ `quarantine` IS TEARDOWN-ONLY. `case_study_moderation_state_ck` and `showcase_launch`
+ * have no such label — the server answers 409 with a sentence saying so, rather
  * than 404, because the route exists and the body is well-formed. The card hides the control on
- * that arm so a moderator does not have to discover that by pressing it.
+ * those arms so a moderator does not have to discover that by pressing it.
  */
 export const BLUEPRINT_MODERATION_VERBS = ["flag", "quarantine", "restore"] as const;
 export type BlueprintModerationVerb = (typeof BLUEPRINT_MODERATION_VERBS)[number];
@@ -28,7 +28,7 @@ export type BlueprintModerationVerb = (typeof BLUEPRINT_MODERATION_VERBS)[number
 export const BlueprintReportQueueItemSchema = z
   .object({
     reportId: z.string(),
-    targetKind: z.enum(["teardown", "case_study"]),
+    targetKind: z.enum(["teardown", "case_study", "showcase"]),
     targetId: z.string(),
     targetSlug: z.string().nullable(),
     targetTitle: z.string(),
@@ -55,7 +55,7 @@ export type BlueprintReportQueuePage = z.infer<typeof BlueprintReportQueuePageSc
 export const BlueprintModerationResultSchema = z
   .object({
     targetId: z.string(),
-    targetKind: z.enum(["teardown", "case_study"]),
+    targetKind: z.enum(["teardown", "case_study", "showcase"]),
     moderationState: z.string(),
     decidedAt: z.string(),
   })

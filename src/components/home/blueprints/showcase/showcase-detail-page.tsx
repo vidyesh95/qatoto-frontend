@@ -31,6 +31,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import BlueprintDiscussion from "@/components/home/blueprints/sections/blueprint-discussion";
+import ReportBlueprintOpener from "@/components/home/blueprints/sections/report-blueprint-opener";
 import BlueprintViewBeacon from "@/components/home/blueprints/sections/blueprint-view-beacon";
 import BlueprintShareButton from "@/components/home/blueprints/sections/blueprint-share-button";
 import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-tag-list";
@@ -260,7 +261,10 @@ export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
         {/* VIEWS ONLY. `likeCount` is a field every blueprint shares, and teardowns and case studies
             still print it, but a launch's approval number is its upvote, in the gutter at the top.
             Printing likes here as well asked a reader to tell two approval numbers apart. */}
-        <p className="text-[11px] text-[#6F7979]">{formatCountLabel(showcase.viewCount)} views</p>
+        <div className="flex items-center gap-4">
+          <p className="text-[11px] text-[#6F7979]">{formatCountLabel(showcase.viewCount)} views</p>
+          <ReportBlueprintOpener arm="showcase" slug={showcase.slug} targetTitle={showcase.title} />
+        </div>
         <Link
           href={buildBlueprintCategoryHref("showcase")}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-[#00696E] hover:underline"

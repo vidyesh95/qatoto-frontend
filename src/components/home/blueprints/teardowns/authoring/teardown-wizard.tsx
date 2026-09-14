@@ -1,8 +1,9 @@
 // TRANSPORT: client-query — the one "use client" file that owns the flow. Calls
-// `useSubmitTeardownMutation`, which is mock-backed today.
+// `useSubmitTeardownMutation`, server-side draft store, and resubmit loader.
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
 import { describeAttestationGap } from "@/components/home/blueprints/teardowns/authoring/attestation-gate";
@@ -18,14 +19,22 @@ import {
   compareTeardownFieldPathsByStep,
   describeTeardownFieldPath,
   EMPTY_TEARDOWN_WIZARD_DRAFT,
+  teardownSubmissionDraftToWizardDraft,
+  TeardownWizardDraftSchema,
   TEARDOWN_WIZARD_STEPS,
   type TeardownWizardDraft,
   type TeardownWizardStepId,
   type TeardownWizardStepProps,
 } from "@/components/home/blueprints/teardowns/authoring/wizard-shared";
 import { useSubmitTeardownMutation } from "@/hooks/blueprints/authoring";
+import { useCreateDraftMutation, useReplaceDraftMutation } from "@/hooks/blueprints/drafts";
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
-import type { TeardownSubmissionReceipt } from "@/lib/blueprints/authoring.schemas";
+import { getMyTeardownSubmission } from "@/lib/blueprints/authoring.api";
+import {
+  TeardownSubmissionDraftSchema,
+  type TeardownSubmissionReceipt,
+} from "@/lib/blueprints/authoring.schemas";
+import { getMyDraft } from "@/lib/blueprints/drafts.api";
 import { ApiRequestError } from "@/lib/http";
 
 /**
@@ -33,8 +42,7 @@ import { ApiRequestError } from "@/lib/http";
  *
  * ⚠️ NOT `currentStepIndex` PLUS `submittedReceipt | null`. Those two fields can express "on step 3
  * AND already submitted", which is not a state this flow has — the illegal-state bag CLAUDE.md
- * Pattern 1 rules out. `new-idea-wizard-page.tsx:57` models its wizard the same way and is the
- * precedent followed here.
+ * Pattern 1 rules out.
  */
 type TeardownWizardViewState =
   | { readonly status: "editing"; readonly currentStepIndex: number }
@@ -42,7 +50,7 @@ type TeardownWizardViewState =
 
 /**
  * A `Record` over the step ids, so a sixth step is a compile error here rather than a step that
- * silently renders nothing — the same house pattern as `TEARDOWN_MEDIA_PREDICATES`.
+ * silently renders nothing.
  */
 const STEP_COMPONENTS: Record<
   TeardownWizardStepId,
@@ -57,16 +65,12 @@ const STEP_COMPONENTS: Record<
 
 /**
  * Publish a teardown: five steps, one attestation, one submit.
- *
- * ⚠️ MOUNTED ONCE, at `/blueprints/teardowns/new`. `todo.md` originally said "one wizard component
- * mounted twice" with the second mount in studio; that was wrong. Studio is MANAGEMENT — a list of
- * what you have submitted — and it links here rather than embedding this, which also keeps
- * `src/components/studio/**` from importing `src/components/home/**`.
- *
- * ⚠️ NOTHING IS OPTIMISTIC AND NOTHING POLLS. The write answers 202 and the verdict does not exist;
- * see `submission-receipt.tsx` for what is said instead.
  */
 export default function TeardownWizard() {
+  const searchParams = useSearchParams();
+  const resubmitSubmissionId = searchParams.get("resubmitSubmissionId");
+  const resumeDraftId = searchParams.get("draftId");
+
   const [draft, setDraft] = useState<TeardownWizardDraft>(EMPTY_TEARDOWN_WIZARD_DRAFT);
   const [viewState, setViewState] = useState<TeardownWizardViewState>({
     status: "editing",
@@ -74,47 +78,129 @@ export default function TeardownWizard() {
   });
   const [fieldErrors, setFieldErrors] = useState<Readonly<Record<string, string[]>>>({});
 
+  const [isLoadingPrefill, setIsLoadingPrefill] = useState<boolean>(() =>
+    Boolean(resubmitSubmissionId || resumeDraftId),
+  );
+  const [prefillError, setPrefillError] = useState<string | null>(null);
+  const [resubmitNote, setResubmitNote] = useState<string | null>(null);
+
+  const [draftMeta, setDraftMeta] = useState<{
+    readonly draftId: string;
+    readonly revision: number;
+    readonly savedAt: string;
+  } | null>(null);
+  const [saveDraftError, setSaveDraftError] = useState<string | null>(null);
+
   const submitMutation = useSubmitTeardownMutation();
-  // ⚠️ THE LAZY, REF-BACKED HOOK, NOT `useState(newIdempotencyKey())`. `crypto.randomUUID()` in a
-  // `useState` initializer runs during the server prerender and `cacheComponents` refuses a
-  // non-deterministic value produced there — it fails the build, not a test.
-  //
-  // The key is read once when Submit is pressed, rotated on any edit and after a success, and KEPT
-  // across a retry of a failed attempt.
+  const createDraftMutation = useCreateDraftMutation();
+  const replaceDraftMutation = useReplaceDraftMutation(draftMeta?.draftId ?? "");
+
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
 
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadPrefill(): Promise<void> {
+      if (resubmitSubmissionId) {
+        const result = await getMyTeardownSubmission(resubmitSubmissionId);
+        if (isCancelled) return;
+        setIsLoadingPrefill(false);
+        if (!result.success) {
+          setPrefillError("Could not load the rejected submission. Please try again.");
+          return;
+        }
+        try {
+          const parsedDoc: unknown = JSON.parse(result.data.document);
+          const validation = TeardownSubmissionDraftSchema.safeParse(parsedDoc);
+          if (validation.success) {
+            setDraft(teardownSubmissionDraftToWizardDraft(validation.data));
+            if (result.data.moderatorNote) {
+              setResubmitNote(result.data.moderatorNote);
+            }
+          } else {
+            setPrefillError("The submission document could not be restored.");
+          }
+        } catch {
+          setPrefillError("Failed to parse the stored submission document.");
+        }
+      } else if (resumeDraftId) {
+        const result = await getMyDraft(resumeDraftId);
+        if (isCancelled) return;
+        setIsLoadingPrefill(false);
+        if (!result.success) {
+          setPrefillError("Could not load the saved draft. Please try again.");
+          return;
+        }
+        try {
+          const rawParsedDoc: unknown = JSON.parse(result.data.document);
+          const validation = TeardownWizardDraftSchema.safeParse(rawParsedDoc);
+          if (validation.success) {
+            setDraft(validation.data);
+            setDraftMeta({
+              draftId: result.data.draftId,
+              revision: result.data.revision,
+              savedAt: new Date(result.data.updatedAt).toLocaleTimeString(),
+            });
+          } else {
+            setPrefillError("The saved draft document structure is invalid.");
+          }
+        } catch {
+          setPrefillError("Failed to parse the saved draft.");
+        }
+      }
+    }
+
+    if (resubmitSubmissionId || resumeDraftId) {
+      void loadPrefill();
+    }
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [resubmitSubmissionId, resumeDraftId]);
+
   function applyDraftPatch(draftPatch: Partial<TeardownWizardDraft>): void {
-    /*
-     * ⚠️ AN EDIT LANDING MID-FLIGHT IS IGNORED, AND THIS GUARD IS WHAT MAKES THE ROTATION BELOW
-     * SAFE. Without it a keystroke arriving while a submission is in flight would rotate the key out
-     * from under it, so a retry of that same attempt would carry a different one — turning one
-     * duplicate-safe request into two real submissions, which is the failure the mechanism exists to
-     * prevent.
-     */
     if (submitMutation.isPending) return;
 
-    /*
-     * ⚠️ ANY EDIT ROTATES THE IDEMPOTENCY KEY, because the server FINGERPRINTS THE BODY. Reusing a
-     * key with an edited draft answers 409, so without this the wizard's dominant failure mode would
-     * be: submit, read a 422 naming a field, fix that field, submit again, and get an unexplained
-     * "already used" refusal. The case-study composer rotates in the same place for the same reason.
-     */
     resetIdempotencyKey();
-
     setDraft((previousDraft) => ({ ...previousDraft, ...draftPatch }));
-
-    /**
-     * ⚠️ EDITING ANYTHING CLEARS THE LAST VERDICT, and both halves of that matter.
-     *
-     * `fieldErrors` came from a `safeParse` of a draft that no longer exists, so leaving it up means
-     * a publisher fixes the named field and still sees the complaint about it — which reads as the
-     * fix not having worked and sends them looking for a second problem that is not there.
-     *
-     * The MUTATION error goes too. A 409 said "a survey of this unit already exists"; the moment the
-     * subject name is edited that is a statement about a value nobody is submitting any more.
-     */
     setFieldErrors({});
     if (submitMutation.error !== null) submitMutation.reset();
+  }
+
+  async function handleSaveDraft(): Promise<void> {
+    setSaveDraftError(null);
+    const docString = JSON.stringify(draft);
+    const label = draft.title.trim() || draft.subjectProductName.trim() || "Untitled teardown";
+    try {
+      if (draftMeta) {
+        const receipt = await replaceDraftMutation.mutateAsync({
+          label,
+          document: docString,
+          documentSchemaVersion: 1,
+          revision: draftMeta.revision,
+        });
+        setDraftMeta({
+          draftId: receipt.draftId,
+          revision: receipt.revision,
+          savedAt: new Date(receipt.updatedAt).toLocaleTimeString(),
+        });
+      } else {
+        const receipt = await createDraftMutation.mutateAsync({
+          arm: "teardown",
+          label,
+          document: docString,
+          documentSchemaVersion: 1,
+        });
+        setDraftMeta({
+          draftId: receipt.draftId,
+          revision: receipt.revision,
+          savedAt: new Date(receipt.updatedAt).toLocaleTimeString(),
+        });
+      }
+    } catch {
+      setSaveDraftError("Failed to save draft. Please check your connection and try again.");
+    }
   }
 
   if (viewState.status === "submitted") {
@@ -125,6 +211,7 @@ export default function TeardownWizard() {
           setDraft(EMPTY_TEARDOWN_WIZARD_DRAFT);
           setFieldErrors({});
           submitMutation.reset();
+          setDraftMeta(null);
           setViewState({ status: "editing", currentStepIndex: 0 });
         }}
       />
@@ -138,18 +225,10 @@ export default function TeardownWizard() {
   const attestationGap = describeAttestationGap(draft.acceptedAttestationClauseIds);
   const isWalkthroughUsable = isYoutubeLinkFieldUsable(draft.walkthroughYoutubeUrl);
 
-  /**
-   * Why submit is unavailable, or `null`.
-   *
-   * ⚠️ ORDER MATTERS: the walkthrough check comes first because it is a field the publisher can see
-   * and fix on another step, while the attestation gap is right in front of them. Naming the far
-   * problem first is what stops somebody ticking four boxes and then meeting an error about a link.
-   */
   const submitBlockedReason = !isWalkthroughUsable
     ? "The walkthrough link on the media step cannot be read. Fix it or clear the field."
     : attestationGap;
 
-  // Sorted by step, so the list reads in the order a publisher walks the wizard.
   const fieldErrorEntries = Object.entries(fieldErrors).toSorted(
     ([firstFieldPath], [secondFieldPath]) =>
       compareTeardownFieldPathsByStep(firstFieldPath, secondFieldPath),
@@ -164,8 +243,6 @@ export default function TeardownWizard() {
   function handleSubmit(): void {
     const collected = collectTeardownSubmission(draft);
     if (!collected.ok) {
-      // The contract refused it. Show every path it named and stay put — jumping the publisher to
-      // another step would hide the messages they need.
       setFieldErrors(collected.fieldErrors);
       return;
     }
@@ -182,6 +259,8 @@ export default function TeardownWizard() {
     );
   }
 
+  const isSavingDraft = createDraftMutation.isPending || replaceDraftMutation.isPending;
+
   return (
     <div>
       <p className="text-[11px] font-medium tracking-[0.5px] text-[#00696E] uppercase">Teardown</p>
@@ -192,11 +271,33 @@ export default function TeardownWizard() {
         not how much you know but how clearly you say how you know it.
       </p>
 
-      {/*
-        The stepper, inline rather than a shared component — the repo has two multi-step forms and
-        neither shares one. Clickable, so a publisher can go back to a step they remember getting
-        wrong without pressing Back four times.
-      */}
+      {isLoadingPrefill ? (
+        <div className="mt-4 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">
+          Loading submission details…
+        </div>
+      ) : null}
+
+      {prefillError ? (
+        <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+          {prefillError}
+        </div>
+      ) : null}
+
+      {resubmitNote ? (
+        <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
+          <p className="text-xs font-semibold tracking-wide text-amber-800 uppercase">
+            Revising rejected submission
+          </p>
+          <p className="mt-1 text-sm">{resubmitNote}</p>
+        </div>
+      ) : null}
+
+      {saveDraftError ? (
+        <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+          {saveDraftError}
+        </div>
+      ) : null}
+
       <nav aria-label="Wizard steps" className="mt-5">
         <ol className="flex flex-wrap gap-x-1 gap-y-2">
           {TEARDOWN_WIZARD_STEPS.map((step, stepIndex) => {
@@ -226,11 +327,6 @@ export default function TeardownWizard() {
         <StepComponent draft={draft} onDraftChange={applyDraftPatch} />
       </div>
 
-      {/*
-        THE CONTRACT'S OWN REFUSALS, keyed by the path it named. They render at the foot of whatever
-        step the publisher is on, because a message about `provenance.subjectProductName` is useless
-        on a screen that does not show that field — so the path is printed with it.
-      */}
       {fieldErrorEntries.length > 0 ? (
         <div
           role="alert"
@@ -240,8 +336,6 @@ export default function TeardownWizard() {
           <ul className="list-inside list-disc text-xs">
             {fieldErrorEntries.map(([fieldPath, messages]) => (
               <li key={fieldPath}>
-                {/* The field's own label and step, not the contract path — see
-                    `describeTeardownFieldPath`. */}
                 <span className="font-medium">{describeTeardownFieldPath(fieldPath)}</span>:{" "}
                 {messages.join(" ")}
               </li>
@@ -256,42 +350,54 @@ export default function TeardownWizard() {
         </div>
       )}
 
-      <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-border pt-5">
-        <button
-          type="button"
-          onClick={() => goToStep(Math.max(0, viewState.currentStepIndex - 1))}
-          disabled={viewState.currentStepIndex === 0}
-          className="rounded-full px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Back
-        </button>
-
-        {isLastStep ? (
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={handleSubmit}
-            disabled={submitBlockedReason !== null || submitMutation.isPending}
-            className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={() => goToStep(Math.max(0, viewState.currentStepIndex - 1))}
+            disabled={viewState.currentStepIndex === 0}
+            className="rounded-full px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {submitMutation.isPending ? "Submitting…" : "Submit for review"}
+            Back
           </button>
-        ) : (
+
+          {isLastStep ? (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitBlockedReason !== null || submitMutation.isPending}
+              className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {submitMutation.isPending ? "Submitting…" : "Submit for review"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() =>
+                goToStep(Math.min(TEARDOWN_WIZARD_STEPS.length - 1, viewState.currentStepIndex + 1))
+              }
+              className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+            >
+              Next
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={() =>
-              goToStep(Math.min(TEARDOWN_WIZARD_STEPS.length - 1, viewState.currentStepIndex + 1))
-            }
-            className="rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#00393C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+            onClick={() => void handleSaveDraft()}
+            disabled={isSavingDraft}
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Next
+            {isSavingDraft ? "Saving…" : "Save draft"}
           </button>
-        )}
 
-        {/*
-          ⚠️ THE DISABLED REASON RENDERS BESIDE THE DISABLED BUTTON. A grey control with no
-          explanation is the commonest way a form wastes an afternoon: somebody checks every field
-          they can see and never finds the one that is wrong.
-        */}
+          {draftMeta ? (
+            <span className="text-xs text-muted-foreground">
+              Draft saved at {draftMeta.savedAt}
+            </span>
+          ) : null}
+        </div>
+
         {isLastStep && submitBlockedReason !== null ? (
           <p className="max-w-md text-xs text-muted-foreground">{submitBlockedReason}</p>
         ) : null}

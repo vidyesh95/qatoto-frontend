@@ -33,6 +33,7 @@ import BlueprintTagList from "@/components/home/blueprints/sections/blueprint-ta
 import SpecificationList, {
   type SpecificationRow,
 } from "@/components/home/blueprints/sections/specification-list";
+import CaseStudyLikeButton from "@/components/home/blueprints/case-studies/sections/case-study-like-button";
 import BlueprintViewBeacon from "@/components/home/blueprints/sections/blueprint-view-beacon";
 import ReportBlueprintOpener from "@/components/home/blueprints/sections/report-blueprint-opener";
 import { getPublicCaseStudy } from "@/lib/blueprints/case-study-public.api";
@@ -45,10 +46,14 @@ import {
   type CaseStudyBlueprint,
   type CaseStudyOption,
 } from "@/lib/blueprints/schemas";
+import { hasCallerSession } from "@/lib/server-http";
 import { formatCentsLabel, formatCountLabel } from "@/lib/store/format";
 
 export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
-  const detailResponse = await getPublicCaseStudy(slug);
+  const [detailResponse, isViewerSignedIn] = await Promise.all([
+    getPublicCaseStudy(slug),
+    hasCallerSession(),
+  ]);
   /*
    * A case study awaiting review or sent back is a 404 here, identical to a slug that never
    * existed — the two are indistinguishable on purpose, so a stranger cannot probe the queue.
@@ -59,9 +64,8 @@ export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
   return (
     <article className="px-4 pt-5 pb-12 lg:px-6">
       {/*
-        ⚠️ THE BEACON, AND NOTHING ELSE. This arm takes no like control and no thread: `case_study_stats`
-        has two counters, and the contract calls a case study "a numbered lesson with no discussion
-        surface". A control here would be a button whose counter does not exist.
+        ⚠️ A numbered lesson with no discussion surface: `case_study_stats` has two counters (views and
+        likes). The view beacon records opens; the like button sits at the foot beside report.
       */}
       <BlueprintViewBeacon arm="case_study" slug={caseStudy.slug} />
       <header>
@@ -109,17 +113,20 @@ export default async function CaseStudyDetailPage({ slug }: { slug: string }) {
 
       <BlueprintTagList tags={caseStudy.tags} />
 
-      <div className="mt-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <p className="text-[11px] text-[#6F7979]">
-          {formatCountLabel(caseStudy.viewCount)} views · {formatCountLabel(caseStudy.likeCount)}{" "}
-          likes
-        </p>
-        {/*
-          ⚠️ A REPORT CONTROL AND NO LIKE CONTROL, WHICH IS NOT AN INCONSISTENCY. `case_study_stats`
-          has two counters and no `comment_count`; the arm is a numbered lesson with no discussion
-          surface, so the counts stay readouts. Reporting is not engagement — it is the one thing a
-          reader can do about a lesson that is wrong.
-        */}
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-black/5 pt-4">
+        <div className="flex items-center gap-3">
+          <p className="text-[11px] text-[#6F7979]">
+            {formatCountLabel(caseStudy.viewCount)} views
+          </p>
+          <span className="text-xs text-[#6F7979]" aria-hidden="true">
+            ·
+          </span>
+          <CaseStudyLikeButton
+            slug={caseStudy.slug}
+            likeCount={caseStudy.likeCount}
+            isViewerSignedIn={isViewerSignedIn}
+          />
+        </div>
         <ReportBlueprintOpener
           arm="case_study"
           slug={caseStudy.slug}

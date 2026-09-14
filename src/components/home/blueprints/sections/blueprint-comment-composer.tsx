@@ -27,14 +27,20 @@ export default function BlueprintCommentComposer({
   isSignedIn,
   isPending,
   placeholder,
+  initialBody = "",
+  submitLabel = "Post",
   onSubmit,
+  onCancel,
 }: {
   readonly isSignedIn: boolean;
   readonly isPending: boolean;
   readonly placeholder: string;
+  readonly initialBody?: string;
+  readonly submitLabel?: string;
   readonly onSubmit: (body: string) => Promise<{ readonly error: unknown } | null>;
+  readonly onCancel?: () => void;
 }) {
-  const [body, setBody] = useState("");
+  const [body, setBody] = useState(initialBody);
   const [refusal, setRefusal] = useState<string | null>(null);
 
   if (!isSignedIn) {
@@ -79,20 +85,28 @@ export default function BlueprintCommentComposer({
         className="w-full resize-y rounded-md border border-[#CAC4D0]/60 bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:opacity-60"
       />
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        {/*
-          An `<output>` rather than a `<span role="status">`: the repo's a11y rule maps that role to
-          this tag, and it is the right one anyway — this IS the result of the reader's typing.
-        */}
         <output className={`text-xs ${isTooLong ? "text-destructive" : "text-muted-foreground"}`}>
           {remainingCharacters <= 200 ? `${String(remainingCharacters)} characters left` : ""}
         </output>
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="cursor-pointer rounded-md bg-[#00696E] px-3 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-default disabled:opacity-50"
-        >
-          {isPending ? "Posting…" : "Post"}
-        </button>
+        <div className="flex items-center gap-2">
+          {onCancel ? (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isPending}
+              className="cursor-pointer rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          ) : null}
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="cursor-pointer rounded-md bg-[#00696E] px-3 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E] disabled:cursor-default disabled:opacity-50"
+          >
+            {isPending ? "Posting…" : submitLabel}
+          </button>
+        </div>
       </div>
       {refusal === null ? null : (
         <output className="mt-2 block text-xs text-destructive">{refusal}</output>

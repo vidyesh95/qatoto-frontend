@@ -45,7 +45,7 @@ export type CreatedBlueprintReport = z.infer<typeof CreatedBlueprintReportSchema
 export const MyBlueprintReportSchema = z
   .object({
     reportId: z.string(),
-    targetKind: z.enum(["teardown", "case_study"]),
+    targetKind: z.enum(["teardown", "case_study", "showcase"]),
     targetTitle: z.string(),
     reason: z.enum(BLUEPRINT_REPORT_REASONS),
     status: z.enum(["open", "actioned", "dismissed"]),
@@ -54,4 +54,4 @@ export const MyBlueprintReportSchema = z
   .strip();
 export type MyBlueprintReport = z.infer<typeof MyBlueprintReportSchema>;
 
-export type BlueprintReportArm = "teardown" | "case_study";
+export type BlueprintReportArm = "teardown" | "case_study" | "showcase";

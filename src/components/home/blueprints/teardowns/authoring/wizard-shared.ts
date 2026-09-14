@@ -6,22 +6,34 @@
 // machinery with the other — they share a SHAPE, copied deliberately, which is cheaper than an
 // abstraction three callers would each need an escape hatch from.
 
+import { z } from "zod";
+
 import { buildYoutubeBlueprintVideo } from "@/components/home/blueprints/authoring/youtube-link-field";
 import {
+  TEARDOWN_ATTESTATION_CLAUSE_IDS,
   TeardownSubmissionDraftSchema,
   type TeardownAttestationClauseId,
   type TeardownSubmissionDraft,
 } from "@/lib/blueprints/authoring.schemas";
-import type {
-  BlueprintDocumentKind,
-  BlueprintProvenanceKind,
-  TeardownDesignationSource,
-  TeardownManufacturingFileKind,
-  TeardownManufacturingMethod,
-  TeardownMaterialClass,
-  TeardownSubjectKind,
-  TeardownSurveyMethod,
-  TeardownUnitAcquisition,
+import {
+  BLUEPRINT_DOCUMENT_KINDS,
+  BLUEPRINT_PROVENANCE_KINDS,
+  TEARDOWN_DESIGNATION_SOURCES,
+  TEARDOWN_MANUFACTURING_FILE_KINDS,
+  TEARDOWN_MANUFACTURING_METHODS,
+  TEARDOWN_MATERIAL_CLASSES,
+  TEARDOWN_SUBJECT_KINDS,
+  TEARDOWN_SURVEY_METHODS,
+  TEARDOWN_UNIT_ACQUISITIONS,
+  type BlueprintDocumentKind,
+  type BlueprintProvenanceKind,
+  type TeardownDesignationSource,
+  type TeardownManufacturingFileKind,
+  type TeardownManufacturingMethod,
+  type TeardownMaterialClass,
+  type TeardownSubjectKind,
+  type TeardownSurveyMethod,
+  type TeardownUnitAcquisition,
 } from "@/lib/blueprints/schemas";
 
 /**
@@ -56,6 +68,18 @@ export interface MaterialDraftRow {
   readonly finish: string;
 }
 
+export const MaterialDraftRowSchema = z
+  .object({
+    rowId: z.string(),
+    appliesToLabel: z.string(),
+    designation: z.string(),
+    designationSource: z.enum(TEARDOWN_DESIGNATION_SOURCES),
+    materialClass: z.enum(TEARDOWN_MATERIAL_CLASSES),
+    process: z.union([z.enum(TEARDOWN_MANUFACTURING_METHODS), z.literal("")]),
+    finish: z.string(),
+  })
+  .strip();
+
 /** One part row while it is being edited. */
 export interface PartDraftRow {
   readonly rowId: string;
@@ -63,42 +87,63 @@ export interface PartDraftRow {
   readonly material: string;
 }
 
+export const PartDraftRowSchema = z
+  .object({
+    rowId: z.string(),
+    label: z.string(),
+    material: z.string(),
+  })
+  .strip();
+
 /**
  * One file row while it is being edited — in TWO shapes, because there are two vocabularies.
- *
- * ⚠️ THIS WAS ONE TYPE CARRYING THE MANUFACTURING KIND, AND BOTH LISTS USED IT. That is how every
- * new document row came to default to `step`: a fab label on a reader's document, which the
- * published detail page then refuses to render. Two types make that a compile error in the editor
- * rather than a refusal at the far end of a submission.
- *
- * They differ in one field, and a generic over `kind` would be worse than the duplication: the
- * helpers that patch a row would collapse `patch.kind` to `never` and need an `as` to recover it,
- * which CLAUDE.md Pattern 2 bans outright.
  */
 export interface DocumentDraftRow {
   readonly rowId: string;
   readonly kind: BlueprintDocumentKind;
   readonly title: string;
-  readonly url: string;
+  readonly source?: "pasted_link" | "uploaded";
+  readonly url?: string;
+  readonly uploadId?: string;
+  readonly fileName?: string;
 }
+
+export const DocumentDraftRowSchema = z
+  .object({
+    rowId: z.string(),
+    kind: z.enum(BLUEPRINT_DOCUMENT_KINDS),
+    title: z.string(),
+    source: z.enum(["pasted_link", "uploaded"]).optional(),
+    url: z.string().optional(),
+    uploadId: z.string().optional(),
+    fileName: z.string().optional(),
+  })
+  .strip();
 
 export interface ManufacturingFileDraftRow {
   readonly rowId: string;
   readonly kind: TeardownManufacturingFileKind;
   readonly title: string;
-  readonly url: string;
+  readonly source?: "pasted_link" | "uploaded";
+  readonly url?: string;
+  readonly uploadId?: string;
+  readonly fileName?: string;
 }
+
+export const ManufacturingFileDraftRowSchema = z
+  .object({
+    rowId: z.string(),
+    kind: z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS),
+    title: z.string(),
+    source: z.enum(["pasted_link", "uploaded"]).optional(),
+    url: z.string().optional(),
+    uploadId: z.string().optional(),
+    fileName: z.string().optional(),
+  })
+  .strip();
 
 /**
  * THE WHOLE FORM, FLAT, AND EVERY SCALAR HELD AS A STRING.
- *
- * ⚠️ STRINGS, NOT PARSED VALUES, AND THAT IS THE `weight-band-editor.tsx` RULE. A half-typed date is
- * not a date and a half-typed number is `NaN`; holding either as its final type means the form has
- * to represent "invalid" inside a type that cannot express it. So the draft holds text, and
- * `collectTeardownSubmission` below parses it ONCE, at submit.
- *
- * FLAT rather than nested, so `onDraftChange({ title })` is a shallow merge and every step is a
- * dumb view over the same object — the shape both existing wizards use.
  */
 export interface TeardownWizardDraft {
   readonly subjectKind: TeardownSubjectKind;
@@ -122,6 +167,30 @@ export interface TeardownWizardDraft {
   readonly tagsText: string;
   readonly acceptedAttestationClauseIds: readonly TeardownAttestationClauseId[];
 }
+
+export const TeardownWizardDraftSchema: z.ZodType<TeardownWizardDraft> = z
+  .object({
+    subjectKind: z.enum(TEARDOWN_SUBJECT_KINDS),
+    title: z.string(),
+    summary: z.string(),
+    subjectProductName: z.string(),
+    unitAcquisition: z.enum(TEARDOWN_UNIT_ACQUISITIONS),
+    surveyMethods: z.array(z.enum(TEARDOWN_SURVEY_METHODS)),
+    surveyedOnDate: z.string(),
+    provenanceKind: z.enum(BLUEPRINT_PROVENANCE_KINDS),
+    licenceName: z.string(),
+    licenceUrl: z.string(),
+    authorizationNote: z.string(),
+    provenanceNotes: z.string(),
+    walkthroughYoutubeUrl: z.string(),
+    documents: z.array(DocumentDraftRowSchema),
+    manufacturingFiles: z.array(ManufacturingFileDraftRowSchema),
+    parts: z.array(PartDraftRowSchema),
+    materials: z.array(MaterialDraftRowSchema),
+    tagsText: z.string(),
+    acceptedAttestationClauseIds: z.array(z.enum(TEARDOWN_ATTESTATION_CLAUSE_IDS)),
+  })
+  .strip();
 
 /** What every step component receives. Dumb view, one patch callback. */
 export interface TeardownWizardStepProps {
@@ -225,16 +294,36 @@ export function collectTeardownSubmission(
       label: partRow.label.trim(),
       material: partRow.material.trim(),
     })),
-    documents: draft.documents.map((fileRow) => ({
-      kind: fileRow.kind,
-      title: fileRow.title.trim(),
-      url: fileRow.url.trim(),
-    })),
-    manufacturingFiles: draft.manufacturingFiles.map((fileRow) => ({
-      kind: fileRow.kind,
-      title: fileRow.title.trim(),
-      url: fileRow.url.trim(),
-    })),
+    documents: draft.documents.map((fileRow) =>
+      fileRow.source === "uploaded" && fileRow.uploadId
+        ? {
+            source: "uploaded" as const,
+            kind: fileRow.kind,
+            title: fileRow.title.trim(),
+            uploadId: fileRow.uploadId,
+          }
+        : {
+            source: "pasted_link" as const,
+            kind: fileRow.kind,
+            title: fileRow.title.trim(),
+            url: (fileRow.url ?? "").trim(),
+          },
+    ),
+    manufacturingFiles: draft.manufacturingFiles.map((fileRow) =>
+      fileRow.source === "uploaded" && fileRow.uploadId
+        ? {
+            source: "uploaded" as const,
+            kind: fileRow.kind,
+            title: fileRow.title.trim(),
+            uploadId: fileRow.uploadId,
+          }
+        : {
+            source: "pasted_link" as const,
+            kind: fileRow.kind,
+            title: fileRow.title.trim(),
+            url: (fileRow.url ?? "").trim(),
+          },
+    ),
     walkthroughVideo: buildYoutubeBlueprintVideo(draft.walkthroughYoutubeUrl),
     tags: draft.tagsText
       .split(",")
@@ -425,4 +514,70 @@ export function compareTeardownFieldPathsByStep(
   };
 
   return findStepPosition(firstFieldPath) - findStepPosition(secondFieldPath);
+}
+
+/**
+ * Reconstitutes an editing draft from a stored submission draft (e.g. for rejected resubmission).
+ */
+export function teardownSubmissionDraftToWizardDraft(
+  submission: TeardownSubmissionDraft,
+): TeardownWizardDraft {
+  const isLicensed = submission.provenance.kind === "licensed_open_source";
+  const isManufacturerAuthorized = submission.provenance.kind === "authorized_by_manufacturer";
+
+  return {
+    subjectKind: submission.subjectKind,
+    title: submission.title,
+    summary: submission.summary,
+    subjectProductName: submission.provenance.subjectProductName,
+    unitAcquisition: submission.provenance.unitAcquisition,
+    surveyMethods: submission.provenance.surveyMethods,
+    surveyedOnDate: submission.provenance.surveyedAt
+      ? submission.provenance.surveyedAt.slice(0, 10)
+      : "",
+    provenanceKind: submission.provenance.kind,
+    licenceName:
+      isLicensed && submission.provenance.licence ? submission.provenance.licence.name : "",
+    licenceUrl:
+      isLicensed && submission.provenance.licence ? submission.provenance.licence.url : "",
+    authorizationNote: isManufacturerAuthorized
+      ? (submission.provenance.authorizationNote ?? "")
+      : "",
+    provenanceNotes: submission.provenance.notes ?? "",
+    walkthroughYoutubeUrl: submission.walkthroughVideo
+      ? `https://www.youtube.com/watch?v=${submission.walkthroughVideo.youtubeVideoId}`
+      : "",
+    documents: submission.documents.map((doc, index) => ({
+      rowId: `doc-${index + 1}`,
+      kind: doc.kind,
+      title: doc.title,
+      source: "uploadId" in doc ? ("uploaded" as const) : ("pasted_link" as const),
+      url: "url" in doc ? doc.url : "",
+      uploadId: "uploadId" in doc ? doc.uploadId : undefined,
+    })),
+    manufacturingFiles: submission.manufacturingFiles.map((mfg, index) => ({
+      rowId: `mfg-${index + 1}`,
+      kind: mfg.kind,
+      title: mfg.title,
+      source: "uploadId" in mfg ? ("uploaded" as const) : ("pasted_link" as const),
+      url: "url" in mfg ? mfg.url : "",
+      uploadId: "uploadId" in mfg ? mfg.uploadId : undefined,
+    })),
+    parts: submission.parts.map((part, index) => ({
+      rowId: `part-${index + 1}`,
+      label: part.label,
+      material: part.material,
+    })),
+    materials: submission.materials.map((mat, index) => ({
+      rowId: `mat-${index + 1}`,
+      appliesToLabel: mat.appliesToLabel,
+      designation: mat.designation,
+      designationSource: mat.designationSource,
+      materialClass: mat.materialClass,
+      process: mat.process ?? "",
+      finish: mat.finish ?? "",
+    })),
+    tagsText: submission.tags.join(", "),
+    acceptedAttestationClauseIds: [],
+  };
 }

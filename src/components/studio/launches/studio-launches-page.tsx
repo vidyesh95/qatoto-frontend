@@ -11,7 +11,7 @@ import {
   SUBMISSION_STATE_LABELS,
 } from "@/components/studio/blueprints/moderation-state-chip";
 import { useMyShowcaseSubmissionsQuery } from "@/hooks/blueprints/showcase-authoring";
-import type { BlueprintSubmissionDisplayState } from "@/lib/blueprints/schemas";
+import { buildBlueprintHref, type BlueprintSubmissionDisplayState } from "@/lib/blueprints/schemas";
 import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
 
 /**
@@ -167,6 +167,18 @@ export default function StudioLaunchesPage() {
                     <p className="mt-2 max-w-prose rounded-xl border border-border bg-card p-3 text-sm leading-6 text-foreground">
                       {submission.moderatorNote}
                     </p>
+                  )}
+
+                  {submission.publicSlug === null ? null : (
+                    <Link
+                      href={buildBlueprintHref({
+                        category: "showcase",
+                        slug: submission.publicSlug,
+                      })}
+                      className="mt-2 inline-block text-sm font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                    >
+                      View the page
+                    </Link>
                   )}
                 </div>
               </li>

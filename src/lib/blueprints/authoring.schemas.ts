@@ -119,22 +119,44 @@ const TeardownSubmissionFileUrlSchema = createExternalHttpsUrlSchema(512);
  * cannot do its job. `create-studio-page.tsx` already takes a pasted link for video for the same
  * reason. When an upload route exists this field keeps its name and gains a sibling.
  */
-export const TeardownSubmissionDocumentSchema = z
-  .object({
-    kind: z.enum(BLUEPRINT_DOCUMENT_KINDS),
-    title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
-    url: TeardownSubmissionFileUrlSchema,
-  })
-  .strict();
+export const TeardownSubmissionDocumentSchema = z.discriminatedUnion("source", [
+  z
+    .object({
+      source: z.literal("pasted_link").default("pasted_link"),
+      kind: z.enum(BLUEPRINT_DOCUMENT_KINDS),
+      title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
+      url: TeardownSubmissionFileUrlSchema,
+    })
+    .strict(),
+  z
+    .object({
+      source: z.literal("uploaded"),
+      kind: z.enum(BLUEPRINT_DOCUMENT_KINDS),
+      title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
+      uploadId: z.string().uuid("An upload id is a UUID."),
+    })
+    .strict(),
+]);
 export type TeardownSubmissionDocument = z.infer<typeof TeardownSubmissionDocumentSchema>;
 
-export const TeardownSubmissionManufacturingFileSchema = z
-  .object({
-    kind: z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS),
-    title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
-    url: TeardownSubmissionFileUrlSchema,
-  })
-  .strict();
+export const TeardownSubmissionManufacturingFileSchema = z.discriminatedUnion("source", [
+  z
+    .object({
+      source: z.literal("pasted_link").default("pasted_link"),
+      kind: z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS),
+      title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
+      url: TeardownSubmissionFileUrlSchema,
+    })
+    .strict(),
+  z
+    .object({
+      source: z.literal("uploaded"),
+      kind: z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS),
+      title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
+      uploadId: z.string().uuid("An upload id is a UUID."),
+    })
+    .strict(),
+]);
 export type TeardownSubmissionManufacturingFile = z.infer<
   typeof TeardownSubmissionManufacturingFileSchema
 >;
@@ -434,3 +456,27 @@ export function isPublishableTeardownSubjectKind(
 }
 
 export { TEARDOWN_SUBJECT_KINDS };
+
+export const TeardownUploadFormatSchema = z.enum(["pdf", "step", "stl", "dxf", "glb"]);
+export type TeardownUploadFormat = z.infer<typeof TeardownUploadFormatSchema>;
+
+export const TeardownUploadReceiptSchema = z
+  .object({
+    uploadId: z.string(),
+    format: TeardownUploadFormatSchema,
+    byteSize: z.number().int().nonnegative(),
+    originalFileName: z.string(),
+  })
+  .strip();
+export type TeardownUploadReceipt = z.infer<typeof TeardownUploadReceiptSchema>;
+
+export const TeardownSubmissionDetailSchema = z
+  .object({
+    submissionId: z.string(),
+    moderationState: z.string(),
+    moderatorNote: z.string().nullable(),
+    document: z.string(),
+    documentSchemaVersion: z.number().int().positive(),
+  })
+  .strip();
+export type TeardownSubmissionDetail = z.infer<typeof TeardownSubmissionDetailSchema>;

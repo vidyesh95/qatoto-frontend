@@ -167,6 +167,16 @@ export default function StudioBlueprintsPage() {
                     View the page
                   </Link>
                 )}
+
+                {/* Rejected submissions can be edited and resubmitted */}
+                {submission.moderationState === "rejected" && (
+                  <Link
+                    href={`/blueprints/teardowns/new?resubmitSubmissionId=${encodeURIComponent(submission.submissionId)}`}
+                    className="mt-2 inline-block text-sm font-medium text-[#00696E] transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00696E]"
+                  >
+                    Edit and resubmit
+                  </Link>
+                )}
               </li>
             );
           })}

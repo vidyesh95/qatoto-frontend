@@ -65,7 +65,7 @@ export function useRefreshBlueprintReportQueue(): () => void {
 }
 
 /** Flag, quarantine or restore one published blueprint. */
-export function useBlueprintModerationMutation(status: BlueprintReportStatus): UseMutationResult<
+export function useBlueprintModerationMutation(_status?: BlueprintReportStatus): UseMutationResult<
   ActionResponse<BlueprintModerationResult>,
   Error,
   {
@@ -74,6 +74,7 @@ export function useBlueprintModerationMutation(status: BlueprintReportStatus): U
     readonly verb: BlueprintModerationVerb;
     readonly reasonNote: string;
     readonly idempotencyKey: string;
+    readonly reportId?: string;
   }
 > {
   const queryClient = useQueryClient();
@@ -85,8 +86,9 @@ export function useBlueprintModerationMutation(status: BlueprintReportStatus): U
        * ⚠️ THE WHOLE QUEUE, NOT THE ONE ROW. A verb changes the TARGET'S state, and every other
        * open report about that same target now describes a state that no longer holds — so their
        * `targetModerationState` is stale too. Patching one row would leave the rest lying.
+       * Also invalidates other tabs (e.g. actioned).
        */
-      void queryClient.invalidateQueries({ queryKey: blueprintKeys.reportQueue(status) });
+      void queryClient.invalidateQueries({ queryKey: blueprintKeys.all });
     },
   });
 }

@@ -124,3 +124,24 @@ export function setBlueprintCommentLike(
     options,
   );
 }
+
+/**
+ * `PATCH /blueprints/comments/:commentId` — edit an existing comment body.
+ */
+export function updateBlueprintComment(
+  input: { readonly commentId: string; readonly body: string },
+  options?: RequestOptions,
+): Promise<
+  ActionResponse<{ readonly commentId: string; readonly body: string; readonly updatedAt: string }>
+> {
+  return sendJson(
+    `/blueprints/comments/${encodeURIComponent(input.commentId)}`,
+    "PATCH",
+    { body: input.body },
+    BlueprintCommentSchema.pick({ commentId: true }).extend({
+      body: BlueprintCommentSchema.shape.body.unwrap(),
+      updatedAt: BlueprintCommentSchema.shape.createdAt,
+    }),
+    options,
+  );
+}

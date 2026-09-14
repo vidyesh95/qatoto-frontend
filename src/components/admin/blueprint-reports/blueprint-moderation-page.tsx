@@ -59,7 +59,8 @@ export default function BlueprintModerationPage() {
       <header className="max-w-3xl space-y-1">
         <h1 className="text-2xl font-semibold">Blueprint reports</h1>
         <p className="text-sm text-muted-foreground">
-          What readers have reported about published teardowns and case studies, oldest first.
+          What readers have reported about published blueprints (teardowns, case studies and
+          showcases), oldest first.
         </p>
         <p className="text-sm text-muted-foreground">
           Nothing here was hidden automatically — a report changes no state on its own, so every

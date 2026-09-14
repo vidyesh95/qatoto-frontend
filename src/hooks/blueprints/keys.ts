@@ -49,6 +49,14 @@ export const blueprintKeys = {
   /** The reporter's own list of reports. Person-scoped server-side, so no id in the key. */
   myReports: () => ["blueprints", "reports", "mine"] as const,
   /**
+   * The author's own drafts, optionally filtered by arm.
+   */
+  myDrafts: (arm?: string) => ["blueprints", "drafts", "mine", arm ?? "all"] as const,
+  /**
+   * A single draft by id.
+   */
+  draft: (draftId: string) => ["blueprints", "drafts", draftId] as const,
+  /**
    * The moderator's content-report queue.
    *
    * ⚠️ `status` IS IN THE KEY AND THE CURSOR IS NOT. The status is a SERVER filter — it changes

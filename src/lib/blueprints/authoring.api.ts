@@ -14,13 +14,18 @@
 import { z } from "zod";
 
 import {
+  TeardownSubmissionDetailSchema,
   TeardownSubmissionReceiptSchema,
   TeardownSubmissionSchema,
+  TeardownUploadReceiptSchema,
   type TeardownSubmission,
+  type TeardownSubmissionDetail,
   type TeardownSubmissionDraft,
   type TeardownSubmissionReceipt,
+  type TeardownUploadFormat,
+  type TeardownUploadReceipt,
 } from "@/lib/blueprints/authoring.schemas";
-import { getJson, sendJson, type ActionResponse, type RequestOptions } from "@/lib/http";
+import { getJson, sendForm, sendJson, type ActionResponse, type RequestOptions } from "@/lib/http";
 
 /**
  * `POST /blueprints/teardowns` — send a survey for review. Answers 202 with a receipt.
@@ -71,4 +76,39 @@ export function listMyTeardownSubmissions(
   options?: RequestOptions,
 ): Promise<ActionResponse<TeardownSubmission[]>> {
   return getJson("/blueprints/teardowns/mine", z.array(TeardownSubmissionSchema), options);
+}
+
+/**
+ * `GET /blueprints/teardowns/mine/:submissionId` — one of the author's own submissions with document.
+ */
+export function getMyTeardownSubmission(
+  submissionId: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<TeardownSubmissionDetail>> {
+  return getJson(
+    `/blueprints/teardowns/mine/${encodeURIComponent(submissionId)}`,
+    TeardownSubmissionDetailSchema,
+    options,
+  );
+}
+
+/**
+ * `POST /blueprints/teardowns/uploads` — stage one CAD file or PDF, up to 50 MB.
+ */
+export function uploadTeardownFile(
+  file: File,
+  format: TeardownUploadFormat,
+  options?: RequestOptions,
+): Promise<ActionResponse<TeardownUploadReceipt>> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("format", format);
+
+  return sendForm(
+    "/blueprints/teardowns/uploads",
+    "POST",
+    formData,
+    TeardownUploadReceiptSchema,
+    options,
+  );
 }

@@ -15,6 +15,7 @@ import {
   deleteBlueprintComment,
   listBlueprintComments,
   setBlueprintCommentLike,
+  updateBlueprintComment,
   type BlueprintCommentArm,
 } from "@/lib/blueprints/comments.api";
 import type { BlueprintComment } from "@/lib/blueprints/schemas";
@@ -109,5 +110,28 @@ export function useBlueprintCommentLikeMutation(): UseMutationResult<
           isSet: variables.isSet,
         }),
       ),
+  });
+}
+
+export interface UpdateBlueprintCommentVariables {
+  readonly commentId: string;
+  readonly body: string;
+}
+
+export function useUpdateBlueprintCommentMutation(
+  arm: BlueprintCommentArm,
+  slug: string,
+): UseMutationResult<
+  { readonly commentId: string; readonly body: string; readonly updatedAt: string },
+  Error,
+  UpdateBlueprintCommentVariables
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: UpdateBlueprintCommentVariables) =>
+      unwrap(await updateBlueprintComment(variables)),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: blueprintKeys.commentThread(arm, slug) });
+    },
   });
 }

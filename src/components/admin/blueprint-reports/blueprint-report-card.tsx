@@ -10,6 +10,7 @@ import {
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
 import type {
   BlueprintModerationVerb,
+  BlueprintReportArmFilter,
   BlueprintReportQueueItem,
   BlueprintReportStatus,
 } from "@/lib/blueprints/admin-reports.schemas";
@@ -20,6 +21,18 @@ const NOTE_CLASS =
 const ACTION_CLASS =
   "cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium outline -outline-offset-1 outline-border disabled:cursor-default disabled:opacity-40";
 
+const TARGET_KIND_LABELS: Record<BlueprintReportArmFilter, string> = {
+  teardown: "Teardown",
+  case_study: "Case study",
+  showcase: "Showcase",
+};
+
+const TARGET_KIND_SEGMENTS: Record<BlueprintReportArmFilter, string> = {
+  teardown: "teardowns",
+  case_study: "case-studies",
+  showcase: "showcase",
+};
+
 /**
  * One queued report.
  *
@@ -27,9 +40,10 @@ const ACTION_CLASS =
  * is sharper than symmetry: a restore OVERTURNS ANOTHER MODERATOR'S QUARANTINE, and the record of
  * why is the only thing that stops the pair being re-litigated silently.
  *
- * ⚠️ `Quarantine` IS HIDDEN ON THE CASE-STUDY ARM. `case_study_moderation_state_ck` has no such
- * label — a case study has no files to withhold — and the server answers 409 with a sentence
- * saying so. Hiding the control means a moderator does not have to discover that by pressing it.
+ * ⚠️ `Quarantine` IS HIDDEN ON THE CASE-STUDY AND SHOWCASE ARMS. `case_study_moderation_state_ck`
+ * and showcase_launch have no such label — only a teardown has files to withhold — and the server
+ * answers 409 with a sentence saying so. Hiding the control means a moderator does not have to
+ * discover that by pressing it.
  *
  * ⚠️ THE OPEN COUNT IS CONTEXT, NEVER A THRESHOLD. It is shown so a pile-up is visible; nothing
  * reads it as a trigger and no threshold exists to publish.
@@ -62,6 +76,7 @@ export default function BlueprintReportCard({
       targetId: report.targetId,
       verb,
       reasonNote: trimmedNote,
+      reportId: report.reportId,
       idempotencyKey: getIdempotencyKey(),
     });
     if (result.success) {
@@ -100,7 +115,7 @@ export default function BlueprintReportCard({
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="text-sm font-medium text-foreground">{report.targetTitle}</p>
         <p className="text-xs text-muted-foreground">
-          {report.targetKind === "teardown" ? "Teardown" : "Case study"} ·{" "}
+          {TARGET_KIND_LABELS[report.targetKind]} ·{" "}
           <span className="font-medium">{report.targetModerationState}</span>
         </p>
       </div>
@@ -124,7 +139,7 @@ export default function BlueprintReportCard({
           <>
             {" · "}
             <a
-              href={`/blueprints/${report.targetKind === "teardown" ? "teardowns" : "case-studies"}/${report.targetSlug}`}
+              href={`/blueprints/${TARGET_KIND_SEGMENTS[report.targetKind]}/${report.targetSlug}`}
               target="_blank"
               rel="noreferrer"
               className="font-medium text-[#00696E] underline-offset-2 hover:underline"

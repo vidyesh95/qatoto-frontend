@@ -22,9 +22,14 @@
 import Link from "next/link";
 
 import StatusPanel from "@/components/home/shared/status-panel";
+import { useMyBlueprintReportsQuery } from "@/hooks/blueprints/reports";
 import { useMyProfileReportsQuery } from "@/hooks/users/user-reports";
 import { useMyVideoReportsQuery } from "@/hooks/videos/content-reports";
 import { describeEngagementError } from "@/hooks/feed/mutations";
+import {
+  BLUEPRINT_REPORT_REASON_LABELS,
+  type MyBlueprintReport,
+} from "@/lib/blueprints/reports.schemas";
 import {
   VIDEO_REPORT_REASON_LABELS,
   type MyVideoReport,
@@ -48,8 +53,10 @@ const STATUS_CLASSES: Readonly<Record<VideoReportStatus, string>> = {
 export default function ReportHistoryPage() {
   const myVideoReportsQuery = useMyVideoReportsQuery();
   const myProfileReportsQuery = useMyProfileReportsQuery();
+  const myBlueprintReportsQuery = useMyBlueprintReportsQuery();
 
   const profileReports = myProfileReportsQuery.data?.success ? myProfileReportsQuery.data.data : [];
+  const blueprintReports = myBlueprintReportsQuery.data ?? [];
 
   return (
     <div className="pb-10">
@@ -72,7 +79,7 @@ export default function ReportHistoryPage() {
     // THE VIDEO QUERY GATES THE PAGE. Both reads are session-scoped and fail together when signed
     // out, so branching on one keeps the signed-out answer a single honest message rather than two
     // stacked copies of it.
-    if (myVideoReportsQuery.isPending) {
+    if (myVideoReportsQuery.isPending || myBlueprintReportsQuery.isPending) {
       return <p className="text-sm text-muted-foreground">Loading your reports…</p>;
     }
 
@@ -84,14 +91,13 @@ export default function ReportHistoryPage() {
 
     const videoReports = myVideoReportsQuery.data;
 
-    if (videoReports.length === 0 && profileReports.length === 0) {
+    if (videoReports.length === 0 && profileReports.length === 0 && blueprintReports.length === 0) {
       return (
         <div className="rounded-xl border border-border px-4 py-3">
           <p className="text-sm font-medium text-foreground">Nothing reported yet</p>
           <p className="mt-1 text-xs leading-4 text-muted-foreground">
-            You can report a video from the menu on any video card, or a channel&rsquo;s description
-            from its About panel. Reporting doesn&rsquo;t remove anything on its own — a moderator
-            reviews every report.
+            You can report a video, channel profile, or blueprint from their respective menus.
+            Reporting doesn&rsquo;t remove anything on its own — a moderator reviews every report.
           </p>
         </div>
       );
@@ -119,6 +125,19 @@ export default function ReportHistoryPage() {
               {profileReports.map((report) => (
                 <li key={report.id} className="rounded-xl border border-border px-4 py-3">
                   {renderProfileReportRow(report)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {blueprintReports.length > 0 && (
+          <div>
+            <h2 className="pb-2 text-sm font-medium text-foreground">Blueprints</h2>
+            <ul className="space-y-2">
+              {blueprintReports.map((report) => (
+                <li key={report.reportId} className="rounded-xl border border-border px-4 py-3">
+                  {renderBlueprintReportRow(report)}
                 </li>
               ))}
             </ul>
@@ -211,6 +230,40 @@ function renderProfileReportRow(report: MyProfileReport) {
       {report.detailText !== null && (
         <p className="mt-2 border-l-2 border-border pl-2 text-xs text-muted-foreground">
           {report.detailText}
+        </p>
+      )}
+    </>
+  );
+}
+
+function renderBlueprintReportRow(report: MyBlueprintReport) {
+  const armLabel =
+    report.targetKind === "teardown"
+      ? "Teardown"
+      : report.targetKind === "case_study"
+        ? "Case study"
+        : "Launch showcase";
+
+  return (
+    <>
+      <div className="flex flex-row items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 text-sm font-medium text-foreground">{report.targetTitle}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground/75">{armLabel}</span> &bull;{" "}
+            {BLUEPRINT_REPORT_REASON_LABELS[report.reason]}
+          </p>
+        </div>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASSES[report.status]}`}
+        >
+          {STATUS_LABELS[report.status]}
+        </span>
+      </div>
+
+      {report.status === "actioned" && (
+        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+          A moderator reviewed this report and took action on the content.
         </p>
       )}
     </>

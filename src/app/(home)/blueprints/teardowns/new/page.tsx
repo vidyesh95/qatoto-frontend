@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 
 import TeardownWizard from "@/components/home/blueprints/teardowns/authoring/teardown-wizard";
@@ -20,7 +21,9 @@ export const metadata: Metadata = {
 export default function NewTeardownRoute() {
   return (
     <div className="px-4 pt-5 pb-12 lg:px-6">
-      <TeardownWizard />
+      <Suspense fallback={<p className="text-sm text-muted-foreground">Loading wizard…</p>}>
+        <TeardownWizard />
+      </Suspense>
     </div>
   );
 }

@@ -46,12 +46,14 @@ export function listBlueprintReportQueue(
 }
 
 /**
- * `POST /blueprints/admin/{teardowns,case-studies}/:id/moderation-state`.
+ * `POST /blueprints/admin/{teardowns,case-studies,showcases}/:id/moderation-state`.
  *
  * ⚠️ ADDRESSED BY THE ROW'S ID, NOT ITS SLUG, which is the opposite of the reader's report route —
  * and both are right. A reader is standing on a public page and the slug is the only handle they
  * have; a moderator is working a queue that hands them an id. It would also be unspellable on the
  * case-study arm, whose `public_slug` is NULL until a moderator mints one.
+ *
+ * Passing `reportId` automatically moves the answered report from `open` to `actioned`.
  */
 export function setBlueprintModerationState(
   input: {
@@ -60,14 +62,37 @@ export function setBlueprintModerationState(
     readonly verb: BlueprintModerationVerb;
     readonly reasonNote: string;
     readonly idempotencyKey: string;
+    readonly reportId?: string;
   },
   options?: RequestOptions,
 ): Promise<ActionResponse<BlueprintModerationResult>> {
-  const segment = input.targetKind === "teardown" ? "teardowns" : "case-studies";
+  let segment: string;
+  switch (input.targetKind) {
+    case "teardown":
+      segment = "teardowns";
+      break;
+    case "case_study":
+      segment = "case-studies";
+      break;
+    case "showcase":
+      segment = "showcases";
+      break;
+    default: {
+      const exhaustiveCheck: never = input.targetKind;
+      throw new Error(`Unhandled targetKind: ${String(exhaustiveCheck)}`);
+    }
+  }
+
+  const payload = {
+    verb: input.verb,
+    reasonNote: input.reasonNote,
+    ...(input.reportId ? { reportId: input.reportId } : {}),
+  };
+
   return sendJson(
     `/blueprints/admin/${segment}/${encodeURIComponent(input.targetId)}/moderation-state`,
     "POST",
-    { verb: input.verb, reasonNote: input.reasonNote },
+    payload,
     BlueprintModerationResultSchema,
     { ...options, headers: { "Idempotency-Key": input.idempotencyKey } },
   );
