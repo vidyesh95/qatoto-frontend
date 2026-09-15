@@ -58,6 +58,14 @@ export default function OrderCancelControl({
 
   const cancelResult = cancelOrder.data;
 
+  // THE STATE, BOUND TO ITS OWN TYPE. `ORDER_STATE_LABELS` is keyed on `OrderState`, so the value that
+  // indexes it is declared as one here rather than read straight off the response inside JSX — a checker
+  // that loses the response's inferred shape then fails at this line, where the contract is written down,
+  // instead of silently widening the key to `any`. `null` is "no accepted result yet", which is the same
+  // condition the block below used to test inline.
+  const cancelledOrderState: OrderState | null =
+    cancelResult !== undefined && cancelResult.success ? cancelResult.data.state : null;
+
   return (
     <section aria-label="Cancel this order" className="rounded-xl border border-border px-4 py-3">
       <p className="text-sm font-medium text-foreground">Cancel this order</p>
@@ -106,15 +114,14 @@ export default function OrderCancelControl({
           again is safe and cannot cancel anything twice.
         </p>
       )}
-      {cancelResult !== undefined &&
-        cancelResult.success && (
-          // READS THE SERVER'S STATE BACK rather than announcing success. The mock returns the order unchanged,
-          // so this deliberately reports what the order now says instead of claiming it is cancelled.
-          <p className="mt-2 text-xs leading-4 text-muted-foreground">
-            The server accepted the request. This order now reads{" "}
-            {ORDER_STATE_LABELS[cancelResult.data.state].toLowerCase()}.
-          </p>
-        )}
+      {cancelledOrderState !== null && (
+        // READS THE SERVER'S STATE BACK rather than announcing success. The mock returns the order unchanged,
+        // so this deliberately reports what the order now says instead of claiming it is cancelled.
+        <p className="mt-2 text-xs leading-4 text-muted-foreground">
+          The server accepted the request. This order now reads{" "}
+          {ORDER_STATE_LABELS[cancelledOrderState].toLowerCase()}.
+        </p>
+      )}
     </section>
   );
 }
