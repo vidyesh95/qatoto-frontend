@@ -16,12 +16,6 @@ const NAV_ITEMS = [
     inactiveIcon: "/icons/dashboard_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
   },
   {
-    href: "/admin/review",
-    label: "Review",
-    activeIcon: "/icons/reviews_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-    inactiveIcon: "/icons/reviews_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-  },
-  {
     href: "/studio",
     label: "Create",
     activeIcon: "/icons/video_call_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",

@@ -18,7 +18,7 @@ import { z } from "zod";
 /* Wire enums — snake_case pgEnum labels, byte-identical                       */
 /* -------------------------------------------------------------------------- */
 
-export const VIDEO_TYPES = ["pitch", "demo", "update", "ama", "anime_episode"] as const;
+export const VIDEO_TYPES = ["pitch", "demo", "update", "ama"] as const;
 export const VIDEO_STAGE_BADGES = ["idea", "mvp", "scaling", "shipped"] as const;
 /** Note `investor_only` — playlists have their own, SHORTER visibility enum. */
 export const VIDEO_VISIBILITIES = ["private", "unlisted", "public", "investor_only"] as const;
@@ -27,7 +27,6 @@ export const VIDEO_PUBLISH_STATUSES = ["draft", "scheduled", "published"] as con
 export const CONTENT_REVIEW_STATUSES = ["not_required", "pending", "approved", "rejected"] as const;
 export const VIDEO_LICENSES = ["standard", "creative_commons"] as const;
 export const SHORTS_REMIX_MODES = ["video_and_audio", "audio_only"] as const;
-export const ANIME_AUDIO_MODES = ["subbed", "dubbed"] as const;
 export const VIDEO_COLLABORATOR_STATUSES = ["invited", "accepted", "declined"] as const;
 export const STORAGE_PROVIDERS = ["livepeer", "cloudflare", "imagekit", "self_hosted"] as const;
 
@@ -40,9 +39,9 @@ export const STORAGE_PROVIDERS = ["livepeer", "cloudflare", "imagekit", "self_ho
 export const STUDIO_VIDEO_STATUSES = [
   "failed",
   "processing",
-  "pending-review",
-  "rejected",
-  "approved",
+  // ⚠️ NO `pending-review` / `rejected` / `approved`. They were derived from `review_status`,
+  // whose only writer was the staff episode queue. Nothing sets anything but `not_required`
+  // now, so those three could only ever have been unreachable states in a public contract.
   "scheduled",
   "published",
   "draft",
@@ -132,29 +131,6 @@ export const VideoDocumentSchema = z
   })
   .strip();
 
-export const AnimeEpisodeSchema = z
-  .object({
-    id: z.string(),
-    seriesId: z.string(),
-    seriesTitle: z.string(),
-    seasonId: z.string(),
-    seasonLabel: z.string(),
-    episodeNumber: z.number(),
-    episodeTitle: z.string(),
-    isPremium: z.boolean(),
-    // NOT instants, and NOT `z.iso.datetime()`. Both are `text` columns: a weekday name and
-    // a clock time. `premiereDate` and `releasedAt` below ARE `timestamp` columns.
-    releaseScheduleDay: z.string().nullable(),
-    releaseScheduleTime: z.string().nullable(),
-    premiereDate: z.iso.datetime().nullable(),
-    audioMode: z.enum(ANIME_AUDIO_MODES).nullable(),
-    audioLanguage: z.string().nullable(),
-    ageRating: z.string().nullable(),
-    releasedAt: z.iso.datetime().nullable(),
-  })
-  .strip();
-export type AnimeEpisode = z.infer<typeof AnimeEpisodeSchema>;
-
 /* -------------------------------------------------------------------------- */
 /* PublicVideo — the owner-scoped detail read                                   */
 /* -------------------------------------------------------------------------- */
@@ -209,7 +185,7 @@ export const PublicVideoSchema = z
     hasFundingCallToAction: z.boolean(),
     /**
      * The venture this video belongs to, as a SLUG — the server resolves the slug and stores
-     * the id, and the id never reaches a client. Null is unaffiliated content: anime and
+     * the id, and the id never reaches a client. Null is unaffiliated content:
      * general creator uploads carry it forever.
      */
     researchProjectSlug: z.string().nullable(),
@@ -250,7 +226,6 @@ export const PublicVideoSchema = z
     collaborators: z.array(VideoCollaboratorSchema),
     documents: z.array(VideoDocumentSchema),
     playlistIds: z.array(z.string()),
-    animeEpisode: AnimeEpisodeSchema.nullable(),
 
     derivedStatus: StudioVideoStatusSchema,
     createdAt: z.iso.datetime(),
@@ -285,7 +260,6 @@ export const VideoListRowSchema = z
     id: z.string(),
     title: z.string(),
     thumbnailUrl: z.string().nullable(),
-    /** Lets the list tell an anime episode from a pitch — they publish by different routes. */
     videoType: VideoTypeSchema,
     videoSource: z.enum(["youtube", "hosted"]),
     visibility: VideoVisibilitySchema,
@@ -328,26 +302,6 @@ export interface ListMyVideosFilter {
   readonly publishStatus?: VideoPublishStatus;
   readonly reviewStatus?: ContentReviewStatus;
 }
-
-/**
- * The anime block, required on create IF AND ONLY IF `videoType === "anime_episode"`.
- *
- * `seriesId` XOR `newSeriesTitle` — sending both, or neither, is a 422 at path `seriesId`. The
- * either/or is why this is a union rather than two optional fields: the illegal combinations
- * are unrepresentable (CLAUDE.md Pattern 1) instead of caught at the boundary.
- */
-export type CreateAnimeEpisodeInput = {
-  readonly seasonLabel: string;
-  readonly episodeNumber: number;
-  readonly episodeTitle: string;
-  readonly releaseScheduleDay?: string;
-  readonly releaseScheduleTime?: string;
-  readonly premiereDate?: string;
-  readonly audioMode?: (typeof ANIME_AUDIO_MODES)[number];
-  readonly audioLanguage?: string;
-  readonly ageRating?: string;
-  readonly genreTags?: string[];
-} & ({ readonly seriesId: string } | { readonly newSeriesTitle: string });
 
 /**
  * `POST /videos`.
@@ -414,28 +368,10 @@ export interface CreateVideoInput {
   }[];
   readonly teamMemberNames?: string[];
   readonly collaboratorEmails?: string[];
-  readonly anime?: CreateAnimeEpisodeInput;
 }
 
-/**
- * `PATCH /videos/:videoId` — every create field, all optional, plus a NARROWER anime block.
- *
- * `anime` on update cannot move the episode between series or seasons: `seriesId`,
- * `newSeriesTitle`, `seasonLabel` and `genreTags` are absent from the update schema and are a
- * 422 if sent. Re-homing an episode is a series operation, not a video edit.
- */
-export type UpdateVideoInput = Partial<Omit<CreateVideoInput, "anime">> & {
-  readonly anime?: {
-    readonly episodeNumber?: number;
-    readonly episodeTitle?: string;
-    readonly releaseScheduleDay?: string;
-    readonly releaseScheduleTime?: string;
-    readonly premiereDate?: string;
-    readonly audioMode?: (typeof ANIME_AUDIO_MODES)[number];
-    readonly audioLanguage?: string;
-    readonly ageRating?: string;
-  };
-};
+/** `PATCH /videos/:videoId` — every create field, all optional. */
+export type UpdateVideoInput = Partial<CreateVideoInput>;
 
 /**
  * `PUT /videos/:videoId/chapters` — a full replace, and the server validates the SHAPE of the

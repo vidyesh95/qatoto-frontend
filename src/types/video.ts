@@ -1,9 +1,6 @@
 // Shared domain types for the video/watch surface. Data truth lives in the
 // Express backend; these shapes are the client-side contract only.
 
-export type Episode = { id: string; label: string; isPremium: boolean };
-export type Season = { id: string; label: string; episodes: Episode[] };
-
 export type Reply = {
   id: string;
   profileSrc: string;
@@ -73,14 +70,13 @@ export type WatchVideo = {
   saleItem?: SaleItem;
   reviews?: Review[];
   isPremium?: boolean;
-  seasons?: Season[];
 };
 
 export type VideoCardProps = {
   /**
    * The backend row id.
    *
-   * REQUIRED. It was optional only while the anime surfaces built cards from mocks without
+   * REQUIRED. It was optional only while the retired surfaces built cards from mocks without
    * ids; both remaining producers supply it unconditionally (`toVideoCardProps` in
    * `@/lib/feed/schemas`, `toReelCardProps` in `venture-video-reel.tsx`) and both source
    * schemas declare it non-nullable. Every engagement control in `video-card-menu.tsx` needs

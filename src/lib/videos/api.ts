@@ -111,8 +111,6 @@ export function updateVideo(
  *   422 gating — a YouTube-hosted video cannot be `investor_only` or NDA-gated
  *   422 completeness — `errors.missing` names the fields
  *
- * An anime episode answers 200 with `reviewStatus: "pending"` and the message "Episode
- * submitted for review" — published is NOT what happened, and the UI must not say it is.
  */
 export function publishVideo(
   videoId: string,

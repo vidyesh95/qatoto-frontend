@@ -46,8 +46,7 @@ export default function VideosList() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">My videos</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Uploads you saved from the upload flow. Anime episodes stay in review (Pending) until
-            Qatoto staff approve them.
+            Uploads you saved from the upload flow.
           </p>
         </div>
         <UploadLink label="Upload video" />
@@ -131,15 +130,10 @@ function VideoRow({ video, onEditClick }: { video: VideoListRow; onEditClick: ()
     setRowMessage(null);
     try {
       const published = await publishMutation.mutateAsync(video.id);
-      // AN ANIME EPISODE DOES NOT PUBLISH. The backend moves it to `reviewStatus: "pending"`
-      // and leaves `publishStatus: "draft"`, so saying "published" here would be a lie the
-      // creator acts on — they would go looking for it on the homepage.
       setRowMessage(
-        published.reviewStatus === "pending"
-          ? "Submitted for review. It goes live once a moderator approves it."
-          : published.publishStatus === "scheduled"
-            ? "Scheduled. It will not appear on the homepage until it is published."
-            : null,
+        published.publishStatus === "scheduled"
+          ? "Scheduled. It will not appear on the homepage until it is published."
+          : null,
       );
     } catch (error) {
       const refusal = describePublishRefusal(error);
@@ -162,17 +156,8 @@ function VideoRow({ video, onEditClick }: { video: VideoListRow; onEditClick: ()
       <div className="flex items-center gap-4">
         <span className="flex aspect-video w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
           {video.thumbnailUrl === null ? (
-            /*
-              The anime/`live_tv` distinction came back with `videoType` on the list projection.
-              Without it every row used the same generic icon, so an episode bound for moderation
-              looked exactly like a pitch that publishes straight away.
-            */
             <Image
-              src={
-                video.videoType === "anime_episode"
-                  ? "/icons/live_tv_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-                  : "/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              }
+              src="/icons/video_library_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
               alt=""
               width={24}
               height={24}
@@ -332,7 +317,6 @@ const VIDEO_TYPE_LABELS: Record<StudioVideoType, string> = {
   demo: "Demo",
   update: "Update",
   ama: "AMA",
-  anime_episode: "Anime episode",
 };
 
 const VISIBILITY_BADGE_LABELS: Record<StudioVideoVisibility, string> = {
@@ -363,8 +347,8 @@ function VisibilityBadge({ visibility }: { visibility: StudioVideoVisibility }) 
  * `derivedStatus` is computed SERVER-SIDE from the four status columns.
  *
  * The mock derived it in a local `resolveVideoStatus` helper, which could disagree with the
- * backend about whether an anime episode needed review. It cannot now — there is one place that
- * decides, and it is the one that owns the columns.
+ * backend. It cannot now — there is one place that decides, and it is the one that owns the
+ * columns.
  */
 function StatusBadge({ video }: { video: VideoListRow }) {
   switch (video.derivedStatus) {
@@ -391,24 +375,6 @@ function StatusBadge({ video }: { video: VideoListRow }) {
           {video.scheduledPublishAt === null
             ? "Scheduled"
             : `Scheduled for ${video.scheduledPublishAt.slice(0, 10)}`}
-        </span>
-      );
-    case "pending-review":
-      return (
-        <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-          Pending
-        </span>
-      );
-    case "approved":
-      return (
-        <span className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
-          Approved
-        </span>
-      );
-    case "rejected":
-      return (
-        <span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
-          Rejected
         </span>
       );
     default: {

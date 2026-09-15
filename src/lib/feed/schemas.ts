@@ -84,7 +84,7 @@ export const VideoSourceSchema = z.enum(VIDEO_SOURCES);
 export type VideoSource = z.infer<typeof VideoSourceSchema>;
 
 /** `video_type` pgEnum. */
-export const VIDEO_TYPES = ["pitch", "demo", "update", "ama", "anime_episode"] as const;
+export const VIDEO_TYPES = ["pitch", "demo", "update", "ama"] as const;
 export const VideoTypeSchema = z.enum(VIDEO_TYPES);
 export type VideoType = z.infer<typeof VideoTypeSchema>;
 
@@ -346,7 +346,7 @@ export const WatchPayloadSchema = z
      * whole `OpenRole` because it needs `projectSlug` to post to and `skills` to render the
      * chips the backend validates a subset against.
      *
-     * Null `linkedRole` means free text — anime, unaffiliated videos, and every blurb written
+     * Null `linkedRole` means free text — unaffiliated videos and every blurb written
      * before the link existed. Those render as a label with no apply control, which is what
      * they have always been.
      */
@@ -360,54 +360,8 @@ export const WatchPayloadSchema = z
         .strip(),
     ),
     /**
-     * The series this episode belongs to, or NULL when the video is not an anime episode.
-     *
-     * `null` AND `[]` MEAN DIFFERENT THINGS AND BOTH ARRIVE. Null is "not part of a series" —
-     * every pitch, demo and unaffiliated video on the platform, which is most of them. An empty
-     * array is a series none of whose episodes are public yet. Hide the picker for the first;
-     * render an empty catalogue for the second. `.nullable()` without `.optional()` because the
-     * server always sends the key.
-     *
-     * ONLY PUBLICLY-WATCHABLE EPISODES ARRIVE, so EPISODE NUMBERS CAN HAVE GAPS. An episode in
-     * review, hidden by a moderator, or with no video yet is omitted entirely rather than sent
-     * as an unclickable row — a picker that names next week's episode would be an oracle over a
-     * catalogue nobody has released. Never renumber the list to close a gap: 1, 2, 4 is the true
-     * answer and 1, 2, 3 would be a fabricated one.
-     *
-     * `videoId` IS NOT NULLABLE HERE even though the column is, precisely because of that
-     * filter — by the time a row reaches this schema its video exists and is watchable, which is
-     * what makes each entry a link.
-     *
-     * NO `isPremium`. The column exists on the backend; no entitlement model, tier or paywall
-     * does, so the server deliberately refuses to send it. Do not reintroduce a lock icon here
-     * from any other source — it would sit over an episode that plays for free.
-     */
-    seasons: z
-      .array(
-        z
-          .object({
-            seasonId: z.string(),
-            seasonLabel: z.string(),
-            position: z.number().int(),
-            episodes: z.array(
-              z
-                .object({
-                  episodeId: z.string(),
-                  videoId: z.string(),
-                  episodeNumber: z.number().int(),
-                  episodeTitle: z.string(),
-                  /** When it went live in /anime, which is on APPROVAL rather than on publish. */
-                  releasedAt: z.iso.datetime().nullable(),
-                })
-                .strip(),
-            ),
-          })
-          .strip(),
-      )
-      .nullable(),
-    /**
-     * The shoppable products under the player. `[]` rather than nullable, unlike `seasons` — every
-     * video CAN carry products, so "none" is an empty list rather than an absent capability.
+     * The shoppable products under the player. `[]` rather than nullable — every video CAN
+     * carry products, so "none" is an empty list rather than an absent capability.
      *
      * THE LIST IS RE-FILTERED SERVER-SIDE ON EVERY READ. A creator attaches a product and the
      * seller can later unpublish it, delist the organization, or have the listing moderated down;
@@ -449,8 +403,6 @@ export const WatchPayloadSchema = z
   })
   .strip();
 export type WatchPayload = z.infer<typeof WatchPayloadSchema>;
-/** The seasons array with its `null` arm removed — what the picker renders once it is mounted. */
-export type WatchSeasons = NonNullable<WatchPayload["seasons"]>;
 
 /* -------------------------------------------------------------------------- */
 /* Comments                                                                     */

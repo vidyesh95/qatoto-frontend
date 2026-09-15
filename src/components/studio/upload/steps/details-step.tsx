@@ -18,10 +18,6 @@ const VIDEO_TYPE_OPTIONS: Array<{ value: StudioVideoType; label: string }> = [
   { value: "demo", label: "Demo" },
   { value: "update", label: "Update" },
   { value: "ama", label: "AMA" },
-  // NO `anime_episode` OPTION. The vertical was retired with `/anime`, so nothing new is
-  // uploaded as one. The VALUE still exists in `VIDEO_TYPES` because it is a backend pgEnum
-  // label and removing it needs a migration — and `videos-list.tsx` still LABELS it, so any
-  // historical row renders with a type instead of a blank. Stop offering; keep displaying.
 ];
 
 const SECTOR_TAG_OPTIONS = [

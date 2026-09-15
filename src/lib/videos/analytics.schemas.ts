@@ -22,7 +22,7 @@ import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  *
  * `publishedVideoCount` is READ FROM the `creator_stats` counter cache. It used to be counted
  * live because that cache drifted: nothing decremented it on delete, on a published -> scheduled
- * re-publish, or on the review reset an anime title edit triggers. All three write paths now
+ * re-publish. Both write paths now
  * decrement under a row lock, and `pnpm db:reconcile-creator-stats` repairs any row that drifted
  * before they did.
  */

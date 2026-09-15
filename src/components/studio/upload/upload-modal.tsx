@@ -14,7 +14,7 @@
 //      fire-and-forget draft save that 422s would lose the creator's work silently, which is
 //      the exact failure the draft behaviour exists to prevent.
 //   3. THE SERVER OWNS THE ID AND THE STATUS. No more `crypto.randomUUID()` and no local
-//      `resolveVideoStatus` — whether an anime episode needs review is the backend's call.
+//      `resolveVideoStatus` — the row's status is the backend's call.
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -315,16 +315,7 @@ export default function UploadVideoModal(props: UploadVideoModalProps) {
     if (outcome.kind !== "saved") return;
 
     try {
-      const published = await publishMutation.mutateAsync(outcome.videoId);
-      // An anime episode is SUBMITTED, not published — the backend leaves `publishStatus` at
-      // draft and moves `reviewStatus` to pending. Closing with a "published" impression would
-      // send the creator looking for it on the homepage.
-      if (published.reviewStatus === "pending") {
-        setSaveErrorMessage(
-          "Saved and submitted for review. It goes live once a moderator approves it.",
-        );
-        return;
-      }
+      await publishMutation.mutateAsync(outcome.videoId);
       onClose();
     } catch (error) {
       const refusal = describePublishRefusal(error);

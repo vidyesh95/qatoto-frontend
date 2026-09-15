@@ -10,7 +10,7 @@
 // EVERY ENUM VALUE HERE IS snake_case, AND THAT IS A CHANGE.
 //
 // `src/state/studio-videos-context.tsx` — the mock store this replaces — spelled them
-// KEBAB-case: `anime-episode`, `investor-only`, `creative-commons`, `video-and-audio`. Those
+// KEBAB-case: `investor-only`, `creative-commons`, `video-and-audio`. Those
 // are `pgEnum` labels. They are DATA, not identifiers (CLAUDE.md wire-casing), and the backend
 // parses them with `z.enum(...).strict()`, so every one of those spellings is a hard 422.
 //
@@ -19,7 +19,6 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 
 import type {
-  CreateAnimeEpisodeInput,
   CreateVideoInput,
   PublicVideo,
   StudioVideoStatus,
@@ -38,23 +37,6 @@ export type VideoChapter = {
   /** `"mm:ss"` or `"hh:mm:ss"` as typed by the creator; converted on save. */
   timestampLabel: string;
   title: string;
-};
-
-export type AnimeEpisodeDetails = {
-  /** Either an existing series id, or "" when the creator is naming a new one. */
-  seriesId: string;
-  /** Set only when `seriesId` is "". The backend takes exactly ONE of the two. */
-  newSeriesTitle: string;
-  seasonLabel: string;
-  episodeNumber: string;
-  episodeTitle: string;
-  releaseScheduleDay: string;
-  releaseScheduleTime: string;
-  premiereDate: string;
-  audioMode: "subbed" | "dubbed";
-  audioLanguage: string;
-  ageRating: string;
-  genreTags: string[];
 };
 
 /** What the four-step upload form edits. */
@@ -120,7 +102,7 @@ export type UploadDraft = {
    * Recruiting blurbs. Objects since the venture link landed: a blurb may point at a real
    * open role, which is what puts an Apply button under the video instead of a label.
    *
-   * `openRoleId` is null for free text, which is still correct for anime and for any video
+   * `openRoleId` is null for free text, which is still correct for any video
    * with no venture — the server refuses an id in that case anyway.
    */
   openRoles: {
@@ -138,7 +120,6 @@ export type UploadDraft = {
   scheduledPublishDate: string;
   /** The pasted YouTube link. REQUIRED by the API — there is no file-upload route. */
   youtubeUrl: string;
-  animeEpisodeDetails: AnimeEpisodeDetails | null;
 };
 
 export function createEmptyUploadDraft(): UploadDraft {
@@ -187,7 +168,6 @@ export function createEmptyUploadDraft(): UploadDraft {
     isNdaRequired: false,
     scheduledPublishDate: "",
     youtubeUrl: "",
-    animeEpisodeDetails: null,
   };
 }
 
@@ -280,37 +260,6 @@ function toDateTimeLocalValue(isoInstant: string | null): string {
   return new Date(shiftedToLocalMs).toISOString().slice(0, 16);
 }
 
-function toAnimeInput(details: AnimeEpisodeDetails): CreateAnimeEpisodeInput {
-  const shared = {
-    seasonLabel: details.seasonLabel,
-    episodeNumber: Number(details.episodeNumber) || 0,
-    episodeTitle: details.episodeTitle,
-    ...(optionalText(details.releaseScheduleDay) === undefined
-      ? {}
-      : { releaseScheduleDay: details.releaseScheduleDay.trim() }),
-    ...(optionalText(details.releaseScheduleTime) === undefined
-      ? {}
-      : { releaseScheduleTime: details.releaseScheduleTime.trim() }),
-    ...(optionalText(details.premiereDate) === undefined
-      ? {}
-      : { premiereDate: new Date(details.premiereDate).toISOString() }),
-    audioMode: details.audioMode,
-    ...(optionalText(details.audioLanguage) === undefined
-      ? {}
-      : { audioLanguage: details.audioLanguage.trim() }),
-    ...(optionalText(details.ageRating) === undefined
-      ? {}
-      : { ageRating: details.ageRating.trim() }),
-    genreTags: details.genreTags,
-  };
-
-  // EXACTLY ONE of the two, never both — the backend refines on it and answers 422 at path
-  // `seriesId` otherwise. Expressing it as a union means the illegal pair is unrepresentable.
-  return details.seriesId.length > 0
-    ? { ...shared, seriesId: details.seriesId }
-    : { ...shared, newSeriesTitle: details.newSeriesTitle };
-}
-
 /**
  * The draft as `POST /videos` takes it.
  *
@@ -392,50 +341,12 @@ export function toCreateVideoInput(draft: UploadDraft): CreateVideoInput {
     })),
     teamMemberNames: draft.teamMemberNames,
     collaboratorEmails: draft.collaboratorEmails,
-    ...(draft.animeEpisodeDetails === null
-      ? {}
-      : { anime: toAnimeInput(draft.animeEpisodeDetails) }),
   };
 }
 
-/**
- * The draft as `PATCH /videos/:videoId` takes it.
- *
- * `youtubeUrl` is included only when non-empty, and the anime block is NARROWER on update —
- * series, season and genre tags cannot move here, so they are dropped rather than sent and
- * rejected.
- */
+/** The draft as `PATCH /videos/:videoId` takes it. `youtubeUrl` is included only when non-empty. */
 export function toUpdateVideoInput(draft: UploadDraft): UpdateVideoInput {
-  const { anime: _createAnime, ...createFields } = toCreateVideoInput(draft);
-  const animeDetails = draft.animeEpisodeDetails;
-
-  return {
-    ...createFields,
-    ...(animeDetails === null
-      ? {}
-      : {
-          anime: {
-            episodeNumber: Number(animeDetails.episodeNumber) || 0,
-            episodeTitle: animeDetails.episodeTitle,
-            ...(optionalText(animeDetails.releaseScheduleDay) === undefined
-              ? {}
-              : { releaseScheduleDay: animeDetails.releaseScheduleDay.trim() }),
-            ...(optionalText(animeDetails.releaseScheduleTime) === undefined
-              ? {}
-              : { releaseScheduleTime: animeDetails.releaseScheduleTime.trim() }),
-            ...(optionalText(animeDetails.premiereDate) === undefined
-              ? {}
-              : { premiereDate: new Date(animeDetails.premiereDate).toISOString() }),
-            audioMode: animeDetails.audioMode,
-            ...(optionalText(animeDetails.audioLanguage) === undefined
-              ? {}
-              : { audioLanguage: animeDetails.audioLanguage.trim() }),
-            ...(optionalText(animeDetails.ageRating) === undefined
-              ? {}
-              : { ageRating: animeDetails.ageRating.trim() }),
-          },
-        }),
-  };
+  return toCreateVideoInput(draft);
 }
 
 /** A saved video back into the form shape, for the edit flow. */
@@ -495,23 +406,6 @@ export function toUploadDraft(video: PublicVideo): UploadDraft {
     isNdaRequired: video.isNdaRequired,
     scheduledPublishDate: toDateTimeLocalValue(video.scheduledPublishAt),
     youtubeUrl: video.youtubeEmbedUrl ?? "",
-    animeEpisodeDetails:
-      video.animeEpisode === null
-        ? null
-        : {
-            seriesId: video.animeEpisode.seriesId,
-            newSeriesTitle: "",
-            seasonLabel: video.animeEpisode.seasonLabel,
-            episodeNumber: String(video.animeEpisode.episodeNumber),
-            episodeTitle: video.animeEpisode.episodeTitle,
-            releaseScheduleDay: video.animeEpisode.releaseScheduleDay ?? "",
-            releaseScheduleTime: video.animeEpisode.releaseScheduleTime ?? "",
-            premiereDate: video.animeEpisode.premiereDate?.slice(0, 10) ?? "",
-            audioMode: video.animeEpisode.audioMode ?? "subbed",
-            audioLanguage: video.animeEpisode.audioLanguage ?? "",
-            ageRating: video.animeEpisode.ageRating ?? "",
-            genreTags: [],
-          },
   };
 }
 
@@ -519,9 +413,6 @@ export function toUploadDraft(video: PublicVideo): UploadDraft {
 export const STUDIO_STATUS_LABELS: Record<StudioVideoStatus, string> = {
   failed: "Failed",
   processing: "Processing",
-  "pending-review": "Pending review",
-  rejected: "Rejected",
-  approved: "Approved",
   scheduled: "Scheduled",
   published: "Published",
   draft: "Draft",

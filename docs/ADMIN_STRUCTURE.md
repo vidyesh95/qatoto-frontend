@@ -1,13 +1,20 @@
 # Admin / Staff Console — Structure
 
-> ⚠️ **THE ANIME VERTICAL WAS RETIRED; `/anime` IS NOW `/blueprints`.** This document still
-> describes the anime review and catalogue pipeline in the present tense because **that pipeline
-> still exists** — the `anime_series` / `anime_season` / `anime_episode` tables, the
-> `anime_episode` value in `video_type`, the studio's `/series` pages and the admin review queue
-> were all deliberately left in place (removing them needs a migration). What changed: the public
-> hub and its five routes are deleted and 308 to `/blueprints`, the studio no longer OFFERS
-> `anime_episode` on upload, and the hero console moved to `/admin/blueprints-hero`. Read every
-> `/anime` URL below as historical. See CLAUDE.md, "The Blueprints hub replaced /anime".
+> ⚠️ **THE ANIME VERTICAL IS GONE IN FULL. EVERY SECTION BELOW THAT DESCRIBES IT IS HISTORY.**
+> An earlier version of this banner said the pipeline "still exists" and that removing it needed
+> a migration. That migration has since been written. Removed: the `anime_series` /
+> `anime_season` / `anime_episode` tables, the `anime_episode` value in `video_type`, the studio
+> `/series` router and pages, and **the staff video review queue in its entirety** —
+> `/admin/review`, `content_review_action`, and the three `/videos/admin/review*` routes. The
+> queue went because the only thing that ever set `review_status: 'pending'` was an anime
+> episode, so it could never fill again.
+>
+> ⚠️ **`review_status` AND `content_review_status` SURVIVE ON PURPOSE.** Their literals are
+> written into the public video gate, four hot queries and a partial index that must byte-match
+> them. Every video is `not_required` forever. Do not "finish the job" by dropping them.
+>
+> The hero console is `/admin/blueprints-hero`, backed by `blueprint_hero_slide`. Read every
+> `/anime` URL and every review-queue section below as a record of what was, not what is.
 
 Planning doc for the Qatoto staff-facing admin surface — where company staff review
 content, moderate users, and manage the platform. Tweak / delete anything; we build

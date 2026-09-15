@@ -131,7 +131,6 @@ const STUDIO_ROUTES = {
   home: "/",
   create: "/studio",
   myVideos: "/studio/videos",
-  series: "/studio/series",
   myProducts: "/studio/products",
   playlists: "/studio/playlists",
   analytics: "/studio/analytics",
@@ -385,7 +384,6 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
     items: [
       { path: STUDIO_ROUTES.create, label: "Create", iconKey: "videoCall" },
       { path: STUDIO_ROUTES.myVideos, label: "My Videos", iconKey: "videoLibrary" },
-      { path: STUDIO_ROUTES.series, label: "Series", iconKey: "liveTv" },
       { path: STUDIO_ROUTES.myProducts, label: "My Products", iconKey: "package" },
       { path: STUDIO_ROUTES.playlists, label: "Playlists", iconKey: "playlistPlay" },
     ],
@@ -449,7 +447,6 @@ const COLLAPSED_NAV_CONFIG: StudioNavItem[] = [
   { path: STUDIO_ROUTES.home, label: "Home", iconKey: "home", isEmphasized: true },
   { path: STUDIO_ROUTES.create, label: "Create", iconKey: "videoCall" },
   { path: STUDIO_ROUTES.myVideos, label: "My Videos", iconKey: "videoLibrary" },
-  { path: STUDIO_ROUTES.series, label: "Series", iconKey: "liveTv" },
   { path: STUDIO_ROUTES.myProducts, label: "My Products", iconKey: "package" },
   { path: STUDIO_ROUTES.playlists, label: "Playlists", iconKey: "playlistPlay" },
 ];

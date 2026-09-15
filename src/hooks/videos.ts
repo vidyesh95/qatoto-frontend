@@ -11,7 +11,7 @@
 //      Callers here must render `isPending` and surface `error`.
 //   2. THE SERVER'S ROW IS THE ROW. The context invented ids with `crypto.randomUUID()` and a
 //      status from a local `resolveVideoStatus` helper; both now come back from the backend,
-//      which is the only thing that knows whether a video needs anime review.
+//      which is the only thing that knows the row's real status.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -123,8 +123,7 @@ export function useUpdateVideoMutation() {
 /**
  * `POST /videos/:videoId/publish`.
  *
- * THE RESULT IS NOT ALWAYS "PUBLISHED". An anime episode comes back with
- * `reviewStatus: "pending"` and `publishStatus` unchanged — it was submitted for review. The
+ * THE RESULT IS NOT ALWAYS "PUBLISHED". A future-dated video comes back `scheduled`. The
  * caller must branch on the returned row rather than assuming success means live, and must
  * treat a 409 (`SOURCE_NOT_VERIFIED`) as "try again shortly", not as a hard failure.
  */

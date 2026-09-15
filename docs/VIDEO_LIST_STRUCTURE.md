@@ -1,13 +1,15 @@
 # My Videos List — `/studio/videos` Structure
 
-> ⚠️ **THE ANIME VERTICAL WAS RETIRED; `/anime` IS NOW `/blueprints`.** This document still
-> describes the anime review and catalogue pipeline in the present tense because **that pipeline
-> still exists** — the `anime_series` / `anime_season` / `anime_episode` tables, the
-> `anime_episode` value in `video_type`, the studio's `/series` pages and the admin review queue
-> were all deliberately left in place (removing them needs a migration). What changed: the public
-> hub and its five routes are deleted and 308 to `/blueprints`, the studio no longer OFFERS
-> `anime_episode` on upload, and the hero console moved to `/admin/blueprints-hero`. Read every
-> `/anime` URL below as historical. See CLAUDE.md, "The Blueprints hub replaced /anime".
+> ⚠️ **THE ANIME VERTICAL IS GONE IN FULL. EVERY ANIME SECTION BELOW IS HISTORY.**
+> An earlier version of this banner said the pipeline "still exists" and that removing it needed
+> a migration. That migration has since been written. Removed: the `anime_series` /
+> `anime_season` / `anime_episode` tables, the `anime_episode` value in `video_type`, the studio
+> `/series` router and pages, and the staff video review queue in its entirety.
+>
+> ⚠️ **NOTHING SETS `review_status` TO ANYTHING BUT `not_required` ANY MORE.** The column and its
+> enum survive only because their literals are byte-matched by the public video gate and a
+> partial index; a video now publishes immediately or is `scheduled`, never "pending review".
+> Read every mention of review, approval or episodes below as a record of what was.
 
 Planning doc for the creator's video list — the "Channel content" table where a
 creator sees all their uploads and changes visibility (list / unlist / schedule).

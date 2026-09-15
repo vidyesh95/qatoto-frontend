@@ -692,19 +692,6 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
       },
       {
         kind: "route",
-        label: "Series",
-        href: "/studio/series",
-        summary: "Group videos into an ordered series.",
-      },
-      {
-        kind: "dynamic",
-        label: "Series detail",
-        pathPattern: "/studio/series/[seriesId]",
-        summary: "Reorder and manage one series.",
-        reachedFrom: "clicking a series in Studio",
-      },
-      {
-        kind: "route",
         label: "Playlists",
         href: "/studio/playlists",
         summary: "Curated, reorderable collections.",

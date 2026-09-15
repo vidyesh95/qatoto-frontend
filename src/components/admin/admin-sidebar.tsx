@@ -66,15 +66,6 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
     title: "Studio · Creator submissions",
     items: [
       {
-        // PRE-publication: an episode that has never been public, waiting for a verdict
-        // before anyone sees it. A creator in Studio is blocked until this queue answers, which
-        // is what puts it here rather than under Home — see "Video reports" for the other half.
-        href: "/admin/review",
-        label: "Review",
-        activeIcon: "/icons/reviews_24dp_000000_FILL1_wght400_GRAD0_opsz24.svg",
-        inactiveIcon: "/icons/reviews_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
-      },
-      {
         // Case studies a writer has sent, never yet public, under `moderate_content`. A writer is
         // blocked until this queue answers, which is what puts it in this section. A PRACTICE QUEUE
         // today, and its page header says so.

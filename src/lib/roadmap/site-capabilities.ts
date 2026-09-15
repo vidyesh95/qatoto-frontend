@@ -369,11 +369,9 @@ export const ROADMAP_AUDIENCES: readonly RoadmapAudience[] = [
       },
       {
         action: "Publish the video that sells it",
-        summary:
-          "Your videos, series and playlists — the same studio you coordinated the build in.",
+        summary: "Your videos and playlists — the same studio you coordinated the build in.",
         routes: [
           { label: "Your videos", href: "/studio/videos" },
-          { label: "Series", href: "/studio/series" },
           { label: "Playlists", href: "/studio/playlists" },
         ],
       },

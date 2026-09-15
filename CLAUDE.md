@@ -239,7 +239,7 @@ rules at once, not contradicting itself.
 
 **Do not write, add, or modify tests unless the user explicitly asks for them.** This applies to unit tests (Vitest), E2E tests (Playwright), and any other test files. Do not create test files as part of a feature implementation, bug fix, or refactor. Do not suggest writing tests unless the user requests it.
 
-## The Blueprints hub replaced /anime (mock, deliberately)
+## The Blueprints hub replaced /anime (wired; its SEEDED CONTENT is invented)
 
 `/anime` was RETIRED. It is now `/blueprints` — engineering teardowns (70%), working
 prototypes (20%) and manufacturing case studies (10%) — and `next.config.ts` 308s `/anime`
@@ -333,7 +333,7 @@ count in a heading is a thing that goes stale the first time somebody adds one:
   has a mobile height cap (`h-44`, since `aspect-video w-full` is 225px of rotating image above the
   fold on a phone). From `lg` up the header and hero share ONE MASTHEAD ROW, hero on the right,
   because left-aligned under the header it had ~870px of empty ground beside it at 1440.
-  `anime_hero_slide` carries no dimensions, so that is CSS only.
+  `blueprint_hero_slide` carries no dimensions, so that is CSS only.
   **Each lane opens on an inset hairline and owns the gutter**, so lane children carry no `px`.
   From `xl` the case-study and showcase lanes share a row, but only when BOTH have rows. The hub's
   launch rows are `ShowcaseLaunchLink`, a compact sibling of `ShowcaseFeedRow` on the
@@ -694,16 +694,18 @@ count in a heading is a thing that goes stale the first time somebody adds one:
     ```
 
 - **The hero is real.** `GET /blueprints/hero-slides` and the admin console at
-  `/admin/blueprints-hero` are live, backed by four rows. The `anime_hero_slide` TABLE and the
-  five `anime_hero_slide_*` audit pgEnum labels KEEP THEIR NAMES — renaming them costs a
-  migration — and the Cloudinary folder is still `qatoto/anime-hero-slides` because that is the
-  address of the existing images, not a label. A URL is public identity; a table name is not.
+  `/admin/blueprints-hero` are live. The table is `blueprint_hero_slide` and the five audit
+  pgEnum labels are `blueprint_hero_slide_*` — both were renamed when the anime vertical was
+  removed. ⚠️ **The Cloudinary folder is still `qatoto/anime-hero-slides` and must stay that
+  way**: a public id is the ADDRESS of every uploaded slide image, so renaming it orphans them
+  all. A URL is public identity; a storage path is an address; a table name is neither.
 
-`anime_episode` survives in `VIDEO_TYPES` because it is a backend pgEnum label. The studio
-STOPPED OFFERING it (`details-step.tsx`) but `videos-list.tsx` still LABELS it, and
-`studio-view.ts` still round-trips an existing anime block so editing a legacy row does not
-erase it. Do not "finish the cleanup" by deleting either — one is a `Record` over the enum, the
-other is data preservation.
+⚠️ **THE ANIME VERTICAL IS FULLY REMOVED — there is nothing left to "finish cleaning up".**
+`anime_episode` is gone from `VIDEO_TYPES`, the `anime_series`/`anime_season`/`anime_episode`
+tables are dropped, the studio `/series` router and its UI are deleted, and the staff video
+review queue went with them (nothing could ever fill it again). The `review_status` column and
+`content_review_status` enum are DELIBERATELY KEPT: their literals are written into the public
+video gate, four hot queries and a partial index that must byte-match. Do not remove them.
 
 ## Current phase: R&D is wired end to end, reads and writes — nothing is mock
 

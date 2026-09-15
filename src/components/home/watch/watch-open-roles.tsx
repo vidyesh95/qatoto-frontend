@@ -15,8 +15,8 @@ import { ROLE_COMMITMENT_LABELS } from "@/lib/rnd/labels";
  * here unchanged — `ApplyRoleSheet` takes a whole `OpenRole` because it needs `projectSlug` to
  * post to and `skills` to render the chips the server validates a subset against.
  *
- * A BLURB WITHOUT A LINKED ROLE STILL RENDERS, as the label it has always been. Anime and
- * unaffiliated videos are unaffected, and so is every row written before the link existed.
+ * A BLURB WITHOUT A LINKED ROLE STILL RENDERS, as the label it has always been. Unaffiliated
+ * videos are unaffected, and so is every row written before the link existed.
  *
  * A CLOSED OR FULL ROLE SHOWS ITS REAL STATE rather than disappearing. Hiding it would leave
  * the creator's text on screen with nothing behind it; saying "closed" is the honest answer,

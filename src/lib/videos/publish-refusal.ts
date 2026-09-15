@@ -30,7 +30,6 @@ const MISSING_FIELD_LABELS: Record<string, string> = {
   title: "a title",
   youtubeUrl: "a YouTube link",
   isMadeForKids: "the “made for kids” answer",
-  anime: "the anime episode details",
 };
 
 function toMissingFieldLabel(fieldName: string): string {
