@@ -166,8 +166,12 @@ rules at once, not contradicting itself.
 prototypes (20%) and manufacturing case studies (10%) — and `next.config.ts` 308s `/anime`
 and `/anime/:path*` at the routing layer.
 
-**The hub is mock and that is a decision, not an oversight.** `src/mocks/blueprints-mocks.ts`
-holds 32 invented builds — 12 teardowns, 10 showcases, 10 case studies. It inherits the caveat `todo.md` recorded against `/anime`
+**The hub is backend-backed, but its CONTENT is invented and that is a decision, not an
+oversight.** Every read calls Express; what those reads return in a seeded environment comes from
+`qatoto-backend/scripts/fixtures/blueprint-seed-corpus.ts`, which holds 32 invented builds — 12
+teardowns, 10 showcases, 10 case studies. The corpus lived here as `src/mocks/blueprints-mocks.ts`
+until the backend seeds became its only consumer. ⚠️ **Only the teardowns and case studies are
+seeded**; the ten showcases have no seed and `showcase_launch` is empty until a maker writes one. It inherits the caveat `todo.md` recorded against `/anime`
 verbatim — _a vertical you cannot fill should not ship_ — so the surface is **de-indexed**: it is
 absent from `src/app/sitemap.ts` AND both routes carry `robots: { index: false, follow: false }`.
 Both halves are needed, because the sidebar and mobile nav link the hub, so a sitemap omission

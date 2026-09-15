@@ -1,4 +1,4 @@
-// TRANSPORT: mock — async server component. Reads `getBlueprintByCategory` from
+// TRANSPORT: server-fetch — async server component. Reads `getPublicShowcase` from
 // `@/lib/blueprints/showcase-public.api`, which reads the Express backend.
 //
 // Laid out after a Launch YC post: the upvote in a left gutter beside the head of the launch (the
@@ -9,20 +9,29 @@
 // launch link, where it identifies a launch in a list; here the write-up's own images and videos
 // carry the build, and a small square above them added nothing a reader could use.
 //
-// THE UPVOTE IS BACK IN THE GUTTER, AS `ShowcaseVoteBox`, THE SAME SHAPE THE FEED ROW USES. It spent
-// a while as a pill in an engagement row under the pitch, beside a comment count and Share; that row
-// is gone. The count now sits where a reader who clicked through from the feed just saw it, the
-// comment count moved into the byline as a link to the thread, and Share sits at the end of the
-// byline. It is still a `<span>`: there is no vote route, and a vote box that looked clickable and
-// did nothing would be the ghost control this surface refuses.
+// THE UPVOTE IS IN THE GUTTER, THE SAME SHAPE THE FEED ROW USES. It spent a while as a pill in an
+// engagement row under the pitch, beside a comment count and Share; that row is gone. The count now
+// sits where a reader who clicked through from the feed just saw it, the comment count moved into
+// the byline as a link to the thread, and Share sits at the end of the byline.
+//
+// ⚠️ IT IS A REAL CONTROL NOW, NOT THE `<span>` THIS COMMENT USED TO DESCRIBE. `PUT`/`DELETE`
+// `/blueprints/showcases/:launchSlug/upvote` landed, so `ShowcaseVoteGutter` renders
+// `ShowcaseVoteButton` for a signed-in reader and the display-only `ShowcaseVoteBox` for everybody
+// else. The span survives for the signed-out case ON PURPOSE — a disabled control says "you cannot
+// do this", the span says "this is a number", and only the second is true of somebody with no
+// account. What the old comment refused was a box that looked clickable and did nothing; that is
+// still refused, and is not what this is.
 //
 // SHARE IS THE FULL SHEET, not the single X intent link this page used to build itself. The reason
 // recorded for that link ruled out a share COUNTER, not the sheet — and `ShareSheet` takes
 // `onShared` as optional precisely so a surface with no counter route can open it. Omitting the
 // callback is what keeps the rule: nothing here increments.
 //
-// THE DISCUSSION IS READ-ONLY, AND `BlueprintCommentThread` says why at length. Short version: no
-// blueprints content table exists for a comment row to reference, so there is nothing to post to.
+// THE DISCUSSION IS LIVE. `showcase_launch_comment` and `showcase_launch_comment_like` exist, so
+// `GET`/`POST /blueprints/showcases/:launchSlug/comments` back a real thread with replies, edits,
+// deletes and likes — `BlueprintDiscussion` is rendered with `canComment` below. This comment used
+// to say the opposite, on the grounds that no content table existed for a comment row to reference;
+// that stopped being true when the showcase arm got its own tables.
 
 import Image from "next/image";
 
@@ -45,11 +54,11 @@ import { formatCountLabel, formatIsoInstantLabel } from "@/lib/store/format";
 
 export default async function ShowcaseDetailPage({ slug }: { slug: string }) {
   /*
-   * ONE READ, AND NO COMMENT THREAD. The discussion used to arrive alongside this from a fixture
-   * map; now that the launch itself is a real row, an invented thread would sit under a real
-   * person's build attributed to people who never wrote it. There is no comment table for a launch
-   * to be referenced by and no composer anywhere in the UI, so the honest thread is the empty one —
-   * and `commentCount` comes back 0 from the server, which is true rather than a placeholder.
+   * ONE READ FOR THE LAUNCH; THE THREAD FETCHES ITSELF. The discussion used to arrive alongside
+   * this from a fixture map, and for a while there was no thread at all because the arm had no
+   * comment table. Both are history: `BlueprintDiscussion` is a client island over
+   * `/blueprints/showcases/:launchSlug/comments`, so the bare public read stays bare and
+   * `commentCount` below is a real count rather than a hardcoded 0.
    */
   /*
    * ⚠️ THE SESSION IS READ HERE ONLY TO SEED A CLIENT ISLAND, never to change this payload. The

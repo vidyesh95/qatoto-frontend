@@ -1,9 +1,13 @@
 // TRANSPORT: server-fetch — all three rails read the Express backend now, through
 // `listPublicTeardowns`, `listPublicCaseStudies` and `listPublicShowcases`. See the note on the
-// read below. Originally:
-// TRANSPORT: mock — reads `listTeardowns`, `listCaseStudies` and `listShowcases` from
-// `@/lib/blueprints/api`, which serve fixtures. The HERO does not: it is a real server-fetch of
-// `GET /blueprints/hero-slides`, rendered by `BlueprintsHeroCarouselSection` below.
+// read below.
+//
+// ⚠️ THE NEXT FIVE LINES ARE THE SUPERSEDED HEADER, QUOTED. They are kept because the swap they
+// describe is the reason the rails read the way they do — but they describe the PAST, and a grep
+// for "TRANSPORT: mock" lands on them:
+// > TRANSPORT: mock — reads `listTeardowns`, `listCaseStudies` and `listShowcases` from
+// > `@/lib/blueprints/api`, which serve fixtures. The HERO does not: it is a real server-fetch of
+// > `GET /blueprints/hero-slides`, rendered by `BlueprintsHeroCarouselSection` below.
 //
 // THE HUB IS A LANDING PAGE, NOT THE WHOLE SURFACE. Each arm has its own route with its own
 // design, and the lanes here are a teaser into them: a few of the newest plus a way through. The

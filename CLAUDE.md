@@ -267,8 +267,12 @@ redirect from a page component does **not** emit a 308 header. The static shell 
 flushed, so Next sends `<meta http-equiv="refresh">` and the browser lands correctly after a
 visible pause. This is measured and written up at `src/app/(home)/store/[...slug]/page.tsx:25-30`.
 
-**The hub is mock and that is a decision, not an oversight.** `src/mocks/blueprints-mocks.ts`
-holds 32 invented builds across three arms — 12 teardowns, 10 showcases, 10 case studies. The ten
+**The hub is backend-backed, but its CONTENT is invented and that is a decision, not an
+oversight.** Every read calls Express; what those reads return in a seeded environment comes from
+`qatoto-backend/scripts/fixtures/blueprint-seed-corpus.ts`, which holds 32 invented builds across three arms — 12
+teardowns, 10 showcases, 10 case studies. The corpus lived here as `src/mocks/blueprints-mocks.ts`
+until the backend seeds became its only consumer. ⚠️ **Only the teardowns and case studies are
+seeded**; the ten showcases have no seed and `showcase_launch` is empty until a maker writes one. The ten
 showcases are dated into the three weeks before 2026-09-08 so that Newest and Top visibly differ and
 both orders page; the literals drift into the past and that is accepted.
 ⚠️ **That is NOT the 70/20/10 split and is not meant to be**: the ratio is a target for real

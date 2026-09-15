@@ -1,5 +1,7 @@
-// TRANSPORT: client-query — React Query hooks over `@/lib/blueprints/case-study-authoring.api`, which is
-// itself mock. Written as if the api were real, so this file does not change on the day it is.
+// TRANSPORT: client-query — React Query hooks over `@/lib/blueprints/case-study-authoring.api`,
+// which is a real transport to Express. It was mock when this was written, and the file was written
+// as if it were real precisely so that nothing here had to change on the day it became so. Nothing
+// did; only this comment is late.
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

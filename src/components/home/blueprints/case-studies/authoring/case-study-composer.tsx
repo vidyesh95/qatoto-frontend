@@ -1,5 +1,6 @@
 // TRANSPORT: client-query — the one "use client" file that owns the case-study flow. Calls
-// `useSubmitCaseStudyMutation`, which is mock-backed today.
+// `useSubmitCaseStudyMutation`, which posts to `POST /blueprints/case-studies` through
+// `case-study-authoring.api`. It was mock-backed when this was written; it has not been for a while.
 "use client";
 
 import { useState } from "react";

@@ -1,9 +1,11 @@
 // TRANSPORT: props-only — pure contract, no network of its own.
 //
 // Client-side contract for the Blueprints hub: engineering teardowns, working prototypes and
-// commercialization case studies. NOTHING BEHIND IT IS REAL YET — `@/lib/blueprints/api` serves
-// fixtures from `@/mocks/blueprints-mocks` — but the shapes below are written as if the payload
-// arrived over the wire, because one day it will and the swap should touch one file.
+// commercialization case studies. THE TRANSPORT IS REAL — every read goes to Express — but the
+// CONTENT in a seeded environment is not: it is seeded from
+// `qatoto-backend/scripts/fixtures/blueprint-seed-corpus.ts`, which is why the surface is still
+// `noindex`. The shapes below were written as if the payload arrived over the wire back when it
+// did not, which is why the swap touched one file.
 //
 // Every object ends `.strip()` so a backend minor release that adds a field is a no-op here
 // rather than a parse failure (CLAUDE.md Pattern 2). Note the house-documented failure mode of
@@ -1563,7 +1565,7 @@ export const TEARDOWN_DESIGNATION_SOURCE_IS_MEASURED: Record<TeardownDesignation
  *
  * ⚠️ THE LAST TWO ARE NOT INSTRUMENTS AND THAT IS DELIBERATE. `declared_not_measured` is the honest
  * value for a percentage copied from a datasheet, and `synthetic_example` is the honest value for a
- * number that was invented — which is what every figure in `@/mocks/blueprints-mocks` is. A table of
+ * number that was invented — which is what every figure in the seed corpus is. A table of
  * element percentages is the most measurement-shaped thing on this surface, so it needs a way to
  * say "this was not measured" that a renderer cannot skip. Both values survive into production:
  * real contributors paste datasheet figures too.

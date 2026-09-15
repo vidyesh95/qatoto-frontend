@@ -1,9 +1,15 @@
 // ONE-OFF GENERATOR, NOT A BUILD STEP. Writes the procedural `.glb` fixtures and the placeholder
 // manufacturing files under `public/dummy/blueprints/`, which are COMMITTED — the same
 // arrangement as the eight placeholder PDFs beside them. Run with `pnpm fixtures:blueprint-models`
-// and paste the byte counts it prints into `src/mocks/blueprints-mocks.ts`. It rewrites nothing
-// under `src/` on purpose: a generator that edits a hand-authored fixture is the staging area that
-// quietly becomes production.
+// and paste the byte counts it prints into the seed corpus, which now lives at
+// `qatoto-backend/scripts/fixtures/blueprint-seed-corpus.ts`. It rewrites nothing on purpose: a
+// generator that edits a hand-authored fixture is the staging area that quietly becomes production.
+//
+// ⚠️ THE FILES IT WRITES ARE A LIVE DEPENDENCY OF THE SEEDED DATABASE, NOT LEFTOVERS. The corpus
+// addresses them as site-relative `/dummy/blueprints/...` paths and the backend seeds store those
+// VERBATIM, so deleting `public/dummy/blueprints/` 404s every seeded teardown's documents and
+// models. The same is true of the `thumbnail_image0N.avif` beside them, which the teardown rows
+// carry as thumbnails and the hero-slide seed uploads to Cloudinary.
 //
 // DETERMINISTIC. No dates, no random ids; `GLTFExporter` writes only names, geometry, materials
 // and a version string, so re-running produces byte-identical files and an empty diff.
@@ -271,7 +277,8 @@ function addMesh(
 }
 
 // --- The solar cold-storage controller ----------------------------------------------------------
-// Nesting IS the `parentPartId` tree in `blueprints-mocks.ts`. Change one, change both.
+// Nesting IS the `parentPartId` tree in the seed corpus
+// (`qatoto-backend/scripts/fixtures/blueprint-seed-corpus.ts`). Change one, change both.
 
 const ENCLOSURE_WIDTH_MM = 160;
 const ENCLOSURE_DEPTH_MM = 100;

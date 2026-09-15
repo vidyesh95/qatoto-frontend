@@ -8,8 +8,10 @@ import type { RawSearchParams } from "@/lib/filter-href";
 export const instant = false;
 
 export const metadata: Metadata = {
-  // `noindex` WHILE THE FIXTURES ARE INVENTED — the same flag the hub carries, for the same
-  // reason. Five routes now hold it; restore all five together with the sitemap entries.
+  // `noindex` WHILE THE SEEDED CONTENT IS INVENTED — the same flag the hub carries, for the same
+  // reason, and the hub's comment holds the full reasoning. ⚠️ NINE ROUTES HOLD IT AND SEVEN GET
+  // RESTORED: the three `/new` wizards and `/teardowns/[slug]/report` are forms and stay noindexed
+  // whatever happens to the content.
   robots: { index: false, follow: false },
   title: "Teardowns · Blueprints",
   description:

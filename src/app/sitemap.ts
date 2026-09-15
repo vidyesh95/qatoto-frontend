@@ -47,15 +47,27 @@ import {
  *
  * - `/watch`, `/search` and `/store/search` are driven by search params (`?v=`, `?query=`).
  *   The bare path renders a placeholder, so announcing it advertises an empty page.
- * - THE WHOLE `/blueprints` SURFACE IS MOCK-BACKED — real UI over 32 invented builds in
- *   `@/mocks/blueprints-mocks` — and is held to exactly the rule the retired `/anime` routes were
- *   held to. ⚠️ THAT IS SEVEN ROUTES NOW, NOT TWO: the hub, `/teardowns`, `/showcase`,
- *   `/case-studies`, and a `[slug]` detail under each of those three. Every one carries
- *   page-level `noindex`, because the sidebar and the mobile nav link the hub: dropping a route
- *   from here is crawl budget, not de-indexing, and on its own it would have stopped nothing (see
- *   the note at the top of `robots.ts`). WHEN REAL BLUEPRINTS EXIST, restore BOTH halves — SEVEN
- *   entries here and the `robots` flag on each of the seven route files — or the surface ships
- *   part-visible, which is worse than either extreme because nobody notices.
+ * - THE `/blueprints` SURFACE IS WIRED BUT ITS CONTENT IS INVENTED, and it is held to exactly the
+ *   rule the retired `/anime` routes were held to. ⚠️ THE TRANSPORT IS NO LONGER THE REASON — every
+ *   read calls Express and there are real rows behind it. What those rows CONTAIN is the reason:
+ *   they are seeded from `qatoto-backend/scripts/fixtures/blueprint-seed-corpus.ts`, so the live
+ *   database holds twelve fabricated teardowns and ten fabricated case studies under invented
+ *   author names, several of them surveying real named commercial products. Announcing those is
+ *   not a thin-content problem, it is publishing invented engineering findings as genuine.
+ *   ⚠️ THAT IS SEVEN ROUTES TO RESTORE AND NINE THAT CARRY `noindex`, and the two counts are not
+ *   the same list. The seven with content to announce: the hub, `/teardowns`, `/showcase`,
+ *   `/case-studies`, and a `[slug]` detail under each of those three. The other two noindexed
+ *   routes stay noindexed forever and never belong here — `/teardowns/[slug]/report` is a form,
+ *   and so are the three `/new` wizards, which are excluded for the same reason
+ *   `/research-and-development/new` is, below.
+ *   Every one carries page-level `noindex`, because the sidebar and the mobile nav link the hub:
+ *   dropping a route from here is crawl budget, not de-indexing, and on its own it would have
+ *   stopped nothing (see the note at the top of `robots.ts`).
+ *   ⚠️ THE TRIGGER IS REAL SUBMITTED BLUEPRINTS, NOT REAL CODE. Seeding the corpus does not meet
+ *   it and neither does deleting the corpus; what meets it is rows that a real author wrote
+ *   through the authoring routes. Then restore BOTH halves — seven entries here and the `robots`
+ *   flag on each of the seven route files — or the surface ships part-visible, which is worse than
+ *   either extreme because nobody notices.
  *   (The eighth file, `/blueprints/[slug]`, is a redirect resolver: no content, no metadata, and
  *   it never belongs in a sitemap.)
  * - `/research-and-development/new` and `/programs/new` are wizard forms with nothing to index.
