@@ -54,7 +54,7 @@ interface ApiEnvelope {
 }
 
 function toEnvelope(payload: unknown): ApiEnvelope {
-  return typeof payload === "object" && payload !== null ? (payload as ApiEnvelope) : {};
+  return typeof payload === "object" && payload !== null ? payload : {};
 }
 
 const NETWORK_ERROR: ApiError = {

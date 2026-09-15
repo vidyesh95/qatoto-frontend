@@ -126,11 +126,10 @@ export default function ForumThreadComposer() {
         )}
       </footer>
 
-      {createResult !== undefined &&
-        !createResult.success && (
-          // The server's own message. A 422 names the field; "something went wrong" throws that away.
-          <p className="text-xs leading-4 text-destructive">{createResult.error.message}</p>
-        )}
+      {createResult !== undefined && !createResult.success && (
+        // The server's own message. A 422 names the field; "something went wrong" throws that away.
+        <p className="text-xs leading-4 text-destructive">{createResult.error.message}</p>
+      )}
       {createForumThread.isError && (
         <p className="text-xs leading-4 text-destructive">
           Couldn&apos;t reach the server. Pressing send again is safe — the request carries an

@@ -142,17 +142,16 @@ function OwnThreadCard({ thread }: { thread: OwnForumThread }) {
 
       <p className="mt-1 text-sm leading-5 text-[#6F7979]">{thread.excerpt}</p>
 
-      {wasNotPublished &&
-        thread.decisionReason !== null && (
-          // NOT styled as an error. The author did nothing wrong by asking; a moderator decided the
-          // board would not carry it, and the note is the actionable part.
-          <div className="mt-2 rounded-lg bg-[#E0E3E3] px-3 py-2">
-            <p className="text-xs leading-4 font-medium text-[#191C1C]">
-              This was not published. Here is why:
-            </p>
-            <p className="mt-1 text-xs leading-4 text-[#4A6364]">{thread.decisionReason}</p>
-          </div>
-        )}
+      {wasNotPublished && thread.decisionReason !== null && (
+        // NOT styled as an error. The author did nothing wrong by asking; a moderator decided the
+        // board would not carry it, and the note is the actionable part.
+        <div className="mt-2 rounded-lg bg-[#E0E3E3] px-3 py-2">
+          <p className="text-xs leading-4 font-medium text-[#191C1C]">
+            This was not published. Here is why:
+          </p>
+          <p className="mt-1 text-xs leading-4 text-[#4A6364]">{thread.decisionReason}</p>
+        </div>
+      )}
 
       {isPubliclyReadable && (
         <p className="mt-2 text-[11px] leading-4 text-[#6F7979]">

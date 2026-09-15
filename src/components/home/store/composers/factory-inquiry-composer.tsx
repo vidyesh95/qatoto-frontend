@@ -205,12 +205,11 @@ export default function FactoryInquiryComposer({
         )}
       </footer>
 
-      {createResult !== undefined &&
-        !createResult.success && (
-          // THE SERVER'S OWN MESSAGE. A 422 from a `.strict()` body names the field, and replacing it
-          // with "something went wrong" throws away the only useful part of the refusal.
-          <p className="text-xs leading-4 text-destructive">{createResult.error.message}</p>
-        )}
+      {createResult !== undefined && !createResult.success && (
+        // THE SERVER'S OWN MESSAGE. A 422 from a `.strict()` body names the field, and replacing it
+        // with "something went wrong" throws away the only useful part of the refusal.
+        <p className="text-xs leading-4 text-destructive">{createResult.error.message}</p>
+      )}
       {createFactoryInquiry.isError && (
         <p className="text-xs leading-4 text-destructive">
           Couldn&apos;t reach the server. Pressing save again is safe — the request carries an
