@@ -970,10 +970,15 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "How to do the thing you are stuck on.",
       },
       {
-        kind: "planned",
+        // GRADUATED. It was `planned` while `todo.md` could still say "there is no ticket API";
+        // `/support/cases` and the `/admin/support` queue shipped, so the route stopped being a
+        // signpost and now opens a case a person reads. The summary changed with it: the old one,
+        // "Reach a human about your account", described the thing it linked to rather than the
+        // page, which is what a signpost's summary always ends up doing.
+        kind: "route",
         label: "Support",
-        pathPattern: "/studio/support",
-        summary: "Reach a human about your account.",
+        href: "/studio/support",
+        summary: "Where a seller's problem already lives, and the cases on your account.",
       },
       {
         kind: "planned",

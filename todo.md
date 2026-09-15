@@ -43,9 +43,10 @@ rail, on two new backend tables (migration `0148`). Proved end to end against th
 **Everything else** is either content-blocked (`/blueprints`), a new backend domain nobody has asked
 for yet (§15, §16, and account-level delegation — `/studio/earn` SHIPPED and is wired to
 `GET /commerce/provider/earnings`;
-`/studio/copyright`, `/studio/pitches` and `/studio/team` all shipped, `/studio/subtitles` is
-architecturally impossible on a youtube-embed model, and support/learn/feedback are signposts that
-are already correct), or a question for Vidyesh rather than a task (**Decisions needed**).
+`/studio/copyright`, `/studio/pitches` and `/studio/team` all shipped, `/studio/support` graduated
+onto the `/support/cases` domain once that shipped, `/studio/subtitles` is architecturally
+impossible on a youtube-embed model, and learn/feedback are signposts that are already correct), or
+a question for Vidyesh rather than a task (**Decisions needed**).
 
 ---
 
@@ -1706,12 +1707,17 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     hardcoded hexes (`#6F7979`, `#00696E`, `#CAC4D0`) that Design.md logs as the Untinted Neutral
     Debt.
 
-2. **The `planned` Studio routes that are left — TWO, not six.** ⚠️ **DO NOT INHERIT A COST FROM
-   THIS LINE WITHOUT CHECKING IT** — it has now been wrong about four separate routes, and the
-   word "six" was itself one of them. `copyright`, `pitches` and `team` graduated; `subtitles`,
-   `support`, `learn` and `feedback` were ruled out. What is left is **`earn`** (blocked on a money
-   rail) and **account-level delegation** (needs a product decision first), which is what the
-   At-a-glance already says.
+2. **The `planned` Studio routes that are left — ONE real build, not two.** ⚠️ **DO NOT INHERIT A
+   COST FROM THIS LINE WITHOUT CHECKING IT** — it has now been wrong about six separate routes, and
+   the word "six" was itself one of them, as was "TWO". `copyright`, `pitches`, `team`, `earn` and
+   `support` graduated; `subtitles` is architecturally impossible on a youtube-embed model, and
+   `learn` and `feedback` are signposts that are already correct. What is left is
+   **account-level delegation** (needs a product decision first).
+
+    ⚠️ **THE COUNT IN THIS HEADING IS THE THING THAT KEEPS GOING STALE, SO CHECK IT RATHER THAN
+    QUOTE IT.** `rg -l "^import StudioPlannedPage" "src/app/(studio)"` is the answer that cannot
+    drift, and the same grep is now written into `studio-planned-page.tsx` in place of the number
+    that used to live there.
 
     ~~`/studio/copyright`~~ **GRADUATED, and it closed a defect rather than only filling a gap.**
     ⚠️ **THE STUDIO WAS TELLING CREATORS SOMETHING FALSE.** `video.moderationVisibilityState`
@@ -1780,9 +1786,32 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     see **Decisions needed** below. It was true before this shipped and is more pressing now that
     a funding-adjacent surface is live.
 
-    **`/studio/support` is already correct** and should not be "built". There is no ticket API, and
-    `/customer-service` is a directory for exactly that reason — "an unanswered form is worse than an
-    honest signpost". A support inbox means a real ticket domain AND somebody to read it.
+    ~~`/studio/support`~~ **GRADUATED, and the line that ruled it out is kept above so the reversal
+    is readable.** It said: "`/studio/support` is already correct and should not be built. There is
+    no ticket API, and `/customer-service` is a directory for exactly that reason — an unanswered
+    form is worse than an honest signpost. A support inbox means a real ticket domain AND somebody
+    to read it."
+
+    **That was the right test and the answer changed.** `POST/GET /support/cases`, the reply route
+    and the `/admin/support` queue shipped, so there is both a ticket domain and somebody reading
+    it. The route stopped being a signpost on that day; it just kept rendering `StudioPlannedPage`
+    for a while afterwards, which is the ordinary way a stale absence-claim survives.
+
+    **What it is now:** a seller triage directory over the studio surfaces that already RECORD each
+    problem (Sales, Earn, Logistics, RFQs, Quotes, Manufacturing inquiries, Reviews, Questions,
+    Copyright, Products, Company profile, plus `/disputes`, `/messages` and `/service-engagements`),
+    then the caller's own cases and the open-case form, both reused verbatim from
+    `components/home/customer-service/`.
+
+    ⚠️ **TWO THINGS IT DELIBERATELY DOES NOT DO.** `/support/cases` is `requireAuth` and carries no
+    seller scope, so this lists the SAME cases as `/customer-service` and says so under the heading
+    rather than filtering by category to look seller-shaped. And a case keeps ONE address,
+    `/customer-service/cases/[caseId]`, because `notifications/format.ts` deep-links there; a
+    `/studio` twin would give one case two URLs and leave the notification on the other one.
+
+    **`/studio/learn` and `/studio/feedback` are NOT covered by this and stay signposts.** Neither
+    is waiting on a backend that shipped: Learn is a writing job and Feedback already has a real
+    control in the Studio navbar (`SendFeedbackSheet`, `POST /feedback`).
 
     ~~`/studio/team`~~ **SHIPPED as the product-team console, and the route changed meaning.**
     2026-08-27. It served YouTube-style video-collaborator credits while sitting in the sidebar's

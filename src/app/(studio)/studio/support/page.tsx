@@ -1,36 +1,27 @@
 import type { Metadata } from "next";
 
-import StudioPlannedPage from "@/components/studio/studio-planned-page";
+import StudioSupportPage from "@/components/studio/support/studio-support-page";
 
-// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+// Permanently dynamic: the cases section reads the caller's session cookie.
 export const instant = false;
 
+/**
+ * GRADUATED FROM `StudioPlannedPage`, and the stub was right until the backend moved.
+ *
+ * Its reason was `todo.md`'s: "There is no ticket API, and `/customer-service` is a directory for
+ * exactly that reason. A support inbox means a real ticket domain AND somebody to read it." Both
+ * now exist: `POST/GET /support/cases`, the reply route and the `/admin/support` queue shipped, so
+ * a case opened here is read by a person. `todo.md` and `site-roadmap.ts` were corrected in the
+ * same edit, the way `/studio/earn` corrected them when it graduated: a `kind: "planned"` entry
+ * left behind would advertise a built page as unbuilt on `/roadmap`.
+ *
+ * NO `robots` HERE: `(studio)/layout.tsx` sets `noindex` for the whole group.
+ */
 export const metadata: Metadata = {
   title: "Support",
-  description: "Support page for Qatoto Creator Studio",
+  description: "Where a seller's problem is already recorded, and the cases on your account",
 };
 
 export default function StudioSupport() {
-  return (
-    <StudioPlannedPage
-      title="Support"
-      // Verbatim from this route's `site-roadmap.ts` entry — one description, two surfaces.
-      summary="Reach a human about your account."
-      whatItWillDo={[
-        "Open a support conversation attached to your account.",
-        "Track what you have asked and what was answered.",
-      ]}
-      // STILL `planned`, because nothing was built AT THIS ROUTE — a seller has no
-      // studio-scoped support surface, and counting somebody else's page as this one's
-      // delivery is exactly what `studio-planned-page.tsx` refuses to do. What changed is
-      // that the alternative is no longer a signpost: support cases are live on the main
-      // site, and both bullets above describe what that page already does.
-      insteadFor={{
-        label: "Customer Service",
-        href: "/customer-service",
-        note: "Support cases are live and a person answers them — open one from",
-      }}
-    />
-  );
+  return <StudioSupportPage />;
 }

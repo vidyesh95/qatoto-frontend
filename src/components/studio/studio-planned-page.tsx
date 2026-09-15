@@ -2,10 +2,14 @@
 //
 // THE HONEST PLACEHOLDER, and the reason it exists rather than a bare `<h1>`.
 //
-// Twelve Studio routes are listed in the sidebar with nothing distinguishing them from the ones
-// that work. A creator clicks "Analytics" and gets a naked heading — the navigation made a promise
-// the page did not keep, which is exactly what `site-capabilities.ts` refuses to let the roadmap do
-// and there is no reason the sidebar should be held to a lower standard.
+// Studio routes are listed in the sidebar with nothing distinguishing them from the ones that work.
+// A creator clicks one and gets a naked heading — the navigation made a promise the page did not
+// keep, which is exactly what `site-capabilities.ts` refuses to let the roadmap do and there is no
+// reason the sidebar should be held to a lower standard.
+//
+// ⚠️ THE COUNT IS NOT WRITTEN DOWN HERE ANY MORE. This comment said "Twelve", then the caller list
+// fell to nine, then six, then four, and every one of those numbers was stale before anybody read
+// it. `rg -l "^import StudioPlannedPage" "src/app/(studio)"` is the answer that cannot drift.
 //
 // THIS IS NOT A SHIPPED FEATURE AND MUST NOT BE COUNTED AS ONE. Every one of these routes stays
 // `kind: "planned"` in `site-roadmap.ts`. Explaining an absence well is not the same as filling it,
@@ -14,9 +18,16 @@
 // `summary` IS COPIED FROM THE ROADMAP ENTRY VERBATIM, so the card on `/roadmap` and this page
 // cannot drift into describing the same route differently.
 //
-// `insteadFor` IS OPTIONAL AND USUALLY ABSENT. Six of the NINE have nowhere real to send anyone,
-// and inventing a destination there would be the same failure in a smaller font — a link that does
-// not answer the need costs more than no link, because it spends the reader's trust.
+// `insteadFor` IS OPTIONAL, AND ABSENT WHENEVER THERE IS GENUINELY NOWHERE TO SEND ANYONE.
+// Inventing a destination there would be the same failure in a smaller font — a link that does not
+// answer the need costs more than no link, because it spends the reader's trust. `/studio/subtitles`
+// is the current example: captions belong to the player Qatoto embeds, so there is no second page
+// that does this.
+//
+// ⚠️ AN `insteadFor` THAT FITS TOO WELL IS A SIGN THE ROUTE IS READY TO GRADUATE, NOT A REASON TO
+// KEEP THE STUB. `/studio/support` pointed at `/customer-service` and described, in its own
+// `whatItWillDo` bullets, two things that page already did. Once the backend it was waiting on
+// shipped, the honest move was to build the route, not to keep explaining the absence well.
 import Link from "next/link";
 
 export default function StudioPlannedPage({
