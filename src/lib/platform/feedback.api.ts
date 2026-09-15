@@ -1,4 +1,4 @@
-// TRANSPORT: client-query — `POST /feedback`, the site-wide feedback box.
+// TRANSPORT: client-query — the SUBMITTER's two feedback routes.
 //
 // IT IS NOT A REPORT, AND THE COPY BUILT ON IT MUST NOT READ LIKE ONE. Every other write of
 // this shape in the app is about a person or a piece of content and ends in a moderator's
@@ -8,46 +8,39 @@
 // WHAT THE CLIENT SENDS IS THE WHOLE BODY: a category, a message, and the path the person
 // was on. The browser string is read from the request header by the server — never sent from
 // here, because a body-carried user agent is a value this untrusted client chooses.
+//
+// SEPARATE FILE FROM `admin-feedback.api.ts`, the split `content-reports.api.ts` makes against
+// `admin-content-reports.api.ts`: everything here is any signed-in person's own feedback, and
+// everything there refuses a caller without `moderate_content`. Keeping them apart means nobody
+// imports a staff route into a member surface by autocomplete.
+//
+// THE VOCABULARY MOVED TO `feedback.schemas.ts` when the reads landed. It is re-exported below
+// so the existing importers keep working, and because a caller wanting a label map should not
+// have to know which of three files holds it.
 
-import { z } from "zod";
+import {
+  buildQueryString,
+  getCursorSiblingList,
+  sendJson,
+  type ActionResponse,
+  type RequestOptions,
+} from "@/lib/http";
+import {
+  FeedbackReceivedSchema,
+  OwnPlatformFeedbackSchema,
+  type FeedbackReceived,
+  type ListPlatformFeedbackFilter,
+  type OwnPlatformFeedback,
+  type SendPlatformFeedbackInput,
+} from "@/lib/platform/feedback.schemas";
 
-import { sendJson, type ActionResponse, type RequestOptions } from "@/lib/http";
-
-/**
- * Byte-identical to the backend's `platform_feedback_category` pgEnum.
- *
- * SNAKE_CASE-SAFE SINGLE TOKENS, and not to be "corrected" to kebab. These are Postgres enum
- * labels sent verbatim; a re-spelled value is a 422 from a `.strict()` schema, not an ignored
- * one.
- */
-export const PLATFORM_FEEDBACK_CATEGORIES = ["bug", "idea", "other"] as const;
-
-export const PlatformFeedbackCategorySchema = z.enum(PLATFORM_FEEDBACK_CATEGORIES);
-export type PlatformFeedbackCategory = z.infer<typeof PlatformFeedbackCategorySchema>;
-
-/** What somebody picks from, in the order the sheet shows them. */
-export const PLATFORM_FEEDBACK_CATEGORY_LABELS: Readonly<Record<PlatformFeedbackCategory, string>> =
-  {
-    bug: "Something is broken",
-    idea: "An idea or improvement",
-    other: "Something else",
-  };
-
-/**
- * Mirrors `platform_feedback_message_ck`, so the textarea stops where the column does and the
- * server never has to refuse a note for its length.
- */
-export const FEEDBACK_MESSAGE_MAX_LENGTH = 2000;
-
-const FeedbackReceivedSchema = z.object({ feedbackId: z.string() }).strip();
-export type FeedbackReceived = z.infer<typeof FeedbackReceivedSchema>;
-
-export interface SendPlatformFeedbackInput {
-  readonly category: PlatformFeedbackCategory;
-  readonly message: string;
-  /** The route the person was looking at, read from `usePathname()` at submit time. */
-  readonly pagePath: string;
-}
+export {
+  FEEDBACK_MESSAGE_MAX_LENGTH,
+  PLATFORM_FEEDBACK_CATEGORIES,
+  PLATFORM_FEEDBACK_CATEGORY_LABELS,
+  type PlatformFeedbackCategory,
+} from "@/lib/platform/feedback.schemas";
+export type { FeedbackReceived, SendPlatformFeedbackInput };
 
 /**
  * Files one piece of feedback.
@@ -60,4 +53,27 @@ export function sendPlatformFeedback(
   options?: RequestOptions,
 ): Promise<ActionResponse<FeedbackReceived>> {
   return sendJson("/feedback", "POST", input, FeedbackReceivedSchema, options);
+}
+
+/**
+ * `GET /feedback/mine` — the caller's own notes, newest first.
+ *
+ * NO USER ID IN THE QUERY, and there must never be one: the session decides who "mine" is.
+ *
+ * ⚠️ AN ERASED ACCOUNT READS AN EMPTY LIST, WHICH IS CORRECT RATHER THAN A BUG. Anonymization
+ * nulls `user_id` and keeps the note, so the rows stop being anybody's. Nothing here should
+ * apologise for that or imply the notes were deleted.
+ *
+ * The cursor is an opaque `<epochMs>_<id>` the server minted. Echo it back exactly; never
+ * construct or compare one here, or it is a `422`.
+ */
+export function listOwnPlatformFeedback(
+  filter: ListPlatformFeedbackFilter = {},
+  options?: RequestOptions,
+): Promise<ActionResponse<{ rows: OwnPlatformFeedback[]; nextCursor: string | null }>> {
+  return getCursorSiblingList(
+    `/feedback/mine${buildQueryString({ status: filter.status, cursor: filter.cursor })}`,
+    OwnPlatformFeedbackSchema,
+    options,
+  );
 }

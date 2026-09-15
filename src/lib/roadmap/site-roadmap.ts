@@ -11,12 +11,24 @@
 // THE COST OF AUTHORING IT IS DRIFT, and the mitigation is that every `route` href is a literal
 // string, so a moved route is one grep away:
 //
-//   rg -o 'href: "(/[^"]*)"' -r '$1' src/lib/roadmap/site-roadmap.ts | sort -u | while read -r p; do
+//   rg -o 'href: "(/[^"?]*)' -r '$1' src/lib/roadmap/site-roadmap.ts | sort -u | while read -r p; do
 //     ls src/app/*/"${p#/}"/page.tsx >/dev/null 2>&1 || [ "$p" = "/" ] || echo "DEAD $p"
 //   done
 //
-// WHAT IS NOT HERE: the ten /admin routes. That console is staff-gated, and enumerating its shape
-// on a public marketing page is disclosure with no reader who benefits.
+// ⚠️ THE CHARACTER CLASS STOPS AT `?` ON PURPOSE, AND IT DID NOT USED TO. One href carries a
+// query string — Import intelligence points at `market-research?tab=import-substitution`, because
+// its own path is a 308 with no page behind it — and a pattern that swallowed the `?` would look
+// for a directory named after the whole query and report a live route as DEAD. A sweep that cries
+// wolf is a sweep nobody runs twice. Note the closing `"` is gone with it, so the match ends at
+// the first `?` or quote either way.
+//
+// WHAT IS NOT HERE: the /admin routes, all of them. That console is staff-gated, and enumerating
+// its shape on a public marketing page is disclosure with no reader who benefits.
+//
+// ⚠️ THIS LINE USED TO SAY "the ten /admin routes" AND THERE ARE TWENTY-FIVE. The exclusion was
+// always right; only the count drifted, and a number in a comment documenting a deliberate
+// omission is exactly what a reader uses to check the omission is still complete. Counted rather
+// than written down now: `find 'src/app/(admin)' -name page.tsx | wc -l`.
 
 /**
  * One destination on the map. THREE VARIANTS, NOT A BAG OF OPTIONAL FIELDS — a `href?: string`
@@ -235,9 +247,15 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Market research, papers and prior art before you commit.",
       },
       {
+        // ⚠️ THE HREF USED TO BE `/research-and-development/import-intelligence`, WHICH IS A
+        // 308 AND NOT A PAGE. `next.config.ts` permanently redirects it to the tab below, and
+        // there has been no index `page.tsx` at that path since — only `[hsCode]` under it. The
+        // `route` variant is documented at the top of this file as "a real, directly linkable
+        // URL", so a permanently-moved one was the map pointing at a door that had been bricked
+        // up. This is the surface that exists; the sweep in this file's header is what found it.
         kind: "route",
         label: "Import intelligence",
-        href: "/research-and-development/import-intelligence",
+        href: "/research-and-development/market-research?tab=import-substitution",
         summary: "What the country imports, and what could be made here instead.",
       },
       {
@@ -246,7 +264,12 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         pathPattern: "/research-and-development/import-intelligence/[hsCode]",
         summary:
           "One commodity: trade history, substitutes, and how feasible making it here looks.",
-        reachedFrom: "clicking a commodity on the import-intelligence page",
+        // CORRECTED WITH THE NODE ABOVE. This said "clicking a commodity on the
+        // import-intelligence page", and that page is gone — `commodity-card.tsx` and
+        // `localization-detail-panel.tsx` are the two real link sites, both rendered from
+        // Market Research. `reachedFrom` is the one field a dynamic node exists to carry, so a
+        // wrong answer here is the whole node being wrong.
+        reachedFrom: "clicking a commodity under Market research, on the Import substitution tab",
       },
     ],
   },
@@ -981,10 +1004,17 @@ export const SITE_ROADMAP_MILESTONES: readonly RoadmapMilestone[] = [
         summary: "Where a seller's problem already lives, and the cases on your account.",
       },
       {
-        kind: "planned",
+        // GRADUATED, and the summary changed by more than a word.
+        //
+        // ⚠️ THE OLD ONE PROMISED A PUSH THIS PRODUCT DOES NOT SEND. The stub's second bullet
+        // read "Tell you when something you reported changed", and nothing does: there is no
+        // feedback notification kind and none was added, because a triage flag moving is not
+        // correspondence. What shipped is a PULL — the note you sent and what was done with it,
+        // on a page you come back to — so the summary says that instead.
+        kind: "route",
         label: "Feedback",
-        pathPattern: "/studio/feedback",
-        summary: "Tell us what is broken.",
+        href: "/studio/feedback",
+        summary: "Tell us what is broken, and see what was done with what you sent.",
       },
     ],
   },

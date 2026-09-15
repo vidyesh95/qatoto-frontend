@@ -16,8 +16,14 @@
 //
 // ⚠️ EVERY `href` MUST BE A ROUTE THAT WORKS. `site-capabilities.ts` states the rule for the
 // roadmap and it binds harder here, because a reader arrives at this page already stuck: linking
-// `/studio/learn`, `/studio/feedback` or `/studio/subtitles`, which are still `StudioPlannedPage`
-// stubs, would spend their trust to tell them "not built yet" a second time.
+// a `StudioPlannedPage` stub would spend their trust to tell them "not built yet" a second time.
+// `/studio/learn` and `/studio/subtitles` are the two left, and neither is linked below.
+//
+// ⚠️ THIS LINE NAMED `/studio/feedback` AMONG THEM AND NO LONGER DOES, because that route
+// graduated. It is still not linked from here, for a different and better reason: feedback ends
+// in nobody answering, so sending somebody who is stuck to a channel that cannot reply would be
+// the same disservice in a nicer wrapper. The traffic goes the other way — `/studio/feedback`
+// points AT this surface for anything blocking.
 //
 // ⚠️ NO SEGMENT WITHOUT AN INDEX. `/studio/orders` and `/studio/service-engagements` resolve only
 // at `[orderId]` / `[engagementId]`; the list collapsed into `/studio/sales` and `/service-

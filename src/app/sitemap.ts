@@ -121,7 +121,13 @@ const STATIC_PUBLIC_PATHS: readonly string[] = [
   "/research-and-development/funding",
   "/research-and-development/go-to-market",
   "/research-and-development/governance",
-  "/research-and-development/import-intelligence",
+  // ⚠️ NO `/research-and-development/import-intelligence` HERE, AND IT WAS LISTED UNTIL NOW.
+  // `next.config.ts` permanently redirects it to `market-research?tab=import-substitution`, so
+  // the built sitemap was announcing a URL that answers 308 — which Google files as "Page with
+  // redirect / not indexable", and which the exclusion rule at the top of this file already
+  // names twice: no redirect-only route, and no searchParam-driven shell. The destination is
+  // both, so neither spelling belongs here. `market-research` below is the indexable surface
+  // and it covers the same content.
   "/research-and-development/market-research",
   "/research-and-development/problem-map",
   "/research-and-development/programs",

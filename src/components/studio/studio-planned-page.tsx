@@ -28,6 +28,13 @@
 // KEEP THE STUB. `/studio/support` pointed at `/customer-service` and described, in its own
 // `whatItWillDo` bullets, two things that page already did. Once the backend it was waiting on
 // shipped, the honest move was to build the route, not to keep explaining the absence well.
+//
+// ⚠️ AND CHECK EVERY `whatItWillDo` BULLET SEPARATELY, because they can rot in opposite
+// directions at once. `/studio/feedback` promised two things: one the product already did badly
+// (the composer existed, buried in an account menu) and one it could not do at all (no read, no
+// status anybody could move, no notification). A stub is not "still accurate" because half of it
+// is — the half that was already true made the page redundant, and the half that was not made it
+// a promise. Graduating it meant building the missing reads AND rewriting the promise.
 import Link from "next/link";
 
 export default function StudioPlannedPage({

@@ -93,11 +93,18 @@ export function replacePathwayImage(
  * which re-sends every slot's candidates afterwards. Sending this route on its own is a data-loss
  * bug wearing the clothes of a partial update.
  *
+ * ⚠️ **MODULE-PRIVATE, WHICH IS WHAT MAKES THE RULE ABOVE ENFORCEABLE RATHER THAN ADVISORY.**
+ * It was `export`ed, so the sentence saying no UI may call it was a comment sitting next to an
+ * autocomplete entry offering exactly that — and `hooks/store/pathway-authoring.ts` already
+ * refuses to wrap it for the same reason ("a data-loss primitive sitting in autocomplete next to
+ * the safe one"). The hook layer honoured the invariant and the module did not. Do not re-export
+ * this to reach it from a test; `savePathwayPlan` below is the only correct caller.
+ *
  * Identity is POSITIONAL — the body carries no `id` and `.strict()` refuses one. The response's
  * slots come back ordered by `siblingOrder`, which the server set from the array index, so
  * `response.slots[i]` is the row for `slots[i]`.
  */
-export function replacePathwaySlots(
+function replacePathwaySlots(
   pathwayId: string,
   slots: readonly PathwaySlotInput[],
   options?: RequestOptions,
@@ -114,7 +121,7 @@ export function replacePathwaySlots(
  * `VARIANT_NOT_APPLICABLE` (a variant was named for a product that has none), `VARIANT_NOT_FOUND`.
  * Each carries the offending ids in the error payload.
  */
-export function replacePathwaySlotCandidates(
+function replacePathwaySlotCandidates(
   pathwayId: string,
   slotId: string,
   candidates: readonly PathwayCandidateInput[],

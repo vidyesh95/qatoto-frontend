@@ -363,6 +363,28 @@ const ADMIN_NAVIGATION_SECTIONS: AdminNavSection[] = [
         inactiveIcon: "/icons/support_agent_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
       },
       {
+        // BESIDE SUPPORT CASES FOR THE REASON THE ROW ABOVE GIVES, and not in a moderation
+        // section: this is unstructured free text somebody wrote about the product, with nobody
+        // to action and no verdict to reach. It differs from Support cases in the one way that
+        // matters to whoever opens it — a case is a conversation that expects an answer, and a
+        // note is not. `moderate_content` rather than `handle_support_cases`, which is the
+        // backend's choice and is mirrored rather than second-guessed.
+        //
+        // ⚠️ THIS ROUTE EXISTED ON THE SERVER LONG BEFORE THIS ROW. `GET /admin/feedback`
+        // shipped with the write and nothing called it, so every note filed through the account
+        // menu went somewhere no surface could read. This entry is the only way in.
+        //
+        // `rate_review`, not `feedback`: that glyph is taken by Store reports two sections up,
+        // and a shared one would say this page is that page. `rate_review` is also what the
+        // account menu's own "Send feedback" control uses, so it carries the right association
+        // for a staff member who has pressed it themselves. ONE ICON FOR BOTH STATES — only its
+        // FILL0 is committed, the same limit the Support row above records.
+        href: "/admin/feedback",
+        label: "Site feedback",
+        activeIcon: "/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+        inactiveIcon: "/icons/rate_review_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg",
+      },
+      {
         // ADMIN ONLY, and the page says so rather than this list: `view_platform_metrics` is held
         // by `admin` alone, but the sidebar is rendered for every staff role and has no
         // capability read of its own. Hiding the row for a moderator would mean fetching

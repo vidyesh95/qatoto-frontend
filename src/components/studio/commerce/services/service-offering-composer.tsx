@@ -125,9 +125,7 @@ export default function ServiceOfferingComposer() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="font-serif text-xl font-semibold text-foreground md:text-2xl">
-          New service listing
-        </h1>
+        <h1 className="text-xl font-semibold text-foreground md:text-2xl">New service listing</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
           This saves a draft. It is not listed until you submit it for review and a moderator
           approves it.

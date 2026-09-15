@@ -45,7 +45,8 @@ for yet (§15, §16, and account-level delegation — `/studio/earn` SHIPPED and
 `GET /commerce/provider/earnings`;
 `/studio/copyright`, `/studio/pitches` and `/studio/team` all shipped, `/studio/support` graduated
 onto the `/support/cases` domain once that shipped, `/studio/subtitles` is architecturally
-impossible on a youtube-embed model, and learn/feedback are signposts that are already correct), or
+impossible on a youtube-embed model, `/studio/feedback` graduated once `GET /feedback/mine` and the
+triage route shipped, and `learn` is a signpost that is already correct), or
 a question for Vidyesh rather than a task (**Decisions needed**).
 
 ---
@@ -1711,7 +1712,8 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
    COST FROM THIS LINE WITHOUT CHECKING IT** — it has now been wrong about six separate routes, and
    the word "six" was itself one of them, as was "TWO". `copyright`, `pitches`, `team`, `earn` and
    `support` graduated; `subtitles` is architecturally impossible on a youtube-embed model, and
-   `learn` and `feedback` are signposts that are already correct. What is left is
+   `feedback` graduated once the reads behind it were built, and `learn` is a signpost that is
+   already correct. What is left is
    **account-level delegation** (needs a product decision first).
 
     ⚠️ **THE COUNT IN THIS HEADING IS THE THING THAT KEEPS GOING STALE, SO CHECK IT RATHER THAN
@@ -1809,9 +1811,18 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     `/customer-service/cases/[caseId]`, because `notifications/format.ts` deep-links there; a
     `/studio` twin would give one case two URLs and leave the notification on the other one.
 
-    **`/studio/learn` and `/studio/feedback` are NOT covered by this and stay signposts.** Neither
-    is waiting on a backend that shipped: Learn is a writing job and Feedback already has a real
-    control in the Studio navbar (`SendFeedbackSheet`, `POST /feedback`).
+    ~~**`/studio/learn` and `/studio/feedback` are NOT covered by this and stay signposts.**~~
+    **HALF OF THAT EXPIRED, AND THE REASONING IS KEPT SO THE REVERSAL IS READABLE.** It said
+    neither was waiting on a backend that shipped, because "Feedback already has a real control in
+    the Studio navbar (`SendFeedbackSheet`, `POST /feedback`)".
+
+    ⚠️ **THAT WAS TRUE OF THE WRITE AND ONLY THE WRITE.** `POST /feedback` was the entire domain:
+    no way to read back what you sent, and no way for a staff member to move the status column the
+    table had shipped with. `GET /feedback/mine` and `POST /admin/feedback/:feedbackId/decisions`
+    landed with the page, which is what makes the route more than a second door onto one form. See
+    the Site feedback section below.
+
+    **`/studio/learn` still stays a signpost.** It is a writing job, not a missing backend.
 
     ~~`/studio/team`~~ **SHIPPED as the product-team console, and the route changed meaning.**
     2026-08-27. It served YouTube-style video-collaborator credits while sitting in the sidebar's
@@ -1844,8 +1855,9 @@ requirement on both admin writes, and the three-field scope of `profile_moderati
     and **account-level delegation** — roles, access, revocation on an ACCOUNT, which is what
     `/studio/team`'s first summary promised and what no primitive anywhere supports. It is now the
     one substantial Studio feature unbuilt, and it is unrelated to the team console above: that one
-    is about who builds a venture, this would be about who may act as you. `learn` and `feedback`
-    are the `/customer-service` shape and already signpost correctly.
+    is about who builds a venture, this would be about who may act as you. `learn` is the
+    `/customer-service` shape and already signposts correctly; `feedback` graduated off that shape
+    once its reads were built.
 
 3. **Category attribute templates — the vocabulary SHIPPED; the seller request queue did not.**
    Design in [docs/CATEGORY_ATTRIBUTES_STRUCTURE.md](docs/CATEGORY_ATTRIBUTES_STRUCTURE.md) and
@@ -3517,37 +3529,60 @@ flag queue read as "copyright is handled".
 
 ---
 
-## Site feedback — PART 1 SHIPPED 2026-09-01 (backend `0160`), parts 2–3 are not built
+## Site feedback — SHIPPED END TO END 2026-09-15. Parts 1, 2 and 3 are all built
 
 The account menu's "Send feedback" button was dead — no `onClick`, not even a menu close. It now
 opens `send-feedback-sheet.tsx` over all three shells (home, studio, admin all mount the same
-`AccountMenu`), and `POST /feedback` writes `platform_feedback` through the new
-`qatoto-backend/src/modules/platform/feedback/` module. `GET /admin/feedback` exists and is
-keyset-paginated behind `moderate_content`, **and nothing in this repo calls it yet** — that is
-part 2, and until it lands the queue is readable only by hand.
+`AccountMenu`), and `POST /feedback` writes `platform_feedback` through
+`qatoto-backend/src/modules/platform/feedback/`.
 
-**Three things about the shape, so they are not re-litigated:**
+**Parts 2 and 3 landed together with `/studio/feedback`, and a fourth piece nobody had planned.**
+No migration was needed for any of it: `0160` shipped the status enum, the column and the index
+precisely so this day would not need one.
 
-- **It is not a report.** No verdict, no moderator decision, no audit entry, no reply. The sheet's
-  receipt says thanks and says plainly that no reply is coming, which is the ceiling — "we'll get
-  back to you" and "logged and prioritised" are both inventions this system cannot honour.
+- **Part 2, the admin queue.** `src/lib/platform/admin-feedback.api.ts`, `feedbackKeys`, a
+  capability-gated hook and `/admin/feedback`. ⚠️ `GET /admin/feedback` had existed since part 1
+  **with no caller at all**, so feedback was write-only in practice: people filed notes and no
+  surface in the product could read them. That is the gap this closed, and it is the reason the
+  page matters more than its size suggests.
+- **Part 3, triage.** `POST /admin/feedback/:feedbackId/decisions`. It does **not** take
+  `idempotency({ required: true })`, and the condition this file set is exactly why: the key was
+  contingent on writing audit entries, and it writes none. Setting a flag twice sets it once.
+- **The unplanned fourth piece: `GET /feedback/mine`.** Parts 2 and 3 are both STAFF-facing, so on
+  their own they would have moved a status column no submitter could see. The submitter's own read
+  is what makes the status worth having, and it is what `/studio/feedback` is built on.
+
+**Four things about the shape, so they are not re-litigated:**
+
+- **It is not a report.** No verdict, no moderator decision, no audit entry, no reply. The receipt
+  says thanks and says plainly that no reply is coming, which is the ceiling — "we'll get back to
+  you" and "logged and prioritised" are both inventions this system cannot honour.
 - **`pagePath` is in the body; the user agent is NOT.** The client is the only thing that knows
   the route, so it sends it; the browser string is read from the request header server-side,
   because a body-carried one is a value this untrusted client chooses.
-- **The status enum shipped with the table** (`new | reviewed | closed`, default `new`) precisely
-  so part 3 needs no migration. Nothing moves it off `new` today.
+- ⚠️ **NOTHING NOTIFIES, AND "Reviewed" IS NOT "FIXED".** No feedback notification kind exists and
+  none was added — a triage flag moving is not correspondence. The submitter PULLS: they come back
+  to `/studio/feedback` and look. `site-roadmap.ts`'s summary was rewritten in the same edit
+  because the old one ("Tell you when something you reported changed") promised a push.
+- ⚠️ **`new` IS ABSENT FROM THE DECISION ENUM**, on the wire and in the UI. It is where every row
+  is born, so nothing needs to set it, and offering it would let triage run backwards under
+  somebody already shown "Read by the team".
 
-**Part 2 — the admin queue page.** `src/lib/platform/admin-feedback.api.ts` (a separate file from
-`feedback.api.ts`, the same viewer/staff split `content-reports.api.ts` documents), a `feedbackKeys`
-factory, a capability-gated hook, and an admin page consuming `nextCursor`. **Part 3 — triage.**
-`POST /admin/feedback/:feedbackId/decisions` flipping the status; it takes
-`idempotency({ required: true })` only if it starts writing audit entries.
+**Two defects fixed on the way through, both in this domain:**
 
-**Not scoped, and each is a decision rather than an oversight:** screenshots (a capture library is
-client weight this repo's thin-client rule does not want), signed-out feedback (needs optional-auth
-plus an IP-keyed limiter, and the spam surface grows), wiring `/studio/feedback`'s placeholder page
-to the same hook, notifying anyone on submit, and including feedback in the data export — check
-`smoke-data-export`'s scope when part 2 lands.
+- **Feedback was in the anonymization manifest and not in the data export** — the Art. 17 half with
+  no Art. 15 half, for a note somebody wrote in their own words. `data-export.service.ts` had
+  already recorded being "nearly missed" this exact way twice (`yourChannelLinks`,
+  `yourVideoDocuments`); this one was missed outright. It is `feedbackYouSent` now.
+- **The queue's hand-rolled cursor decoder was too lenient.** It ran the epoch prefix through
+  `Number()`, so `1e5_abc` parsed as 100000, `0x10_abc` as 16 and `"  12_abc"` as 12 — three
+  malformed cursors each paging from a silently invented instant instead of answering 422. It uses
+  the shared `decodeInstantCursor`, which tests `/^\d+$/` before converting.
+
+**Still not scoped, and each is a decision rather than an oversight:** screenshots (a capture
+library is client weight this repo's thin-client rule does not want), signed-out feedback (needs
+optional-auth plus an IP-keyed limiter, and the spam surface grows), and notifying anyone on
+submit.
 
 ## View in 360° — SHIPPED END TO END 2026-09-08 (backend `0168`)
 
