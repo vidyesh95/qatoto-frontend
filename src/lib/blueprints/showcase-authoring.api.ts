@@ -12,7 +12,12 @@
 
 import { z } from "zod";
 
-import { BlueprintWriteUpImageSchema, type BlueprintWriteUpImage } from "@/lib/blueprints/schemas";
+import {
+  BlueprintWriteUpImageSchema,
+  ShowcaseHeadingImageSchema,
+  type BlueprintWriteUpImage,
+  type ShowcaseHeadingImage,
+} from "@/lib/blueprints/schemas";
 import {
   ShowcaseSubmissionReceiptSchema,
   ShowcaseSubmissionSchema,
@@ -20,7 +25,13 @@ import {
   type ShowcaseSubmissionDraft,
   type ShowcaseSubmissionReceipt,
 } from "@/lib/blueprints/showcase-authoring.schemas";
-import { getJson, sendForm, type ActionResponse, type RequestOptions } from "@/lib/http";
+import {
+  buildQueryString,
+  getJson,
+  sendForm,
+  type ActionResponse,
+  type RequestOptions,
+} from "@/lib/http";
 
 /**
  * `POST /blueprints/showcases` (multipart) — post a launch for review. Answers 201 with a receipt.
@@ -36,14 +47,21 @@ import { getJson, sendForm, type ActionResponse, type RequestOptions } from "@/l
 export function submitShowcaseForReview(
   submissionRequest: {
     readonly draft: ShowcaseSubmissionDraft;
-    readonly headingImageFile: File;
+    /**
+     * OMITTED WHEN THE COVER WAS STAGED, which is every launch composed from a draft: the draft
+     * carries `headingImageId` instead and the server claims that row. The multipart shape is
+     * still sent by a composer that uploaded nothing ahead of time, and the backend accepts both.
+     */
+    readonly headingImageFile?: File;
     readonly idempotencyKey: string;
   },
   options?: RequestOptions,
 ): Promise<ActionResponse<ShowcaseSubmissionReceipt>> {
   const formData = new FormData();
   formData.append("draft", JSON.stringify(submissionRequest.draft));
-  formData.append("headingImage", submissionRequest.headingImageFile);
+  if (submissionRequest.headingImageFile !== undefined) {
+    formData.append("headingImage", submissionRequest.headingImageFile);
+  }
 
   return sendForm("/blueprints/showcases", "POST", formData, ShowcaseSubmissionReceiptSchema, {
     ...options,
@@ -61,16 +79,55 @@ export function submitShowcaseForReview(
  */
 export function uploadShowcaseWriteUpImage(
   imageFile: File,
+  /**
+   * The draft this image belongs to, when one exists.
+   *
+   * ⚠️ WITHOUT IT THE SERVER REAPS THE IMAGE IN A DAY. An upload nothing points at is deleted by
+   * `sweep-orphan-showcase-images` after 24 hours, and a draft is not a launch — so an image
+   * uploaded into a draft without this is a dead link the next time the maker opens it.
+   *
+   * A QUERY PARAM because the route's parser takes one file and no text parts.
+   */
+  draftId?: string,
   options?: RequestOptions,
 ): Promise<ActionResponse<BlueprintWriteUpImage>> {
   const formData = new FormData();
   formData.append("image", imageFile);
 
   return sendForm(
-    "/blueprints/showcases/write-up-images",
+    `/blueprints/showcases/write-up-images${buildQueryString({ draftId })}`,
     "POST",
     formData,
     BlueprintWriteUpImageSchema,
+    options,
+  );
+}
+
+/**
+ * `POST /blueprints/showcases/heading-images` (multipart, field `image`) — the cover, stored before
+ * the launch exists.
+ *
+ * ⚠️ **THIS IS WHAT LETS A DRAFT HOLD A COVER AT ALL.** The cover used to travel only as part of the
+ * submit, as a `File`, and a `File` does not serialize into a JSON draft document — so a saved
+ * launch came back without its cover every time. What the draft stores is the `headingImageId` this
+ * answers with.
+ *
+ * SAME SERVER-SIDE CHECKS AS THE SUBMIT PATH — square within one percent, at least 256px, measured
+ * on the re-encoded file. Staging is not a way around them.
+ */
+export function uploadShowcaseHeadingImage(
+  imageFile: File,
+  draftId?: string,
+  options?: RequestOptions,
+): Promise<ActionResponse<ShowcaseHeadingImage>> {
+  const formData = new FormData();
+  formData.append("image", imageFile);
+
+  return sendForm(
+    `/blueprints/showcases/heading-images${buildQueryString({ draftId })}`,
+    "POST",
+    formData,
+    ShowcaseHeadingImageSchema,
     options,
   );
 }

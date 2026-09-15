@@ -49,13 +49,32 @@ export const blueprintKeys = {
   /** The reporter's own list of reports. Person-scoped server-side, so no id in the key. */
   myReports: () => ["blueprints", "reports", "mine"] as const,
   /**
+   * Everything under the draft store — every arm's list AND every single draft.
+   *
+   * ⚠️ IT EXISTS BECAUSE THREE MUTATIONS WERE SPELLING IT BY HAND. `drafts.ts` invalidated with a
+   * raw `["blueprints", "drafts"]` literal in three `onSuccess` blocks, which worked by prefix
+   * match and sat outside the one rule this file's header states: an invalidation must not be able
+   * to drift from the query it clears. A saved draft changes both the list it belongs to and its
+   * own entry, so this is deliberately the shared prefix of `myDrafts` and `draft` rather than a
+   * third spelling beside them.
+   */
+  draftsRoot: () => ["blueprints", "drafts"] as const,
+  /**
    * The author's own drafts, optionally filtered by arm.
    */
   myDrafts: (arm?: string) => ["blueprints", "drafts", "mine", arm ?? "all"] as const,
   /**
    * A single draft by id.
+   *
+   * ⚠️ NEVER CALL THIS WITH A PLACEHOLDER STRING. `useMyDraftQuery` used to key its disabled state
+   * as `["blueprints", "drafts", "null"]`, which is byte-identical to `draft("null")` — so a draft
+   * whose id really was `"null"` would have shared a cache entry with every disabled instance of
+   * the hook. The disabled key is now `draftPlaceholder()` below, which no id can collide with
+   * because a server-minted id never contains a space.
    */
   draft: (draftId: string) => ["blueprints", "drafts", draftId] as const,
+  /** The key a disabled single-draft query parks on. Unreachable by any real id. */
+  draftPlaceholder: () => ["blueprints", "drafts", "no draft selected"] as const,
   /**
    * The moderator's content-report queue.
    *

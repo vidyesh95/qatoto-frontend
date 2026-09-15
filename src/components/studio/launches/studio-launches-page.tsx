@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import StatusPanel from "@/components/home/shared/status-panel";
+import UnsubmittedDraftsSection from "@/components/studio/blueprints/unsubmitted-drafts-section";
 import {
   SUBMISSION_STATE_CHIP_CLASS,
   SUBMISSION_STATE_LABELS,
@@ -78,6 +79,14 @@ export default function StudioLaunchesPage() {
           Post a launch
         </Link>
       </div>
+
+      {/* ABOVE THE SUBMISSIONS LIST, because unsent work is what an author came back
+          for. It renders nothing when there are no drafts. */}
+      <UnsubmittedDraftsSection
+        arm="showcase_launch"
+        composerHref="/blueprints/showcase/new"
+        emptyLabelFallback="Untitled launch"
+      />
 
       {/* A skeleton in the list's own shape: a square image, two lines and a chip per row. */}
       {submissionsQuery.isPending ? (

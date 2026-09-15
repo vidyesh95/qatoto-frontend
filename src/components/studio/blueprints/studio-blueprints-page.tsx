@@ -5,6 +5,7 @@
 import Link from "next/link";
 
 import StatusPanel from "@/components/home/shared/status-panel";
+import UnsubmittedDraftsSection from "@/components/studio/blueprints/unsubmitted-drafts-section";
 import {
   SUBMISSION_STATE_CHIP_CLASS,
   SUBMISSION_STATE_LABELS,
@@ -68,6 +69,14 @@ export default function StudioBlueprintsPage() {
           Publish a teardown
         </Link>
       </div>
+
+      {/* ABOVE THE SUBMISSIONS LIST, because unsent work is what an author came back
+          for. It renders nothing when there are no drafts. */}
+      <UnsubmittedDraftsSection
+        arm="teardown"
+        composerHref="/blueprints/teardowns/new"
+        emptyLabelFallback="Untitled teardown"
+      />
 
       {/* A SKELETON IN THE LIST'S OWN SHAPE, not a "Loading…" line: `product.md` asks for skeletons
           over spinners, and three rows of title, meta line and chip is what the list resolves into,

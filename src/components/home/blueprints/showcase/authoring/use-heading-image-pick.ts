@@ -91,7 +91,15 @@ export function useHeadingImagePick() {
     [],
   );
 
-  async function pickFile(file: File): Promise<void> {
+  /**
+   * Runs the local checks and, when they pass, returns the accepted file.
+   *
+   * ⚠️ IT RETURNS THE FILE SO THE CALLER CAN UPLOAD IT WITHOUT AN EFFECT. The composer stages the
+   * cover the moment it is accepted, and watching `pickState` for that would mean a `setState`
+   * inside an effect chasing another render — which this repo rules out. Returning the outcome
+   * keeps the whole sequence inside the one event that caused it.
+   */
+  async function pickFile(file: File): Promise<File | null> {
     latestAttemptNumberRef.current += 1;
     const attemptNumber = latestAttemptNumberRef.current;
     releasePreviewUrl();
@@ -100,14 +108,14 @@ export function useHeadingImagePick() {
     const checkResult = await checkImageFile(file, {
       minimumDimensionPx: HEADING_IMAGE_MINIMUM_DIMENSION_PX,
     });
-    if (attemptNumber !== latestAttemptNumberRef.current) return;
+    if (attemptNumber !== latestAttemptNumberRef.current) return null;
 
     if (!checkResult.success) {
       setPickState({
         status: "rejected",
         message: describeHeadingImageCheckFailure(checkResult.failure),
       });
-      return;
+      return null;
     }
 
     const { widthPx, heightPx } = checkResult;
@@ -116,12 +124,13 @@ export function useHeadingImagePick() {
         status: "rejected",
         message: `That image is ${widthPx} × ${heightPx}. A heading image has to be square, the same width and height.`,
       });
-      return;
+      return null;
     }
 
     const previewUrl = URL.createObjectURL(file);
     previewUrlRef.current = previewUrl;
     setPickState({ status: "ready", file, previewUrl, widthPx, heightPx });
+    return file;
   }
 
   function clearPick(): void {

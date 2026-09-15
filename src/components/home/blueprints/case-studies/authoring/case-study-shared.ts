@@ -5,14 +5,19 @@
 // `collectCaseStudySubmission` converts it ONCE, when the writer presses Send, then lets the contract
 // decide.
 
+import { z } from "zod";
+
 import type { CaseStudyLessonRowFields } from "@/components/home/blueprints/cards/case-study-lesson-row";
 import { splitTagsText } from "@/components/home/blueprints/showcase/authoring/showcase-launch-shared";
 import {
+  CASE_STUDY_CURRENCIES,
+  CASE_STUDY_STATEMENT_IDS,
   CaseStudySubmissionDraftSchema,
   type CaseStudyCurrency,
   type CaseStudyStatementId,
   type CaseStudySubmissionDraft,
 } from "@/lib/blueprints/case-study-authoring.schemas";
+import { BLUEPRINT_DISCIPLINES, CASE_STUDY_AUTHOR_RELATIONSHIPS } from "@/lib/blueprints/schemas";
 import type { BlueprintDiscipline, CaseStudyAuthorRelationship } from "@/lib/blueprints/schemas";
 
 /** A step or a pitfall while it is being edited. `rowId` is client-only, for a stable React key. */
@@ -373,4 +378,94 @@ export function describeCaseStudyFieldPath(fieldPath: string): string {
   const labelEntry = CASE_STUDY_FIELD_LABELS_IN_PAGE_ORDER[findCaseStudyFieldPosition(fieldPath)];
   if (labelEntry !== undefined) return labelEntry[1];
   return fieldPath === "form" ? "The case study" : fieldPath;
+}
+
+/**
+ * The SAVED shape of this form, as a schema.
+ *
+ * ⚠️ A SEPARATE SCHEMA FROM `CaseStudyDraftSchema`, AND IT MUST STAY THAT WAY. That one describes a
+ * SUBMITTABLE case study: required fields, length bounds, refinements. This one describes a
+ * half-written one, which is what a draft is by definition — so every field here is the widest type
+ * the form can hold, and a `""` is a legal value throughout. Validating a draft against the submit
+ * contract would refuse exactly the drafts worth keeping.
+ *
+ * THE MIRROR IS THE COST, AND IT IS PAID ON PURPOSE. `TeardownWizardDraftSchema` is the precedent
+ * and carries the same duplication. The alternative is an `as` cast on a document that arrived over
+ * the network, which CLAUDE.md's Pattern 2 rules out: this is a stored blob the server deliberately
+ * never parses, so the client is the only thing standing between a corrupt document and a form
+ * rendering `undefined` into its inputs.
+ */
+const TextItemDraftRowSchema: z.ZodType<TextItemDraftRow> = z
+  .object({ rowId: z.string(), text: z.string() })
+  .strip();
+
+const EvidenceCompanyDraftRowSchema: z.ZodType<EvidenceCompanyDraftRow> = z
+  .object({
+    rowId: z.string(),
+    name: z.string(),
+    isNameWithheld: z.boolean(),
+    locationLabel: z.string(),
+    yearLabel: z.string(),
+  })
+  .strip();
+
+const OutcomeMetricDraftRowSchema: z.ZodType<OutcomeMetricDraftRow> = z
+  .object({
+    rowId: z.string(),
+    label: z.string(),
+    kind: z.union([z.enum(OUTCOME_METRIC_KINDS), z.literal("")]),
+    valueText: z.string(),
+    currency: z.enum(CASE_STUDY_CURRENCIES),
+  })
+  .strip();
+
+const SourceDraftRowSchema: z.ZodType<SourceDraftRow> = z
+  .object({
+    rowId: z.string(),
+    label: z.string(),
+    publisherLabel: z.string(),
+    url: z.string(),
+  })
+  .strip();
+
+export const CaseStudyFormDraftSchema: z.ZodType<CaseStudyFormDraft> = z
+  .object({
+    title: z.string(),
+    oneLineAction: z.string(),
+    discipline: z.union([z.enum(BLUEPRINT_DISCIPLINES), z.literal("")]),
+    sector: z.string(),
+    outcomeSummary: z.string(),
+    authorRelationship: z.union([z.enum(CASE_STUDY_AUTHOR_RELATIONSHIPS), z.literal("")]),
+    summary: z.string(),
+    problem: z.string(),
+    context: z.string(),
+    actionStepRows: z.array(TextItemDraftRowSchema),
+    pitfallRows: z.array(TextItemDraftRowSchema),
+    companyRows: z.array(EvidenceCompanyDraftRowSchema),
+    timelineLabel: z.string(),
+    capitalRaisedText: z.string(),
+    capitalRaisedCurrency: z.enum(CASE_STUDY_CURRENCIES),
+    metricRows: z.array(OutcomeMetricDraftRowSchema),
+    sourceRows: z.array(SourceDraftRowSchema),
+    relatedLessonSlotSlugs: z.array(z.string()),
+    tagsText: z.string(),
+    acceptedStatementIds: z.array(z.enum(CASE_STUDY_STATEMENT_IDS)),
+  })
+  .strip();
+
+/**
+ * Parses a stored draft document back into form state, or `null` if it cannot be reopened.
+ *
+ * PURE, so the composer can call it during render while seeding. Both failure modes — malformed
+ * JSON and a document this build no longer recognises — collapse to one `null`, because they are
+ * the same thing to the writer: this draft cannot be reopened.
+ */
+export function restoreCaseStudyFormDraft(storedDocument: string): CaseStudyFormDraft | null {
+  try {
+    const parsedDocument: unknown = JSON.parse(storedDocument);
+    const validation = CaseStudyFormDraftSchema.safeParse(parsedDocument);
+    return validation.success ? validation.data : null;
+  } catch {
+    return null;
+  }
 }

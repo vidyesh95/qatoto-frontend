@@ -27,14 +27,17 @@ import {
   type TeardownWizardStepProps,
 } from "@/components/home/blueprints/teardowns/authoring/wizard-shared";
 import { useSubmitTeardownMutation } from "@/hooks/blueprints/authoring";
-import { useCreateDraftMutation, useReplaceDraftMutation } from "@/hooks/blueprints/drafts";
+import {
+  useCreateDraftMutation,
+  useMyDraftQuery,
+  useReplaceDraftMutation,
+} from "@/hooks/blueprints/drafts";
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
 import { getMyTeardownSubmission } from "@/lib/blueprints/authoring.api";
 import {
   TeardownSubmissionDraftSchema,
   type TeardownSubmissionReceipt,
 } from "@/lib/blueprints/authoring.schemas";
-import { getMyDraft } from "@/lib/blueprints/drafts.api";
 import { ApiRequestError } from "@/lib/http";
 
 /**
@@ -64,6 +67,23 @@ const STEP_COMPONENTS: Record<
 };
 
 /**
+ * Parses a stored draft document into wizard state, or `null` if it cannot be trusted.
+ *
+ * PURE AND OUTSIDE THE COMPONENT so it can be called during render. It swallows both failure modes
+ * — malformed JSON and a document that no longer matches the wizard's shape — into one `null`,
+ * because they are the same thing to the author: this draft cannot be reopened.
+ */
+function restoreWizardDraftFromDocument(document: string): TeardownWizardDraft | null {
+  try {
+    const parsedDocument: unknown = JSON.parse(document);
+    const validation = TeardownWizardDraftSchema.safeParse(parsedDocument);
+    return validation.success ? validation.data : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Publish a teardown: five steps, one attestation, one submit.
  */
 export default function TeardownWizard() {
@@ -78,8 +98,8 @@ export default function TeardownWizard() {
   });
   const [fieldErrors, setFieldErrors] = useState<Readonly<Record<string, string[]>>>({});
 
-  const [isLoadingPrefill, setIsLoadingPrefill] = useState<boolean>(() =>
-    Boolean(resubmitSubmissionId || resumeDraftId),
+  const [isLoadingResubmitPrefill, setIsLoadingResubmitPrefill] = useState<boolean>(() =>
+    Boolean(resubmitSubmissionId),
   );
   const [prefillError, setPrefillError] = useState<string | null>(null);
   const [resubmitNote, setResubmitNote] = useState<string | null>(null);
@@ -95,69 +115,109 @@ export default function TeardownWizard() {
   const createDraftMutation = useCreateDraftMutation();
   const replaceDraftMutation = useReplaceDraftMutation(draftMeta?.draftId ?? "");
 
+  /**
+   * THE RESUME READ, THROUGH THE HOOK RATHER THAN THE API MODULE.
+   *
+   * This called `getMyDraft` directly inside the effect below, which worked and meant
+   * `useMyDraftQuery` — written for exactly this — had no caller in the app. Two implementations
+   * of one read is how they drift.
+   *
+   * ⚠️ ITS `isPending` IS MEANINGLESS WHEN THERE IS NO DRAFT TO LOAD. A disabled React Query sits
+   * pending forever, so `isLoadingPrefill` below checks `resumeDraftId` FIRST. Reading the flag on
+   * its own would spin the wizard permanently for everybody starting a teardown from scratch.
+   */
+  const resumeDraftQuery = useMyDraftQuery(resumeDraftId);
+
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
 
+  // THE RESUBMIT PREFILL, still imperative: it reads a SUBMISSION, not a draft, and there is no
+  // hook for that read. Its document is parsed against the SUBMIT schema — a rejected submission
+  // was complete enough to send — where a draft is parsed against the loose wizard shape below.
   useEffect(() => {
     let isCancelled = false;
 
-    async function loadPrefill(): Promise<void> {
-      if (resubmitSubmissionId) {
-        const result = await getMyTeardownSubmission(resubmitSubmissionId);
-        if (isCancelled) return;
-        setIsLoadingPrefill(false);
-        if (!result.success) {
-          setPrefillError("Could not load the rejected submission. Please try again.");
-          return;
-        }
-        try {
-          const parsedDoc: unknown = JSON.parse(result.data.document);
-          const validation = TeardownSubmissionDraftSchema.safeParse(parsedDoc);
-          if (validation.success) {
-            setDraft(teardownSubmissionDraftToWizardDraft(validation.data));
-            if (result.data.moderatorNote) {
-              setResubmitNote(result.data.moderatorNote);
-            }
-          } else {
-            setPrefillError("The submission document could not be restored.");
+    async function loadResubmitPrefill(): Promise<void> {
+      if (!resubmitSubmissionId) return;
+      const result = await getMyTeardownSubmission(resubmitSubmissionId);
+      if (isCancelled) return;
+      setIsLoadingResubmitPrefill(false);
+      if (!result.success) {
+        setPrefillError("Could not load the rejected submission. Please try again.");
+        return;
+      }
+      try {
+        const parsedDoc: unknown = JSON.parse(result.data.document);
+        const validation = TeardownSubmissionDraftSchema.safeParse(parsedDoc);
+        if (validation.success) {
+          setDraft(teardownSubmissionDraftToWizardDraft(validation.data));
+          if (result.data.moderatorNote) {
+            setResubmitNote(result.data.moderatorNote);
           }
-        } catch {
-          setPrefillError("Failed to parse the stored submission document.");
+        } else {
+          setPrefillError("The submission document could not be restored.");
         }
-      } else if (resumeDraftId) {
-        const result = await getMyDraft(resumeDraftId);
-        if (isCancelled) return;
-        setIsLoadingPrefill(false);
-        if (!result.success) {
-          setPrefillError("Could not load the saved draft. Please try again.");
-          return;
-        }
-        try {
-          const rawParsedDoc: unknown = JSON.parse(result.data.document);
-          const validation = TeardownWizardDraftSchema.safeParse(rawParsedDoc);
-          if (validation.success) {
-            setDraft(validation.data);
-            setDraftMeta({
-              draftId: result.data.draftId,
-              revision: result.data.revision,
-              savedAt: new Date(result.data.updatedAt).toLocaleTimeString(),
-            });
-          } else {
-            setPrefillError("The saved draft document structure is invalid.");
-          }
-        } catch {
-          setPrefillError("Failed to parse the saved draft.");
-        }
+      } catch {
+        setPrefillError("Failed to parse the stored submission document.");
       }
     }
 
-    if (resubmitSubmissionId || resumeDraftId) {
-      void loadPrefill();
-    }
+    void loadResubmitPrefill();
 
     return () => {
       isCancelled = true;
     };
-  }, [resubmitSubmissionId, resumeDraftId]);
+  }, [resubmitSubmissionId]);
+
+  /**
+   * Seeds the form from the resumed draft — DURING RENDER, EXACTLY ONCE PER DRAFT.
+   *
+   * ⚠️ NOT AN EFFECT, AND NOT BECAUSE OF THE LINT RULE. `react(set-state-in-effect)` is what flags
+   * it, and `teardown-explorer.tsx` records the reasoning the rule is standing in for: a `setState`
+   * inside an effect is a second render chasing the first. React sanctions adjusting state during
+   * render for exactly this case — data arrived, the form it initialises must now hold it — and
+   * discards the in-flight render rather than committing an empty form and then replacing it.
+   *
+   * ⚠️ THE GUARD IS STATE, NOT A REF, AND IT PREVENTS A DATA-LOSS BUG rather than a re-render.
+   * A ref cannot be read during render (`react(refs)`), and React's own "adjusting state when data
+   * changes" idiom uses state for the remembered value for that reason. Saving calls `setQueryData` to
+   * write the new revision into this very cache entry, handing the next render a new object.
+   * Reseeding on that would re-apply the document AS IT WAS WHEN LOADED, silently discarding
+   * everything typed since — on every save, the one moment an author is most sure their work is
+   * safe. Only a change of draft identity may reseed.
+   */
+  const resumedDraftDocument = resumeDraftQuery.data;
+  const [seededDraftId, setSeededDraftId] = useState<string | null>(null);
+  if (resumedDraftDocument !== undefined && seededDraftId !== resumedDraftDocument.draftId) {
+    setSeededDraftId(resumedDraftDocument.draftId);
+    const restored = restoreWizardDraftFromDocument(resumedDraftDocument.document);
+    if (restored === null) {
+      setPrefillError(
+        "The saved draft could not be restored. It may have been saved by an older version.",
+      );
+    } else {
+      setDraft(restored);
+      setDraftMeta({
+        draftId: resumedDraftDocument.draftId,
+        revision: resumedDraftDocument.revision,
+        savedAt: new Date(resumedDraftDocument.updatedAt).toLocaleTimeString(),
+      });
+    }
+  }
+
+  /**
+   * ⚠️ `resumeDraftId` IS CHECKED BEFORE THE QUERY'S OWN FLAG, and the order is load-bearing.
+   * `useMyDraftQuery(null)` is disabled, and a disabled query reports `isPending` forever — so
+   * reading it first would leave the wizard on its loading screen for every author starting fresh.
+   */
+  const isLoadingPrefill =
+    resubmitSubmissionId !== null
+      ? isLoadingResubmitPrefill
+      : resumeDraftId !== null && resumeDraftQuery.isPending;
+
+  const resumeDraftReadError =
+    resumeDraftId !== null && resumeDraftQuery.isError
+      ? "Could not load the saved draft. Please try again."
+      : null;
 
   function applyDraftPatch(draftPatch: Partial<TeardownWizardDraft>): void {
     if (submitMutation.isPending) return;
@@ -273,13 +333,16 @@ export default function TeardownWizard() {
 
       {isLoadingPrefill ? (
         <div className="mt-4 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">
-          Loading submission details…
+          {resumeDraftId === null ? "Loading submission details…" : "Loading your saved draft…"}
         </div>
       ) : null}
 
-      {prefillError ? (
+      {/* ONE BANNER FOR BOTH PREFILL SOURCES. `prefillError` is set by the resubmit loader and by a
+          draft that parsed badly; `resumeDraftReadError` comes from the query failing outright.
+          Two banners for "we could not fill this in for you" would be one too many. */}
+      {(prefillError ?? resumeDraftReadError) ? (
         <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-          {prefillError}
+          {prefillError ?? resumeDraftReadError}
         </div>
       ) : null}
 

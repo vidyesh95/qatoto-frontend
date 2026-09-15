@@ -3529,6 +3529,46 @@ flag queue read as "copyright is handled".
 
 ---
 
+## Blueprint drafts — SHIPPED 2026-09-15, and migration `0198` is NOT APPLIED YET
+
+The draft store had a complete backend and half a frontend. `POST`/`PUT /blueprints/drafts` were
+wired to the teardown wizard; the list, the single read and the delete had **no caller anywhere**.
+
+⚠️ **THE CONSEQUENCE WAS MAROONED DATA, NOT AN UNUSED WRAPPER.** The wizard could always resume a
+draft — it reads `?draftId=` — but nothing in the app ever built that link, and the studio list
+beside it shows submissions already SENT to a moderator. So a maker pressed "Save draft" and never
+saw it again. Worse at the ceiling: `MAX_BLUEPRINT_DRAFTS_PER_AUTHOR` is 25, and with no list and no
+delete an author who reached it was locked out of saving for good.
+
+**What shipped.** A "Not submitted yet" section on all three studio pages (`/studio/blueprints`,
+`/studio/launches`, `/studio/case-studies`) with Resume and a two-step Delete; autosave on the
+showcase and case-study composers; and the cover-image staging that lets a showcase draft hold one.
+The teardown wizard's read moved off a direct `getMyDraft` call onto `useMyDraftQuery`.
+
+⚠️ **THE BACKEND HAD ALREADY BEEN BUILT FOR THIS AND NOBODY HAD USED IT.**
+`showcase_launch_write_up_image.draft_id` existed, with a comment reading "WITHOUT THIS COLUMN A
+RESUMED SHOWCASE DRAFT LOSES EVERY IMAGE, SILENTLY" — and nothing ever set it, because the upload
+route took no draft id. The sweeper and the submit service both already refused to reap a
+draft-attached image. Likewise `blueprintDraftSaveLimiter` is 600 per 15 minutes _because_ its author
+expected an autosave. The orphaned hooks were one symptom of a half-wired feature, not the feature.
+
+### ⚠️ OPEN: migration `0198` is generated and NOT applied
+
+`drizzle/0198_perfect_nightshade.sql` creates `showcase_launch_heading_image`. It was read by hand
+(all three CHECKs intact, the `chr(59)` blur constraint not truncated) and **deliberately not run**,
+because the database is shared. Until `pnpm db:migrate` is run, `POST
+/blueprints/showcases/heading-images` and every showcase draft carrying a cover will fail at the
+insert. Everything else in this change works without it.
+
+### Open, smaller
+
+- **Two save idioms in one domain.** The teardown wizard keeps its manual "Save draft" button; the
+  other two composers autosave on a 2.5s idle debounce. Converting the wizard was unasked scope on
+  the one flow that already worked, and the limiter's own comment suggests autosave is the intended
+  shape. Worth settling on one.
+- **`useRefreshBlueprintReportQueue` still has no caller** (`src/hooks/blueprints/content-moderation.ts`).
+  Unrelated to drafts; wire it or delete it.
+
 ## Site feedback — SHIPPED END TO END 2026-09-15. Parts 1, 2 and 3 are all built
 
 The account menu's "Send feedback" button was dead — no `onClick`, not even a menu close. It now

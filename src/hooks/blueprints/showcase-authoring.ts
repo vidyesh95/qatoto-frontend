@@ -7,6 +7,7 @@ import { blueprintKeys } from "@/hooks/blueprints/keys";
 import {
   listMyShowcaseSubmissions,
   submitShowcaseForReview,
+  uploadShowcaseHeadingImage,
   uploadShowcaseWriteUpImage,
 } from "@/lib/blueprints/showcase-authoring.api";
 import type { ShowcaseSubmissionDraft } from "@/lib/blueprints/showcase-authoring.schemas";
@@ -35,7 +36,8 @@ export function useSubmitShowcaseMutation() {
   return useMutation({
     mutationFn: async (variables: {
       readonly draft: ShowcaseSubmissionDraft;
-      readonly headingImageFile: File;
+      /** Omitted when the cover was staged and the draft carries its id instead. */
+      readonly headingImageFile?: File;
       readonly idempotencyKey: string;
     }) => unwrap(await submitShowcaseForReview(variables)),
     onSuccess: () => {
@@ -52,6 +54,20 @@ export function useSubmitShowcaseMutation() {
  */
 export function useUploadShowcaseWriteUpImageMutation() {
   return useMutation({
-    mutationFn: (imageFile: File) => uploadShowcaseWriteUpImage(imageFile),
+    mutationFn: (variables: { readonly imageFile: File; readonly draftId?: string }) =>
+      uploadShowcaseWriteUpImage(variables.imageFile, variables.draftId),
+  });
+}
+
+/**
+ * Stages the cover image, so a draft can hold one.
+ *
+ * NO IDEMPOTENCY KEY, like the write-up upload and for the same reason: the route takes none, and a
+ * retried upload stores a second copy nothing references, which the server reaps after a day.
+ */
+export function useUploadShowcaseHeadingImageMutation() {
+  return useMutation({
+    mutationFn: (variables: { readonly imageFile: File; readonly draftId?: string }) =>
+      uploadShowcaseHeadingImage(variables.imageFile, variables.draftId),
   });
 }

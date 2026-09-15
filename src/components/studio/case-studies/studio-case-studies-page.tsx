@@ -5,6 +5,7 @@
 import Link from "next/link";
 
 import StatusPanel from "@/components/home/shared/status-panel";
+import UnsubmittedDraftsSection from "@/components/studio/blueprints/unsubmitted-drafts-section";
 import {
   SUBMISSION_STATE_CHIP_CLASS,
   SUBMISSION_STATE_LABELS,
@@ -69,6 +70,14 @@ export default function StudioCaseStudiesPage() {
           Write a case study
         </Link>
       </div>
+
+      {/* ABOVE THE SUBMISSIONS LIST, because unsent work is what an author came back
+          for. It renders nothing when there are no drafts. */}
+      <UnsubmittedDraftsSection
+        arm="case_study"
+        composerHref="/blueprints/case-studies/new"
+        emptyLabelFallback="Untitled case study"
+      />
 
       {submissionsQuery.isPending ? (
         <div className="mt-6 max-w-3xl">

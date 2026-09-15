@@ -281,6 +281,14 @@ export const ShowcaseSubmissionDraftSchema = z
     acceptedLaunchStatementIds: z
       .array(z.enum(SHOWCASE_LAUNCH_STATEMENT_IDS))
       .max(SHOWCASE_LAUNCH_STATEMENT_IDS.length),
+    /**
+     * A cover staged earlier, when this launch was composed from a draft.
+     *
+     * `null` MEANS THE FILE IS COMING ON THE REQUEST ITSELF, which is the original multipart shape
+     * and still what a composer that staged nothing sends. The backend accepts either and refuses
+     * only when both are absent.
+     */
+    headingImageId: z.string().nullable(),
   })
   .strict()
   // ⚠️ THREE REFINEMENTS, NOT ONE, EACH GATED BY `when` ON THE FIELDS IT READS. As one refinement

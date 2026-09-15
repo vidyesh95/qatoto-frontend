@@ -6,8 +6,16 @@
 
 import { z } from "zod";
 
-import type { BlueprintDifficulty, BlueprintWriteUpImage } from "@/lib/blueprints/schemas";
 import {
+  BLUEPRINT_DIFFICULTIES,
+  BlueprintWriteUpImageSchema,
+  ShowcaseHeadingImageSchema,
+  type BlueprintDifficulty,
+  type BlueprintWriteUpImage,
+  type ShowcaseHeadingImage,
+} from "@/lib/blueprints/schemas";
+import {
+  SHOWCASE_LAUNCH_STATEMENT_IDS,
   ShowcaseSubmissionDraftSchema,
   type ShowcaseLaunchStatementId,
   type ShowcaseSubmissionDraft,
@@ -25,8 +33,12 @@ export interface TeamMemberDraftRow {
 
 /**
  * THE WHOLE FORM, FLAT, EVERY SCALAR HELD AS TEXT, for the `weight-band-editor.tsx` reason: a
- * half-typed cost is not a number and a half-picked date is not a date. The heading image is not
- * here; it is a `File` held by `useHeadingImagePick`, because it never becomes JSON.
+ * half-typed cost is not a number and a half-picked date is not a date.
+ *
+ * ⚠️ THIS USED TO SAY "the heading image is not here; it is a `File` held by `useHeadingImagePick`,
+ * because it never becomes JSON". That was true and it was the reason a saved launch draft came
+ * back with no cover. The image is uploaded when it is picked now, and `stagedHeadingImage` holds
+ * what the server answered with — which is JSON, and survives a round trip through the draft store.
  */
 export interface ShowcaseLaunchFormDraft {
   readonly title: string;
@@ -56,9 +68,21 @@ export interface ShowcaseLaunchFormDraft {
    * harmless: the preview only looks up addresses the Markdown still contains.
    */
   readonly uploadedWriteUpImages: readonly BlueprintWriteUpImage[];
+  /**
+   * The cover, once it has been uploaded and the server has measured it.
+   *
+   * ⚠️ **THE COVER LIVES IN THE FORM DRAFT NOW, WHERE IT USED TO BE A `File` OUTSIDE IT.** This
+   * file's own header said so: "The heading image is not here; it is a `File` held by
+   * `useHeadingImagePick`, because it never becomes JSON." That was the one thing stopping a
+   * showcase draft from surviving a resume — a `File` cannot be serialized — so the image is
+   * uploaded the moment it is accepted and what is kept here is the id and address it came back
+   * with. `useHeadingImagePick` still runs the local checks and owns the preview.
+   */
+  readonly stagedHeadingImage: ShowcaseHeadingImage | null;
 }
 
 export const EMPTY_SHOWCASE_LAUNCH_FORM_DRAFT: ShowcaseLaunchFormDraft = {
+  stagedHeadingImage: null,
   title: "",
   tagline: "",
   summary: "",
@@ -189,6 +213,9 @@ export function collectShowcaseSubmission(
       ? null
       : { label: formDraft.callToActionLabel.trim(), url: formDraft.callToActionUrl.trim() },
     acceptedLaunchStatementIds: formDraft.acceptedLaunchStatementIds,
+    // THE STAGED ROW'S ID, never its URL: the server claims the row it names, and a URL a client
+    // chose is not something a submit may act on. `null` means the cover is on the request itself.
+    headingImageId: formDraft.stagedHeadingImage?.headingImageId ?? null,
   };
 
   const parsed = ShowcaseSubmissionDraftSchema.safeParse(candidate);
@@ -459,5 +486,61 @@ export function describeWriteUpImageUploadRefusal(apiError: ApiError): string {
       return "The image could not be uploaded. Check your connection and try again.";
     default:
       return "The image could not be uploaded. Try again.";
+  }
+}
+
+/**
+ * The SAVED shape of this form, as a schema.
+ *
+ * A SEPARATE SCHEMA FROM THE SUBMISSION CONTRACT, and it must stay that way: that one describes a
+ * POSTABLE launch, this one a half-written draft, where every field may be `""` and nothing is
+ * required. Validating a draft against the submit contract would refuse exactly the drafts worth
+ * keeping. `TeardownWizardDraftSchema` is the precedent.
+ */
+export const ShowcaseLaunchFormDraftSchema: z.ZodType<ShowcaseLaunchFormDraft> = z
+  .object({
+    title: z.string(),
+    tagline: z.string(),
+    summary: z.string(),
+    writeUp: z.string(),
+    callToActionLabel: z.string(),
+    callToActionUrl: z.string(),
+    teamRows: z.array(
+      z
+        .object({
+          rowId: z.string(),
+          displayName: z.string(),
+          handle: z.string(),
+          role: z.string(),
+        })
+        .strip(),
+    ),
+    builtFromBlueprintSlug: z.string(),
+    launchedOnDate: z.string(),
+    difficulty: z.union([z.enum(BLUEPRINT_DIFFICULTIES), z.literal("")]),
+    costMinimumText: z.string(),
+    costMaximumText: z.string(),
+    tagsText: z.string(),
+    acceptedLaunchStatementIds: z.array(z.enum(SHOWCASE_LAUNCH_STATEMENT_IDS)),
+    uploadedWriteUpImages: z.array(BlueprintWriteUpImageSchema),
+    stagedHeadingImage: ShowcaseHeadingImageSchema.nullable(),
+  })
+  .strip();
+
+/**
+ * Parses a stored draft document back into form state, or `null` if it cannot be reopened.
+ *
+ * PURE, so the composer can call it during render while seeding. Malformed JSON and an unrecognised
+ * shape collapse to one `null`: both mean the same thing to the maker.
+ */
+export function restoreShowcaseLaunchFormDraft(
+  storedDocument: string,
+): ShowcaseLaunchFormDraft | null {
+  try {
+    const parsedDocument: unknown = JSON.parse(storedDocument);
+    const validation = ShowcaseLaunchFormDraftSchema.safeParse(parsedDocument);
+    return validation.success ? validation.data : null;
+  } catch {
+    return null;
   }
 }

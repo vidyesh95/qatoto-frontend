@@ -3,6 +3,11 @@
 // `useUploadShowcaseWriteUpImageMutation`, both against the Express backend.
 "use client";
 
+import { useSearchParams } from "next/navigation";
+
+import DraftAutosaveStatus from "@/components/home/blueprints/shared/draft-autosave-status";
+import { useMyDraftQuery } from "@/hooks/blueprints/drafts";
+import { useBlueprintDraftAutosave } from "@/hooks/blueprints/use-draft-autosave";
 import { useRef, useState } from "react";
 
 import LaunchStatements, {
@@ -21,6 +26,7 @@ import {
   describeWriteUpImageCheckFailure,
   describeWriteUpImageUploadRefusal,
   EMPTY_SHOWCASE_LAUNCH_FORM_DRAFT,
+  restoreShowcaseLaunchFormDraft,
   findShowcaseFieldPosition,
   insertMarkdownImageAtSelection,
   readShowcaseLaunchRefusalFieldErrors,
@@ -41,6 +47,7 @@ import {
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import {
   useSubmitShowcaseMutation,
+  useUploadShowcaseHeadingImageMutation,
   useUploadShowcaseWriteUpImageMutation,
 } from "@/hooks/blueprints/showcase-authoring";
 import { useResettableAttemptIdempotencyKey } from "@/hooks/use-attempt-idempotency-key";
@@ -175,6 +182,49 @@ export default function ShowcaseLaunchComposer({
   const headingImagePick = useHeadingImagePick();
   const submitMutation = useSubmitShowcaseMutation();
   const uploadWriteUpImageMutation = useUploadShowcaseWriteUpImageMutation();
+  const uploadHeadingImageMutation = useUploadShowcaseHeadingImageMutation();
+
+  const resumeDraftId = useSearchParams().get("draftId");
+  const resumeDraftQuery = useMyDraftQuery(resumeDraftId);
+  const resumedDraft = resumeDraftQuery.data;
+
+  /** Armed by the first real edit — see `use-draft-autosave.ts` for why a pristine form never saves. */
+  const [hasMakerEdited, setHasMakerEdited] = useState(false);
+  const [resumeError, setResumeError] = useState<string | null>(null);
+  const [headingImageUploadMessage, setHeadingImageUploadMessage] = useState<string | null>(null);
+
+  // SEEDS THE FORM FROM A RESUMED DRAFT during render, the pattern written up in `teardown-wizard`.
+  const [seededDraftId, setSeededDraftId] = useState<string | null>(null);
+  if (resumedDraft !== undefined && seededDraftId !== resumedDraft.draftId) {
+    setSeededDraftId(resumedDraft.draftId);
+    const restored = restoreShowcaseLaunchFormDraft(resumedDraft.document);
+    if (restored === null) {
+      setResumeError(
+        "That saved draft could not be reopened. It may have been saved by an older version of this form.",
+      );
+    } else {
+      setFormDraft(restored);
+    }
+  }
+
+  const autosaveState = useBlueprintDraftAutosave({
+    arm: "showcase_launch",
+    documentJson: JSON.stringify(formDraft),
+    label: formDraft.title.trim() || formDraft.tagline.trim() || "Untitled launch",
+    isSavable: hasMakerEdited,
+    resumedDraft,
+  });
+
+  /**
+   * The draft an upload should attach itself to, once one exists.
+   *
+   * ⚠️ WITHOUT IT AN UPLOADED IMAGE IS REAPED IN A DAY. The server deletes any upload nothing points
+   * at after 24 hours, and a draft is not a launch — so an image staged before the first autosave
+   * has landed carries no draft id and is on that clock. That is not a bug worth engineering around:
+   * the first save happens 2.5 seconds after the first keystroke, and a maker who uploads an image
+   * and then abandons the page for a day has no draft to lose it from either.
+   */
+  const stagedDraftId = resumeDraftId ?? seededDraftId;
   // Read and written only in handlers, never during render.
   const writeUpTextAreaRef = useRef<HTMLTextAreaElement>(null);
   const writeUpImageInputRef = useRef<HTMLInputElement>(null);
@@ -197,6 +247,7 @@ export default function ShowcaseLaunchComposer({
     buildNextFormDraft: (previousFormDraft: ShowcaseLaunchFormDraft) => ShowcaseLaunchFormDraft,
   ): void {
     if (submitMutation.isPending) return;
+    setHasMakerEdited(true);
     resetIdempotencyKey();
     setFormDraft(buildNextFormDraft);
     // EDITING ANYTHING CLEARS THE LAST VERDICT: the errors describe a draft that no longer exists, and
@@ -213,8 +264,18 @@ export default function ShowcaseLaunchComposer({
   const rowPreviewProps = {
     title: formDraft.title,
     tagline: formDraft.tagline,
+    /*
+     * THE LOCAL PREVIEW FIRST, THE STORED ADDRESS SECOND, and the order matters on a resume.
+     *
+     * A freshly picked file has a `blob:` preview the instant it is accepted, before the upload
+     * finishes, so the maker sees their image immediately. A RESUMED draft has no pick state at all
+     * — the `File` is long gone — and its cover comes back from the stored URL. Reversing these
+     * would show the uploaded copy a beat late on every pick.
+     */
     headingImageUrl:
-      headingImagePickState.status === "ready" ? headingImagePickState.previewUrl : null,
+      headingImagePickState.status === "ready"
+        ? headingImagePickState.previewUrl
+        : (formDraft.stagedHeadingImage?.url ?? null),
     launchedAtIsoInstant:
       formDraft.launchedOnDate === "" ? null : buildMiddayInstantForDate(formDraft.launchedOnDate),
     isBuiltFromTeardown: formDraft.builtFromBlueprintSlug !== "",
@@ -262,9 +323,11 @@ export default function ShowcaseLaunchComposer({
    */
   const postBlockedReason = isWriteUpImageBusy
     ? "Wait for the image to finish uploading into the write-up."
-    : headingImagePickState.status !== "ready"
-      ? "Add a square heading image under Heading image."
-      : describeLaunchStatementGap(formDraft.acceptedLaunchStatementIds);
+    : uploadHeadingImageMutation.isPending
+      ? "Wait for the cover image to finish uploading."
+      : formDraft.stagedHeadingImage === null
+        ? "Add a square heading image under Heading image."
+        : describeLaunchStatementGap(formDraft.acceptedLaunchStatementIds);
 
   // The server's field refusals replace the client's, which were cleared when Post was pressed.
   const displayedFieldErrors =
@@ -299,6 +362,30 @@ export default function ShowcaseLaunchComposer({
     writeUpImageInputRef.current?.click();
   }
 
+  /**
+   * Runs the local checks, then stages the cover so a draft can carry it.
+   *
+   * ⚠️ **UPLOADED HERE RATHER THAN HELD AS A `File` UNTIL POST**, which is the change that makes a
+   * showcase draft survive a resume at all. The local checks still run first and are still only a
+   * courtesy — the server repeats every one of them on the way in.
+   */
+  async function handleHeadingImagePicked(file: File): Promise<void> {
+    setHeadingImageUploadMessage(null);
+    const acceptedFile = await headingImagePick.pickFile(file);
+    // Refused locally. `pickState` already says why, under the picker.
+    if (acceptedFile === null) return;
+
+    const uploadResult = await uploadHeadingImageMutation.mutateAsync({
+      imageFile: acceptedFile,
+      ...(stagedDraftId === null ? {} : { draftId: stagedDraftId }),
+    });
+    if (!uploadResult.success) {
+      setHeadingImageUploadMessage(uploadResult.error.message);
+      return;
+    }
+    applyFormPatch({ stagedHeadingImage: uploadResult.data });
+  }
+
   async function handleWriteUpImageFilePicked(imageFile: File): Promise<void> {
     const writeUpLength = formDraft.writeUp.length;
     const insertionSelection = pendingImageSelectionRef.current ?? {
@@ -318,38 +405,42 @@ export default function ShowcaseLaunchComposer({
     }
 
     setWriteUpImageUploadState({ status: "uploading", fileName: imageFile.name });
-    uploadWriteUpImageMutation.mutate(imageFile, {
-      onSuccess: (uploadResult) => {
-        if (!uploadResult.success) {
+    uploadWriteUpImageMutation.mutate(
+      { imageFile, ...(stagedDraftId === null ? {} : { draftId: stagedDraftId }) },
+      {
+        onSuccess: (uploadResult) => {
+          if (!uploadResult.success) {
+            setWriteUpImageUploadState({
+              status: "refused",
+              message: describeWriteUpImageUploadRefusal(uploadResult.error),
+            });
+            return;
+          }
+          const uploadedImage = uploadResult.data;
+          applyFormUpdate((previousFormDraft) => ({
+            ...previousFormDraft,
+            writeUp: insertMarkdownImageAtSelection(
+              previousFormDraft.writeUp,
+              insertionSelection,
+              buildWriteUpImageAltText(imageFile.name),
+              uploadedImage.url,
+            ),
+            uploadedWriteUpImages: [...previousFormDraft.uploadedWriteUpImages, uploadedImage],
+          }));
+          setWriteUpImageUploadState({ status: "idle" });
+        },
+        onError: () =>
           setWriteUpImageUploadState({
             status: "refused",
-            message: describeWriteUpImageUploadRefusal(uploadResult.error),
-          });
-          return;
-        }
-        const uploadedImage = uploadResult.data;
-        applyFormUpdate((previousFormDraft) => ({
-          ...previousFormDraft,
-          writeUp: insertMarkdownImageAtSelection(
-            previousFormDraft.writeUp,
-            insertionSelection,
-            buildWriteUpImageAltText(imageFile.name),
-            uploadedImage.url,
-          ),
-          uploadedWriteUpImages: [...previousFormDraft.uploadedWriteUpImages, uploadedImage],
-        }));
-        setWriteUpImageUploadState({ status: "idle" });
+            message: "The image could not be uploaded. Check your connection and try again.",
+          }),
       },
-      onError: () =>
-        setWriteUpImageUploadState({
-          status: "refused",
-          message: "The image could not be uploaded. Check your connection and try again.",
-        }),
-    });
+    );
   }
 
   function handlePostClick(): void {
-    if (headingImagePickState.status !== "ready") return;
+    // The cover is already stored; the draft carries its id. Nothing is attached to this request.
+    if (formDraft.stagedHeadingImage === null) return;
 
     const collected = collectShowcaseSubmission(formDraft);
     if (!collected.ok) {
@@ -362,7 +453,6 @@ export default function ShowcaseLaunchComposer({
     submitMutation.mutate(
       {
         draft: collected.submission,
-        headingImageFile: headingImagePickState.file,
         idempotencyKey: getIdempotencyKey(),
       },
       {
@@ -385,6 +475,15 @@ export default function ShowcaseLaunchComposer({
 
       {/* A DISABLED FIELDSET WHILE POSTING locks every input, select and button inside in one place,
           so nothing can change the draft a running request was built from. */}
+      {/* A DRAFT THAT WOULD NOT REOPEN. Said once, and the form below is the EMPTY one rather than
+          a half-restored one: a partly-applied draft is worse than none, because the maker cannot
+          tell which fields are theirs. */}
+      {resumeError === null ? null : (
+        <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+          {resumeError}
+        </div>
+      )}
+
       <fieldset disabled={isPosting} className="mt-8 min-w-0 space-y-8">
         <FormSection title="The build">
           <LabeledTextInput
@@ -422,13 +521,25 @@ export default function ShowcaseLaunchComposer({
             onFilePicked={(file) => {
               // A different image is a different attempt, for the reason the key's comment gives.
               resetIdempotencyKey();
-              void headingImagePick.pickFile(file);
+              void handleHeadingImagePicked(file);
             }}
             onRemove={() => {
               resetIdempotencyKey();
               headingImagePick.clearPick();
+              setHeadingImageUploadMessage(null);
+              applyFormPatch({ stagedHeadingImage: null });
             }}
           />
+          {/* THE SERVER'S REFUSAL, under the control that caused it. The picker shows LOCAL refusals
+              from its own `pickState`; this is the upload being turned down after those passed. */}
+          {headingImageUploadMessage === null ? null : (
+            <p role="alert" className="text-xs leading-4 text-destructive">
+              {headingImageUploadMessage}
+            </p>
+          )}
+          {uploadHeadingImageMutation.isPending ? (
+            <p className="text-xs text-muted-foreground">Uploading the cover image…</p>
+          ) : null}
           {/* THE LIVE PREVIEW SITS WITH THE IMAGE, because the image is the one field a maker cannot
               judge from the form alone: what matters is how it reads beside the name at 64px. */}
           <div className="rounded-xl border border-border bg-card p-4">
@@ -752,6 +863,11 @@ export default function ShowcaseLaunchComposer({
         {postBlockedReason === null ? null : (
           <p className="max-w-md text-xs text-muted-foreground">{postBlockedReason}</p>
         )}
+      </div>
+
+      {/* BESIDE POST, where a maker looks when deciding whether it is safe to leave. */}
+      <div className="mt-3">
+        <DraftAutosaveStatus state={autosaveState} />
       </div>
     </div>
   );

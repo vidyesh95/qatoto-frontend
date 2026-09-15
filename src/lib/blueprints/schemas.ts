@@ -1980,6 +1980,25 @@ export const TeardownBlueprintSchema = z
  * sets `width`, `height` and `aspect-ratio` from these numbers, and fills the reserved box with
  * `blurDataUrl` until the file loads.
  */
+/**
+ * A cover image staged before its launch exists.
+ *
+ * ⚠️ `headingImageId` IS THE FIELD THE DRAFT CARRIES, and the reason this schema exists at all. The
+ * URL is for showing the maker their own preview; the id is what the submit sends so the server can
+ * claim the row it named. A draft storing only the URL would leave the server unable to tell which
+ * row to claim, and a client-supplied URL is not something a submit may trust anyway.
+ */
+export const ShowcaseHeadingImageSchema = z
+  .object({
+    headingImageId: z.string(),
+    url: z.string(),
+    widthPx: z.number().int().positive(),
+    heightPx: z.number().int().positive(),
+    blurDataUrl: z.string(),
+  })
+  .strip();
+export type ShowcaseHeadingImage = z.infer<typeof ShowcaseHeadingImageSchema>;
+
 export const BlueprintWriteUpImageSchema = z
   .object({
     url: createHttpsOrSiteRelativeUrlSchema(2048),

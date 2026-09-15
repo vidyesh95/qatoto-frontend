@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 
 import CaseStudyAuthoringPage from "@/components/home/blueprints/case-studies/authoring/case-study-authoring-page";
@@ -19,7 +20,13 @@ export const metadata: Metadata = {
 export default function NewCaseStudyRoute() {
   return (
     <div className="px-4 pt-5 pb-12 lg:px-6">
-      <CaseStudyAuthoringPage />
+      {/* REQUIRED BY `?draftId=`, not optional tidiness. The composer reads `useSearchParams()` to
+          resume a saved draft, and under Cache Components a component that does so must sit under a
+          Suspense boundary or the build refuses the route. `/blueprints/teardowns/new` has carried
+          this since it gained the same parameter. */}
+      <Suspense fallback={<p className="text-sm text-muted-foreground">Loading the form…</p>}>
+        <CaseStudyAuthoringPage />
+      </Suspense>
     </div>
   );
 }
