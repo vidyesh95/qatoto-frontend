@@ -8,41 +8,40 @@ pipeline story; deep features live on sub-routes.
 
 **Read alongside:**
 
-- [R_AND_D_BACKEND_STRUCTURE.md](R_AND_D_BACKEND_STRUCTURE.md) — the API contract this surface will
-  consume. **Five of its six domains are shipped and reachable today**; only §10 (Project Immortal)
-  is pending. Section references below like "backend §7A" point there.
+- `R_AND_D_BACKEND_STRUCTURE.md` (backend repo — see [BACKEND_DOCS.md](BACKEND_DOCS.md)) — the API contract this surface
+  consumes. Section references below like "backend §7A" point there.
 - [PROOF_OF_EFFORT_SPEC.md](PROOF_OF_EFFORT_SPEC.md) — the Slicing Pie math and verification
   pipeline the `/proof-of-effort` route renders.
-- [ESCROW_LEDGER_STRUCTURE.md](ESCROW_LEDGER_STRUCTURE.md) — where the escrow ledger design went
+- `ESCROW_LEDGER_STRUCTURE.md` (backend repo — see [BACKEND_DOCS.md](BACKEND_DOCS.md)) — where the escrow ledger design went
   (the **commerce** domain). It is not part of this surface any more.
 - [CLAUDE.md](CLAUDE.md) — thin-client invariant, naming rules, current phase.
 
-> **Phase note: integration is finished except for Project Immortal.** Every route on this surface
+> **Phase note: integration is complete.** Every route on this surface
 > reads the Express backend, **every shipped write has a control on a page**, **every long list pages
-> past its first screen**, and the five mock sheets that posted nowhere are gone or wired. §18 is the
+> past its first screen**, and mock sheets that posted nowhere are gone or wired. §18 is the
 > phase order; §19 is the per-file transport map.
 >
-> | Phase                                                                                                              | State                                    |
-> | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
-> | **0 · foundations** — `src/lib/rnd/`, `src/lib/server-http.ts`, `QueryProvider` in `(home)`                        | ✅ done                                  |
-> | **1 · public discovery reads** — landing, knowledge-hub, problem-map, talent, team-building, go-to-market, funding | ✅ done                                  |
-> | **2 · projects & detail** · **3 · workshop & daily logs**                                                          | ✅ done                                  |
-> | **4 · proof of effort** — ledger, verification, disputes, integrations, audit chain, pie bake                      | ✅ done                                  |
-> | **5 · compensation & governance** — agreements, statements, payments, `/governance/summary`                        | ✅ done                                  |
-> | **K · keyset paging** — six lists made pageable; the rest of each ledger, feed and index is reachable              | ✅ done                                  |
-> | **6 · Project Immortal**                                                                                           | 🚫 **blocked** — no backend exists (§18) |
+> | Phase                                                                                                              | State   |
+> | ------------------------------------------------------------------------------------------------------------------ | ------- |
+> | **0 · foundations** — `src/lib/rnd/`, `src/lib/server-http.ts`, `QueryProvider` in `(home)`                        | ✅ done |
+> | **1 · public discovery reads** — landing, knowledge-hub, problem-map, talent, team-building, go-to-market, funding | ✅ done |
+> | **2 · projects & detail** · **3 · workshop & daily logs**                                                          | ✅ done |
+> | **4 · proof of effort** — ledger, verification, disputes, integrations, audit chain, pie bake                      | ✅ done |
+> | **5 · compensation & governance** — agreements, statements, payments, `/governance/summary`                        | ✅ done |
+> | **K · keyset paging** — six lists made pageable; the rest of each ledger, feed and index is reachable              | ✅ done |
+> | **6 · research programmes** — `/research-programs` index, detail, tree, papers, wizard, Immortal as a row          | ✅ done |
+> | **7 · import intelligence** — commodity index, bilateral import volumes, domestic substitution                     | ✅ done |
 >
-> **The two compliance items are now built.** The dispute/override screen (GDPR Art. 22
+> **The two compliance items are built.** The dispute/override screen (GDPR Art. 22
 > contestability) and the integration-consent screen (EU AI Act Art. 14 human oversight) were the
 > two surfaces §18 flagged as legally weighted, and both were endpoints no screen called. They are
 > screens now — see `dispute-window-tab.tsx`, `dispute-actions-island.tsx`,
 > `claim-detail-disclosure.tsx` and `integration-consent-tab.tsx`.
 >
-> **The `TRANSPORT:` banner on line 1 of every component is the authority**, not this doc. Four
-> values, a closed set: `server-fetch` · `client-query` · `props-only` · `mock`. So
-> `grep -rn "TRANSPORT: mock" src/components/home/research-and-development/` is the live list of
-> what is still fabricated — **exactly one file now**, `project-immortal-page.tsx` — and it cannot
-> drift the way a hand-maintained table does.
+> **The `TRANSPORT:` banner on line 1 of every component is the authority**, not this doc. Three
+> values across R&D: `server-fetch` · `client-query` · `props-only`.
+> `grep -rn "TRANSPORT: mock" src/components/home/research-and-development/` returns **NOTHING**, which
+> is the check that the entire vertical is wired to the backend without mock data.
 >
 > §11–§14 were written as a spec for this work. They are now **partly a changelog**: each section
 > says which of its rows landed and which are still owed.
@@ -75,12 +74,12 @@ Everything marked ✅ is built — those rows are an inventory, not a plan. **Th
 | Types re-export composer | [src/types/research-and-development.ts](src/types/research-and-development.ts)                    | ✅ kept deliberately — ~55 importers use the flat specifier and must keep working                                                                                                                                                                          |
 | Mocks                    | [src/mocks/research-and-development/](src/mocks/research-and-development/)                        | ◐ **16 leaf files** behind 2 composers — phase 1 deleted seven (§1.6 of the plan: insights, problem reports, trending signals, talent, suppliers + launch readiness, investor confidence, and the stage-label map, which moved to `src/lib/rnd/labels.ts`) |
 | Proof-of-Effort surface  | [proof-of-effort-page.tsx](src/components/home/research-and-development/proof-of-effort-page.tsx) | ✅ **its own route with 6 tabs** (§5b) — Integrations joined the original five                                                                                                                                                                             |
-| Project Immortal         | [page.tsx](<src/app/(home)/research-and-development/projects/project-immortal/page.tsx>)          | ✅ see §4b; the old `/project-immortal` route is a 6-line `redirect()` shim                                                                                                                                                                                |
+| Project Immortal         | [page.tsx](<src/app/(home)/research-and-development/projects/project-immortal/page.tsx>)          | ✅ row in `/programs/project-immortal`; old routes redirect                                                                                                                                                                                                |
 | Sidebar nav              | [sidebar.tsx](src/components/home/layout/sidebar.tsx)                                             | ✅ top-level "R&D" (`science`) + a 5-item **Research and Development** section (§15 Q8)                                                                                                                                                                    |
 | Mobile bottom nav        | [mobile-bottom-nav.tsx:36](src/components/home/layout/mobile-bottom-nav.tsx#L36)                  | ✅ single R&D tab; sub-path matching works, no sub-links                                                                                                                                                                                                   |
 | Navbar breadcrumb        | [navbar.tsx](src/components/home/layout/navbar.tsx)                                               | ✅ `RESEARCH_AND_DEVELOPMENT_SUBPAGES` (9 entries — 5 originals + the 4 stage routes) + a `prettifySlug` fallthrough. The stage entries are explicit because the fallthrough renders "Build log", not "Build & Daily Logs"                                 |
 | Network layer            | [src/lib/rnd/](src/lib/rnd/) + [src/lib/server-http.ts](src/lib/server-http.ts)                   | ✅ **built** (§18 phase 0) — five schema/api module pairs plus `format`, `discovery-format`, `map-projection`, `filter-href`, `view-state`, `labels`. `QueryProvider` now mounted in `(home)/layout.tsx`                                                   |
-| Transport labelling      | every component's first line                                                                      | ✅ **137/137 labelled** over a closed 4-value set (§19): 15 `server-fetch`, 34 `client-query`, 87 `props-only`, 1 `mock`. Recount with the grep in §19 rather than trusting this number                                                                    |
+| Transport labelling      | every component's first line                                                                      | ✅ **100% labelled** over `server-fetch`, `client-query`, `props-only` (0 `mock`). Recount with the grep in §19 rather than trusting this number                                                                                                           |
 
 Pattern donors elsewhere in the repo:
 

@@ -6,12 +6,12 @@ trade-service connectors.
 
 **Read alongside:**
 
-- [STORE_BACKEND_STRUCTURE.md](STORE_BACKEND_STRUCTURE.md) — the proposed Express data model,
+- `STORE_BACKEND_STRUCTURE.md` (backend repo — see [BACKEND_DOCS.md](BACKEND_DOCS.md)) — the Express data model,
   endpoint contract, state machines, and rollout order.
 - `/studio/products` (`src/components/studio/pages/products-page.tsx`) — the shipped seller product manager
   and listing wizard.
 - [R_AND_D_STRUCTURE.md](R_AND_D_STRUCTURE.md) — the separate R&D go-to-market supplier directory.
-- [ESCROW_LEDGER_STRUCTURE.md](ESCROW_LEDGER_STRUCTURE.md) — project-funding ledger context; not a
+- `ESCROW_LEDGER_STRUCTURE.md` (backend repo — see [BACKEND_DOCS.md](BACKEND_DOCS.md)) — project-funding ledger context; not a
   claim that store checkout is escrowed.
 - [CLAUDE.md](CLAUDE.md) — thin-client, defensive parsing, UI state, and naming rules.
 
@@ -19,31 +19,13 @@ trade-service connectors.
 > authoring surface. Authenticated buyer procurement remains in the `(home)` shell; seller and
 > service-provider work queues belong in `(studio)`.
 >
-> **Status:** the store is a high-fidelity **mock prototype with one wired slice**. It has seven
-> app-route files, **67** store components, 37 mock category slugs, five pathways, and one static
-> product detail page. Cart, orders, logistics, inquiry, chat, reviews, delivery and trade protection
-> are mock or placeholder UI.
->
-> **The one exception, and it is the reference implementation for everything else:** the organization
-> storefront (`/store/organizations/[organizationSlug]`) is server-fetched and **safely parsed** —
-> `src/lib/store/organizations.schemas.ts` takes `unknown` through `.strip()` schemas with the wire
-> enums verbatim, and `organization-storefront.tsx` plus its fourteen `sections/organization/*`
-> children carry real `TRANSPORT:` banners. Copy that file's shape when wiring the catalog; do not
-> invent a second discipline.
->
-> **What still stands between the store and the backend, measured rather than assumed:**
->
-> - `src/lib/store.ts` reads `QATOTO_STORE_API_URL`, which is **unset**, so all nine of its getters
->   fall through to mocks on every request. The seller surface reads a _different_ variable,
->   `NEXT_PUBLIC_API_URL` (`src/lib/api.ts:2`). §5.1's instruction to retire the former is the
->   first task, because until it is done no wiring can be observed at all.
-> - Eight of nine getters go through `storeFetch<T>`, which annotates `res.json()` as `T` — a type
->   assertion in disguise, and a Pattern 2 violation. Only `getOrganizationStorefront` uses
->   `storeFetchUnknown` + Zod.
-> - The backend it should be talking to is **fully built**: `STORE_BACKEND_STRUCTURE.md` (backend repo — see `BACKEND_DOCS.md`) Phases
->   0–14 ship 18 public `/store/*` reads, ~110 `/commerce/*` routes and 14 `/products/*` routes,
->   verified against the backend source. The store is not blocked on the backend; it is unwired.
->   Appendix A23–A27 there records the only five real gaps found from this side.
+> **Status: Shipped & Wired.** The Store was migrated and fully wired to the Express backend across
+> catalog discovery, organization storefronts, cart, checkout, orders, reviews, inquiries, RFQs, quotes,
+> and provider logistics. `src/mocks/store-mocks.ts` and `src/types/store.ts` were deleted, `src/lib/store.ts`
+> was reduced to pure string helpers (`prettifySlugForDisplay`), and all commerce data fetches now route
+> through typed domain modules in `src/lib/store/*.api.ts` with Zod boundary parsing and React Query hooks
+> (`src/hooks/store/`). This document preserves the target route hierarchy and architecture plan that
+> guided that implementation.
 
 ---
 

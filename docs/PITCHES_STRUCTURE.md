@@ -8,7 +8,7 @@ The frontend + backend plan for `/studio/pitches`, its public counterpart under
 - [R_AND_D_STRUCTURE.md](R_AND_D_STRUCTURE.md) §7 (funding), §15.7 (relationship to the studio
   surfaces — this doc closes the half of it that was left open), §18–§19 (phase order and the
   `TRANSPORT:` transport map every file here follows).
-- [STUDIO_BACKEND_STRUCTURE.md](STUDIO_BACKEND_STRUCTURE.md) — video upload and the video-document
+- `STUDIO_BACKEND_STRUCTURE.md` (backend repo — see [BACKEND_DOCS.md](BACKEND_DOCS.md)) — video upload and the video-document
   rail a pitch reuses for its deck.
 - [CLAUDE.md](CLAUDE.md) — thin-client invariant, Zod boundary parsing, discriminated-union UI
   states, wire casing.

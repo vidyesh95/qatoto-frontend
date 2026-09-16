@@ -48,7 +48,7 @@ To maintain a consistent codebase, we use `oxfmt` for formatting. **You must for
 We have provided a script to make this easy:
 
 ```bash
-pnpm run format
+pnpm fmt
 ```
 
 This will run `oxfmt` on the entire project and apply any necessary changes.

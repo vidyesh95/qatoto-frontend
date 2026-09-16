@@ -1,8 +1,12 @@
 # Category attributes — the frontend half
 
 Per-category specification fields, so a buyer can filter and compare listings instead of reading
-prose. **Nothing here is built.** This is the frontend contract for
-`STORE_BACKEND_STRUCTURE.md` §20 and §21 (backend repo — see [BACKEND_DOCS.md](BACKEND_DOCS.md)).
+prose.
+
+> **Status: Wired & Live.** Category attributes are shipped across catalog reads (`src/lib/store/catalog.api.ts`),
+> the seller listing wizard (`src/components/studio/pages/create-listing-page.tsx`), and the staff
+> consoles (`/admin/categories` and `/admin/store-categories`). This document records the design contract
+> that guided that implementation against `STORE_BACKEND_STRUCTURE.md` §20 and §21 (backend repo — see [BACKEND_DOCS.md](BACKEND_DOCS.md)).
 
 **Read alongside:**
 

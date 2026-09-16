@@ -2,16 +2,15 @@
 
 Business/product spec for Qatoto's AI-driven compensation engine — the mechanism
 behind pillar 6 ("Daily Update Protocol") in [R_AND_D_STRUCTURE.md](R_AND_D_STRUCTURE.md).
-This doc is **strategy, not implementation** — no code here targets the current
-UI-phase build. Where the R&D frontend renders a piece of this (Daily Logs tab, Team
-equity, Governance ledger), those renders are **static mocks only**; the math and
-verification logic described below are entirely backend-owned, later phase.
+This doc is **strategy and product mechanism** — why Proof of Effort exists, how the math
+works, how fraud is defeated, and how the business sequences rollout. The R&D frontend surfaces
+rendering this (Daily Logs tab, Team equity, Governance ledger, Statement exports) are **fully wired**
+to the Express backend (`src/lib/rnd/*.api.ts`); the verification pipelines and compensation
+calculations are backend-owned.
 
 > Relationship to `R_AND_D_STRUCTURE.md`: that doc specs the **frontend surface**
-> (routes, components, mock shapes) for the pipeline UI-phase build. This doc specs
-> the **product mechanism** (why Proof of Effort exists, how the math works, how
-> fraud is defeated, how the business sequences rollout). Frontend implementers
-> should read `R_AND_D_STRUCTURE.md`; product/backend design should read this.
+> (routes, components, state management). Frontend implementers should read `R_AND_D_STRUCTURE.md`;
+> product and domain engineers should read this.
 
 ---
 
@@ -29,7 +28,7 @@ regulatory burden until there's capital to handle it.
 > It is not only a pricing choice. Charging a percentage of a transaction is one of the hooks
 > several US state money-transmitter definitions turn on, so free-and-non-custodial is a materially
 > simpler legal position than free-and-custodial or paid-and-non-custodial. See
-> [R_AND_D_BACKEND_STRUCTURE.md](R_AND_D_BACKEND_STRUCTURE.md) §7A.6.
+> `R_AND_D_BACKEND_STRUCTURE.md` §7A.6 (backend repo — see [BACKEND_DOCS.md](BACKEND_DOCS.md)).
 
 1. **Phase 1 — AI Chief of Staff (Months 1–8).** Focus solely on the Daily Update Protocol — teams
    log EOD updates (video or text), AI extracts what was claimed, verification grounds it against
@@ -95,7 +94,7 @@ reference. Never a grant, never an allotment, never an option award.
 > jurisdictions above, and making it is unauthorized-practice-of-law exposure in most US states.
 > Every equity surface carries a standing "not legal or tax advice" notice, and the product's job is
 > to make the lawyer's month cheap — not to replace them. See
-> [R_AND_D_BACKEND_STRUCTURE.md](R_AND_D_BACKEND_STRUCTURE.md) §9.11 and §7A.6 item 4.
+> `R_AND_D_BACKEND_STRUCTURE.md` §9.11 and §7A.6 item 4 (backend repo — see [BACKEND_DOCS.md](BACKEND_DOCS.md)).
 
 Takeaway: the value is a trustworthy record, team trust, and automation — not "AI analysis," and not
 a promise about legal execution that cannot be kept.
