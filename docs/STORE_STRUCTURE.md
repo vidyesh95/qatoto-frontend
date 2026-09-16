@@ -8,10 +8,8 @@ trade-service connectors.
 
 - [STORE_BACKEND_STRUCTURE.md](STORE_BACKEND_STRUCTURE.md) — the proposed Express data model,
   endpoint contract, state machines, and rollout order.
-- [STUDIO_PRODUCTS_STRUCTURE.md](STUDIO_PRODUCTS_STRUCTURE.md) — the shipped seller product manager
+- `/studio/products` (`src/components/studio/pages/products-page.tsx`) — the shipped seller product manager
   and listing wizard.
-- [STUDIO_PRODUCTS_BACKEND_STRUCTURE.md](STUDIO_PRODUCTS_BACKEND_STRUCTURE.md) — the shipped
-  seller-owned `/products/*` API.
 - [R_AND_D_STRUCTURE.md](R_AND_D_STRUCTURE.md) — the separate R&D go-to-market supplier directory.
 - [ESCROW_LEDGER_STRUCTURE.md](ESCROW_LEDGER_STRUCTURE.md) — project-funding ledger context; not a
   claim that store checkout is escrowed.

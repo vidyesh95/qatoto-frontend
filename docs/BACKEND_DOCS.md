@@ -18,8 +18,8 @@ deleted on 2026-08-27 rather than re-synced, and this file replaces them.
 `ESCROW_LEDGER_STRUCTURE.md` was byte-identical, which is a fork that has not drifted YET rather
 than one that will not.
 
-⚠️ **`STUDIO_PRODUCTS_BACKEND_STRUCTURE.md` and `ADMIN_STRUCTURE.md` STAY.** Despite the names, they
-exist only in this repo and have no upstream — deleting them would lose the only copy.
+⚠️ **`ADMIN_STRUCTURE.md` STAYS.** Despite the name, it
+exists only in this repo and has no upstream — deleting it would lose the only copy.
 
 ## Why they were deleted rather than brought up to date
 

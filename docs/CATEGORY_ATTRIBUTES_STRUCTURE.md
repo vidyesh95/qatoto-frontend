@@ -11,8 +11,8 @@ prose. **Nothing here is built.** This is the frontend contract for
   the authority for every enum value and column on this page.
 - [STORE_STRUCTURE.md](STORE_STRUCTURE.md) — the buyer surface this extends, especially §7.3
   (search and filters) and §8 (product detail).
-- [STUDIO_PRODUCTS_STRUCTURE.md](STUDIO_PRODUCTS_STRUCTURE.md) — the shipped seller wizard this
-  adds a step to.
+- `/studio/products/create` (`src/components/studio/pages/create-listing-page.tsx`) — the shipped
+  seller wizard this adds a step to.
 - [CLAUDE.md](../CLAUDE.md) — thin-client, defensive parsing, view states, and the wire-casing
   table that governs `attributeKey`.
 
