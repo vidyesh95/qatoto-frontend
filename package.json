@@ -12,7 +12,8 @@
     "fmt:check": "oxfmt --check",
     "fixtures:blueprint-models": "node scripts/generate-blueprint-fixture-models.mts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "bench": "vite-node --config vitest.config.mts bench/index.bench.ts"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.7.5",
@@ -32,6 +33,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@codspeed/tinybench-plugin": "^5.7.1",
     "@eslint/eslintrc": "^3.3.7",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
@@ -55,7 +57,9 @@
     "oxlint-tsgolint": "^7.0.2001",
     "react-scan": "^0.5.7",
     "tailwindcss": "^4.3.3",
+    "tinybench": "5.1.0",
     "typescript": "^7.0.2",
+    "vite-node": "^6.0.0",
     "vitest": "^5.0.0"
   },
   "engines": {

@@ -1,5 +1,7 @@
 # [Qatoto](https://qatoto.com/) : Qatoto is a B2B pipeline that carries a physical product from an idea to a shipped unit
 
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/vidyesh95/qatoto-frontend?utm_source=badge)
+
 pitch, form a team, raise, build under a daily-update protocol, ship through the platform's
 store and logistics. One identity, one ledger, one audience across all five stages.
 
@@ -39,7 +41,16 @@ pnpm lint:fix     # Run oxlint --fix
 pnpm fmt          # Format code with oxfmt
 pnpm fmt:check    # Check code formatting with oxfmt
 pnpm test         # Run unit tests with Vitest
+pnpm bench        # Run the performance benchmarks with tinybench
 ```
+
+## Benchmarks
+
+Benchmarks live in `bench/` and cover the pure logic on the hot paths — the feed boundary
+schemas, the feed view models, watch-history grouping, the blueprint explosion geometry and the
+chart scales. They run locally with `pnpm bench` and in CI on every pull request through
+[CodSpeed](https://app.codspeed.io/vidyesh95/qatoto-frontend), which measures them in CPU
+simulation mode so the numbers are comparable between commits.
 
 ## E2E Tests
 
