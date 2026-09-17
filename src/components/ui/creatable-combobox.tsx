@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 
 import { createPortal } from "react-dom";
 
@@ -25,6 +25,19 @@ import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 // The listbox is portaled to document.body and positioned `fixed` so it can be
 // used inside a clipping scroll container (an overflow-y-auto sheet body) as
 // well as in open page flow.
+
+function subscribeToNothing(): () => void {
+  return () => {};
+}
+
+function readPortalContainer(): HTMLElement | null {
+  return document.body;
+}
+
+/** No `document` on the server, so no portal target; the list only opens after interaction anyway. */
+function readPortalContainerOnServer(): HTMLElement | null {
+  return null;
+}
 
 // `query` exists only in the open variant, so the input's displayed value is
 // derived rather than stored — that is what makes Escape/blur revert for free.
@@ -260,6 +273,11 @@ export default function CreatableCombobox({
   helpText,
 }: CreatableComboboxProps) {
   const [comboboxState, setComboboxState] = useState<CreatableComboboxState>({ status: "closed" });
+  const portalContainer = useSyncExternalStore(
+    subscribeToNothing,
+    readPortalContainer,
+    readPortalContainerOnServer,
+  );
   const inputElementRef = useRef<HTMLInputElement | null>(null);
   const rowElementRefs = useRef<(HTMLLIElement | null)[]>([]);
 
@@ -523,6 +541,7 @@ export default function CreatableCombobox({
       {helpText && <p className="text-xs text-muted-foreground">{helpText}</p>}
 
       {comboboxState.status === "open" &&
+        portalContainer !== null &&
         createPortal(
           <ul
             id={comboboxListboxId}
@@ -580,7 +599,7 @@ export default function CreatableCombobox({
               );
             })}
           </ul>,
-          document.body,
+          portalContainer,
         )}
     </div>
   );

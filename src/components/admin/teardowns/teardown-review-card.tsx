@@ -80,11 +80,7 @@ export default function TeardownReviewCard({
   readonly submission: TeardownReviewItem;
 }) {
   const [moderatorNote, setModeratorNote] = useState("");
-  const [thumbnailUrl, setThumbnailUrl] = useState(() =>
-    submission.document.status === "present"
-      ? (submission.document.document.walkthroughVideo?.posterUrl ?? "")
-      : "",
-  );
+  const [thumbnailUrl, setThumbnailUrl] = useState(() => readInitialThumbnailUrl(submission));
   const [difficulty, setDifficulty] = useState<BlueprintDifficulty | "">("");
   const [desiredSlug, setDesiredSlug] = useState("");
   const [cardState, setCardState] = useState<CardState>({ status: "idle" });
@@ -93,9 +89,7 @@ export default function TeardownReviewCard({
   const refreshQueue = useRefreshTeardownReviewQueue();
   const { getIdempotencyKey, resetIdempotencyKey } = useResettableAttemptIdempotencyKey();
 
-  const trimmedNote = moderatorNote.trim();
-  const trimmedThumbnailUrl = thumbnailUrl.trim();
-  const trimmedSlug = desiredSlug.trim();
+  const isNoteEmpty = moderatorNote.trim() === "";
   const isBusy = cardState.status === "deciding";
 
   /**
@@ -104,41 +98,53 @@ export default function TeardownReviewCard({
    * REPLAY of the first body rather than the corrected one. Rotating before a send-back that never
    * reads those fields is unnecessary and harmless; a per-field branch would not be.
    */
-  function applyDecisionInput(applyChange: () => void): void {
-    if (isBusy) return;
-    applyChange();
+  function markDecisionInputChanged(): void {
     resetIdempotencyKey();
     if (cardState.status === "refused") setCardState({ status: "idle" });
   }
 
+  function handleModeratorNoteChange(nextNote: string): void {
+    if (isBusy) return;
+    setModeratorNote(nextNote);
+    markDecisionInputChanged();
+  }
+
+  function handleThumbnailUrlChange(nextThumbnailUrl: string): void {
+    if (isBusy) return;
+    setThumbnailUrl(nextThumbnailUrl);
+    markDecisionInputChanged();
+  }
+
+  function handleDifficultyChange(nextDifficulty: BlueprintDifficulty | ""): void {
+    if (isBusy) return;
+    setDifficulty(nextDifficulty);
+    markDecisionInputChanged();
+  }
+
+  function handleDesiredSlugChange(nextDesiredSlug: string): void {
+    if (isBusy) return;
+    setDesiredSlug(nextDesiredSlug);
+    markDecisionInputChanged();
+  }
+
   function decide(decision: DecisionKind): void {
     const parsedDecision = TeardownModerationDecisionSchema.safeParse(
-      decision === "published"
-        ? {
-            decision,
-            moderatorNote: trimmedNote === "" ? null : trimmedNote,
-            thumbnailUrl: trimmedThumbnailUrl,
-            difficulty,
-            desiredSlug: trimmedSlug === "" ? null : trimmedSlug,
-          }
-        : { decision, moderatorNote: trimmedNote },
+      buildModerationDecisionInput(decision, {
+        moderatorNote,
+        thumbnailUrl,
+        difficulty,
+        desiredSlug,
+      }),
     );
 
     if (!parsedDecision.success) {
-      /*
-       * ⚠️ EVERY ISSUE, NOT `issues[0]`. A publish carries four fields a moderator fills in, so a
-       * bad slug AND a bad thumbnail would otherwise surface one at a time — the second arriving
-       * after the first is fixed, reading as a new failure. `MutationErrorNotice` already renders a
-       * field map as a list.
-       */
-      const fieldErrors: Record<string, string[]> = {};
-      for (const issue of parsedDecision.error.issues) {
-        const fieldKey = issue.path.join(".") || "decision";
-        fieldErrors[fieldKey] = [...(fieldErrors[fieldKey] ?? []), issue.message];
-      }
       setCardState({
         status: "refused",
-        error: { code: "422", message: "That decision could not be sent.", fieldErrors },
+        error: {
+          code: "422",
+          message: "That decision could not be sent.",
+          fieldErrors: collectDecisionFieldErrors(parsedDecision.error.issues),
+        },
       });
       return;
     }
@@ -167,111 +173,43 @@ export default function TeardownReviewCard({
   }
 
   if (cardState.status === "decided") {
+    return <DecidedNotice title={submission.title} result={cardState.result} />;
+  }
+
+  if (submission.document.status === "client_unreadable") {
     return (
-      <article className={CARD_CLASS}>
-        <h2 className="text-sm font-medium">{submission.title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {cardState.result.moderationState === "published"
-            ? /*
-               * The address as TEXT, not a link. The whole `/blueprints` surface is de-indexed, and
-               * a moderator middle-clicking out of the console loses their place in the queue.
-               */
-              `Published at /blueprints/teardowns/${cardState.result.publicSlug ?? ""}.`
-            : "Sent back to the publisher with your note."}
-        </p>
-      </article>
+      <ClientUnreadableNotice
+        submission={submission}
+        issues={submission.document.issues}
+        onRefreshQueue={refreshQueue}
+      />
     );
   }
 
-  const submissionHeader = <SubmissionHeader submission={submission} />;
   const noteField = (
     <NoteField
       moderatorNote={moderatorNote}
       isBusy={isBusy}
-      onNoteChange={(nextNote) => applyDecisionInput(() => setModeratorNote(nextNote))}
+      onNoteChange={handleModeratorNoteChange}
     />
   );
   const refusalBlock =
     cardState.status === "refused" ? (
-      <div className="mt-3 space-y-2">
-        <MutationErrorNotice error={cardState.error} />
-        {cardState.error.code === "409" ? (
-          <button type="button" onClick={refreshQueue} className={QUIET_BUTTON_CLASS}>
-            Refresh the queue
-          </button>
-        ) : null}
-      </div>
+      <RefusalBlock error={cardState.error} onRefreshQueue={refreshQueue} />
     ) : null;
 
-  /**
-   * ⚠️ THIS CONSOLE COULD NOT READ IT, AND THAT IS NOT THE PUBLISHER'S FAULT.
-   *
-   * No decision is offered at all. A send-back note is the only thing they ever see, and sending
-   * somebody's survey back over a bug in our own parser is the one unrecoverable mistake available
-   * here. The issues are printed so they can go in a bug report.
-   */
-  if (submission.document.status === "client_unreadable") {
-    return (
-      <article className={CARD_CLASS}>
-        {submissionHeader}
-        <div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm">
-          <h3 className="font-medium text-destructive">This console could not read it</h3>
-          <p className="mt-1 text-muted-foreground">
-            The server holds a submission this build does not understand. That is a fault here, not
-            in the survey, so there is nothing to decide and no note to send. Report it with the
-            detail below.
-          </p>
-          <IssueList issues={submission.document.issues} />
-        </div>
-        <div className="mt-3">
-          <button type="button" onClick={refreshQueue} className={QUIET_BUTTON_CLASS}>
-            Refresh the queue
-          </button>
-        </div>
-      </article>
-    );
-  }
-
-  /**
-   * ⚠️ THE SERVER COULD NOT READ IT EITHER, so the survey really is unpublishable and a send-back is
-   * the remedy. The publish control is ABSENT rather than disabled: a greyed button invites a
-   * moderator to hunt for the condition that ungreys it, and there is none — `POST …/moderate` with
-   * `published` against this row is a hard 422.
-   */
   if (submission.document.status === "unparseable") {
     return (
-      <article className={CARD_CLASS}>
-        {submissionHeader}
-        <div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm">
-          <h3 className="font-medium text-destructive">This submission cannot be published</h3>
-          <p className="mt-1 text-muted-foreground">
-            It was written against an older version of the form (version{" "}
-            {submission.document.schemaVersion}) and no longer matches what a teardown has to carry.
-            Send it back and ask for a fresh survey — your note is the only thing the publisher
-            sees, so say what they should do rather than quoting the detail below.
-          </p>
-          <IssueList issues={submission.document.issues} />
-        </div>
-        <div className="mt-4 border-t border-[#CAC4D0]/60 pt-3">
-          {noteField}
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => decide("rejected")}
-              disabled={isBusy || trimmedNote === ""}
-              className={QUIET_BUTTON_CLASS}
-            >
-              {isBusy ? "Sending back…" : "Send back"}
-            </button>
-            {trimmedNote === "" ? (
-              <span className="text-[11px] text-muted-foreground">
-                Sending back needs a note. It is the only thing the publisher sees.
-              </span>
-            ) : null}
-          </div>
-          {refusalBlock}
-        </div>
-      </article>
+      <UnpublishableDecision
+        submission={submission}
+        schemaVersion={submission.document.schemaVersion}
+        issues={submission.document.issues}
+        noteField={noteField}
+        refusalBlock={refusalBlock}
+        isBusy={isBusy}
+        isNoteEmpty={isNoteEmpty}
+        onSendBack={() => decide("rejected")}
+      />
     );
   }
 
@@ -279,7 +217,7 @@ export default function TeardownReviewCard({
 
   return (
     <article className={CARD_CLASS}>
-      {submissionHeader}
+      <SubmissionHeader submission={submission} />
 
       <PermissionBlock provenance={payload.provenance} />
       <SurveyFacts provenance={payload.provenance} />
@@ -295,9 +233,7 @@ export default function TeardownReviewCard({
         expects="manufacturing"
       />
       <WalkthroughBlock walkthroughVideo={payload.walkthroughVideo} />
-      {payload.tags.length > 0 ? (
-        <p className="mt-3 text-xs text-muted-foreground">Tags: {payload.tags.join(", ")}</p>
-      ) : null}
+      <TagLine tags={payload.tags} />
 
       <div className="mt-4 border-t border-[#CAC4D0]/60 pt-3">
         {noteField}
@@ -313,68 +249,282 @@ export default function TeardownReviewCard({
           difficulty={difficulty}
           desiredSlug={desiredSlug}
           isBusy={isBusy}
-          onThumbnailUrlChange={(next) => applyDecisionInput(() => setThumbnailUrl(next))}
-          onDifficultyChange={(next) => applyDecisionInput(() => setDifficulty(next))}
-          onDesiredSlugChange={(next) => applyDecisionInput(() => setDesiredSlug(next))}
+          onThumbnailUrlChange={handleThumbnailUrlChange}
+          onDifficultyChange={handleDifficultyChange}
+          onDesiredSlugChange={handleDesiredSlugChange}
         />
 
-        {cardState.status === "confirmingPublish" ? (
-          <div className="mt-2 rounded-lg bg-muted/40 p-3">
-            <p className="text-xs">
-              Publishing gives this survey a public address and puts somebody else&apos;s product on
-              it. The address cannot be changed afterwards.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => decide("published")}
-                className={PRIMARY_BUTTON_CLASS}
-              >
-                Publish it
-              </button>
-              <button
-                type="button"
-                onClick={() => setCardState({ status: "idle" })}
-                className={QUIET_BUTTON_CLASS}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setCardState({ status: "confirmingPublish" })}
-              disabled={isBusy}
-              className={PRIMARY_BUTTON_CLASS}
-            >
-              {cardState.status === "deciding" && cardState.decision === "published"
-                ? "Publishing…"
-                : "Publish"}
-            </button>
-            <button
-              type="button"
-              onClick={() => decide("rejected")}
-              disabled={isBusy || trimmedNote === ""}
-              className={QUIET_BUTTON_CLASS}
-            >
-              {cardState.status === "deciding" && cardState.decision === "rejected"
-                ? "Sending back…"
-                : "Send back"}
-            </button>
-            {trimmedNote === "" ? (
-              <span className="text-[11px] text-muted-foreground">
-                Sending back needs a note. It is the only thing the publisher sees.
-              </span>
-            ) : null}
-          </div>
-        )}
+        <DecisionControls
+          cardState={cardState}
+          isBusy={isBusy}
+          isNoteEmpty={isNoteEmpty}
+          onRequestPublish={() => setCardState({ status: "confirmingPublish" })}
+          onConfirmPublish={() => decide("published")}
+          onCancelPublish={() => setCardState({ status: "idle" })}
+          onSendBack={() => decide("rejected")}
+        />
 
         {refusalBlock}
       </div>
     </article>
   );
+}
+
+/** The walkthrough poster is the only thumbnail a submission can suggest; an unreadable one has none. */
+function readInitialThumbnailUrl(submission: TeardownReviewItem): string {
+  return submission.document.status === "present"
+    ? (submission.document.document.walkthroughVideo?.posterUrl ?? "")
+    : "";
+}
+
+/** The body for `TeardownModerationDecisionSchema`: a publish carries four fields, a send-back one. */
+function buildModerationDecisionInput(
+  decision: DecisionKind,
+  fields: {
+    readonly moderatorNote: string;
+    readonly thumbnailUrl: string;
+    readonly difficulty: BlueprintDifficulty | "";
+    readonly desiredSlug: string;
+  },
+): unknown {
+  const trimmedNote = fields.moderatorNote.trim();
+  if (decision !== "published") return { decision, moderatorNote: trimmedNote };
+  const trimmedSlug = fields.desiredSlug.trim();
+  return {
+    decision,
+    moderatorNote: trimmedNote === "" ? null : trimmedNote,
+    thumbnailUrl: fields.thumbnailUrl.trim(),
+    difficulty: fields.difficulty,
+    desiredSlug: trimmedSlug === "" ? null : trimmedSlug,
+  };
+}
+
+/**
+ * ⚠️ EVERY ISSUE, NOT `issues[0]`. A publish carries four fields a moderator fills in, so a
+ * bad slug AND a bad thumbnail would otherwise surface one at a time — the second arriving
+ * after the first is fixed, reading as a new failure. `MutationErrorNotice` already renders a
+ * field map as a list.
+ */
+function collectDecisionFieldErrors(
+  issues: readonly { readonly path: readonly PropertyKey[]; readonly message: string }[],
+): Record<string, string[]> {
+  const fieldErrors: Record<string, string[]> = {};
+  for (const issue of issues) {
+    const fieldKey = issue.path.join(".") || "decision";
+    fieldErrors[fieldKey] = [...(fieldErrors[fieldKey] ?? []), issue.message];
+  }
+  return fieldErrors;
+}
+
+function DecidedNotice({
+  title,
+  result,
+}: {
+  readonly title: string;
+  readonly result: TeardownModerationResult;
+}) {
+  return (
+    <article className={CARD_CLASS}>
+      <h2 className="text-sm font-medium">{title}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {result.moderationState === "published"
+          ? /*
+             * The address as TEXT, not a link. The whole `/blueprints` surface is de-indexed, and
+             * a moderator middle-clicking out of the console loses their place in the queue.
+             */
+            `Published at /blueprints/teardowns/${result.publicSlug ?? ""}.`
+          : "Sent back to the publisher with your note."}
+      </p>
+    </article>
+  );
+}
+
+function RefusalBlock({
+  error,
+  onRefreshQueue,
+}: {
+  readonly error: ApiError;
+  readonly onRefreshQueue: () => void;
+}) {
+  return (
+    <div className="mt-3 space-y-2">
+      <MutationErrorNotice error={error} />
+      {error.code === "409" ? (
+        <button type="button" onClick={onRefreshQueue} className={QUIET_BUTTON_CLASS}>
+          Refresh the queue
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function SendBackHint({ isNoteEmpty }: { readonly isNoteEmpty: boolean }) {
+  if (!isNoteEmpty) return null;
+  return (
+    <span className="text-[11px] text-muted-foreground">
+      Sending back needs a note. It is the only thing the publisher sees.
+    </span>
+  );
+}
+
+/**
+ * ⚠️ THIS CONSOLE COULD NOT READ IT, AND THAT IS NOT THE PUBLISHER'S FAULT.
+ *
+ * No decision is offered at all. A send-back note is the only thing they ever see, and sending
+ * somebody's survey back over a bug in our own parser is the one unrecoverable mistake available
+ * here. The issues are printed so they can go in a bug report.
+ */
+function ClientUnreadableNotice({
+  submission,
+  issues,
+  onRefreshQueue,
+}: {
+  readonly submission: TeardownReviewItem;
+  readonly issues: readonly string[];
+  readonly onRefreshQueue: () => void;
+}) {
+  return (
+    <article className={CARD_CLASS}>
+      <SubmissionHeader submission={submission} />
+      <div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm">
+        <h3 className="font-medium text-destructive">This console could not read it</h3>
+        <p className="mt-1 text-muted-foreground">
+          The server holds a submission this build does not understand. That is a fault here, not in
+          the survey, so there is nothing to decide and no note to send. Report it with the detail
+          below.
+        </p>
+        <IssueList issues={issues} />
+      </div>
+      <div className="mt-3">
+        <button type="button" onClick={onRefreshQueue} className={QUIET_BUTTON_CLASS}>
+          Refresh the queue
+        </button>
+      </div>
+    </article>
+  );
+}
+
+/**
+ * ⚠️ THE SERVER COULD NOT READ IT EITHER, so the survey really is unpublishable and a send-back is
+ * the remedy. The publish control is ABSENT rather than disabled: a greyed button invites a
+ * moderator to hunt for the condition that ungreys it, and there is none — `POST …/moderate` with
+ * `published` against this row is a hard 422.
+ */
+function UnpublishableDecision({
+  submission,
+  schemaVersion,
+  issues,
+  noteField,
+  refusalBlock,
+  isBusy,
+  isNoteEmpty,
+  onSendBack,
+}: {
+  readonly submission: TeardownReviewItem;
+  readonly schemaVersion: number;
+  readonly issues: readonly string[];
+  readonly noteField: React.ReactNode;
+  readonly refusalBlock: React.ReactNode;
+  readonly isBusy: boolean;
+  readonly isNoteEmpty: boolean;
+  readonly onSendBack: () => void;
+}) {
+  return (
+    <article className={CARD_CLASS}>
+      <SubmissionHeader submission={submission} />
+      <div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm">
+        <h3 className="font-medium text-destructive">This submission cannot be published</h3>
+        <p className="mt-1 text-muted-foreground">
+          It was written against an older version of the form (version {schemaVersion}) and no
+          longer matches what a teardown has to carry. Send it back and ask for a fresh survey —
+          your note is the only thing the publisher sees, so say what they should do rather than
+          quoting the detail below.
+        </p>
+        <IssueList issues={issues} />
+      </div>
+      <div className="mt-4 border-t border-[#CAC4D0]/60 pt-3">
+        {noteField}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={onSendBack}
+            disabled={isBusy || isNoteEmpty}
+            className={QUIET_BUTTON_CLASS}
+          >
+            {isBusy ? "Sending back…" : "Send back"}
+          </button>
+          <SendBackHint isNoteEmpty={isNoteEmpty} />
+        </div>
+        {refusalBlock}
+      </div>
+    </article>
+  );
+}
+
+function DecisionControls({
+  cardState,
+  isBusy,
+  isNoteEmpty,
+  onRequestPublish,
+  onConfirmPublish,
+  onCancelPublish,
+  onSendBack,
+}: {
+  readonly cardState: CardState;
+  readonly isBusy: boolean;
+  readonly isNoteEmpty: boolean;
+  readonly onRequestPublish: () => void;
+  readonly onConfirmPublish: () => void;
+  readonly onCancelPublish: () => void;
+  readonly onSendBack: () => void;
+}) {
+  if (cardState.status === "confirmingPublish") {
+    return (
+      <div className="mt-2 rounded-lg bg-muted/40 p-3">
+        <p className="text-xs">
+          Publishing gives this survey a public address and puts somebody else&apos;s product on it.
+          The address cannot be changed afterwards.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button type="button" onClick={onConfirmPublish} className={PRIMARY_BUTTON_CLASS}>
+            Publish it
+          </button>
+          <button type="button" onClick={onCancelPublish} className={QUIET_BUTTON_CLASS}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const decidingKind = cardState.status === "deciding" ? cardState.decision : null;
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={onRequestPublish}
+        disabled={isBusy}
+        className={PRIMARY_BUTTON_CLASS}
+      >
+        {decidingKind === "published" ? "Publishing…" : "Publish"}
+      </button>
+      <button
+        type="button"
+        onClick={onSendBack}
+        disabled={isBusy || isNoteEmpty}
+        className={QUIET_BUTTON_CLASS}
+      >
+        {decidingKind === "rejected" ? "Sending back…" : "Send back"}
+      </button>
+      <SendBackHint isNoteEmpty={isNoteEmpty} />
+    </div>
+  );
+}
+
+function TagLine({ tags }: { readonly tags: readonly string[] }) {
+  if (tags.length === 0) return null;
+  return <p className="mt-3 text-xs text-muted-foreground">Tags: {tags.join(", ")}</p>;
 }
 
 function SubmissionHeader({ submission }: { readonly submission: TeardownReviewItem }) {

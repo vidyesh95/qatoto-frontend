@@ -219,9 +219,7 @@ per-site read or a decision, not a mechanical fix.
 7. **Deprecated `.strict()` left in two chains** (no longer flagged): `.extend(...).strict()` in
    `src/lib/blueprints/authoring.schemas.ts`. One sits on `safeExtend`, whose base refinements a
    `z.strictObject({...shape})` rewrite would drop, so it needs a careful look rather than a swap.
-8. **Known false positives, no change**: `no-impure-state-updater` in `teardown-review-card.tsx`
-   (`applyDecisionInput` is a callback, not an updater), the `document.body` portal in
-   `creatable-combobox.tsx` (open-only branch), object URLs in `profile-photo-panel.tsx` /
+8. **Known false positives, no change**: object URLs in `profile-photo-panel.tsx` /
    `use-heading-image-pick.ts` / `thumbnail-picker.tsx` (already revoked), index keys in
    `watch-open-roles.tsx` (documented) and `new-program-wizard-page.tsx` (append-only rows),
    `iframe-missing-sandbox` in `video-preview-card.tsx`, `nextjs-no-client-side-redirect` in
