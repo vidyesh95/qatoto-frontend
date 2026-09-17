@@ -1,0 +1,42 @@
+name: CodSpeed
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  # `workflow_dispatch` allows CodSpeed to trigger backtest performance analysis
+  # in order to generate initial data.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Required for OIDC authentication with CodSpeed — no token secret to rotate.
+  id-token: write
+
+jobs:
+  benchmarks:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # `engines` in package.json requires pnpm >= 12.3.4 and Node >= 24.21.0, and
+      # pnpm enforces it: an older pair fails the install before any benchmark runs.
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.4.2
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v5
+        with:
+          mode: simulation
+          run: pnpm bench
