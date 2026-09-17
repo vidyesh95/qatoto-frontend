@@ -1,5 +1,6 @@
 // TRANSPORT: client-query — writes POST /commerce/orders/:orderId/payment-intents (202) and polls
-// GET /commerce/payments/:paymentIntentId; reads GET /commerce/refunds for this order.
+// GET /commerce/payments/:paymentIntentId; reads GET /commerce/refunds for this order; for a Razorpay
+// intent, opens Checkout and writes POST /commerce/payments/:paymentIntentId/razorpay-verification.
 "use client";
 
 // THE PAY CONTROL, and it is the last piece of a buyer path that could not previously complete.
@@ -39,13 +40,21 @@ import {
   useCreateRefund,
   useOrderRefundsQuery,
   usePaymentIntentQuery,
+  useVerifyRazorpayPayment,
 } from "@/hooks/store/payments";
 import { newIdempotencyKey } from "@/lib/idempotency";
+import {
+  loadRazorpayCheckout,
+  RAZORPAY_KEY_ID,
+  type RazorpayCheckoutConstructor,
+} from "@/lib/razorpay-checkout";
 import { formatCentsLabel, formatIsoInstantLabel } from "@/lib/store/format";
 import {
   isPaymentIntentInFlight,
   OverRefundDetailsSchema,
   PAYMENT_INTENT_STATE_LABELS,
+  RazorpayCheckoutSuccessSchema,
+  RazorpayPaymentFailedSchema,
   REFUND_STATE_LABELS,
   type PaymentIntent,
   type Refund,
@@ -102,6 +111,7 @@ export default function OrderPaymentPanel({
         />
       ) : (
         <ResumedPayment
+          orderId={orderId}
           isLoading={paymentIntentQuery.isPending}
           intent={intent}
           errorMessage={
@@ -172,10 +182,12 @@ function PayPrompt({
 
 /** An intent exists — from this session or from one before a reload. */
 function ResumedPayment({
+  orderId,
   isLoading,
   intent,
   errorMessage,
 }: {
+  orderId: string;
   isLoading: boolean;
   intent: PaymentIntent | null;
   errorMessage: string | null;
@@ -207,10 +219,17 @@ function ResumedPayment({
         {formatCentsLabel(intent.amountInCents, intent.currency)}
       </p>
 
-      {isPaymentIntentInFlight(intent.state) && (
-        <p className="text-xs leading-4 text-muted-foreground">
-          This updates on its own — there is nothing to press.
-        </p>
+      {/* Razorpay waits on the BUYER in `requires_action`, so "nothing to press" would be false
+          there — that one state gets the Checkout control instead. Every other in-flight state is
+          still waiting on the outbox or the provider. */}
+      {isAwaitingRazorpayCheckout(intent) ? (
+        <RazorpayCheckoutControl orderId={orderId} intent={intent} />
+      ) : (
+        isPaymentIntentInFlight(intent.state) && (
+          <p className="text-xs leading-4 text-muted-foreground">
+            This updates on its own — there is nothing to press.
+          </p>
+        )
       )}
 
       {/* Rendered only when the server gave one. A null `failureReason` on a failed payment means
@@ -236,6 +255,211 @@ function ResumedPayment({
       )}
     </div>
   );
+}
+
+function isAwaitingRazorpayCheckout(intent: PaymentIntent): boolean {
+  return (
+    intent.provider === "razorpay" &&
+    intent.state === "requires_action" &&
+    intent.providerPaymentRef !== null
+  );
+}
+
+type RazorpayCheckoutState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "open" }
+  | { status: "verifying" }
+  | { status: "awaitingConfirmation" }
+  | { status: "cancelled" }
+  | { status: "failed"; message: string }
+  | { status: "verificationFailed"; message: string };
+
+const CHECKOUT_FAILED_FALLBACK =
+  "The payment didn't go through. Nothing was taken — you can try again.";
+
+/**
+ * Razorpay Checkout for an intent waiting on the buyer.
+ *
+ * THE HANDLER FIRING IS NOT A PAYMENT, and this control never says "paid". Checkout's success
+ * callback hands us three strings; the backend verifies the signature, checks the Razorpay order is
+ * THIS intent's, and asks Razorpay whether it is paid. Only the polled intent reaching `settled` —
+ * which unmounts this control — is the verdict.
+ *
+ * THE SAME RAZORPAY ORDER IS REUSED ON EVERY TRY. A dismissed modal or a declined card leaves the
+ * order unpaid and the intent `requires_action`, so reopening Checkout on `providerPaymentRef` is a
+ * retry of the same payment, never a second one.
+ */
+function RazorpayCheckoutControl({ orderId, intent }: { orderId: string; intent: PaymentIntent }) {
+  const verifyRazorpayPayment = useVerifyRazorpayPayment();
+  const [checkoutState, setCheckoutState] = useState<RazorpayCheckoutState>({ status: "idle" });
+
+  const razorpayOrderId = intent.providerPaymentRef;
+  if (razorpayOrderId === null) return null;
+
+  if (RAZORPAY_KEY_ID === null) {
+    return (
+      <p role="alert" className="text-xs leading-4 text-destructive">
+        Razorpay is not configured on this site (NEXT_PUBLIC_RAZORPAY_KEY_ID). Nothing was charged.
+      </p>
+    );
+  }
+  const razorpayKeyId = RAZORPAY_KEY_ID;
+
+  const handleCheckoutSuccess = (checkoutSuccess: unknown) => {
+    const parsedSuccess = RazorpayCheckoutSuccessSchema.safeParse(checkoutSuccess);
+    if (!parsedSuccess.success) {
+      setCheckoutState({
+        status: "verificationFailed",
+        message:
+          "Razorpay returned an unexpected response. If money was taken, it will still be recorded once Razorpay confirms it.",
+      });
+      return;
+    }
+
+    setCheckoutState({ status: "verifying" });
+    verifyRazorpayPayment.mutate(
+      { orderId, paymentIntentId: intent.id, verification: parsedSuccess.data },
+      {
+        onSuccess: (result) => {
+          if (!result.success) {
+            setCheckoutState({ status: "verificationFailed", message: result.error.message });
+            return;
+          }
+          // `settled` unmounts this control through the refetched intent. Anything else means
+          // Razorpay has not marked the order paid yet; the poll is still running.
+          setCheckoutState(
+            result.data.state === "settled"
+              ? { status: "idle" }
+              : { status: "awaitingConfirmation" },
+          );
+        },
+        onError: () => {
+          setCheckoutState({
+            status: "verificationFailed",
+            message:
+              "Couldn't reach the server to confirm the payment. If money was taken, it will still be recorded once Razorpay confirms it.",
+          });
+        },
+      },
+    );
+  };
+
+  const openCheckout = (RazorpayCheckout: RazorpayCheckoutConstructor): void => {
+    // Set by the success handler before Checkout closes, so a dismiss that follows a payment is not
+    // reported to the buyer as a cancellation.
+    let hasCheckoutSucceeded = false;
+
+    const checkout = new RazorpayCheckout({
+      key: razorpayKeyId,
+      order_id: razorpayOrderId,
+      amount: intent.amountInCents,
+      currency: intent.currency,
+      name: "Qatoto",
+      description: `Order ${orderId}`,
+      handler: (checkoutSuccess) => {
+        hasCheckoutSucceeded = true;
+        handleCheckoutSuccess(checkoutSuccess);
+      },
+      modal: {
+        ondismiss: () => {
+          if (hasCheckoutSucceeded) return;
+          // A decline stays on screen after the buyer closes the window — it is the more useful
+          // sentence of the two.
+          setCheckoutState((previousState) =>
+            previousState.status === "failed" ? previousState : { status: "cancelled" },
+          );
+        },
+      },
+    });
+    // Razorpay keeps its window open after a decline so the buyer can retry in place.
+    checkout.on("payment.failed", (paymentFailure) => {
+      const parsedFailure = RazorpayPaymentFailedSchema.safeParse(paymentFailure);
+      const description = parsedFailure.success ? parsedFailure.data.error?.description : undefined;
+      setCheckoutState({ status: "failed", message: description ?? CHECKOUT_FAILED_FALLBACK });
+    });
+    setCheckoutState({ status: "open" });
+    checkout.open();
+  };
+
+  const handleCheckoutLoadFailure = (): void => {
+    setCheckoutState({
+      status: "failed",
+      message:
+        "Couldn't load Razorpay Checkout. Check your connection or ad blocker, then try again.",
+    });
+  };
+
+  const handlePayWithRazorpayClick = () => {
+    setCheckoutState({ status: "loading" });
+    void loadRazorpayCheckout().then(openCheckout, handleCheckoutLoadFailure);
+  };
+
+  const isBusy =
+    checkoutState.status === "loading" ||
+    checkoutState.status === "open" ||
+    checkoutState.status === "verifying" ||
+    checkoutState.status === "awaitingConfirmation";
+
+  return (
+    <div className="space-y-1.5">
+      <button
+        type="button"
+        onClick={handlePayWithRazorpayClick}
+        disabled={isBusy}
+        className="cursor-pointer rounded-full bg-[#00696E] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+      >
+        {checkoutState.status === "loading" ? "Opening Razorpay…" : "Pay with Razorpay"}
+      </button>
+      <RazorpayCheckoutStatus checkoutState={checkoutState} />
+    </div>
+  );
+}
+
+function RazorpayCheckoutStatus({ checkoutState }: { checkoutState: RazorpayCheckoutState }) {
+  switch (checkoutState.status) {
+    case "idle":
+    case "loading":
+      return (
+        <p className="text-[11px] leading-4 text-muted-foreground">
+          Razorpay test mode. Card, UPI and netbanking are handled in Razorpay&apos;s window.
+        </p>
+      );
+    case "open":
+      return (
+        <p className="text-xs leading-4 text-muted-foreground">Complete the payment in Razorpay.</p>
+      );
+    case "verifying":
+      return (
+        <output className="block text-xs leading-4 text-muted-foreground">
+          Confirming the payment with Razorpay…
+        </output>
+      );
+    case "awaitingConfirmation":
+      return (
+        <output className="block text-xs leading-4 text-muted-foreground">
+          Razorpay accepted the payment and hasn&apos;t confirmed capture yet. This updates on its
+          own.
+        </output>
+      );
+    case "cancelled":
+      return (
+        <p className="text-xs leading-4 text-muted-foreground">
+          Payment cancelled. Nothing was taken — you can try again.
+        </p>
+      );
+    case "failed":
+    case "verificationFailed":
+      return (
+        <p role="alert" className="text-xs leading-4 text-destructive">
+          {checkoutState.message}
+        </p>
+      );
+    default: {
+      const exhaustiveCheck: never = checkoutState;
+      throw new Error(`Unhandled Razorpay checkout state: ${JSON.stringify(exhaustiveCheck)}`);
+    }
+  }
 }
 
 /**

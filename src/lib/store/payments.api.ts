@@ -8,7 +8,9 @@
 // custody pair the `direct_processor` rail forbids. A41 made the postings rail-aware; these three
 // calls are what let a buyer use that.
 //
-// FOUR ROUTES NOW. `POST /commerce/orders/:orderId/refunds` used to be deliberately absent, and the
+// FIVE ROUTES NOW — the fifth is Razorpay's checkout verification, below `createPaymentIntent`.
+//
+// FOUR ROUTES BEFORE THAT. `POST /commerce/orders/:orderId/refunds` used to be deliberately absent, and the
 // reason it was is worth keeping because it explains the shape of what replaced it: requesting a
 // refund needs a control that can render `409 OVER_REFUND`, whose remaining refundable balance
 // rides in the envelope's `data` — and the shared transport dropped `data` on every failure, so
@@ -33,6 +35,7 @@ import {
 } from "@/lib/http";
 import {
   PaymentIntentSchema,
+  type RazorpayVerificationBody,
   RefundListPageSchema,
   RefundSchema,
   type CreateRefundInput,
@@ -75,6 +78,31 @@ export function createPaymentIntent(
     `/commerce/orders/${encodeURIComponent(orderId)}/payment-intents`,
     "POST",
     undefined,
+    PaymentIntentSchema,
+    options,
+  );
+}
+
+/**
+ * Reports a completed Razorpay Checkout — `POST /commerce/payments/:paymentIntentId/razorpay-verification`.
+ *
+ * **A `200` IS NOT NECESSARILY PAID.** The backend verifies the signature, checks the Razorpay order
+ * belongs to this intent, then asks Razorpay; if Razorpay has not marked the order paid yet the
+ * answer is `200` with `state: "requires_action"`, and the poll carries on. Read `state`.
+ *
+ * `400` = the signature did not verify and nothing was recorded. `409` = the Razorpay order is not
+ * this intent's. No `Idempotency-Key`: the backend dedupes the settlement itself, so repeating this
+ * call after a network blip is safe.
+ */
+export function verifyRazorpayPayment(
+  paymentIntentId: string,
+  body: RazorpayVerificationBody,
+  options?: RequestOptions,
+): Promise<ActionResponse<PaymentIntent>> {
+  return sendJson(
+    `/commerce/payments/${encodeURIComponent(paymentIntentId)}/razorpay-verification`,
+    "POST",
+    body,
     PaymentIntentSchema,
     options,
   );

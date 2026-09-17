@@ -26,12 +26,17 @@ import {
 
 import { storeKeys } from "@/hooks/store/keys";
 import type { ActionResponse } from "@/lib/http";
-import type { CreateRefundInput, Refund } from "@/lib/store/payments.schemas";
+import type {
+  CreateRefundInput,
+  RazorpayVerificationBody,
+  Refund,
+} from "@/lib/store/payments.schemas";
 import {
   createPaymentIntent,
   createRefund,
   getPaymentIntent,
   listRefunds,
+  verifyRazorpayPayment,
 } from "@/lib/store/payments.api";
 import { isPaymentIntentInFlight, type PaymentIntent } from "@/lib/store/payments.schemas";
 
@@ -117,6 +122,38 @@ export function useCreatePaymentIntent(): UseMutationResult<
       createPaymentIntent(orderId, { headers: { "Idempotency-Key": idempotencyKey } }),
     onSuccess: (result, { orderId }) => {
       if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.order(orderId) });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.orderList("buyer") });
+      void queryClient.invalidateQueries({ queryKey: storeKeys.orderList("provider") });
+    },
+  });
+}
+
+/**
+ * Reports a completed Razorpay Checkout for verification.
+ *
+ * INVALIDATES, NEVER WRITES, for the same reason as `useCreatePaymentIntent`: even a `200` may carry
+ * `requires_action` when Razorpay has not yet marked the order paid, and writing the returned intent
+ * over the poll's would be trusting one read over the next. The intent query refetches and keeps
+ * polling while in flight; the order and both lists refetch because a settled payment moves the order.
+ */
+export function useVerifyRazorpayPayment(): UseMutationResult<
+  ActionResponse<PaymentIntent>,
+  Error,
+  {
+    readonly orderId: string;
+    readonly paymentIntentId: string;
+    readonly verification: RazorpayVerificationBody;
+  }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ paymentIntentId, verification }) =>
+      verifyRazorpayPayment(paymentIntentId, verification),
+    onSuccess: (result, { orderId, paymentIntentId }) => {
+      if (!result.success) return;
+      void queryClient.invalidateQueries({ queryKey: storeKeys.paymentIntent(paymentIntentId) });
       void queryClient.invalidateQueries({ queryKey: storeKeys.order(orderId) });
       void queryClient.invalidateQueries({ queryKey: storeKeys.orderList("buyer") });
       void queryClient.invalidateQueries({ queryKey: storeKeys.orderList("provider") });

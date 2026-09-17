@@ -48,8 +48,13 @@ export const PAYMENT_INTENT_STATES = [
 
 export type PaymentIntentState = (typeof PAYMENT_INTENT_STATES)[number];
 
-/** `commerce_payment_provider`. `fake` is the development adapter and reaches real responses. */
-export const PAYMENT_PROVIDERS = ["fake", "stripe"] as const;
+/**
+ * `commerce_payment_provider`. `fake` is the development adapter and reaches real responses.
+ * `razorpay` is TEST MODE ONLY on the backend — refused in production and for live keys — and is the
+ * one provider that needs the BUYER to act: its intent waits in `requires_action` until Checkout is
+ * completed in the browser.
+ */
+export const PAYMENT_PROVIDERS = ["fake", "stripe", "razorpay"] as const;
 
 export const REFUND_STATES = ["created", "processing", "settled", "failed", "cancelled"] as const;
 
@@ -210,3 +215,44 @@ export const REFUND_STATE_LABELS: Readonly<Record<RefundState, string>> = {
   failed: "Refund failed",
   cancelled: "Refund cancelled",
 };
+
+// --- Razorpay Checkout ------------------------------------------------------
+//
+// `POST /commerce/payments/:paymentIntentId/razorpay-verification`. The backend checks the HMAC, that
+// the Razorpay order is THIS intent's, and then asks Razorpay itself whether the order is paid — so
+// the verdict is the returned intent's `state`, never the fact that Checkout called its handler.
+
+/** The write body. camelCase on our wire; the regexes mirror the backend's so a typo is caught here. */
+export const RazorpayVerificationBodySchema = z.strictObject({
+  razorpayOrderId: z.string().regex(/^order_[A-Za-z0-9]+$/),
+  razorpayPaymentId: z.string().regex(/^pay_[A-Za-z0-9]+$/),
+  razorpaySignature: z.string().regex(/^[a-f0-9]{64}$/),
+});
+
+export type RazorpayVerificationBody = z.infer<typeof RazorpayVerificationBodySchema>;
+
+/**
+ * What Razorpay's `handler` receives. THIRD-PARTY DATA, parsed rather than trusted: its snake_case
+ * keys are Razorpay's contract, not ours, and are renamed exactly once, here.
+ */
+export const RazorpayCheckoutSuccessSchema = z
+  .object({
+    razorpay_order_id: z.string(),
+    razorpay_payment_id: z.string(),
+    razorpay_signature: z.string(),
+  })
+  .transform((checkoutSuccess): RazorpayVerificationBody => ({
+    razorpayOrderId: checkoutSuccess.razorpay_order_id,
+    razorpayPaymentId: checkoutSuccess.razorpay_payment_id,
+    razorpaySignature: checkoutSuccess.razorpay_signature,
+  }))
+  .pipe(RazorpayVerificationBodySchema);
+
+/**
+ * The `payment.failed` event. Only `description` is shown — it is Razorpay's buyer-facing sentence
+ * ("Your payment was declined…"). Every field is optional because a missing sentence must degrade to
+ * our own fallback, not to a parse failure that hides the decline.
+ */
+export const RazorpayPaymentFailedSchema = z.object({
+  error: z.object({ description: z.string().optional() }).optional(),
+});
