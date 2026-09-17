@@ -24,12 +24,10 @@ export type BlueprintArm = keyof typeof BLUEPRINT_ARM_SEGMENTS;
  * to a tap, and then SETTLES ON THIS — a client that kept its own guess would drift from every
  * other reader's view of the same row.
  */
-export const BlueprintToggleResultSchema = z
-  .object({
-    isSet: z.boolean(),
-    count: z.number().int().nonnegative(),
-  })
-  .strip();
+export const BlueprintToggleResultSchema = z.object({
+  isSet: z.boolean(),
+  count: z.number().int().nonnegative(),
+});
 export type BlueprintToggleResult = z.infer<typeof BlueprintToggleResultSchema>;
 
 /**
@@ -44,13 +42,11 @@ export type BlueprintToggleResult = z.infer<typeof BlueprintToggleResultSchema>;
  * saved and not upvoted; a case study neither. The shapes differ because the counters differ, and
  * three schema comments on the server state that as contract.
  */
-export const BlueprintViewerStateSchema = z
-  .object({
-    showcases: z.record(z.string(), z.object({ hasLiked: z.boolean(), hasUpvoted: z.boolean() })),
-    teardowns: z.record(z.string(), z.object({ hasLiked: z.boolean(), hasSaved: z.boolean() })),
-    caseStudies: z.record(z.string(), z.object({ hasLiked: z.boolean() })),
-  })
-  .strip();
+export const BlueprintViewerStateSchema = z.object({
+  showcases: z.record(z.string(), z.object({ hasLiked: z.boolean(), hasUpvoted: z.boolean() })),
+  teardowns: z.record(z.string(), z.object({ hasLiked: z.boolean(), hasSaved: z.boolean() })),
+  caseStudies: z.record(z.string(), z.object({ hasLiked: z.boolean() })),
+});
 export type BlueprintViewerState = z.infer<typeof BlueprintViewerStateSchema>;
 
 /** The verbs, and which arm offers which. Mirrors `VERBS_BY_ARM` on the server. */

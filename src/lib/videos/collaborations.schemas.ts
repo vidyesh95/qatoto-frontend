@@ -13,32 +13,28 @@ export const CollaborationStatusSchema = z.enum(COLLABORATION_STATUSES);
 export type CollaborationStatus = z.infer<typeof CollaborationStatusSchema>;
 
 /** `GET /users/me/collaborations` — an invitation addressed to the caller. */
-export const CollaborationInviteSchema = z
-  .object({
-    videoId: z.string(),
-    videoTitle: z.string(),
-    creatorName: z.string(),
-    status: CollaborationStatusSchema,
-    invitedAt: z.string(),
-  })
-  .strip();
+export const CollaborationInviteSchema = z.object({
+  videoId: z.string(),
+  videoTitle: z.string(),
+  creatorName: z.string(),
+  status: CollaborationStatusSchema,
+  invitedAt: z.string(),
+});
 export type CollaborationInvite = z.infer<typeof CollaborationInviteSchema>;
 
 /** `GET /users/me/collaborators` — somebody the caller invited onto one of their own videos. */
-export const VideoCollaboratorSchema = z
-  .object({
-    videoId: z.string(),
-    videoTitle: z.string(),
-    invitedEmail: z.string(),
-    status: CollaborationStatusSchema,
-    invitedAt: z.string(),
-    /**
-     * NULL until the invite is answered — an unanswered invite is an ADDRESS, not a person. Render
-     * the absence rather than implying an account is behind it.
-     */
-    userId: z.string().nullable(),
-  })
-  .strip();
+export const VideoCollaboratorSchema = z.object({
+  videoId: z.string(),
+  videoTitle: z.string(),
+  invitedEmail: z.string(),
+  status: CollaborationStatusSchema,
+  invitedAt: z.string(),
+  /**
+   * NULL until the invite is answered — an unanswered invite is an ADDRESS, not a person. Render
+   * the absence rather than implying an account is behind it.
+   */
+  userId: z.string().nullable(),
+});
 export type VideoCollaborator = z.infer<typeof VideoCollaboratorSchema>;
 
 /**

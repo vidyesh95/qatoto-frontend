@@ -2,7 +2,7 @@
 // the home feed, the watch payload and engagement. No network here; `api.ts` does the I/O.
 //
 // The Express backend owns data truth, but the network is untrusted (CLAUDE.md Pattern 2):
-// every payload arrives as `unknown` and is parsed, never asserted. `.strip()` everywhere, so
+// every payload arrives as `unknown` and is parsed, never asserted. Plain `z.object` (which strips) everywhere, so
 // a backend minor release that adds a field is a no-op rather than a blank homepage.
 
 import { z } from "zod";
@@ -101,18 +101,16 @@ export type VideoType = z.infer<typeof VideoTypeSchema>;
  * the absence as a broken tile would put a hole in the grid. Use `toCategoryTiles` below
  * rather than filtering by hand at each call site.
  */
-export const ContentCategorySchema = z
-  .object({
-    id: z.string(),
-    // Kebab-case, server-generated, and linked the moment it exists — therefore never
-    // constructed or edited client-side. This is the value `?categorySlug=` carries.
-    slug: z.string(),
-    label: z.string(),
-    imageUrl: z.string().nullable(),
-    isTile: z.boolean(),
-    sortOrder: z.number(),
-  })
-  .strip();
+export const ContentCategorySchema = z.object({
+  id: z.string(),
+  // Kebab-case, server-generated, and linked the moment it exists — therefore never
+  // constructed or edited client-side. This is the value `?categorySlug=` carries.
+  slug: z.string(),
+  label: z.string(),
+  imageUrl: z.string().nullable(),
+  isTile: z.boolean(),
+  sortOrder: z.number(),
+});
 export type ContentCategory = z.infer<typeof ContentCategorySchema>;
 
 /* -------------------------------------------------------------------------- */
@@ -132,77 +130,67 @@ export type ContentCategory = z.infer<typeof ContentCategorySchema>;
  * the platform cannot support. Do not add it here "for completeness" — `.strip()` would
  * silently keep it undefined and the badge would never light.
  */
-export const FeedVideoSchema = z
-  .object({
-    videoId: z.string(),
-    youtubeVideoId: z.string().nullable(),
-    title: z.string(),
-    thumbnailUrl: z.string().nullable(),
-    // ISO 8601, NEVER a pre-formatted label. Formatting it during a server render would
-    // freeze the string into the `cacheComponents` cache entry — see `relative-time.tsx`.
-    //
-    // `z.iso.datetime()`, not `z.string()`. This route once served the Postgres text form
-    // `'2026-08-02 17:36:54.105'` — no `T`, no zone — which `Date.parse` reads as LOCAL
-    // time, so every "posted X ago" was off by the viewer's UTC offset. A loose `z.string()`
-    // accepted it silently and rendered the wrong hour. This fails at the boundary instead.
-    publishedAt: z.iso.datetime().nullable(),
-    // Null until the nightly median job has >= 5 independent samples. Absence is not zero:
-    // render nothing rather than "0:00".
-    durationSeconds: z.number().nullable(),
-    creator: z
-      .object({
-        id: z.string(),
-        handle: z.string().nullable(),
-        name: z.string(),
-        imageUrl: z.string().nullable(),
-      })
-      .strip(),
-    categories: z.array(z.object({ slug: z.string(), label: z.string() }).strip()),
-    // THREE keys. The watch payload's `stats` has five; they are separate schemas on purpose.
-    stats: z
-      .object({
-        viewCount: z.number(),
-        likeCount: z.number(),
-        commentCount: z.number(),
-      })
-      .strip(),
-    viewerState: z
-      .object({
-        hasLiked: z.boolean(),
-        hasSaved: z.boolean(),
-        isSubscribedToCreator: z.boolean(),
-      })
-      .strip(),
-    // The literal, not a boolean. No stream domain exists (HOME_BACKEND §5.3), so the backend
-    // sends `false` and the type says a `true` would be a contract violation, not a live show.
-    isChannelLive: z.literal(false),
-    // PRESENT ONLY ON `?mode=watched` — when this viewer last started watching, as
-    // `max(first_beacon_at)` over their un-hidden counted sessions.
-    //
-    // `.optional()`, NOT `.nullable()`, and the difference is a claim about the viewer.
-    // Absent means the question was never asked, which is every other mode; `null` would mean
-    // "never watched", which no other mode looks up. `/history` is the only reader.
-    //
-    // It is the SAME expression the backend sorts this mode by. `<HistoryList>` groups the
-    // rows into date headers in one pass over that order, so a value disagreeing with the sort
-    // key would make a date group end and then reappear further down the page.
-    //
-    // `z.iso.datetime()` for the reason `publishedAt` states above: this API has served the
-    // bare Postgres text form before, and `Date.parse` reads that as LOCAL time.
-    watchedAt: z.iso.datetime().optional(),
-  })
-  .strip();
+export const FeedVideoSchema = z.object({
+  videoId: z.string(),
+  youtubeVideoId: z.string().nullable(),
+  title: z.string(),
+  thumbnailUrl: z.string().nullable(),
+  // ISO 8601, NEVER a pre-formatted label. Formatting it during a server render would
+  // freeze the string into the `cacheComponents` cache entry — see `relative-time.tsx`.
+  //
+  // `z.iso.datetime()`, not `z.string()`. This route once served the Postgres text form
+  // `'2026-08-02 17:36:54.105'` — no `T`, no zone — which `Date.parse` reads as LOCAL
+  // time, so every "posted X ago" was off by the viewer's UTC offset. A loose `z.string()`
+  // accepted it silently and rendered the wrong hour. This fails at the boundary instead.
+  publishedAt: z.iso.datetime().nullable(),
+  // Null until the nightly median job has >= 5 independent samples. Absence is not zero:
+  // render nothing rather than "0:00".
+  durationSeconds: z.number().nullable(),
+  creator: z.object({
+    id: z.string(),
+    handle: z.string().nullable(),
+    name: z.string(),
+    imageUrl: z.string().nullable(),
+  }),
+  categories: z.array(z.object({ slug: z.string(), label: z.string() })),
+  // THREE keys. The watch payload's `stats` has five; they are separate schemas on purpose.
+  stats: z.object({
+    viewCount: z.number(),
+    likeCount: z.number(),
+    commentCount: z.number(),
+  }),
+  viewerState: z.object({
+    hasLiked: z.boolean(),
+    hasSaved: z.boolean(),
+    isSubscribedToCreator: z.boolean(),
+  }),
+  // The literal, not a boolean. No stream domain exists (HOME_BACKEND §5.3), so the backend
+  // sends `false` and the type says a `true` would be a contract violation, not a live show.
+  isChannelLive: z.literal(false),
+  // PRESENT ONLY ON `?mode=watched` — when this viewer last started watching, as
+  // `max(first_beacon_at)` over their un-hidden counted sessions.
+  //
+  // `.optional()`, NOT `.nullable()`, and the difference is a claim about the viewer.
+  // Absent means the question was never asked, which is every other mode; `null` would mean
+  // "never watched", which no other mode looks up. `/history` is the only reader.
+  //
+  // It is the SAME expression the backend sorts this mode by. `<HistoryList>` groups the
+  // rows into date headers in one pass over that order, so a value disagreeing with the sort
+  // key would make a date group end and then reappear further down the page.
+  //
+  // `z.iso.datetime()` for the reason `publishedAt` states above: this API has served the
+  // bare Postgres text form before, and `Date.parse` reads that as LOCAL time.
+  watchedAt: z.iso.datetime().optional(),
+});
 export type FeedVideo = z.infer<typeof FeedVideoSchema>;
 
 /** The `pagination` sibling on `PaginatedResponse`. */
-export const PaginationMetaSchema = z
-  .object({
-    page: z.number(),
-    limit: z.number(),
-    total: z.number(),
-    totalPages: z.number(),
-  })
-  .strip();
+export const PaginationMetaSchema = z.object({
+  page: z.number(),
+  limit: z.number(),
+  total: z.number(),
+  totalPages: z.number(),
+});
 
 /**
  * The WHOLE `GET /feed/videos` envelope, because `rankSeed` is a third top-level sibling of
@@ -212,13 +200,11 @@ export const PaginationMetaSchema = z
  * a first request, echoed here, and sent back on every subsequent page. Lose it and page 2
  * ranks against a fresh seed, which reshuffles the feed and shows the same video twice.
  */
-export const FeedVideoPageSchema = z
-  .object({
-    data: z.array(FeedVideoSchema),
-    pagination: PaginationMetaSchema,
-    rankSeed: z.string().length(32),
-  })
-  .strip();
+export const FeedVideoPageSchema = z.object({
+  data: z.array(FeedVideoSchema),
+  pagination: PaginationMetaSchema,
+  rankSeed: z.string().length(32),
+});
 export type FeedVideoPage = z.infer<typeof FeedVideoPageSchema>;
 
 /**
@@ -233,12 +219,10 @@ export type FeedVideoPage = z.infer<typeof FeedVideoPageSchema>;
  * term across pages; search has no exploration term because relevance is deterministic, so
  * this envelope has exactly two top-level keys and is read with `getPaginated`.
  */
-export const SearchVideoPageSchema = z
-  .object({
-    data: z.array(FeedVideoSchema),
-    pagination: PaginationMetaSchema,
-  })
-  .strip();
+export const SearchVideoPageSchema = z.object({
+  data: z.array(FeedVideoSchema),
+  pagination: PaginationMetaSchema,
+});
 export type SearchVideoPage = z.infer<typeof SearchVideoPageSchema>;
 
 /**
@@ -278,130 +262,115 @@ export interface ListFeedVideosFilter {
  * `uploadStatus` and `isSourceVerified`: they are the creator's business, and a public watch
  * route that leaked them would tell a stranger which of your drafts exist.
  */
-export const WatchPayloadSchema = z
-  .object({
-    videoId: z.string(),
-    videoSource: VideoSourceSchema,
-    youtubeVideoId: z.string().nullable(),
-    title: z.string(),
-    description: z.string().nullable(),
-    thumbnailUrl: z.string().nullable(),
-    publishedAt: z.iso.datetime().nullable(),
-    durationSeconds: z.number().nullable(),
-    videoType: VideoTypeSchema,
-    areCommentsEnabled: z.boolean(),
-    chapters: z.array(z.object({ startSeconds: z.number(), title: z.string() }).strip()),
-    creator: z
-      .object({
-        id: z.string(),
-        handle: z.string().nullable(),
-        name: z.string(),
-        imageUrl: z.string().nullable(),
-        subscriberCount: z.number(),
-      })
-      .strip(),
-    categories: z.array(z.object({ slug: z.string(), label: z.string() }).strip()),
-    stats: z
-      .object({
-        viewCount: z.number(),
-        likeCount: z.number(),
-        commentCount: z.number(),
-        shareCount: z.number(),
-        saveCount: z.number(),
-      })
-      .strip(),
-    viewerState: z
-      .object({
-        hasLiked: z.boolean(),
-        hasSaved: z.boolean(),
-        isSubscribedToCreator: z.boolean(),
-      })
-      .strip(),
-    isChannelLive: z.literal(false),
-    /**
-     * The venture behind this video, or null — the watch-page half of the R&D link.
-     *
-     * A BADGE, NOT A CARD: identity only, no counts and no equity. The store's product page
-     * carries proof numbers because a buyer is spending money; a viewer here is deciding
-     * whether to click through.
-     *
-     * Null covers three cases the client must NOT distinguish: no venture, a venture that is
-     * not `active`, and a row that is gone. A draft venture is never nameable from a public
-     * watch page, which is why the backend puts its status term in the JOIN and not the WHERE.
-     */
-    builtInTheOpen: z
-      .object({
-        projectSlug: z.string(),
-        projectName: z.string(),
-        stage: ProjectStageSchema,
-      })
-      .strip()
-      .nullable(),
-    /**
-     * What this video says it is hiring for.
-     *
-     * `roleTitle` is the creator's own text and is always there. `linkedRole` is the REAL
-     * open role behind it when one was picked — the same `OpenRoleSchema` the R&D surfaces
-     * parse, which is exactly why `ApplyRoleSheet` can be mounted here unchanged: it takes a
-     * whole `OpenRole` because it needs `projectSlug` to post to and `skills` to render the
-     * chips the backend validates a subset against.
-     *
-     * Null `linkedRole` means free text — unaffiliated videos and every blurb written
-     * before the link existed. Those render as a label with no apply control, which is what
-     * they have always been.
-     */
-    openRoles: z.array(
-      z
-        .object({
-          roleTitle: z.string(),
-          roleDescription: z.string().nullable(),
-          linkedRole: OpenRoleSchema.nullable(),
-        })
-        .strip(),
-    ),
-    /**
-     * The shoppable products under the player. `[]` rather than nullable — every video CAN
-     * carry products, so "none" is an empty list rather than an absent capability.
-     *
-     * THE LIST IS RE-FILTERED SERVER-SIDE ON EVERY READ. A creator attaches a product and the
-     * seller can later unpublish it, delist the organization, or have the listing moderated down;
-     * none of that touches the attachment. The server drops those entries, so this list gets
-     * SHORTER rather than growing a dead card — and re-publishing brings the card straight back.
-     * It follows that the length here is not "how many products the creator attached".
-     *
-     * `StoreProductCardSchema` IS THE STORE'S OWN CARD, reused rather than re-declared, so a
-     * product under a video and the same product in a browse grid parse through one vocabulary
-     * and render through one component.
-     */
-    attachedProducts: z.array(
-      z
-        .object({
-          product: StoreProductCardSchema,
-          /** The second the creator pinned it to, or null for an unpinned attachment. */
-          pinnedAtSeconds: z.number().int().nullable(),
-        })
-        .strip(),
-    ),
-    /**
-     * THE DECK OR WHITEPAPER SHOWN AS A DOWNLOAD UNDER THE VIDEO.
-     *
-     * ⚠️ `downloadPath` IS A PATH ON THE API, NOT A LINK TO THE BYTES. Fetching it re-runs the
-     * video's public gate and 302s to a storage URL that lives five minutes — which is why the
-     * backend has no `url` column: a stored link would keep working after the video is
-     * unpublished. Render it as an `<a href>` against the API origin; never cache the redirect.
-     */
-    documents: z.array(
-      z
-        .object({
-          id: z.string(),
-          fileName: z.string(),
-          byteSize: z.number().int(),
-          downloadPath: z.string(),
-        })
-        .strip(),
-    ),
-  })
-  .strip();
+export const WatchPayloadSchema = z.object({
+  videoId: z.string(),
+  videoSource: VideoSourceSchema,
+  youtubeVideoId: z.string().nullable(),
+  title: z.string(),
+  description: z.string().nullable(),
+  thumbnailUrl: z.string().nullable(),
+  publishedAt: z.iso.datetime().nullable(),
+  durationSeconds: z.number().nullable(),
+  videoType: VideoTypeSchema,
+  areCommentsEnabled: z.boolean(),
+  chapters: z.array(z.object({ startSeconds: z.number(), title: z.string() })),
+  creator: z.object({
+    id: z.string(),
+    handle: z.string().nullable(),
+    name: z.string(),
+    imageUrl: z.string().nullable(),
+    subscriberCount: z.number(),
+  }),
+  categories: z.array(z.object({ slug: z.string(), label: z.string() })),
+  stats: z.object({
+    viewCount: z.number(),
+    likeCount: z.number(),
+    commentCount: z.number(),
+    shareCount: z.number(),
+    saveCount: z.number(),
+  }),
+  viewerState: z.object({
+    hasLiked: z.boolean(),
+    hasSaved: z.boolean(),
+    isSubscribedToCreator: z.boolean(),
+  }),
+  isChannelLive: z.literal(false),
+  /**
+   * The venture behind this video, or null — the watch-page half of the R&D link.
+   *
+   * A BADGE, NOT A CARD: identity only, no counts and no equity. The store's product page
+   * carries proof numbers because a buyer is spending money; a viewer here is deciding
+   * whether to click through.
+   *
+   * Null covers three cases the client must NOT distinguish: no venture, a venture that is
+   * not `active`, and a row that is gone. A draft venture is never nameable from a public
+   * watch page, which is why the backend puts its status term in the JOIN and not the WHERE.
+   */
+  builtInTheOpen: z
+    .object({
+      projectSlug: z.string(),
+      projectName: z.string(),
+      stage: ProjectStageSchema,
+    })
+    .nullable(),
+  /**
+   * What this video says it is hiring for.
+   *
+   * `roleTitle` is the creator's own text and is always there. `linkedRole` is the REAL
+   * open role behind it when one was picked — the same `OpenRoleSchema` the R&D surfaces
+   * parse, which is exactly why `ApplyRoleSheet` can be mounted here unchanged: it takes a
+   * whole `OpenRole` because it needs `projectSlug` to post to and `skills` to render the
+   * chips the backend validates a subset against.
+   *
+   * Null `linkedRole` means free text — unaffiliated videos and every blurb written
+   * before the link existed. Those render as a label with no apply control, which is what
+   * they have always been.
+   */
+  openRoles: z.array(
+    z.object({
+      roleTitle: z.string(),
+      roleDescription: z.string().nullable(),
+      linkedRole: OpenRoleSchema.nullable(),
+    }),
+  ),
+  /**
+   * The shoppable products under the player. `[]` rather than nullable — every video CAN
+   * carry products, so "none" is an empty list rather than an absent capability.
+   *
+   * THE LIST IS RE-FILTERED SERVER-SIDE ON EVERY READ. A creator attaches a product and the
+   * seller can later unpublish it, delist the organization, or have the listing moderated down;
+   * none of that touches the attachment. The server drops those entries, so this list gets
+   * SHORTER rather than growing a dead card — and re-publishing brings the card straight back.
+   * It follows that the length here is not "how many products the creator attached".
+   *
+   * `StoreProductCardSchema` IS THE STORE'S OWN CARD, reused rather than re-declared, so a
+   * product under a video and the same product in a browse grid parse through one vocabulary
+   * and render through one component.
+   */
+  attachedProducts: z.array(
+    z.object({
+      product: StoreProductCardSchema,
+      /** The second the creator pinned it to, or null for an unpinned attachment. */
+      pinnedAtSeconds: z.number().int().nullable(),
+    }),
+  ),
+  /**
+   * THE DECK OR WHITEPAPER SHOWN AS A DOWNLOAD UNDER THE VIDEO.
+   *
+   * ⚠️ `downloadPath` IS A PATH ON THE API, NOT A LINK TO THE BYTES. Fetching it re-runs the
+   * video's public gate and 302s to a storage URL that lives five minutes — which is why the
+   * backend has no `url` column: a stored link would keep working after the video is
+   * unpublished. Render it as an `<a href>` against the API origin; never cache the redirect.
+   */
+  documents: z.array(
+    z.object({
+      id: z.string(),
+      fileName: z.string(),
+      byteSize: z.number().int(),
+      downloadPath: z.string(),
+    }),
+  ),
+});
 export type WatchPayload = z.infer<typeof WatchPayloadSchema>;
 
 /* -------------------------------------------------------------------------- */
@@ -416,42 +385,37 @@ export type WatchPayload = z.infer<typeof WatchPayloadSchema>;
  * sets `isDeleted`. `author` is also null for a closed account on a live comment. Render the
  * tombstone, never a card with an empty name.
  */
-export const VideoCommentSchema = z
-  .object({
-    commentId: z.string(),
-    parentCommentId: z.string().nullable(),
-    body: z.string().nullable(),
-    isDeleted: z.boolean(),
-    author: z
-      .object({
-        id: z.string(),
-        handle: z.string().nullable(),
-        name: z.string(),
-        imageUrl: z.string().nullable(),
-      })
-      .strip()
-      .nullable(),
-    likeCount: z.number(),
-    replyCount: z.number(),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
-    viewerState: z.object({ hasLiked: z.boolean() }).strip(),
-  })
-  .strip();
+export const VideoCommentSchema = z.object({
+  commentId: z.string(),
+  parentCommentId: z.string().nullable(),
+  body: z.string().nullable(),
+  isDeleted: z.boolean(),
+  author: z
+    .object({
+      id: z.string(),
+      handle: z.string().nullable(),
+      name: z.string(),
+      imageUrl: z.string().nullable(),
+    })
+    .nullable(),
+  likeCount: z.number(),
+  replyCount: z.number(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  viewerState: z.object({ hasLiked: z.boolean() }),
+});
 export type VideoComment = z.infer<typeof VideoCommentSchema>;
 
 /** `PATCH /comments/:commentId` answers a partial, not a whole `CommentView`. */
-export const UpdatedVideoCommentSchema = z
-  .object({
-    commentId: z.string(),
-    body: z.string(),
-    updatedAt: z.iso.datetime(),
-  })
-  .strip();
+export const UpdatedVideoCommentSchema = z.object({
+  commentId: z.string(),
+  body: z.string(),
+  updatedAt: z.iso.datetime(),
+});
 export type UpdatedVideoComment = z.infer<typeof UpdatedVideoCommentSchema>;
 
 /** `DELETE /comments/:commentId` — a tombstone acknowledgement. */
-export const DeletedVideoCommentSchema = z.object({ commentId: z.string() }).strip();
+export const DeletedVideoCommentSchema = z.object({ commentId: z.string() });
 
 /* -------------------------------------------------------------------------- */
 /* Engagement toggle results                                                    */
@@ -469,22 +433,19 @@ export const DeletedVideoCommentSchema = z.object({ commentId: z.string() }).str
  * would find a field this file claims does not exist. Map them in the hooks, not here.
  */
 
-export const LikeToggleResultSchema = z
-  .object({ hasLiked: z.boolean(), likeCount: z.number() })
-  .strip();
+export const LikeToggleResultSchema = z.object({ hasLiked: z.boolean(), likeCount: z.number() });
 export type LikeToggleResult = z.infer<typeof LikeToggleResultSchema>;
 
-export const SaveToggleResultSchema = z
-  .object({ hasSaved: z.boolean(), saveCount: z.number() })
-  .strip();
+export const SaveToggleResultSchema = z.object({ hasSaved: z.boolean(), saveCount: z.number() });
 export type SaveToggleResult = z.infer<typeof SaveToggleResultSchema>;
 
-export const SubscribeToggleResultSchema = z
-  .object({ isSubscribed: z.boolean(), subscriberCount: z.number() })
-  .strip();
+export const SubscribeToggleResultSchema = z.object({
+  isSubscribed: z.boolean(),
+  subscriberCount: z.number(),
+});
 export type SubscribeToggleResult = z.infer<typeof SubscribeToggleResultSchema>;
 
-export const ShareResultSchema = z.object({ shareCount: z.number() }).strip();
+export const ShareResultSchema = z.object({ shareCount: z.number() });
 export type ShareResult = z.infer<typeof ShareResultSchema>;
 
 /*
@@ -497,10 +458,10 @@ export type ShareResult = z.infer<typeof ShareResultSchema>;
  * would be a field the wire does not carry, and `.strip()` would leave it `undefined`.
  */
 
-export const NotInterestedResultSchema = z.object({ isNotInterested: z.boolean() }).strip();
+export const NotInterestedResultSchema = z.object({ isNotInterested: z.boolean() });
 export type NotInterestedResult = z.infer<typeof NotInterestedResultSchema>;
 
-export const CreatorMuteResultSchema = z.object({ isMuted: z.boolean() }).strip();
+export const CreatorMuteResultSchema = z.object({ isMuted: z.boolean() });
 export type CreatorMuteResult = z.infer<typeof CreatorMuteResultSchema>;
 
 /**
@@ -510,15 +471,13 @@ export type CreatorMuteResult = z.infer<typeof CreatorMuteResultSchema>;
  * an account with neither is a real account. A caller must not build `/channel/${handle}`
  * without branching — see `toVideoCardProps`, which omits the link rather than guessing.
  */
-export const MutedCreatorSchema = z
-  .object({
-    id: z.string(),
-    handle: z.string().nullable(),
-    name: z.string(),
-    imageUrl: z.string().nullable(),
-    mutedAt: z.iso.datetime(),
-  })
-  .strip();
+export const MutedCreatorSchema = z.object({
+  id: z.string(),
+  handle: z.string().nullable(),
+  name: z.string(),
+  imageUrl: z.string().nullable(),
+  mutedAt: z.iso.datetime(),
+});
 export type MutedCreator = z.infer<typeof MutedCreatorSchema>;
 
 /**
@@ -533,16 +492,14 @@ export type MutedCreator = z.infer<typeof MutedCreatorSchema>;
  * NO `viewerState`, NO COUNTS. This is a row in an undo list, not a feed card — everything
  * here exists so somebody can recognise the video they dismissed and take it back.
  */
-export const NotInterestedVideoSchema = z
-  .object({
-    videoId: z.string(),
-    title: z.string(),
-    thumbnailUrl: z.string().nullable(),
-    creatorName: z.string(),
-    creatorHandle: z.string().nullable(),
-    dismissedAt: z.iso.datetime(),
-  })
-  .strip();
+export const NotInterestedVideoSchema = z.object({
+  videoId: z.string(),
+  title: z.string(),
+  thumbnailUrl: z.string().nullable(),
+  creatorName: z.string(),
+  creatorHandle: z.string().nullable(),
+  dismissedAt: z.iso.datetime(),
+});
 export type NotInterestedVideo = z.infer<typeof NotInterestedVideoSchema>;
 
 /*
@@ -553,17 +510,13 @@ export type NotInterestedVideo = z.infer<typeof NotInterestedVideoSchema>;
  * separate schemas rather than one shared `{ count }` because the field names are the only
  * thing distinguishing three otherwise identical responses in a network log.
  */
-export const HideFromWatchHistoryResultSchema = z
-  .object({ hiddenSessionCount: z.number() })
-  .strip();
+export const HideFromWatchHistoryResultSchema = z.object({ hiddenSessionCount: z.number() });
 export type HideFromWatchHistoryResult = z.infer<typeof HideFromWatchHistoryResultSchema>;
 
-export const RestoreToWatchHistoryResultSchema = z
-  .object({ restoredSessionCount: z.number() })
-  .strip();
+export const RestoreToWatchHistoryResultSchema = z.object({ restoredSessionCount: z.number() });
 export type RestoreToWatchHistoryResult = z.infer<typeof RestoreToWatchHistoryResultSchema>;
 
-export const ClearWatchHistoryResultSchema = z.object({ clearedSessionCount: z.number() }).strip();
+export const ClearWatchHistoryResultSchema = z.object({ clearedSessionCount: z.number() });
 export type ClearWatchHistoryResult = z.infer<typeof ClearWatchHistoryResultSchema>;
 
 /**

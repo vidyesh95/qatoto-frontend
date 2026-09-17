@@ -176,6 +176,38 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
       },
     );
   }
+  function renderCreateOutcome(card: AdminFreightRateCard, supersededRateCardId: string | null) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1 rounded-xl border border-[#00696E]/30 bg-[#00696E]/5 p-3 text-sm">
+          <p className="font-medium text-[#00696E]">Card created.</p>
+          <p className="text-xs text-muted-foreground">
+            {card.originCountryCode} → {card.destinationCountryCode} ·{" "}
+            {FREIGHT_TRANSPORT_MODE_LABELS[card.mode]} · {card.currency} · starts{" "}
+            {formatIsoInstantLabel(card.validFrom)}
+          </p>
+          <p className="text-xs">
+            {card.bandsEditable
+              ? "Bands are still editable — this card is staged. That stops the moment it comes into force."
+              : "Bands are already frozen on this card. It came into force on creation, and there is no way to reopen it — withdraw it and author another if the ladder is wrong."}
+          </p>
+        </div>
+
+        {/* Reported EXACTLY ONCE, here. No later read announces it, so it is surfaced plainly
+            rather than folded into a toast that scrolls away. */}
+        {supersededRateCardId !== null && (
+          <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
+            This create closed the previous card on the lane, id <code>{supersededRateCardId}</code>
+            . That is the only time you will be told.
+          </p>
+        )}
+
+        <button type="button" onClick={onClose} className={QUIET_BUTTON_CLASS}>
+          Back to the lanes
+        </button>
+      </div>
+    );
+  }
 
   return (
     <section className={`${CARD_CLASS} space-y-4`}>
@@ -388,39 +420,6 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
       )}
     </section>
   );
-
-  function renderCreateOutcome(card: AdminFreightRateCard, supersededRateCardId: string | null) {
-    return (
-      <div className="space-y-3">
-        <div className="space-y-1 rounded-xl border border-[#00696E]/30 bg-[#00696E]/5 p-3 text-sm">
-          <p className="font-medium text-[#00696E]">Card created.</p>
-          <p className="text-xs text-muted-foreground">
-            {card.originCountryCode} → {card.destinationCountryCode} ·{" "}
-            {FREIGHT_TRANSPORT_MODE_LABELS[card.mode]} · {card.currency} · starts{" "}
-            {formatIsoInstantLabel(card.validFrom)}
-          </p>
-          <p className="text-xs">
-            {card.bandsEditable
-              ? "Bands are still editable — this card is staged. That stops the moment it comes into force."
-              : "Bands are already frozen on this card. It came into force on creation, and there is no way to reopen it — withdraw it and author another if the ladder is wrong."}
-          </p>
-        </div>
-
-        {/* Reported EXACTLY ONCE, here. No later read announces it, so it is surfaced plainly
-            rather than folded into a toast that scrolls away. */}
-        {supersededRateCardId !== null && (
-          <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
-            This create closed the previous card on the lane, id <code>{supersededRateCardId}</code>
-            . That is the only time you will be told.
-          </p>
-        )}
-
-        <button type="button" onClick={onClose} className={QUIET_BUTTON_CLASS}>
-          Back to the lanes
-        </button>
-      </div>
-    );
-  }
 }
 
 /**

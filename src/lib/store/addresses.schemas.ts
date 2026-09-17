@@ -43,26 +43,24 @@ export type OrganizationAddressKind = (typeof ORGANIZATION_ADDRESS_KINDS)[number
 /** The server's own cap, per kind. Stated so the UI can say why "add" went away. */
 export const MAXIMUM_ADDRESSES_PER_KIND = 10;
 
-export const OrganizationAddressSchema = z
-  .object({
-    id: z.string(),
-    organizationId: z.string(),
-    addressKind: z.enum(ORGANIZATION_ADDRESS_KINDS),
-    label: z.string().nullable(),
-    countryCode: z.string(),
-    regionCode: z.string().nullable(),
-    locality: z.string(),
-    postalCode: z.string().nullable(),
-    // Decrypted for a member who may read them. PII — see rule 4 above.
-    recipientName: z.string().nullable(),
-    addressLineOne: z.string().nullable(),
-    addressLineTwo: z.string().nullable(),
-    phone: z.string().nullable(),
-    isDefault: z.boolean(),
-    createdAt: IsoDateTimeSchema,
-    updatedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const OrganizationAddressSchema = z.object({
+  id: z.string(),
+  organizationId: z.string(),
+  addressKind: z.enum(ORGANIZATION_ADDRESS_KINDS),
+  label: z.string().nullable(),
+  countryCode: z.string(),
+  regionCode: z.string().nullable(),
+  locality: z.string(),
+  postalCode: z.string().nullable(),
+  // Decrypted for a member who may read them. PII — see rule 4 above.
+  recipientName: z.string().nullable(),
+  addressLineOne: z.string().nullable(),
+  addressLineTwo: z.string().nullable(),
+  phone: z.string().nullable(),
+  isDefault: z.boolean(),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+});
 
 export const OrganizationAddressListSchema = z.array(OrganizationAddressSchema);
 

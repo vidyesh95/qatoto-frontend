@@ -202,7 +202,7 @@ export function uploadProductModel(
     `/products/${productId}/model`,
     "POST",
     formData,
-    z.object({ threeDimensionalModel: ProductThreeDimensionalModelSchema }).strip(),
+    z.object({ threeDimensionalModel: ProductThreeDimensionalModelSchema }),
   );
 }
 
@@ -214,7 +214,7 @@ export function deleteProductModel(
     `/products/${productId}/model`,
     "DELETE",
     undefined,
-    z.object({ threeDimensionalModel: z.null() }).strip(),
+    z.object({ threeDimensionalModel: z.null() }),
   );
 }
 
@@ -307,7 +307,7 @@ export function replaceProductRelations(
     `/commerce/products/${productId}/relations`,
     "PUT",
     { relations },
-    z.object({ relations: z.array(SellerProductRelationSchema) }).strip(),
+    z.object({ relations: z.array(SellerProductRelationSchema) }),
     options,
   );
 }

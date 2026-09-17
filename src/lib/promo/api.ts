@@ -19,8 +19,8 @@ import {
  * schema is the wrapper and the caller unwraps. Matching the backend exactly here is
  * cheaper than a helper that has to guess which shape a route uses.
  */
-const PublicSlideListSchema = z.object({ slides: PublicPromotionalSlideSchema.array() }).strip();
-const AdminSlideListSchema = z.object({ slides: AdminPromotionalSlideSchema.array() }).strip();
+const PublicSlideListSchema = z.object({ slides: PublicPromotionalSlideSchema.array() });
+const AdminSlideListSchema = z.object({ slides: AdminPromotionalSlideSchema.array() });
 
 /**
  * `GET /promotions/slides` — PUBLIC, no session.
@@ -148,7 +148,7 @@ export function deletePromotionalSlide(
     `/promotions/admin/slides/${encodeURIComponent(slideId)}`,
     "DELETE",
     undefined,
-    z.object({ deletedSlideId: z.string() }).strip(),
+    z.object({ deletedSlideId: z.string() }),
     options,
   );
 }

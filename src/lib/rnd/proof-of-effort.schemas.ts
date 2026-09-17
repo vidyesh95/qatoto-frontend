@@ -104,39 +104,35 @@ export type FairMarketRateStatus = z.infer<typeof FairMarketRateStatusSchema>;
  * ACCEPTS, and only then can it be locked. Without the accept step the founder both sets
  * and ratifies the number, which is founder fiat wearing a process.
  */
-export const FairMarketRateSchema = z
-  .object({
-    id: z.string(),
-    memberId: z.string(),
-    memberUserId: z.string(),
-    memberName: z.string(),
-    fairMarketRateCentsPerHour: z.string(),
-    paidCashRateCentsPerHour: z.string(),
-    unpaidRateCentsPerHour: z.string(),
-    currencyCode: z.string(),
-    status: FairMarketRateStatusSchema,
-    effectiveFrom: z.string(),
-    rationaleNote: z.string(),
-    proposedByUserId: z.string(),
-    acceptedAt: z.string().nullable(),
-    /** Trigger-frozen after this instant. A rate that moved would re-price every logged hour. */
-    lockedAt: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const FairMarketRateSchema = z.object({
+  id: z.string(),
+  memberId: z.string(),
+  memberUserId: z.string(),
+  memberName: z.string(),
+  fairMarketRateCentsPerHour: z.string(),
+  paidCashRateCentsPerHour: z.string(),
+  unpaidRateCentsPerHour: z.string(),
+  currencyCode: z.string(),
+  status: FairMarketRateStatusSchema,
+  effectiveFrom: z.string(),
+  rationaleNote: z.string(),
+  proposedByUserId: z.string(),
+  acceptedAt: z.string().nullable(),
+  /** Trigger-frozen after this instant. A rate that moved would re-price every logged hour. */
+  lockedAt: z.string().nullable(),
+  createdAt: z.string(),
+});
 export type FairMarketRate = z.infer<typeof FairMarketRateSchema>;
 
 // --- Equity (the cap table) ---------------------------------------------------
 
-export const EquityShareSchema = z
-  .object({
-    memberId: z.string(),
-    memberUserId: z.string(),
-    memberName: z.string(),
-    slices: z.string(),
-    equityBasisPoints: z.number(),
-  })
-  .strip();
+export const EquityShareSchema = z.object({
+  memberId: z.string(),
+  memberUserId: z.string(),
+  memberName: z.string(),
+  slices: z.string(),
+  equityBasisPoints: z.number(),
+});
 export type EquityShare = z.infer<typeof EquityShareSchema>;
 
 /**
@@ -150,20 +146,18 @@ export type EquityShare = z.infer<typeof EquityShareSchema>;
  * `isBaked` freezes it forever: after the bake, dynamic recalculation stops and the
  * nightly job skips the project entirely.
  */
-export const EquitySnapshotSchema = z
-  .object({
-    id: z.string(),
-    asOf: z.string(),
-    computedAt: z.string(),
-    totalSlices: z.string(),
-    memberCount: z.number(),
-    apportionmentAlgorithm: z.string(),
-    throughLedgerSequenceNumber: z.number(),
-    isDegenerate: z.boolean(),
-    isBaked: z.boolean(),
-    shares: EquityShareSchema.array(),
-  })
-  .strip();
+export const EquitySnapshotSchema = z.object({
+  id: z.string(),
+  asOf: z.string(),
+  computedAt: z.string(),
+  totalSlices: z.string(),
+  memberCount: z.number(),
+  apportionmentAlgorithm: z.string(),
+  throughLedgerSequenceNumber: z.number(),
+  isDegenerate: z.boolean(),
+  isBaked: z.boolean(),
+  shares: EquityShareSchema.array(),
+});
 export type EquitySnapshot = z.infer<typeof EquitySnapshotSchema>;
 
 /**
@@ -174,17 +168,15 @@ export type EquitySnapshot = z.infer<typeof EquitySnapshotSchema>;
  * its own advertised band, computed from `basis` and explicitly OUTSIDE the denominator.
  * Nothing here may render as an allocation.
  */
-export const OpenRoleProjectionSchema = z
-  .object({
-    openRoleId: z.string(),
-    roleTitle: z.string(),
-    projectedSlices: z.string(),
-    projectedDilutionBasisPoints: z.number(),
-    assumedRateCentsPerHour: z.string(),
-    assumedMonthlyMinutes: z.number(),
-    basis: z.string(),
-  })
-  .strip();
+export const OpenRoleProjectionSchema = z.object({
+  openRoleId: z.string(),
+  roleTitle: z.string(),
+  projectedSlices: z.string(),
+  projectedDilutionBasisPoints: z.number(),
+  assumedRateCentsPerHour: z.string(),
+  assumedMonthlyMinutes: z.number(),
+  basis: z.string(),
+});
 export type OpenRoleProjection = z.infer<typeof OpenRoleProjectionSchema>;
 
 // --- The slice ledger ---------------------------------------------------------
@@ -197,23 +189,21 @@ export type OpenRoleProjection = z.infer<typeof OpenRoleProjectionSchema>;
  * slice went; `slicesAwarded` is the rounded integer. Show both or show the integer, but
  * never present the rounded one as exact.
  */
-export const LedgerEntrySchema = z
-  .object({
-    id: z.string(),
-    sequenceNumber: z.number(),
-    memberId: z.string(),
-    memberName: z.string(),
-    entryKind: SliceLedgerEntryKindSchema,
-    contributionKind: SliceContributionKindSchema,
-    claimId: z.string().nullable(),
-    sliceNumerator: z.string(),
-    slicesAwarded: z.number(),
-    effortMinutes: z.number().nullable(),
-    cashInCents: z.string().nullable(),
-    unpaidRateCentsPerHour: z.string().nullable(),
-    occurredAt: z.string(),
-  })
-  .strip();
+export const LedgerEntrySchema = z.object({
+  id: z.string(),
+  sequenceNumber: z.number(),
+  memberId: z.string(),
+  memberName: z.string(),
+  entryKind: SliceLedgerEntryKindSchema,
+  contributionKind: SliceContributionKindSchema,
+  claimId: z.string().nullable(),
+  sliceNumerator: z.string(),
+  slicesAwarded: z.number(),
+  effortMinutes: z.number().nullable(),
+  cashInCents: z.string().nullable(),
+  unpaidRateCentsPerHour: z.string().nullable(),
+  occurredAt: z.string(),
+});
 export type LedgerEntry = z.infer<typeof LedgerEntrySchema>;
 
 // --- Effort claims ------------------------------------------------------------
@@ -226,23 +216,21 @@ export type LedgerEntry = z.infer<typeof LedgerEntrySchema>;
  * page of twenty. The index answers who, when, how much and what the verdict was; opening
  * a row fetches the rest.
  */
-export const ClaimSummarySchema = z
-  .object({
-    id: z.string(),
-    memberId: z.string(),
-    memberUserId: z.string(),
-    memberName: z.string(),
-    sourceKind: EffortClaimSourceKindSchema,
-    claimedForDate: z.string(),
-    claimSummary: z.string(),
-    groundedMinutes: z.number().nullable(),
-    groundedCashInCents: z.string().nullable(),
-    overriddenMinutes: z.number().nullable(),
-    verificationStatus: EffortVerificationStatusSchema,
-    verdictReachedAt: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const ClaimSummarySchema = z.object({
+  id: z.string(),
+  memberId: z.string(),
+  memberUserId: z.string(),
+  memberName: z.string(),
+  sourceKind: EffortClaimSourceKindSchema,
+  claimedForDate: z.string(),
+  claimSummary: z.string(),
+  groundedMinutes: z.number().nullable(),
+  groundedCashInCents: z.string().nullable(),
+  overriddenMinutes: z.number().nullable(),
+  verificationStatus: EffortVerificationStatusSchema,
+  verdictReachedAt: z.string().nullable(),
+  createdAt: z.string(),
+});
 export type ClaimSummary = z.infer<typeof ClaimSummarySchema>;
 
 /**
@@ -253,24 +241,22 @@ export type ClaimSummary = z.infer<typeof ClaimSummarySchema>;
  * formula then recomputes the minutes itself. Any UI that lets a human type a minute
  * count has reinvented founder fiat.
  */
-export const VerificationStepSchema = z
-  .object({
-    id: z.string(),
-    stepOrder: z.number(),
-    stepKind: VerificationStepKindSchema,
-    status: VerificationStepStatusSchema,
-    overriddenStatus: VerificationStepStatusSchema.nullable(),
-    findingSummary: z.string().nullable(),
-    scoreBps: z.number().nullable(),
-    modelName: z.string().nullable(),
-    promptVersion: z.string().nullable(),
-    confidenceBps: z.number().nullable(),
-    reviewedByUserId: z.string().nullable(),
-    overrideReason: z.string().nullable(),
-    reviewedAt: z.string().nullable(),
-    completedAt: z.string().nullable(),
-  })
-  .strip();
+export const VerificationStepSchema = z.object({
+  id: z.string(),
+  stepOrder: z.number(),
+  stepKind: VerificationStepKindSchema,
+  status: VerificationStepStatusSchema,
+  overriddenStatus: VerificationStepStatusSchema.nullable(),
+  findingSummary: z.string().nullable(),
+  scoreBps: z.number().nullable(),
+  modelName: z.string().nullable(),
+  promptVersion: z.string().nullable(),
+  confidenceBps: z.number().nullable(),
+  reviewedByUserId: z.string().nullable(),
+  overrideReason: z.string().nullable(),
+  reviewedAt: z.string().nullable(),
+  completedAt: z.string().nullable(),
+});
 export type VerificationStep = z.infer<typeof VerificationStepSchema>;
 
 /**
@@ -291,25 +277,23 @@ export type VerificationStep = z.infer<typeof VerificationStepSchema>;
  * `flaggedAt` is `completedAt` COALESCED with `createdAt` server-side: a step flagged by a
  * pipeline that crashed before stamping completion still belongs in the queue.
  */
-export const OverrideQueueRowSchema = z
-  .object({
-    stepId: z.string(),
-    claimId: z.string(),
-    runId: z.string(),
-    attemptNumber: z.number(),
-    memberUserId: z.string(),
-    memberName: z.string(),
-    stepKind: VerificationStepKindSchema,
-    stepOrder: z.number(),
-    findingSummary: z.string().nullable(),
-    scoreBps: z.number().nullable(),
-    confidenceBps: z.number().nullable(),
-    claimedForDate: z.string(),
-    claimSummary: z.string(),
-    verificationStatus: EffortVerificationStatusSchema,
-    flaggedAt: z.string(),
-  })
-  .strip();
+export const OverrideQueueRowSchema = z.object({
+  stepId: z.string(),
+  claimId: z.string(),
+  runId: z.string(),
+  attemptNumber: z.number(),
+  memberUserId: z.string(),
+  memberName: z.string(),
+  stepKind: VerificationStepKindSchema,
+  stepOrder: z.number(),
+  findingSummary: z.string().nullable(),
+  scoreBps: z.number().nullable(),
+  confidenceBps: z.number().nullable(),
+  claimedForDate: z.string(),
+  claimSummary: z.string(),
+  verificationStatus: EffortVerificationStatusSchema,
+  flaggedAt: z.string(),
+});
 export type OverrideQueueRow = z.infer<typeof OverrideQueueRowSchema>;
 
 export const ARTIFACT_SIGNATURE_STATUSES = ["valid", "invalid", "unsigned", "unknown"] as const;
@@ -340,34 +324,30 @@ export type ArtifactProvider = z.infer<typeof ArtifactProviderSchema>;
  * difference; "evidence deleted" and "evidence never existed" are different facts, and a
  * dispute raised against a purged claim resolves `409 EVIDENCE_PURGED`.
  */
-export const ClaimEvidenceSchema = z
-  .object({
-    provider: ArtifactProviderSchema,
-    externalId: z.string(),
-    label: z.string(),
-    externalUrl: z.string().nullable(),
-    payloadSha256: z.string(),
-    signatureStatus: ArtifactSignatureStatusSchema,
-    artifactOccurredAt: z.string(),
-    countsTowardSlices: z.boolean(),
-    evidenceRetained: z.boolean(),
-  })
-  .strip();
+export const ClaimEvidenceSchema = z.object({
+  provider: ArtifactProviderSchema,
+  externalId: z.string(),
+  label: z.string(),
+  externalUrl: z.string().nullable(),
+  payloadSha256: z.string(),
+  signatureStatus: ArtifactSignatureStatusSchema,
+  artifactOccurredAt: z.string(),
+  countsTowardSlices: z.boolean(),
+  evidenceRetained: z.boolean(),
+});
 export type ClaimEvidence = z.infer<typeof ClaimEvidenceSchema>;
 
-export const ClaimVerificationRunSchema = z
-  .object({
-    id: z.string(),
-    attemptNumber: z.number(),
-    verdict: EffortVerificationStatusSchema,
-    triggerReason: z.string().nullable(),
-    scopedWindowStartsAt: z.string().nullable(),
-    scopedWindowEndsAt: z.string().nullable(),
-    startedAt: z.string(),
-    completedAt: z.string().nullable(),
-    steps: VerificationStepSchema.array(),
-  })
-  .strip();
+export const ClaimVerificationRunSchema = z.object({
+  id: z.string(),
+  attemptNumber: z.number(),
+  verdict: EffortVerificationStatusSchema,
+  triggerReason: z.string().nullable(),
+  scopedWindowStartsAt: z.string().nullable(),
+  scopedWindowEndsAt: z.string().nullable(),
+  startedAt: z.string(),
+  completedAt: z.string().nullable(),
+  steps: VerificationStepSchema.array(),
+});
 export type ClaimVerificationRun = z.infer<typeof ClaimVerificationRunSchema>;
 
 /**
@@ -380,28 +360,26 @@ export type ClaimVerificationRun = z.infer<typeof ClaimVerificationRunSchema>;
  * the artifacts PROVE, and that — or its override — is what the ledger prices. Never label
  * the first as effort.
  */
-export const ClaimDetailSchema = z
-  .object({
-    id: z.string(),
-    memberId: z.string(),
-    memberName: z.string(),
-    sourceKind: EffortClaimSourceKindSchema,
-    dailyLogId: z.string().nullable(),
-    claimedForDate: z.string(),
-    claimSummary: z.string(),
-    extractedMinutes: z.number().nullable(),
-    extractedCashInCents: z.string().nullable(),
-    groundedMinutes: z.number().nullable(),
-    groundedCashInCents: z.string().nullable(),
-    overriddenMinutes: z.number().nullable(),
-    overrideReason: z.string().nullable(),
-    verificationStatus: EffortVerificationStatusSchema,
-    verdictReachedAt: z.string().nullable(),
-    fairMarketRateId: z.string().nullable(),
-    runs: ClaimVerificationRunSchema.array(),
-    evidence: ClaimEvidenceSchema.array(),
-  })
-  .strip();
+export const ClaimDetailSchema = z.object({
+  id: z.string(),
+  memberId: z.string(),
+  memberName: z.string(),
+  sourceKind: EffortClaimSourceKindSchema,
+  dailyLogId: z.string().nullable(),
+  claimedForDate: z.string(),
+  claimSummary: z.string(),
+  extractedMinutes: z.number().nullable(),
+  extractedCashInCents: z.string().nullable(),
+  groundedMinutes: z.number().nullable(),
+  groundedCashInCents: z.string().nullable(),
+  overriddenMinutes: z.number().nullable(),
+  overrideReason: z.string().nullable(),
+  verificationStatus: EffortVerificationStatusSchema,
+  verdictReachedAt: z.string().nullable(),
+  fairMarketRateId: z.string().nullable(),
+  runs: ClaimVerificationRunSchema.array(),
+  evidence: ClaimEvidenceSchema.array(),
+});
 export type ClaimDetail = z.infer<typeof ClaimDetailSchema>;
 
 export interface ListClaimsFilter {
@@ -438,25 +416,23 @@ export type AllocationProposalStatus = z.infer<typeof AllocationProposalStatusSc
  * `windowClosesAt` IS AN ISO INSTANT, never a countdown string. The client counts down, so
  * the number stays right when the tab has been open for an hour.
  */
-export const AllocationProposalSchema = z
-  .object({
-    id: z.string(),
-    claimId: z.string(),
-    memberId: z.string(),
-    memberName: z.string(),
-    verdict: EffortVerificationStatusSchema,
-    proposedSlices: z.number(),
-    proposedSliceNumerator: z.string(),
-    status: AllocationProposalStatusSchema,
-    windowOpensAt: z.string(),
-    windowClosesAt: z.string(),
-    escrowedSlices: z.number(),
-    activeDisputeId: z.string().nullable(),
-    settledLedgerEntryId: z.string().nullable(),
-    claimSummary: z.string(),
-    claimedForDate: z.string(),
-  })
-  .strip();
+export const AllocationProposalSchema = z.object({
+  id: z.string(),
+  claimId: z.string(),
+  memberId: z.string(),
+  memberName: z.string(),
+  verdict: EffortVerificationStatusSchema,
+  proposedSlices: z.number(),
+  proposedSliceNumerator: z.string(),
+  status: AllocationProposalStatusSchema,
+  windowOpensAt: z.string(),
+  windowClosesAt: z.string(),
+  escrowedSlices: z.number(),
+  activeDisputeId: z.string().nullable(),
+  settledLedgerEntryId: z.string().nullable(),
+  claimSummary: z.string(),
+  claimedForDate: z.string(),
+});
 export type AllocationProposal = z.infer<typeof AllocationProposalSchema>;
 
 /**
@@ -469,14 +445,12 @@ export type AllocationProposal = z.infer<typeof AllocationProposalSchema>;
  * `AllocationProposalSchema`, and a `z.lazy` forward reference would erase the inferred
  * type to `any` — which is exactly the escape hatch CLAUDE.md Pattern 2 forbids.
  */
-export const ProofOfEffortSummarySchema = z
-  .object({
-    equity: EquitySnapshotSchema.nullable(),
-    openProposals: AllocationProposalSchema.array(),
-    recentLedgerEntries: LedgerEntrySchema.array(),
-    openRoleProjection: OpenRoleProjectionSchema.array(),
-  })
-  .strip();
+export const ProofOfEffortSummarySchema = z.object({
+  equity: EquitySnapshotSchema.nullable(),
+  openProposals: AllocationProposalSchema.array(),
+  recentLedgerEntries: LedgerEntrySchema.array(),
+  openRoleProjection: OpenRoleProjectionSchema.array(),
+});
 export type ProofOfEffortSummary = z.infer<typeof ProofOfEffortSummarySchema>;
 
 export const DISPUTE_STATUSES = ["open", "withdrawn", "consensus_reached"] as const;
@@ -501,15 +475,13 @@ export const DISPUTE_VOTE_POSITIONS = ["uphold", "void", "re_verify"] as const;
 export const DisputeVotePositionSchema = z.enum(DISPUTE_VOTE_POSITIONS);
 export type DisputeVotePosition = z.infer<typeof DisputeVotePositionSchema>;
 
-export const DisputeVoteSchema = z
-  .object({
-    voterMemberId: z.string(),
-    voterName: z.string(),
-    position: DisputeVotePositionSchema,
-    note: z.string().nullable(),
-    castAt: z.string(),
-  })
-  .strip();
+export const DisputeVoteSchema = z.object({
+  voterMemberId: z.string(),
+  voterName: z.string(),
+  position: DisputeVotePositionSchema,
+  note: z.string().nullable(),
+  castAt: z.string(),
+});
 export type DisputeVote = z.infer<typeof DisputeVoteSchema>;
 
 /**
@@ -526,24 +498,22 @@ export type DisputeVote = z.infer<typeof DisputeVoteSchema>;
  *
  * `resolution` is nullable on the wire while the dispute is unresolved.
  */
-export const DisputeSchema = z
-  .object({
-    id: z.string(),
-    proposalId: z.string(),
-    raisedByMemberId: z.string(),
-    raisedByName: z.string(),
-    disputeNote: z.string(),
-    status: DisputeStatusSchema,
-    quorumMemberCount: z.number(),
-    resolution: DisputeResolutionSchema.nullable(),
-    resolutionNote: z.string().nullable(),
-    resolvedAt: z.string().nullable(),
-    scopedWindowStartsAt: z.string().nullable(),
-    scopedWindowEndsAt: z.string().nullable(),
-    createdAt: z.string(),
-    votes: DisputeVoteSchema.array(),
-  })
-  .strip();
+export const DisputeSchema = z.object({
+  id: z.string(),
+  proposalId: z.string(),
+  raisedByMemberId: z.string(),
+  raisedByName: z.string(),
+  disputeNote: z.string(),
+  status: DisputeStatusSchema,
+  quorumMemberCount: z.number(),
+  resolution: DisputeResolutionSchema.nullable(),
+  resolutionNote: z.string().nullable(),
+  resolvedAt: z.string().nullable(),
+  scopedWindowStartsAt: z.string().nullable(),
+  scopedWindowEndsAt: z.string().nullable(),
+  createdAt: z.string(),
+  votes: DisputeVoteSchema.array(),
+});
 export type Dispute = z.infer<typeof DisputeSchema>;
 
 // --- Physical receipts --------------------------------------------------------
@@ -571,13 +541,11 @@ export const RECEIPT_FORENSICS_RESULTS = ["pass", "flag", "fail", "not_applicabl
 export const ReceiptForensicsResultSchema = z.enum(RECEIPT_FORENSICS_RESULTS);
 export type ReceiptForensicsResult = z.infer<typeof ReceiptForensicsResultSchema>;
 
-export const ReceiptForensicsCheckSchema = z
-  .object({
-    checkKind: ReceiptForensicsCheckKindSchema,
-    result: ReceiptForensicsResultSchema,
-    findingSummary: z.string().nullable(),
-  })
-  .strip();
+export const ReceiptForensicsCheckSchema = z.object({
+  checkKind: ReceiptForensicsCheckKindSchema,
+  result: ReceiptForensicsResultSchema,
+  findingSummary: z.string().nullable(),
+});
 export type ReceiptForensicsCheck = z.infer<typeof ReceiptForensicsCheckSchema>;
 
 /**
@@ -588,22 +556,20 @@ export type ReceiptForensicsCheck = z.infer<typeof ReceiptForensicsCheckSchema>;
  * capture spans across its receipts, because a body carrying an hour count is exactly what
  * §0 forbids and a photograph has no transcript.
  */
-export const PhysicalReceiptSchema = z
-  .object({
-    id: z.string(),
-    receiptKind: PhysicalReceiptKindSchema,
-    contentSha256: z.string(),
-    perceptualHash: z.string(),
-    storedImageUrl: z.string().nullable(),
-    sizeBytes: z.number(),
-    widthPixels: z.number().nullable(),
-    heightPixels: z.number().nullable(),
-    capturedAt: z.string().nullable(),
-    claimId: z.string().nullable(),
-    createdAt: z.string(),
-    forensics: ReceiptForensicsCheckSchema.array(),
-  })
-  .strip();
+export const PhysicalReceiptSchema = z.object({
+  id: z.string(),
+  receiptKind: PhysicalReceiptKindSchema,
+  contentSha256: z.string(),
+  perceptualHash: z.string(),
+  storedImageUrl: z.string().nullable(),
+  sizeBytes: z.number(),
+  widthPixels: z.number().nullable(),
+  heightPixels: z.number().nullable(),
+  capturedAt: z.string().nullable(),
+  claimId: z.string().nullable(),
+  createdAt: z.string(),
+  forensics: ReceiptForensicsCheckSchema.array(),
+});
 export type PhysicalReceipt = z.infer<typeof PhysicalReceiptSchema>;
 
 // --- Integration consent ------------------------------------------------------
@@ -631,28 +597,24 @@ export type IntegrationGrantStatus = z.infer<typeof IntegrationGrantStatusSchema
  * the claim lands at `flagged_for_review` with zero slices. This screen is where a member
  * fixes that, which is why it is not optional chrome.
  */
-export const IntegrationGrantSchema = z
-  .object({
-    id: z.string(),
-    provider: IntegrationProviderSchema,
-    status: IntegrationGrantStatusSchema,
-    allowedResourceIds: z.string().array(),
-    externalAccountLabel: z.string().nullable(),
-    grantedAt: z.string().nullable(),
-    expiresAt: z.string().nullable(),
-    revokedAt: z.string().nullable(),
-    hasStoredToken: z.boolean(),
-  })
-  .strip();
+export const IntegrationGrantSchema = z.object({
+  id: z.string(),
+  provider: IntegrationProviderSchema,
+  status: IntegrationGrantStatusSchema,
+  allowedResourceIds: z.string().array(),
+  externalAccountLabel: z.string().nullable(),
+  grantedAt: z.string().nullable(),
+  expiresAt: z.string().nullable(),
+  revokedAt: z.string().nullable(),
+  hasStoredToken: z.boolean(),
+});
 export type IntegrationGrant = z.infer<typeof IntegrationGrantSchema>;
 
-export const AuthorizeUrlSchema = z
-  .object({
-    provider: IntegrationProviderSchema,
-    authorizeUrl: z.string(),
-    expiresInSeconds: z.number(),
-  })
-  .strip();
+export const AuthorizeUrlSchema = z.object({
+  provider: IntegrationProviderSchema,
+  authorizeUrl: z.string(),
+  expiresInSeconds: z.number(),
+});
 export type AuthorizeUrl = z.infer<typeof AuthorizeUrlSchema>;
 
 // --- Optimization suggestions -------------------------------------------------
@@ -668,32 +630,29 @@ export type OptimizationSuggestionStatus = z.infer<typeof OptimizationSuggestion
  * provenance is hidden reads as a platform ruling. `confidenceBps` is nullable and null is
  * not zero confidence — it is no recorded confidence.
  */
-export const OptimizationSuggestionSchema = z
-  .object({
-    id: z.string(),
-    memberId: z.string().nullable(),
-    title: z.string(),
-    bodyText: z.string(),
-    status: OptimizationSuggestionStatusSchema,
-    modelName: z.string(),
-    modelVersion: z.string().nullable(),
-    promptVersion: z.string(),
-    confidenceBps: z.number().nullable(),
-    asOf: z.string(),
-    decidedByUserId: z.string().nullable(),
-    decidedAt: z.string().nullable(),
-    decisionNote: z.string().nullable(),
-    createdAt: z.string(),
-    evidence: z
-      .object({
-        sequenceNumber: z.number(),
-        label: z.string(),
-        relatedClaimId: z.string().nullable(),
-      })
-      .strip()
-      .array(),
-  })
-  .strip();
+export const OptimizationSuggestionSchema = z.object({
+  id: z.string(),
+  memberId: z.string().nullable(),
+  title: z.string(),
+  bodyText: z.string(),
+  status: OptimizationSuggestionStatusSchema,
+  modelName: z.string(),
+  modelVersion: z.string().nullable(),
+  promptVersion: z.string(),
+  confidenceBps: z.number().nullable(),
+  asOf: z.string(),
+  decidedByUserId: z.string().nullable(),
+  decidedAt: z.string().nullable(),
+  decisionNote: z.string().nullable(),
+  createdAt: z.string(),
+  evidence: z
+    .object({
+      sequenceNumber: z.number(),
+      label: z.string(),
+      relatedClaimId: z.string().nullable(),
+    })
+    .array(),
+});
 export type OptimizationSuggestion = z.infer<typeof OptimizationSuggestionSchema>;
 
 // --- Audit trail and the hash chain -------------------------------------------
@@ -710,24 +669,22 @@ export type OptimizationSuggestion = z.infer<typeof OptimizationSuggestionSchema
  * `entryHash` is the full 64 hex characters, always. The short form a UI shows is a
  * rendering — never key a list, a cache entry or an equality test on it.
  */
-export const AuditEntrySchema = z
-  .object({
-    id: z.string(),
-    sequenceNumber: z.number(),
-    eventKind: z.string(),
-    actorNameSnapshot: z.string(),
-    actorRoleSnapshot: z.string(),
-    actorDisplayName: z.string().nullable(),
-    actionLabel: z.string(),
-    targetLabel: z.string(),
-    detailNote: z.string(),
-    payloadJson: z.string(),
-    occurredAt: z.string(),
-    previousEntryHash: z.string().nullable(),
-    entryHash: z.string(),
-    hashAlgorithmVersion: z.string(),
-  })
-  .strip();
+export const AuditEntrySchema = z.object({
+  id: z.string(),
+  sequenceNumber: z.number(),
+  eventKind: z.string(),
+  actorNameSnapshot: z.string(),
+  actorRoleSnapshot: z.string(),
+  actorDisplayName: z.string().nullable(),
+  actionLabel: z.string(),
+  targetLabel: z.string(),
+  detailNote: z.string(),
+  payloadJson: z.string(),
+  occurredAt: z.string(),
+  previousEntryHash: z.string().nullable(),
+  entryHash: z.string(),
+  hashAlgorithmVersion: z.string(),
+});
 export type AuditEntry = z.infer<typeof AuditEntrySchema>;
 
 /**
@@ -738,15 +695,13 @@ export type AuditEntry = z.infer<typeof AuditEntrySchema>;
  * that verified is the only chain this schema ever parses. A broken chain arrives as an
  * error and must be surfaced as an operational emergency, not as a checkbox.
  */
-export const ChainVerificationSchema = z
-  .object({
-    entriesChecked: z.number(),
-    firstSequence: z.number().nullable(),
-    lastSequence: z.number().nullable(),
-    headEntryHash: z.string().nullable(),
-    lastAnchoredAt: z.string().nullable(),
-  })
-  .strip();
+export const ChainVerificationSchema = z.object({
+  entriesChecked: z.number(),
+  firstSequence: z.number().nullable(),
+  lastSequence: z.number().nullable(),
+  headEntryHash: z.string().nullable(),
+  lastAnchoredAt: z.string().nullable(),
+});
 export type ChainVerification = z.infer<typeof ChainVerificationSchema>;
 
 /**
@@ -755,15 +710,13 @@ export type ChainVerification = z.infer<typeof ChainVerificationSchema>;
  * Five lines of `crypto.subtle` reproduce `entryHash` from `canonicalBytes`, which is the
  * whole point — a server that grades its own homework proves nothing.
  */
-export const HashInputSchema = z
-  .object({
-    entryId: z.string(),
-    sequenceNumber: z.number(),
-    canonicalBytes: z.string(),
-    entryHash: z.string(),
-    hashAlgorithmVersion: z.string(),
-  })
-  .strip();
+export const HashInputSchema = z.object({
+  entryId: z.string(),
+  sequenceNumber: z.number(),
+  canonicalBytes: z.string(),
+  entryHash: z.string(),
+  hashAlgorithmVersion: z.string(),
+});
 export type HashInput = z.infer<typeof HashInputSchema>;
 
 // --- The pie bake -------------------------------------------------------------
@@ -794,13 +747,11 @@ export type PieBakeTrigger = z.infer<typeof PieBakeTriggerSchema>;
  * `GET …/pie-bake` answers 404 before the bake, which is an ABSENCE and not an error: a
  * project with a dynamic pie has no frozen one.
  */
-export const PieBakeSchema = z
-  .object({
-    bakeEventId: z.string(),
-    trigger: PieBakeTriggerSchema,
-    valuationCents: z.string().nullable(),
-    bakedAt: z.string(),
-    snapshot: EquitySnapshotSchema,
-  })
-  .strip();
+export const PieBakeSchema = z.object({
+  bakeEventId: z.string(),
+  trigger: PieBakeTriggerSchema,
+  valuationCents: z.string().nullable(),
+  bakedAt: z.string(),
+  snapshot: EquitySnapshotSchema,
+});
 export type PieBake = z.infer<typeof PieBakeSchema>;

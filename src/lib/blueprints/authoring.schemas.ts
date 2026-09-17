@@ -5,7 +5,7 @@
 // value objects rather than restating them — a second definition of a material or a provenance
 // block is a second thing to keep in step, and they would drift on the first backend change.
 //
-// ⚠️ `.strict()` ON THE DRAFT, `.strip()` ON THE RESPONSES, AND THE DIFFERENCE IS NOT STYLE.
+// ⚠️ `z.strictObject` ON THE DRAFT, PLAIN (STRIPPING) `z.object` ON THE RESPONSES, AND THE DIFFERENCE IS NOT STYLE.
 // `src/lib/products/schemas.ts:98-107` records what stripping cost on a write path — a stripped
 // field silently destroyed sellers' declared lead times on every edit, and nothing failed. So an
 // unknown key on the way OUT is a bug in this repo and should be loud.
@@ -120,42 +120,34 @@ const TeardownSubmissionFileUrlSchema = createExternalHttpsUrlSchema(512);
  * reason. When an upload route exists this field keeps its name and gains a sibling.
  */
 export const TeardownSubmissionDocumentSchema = z.discriminatedUnion("source", [
-  z
-    .object({
-      source: z.literal("pasted_link").default("pasted_link"),
-      kind: z.enum(BLUEPRINT_DOCUMENT_KINDS),
-      title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
-      url: TeardownSubmissionFileUrlSchema,
-    })
-    .strict(),
-  z
-    .object({
-      source: z.literal("uploaded"),
-      kind: z.enum(BLUEPRINT_DOCUMENT_KINDS),
-      title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
-      uploadId: z.string().uuid("An upload id is a UUID."),
-    })
-    .strict(),
+  z.strictObject({
+    source: z.literal("pasted_link").default("pasted_link"),
+    kind: z.enum(BLUEPRINT_DOCUMENT_KINDS),
+    title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
+    url: TeardownSubmissionFileUrlSchema,
+  }),
+  z.strictObject({
+    source: z.literal("uploaded"),
+    kind: z.enum(BLUEPRINT_DOCUMENT_KINDS),
+    title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
+    uploadId: z.uuid("An upload id is a UUID."),
+  }),
 ]);
 export type TeardownSubmissionDocument = z.infer<typeof TeardownSubmissionDocumentSchema>;
 
 export const TeardownSubmissionManufacturingFileSchema = z.discriminatedUnion("source", [
-  z
-    .object({
-      source: z.literal("pasted_link").default("pasted_link"),
-      kind: z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS),
-      title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
-      url: TeardownSubmissionFileUrlSchema,
-    })
-    .strict(),
-  z
-    .object({
-      source: z.literal("uploaded"),
-      kind: z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS),
-      title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
-      uploadId: z.string().uuid("An upload id is a UUID."),
-    })
-    .strict(),
+  z.strictObject({
+    source: z.literal("pasted_link").default("pasted_link"),
+    kind: z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS),
+    title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
+    url: TeardownSubmissionFileUrlSchema,
+  }),
+  z.strictObject({
+    source: z.literal("uploaded"),
+    kind: z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS),
+    title: z.string().min(1, TEARDOWN_FILE_TITLE_MESSAGE),
+    uploadId: z.uuid("An upload id is a UUID."),
+  }),
 ]);
 export type TeardownSubmissionManufacturingFile = z.infer<
   typeof TeardownSubmissionManufacturingFileSchema
@@ -169,12 +161,10 @@ export type TeardownSubmissionManufacturingFile = z.infer<
  * produce a modelled teardown, and the wizard says so rather than offering a field that goes
  * nowhere. This is the one place the write contract is deliberately NARROWER than the read one.
  */
-export const TeardownSubmissionPartSchema = z
-  .object({
-    label: z.string().min(1, "Name the part."),
-    material: z.string().min(1, "Say what it is made of, even roughly."),
-  })
-  .strict();
+export const TeardownSubmissionPartSchema = z.strictObject({
+  label: z.string().min(1, "Name the part."),
+  material: z.string().min(1, "Say what it is made of, even roughly."),
+});
 export type TeardownSubmissionPart = z.infer<typeof TeardownSubmissionPartSchema>;
 
 /**
@@ -263,7 +253,7 @@ const AttestationRefinementInputsSchema = z.object({
  * guards the fixtures guards this.
  */
 export const TeardownSubmissionDraftSchema = z
-  .object({
+  .strictObject({
     subjectKind: z.literal(PUBLISHABLE_TEARDOWN_SUBJECT_KIND),
     title: z.string().min(8, "A title short enough to skim and specific enough to search."),
     summary: z.string().min(40, "One paragraph: what it is, and what you found."),
@@ -299,7 +289,6 @@ export const TeardownSubmissionDraftSchema = z
      */
     acceptedAttestationClauseIds: z.array(z.enum(TEARDOWN_ATTESTATION_CLAUSE_IDS)),
   })
-  .strict()
   // ⚠️ TWO REFINEMENTS, EACH GATED BY `when` ON THE FIELDS IT READS. As one refinement it was skipped
   // whenever any field aborted (an unselected provenance kind, a literal miss), so the survey-date
   // and statement messages only appeared on a second press. See `refinement-inputs.ts`.
@@ -380,14 +369,12 @@ export type TeardownSubmissionDraft = z.infer<typeof TeardownSubmissionDraftSche
  * state, and typing it as the whole enum would invite a renderer to branch on six values that this
  * call can never return.
  */
-export const TeardownSubmissionReceiptSchema = z
-  .object({
-    submissionId: z.string(),
-    moderationState: z.literal("pending_review"),
-    /** ISO 8601, server-stamped. When the submission was accepted, not when it was decided. */
-    receivedAt: z.string(),
-  })
-  .strip();
+export const TeardownSubmissionReceiptSchema = z.object({
+  submissionId: z.string(),
+  moderationState: z.literal("pending_review"),
+  /** ISO 8601, server-stamped. When the submission was accepted, not when it was decided. */
+  receivedAt: z.string(),
+});
 export type TeardownSubmissionReceipt = z.infer<typeof TeardownSubmissionReceiptSchema>;
 
 /**
@@ -416,7 +403,6 @@ export const TeardownSubmissionSchema = z
     publicSlug: z.string().nullable(),
     moderatorNote: z.string().nullable(),
   })
-  .strip()
   .superRefine((submission, context) => {
     if (submission.moderationState === "rejected" && submission.moderatorNote === null) {
       context.addIssue({
@@ -460,23 +446,19 @@ export { TEARDOWN_SUBJECT_KINDS };
 export const TeardownUploadFormatSchema = z.enum(["pdf", "step", "stl", "dxf", "glb"]);
 export type TeardownUploadFormat = z.infer<typeof TeardownUploadFormatSchema>;
 
-export const TeardownUploadReceiptSchema = z
-  .object({
-    uploadId: z.string(),
-    format: TeardownUploadFormatSchema,
-    byteSize: z.number().int().nonnegative(),
-    originalFileName: z.string(),
-  })
-  .strip();
+export const TeardownUploadReceiptSchema = z.object({
+  uploadId: z.string(),
+  format: TeardownUploadFormatSchema,
+  byteSize: z.number().int().nonnegative(),
+  originalFileName: z.string(),
+});
 export type TeardownUploadReceipt = z.infer<typeof TeardownUploadReceiptSchema>;
 
-export const TeardownSubmissionDetailSchema = z
-  .object({
-    submissionId: z.string(),
-    moderationState: z.string(),
-    moderatorNote: z.string().nullable(),
-    document: z.string(),
-    documentSchemaVersion: z.number().int().positive(),
-  })
-  .strip();
+export const TeardownSubmissionDetailSchema = z.object({
+  submissionId: z.string(),
+  moderationState: z.string(),
+  moderatorNote: z.string().nullable(),
+  document: z.string(),
+  documentSchemaVersion: z.number().int().positive(),
+});
 export type TeardownSubmissionDetail = z.infer<typeof TeardownSubmissionDetailSchema>;

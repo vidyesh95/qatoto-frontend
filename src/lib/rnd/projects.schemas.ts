@@ -21,23 +21,21 @@ import {
  * separate opaque id on this row on purpose — the slug IS the URL identity across all
  * three clients.
  */
-export const ResearchProjectListRowSchema = z
-  .object({
-    slug: z.string(),
-    name: z.string(),
-    tagline: z.string(),
-    categorySlug: z.string(),
-    categoryLabel: z.string(),
-    stage: ProjectStageSchema,
-    status: ResearchProjectStatusSchema,
-    coverImageUrl: z.string().nullable(),
-    watchersCount: z.number(),
-    teamMemberCount: z.number(),
-    openRoleCount: z.number(),
-    publishedAt: z.string().nullable(),
-    updatedAt: z.string(),
-  })
-  .strip();
+export const ResearchProjectListRowSchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  tagline: z.string(),
+  categorySlug: z.string(),
+  categoryLabel: z.string(),
+  stage: ProjectStageSchema,
+  status: ResearchProjectStatusSchema,
+  coverImageUrl: z.string().nullable(),
+  watchersCount: z.number(),
+  teamMemberCount: z.number(),
+  openRoleCount: z.number(),
+  publishedAt: z.string().nullable(),
+  updatedAt: z.string(),
+});
 export type ResearchProjectListRow = z.infer<typeof ResearchProjectListRowSchema>;
 
 /**
@@ -81,20 +79,18 @@ export type ProjectMemberRole = z.infer<typeof ProjectMemberRoleSchema>;
  * fabricated number as fact on a Slicing Pie surface. The real cap table is the
  * Proof-of-Effort equity snapshot; do not reconstruct an equity split from this row.
  */
-export const ProjectTeamMemberSchema = z
-  .object({
-    memberId: z.string(),
-    userId: z.string(),
-    name: z.string(),
-    avatarImageUrl: z.string().nullable(),
-    handle: z.string().nullable(),
-    projectRole: ProjectMemberRoleSchema,
-    roleTitle: z.string().nullable(),
-    skills: z.string().array(),
-    isFounder: z.boolean(),
-    joinedAt: z.string(),
-  })
-  .strip();
+export const ProjectTeamMemberSchema = z.object({
+  memberId: z.string(),
+  userId: z.string(),
+  name: z.string(),
+  avatarImageUrl: z.string().nullable(),
+  handle: z.string().nullable(),
+  projectRole: ProjectMemberRoleSchema,
+  roleTitle: z.string().nullable(),
+  skills: z.string().array(),
+  isFounder: z.boolean(),
+  joinedAt: z.string(),
+});
 export type ProjectTeamMember = z.infer<typeof ProjectTeamMemberSchema>;
 
 /**
@@ -107,19 +103,17 @@ export type ProjectTeamMember = z.infer<typeof ProjectTeamMemberSchema>;
  * `statsComputedAt` exists so a client renders "as of" — these numbers are stored, not
  * live, and a streak decays at midnight in `projectTimeZone` with no write happening.
  */
-export const ProjectStatsSchema = z
-  .object({
-    watchersCount: z.number(),
-    teamMemberCount: z.number(),
-    openRoleCount: z.number(),
-    projectTimeZone: z.string(),
-    dailyLogStreakDays: z.number().nullable(),
-    lastDailyLogDate: z.string().nullable(),
-    verifiedEffortMinutesTotal: z.number().nullable(),
-    allocatedEquityBasisPoints: z.number().nullable(),
-    statsComputedAt: z.string().nullable(),
-  })
-  .strip();
+export const ProjectStatsSchema = z.object({
+  watchersCount: z.number(),
+  teamMemberCount: z.number(),
+  openRoleCount: z.number(),
+  projectTimeZone: z.string(),
+  dailyLogStreakDays: z.number().nullable(),
+  lastDailyLogDate: z.string().nullable(),
+  verifiedEffortMinutesTotal: z.number().nullable(),
+  allocatedEquityBasisPoints: z.number().nullable(),
+  statsComputedAt: z.string().nullable(),
+});
 export type ProjectStats = z.infer<typeof ProjectStatsSchema>;
 
 /**
@@ -149,95 +143,89 @@ export type ProjectStats = z.infer<typeof ProjectStatsSchema>;
  * `isSubscribedToCreator`; this rail renders none of them, and shipping `false` to a
  * signed-out visitor would be a negative the client has no basis for. A rail links.
  */
-export const ProjectVideoSchema = z
-  .object({
-    videoId: z.string(),
-    title: z.string(),
-    thumbnailUrl: z.string().nullable(),
-    publishedAt: z.iso.datetime().nullable(),
-    /** NULL until the duration job has enough samples. An absence, never a zero. */
-    durationSeconds: z.number().int().nullable(),
-    creator: z
-      .object({
-        /**
-         * ⚠️ REQUIRED, AND IT IS A DEPLOY-ORDER DEPENDENCY. The backend only began projecting
-         * this alongside the other creator fields (`project-videos.service.ts`); against an
-         * older backend that omits it, `.strip()` does NOT save us — a MISSING required key is
-         * a parse failure, not an unknown extra — and the whole reel renders empty. Ship the
-         * backend first.
-         *
-         * It exists so the card's overflow menu can address "don't recommend channel" by id.
-         */
-        id: z.string(),
-        handle: z.string().nullable(),
-        name: z.string(),
-        imageUrl: z.string().nullable(),
-      })
-      .strip(),
-  })
-  .strip();
+export const ProjectVideoSchema = z.object({
+  videoId: z.string(),
+  title: z.string(),
+  thumbnailUrl: z.string().nullable(),
+  publishedAt: z.iso.datetime().nullable(),
+  /** NULL until the duration job has enough samples. An absence, never a zero. */
+  durationSeconds: z.number().int().nullable(),
+  creator: z.object({
+    /**
+     * ⚠️ REQUIRED, AND IT IS A DEPLOY-ORDER DEPENDENCY. The backend only began projecting
+     * this alongside the other creator fields (`project-videos.service.ts`); against an
+     * older backend that omits it, `.strip()` does NOT save us — a MISSING required key is
+     * a parse failure, not an unknown extra — and the whole reel renders empty. Ship the
+     * backend first.
+     *
+     * It exists so the card's overflow menu can address "don't recommend channel" by id.
+     */
+    id: z.string(),
+    handle: z.string().nullable(),
+    name: z.string(),
+    imageUrl: z.string().nullable(),
+  }),
+});
 export type ProjectVideo = z.infer<typeof ProjectVideoSchema>;
 
-export const ResearchProjectDetailSchema = z
-  .object({
-    slug: z.string(),
-    name: z.string(),
-    tagline: z.string(),
-    description: z.string().nullable(),
-    problemStatement: z.string().nullable(),
-    solutionSummary: z.string().nullable(),
-    targetRegion: z.string().nullable(),
-    /**
-     * The FOUNDER'S OWN assertion of demand. Must render visually distinct from
-     * platform-computed market insights — an assertion is not verified evidence.
-     */
-    demandEvidenceNotes: z.string().nullable(),
-    category: z.object({ slug: z.string(), label: z.string() }).strip(),
-    stage: ProjectStageSchema,
-    status: ResearchProjectStatusSchema,
-    currency: z.string(),
-    coverImageUrl: z.string().nullable(),
-    seedRolesNeeded: z.string().array(),
-    offeredEquityBasisPointsMin: z.number().nullable(),
-    offeredEquityBasisPointsMax: z.number().nullable(),
-    /**
-     * NULLABLE. `research_project.expected_commitment` carries no `.notNull()`
-     * (backend `schema.ts:895`) and a project created without one returns null — which
-     * is what a founder who has not decided yet looks like, not a default of
-     * `part_time`. Render the absence.
-     */
-    expectedCommitment: RoleCommitmentSchema.nullable(),
-    founderUserId: z.string(),
-    publishedAt: z.string().nullable(),
-    archivedAt: z.string().nullable(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-    stats: ProjectStatsSchema.nullable(),
-    team: ProjectTeamMemberSchema.array(),
-    /**
-     * The Civic Pulse cluster this project was born from (§11k.1) — the
-     * `problem_cluster_project_link` row whose `source` is `origin`.
-     *
-     * ADDRESSED BY ID, NOT SLUG: clusters have no slug anywhere in the backend, so the
-     * chip links to `/problem-map` by `clusterId` exactly as the map itself does. It is
-     * NOT `originProblemReportId` — there is no such column, and this is a cluster
-     * rather than one person's report.
-     */
-    originCluster: z.object({ clusterId: z.string(), title: z.string() }).strip().nullable(),
-    /**
-     * Moderated market insights this project cites (§11k.2), PUBLISHED ONES ONLY and
-     * server-ordered.
-     *
-     * Distinct from `demandEvidenceNotes` above, and they must render differently: that
-     * is the founder's own assertion citing nothing a reader can open, these are
-     * platform-moderated evidence a reader can follow to `/knowledge-hub`.
-     */
-    relatedInsights: z.object({ insightId: z.string(), headline: z.string() }).strip().array(),
-    /** Computed per request from the viewer's session, never a column. */
-    isWatchedByViewer: z.boolean(),
-    viewerProjectRole: z.string().nullable(),
-  })
-  .strip();
+export const ResearchProjectDetailSchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  tagline: z.string(),
+  description: z.string().nullable(),
+  problemStatement: z.string().nullable(),
+  solutionSummary: z.string().nullable(),
+  targetRegion: z.string().nullable(),
+  /**
+   * The FOUNDER'S OWN assertion of demand. Must render visually distinct from
+   * platform-computed market insights — an assertion is not verified evidence.
+   */
+  demandEvidenceNotes: z.string().nullable(),
+  category: z.object({ slug: z.string(), label: z.string() }),
+  stage: ProjectStageSchema,
+  status: ResearchProjectStatusSchema,
+  currency: z.string(),
+  coverImageUrl: z.string().nullable(),
+  seedRolesNeeded: z.string().array(),
+  offeredEquityBasisPointsMin: z.number().nullable(),
+  offeredEquityBasisPointsMax: z.number().nullable(),
+  /**
+   * NULLABLE. `research_project.expected_commitment` carries no `.notNull()`
+   * (backend `schema.ts:895`) and a project created without one returns null — which
+   * is what a founder who has not decided yet looks like, not a default of
+   * `part_time`. Render the absence.
+   */
+  expectedCommitment: RoleCommitmentSchema.nullable(),
+  founderUserId: z.string(),
+  publishedAt: z.string().nullable(),
+  archivedAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  stats: ProjectStatsSchema.nullable(),
+  team: ProjectTeamMemberSchema.array(),
+  /**
+   * The Civic Pulse cluster this project was born from (§11k.1) — the
+   * `problem_cluster_project_link` row whose `source` is `origin`.
+   *
+   * ADDRESSED BY ID, NOT SLUG: clusters have no slug anywhere in the backend, so the
+   * chip links to `/problem-map` by `clusterId` exactly as the map itself does. It is
+   * NOT `originProblemReportId` — there is no such column, and this is a cluster
+   * rather than one person's report.
+   */
+  originCluster: z.object({ clusterId: z.string(), title: z.string() }).nullable(),
+  /**
+   * Moderated market insights this project cites (§11k.2), PUBLISHED ONES ONLY and
+   * server-ordered.
+   *
+   * Distinct from `demandEvidenceNotes` above, and they must render differently: that
+   * is the founder's own assertion citing nothing a reader can open, these are
+   * platform-moderated evidence a reader can follow to `/knowledge-hub`.
+   */
+  relatedInsights: z.object({ insightId: z.string(), headline: z.string() }).array(),
+  /** Computed per request from the viewer's session, never a column. */
+  isWatchedByViewer: z.boolean(),
+  viewerProjectRole: z.string().nullable(),
+});
 export type ResearchProjectDetail = z.infer<typeof ResearchProjectDetailSchema>;
 
 /**
@@ -245,11 +233,9 @@ export type ResearchProjectDetail = z.infer<typeof ResearchProjectDetailSchema>;
  * URL. It is not a full project detail (backend `setProjectCover` → `{ coverImageUrl }`).
  * Parsing it as `ResearchProjectDetailSchema` fails every field.
  */
-export const ProjectCoverUploadResultSchema = z
-  .object({
-    coverImageUrl: z.string(),
-  })
-  .strip();
+export const ProjectCoverUploadResultSchema = z.object({
+  coverImageUrl: z.string(),
+});
 export type ProjectCoverUploadResult = z.infer<typeof ProjectCoverUploadResultSchema>;
 
 // --- Applications and invites (§11j.2) ----------------------------------------
@@ -285,26 +271,24 @@ export type ProjectInviteStatus = z.infer<typeof ProjectInviteStatusSchema>;
  * ledger and is never an input to any grant; it is a sentence a person wrote, and any UI
  * that totals or compares these has invented a salary band nobody agreed to.
  */
-export const ProjectApplicationSchema = z
-  .object({
-    id: z.string(),
-    kind: ProjectApplicationKindSchema,
-    status: ProjectApplicationStatusSchema,
-    applicantUserId: z.string(),
-    applicantName: z.string(),
-    applicantAvatarImageUrl: z.string().nullable(),
-    openRoleId: z.string().nullable(),
-    roleTitleSnapshot: z.string().nullable(),
-    shortPitch: z.string(),
-    selectedSkills: z.string().array(),
-    statedCommitment: RoleCommitmentSchema,
-    expectedCompensationNote: z.string().nullable(),
-    reviewNote: z.string().nullable(),
-    decidedAt: z.string().nullable(),
-    expiresAt: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const ProjectApplicationSchema = z.object({
+  id: z.string(),
+  kind: ProjectApplicationKindSchema,
+  status: ProjectApplicationStatusSchema,
+  applicantUserId: z.string(),
+  applicantName: z.string(),
+  applicantAvatarImageUrl: z.string().nullable(),
+  openRoleId: z.string().nullable(),
+  roleTitleSnapshot: z.string().nullable(),
+  shortPitch: z.string(),
+  selectedSkills: z.string().array(),
+  statedCommitment: RoleCommitmentSchema,
+  expectedCompensationNote: z.string().nullable(),
+  reviewNote: z.string().nullable(),
+  decidedAt: z.string().nullable(),
+  expiresAt: z.string().nullable(),
+  createdAt: z.string(),
+});
 export type ProjectApplication = z.infer<typeof ProjectApplicationSchema>;
 
 /**
@@ -331,28 +315,26 @@ export type ReceivedApplication = z.infer<typeof ReceivedApplicationSchema>;
  * NO PROJECT-STATUS FILTER, deliberately: a draft project's application stays visible to
  * the person who sent it. They already know the project exists — they applied to it.
  */
-export const MyApplicationSchema = z
-  .object({
-    id: z.string(),
-    kind: ProjectApplicationKindSchema,
-    status: ProjectApplicationStatusSchema,
-    projectSlug: z.string(),
-    projectName: z.string(),
-    projectStage: ProjectStageSchema,
-    projectCoverImageUrl: z.string().nullable(),
-    openRoleId: z.string().nullable(),
-    roleTitleSnapshot: z.string().nullable(),
-    shortPitch: z.string(),
-    selectedSkills: z.string().array(),
-    statedCommitment: RoleCommitmentSchema,
-    expectedCompensationNote: z.string().nullable(),
-    /** The founder's note back — the whole reason an applicant opens this screen. */
-    reviewNote: z.string().nullable(),
-    decidedAt: z.string().nullable(),
-    expiresAt: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const MyApplicationSchema = z.object({
+  id: z.string(),
+  kind: ProjectApplicationKindSchema,
+  status: ProjectApplicationStatusSchema,
+  projectSlug: z.string(),
+  projectName: z.string(),
+  projectStage: ProjectStageSchema,
+  projectCoverImageUrl: z.string().nullable(),
+  openRoleId: z.string().nullable(),
+  roleTitleSnapshot: z.string().nullable(),
+  shortPitch: z.string(),
+  selectedSkills: z.string().array(),
+  statedCommitment: RoleCommitmentSchema,
+  expectedCompensationNote: z.string().nullable(),
+  /** The founder's note back — the whole reason an applicant opens this screen. */
+  reviewNote: z.string().nullable(),
+  decidedAt: z.string().nullable(),
+  expiresAt: z.string().nullable(),
+  createdAt: z.string(),
+});
 export type MyApplication = z.infer<typeof MyApplicationSchema>;
 
 /**
@@ -364,42 +346,38 @@ export type MyApplication = z.infer<typeof MyApplicationSchema>;
  * `invitedByName` is the INVITER. On this screen the caller is the invitee, so naming
  * them back to themselves would be the one useless field on the row.
  */
-export const MyInviteSchema = z
-  .object({
-    id: z.string(),
-    status: ProjectInviteStatusSchema,
-    projectSlug: z.string(),
-    projectName: z.string(),
-    projectStage: ProjectStageSchema,
-    projectCoverImageUrl: z.string().nullable(),
-    invitedByUserId: z.string(),
-    invitedByName: z.string(),
-    invitedByAvatarImageUrl: z.string().nullable(),
-    openRoleId: z.string().nullable(),
-    roleTitle: z.string().nullable(),
-    message: z.string().nullable(),
-    respondedAt: z.string().nullable(),
-    expiresAt: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const MyInviteSchema = z.object({
+  id: z.string(),
+  status: ProjectInviteStatusSchema,
+  projectSlug: z.string(),
+  projectName: z.string(),
+  projectStage: ProjectStageSchema,
+  projectCoverImageUrl: z.string().nullable(),
+  invitedByUserId: z.string(),
+  invitedByName: z.string(),
+  invitedByAvatarImageUrl: z.string().nullable(),
+  openRoleId: z.string().nullable(),
+  roleTitle: z.string().nullable(),
+  message: z.string().nullable(),
+  respondedAt: z.string().nullable(),
+  expiresAt: z.string().nullable(),
+  createdAt: z.string(),
+});
 export type MyInvite = z.infer<typeof MyInviteSchema>;
 
 /** One invite as the SENDER sees it — `GET …/:projectSlug/invites`. */
-export const ProjectInviteSchema = z
-  .object({
-    id: z.string(),
-    status: ProjectInviteStatusSchema,
-    inviteeUserId: z.string(),
-    inviteeName: z.string(),
-    inviteeAvatarImageUrl: z.string().nullable(),
-    invitedByUserId: z.string(),
-    openRoleId: z.string().nullable(),
-    roleTitle: z.string().nullable(),
-    message: z.string().nullable(),
-    respondedAt: z.string().nullable(),
-    expiresAt: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const ProjectInviteSchema = z.object({
+  id: z.string(),
+  status: ProjectInviteStatusSchema,
+  inviteeUserId: z.string(),
+  inviteeName: z.string(),
+  inviteeAvatarImageUrl: z.string().nullable(),
+  invitedByUserId: z.string(),
+  openRoleId: z.string().nullable(),
+  roleTitle: z.string().nullable(),
+  message: z.string().nullable(),
+  respondedAt: z.string().nullable(),
+  expiresAt: z.string().nullable(),
+  createdAt: z.string(),
+});
 export type ProjectInvite = z.infer<typeof ProjectInviteSchema>;

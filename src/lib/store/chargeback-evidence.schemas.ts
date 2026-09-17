@@ -28,15 +28,13 @@ import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * `getOrderDeliveryAddress`) and echoes its id back so the UI can show "logged: exported by
  * &lt;staff email&gt; at &lt;time&gt;" without a second write.
  */
-export const ChargebackEvidenceBundleSchema = z
-  .object({
-    order: OrderDetailSchema,
-    messages: z.array(ThreadMessageSchema),
-    shipments: z.array(ShipmentDetailSchema),
-    generatedAt: IsoDateTimeSchema,
-    exportedByStaffEmail: z.string(),
-    exportAuditId: z.string(),
-  })
-  .strip();
+export const ChargebackEvidenceBundleSchema = z.object({
+  order: OrderDetailSchema,
+  messages: z.array(ThreadMessageSchema),
+  shipments: z.array(ShipmentDetailSchema),
+  generatedAt: IsoDateTimeSchema,
+  exportedByStaffEmail: z.string(),
+  exportAuditId: z.string(),
+});
 
 export type ChargebackEvidenceBundle = z.infer<typeof ChargebackEvidenceBundleSchema>;

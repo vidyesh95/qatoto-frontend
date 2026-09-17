@@ -112,50 +112,6 @@ export default function VerificationPipelineTab({
       isSelected: selectedClaimStatus === status,
     })),
   ];
-
-  return (
-    <div className="space-y-6 px-4 lg:px-6">
-      {/* Above the index on purpose: the index is a record, the queue is work. A reviewer
-          opening this tab is answering what is waiting far more often than browsing what
-          has already been decided. */}
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-sm font-medium tracking-wide xl:text-lg">Waiting on a person</h3>
-          <p className="text-xs text-muted-foreground">
-            Steps the pipeline flagged and nobody has answered. Maintainers can answer them here.
-          </p>
-        </div>
-        <OverrideQueueIsland
-          projectSlug={projectSlug}
-          projectCurrency={projectCurrency}
-          viewerProjectRole={viewerProjectRole}
-        />
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-sm font-medium tracking-wide xl:text-lg">Claims</h3>
-          <p className="text-xs text-muted-foreground">
-            Every member can see every member&apos;s claims — that is the point of a shared pie.
-          </p>
-        </div>
-        <FilterChipRow options={statusChips} ariaLabel="Filter claims by verification status" />
-        {renderClaims()}
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Your physical receipts</h3>
-        {renderReceipts()}
-      </section>
-
-      <ClaimSubmitIsland
-        projectSlug={projectSlug}
-        receipts={receiptsState.status === "ready" ? receiptsState.rows : []}
-        viewerProjectRole={viewerProjectRole}
-      />
-    </div>
-  );
-
   function renderClaims() {
     switch (claimsState.status) {
       case "error":
@@ -244,4 +200,47 @@ export default function VerificationPipelineTab({
       }
     }
   }
+
+  return (
+    <div className="space-y-6 px-4 lg:px-6">
+      {/* Above the index on purpose: the index is a record, the queue is work. A reviewer
+          opening this tab is answering what is waiting far more often than browsing what
+          has already been decided. */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="text-sm font-medium tracking-wide xl:text-lg">Waiting on a person</h3>
+          <p className="text-xs text-muted-foreground">
+            Steps the pipeline flagged and nobody has answered. Maintainers can answer them here.
+          </p>
+        </div>
+        <OverrideQueueIsland
+          projectSlug={projectSlug}
+          projectCurrency={projectCurrency}
+          viewerProjectRole={viewerProjectRole}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="text-sm font-medium tracking-wide xl:text-lg">Claims</h3>
+          <p className="text-xs text-muted-foreground">
+            Every member can see every member&apos;s claims — that is the point of a shared pie.
+          </p>
+        </div>
+        <FilterChipRow options={statusChips} ariaLabel="Filter claims by verification status" />
+        {renderClaims()}
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Your physical receipts</h3>
+        {renderReceipts()}
+      </section>
+
+      <ClaimSubmitIsland
+        projectSlug={projectSlug}
+        receipts={receiptsState.status === "ready" ? receiptsState.rows : []}
+        viewerProjectRole={viewerProjectRole}
+      />
+    </div>
+  );
 }

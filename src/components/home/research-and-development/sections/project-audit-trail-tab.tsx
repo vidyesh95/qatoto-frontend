@@ -41,20 +41,6 @@ export default function ProjectAuditTrailTab({
   chainVerificationState: MemberScopedItemViewState<ChainVerification>;
   projectSlug: string;
 }) {
-  return (
-    <div className="space-y-6 px-4 lg:px-6">
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Chain integrity</h3>
-        {renderChainVerification()}
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Every decision, in order</h3>
-        {renderEntries()}
-      </section>
-    </div>
-  );
-
   function renderChainVerification() {
     switch (chainVerificationState.status) {
       case "error":
@@ -131,4 +117,18 @@ export default function ProjectAuditTrailTab({
       }
     }
   }
+
+  return (
+    <div className="space-y-6 px-4 lg:px-6">
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Chain integrity</h3>
+        {renderChainVerification()}
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Every decision, in order</h3>
+        {renderEntries()}
+      </section>
+    </div>
+  );
 }

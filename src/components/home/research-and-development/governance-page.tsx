@@ -50,40 +50,6 @@ export default async function GovernancePage() {
     { limit: GOVERNANCE_PAGE_LIMIT },
     requestOptions,
   );
-
-  return (
-    <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
-      <GovernanceHero />
-      {renderSummary()}
-      <StatementWalkthrough
-        period={SAMPLE_STATEMENT_WALKTHROUGH}
-        memberLabelsById={SAMPLE_STATEMENT_MEMBER_LABELS}
-      />
-      <AccountabilityExplainer />
-      <section className="mx-4 space-y-4 rounded-2xl bg-[#00696E]/5 p-6 text-center md:p-8 lg:mx-6">
-        <h2 className="text-xl font-semibold md:text-2xl">Act on a project, not on this page</h2>
-        <p className="text-sm text-muted-foreground">
-          Finalizing, countersigning, recording a payment and confirming that one arrived all happen
-          inside the project, by the person whose role allows it.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link
-            href="/research-and-development"
-            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
-          >
-            Open a project&apos;s governance tab
-          </Link>
-          <Link
-            href="/research-and-development/funding"
-            className="cursor-pointer rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E]"
-          >
-            Browse deal flow
-          </Link>
-        </div>
-      </section>
-    </div>
-  );
-
   function renderSummary() {
     // A single object read, so there is no list view state to lift: it either arrived or
     // it did not. A failure must NOT render as "no projects have statements yet", which
@@ -119,4 +85,37 @@ export default async function GovernancePage() {
       </>
     );
   }
+
+  return (
+    <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
+      <GovernanceHero />
+      {renderSummary()}
+      <StatementWalkthrough
+        period={SAMPLE_STATEMENT_WALKTHROUGH}
+        memberLabelsById={SAMPLE_STATEMENT_MEMBER_LABELS}
+      />
+      <AccountabilityExplainer />
+      <section className="mx-4 space-y-4 rounded-2xl bg-[#00696E]/5 p-6 text-center md:p-8 lg:mx-6">
+        <h2 className="text-xl font-semibold md:text-2xl">Act on a project, not on this page</h2>
+        <p className="text-sm text-muted-foreground">
+          Finalizing, countersigning, recording a payment and confirming that one arrived all happen
+          inside the project, by the person whose role allows it.
+        </p>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link
+            href="/research-and-development"
+            className="cursor-pointer rounded-full bg-[#00696E] px-4 py-2 text-sm font-medium text-white"
+          >
+            Open a project&apos;s governance tab
+          </Link>
+          <Link
+            href="/research-and-development/funding"
+            className="cursor-pointer rounded-full border border-[#00696E]/40 px-4 py-2 text-sm font-medium text-[#00696E]"
+          >
+            Browse deal flow
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
 }

@@ -10,7 +10,7 @@ import { CompensationKindSchema, PaginationMetaSchema } from "@/lib/rnd/shared.s
 // view interfaces beside them — not off the design doc, which drifts. When a value below
 // looks wrong, re-read the pgEnum.
 //
-// Every object schema ends `.strip()` so a backend minor release that adds a field is a
+// Every object schema is a plain `z.object`, which strips unknown keys, so a backend minor release that adds a field is a
 // no-op here rather than a parse failure (CLAUDE.md Pattern 2).
 //
 // WHAT CHANGED FROM THE MOCK THIS REPLACES, because the differences are the point:
@@ -143,32 +143,28 @@ export type ResearchModerationActionKind = z.infer<typeof ResearchModerationActi
  * ("Pune, India"): render it as the author's own statement about themselves, and never branch
  * on it.
  */
-export const ProgramAuthorSchema = z
-  .object({
-    userId: z.string().nullable(),
-    name: z.string(),
-    handle: z.string().nullable(),
-    avatarImageUrl: z.string().nullable(),
-    locationLabel: z.string().nullable(),
-  })
-  .strip();
+export const ProgramAuthorSchema = z.object({
+  userId: z.string().nullable(),
+  name: z.string(),
+  handle: z.string().nullable(),
+  avatarImageUrl: z.string().nullable(),
+  locationLabel: z.string().nullable(),
+});
 export type ProgramAuthor = z.infer<typeof ProgramAuthorSchema>;
 
 // --- Programs ----------------------------------------------------------------------------
 
-export const ResearchProgramSummarySchema = z
-  .object({
-    programId: z.string(),
-    slug: z.string(),
-    title: z.string(),
-    tagline: z.string(),
-    status: ResearchProgramStatusSchema,
-    branchCount: z.number(),
-    participantCount: z.number(),
-    publishedAt: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const ResearchProgramSummarySchema = z.object({
+  programId: z.string(),
+  slug: z.string(),
+  title: z.string(),
+  tagline: z.string(),
+  status: ResearchProgramStatusSchema,
+  branchCount: z.number(),
+  participantCount: z.number(),
+  publishedAt: z.string().nullable(),
+  createdAt: z.string(),
+});
 export type ResearchProgramSummary = z.infer<typeof ResearchProgramSummarySchema>;
 
 export const ResearchProgramDetailSchema = ResearchProgramSummarySchema.extend({
@@ -179,7 +175,7 @@ export const ResearchProgramDetailSchema = ResearchProgramSummarySchema.extend({
   reviewedAt: z.string().nullable(),
   isViewerCreator: z.boolean(),
   isViewerParticipant: z.boolean(),
-}).strip();
+});
 export type ResearchProgramDetail = z.infer<typeof ResearchProgramDetailSchema>;
 
 /**
@@ -191,102 +187,95 @@ export type ResearchProgramDetail = z.infer<typeof ResearchProgramDetailSchema>;
  *
  * There is no money field. See the header note.
  */
-export const ResearchProgramStatsSchema = z
-  .object({
-    asOf: z.string(),
-    participantCount: z.number(),
-    paperCount: z.number(),
-    branchCount: z.number(),
-    postCount: z.number(),
-    /** Branches at `status: "missing"` — the research gaps this surface exists to name. */
-    openGapCount: z.number(),
-    overlapFlagCount: z.number(),
-    totalEffortMinutes: z.number(),
-  })
-  .strip();
+export const ResearchProgramStatsSchema = z.object({
+  asOf: z.string(),
+  participantCount: z.number(),
+  paperCount: z.number(),
+  branchCount: z.number(),
+  postCount: z.number(),
+  /** Branches at `status: "missing"` — the research gaps this surface exists to name. */
+  openGapCount: z.number(),
+  overlapFlagCount: z.number(),
+  totalEffortMinutes: z.number(),
+});
 export type ResearchProgramStats = z.infer<typeof ResearchProgramStatsSchema>;
 
 // --- Branches ----------------------------------------------------------------------------
 
-export const ResearchBranchSchema = z
-  .object({
-    branchId: z.string(),
-    parentBranchId: z.string().nullable(),
-    title: z.string(),
-    summary: z.string(),
-    /** Materialized `/`-joined ancestor ids. Depth-first order when sorted; do not parse it. */
-    ancestorPath: z.string(),
-    siblingOrder: z.number(),
-    depth: z.number(),
-    status: ResearchBranchStatusSchema,
-    overlappingGroupCount: z.number(),
-    contributorCount: z.number(),
-    approvedPaperCount: z.number(),
-    /**
-     * THREADS filed against this branch, and the newest few titles.
-     *
-     * `depth = 0` on the backend, so this counts threads rather than posts — it has to agree with
-     * the title list beside it. Deliberately a different definition from the program-level
-     * `postCount` stat tile, which does count replies.
-     *
-     * An `idea` has no title, so a list entry may be a truncated body.
-     */
-    discussionCount: z.number(),
-    recentThreadTitles: z.array(z.string()),
-    /** Curator override, integer per-mille, normally null. Both or neither. */
-    pinnedLeftPermille: z.number().nullable(),
-    pinnedTopPermille: z.number().nullable(),
-    isClaimedByViewer: z.boolean(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const ResearchBranchSchema = z.object({
+  branchId: z.string(),
+  parentBranchId: z.string().nullable(),
+  title: z.string(),
+  summary: z.string(),
+  /** Materialized `/`-joined ancestor ids. Depth-first order when sorted; do not parse it. */
+  ancestorPath: z.string(),
+  siblingOrder: z.number(),
+  depth: z.number(),
+  status: ResearchBranchStatusSchema,
+  overlappingGroupCount: z.number(),
+  contributorCount: z.number(),
+  approvedPaperCount: z.number(),
+  /**
+   * THREADS filed against this branch, and the newest few titles.
+   *
+   * `depth = 0` on the backend, so this counts threads rather than posts — it has to agree with
+   * the title list beside it. Deliberately a different definition from the program-level
+   * `postCount` stat tile, which does count replies.
+   *
+   * An `idea` has no title, so a list entry may be a truncated body.
+   */
+  discussionCount: z.number(),
+  recentThreadTitles: z.array(z.string()),
+  /** Curator override, integer per-mille, normally null. Both or neither. */
+  pinnedLeftPermille: z.number().nullable(),
+  pinnedTopPermille: z.number().nullable(),
+  isClaimedByViewer: z.boolean(),
+  createdAt: z.string(),
+});
 export type ResearchBranch = z.infer<typeof ResearchBranchSchema>;
 
 // --- Paper categories --------------------------------------------------------------------
 
-export const ResearchPaperCategorySchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    /** `displayLabel`, not `label` — the backend applies the alias at its projection boundary. */
-    displayLabel: z.string(),
-    status: z.enum(["approved", "pending", "rejected"]),
-  })
-  .strip();
+export const ResearchPaperCategorySchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  /** `displayLabel`, not `label` — the backend applies the alias at its projection boundary. */
+  displayLabel: z.string(),
+  status: z.enum(["approved", "pending", "rejected"]),
+});
 export type ResearchPaperCategory = z.infer<typeof ResearchPaperCategorySchema>;
 
 // --- Papers ------------------------------------------------------------------------------
 
-export const ResearchPaperSchema = z
-  .object({
-    paperId: z.string(),
-    title: z.string(),
-    categoryId: z.string(),
-    categorySlug: z.string(),
-    categoryDisplayLabel: z.string(),
-    branchId: z.string().nullable(),
-    doi: z.string().nullable(),
-    /** The uploader's CLAIMED affiliation. Never verified — render as attribution. */
-    authorAffiliation: z.string().nullable(),
-    abstractText: z.string().nullable(),
-    uploader: ProgramAuthorSchema,
-    moderationStatus: ResearchPaperModerationStatusSchema,
-    flagReasons: z.array(z.string()),
-    reviewerNote: z.string().nullable(),
-    reviewedAt: z.string().nullable(),
-    /** Bytes. "2.4 MB" is a locale decision — `formatByteSize` in `format.ts`. */
-    fileByteSize: z.number().nullable(),
-    hasFile: z.boolean(),
-    isUploadedByViewer: z.boolean(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const ResearchPaperSchema = z.object({
+  paperId: z.string(),
+  title: z.string(),
+  categoryId: z.string(),
+  categorySlug: z.string(),
+  categoryDisplayLabel: z.string(),
+  branchId: z.string().nullable(),
+  doi: z.string().nullable(),
+  /** The uploader's CLAIMED affiliation. Never verified — render as attribution. */
+  authorAffiliation: z.string().nullable(),
+  abstractText: z.string().nullable(),
+  uploader: ProgramAuthorSchema,
+  moderationStatus: ResearchPaperModerationStatusSchema,
+  flagReasons: z.array(z.string()),
+  reviewerNote: z.string().nullable(),
+  reviewedAt: z.string().nullable(),
+  /** Bytes. "2.4 MB" is a locale decision — `formatByteSize` in `format.ts`. */
+  fileByteSize: z.number().nullable(),
+  hasFile: z.boolean(),
+  isUploadedByViewer: z.boolean(),
+  createdAt: z.string(),
+});
 export type ResearchPaper = z.infer<typeof ResearchPaperSchema>;
 
 /** What `GET …/papers/:paperId/download` returns. A short-lived presigned URL, not a redirect. */
-export const PaperDownloadLinkSchema = z
-  .object({ downloadUrl: z.string(), expiresInSeconds: z.number() })
-  .strip();
+export const PaperDownloadLinkSchema = z.object({
+  downloadUrl: z.string(),
+  expiresInSeconds: z.number(),
+});
 export type PaperDownloadLink = z.infer<typeof PaperDownloadLinkSchema>;
 
 // --- Posts -------------------------------------------------------------------------------
@@ -322,88 +311,80 @@ export interface ResearchPost {
 }
 
 export const ResearchPostSchema: z.ZodType<ResearchPost> = z.lazy(() =>
-  z
-    .object({
-      postId: z.string(),
-      parentPostId: z.string().nullable(),
-      track: ResearchPostTrackSchema,
-      depth: z.number(),
-      branchId: z.string().nullable(),
-      title: z.string().nullable(),
-      bodyText: z.string(),
-      author: ProgramAuthorSchema,
-      reactionCount: z.number(),
-      replyCount: z.number(),
-      isReactedByViewer: z.boolean(),
-      isAuthoredByViewer: z.boolean(),
-      isHidden: z.boolean(),
-      createdAt: z.string(),
-      replies: z.array(ResearchPostSchema),
-    })
-    .strip(),
+  z.object({
+    postId: z.string(),
+    parentPostId: z.string().nullable(),
+    track: ResearchPostTrackSchema,
+    depth: z.number(),
+    branchId: z.string().nullable(),
+    title: z.string().nullable(),
+    bodyText: z.string(),
+    author: ProgramAuthorSchema,
+    reactionCount: z.number(),
+    replyCount: z.number(),
+    isReactedByViewer: z.boolean(),
+    isAuthoredByViewer: z.boolean(),
+    isHidden: z.boolean(),
+    createdAt: z.string(),
+    replies: z.array(ResearchPostSchema),
+  }),
 );
 
 /** What a reaction write returns: the server's count, so the client renders a given number. */
-export const ReactionResultSchema = z.object({ reactionCount: z.number() }).strip();
+export const ReactionResultSchema = z.object({ reactionCount: z.number() });
 export type ReactionResult = z.infer<typeof ReactionResultSchema>;
 
 // --- Product opportunities ---------------------------------------------------------------
 
-export const ResearchOpportunitySchema = z
-  .object({
-    opportunityId: z.string(),
-    productName: z.string(),
-    productDescription: z.string(),
-    derivedFromBranchId: z.string(),
-    /** Joined, so the rail can name the research without a second read. */
-    derivedFromBranchTitle: z.string(),
-    /**
-     * A NUMBER on the wire despite being a bigint column, because the backend's view returns
-     * it as one and the values in play (12 billion cents) are well inside `Number.MAX_SAFE_INTEGER`.
-     * Formatted by `formatCompactMoney` — never rendered raw.
-     */
-    estimatedMarketSizeInCents: z.number(),
-    readinessMinMonths: z.number(),
-    readinessMaxMonths: z.number(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const ResearchOpportunitySchema = z.object({
+  opportunityId: z.string(),
+  productName: z.string(),
+  productDescription: z.string(),
+  derivedFromBranchId: z.string(),
+  /** Joined, so the rail can name the research without a second read. */
+  derivedFromBranchTitle: z.string(),
+  /**
+   * A NUMBER on the wire despite being a bigint column, because the backend's view returns
+   * it as one and the values in play (12 billion cents) are well inside `Number.MAX_SAFE_INTEGER`.
+   * Formatted by `formatCompactMoney` — never rendered raw.
+   */
+  estimatedMarketSizeInCents: z.number(),
+  readinessMinMonths: z.number(),
+  readinessMaxMonths: z.number(),
+  createdAt: z.string(),
+});
 export type ResearchOpportunity = z.infer<typeof ResearchOpportunitySchema>;
 
 // --- Participants ------------------------------------------------------------------------
 
-export const ResearchParticipantSchema = z
-  .object({
-    participantId: z.string(),
-    participant: ProgramAuthorSchema,
-    role: ResearchParticipantRoleSchema,
-    compensationPreference: CompensationKindSchema,
-    contributionSummary: z.string().nullable(),
-    /** A SUM over effort logs, never a stored column. Minutes; hours are a locale decision. */
-    totalEffortMinutes: z.number(),
-    fundingTrancheIndex: z.number().nullable(),
-    fundingTrancheTotal: z.number().nullable(),
-    isViewer: z.boolean(),
-    joinedAt: z.string(),
-  })
-  .strip();
+export const ResearchParticipantSchema = z.object({
+  participantId: z.string(),
+  participant: ProgramAuthorSchema,
+  role: ResearchParticipantRoleSchema,
+  compensationPreference: CompensationKindSchema,
+  contributionSummary: z.string().nullable(),
+  /** A SUM over effort logs, never a stored column. Minutes; hours are a locale decision. */
+  totalEffortMinutes: z.number(),
+  fundingTrancheIndex: z.number().nullable(),
+  fundingTrancheTotal: z.number().nullable(),
+  isViewer: z.boolean(),
+  joinedAt: z.string(),
+});
 export type ResearchParticipant = z.infer<typeof ResearchParticipantSchema>;
 
 // --- Moderation --------------------------------------------------------------------------
 
-export const ContentReportSchema = z
-  .object({
-    reportId: z.string(),
-    targetKind: z.enum(["paper", "post"]),
-    paperId: z.string().nullable(),
-    postId: z.string().nullable(),
-    reason: ContentReportReasonSchema,
-    detailText: z.string().nullable(),
-    reporterName: z.string().nullable(),
-    status: ContentReportStatusSchema,
-    createdAt: z.string(),
-  })
-  .strip();
+export const ContentReportSchema = z.object({
+  reportId: z.string(),
+  targetKind: z.enum(["paper", "post"]),
+  paperId: z.string().nullable(),
+  postId: z.string().nullable(),
+  reason: ContentReportReasonSchema,
+  detailText: z.string().nullable(),
+  reporterName: z.string().nullable(),
+  status: ContentReportStatusSchema,
+  createdAt: z.string(),
+});
 export type ContentReport = z.infer<typeof ContentReportSchema>;
 
 /**
@@ -412,20 +393,18 @@ export type ContentReport = z.infer<typeof ContentReportSchema>;
  * `auditEntryId` links to the tamper-evident row. `moderatorRoleSnapshot` is the role AT THE
  * TIME, because roles are revocable and a join would lie later.
  */
-export const ModerationActionSchema = z
-  .object({
-    actionId: z.string(),
-    actionKind: ResearchModerationActionKindSchema,
-    paperId: z.string().nullable(),
-    postId: z.string().nullable(),
-    reportId: z.string().nullable(),
-    moderatorName: z.string(),
-    moderatorRoleSnapshot: z.string(),
-    reasonNote: z.string(),
-    auditEntryId: z.string(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const ModerationActionSchema = z.object({
+  actionId: z.string(),
+  actionKind: ResearchModerationActionKindSchema,
+  paperId: z.string().nullable(),
+  postId: z.string().nullable(),
+  reportId: z.string().nullable(),
+  moderatorName: z.string(),
+  moderatorRoleSnapshot: z.string(),
+  reasonNote: z.string(),
+  auditEntryId: z.string(),
+  createdAt: z.string(),
+});
 export type ModerationAction = z.infer<typeof ModerationActionSchema>;
 
 // --- Write results -----------------------------------------------------------------------
@@ -433,46 +412,41 @@ export type ModerationAction = z.infer<typeof ModerationActionSchema>;
 // Each write returns the id it created, and nothing else. Re-reading is the caller's job, so
 // there is no chance of a stale composite drifting from what a subsequent GET would say.
 
-export const ProgramIdResultSchema = z.object({ programId: z.string() }).strip();
-export const BranchIdResultSchema = z.object({ branchId: z.string() }).strip();
-export const PaperIdResultSchema = z.object({ paperId: z.string() }).strip();
-export const PostIdResultSchema = z.object({ postId: z.string() }).strip();
-export const ReportIdResultSchema = z.object({ reportId: z.string() }).strip();
-export const ParticipantIdResultSchema = z.object({ participantId: z.string() }).strip();
-export const OpportunityIdResultSchema = z.object({ opportunityId: z.string() }).strip();
-export const BranchClaimResultSchema = z.object({ claimed: z.literal(true) }).strip();
-export const BranchReleaseResultSchema = z.object({ released: z.literal(true) }).strip();
-export const PaperFileResultSchema = z.object({ fileByteSize: z.number() }).strip();
-export const DeletedResultSchema = z.object({ deleted: z.literal(true) }).strip();
+export const ProgramIdResultSchema = z.object({ programId: z.string() });
+export const BranchIdResultSchema = z.object({ branchId: z.string() });
+export const PaperIdResultSchema = z.object({ paperId: z.string() });
+export const PostIdResultSchema = z.object({ postId: z.string() });
+export const ReportIdResultSchema = z.object({ reportId: z.string() });
+export const ParticipantIdResultSchema = z.object({ participantId: z.string() });
+export const OpportunityIdResultSchema = z.object({ opportunityId: z.string() });
+export const BranchClaimResultSchema = z.object({ claimed: z.literal(true) });
+export const BranchReleaseResultSchema = z.object({ released: z.literal(true) });
+export const PaperFileResultSchema = z.object({ fileByteSize: z.number() });
+export const DeletedResultSchema = z.object({ deleted: z.literal(true) });
 
 /**
  * The two writes that carry a body-level idempotency key answer 200 on a REPLAY and 201 on a
  * genuine create, and say which through `wasReplay`. Surface it: "already recorded" and
  * "recorded" are different things to tell someone.
  */
-export const EffortLogResultSchema = z
-  .object({ effortLogId: z.string(), wasReplay: z.boolean() })
-  .strip();
+export const EffortLogResultSchema = z.object({ effortLogId: z.string(), wasReplay: z.boolean() });
 export type EffortLogResult = z.infer<typeof EffortLogResultSchema>;
 
-export const ContributionResultSchema = z
-  .object({ contributionId: z.string(), wasReplay: z.boolean() })
-  .strip();
+export const ContributionResultSchema = z.object({
+  contributionId: z.string(),
+  wasReplay: z.boolean(),
+});
 export type ContributionResult = z.infer<typeof ContributionResultSchema>;
 
 // --- Paged envelopes ---------------------------------------------------------------------
 
 /** Offset-paginated lists carry `pagination` as a SIBLING of `data`. */
-export const ProgramPageSchema = z
-  .object({
-    rows: z.array(ResearchProgramSummarySchema),
-    pagination: PaginationMetaSchema,
-  })
-  .strip();
+export const ProgramPageSchema = z.object({
+  rows: z.array(ResearchProgramSummarySchema),
+  pagination: PaginationMetaSchema,
+});
 
-export const ParticipantPageSchema = z
-  .object({
-    rows: z.array(ResearchParticipantSchema),
-    pagination: PaginationMetaSchema,
-  })
-  .strip();
+export const ParticipantPageSchema = z.object({
+  rows: z.array(ResearchParticipantSchema),
+  pagination: PaginationMetaSchema,
+});

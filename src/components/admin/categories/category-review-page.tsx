@@ -253,16 +253,6 @@ function CategoryQueueSection({
   supportsPinIcon: boolean;
   onDecide: (categoryId: string, verdict: CategoryVerdict) => void;
 }) {
-  return (
-    <section className="space-y-3">
-      <div className="space-y-1">
-        <h2 className="text-lg font-medium">{title}</h2>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-      {renderQueue()}
-    </section>
-  );
-
   function renderQueue() {
     switch (state.status) {
       case "loading":
@@ -299,6 +289,16 @@ function CategoryQueueSection({
       }
     }
   }
+
+  return (
+    <section className="space-y-3">
+      <div className="space-y-1">
+        <h2 className="text-lg font-medium">{title}</h2>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      {renderQueue()}
+    </section>
+  );
 }
 
 function PendingCategoryCard({

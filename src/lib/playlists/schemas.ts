@@ -22,51 +22,45 @@ export const PlaylistVideoOrderSchema = z.enum(PLAYLIST_VIDEO_ORDERS);
 export type PlaylistVideoOrder = z.infer<typeof PlaylistVideoOrderSchema>;
 
 /** Note the key is `videoId`, NOT `id` — the row identifies the video, not the membership. */
-export const PlaylistVideoSchema = z
-  .object({
-    videoId: z.string(),
-    title: z.string(),
-    thumbnailUrl: z.string().nullable(),
-    position: z.number(),
-  })
-  .strip();
+export const PlaylistVideoSchema = z.object({
+  videoId: z.string(),
+  title: z.string(),
+  thumbnailUrl: z.string().nullable(),
+  position: z.number(),
+});
 export type PlaylistVideo = z.infer<typeof PlaylistVideoSchema>;
 
-export const PublicPlaylistSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    description: z.string().nullable(),
-    visibility: PlaylistVisibilitySchema,
-    defaultVideoOrder: PlaylistVideoOrderSchema,
-    language: z.string().nullable(),
-    videos: z.array(PlaylistVideoSchema),
-    videoCount: z.number(),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
-  })
-  .strip();
+export const PublicPlaylistSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  visibility: PlaylistVisibilitySchema,
+  defaultVideoOrder: PlaylistVideoOrderSchema,
+  language: z.string().nullable(),
+  videos: z.array(PlaylistVideoSchema),
+  videoCount: z.number(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
 export type PublicPlaylist = z.infer<typeof PublicPlaylistSchema>;
 
 /** `GET /playlists/mine`. No description, no order, no language, no createdAt — by design. */
-export const PlaylistListRowSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    visibility: PlaylistVisibilitySchema,
-    videoCount: z.number(),
-    updatedAt: z.iso.datetime(),
-    /**
-     * Whether this playlist already holds the video passed as `?videoId=`.
-     *
-     * `.optional()`, NOT `.nullable()` or a default, because the KEY IS ABSENT unless that
-     * parameter was sent — the backend drops it rather than answering `false`. Absence means
-     * "nobody asked"; `false` means "asked, and no". A picker that cannot tell those apart
-     * renders every checkbox unchecked on a plain list read. Same rule as `watchedAt`.
-     */
-    containsVideo: z.boolean().optional(),
-  })
-  .strip();
+export const PlaylistListRowSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  visibility: PlaylistVisibilitySchema,
+  videoCount: z.number(),
+  updatedAt: z.iso.datetime(),
+  /**
+   * Whether this playlist already holds the video passed as `?videoId=`.
+   *
+   * `.optional()`, NOT `.nullable()` or a default, because the KEY IS ABSENT unless that
+   * parameter was sent — the backend drops it rather than answering `false`. Absence means
+   * "nobody asked"; `false` means "asked, and no". A picker that cannot tell those apart
+   * renders every checkbox unchecked on a plain list read. Same rule as `watchedAt`.
+   */
+  containsVideo: z.boolean().optional(),
+});
 export type PlaylistListRow = z.infer<typeof PlaylistListRowSchema>;
 
 /** The query schema is `.strict()`, so only these three keys exist. */

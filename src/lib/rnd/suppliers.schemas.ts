@@ -55,14 +55,12 @@ export const SupplierContactPolicySchema = z.enum(SUPPLIER_CONTACT_POLICIES);
 export type SupplierContactPolicy = z.infer<typeof SupplierContactPolicySchema>;
 
 /** One entry of the SEEDED capability vocabulary. There is no POST for these. */
-export const SupplierCapabilitySchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    displayLabel: z.string(),
-    kind: SupplierCapabilityKindSchema,
-  })
-  .strip();
+export const SupplierCapabilitySchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  displayLabel: z.string(),
+  kind: SupplierCapabilityKindSchema,
+});
 export type SupplierCapability = z.infer<typeof SupplierCapabilitySchema>;
 
 /**
@@ -73,24 +71,22 @@ export type SupplierCapability = z.infer<typeof SupplierCapabilitySchema>;
  *
  * `slug` is unwritable after creation; clients link to it.
  */
-export const SupplierSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    name: z.string(),
-    summary: z.string().nullable(),
-    regionSlug: z.string().nullable(),
-    regionDisplayLabel: z.string().nullable(),
-    verificationState: SupplierVerificationStateSchema,
-    contactPolicy: SupplierContactPolicySchema,
-    websiteUrl: z.string().nullable(),
-    // Integer days, never "12 days".
-    leadTimeDays: z.number().nullable(),
-    minimumOrderQuantity: z.number().nullable(),
-    capabilities: SupplierCapabilitySchema.array(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const SupplierSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  summary: z.string().nullable(),
+  regionSlug: z.string().nullable(),
+  regionDisplayLabel: z.string().nullable(),
+  verificationState: SupplierVerificationStateSchema,
+  contactPolicy: SupplierContactPolicySchema,
+  websiteUrl: z.string().nullable(),
+  // Integer days, never "12 days".
+  leadTimeDays: z.number().nullable(),
+  minimumOrderQuantity: z.number().nullable(),
+  capabilities: SupplierCapabilitySchema.array(),
+  createdAt: z.string(),
+});
 export type Supplier = z.infer<typeof SupplierSchema>;
 
 /**
@@ -101,25 +97,22 @@ export type Supplier = z.infer<typeof SupplierSchema>;
  * zero would assert "this project has no verified effort" when the truth is "no job
  * has looked".
  */
-export const LaunchReadyProjectSchema = z
-  .object({
-    projectSlug: z.string(),
-    projectName: z.string(),
-    projectCoverImageUrl: z.string().nullable(),
-    projectTagline: z.string(),
-    verifiedEffortMinutesTotal: z.number().nullable(),
-    allocatedEquityBasisPoints: z.number().nullable(),
-    statsComputedAt: z.string().nullable(),
-    launchedProducts: z
-      .object({
-        productId: z.string(),
-        title: z.string(),
-        status: z.string(),
-      })
-      .strip()
-      .array(),
-  })
-  .strip();
+export const LaunchReadyProjectSchema = z.object({
+  projectSlug: z.string(),
+  projectName: z.string(),
+  projectCoverImageUrl: z.string().nullable(),
+  projectTagline: z.string(),
+  verifiedEffortMinutesTotal: z.number().nullable(),
+  allocatedEquityBasisPoints: z.number().nullable(),
+  statsComputedAt: z.string().nullable(),
+  launchedProducts: z
+    .object({
+      productId: z.string(),
+      title: z.string(),
+      status: z.string(),
+    })
+    .array(),
+});
 export type LaunchReadyProject = z.infer<typeof LaunchReadyProjectSchema>;
 
 // --- Launch readiness (member-only, per project) -----------------------------
@@ -145,15 +138,13 @@ export const LAUNCH_READINESS_STATES = ["met", "not_met", "waived"] as const;
 export const LaunchReadinessStateSchema = z.enum(LAUNCH_READINESS_STATES);
 export type LaunchReadinessState = z.infer<typeof LaunchReadinessStateSchema>;
 
-export const LaunchReadinessItemSchema = z
-  .object({
-    key: LaunchReadinessItemKeySchema,
-    state: LaunchReadinessStateSchema,
-    // The integer the state was decided from, or NULL when the underlying signal has
-    // never been computed. Integers only — the client composes the sentence.
-    observedCount: z.number().nullable(),
-  })
-  .strip();
+export const LaunchReadinessItemSchema = z.object({
+  key: LaunchReadinessItemKeySchema,
+  state: LaunchReadinessStateSchema,
+  // The integer the state was decided from, or NULL when the underlying signal has
+  // never been computed. Integers only — the client composes the sentence.
+  observedCount: z.number().nullable(),
+});
 export type LaunchReadinessItem = z.infer<typeof LaunchReadinessItemSchema>;
 
 /**
@@ -161,16 +152,14 @@ export type LaunchReadinessItem = z.infer<typeof LaunchReadinessItemSchema>;
  * `asOf` ships because two of the six items read job-computed columns that advance
  * with no write, so a checklist without it asserts freshness it does not have.
  */
-export const LaunchReadinessSchema = z
-  .object({
-    projectSlug: z.string(),
-    stage: ProjectStageSchema,
-    items: LaunchReadinessItemSchema.array(),
-    metCount: z.number(),
-    totalCount: z.number(),
-    asOf: z.string().nullable(),
-  })
-  .strip();
+export const LaunchReadinessSchema = z.object({
+  projectSlug: z.string(),
+  stage: ProjectStageSchema,
+  items: LaunchReadinessItemSchema.array(),
+  metCount: z.number(),
+  totalCount: z.number(),
+  asOf: z.string().nullable(),
+});
 export type LaunchReadiness = z.infer<typeof LaunchReadinessSchema>;
 
 /** `capability` REPEATS and the backend ANDs the values: every slug must match. */

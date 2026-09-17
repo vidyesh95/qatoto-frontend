@@ -67,26 +67,6 @@ export default function DisputeWindowTab({
   projectSlug: string;
   viewerProjectRole: string | null;
 }) {
-  return (
-    <div className="space-y-6 px-4 lg:px-6">
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">
-          Allocations in their window
-        </h3>
-        <p className="text-xs text-muted-foreground">
-          A proposed allocation sits in a window before it enters the ledger. Any active member can
-          dispute it while the window is open; after that it settles automatically.
-        </p>
-        {renderProposals()}
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Disputes</h3>
-        {renderDisputes()}
-      </section>
-    </div>
-  );
-
   function renderProposals() {
     switch (proposalsState.status) {
       case "error":
@@ -194,4 +174,24 @@ export default function DisputeWindowTab({
       }
     }
   }
+
+  return (
+    <div className="space-y-6 px-4 lg:px-6">
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">
+          Allocations in their window
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          A proposed allocation sits in a window before it enters the ledger. Any active member can
+          dispute it while the window is open; after that it settles automatically.
+        </p>
+        {renderProposals()}
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Disputes</h3>
+        {renderDisputes()}
+      </section>
+    </div>
+  );
 }

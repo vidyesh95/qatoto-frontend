@@ -27,22 +27,20 @@ export const ATTESTATION_KIND_LABELS: Readonly<Record<AttestationKind, string>> 
   payment_received: "Payment received",
 };
 
-export const SettlementAttestationSchema = z
-  .object({
-    id: z.string(),
-    orderId: z.string(),
-    attestationKind: z.enum(ATTESTATION_KINDS),
-    attestedByOrganizationId: z.string(),
-    /** Derived server-side, so a shared surface can label a claim without knowing which id it is. */
-    attestedByRole: z.enum(["buyer", "seller"]),
-    attestedByLegalNameSnapshot: z.string(),
-    amountInCents: z.number().int(),
-    currency: z.string(),
-    referenceNote: z.string().nullable(),
-    occurredAt: IsoDateTimeSchema,
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const SettlementAttestationSchema = z.object({
+  id: z.string(),
+  orderId: z.string(),
+  attestationKind: z.enum(ATTESTATION_KINDS),
+  attestedByOrganizationId: z.string(),
+  /** Derived server-side, so a shared surface can label a claim without knowing which id it is. */
+  attestedByRole: z.enum(["buyer", "seller"]),
+  attestedByLegalNameSnapshot: z.string(),
+  amountInCents: z.number().int(),
+  currency: z.string(),
+  referenceNote: z.string().nullable(),
+  occurredAt: IsoDateTimeSchema,
+  createdAt: IsoDateTimeSchema,
+});
 
 /**
  * `isAttestable` IS A LEGITIMATE `false`, not an error.
@@ -52,16 +50,14 @@ export const SettlementAttestationSchema = z
  * "this settles through a processor, there is nothing to record" without provoking a 409 to find
  * out, which is why the read reports the rail rather than refusing.
  */
-export const SettlementAttestationListSchema = z
-  .object({
-    orderId: z.string(),
-    settlementRail: z.string(),
-    currency: z.string(),
-    orderTotalInCents: z.number().int(),
-    isAttestable: z.boolean(),
-    items: z.array(SettlementAttestationSchema),
-  })
-  .strip();
+export const SettlementAttestationListSchema = z.object({
+  orderId: z.string(),
+  settlementRail: z.string(),
+  currency: z.string(),
+  orderTotalInCents: z.number().int(),
+  isAttestable: z.boolean(),
+  items: z.array(SettlementAttestationSchema),
+});
 
 export type SettlementAttestation = z.infer<typeof SettlementAttestationSchema>;
 export type SettlementAttestationList = z.infer<typeof SettlementAttestationListSchema>;

@@ -27,23 +27,20 @@ import {
  * schema is the wrapper and the caller unwraps. Matching the backend exactly here is cheaper
  * than a helper that has to guess which shape a route uses.
  */
-const AdminCategoryListSchema = z
-  .object({ items: AdminStoreCategorySchema.array(), homeRailLimit: z.number().int() })
-  .strip();
-const AdminCategorySchema = z.object({ category: AdminStoreCategorySchema }).strip();
-const CategoryRequestListSchema = z
-  .object({ requests: CommerceCategoryRequestSchema.array() })
-  .strip();
-const CategoryRequestSchema = z.object({ request: CommerceCategoryRequestSchema }).strip();
-const DecideResultSchema = z
-  .object({
-    request: CommerceCategoryRequestSchema,
-    // Null on a rejection. NOT a placeholder row — a rejected request became nothing, and
-    // inventing an empty category here would be fabricating a value the server said was
-    // absent.
-    category: AdminStoreCategorySchema.nullable(),
-  })
-  .strip();
+const AdminCategoryListSchema = z.object({
+  items: AdminStoreCategorySchema.array(),
+  homeRailLimit: z.number().int(),
+});
+const AdminCategorySchema = z.object({ category: AdminStoreCategorySchema });
+const CategoryRequestListSchema = z.object({ requests: CommerceCategoryRequestSchema.array() });
+const CategoryRequestSchema = z.object({ request: CommerceCategoryRequestSchema });
+const DecideResultSchema = z.object({
+  request: CommerceCategoryRequestSchema,
+  // Null on a rejection. NOT a placeholder row — a rejected request became nothing, and
+  // inventing an empty category here would be fabricating a value the server said was
+  // absent.
+  category: AdminStoreCategorySchema.nullable(),
+});
 
 /** `GET /commerce/admin/categories` — the whole tree, draft and retired included. */
 export async function listStoreCategoriesForAdmin(
@@ -137,7 +134,7 @@ export async function reorderStoreCategories(
     "/commerce/admin/categories/reorder",
     "PATCH",
     { parentCategoryId, categoryIds },
-    z.object({ items: AdminStoreCategorySchema.array() }).strip(),
+    z.object({ items: AdminStoreCategorySchema.array() }),
     options,
   );
   return result.success ? { success: true, data: result.data.items } : result;
@@ -227,8 +224,8 @@ export async function listOwnStoreCategoryRequests(
 
 // --- Category attributes (STORE §20) ---------------------------------------
 
-const AttributeListSchema = z.object({ attributes: AdminCategoryAttributeSchema.array() }).strip();
-const AttributeSchema = z.object({ attribute: AdminCategoryAttributeSchema }).strip();
+const AttributeListSchema = z.object({ attributes: AdminCategoryAttributeSchema.array() });
+const AttributeSchema = z.object({ attribute: AdminCategoryAttributeSchema });
 
 /**
  * `GET /commerce/admin/categories/:categoryId/attributes` — the RESOLVED set.

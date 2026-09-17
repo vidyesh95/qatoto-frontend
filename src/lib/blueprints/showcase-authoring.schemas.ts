@@ -5,7 +5,7 @@
 // `@/lib/blueprints/schemas`; its teardown sibling is `authoring.schemas.ts`, whose rules this file
 // follows unless a note here says otherwise.
 //
-// ⚠️ `.strict()` ON THE DRAFT, `.strip()` ON THE RESPONSES. An unknown key on the way OUT is a bug
+// ⚠️ `z.strictObject` ON THE DRAFT, PLAIN (STRIPPING) `z.object` ON THE RESPONSES. An unknown key on the way OUT is a bug
 // in this repo and should be loud (`src/lib/products/schemas.ts:98-107` records what stripping cost
 // on a write path). An unknown key on the way IN is a backend minor release, which CLAUDE.md Pattern
 // 2 says to ignore rather than crash on.
@@ -104,37 +104,33 @@ function countWriteUpMarkupCharacters(writeUp: string): number {
  * upload for it, and a pasted photo link for somebody else is a thing nobody has the right to post.
  * The form shows an initials circle; Part 2 derives the avatar from the person's own account.
  */
-const ShowcaseTeamMemberDraftSchema = z
-  .object({
-    displayName: z
-      .string()
-      .min(1, "Give this person's name.")
-      .max(80, "Keep the name under 80 characters."),
-    handle: z
-      .string()
-      .min(1, "Give their handle.")
-      .max(64, "A handle is at most 64 characters.")
-      .regex(/^[A-Za-z0-9_.-]+$/, "A handle has no spaces and no @, like amara-builds."),
-    role: z
-      .string()
-      .min(1, "Say what they did on the build.")
-      .max(60, "Keep the role under 60 characters."),
-  })
-  .strict();
+const ShowcaseTeamMemberDraftSchema = z.strictObject({
+  displayName: z
+    .string()
+    .min(1, "Give this person's name.")
+    .max(80, "Keep the name under 80 characters."),
+  handle: z
+    .string()
+    .min(1, "Give their handle.")
+    .max(64, "A handle is at most 64 characters.")
+    .regex(/^[A-Za-z0-9_.-]+$/, "A handle has no spaces and no @, like amara-builds."),
+  role: z
+    .string()
+    .min(1, "Say what they did on the build.")
+    .max(60, "Keep the role under 60 characters."),
+});
 
 /**
  * The launch's one outbound link. STRICTER THAN `BlueprintLinkSchema`, which is a read shape: that
  * one strips unknown keys and accepts an empty label, and a write must refuse both.
  */
-const ShowcaseCallToActionDraftSchema = z
-  .object({
-    label: z
-      .string()
-      .min(1, "Give the link a label, like Order a unit.")
-      .max(40, "Keep the link label under 40 characters."),
-    url: createExternalHttpsUrlSchema(2048),
-  })
-  .strict();
+const ShowcaseCallToActionDraftSchema = z.strictObject({
+  label: z
+    .string()
+    .min(1, "Give the link a label, like Order a unit.")
+    .max(40, "Keep the link label under 40 characters."),
+  url: createExternalHttpsUrlSchema(2048),
+});
 
 /** The two numbers the range comparison reads. `z.number()` refuses `NaN`, so an unreadable one skips it. */
 const CostRangeComparisonInputsSchema = z.object({
@@ -155,7 +151,7 @@ const SHOWCASE_COST_MAXIMUM_IN_CENTS = 100_000_000;
 const SHOWCASE_COST_TOO_LARGE_MESSAGE = "Keep the cost under $1,000,000.";
 
 const ShowcaseCostRangeDraftSchema = z
-  .object({
+  .strictObject({
     minimumInCents: z
       .number({ error: "Give the lowest cost as a number, like 45 or 45.50." })
       .int()
@@ -168,7 +164,6 @@ const ShowcaseCostRangeDraftSchema = z
       .max(SHOWCASE_COST_MAXIMUM_IN_CENTS, SHOWCASE_COST_TOO_LARGE_MESSAGE),
     currency: z.literal("USD"),
   })
-  .strict()
   .refine(
     (costRange) => {
       const comparisonInputs = CostRangeComparisonInputsSchema.safeParse(costRange);
@@ -205,7 +200,7 @@ const LaunchDateRefinementInputsSchema = z.object({ launchedAt: z.string() });
  * Part 1 either; the backend writes it null.
  */
 export const ShowcaseSubmissionDraftSchema = z
-  .object({
+  .strictObject({
     title: z
       .string()
       .min(8, "A name short enough to skim and specific enough to search.")
@@ -290,7 +285,6 @@ export const ShowcaseSubmissionDraftSchema = z
      */
     headingImageId: z.string().nullable(),
   })
-  .strict()
   // ⚠️ THREE REFINEMENTS, NOT ONE, EACH GATED BY `when` ON THE FIELDS IT READS. As one refinement
   // it was skipped whenever any field aborted, and the form starts with difficulty unchosen, so the
   // statements, duplicate-handle and future-date messages only appeared on a second press. Each body
@@ -369,14 +363,12 @@ export type ShowcaseSubmissionDraft = z.infer<typeof ShowcaseSubmissionDraftSche
  *
  * The post answers 201: the launch row exists when it answers, and `pending_review` is its state.
  */
-export const ShowcaseSubmissionReceiptSchema = z
-  .object({
-    submissionId: z.string(),
-    moderationState: z.literal("pending_review"),
-    /** ISO 8601, server-stamped. When the launch was accepted, not when it was decided. */
-    receivedAt: z.string(),
-  })
-  .strip();
+export const ShowcaseSubmissionReceiptSchema = z.object({
+  submissionId: z.string(),
+  moderationState: z.literal("pending_review"),
+  /** ISO 8601, server-stamped. When the launch was accepted, not when it was decided. */
+  receivedAt: z.string(),
+});
 export type ShowcaseSubmissionReceipt = z.infer<typeof ShowcaseSubmissionReceiptSchema>;
 
 /**
@@ -398,7 +390,6 @@ export const ShowcaseSubmissionSchema = z
     publicSlug: z.string().nullable(),
     moderatorNote: z.string().nullable(),
   })
-  .strip()
   .superRefine((submission, context) => {
     if (submission.moderationState === "rejected" && submission.moderatorNote === null) {
       context.addIssue({

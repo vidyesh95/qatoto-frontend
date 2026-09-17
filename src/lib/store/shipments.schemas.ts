@@ -34,22 +34,20 @@ export type ShipmentState = (typeof SHIPMENT_STATES)[number];
  * The lane fields are nullable for the same reason: a shipment created before its origin was known
  * has no origin, and "—" is the honest render.
  */
-export const ShipmentQueueRowSchema = z
-  .object({
-    id: z.string(),
-    orderId: z.string(),
-    buyerOrganizationId: z.string(),
-    state: z.enum(SHIPMENT_STATES),
-    originCountryCode: z.string().nullable(),
-    originLocality: z.string().nullable(),
-    destinationCountryCode: z.string().nullable(),
-    destinationLocality: z.string().nullable(),
-    packageCount: z.number().int(),
-    totalWeightGrams: z.number().int().nullable(),
-    estimatedArrivalAt: IsoDateTimeSchema.nullable(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const ShipmentQueueRowSchema = z.object({
+  id: z.string(),
+  orderId: z.string(),
+  buyerOrganizationId: z.string(),
+  state: z.enum(SHIPMENT_STATES),
+  originCountryCode: z.string().nullable(),
+  originLocality: z.string().nullable(),
+  destinationCountryCode: z.string().nullable(),
+  destinationLocality: z.string().nullable(),
+  packageCount: z.number().int(),
+  totalWeightGrams: z.number().int().nullable(),
+  estimatedArrivalAt: IsoDateTimeSchema.nullable(),
+  createdAt: IsoDateTimeSchema,
+});
 
 export const ShipmentQueuePageSchema = cursorPageOf(ShipmentQueueRowSchema);
 
@@ -97,22 +95,18 @@ export const APPENDABLE_SHIPMENT_EVENT_KINDS = [
 ] as const;
 export type AppendableShipmentEventKind = (typeof APPENDABLE_SHIPMENT_EVENT_KINDS)[number];
 
-export const ShipmentProductLineSchema = z
-  .object({
-    id: z.string(),
-    orderProductLineId: z.string(),
-    quantity: z.number().int(),
-  })
-  .strip();
+export const ShipmentProductLineSchema = z.object({
+  id: z.string(),
+  orderProductLineId: z.string(),
+  quantity: z.number().int(),
+});
 
-export const ShipmentEventSchema = z
-  .object({
-    id: z.string(),
-    eventKind: z.enum(SHIPMENT_EVENT_KINDS),
-    occurredAt: IsoDateTimeSchema,
-    description: z.string().nullable(),
-  })
-  .strip();
+export const ShipmentEventSchema = z.object({
+  id: z.string(),
+  eventKind: z.enum(SHIPMENT_EVENT_KINDS),
+  occurredAt: IsoDateTimeSchema,
+  description: z.string().nullable(),
+});
 
 /**
  * One shipment as both writes answer it.
@@ -122,22 +116,20 @@ export const ShipmentEventSchema = z
  * projection, with the lines and the event history. Three projections of one table, and parsing a
  * response with the wrong one is a `PARSE` result that reads like a refused write.
  */
-export const WrittenShipmentSchema = z
-  .object({
-    id: z.string(),
-    orderId: z.string(),
-    state: z.enum(SHIPMENT_STATES),
-    originCountryCode: z.string().nullable(),
-    originLocality: z.string().nullable(),
-    destinationCountryCode: z.string().nullable(),
-    destinationLocality: z.string().nullable(),
-    packageCount: z.number().int(),
-    totalWeightGrams: z.number().int().nullable(),
-    createdAt: IsoDateTimeSchema,
-    productLines: z.array(ShipmentProductLineSchema),
-    events: z.array(ShipmentEventSchema),
-  })
-  .strip();
+export const WrittenShipmentSchema = z.object({
+  id: z.string(),
+  orderId: z.string(),
+  state: z.enum(SHIPMENT_STATES),
+  originCountryCode: z.string().nullable(),
+  originLocality: z.string().nullable(),
+  destinationCountryCode: z.string().nullable(),
+  destinationLocality: z.string().nullable(),
+  packageCount: z.number().int(),
+  totalWeightGrams: z.number().int().nullable(),
+  createdAt: IsoDateTimeSchema,
+  productLines: z.array(ShipmentProductLineSchema),
+  events: z.array(ShipmentEventSchema),
+});
 export type WrittenShipment = z.infer<typeof WrittenShipmentSchema>;
 
 /**
@@ -224,7 +216,7 @@ export const APPENDABLE_SHIPMENT_EVENT_KIND_LABELS: Record<AppendableShipmentEve
 export const ShipmentDetailSchema = WrittenShipmentSchema.extend({
   version: z.number().int(),
   legs: z.array(ShipmentLegSchema),
-}).strip();
+});
 export type ShipmentDetail = z.infer<typeof ShipmentDetailSchema>;
 
 /**
@@ -323,12 +315,10 @@ export const SHIPMENT_LEG_COMMAND_LABELS: Record<ShipmentLegCommandName, string>
  * success to a client that sent a broken body.
  */
 /** What `POST …/legs` answers: the shipment it touched, and the legs it created. */
-export const ShipmentLegsAddedSchema = z
-  .object({
-    shipmentId: z.string(),
-    legs: z.array(ShipmentLegSchema),
-  })
-  .strip();
+export const ShipmentLegsAddedSchema = z.object({
+  shipmentId: z.string(),
+  legs: z.array(ShipmentLegSchema),
+});
 export type ShipmentLegsAdded = z.infer<typeof ShipmentLegsAddedSchema>;
 
 export interface AddShipmentLegsInput {
@@ -352,22 +342,18 @@ export interface ShipmentLegAssignmentInput {
 }
 
 /** One entry in a leg's history — `GET /commerce/shipment-legs/:legId/events`. */
-export const ShipmentLegEventSchema = z
-  .object({
-    id: z.string(),
-    sequence: z.number().int(),
-    eventKind: z.enum(SHIPMENT_LEG_EVENT_KINDS),
-    occurredAt: IsoDateTimeSchema,
-    description: z.string().nullable(),
-    carrierReference: z.string().nullable(),
-    trackingReference: z.string().nullable(),
-    locationIdentifier: z.string().nullable(),
-    evidenceDocumentId: z.string().nullable(),
-  })
-  .strip();
+export const ShipmentLegEventSchema = z.object({
+  id: z.string(),
+  sequence: z.number().int(),
+  eventKind: z.enum(SHIPMENT_LEG_EVENT_KINDS),
+  occurredAt: IsoDateTimeSchema,
+  description: z.string().nullable(),
+  carrierReference: z.string().nullable(),
+  trackingReference: z.string().nullable(),
+  locationIdentifier: z.string().nullable(),
+  evidenceDocumentId: z.string().nullable(),
+});
 export type ShipmentLegEvent = z.infer<typeof ShipmentLegEventSchema>;
 
-export const ShipmentLegEventListSchema = z
-  .object({ items: z.array(ShipmentLegEventSchema) })
-  .strip();
+export const ShipmentLegEventListSchema = z.object({ items: z.array(ShipmentLegEventSchema) });
 export type ShipmentLegEventList = z.infer<typeof ShipmentLegEventListSchema>;

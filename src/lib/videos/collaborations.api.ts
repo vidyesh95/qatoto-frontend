@@ -12,7 +12,7 @@ import {
 } from "@/lib/videos/collaborations.schemas";
 
 /** The answer echoed back. Narrow on purpose — the caller already knows which way it went. */
-const RespondedSchema = z.object({ status: z.string() }).strip();
+const RespondedSchema = z.object({ status: z.string() });
 
 /**
  * `GET /users/me/collaborations` — invitations addressed to ME.

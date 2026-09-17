@@ -50,7 +50,7 @@ export const VIDEO_REPORT_REASON_LABELS: Readonly<Record<VideoReportReason, stri
 export const VideoReportStatusSchema = z.enum(["open", "actioned", "dismissed"]);
 export type VideoReportStatus = z.infer<typeof VideoReportStatusSchema>;
 
-const ReportAcceptedSchema = z.object({ reportId: z.string() }).strip();
+const ReportAcceptedSchema = z.object({ reportId: z.string() });
 
 /**
  * The moderation actions a reporter can be shown, byte-identical to the backend's
@@ -71,50 +71,48 @@ export const VideoReportOutcomeKindSchema = z.enum(VIDEO_REPORT_OUTCOME_KINDS);
 
 export type VideoReportOutcomeKind = (typeof VIDEO_REPORT_OUTCOME_KINDS)[number];
 
-export const MyVideoReportSchema = z
-  .object({
-    id: z.string(),
-    videoId: z.string(),
-    videoTitle: z.string().nullable(),
-    reason: VideoReportReasonSchema,
-    detailText: z.string().nullable(),
-    status: VideoReportStatusSchema,
-    createdAt: z.iso.datetime(),
-    /**
-     * `null` while the report is open.
-     *
-     * NULLABLE, NOT OPTIONAL — the backend's CHECK binds it to `status`, so its absence is a
-     * real fact ("not decided yet") rather than a question nobody asked. That is the opposite
-     * of `containsVideo` on a playlist row, and the difference is worth keeping straight.
-     */
-    resolvedAt: z.iso.datetime().nullable(),
-    /**
-     * The moderator's message to this reporter, or `null` when they wrote none.
-     *
-     * ⚠️ THIS IS NOT THE MODERATOR'S REASON NOTE. The backend keeps two separate columns on
-     * purpose: `videoModerationAction.reasonNote` is the staff record, hash-chained into the
-     * audit entry, and may name other reporters or the commercial motive behind a claim — it
-     * is never selected into any response a reporter can read. This one is the published half,
-     * written knowing a stranger will read it.
-     *
-     * A moderator who writes nothing sends a bare outcome. That is the honest default; a
-     * canned sentence pretending to be a considered reply is worse than none.
-     */
-    resolutionNote: z.string().nullable(),
-    /**
-     * What was actually DONE, which `status` alone cannot say.
-     *
-     * ⚠️ `redirected_to_source` AND `report_dismissed` BOTH ARRIVE AS `status: "dismissed"`
-     * — neither took a content action — but they mean opposite things to the person who filed
-     * the report. One is "we looked, the claim does not hold". The other is "the claim may
-     * well hold, and Qatoto is not who can act on it, because the bytes are on youtube.com".
-     * Render the status alone and every redirect reads as a rejection.
-     *
-     * `null` while the report is open.
-     */
-    outcomeKind: VideoReportOutcomeKindSchema.nullable(),
-  })
-  .strip();
+export const MyVideoReportSchema = z.object({
+  id: z.string(),
+  videoId: z.string(),
+  videoTitle: z.string().nullable(),
+  reason: VideoReportReasonSchema,
+  detailText: z.string().nullable(),
+  status: VideoReportStatusSchema,
+  createdAt: z.iso.datetime(),
+  /**
+   * `null` while the report is open.
+   *
+   * NULLABLE, NOT OPTIONAL — the backend's CHECK binds it to `status`, so its absence is a
+   * real fact ("not decided yet") rather than a question nobody asked. That is the opposite
+   * of `containsVideo` on a playlist row, and the difference is worth keeping straight.
+   */
+  resolvedAt: z.iso.datetime().nullable(),
+  /**
+   * The moderator's message to this reporter, or `null` when they wrote none.
+   *
+   * ⚠️ THIS IS NOT THE MODERATOR'S REASON NOTE. The backend keeps two separate columns on
+   * purpose: `videoModerationAction.reasonNote` is the staff record, hash-chained into the
+   * audit entry, and may name other reporters or the commercial motive behind a claim — it
+   * is never selected into any response a reporter can read. This one is the published half,
+   * written knowing a stranger will read it.
+   *
+   * A moderator who writes nothing sends a bare outcome. That is the honest default; a
+   * canned sentence pretending to be a considered reply is worse than none.
+   */
+  resolutionNote: z.string().nullable(),
+  /**
+   * What was actually DONE, which `status` alone cannot say.
+   *
+   * ⚠️ `redirected_to_source` AND `report_dismissed` BOTH ARRIVE AS `status: "dismissed"`
+   * — neither took a content action — but they mean opposite things to the person who filed
+   * the report. One is "we looked, the claim does not hold". The other is "the claim may
+   * well hold, and Qatoto is not who can act on it, because the bytes are on youtube.com".
+   * Render the status alone and every redirect reads as a rejection.
+   *
+   * `null` while the report is open.
+   */
+  outcomeKind: VideoReportOutcomeKindSchema.nullable(),
+});
 export type MyVideoReport = z.infer<typeof MyVideoReportSchema>;
 
 export interface ReportVideoInput {
@@ -173,15 +171,13 @@ export type VideoModerationActionKind = z.infer<typeof VideoModerationActionKind
  *
  * `reason` is NULLABLE because an action can be taken without a report behind it.
  */
-export const VideoModerationNoticeSchema = z
-  .object({
-    videoId: z.string(),
-    videoTitle: z.string(),
-    actionKind: VideoModerationActionKindSchema,
-    reason: VideoReportReasonSchema.nullable(),
-    decidedAt: z.string(),
-  })
-  .strip();
+export const VideoModerationNoticeSchema = z.object({
+  videoId: z.string(),
+  videoTitle: z.string(),
+  actionKind: VideoModerationActionKindSchema,
+  reason: VideoReportReasonSchema.nullable(),
+  decidedAt: z.string(),
+});
 export type VideoModerationNotice = z.infer<typeof VideoModerationNoticeSchema>;
 
 /** Written for the person the action was taken AGAINST, so it says what happened to THEM. */

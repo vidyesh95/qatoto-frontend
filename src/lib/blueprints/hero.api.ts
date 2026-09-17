@@ -18,8 +18,8 @@ import { z } from "zod";
  * schema is the wrapper and the caller unwraps. Matching the backend exactly is cheaper than
  * a helper that has to guess which shape a route uses.
  */
-const PublicSlideListSchema = z.object({ slides: PublicBlueprintHeroSlideSchema.array() }).strip();
-const AdminSlideListSchema = z.object({ slides: AdminBlueprintHeroSlideSchema.array() }).strip();
+const PublicSlideListSchema = z.object({ slides: PublicBlueprintHeroSlideSchema.array() });
+const AdminSlideListSchema = z.object({ slides: AdminBlueprintHeroSlideSchema.array() });
 
 /**
  * `GET /blueprints/hero-slides` — PUBLIC, no session.
@@ -152,7 +152,7 @@ export function deleteBlueprintHeroSlide(
     `/blueprints/admin/hero-slides/${encodeURIComponent(slideId)}`,
     "DELETE",
     undefined,
-    z.object({ deletedSlideId: z.string() }).strip(),
+    z.object({ deletedSlideId: z.string() }),
     options,
   );
 }

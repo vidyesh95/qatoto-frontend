@@ -15,15 +15,13 @@ import { OwnedCertificationSchema } from "@/lib/store/organizations.schemas";
 import { cursorPageOf } from "@/lib/store/shared.schemas";
 
 export const ModerationCertificationSchema = OwnedCertificationSchema.extend({
-  organization: z
-    .object({
-      id: z.string(),
-      legalName: z.string(),
-      displayName: z.string(),
-      slug: z.string(),
-    })
-    .strip(),
-}).strip();
+  organization: z.object({
+    id: z.string(),
+    legalName: z.string(),
+    displayName: z.string(),
+    slug: z.string(),
+  }),
+});
 export type ModerationCertification = z.infer<typeof ModerationCertificationSchema>;
 
 export const ModerationCertificationPageSchema = cursorPageOf(ModerationCertificationSchema);

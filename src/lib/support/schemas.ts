@@ -40,36 +40,32 @@ export type SupportCaseAuthorKind = z.infer<typeof SupportCaseAuthorKindSchema>;
  * keeps a moderator's name out of `/report-history`. Nothing here may invent a name for the
  * `staff` side beyond the generic label below.
  */
-export const SupportCaseMessageSchema = z
-  .object({
-    id: z.string(),
-    sequence: z.number().int(),
-    authorKind: SupportCaseAuthorKindSchema,
-    body: z.string(),
-    createdAt: z.iso.datetime(),
-  })
-  .strip();
+export const SupportCaseMessageSchema = z.object({
+  id: z.string(),
+  sequence: z.number().int(),
+  authorKind: SupportCaseAuthorKindSchema,
+  body: z.string(),
+  createdAt: z.iso.datetime(),
+});
 export type SupportCaseMessage = z.infer<typeof SupportCaseMessageSchema>;
 
 /** A row in "your cases" and in the staff queue alike. */
-export const SupportCaseSummarySchema = z
-  .object({
-    id: z.string(),
-    category: SupportCaseCategorySchema,
-    state: SupportCaseStateSchema,
-    subject: z.string(),
-    /**
-     * Free text the person pasted so a human can find the thing they mean.
-     *
-     * NULLABLE, NOT OPTIONAL, and never a link: the backend deliberately stores a string
-     * rather than an order id, so there is nothing here to navigate to and nothing to look up.
-     */
-    orderReference: z.string().nullable(),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
-    decidedAt: z.iso.datetime().nullable(),
-  })
-  .strip();
+export const SupportCaseSummarySchema = z.object({
+  id: z.string(),
+  category: SupportCaseCategorySchema,
+  state: SupportCaseStateSchema,
+  subject: z.string(),
+  /**
+   * Free text the person pasted so a human can find the thing they mean.
+   *
+   * NULLABLE, NOT OPTIONAL, and never a link: the backend deliberately stores a string
+   * rather than an order id, so there is nothing here to navigate to and nothing to look up.
+   */
+  orderReference: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  decidedAt: z.iso.datetime().nullable(),
+});
 export type SupportCaseSummary = z.infer<typeof SupportCaseSummarySchema>;
 
 export const SupportCaseDetailSchema = SupportCaseSummarySchema.extend({
@@ -85,7 +81,7 @@ export const SupportCaseDetailSchema = SupportCaseSummarySchema.extend({
    * one that would have worked.
    */
   canOpenerReply: z.boolean(),
-}).strip();
+});
 export type SupportCaseDetail = z.infer<typeof SupportCaseDetailSchema>;
 
 /** The queue row adds the person, which the opener's own projection has no reason to carry. */
@@ -93,14 +89,14 @@ export const StaffSupportCaseSummarySchema = SupportCaseSummarySchema.extend({
   openedByUserId: z.string(),
   openerName: z.string(),
   openerHandle: z.string().nullable(),
-}).strip();
+});
 export type StaffSupportCaseSummary = z.infer<typeof StaffSupportCaseSummarySchema>;
 
 export const StaffSupportCaseDetailSchema = StaffSupportCaseSummarySchema.extend({
   description: z.string(),
   decisionNote: z.string().nullable(),
   messages: z.array(SupportCaseMessageSchema),
-}).strip();
+});
 export type StaffSupportCaseDetail = z.infer<typeof StaffSupportCaseDetailSchema>;
 
 export interface OpenSupportCaseInput {

@@ -217,63 +217,6 @@ export default function StoreCategoryAdminPage() {
     reordered.splice(targetIndex, 0, categoryId);
     reorderCategories.mutate({ parentCategoryId: null, categoryIds: reordered });
   }
-
-  return (
-    <div className="space-y-8">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Store categories</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          What the store browses by. The first {String(HOME_RAIL_CATEGORY_LIMIT)} top-level
-          categories in this order are the row on the store home; the rest are reachable from
-          &ldquo;All categories&rdquo;.
-        </p>
-      </header>
-
-      {/* Three distinct cases, said apart — a failed permission check is not the same as
-          failing it. */}
-      {staffContextQuery.isError && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
-          Couldn&apos;t check your permissions, so this page is read-only.
-        </output>
-      )}
-      {staffContextQuery.isSuccess && !canManageCategories && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
-          Managing store categories needs the moderator or admin role. Your role is{" "}
-          {staffContextQuery.data.platformRole ?? "none"}, so this page is read-only.
-        </output>
-      )}
-
-      {firstError && <MutationErrorNotice error={firstError.apiError} />}
-
-      {canManageCategories && (
-        <CreateCategoryForm
-          isSubmitting={createCategory.isPending}
-          parentOptions={assignableCategories}
-          onCreate={(input) => {
-            createCategory.mutate(input);
-          }}
-        />
-      )}
-
-      <RequestQueueSection
-        state={queueState}
-        assignableCategories={assignableCategories}
-        canDecide={canManageCategories}
-      />
-
-      <section className="space-y-3">
-        <div className="space-y-1">
-          <h2 className="text-lg font-medium">Categories</h2>
-          <p className="text-xs text-muted-foreground">
-            Top-level order sets the store home row. Sub-categories are listed under their parent
-            and keep their own order.
-          </p>
-        </div>
-        {renderTree()}
-      </section>
-    </div>
-  );
-
   function renderTree() {
     switch (treeState.status) {
       case "restricted":
@@ -352,6 +295,62 @@ export default function StoreCategoryAdminPage() {
       </ul>
     );
   }
+
+  return (
+    <div className="space-y-8">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Store categories</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          What the store browses by. The first {String(HOME_RAIL_CATEGORY_LIMIT)} top-level
+          categories in this order are the row on the store home; the rest are reachable from
+          &ldquo;All categories&rdquo;.
+        </p>
+      </header>
+
+      {/* Three distinct cases, said apart — a failed permission check is not the same as
+          failing it. */}
+      {staffContextQuery.isError && (
+        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+          Couldn&apos;t check your permissions, so this page is read-only.
+        </output>
+      )}
+      {staffContextQuery.isSuccess && !canManageCategories && (
+        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+          Managing store categories needs the moderator or admin role. Your role is{" "}
+          {staffContextQuery.data.platformRole ?? "none"}, so this page is read-only.
+        </output>
+      )}
+
+      {firstError && <MutationErrorNotice error={firstError.apiError} />}
+
+      {canManageCategories && (
+        <CreateCategoryForm
+          isSubmitting={createCategory.isPending}
+          parentOptions={assignableCategories}
+          onCreate={(input) => {
+            createCategory.mutate(input);
+          }}
+        />
+      )}
+
+      <RequestQueueSection
+        state={queueState}
+        assignableCategories={assignableCategories}
+        canDecide={canManageCategories}
+      />
+
+      <section className="space-y-3">
+        <div className="space-y-1">
+          <h2 className="text-lg font-medium">Categories</h2>
+          <p className="text-xs text-muted-foreground">
+            Top-level order sets the store home row. Sub-categories are listed under their parent
+            and keep their own order.
+          </p>
+        </div>
+        {renderTree()}
+      </section>
+    </div>
+  );
 }
 
 /**
@@ -555,7 +554,7 @@ function CategoryRow({
   const [draftParentCategoryId, setDraftParentCategoryId] = useState(
     category.parentCategoryId ?? "",
   );
-  const [draftSynonyms, setDraftSynonyms] = useState(category.searchSynonyms.join(", "));
+  const [draftSynonyms, setDraftSynonyms] = useState(() => category.searchSynonyms.join(", "));
   const [isReplacingImage, setIsReplacingImage] = useState(false);
   const [replacementFile, setReplacementFile] = useState<File | null>(null);
   const [isConfirmingRetire, setIsConfirmingRetire] = useState(false);
@@ -1149,20 +1148,6 @@ function RequestQueueSection({
   assignableCategories: readonly AdminStoreCategory[];
   canDecide: boolean;
 }) {
-  return (
-    <section className="space-y-3">
-      <div className="space-y-1">
-        <h2 className="text-lg font-medium">Category requests</h2>
-        <p className="text-xs text-muted-foreground">
-          Sellers asking for a category that does not exist. Their listings are live already and
-          sitting in Misc; approving moves <strong>only those listings</strong> into the new
-          category, never the rest of Misc.
-        </p>
-      </div>
-      {renderQueue()}
-    </section>
-  );
-
   function renderQueue() {
     switch (state.status) {
       case "restricted":
@@ -1203,6 +1188,20 @@ function RequestQueueSection({
       }
     }
   }
+
+  return (
+    <section className="space-y-3">
+      <div className="space-y-1">
+        <h2 className="text-lg font-medium">Category requests</h2>
+        <p className="text-xs text-muted-foreground">
+          Sellers asking for a category that does not exist. Their listings are live already and
+          sitting in Misc; approving moves <strong>only those listings</strong> into the new
+          category, never the rest of Misc.
+        </p>
+      </div>
+      {renderQueue()}
+    </section>
+  );
 }
 
 /**
@@ -1229,7 +1228,7 @@ function PendingRequestCard({
   const decideRequest = useDecideStoreCategoryRequestMutation();
 
   const [name, setName] = useState(request.proposedName);
-  const [slug, setSlug] = useState(toCategorySlug(request.proposedName));
+  const [slug, setSlug] = useState(() => toCategorySlug(request.proposedName));
   const [hasEditedSlug, setHasEditedSlug] = useState(false);
   const [parentCategoryId, setParentCategoryId] = useState(request.proposedParentCategoryId ?? "");
   const [note, setNote] = useState("");

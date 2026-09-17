@@ -26,45 +26,41 @@ import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * decrement under a row lock, and `pnpm db:reconcile-creator-stats` repairs any row that drifted
  * before they did.
  */
-export const CreatorSummarySchema = z
-  .object({
-    subscriberCount: z.number().int(),
-    publishedVideoCount: z.number().int(),
-    totalViewCount: z.number().int(),
-  })
-  .strip();
+export const CreatorSummarySchema = z.object({
+  subscriberCount: z.number().int(),
+  publishedVideoCount: z.number().int(),
+  totalViewCount: z.number().int(),
+});
 export type CreatorSummary = z.infer<typeof CreatorSummarySchema>;
 
 /** One row of `GET /users/me/video-analytics`. */
-export const VideoAnalyticsRowSchema = z
-  .object({
-    videoId: z.string(),
-    title: z.string(),
-    thumbnailUrl: z.string().nullable(),
-    publishStatus: z.enum(["draft", "scheduled", "published"]),
-    /** Null for a draft — it has never been published, so it has no publication instant. */
-    publishedAt: IsoDateTimeSchema.nullable(),
-    viewCount: z.number().int(),
-    likeCount: z.number().int(),
-    commentCount: z.number().int(),
-    shareCount: z.number().int(),
-    saveCount: z.number().int(),
-    totalWatchedSeconds: z.number().int(),
-    /**
-     * NULL BEFORE THE NIGHTLY JOB HAS RUN, AND NULL AGAIN AFTER 90 DAYS. Both are computed from
-     * raw view sessions, which are pruned on a retention clock — so a null here can mean "not
-     * measured yet" on a new video and "no longer measurable" on an old one. Rendering either as
-     * 0 would claim nobody watched a video whose evidence was merely aged out.
-     */
-    uniqueViewerCount: z.number().int().nullable(),
-    countedViewsFirst48Hours: z.number().int().nullable(),
-    /**
-     * Mean completion in basis points (10000 = 100%), or null when nothing has been sampled.
-     *
-     * An unmeasured completion rate is not a rate of zero. The server returns null rather than
-     * dividing by a zero sample, and the UI must render that as an absence.
-     */
-    meanCompletionBasisPoints: z.number().int().nullable(),
-  })
-  .strip();
+export const VideoAnalyticsRowSchema = z.object({
+  videoId: z.string(),
+  title: z.string(),
+  thumbnailUrl: z.string().nullable(),
+  publishStatus: z.enum(["draft", "scheduled", "published"]),
+  /** Null for a draft — it has never been published, so it has no publication instant. */
+  publishedAt: IsoDateTimeSchema.nullable(),
+  viewCount: z.number().int(),
+  likeCount: z.number().int(),
+  commentCount: z.number().int(),
+  shareCount: z.number().int(),
+  saveCount: z.number().int(),
+  totalWatchedSeconds: z.number().int(),
+  /**
+   * NULL BEFORE THE NIGHTLY JOB HAS RUN, AND NULL AGAIN AFTER 90 DAYS. Both are computed from
+   * raw view sessions, which are pruned on a retention clock — so a null here can mean "not
+   * measured yet" on a new video and "no longer measurable" on an old one. Rendering either as
+   * 0 would claim nobody watched a video whose evidence was merely aged out.
+   */
+  uniqueViewerCount: z.number().int().nullable(),
+  countedViewsFirst48Hours: z.number().int().nullable(),
+  /**
+   * Mean completion in basis points (10000 = 100%), or null when nothing has been sampled.
+   *
+   * An unmeasured completion rate is not a rate of zero. The server returns null rather than
+   * dividing by a zero sample, and the UI must render that as an absence.
+   */
+  meanCompletionBasisPoints: z.number().int().nullable(),
+});
 export type VideoAnalyticsRow = z.infer<typeof VideoAnalyticsRowSchema>;

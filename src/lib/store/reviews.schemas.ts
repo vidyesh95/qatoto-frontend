@@ -54,34 +54,28 @@ export type CompletionTargetKind = (typeof COMPLETION_TARGET_KINDS)[number];
  * `hasReview` IS A FACT ABOUT THE CALLER, never about the completion — another organization's review
  * must not make a completion look spent.
  */
-export const BuyerCompletionSchema = z
-  .object({
-    completionId: z.string(),
-    targetKind: z.enum(COMPLETION_TARGET_KINDS),
-    orderId: z.string(),
-    // Null for a service engagement: there is no product behind it.
-    productId: z.string().nullable(),
-    counterpartyOrganization: z
-      .object({
-        organizationId: z.string(),
-        slug: z.string(),
-        displayName: z.string(),
-      })
-      .strip(),
-    completedAt: IsoDateTimeSchema,
-    hasReview: z.boolean(),
-  })
-  .strip();
+export const BuyerCompletionSchema = z.object({
+  completionId: z.string(),
+  targetKind: z.enum(COMPLETION_TARGET_KINDS),
+  orderId: z.string(),
+  // Null for a service engagement: there is no product behind it.
+  productId: z.string().nullable(),
+  counterpartyOrganization: z.object({
+    organizationId: z.string(),
+    slug: z.string(),
+    displayName: z.string(),
+  }),
+  completedAt: IsoDateTimeSchema,
+  hasReview: z.boolean(),
+});
 
 export type BuyerCompletion = z.infer<typeof BuyerCompletionSchema>;
 
 /** `{ items, page: { nextCursor, hasMore } }`. */
-export const BuyerCompletionPageSchema = z
-  .object({
-    items: z.array(BuyerCompletionSchema),
-    page: z.object({ nextCursor: z.string().nullable(), hasMore: z.boolean() }).strip(),
-  })
-  .strip();
+export const BuyerCompletionPageSchema = z.object({
+  items: z.array(BuyerCompletionSchema),
+  page: z.object({ nextCursor: z.string().nullable(), hasMore: z.boolean() }),
+});
 
 export interface ListBuyerCompletionsFilter {
   readonly reviewable?: boolean;
@@ -101,12 +95,10 @@ export const REVIEW_SCORE_AXIS_LABELS: Record<ReviewScoreAxis, string> = {
   quality: "Quality",
 };
 
-export const ReviewScoreEntrySchema = z
-  .object({
-    axis: z.enum(REVIEW_SCORE_AXES),
-    score: z.number().int(),
-  })
-  .strip();
+export const ReviewScoreEntrySchema = z.object({
+  axis: z.enum(REVIEW_SCORE_AXES),
+  score: z.number().int(),
+});
 
 /**
  * The AUTHOR-FACING review projection, which the write routes answer with.
@@ -117,22 +109,20 @@ export const ReviewScoreEntrySchema = z
  * `visibility` can be `hidden` — a moderator acted. The author still sees the row, which is right:
  * it is theirs, and it still occupies their one review slot on that completion.
  */
-export const AuthoredReviewSchema = z
-  .object({
-    id: z.string(),
-    completionId: z.string(),
-    subjectOrganizationId: z.string(),
-    productId: z.string().nullable(),
-    rating: z.number().int(),
-    body: z.string(),
-    visibility: z.enum(["visible", "hidden"]),
-    helpfulCount: z.number().int(),
-    mediaCount: z.number().int(),
-    scores: z.array(ReviewScoreEntrySchema),
-    editedAt: IsoDateTimeSchema.nullable(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const AuthoredReviewSchema = z.object({
+  id: z.string(),
+  completionId: z.string(),
+  subjectOrganizationId: z.string(),
+  productId: z.string().nullable(),
+  rating: z.number().int(),
+  body: z.string(),
+  visibility: z.enum(["visible", "hidden"]),
+  helpfulCount: z.number().int(),
+  mediaCount: z.number().int(),
+  scores: z.array(ReviewScoreEntrySchema),
+  editedAt: IsoDateTimeSchema.nullable(),
+  createdAt: IsoDateTimeSchema,
+});
 
 export type AuthoredReview = z.infer<typeof AuthoredReviewSchema>;
 
@@ -147,20 +137,18 @@ export type AuthoredReview = z.infer<typeof AuthoredReviewSchema>;
  * ONLY A `youtube_video` CAN BECOME UNAVAILABLE. A photo is a first-party asset; the state is moved
  * by the YouTube revalidation job, never by a route.
  */
-export const AuthoredReviewMediaSchema = z
-  .object({
-    id: z.string(),
-    reviewId: z.string(),
-    mediaKind: z.enum(["photo", "youtube_video"]),
-    url: z.string().nullable(),
-    youtubeVideoId: z.string().nullable(),
-    widthPx: z.number().int().nullable(),
-    heightPx: z.number().int().nullable(),
-    position: z.number().int(),
-    state: z.enum(["visible", "unavailable_upstream"]),
-    unavailableAt: IsoDateTimeSchema.nullable(),
-  })
-  .strip();
+export const AuthoredReviewMediaSchema = z.object({
+  id: z.string(),
+  reviewId: z.string(),
+  mediaKind: z.enum(["photo", "youtube_video"]),
+  url: z.string().nullable(),
+  youtubeVideoId: z.string().nullable(),
+  widthPx: z.number().int().nullable(),
+  heightPx: z.number().int().nullable(),
+  position: z.number().int(),
+  state: z.enum(["visible", "unavailable_upstream"]),
+  unavailableAt: IsoDateTimeSchema.nullable(),
+});
 
 export type AuthoredReviewMedia = z.infer<typeof AuthoredReviewMediaSchema>;
 
@@ -179,14 +167,15 @@ export type AuthoredReviewMedia = z.infer<typeof AuthoredReviewMediaSchema>;
  */
 export const OwnReviewDetailSchema = AuthoredReviewSchema.extend({
   media: z.array(AuthoredReviewMediaSchema),
-}).strip();
+});
 
 export type OwnReviewDetail = z.infer<typeof OwnReviewDetailSchema>;
 
 /** `DELETE /commerce/reviews/:reviewId/media/:mediaId` answers with the surviving count. */
-export const DetachedReviewMediaSchema = z
-  .object({ reviewId: z.string(), mediaCount: z.number().int() })
-  .strip();
+export const DetachedReviewMediaSchema = z.object({
+  reviewId: z.string(),
+  mediaCount: z.number().int(),
+});
 
 export type DetachedReviewMedia = z.infer<typeof DetachedReviewMediaSchema>;
 
@@ -251,13 +240,11 @@ export interface AttachReviewVideoInput {
  * by verb, so a double-tap on a slow connection is already harmless. Same rule like, save and
  * subscribe follow.
  */
-export const ReviewHelpfulVoteSchema = z
-  .object({
-    reviewId: z.string(),
-    isHelpful: z.boolean(),
-    helpfulCount: z.number().int(),
-  })
-  .strip();
+export const ReviewHelpfulVoteSchema = z.object({
+  reviewId: z.string(),
+  isHelpful: z.boolean(),
+  helpfulCount: z.number().int(),
+});
 
 export type ReviewHelpfulVote = z.infer<typeof ReviewHelpfulVoteSchema>;
 
@@ -267,20 +254,18 @@ export type ReviewHelpfulVote = z.infer<typeof ReviewHelpfulVoteSchema>;
  * NO `editedAt` ON THE WIRE, even though the column exists — so a client cannot know locally whether
  * the single permitted revision has been spent. The 409 is the authority; see `upsertReviewReply`.
  */
-export const ReviewReplySchema = z
-  .object({
-    reviewId: z.string(),
-    responderOrganizationId: z.string(),
-    body: z.string(),
-    createdAt: IsoDateTimeSchema,
-    updatedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const ReviewReplySchema = z.object({
+  reviewId: z.string(),
+  responderOrganizationId: z.string(),
+  body: z.string(),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+});
 
 export type ReviewReply = z.infer<typeof ReviewReplySchema>;
 
 /** `DELETE /commerce/reviews/:reviewId/reply` answers with the id alone. */
-export const WithdrawnReviewReplySchema = z.object({ reviewId: z.string() }).strip();
+export const WithdrawnReviewReplySchema = z.object({ reviewId: z.string() });
 
 export type WithdrawnReviewReply = z.infer<typeof WithdrawnReviewReplySchema>;
 

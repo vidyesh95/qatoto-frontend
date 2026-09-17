@@ -161,6 +161,44 @@ export default function AuditHashInputInspector({
 
   const hashInputError =
     hashInputQuery.error instanceof ApiRequestError ? hashInputQuery.error.apiError : null;
+  function renderVerdict() {
+    switch (localDigestState.status) {
+      case "idle":
+      case "computing":
+        return <p className="text-xs text-muted-foreground">Recomputing the digest here…</p>;
+      case "unsupported_algorithm":
+        return (
+          <p className="text-xs text-muted-foreground">
+            This entry was hashed with {localDigestState.version}, which this page does not know how
+            to reproduce. Nothing is wrong with the entry — check it with a tool that implements
+            that version.
+          </p>
+        );
+      case "unavailable":
+        return <p className="text-xs text-muted-foreground">{localDigestState.reason}</p>;
+      case "computed":
+        return localDigestState.isDigestMatching ? (
+          <p className="rounded-lg bg-[#00696E]/10 p-2 text-xs font-medium text-[#00696E]">
+            Recomputed in your browser and it matches. The server did not assert this — the bytes
+            below hash to the entry hash below.
+          </p>
+        ) : (
+          <div className="space-y-1 rounded-lg bg-red-50 p-2">
+            <p className="text-xs font-medium text-red-900">
+              Recomputed in your browser and it does NOT match. Treat this as an operational
+              emergency and report it — do not dismiss it.
+            </p>
+            <p className="font-mono text-[11px] break-all text-red-900">
+              got {localDigestState.digestHex}
+            </p>
+          </div>
+        );
+      default: {
+        const exhaustiveCheck: never = localDigestState;
+        return exhaustiveCheck;
+      }
+    }
+  }
 
   return (
     <div className="mt-2 space-y-2 rounded-xl bg-muted/40 p-3">
@@ -211,43 +249,4 @@ export default function AuditHashInputInspector({
       )}
     </div>
   );
-
-  function renderVerdict() {
-    switch (localDigestState.status) {
-      case "idle":
-      case "computing":
-        return <p className="text-xs text-muted-foreground">Recomputing the digest here…</p>;
-      case "unsupported_algorithm":
-        return (
-          <p className="text-xs text-muted-foreground">
-            This entry was hashed with {localDigestState.version}, which this page does not know how
-            to reproduce. Nothing is wrong with the entry — check it with a tool that implements
-            that version.
-          </p>
-        );
-      case "unavailable":
-        return <p className="text-xs text-muted-foreground">{localDigestState.reason}</p>;
-      case "computed":
-        return localDigestState.isDigestMatching ? (
-          <p className="rounded-lg bg-[#00696E]/10 p-2 text-xs font-medium text-[#00696E]">
-            Recomputed in your browser and it matches. The server did not assert this — the bytes
-            below hash to the entry hash below.
-          </p>
-        ) : (
-          <div className="space-y-1 rounded-lg bg-red-50 p-2">
-            <p className="text-xs font-medium text-red-900">
-              Recomputed in your browser and it does NOT match. Treat this as an operational
-              emergency and report it — do not dismiss it.
-            </p>
-            <p className="font-mono text-[11px] break-all text-red-900">
-              got {localDigestState.digestHex}
-            </p>
-          </div>
-        );
-      default: {
-        const exhaustiveCheck: never = localDigestState;
-        return exhaustiveCheck;
-      }
-    }
-  }
 }

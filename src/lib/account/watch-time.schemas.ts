@@ -21,31 +21,25 @@ import { z } from "zod";
 /** Integer seconds, or `null` when nothing has ever been recorded for this account. */
 const WatchedSecondsSchema = z.number().int().nonnegative().nullable();
 
-export const ViewerWatchTimeSchema = z
-  .object({
-    totals: z
-      .object({
-        today: WatchedSecondsSchema,
-        thisWeek: WatchedSecondsSchema,
-        thisMonth: WatchedSecondsSchema,
-        thisYear: WatchedSecondsSchema,
-      })
-      .strip(),
-    /** The last 30 local days, densified — a day with no watching is a real zero here. */
-    dailySeries: z.array(
-      z
-        .object({
-          date: z.string(),
-          watchedSeconds: z.number().int().nonnegative(),
-        })
-        .strip(),
-    ),
-    /** 24 buckets in the viewer's own zone, index = hour, over the last N days. */
-    hourHistogram: z.array(z.number().int().nonnegative()),
-    /** So the copy can state the hour-detail window without hardcoding 90. */
-    hourDetailRetentionDays: z.number().int().positive(),
-  })
-  .strip();
+export const ViewerWatchTimeSchema = z.object({
+  totals: z.object({
+    today: WatchedSecondsSchema,
+    thisWeek: WatchedSecondsSchema,
+    thisMonth: WatchedSecondsSchema,
+    thisYear: WatchedSecondsSchema,
+  }),
+  /** The last 30 local days, densified — a day with no watching is a real zero here. */
+  dailySeries: z.array(
+    z.object({
+      date: z.string(),
+      watchedSeconds: z.number().int().nonnegative(),
+    }),
+  ),
+  /** 24 buckets in the viewer's own zone, index = hour, over the last N days. */
+  hourHistogram: z.array(z.number().int().nonnegative()),
+  /** So the copy can state the hour-detail window without hardcoding 90. */
+  hourDetailRetentionDays: z.number().int().positive(),
+});
 
 export type ViewerWatchTime = z.infer<typeof ViewerWatchTimeSchema>;
 export type ViewerWatchTimeDay = ViewerWatchTime["dailySeries"][number];

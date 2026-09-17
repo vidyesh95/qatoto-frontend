@@ -65,13 +65,11 @@ export const SLUG_TO_CONDITION_LABEL: Record<string, string> = {
 
 // --- Response schemas -------------------------------------------------------
 
-export const ProductImageSchema = z
-  .object({
-    id: z.string(),
-    url: z.string(),
-    position: z.number(),
-  })
-  .strip();
+export const ProductImageSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  position: z.number(),
+});
 
 /**
  * One band of the volume ladder, as the SELLER sees it.
@@ -90,16 +88,14 @@ export const ProductImageSchema = z
  * STRICT — it does NOT inherit — so a variant with no ladder of its own reads `[]` here, while the
  * BUYER read substitutes the product's (`store-catalog.service.ts:1401`). Do not compare the two.
  */
-export const ProductPricingTierSchema = z
-  .object({
-    id: z.string(),
-    variantId: z.string().nullable(),
-    unitPriceInCents: z.number(),
-    minimumOrderQuantity: z.number(),
-    leadTimeDays: z.number().int().nullable(),
-    position: z.number(),
-  })
-  .strip();
+export const ProductPricingTierSchema = z.object({
+  id: z.string(),
+  variantId: z.string().nullable(),
+  unitPriceInCents: z.number(),
+  minimumOrderQuantity: z.number(),
+  leadTimeDays: z.number().int().nullable(),
+  position: z.number(),
+});
 
 /**
  * A1. One buyable variation of this listing, as the SELLER sees it — "Sea blue", "480 V / 60 Hz".
@@ -118,20 +114,18 @@ export const ProductPricingTierSchema = z
  * A FLAT LIST, NOT AXES (A26, deferred). "Sea blue × Large" is one opaque variant name rather than
  * two dimensions — see `src/components/home/store/sections/variant-picker.tsx`.
  */
-export const SellerProductVariantSchema = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    publicSlug: z.string(),
-    sku: z.string().nullable(),
-    priceInCents: z.number().int(),
-    stockQuantity: z.number().int(),
-    minimumOrderQuantity: z.number().int().nullable(),
-    position: z.number().int(),
-    state: z.enum(["active", "retired"]),
-    pricingTiers: z.array(ProductPricingTierSchema),
-  })
-  .strip();
+export const SellerProductVariantSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  publicSlug: z.string(),
+  sku: z.string().nullable(),
+  priceInCents: z.number().int(),
+  stockQuantity: z.number().int(),
+  minimumOrderQuantity: z.number().int().nullable(),
+  position: z.number().int(),
+  state: z.enum(["active", "retired"]),
+  pricingTiers: z.array(ProductPricingTierSchema),
+});
 
 /**
  * A18. One customization slot the seller offers on this listing — "Your logo", "Packaging material".
@@ -157,20 +151,18 @@ export const SellerProductVariantSchema = z
  * `choiceValues`; a choice slot the reverse. The backend enforces that with a cross-field refine, so
  * a slot carrying both is a 422 that fails the whole save.
  */
-export const SellerProductCustomizationOptionSchema = z
-  .object({
-    id: z.string(),
-    slotKey: z.string(),
-    label: z.string(),
-    customizationKind: z.enum(PRODUCT_CUSTOMIZATION_KINDS),
-    acceptedMediaTypes: z.array(z.string()),
-    choiceValues: z.array(z.string()),
-    minimumOrderQuantity: z.number().int(),
-    isRequired: z.boolean(),
-    position: z.number().int(),
-    state: z.enum(["active", "retired"]),
-  })
-  .strip();
+export const SellerProductCustomizationOptionSchema = z.object({
+  id: z.string(),
+  slotKey: z.string(),
+  label: z.string(),
+  customizationKind: z.enum(PRODUCT_CUSTOMIZATION_KINDS),
+  acceptedMediaTypes: z.array(z.string()),
+  choiceValues: z.array(z.string()),
+  minimumOrderQuantity: z.number().int(),
+  isRequired: z.boolean(),
+  position: z.number().int(),
+  state: z.enum(["active", "retired"]),
+});
 
 /**
  * One structured key/value fact about a listing — "Material: Solid oak", "Voltage: 5 V".
@@ -196,15 +188,13 @@ export const SellerProductCustomizationOptionSchema = z
  * `POST /products/:id/highlights/:highlightId/image` and comes back here as a Cloudinary URL.
  * Sending it back on a write is a 422 against a `.strict()` body.
  */
-export const ProductHighlightSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    bodyText: z.string(),
-    imageUrl: z.string().nullable(),
-    position: z.number().int(),
-  })
-  .strip();
+export const ProductHighlightSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  bodyText: z.string(),
+  imageUrl: z.string().nullable(),
+  position: z.number().int(),
+});
 
 /**
  * STORE §21.3. A public PDF the seller attached — the owner's view of it.
@@ -213,24 +203,20 @@ export const ProductHighlightSchema = z
  * does not link to them, and the seller's own listing may not be public yet, so a download path
  * would be a link that legitimately 404s.
  */
-export const SellerProductDocumentSchema = z
-  .object({
-    id: z.string(),
-    documentKind: z.enum(PRODUCT_DOCUMENT_KINDS),
-    fileName: z.string(),
-    byteSize: z.number().int(),
-    position: z.number().int(),
-  })
-  .strip();
+export const SellerProductDocumentSchema = z.object({
+  id: z.string(),
+  documentKind: z.enum(PRODUCT_DOCUMENT_KINDS),
+  fileName: z.string(),
+  byteSize: z.number().int(),
+  position: z.number().int(),
+});
 
-export const ProductSpecificationSchema = z
-  .object({
-    key: z.string(),
-    value: z.string(),
-    group: z.string().nullable(),
-    position: z.number(),
-  })
-  .strip();
+export const ProductSpecificationSchema = z.object({
+  key: z.string(),
+  value: z.string(),
+  group: z.string().nullable(),
+  position: z.number(),
+});
 
 /**
  * WHAT A LISTING STILL NEEDS BEFORE IT CAN BE PUBLISHED.
@@ -264,30 +250,26 @@ export const LISTING_REQUIREMENT_KEYS = [
  */
 export const LISTING_REQUIREMENT_STATES = ["satisfied", "missing", "not_applicable"] as const;
 
-export const ListingRequirementSchema = z
-  .object({
-    key: z.enum(LISTING_REQUIREMENT_KEYS),
-    state: z.enum(LISTING_REQUIREMENT_STATES),
-    /**
-     * The exact field tokens to fill in — the same vocabulary `INCOMPLETE_FOR_PUBLISH.missing`
-     * carries. Empty unless `state` is `missing`. Not typed as an enum: it is a wire vocabulary the
-     * backend may extend, and a narrow enum here would fail the parse on an addition rather than
-     * fall through to the raw token.
-     */
-    missingFields: z.array(z.string()),
-  })
-  .strip();
+export const ListingRequirementSchema = z.object({
+  key: z.enum(LISTING_REQUIREMENT_KEYS),
+  state: z.enum(LISTING_REQUIREMENT_STATES),
+  /**
+   * The exact field tokens to fill in — the same vocabulary `INCOMPLETE_FOR_PUBLISH.missing`
+   * carries. Empty unless `state` is `missing`. Not typed as an enum: it is a wire vocabulary the
+   * backend may extend, and a narrow enum here would fail the parse on an addition rather than
+   * fall through to the raw token.
+   */
+  missingFields: z.array(z.string()),
+});
 
-export const ListingCompletenessSchema = z
-  .object({
-    requirements: z.array(ListingRequirementSchema),
-    requirementCount: z.number().int(),
-    /** Requirements that apply to THIS listing — the denominator of `isComplete`. */
-    applicableRequirementCount: z.number().int(),
-    satisfiedRequirementCount: z.number().int(),
-    isComplete: z.boolean(),
-  })
-  .strip();
+export const ListingCompletenessSchema = z.object({
+  requirements: z.array(ListingRequirementSchema),
+  requirementCount: z.number().int(),
+  /** Requirements that apply to THIS listing — the denominator of `isComplete`. */
+  applicableRequirementCount: z.number().int(),
+  satisfiedRequirementCount: z.number().int(),
+  isComplete: z.boolean(),
+});
 
 /**
  * One related product, as its OWNER sees it.
@@ -298,17 +280,15 @@ export const ListingCompletenessSchema = z
  * curated edge is a **409**, because the unique index does not include `sourceKind`. So the editor
  * shows curated and derived rows READ-ONLY and rebuilds its payload from the seller's own.
  */
-export const SellerProductRelationSchema = z
-  .object({
-    id: z.string(),
-    toProductId: z.string(),
-    relationKind: z.enum(PRODUCT_RELATION_KINDS),
-    sourceKind: z.enum(PRODUCT_RELATION_SOURCE_KINDS),
-    rank: z.number().int(),
-    toProductTitle: z.string(),
-    toProductPublicSlug: z.string().nullable(),
-  })
-  .strip();
+export const SellerProductRelationSchema = z.object({
+  id: z.string(),
+  toProductId: z.string(),
+  relationKind: z.enum(PRODUCT_RELATION_KINDS),
+  sourceKind: z.enum(PRODUCT_RELATION_SOURCE_KINDS),
+  rank: z.number().int(),
+  toProductTitle: z.string(),
+  toProductPublicSlug: z.string().nullable(),
+});
 
 export type SellerProductRelation = z.infer<typeof SellerProductRelationSchema>;
 
@@ -318,200 +298,192 @@ export interface ProductRelationInput {
   readonly relationKind: (typeof PRODUCT_RELATION_KINDS)[number];
 }
 
-export const PublicProductSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    brand: z.string().nullable(),
-    /**
-     * The LEGACY enum value, and null for every listing created since 0098. Kept on the
-     * wire so old clients still parse; `categoryId` is the authoritative field and the only
-     * one this app reads.
-     */
-    category: z.string().nullable(),
-    categoryId: z.string(),
-    /**
-     * Set while this listing sits in Misc awaiting a verdict on a requested category. A
-     * non-null value is why the studio says "waiting for review" instead of presenting Misc
-     * as a category the seller chose.
-     */
-    pendingCategoryRequestId: z.string().nullable(),
-    condition: z.enum(PRODUCT_CONDITION_SLUGS),
-    description: z.string().nullable(),
-    priceInCents: z.number(),
-    compareAtPriceInCents: z.number().nullable(),
-    currency: z.string(),
-    stockQuantity: z.number(),
-    sku: z.string().nullable(),
-    /**
-     * A44. The accepted quote line these goods were sourced from, or null.
-     *
-     * ⚠️ **THE EDITOR NEEDS THIS OR IT DESTROYS DATA.** The listing save sends the field on every
-     * write, `null` included, because `null` is how a wrong link is cleared. A form that could not
-     * read the existing value would prefill empty and wipe the link on the next unrelated edit.
-     */
-    sourcingQuoteProductLineId: z.string().nullable(),
-    keyFeatures: z.array(z.string()),
-    status: z.enum(PRODUCT_STATUSES),
-    /**
-     * §21.2. NOT `status`, and the two are easy to confuse. `status` is draft/active — whether
-     * this listing has been published. This is whether the seller still sells the thing.
-     */
-    sellingState: z.enum(PRODUCT_SELLING_STATES),
-    /**
-     * A THIRD STATE, AND THE ONLY ONE THE SELLER DOES NOT CONTROL. `status` is draft/active and
-     * `sellingState` is whether the seller still sells the thing; this is what a MODERATOR decided.
-     *
-     * ⚠️ IT WAS ON THE WIRE AND NOT IN THIS SCHEMA, so `.strip()` dropped it and a seller whose
-     * listing was `rejected` or `suspended` was told nothing at all — the studio showed "Draft" or
-     * "Active" as though nothing had happened. That is the same defect `video.moderationVisibility
-     * State` had in the Studio before `/studio/copyright` shipped: not silence about a takedown,
-     * but a wrong answer on the one screen the person who could appeal would look at.
-     */
-    moderationState: z.enum(PRODUCT_MODERATION_STATES),
-    publishedAt: z.string().nullable(),
-    /**
-     * The buyer-facing slug, so the studio can link to the live listing at
-     * `/store/product/${publicSlug}`. Server-generated and returned since the column shipped;
-     * nothing on this client had ever named it, so there was no way out of the studio to the page
-     * a seller was editing.
-     *
-     * NULL UNTIL PUBLISHED. A draft has no buyer page, so the link is gated on the value rather
-     * than on `status` — the two can disagree and the slug is the one that decides whether a URL
-     * exists.
-     */
-    publicSlug: z.string().nullable(),
-    /**
-     * THE THREE IDENTITY FACTS THE BUYER PAGE ALREADY RENDERS.
-     *
-     * `product-details-sheet.tsx` builds its "Item details" tab from `brand`, `modelNumber`,
-     * `condition`, `countryOfOriginCode` and `unitOfMeasure` — so before these reached the seller
-     * form, three of those five rows were dropped for every listing on the site. The columns, the
-     * CHECK (`product_model_unit_ck`) and the write schema all predate this; only the seller had
-     * no way to fill them in.
-     *
-     * `countryOfOriginCode` is ISO 3166-1 alpha-2 and the backend regex is `/^[A-Z]{2}$/`.
-     * `unitOfMeasure` is free text ("piece", "metre", "carton") — there is no unit enum on the
-     * wire, and inventing one here would refuse a unit the backend accepts.
-     */
-    modelNumber: z.string().nullable(),
-    countryOfOriginCode: z.string().nullable(),
-    unitOfMeasure: z.string().nullable(),
-    images: z.array(ProductImageSchema),
-    pricingTiers: z.array(ProductPricingTierSchema),
-    /**
-     * A1. Every variation on this listing, ACTIVE AND RETIRED, ordered by `position`.
-     *
-     * Empty means the listing is sold as one thing. Non-empty changes how it is bought: a cart line
-     * naming no variant is refused `VARIANT_REQUIRED`, and the storefront card shows a "from" price
-     * the server computes across the active ones.
-     */
-    variants: z.array(SellerProductVariantSchema),
-    /**
-     * The structured spec sheet. Ordered by `position`, and EMPTY FOR EVERY LISTING CREATED
-     * BEFORE THIS FIELD REACHED THE FORM — the backend has accepted `specifications[]` on create
-     * and PATCH since the table shipped, and no client had ever sent one, so the buyer's spec
-     * sheet and comparison table were rendering an array nothing wrote to.
-     */
-    specifications: z.array(ProductSpecificationSchema),
-    /**
-     * STORE §20. The listing's STRUCTURED answers, so an edit hydrates what was saved.
-     *
-     * Shaped like the buyer's, minus the display-only joins: the wizard needs the raw answer to
-     * put back in a control, not a rendered string.
-     */
-    attributeValues: z.array(
-      z
-        .object({
-          attributeKey: z.string(),
-          valueKind: z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS),
-          numericScale: z.number().int().nullable(),
-          choiceValue: z.string().nullable(),
-          numericValueScaled: z.number().nullable(),
-          textValue: z.string().nullable(),
-        })
-        .strip(),
-    ),
-    /**
-     * The long-form body. Rendered by `sections/product-highlights.tsx` on the buyer page, which
-     * has been mapping an empty array since it shipped — the table, both routes and the image
-     * pipeline all existed and no seller surface ever wrote to them.
-     */
-    highlights: z.array(ProductHighlightSchema),
-    documents: z.array(SellerProductDocumentSchema),
-    /**
-     * A47. The optional `.glb`, or null. Named here for the reason the block below spells out:
-     * `.strip()` would drop it silently, the wizard would hydrate "no model" over a saved file,
-     * and the seller would see an empty slot instead of a Remove control.
-     */
-    threeDimensionalModel: ProductThreeDimensionalModelSchema.nullable(),
-    /**
-     * ⚠️ **NAMING THIS KEY IS THE WHOLE FIX, AND THIS FILE HAS BEEN BITTEN TWICE ALREADY** —
-     * `moderationState` and then `customizationOptions`, both documented above. `.strip()` discards
-     * an array nobody names, so a missing key here would leave the wizard hydrating empty and the
-     * next save wiping every relation the seller had declared.
-     */
-    relations: z.array(SellerProductRelationSchema),
-    // A18. ACTIVE AND RETIRED BOTH — see `SellerProductCustomizationOptionSchema`. Naming the key is
-    // the whole fix: `.strip()` was discarding this array on every seller read.
-    customizationOptions: z.array(SellerProductCustomizationOptionSchema),
-    /**
-     * A17. THE THREE SAMPLE FACTS, which answer three different questions and must not be
-     * collapsed. `samplePolicy` says whether a sample can be had at all and whether its price
-     * comes back against a later bulk order; `samplePriceInCents` says what it costs, and NULL
-     * IS NOT FREE — it is unstated; `maximumSampleQuantity` says how many one line may hold, and
-     * is never null because the column defaults to 1.
-     *
-     * The cap is what keeps the sample bypass honest: a sample skips the tier ladder and the
-     * minimum order quantity, so without a ceiling a large "sample" line is a bulk order at
-     * sample pricing, and on a refundable listing it mints a credit the size of the whole line.
-     */
-    samplePolicy: z.enum(PRODUCT_SAMPLE_POLICIES),
-    samplePriceInCents: z.number().int().nullable(),
-    maximumSampleQuantity: z.number().int(),
-    /**
-     * THE FIVE SHIPPING FACTS (§19.9a). Nullable, and there is no migration, because nobody can
-     * invent a box size for a listing that already exists — a pre-Phase-20 listing keeps selling
-     * and is refused on its next edit instead.
-     *
-     * NAMED UNITS, NEVER A FORMATTED STRING. Freight rates on chargeable weight, which is
-     * `max(actual, volumetric)`, and volumetric needs L x W x H MULTIPLIED BY the package count.
-     * That is why all five are required and not just the three dimensions: without
-     * `unitsPerPackage` the rater skips the line entirely, and without `packageGrossWeightGrams`
-     * it contributes zero weight. A gate on three would look done and would not be.
-     */
-    packageLengthMm: z.number().int().nullable(),
-    packageWidthMm: z.number().int().nullable(),
-    packageHeightMm: z.number().int().nullable(),
-    packageGrossWeightGrams: z.number().int().nullable(),
-    unitsPerPackage: z.number().int().nullable(),
-    listingCompleteness: ListingCompletenessSchema,
-  })
-  .strip();
+export const PublicProductSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  brand: z.string().nullable(),
+  /**
+   * The LEGACY enum value, and null for every listing created since 0098. Kept on the
+   * wire so old clients still parse; `categoryId` is the authoritative field and the only
+   * one this app reads.
+   */
+  category: z.string().nullable(),
+  categoryId: z.string(),
+  /**
+   * Set while this listing sits in Misc awaiting a verdict on a requested category. A
+   * non-null value is why the studio says "waiting for review" instead of presenting Misc
+   * as a category the seller chose.
+   */
+  pendingCategoryRequestId: z.string().nullable(),
+  condition: z.enum(PRODUCT_CONDITION_SLUGS),
+  description: z.string().nullable(),
+  priceInCents: z.number(),
+  compareAtPriceInCents: z.number().nullable(),
+  currency: z.string(),
+  stockQuantity: z.number(),
+  sku: z.string().nullable(),
+  /**
+   * A44. The accepted quote line these goods were sourced from, or null.
+   *
+   * ⚠️ **THE EDITOR NEEDS THIS OR IT DESTROYS DATA.** The listing save sends the field on every
+   * write, `null` included, because `null` is how a wrong link is cleared. A form that could not
+   * read the existing value would prefill empty and wipe the link on the next unrelated edit.
+   */
+  sourcingQuoteProductLineId: z.string().nullable(),
+  keyFeatures: z.array(z.string()),
+  status: z.enum(PRODUCT_STATUSES),
+  /**
+   * §21.2. NOT `status`, and the two are easy to confuse. `status` is draft/active — whether
+   * this listing has been published. This is whether the seller still sells the thing.
+   */
+  sellingState: z.enum(PRODUCT_SELLING_STATES),
+  /**
+   * A THIRD STATE, AND THE ONLY ONE THE SELLER DOES NOT CONTROL. `status` is draft/active and
+   * `sellingState` is whether the seller still sells the thing; this is what a MODERATOR decided.
+   *
+   * ⚠️ IT WAS ON THE WIRE AND NOT IN THIS SCHEMA, so `.strip()` dropped it and a seller whose
+   * listing was `rejected` or `suspended` was told nothing at all — the studio showed "Draft" or
+   * "Active" as though nothing had happened. That is the same defect `video.moderationVisibility
+   * State` had in the Studio before `/studio/copyright` shipped: not silence about a takedown,
+   * but a wrong answer on the one screen the person who could appeal would look at.
+   */
+  moderationState: z.enum(PRODUCT_MODERATION_STATES),
+  publishedAt: z.string().nullable(),
+  /**
+   * The buyer-facing slug, so the studio can link to the live listing at
+   * `/store/product/${publicSlug}`. Server-generated and returned since the column shipped;
+   * nothing on this client had ever named it, so there was no way out of the studio to the page
+   * a seller was editing.
+   *
+   * NULL UNTIL PUBLISHED. A draft has no buyer page, so the link is gated on the value rather
+   * than on `status` — the two can disagree and the slug is the one that decides whether a URL
+   * exists.
+   */
+  publicSlug: z.string().nullable(),
+  /**
+   * THE THREE IDENTITY FACTS THE BUYER PAGE ALREADY RENDERS.
+   *
+   * `product-details-sheet.tsx` builds its "Item details" tab from `brand`, `modelNumber`,
+   * `condition`, `countryOfOriginCode` and `unitOfMeasure` — so before these reached the seller
+   * form, three of those five rows were dropped for every listing on the site. The columns, the
+   * CHECK (`product_model_unit_ck`) and the write schema all predate this; only the seller had
+   * no way to fill them in.
+   *
+   * `countryOfOriginCode` is ISO 3166-1 alpha-2 and the backend regex is `/^[A-Z]{2}$/`.
+   * `unitOfMeasure` is free text ("piece", "metre", "carton") — there is no unit enum on the
+   * wire, and inventing one here would refuse a unit the backend accepts.
+   */
+  modelNumber: z.string().nullable(),
+  countryOfOriginCode: z.string().nullable(),
+  unitOfMeasure: z.string().nullable(),
+  images: z.array(ProductImageSchema),
+  pricingTiers: z.array(ProductPricingTierSchema),
+  /**
+   * A1. Every variation on this listing, ACTIVE AND RETIRED, ordered by `position`.
+   *
+   * Empty means the listing is sold as one thing. Non-empty changes how it is bought: a cart line
+   * naming no variant is refused `VARIANT_REQUIRED`, and the storefront card shows a "from" price
+   * the server computes across the active ones.
+   */
+  variants: z.array(SellerProductVariantSchema),
+  /**
+   * The structured spec sheet. Ordered by `position`, and EMPTY FOR EVERY LISTING CREATED
+   * BEFORE THIS FIELD REACHED THE FORM — the backend has accepted `specifications[]` on create
+   * and PATCH since the table shipped, and no client had ever sent one, so the buyer's spec
+   * sheet and comparison table were rendering an array nothing wrote to.
+   */
+  specifications: z.array(ProductSpecificationSchema),
+  /**
+   * STORE §20. The listing's STRUCTURED answers, so an edit hydrates what was saved.
+   *
+   * Shaped like the buyer's, minus the display-only joins: the wizard needs the raw answer to
+   * put back in a control, not a rendered string.
+   */
+  attributeValues: z.array(
+    z.object({
+      attributeKey: z.string(),
+      valueKind: z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS),
+      numericScale: z.number().int().nullable(),
+      choiceValue: z.string().nullable(),
+      numericValueScaled: z.number().nullable(),
+      textValue: z.string().nullable(),
+    }),
+  ),
+  /**
+   * The long-form body. Rendered by `sections/product-highlights.tsx` on the buyer page, which
+   * has been mapping an empty array since it shipped — the table, both routes and the image
+   * pipeline all existed and no seller surface ever wrote to them.
+   */
+  highlights: z.array(ProductHighlightSchema),
+  documents: z.array(SellerProductDocumentSchema),
+  /**
+   * A47. The optional `.glb`, or null. Named here for the reason the block below spells out:
+   * `.strip()` would drop it silently, the wizard would hydrate "no model" over a saved file,
+   * and the seller would see an empty slot instead of a Remove control.
+   */
+  threeDimensionalModel: ProductThreeDimensionalModelSchema.nullable(),
+  /**
+   * ⚠️ **NAMING THIS KEY IS THE WHOLE FIX, AND THIS FILE HAS BEEN BITTEN TWICE ALREADY** —
+   * `moderationState` and then `customizationOptions`, both documented above. `.strip()` discards
+   * an array nobody names, so a missing key here would leave the wizard hydrating empty and the
+   * next save wiping every relation the seller had declared.
+   */
+  relations: z.array(SellerProductRelationSchema),
+  // A18. ACTIVE AND RETIRED BOTH — see `SellerProductCustomizationOptionSchema`. Naming the key is
+  // the whole fix: `.strip()` was discarding this array on every seller read.
+  customizationOptions: z.array(SellerProductCustomizationOptionSchema),
+  /**
+   * A17. THE THREE SAMPLE FACTS, which answer three different questions and must not be
+   * collapsed. `samplePolicy` says whether a sample can be had at all and whether its price
+   * comes back against a later bulk order; `samplePriceInCents` says what it costs, and NULL
+   * IS NOT FREE — it is unstated; `maximumSampleQuantity` says how many one line may hold, and
+   * is never null because the column defaults to 1.
+   *
+   * The cap is what keeps the sample bypass honest: a sample skips the tier ladder and the
+   * minimum order quantity, so without a ceiling a large "sample" line is a bulk order at
+   * sample pricing, and on a refundable listing it mints a credit the size of the whole line.
+   */
+  samplePolicy: z.enum(PRODUCT_SAMPLE_POLICIES),
+  samplePriceInCents: z.number().int().nullable(),
+  maximumSampleQuantity: z.number().int(),
+  /**
+   * THE FIVE SHIPPING FACTS (§19.9a). Nullable, and there is no migration, because nobody can
+   * invent a box size for a listing that already exists — a pre-Phase-20 listing keeps selling
+   * and is refused on its next edit instead.
+   *
+   * NAMED UNITS, NEVER A FORMATTED STRING. Freight rates on chargeable weight, which is
+   * `max(actual, volumetric)`, and volumetric needs L x W x H MULTIPLIED BY the package count.
+   * That is why all five are required and not just the three dimensions: without
+   * `unitsPerPackage` the rater skips the line entirely, and without `packageGrossWeightGrams`
+   * it contributes zero weight. A gate on three would look done and would not be.
+   */
+  packageLengthMm: z.number().int().nullable(),
+  packageWidthMm: z.number().int().nullable(),
+  packageHeightMm: z.number().int().nullable(),
+  packageGrossWeightGrams: z.number().int().nullable(),
+  unitsPerPackage: z.number().int().nullable(),
+  listingCompleteness: ListingCompletenessSchema,
+});
 
-export const ProductListRowSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    sku: z.string().nullable(),
-    priceInCents: z.number(),
-    stockQuantity: z.number(),
-    status: z.enum(PRODUCT_STATUSES),
-    /** §20. What a moderator decided. `status` says draft/active and cannot carry this. */
-    moderationState: z.enum(PRODUCT_MODERATION_STATES),
-    /** NULL until published. */
-    publicSlug: z.string().nullable(),
-  })
-  .strip();
+export const ProductListRowSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  sku: z.string().nullable(),
+  priceInCents: z.number(),
+  stockQuantity: z.number(),
+  status: z.enum(PRODUCT_STATUSES),
+  /** §20. What a moderator decided. `status` says draft/active and cannot carry this. */
+  moderationState: z.enum(PRODUCT_MODERATION_STATES),
+  /** NULL until published. */
+  publicSlug: z.string().nullable(),
+});
 
-export const PaginationMetaSchema = z
-  .object({
-    page: z.number(),
-    limit: z.number(),
-    total: z.number(),
-    totalPages: z.number(),
-  })
-  .strip();
+export const PaginationMetaSchema = z.object({
+  page: z.number(),
+  limit: z.number(),
+  total: z.number(),
+  totalPages: z.number(),
+});
 
 export type ProductImage = z.infer<typeof ProductImageSchema>;
 export type ProductSpecification = z.infer<typeof ProductSpecificationSchema>;

@@ -5,7 +5,7 @@
 //
 // Every field below is TRANSCRIBED from the backend projection, not designed here:
 // `StoreCategoryProjection` / `StoreCategoryFacets` in `store-catalog.service.ts:42,196`
-// and `StoreSearchHit` in `store-search.service.ts:107`. `.strip()` throughout, so a
+// and `StoreSearchHit` in `store-search.service.ts:107`. Plain `z.object` (which strips) throughout, so a
 // backend minor release that adds a field is ignored rather than fatal.
 //
 // TWO THINGS THIS FILE REFUSES TO MODEL, AND THE REASONS MATTER:
@@ -36,18 +36,16 @@ import { CursorPageSchema, cursorPageOf, PROVIDER_KINDS } from "@/lib/store/shar
  * a second read — which is exactly why the ancestor trail has to come from the server.
  * `siblingOrder` is the server's ordering; never re-sort a fetched page client-side.
  */
-export const StoreCategorySchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    name: z.string(),
-    parentCategoryId: z.string().nullable(),
-    siblingOrder: z.number().int(),
-    imageUrl: z.string().nullable(),
-  })
-  .strip();
+export const StoreCategorySchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  parentCategoryId: z.string().nullable(),
+  siblingOrder: z.number().int(),
+  imageUrl: z.string().nullable(),
+});
 
-export const StoreCategoryListSchema = z.object({ items: z.array(StoreCategorySchema) }).strip();
+export const StoreCategoryListSchema = z.object({ items: z.array(StoreCategorySchema) });
 
 /**
  * A facet bucket: the value as the backend spells it, plus how many rows carry it.
@@ -55,12 +53,10 @@ export const StoreCategoryListSchema = z.object({ items: z.array(StoreCategorySc
  * The count is the honest denominator for the chip label. A chip whose count the search
  * cannot actually filter on is not shipped — see the header note.
  */
-export const StoreFacetBucketSchema = z
-  .object({
-    value: z.string(),
-    count: z.number().int(),
-  })
-  .strip();
+export const StoreFacetBucketSchema = z.object({
+  value: z.string(),
+  count: z.number().int(),
+});
 
 /**
  * The four facets `getCategoryFacets` computes.
@@ -70,20 +66,16 @@ export const StoreFacetBucketSchema = z
  * category whose every listing is quote-only has no price range — that is an absence, and
  * rendering it as `$0` would advertise free goods.
  */
-export const StoreCategoryFacetsSchema = z
-  .object({
-    sellerCountryCodes: z.array(StoreFacetBucketSchema),
-    stockStates: z.array(StoreFacetBucketSchema),
-    samplePolicies: z.array(StoreFacetBucketSchema),
-    priceRangesInCents: z
-      .object({
-        minInCents: z.number().int().nullable(),
-        maxInCents: z.number().int().nullable(),
-        count: z.number().int(),
-      })
-      .strip(),
-  })
-  .strip();
+export const StoreCategoryFacetsSchema = z.object({
+  sellerCountryCodes: z.array(StoreFacetBucketSchema),
+  stockStates: z.array(StoreFacetBucketSchema),
+  samplePolicies: z.array(StoreFacetBucketSchema),
+  priceRangesInCents: z.object({
+    minInCents: z.number().int().nullable(),
+    maxInCents: z.number().int().nullable(),
+    count: z.number().int(),
+  }),
+});
 
 /**
  * `GET /store/categories/:slug`.
@@ -107,36 +99,32 @@ export type CategoryAttributeValueKind = (typeof CATEGORY_ATTRIBUTE_VALUE_KINDS)
 /** The tuple as a parser, so an admin `<select>` narrows rather than asserts. */
 export const CategoryAttributeValueKindSchema = z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS);
 
-export const CategoryAttributeChoiceSchema = z
-  .object({
-    choiceValue: z.string(),
-    label: z.string(),
-    position: z.number().int(),
-  })
-  .strip();
+export const CategoryAttributeChoiceSchema = z.object({
+  choiceValue: z.string(),
+  label: z.string(),
+  position: z.number().int(),
+});
 
-export const CategoryAttributeSchema = z
-  .object({
-    attributeKey: z.string(),
-    label: z.string(),
-    /** Becomes the tab on the buyer's spec sheet. Null is ungrouped. */
-    groupLabel: z.string().nullable(),
-    valueKind: z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS),
-    /** `number` only — rendered as a suffix, never parsed back out of the value. */
-    unitLabel: z.string().nullable(),
-    /** `number` only. The stored integer is the real value multiplied by 10^scale. */
-    numericScale: z.number().int().nullable(),
-    /** Only `enum` and `number` can be true — a free-text filter is worse than none. */
-    isFilterable: z.boolean(),
-    isRequiredForPublish: z.boolean(),
-    position: z.number().int(),
-    choices: z.array(CategoryAttributeChoiceSchema),
-  })
-  .strip();
+export const CategoryAttributeSchema = z.object({
+  attributeKey: z.string(),
+  label: z.string(),
+  /** Becomes the tab on the buyer's spec sheet. Null is ungrouped. */
+  groupLabel: z.string().nullable(),
+  valueKind: z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS),
+  /** `number` only — rendered as a suffix, never parsed back out of the value. */
+  unitLabel: z.string().nullable(),
+  /** `number` only. The stored integer is the real value multiplied by 10^scale. */
+  numericScale: z.number().int().nullable(),
+  /** Only `enum` and `number` can be true — a free-text filter is worse than none. */
+  isFilterable: z.boolean(),
+  isRequiredForPublish: z.boolean(),
+  position: z.number().int(),
+  choices: z.array(CategoryAttributeChoiceSchema),
+});
 
-export const CategoryAttributeListSchema = z
-  .object({ attributes: z.array(CategoryAttributeSchema) })
-  .strip();
+export const CategoryAttributeListSchema = z.object({
+  attributes: z.array(CategoryAttributeSchema),
+});
 
 /**
  * STORE §20.6. One attribute's facet.
@@ -146,30 +134,24 @@ export const CategoryAttributeListSchema = z
  * not have to guess which. `text` never appears — a free-text attribute is display-only.
  */
 export const AttributeFacetSchema = z.discriminatedUnion("valueKind", [
-  z
-    .object({
-      valueKind: z.literal("enum"),
-      attributeKey: z.string(),
-      label: z.string(),
-      groupLabel: z.string().nullable(),
-      buckets: z.array(
-        z.object({ value: z.string(), label: z.string(), count: z.number().int() }).strip(),
-      ),
-    })
-    .strip(),
-  z
-    .object({
-      valueKind: z.literal("number"),
-      attributeKey: z.string(),
-      label: z.string(),
-      groupLabel: z.string().nullable(),
-      unitLabel: z.string().nullable(),
-      numericScale: z.number().int(),
-      minScaled: z.number().nullable(),
-      maxScaled: z.number().nullable(),
-      count: z.number().int(),
-    })
-    .strip(),
+  z.object({
+    valueKind: z.literal("enum"),
+    attributeKey: z.string(),
+    label: z.string(),
+    groupLabel: z.string().nullable(),
+    buckets: z.array(z.object({ value: z.string(), label: z.string(), count: z.number().int() })),
+  }),
+  z.object({
+    valueKind: z.literal("number"),
+    attributeKey: z.string(),
+    label: z.string(),
+    groupLabel: z.string().nullable(),
+    unitLabel: z.string().nullable(),
+    numericScale: z.number().int(),
+    minScaled: z.number().nullable(),
+    maxScaled: z.number().nullable(),
+    count: z.number().int(),
+  }),
 ]);
 
 export type CategoryAttribute = z.infer<typeof CategoryAttributeSchema>;
@@ -192,19 +174,15 @@ export function formatScaledAttributeValue(
   return unitLabel === null ? formatted : `${formatted} ${unitLabel}`;
 }
 
-export const StoreCategoryDetailSchema = z
-  .object({
-    category: StoreCategorySchema,
-    children: z.array(StoreCategorySchema),
-    facets: StoreCategoryFacetsSchema,
-    products: z
-      .object({
-        items: z.array(StoreProductCardSchema),
-        page: CursorPageSchema,
-      })
-      .strip(),
-  })
-  .strip();
+export const StoreCategoryDetailSchema = z.object({
+  category: StoreCategorySchema,
+  children: z.array(StoreCategorySchema),
+  facets: StoreCategoryFacetsSchema,
+  products: z.object({
+    items: z.array(StoreProductCardSchema),
+    page: CursorPageSchema,
+  }),
+});
 
 // --- Search -----------------------------------------------------------------
 
@@ -252,57 +230,55 @@ export type SearchSort = (typeof SEARCH_SORTS)[number];
  * `relevanceScore` is diagnostic only. Do not render it, do not sort by it client-side —
  * the server already ordered the page, and re-sorting a keyset page breaks the cursor.
  */
-export const StoreSearchHitSchema = z
-  .object({
-    documentKind: z.enum(SEARCH_DOCUMENT_KINDS),
-    entityId: z.string(),
-    publicSlug: z.string(),
-    title: z.string(),
-    summary: z.string().nullable(),
-    organizationSlug: z.string(),
-    organizationDisplayName: z.string(),
-    organizationCountryCode: z.string(),
-    categorySlug: z.string().nullable(),
-    providerKind: z.enum(PROVIDER_KINDS).nullable(),
-    priceInCents: z.number().int().nullable(),
-    currency: z.string().nullable(),
-    minimumOrderQuantity: z.number().int().nullable(),
-    /**
-     * The A25 columns the backend projects on every hit and this schema used to drop.
-     *
-     * They are what lets a row SHOW the thing a facet just filtered on — a buyer who clicked
-     * "Made to order · 11" should see which eleven. All nullable: an offering has no stock state
-     * and a product has no provider verification, so branch on `documentKind` rather than reading
-     * a null as a value.
-     */
-    stockState: z.string().nullable(),
-    samplePolicy: z.string().nullable(),
-    condition: z.string().nullable(),
-    sellingState: z.string().nullable(),
-    providerVerificationState: z.string().nullable(),
-    leadTimeMaxDays: z.number().int().nullable(),
-    /**
-     * STORE §21.1. The manufacturer part code, so a row can SHOW what a part-code search matched
-     * on — a buyer who typed `LM358` and got twelve rows needs to see which of them carries it.
-     *
-     * Nullable rather than optional, and it travels on EVERY hit: the backend projects it from
-     * all three sort branches and sends `null` for offerings and organizations, which are not
-     * manufactured parts. `undefined` is not `null` to Zod, so an optional here would quietly
-     * accept a backend that stopped sending it.
-     */
-    modelNumber: z.string().nullable(),
-    relevanceScore: z.number().nullable(),
-    /**
-     * When the listing last changed. A REAL content clock, not a refresh stamp — the backend
-     * re-projects a search document only after the product, offering or organization behind it
-     * mutates, so this is safe to hand a crawler as `lastModified`.
-     *
-     * `z.iso.datetime()`, not `z.string()`: `sitemap.ts` puts this value straight into the XML,
-     * and a malformed date there is worse than an absent one.
-     */
-    updatedAt: z.iso.datetime(),
-  })
-  .strip();
+export const StoreSearchHitSchema = z.object({
+  documentKind: z.enum(SEARCH_DOCUMENT_KINDS),
+  entityId: z.string(),
+  publicSlug: z.string(),
+  title: z.string(),
+  summary: z.string().nullable(),
+  organizationSlug: z.string(),
+  organizationDisplayName: z.string(),
+  organizationCountryCode: z.string(),
+  categorySlug: z.string().nullable(),
+  providerKind: z.enum(PROVIDER_KINDS).nullable(),
+  priceInCents: z.number().int().nullable(),
+  currency: z.string().nullable(),
+  minimumOrderQuantity: z.number().int().nullable(),
+  /**
+   * The A25 columns the backend projects on every hit and this schema used to drop.
+   *
+   * They are what lets a row SHOW the thing a facet just filtered on — a buyer who clicked
+   * "Made to order · 11" should see which eleven. All nullable: an offering has no stock state
+   * and a product has no provider verification, so branch on `documentKind` rather than reading
+   * a null as a value.
+   */
+  stockState: z.string().nullable(),
+  samplePolicy: z.string().nullable(),
+  condition: z.string().nullable(),
+  sellingState: z.string().nullable(),
+  providerVerificationState: z.string().nullable(),
+  leadTimeMaxDays: z.number().int().nullable(),
+  /**
+   * STORE §21.1. The manufacturer part code, so a row can SHOW what a part-code search matched
+   * on — a buyer who typed `LM358` and got twelve rows needs to see which of them carries it.
+   *
+   * Nullable rather than optional, and it travels on EVERY hit: the backend projects it from
+   * all three sort branches and sends `null` for offerings and organizations, which are not
+   * manufactured parts. `undefined` is not `null` to Zod, so an optional here would quietly
+   * accept a backend that stopped sending it.
+   */
+  modelNumber: z.string().nullable(),
+  relevanceScore: z.number().nullable(),
+  /**
+   * When the listing last changed. A REAL content clock, not a refresh stamp — the backend
+   * re-projects a search document only after the product, offering or organization behind it
+   * mutates, so this is safe to hand a crawler as `lastModified`.
+   *
+   * `z.iso.datetime()`, not `z.string()`: `sitemap.ts` puts this value straight into the XML,
+   * and a malformed date there is worse than an absent one.
+   */
+  updatedAt: z.iso.datetime(),
+});
 
 /**
  * The NINE dimensions `/store/search` computes, against the FOUR `/store/categories/:slug` does.
@@ -321,36 +297,32 @@ export const StoreSearchHitSchema = z
  * into an enum, which would be a claim about the network (Pattern 2) and would break the first time
  * a new member is seeded.
  */
-export const StoreSearchFacetsSchema = z
-  .object({
-    sellerCountryCodes: z.array(StoreFacetBucketSchema),
-    stockStates: z.array(StoreFacetBucketSchema),
-    samplePolicies: z.array(StoreFacetBucketSchema),
-    conditions: z.array(StoreFacetBucketSchema),
-    sellingStates: z.array(StoreFacetBucketSchema),
-    /**
-     * §20.6. EMPTY UNLESS A CATEGORY IS IN SCOPE, and empty for a category that defines no
-     * filterable attributes. That is the rule the whole design rests on: a category with no
-     * attributes renders no new control, so Books & Media costs a buyer nothing.
-     */
-    attributeFacets: z.array(AttributeFacetSchema),
-    verificationStates: z.array(StoreFacetBucketSchema),
-    documentKinds: z.array(StoreFacetBucketSchema),
-    providerKinds: z.array(StoreFacetBucketSchema),
-    /**
-     * BUCKETED, not a min/max pair like price — the backend's own note says a scalar cannot be
-     * clicked. The values are day thresholds (7, 15, 30, 60, 90) and read as "within N days".
-     */
-    leadTimeMaxDays: z.array(StoreFacetBucketSchema),
-    priceRangesInCents: z
-      .object({
-        minInCents: z.number().int().nullable(),
-        maxInCents: z.number().int().nullable(),
-        count: z.number().int(),
-      })
-      .strip(),
-  })
-  .strip();
+export const StoreSearchFacetsSchema = z.object({
+  sellerCountryCodes: z.array(StoreFacetBucketSchema),
+  stockStates: z.array(StoreFacetBucketSchema),
+  samplePolicies: z.array(StoreFacetBucketSchema),
+  conditions: z.array(StoreFacetBucketSchema),
+  sellingStates: z.array(StoreFacetBucketSchema),
+  /**
+   * §20.6. EMPTY UNLESS A CATEGORY IS IN SCOPE, and empty for a category that defines no
+   * filterable attributes. That is the rule the whole design rests on: a category with no
+   * attributes renders no new control, so Books & Media costs a buyer nothing.
+   */
+  attributeFacets: z.array(AttributeFacetSchema),
+  verificationStates: z.array(StoreFacetBucketSchema),
+  documentKinds: z.array(StoreFacetBucketSchema),
+  providerKinds: z.array(StoreFacetBucketSchema),
+  /**
+   * BUCKETED, not a min/max pair like price — the backend's own note says a scalar cannot be
+   * clicked. The values are day thresholds (7, 15, 30, 60, 90) and read as "within N days".
+   */
+  leadTimeMaxDays: z.array(StoreFacetBucketSchema),
+  priceRangesInCents: z.object({
+    minInCents: z.number().int().nullable(),
+    maxInCents: z.number().int().nullable(),
+    count: z.number().int(),
+  }),
+});
 export type StoreSearchFacets = z.infer<typeof StoreSearchFacetsSchema>;
 
 /**

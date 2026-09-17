@@ -92,29 +92,27 @@ export interface OpenDisputeInput {
 
 // --- Projections ------------------------------------------------------------
 
-export const DisputeSchema = z
-  .object({
-    id: z.string(),
-    orderId: z.string(),
-    state: z.enum(DISPUTE_STATES),
-    /** A free-form code the opener chose, `^[a-z][a-z0-9_]{0,79}$`. Not a closed enum. */
-    reasonCode: z.string(),
-    summary: z.string(),
-    /**
-     * The order state the dispute FROZE, and what `decideDispute` restores it to.
-     *
-     * Opening a dispute moves the order to `disputed`; this is where it came from. Render it as
-     * "this order was X when the dispute opened", never as the order's current state.
-     */
-    priorOrderState: z.enum(ORDER_STATES),
-    buyerOrganizationId: z.string(),
-    counterpartyOrganizationId: z.string(),
-    /** Only a BUYER may open one, so today this always equals `buyerOrganizationId`. */
-    openedByOrganizationId: z.string(),
-    createdAt: IsoDateTimeSchema,
-    decidedAt: IsoDateTimeSchema.nullable(),
-  })
-  .strip();
+export const DisputeSchema = z.object({
+  id: z.string(),
+  orderId: z.string(),
+  state: z.enum(DISPUTE_STATES),
+  /** A free-form code the opener chose, `^[a-z][a-z0-9_]{0,79}$`. Not a closed enum. */
+  reasonCode: z.string(),
+  summary: z.string(),
+  /**
+   * The order state the dispute FROZE, and what `decideDispute` restores it to.
+   *
+   * Opening a dispute moves the order to `disputed`; this is where it came from. Render it as
+   * "this order was X when the dispute opened", never as the order's current state.
+   */
+  priorOrderState: z.enum(ORDER_STATES),
+  buyerOrganizationId: z.string(),
+  counterpartyOrganizationId: z.string(),
+  /** Only a BUYER may open one, so today this always equals `buyerOrganizationId`. */
+  openedByOrganizationId: z.string(),
+  createdAt: IsoDateTimeSchema,
+  decidedAt: IsoDateTimeSchema.nullable(),
+});
 
 export const DisputeListPageSchema = cursorPageOf(DisputeSchema);
 
@@ -128,14 +126,12 @@ export const DisputeListPageSchema = cursorPageOf(DisputeSchema);
  * `note` is null on `opened`, `closed` and `dismissed` when no reason was given. It is never null
  * on `note_added` — a note is the whole event.
  */
-export const DisputeTimelineEntrySchema = z
-  .object({
-    sequence: z.number().int(),
-    eventKind: z.enum(DISPUTE_EVENT_KINDS),
-    note: z.string().nullable(),
-    occurredAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const DisputeTimelineEntrySchema = z.object({
+  sequence: z.number().int(),
+  eventKind: z.enum(DISPUTE_EVENT_KINDS),
+  note: z.string().nullable(),
+  occurredAt: IsoDateTimeSchema,
+});
 
 /**
  * `GET /commerce/disputes/:disputeId` and the answer to `POST …/notes`.
@@ -146,7 +142,7 @@ export const DisputeTimelineEntrySchema = z
 export const DisputeDetailSchema = DisputeSchema.extend({
   decisionNote: z.string().nullable(),
   timeline: z.array(DisputeTimelineEntrySchema),
-}).strip();
+});
 
 export type Dispute = z.infer<typeof DisputeSchema>;
 export type DisputeDetail = z.infer<typeof DisputeDetailSchema>;

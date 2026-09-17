@@ -79,35 +79,33 @@ export type AiSummaryChipKind = z.infer<typeof AiSummaryChipKindSchema>;
  * member froze it and is null while the log is still a draft. They are two different
  * facts and the old single `date` field conflated them.
  */
-export const DailyLogViewSchema = z
-  .object({
-    id: z.string(),
-    authorMemberId: z.string(),
-    authorName: z.string(),
-    authorAvatarImageUrl: z.string().nullable(),
-    logDate: z.string(),
-    submittedAt: z.string().nullable(),
-    narrative: z.string().nullable(),
-    status: DailyLogStatusSchema,
-    videoSource: DailyLogVideoSourceSchema,
-    videoEmbedUrl: z.string().nullable(),
-    videoThumbnailUrl: z.string().nullable(),
-    /**
-     * Whether YouTube has confirmed the linked video (§22). Derived server-side, never stored.
-     *
-     * FALSE WITH A `youtube` SOURCE IS NOT AN ERROR — it means verification is deferred and the
-     * job is retrying. The row is real and its embed URL is real; only the thumbnail is missing,
-     * because oEmbed has not answered. Without this the card cannot tell that from "no video".
-     */
-    isVideoVerified: z.boolean(),
-    analysisStatus: DailyLogAnalysisStatusSchema,
-    analysisFailureReason: z.string().nullable(),
-    analysisCompletedAt: z.string().nullable(),
-    effortVerificationStatus: EffortVerificationStatusSchema,
-    isEffortVerified: z.boolean(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const DailyLogViewSchema = z.object({
+  id: z.string(),
+  authorMemberId: z.string(),
+  authorName: z.string(),
+  authorAvatarImageUrl: z.string().nullable(),
+  logDate: z.string(),
+  submittedAt: z.string().nullable(),
+  narrative: z.string().nullable(),
+  status: DailyLogStatusSchema,
+  videoSource: DailyLogVideoSourceSchema,
+  videoEmbedUrl: z.string().nullable(),
+  videoThumbnailUrl: z.string().nullable(),
+  /**
+   * Whether YouTube has confirmed the linked video (§22). Derived server-side, never stored.
+   *
+   * FALSE WITH A `youtube` SOURCE IS NOT AN ERROR — it means verification is deferred and the
+   * job is retrying. The row is real and its embed URL is real; only the thumbnail is missing,
+   * because oEmbed has not answered. Without this the card cannot tell that from "no video".
+   */
+  isVideoVerified: z.boolean(),
+  analysisStatus: DailyLogAnalysisStatusSchema,
+  analysisFailureReason: z.string().nullable(),
+  analysisCompletedAt: z.string().nullable(),
+  effortVerificationStatus: EffortVerificationStatusSchema,
+  isEffortVerified: z.boolean(),
+  createdAt: z.string(),
+});
 export type DailyLogView = z.infer<typeof DailyLogViewSchema>;
 
 /**
@@ -119,7 +117,7 @@ export const DailyLogFeedRowSchema = DailyLogViewSchema.extend({
   projectName: z.string(),
   projectCoverImageUrl: z.string().nullable(),
   projectStage: ProjectStageSchema,
-}).strip();
+});
 export type DailyLogFeedRow = z.infer<typeof DailyLogFeedRowSchema>;
 
 /**
@@ -130,12 +128,10 @@ export type DailyLogFeedRow = z.infer<typeof DailyLogFeedRowSchema>;
  * `nextCursor` is `logDate_submittedAtMs_id`, opaque. Echo it back verbatim; anything
  * constructed client-side is a `422 CURSOR_MALFORMED`.
  */
-export const DailyLogFeedPageSchema = z
-  .object({
-    logs: DailyLogFeedRowSchema.array(),
-    nextCursor: z.string().nullable(),
-  })
-  .strip();
+export const DailyLogFeedPageSchema = z.object({
+  logs: DailyLogFeedRowSchema.array(),
+  nextCursor: z.string().nullable(),
+});
 export type DailyLogFeedPage = z.infer<typeof DailyLogFeedPageSchema>;
 
 /**
@@ -146,18 +142,16 @@ export type DailyLogFeedPage = z.infer<typeof DailyLogFeedPageSchema>;
  * numbers is lying about how fresh it is. It is nullable, and null renders as an
  * absence rather than as "just now".
  */
-export const DailyLogStreakStandingSchema = z
-  .object({
-    projectSlug: z.string(),
-    projectName: z.string(),
-    projectCoverImageUrl: z.string().nullable(),
-    projectStage: ProjectStageSchema,
-    dailyLogStreakDays: z.number(),
-    lastDailyLogDate: z.string().nullable(),
-    projectTimeZone: z.string(),
-    statsComputedAt: z.string().nullable(),
-  })
-  .strip();
+export const DailyLogStreakStandingSchema = z.object({
+  projectSlug: z.string(),
+  projectName: z.string(),
+  projectCoverImageUrl: z.string().nullable(),
+  projectStage: ProjectStageSchema,
+  dailyLogStreakDays: z.number(),
+  lastDailyLogDate: z.string().nullable(),
+  projectTimeZone: z.string(),
+  statsComputedAt: z.string().nullable(),
+});
 export type DailyLogStreakStanding = z.infer<typeof DailyLogStreakStandingSchema>;
 
 // --- Request-side filters -----------------------------------------------------
@@ -211,7 +205,6 @@ export const DailyLogDetailSchema = DailyLogViewSchema.extend({
       speakerLabel: z.string().nullable(),
       segmentText: z.string(),
     })
-    .strip()
     .array(),
   aiSummaryChips: z
     .object({
@@ -219,7 +212,6 @@ export const DailyLogDetailSchema = DailyLogViewSchema.extend({
       label: z.string(),
       confidenceBps: z.number().nullable(),
     })
-    .strip()
     .array(),
   extractedClaims: z
     .object({
@@ -229,7 +221,6 @@ export const DailyLogDetailSchema = DailyLogViewSchema.extend({
       claimSummary: z.string(),
       confidenceBps: z.number().nullable(),
     })
-    .strip()
     .array(),
   evidenceLinks: z
     .object({
@@ -238,12 +229,11 @@ export const DailyLogDetailSchema = DailyLogViewSchema.extend({
       externalUrl: z.string(),
       externalHost: z.string(),
     })
-    .strip()
     .array(),
   analysisModelName: z.string().nullable(),
   analysisModelVersion: z.string().nullable(),
   analysisPromptVersion: z.string().nullable(),
-}).strip();
+});
 export type DailyLogDetail = z.infer<typeof DailyLogDetailSchema>;
 
 /**
@@ -254,15 +244,13 @@ export type DailyLogDetail = z.infer<typeof DailyLogDetailSchema>;
  * analysis has not happened at the moment this returns. `dailyLogStreakDays` is the one
  * real number on it, because the streak moves inside the submit transaction.
  */
-export const SubmitDailyLogReceiptSchema = z
-  .object({
-    logId: z.string(),
-    submittedAt: z.string(),
-    analysisStatus: DailyLogAnalysisStatusSchema,
-    effortVerificationStatus: EffortVerificationStatusSchema,
-    dailyLogStreakDays: z.number(),
-  })
-  .strip();
+export const SubmitDailyLogReceiptSchema = z.object({
+  logId: z.string(),
+  submittedAt: z.string(),
+  analysisStatus: DailyLogAnalysisStatusSchema,
+  effortVerificationStatus: EffortVerificationStatusSchema,
+  dailyLogStreakDays: z.number(),
+});
 export type SubmitDailyLogReceipt = z.infer<typeof SubmitDailyLogReceiptSchema>;
 
 /**

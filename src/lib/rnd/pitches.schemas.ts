@@ -38,17 +38,15 @@ export const PITCH_STATUS_LABELS: Record<PitchStatus, string> = {
  * exposes nothing new. The lifecycle columns — `visibility`, `publishStatus`, `reviewStatus`,
  * `uploadStatus`, `isSourceVerified` — are deliberately not on the wire.
  */
-export const PitchVideoSchema = z
-  .object({
-    videoId: z.string(),
-    videoSource: z.enum(["youtube", "hosted"]),
-    youtubeVideoId: z.string().nullable(),
-    title: z.string(),
-    thumbnailUrl: z.string().nullable(),
-    /** NULL until the duration job has enough samples. An absence, never a zero. */
-    durationSeconds: z.number().int().nullable(),
-  })
-  .strip();
+export const PitchVideoSchema = z.object({
+  videoId: z.string(),
+  videoSource: z.enum(["youtube", "hosted"]),
+  youtubeVideoId: z.string().nullable(),
+  title: z.string(),
+  thumbnailUrl: z.string().nullable(),
+  /** NULL until the duration job has enough samples. An absence, never a zero. */
+  durationSeconds: z.number().int().nullable(),
+});
 export type PitchVideo = z.infer<typeof PitchVideoSchema>;
 
 /**
@@ -63,25 +61,23 @@ export type PitchVideo = z.infer<typeof PitchVideoSchema>;
  * is the moderator's own sentence and the reason a rejection is actionable rather than a
  * wall.
  */
-export const PitchSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    projectId: z.string(),
-    projectSlug: z.string(),
-    projectName: z.string(),
-    title: z.string(),
-    summary: z.string(),
-    pitchVideo: PitchVideoSchema.nullable(),
-    externalFundingUrl: z.string().nullable(),
-    externalContactUrl: z.string().nullable(),
-    status: PitchStatusSchema,
-    rejectionReason: z.string().nullable(),
-    publishedAt: z.string().nullable(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-  })
-  .strip();
+export const PitchSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  projectId: z.string(),
+  projectSlug: z.string(),
+  projectName: z.string(),
+  title: z.string(),
+  summary: z.string(),
+  pitchVideo: PitchVideoSchema.nullable(),
+  externalFundingUrl: z.string().nullable(),
+  externalContactUrl: z.string().nullable(),
+  status: PitchStatusSchema,
+  rejectionReason: z.string().nullable(),
+  publishedAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
 export type Pitch = z.infer<typeof PitchSchema>;
 
 /**
@@ -99,30 +95,28 @@ export type Pitch = z.infer<typeof PitchSchema>;
  * `amountInCents` IS A DECIMAL STRING over a `bigint` column. Parse with `BigInt` and format
  * through `@/lib/rnd/format`; `Number(…)` loses precision past 2^53.
  */
-export const PitchFundingOutcomeSchema = z
-  .object({
-    id: z.string(),
-    pitchId: z.string(),
-    amountInCents: z.string(),
-    currencyCode: z.string(),
-    fundedOnDate: z.string(),
-    funderUserId: z.string().nullable(),
-    funderNameText: z.string(),
-    note: z.string().nullable(),
-    recordedByUserId: z.string(),
-    recordedByName: z.string(),
-    confirmedByUserId: z.string().nullable(),
-    confirmedAt: z.string().nullable(),
-    isConfirmed: z.boolean(),
-    /**
-     * False when the record names no Qatoto account for the funder — there is nobody who
-     * could countersign, so it will never reach the public page. Render the difference: a
-     * founder who is not told this just watches a record they entered never appear.
-     */
-    isConfirmable: z.boolean(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const PitchFundingOutcomeSchema = z.object({
+  id: z.string(),
+  pitchId: z.string(),
+  amountInCents: z.string(),
+  currencyCode: z.string(),
+  fundedOnDate: z.string(),
+  funderUserId: z.string().nullable(),
+  funderNameText: z.string(),
+  note: z.string().nullable(),
+  recordedByUserId: z.string(),
+  recordedByName: z.string(),
+  confirmedByUserId: z.string().nullable(),
+  confirmedAt: z.string().nullable(),
+  isConfirmed: z.boolean(),
+  /**
+   * False when the record names no Qatoto account for the funder — there is nobody who
+   * could countersign, so it will never reach the public page. Render the difference: a
+   * founder who is not told this just watches a record they entered never appear.
+   */
+  isConfirmable: z.boolean(),
+  createdAt: z.string(),
+});
 export type PitchFundingOutcome = z.infer<typeof PitchFundingOutcomeSchema>;
 
 /**
@@ -132,12 +126,10 @@ export type PitchFundingOutcome = z.infer<typeof PitchFundingOutcomeSchema>;
  * records only, and the founder additionally sees their own unconfirmed ones. There is no
  * client parameter for this and there must not be one.
  */
-export const PitchDetailSchema = z
-  .object({
-    pitch: PitchSchema,
-    outcomes: PitchFundingOutcomeSchema.array(),
-  })
-  .strip();
+export const PitchDetailSchema = z.object({
+  pitch: PitchSchema,
+  outcomes: PitchFundingOutcomeSchema.array(),
+});
 export type PitchDetail = z.infer<typeof PitchDetailSchema>;
 
 /**
@@ -147,36 +139,33 @@ export type PitchDetail = z.infer<typeof PitchDetailSchema>;
  * the single most important thing a moderator does, and requiring them to open the pitch to
  * see it would be the step that gets skipped.
  */
-export const PitchReviewQueueEntrySchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    title: z.string(),
-    summary: z.string(),
-    projectSlug: z.string(),
-    projectName: z.string(),
-    /** What the moderator is judging — narrower than the public shape, no `videoSource`. */
-    pitchVideo: z
-      .object({
-        videoId: z.string(),
-        youtubeVideoId: z.string().nullable(),
-        title: z.string(),
-        thumbnailUrl: z.string().nullable(),
-      })
-      .strip()
-      .nullable(),
-    externalFundingUrl: z.string().nullable(),
-    externalContactUrl: z.string().nullable(),
-    submittedByUserId: z.string(),
-    submittedByName: z.string(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-  })
-  .strip();
+export const PitchReviewQueueEntrySchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  title: z.string(),
+  summary: z.string(),
+  projectSlug: z.string(),
+  projectName: z.string(),
+  /** What the moderator is judging — narrower than the public shape, no `videoSource`. */
+  pitchVideo: z
+    .object({
+      videoId: z.string(),
+      youtubeVideoId: z.string().nullable(),
+      title: z.string(),
+      thumbnailUrl: z.string().nullable(),
+    })
+    .nullable(),
+  externalFundingUrl: z.string().nullable(),
+  externalContactUrl: z.string().nullable(),
+  submittedByUserId: z.string(),
+  submittedByName: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
 export type PitchReviewQueueEntry = z.infer<typeof PitchReviewQueueEntrySchema>;
 
 /** `DELETE /pitches/:pitchId`. */
-export const DeletedPitchSchema = z.object({ deletedPitchId: z.string() }).strip();
+export const DeletedPitchSchema = z.object({ deletedPitchId: z.string() });
 
 export interface ListMyPitchesFilter {
   readonly status?: PitchStatus;

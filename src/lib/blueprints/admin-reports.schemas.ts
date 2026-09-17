@@ -25,39 +25,33 @@ export type BlueprintReportArmFilter = "teardown" | "case_study" | "showcase";
 export const BLUEPRINT_MODERATION_VERBS = ["flag", "quarantine", "restore"] as const;
 export type BlueprintModerationVerb = (typeof BLUEPRINT_MODERATION_VERBS)[number];
 
-export const BlueprintReportQueueItemSchema = z
-  .object({
-    reportId: z.string(),
-    targetKind: z.enum(["teardown", "case_study", "showcase"]),
-    targetId: z.string(),
-    targetSlug: z.string().nullable(),
-    targetTitle: z.string(),
-    /** So a moderator can see whether somebody has already acted on this row. */
-    targetModerationState: z.string(),
-    reason: z.enum(BLUEPRINT_REPORT_REASONS),
-    detailText: z.string().nullable(),
-    reporterHandle: z.string().nullable(),
-    /** ⚠️ CONTEXT, NEVER A THRESHOLD. Nothing reads this as a trigger, and none is published. */
-    openReportCount: z.number().int().nonnegative(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const BlueprintReportQueueItemSchema = z.object({
+  reportId: z.string(),
+  targetKind: z.enum(["teardown", "case_study", "showcase"]),
+  targetId: z.string(),
+  targetSlug: z.string().nullable(),
+  targetTitle: z.string(),
+  /** So a moderator can see whether somebody has already acted on this row. */
+  targetModerationState: z.string(),
+  reason: z.enum(BLUEPRINT_REPORT_REASONS),
+  detailText: z.string().nullable(),
+  reporterHandle: z.string().nullable(),
+  /** ⚠️ CONTEXT, NEVER A THRESHOLD. Nothing reads this as a trigger, and none is published. */
+  openReportCount: z.number().int().nonnegative(),
+  createdAt: z.string(),
+});
 export type BlueprintReportQueueItem = z.infer<typeof BlueprintReportQueueItemSchema>;
 
-export const BlueprintReportQueuePageSchema = z
-  .object({
-    items: BlueprintReportQueueItemSchema.array(),
-    page: z.object({ nextCursor: z.string().nullable(), hasMore: z.boolean() }),
-  })
-  .strip();
+export const BlueprintReportQueuePageSchema = z.object({
+  items: BlueprintReportQueueItemSchema.array(),
+  page: z.object({ nextCursor: z.string().nullable(), hasMore: z.boolean() }),
+});
 export type BlueprintReportQueuePage = z.infer<typeof BlueprintReportQueuePageSchema>;
 
-export const BlueprintModerationResultSchema = z
-  .object({
-    targetId: z.string(),
-    targetKind: z.enum(["teardown", "case_study", "showcase"]),
-    moderationState: z.string(),
-    decidedAt: z.string(),
-  })
-  .strip();
+export const BlueprintModerationResultSchema = z.object({
+  targetId: z.string(),
+  targetKind: z.enum(["teardown", "case_study", "showcase"]),
+  moderationState: z.string(),
+  decidedAt: z.string(),
+});
 export type BlueprintModerationResult = z.infer<typeof BlueprintModerationResultSchema>;

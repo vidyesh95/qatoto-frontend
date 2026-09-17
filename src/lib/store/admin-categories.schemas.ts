@@ -35,22 +35,20 @@ export type CommerceCategoryRequestState = z.infer<typeof CommerceCategoryReques
  * client able to set them could talk the retire guard into letting a category with listings
  * disappear from browse.
  */
-export const AdminStoreCategorySchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    name: z.string(),
-    parentCategoryId: z.string().nullable(),
-    siblingOrder: z.number().int(),
-    imageUrl: z.string().nullable(),
-    state: CommerceCategoryStateSchema,
-    searchSynonyms: z.array(z.string()),
-    childCount: z.number().int(),
-    productCount: z.number().int(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-  })
-  .strip();
+export const AdminStoreCategorySchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  parentCategoryId: z.string().nullable(),
+  siblingOrder: z.number().int(),
+  imageUrl: z.string().nullable(),
+  state: CommerceCategoryStateSchema,
+  searchSynonyms: z.array(z.string()),
+  childCount: z.number().int(),
+  productCount: z.number().int(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
 
 /**
  * One seller request as the moderation queue renders it.
@@ -60,23 +58,21 @@ export const AdminStoreCategorySchema = z
  * the titles are what let a moderator notice one of them belongs in a category that already
  * exists and route it there instead.
  */
-export const CommerceCategoryRequestSchema = z
-  .object({
-    id: z.string(),
-    requestedByUserId: z.string().nullable(),
-    requestedOrganizationId: z.string().nullable(),
-    proposedName: z.string(),
-    proposedParentCategoryId: z.string().nullable(),
-    justification: z.string().nullable(),
-    state: CommerceCategoryRequestStateSchema,
-    reviewedByUserId: z.string().nullable(),
-    reviewedAt: z.string().nullable(),
-    reviewNote: z.string().nullable(),
-    resultingCategoryId: z.string().nullable(),
-    waitingProducts: z.array(z.object({ id: z.string(), title: z.string() }).strip()),
-    createdAt: z.string(),
-  })
-  .strip();
+export const CommerceCategoryRequestSchema = z.object({
+  id: z.string(),
+  requestedByUserId: z.string().nullable(),
+  requestedOrganizationId: z.string().nullable(),
+  proposedName: z.string(),
+  proposedParentCategoryId: z.string().nullable(),
+  justification: z.string().nullable(),
+  state: CommerceCategoryRequestStateSchema,
+  reviewedByUserId: z.string().nullable(),
+  reviewedAt: z.string().nullable(),
+  reviewNote: z.string().nullable(),
+  resultingCategoryId: z.string().nullable(),
+  waitingProducts: z.array(z.object({ id: z.string(), title: z.string() })),
+  createdAt: z.string(),
+});
 
 export type AdminStoreCategory = z.infer<typeof AdminStoreCategorySchema>;
 export type CommerceCategoryRequest = z.infer<typeof CommerceCategoryRequestSchema>;
@@ -168,24 +164,22 @@ export function toCategorySlug(displayName: string): string {
  * removed — and `isInherited` says the row belongs to an ANCESTOR category, so editing it here
  * would rewrite a parent's vocabulary for every sibling leaf.
  */
-export const AdminCategoryAttributeSchema = z
-  .object({
-    id: z.string(),
-    categoryId: z.string(),
-    attributeKey: z.string(),
-    label: z.string(),
-    groupLabel: z.string().nullable(),
-    valueKind: z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS),
-    unitLabel: z.string().nullable(),
-    numericScale: z.number().int().nullable(),
-    isFilterable: z.boolean(),
-    isRequiredForPublish: z.boolean(),
-    position: z.number().int(),
-    choices: z.array(CategoryAttributeChoiceSchema),
-    valueCount: z.number().int(),
-    isInherited: z.boolean(),
-  })
-  .strip();
+export const AdminCategoryAttributeSchema = z.object({
+  id: z.string(),
+  categoryId: z.string(),
+  attributeKey: z.string(),
+  label: z.string(),
+  groupLabel: z.string().nullable(),
+  valueKind: z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS),
+  unitLabel: z.string().nullable(),
+  numericScale: z.number().int().nullable(),
+  isFilterable: z.boolean(),
+  isRequiredForPublish: z.boolean(),
+  position: z.number().int(),
+  choices: z.array(CategoryAttributeChoiceSchema),
+  valueCount: z.number().int(),
+  isInherited: z.boolean(),
+});
 
 export type AdminCategoryAttribute = z.infer<typeof AdminCategoryAttributeSchema>;
 

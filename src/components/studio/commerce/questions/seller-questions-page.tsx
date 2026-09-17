@@ -69,36 +69,6 @@ export default function SellerQuestionsPage() {
 
   const result = inboxQuery.data;
   const page = result?.success ? result.data : null;
-
-  return (
-    <div className="space-y-4">
-      <header className="space-y-1">
-        <h1 className="text-lg font-medium text-foreground">Questions about your listings</h1>
-        <p className="text-sm text-muted-foreground">
-          Every question buyers asked on products you sell, oldest first — the one waiting longest
-          is at the top.
-        </p>
-      </header>
-
-      <fieldset className="flex flex-wrap gap-2">
-        <legend className="sr-only">Filter questions</legend>
-        <FilterChip
-          label="All questions"
-          isSelected={!isAwaitingAnswerOnly}
-          onSelect={() => changeAwaitingAnswerOnly(false)}
-        />
-        {/* NOT "Unanswered" — see the header. A buyer may have answered it; you have not. */}
-        <FilterChip
-          label="Awaiting your answer"
-          isSelected={isAwaitingAnswerOnly}
-          onSelect={() => changeAwaitingAnswerOnly(true)}
-        />
-      </fieldset>
-
-      {renderInbox()}
-    </div>
-  );
-
   function renderInbox() {
     if (inboxQuery.isPending) {
       return <p className="text-sm text-muted-foreground">Loading questions…</p>;
@@ -167,6 +137,35 @@ export default function SellerQuestionsPage() {
       </>
     );
   }
+
+  return (
+    <div className="space-y-4">
+      <header className="space-y-1">
+        <h1 className="text-lg font-medium text-foreground">Questions about your listings</h1>
+        <p className="text-sm text-muted-foreground">
+          Every question buyers asked on products you sell, oldest first — the one waiting longest
+          is at the top.
+        </p>
+      </header>
+
+      <fieldset className="flex flex-wrap gap-2">
+        <legend className="sr-only">Filter questions</legend>
+        <FilterChip
+          label="All questions"
+          isSelected={!isAwaitingAnswerOnly}
+          onSelect={() => changeAwaitingAnswerOnly(false)}
+        />
+        {/* NOT "Unanswered" — see the header. A buyer may have answered it; you have not. */}
+        <FilterChip
+          label="Awaiting your answer"
+          isSelected={isAwaitingAnswerOnly}
+          onSelect={() => changeAwaitingAnswerOnly(true)}
+        />
+      </fieldset>
+
+      {renderInbox()}
+    </div>
+  );
 }
 
 function FilterChip({

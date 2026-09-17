@@ -77,6 +77,34 @@ export default function SquareImagePicker({
   }
 
   const isReady = pickState.status === "ready";
+  function renderStatusLine() {
+    switch (pickState.status) {
+      case "empty":
+        return <p className="text-sm text-muted-foreground">No image chosen yet.</p>;
+      case "checking":
+        return <p className="text-sm text-muted-foreground">Checking {pickState.fileName}…</p>;
+      case "rejected":
+        return (
+          <p role="alert" className="text-sm text-destructive">
+            {pickState.message}
+          </p>
+        );
+      case "ready":
+        return (
+          <p className="text-sm text-foreground">
+            <span className="block truncate">{pickState.file.name}</span>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {pickState.widthPx} × {pickState.heightPx} ·{" "}
+              {formatFileSizeLabel(pickState.file.size)}
+            </span>
+          </p>
+        );
+      default: {
+        const exhaustiveCheck: never = pickState;
+        return exhaustiveCheck;
+      }
+    }
+  }
 
   return (
     <div>
@@ -165,33 +193,4 @@ export default function SquareImagePicker({
       </p>
     </div>
   );
-
-  function renderStatusLine() {
-    switch (pickState.status) {
-      case "empty":
-        return <p className="text-sm text-muted-foreground">No image chosen yet.</p>;
-      case "checking":
-        return <p className="text-sm text-muted-foreground">Checking {pickState.fileName}…</p>;
-      case "rejected":
-        return (
-          <p role="alert" className="text-sm text-destructive">
-            {pickState.message}
-          </p>
-        );
-      case "ready":
-        return (
-          <p className="text-sm text-foreground">
-            <span className="block truncate">{pickState.file.name}</span>
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {pickState.widthPx} × {pickState.heightPx} ·{" "}
-              {formatFileSizeLabel(pickState.file.size)}
-            </span>
-          </p>
-        );
-      default: {
-        const exhaustiveCheck: never = pickState;
-        return exhaustiveCheck;
-      }
-    }
-  }
 }

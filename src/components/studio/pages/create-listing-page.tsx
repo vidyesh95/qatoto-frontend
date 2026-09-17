@@ -1070,10 +1070,13 @@ export default function CreateListingPage({ productId }: { productId?: string })
     );
     const filesToAdd = imageFiles.slice(0, remainingSlots);
     if (filesToAdd.length === 0) return;
-    setSelectedImagePreviews((previousPreviews) => [
-      ...previousPreviews,
-      ...filesToAdd.map((file) => ({ file, previewUrl: URL.createObjectURL(file) })),
-    ]);
+    // Object URLs are minted OUTSIDE the updater: React may run an updater twice, and each run
+    // would mint a URL nothing ever revokes.
+    const addedPreviews = filesToAdd.map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+    setSelectedImagePreviews((previousPreviews) => [...previousPreviews, ...addedPreviews]);
   }
 
   function handleImageDrop(event: React.DragEvent<HTMLDivElement>) {
@@ -1242,11 +1245,11 @@ export default function CreateListingPage({ productId }: { productId?: string })
   }
 
   function handleRemoveImageClick(imageIndexToRemove: number) {
-    setSelectedImagePreviews((previousPreviews) => {
-      const previewToRemove = previousPreviews[imageIndexToRemove];
-      if (previewToRemove) URL.revokeObjectURL(previewToRemove.previewUrl);
-      return previousPreviews.filter((_, imageIndex) => imageIndex !== imageIndexToRemove);
-    });
+    const previewToRemove = selectedImagePreviews[imageIndexToRemove];
+    if (previewToRemove) URL.revokeObjectURL(previewToRemove.previewUrl);
+    setSelectedImagePreviews((previousPreviews) =>
+      previousPreviews.filter((_, imageIndex) => imageIndex !== imageIndexToRemove),
+    );
   }
 
   function handleRemoveExistingImage(imageId: string) {
@@ -1469,30 +1472,25 @@ export default function CreateListingPage({ productId }: { productId?: string })
   }
 
   function handleHighlightImageChange(highlightIndex: number, imageFile: File | null) {
+    // Revoke the URL this row was holding before replacing it — one object URL per row at a
+    // time, so the unmount sweep below has nothing to miss. Both URL calls stay OUTSIDE the
+    // updater, which React may run twice.
+    const replacedPreviewUrl = highlights[highlightIndex]?.imagePreviewUrl ?? null;
+    if (replacedPreviewUrl !== null) URL.revokeObjectURL(replacedPreviewUrl);
+    const nextPreviewUrl = imageFile === null ? null : URL.createObjectURL(imageFile);
     setHighlights((previous) =>
-      previous.map((highlight, index) => {
-        if (index !== highlightIndex) return highlight;
-        // Revoke the URL this row was holding before replacing it — one object URL per row at a
-        // time, so the unmount sweep below has nothing to miss.
-        if (highlight.imagePreviewUrl !== null) URL.revokeObjectURL(highlight.imagePreviewUrl);
-        return {
-          ...highlight,
-          imageFile,
-          imagePreviewUrl: imageFile === null ? null : URL.createObjectURL(imageFile),
-        };
-      }),
+      previous.map((highlight, index) =>
+        index === highlightIndex
+          ? { ...highlight, imageFile, imagePreviewUrl: nextPreviewUrl }
+          : highlight,
+      ),
     );
   }
 
   function handleRemoveHighlightClick(highlightIndexToRemove: number) {
-    setHighlights((previous) =>
-      previous.filter((highlight, index) => {
-        if (index === highlightIndexToRemove && highlight.imagePreviewUrl !== null) {
-          URL.revokeObjectURL(highlight.imagePreviewUrl);
-        }
-        return index !== highlightIndexToRemove;
-      }),
-    );
+    const removedPreviewUrl = highlights[highlightIndexToRemove]?.imagePreviewUrl ?? null;
+    if (removedPreviewUrl !== null) URL.revokeObjectURL(removedPreviewUrl);
+    setHighlights((previous) => previous.filter((_, index) => index !== highlightIndexToRemove));
   }
 
   function handleAddSpecificationClick() {

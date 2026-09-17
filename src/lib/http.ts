@@ -289,7 +289,7 @@ function readContentDispositionFileName(header: string | null): string | null {
  * ranking across pages. Reading it through `getPaginated` would drop it silently and page 2
  * would reshuffle against a freshly minted seed, showing the same video twice.
  *
- * Pass a `.strip()` schema: `status`, `statusCode` and `message` are on every envelope and
+ * Pass a plain `z.object` schema (it strips unknown keys): `status`, `statusCode` and `message` are on every envelope and
  * no caller wants them.
  */
 export async function getEnvelope<T>(

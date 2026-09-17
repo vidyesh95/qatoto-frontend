@@ -72,22 +72,20 @@ export type RfqCallerRelation = (typeof RFQ_CALLER_RELATIONS)[number];
 
 // --- Summary and list -------------------------------------------------------
 
-export const RfqSummarySchema = z
-  .object({
-    id: z.string(),
-    buyerOrganizationId: z.string(),
-    title: z.string(),
-    state: z.enum(RFQ_STATES),
-    visibility: z.enum(RFQ_VISIBILITIES),
-    // Null on a draft: a deadline is set when the RFQ opens, and a draft with no deadline is normal.
-    responseDeadlineAt: IsoDateTimeSchema.nullable(),
-    settlementCurrency: z.string(),
-    openedAt: IsoDateTimeSchema.nullable(),
-    closedAt: IsoDateTimeSchema.nullable(),
-    createdAt: IsoDateTimeSchema,
-    updatedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const RfqSummarySchema = z.object({
+  id: z.string(),
+  buyerOrganizationId: z.string(),
+  title: z.string(),
+  state: z.enum(RFQ_STATES),
+  visibility: z.enum(RFQ_VISIBILITIES),
+  // Null on a draft: a deadline is set when the RFQ opens, and a draft with no deadline is normal.
+  responseDeadlineAt: IsoDateTimeSchema.nullable(),
+  settlementCurrency: z.string(),
+  openedAt: IsoDateTimeSchema.nullable(),
+  closedAt: IsoDateTimeSchema.nullable(),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+});
 
 export const RfqListPageSchema = cursorPageOf(RfqSummarySchema);
 
@@ -105,21 +103,19 @@ export const RfqListPageSchema = cursorPageOf(RfqSummarySchema);
  * `productId` is nullable because the whole point of an RFQ is sourcing something that may not be
  * listed. `categoryId` likewise — a buyer can describe a requirement without classifying it.
  */
-export const RfqProductLineSchema = z
-  .object({
-    id: z.string(),
-    rfqId: z.string(),
-    productId: z.string().nullable(),
-    categoryId: z.string().nullable(),
-    requestedTitle: z.string(),
-    requestedSpecificationSnapshot: z.string(),
-    quantity: z.number().int(),
-    // Free text — "tons", "sets", "pallets". The buyer's unit, not a platform enum.
-    unitLabel: z.string(),
-    siblingOrder: z.number().int(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const RfqProductLineSchema = z.object({
+  id: z.string(),
+  rfqId: z.string(),
+  productId: z.string().nullable(),
+  categoryId: z.string().nullable(),
+  requestedTitle: z.string(),
+  requestedSpecificationSnapshot: z.string(),
+  quantity: z.number().int(),
+  // Free text — "tons", "sets", "pallets". The buyer's unit, not a platform enum.
+  unitLabel: z.string(),
+  siblingOrder: z.number().int(),
+  createdAt: IsoDateTimeSchema,
+});
 
 /**
  * An attached document, by reference only.
@@ -128,13 +124,11 @@ export const RfqProductLineSchema = z
  * link to render — attachments are served through short-lived authorized URLs, and this read does not
  * mint one. So a client shows that a document exists and cannot show the document.
  */
-export const RfqDocumentSchema = z
-  .object({
-    id: z.string(),
-    encryptedDocumentId: z.string(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const RfqDocumentSchema = z.object({
+  id: z.string(),
+  encryptedDocumentId: z.string(),
+  createdAt: IsoDateTimeSchema,
+});
 
 /**
  * One invited provider.
@@ -148,17 +142,15 @@ export const RfqDocumentSchema = z
  * `expired` are written by nothing at all. `responded` is set provider-side when a quote shell is
  * created. Do not build a "send" control for `pending`: it is a state that cannot occur.
  */
-export const RfqInvitationSchema = z
-  .object({
-    id: z.string(),
-    providerOrganizationId: z.string(),
-    providerDisplayName: z.string(),
-    providerSlug: z.string(),
-    state: z.enum(RFQ_INVITATION_STATES),
-    sentAt: IsoDateTimeSchema.nullable(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const RfqInvitationSchema = z.object({
+  id: z.string(),
+  providerOrganizationId: z.string(),
+  providerDisplayName: z.string(),
+  providerSlug: z.string(),
+  state: z.enum(RFQ_INVITATION_STATES),
+  sentAt: IsoDateTimeSchema.nullable(),
+  createdAt: IsoDateTimeSchema,
+});
 
 // --- The eight-arm requirement union ----------------------------------------
 //
@@ -177,69 +169,55 @@ const FreightRequirementShape = {
 };
 
 export const RfqRequirementDetailSchema = z.discriminatedUnion("providerKind", [
-  z.object({ providerKind: z.literal("freight_forwarder"), ...FreightRequirementShape }).strip(),
-  z.object({ providerKind: z.literal("logistics_operator"), ...FreightRequirementShape }).strip(),
-  z
-    .object({
-      providerKind: z.literal("customs_broker"),
-      jurisdictions: z.array(z.string()),
-      importRequired: z.boolean().optional(),
-      exportRequired: z.boolean().optional(),
-      commoditySummary: z.string().nullable().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      providerKind: z.literal("insurance_provider"),
-      cargoCoverageClasses: z.array(z.string()),
-      coverageLimitInCents: z.number().int().nullable().optional(),
-      currency: z.string().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      providerKind: z.literal("inspection_agency"),
-      // ALL FOUR OPTIONAL, unlike the offering detail where they are required booleans. An RFQ says
-      // what the buyer NEEDS; an absent stage is "not asked for", which is not the same as "no".
-      preProduction: z.boolean().optional(),
-      duringProduction: z.boolean().optional(),
-      preShipment: z.boolean().optional(),
-      loadingSupervision: z.boolean().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      providerKind: z.literal("testing_certification_lab"),
-      standards: z.array(z.string()),
-      laboratoryLocationPreference: z.string().nullable().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      providerKind: z.literal("marketing_agency"),
-      channels: z.array(z.string()),
-      targetRegions: z.array(z.string()),
-      languageCapabilities: z.array(z.string()),
-    })
-    .strip(),
-  z
-    .object({
-      providerKind: z.literal("warehouse_provider"),
-      storageTypes: z.array(z.string()),
-      temperatureControlled: z.boolean().optional(),
-      bondedStatusRequired: z.boolean().optional(),
-      capacityUnits: z.string().nullable().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      providerKind: z.literal("foreign_exchange_facilitator"),
-      currencyPairs: z.array(z.string()),
-      settlementRails: z.array(z.string()),
-      notionalAmountInCents: z.number().int().nullable().optional(),
-      notionalCurrency: z.string().optional(),
-    })
-    .strip(),
+  z.object({ providerKind: z.literal("freight_forwarder"), ...FreightRequirementShape }),
+  z.object({ providerKind: z.literal("logistics_operator"), ...FreightRequirementShape }),
+  z.object({
+    providerKind: z.literal("customs_broker"),
+    jurisdictions: z.array(z.string()),
+    importRequired: z.boolean().optional(),
+    exportRequired: z.boolean().optional(),
+    commoditySummary: z.string().nullable().optional(),
+  }),
+  z.object({
+    providerKind: z.literal("insurance_provider"),
+    cargoCoverageClasses: z.array(z.string()),
+    coverageLimitInCents: z.number().int().nullable().optional(),
+    currency: z.string().optional(),
+  }),
+  z.object({
+    providerKind: z.literal("inspection_agency"),
+    // ALL FOUR OPTIONAL, unlike the offering detail where they are required booleans. An RFQ says
+    // what the buyer NEEDS; an absent stage is "not asked for", which is not the same as "no".
+    preProduction: z.boolean().optional(),
+    duringProduction: z.boolean().optional(),
+    preShipment: z.boolean().optional(),
+    loadingSupervision: z.boolean().optional(),
+  }),
+  z.object({
+    providerKind: z.literal("testing_certification_lab"),
+    standards: z.array(z.string()),
+    laboratoryLocationPreference: z.string().nullable().optional(),
+  }),
+  z.object({
+    providerKind: z.literal("marketing_agency"),
+    channels: z.array(z.string()),
+    targetRegions: z.array(z.string()),
+    languageCapabilities: z.array(z.string()),
+  }),
+  z.object({
+    providerKind: z.literal("warehouse_provider"),
+    storageTypes: z.array(z.string()),
+    temperatureControlled: z.boolean().optional(),
+    bondedStatusRequired: z.boolean().optional(),
+    capacityUnits: z.string().nullable().optional(),
+  }),
+  z.object({
+    providerKind: z.literal("foreign_exchange_facilitator"),
+    currencyPairs: z.array(z.string()),
+    settlementRails: z.array(z.string()),
+    notionalAmountInCents: z.number().int().nullable().optional(),
+    notionalCurrency: z.string().optional(),
+  }),
 ]);
 
 /**
@@ -252,54 +230,50 @@ export const RfqRequirementDetailSchema = z.discriminatedUnion("providerKind", [
  * `linkedProductLineId` connects a service to a product line WITHOUT making it that line's child: a
  * shipment of the chairs is about the chairs, but cancelling the chairs does not cancel the freight.
  */
-export const RfqServiceLineSchema = z
-  .object({
-    id: z.string(),
-    rfqId: z.string(),
-    providerKind: z.enum(PROVIDER_KINDS),
-    // Present when the buyer is asking a SPECIFIC offering rather than the market.
-    serviceOfferingId: z.string().nullable(),
-    linkedProductLineId: z.string().nullable(),
-    requirementSummary: z.string(),
-    siblingOrder: z.number().int(),
-    createdAt: IsoDateTimeSchema,
-    requirementDetail: RfqRequirementDetailSchema.nullable(),
-  })
-  .strip();
+export const RfqServiceLineSchema = z.object({
+  id: z.string(),
+  rfqId: z.string(),
+  providerKind: z.enum(PROVIDER_KINDS),
+  // Present when the buyer is asking a SPECIFIC offering rather than the market.
+  serviceOfferingId: z.string().nullable(),
+  linkedProductLineId: z.string().nullable(),
+  requirementSummary: z.string(),
+  siblingOrder: z.number().int(),
+  createdAt: IsoDateTimeSchema,
+  requirementDetail: RfqRequirementDetailSchema.nullable(),
+});
 
 // --- Detail -----------------------------------------------------------------
 
-export const RfqDetailSchema = z
-  .object({
-    id: z.string(),
-    buyerOrganizationId: z.string(),
-    createdByMemberId: z.string(),
-    title: z.string(),
-    description: z.string().nullable(),
-    state: z.enum(RFQ_STATES),
-    visibility: z.enum(RFQ_VISIBILITIES),
-    responseDeadlineAt: IsoDateTimeSchema.nullable(),
-    desiredDeliveryStartsAt: IsoDateTimeSchema.nullable(),
-    desiredDeliveryEndsAt: IsoDateTimeSchema.nullable(),
-    // The address ID, plus the two plaintext fields safe to show. The street lines are encrypted and
-    // do not appear here at all — a provider quoting a lane needs a country and a city, not a door.
-    destinationAddressId: z.string().nullable(),
-    destinationCountryCode: z.string().nullable(),
-    destinationLocality: z.string().nullable(),
-    settlementCurrency: z.string(),
-    openedAt: IsoDateTimeSchema.nullable(),
-    closedAt: IsoDateTimeSchema.nullable(),
-    awardedAt: IsoDateTimeSchema.nullable(),
-    createdAt: IsoDateTimeSchema,
-    updatedAt: IsoDateTimeSchema,
-    productLines: z.array(RfqProductLineSchema),
-    serviceLines: z.array(RfqServiceLineSchema),
-    documents: z.array(RfqDocumentSchema),
-    invitations: z.array(RfqInvitationSchema),
-    // STATED BY THE SERVER. No organization lookup, no route-derived guess.
-    callerRelation: z.enum(RFQ_CALLER_RELATIONS),
-  })
-  .strip();
+export const RfqDetailSchema = z.object({
+  id: z.string(),
+  buyerOrganizationId: z.string(),
+  createdByMemberId: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  state: z.enum(RFQ_STATES),
+  visibility: z.enum(RFQ_VISIBILITIES),
+  responseDeadlineAt: IsoDateTimeSchema.nullable(),
+  desiredDeliveryStartsAt: IsoDateTimeSchema.nullable(),
+  desiredDeliveryEndsAt: IsoDateTimeSchema.nullable(),
+  // The address ID, plus the two plaintext fields safe to show. The street lines are encrypted and
+  // do not appear here at all — a provider quoting a lane needs a country and a city, not a door.
+  destinationAddressId: z.string().nullable(),
+  destinationCountryCode: z.string().nullable(),
+  destinationLocality: z.string().nullable(),
+  settlementCurrency: z.string(),
+  openedAt: IsoDateTimeSchema.nullable(),
+  closedAt: IsoDateTimeSchema.nullable(),
+  awardedAt: IsoDateTimeSchema.nullable(),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+  productLines: z.array(RfqProductLineSchema),
+  serviceLines: z.array(RfqServiceLineSchema),
+  documents: z.array(RfqDocumentSchema),
+  invitations: z.array(RfqInvitationSchema),
+  // STATED BY THE SERVER. No organization lookup, no route-derived guess.
+  callerRelation: z.enum(RFQ_CALLER_RELATIONS),
+});
 
 // --- Filter inputs ----------------------------------------------------------
 
@@ -493,9 +467,7 @@ export interface RfqServiceLineInput {
  * the module — `withdrawn` exists in the enum and nothing reaches it.
  */
 /** `POST …/invitations` answers `{ invitations }` — only the rows it just created. */
-export const InvitedProvidersSchema = z
-  .object({ invitations: z.array(RfqInvitationSchema) })
-  .strip();
+export const InvitedProvidersSchema = z.object({ invitations: z.array(RfqInvitationSchema) });
 
 export interface InviteProvidersInput {
   readonly providerOrganizationIds: readonly string[];

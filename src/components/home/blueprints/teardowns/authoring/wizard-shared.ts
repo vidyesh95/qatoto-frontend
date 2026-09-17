@@ -68,17 +68,15 @@ export interface MaterialDraftRow {
   readonly finish: string;
 }
 
-export const MaterialDraftRowSchema = z
-  .object({
-    rowId: z.string(),
-    appliesToLabel: z.string(),
-    designation: z.string(),
-    designationSource: z.enum(TEARDOWN_DESIGNATION_SOURCES),
-    materialClass: z.enum(TEARDOWN_MATERIAL_CLASSES),
-    process: z.union([z.enum(TEARDOWN_MANUFACTURING_METHODS), z.literal("")]),
-    finish: z.string(),
-  })
-  .strip();
+export const MaterialDraftRowSchema = z.object({
+  rowId: z.string(),
+  appliesToLabel: z.string(),
+  designation: z.string(),
+  designationSource: z.enum(TEARDOWN_DESIGNATION_SOURCES),
+  materialClass: z.enum(TEARDOWN_MATERIAL_CLASSES),
+  process: z.union([z.enum(TEARDOWN_MANUFACTURING_METHODS), z.literal("")]),
+  finish: z.string(),
+});
 
 /** One part row while it is being edited. */
 export interface PartDraftRow {
@@ -87,13 +85,11 @@ export interface PartDraftRow {
   readonly material: string;
 }
 
-export const PartDraftRowSchema = z
-  .object({
-    rowId: z.string(),
-    label: z.string(),
-    material: z.string(),
-  })
-  .strip();
+export const PartDraftRowSchema = z.object({
+  rowId: z.string(),
+  label: z.string(),
+  material: z.string(),
+});
 
 /**
  * One file row while it is being edited — in TWO shapes, because there are two vocabularies.
@@ -108,17 +104,15 @@ export interface DocumentDraftRow {
   readonly fileName?: string;
 }
 
-export const DocumentDraftRowSchema = z
-  .object({
-    rowId: z.string(),
-    kind: z.enum(BLUEPRINT_DOCUMENT_KINDS),
-    title: z.string(),
-    source: z.enum(["pasted_link", "uploaded"]).optional(),
-    url: z.string().optional(),
-    uploadId: z.string().optional(),
-    fileName: z.string().optional(),
-  })
-  .strip();
+export const DocumentDraftRowSchema = z.object({
+  rowId: z.string(),
+  kind: z.enum(BLUEPRINT_DOCUMENT_KINDS),
+  title: z.string(),
+  source: z.enum(["pasted_link", "uploaded"]).optional(),
+  url: z.string().optional(),
+  uploadId: z.string().optional(),
+  fileName: z.string().optional(),
+});
 
 export interface ManufacturingFileDraftRow {
   readonly rowId: string;
@@ -130,17 +124,15 @@ export interface ManufacturingFileDraftRow {
   readonly fileName?: string;
 }
 
-export const ManufacturingFileDraftRowSchema = z
-  .object({
-    rowId: z.string(),
-    kind: z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS),
-    title: z.string(),
-    source: z.enum(["pasted_link", "uploaded"]).optional(),
-    url: z.string().optional(),
-    uploadId: z.string().optional(),
-    fileName: z.string().optional(),
-  })
-  .strip();
+export const ManufacturingFileDraftRowSchema = z.object({
+  rowId: z.string(),
+  kind: z.enum(TEARDOWN_MANUFACTURING_FILE_KINDS),
+  title: z.string(),
+  source: z.enum(["pasted_link", "uploaded"]).optional(),
+  url: z.string().optional(),
+  uploadId: z.string().optional(),
+  fileName: z.string().optional(),
+});
 
 /**
  * THE WHOLE FORM, FLAT, AND EVERY SCALAR HELD AS A STRING.
@@ -168,29 +160,27 @@ export interface TeardownWizardDraft {
   readonly acceptedAttestationClauseIds: readonly TeardownAttestationClauseId[];
 }
 
-export const TeardownWizardDraftSchema: z.ZodType<TeardownWizardDraft> = z
-  .object({
-    subjectKind: z.enum(TEARDOWN_SUBJECT_KINDS),
-    title: z.string(),
-    summary: z.string(),
-    subjectProductName: z.string(),
-    unitAcquisition: z.enum(TEARDOWN_UNIT_ACQUISITIONS),
-    surveyMethods: z.array(z.enum(TEARDOWN_SURVEY_METHODS)),
-    surveyedOnDate: z.string(),
-    provenanceKind: z.enum(BLUEPRINT_PROVENANCE_KINDS),
-    licenceName: z.string(),
-    licenceUrl: z.string(),
-    authorizationNote: z.string(),
-    provenanceNotes: z.string(),
-    walkthroughYoutubeUrl: z.string(),
-    documents: z.array(DocumentDraftRowSchema),
-    manufacturingFiles: z.array(ManufacturingFileDraftRowSchema),
-    parts: z.array(PartDraftRowSchema),
-    materials: z.array(MaterialDraftRowSchema),
-    tagsText: z.string(),
-    acceptedAttestationClauseIds: z.array(z.enum(TEARDOWN_ATTESTATION_CLAUSE_IDS)),
-  })
-  .strip();
+export const TeardownWizardDraftSchema: z.ZodType<TeardownWizardDraft> = z.object({
+  subjectKind: z.enum(TEARDOWN_SUBJECT_KINDS),
+  title: z.string(),
+  summary: z.string(),
+  subjectProductName: z.string(),
+  unitAcquisition: z.enum(TEARDOWN_UNIT_ACQUISITIONS),
+  surveyMethods: z.array(z.enum(TEARDOWN_SURVEY_METHODS)),
+  surveyedOnDate: z.string(),
+  provenanceKind: z.enum(BLUEPRINT_PROVENANCE_KINDS),
+  licenceName: z.string(),
+  licenceUrl: z.string(),
+  authorizationNote: z.string(),
+  provenanceNotes: z.string(),
+  walkthroughYoutubeUrl: z.string(),
+  documents: z.array(DocumentDraftRowSchema),
+  manufacturingFiles: z.array(ManufacturingFileDraftRowSchema),
+  parts: z.array(PartDraftRowSchema),
+  materials: z.array(MaterialDraftRowSchema),
+  tagsText: z.string(),
+  acceptedAttestationClauseIds: z.array(z.enum(TEARDOWN_ATTESTATION_CLAUSE_IDS)),
+});
 
 /** What every step component receives. Dumb view, one patch callback. */
 export interface TeardownWizardStepProps {

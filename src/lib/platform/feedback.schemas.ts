@@ -72,7 +72,7 @@ export const PLATFORM_FEEDBACK_STATUS_QUEUE_LABELS: Readonly<
  */
 export const FEEDBACK_MESSAGE_MAX_LENGTH = 2000;
 
-export const FeedbackReceivedSchema = z.object({ feedbackId: z.string() }).strip();
+export const FeedbackReceivedSchema = z.object({ feedbackId: z.string() });
 export type FeedbackReceived = z.infer<typeof FeedbackReceivedSchema>;
 
 /**
@@ -82,17 +82,15 @@ export type FeedbackReceived = z.infer<typeof FeedbackReceivedSchema>;
  * string was read from a request header, so echoing it would describe the browser they are
  * holding; the author is whoever is asking.
  */
-export const OwnPlatformFeedbackSchema = z
-  .object({
-    feedbackId: z.string(),
-    category: PlatformFeedbackCategorySchema,
-    message: z.string(),
-    /** The route they were on when they wrote it. Text, never a link: it may be a dead URL. */
-    pagePath: z.string(),
-    status: PlatformFeedbackStatusSchema,
-    createdAt: z.iso.datetime(),
-  })
-  .strip();
+export const OwnPlatformFeedbackSchema = z.object({
+  feedbackId: z.string(),
+  category: PlatformFeedbackCategorySchema,
+  message: z.string(),
+  /** The route they were on when they wrote it. Text, never a link: it may be a dead URL. */
+  pagePath: z.string(),
+  status: PlatformFeedbackStatusSchema,
+  createdAt: z.iso.datetime(),
+});
 export type OwnPlatformFeedback = z.infer<typeof OwnPlatformFeedbackSchema>;
 
 /**
@@ -106,9 +104,8 @@ export const StaffPlatformFeedbackSchema = OwnPlatformFeedbackSchema.extend({
   userAgent: z.string().nullable(),
   author: z
     .object({ userId: z.string(), handle: z.string().nullable(), name: z.string() })
-    .strip()
     .nullable(),
-}).strip();
+});
 export type StaffPlatformFeedback = z.infer<typeof StaffPlatformFeedbackSchema>;
 
 export interface SendPlatformFeedbackInput {

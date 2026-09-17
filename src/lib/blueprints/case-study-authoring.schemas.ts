@@ -5,7 +5,7 @@
 // `CaseStudyBlueprintSchema` in `@/lib/blueprints/schemas`; its launch sibling is
 // `showcase-authoring.schemas.ts`, whose rules this file follows unless a note here says otherwise.
 //
-// ⚠️ `.strict()` ON THE DRAFT, `.strip()` ON THE RESPONSES, for the reason the launch contract gives:
+// ⚠️ `z.strictObject` ON THE DRAFT, PLAIN (STRIPPING) `z.object` ON THE RESPONSES, for the reason the launch contract gives:
 // an unknown key on the way out is a bug here, an unknown key on the way in is a backend release.
 //
 // ⚠️ A CASE STUDY IS A CLAIM ABOUT A BUSINESS, OFTEN SOMEBODY ELSE'S. So the writer says how they know
@@ -111,45 +111,38 @@ export const CASE_STUDY_TITLE_MAXIMUM_CHARACTERS = 140;
 export const CASE_STUDY_ONE_LINE_ACTION_MAXIMUM_CHARACTERS = 140;
 export const CASE_STUDY_OUTCOME_SUMMARY_MAXIMUM_CHARACTERS = 120;
 
-const CaseStudyEvidenceCompanyDraftSchema = z
-  .object({
-    /**
-     * ⚠️ ALWAYS THE REAL NAME, WITHHELD OR NOT. A withheld name is withheld from READERS, not from
-     * Qatoto: it travels to the backend so a moderator can check the case study against it, and every
-     * public read returns `null` in its place (`CaseStudyEvidenceCompanySchema`). A withheld company a
-     * moderator cannot see is a claim nobody can check, which is the reason public sources may not
-     * withhold one either.
-     */
-    name: z
-      .string()
-      .min(1, "Give the company's name.")
-      .max(80, "Keep the name under 80 characters."),
-    /** Only a first-hand case study may set this; the refinement on the draft enforces that. */
-    isNameWithheld: z.boolean(),
-    locationLabel: z
-      .string()
-      .min(1, "Say where it happened, like Porto.")
-      .max(60, "Keep the place under 60 characters."),
-    yearLabel: z
-      .string()
-      .min(1, "Say when it happened, like 2024.")
-      .max(20, "Keep the year under 20 characters."),
-  })
-  .strict();
+const CaseStudyEvidenceCompanyDraftSchema = z.strictObject({
+  /**
+   * ⚠️ ALWAYS THE REAL NAME, WITHHELD OR NOT. A withheld name is withheld from READERS, not from
+   * Qatoto: it travels to the backend so a moderator can check the case study against it, and every
+   * public read returns `null` in its place (`CaseStudyEvidenceCompanySchema`). A withheld company a
+   * moderator cannot see is a claim nobody can check, which is the reason public sources may not
+   * withhold one either.
+   */
+  name: z.string().min(1, "Give the company's name.").max(80, "Keep the name under 80 characters."),
+  /** Only a first-hand case study may set this; the refinement on the draft enforces that. */
+  isNameWithheld: z.boolean(),
+  locationLabel: z
+    .string()
+    .min(1, "Say where it happened, like Porto.")
+    .max(60, "Keep the place under 60 characters."),
+  yearLabel: z
+    .string()
+    .min(1, "Say when it happened, like 2024.")
+    .max(20, "Keep the year under 20 characters."),
+});
 
 /**
  * Money on a case study, in integer minor units. STRICTER THAN `BlueprintMoneySchema`, a read shape
  * that accepts any currency string and a negative amount; a write refuses both.
  */
-const CaseStudyMoneyDraftSchema = z
-  .object({
-    amountInCents: z
-      .number({ error: "Give the amount as a number, like 250000 or 5.12." })
-      .int()
-      .nonnegative("An amount can't be below zero."),
-    currency: z.enum(CASE_STUDY_CURRENCIES, { error: "Pick the currency." }),
-  })
-  .strict();
+const CaseStudyMoneyDraftSchema = z.strictObject({
+  amountInCents: z
+    .number({ error: "Give the amount as a number, like 250000 or 5.12." })
+    .int()
+    .nonnegative("An amount can't be below zero."),
+  currency: z.enum(CASE_STUDY_CURRENCIES, { error: "Pick the currency." }),
+});
 
 /**
  * One figure's value. The read side's `BlueprintMetricValueSchema`, strict, with messages a writer can
@@ -158,44 +151,36 @@ const CaseStudyMoneyDraftSchema = z
 const CaseStudyMetricValueDraftSchema = z.discriminatedUnion(
   "kind",
   [
-    z
-      .object({
-        kind: z.literal("count"),
-        amount: z
-          .number({ error: "Give the count as a whole number, like 1000." })
-          .int("Give the count as a whole number, like 1000.")
-          .nonnegative("A count can't be below zero."),
-      })
-      .strict(),
-    z
-      .object({
-        kind: z.literal("money"),
-        amountInCents: z
-          .number({ error: "Give the amount as a number, like 5.12." })
-          .int()
-          .nonnegative("An amount can't be below zero."),
-        currency: z.enum(CASE_STUDY_CURRENCIES, { error: "Pick the currency." }),
-      })
-      .strict(),
-    z
-      .object({
-        kind: z.literal("percentage"),
-        basisPoints: z.number({ error: "Give the percentage as a number, like 43.8." }).int(),
-      })
-      .strict(),
+    z.strictObject({
+      kind: z.literal("count"),
+      amount: z
+        .number({ error: "Give the count as a whole number, like 1000." })
+        .int("Give the count as a whole number, like 1000.")
+        .nonnegative("A count can't be below zero."),
+    }),
+    z.strictObject({
+      kind: z.literal("money"),
+      amountInCents: z
+        .number({ error: "Give the amount as a number, like 5.12." })
+        .int()
+        .nonnegative("An amount can't be below zero."),
+      currency: z.enum(CASE_STUDY_CURRENCIES, { error: "Pick the currency." }),
+    }),
+    z.strictObject({
+      kind: z.literal("percentage"),
+      basisPoints: z.number({ error: "Give the percentage as a number, like 43.8." }).int(),
+    }),
   ],
   { error: "Say what kind of figure this is." },
 );
 
-const CaseStudyOutcomeMetricDraftSchema = z
-  .object({
-    label: z
-      .string()
-      .min(1, "Name the figure, like Units shipped.")
-      .max(60, "Keep the label under 60 characters."),
-    value: CaseStudyMetricValueDraftSchema,
-  })
-  .strict();
+const CaseStudyOutcomeMetricDraftSchema = z.strictObject({
+  label: z
+    .string()
+    .min(1, "Name the figure, like Units shipped.")
+    .max(60, "Keep the label under 60 characters."),
+  value: CaseStudyMetricValueDraftSchema,
+});
 
 /**
  * ⚠️ 512 CHARACTERS, NOT THE 2,048 EVERY OTHER OUTBOUND LINK HERE ALLOWS, and the reason is on the
@@ -209,19 +194,17 @@ const CaseStudyOutcomeMetricDraftSchema = z
 export const CASE_STUDY_SOURCE_URL_MAXIMUM_CHARACTERS = 512;
 
 /** STRICTER THAN `BlueprintSourceSchema` for the launch link's reason: a write refuses empty labels. */
-const CaseStudySourceDraftSchema = z
-  .object({
-    label: z
-      .string()
-      .min(1, "Say what the source is, like Run-by-run cost breakdown.")
-      .max(120, "Keep the label under 120 characters."),
-    publisherLabel: z
-      .string()
-      .min(1, "Say who published it.")
-      .max(80, "Keep the publisher under 80 characters."),
-    url: createExternalHttpsUrlSchema(CASE_STUDY_SOURCE_URL_MAXIMUM_CHARACTERS),
-  })
-  .strict();
+const CaseStudySourceDraftSchema = z.strictObject({
+  label: z
+    .string()
+    .min(1, "Say what the source is, like Run-by-run cost breakdown.")
+    .max(120, "Keep the label under 120 characters."),
+  publisherLabel: z
+    .string()
+    .min(1, "Say who published it.")
+    .max(80, "Keep the publisher under 80 characters."),
+  url: createExternalHttpsUrlSchema(CASE_STUDY_SOURCE_URL_MAXIMUM_CHARACTERS),
+});
 
 /** A step or a pitfall. Blank rows are refused rather than dropped, so a writer sees what is empty. */
 function createListItemDraftSchema(emptyItemMessage: string) {
@@ -283,7 +266,7 @@ const RelatedLessonRefinementInputsSchema = z.object({
  * repeat would collide there rather than fail here.
  */
 export const CaseStudySubmissionDraftSchema = z
-  .object({
+  .strictObject({
     /** THE LESSON, AS ONE INSTRUCTION. The read arm's note says why there is no second title. */
     title: z
       .string()
@@ -350,7 +333,6 @@ export const CaseStudySubmissionDraftSchema = z
     tags: z.array(z.string().min(1)).max(10, "Ten tags at most."),
     acceptedStatementIds: z.array(z.enum(CASE_STUDY_STATEMENT_IDS)),
   })
-  .strict()
   // ⚠️ ONE REFINEMENT PER RULE, EACH GATED BY `when` ON THE FIELDS IT READS, so every message shows on
   // the first press even while an unrelated field is still empty. See `refinement-inputs.ts`.
   .superRefine(
@@ -550,14 +532,12 @@ export type CaseStudySubmissionDraft = z.infer<typeof CaseStudySubmissionDraftSc
  * WHAT COMES BACK FROM SENDING, a receipt and not a row. No slug and no public URL, because neither
  * exists until a moderator publishes it.
  */
-export const CaseStudySubmissionReceiptSchema = z
-  .object({
-    submissionId: z.string(),
-    moderationState: z.literal("pending_review"),
-    /** ISO 8601, server-stamped. When the case study was accepted, not when it was decided. */
-    receivedAt: z.string(),
-  })
-  .strip();
+export const CaseStudySubmissionReceiptSchema = z.object({
+  submissionId: z.string(),
+  moderationState: z.literal("pending_review"),
+  /** ISO 8601, server-stamped. When the case study was accepted, not when it was decided. */
+  receivedAt: z.string(),
+});
 export type CaseStudySubmissionReceipt = z.infer<typeof CaseStudySubmissionReceiptSchema>;
 
 /**
@@ -578,7 +558,6 @@ export const CaseStudySubmissionSchema = z
     publicSlug: z.string().nullable(),
     moderatorNote: z.string().nullable(),
   })
-  .strip()
   .superRefine((submission, context) => {
     if (submission.moderationState === "rejected" && submission.moderatorNote === null) {
       context.addIssue({

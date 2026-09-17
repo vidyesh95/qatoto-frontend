@@ -9,7 +9,7 @@
 // may import this file, and the check is
 // `rg "case-study-moderation" src/components/home src/components/studio`, which must print nothing.
 //
-// `.strip()` ON WHAT COMES BACK, `.strict()` ON THE DECISION THAT GOES OUT, as everywhere on this
+// PLAIN (STRIPPING) `z.object` ON WHAT COMES BACK, `z.strictObject` ON THE DECISION THAT GOES OUT, as everywhere on this
 // surface.
 
 import { z } from "zod";
@@ -31,53 +31,49 @@ import { cursorPageOf, IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * `CaseStudyEvidenceCompanySchema` keeps `name` nullable, because the public read writes `null` in
  * place of a withheld name.
  */
-export const CaseStudyModerationCompanySchema = z
-  .object({
-    name: z.string(),
-    isNameWithheld: z.boolean(),
-    locationLabel: z.string(),
-    yearLabel: z.string(),
-  })
-  .strip();
+export const CaseStudyModerationCompanySchema = z.object({
+  name: z.string(),
+  isNameWithheld: z.boolean(),
+  locationLabel: z.string(),
+  yearLabel: z.string(),
+});
 export type CaseStudyModerationCompany = z.infer<typeof CaseStudyModerationCompanySchema>;
 
 /** One submission waiting in `/admin/case-studies`, with everything the writer sent. */
-export const CaseStudyReviewItemSchema = z
-  .object({
-    submissionId: z.string(),
-    submittedAt: IsoDateTimeSchema,
-    /**
-     * Who sent it. The backend refuses a moderator deciding their own (403).
-     *
-     * ⚠️ `handle` IS NULLABLE, and it was not. `user.handle` is nullable — nothing guarantees an
-     * account has one — so the review queue can legitimately produce `null`, and a non-nullable
-     * field here would have made the whole ROW refuse to parse: a moderator would see a card
-     * vanish rather than a byline without a handle. `BlueprintAuthorSchema` and the showcase
-     * queue's own author shape are both nullable for the same reason.
-     */
-    author: z.object({ displayName: z.string(), handle: z.string().nullable() }).strip(),
-    authorRelationship: z.enum(CASE_STUDY_AUTHOR_RELATIONSHIPS),
-    /** What the writer vouched for, so a moderator can hold the case study to it. */
-    acceptedStatementIds: z.array(z.enum(CASE_STUDY_STATEMENT_IDS)),
-    title: z.string(),
-    oneLineAction: z.string(),
-    discipline: z.enum(BLUEPRINT_DISCIPLINES),
-    sector: z.string(),
-    outcomeSummary: z.string().nullable(),
-    summary: z.string(),
-    problem: z.string(),
-    context: z.string(),
-    actionSteps: z.array(z.string()),
-    pitfalls: z.array(z.string()),
-    evidenceCompanies: z.array(CaseStudyModerationCompanySchema),
-    timelineLabel: z.string().nullable(),
-    capitalRaised: BlueprintMoneySchema.nullable(),
-    outcomeMetrics: z.array(BlueprintOutcomeMetricSchema),
-    sources: z.array(BlueprintSourceSchema),
-    relatedLessonSlugs: z.array(z.string()),
-    tags: z.array(z.string()),
-  })
-  .strip();
+export const CaseStudyReviewItemSchema = z.object({
+  submissionId: z.string(),
+  submittedAt: IsoDateTimeSchema,
+  /**
+   * Who sent it. The backend refuses a moderator deciding their own (403).
+   *
+   * ⚠️ `handle` IS NULLABLE, and it was not. `user.handle` is nullable — nothing guarantees an
+   * account has one — so the review queue can legitimately produce `null`, and a non-nullable
+   * field here would have made the whole ROW refuse to parse: a moderator would see a card
+   * vanish rather than a byline without a handle. `BlueprintAuthorSchema` and the showcase
+   * queue's own author shape are both nullable for the same reason.
+   */
+  author: z.object({ displayName: z.string(), handle: z.string().nullable() }),
+  authorRelationship: z.enum(CASE_STUDY_AUTHOR_RELATIONSHIPS),
+  /** What the writer vouched for, so a moderator can hold the case study to it. */
+  acceptedStatementIds: z.array(z.enum(CASE_STUDY_STATEMENT_IDS)),
+  title: z.string(),
+  oneLineAction: z.string(),
+  discipline: z.enum(BLUEPRINT_DISCIPLINES),
+  sector: z.string(),
+  outcomeSummary: z.string().nullable(),
+  summary: z.string(),
+  problem: z.string(),
+  context: z.string(),
+  actionSteps: z.array(z.string()),
+  pitfalls: z.array(z.string()),
+  evidenceCompanies: z.array(CaseStudyModerationCompanySchema),
+  timelineLabel: z.string().nullable(),
+  capitalRaised: BlueprintMoneySchema.nullable(),
+  outcomeMetrics: z.array(BlueprintOutcomeMetricSchema),
+  sources: z.array(BlueprintSourceSchema),
+  relatedLessonSlugs: z.array(z.string()),
+  tags: z.array(z.string()),
+});
 export type CaseStudyReviewItem = z.infer<typeof CaseStudyReviewItemSchema>;
 
 /** `GET /blueprints/admin/case-studies/review-queue`, oldest first. */
@@ -98,24 +94,20 @@ const MODERATOR_NOTE_TOO_LONG_MESSAGE = `Keep the note under ${CASE_STUDY_MODERA
  * act on comes back unchanged. Publishing may carry a note or none.
  */
 export const CaseStudyModerationDecisionSchema = z.discriminatedUnion("decision", [
-  z
-    .object({
-      decision: z.literal("published"),
-      moderatorNote: z
-        .string()
-        .max(CASE_STUDY_MODERATOR_NOTE_MAXIMUM_CHARACTERS, MODERATOR_NOTE_TOO_LONG_MESSAGE)
-        .nullable(),
-    })
-    .strict(),
-  z
-    .object({
-      decision: z.literal("rejected"),
-      moderatorNote: z
-        .string()
-        .min(1, "Sending back needs a note. It is the only thing the writer sees.")
-        .max(CASE_STUDY_MODERATOR_NOTE_MAXIMUM_CHARACTERS, MODERATOR_NOTE_TOO_LONG_MESSAGE),
-    })
-    .strict(),
+  z.strictObject({
+    decision: z.literal("published"),
+    moderatorNote: z
+      .string()
+      .max(CASE_STUDY_MODERATOR_NOTE_MAXIMUM_CHARACTERS, MODERATOR_NOTE_TOO_LONG_MESSAGE)
+      .nullable(),
+  }),
+  z.strictObject({
+    decision: z.literal("rejected"),
+    moderatorNote: z
+      .string()
+      .min(1, "Sending back needs a note. It is the only thing the writer sees.")
+      .max(CASE_STUDY_MODERATOR_NOTE_MAXIMUM_CHARACTERS, MODERATOR_NOTE_TOO_LONG_MESSAGE),
+  }),
 ]);
 export type CaseStudyModerationDecision = z.infer<typeof CaseStudyModerationDecisionSchema>;
 
@@ -127,7 +119,6 @@ export const CaseStudyModerationResultSchema = z
     publicSlug: z.string().nullable(),
     decidedAt: IsoDateTimeSchema,
   })
-  .strip()
   .superRefine((result, context) => {
     if (result.moderationState === "published" && result.publicSlug === null) {
       context.addIssue({

@@ -90,129 +90,121 @@ export function deriveOrderViewerRelation(
  */
 const PaymentIntentIdSchema = z.string().nullable();
 
-export const OrderSummarySchema = z
-  .object({
-    id: z.string(),
-    buyerOrganizationId: z.string(),
-    counterpartyOrganizationId: z.string(),
-    checkoutGroupId: z.string().nullable(),
-    source: z.enum(ORDER_SOURCES),
-    state: z.enum(ORDER_STATES),
-    currency: z.string(),
-    totalInCents: z.number().int(),
-    // Legal names, SNAPSHOTTED at creation. A later rename of either organization must not rewrite
-    // what an order says — that is the point of an immutable commercial record.
-    buyerLegalNameSnapshot: z.string(),
-    counterpartyLegalNameSnapshot: z.string(),
-    createdAt: IsoDateTimeSchema,
-    settlementRail: z.enum(SETTLEMENT_RAILS),
-    hasEscrowProtection: z.boolean(),
-    paymentIntentId: PaymentIntentIdSchema,
-  })
-  .strip();
+export const OrderSummarySchema = z.object({
+  id: z.string(),
+  buyerOrganizationId: z.string(),
+  counterpartyOrganizationId: z.string(),
+  checkoutGroupId: z.string().nullable(),
+  source: z.enum(ORDER_SOURCES),
+  state: z.enum(ORDER_STATES),
+  currency: z.string(),
+  totalInCents: z.number().int(),
+  // Legal names, SNAPSHOTTED at creation. A later rename of either organization must not rewrite
+  // what an order says — that is the point of an immutable commercial record.
+  buyerLegalNameSnapshot: z.string(),
+  counterpartyLegalNameSnapshot: z.string(),
+  createdAt: IsoDateTimeSchema,
+  settlementRail: z.enum(SETTLEMENT_RAILS),
+  hasEscrowProtection: z.boolean(),
+  paymentIntentId: PaymentIntentIdSchema,
+});
 
 export const OrderListPageSchema = cursorPageOf(OrderSummarySchema);
 
 // --- Order detail -----------------------------------------------------------
 
-export const OrderProductLineSchema = z
-  .object({
-    id: z.string(),
-    /**
-     * THE ID THAT MAKES A REVIEW REACHABLE. `POST /commerce/completions/:completionId/reviews` is
-     * keyed on a completion, and before this was projected the id appeared on NO read in the backend —
-     * so the entire review surface was live, constrained, rate-limited and unreachable except by
-     * guessing a UUID. `null` until the line completes.
-     */
-    completionId: z.string().nullable(),
-    // Nullable because an order may name an unlisted product — a quote-originated line for something
-    // that was never a catalog listing.
-    productId: z.string().nullable(),
-    titleSnapshot: z.string(),
-    /**
-     * A1. WHICH VARIATION WAS BOUGHT — "Sea blue" — frozen at order time.
-     *
-     * `null` on a listing sold as one thing, which is a different fact from an unnamed variant: the
-     * backend pairs this with `variantId` under a CHECK, so both are set or neither is.
-     *
-     * ⚠️ IT IS THE SNAPSHOT, NOT THE LIVE VARIANT NAME, and that is the whole reason the column
-     * exists — reading through to `commerce_product_variant.name` would let a seller rename what
-     * somebody already bought. Written since Phase 8 and projected NOWHERE until now, so an order
-     * for one variant of a multi-variant listing did not say which one.
-     */
-    variantNameSnapshot: z.string().nullable(),
-    specificationSnapshot: z.string(),
-    /**
-     * FIVE QUANTITIES, and they do not sum to each other. Ordered is the commitment; reserved,
-     * fulfilled, cancelled and refunded are independent counters that move as the order progresses. A
-     * client must never compute one from the others — a partial shipment plus a partial refund is a
-     * real state and arithmetic here would misreport it.
-     */
-    quantityOrdered: z.number().int(),
-    quantityReserved: z.number().int(),
-    quantityFulfilled: z.number().int(),
-    quantityCancelled: z.number().int(),
-    quantityRefunded: z.number().int(),
-    unitPriceInCents: z.number().int(),
-    lineTotalInCents: z.number().int(),
-    siblingOrder: z.number().int(),
-  })
-  .strip();
+export const OrderProductLineSchema = z.object({
+  id: z.string(),
+  /**
+   * THE ID THAT MAKES A REVIEW REACHABLE. `POST /commerce/completions/:completionId/reviews` is
+   * keyed on a completion, and before this was projected the id appeared on NO read in the backend —
+   * so the entire review surface was live, constrained, rate-limited and unreachable except by
+   * guessing a UUID. `null` until the line completes.
+   */
+  completionId: z.string().nullable(),
+  // Nullable because an order may name an unlisted product — a quote-originated line for something
+  // that was never a catalog listing.
+  productId: z.string().nullable(),
+  titleSnapshot: z.string(),
+  /**
+   * A1. WHICH VARIATION WAS BOUGHT — "Sea blue" — frozen at order time.
+   *
+   * `null` on a listing sold as one thing, which is a different fact from an unnamed variant: the
+   * backend pairs this with `variantId` under a CHECK, so both are set or neither is.
+   *
+   * ⚠️ IT IS THE SNAPSHOT, NOT THE LIVE VARIANT NAME, and that is the whole reason the column
+   * exists — reading through to `commerce_product_variant.name` would let a seller rename what
+   * somebody already bought. Written since Phase 8 and projected NOWHERE until now, so an order
+   * for one variant of a multi-variant listing did not say which one.
+   */
+  variantNameSnapshot: z.string().nullable(),
+  specificationSnapshot: z.string(),
+  /**
+   * FIVE QUANTITIES, and they do not sum to each other. Ordered is the commitment; reserved,
+   * fulfilled, cancelled and refunded are independent counters that move as the order progresses. A
+   * client must never compute one from the others — a partial shipment plus a partial refund is a
+   * real state and arithmetic here would misreport it.
+   */
+  quantityOrdered: z.number().int(),
+  quantityReserved: z.number().int(),
+  quantityFulfilled: z.number().int(),
+  quantityCancelled: z.number().int(),
+  quantityRefunded: z.number().int(),
+  unitPriceInCents: z.number().int(),
+  lineTotalInCents: z.number().int(),
+  siblingOrder: z.number().int(),
+});
 
-export const OrderServiceLineSchema = z
-  .object({
-    id: z.string(),
-    providerKind: z.enum(PROVIDER_KINDS),
-    titleSnapshot: z.string(),
-    scopeSnapshot: z.string(),
-    feeInCents: z.number().int(),
-    siblingOrder: z.number().int(),
-  })
-  .strip();
+export const OrderServiceLineSchema = z.object({
+  id: z.string(),
+  providerKind: z.enum(PROVIDER_KINDS),
+  titleSnapshot: z.string(),
+  scopeSnapshot: z.string(),
+  feeInCents: z.number().int(),
+  siblingOrder: z.number().int(),
+});
 
-export const OrderDetailSchema = z
-  .object({
-    id: z.string(),
-    buyerOrganizationId: z.string(),
-    counterpartyOrganizationId: z.string(),
-    checkoutGroupId: z.string().nullable(),
-    source: z.enum(ORDER_SOURCES),
-    state: z.enum(ORDER_STATES),
-    // Present when `source` is `accepted_quote` — the revision this order was snapshotted from.
-    acceptedQuoteId: z.string().nullable(),
-    currency: z.string(),
-    subtotalInCents: z.number().int(),
-    taxInCents: z.number().int(),
-    serviceFeeInCents: z.number().int(),
-    shippingInCents: z.number().int(),
-    discountInCents: z.number().int(),
-    totalInCents: z.number().int(),
-    paymentTermsSnapshot: z.string().nullable(),
-    incotermSnapshot: z.string().nullable(),
-    /**
-     * A45. What the buyer asked for at checkout — never what was booked.
-     *
-     * NULL MEANS "NOT ASKED OR NOT CHOSEN", not "no preference", and nothing may default it. The
-     * mode the goods actually move by lives on the shipment's legs.
-     */
-    requestedFreightModeSnapshot: z.string().nullable(),
+export const OrderDetailSchema = z.object({
+  id: z.string(),
+  buyerOrganizationId: z.string(),
+  counterpartyOrganizationId: z.string(),
+  checkoutGroupId: z.string().nullable(),
+  source: z.enum(ORDER_SOURCES),
+  state: z.enum(ORDER_STATES),
+  // Present when `source` is `accepted_quote` — the revision this order was snapshotted from.
+  acceptedQuoteId: z.string().nullable(),
+  currency: z.string(),
+  subtotalInCents: z.number().int(),
+  taxInCents: z.number().int(),
+  serviceFeeInCents: z.number().int(),
+  shippingInCents: z.number().int(),
+  discountInCents: z.number().int(),
+  totalInCents: z.number().int(),
+  paymentTermsSnapshot: z.string().nullable(),
+  incotermSnapshot: z.string().nullable(),
+  /**
+   * A45. What the buyer asked for at checkout — never what was booked.
+   *
+   * NULL MEANS "NOT ASKED OR NOT CHOSEN", not "no preference", and nothing may default it. The
+   * mode the goods actually move by lives on the shipment's legs.
+   */
+  requestedFreightModeSnapshot: z.string().nullable(),
 
-    buyerLegalNameSnapshot: z.string(),
-    counterpartyLegalNameSnapshot: z.string(),
-    createdAt: IsoDateTimeSchema,
-    productLines: z.array(OrderProductLineSchema),
-    serviceLines: z.array(OrderServiceLineSchema),
-    /**
-     * Every completion this order produced, INCLUDING the service-engagement ones that belong to no
-     * product line. The per-line id covers the common case; this covers the rest without making a
-     * client walk two shapes to find them.
-     */
-    completionIds: z.array(z.string()),
-    settlementRail: z.enum(SETTLEMENT_RAILS),
-    hasEscrowProtection: z.boolean(),
-    paymentIntentId: PaymentIntentIdSchema,
-  })
-  .strip();
+  buyerLegalNameSnapshot: z.string(),
+  counterpartyLegalNameSnapshot: z.string(),
+  createdAt: IsoDateTimeSchema,
+  productLines: z.array(OrderProductLineSchema),
+  serviceLines: z.array(OrderServiceLineSchema),
+  /**
+   * Every completion this order produced, INCLUDING the service-engagement ones that belong to no
+   * product line. The per-line id covers the common case; this covers the rest without making a
+   * client walk two shapes to find them.
+   */
+  completionIds: z.array(z.string()),
+  settlementRail: z.enum(SETTLEMENT_RAILS),
+  hasEscrowProtection: z.boolean(),
+  paymentIntentId: PaymentIntentIdSchema,
+});
 
 // --- The audited delivery-address reveal ------------------------------------
 
@@ -229,17 +221,15 @@ export const OrderDetailSchema = z
  * Rendering it on mount would log a PII access the seller never asked for, on every page view. It
  * belongs behind an explicit control that says what pressing it does.
  */
-export const OrderDeliveryAddressSchema = z
-  .object({
-    recipientName: z.string(),
-    phone: z.string().nullable(),
-    streetLines: z.array(z.string()),
-    locality: z.string().nullable(),
-    region: z.string().nullable(),
-    postalCode: z.string().nullable(),
-    countryCode: z.string(),
-  })
-  .strip();
+export const OrderDeliveryAddressSchema = z.object({
+  recipientName: z.string(),
+  phone: z.string().nullable(),
+  streetLines: z.array(z.string()),
+  locality: z.string().nullable(),
+  region: z.string().nullable(),
+  postalCode: z.string().nullable(),
+  countryCode: z.string(),
+});
 
 // --- Filter inputs ----------------------------------------------------------
 

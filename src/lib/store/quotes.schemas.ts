@@ -71,21 +71,19 @@ export type QuoteStatus = (typeof QUOTE_STATUSES)[number];
  * `shippingInCents` CAN be non-zero here, unlike on a checkout total. A provider typing a freight figure
  * onto a quote is the only way a non-zero shipping amount enters this system.
  */
-export const QuoteRevisionMoneySchema = z
-  .object({
-    revisionNumber: z.number().int(),
-    currency: z.string(),
-    validityDeadlineAt: IsoDateTimeSchema,
-    subtotalInCents: z.number().int(),
-    taxInCents: z.number().int(),
-    serviceFeeInCents: z.number().int(),
-    shippingInCents: z.number().int(),
-    discountInCents: z.number().int(),
-    totalInCents: z.number().int(),
-    // Null on a draft revision. A revision is immutable only once submitted.
-    submittedAt: IsoDateTimeSchema.nullable(),
-  })
-  .strip();
+export const QuoteRevisionMoneySchema = z.object({
+  revisionNumber: z.number().int(),
+  currency: z.string(),
+  validityDeadlineAt: IsoDateTimeSchema,
+  subtotalInCents: z.number().int(),
+  taxInCents: z.number().int(),
+  serviceFeeInCents: z.number().int(),
+  shippingInCents: z.number().int(),
+  discountInCents: z.number().int(),
+  totalInCents: z.number().int(),
+  // Null on a draft revision. A revision is immutable only once submitted.
+  submittedAt: IsoDateTimeSchema.nullable(),
+});
 
 // --- The quoted service detail ----------------------------------------------
 
@@ -99,121 +97,101 @@ const QuoteFreightDetailShape = {
 };
 
 export const QuoteServiceDetailSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("freight_forwarder"), ...QuoteFreightDetailShape }).strip(),
-  z.object({ kind: z.literal("logistics_operator"), ...QuoteFreightDetailShape }).strip(),
-  z
-    .object({
-      kind: z.literal("customs_broker"),
-      jurisdictions: z.array(z.string()),
-      filingSummary: z.string().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("insurance_provider"),
-      coverageClasses: z.array(z.string()),
-      coverageLimitInCents: z.number().int().optional(),
-      currency: z.string().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("inspection_agency"),
-      // Free-text stages, not the four booleans the RFQ requirement and the offering both use. A quote
-      // says what the provider is including, in their words.
-      includedStages: z.array(z.string()),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("testing_certification_lab"),
-      standards: z.array(z.string()),
-      laboratoryLocation: z.string().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("marketing_agency"),
-      channels: z.array(z.string()),
-      deliverablesSummary: z.string().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("warehouse_provider"),
-      storageTypes: z.array(z.string()),
-      capacityUnits: z.string().optional(),
-      // REQUIRED here, optional on the RFQ requirement. A quote must state it; a buyer need not ask.
-      temperatureControlled: z.boolean(),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("foreign_exchange_facilitator"),
-      currencyPair: z.string(),
-      /**
-       * A FIXED-POINT RATE AND ITS SCALE. Two integers, because JavaScript and Postgres floating point
-       * are both forbidden for exchange rates: `1.0842` is `{rateFixedPoint: 10842, rateScale: 4}`.
-       * Divide by `10 ** rateScale` to display, and never store or arithmetic the divided value.
-       */
-      rateFixedPoint: z.number().int(),
-      rateScale: z.number().int(),
-      settlementRail: z.string().optional(),
-      notionalAmountInCents: z.number().int().optional(),
-      notionalCurrency: z.string().optional(),
-    })
-    .strip(),
+  z.object({ kind: z.literal("freight_forwarder"), ...QuoteFreightDetailShape }),
+  z.object({ kind: z.literal("logistics_operator"), ...QuoteFreightDetailShape }),
+  z.object({
+    kind: z.literal("customs_broker"),
+    jurisdictions: z.array(z.string()),
+    filingSummary: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("insurance_provider"),
+    coverageClasses: z.array(z.string()),
+    coverageLimitInCents: z.number().int().optional(),
+    currency: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("inspection_agency"),
+    // Free-text stages, not the four booleans the RFQ requirement and the offering both use. A quote
+    // says what the provider is including, in their words.
+    includedStages: z.array(z.string()),
+  }),
+  z.object({
+    kind: z.literal("testing_certification_lab"),
+    standards: z.array(z.string()),
+    laboratoryLocation: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("marketing_agency"),
+    channels: z.array(z.string()),
+    deliverablesSummary: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("warehouse_provider"),
+    storageTypes: z.array(z.string()),
+    capacityUnits: z.string().optional(),
+    // REQUIRED here, optional on the RFQ requirement. A quote must state it; a buyer need not ask.
+    temperatureControlled: z.boolean(),
+  }),
+  z.object({
+    kind: z.literal("foreign_exchange_facilitator"),
+    currencyPair: z.string(),
+    /**
+     * A FIXED-POINT RATE AND ITS SCALE. Two integers, because JavaScript and Postgres floating point
+     * are both forbidden for exchange rates: `1.0842` is `{rateFixedPoint: 10842, rateScale: 4}`.
+     * Divide by `10 ** rateScale` to display, and never store or arithmetic the divided value.
+     */
+    rateFixedPoint: z.number().int(),
+    rateScale: z.number().int(),
+    settlementRail: z.string().optional(),
+    notionalAmountInCents: z.number().int().optional(),
+    notionalCurrency: z.string().optional(),
+  }),
 ]);
 
 // --- Revision lines ---------------------------------------------------------
 
-export const QuoteProductLineSchema = z
-  .object({
-    id: z.string(),
-    // Which RFQ line this answers. The link is what makes a comparison possible at all.
-    rfqProductLineId: z.string(),
-    quantity: z.number().int(),
-    unitPriceInCents: z.number().int(),
-    lineTotalInCents: z.number().int(),
-    titleSnapshot: z.string(),
-    specificationSnapshot: z.string(),
-    leadTimeDays: z.number().int().nullable(),
-    /**
-     * WHAT THE PROVIDER IS NOT DOING. Null means they stated no exclusions — which is NOT the same as
-     * "nothing is excluded", and a comparison that treated the two alike would flatter the provider who
-     * simply left the field blank.
-     */
-    exclusionsSnapshot: z.string().nullable(),
-    siblingOrder: z.number().int(),
-  })
-  .strip();
+export const QuoteProductLineSchema = z.object({
+  id: z.string(),
+  // Which RFQ line this answers. The link is what makes a comparison possible at all.
+  rfqProductLineId: z.string(),
+  quantity: z.number().int(),
+  unitPriceInCents: z.number().int(),
+  lineTotalInCents: z.number().int(),
+  titleSnapshot: z.string(),
+  specificationSnapshot: z.string(),
+  leadTimeDays: z.number().int().nullable(),
+  /**
+   * WHAT THE PROVIDER IS NOT DOING. Null means they stated no exclusions — which is NOT the same as
+   * "nothing is excluded", and a comparison that treated the two alike would flatter the provider who
+   * simply left the field blank.
+   */
+  exclusionsSnapshot: z.string().nullable(),
+  siblingOrder: z.number().int(),
+});
 
-export const QuoteServiceLineSchema = z
-  .object({
-    id: z.string(),
-    rfqServiceLineId: z.string(),
-    providerKind: z.enum(PROVIDER_KINDS),
-    feeInCents: z.number().int(),
-    titleSnapshot: z.string(),
-    scopeSnapshot: z.string(),
-    leadTimeDays: z.number().int().nullable(),
-    exclusionsSnapshot: z.string().nullable(),
-    deliverableSnapshot: z.string().nullable(),
-    serviceDetail: QuoteServiceDetailSchema.nullable(),
-    deliverables: z.array(
-      z
-        .object({
-          id: z.string(),
-          sequence: z.number().int(),
-          title: z.string(),
-          isRequired: z.boolean(),
-          dueAt: IsoDateTimeSchema.nullable(),
-        })
-        .strip(),
-    ),
-    siblingOrder: z.number().int(),
-  })
-  .strip();
+export const QuoteServiceLineSchema = z.object({
+  id: z.string(),
+  rfqServiceLineId: z.string(),
+  providerKind: z.enum(PROVIDER_KINDS),
+  feeInCents: z.number().int(),
+  titleSnapshot: z.string(),
+  scopeSnapshot: z.string(),
+  leadTimeDays: z.number().int().nullable(),
+  exclusionsSnapshot: z.string().nullable(),
+  deliverableSnapshot: z.string().nullable(),
+  serviceDetail: QuoteServiceDetailSchema.nullable(),
+  deliverables: z.array(
+    z.object({
+      id: z.string(),
+      sequence: z.number().int(),
+      title: z.string(),
+      isRequired: z.boolean(),
+      dueAt: IsoDateTimeSchema.nullable(),
+    }),
+  ),
+  siblingOrder: z.number().int(),
+});
 
 // --- Detail -----------------------------------------------------------------
 
@@ -235,38 +213,34 @@ export const QuoteRevisionSchema = QuoteRevisionMoneySchema.extend({
    * on every request; a link here would outlive the access it was issued under.
    */
   documents: z.array(
-    z
-      .object({
-        documentId: z.string(),
-        mediaType: z.string(),
-        fileByteSize: z.number().int(),
-        fileName: z.string().nullable(),
-        attachedAt: z.string(),
-      })
-      .strip(),
+    z.object({
+      documentId: z.string(),
+      mediaType: z.string(),
+      fileByteSize: z.number().int(),
+      fileName: z.string().nullable(),
+      attachedAt: z.string(),
+    }),
   ),
-}).strip();
+});
 
-export const QuoteDetailSchema = z
-  .object({
-    id: z.string(),
-    rfqId: z.string(),
-    providerOrganizationId: z.string(),
-    status: z.enum(QUOTE_STATUSES),
-    latestRevisionNumber: z.number().int(),
-    // Which revision was accepted, if any. NOT necessarily the latest — a buyer accepts a specific
-    // snapshot, and the provider may have appended after.
-    acceptedRevisionNumber: z.number().int().nullable(),
-    submittedAt: IsoDateTimeSchema.nullable(),
-    acceptedAt: IsoDateTimeSchema.nullable(),
-    declinedAt: IsoDateTimeSchema.nullable(),
-    withdrawnAt: IsoDateTimeSchema.nullable(),
-    expiredAt: IsoDateTimeSchema.nullable(),
-    createdAt: IsoDateTimeSchema,
-    // Null when the quote shell exists with no revision yet — a provider who started and stopped.
-    latestRevision: QuoteRevisionSchema.nullable(),
-  })
-  .strip();
+export const QuoteDetailSchema = z.object({
+  id: z.string(),
+  rfqId: z.string(),
+  providerOrganizationId: z.string(),
+  status: z.enum(QUOTE_STATUSES),
+  latestRevisionNumber: z.number().int(),
+  // Which revision was accepted, if any. NOT necessarily the latest — a buyer accepts a specific
+  // snapshot, and the provider may have appended after.
+  acceptedRevisionNumber: z.number().int().nullable(),
+  submittedAt: IsoDateTimeSchema.nullable(),
+  acceptedAt: IsoDateTimeSchema.nullable(),
+  declinedAt: IsoDateTimeSchema.nullable(),
+  withdrawnAt: IsoDateTimeSchema.nullable(),
+  expiredAt: IsoDateTimeSchema.nullable(),
+  createdAt: IsoDateTimeSchema,
+  // Null when the quote shell exists with no revision yet — a provider who started and stopped.
+  latestRevision: QuoteRevisionSchema.nullable(),
+});
 
 // --- Comparison -------------------------------------------------------------
 
@@ -280,39 +254,31 @@ export const QuoteDetailSchema = z
  * Unlike the detail read, this carries the provider's DISPLAY NAME. Comparing organization ids would be
  * useless, so the backend resolves them here and only here.
  */
-export const QuoteComparisonItemSchema = z
-  .object({
-    quoteId: z.string(),
-    status: z.enum(QUOTE_STATUSES),
-    provider: z
-      .object({
-        organizationId: z.string(),
-        displayName: z.string(),
-        slug: z.string(),
-      })
-      .strip(),
-    latestSubmittedRevision: QuoteRevisionMoneySchema.nullable(),
-    productLineSummaries: z.array(
-      z
-        .object({
-          titleSnapshot: z.string(),
-          quantity: z.number().int(),
-          unitPriceInCents: z.number().int(),
-          lineTotalInCents: z.number().int(),
-        })
-        .strip(),
-    ),
-    serviceLineSummaries: z.array(
-      z
-        .object({
-          titleSnapshot: z.string(),
-          providerKind: z.enum(PROVIDER_KINDS),
-          feeInCents: z.number().int(),
-        })
-        .strip(),
-    ),
-  })
-  .strip();
+export const QuoteComparisonItemSchema = z.object({
+  quoteId: z.string(),
+  status: z.enum(QUOTE_STATUSES),
+  provider: z.object({
+    organizationId: z.string(),
+    displayName: z.string(),
+    slug: z.string(),
+  }),
+  latestSubmittedRevision: QuoteRevisionMoneySchema.nullable(),
+  productLineSummaries: z.array(
+    z.object({
+      titleSnapshot: z.string(),
+      quantity: z.number().int(),
+      unitPriceInCents: z.number().int(),
+      lineTotalInCents: z.number().int(),
+    }),
+  ),
+  serviceLineSummaries: z.array(
+    z.object({
+      titleSnapshot: z.string(),
+      providerKind: z.enum(PROVIDER_KINDS),
+      feeInCents: z.number().int(),
+    }),
+  ),
+});
 
 /** A bare array — `listQuotesForRfq` is unpaginated, because an RFQ's quote set is bounded. */
 /**
@@ -328,9 +294,7 @@ export const QuoteComparisonItemSchema = z
  * probe whether an RFQ exists. Which means the same component renders a genuine comparison for a buyer
  * and a one-row summary for a provider, and it must not call the second one a comparison.
  */
-export const QuoteComparisonListSchema = z
-  .object({ items: z.array(QuoteComparisonItemSchema) })
-  .strip();
+export const QuoteComparisonListSchema = z.object({ items: z.array(QuoteComparisonItemSchema) });
 
 // --- Request bodies ---------------------------------------------------------
 
@@ -408,16 +372,14 @@ export function formatFixedPointRateLabel(rateFixedPoint: number, rateScale: num
  * the whole priced detail would invite a screen to re-render terms nobody is offering any more.
  * Callers that need the detail back re-read it.
  */
-export const QuoteShellSchema = z
-  .object({
-    id: z.string(),
-    rfqId: z.string(),
-    providerOrganizationId: z.string(),
-    status: z.enum(QUOTE_STATUSES),
-    latestRevisionNumber: z.number().int(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const QuoteShellSchema = z.object({
+  id: z.string(),
+  rfqId: z.string(),
+  providerOrganizationId: z.string(),
+  status: z.enum(QUOTE_STATUSES),
+  latestRevisionNumber: z.number().int(),
+  createdAt: IsoDateTimeSchema,
+});
 
 export type QuoteShell = z.infer<typeof QuoteShellSchema>;
 
@@ -436,7 +398,7 @@ export type QuoteShell = z.infer<typeof QuoteShellSchema>;
  */
 export const AppendedQuoteRevisionSchema = QuoteRevisionMoneySchema.extend({
   quoteId: z.string(),
-}).strip();
+});
 
 export type AppendedQuoteRevision = z.infer<typeof AppendedQuoteRevisionSchema>;
 
@@ -451,7 +413,7 @@ export type AppendedQuoteRevision = z.infer<typeof AppendedQuoteRevisionSchema>;
  */
 export const SubmittedQuoteRevisionSchema = QuoteShellSchema.extend({
   revisionNumber: z.number().int(),
-}).strip();
+});
 
 export type SubmittedQuoteRevision = z.infer<typeof SubmittedQuoteRevisionSchema>;
 
@@ -475,39 +437,31 @@ export type SubmittedQuoteRevision = z.infer<typeof SubmittedQuoteRevisionSchema
  * `latestSubmittedRevision` IS NULL FOR A DRAFT-ONLY QUOTE. That is not zero and must not render as
  * a price.
  */
-export const ProviderQuoteQueueItemSchema = z
-  .object({
-    quoteId: z.string(),
-    status: z.enum(QUOTE_STATUSES),
-    rfq: z
-      .object({
-        id: z.string(),
-        title: z.string(),
-        state: z.enum(RFQ_STATES),
-        buyerOrganizationId: z.string(),
-      })
-      .strip(),
-    latestSubmittedRevision: QuoteRevisionMoneySchema.nullable(),
-    latestRevisionNumber: z.number().int(),
-    createdAt: IsoDateTimeSchema,
-    updatedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const ProviderQuoteQueueItemSchema = z.object({
+  quoteId: z.string(),
+  status: z.enum(QUOTE_STATUSES),
+  rfq: z.object({
+    id: z.string(),
+    title: z.string(),
+    state: z.enum(RFQ_STATES),
+    buyerOrganizationId: z.string(),
+  }),
+  latestSubmittedRevision: QuoteRevisionMoneySchema.nullable(),
+  latestRevisionNumber: z.number().int(),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+});
 
 export type ProviderQuoteQueueItem = z.infer<typeof ProviderQuoteQueueItemSchema>;
 
 /** The keyset envelope: `{ items, page: { nextCursor, hasMore } }`. */
-export const ProviderQuoteQueuePageSchema = z
-  .object({
-    items: z.array(ProviderQuoteQueueItemSchema),
-    page: z
-      .object({
-        nextCursor: z.string().nullable(),
-        hasMore: z.boolean(),
-      })
-      .strip(),
-  })
-  .strip();
+export const ProviderQuoteQueuePageSchema = z.object({
+  items: z.array(ProviderQuoteQueueItemSchema),
+  page: z.object({
+    nextCursor: z.string().nullable(),
+    hasMore: z.boolean(),
+  }),
+});
 
 export interface ListProviderQuotesFilter {
   readonly status?: QuoteStatus;
@@ -746,7 +700,7 @@ export interface AppendQuoteRevisionInput {
 // than promoting one route's payload into a contract every surface shares.
 
 /** `409 REVISION_CHANGED` — the provider appended since this screen last read. */
-export const RevisionChangedDetailSchema = z.object({ currentRevision: z.number().int() }).strip();
+export const RevisionChangedDetailSchema = z.object({ currentRevision: z.number().int() });
 
 /** `409 QUOTE_EXPIRED` — the validity deadline passed before submit. */
-export const QuoteExpiredDetailSchema = z.object({ expiredAt: IsoDateTimeSchema }).strip();
+export const QuoteExpiredDetailSchema = z.object({ expiredAt: IsoDateTimeSchema });

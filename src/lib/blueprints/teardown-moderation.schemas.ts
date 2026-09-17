@@ -15,7 +15,7 @@
 // spelling reports a hit on a file that imports nothing from here, and a check that always fails is
 // a check nobody runs.
 //
-// `.strip()` ON WHAT COMES BACK, `.strict()` ON THE DECISION THAT GOES OUT, as everywhere here.
+// PLAIN (STRIPPING) `z.object` ON WHAT COMES BACK, `z.strictObject` ON THE DECISION THAT GOES OUT, as everywhere here.
 
 import { z } from "zod";
 
@@ -75,13 +75,11 @@ export function isTeardownManufacturingFileKind(
 }
 
 /** One file a publisher pointed at. No `id` and no `byteSize`: a submission carries neither. */
-export const TeardownReviewFileSchema = z
-  .object({
-    kind: TeardownReviewFileKindSchema,
-    title: z.string(),
-    url: createHttpsOrSiteRelativeUrlSchema(2048),
-  })
-  .strip();
+export const TeardownReviewFileSchema = z.object({
+  kind: TeardownReviewFileKindSchema,
+  title: z.string(),
+  url: createHttpsOrSiteRelativeUrlSchema(2048),
+});
 export type TeardownReviewFile = z.infer<typeof TeardownReviewFileSchema>;
 
 /**
@@ -118,26 +116,24 @@ export type TeardownReviewMaterial = z.infer<typeof TeardownReviewMaterialSchema
  * licence/authorisation rule is the exact thing a moderator is here to enforce, and its failure now
  * degrades one card rather than blanking the queue.
  */
-const TeardownReviewPayloadSchema = z
-  .object({
-    subjectKind: z.literal(PUBLISHABLE_TEARDOWN_SUBJECT_KIND),
-    title: z.string(),
-    summary: z.string(),
-    provenance: TeardownProvenanceSchema,
-    materials: z.array(TeardownReviewMaterialSchema),
-    parts: z.array(TeardownListedPartSchema),
-    documents: z.array(TeardownReviewFileSchema),
-    manufacturingFiles: z.array(TeardownReviewFileSchema),
-    walkthroughVideo: BlueprintVideoSchema.nullable(),
-    tags: z.array(z.string()),
-    /**
-     * PLAIN STRINGS, NOT THE ENUM. A clause added to the attestation later must not make every
-     * stored row unreadable; `summarizeTeardownAttestation` does the adjudicating, visibly, where a
-     * moderator can see an id this build does not recognise rather than losing the row over it.
-     */
-    acceptedAttestationClauseIds: z.array(z.string()),
-  })
-  .strip();
+const TeardownReviewPayloadSchema = z.object({
+  subjectKind: z.literal(PUBLISHABLE_TEARDOWN_SUBJECT_KIND),
+  title: z.string(),
+  summary: z.string(),
+  provenance: TeardownProvenanceSchema,
+  materials: z.array(TeardownReviewMaterialSchema),
+  parts: z.array(TeardownListedPartSchema),
+  documents: z.array(TeardownReviewFileSchema),
+  manufacturingFiles: z.array(TeardownReviewFileSchema),
+  walkthroughVideo: BlueprintVideoSchema.nullable(),
+  tags: z.array(z.string()),
+  /**
+   * PLAIN STRINGS, NOT THE ENUM. A clause added to the attestation later must not make every
+   * stored row unreadable; `summarizeTeardownAttestation` does the adjudicating, visibly, where a
+   * moderator can see an id this build does not recognise rather than losing the row over it.
+   */
+  acceptedAttestationClauseIds: z.array(z.string()),
+});
 export type TeardownReviewPayload = z.infer<typeof TeardownReviewPayloadSchema>;
 
 /**
@@ -155,15 +151,13 @@ export type TeardownReviewPayload = z.infer<typeof TeardownReviewPayloadSchema>;
  */
 export const TeardownReviewDocumentSchema = z
   .discriminatedUnion("status", [
-    z.object({ status: z.literal("present"), document: TeardownReviewPayloadSchema }).strip(),
-    z
-      .object({
-        status: z.literal("unparseable"),
-        schemaVersion: z.number(),
-        issues: z.array(z.string()),
-      })
-      .strip(),
-    z.object({ status: z.literal("client_unreadable"), issues: z.array(z.string()) }).strip(),
+    z.object({ status: z.literal("present"), document: TeardownReviewPayloadSchema }),
+    z.object({
+      status: z.literal("unparseable"),
+      schemaVersion: z.number(),
+      issues: z.array(z.string()),
+    }),
+    z.object({ status: z.literal("client_unreadable"), issues: z.array(z.string()) }),
   ])
   .catch((context) => ({
     status: "client_unreadable" as const,
@@ -180,23 +174,21 @@ export type TeardownReviewDocument = z.infer<typeof TeardownReviewDocumentSchema
  * header renders, and a card whose document could not be read still has to say which submission it
  * is talking about.
  */
-export const TeardownReviewItemSchema = z
-  .object({
-    submissionId: z.string(),
-    submittedAt: IsoDateTimeSchema,
-    /**
-     * Who sent it. The backend refuses a moderator deciding their own (403).
-     *
-     * ⚠️ `handle` IS NULLABLE BECAUSE `user.handle` IS. A non-nullable field here would make the
-     * whole ROW fail to parse, and the card would simply not be there — the same trap the
-     * case-study queue records.
-     */
-    author: z.object({ displayName: z.string(), handle: z.string().nullable() }).strip(),
-    title: z.string(),
-    subjectProductName: z.string(),
-    document: TeardownReviewDocumentSchema,
-  })
-  .strip();
+export const TeardownReviewItemSchema = z.object({
+  submissionId: z.string(),
+  submittedAt: IsoDateTimeSchema,
+  /**
+   * Who sent it. The backend refuses a moderator deciding their own (403).
+   *
+   * ⚠️ `handle` IS NULLABLE BECAUSE `user.handle` IS. A non-nullable field here would make the
+   * whole ROW fail to parse, and the card would simply not be there — the same trap the
+   * case-study queue records.
+   */
+  author: z.object({ displayName: z.string(), handle: z.string().nullable() }),
+  title: z.string(),
+  subjectProductName: z.string(),
+  document: TeardownReviewDocumentSchema,
+});
 export type TeardownReviewItem = z.infer<typeof TeardownReviewItemSchema>;
 
 export const TeardownReviewQueuePageSchema = cursorPageOf(TeardownReviewItemSchema);
@@ -226,33 +218,29 @@ const DESIRED_SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
  * publisher's entire remedy: they read it, survey again, and submit afresh.
  */
 export const TeardownModerationDecisionSchema = z.discriminatedUnion("decision", [
-  z
-    .object({
-      decision: z.literal("published"),
-      moderatorNote: z
-        .string()
-        .max(TEARDOWN_MODERATOR_NOTE_MAXIMUM_CHARACTERS, MODERATOR_NOTE_TOO_LONG_MESSAGE)
-        .nullable(),
-      thumbnailUrl: createHttpsOrSiteRelativeUrlSchema(TEARDOWN_THUMBNAIL_URL_MAXIMUM_CHARACTERS),
-      difficulty: z.enum(BLUEPRINT_DIFFICULTIES),
-      /** `null` lets the server derive one from the title. The address is permanent once minted. */
-      desiredSlug: z
-        .string()
-        .min(3, "An address is at least three characters.")
-        .max(120, "An address is at most 120 characters.")
-        .regex(DESIRED_SLUG_PATTERN, "An address is lowercase, digits and single hyphens.")
-        .nullable(),
-    })
-    .strict(),
-  z
-    .object({
-      decision: z.literal("rejected"),
-      moderatorNote: z
-        .string()
-        .min(1, "Sending back needs a note. It is the only thing the publisher sees.")
-        .max(TEARDOWN_MODERATOR_NOTE_MAXIMUM_CHARACTERS, MODERATOR_NOTE_TOO_LONG_MESSAGE),
-    })
-    .strict(),
+  z.strictObject({
+    decision: z.literal("published"),
+    moderatorNote: z
+      .string()
+      .max(TEARDOWN_MODERATOR_NOTE_MAXIMUM_CHARACTERS, MODERATOR_NOTE_TOO_LONG_MESSAGE)
+      .nullable(),
+    thumbnailUrl: createHttpsOrSiteRelativeUrlSchema(TEARDOWN_THUMBNAIL_URL_MAXIMUM_CHARACTERS),
+    difficulty: z.enum(BLUEPRINT_DIFFICULTIES),
+    /** `null` lets the server derive one from the title. The address is permanent once minted. */
+    desiredSlug: z
+      .string()
+      .min(3, "An address is at least three characters.")
+      .max(120, "An address is at most 120 characters.")
+      .regex(DESIRED_SLUG_PATTERN, "An address is lowercase, digits and single hyphens.")
+      .nullable(),
+  }),
+  z.strictObject({
+    decision: z.literal("rejected"),
+    moderatorNote: z
+      .string()
+      .min(1, "Sending back needs a note. It is the only thing the publisher sees.")
+      .max(TEARDOWN_MODERATOR_NOTE_MAXIMUM_CHARACTERS, MODERATOR_NOTE_TOO_LONG_MESSAGE),
+  }),
 ]);
 export type TeardownModerationDecision = z.infer<typeof TeardownModerationDecisionSchema>;
 
@@ -264,7 +252,6 @@ export const TeardownModerationResultSchema = z
     publicSlug: z.string().nullable(),
     decidedAt: IsoDateTimeSchema,
   })
-  .strip()
   .superRefine((result, context) => {
     if (result.moderationState === "published" && result.publicSlug === null) {
       context.addIssue({

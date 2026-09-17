@@ -13,24 +13,22 @@ import { z } from "zod";
  * from done by status would find both look identical. The verdict lives in this field and
  * the poll is what carries it.
  */
-export const DataExportStatusSchema = z
-  .object({
-    requestId: z.string(),
-    state: z.enum(["pending", "running", "ready", "failed", "expired"]),
-    requestedAt: z.string(),
-    completedAt: z.string().nullable(),
-    /** When the ARCHIVE dies. Not when the link below does — those are different clocks. */
-    expiresAt: z.string().nullable(),
-    /**
-     * Present only while `ready`, minted per read, and alive for five minutes.
-     *
-     * NEVER CACHE THIS. It is a bearer credential to a complete copy of one person's
-     * personal data, and a stale one renders as a working button that 403s.
-     */
-    downloadUrl: z.string().nullable(),
-    byteSize: z.number().int().nullable(),
-  })
-  .strip();
+export const DataExportStatusSchema = z.object({
+  requestId: z.string(),
+  state: z.enum(["pending", "running", "ready", "failed", "expired"]),
+  requestedAt: z.string(),
+  completedAt: z.string().nullable(),
+  /** When the ARCHIVE dies. Not when the link below does — those are different clocks. */
+  expiresAt: z.string().nullable(),
+  /**
+   * Present only while `ready`, minted per read, and alive for five minutes.
+   *
+   * NEVER CACHE THIS. It is a bearer credential to a complete copy of one person's
+   * personal data, and a stale one renders as a working button that 403s.
+   */
+  downloadUrl: z.string().nullable(),
+  byteSize: z.number().int().nullable(),
+});
 
 export type DataExportStatus = z.infer<typeof DataExportStatusSchema>;
 

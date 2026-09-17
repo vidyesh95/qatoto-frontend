@@ -31,24 +31,22 @@ import { cursorPageOf, IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * since unpublished the thing they claimed a fit against — a fact the public companions read
  * deliberately hides, and which a moderator needs.
  */
-export const ModerationProductRelationSchema = z
-  .object({
-    id: z.string(),
-    relationKind: z.enum(PRODUCT_RELATION_KINDS),
-    sourceKind: z.enum(PRODUCT_RELATION_SOURCE_KINDS),
-    createdAt: IsoDateTimeSchema,
-    fromProductId: z.string(),
-    fromProductTitle: z.string(),
-    fromProductPublicSlug: z.string().nullable(),
-    toProductId: z.string(),
-    toProductTitle: z.string(),
-    toProductPublicSlug: z.string().nullable(),
-    toProductStatus: z.string(),
-    toProductModerationState: z.string(),
-    sellerOrganizationId: z.string(),
-    sellerOrganizationDisplayName: z.string(),
-  })
-  .strip();
+export const ModerationProductRelationSchema = z.object({
+  id: z.string(),
+  relationKind: z.enum(PRODUCT_RELATION_KINDS),
+  sourceKind: z.enum(PRODUCT_RELATION_SOURCE_KINDS),
+  createdAt: IsoDateTimeSchema,
+  fromProductId: z.string(),
+  fromProductTitle: z.string(),
+  fromProductPublicSlug: z.string().nullable(),
+  toProductId: z.string(),
+  toProductTitle: z.string(),
+  toProductPublicSlug: z.string().nullable(),
+  toProductStatus: z.string(),
+  toProductModerationState: z.string(),
+  sellerOrganizationId: z.string(),
+  sellerOrganizationDisplayName: z.string(),
+});
 
 export type ModerationProductRelation = z.infer<typeof ModerationProductRelationSchema>;
 

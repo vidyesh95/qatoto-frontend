@@ -52,27 +52,23 @@ import {
  * "unavailable" would flatten all ten into a shrug.
  */
 export const CommercePricingErrorSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("PRODUCT_NOT_FOUND") }).strip(),
-  z.object({ type: z.literal("PRODUCT_NOT_PURCHASABLE") }).strip(),
-  z
-    .object({
-      type: z.literal("BELOW_MINIMUM_ORDER_QUANTITY"),
-      minimumOrderQuantity: z.number().int(),
-    })
-    .strip(),
-  z.object({ type: z.literal("INSUFFICIENT_STOCK"), availableQuantity: z.number().int() }).strip(),
-  z.object({ type: z.literal("SELLER_ORGANIZATION_MISSING") }).strip(),
-  z.object({ type: z.literal("VARIANT_REQUIRED") }).strip(),
-  z.object({ type: z.literal("VARIANT_NOT_APPLICABLE") }).strip(),
-  z.object({ type: z.literal("VARIANT_NOT_FOUND") }).strip(),
-  z.object({ type: z.literal("VARIANT_NOT_PURCHASABLE") }).strip(),
-  z.object({ type: z.literal("SAMPLE_NOT_AVAILABLE") }).strip(),
-  z
-    .object({
-      type: z.literal("ABOVE_MAXIMUM_SAMPLE_QUANTITY"),
-      maximumSampleQuantity: z.number().int(),
-    })
-    .strip(),
+  z.object({ type: z.literal("PRODUCT_NOT_FOUND") }),
+  z.object({ type: z.literal("PRODUCT_NOT_PURCHASABLE") }),
+  z.object({
+    type: z.literal("BELOW_MINIMUM_ORDER_QUANTITY"),
+    minimumOrderQuantity: z.number().int(),
+  }),
+  z.object({ type: z.literal("INSUFFICIENT_STOCK"), availableQuantity: z.number().int() }),
+  z.object({ type: z.literal("SELLER_ORGANIZATION_MISSING") }),
+  z.object({ type: z.literal("VARIANT_REQUIRED") }),
+  z.object({ type: z.literal("VARIANT_NOT_APPLICABLE") }),
+  z.object({ type: z.literal("VARIANT_NOT_FOUND") }),
+  z.object({ type: z.literal("VARIANT_NOT_PURCHASABLE") }),
+  z.object({ type: z.literal("SAMPLE_NOT_AVAILABLE") }),
+  z.object({
+    type: z.literal("ABOVE_MAXIMUM_SAMPLE_QUANTITY"),
+    maximumSampleQuantity: z.number().int(),
+  }),
 ]);
 
 // --- Pathway index ----------------------------------------------------------
@@ -88,18 +84,16 @@ export const CommercePricingErrorSchema = z.discriminatedUnion("type", [
  * merchandiser typed, and an anchored set whose slots were RESOLVED from the relation graph against
  * one product. Same route, same wire shape, same renderer — an anchored set is not a second feature.
  */
-export const StorePathwayCardSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    title: z.string(),
-    summary: z.string().nullable(),
-    accent: AccentTokenSchema,
-    cardImageUrl: z.string().nullable(),
-    isAnchored: z.boolean(),
-    slotCount: z.number().int(),
-  })
-  .strip();
+export const StorePathwayCardSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  title: z.string(),
+  summary: z.string().nullable(),
+  accent: AccentTokenSchema,
+  cardImageUrl: z.string().nullable(),
+  isAnchored: z.boolean(),
+  slotCount: z.number().int(),
+});
 
 export const StorePathwayIndexPageSchema = cursorPageOf(StorePathwayCardSchema);
 
@@ -133,9 +127,9 @@ export type ProductRelationKind = (typeof PRODUCT_RELATION_KINDS)[number];
  * `NO_ELIGIBLE_CANDIDATE` means the set is genuinely short a piece.
  */
 export const PathwaySlotUnavailableReasonSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("NO_ELIGIBLE_CANDIDATE") }).strip(),
-  z.object({ type: z.literal("VARIANT_SELECTION_REQUIRED") }).strip(),
-  z.object({ type: z.literal("PRICING_FAILED"), pricingError: CommercePricingErrorSchema }).strip(),
+  z.object({ type: z.literal("NO_ELIGIBLE_CANDIDATE") }),
+  z.object({ type: z.literal("VARIANT_SELECTION_REQUIRED") }),
+  z.object({ type: z.literal("PRICING_FAILED"), pricingError: CommercePricingErrorSchema }),
 ]);
 
 /**
@@ -146,20 +140,18 @@ export const PathwaySlotUnavailableReasonSchema = z.discriminatedUnion("type", [
  * disagreeing with the cart it seeds.
  */
 export const PathwayCandidatePricingSchema = z.discriminatedUnion("status", [
-  z
-    .object({
-      status: z.literal("priced"),
-      currency: z.string(),
-      unitPriceInCents: z.number().int(),
-      lineTotalInCents: z.number().int(),
-      minimumOrderQuantity: z.number().int(),
-      stockState: z.enum(STORE_STOCK_STATES),
-    })
-    .strip(),
+  z.object({
+    status: z.literal("priced"),
+    currency: z.string(),
+    unitPriceInCents: z.number().int(),
+    lineTotalInCents: z.number().int(),
+    minimumOrderQuantity: z.number().int(),
+    stockState: z.enum(STORE_STOCK_STATES),
+  }),
   // Not an error: a candidate the server did not price on this read, e.g. beyond the priced window.
-  z.object({ status: z.literal("unpriced") }).strip(),
-  z.object({ status: z.literal("unavailable"), pricingError: CommercePricingErrorSchema }).strip(),
-  z.object({ status: z.literal("variant_selection_required") }).strip(),
+  z.object({ status: z.literal("unpriced") }),
+  z.object({ status: z.literal("unavailable"), pricingError: CommercePricingErrorSchema }),
+  z.object({ status: z.literal("variant_selection_required") }),
 ]);
 
 /**
@@ -173,36 +165,32 @@ export const PathwayCandidatePricingSchema = z.discriminatedUnion("status", [
  * A derived candidate's key is synthesised (`derived:<productId>`), so it is NOT a database id and
  * must never be sent anywhere as one.
  */
-export const StorePathwayCandidateSchema = z
-  .object({
-    key: z.string(),
-    rank: z.number().int(),
-    sourceKind: z.enum(PATHWAY_CANDIDATE_SOURCE_KINDS),
-    // Null on a curated candidate — a merchandiser's choice needs no relation to justify it.
-    relationKind: z.enum(PRODUCT_RELATION_KINDS).nullable(),
-    productId: z.string(),
-    variantId: z.string().nullable(),
-    variantName: z.string().nullable(),
-    product: StoreProductCardSchema,
-    pricing: PathwayCandidatePricingSchema,
-  })
-  .strip();
+export const StorePathwayCandidateSchema = z.object({
+  key: z.string(),
+  rank: z.number().int(),
+  sourceKind: z.enum(PATHWAY_CANDIDATE_SOURCE_KINDS),
+  // Null on a curated candidate — a merchandiser's choice needs no relation to justify it.
+  relationKind: z.enum(PRODUCT_RELATION_KINDS).nullable(),
+  productId: z.string(),
+  variantId: z.string().nullable(),
+  variantName: z.string().nullable(),
+  product: StoreProductCardSchema,
+  pricing: PathwayCandidatePricingSchema,
+});
 
-export const StorePathwaySlotSchema = z
-  .object({
-    id: z.string(),
-    // Display copy, not an enum: the roles in a hotel refit and a bicycle build share nothing.
-    roleLabel: z.string(),
-    isRequired: z.boolean(),
-    quantity: z.number().int(),
-    siblingOrder: z.number().int(),
-    derivedRelationKind: z.enum(PRODUCT_RELATION_KINDS).nullable(),
-    state: z.enum(PATHWAY_SLOT_STATES),
-    chosenCandidateKey: z.string().nullable(),
-    unavailableReason: PathwaySlotUnavailableReasonSchema.nullable(),
-    candidates: z.array(StorePathwayCandidateSchema),
-  })
-  .strip();
+export const StorePathwaySlotSchema = z.object({
+  id: z.string(),
+  // Display copy, not an enum: the roles in a hotel refit and a bicycle build share nothing.
+  roleLabel: z.string(),
+  isRequired: z.boolean(),
+  quantity: z.number().int(),
+  siblingOrder: z.number().int(),
+  derivedRelationKind: z.enum(PRODUCT_RELATION_KINDS).nullable(),
+  state: z.enum(PATHWAY_SLOT_STATES),
+  chosenCandidateKey: z.string().nullable(),
+  unavailableReason: PathwaySlotUnavailableReasonSchema.nullable(),
+  candidates: z.array(StorePathwayCandidateSchema),
+});
 
 /**
  * A per-currency subtotal, with how many slots contributed to it.
@@ -210,43 +198,35 @@ export const StorePathwaySlotSchema = z
  * `slotCount` matters: a total over 3 of 5 slots is not the price of the set, and stating the count
  * beside the number is what stops it reading as one.
  */
-export const StorePathwayCurrencyTotalSchema = z
-  .object({
-    currency: z.string(),
-    subtotalInCents: z.number().int(),
-    slotCount: z.number().int(),
-  })
-  .strip();
+export const StorePathwayCurrencyTotalSchema = z.object({
+  currency: z.string(),
+  subtotalInCents: z.number().int(),
+  slotCount: z.number().int(),
+});
 
-export const StorePathwaySetSchema = z
-  .object({
-    pathway: z
-      .object({
-        id: z.string(),
-        slug: z.string(),
-        title: z.string(),
-        summary: z.string().nullable(),
-        accent: AccentTokenSchema,
-        heroImageUrl: z.string().nullable(),
-        cardImageUrl: z.string().nullable(),
-        // Non-null makes this an anchored set: the slots were resolved against this product.
-        anchorProduct: StoreProductCardSchema.nullable(),
-      })
-      .strip(),
-    slots: z.array(StorePathwaySlotSchema),
-    currencyTotals: z.array(StorePathwayCurrencyTotalSchema),
-    // Computed over EVERY slot, never the page — see the header.
-    completeness: z
-      .object({
-        slotCount: z.number().int(),
-        requiredSlotCount: z.number().int(),
-        filledRequiredSlotCount: z.number().int(),
-        isComplete: z.boolean(),
-      })
-      .strip(),
-    page: z.object({ nextCursor: z.string().nullable(), hasMore: z.boolean() }).strip(),
-  })
-  .strip();
+export const StorePathwaySetSchema = z.object({
+  pathway: z.object({
+    id: z.string(),
+    slug: z.string(),
+    title: z.string(),
+    summary: z.string().nullable(),
+    accent: AccentTokenSchema,
+    heroImageUrl: z.string().nullable(),
+    cardImageUrl: z.string().nullable(),
+    // Non-null makes this an anchored set: the slots were resolved against this product.
+    anchorProduct: StoreProductCardSchema.nullable(),
+  }),
+  slots: z.array(StorePathwaySlotSchema),
+  currencyTotals: z.array(StorePathwayCurrencyTotalSchema),
+  // Computed over EVERY slot, never the page — see the header.
+  completeness: z.object({
+    slotCount: z.number().int(),
+    requiredSlotCount: z.number().int(),
+    filledRequiredSlotCount: z.number().int(),
+    isComplete: z.boolean(),
+  }),
+  page: z.object({ nextCursor: z.string().nullable(), hasMore: z.boolean() }),
+});
 
 // --- Rails ------------------------------------------------------------------
 
@@ -259,35 +239,27 @@ export const StorePathwaySetSchema = z
  * over this union on the client is what keeps the same class of bug from recurring here.
  */
 export const MerchandisingItemSchema = z.discriminatedUnion("entityKind", [
-  z
-    .object({
-      entityKind: z.literal("product"),
-      entityId: z.string(),
-      product: StoreProductCardSchema,
-    })
-    .strip(),
-  z
-    .object({
-      entityKind: z.literal("provider_offering"),
-      entityId: z.string(),
-      offering: PublicOfferingCardSchema,
-      provider: PublicProviderCardSchema,
-    })
-    .strip(),
-  z
-    .object({
-      entityKind: z.literal("category"),
-      entityId: z.string(),
-      category: StoreCategorySchema,
-    })
-    .strip(),
-  z
-    .object({
-      entityKind: z.literal("organization"),
-      entityId: z.string(),
-      organization: StoreSellerSummarySchema,
-    })
-    .strip(),
+  z.object({
+    entityKind: z.literal("product"),
+    entityId: z.string(),
+    product: StoreProductCardSchema,
+  }),
+  z.object({
+    entityKind: z.literal("provider_offering"),
+    entityId: z.string(),
+    offering: PublicOfferingCardSchema,
+    provider: PublicProviderCardSchema,
+  }),
+  z.object({
+    entityKind: z.literal("category"),
+    entityId: z.string(),
+    category: StoreCategorySchema,
+  }),
+  z.object({
+    entityKind: z.literal("organization"),
+    entityId: z.string(),
+    organization: StoreSellerSummarySchema,
+  }),
 ]);
 
 /**
@@ -298,13 +270,11 @@ export const MerchandisingItemSchema = z.discriminatedUnion("entityKind", [
  * `trending_placeholder` returns an EMPTY LIST unconditionally and always will — a rail carrying it
  * is not broken and must render as empty, not as an error.
  */
-export const StoreRailPageSchema = z
-  .object({
-    rail: z.object({ slug: z.string(), title: z.string(), strategy: z.string() }).strip(),
-    items: z.array(MerchandisingItemSchema),
-    page: z.object({ nextCursor: z.string().nullable(), hasMore: z.boolean() }).strip(),
-  })
-  .strip();
+export const StoreRailPageSchema = z.object({
+  rail: z.object({ slug: z.string(), title: z.string(), strategy: z.string() }),
+  items: z.array(MerchandisingItemSchema),
+  page: z.object({ nextCursor: z.string().nullable(), hasMore: z.boolean() }),
+});
 
 // --- Store home ---------------------------------------------------------------
 
@@ -318,17 +288,15 @@ export const StoreRailPageSchema = z
  * `linkTargetId` is deliberately absent: the id addresses nothing the client can route to, and the
  * slug is what every store URL is keyed on.
  */
-export const StoreHeroSlideSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    subtitle: z.string().nullable(),
-    accent: AccentTokenSchema,
-    imageUrl: z.string().nullable(),
-    linkTargetKind: z.enum(MERCHANDISING_ENTITY_KINDS).nullable(),
-    linkTargetSlug: z.string().nullable(),
-  })
-  .strip();
+export const StoreHeroSlideSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  subtitle: z.string().nullable(),
+  accent: AccentTokenSchema,
+  imageUrl: z.string().nullable(),
+  linkTargetKind: z.enum(MERCHANDISING_ENTITY_KINDS).nullable(),
+  linkTargetSlug: z.string().nullable(),
+});
 
 /**
  * A pathway as the HOME page carries it — the index card WITHOUT `slotCount`.
@@ -337,31 +305,27 @@ export const StoreHeroSlideSchema = z
  * seven columns and the index read computes an eighth, so parsing home rows against the index shape
  * would fail every time. Two reads, two shapes, and the difference is real.
  */
-export const StoreHomePathwayCardSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    title: z.string(),
-    summary: z.string().nullable(),
-    accent: AccentTokenSchema,
-    cardImageUrl: z.string().nullable(),
-    isAnchored: z.boolean(),
-  })
-  .strip();
+export const StoreHomePathwayCardSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  title: z.string(),
+  summary: z.string().nullable(),
+  accent: AccentTokenSchema,
+  cardImageUrl: z.string().nullable(),
+  isAnchored: z.boolean(),
+});
 
 /**
  * A rail on the home page. NO `id` and NO `page` envelope — the home read returns the first twelve
  * items of each rail and nothing more. Paging one open means navigating to `/store/rails/:slug`,
  * which is the read that carries a cursor.
  */
-export const StoreHomeRailSchema = z
-  .object({
-    slug: z.string(),
-    title: z.string(),
-    strategy: z.string(),
-    items: z.array(MerchandisingItemSchema),
-  })
-  .strip();
+export const StoreHomeRailSchema = z.object({
+  slug: z.string(),
+  title: z.string(),
+  strategy: z.string(),
+  items: z.array(MerchandisingItemSchema),
+});
 
 /**
  * `GET /store/home`.
@@ -374,15 +338,13 @@ export const StoreHomeRailSchema = z
  * a static frontend manifest (`src/lib/store/business-tools.ts`), not merchandising data, and
  * pretending it came from the wire is what the legacy getter did.
  */
-export const StoreHomeSchema = z
-  .object({
-    heroSlides: z.array(StoreHeroSlideSchema),
-    categories: z.array(StoreCategorySchema),
-    pathways: z.array(StoreHomePathwayCardSchema),
-    providerShortcuts: z.array(PublicProviderCardSchema),
-    rails: z.array(StoreHomeRailSchema),
-  })
-  .strip();
+export const StoreHomeSchema = z.object({
+  heroSlides: z.array(StoreHeroSlideSchema),
+  categories: z.array(StoreCategorySchema),
+  pathways: z.array(StoreHomePathwayCardSchema),
+  providerShortcuts: z.array(PublicProviderCardSchema),
+  rails: z.array(StoreHomeRailSchema),
+});
 
 // --- Filter inputs ----------------------------------------------------------
 

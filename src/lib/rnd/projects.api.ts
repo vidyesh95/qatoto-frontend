@@ -351,7 +351,7 @@ export function watchProject(
     `/research-projects/${projectSlug}/watch`,
     "POST",
     undefined,
-    z.object({ isWatchedByViewer: z.boolean() }).strip(),
+    z.object({ isWatchedByViewer: z.boolean() }),
     options,
   );
 }
@@ -364,7 +364,7 @@ export function unwatchProject(
     `/research-projects/${projectSlug}/watch`,
     "DELETE",
     undefined,
-    z.object({ isWatchedByViewer: z.boolean() }).strip(),
+    z.object({ isWatchedByViewer: z.boolean() }),
     options,
   );
 }

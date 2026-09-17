@@ -35,31 +35,29 @@ export const FundingRoundStatusSchema = z.enum(FUNDING_ROUND_STATUSES);
  * over-funded round is a real state, so do not clamp a progress bar's label to 100%
  * even where the bar itself is capped.
  */
-export const FundingDealSchema = z
-  .object({
-    id: z.string(),
-    projectId: z.string(),
-    projectSlug: z.string().nullable(),
-    projectName: z.string(),
-    projectStage: ProjectStageSchema,
-    projectTagline: z.string(),
-    type: FundingRoundTypeSchema,
-    status: FundingRoundStatusSchema,
-    title: z.string(),
-    summary: z.string().nullable(),
-    currency: z.string(),
-    goalAmountInCents: z.string(),
-    raisedAmountInCents: z.string(),
-    percentageFundedBasisPoints: z.number(),
-    backersCount: z.number(),
-    minimumPledgeInCents: z.string(),
-    maximumPledgeInCents: z.string().nullable(),
-    opensAt: z.string().nullable(),
-    closesAt: z.string().nullable(),
-    closedAt: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const FundingDealSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  projectSlug: z.string().nullable(),
+  projectName: z.string(),
+  projectStage: ProjectStageSchema,
+  projectTagline: z.string(),
+  type: FundingRoundTypeSchema,
+  status: FundingRoundStatusSchema,
+  title: z.string(),
+  summary: z.string().nullable(),
+  currency: z.string(),
+  goalAmountInCents: z.string(),
+  raisedAmountInCents: z.string(),
+  percentageFundedBasisPoints: z.number(),
+  backersCount: z.number(),
+  minimumPledgeInCents: z.string(),
+  maximumPledgeInCents: z.string().nullable(),
+  opensAt: z.string().nullable(),
+  closesAt: z.string().nullable(),
+  closedAt: z.string().nullable(),
+  createdAt: z.string(),
+});
 export type FundingDeal = z.infer<typeof FundingDealSchema>;
 
 /**
@@ -91,21 +89,19 @@ export type PledgeStatus = z.infer<typeof PledgeStatusSchema>;
  * goes to `committed` and stays there; there is no settlement step because there is no
  * custody.
  */
-export const PledgeSchema = z
-  .object({
-    id: z.string(),
-    roundId: z.string(),
-    projectId: z.string(),
-    amountInCents: z.string(),
-    platformFeeInCents: z.string(),
-    netToEscrowInCents: z.string(),
-    currency: z.string(),
-    status: PledgeStatusSchema,
-    providerTransferId: z.string().nullable(),
-    settledAt: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const PledgeSchema = z.object({
+  id: z.string(),
+  roundId: z.string(),
+  projectId: z.string(),
+  amountInCents: z.string(),
+  platformFeeInCents: z.string(),
+  netToEscrowInCents: z.string(),
+  currency: z.string(),
+  status: PledgeStatusSchema,
+  providerTransferId: z.string().nullable(),
+  settledAt: z.string().nullable(),
+  createdAt: z.string(),
+});
 export type Pledge = z.infer<typeof PledgeSchema>;
 
 /**
@@ -115,16 +111,14 @@ export type Pledge = z.infer<typeof PledgeSchema>;
  * these are for rendering a helpful field, never for deciding whether a pledge is allowed.
  * `platformFeeBasisPoints` is `0` and is returned so no client has to assume it.
  */
-export const PledgeOptionsSchema = z
-  .object({
-    currency: z.string(),
-    minimumPledgeInCents: z.string(),
-    maximumPledgeInCents: z.string().nullable(),
-    platformFeeBasisPoints: z.number(),
-    acceptingPledges: z.boolean(),
-    closesAt: z.string().nullable(),
-  })
-  .strip();
+export const PledgeOptionsSchema = z.object({
+  currency: z.string(),
+  minimumPledgeInCents: z.string(),
+  maximumPledgeInCents: z.string().nullable(),
+  platformFeeBasisPoints: z.number(),
+  acceptingPledges: z.boolean(),
+  closesAt: z.string().nullable(),
+});
 export type PledgeOptions = z.infer<typeof PledgeOptionsSchema>;
 
 /**
@@ -133,17 +127,15 @@ export type PledgeOptions = z.infer<typeof PledgeOptionsSchema>;
  * COMMITTED AND HISTORICALLY SETTLED, never cancelled, failed or refunded — a withdrawn
  * commitment leaves this list rather than lingering as a name beside a number nobody owes.
  */
-export const RoundBackerSchema = z
-  .object({
-    pledgeId: z.string(),
-    backerName: z.string(),
-    backerHandle: z.string().nullable(),
-    amountInCents: z.string(),
-    currency: z.string(),
-    status: PledgeStatusSchema,
-    pledgedAt: z.string(),
-  })
-  .strip();
+export const RoundBackerSchema = z.object({
+  pledgeId: z.string(),
+  backerName: z.string(),
+  backerHandle: z.string().nullable(),
+  amountInCents: z.string(),
+  currency: z.string(),
+  status: PledgeStatusSchema,
+  pledgedAt: z.string(),
+});
 export type RoundBacker = z.infer<typeof RoundBackerSchema>;
 
 // --- The project-scoped reads -------------------------------------------------
@@ -161,28 +153,26 @@ export type RoundBacker = z.infer<typeof RoundBackerSchema>;
  * view adds them because a cross-project list needs them, and a project-scoped read
  * already knows whose rounds these are.
  */
-export const FundingRoundSchema = z
-  .object({
-    id: z.string(),
-    projectId: z.string(),
-    projectSlug: z.string().nullable(),
-    type: FundingRoundTypeSchema,
-    status: FundingRoundStatusSchema,
-    title: z.string(),
-    summary: z.string().nullable(),
-    currency: z.string(),
-    goalAmountInCents: z.string(),
-    raisedAmountInCents: z.string(),
-    percentageFundedBasisPoints: z.number(),
-    backersCount: z.number(),
-    minimumPledgeInCents: z.string(),
-    maximumPledgeInCents: z.string().nullable(),
-    opensAt: z.string().nullable(),
-    closesAt: z.string().nullable(),
-    closedAt: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const FundingRoundSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  projectSlug: z.string().nullable(),
+  type: FundingRoundTypeSchema,
+  status: FundingRoundStatusSchema,
+  title: z.string(),
+  summary: z.string().nullable(),
+  currency: z.string(),
+  goalAmountInCents: z.string(),
+  raisedAmountInCents: z.string(),
+  percentageFundedBasisPoints: z.number(),
+  backersCount: z.number(),
+  minimumPledgeInCents: z.string(),
+  maximumPledgeInCents: z.string().nullable(),
+  opensAt: z.string().nullable(),
+  closesAt: z.string().nullable(),
+  closedAt: z.string().nullable(),
+  createdAt: z.string(),
+});
 export type FundingRound = z.infer<typeof FundingRoundSchema>;
 
 /**
@@ -219,21 +209,19 @@ export const VARIANCE_EFFORT_UNIT_KEYS = ["minutes", "hours"] as const;
  * which is why the mock's `varianceLabel: "26% behind"` could not survive: one string
  * carried a magnitude, a direction and a judgement at once.
  */
-export const MilestoneVarianceSchema = z
-  .object({
-    plannedDurationDays: z.number(),
-    actualDurationDays: z.number(),
-    plannedCostInCents: z.string(),
-    actualCostInCents: z.string(),
-    plannedEffortMinutes: z.number(),
-    actualEffortMinutes: z.number(),
-    scheduleUnitKey: z.enum(VARIANCE_SCHEDULE_UNIT_KEYS),
-    effortUnitKey: z.enum(VARIANCE_EFFORT_UNIT_KEYS),
-    varianceBasisPoints: z.number(),
-    currency: z.string(),
-    computedAt: z.string(),
-  })
-  .strip();
+export const MilestoneVarianceSchema = z.object({
+  plannedDurationDays: z.number(),
+  actualDurationDays: z.number(),
+  plannedCostInCents: z.string(),
+  actualCostInCents: z.string(),
+  plannedEffortMinutes: z.number(),
+  actualEffortMinutes: z.number(),
+  scheduleUnitKey: z.enum(VARIANCE_SCHEDULE_UNIT_KEYS),
+  effortUnitKey: z.enum(VARIANCE_EFFORT_UNIT_KEYS),
+  varianceBasisPoints: z.number(),
+  currency: z.string(),
+  computedAt: z.string(),
+});
 export type MilestoneVariance = z.infer<typeof MilestoneVarianceSchema>;
 
 /**
@@ -246,22 +234,20 @@ export type MilestoneVariance = z.infer<typeof MilestoneVarianceSchema>;
  * `variance` is null on milestones nobody tracked with production metrics — an absence,
  * not a zeroed row.
  */
-export const MilestoneSchema = z
-  .object({
-    id: z.string(),
-    projectId: z.string(),
-    title: z.string(),
-    description: z.string().nullable(),
-    status: MilestoneStatusSchema,
-    plannedPayoutInCents: z.string(),
-    currency: z.string(),
-    dueDate: z.string().nullable(),
-    completedAt: z.string().nullable(),
-    orderIndex: z.number(),
-    variance: MilestoneVarianceSchema.nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const MilestoneSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  status: MilestoneStatusSchema,
+  plannedPayoutInCents: z.string(),
+  currency: z.string(),
+  dueDate: z.string().nullable(),
+  completedAt: z.string().nullable(),
+  orderIndex: z.number(),
+  variance: MilestoneVarianceSchema.nullable(),
+  createdAt: z.string(),
+});
 export type Milestone = z.infer<typeof MilestoneSchema>;
 
 /**
@@ -275,20 +261,18 @@ export type Milestone = z.infer<typeof MilestoneSchema>;
  * or use `formatEquityFromBasisPoints`-style rendering, never treat it as 0..100.
  * `asOf` exists so the client renders "as of" rather than implying a live number.
  */
-export const InvestorConfidenceSchema = z
-  .object({
-    projectId: z.string(),
-    confidenceBasisPoints: z.number(),
-    trend: TrendDirectionSchema,
-    dailyLogStreakDays: z.number(),
-    verifiedMilestoneCount: z.number(),
-    totalMilestoneCount: z.number(),
-    openDisputeCount: z.number(),
-    resolvedDisputeCount: z.number(),
-    asOf: z.string(),
-    windowStartsAt: z.string(),
-    windowEndsAt: z.string(),
-    computedAt: z.string(),
-  })
-  .strip();
+export const InvestorConfidenceSchema = z.object({
+  projectId: z.string(),
+  confidenceBasisPoints: z.number(),
+  trend: TrendDirectionSchema,
+  dailyLogStreakDays: z.number(),
+  verifiedMilestoneCount: z.number(),
+  totalMilestoneCount: z.number(),
+  openDisputeCount: z.number(),
+  resolvedDisputeCount: z.number(),
+  asOf: z.string(),
+  windowStartsAt: z.string(),
+  windowEndsAt: z.string(),
+  computedAt: z.string(),
+});
 export type InvestorConfidence = z.infer<typeof InvestorConfidenceSchema>;

@@ -123,9 +123,10 @@ export function formatGramsLabel(grams: number): string {
   return `${(grams / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} kg`;
 }
 
+const REGION_DISPLAY_NAMES = new Intl.DisplayNames(["en"], { type: "region" });
+
 export function countryLabelFromCode(countryCode: string): string {
-  const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
-  return displayNames.of(countryCode.toUpperCase()) ?? countryCode;
+  return REGION_DISPLAY_NAMES.of(countryCode.toUpperCase()) ?? countryCode;
 }
 
 /**

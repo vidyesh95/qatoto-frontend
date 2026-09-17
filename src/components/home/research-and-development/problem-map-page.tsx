@@ -97,6 +97,28 @@ export default async function ProblemMapPage({
       isSelected: selectedRegionSlug === region.slug,
     })),
   ];
+  function renderCanvas() {
+    switch (clustersState.status) {
+      case "error":
+        return <RndErrorPanel message="Couldn't load the problem map." />;
+      case "empty":
+        return (
+          <RndStatusPanel
+            message={
+              selectedCategorySlug === undefined && selectedRegionSlug === undefined
+                ? "No problems have been clustered yet."
+                : "No clusters match these filters yet."
+            }
+          />
+        );
+      case "ready":
+        return <ProblemMapCanvas clusters={clustersState.rows} />;
+      default: {
+        const exhaustiveCheck: never = clustersState;
+        return exhaustiveCheck;
+      }
+    }
+  }
 
   return (
     <div className="space-y-6 px-4 pt-4 pb-4 lg:px-6 lg:pt-6 lg:pb-6">
@@ -132,27 +154,4 @@ export default async function ProblemMapPage({
       <MyProblemReportsPanel />
     </div>
   );
-
-  function renderCanvas() {
-    switch (clustersState.status) {
-      case "error":
-        return <RndErrorPanel message="Couldn't load the problem map." />;
-      case "empty":
-        return (
-          <RndStatusPanel
-            message={
-              selectedCategorySlug === undefined && selectedRegionSlug === undefined
-                ? "No problems have been clustered yet."
-                : "No clusters match these filters yet."
-            }
-          />
-        );
-      case "ready":
-        return <ProblemMapCanvas clusters={clustersState.rows} />;
-      default: {
-        const exhaustiveCheck: never = clustersState;
-        return exhaustiveCheck;
-      }
-    }
-  }
 }

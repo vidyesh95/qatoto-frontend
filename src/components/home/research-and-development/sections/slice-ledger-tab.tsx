@@ -70,37 +70,6 @@ export default function SliceLedgerTab({
   team: ProjectTeamMember[];
   viewerProjectRole: string | null;
 }) {
-  return (
-    <div className="space-y-6 px-4 lg:px-6">
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">The cap table</h3>
-        {renderEquity()}
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">
-          If the open roles were filled
-        </h3>
-        {renderProjection()}
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Slice ledger</h3>
-        {renderLedger()}
-      </section>
-
-      <RateLockPanel projectSlug={projectSlug} team={team} viewerProjectRole={viewerProjectRole} />
-
-      <PieBakePanel
-        pieBakeState={pieBakeState}
-        summaryState={summaryState}
-        projectCurrency={projectCurrency}
-        projectSlug={projectSlug}
-        viewerProjectRole={viewerProjectRole}
-      />
-    </div>
-  );
-
   function renderEquity() {
     switch (summaryState.status) {
       case "error":
@@ -276,4 +245,35 @@ export default function SliceLedgerTab({
       }
     }
   }
+
+  return (
+    <div className="space-y-6 px-4 lg:px-6">
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">The cap table</h3>
+        {renderEquity()}
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">
+          If the open roles were filled
+        </h3>
+        {renderProjection()}
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Slice ledger</h3>
+        {renderLedger()}
+      </section>
+
+      <RateLockPanel projectSlug={projectSlug} team={team} viewerProjectRole={viewerProjectRole} />
+
+      <PieBakePanel
+        pieBakeState={pieBakeState}
+        summaryState={summaryState}
+        projectCurrency={projectCurrency}
+        projectSlug={projectSlug}
+        viewerProjectRole={viewerProjectRole}
+      />
+    </div>
+  );
 }

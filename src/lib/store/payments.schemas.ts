@@ -88,22 +88,20 @@ export function isPaymentIntentInFlight(state: PaymentIntentState): boolean {
  * `providerPaymentRef` is the id at the processor. It is a support-desk reference, not a receipt,
  * and it is null until the provider has answered at all.
  */
-export const PaymentIntentSchema = z
-  .object({
-    id: z.string(),
-    orderId: z.string(),
-    state: z.enum(PAYMENT_INTENT_STATES),
-    amountInCents: z.number().int(),
-    currency: z.string(),
-    provider: z.enum(PAYMENT_PROVIDERS),
-    providerPaymentRef: z.string().nullable(),
-    failureReason: z.string().nullable(),
-    authorizedAt: IsoDateTimeSchema.nullable(),
-    settledAt: IsoDateTimeSchema.nullable(),
-    createdAt: IsoDateTimeSchema,
-    updatedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const PaymentIntentSchema = z.object({
+  id: z.string(),
+  orderId: z.string(),
+  state: z.enum(PAYMENT_INTENT_STATES),
+  amountInCents: z.number().int(),
+  currency: z.string(),
+  provider: z.enum(PAYMENT_PROVIDERS),
+  providerPaymentRef: z.string().nullable(),
+  failureReason: z.string().nullable(),
+  authorizedAt: IsoDateTimeSchema.nullable(),
+  settledAt: IsoDateTimeSchema.nullable(),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+});
 
 export type PaymentIntent = z.infer<typeof PaymentIntentSchema>;
 
@@ -131,21 +129,19 @@ export type PaymentIntent = z.infer<typeof PaymentIntentSchema>;
  * default — an order can carry several. Do not sum them client-side to decide what is left
  * refundable: the server holds that figure and returns it on the refusal when it matters.
  */
-export const RefundSchema = z
-  .object({
-    id: z.string(),
-    paymentIntentId: z.string(),
-    orderId: z.string(),
-    state: z.enum(REFUND_STATES),
-    amountInCents: z.number().int(),
-    currency: z.string(),
-    providerRefundRef: z.string().nullable(),
-    reason: z.string().nullable(),
-    failureReason: z.string().nullable(),
-    settledAt: IsoDateTimeSchema.nullable(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const RefundSchema = z.object({
+  id: z.string(),
+  paymentIntentId: z.string(),
+  orderId: z.string(),
+  state: z.enum(REFUND_STATES),
+  amountInCents: z.number().int(),
+  currency: z.string(),
+  providerRefundRef: z.string().nullable(),
+  reason: z.string().nullable(),
+  failureReason: z.string().nullable(),
+  settledAt: IsoDateTimeSchema.nullable(),
+  createdAt: IsoDateTimeSchema,
+});
 
 export type Refund = z.infer<typeof RefundSchema>;
 
@@ -176,7 +172,7 @@ export interface CreateRefundInput {
  * parse is a real possibility (a proxy rewrote the body, an older backend), and the caller falls
  * back to the envelope's `message`, which is already a complete sentence.
  */
-export const OverRefundDetailsSchema = z.object({ refundableInCents: z.number().int() }).strip();
+export const OverRefundDetailsSchema = z.object({ refundableInCents: z.number().int() });
 
 /** `GET /commerce/refunds`. `orderId` narrows an inbox to one order's history. */
 export interface ListRefundsFilter {

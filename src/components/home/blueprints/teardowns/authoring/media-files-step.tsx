@@ -73,8 +73,9 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
   function setRowError(rowId: string, error: string | null): void {
     setUploadErrors((previous) => {
       if (error === null) {
-        const { [rowId]: _, ...rest } = previous;
-        return rest;
+        return Object.fromEntries(
+          Object.entries(previous).filter(([errorRowId]) => errorRowId !== rowId),
+        );
       }
       return { ...previous, [rowId]: error };
     });
@@ -112,24 +113,23 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
   async function handleDocumentUpload(rowId: string, file: File): Promise<void> {
     setRowError(rowId, null);
     setRowUploading(rowId, true);
-    try {
-      const result = await uploadTeardownFile(file, "pdf");
-      if (!result.success) {
-        setRowError(rowId, result.error.message);
-        return;
-      }
-      const existingRow = draft.documents.find((row) => row.rowId === rowId);
-      updateDocumentRow(rowId, {
-        source: "uploaded",
-        uploadId: result.data.uploadId,
-        fileName: result.data.originalFileName,
-        title: existingRow?.title.trim() ? existingRow.title : result.data.originalFileName,
-      });
-    } catch {
+    const result = await uploadTeardownFile(file, "pdf").catch(() => null);
+    setRowUploading(rowId, false);
+    if (result === null) {
       setRowError(rowId, "Upload failed. Please check your network and try again.");
-    } finally {
-      setRowUploading(rowId, false);
+      return;
     }
+    if (!result.success) {
+      setRowError(rowId, result.error.message);
+      return;
+    }
+    const existingRow = draft.documents.find((row) => row.rowId === rowId);
+    updateDocumentRow(rowId, {
+      source: "uploaded",
+      uploadId: result.data.uploadId,
+      fileName: result.data.originalFileName,
+      title: existingRow?.title.trim() ? existingRow.title : result.data.originalFileName,
+    });
   }
 
   async function handleManufacturingFileUpload(rowId: string, file: File): Promise<void> {
@@ -141,24 +141,23 @@ export default function MediaFilesStep({ draft, onDraftChange }: TeardownWizardS
     }
 
     setRowUploading(rowId, true);
-    try {
-      const result = await uploadTeardownFile(file, format);
-      if (!result.success) {
-        setRowError(rowId, result.error.message);
-        return;
-      }
-      const existingRow = draft.manufacturingFiles.find((row) => row.rowId === rowId);
-      updateManufacturingFileRow(rowId, {
-        source: "uploaded",
-        uploadId: result.data.uploadId,
-        fileName: result.data.originalFileName,
-        title: existingRow?.title.trim() ? existingRow.title : result.data.originalFileName,
-      });
-    } catch {
+    const result = await uploadTeardownFile(file, format).catch(() => null);
+    setRowUploading(rowId, false);
+    if (result === null) {
       setRowError(rowId, "Upload failed. Please check your network and try again.");
-    } finally {
-      setRowUploading(rowId, false);
+      return;
     }
+    if (!result.success) {
+      setRowError(rowId, result.error.message);
+      return;
+    }
+    const existingRow = draft.manufacturingFiles.find((row) => row.rowId === rowId);
+    updateManufacturingFileRow(rowId, {
+      source: "uploaded",
+      uploadId: result.data.uploadId,
+      fileName: result.data.originalFileName,
+      title: existingRow?.title.trim() ? existingRow.title : result.data.originalFileName,
+    });
   }
 
   function renderDocumentRows() {

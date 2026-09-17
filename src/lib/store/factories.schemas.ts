@@ -139,38 +139,34 @@ export type FactoryInquiryState = (typeof FACTORY_INQUIRY_STATES)[number];
  * known defect (`provider-directory-page.tsx` §1: "a row cannot say what it does"). Repeating that
  * mistake in a contract written from scratch would be choosing it.
  */
-export const FactoryCardSchema = z
-  .object({
-    organizationId: z.string(),
-    slug: z.string(),
-    displayName: z.string(),
-    countryCode: z.string(),
-    logoUrl: z.string().nullable(),
-    publicSummary: z.string().nullable(),
-    capabilityKinds: z.array(z.enum(FACTORY_CAPABILITY_KINDS)),
-    /**
-     * The smallest order this factory takes, and the unit it counts in.
-     *
-     * BOTH-OR-NEITHER. A bare `500` is unreadable — 500 pieces and 500 cartons are different
-     * businesses — so a renderer must have the unit before it prints the number.
-     */
-    minimumOrderQuantity: z.number().int().nullable(),
-    minimumOrderQuantityUnitLabel: z.string().nullable(),
-    minimumLeadTimeDays: z.number().int().nullable(),
-    maximumLeadTimeDays: z.number().int().nullable(),
-    /** Names only. Validity lives on the detail read — see rule 2 in the header. */
-    certifications: z.array(z.enum(FACTORY_CERTIFICATIONS)),
-    verificationState: z.enum(FACTORY_VERIFICATION_STATES),
-    acceptingInquiries: z.boolean(),
-    fulfillmentMetrics: z
-      .object({
-        onTimeShipmentRate: z.number().nullable(),
-        onTimeSampleSize: z.number().int(),
-        completedOrderCount: z.number().int(),
-      })
-      .strip(),
-  })
-  .strip();
+export const FactoryCardSchema = z.object({
+  organizationId: z.string(),
+  slug: z.string(),
+  displayName: z.string(),
+  countryCode: z.string(),
+  logoUrl: z.string().nullable(),
+  publicSummary: z.string().nullable(),
+  capabilityKinds: z.array(z.enum(FACTORY_CAPABILITY_KINDS)),
+  /**
+   * The smallest order this factory takes, and the unit it counts in.
+   *
+   * BOTH-OR-NEITHER. A bare `500` is unreadable — 500 pieces and 500 cartons are different
+   * businesses — so a renderer must have the unit before it prints the number.
+   */
+  minimumOrderQuantity: z.number().int().nullable(),
+  minimumOrderQuantityUnitLabel: z.string().nullable(),
+  minimumLeadTimeDays: z.number().int().nullable(),
+  maximumLeadTimeDays: z.number().int().nullable(),
+  /** Names only. Validity lives on the detail read — see rule 2 in the header. */
+  certifications: z.array(z.enum(FACTORY_CERTIFICATIONS)),
+  verificationState: z.enum(FACTORY_VERIFICATION_STATES),
+  acceptingInquiries: z.boolean(),
+  fulfillmentMetrics: z.object({
+    onTimeShipmentRate: z.number().nullable(),
+    onTimeSampleSize: z.number().int(),
+    completedOrderCount: z.number().int(),
+  }),
+});
 
 export const FactoryDirectoryPageSchema = cursorPageOf(FactoryCardSchema);
 
@@ -182,15 +178,13 @@ export const FactoryDirectoryPageSchema = cursorPageOf(FactoryCardSchema);
  * `monthlyCapacityUnits` is nullable and the unit is required beside it, for the same reason the
  * MOQ pair is: a capacity without a unit cannot be compared against an order.
  */
-export const FactoryProductionLineSchema = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    processSummary: z.string(),
-    monthlyCapacityUnits: z.number().int().nullable(),
-    unitLabel: z.string(),
-  })
-  .strip();
+export const FactoryProductionLineSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  processSummary: z.string(),
+  monthlyCapacityUnits: z.number().int().nullable(),
+  unitLabel: z.string(),
+});
 
 /**
  * One certification, with the window it is good for.
@@ -200,23 +194,21 @@ export const FactoryProductionLineSchema = z
  * whole ballgame. Dates are `YYYY-MM-DD` and are compared by string parts — never through
  * `new Date()`, which shifts a day for anyone west of UTC.
  */
-export const FactoryCertificationRecordSchema = z
-  .object({
-    certification: z.enum(FACTORY_CERTIFICATIONS),
-    /**
-     * The certificate's own display string, free text.
-     *
-     * NOT DERIVABLE FROM `certification`. `FACTORY_CERTIFICATION_LABELS` gives the standard a
-     * short name for a chip; this is what the paper actually says, which is frequently longer and
-     * carries a revision year. Render this where there is room and the label where there is not.
-     */
-    standardName: z.string(),
-    certificateNumber: z.string().nullable(),
-    issuingBody: z.string().nullable(),
-    validFrom: IsoDateSchema.nullable(),
-    validUntil: IsoDateSchema.nullable(),
-  })
-  .strip();
+export const FactoryCertificationRecordSchema = z.object({
+  certification: z.enum(FACTORY_CERTIFICATIONS),
+  /**
+   * The certificate's own display string, free text.
+   *
+   * NOT DERIVABLE FROM `certification`. `FACTORY_CERTIFICATION_LABELS` gives the standard a
+   * short name for a chip; this is what the paper actually says, which is frequently longer and
+   * carries a revision year. Render this where there is room and the label where there is not.
+   */
+  standardName: z.string(),
+  certificateNumber: z.string().nullable(),
+  issuingBody: z.string().nullable(),
+  validFrom: IsoDateSchema.nullable(),
+  validUntil: IsoDateSchema.nullable(),
+});
 
 /**
  * An approved certificate whose standard is outside the closed eight.
@@ -229,15 +221,13 @@ export const FactoryCertificationRecordSchema = z
  * Same expiry rule as the records above: `validUntil` null means no expiry was recorded, not
  * valid forever.
  */
-export const FactoryOtherCertificationSchema = z
-  .object({
-    standardName: z.string(),
-    certificateNumber: z.string().nullable(),
-    issuingBody: z.string().nullable(),
-    validFrom: IsoDateSchema.nullable(),
-    validUntil: IsoDateSchema.nullable(),
-  })
-  .strip();
+export const FactoryOtherCertificationSchema = z.object({
+  standardName: z.string(),
+  certificateNumber: z.string().nullable(),
+  issuingBody: z.string().nullable(),
+  validFrom: IsoDateSchema.nullable(),
+  validUntil: IsoDateSchema.nullable(),
+});
 
 /**
  * One physical site. A factory may run several, in more than one country.
@@ -247,16 +237,14 @@ export const FactoryOtherCertificationSchema = z
  * not sum these into an org total and do not prefer one over the other — a platform that silently
  * reconciles them is asserting something neither party said.
  */
-export const FactorySiteSchema = z
-  .object({
-    id: z.string(),
-    label: z.string(),
-    countryCode: z.string(),
-    locality: z.string().nullable(),
-    floorAreaSquareMetres: z.number().int().nullable(),
-    productionStaffCount: z.number().int().nullable(),
-  })
-  .strip();
+export const FactorySiteSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  countryCode: z.string(),
+  locality: z.string().nullable(),
+  floorAreaSquareMetres: z.number().int().nullable(),
+  productionStaffCount: z.number().int().nullable(),
+});
 
 /**
  * What the factory will do about samples.
@@ -265,51 +253,47 @@ export const FactorySiteSchema = z
  * thing this surface must not do is render an unstated fee as free — a buyer who orders a sample on
  * that basis finds out at invoice time.
  */
-export const FactorySamplePolicySchema = z
-  .object({
-    offersSamples: z.boolean(),
-    sampleLeadTimeDays: z.number().int().nullable(),
-    sampleFeeInCents: z.number().int().nullable(),
-    currency: z.string(),
-  })
-  .strip();
+export const FactorySamplePolicySchema = z.object({
+  offersSamples: z.boolean(),
+  sampleLeadTimeDays: z.number().int().nullable(),
+  sampleFeeInCents: z.number().int().nullable(),
+  currency: z.string(),
+});
 
 /** `GET /store/factories/:factorySlug`. */
-export const FactoryDetailSchema = z
-  .object({
-    factory: FactoryCardSchema,
-    productionLines: z.array(FactoryProductionLineSchema),
-    certificationRecords: z.array(FactoryCertificationRecordSchema),
-    /** Approved certificates outside the closed eight. Readable, never filterable. */
-    otherCertifications: z.array(FactoryOtherCertificationSchema),
-    sites: z.array(FactorySiteSchema),
-    samplePolicy: FactorySamplePolicySchema,
-    /**
-     * ISO date of the most recent site audit, or `null` when nobody has been.
-     *
-     * A DATE AND NOTHING ELSE. `commerce_organization_site_audit` carries the auditor's identity
-     * and the scope covered, and this read projects neither: publishing an auditor's name on a
-     * browse page is a disclosure about a third party who never consented to it (§6.6).
-     *
-     * `site_audited` IS NEVER DERIVED FROM `documents_reviewed`. The backend's
-     * `deriveVerificationState` reads the audit record first and falls through to the document
-     * review only when there is no audit — it never turns one into the other, which is the precise
-     * collapse the three-state enum exists to prevent.
-     */
-    lastAuditedAt: IsoDateSchema.nullable(),
-    /**
-     * ISO country codes this factory has actually shipped to. Empty is a fact, not a gap.
-     *
-     * DERIVED, NOT DECLARED (Phase 17 decided this). The backend computes it from distinct
-     * delivery-address country codes over completed orders where this factory is the
-     * counterparty. There is no column and no seller can edit it, which is why it appears on no
-     * write input in this file. A13's rule is what forces the choice: a derived stat and a
-     * declared stat must be visibly different on the wire, so this one must never be rendered
-     * beside declared figures as though the factory typed it.
-     */
-    exportMarkets: z.array(z.string()),
-  })
-  .strip();
+export const FactoryDetailSchema = z.object({
+  factory: FactoryCardSchema,
+  productionLines: z.array(FactoryProductionLineSchema),
+  certificationRecords: z.array(FactoryCertificationRecordSchema),
+  /** Approved certificates outside the closed eight. Readable, never filterable. */
+  otherCertifications: z.array(FactoryOtherCertificationSchema),
+  sites: z.array(FactorySiteSchema),
+  samplePolicy: FactorySamplePolicySchema,
+  /**
+   * ISO date of the most recent site audit, or `null` when nobody has been.
+   *
+   * A DATE AND NOTHING ELSE. `commerce_organization_site_audit` carries the auditor's identity
+   * and the scope covered, and this read projects neither: publishing an auditor's name on a
+   * browse page is a disclosure about a third party who never consented to it (§6.6).
+   *
+   * `site_audited` IS NEVER DERIVED FROM `documents_reviewed`. The backend's
+   * `deriveVerificationState` reads the audit record first and falls through to the document
+   * review only when there is no audit — it never turns one into the other, which is the precise
+   * collapse the three-state enum exists to prevent.
+   */
+  lastAuditedAt: IsoDateSchema.nullable(),
+  /**
+   * ISO country codes this factory has actually shipped to. Empty is a fact, not a gap.
+   *
+   * DERIVED, NOT DECLARED (Phase 17 decided this). The backend computes it from distinct
+   * delivery-address country codes over completed orders where this factory is the
+   * counterparty. There is no column and no seller can edit it, which is why it appears on no
+   * write input in this file. A13's rule is what forces the choice: a derived stat and a
+   * declared stat must be visibly different on the wire, so this one must never be rendered
+   * beside declared figures as though the factory typed it.
+   */
+  exportMarkets: z.array(z.string()),
+});
 
 // --- Filter input -----------------------------------------------------------
 
@@ -365,19 +349,17 @@ export interface CreateFactoryInquiryInput {
  * the TABLE'S OWN COLUMNS, not a projection, so the success screen has no factory object to read
  * and must not pretend otherwise.
  */
-export const CreatedFactoryInquirySchema = z
-  .object({
-    id: z.string(),
-    /** A human-quotable handle — the thing a buyer reads out on a call. */
-    reference: z.string(),
-    factoryOrganizationId: z.string(),
-    factorySlug: z.string(),
-    state: z.enum(FACTORY_INQUIRY_STATES),
-    capabilityKind: z.enum(FACTORY_CAPABILITY_KINDS),
-    productDescription: z.string(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const CreatedFactoryInquirySchema = z.object({
+  id: z.string(),
+  /** A human-quotable handle — the thing a buyer reads out on a call. */
+  reference: z.string(),
+  factoryOrganizationId: z.string(),
+  factorySlug: z.string(),
+  state: z.enum(FACTORY_INQUIRY_STATES),
+  capabilityKind: z.enum(FACTORY_CAPABILITY_KINDS),
+  productDescription: z.string(),
+  createdAt: IsoDateTimeSchema,
+});
 
 // --- The inquiry lifecycle --------------------------------------------------
 //
@@ -398,41 +380,39 @@ export const CreatedFactoryInquirySchema = z
  * `/received` NEVER CONTAINS A `draft`. Creating notifies nobody, so a factory that could see
  * drafts would be reading mail nobody posted.
  */
-export const FactoryInquirySchema = z
-  .object({
-    id: z.string(),
-    /** A human-quotable handle — the thing a buyer reads out on a call. */
-    reference: z.string(),
-    state: z.enum(FACTORY_INQUIRY_STATES),
-    factoryOrganizationId: z.string(),
-    factorySlug: z.string(),
-    factoryDisplayName: z.string(),
-    buyerOrganizationId: z.string(),
-    buyerDisplayName: z.string(),
-    capabilityKind: z.enum(FACTORY_CAPABILITY_KINDS),
-    productDescription: z.string(),
-    estimatedAnnualQuantity: z.number().int().nullable(),
-    unitLabel: z.string().nullable(),
-    targetUnitPriceInCents: z.number().int().nullable(),
-    currency: z.string().nullable(),
-    requiredCertifications: z.array(z.enum(FACTORY_CERTIFICATIONS)),
-    desiredFirstDeliveryAt: IsoDateSchema.nullable(),
-    notes: z.string().nullable(),
-    /**
-     * The one-to-one thread opened by `send`, or `null` while the inquiry is still a draft.
-     *
-     * ONE-TO-ONE BY DEFINITION (§16.5). An RFQ thread has every invited provider in it; folding a
-     * manufacturing inquiry into that shape would expose one seller's conversation to its
-     * competitors.
-     */
-    threadId: z.string().nullable(),
-    /** Set by `send`. `null` while `draft`, and a renderer must not print "sent" without it. */
-    sentAt: IsoDateTimeSchema.nullable(),
-    answeredAt: IsoDateTimeSchema.nullable(),
-    closedAt: IsoDateTimeSchema.nullable(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const FactoryInquirySchema = z.object({
+  id: z.string(),
+  /** A human-quotable handle — the thing a buyer reads out on a call. */
+  reference: z.string(),
+  state: z.enum(FACTORY_INQUIRY_STATES),
+  factoryOrganizationId: z.string(),
+  factorySlug: z.string(),
+  factoryDisplayName: z.string(),
+  buyerOrganizationId: z.string(),
+  buyerDisplayName: z.string(),
+  capabilityKind: z.enum(FACTORY_CAPABILITY_KINDS),
+  productDescription: z.string(),
+  estimatedAnnualQuantity: z.number().int().nullable(),
+  unitLabel: z.string().nullable(),
+  targetUnitPriceInCents: z.number().int().nullable(),
+  currency: z.string().nullable(),
+  requiredCertifications: z.array(z.enum(FACTORY_CERTIFICATIONS)),
+  desiredFirstDeliveryAt: IsoDateSchema.nullable(),
+  notes: z.string().nullable(),
+  /**
+   * The one-to-one thread opened by `send`, or `null` while the inquiry is still a draft.
+   *
+   * ONE-TO-ONE BY DEFINITION (§16.5). An RFQ thread has every invited provider in it; folding a
+   * manufacturing inquiry into that shape would expose one seller's conversation to its
+   * competitors.
+   */
+  threadId: z.string().nullable(),
+  /** Set by `send`. `null` while `draft`, and a renderer must not print "sent" without it. */
+  sentAt: IsoDateTimeSchema.nullable(),
+  answeredAt: IsoDateTimeSchema.nullable(),
+  closedAt: IsoDateTimeSchema.nullable(),
+  createdAt: IsoDateTimeSchema,
+});
 
 export const FactoryInquiryListPageSchema = cursorPageOf(FactoryInquirySchema);
 
@@ -547,11 +527,11 @@ export interface UpdateFactoryTermsInput {
 // The call parses `SellerDeclaredProfileSchema` from `organizations.schemas.ts` instead, which is
 // the same shape the storefront read already uses.
 
-export const FactoryProductionLineListSchema = z
-  .object({ productionLines: z.array(FactoryProductionLineSchema) })
-  .strip();
+export const FactoryProductionLineListSchema = z.object({
+  productionLines: z.array(FactoryProductionLineSchema),
+});
 
-export const FactorySiteListSchema = z.object({ sites: z.array(FactorySiteSchema) }).strip();
+export const FactorySiteListSchema = z.object({ sites: z.array(FactorySiteSchema) });
 
 // --- Staff site audits ------------------------------------------------------
 //
@@ -575,35 +555,31 @@ export type FactorySiteAuditState = (typeof FACTORY_SITE_AUDIT_STATES)[number];
  * NONE OF THIS REACHES THE PUBLIC DETAIL READ except the date, as `lastAuditedAt`. The auditor and
  * the sites covered are a disclosure about third parties.
  */
-export const FactorySiteAuditSchema = z
-  .object({
-    id: z.string(),
-    organizationId: z.string(),
-    state: z.enum(FACTORY_SITE_AUDIT_STATES),
-    auditedAt: IsoDateSchema,
-    auditorName: z.string(),
-    scopeSummary: z.string(),
-    /**
-     * Ids from `FactorySite`. Empty means the audit covered the organization, not a named site.
-     *
-     * `siteIds` IS THE WIRE'S SPELLING, on the row AND in the create body — this said
-     * `coveredSiteIds` in both places, so the read failed to parse and the write was a 422.
-     */
-    siteIds: z.array(z.string()),
-    // NO `auditEntryId`. Its comment claimed it was "NOT NULL on the backend"; `projectSiteAudit`
-    // never emits it at all, so requiring it failed every audit row. The accountable human is
-    // `auditorName`, which is on the row and is what the console renders.
-    withdrawnAt: IsoDateTimeSchema.nullable(),
-    /** Required by the withdraw route, so it is present whenever `withdrawnAt` is. */
-    withdrawalReason: z.string().nullable(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const FactorySiteAuditSchema = z.object({
+  id: z.string(),
+  organizationId: z.string(),
+  state: z.enum(FACTORY_SITE_AUDIT_STATES),
+  auditedAt: IsoDateSchema,
+  auditorName: z.string(),
+  scopeSummary: z.string(),
+  /**
+   * Ids from `FactorySite`. Empty means the audit covered the organization, not a named site.
+   *
+   * `siteIds` IS THE WIRE'S SPELLING, on the row AND in the create body — this said
+   * `coveredSiteIds` in both places, so the read failed to parse and the write was a 422.
+   */
+  siteIds: z.array(z.string()),
+  // NO `auditEntryId`. Its comment claimed it was "NOT NULL on the backend"; `projectSiteAudit`
+  // never emits it at all, so requiring it failed every audit row. The accountable human is
+  // `auditorName`, which is on the row and is what the console renders.
+  withdrawnAt: IsoDateTimeSchema.nullable(),
+  /** Required by the withdraw route, so it is present whenever `withdrawnAt` is. */
+  withdrawalReason: z.string().nullable(),
+  createdAt: IsoDateTimeSchema,
+});
 
 /** `GET …/site-audits`. The wrapper key is `siteAudits` — `audits` was never on the wire. */
-export const FactorySiteAuditListSchema = z
-  .object({ siteAudits: z.array(FactorySiteAuditSchema) })
-  .strip();
+export const FactorySiteAuditListSchema = z.object({ siteAudits: z.array(FactorySiteAuditSchema) });
 
 /** `POST …/site-audits`. Requires an `Idempotency-Key` — a retry without one audits twice. */
 export interface RecordSiteAuditInput {

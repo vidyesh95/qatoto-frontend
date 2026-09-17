@@ -95,40 +95,34 @@ export type ReviewSort = (typeof REVIEW_SORTS)[number];
 // --- Product detail ---------------------------------------------------------
 
 /** A5. Integers in named units — never a formatted string a client cannot compare. */
-export const ProductPackagingSchema = z
-  .object({
-    packageLengthMm: z.number().int().nullable(),
-    packageWidthMm: z.number().int().nullable(),
-    packageHeightMm: z.number().int().nullable(),
-    packageGrossWeightGrams: z.number().int().nullable(),
-    unitsPerPackage: z.number().int().nullable(),
-  })
-  .strip();
+export const ProductPackagingSchema = z.object({
+  packageLengthMm: z.number().int().nullable(),
+  packageWidthMm: z.number().int().nullable(),
+  packageHeightMm: z.number().int().nullable(),
+  packageGrossWeightGrams: z.number().int().nullable(),
+  unitsPerPackage: z.number().int().nullable(),
+});
 
 /** A2. `mediaKind` is what makes a 360 spin expressible at all. */
-export const ProductMediaSchema = z
-  .object({
-    id: z.string(),
-    url: z.string(),
-    mediaKind: z.enum(PRODUCT_MEDIA_KINDS),
-    altText: z.string().nullable(),
-    widthPx: z.number().int().nullable(),
-    heightPx: z.number().int().nullable(),
-    position: z.number().int(),
-  })
-  .strip();
+export const ProductMediaSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  mediaKind: z.enum(PRODUCT_MEDIA_KINDS),
+  altText: z.string().nullable(),
+  widthPx: z.number().int().nullable(),
+  heightPx: z.number().int().nullable(),
+  position: z.number().int(),
+});
 
-export const ProductPricingTierSchema = z
-  .object({
-    unitPriceInCents: z.number().int(),
-    minimumOrderQuantity: z.number().int(),
-    // A27. This band's OWN maximum lead time, or `null` when it declared none and the product's
-    // `leadTimeMaxDays` applies. It is the band the buyer's quantity will be priced from at
-    // preparation, so the delivery panel and the promise agree.
-    leadTimeDays: z.number().int().nullable(),
-    position: z.number().int(),
-  })
-  .strip();
+export const ProductPricingTierSchema = z.object({
+  unitPriceInCents: z.number().int(),
+  minimumOrderQuantity: z.number().int(),
+  // A27. This band's OWN maximum lead time, or `null` when it declared none and the product's
+  // `leadTimeMaxDays` applies. It is the band the buyer's quantity will be priced from at
+  // preparation, so the delivery panel and the promise agree.
+  leadTimeDays: z.number().int().nullable(),
+  position: z.number().int(),
+});
 
 /**
  * A1. One buyable variation, with its own price, stock, MOQ and gallery.
@@ -136,30 +130,26 @@ export const ProductPricingTierSchema = z
  * A FLAT LIST, NOT AXES (A26, deferred deliberately). "Sea blue × Large" is one opaque variant
  * name rather than two dimensions a buyer picks independently. The picker renders one strip.
  */
-export const ProductVariantSchema = z
-  .object({
-    id: z.string(),
-    publicSlug: z.string(),
-    name: z.string(),
-    priceInCents: z.number().int(),
-    minimumOrderQuantity: z.number().int().nullable(),
-    stockState: z.enum(STORE_STOCK_STATES),
-    position: z.number().int(),
-    images: z.array(ProductMediaSchema),
-    pricingTiers: z.array(ProductPricingTierSchema),
-  })
-  .strip();
+export const ProductVariantSchema = z.object({
+  id: z.string(),
+  publicSlug: z.string(),
+  name: z.string(),
+  priceInCents: z.number().int(),
+  minimumOrderQuantity: z.number().int().nullable(),
+  stockState: z.enum(STORE_STOCK_STATES),
+  position: z.number().int(),
+  images: z.array(ProductMediaSchema),
+  pricingTiers: z.array(ProductPricingTierSchema),
+});
 
 /** A6. Richer than `keyFeatures`: a title, a body, and an image. */
-export const ProductHighlightSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    bodyText: z.string(),
-    imageUrl: z.string().nullable(),
-    position: z.number().int(),
-  })
-  .strip();
+export const ProductHighlightSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  bodyText: z.string(),
+  imageUrl: z.string().nullable(),
+  position: z.number().int(),
+});
 
 /** The four kinds a seller can file a listing document under. Matches the backend pgEnum. */
 export const PRODUCT_DOCUMENT_KINDS = ["datasheet", "manual", "care_guide", "other"] as const;
@@ -189,16 +179,14 @@ export const PRODUCT_DOCUMENT_KIND_LABELS: Readonly<
  * a virus check happened — see migration `0155` for why that is the honest position rather than
  * the lax one.
  */
-export const ProductDocumentSchema = z
-  .object({
-    id: z.string(),
-    documentKind: z.enum(PRODUCT_DOCUMENT_KINDS),
-    fileName: z.string(),
-    byteSize: z.number().int(),
-    position: z.number().int(),
-    downloadPath: z.string(),
-  })
-  .strip();
+export const ProductDocumentSchema = z.object({
+  id: z.string(),
+  documentKind: z.enum(PRODUCT_DOCUMENT_KINDS),
+  fileName: z.string(),
+  byteSize: z.number().int(),
+  position: z.number().int(),
+  downloadPath: z.string(),
+});
 
 /**
  * A47. The listing's optional `.glb` 3D model — what the "View in 360º" control opens.
@@ -209,15 +197,13 @@ export const ProductDocumentSchema = z
  * fetches it directly. Same exposure class as `images[].url`. Nothing here says the file was
  * scanned, because it was not.
  */
-export const ProductThreeDimensionalModelSchema = z
-  .object({
-    id: z.string(),
-    url: z.string(),
-    fileName: z.string(),
-    byteSize: z.number().int(),
-    updatedAt: z.string(),
-  })
-  .strip();
+export const ProductThreeDimensionalModelSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  fileName: z.string(),
+  byteSize: z.number().int(),
+  updatedAt: z.string(),
+});
 export type ProductThreeDimensionalModel = z.infer<typeof ProductThreeDimensionalModelSchema>;
 
 /**
@@ -231,19 +217,17 @@ export type ProductThreeDimensionalModel = z.infer<typeof ProductThreeDimensiona
  * `state` is deliberately absent from the wire: the read carries ACTIVE options only, and a retired
  * option is not a thing a buyer can choose.
  */
-export const ProductCustomizationOptionSchema = z
-  .object({
-    id: z.string(),
-    slotKey: z.string(),
-    label: z.string(),
-    customizationKind: z.enum(PRODUCT_CUSTOMIZATION_KINDS),
-    acceptedMediaTypes: z.array(z.string()),
-    choiceValues: z.array(z.string()),
-    minimumOrderQuantity: z.number().int(),
-    isRequired: z.boolean(),
-    position: z.number().int(),
-  })
-  .strip();
+export const ProductCustomizationOptionSchema = z.object({
+  id: z.string(),
+  slotKey: z.string(),
+  label: z.string(),
+  customizationKind: z.enum(PRODUCT_CUSTOMIZATION_KINDS),
+  acceptedMediaTypes: z.array(z.string()),
+  choiceValues: z.array(z.string()),
+  minimumOrderQuantity: z.number().int(),
+  isRequired: z.boolean(),
+  position: z.number().int(),
+});
 
 /**
  * A11. What the CALLER has done to this product. `null` for a signed-out visitor.
@@ -251,9 +235,10 @@ export const ProductCustomizationOptionSchema = z
  * TWO INDEPENDENT FACTS, NOT ONE. A like is a public reaction; a bookmark is the buyer's wishlist.
  * A product can be both, neither, or either.
  */
-export const ProductViewerEngagementSchema = z
-  .object({ hasLiked: z.boolean(), hasBookmarked: z.boolean() })
-  .strip();
+export const ProductViewerEngagementSchema = z.object({
+  hasLiked: z.boolean(),
+  hasBookmarked: z.boolean(),
+});
 
 /**
  * A11. Integer counts plus per-viewer state. The client formats "3.7k"; the server counts.
@@ -262,20 +247,18 @@ export const ProductViewerEngagementSchema = z
  * count incrementally, so it is written by the nightly rollup or not at all, and a zero would state
  * a false denominator. There is no `commentCount`; see rule 2 at the top of this file.
  */
-export const ProductEngagementSchema = z
-  .object({
-    /** The public like count — what the heart shows. Lists nowhere. */
-    likeCount: z.number().int(),
-    /** How many buyers hold this in a wishlist. */
-    bookmarkedCount: z.number().int(),
-    shareCount: z.number().int(),
-    questionCount: z.number().int(),
-    answeredQuestionCount: z.number().int(),
-    viewCount: z.number().int(),
-    uniqueViewerCount: z.number().int().nullable(),
-    viewer: ProductViewerEngagementSchema.nullable(),
-  })
-  .strip();
+export const ProductEngagementSchema = z.object({
+  /** The public like count — what the heart shows. Lists nowhere. */
+  likeCount: z.number().int(),
+  /** How many buyers hold this in a wishlist. */
+  bookmarkedCount: z.number().int(),
+  shareCount: z.number().int(),
+  questionCount: z.number().int(),
+  answeredQuestionCount: z.number().int(),
+  viewCount: z.number().int(),
+  uniqueViewerCount: z.number().int().nullable(),
+  viewer: ProductViewerEngagementSchema.nullable(),
+});
 
 /**
  * The venture that built this listing — the read side of `product.researchProjectId`, new on the
@@ -295,18 +278,16 @@ export const ProductEngagementSchema = z
  * — the same rule `launch-ready-projects-rail.tsx` follows. `statsComputedAt` is what lets the
  * block say "as of" instead of implying a live number.
  */
-export const ProductVentureProvenanceSchema = z
-  .object({
-    projectSlug: z.string(),
-    projectName: z.string(),
-    projectTagline: z.string(),
-    projectCoverImageUrl: z.string().nullable(),
-    stage: ProjectStageSchema,
-    verifiedEffortMinutesTotal: z.number().int().nullable(),
-    teamMemberCount: z.number().int().nullable(),
-    statsComputedAt: IsoDateTimeSchema.nullable(),
-  })
-  .strip();
+export const ProductVentureProvenanceSchema = z.object({
+  projectSlug: z.string(),
+  projectName: z.string(),
+  projectTagline: z.string(),
+  projectCoverImageUrl: z.string().nullable(),
+  stage: ProjectStageSchema,
+  verifiedEffortMinutesTotal: z.number().int().nullable(),
+  teamMemberCount: z.number().int().nullable(),
+  statsComputedAt: IsoDateTimeSchema.nullable(),
+});
 
 export const StoreProductDetailSchema = StoreProductCardSchema.extend({
   description: z.string().nullable(),
@@ -331,15 +312,13 @@ export const StoreProductDetailSchema = StoreProductCardSchema.extend({
   threeDimensionalModel: ProductThreeDimensionalModelSchema.nullable(),
   customizationOptions: z.array(ProductCustomizationOptionSchema),
   specifications: z.array(
-    z
-      .object({
-        key: z.string(),
-        value: z.string(),
-        // A3. Null is ungrouped, which is every pre-Phase-8 row.
-        group: z.string().nullable(),
-        position: z.number().int(),
-      })
-      .strip(),
+    z.object({
+      key: z.string(),
+      value: z.string(),
+      // A3. Null is ungrouped, which is every pre-Phase-8 row.
+      group: z.string().nullable(),
+      position: z.number().int(),
+    }),
   ),
   /**
    * STORE §20. The STRUCTURED answers, beside the free-text `specifications` above.
@@ -350,21 +329,19 @@ export const StoreProductDetailSchema = StoreProductCardSchema.extend({
    * does not care which table an answer came from.
    */
   attributeValues: z.array(
-    z
-      .object({
-        attributeKey: z.string(),
-        label: z.string(),
-        groupLabel: z.string().nullable(),
-        valueKind: z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS),
-        unitLabel: z.string().nullable(),
-        numericScale: z.number().int().nullable(),
-        position: z.number().int(),
-        choiceValue: z.string().nullable(),
-        choiceLabel: z.string().nullable(),
-        numericValueScaled: z.number().nullable(),
-        textValue: z.string().nullable(),
-      })
-      .strip(),
+    z.object({
+      attributeKey: z.string(),
+      label: z.string(),
+      groupLabel: z.string().nullable(),
+      valueKind: z.enum(CATEGORY_ATTRIBUTE_VALUE_KINDS),
+      unitLabel: z.string().nullable(),
+      numericScale: z.number().int().nullable(),
+      position: z.number().int(),
+      choiceValue: z.string().nullable(),
+      choiceLabel: z.string().nullable(),
+      numericValueScaled: z.number().nullable(),
+      textValue: z.string().nullable(),
+    }),
   ),
   categoryTrail: z.array(StoreCategorySchema),
   engagement: ProductEngagementSchema,
@@ -375,7 +352,7 @@ export const StoreProductDetailSchema = StoreProductCardSchema.extend({
    * projection carries no venture, because a grid has nowhere to put one.
    */
   builtInTheOpen: ProductVentureProvenanceSchema.nullable(),
-}).strip();
+});
 
 // --- View beacon ------------------------------------------------------------
 
@@ -411,38 +388,30 @@ export interface ProductViewBeaconInput {
  * one anything may render. `isCountedView` is the server's judgement about whether the dwell
  * crossed its own threshold — the client does not know the threshold and must not guess it.
  */
-export const ProductViewBeaconResultSchema = z
-  .object({
-    dwellSeconds: z.number().int(),
-    isCountedView: z.boolean(),
-  })
-  .strip();
+export const ProductViewBeaconResultSchema = z.object({
+  dwellSeconds: z.number().int(),
+  isCountedView: z.boolean(),
+});
 
 export type ProductViewBeaconResult = z.infer<typeof ProductViewBeaconResultSchema>;
 
 // --- Companions -------------------------------------------------------------
 
-export const ProductCompanionSchema = z
-  .object({
-    relationKind: z.enum(PRODUCT_RELATION_KINDS),
-    // Rule 3. Never render a `seller_declared` relation as verified fitment.
-    sourceKind: z.enum(PRODUCT_RELATION_SOURCE_KINDS),
-    rank: z.number().int(),
-    product: StoreProductCardSchema,
-  })
-  .strip();
+export const ProductCompanionSchema = z.object({
+  relationKind: z.enum(PRODUCT_RELATION_KINDS),
+  // Rule 3. Never render a `seller_declared` relation as verified fitment.
+  sourceKind: z.enum(PRODUCT_RELATION_SOURCE_KINDS),
+  rank: z.number().int(),
+  product: StoreProductCardSchema,
+});
 
-export const ProductCompanionGroupSchema = z
-  .object({
-    relationKind: z.enum(PRODUCT_RELATION_KINDS),
-    items: z.array(ProductCompanionSchema),
-  })
-  .strip();
+export const ProductCompanionGroupSchema = z.object({
+  relationKind: z.enum(PRODUCT_RELATION_KINDS),
+  items: z.array(ProductCompanionSchema),
+});
 
 /** The route nests the array under `groups`. */
-export const ProductCompanionsSchema = z
-  .object({ groups: z.array(ProductCompanionGroupSchema) })
-  .strip();
+export const ProductCompanionsSchema = z.object({ groups: z.array(ProductCompanionGroupSchema) });
 
 // --- Delivery estimate ------------------------------------------------------
 
@@ -472,87 +441,76 @@ export const ProductDeliveryEstimateSchema = DeliveryEstimateSchema;
  * One entry per currency, never converted — an offering's currency is independent of the order's,
  * and converting without an FX quote would invent a rate.
  */
-export const ProductDeliveryEstimatePageSchema = z
-  .object({
-    estimates: z.array(ProductDeliveryEstimateSchema),
-    /**
-     * §19's rate-card projection, ADDED ALONGSIDE `estimates` AND NEVER IN PLACE OF IT. The two
-     * answer different questions from different data: `estimates` is derived from declared provider
-     * COVERAGE and gives a per-currency range; `lanePlan` is derived from purchased RATE CARDS and
-     * gives per-leg options a buyer can actually choose between. A16's projection is unchanged, byte
-     * for byte, which is why this is a sibling rather than a replacement.
-     *
-     * NULLABLE, AND THE DOC IS WRONG ABOUT THIS. §19.5 says never-null on a 200; `planFreightJourney`
-     * returns `FreightLanePlan | null` when the seller's origin country is unresolved
-     * (`commerce-freight-journey.service.ts:416`). Code wins — a non-nullable parse here would fail
-     * the whole page for a seller who never published a dispatch country, which is common.
-     */
-    lanePlan: FreightLanePlanSchema.nullable(),
-  })
-  .strip();
+export const ProductDeliveryEstimatePageSchema = z.object({
+  estimates: z.array(ProductDeliveryEstimateSchema),
+  /**
+   * §19's rate-card projection, ADDED ALONGSIDE `estimates` AND NEVER IN PLACE OF IT. The two
+   * answer different questions from different data: `estimates` is derived from declared provider
+   * COVERAGE and gives a per-currency range; `lanePlan` is derived from purchased RATE CARDS and
+   * gives per-leg options a buyer can actually choose between. A16's projection is unchanged, byte
+   * for byte, which is why this is a sibling rather than a replacement.
+   *
+   * NULLABLE, AND THE DOC IS WRONG ABOUT THIS. §19.5 says never-null on a 200; `planFreightJourney`
+   * returns `FreightLanePlan | null` when the seller's origin country is unresolved
+   * (`commerce-freight-journey.service.ts:416`). Code wins — a non-nullable parse here would fail
+   * the whole page for a seller who never published a dispatch country, which is common.
+   */
+  lanePlan: FreightLanePlanSchema.nullable(),
+});
 
 // --- Reviews ----------------------------------------------------------------
 
-export const ReviewMediaSchema = z
-  .object({
-    id: z.string(),
-    mediaKind: z.enum(REVIEW_MEDIA_KINDS),
-    url: z.string().nullable(),
-    // There is no first-party video ingest anywhere in this domain. A review video is a YouTube id.
-    youtubeVideoId: z.string().nullable(),
-    widthPx: z.number().int().nullable(),
-    heightPx: z.number().int().nullable(),
-    position: z.number().int(),
-  })
-  .strip();
+export const ReviewMediaSchema = z.object({
+  id: z.string(),
+  mediaKind: z.enum(REVIEW_MEDIA_KINDS),
+  url: z.string().nullable(),
+  // There is no first-party video ingest anywhere in this domain. A review video is a YouTube id.
+  youtubeVideoId: z.string().nullable(),
+  widthPx: z.number().int().nullable(),
+  heightPx: z.number().int().nullable(),
+  position: z.number().int(),
+});
 
-export const ReviewScoresSchema = z
-  .object({
-    service: z.number().nullable(),
-    shipping: z.number().nullable(),
-    quality: z.number().nullable(),
-  })
-  .strip();
+export const ReviewScoresSchema = z.object({
+  service: z.number().nullable(),
+  shipping: z.number().nullable(),
+  quality: z.number().nullable(),
+});
 
-export const ReviewOrganizationSchema = z
-  .object({
-    organizationId: z.string(),
-    slug: z.string(),
-    displayName: z.string(),
-    logoUrl: z.string().nullable(),
-  })
-  .strip();
+export const ReviewOrganizationSchema = z.object({
+  organizationId: z.string(),
+  slug: z.string(),
+  displayName: z.string(),
+  logoUrl: z.string().nullable(),
+});
 
-export const ReviewReplySchema = z
-  .object({
-    body: z.string(),
-    respondedAt: IsoDateTimeSchema,
-    responder: ReviewOrganizationSchema.nullable(),
-  })
-  .strip();
+export const ReviewReplySchema = z.object({
+  body: z.string(),
+  respondedAt: IsoDateTimeSchema,
+  responder: ReviewOrganizationSchema.nullable(),
+});
 
-export const StoreReviewSchema = z
-  .object({
-    id: z.string(),
-    rating: z.number(),
-    body: z.string(),
-    createdAt: IsoDateTimeSchema,
-    productId: z.string().nullable(),
-    // `null` when the reviewing organization is not publicly visible — the card then renders
-    // "Verified buyer". A private organization's identity is not disclosed by the act of reviewing.
-    reviewer: ReviewOrganizationSchema.extend({ countryCode: z.string() }).strip().nullable(),
-    scores: ReviewScoresSchema,
-    media: z.array(ReviewMediaSchema),
-    helpfulCount: z.number().int(),
-    // Rule 1. `null` for a caller with no active organization, NOT `{hasVotedHelpful: false}`.
-    viewer: z.object({ hasVotedHelpful: z.boolean() }).strip().nullable(),
-    reply: ReviewReplySchema.nullable(),
-  })
-  .strip();
+export const StoreReviewSchema = z.object({
+  id: z.string(),
+  rating: z.number(),
+  body: z.string(),
+  createdAt: IsoDateTimeSchema,
+  productId: z.string().nullable(),
+  // `null` when the reviewing organization is not publicly visible — the card then renders
+  // "Verified buyer". A private organization's identity is not disclosed by the act of reviewing.
+  reviewer: ReviewOrganizationSchema.extend({ countryCode: z.string() }).nullable(),
+  scores: ReviewScoresSchema,
+  media: z.array(ReviewMediaSchema),
+  helpfulCount: z.number().int(),
+  // Rule 1. `null` for a caller with no active organization, NOT `{hasVotedHelpful: false}`.
+  viewer: z.object({ hasVotedHelpful: z.boolean() }).nullable(),
+  reply: ReviewReplySchema.nullable(),
+});
 
-const ReviewScoreAverageSchema = z
-  .object({ average: z.number().nullable(), count: z.number().int() })
-  .strip();
+const ReviewScoreAverageSchema = z.object({
+  average: z.number().nullable(),
+  count: z.number().int(),
+});
 
 /**
  * ALWAYS computed over every visible review in scope — never over the filtered subset.
@@ -560,30 +518,24 @@ const ReviewScoreAverageSchema = z
  * The filter chips display these counts, so a summary that narrowed with the filter would make the
  * chips renumber themselves as you click them and leave no way back to the full picture.
  */
-export const StoreReviewSummarySchema = z
-  .object({
-    averageRating: z.number().nullable(),
-    reviewCount: z.number().int(),
-    ratingHistogram: z
-      .object({
-        rating1: z.number().int(),
-        rating2: z.number().int(),
-        rating3: z.number().int(),
-        rating4: z.number().int(),
-        rating5: z.number().int(),
-      })
-      .strip(),
-    reviewsWithMediaCount: z.number().int(),
-    mediaCount: z.number().int(),
-    scoreAverages: z
-      .object({
-        service: ReviewScoreAverageSchema,
-        shipping: ReviewScoreAverageSchema,
-        quality: ReviewScoreAverageSchema,
-      })
-      .strip(),
-  })
-  .strip();
+export const StoreReviewSummarySchema = z.object({
+  averageRating: z.number().nullable(),
+  reviewCount: z.number().int(),
+  ratingHistogram: z.object({
+    rating1: z.number().int(),
+    rating2: z.number().int(),
+    rating3: z.number().int(),
+    rating4: z.number().int(),
+    rating5: z.number().int(),
+  }),
+  reviewsWithMediaCount: z.number().int(),
+  mediaCount: z.number().int(),
+  scoreAverages: z.object({
+    service: ReviewScoreAverageSchema,
+    shipping: ReviewScoreAverageSchema,
+    quality: ReviewScoreAverageSchema,
+  }),
+});
 
 export const StoreReviewListPageSchema = cursorPageOf(StoreReviewSchema).extend({
   summary: StoreReviewSummarySchema,
@@ -591,37 +543,33 @@ export const StoreReviewListPageSchema = cursorPageOf(StoreReviewSchema).extend(
 
 // --- Questions and answers --------------------------------------------------
 
-export const ProductAnswerSchema = z
-  .object({
-    id: z.string(),
-    questionId: z.string(),
-    // DERIVED, never sent on a write. The server decides whether an answer is the seller's.
-    authorKind: z.enum(PRODUCT_ANSWER_AUTHOR_KINDS),
-    bodyText: z.string(),
-    createdAt: IsoDateTimeSchema,
-    helpfulCount: z.number().int(),
-    // Rule 1, again. Keyed on the ORGANIZATION, because the vote table is.
-    viewer: z.object({ hasVotedHelpful: z.boolean() }).strip().nullable(),
-    author: ReviewOrganizationSchema.nullable(),
-  })
-  .strip();
+export const ProductAnswerSchema = z.object({
+  id: z.string(),
+  questionId: z.string(),
+  // DERIVED, never sent on a write. The server decides whether an answer is the seller's.
+  authorKind: z.enum(PRODUCT_ANSWER_AUTHOR_KINDS),
+  bodyText: z.string(),
+  createdAt: IsoDateTimeSchema,
+  helpfulCount: z.number().int(),
+  // Rule 1, again. Keyed on the ORGANIZATION, because the vote table is.
+  viewer: z.object({ hasVotedHelpful: z.boolean() }).nullable(),
+  author: ReviewOrganizationSchema.nullable(),
+});
 
-export const ProductQuestionSchema = z
-  .object({
-    id: z.string(),
-    bodyText: z.string(),
-    createdAt: IsoDateTimeSchema,
-    answerCount: z.number().int(),
-    hasSellerAnswer: z.boolean(),
-    /** The asker's display handle. Their EMPLOYER is never projected. */
-    askedBy: z.object({ name: z.string(), handle: z.string().nullable() }).strip().nullable(),
-    /**
-     * At most one answer, the seller's first. The full list is its own paginated route, because a
-     * cursor over a computed preference rank is how pagination starts skipping rows.
-     */
-    topAnswer: ProductAnswerSchema.nullable(),
-  })
-  .strip();
+export const ProductQuestionSchema = z.object({
+  id: z.string(),
+  bodyText: z.string(),
+  createdAt: IsoDateTimeSchema,
+  answerCount: z.number().int(),
+  hasSellerAnswer: z.boolean(),
+  /** The asker's display handle. Their EMPLOYER is never projected. */
+  askedBy: z.object({ name: z.string(), handle: z.string().nullable() }).nullable(),
+  /**
+   * At most one answer, the seller's first. The full list is its own paginated route, because a
+   * cursor over a computed preference rank is how pagination starts skipping rows.
+   */
+  topAnswer: ProductAnswerSchema.nullable(),
+});
 
 export const ProductQuestionListPageSchema = cursorPageOf(ProductQuestionSchema);
 export const ProductAnswerListPageSchema = cursorPageOf(ProductAnswerSchema);
@@ -642,15 +590,13 @@ export const ProductAnswerListPageSchema = cursorPageOf(ProductAnswerSchema);
 // NEWER rows, and a "Show older" label copied from the review inbox would be backwards.
 
 export const SellerQuestionInboxItemSchema = ProductQuestionSchema.extend({
-  product: z
-    .object({
-      id: z.string(),
-      title: z.string(),
-      /** NULL until published, and again if it is unpublished. The link is gated on this. */
-      publicSlug: z.string().nullable(),
-    })
-    .strip(),
-}).strip();
+  product: z.object({
+    id: z.string(),
+    title: z.string(),
+    /** NULL until published, and again if it is unpublished. The link is gated on this. */
+    publicSlug: z.string().nullable(),
+  }),
+});
 
 export const SellerQuestionInboxPageSchema = cursorPageOf(SellerQuestionInboxItemSchema);
 
@@ -712,20 +658,18 @@ export const CreatedProductAnswerSchema = ProductAnswerSchema;
  * other people's writing and a real delete would cascade it away. The state also keeps an author's
  * retraction distinguishable from a moderator's hide, which is why there is no shared "deleted" flag.
  */
-export const RetractedProductQuestionSchema = z.object({ questionId: z.string() }).strip();
-export const RetractedProductAnswerSchema = z.object({ answerId: z.string() }).strip();
+export const RetractedProductQuestionSchema = z.object({ questionId: z.string() });
+export const RetractedProductAnswerSchema = z.object({ answerId: z.string() });
 
 /**
  * What the helpful pair answers with. `helpfulCount` is the SERVER's count after the write — render
  * it rather than incrementing locally, because the two disagree the moment anyone else votes.
  */
-export const ProductAnswerHelpfulVoteSchema = z
-  .object({
-    answerId: z.string(),
-    isHelpful: z.boolean(),
-    helpfulCount: z.number().int(),
-  })
-  .strip();
+export const ProductAnswerHelpfulVoteSchema = z.object({
+  answerId: z.string(),
+  isHelpful: z.boolean(),
+  helpfulCount: z.number().int(),
+});
 
 // --- Filter inputs ----------------------------------------------------------
 //

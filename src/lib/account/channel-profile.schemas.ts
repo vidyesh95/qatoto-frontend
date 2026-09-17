@@ -10,45 +10,41 @@
 
 import { z } from "zod";
 
-export const ProfileLinkSchema = z
-  .object({
-    label: z.string(),
-    url: z.string(),
-  })
-  .strip();
+export const ProfileLinkSchema = z.object({
+  label: z.string(),
+  url: z.string(),
+});
 
 export type ProfileLink = z.infer<typeof ProfileLinkSchema>;
 
-export const ChannelProfileDraftSchema = z
-  .object({
-    bio: z.string().nullable(),
-    links: z.array(ProfileLinkSchema),
-    /**
-     * Whether a moderator has hidden this text from the public channel page.
-     *
-     * ⚠️ THIS IS THE ONLY WAY THE PERSON FINDS OUT. Upholding a report writes an audit entry and
-     * an action row and reaches them not at all — there is no notification. Without this field the
-     * editor would render their description exactly as before, so somebody asked to fix a problem
-     * would not know there was one.
-     */
-    profileModerationState: z.enum(["visible", "hidden_by_moderator"]),
-    /**
-     * Whether this creator's channel page is announced in Qatoto's public sitemap.
-     *
-     * DISCOVERABILITY, NOT VISIBILITY, and the editor's copy has to say so. The channel page is
-     * public either way — every feed card links to it — and this only decides whether
-     * `GET /channels` announces the handle to a crawler. Copy implying that switching it off makes
-     * a channel private would be a promise the backend cannot keep.
-     *
-     * DEFAULTS TRUE server-side, so this control is an opt-OUT. It shipped as an opt-in and was
-     * reversed: indexing a page that is already public and already linked from every feed card
-     * reveals nothing new, and the opt-in produced zero listed channels because nobody ticks a box
-     * they are never shown. Keeping the control at all is stricter than YouTube, which indexes
-     * channel pages by default and offers no toggle.
-     */
-    isChannelListed: z.boolean(),
-  })
-  .strip();
+export const ChannelProfileDraftSchema = z.object({
+  bio: z.string().nullable(),
+  links: z.array(ProfileLinkSchema),
+  /**
+   * Whether a moderator has hidden this text from the public channel page.
+   *
+   * ⚠️ THIS IS THE ONLY WAY THE PERSON FINDS OUT. Upholding a report writes an audit entry and
+   * an action row and reaches them not at all — there is no notification. Without this field the
+   * editor would render their description exactly as before, so somebody asked to fix a problem
+   * would not know there was one.
+   */
+  profileModerationState: z.enum(["visible", "hidden_by_moderator"]),
+  /**
+   * Whether this creator's channel page is announced in Qatoto's public sitemap.
+   *
+   * DISCOVERABILITY, NOT VISIBILITY, and the editor's copy has to say so. The channel page is
+   * public either way — every feed card links to it — and this only decides whether
+   * `GET /channels` announces the handle to a crawler. Copy implying that switching it off makes
+   * a channel private would be a promise the backend cannot keep.
+   *
+   * DEFAULTS TRUE server-side, so this control is an opt-OUT. It shipped as an opt-in and was
+   * reversed: indexing a page that is already public and already linked from every feed card
+   * reveals nothing new, and the opt-in produced zero listed channels because nobody ticks a box
+   * they are never shown. Keeping the control at all is stricter than YouTube, which indexes
+   * channel pages by default and offers no toggle.
+   */
+  isChannelListed: z.boolean(),
+});
 
 export type ChannelProfileDraft = z.infer<typeof ChannelProfileDraftSchema>;
 

@@ -65,7 +65,7 @@ export const DEFAULT_BROWSER_PREFERENCES: BrowserPreferences = {
 
 /**
  * `.partial()` so a blob written by an older build cannot fail wholesale and wipe the preferences
- * it *does* carry, and `.strip()` so keys this build no longer knows about are dropped silently.
+ * it *does* carry, and `z.object`'s default stripping so keys this build no longer knows about are dropped silently.
  *
  * THAT PAIR IS WHY REMOVING THREE PREFERENCES NEEDED NO MIGRATION. A returning visitor's blob still
  * has `theme`, `isChildModeOn` and `isIncognitoModeOn` in it; `.strip()` discards them and the
@@ -78,8 +78,7 @@ const StoredBrowserPreferencesSchema = z
     countryCode: z.string(),
     isAiAssistModeOn: z.boolean(),
   })
-  .partial()
-  .strip();
+  .partial();
 
 /**
  * Parses a raw localStorage value into preferences, merged over the defaults.

@@ -1331,7 +1331,7 @@ service view interfaces, never §11:
 - **Never fabricate a missing signal.** `investor-confidence` 404s when never computed, `…/pie-bake`
   404s before the bake, `equity` is null before the first snapshot — all render as absences.
 
-Everything crossing the network is `unknown` → Zod `.strip()` → tagged result, lifted into the
+Everything crossing the network is `unknown` → Zod `z.object` (strips unknown keys) → tagged result, lifted into the
 component's state union (`CLAUDE.md` Patterns 1–3). That now covers the writes too: a mutation's
 response is parsed exactly like a read's, so a backend that starts returning a different shape fails
 the parse instead of quietly rendering.
@@ -2052,7 +2052,7 @@ filter the server cannot apply is not shipped at all.
 ### Data shapes
 
 `src/lib/rnd/import-intelligence.schemas.ts` and `.api.ts`, beside the others, following
-`suppliers.*` exactly: enum tuples `as const` → `z.enum` → type, every object `.strip()`, filter
+`suppliers.*` exactly: enum tuples `as const` → `z.enum` → type, every object a plain (stripping) `z.object`, filter
 interfaces as plain `readonly` TS rather than Zod. Reads go through `getPaginated` / `getJson` from
 `src/lib/http.ts` with `callerRequestOptions()` forwarded from the page body.
 

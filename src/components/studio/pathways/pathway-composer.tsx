@@ -207,7 +207,7 @@ function MetadataSection({
   const [title, setTitle] = useState(pathway.title);
   const [summary, setSummary] = useState(pathway.summary ?? "");
   const [accent, setAccent] = useState<PathwayAccent>(() => narrowToAccent(pathway.accent));
-  const [endsAt, setEndsAt] = useState(pathway.endsAt?.slice(0, 10) ?? "");
+  const [endsAt, setEndsAt] = useState(() => pathway.endsAt?.slice(0, 10) ?? "");
   const [localError, setLocalError] = useState<string | null>(null);
 
   const updatePathway = useUpdatePathwayMutation();

@@ -121,20 +121,18 @@ export type NotificationPayload = z.infer<typeof NotificationPayloadSchema>;
  * `projectName` are NULL for the programme and staff-role kinds: a programme is not a project,
  * which is the case the column was left nullable for.
  */
-export const NotificationRowSchema = z
-  .object({
-    id: z.string(),
-    kind: z.string(),
-    projectId: z.string().nullable(),
-    projectSlug: z.string().nullable(),
-    projectName: z.string().nullable(),
-    actorUserId: z.string().nullable(),
-    actorName: z.string().nullable(),
-    payload: NotificationPayloadSchema,
-    readAt: z.iso.datetime().nullable(),
-    createdAt: z.iso.datetime(),
-  })
-  .strip();
+export const NotificationRowSchema = z.object({
+  id: z.string(),
+  kind: z.string(),
+  projectId: z.string().nullable(),
+  projectSlug: z.string().nullable(),
+  projectName: z.string().nullable(),
+  actorUserId: z.string().nullable(),
+  actorName: z.string().nullable(),
+  payload: NotificationPayloadSchema,
+  readAt: z.iso.datetime().nullable(),
+  createdAt: z.iso.datetime(),
+});
 export type NotificationRow = z.infer<typeof NotificationRowSchema>;
 
 /**
@@ -146,21 +144,19 @@ export type NotificationRow = z.infer<typeof NotificationRowSchema>;
  * `unreadCount` rides along here as well as on its own route. The BADGE must not read it — see
  * the header of `src/hooks/notifications.ts`.
  */
-export const NotificationPageSchema = z
-  .object({
-    notifications: z.array(NotificationRowSchema),
-    nextCursor: z.string().nullable(),
-    unreadCount: z.number(),
-  })
-  .strip();
+export const NotificationPageSchema = z.object({
+  notifications: z.array(NotificationRowSchema),
+  nextCursor: z.string().nullable(),
+  unreadCount: z.number(),
+});
 export type NotificationPage = z.infer<typeof NotificationPageSchema>;
 
 /** `GET /notifications/unread-count` — the badge alone, on its own partial index. */
-export const UnreadNotificationCountSchema = z.object({ unreadCount: z.number() }).strip();
+export const UnreadNotificationCountSchema = z.object({ unreadCount: z.number() });
 export type UnreadNotificationCount = z.infer<typeof UnreadNotificationCountSchema>;
 
 /** `POST /notifications/read`. `markedCount` is 0 when everything through that row was read. */
-export const MarkNotificationsReadResultSchema = z.object({ markedCount: z.number() }).strip();
+export const MarkNotificationsReadResultSchema = z.object({ markedCount: z.number() });
 export type MarkNotificationsReadResult = z.infer<typeof MarkNotificationsReadResultSchema>;
 
 /**

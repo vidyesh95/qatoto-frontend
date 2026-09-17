@@ -30,25 +30,21 @@ export type ThreadResourceKind = (typeof THREAD_RESOURCE_KINDS)[number];
 
 export const THREAD_PARTICIPANT_ROLES = ["buyer", "provider", "moderator"] as const;
 
-export const ThreadParticipantSchema = z
-  .object({
-    organizationId: z.string(),
-    participantRole: z.enum(THREAD_PARTICIPANT_ROLES),
-  })
-  .strip();
+export const ThreadParticipantSchema = z.object({
+  organizationId: z.string(),
+  participantRole: z.enum(THREAD_PARTICIPANT_ROLES),
+});
 
-export const ThreadSchema = z
-  .object({
-    id: z.string(),
-    resourceKind: z.enum(THREAD_RESOURCE_KINDS),
-    resourceId: z.string(),
-    createdByOrganizationId: z.string(),
-    createdByMemberId: z.string(),
-    createdAt: IsoDateTimeSchema,
-    updatedAt: IsoDateTimeSchema,
-    participants: z.array(ThreadParticipantSchema),
-  })
-  .strip();
+export const ThreadSchema = z.object({
+  id: z.string(),
+  resourceKind: z.enum(THREAD_RESOURCE_KINDS),
+  resourceId: z.string(),
+  createdByOrganizationId: z.string(),
+  createdByMemberId: z.string(),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+  participants: z.array(ThreadParticipantSchema),
+});
 
 /**
  * One message.
@@ -60,17 +56,15 @@ export const ThreadSchema = z
  * `encryptedDocumentIds` are ids of documents ALREADY uploaded and authorized elsewhere. This route
  * attaches, it does not upload.
  */
-export const ThreadMessageSchema = z
-  .object({
-    id: z.string(),
-    threadId: z.string(),
-    authorOrganizationId: z.string(),
-    authorMemberId: z.string(),
-    bodyText: z.string(),
-    createdAt: IsoDateTimeSchema,
-    encryptedDocumentIds: z.array(z.string()),
-  })
-  .strip();
+export const ThreadMessageSchema = z.object({
+  id: z.string(),
+  threadId: z.string(),
+  authorOrganizationId: z.string(),
+  authorMemberId: z.string(),
+  bodyText: z.string(),
+  createdAt: IsoDateTimeSchema,
+  encryptedDocumentIds: z.array(z.string()),
+});
 
 export const ThreadMessagePageSchema = cursorPageOf(ThreadMessageSchema);
 
@@ -83,9 +77,8 @@ export const ThreadInboxEntrySchema = ThreadSchema.extend({
       bodyPreview: z.string(),
       createdAt: IsoDateTimeSchema,
     })
-    .strip()
     .nullable(),
-}).strip();
+});
 
 export const ThreadInboxPageSchema = cursorPageOf(ThreadInboxEntrySchema);
 
@@ -96,17 +89,15 @@ export const ThreadInboxPageSchema = cursorPageOf(ThreadInboxEntrySchema);
  * does not fan out to threads; the create is the one call that hands back the id a conversation
  * needs, which is exactly the shape A38 spent nine routes fixing elsewhere.
  */
-export const ProductInquirySchema = z
-  .object({
-    id: z.string(),
-    productId: z.string(),
-    buyerOrganizationId: z.string(),
-    sellerOrganizationId: z.string(),
-    convertedToRfqId: z.string().nullable(),
-    createdAt: IsoDateTimeSchema,
-    thread: ThreadSchema.nullable(),
-  })
-  .strip();
+export const ProductInquirySchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  buyerOrganizationId: z.string(),
+  sellerOrganizationId: z.string(),
+  convertedToRfqId: z.string().nullable(),
+  createdAt: IsoDateTimeSchema,
+  thread: ThreadSchema.nullable(),
+});
 
 export type Thread = z.infer<typeof ThreadSchema>;
 export type ThreadMessage = z.infer<typeof ThreadMessageSchema>;

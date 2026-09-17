@@ -27,32 +27,30 @@ export const PROBLEM_CLUSTER_STATUSES = ["active", "merged", "hidden"] as const;
  * aspect ratio; the wire carries integer microdegrees and each client projects them
  * (see `projectMicrodegreesToMapPercent` in the problem-map canvas).
  */
-export const ProblemClusterSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    description: z.string().nullable(),
-    category: DiscoveryCategoryRefSchema,
-    // LEFT JOIN — a cluster has no region until one is resolved.
-    region: DiscoveryRegionRefSchema.nullable(),
-    countryCode: z.string().nullable(),
-    locationLabel: z.string().nullable(),
-    // Degrees × 1e6, quantized for publication.
-    centroidLatitudeMicrodegrees: z.number(),
-    centroidLongitudeMicrodegrees: z.number(),
-    distinctReporterCount: z.number(),
-    submissionCount: z.number(),
-    // 0..100, and NULL until the first scoring run. Never render this as 0 — that
-    // publishes "no opportunity here" as a finding about the place when the only
-    // finding is that no job has run.
-    opportunityScorePoints: z.number().nullable(),
-    scoreComputedAt: z.string().nullable(),
-    firstReportedAt: z.string(),
-    lastReportedAt: z.string(),
-    status: z.enum(PROBLEM_CLUSTER_STATUSES),
-    mergedIntoClusterId: z.string().nullable(),
-  })
-  .strip();
+export const ProblemClusterSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  category: DiscoveryCategoryRefSchema,
+  // LEFT JOIN — a cluster has no region until one is resolved.
+  region: DiscoveryRegionRefSchema.nullable(),
+  countryCode: z.string().nullable(),
+  locationLabel: z.string().nullable(),
+  // Degrees × 1e6, quantized for publication.
+  centroidLatitudeMicrodegrees: z.number(),
+  centroidLongitudeMicrodegrees: z.number(),
+  distinctReporterCount: z.number(),
+  submissionCount: z.number(),
+  // 0..100, and NULL until the first scoring run. Never render this as 0 — that
+  // publishes "no opportunity here" as a finding about the place when the only
+  // finding is that no job has run.
+  opportunityScorePoints: z.number().nullable(),
+  scoreComputedAt: z.string().nullable(),
+  firstReportedAt: z.string(),
+  lastReportedAt: z.string(),
+  status: z.enum(PROBLEM_CLUSTER_STATUSES),
+  mergedIntoClusterId: z.string().nullable(),
+});
 export type ProblemCluster = z.infer<typeof ProblemClusterSchema>;
 
 export const PROBLEM_CLUSTER_SORTS = ["opportunity", "recent", "reporters"] as const;
@@ -92,24 +90,22 @@ export type MarketInsightStatUnitKey = z.infer<typeof MarketInsightStatUnitKeySc
  * can render one decimal place without the server having decided how many to show.
  * Only `percent_change` may be negative.
  */
-export const MarketInsightSchema = z
-  .object({
-    id: z.string(),
-    headline: z.string(),
-    summary: z.string().nullable(),
-    statKind: MarketInsightStatKindSchema,
-    statValueMilli: z.number(),
-    statUnitKey: MarketInsightStatUnitKeySchema,
-    trendDirection: TrendDirectionSchema,
-    category: DiscoveryCategoryRefSchema,
-    region: DiscoveryRegionRefSchema,
-    // `sourceNote` split into an attribution, a citation and a date.
-    sourceName: z.string(),
-    sourceUrl: z.string().nullable(),
-    sourcePublishedDate: z.string(),
-    publishedAt: z.string(),
-  })
-  .strip();
+export const MarketInsightSchema = z.object({
+  id: z.string(),
+  headline: z.string(),
+  summary: z.string().nullable(),
+  statKind: MarketInsightStatKindSchema,
+  statValueMilli: z.number(),
+  statUnitKey: MarketInsightStatUnitKeySchema,
+  trendDirection: TrendDirectionSchema,
+  category: DiscoveryCategoryRefSchema,
+  region: DiscoveryRegionRefSchema,
+  // `sourceNote` split into an attribution, a citation and a date.
+  sourceName: z.string(),
+  sourceUrl: z.string().nullable(),
+  sourcePublishedDate: z.string(),
+  publishedAt: z.string(),
+});
 export type MarketInsight = z.infer<typeof MarketInsightSchema>;
 
 // --- Demand signals ----------------------------------------------------------
@@ -118,35 +114,33 @@ export type MarketInsight = z.infer<typeof MarketInsightSchema>;
  * One row of the demand leaderboard. `asOf` ships on every row because these are
  * snapshot numbers from a nightly job — a leaderboard implying live figures lies.
  */
-export const DemandSignalSchema = z
-  .object({
-    rank: z.number(),
-    category: DiscoveryCategoryRefSchema,
-    region: DiscoveryRegionRefSchema,
-    // 0..100.
-    demandScorePoints: z.number(),
-    previousDemandScorePoints: z.number().nullable(),
-    trendDirection: TrendDirectionSchema,
-    clusterCount: z.number(),
-    distinctReporterCount: z.number(),
-    relatedProjectCount: z.number(),
-    openRoleCount: z.number(),
-    /**
-     * The store's evidence for this cell (§22): units sold and visible reviews in the window,
-     * on listings the cell's ventures actually shipped.
-     *
-     * NOT part of `demandScorePoints`. The rank is unchanged by these; they are shown so a
-     * reader can weigh "somebody actually paid" alongside "somebody reported a problem", and
-     * the question of what they should be WORTH to the score is deliberately still open.
-     *
-     * A zero here is a real zero, not a null wearing a number: it means no completed order was
-     * attributed to this cell in the window.
-     */
-    soldUnitCount: z.number(),
-    productReviewCount: z.number(),
-    asOf: z.string(),
-  })
-  .strip();
+export const DemandSignalSchema = z.object({
+  rank: z.number(),
+  category: DiscoveryCategoryRefSchema,
+  region: DiscoveryRegionRefSchema,
+  // 0..100.
+  demandScorePoints: z.number(),
+  previousDemandScorePoints: z.number().nullable(),
+  trendDirection: TrendDirectionSchema,
+  clusterCount: z.number(),
+  distinctReporterCount: z.number(),
+  relatedProjectCount: z.number(),
+  openRoleCount: z.number(),
+  /**
+   * The store's evidence for this cell (§22): units sold and visible reviews in the window,
+   * on listings the cell's ventures actually shipped.
+   *
+   * NOT part of `demandScorePoints`. The rank is unchanged by these; they are shown so a
+   * reader can weigh "somebody actually paid" alongside "somebody reported a problem", and
+   * the question of what they should be WORTH to the score is deliberately still open.
+   *
+   * A zero here is a real zero, not a null wearing a number: it means no completed order was
+   * attributed to this cell in the window.
+   */
+  soldUnitCount: z.number(),
+  productReviewCount: z.number(),
+  asOf: z.string(),
+});
 export type DemandSignal = z.infer<typeof DemandSignalSchema>;
 
 // --- Regions and skills (facet vocabularies, neither paginated) --------------
@@ -159,14 +153,12 @@ export type DiscoveryRegion = z.infer<typeof DiscoveryRegionSchema>;
  * which is what retires the old `skills.some((skill) => skill.includes(chipText))`
  * substring match — under which a "Water" chip matched "Water Polo".
  */
-export const DiscoverySkillSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    displayLabel: z.string(),
-    categoryId: z.string().nullable(),
-  })
-  .strip();
+export const DiscoverySkillSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  displayLabel: z.string(),
+  categoryId: z.string().nullable(),
+});
 export type DiscoverySkill = z.infer<typeof DiscoverySkillSchema>;
 
 // --- Talent ------------------------------------------------------------------
@@ -180,13 +172,11 @@ export type TalentAvailability = z.infer<typeof TalentAvailabilitySchema>;
  * verified effort on a project tagged with this skill. No request can set it, which
  * is the entire point of the badge.
  */
-export const TalentSkillSchema = z
-  .object({
-    slug: z.string(),
-    displayLabel: z.string(),
-    isVerified: z.boolean(),
-  })
-  .strip();
+export const TalentSkillSchema = z.object({
+  slug: z.string(),
+  displayLabel: z.string(),
+  isVerified: z.boolean(),
+});
 export type TalentSkill = z.infer<typeof TalentSkillSchema>;
 
 /**
@@ -195,29 +185,23 @@ export type TalentSkill = z.infer<typeof TalentSkillSchema>;
  * Note `equity` carries NO currency: basis points are dimensionless.
  */
 export const TalentCompensationAskSchema = z.discriminatedUnion("kind", [
-  z
-    .object({
-      kind: z.literal("salary"),
-      salaryMinInCentsPerMonth: z.number(),
-      salaryMaxInCentsPerMonth: z.number().nullable(),
-      currency: z.string(),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("one_time"),
-      oneTimeMinInCents: z.number(),
-      oneTimeMaxInCents: z.number().nullable(),
-      currency: z.string(),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("equity"),
-      equityBasisPointsMin: z.number(),
-      equityBasisPointsMax: z.number().nullable(),
-    })
-    .strip(),
+  z.object({
+    kind: z.literal("salary"),
+    salaryMinInCentsPerMonth: z.number(),
+    salaryMaxInCentsPerMonth: z.number().nullable(),
+    currency: z.string(),
+  }),
+  z.object({
+    kind: z.literal("one_time"),
+    oneTimeMinInCents: z.number(),
+    oneTimeMaxInCents: z.number().nullable(),
+    currency: z.string(),
+  }),
+  z.object({
+    kind: z.literal("equity"),
+    equityBasisPointsMin: z.number(),
+    equityBasisPointsMax: z.number().nullable(),
+  }),
 ]);
 export type TalentCompensationAsk = z.infer<typeof TalentCompensationAskSchema>;
 
@@ -230,26 +214,24 @@ export type TalentCompensationAsk = z.infer<typeof TalentCompensationAskSchema>;
  * `verifiedEffortMinutes` and `projectsCompletedCount` are NULL until §9's jobs have
  * run. Null is not zero: zero asserts "this person has done nothing".
  */
-export const TalentProfileSchema = z
-  .object({
-    userId: z.string(),
-    name: z.string(),
-    handle: z.string().nullable(),
-    avatarImageUrl: z.string().nullable(),
-    headlineRole: z.string(),
-    bio: z.string().nullable(),
-    availability: TalentAvailabilitySchema,
-    commitment: RoleCommitmentSchema,
-    locationLabel: z.string().nullable(),
-    region: DiscoveryRegionRefSchema.nullable(),
-    skills: TalentSkillSchema.array(),
-    compensationAsks: TalentCompensationAskSchema.array(),
-    verifiedEffortMinutes: z.number().nullable(),
-    projectsCompletedCount: z.number().nullable(),
-    projectionComputedAt: z.string().nullable(),
-    profileUpdatedAt: z.string(),
-  })
-  .strip();
+export const TalentProfileSchema = z.object({
+  userId: z.string(),
+  name: z.string(),
+  handle: z.string().nullable(),
+  avatarImageUrl: z.string().nullable(),
+  headlineRole: z.string(),
+  bio: z.string().nullable(),
+  availability: TalentAvailabilitySchema,
+  commitment: RoleCommitmentSchema,
+  locationLabel: z.string().nullable(),
+  region: DiscoveryRegionRefSchema.nullable(),
+  skills: TalentSkillSchema.array(),
+  compensationAsks: TalentCompensationAskSchema.array(),
+  verifiedEffortMinutes: z.number().nullable(),
+  projectsCompletedCount: z.number().nullable(),
+  projectionComputedAt: z.string().nullable(),
+  profileUpdatedAt: z.string(),
+});
 export type TalentProfile = z.infer<typeof TalentProfileSchema>;
 
 /**
@@ -264,13 +246,11 @@ export type TalentProfile = z.infer<typeof TalentProfileSchema>;
 export const TalentProfileMeSchema = TalentProfileSchema.extend({
   isPublished: z.boolean(),
   publishedAt: z.string().nullable(),
-  completeness: z
-    .object({
-      isPublishable: z.boolean(),
-      missing: z.string().array(),
-    })
-    .strip(),
-}).strip();
+  completeness: z.object({
+    isPublishable: z.boolean(),
+    missing: z.string().array(),
+  }),
+});
 export type TalentProfileMe = z.infer<typeof TalentProfileMeSchema>;
 
 /**
@@ -337,14 +317,12 @@ export type ProblemSubmissionStatus = z.infer<typeof ProblemSubmissionStatusSche
  * that reads a cluster off this receipt is reading a field that is null by construction —
  * the client polls `GET /discovery/problem-reports/mine` instead.
  */
-export const ProblemSubmissionReceiptSchema = z
-  .object({
-    submissionId: z.string(),
-    clusteringStatus: ProblemSubmissionStatusSchema,
-    clusterId: z.null(),
-    submittedAt: z.string(),
-  })
-  .strip();
+export const ProblemSubmissionReceiptSchema = z.object({
+  submissionId: z.string(),
+  clusteringStatus: ProblemSubmissionStatusSchema,
+  clusterId: z.null(),
+  submittedAt: z.string(),
+});
 export type ProblemSubmissionReceipt = z.infer<typeof ProblemSubmissionReceiptSchema>;
 
 /**
@@ -357,23 +335,21 @@ export type ProblemSubmissionReceipt = z.infer<typeof ProblemSubmissionReceiptSc
  * `geocodeFailureReason` is the honest ending: a report whose location could not be
  * resolved never reaches a cluster, and saying so beats leaving it `queued` forever.
  */
-export const MyProblemReportSchema = z
-  .object({
-    submissionId: z.string(),
-    title: z.string(),
-    description: z.string(),
-    category: DiscoveryCategoryRefSchema,
-    locationText: z.string(),
-    countryCode: z.string().nullable(),
-    latitudeMicrodegrees: z.number().nullable(),
-    longitudeMicrodegrees: z.number().nullable(),
-    clusteringStatus: ProblemSubmissionStatusSchema,
-    clusterId: z.string().nullable(),
-    clusterTitle: z.string().nullable(),
-    geocodeFailureReason: z.string().nullable(),
-    submittedAt: z.string(),
-  })
-  .strip();
+export const MyProblemReportSchema = z.object({
+  submissionId: z.string(),
+  title: z.string(),
+  description: z.string(),
+  category: DiscoveryCategoryRefSchema,
+  locationText: z.string(),
+  countryCode: z.string().nullable(),
+  latitudeMicrodegrees: z.number().nullable(),
+  longitudeMicrodegrees: z.number().nullable(),
+  clusteringStatus: ProblemSubmissionStatusSchema,
+  clusterId: z.string().nullable(),
+  clusterTitle: z.string().nullable(),
+  geocodeFailureReason: z.string().nullable(),
+  submittedAt: z.string(),
+});
 export type MyProblemReport = z.infer<typeof MyProblemReportSchema>;
 
 export const TALENT_SORTS = ["recent", "effort"] as const;

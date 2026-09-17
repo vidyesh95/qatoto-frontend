@@ -79,25 +79,23 @@ export type CompensationPaymentMethodKey = z.infer<typeof CompensationPaymentMet
  * NO `currencyCode` ON THE WAY IN — it is derived from the project. It comes BACK because
  * a reader needs to know what the number means.
  */
-export const CompensationAgreementSchema = z
-  .object({
-    id: z.string(),
-    memberId: z.string(),
-    memberUserId: z.string(),
-    memberName: z.string(),
-    engagementKind: EngagementKindSchema,
-    monthlyAmountInCents: z.string().nullable(),
-    hourlyRateCentsPerHour: z.string().nullable(),
-    currencyCode: z.string(),
-    status: CompensationAgreementStatusSchema,
-    effectiveFrom: z.string(),
-    effectiveUntil: z.string().nullable(),
-    rationaleNote: z.string(),
-    proposedByUserId: z.string(),
-    acceptedAt: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const CompensationAgreementSchema = z.object({
+  id: z.string(),
+  memberId: z.string(),
+  memberUserId: z.string(),
+  memberName: z.string(),
+  engagementKind: EngagementKindSchema,
+  monthlyAmountInCents: z.string().nullable(),
+  hourlyRateCentsPerHour: z.string().nullable(),
+  currencyCode: z.string(),
+  status: CompensationAgreementStatusSchema,
+  effectiveFrom: z.string(),
+  effectiveUntil: z.string().nullable(),
+  rationaleNote: z.string(),
+  proposedByUserId: z.string(),
+  acceptedAt: z.string().nullable(),
+  createdAt: z.string(),
+});
 export type CompensationAgreement = z.infer<typeof CompensationAgreementSchema>;
 
 // --- Periods, lines and payments ----------------------------------------------
@@ -114,24 +112,22 @@ export type CompensationAgreement = z.infer<typeof CompensationAgreementSchema>;
  * changes no number. Render it as an annotation beside the amount — never as the reason
  * the amount is lower, because it never is: verification does not reduce cash.
  */
-export const CompensationPeriodLineSchema = z
-  .object({
-    id: z.string(),
-    kind: CompensationPeriodLineKindSchema,
-    memberId: z.string(),
-    memberUserId: z.string(),
-    memberName: z.string(),
-    grossAmountInCents: z.string().nullable(),
-    currency: z.string().nullable(),
-    effortMinutes: z.number().nullable(),
-    sourceAgreementId: z.string().nullable(),
-    sourceRateId: z.string().nullable(),
-    equityBasisPointsAtStart: z.number().nullable(),
-    equityBasisPointsAtEnd: z.number().nullable(),
-    equityBasisPointsDelta: z.number().nullable(),
-    verificationNote: z.string().nullable(),
-  })
-  .strip();
+export const CompensationPeriodLineSchema = z.object({
+  id: z.string(),
+  kind: CompensationPeriodLineKindSchema,
+  memberId: z.string(),
+  memberUserId: z.string(),
+  memberName: z.string(),
+  grossAmountInCents: z.string().nullable(),
+  currency: z.string().nullable(),
+  effortMinutes: z.number().nullable(),
+  sourceAgreementId: z.string().nullable(),
+  sourceRateId: z.string().nullable(),
+  equityBasisPointsAtStart: z.number().nullable(),
+  equityBasisPointsAtEnd: z.number().nullable(),
+  equityBasisPointsDelta: z.number().nullable(),
+  verificationNote: z.string().nullable(),
+});
 export type CompensationPeriodLine = z.infer<typeof CompensationPeriodLineSchema>;
 
 /**
@@ -141,21 +137,19 @@ export type CompensationPeriodLine = z.infer<typeof CompensationPeriodLineSchema
  * this must render that null as UNCONFIRMED. A client showing an unconfirmed payment as
  * "paid" is telling someone they were paid on one party's word alone.
  */
-export const CompensationPaymentSchema = z
-  .object({
-    id: z.string(),
-    lineId: z.string(),
-    paidAmountInCents: z.string(),
-    currency: z.string(),
-    paidOnDate: z.string(),
-    methodKey: CompensationPaymentMethodKeySchema,
-    referenceNote: z.string().nullable(),
-    recordedByUserId: z.string(),
-    confirmedByMemberAt: z.string().nullable(),
-    confirmedByUserId: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const CompensationPaymentSchema = z.object({
+  id: z.string(),
+  lineId: z.string(),
+  paidAmountInCents: z.string(),
+  currency: z.string(),
+  paidOnDate: z.string(),
+  methodKey: CompensationPaymentMethodKeySchema,
+  referenceNote: z.string().nullable(),
+  recordedByUserId: z.string(),
+  confirmedByMemberAt: z.string().nullable(),
+  confirmedByUserId: z.string().nullable(),
+  createdAt: z.string(),
+});
 export type CompensationPayment = z.infer<typeof CompensationPaymentSchema>;
 
 /**
@@ -168,33 +162,31 @@ export type CompensationPayment = z.infer<typeof CompensationPaymentSchema>;
  * `statementHash` is null until finalize. Once set it is the full 64 hex characters; the
  * short form a UI shows is a rendering, never an identity.
  */
-export const CompensationPeriodSummarySchema = z
-  .object({
-    id: z.string(),
-    sequenceNumber: z.number(),
-    periodStartDate: z.string(),
-    periodEndDate: z.string(),
-    timeZone: z.string(),
-    status: CompensationPeriodStatusSchema,
-    lastDraftedAt: z.string().nullable(),
-    finalizedAt: z.string().nullable(),
-    finalizedByUserId: z.string().nullable(),
-    countersignedAt: z.string().nullable(),
-    countersignedByUserId: z.string().nullable(),
-    statementHash: z.string().nullable(),
-    previousStatementHash: z.string().nullable(),
-    hashVersion: z.string().nullable(),
-    supersededByPeriodId: z.string().nullable(),
-    grossOnlyNotice: z.string(),
-  })
-  .strip();
+export const CompensationPeriodSummarySchema = z.object({
+  id: z.string(),
+  sequenceNumber: z.number(),
+  periodStartDate: z.string(),
+  periodEndDate: z.string(),
+  timeZone: z.string(),
+  status: CompensationPeriodStatusSchema,
+  lastDraftedAt: z.string().nullable(),
+  finalizedAt: z.string().nullable(),
+  finalizedByUserId: z.string().nullable(),
+  countersignedAt: z.string().nullable(),
+  countersignedByUserId: z.string().nullable(),
+  statementHash: z.string().nullable(),
+  previousStatementHash: z.string().nullable(),
+  hashVersion: z.string().nullable(),
+  supersededByPeriodId: z.string().nullable(),
+  grossOnlyNotice: z.string(),
+});
 export type CompensationPeriodSummary = z.infer<typeof CompensationPeriodSummarySchema>;
 
 /** The detail read: the same period plus its lines and every payment against them. */
 export const CompensationPeriodDetailSchema = CompensationPeriodSummarySchema.extend({
   lines: CompensationPeriodLineSchema.array(),
   payments: CompensationPaymentSchema.array(),
-}).strip();
+});
 export type CompensationPeriodDetail = z.infer<typeof CompensationPeriodDetailSchema>;
 
 /**
@@ -203,30 +195,26 @@ export type CompensationPeriodDetail = z.infer<typeof CompensationPeriodDetailSc
  * A BREAK IS `409 STATEMENT_CHAIN_BROKEN`, never a `200` carrying `valid: false` — the
  * same rule §9's audit verifier follows, and the reason there is no boolean here to render.
  */
-export const StatementChainVerificationSchema = z
-  .object({
-    periodsChecked: z.number(),
-    firstSequence: z.number().nullable(),
-    lastSequence: z.number().nullable(),
-    headStatementHash: z.string().nullable(),
-  })
-  .strip();
+export const StatementChainVerificationSchema = z.object({
+  periodsChecked: z.number(),
+  firstSequence: z.number().nullable(),
+  lastSequence: z.number().nullable(),
+  headStatementHash: z.string().nullable(),
+});
 export type StatementChainVerification = z.infer<typeof StatementChainVerificationSchema>;
 
 // --- The project compensation summary (`GET …/compensation`) -------------------
 
-export const MemberCompensationRateSchema = z
-  .object({
-    rateId: z.string(),
-    fairMarketRateCentsPerHour: z.string(),
-    paidCashRateCentsPerHour: z.string(),
-    currencyCode: z.string(),
-    status: z.string(),
-    effectiveFrom: z.string(),
-    acceptedAt: z.string().nullable(),
-    lockedAt: z.string().nullable(),
-  })
-  .strip();
+export const MemberCompensationRateSchema = z.object({
+  rateId: z.string(),
+  fairMarketRateCentsPerHour: z.string(),
+  paidCashRateCentsPerHour: z.string(),
+  currencyCode: z.string(),
+  status: z.string(),
+  effectiveFrom: z.string(),
+  acceptedAt: z.string().nullable(),
+  lockedAt: z.string().nullable(),
+});
 export type MemberCompensationRate = z.infer<typeof MemberCompensationRateSchema>;
 
 /**
@@ -237,17 +225,15 @@ export type MemberCompensationRate = z.infer<typeof MemberCompensationRateSchema
  * rendering a merely proposed rate as though it were binding would contradict the endpoint
  * that enforces it.
  */
-export const MemberCompensationSchema = z
-  .object({
-    memberId: z.string(),
-    userId: z.string(),
-    name: z.string(),
-    projectRole: z.string(),
-    roleTitle: z.string().nullable(),
-    lockedRate: MemberCompensationRateSchema.nullable(),
-    rateHistory: MemberCompensationRateSchema.array(),
-  })
-  .strip();
+export const MemberCompensationSchema = z.object({
+  memberId: z.string(),
+  userId: z.string(),
+  name: z.string(),
+  projectRole: z.string(),
+  roleTitle: z.string().nullable(),
+  lockedRate: MemberCompensationRateSchema.nullable(),
+  rateHistory: MemberCompensationRateSchema.array(),
+});
 export type MemberCompensation = z.infer<typeof MemberCompensationSchema>;
 
 /**
@@ -258,37 +244,33 @@ export type MemberCompensation = z.infer<typeof MemberCompensationSchema>;
  * un-localizable strings, and would let a founder write a payout promise no mechanism
  * honours. Two of its values are RETIRED — readable on old rows, never writable.
  */
-export const AdvertisedCompensationSchema = z
-  .object({
-    openRoleId: z.string(),
-    roleTitle: z.string(),
-    kind: z.string(),
-    salaryMinInCentsPerMonth: z.number().nullable(),
-    salaryMaxInCentsPerMonth: z.number().nullable(),
-    oneTimeMinInCents: z.number().nullable(),
-    oneTimeMaxInCents: z.number().nullable(),
-    equityBasisPointsMin: z.number().nullable(),
-    equityBasisPointsMax: z.number().nullable(),
-    earnedAsPolicy: z.string(),
-  })
-  .strip();
+export const AdvertisedCompensationSchema = z.object({
+  openRoleId: z.string(),
+  roleTitle: z.string(),
+  kind: z.string(),
+  salaryMinInCentsPerMonth: z.number().nullable(),
+  salaryMaxInCentsPerMonth: z.number().nullable(),
+  oneTimeMinInCents: z.number().nullable(),
+  oneTimeMaxInCents: z.number().nullable(),
+  equityBasisPointsMin: z.number().nullable(),
+  equityBasisPointsMax: z.number().nullable(),
+  earnedAsPolicy: z.string(),
+});
 export type AdvertisedCompensation = z.infer<typeof AdvertisedCompensationSchema>;
 
-export const PaidOutCompensationSchema = z
-  .object({
-    paymentId: z.string(),
-    memberUserId: z.string(),
-    memberName: z.string(),
-    lineKind: z.string(),
-    periodStartDate: z.string(),
-    amountInCents: z.string(),
-    currency: z.string(),
-    /** The calendar day the payer says the money left. Never an invented instant. */
-    paidOnDate: z.string(),
-    methodKey: z.string(),
-    confirmedByMemberAt: z.string().nullable(),
-  })
-  .strip();
+export const PaidOutCompensationSchema = z.object({
+  paymentId: z.string(),
+  memberUserId: z.string(),
+  memberName: z.string(),
+  lineKind: z.string(),
+  periodStartDate: z.string(),
+  amountInCents: z.string(),
+  currency: z.string(),
+  /** The calendar day the payer says the money left. Never an invented instant. */
+  paidOnDate: z.string(),
+  methodKey: z.string(),
+  confirmedByMemberAt: z.string().nullable(),
+});
 export type PaidOutCompensation = z.infer<typeof PaidOutCompensationSchema>;
 
 /**
@@ -300,16 +282,14 @@ export type PaidOutCompensation = z.infer<typeof PaidOutCompensationSchema>;
  * said they received — which is why showing only the first would be the most misleading
  * number on the page.
  */
-export const ProjectCompensationSchema = z
-  .object({
-    currency: z.string(),
-    members: MemberCompensationSchema.array(),
-    advertised: AdvertisedCompensationSchema.array(),
-    paidOut: PaidOutCompensationSchema.array(),
-    totalPaidOutInCents: z.string(),
-    totalConfirmedPaidInCents: z.string(),
-  })
-  .strip();
+export const ProjectCompensationSchema = z.object({
+  currency: z.string(),
+  members: MemberCompensationSchema.array(),
+  advertised: AdvertisedCompensationSchema.array(),
+  paidOut: PaidOutCompensationSchema.array(),
+  totalPaidOutInCents: z.string(),
+  totalConfirmedPaidInCents: z.string(),
+});
 export type ProjectCompensation = z.infer<typeof ProjectCompensationSchema>;
 
 // --- Governance summary (`GET /governance/summary`) ---------------------------
@@ -327,15 +307,13 @@ export const GOVERNANCE_DISCLOSURE_KEYS = [
 export const GovernanceDisclosureKeySchema = z.enum(GOVERNANCE_DISCLOSURE_KEYS);
 export type GovernanceDisclosureKey = z.infer<typeof GovernanceDisclosureKeySchema>;
 
-export const GovernancePeriodCountsSchema = z
-  .object({
-    openPeriodCount: z.number(),
-    finalizedPeriodCount: z.number(),
-    supersededPeriodCount: z.number(),
-    /** Orthogonal to status: a finalized period may or may not be countersigned yet. */
-    countersignedPeriodCount: z.number(),
-  })
-  .strip();
+export const GovernancePeriodCountsSchema = z.object({
+  openPeriodCount: z.number(),
+  finalizedPeriodCount: z.number(),
+  supersededPeriodCount: z.number(),
+  /** Orthogonal to status: a finalized period may or may not be countersigned yet. */
+  countersignedPeriodCount: z.number(),
+});
 export type GovernancePeriodCounts = z.infer<typeof GovernancePeriodCountsSchema>;
 
 /**
@@ -361,24 +339,22 @@ export const GovernanceProjectRollupSchema = GovernancePeriodCountsSchema.extend
   committedFundingInCents: z.string(),
   investorConfidenceBasisPoints: z.number().nullable(),
   investorConfidenceAsOf: z.string().nullable(),
-}).strip();
+});
 export type GovernanceProjectRollup = z.infer<typeof GovernanceProjectRollupSchema>;
 
 /** One of the CALLER'S OWN lines. No other member's line is ever shaped into this. */
-export const GovernanceCallerLineSchema = z
-  .object({
-    projectSlug: z.string(),
-    periodId: z.string(),
-    periodStartDate: z.string(),
-    periodEndDate: z.string(),
-    kind: CompensationPeriodLineKindSchema,
-    /** Null on an equity line — equity is not money and is never summed with it. */
-    grossAmountInCents: z.string().nullable(),
-    currency: z.string().nullable(),
-    effortMinutes: z.number().nullable(),
-    equityBasisPointsDelta: z.number().nullable(),
-  })
-  .strip();
+export const GovernanceCallerLineSchema = z.object({
+  projectSlug: z.string(),
+  periodId: z.string(),
+  periodStartDate: z.string(),
+  periodEndDate: z.string(),
+  kind: CompensationPeriodLineKindSchema,
+  /** Null on an equity line — equity is not money and is never summed with it. */
+  grossAmountInCents: z.string().nullable(),
+  currency: z.string().nullable(),
+  effortMinutes: z.number().nullable(),
+  equityBasisPointsDelta: z.number().nullable(),
+});
 export type GovernanceCallerLine = z.infer<typeof GovernanceCallerLineSchema>;
 
 /**
@@ -391,15 +367,13 @@ export type GovernanceCallerLine = z.infer<typeof GovernanceCallerLineSchema>;
  * `asOf` exists because every count is as of that instant rather than "now". A rollup
  * presented as live would be asserting freshness it does not have.
  */
-export const GovernanceSummarySchema = z
-  .object({
-    asOf: z.string(),
-    platformTotals: GovernancePeriodCountsSchema,
-    projects: GovernanceProjectRollupSchema.array(),
-    projectsTotal: z.number(),
-    callerOpenLines: GovernanceCallerLineSchema.array(),
-    disclosureKeys: GovernanceDisclosureKeySchema.array(),
-    grossOnlyNotice: z.string(),
-  })
-  .strip();
+export const GovernanceSummarySchema = z.object({
+  asOf: z.string(),
+  platformTotals: GovernancePeriodCountsSchema,
+  projects: GovernanceProjectRollupSchema.array(),
+  projectsTotal: z.number(),
+  callerOpenLines: GovernanceCallerLineSchema.array(),
+  disclosureKeys: GovernanceDisclosureKeySchema.array(),
+  grossOnlyNotice: z.string(),
+});
 export type GovernanceSummary = z.infer<typeof GovernanceSummarySchema>;

@@ -48,18 +48,16 @@ export const FREIGHT_RATE_CARD_STATE_LABELS: Record<FreightRateCardState, string
  * Both floors are conjunctive at rating time: a consignment must clear `minBillableWeightGrams`
  * AND `minVolumeCubicCm` to qualify for the band, and the highest qualifying band wins.
  */
-export const AdminFreightRateBreakSchema = z
-  .object({
-    id: z.string(),
-    position: z.number().int(),
-    minBillableWeightGrams: z.number().int(),
-    minVolumeCubicCm: z.number().int(),
-    unitPriceInCents: z.number().int(),
-    minimumChargeInCents: z.number().int(),
-    transitDaysMin: z.number().int(),
-    transitDaysMax: z.number().int(),
-  })
-  .strip();
+export const AdminFreightRateBreakSchema = z.object({
+  id: z.string(),
+  position: z.number().int(),
+  minBillableWeightGrams: z.number().int(),
+  minVolumeCubicCm: z.number().int(),
+  unitPriceInCents: z.number().int(),
+  minimumChargeInCents: z.number().int(),
+  transitDaysMin: z.number().int(),
+  transitDaysMax: z.number().int(),
+});
 export type AdminFreightRateBreak = z.infer<typeof AdminFreightRateBreakSchema>;
 
 /**
@@ -74,26 +72,24 @@ export type AdminFreightRateBreak = z.infer<typeof AdminFreightRateBreakSchema>;
  * `supersedesRateCardId` anywhere in the product: an operator cannot name, choose or opt out of
  * the card their new one replaces.
  */
-export const AdminFreightRateCardSchema = z
-  .object({
-    id: z.string(),
-    providerOrganizationId: z.string(),
-    originCountryCode: z.string(),
-    destinationCountryCode: z.string(),
-    mode: FreightModeSchema,
-    currency: z.string(),
-    validFrom: z.string(),
-    validUntil: z.string().nullable(),
-    sourceForwarderName: z.string(),
-    volumetricDivisorCm3PerKg: z.number().int(),
-    state: FreightRateCardStateSchema,
-    supersededByRateCardId: z.string().nullable(),
-    bandsEditable: z.boolean(),
-    breaks: AdminFreightRateBreakSchema.array(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-  })
-  .strip();
+export const AdminFreightRateCardSchema = z.object({
+  id: z.string(),
+  providerOrganizationId: z.string(),
+  originCountryCode: z.string(),
+  destinationCountryCode: z.string(),
+  mode: FreightModeSchema,
+  currency: z.string(),
+  validFrom: z.string(),
+  validUntil: z.string().nullable(),
+  sourceForwarderName: z.string(),
+  volumetricDivisorCm3PerKg: z.number().int(),
+  state: FreightRateCardStateSchema,
+  supersededByRateCardId: z.string().nullable(),
+  bandsEditable: z.boolean(),
+  breaks: AdminFreightRateBreakSchema.array(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
 export type AdminFreightRateCard = z.infer<typeof AdminFreightRateCardSchema>;
 
 export const AdminFreightRateCardPageSchema = cursorPageOf(AdminFreightRateCardSchema);
@@ -106,18 +102,14 @@ export type AdminFreightRateCardPage = z.infer<typeof AdminFreightRateCardPageSc
  * `(provider, origin, destination, mode, currency)`. It is reported exactly once, here — no later
  * read announces it — so a console that drops it loses the fact permanently.
  */
-export const CreateFreightRateCardResultSchema = z
-  .object({
-    rateCard: AdminFreightRateCardSchema,
-    supersededRateCardId: z.string().nullable(),
-  })
-  .strip();
+export const CreateFreightRateCardResultSchema = z.object({
+  rateCard: AdminFreightRateCardSchema,
+  supersededRateCardId: z.string().nullable(),
+});
 export type CreateFreightRateCardResult = z.infer<typeof CreateFreightRateCardResultSchema>;
 
 /** The four non-create card writes all answer the same one-key envelope. */
-export const FreightRateCardResultSchema = z
-  .object({ rateCard: AdminFreightRateCardSchema })
-  .strip();
+export const FreightRateCardResultSchema = z.object({ rateCard: AdminFreightRateCardSchema });
 export type FreightRateCardResult = z.infer<typeof FreightRateCardResultSchema>;
 
 // --- Customs dwell estimates ---------------------------------------------------
@@ -132,21 +124,19 @@ export type FreightRateCardResult = z.infer<typeof FreightRateCardResultSchema>;
  * `originCountryCode: null` means ANY origin and `commodityScopeCategoryId: null` means ANY
  * commodity. Both are real scope values, not missing data.
  */
-export const AdminCustomsDwellEstimateSchema = z
-  .object({
-    id: z.string(),
-    destinationCountryCode: z.string(),
-    originCountryCode: z.string().nullable(),
-    commodityScopeCategoryId: z.string().nullable(),
-    clearanceDaysMin: z.number().int(),
-    clearanceDaysMax: z.number().int(),
-    source: z.string(),
-    validFrom: z.string(),
-    validUntil: z.string().nullable(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-  })
-  .strip();
+export const AdminCustomsDwellEstimateSchema = z.object({
+  id: z.string(),
+  destinationCountryCode: z.string(),
+  originCountryCode: z.string().nullable(),
+  commodityScopeCategoryId: z.string().nullable(),
+  clearanceDaysMin: z.number().int(),
+  clearanceDaysMax: z.number().int(),
+  source: z.string(),
+  validFrom: z.string(),
+  validUntil: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
 export type AdminCustomsDwellEstimate = z.infer<typeof AdminCustomsDwellEstimateSchema>;
 
 export const AdminCustomsDwellEstimatePageSchema = cursorPageOf(AdminCustomsDwellEstimateSchema);
@@ -157,19 +147,17 @@ export type AdminCustomsDwellEstimatePage = z.infer<typeof AdminCustomsDwellEsti
  * an estimate on a scope that already has an open-ended row CLOSES that row at the new
  * `validFrom`, and this is the only place that closure is ever reported.
  */
-export const CreateCustomsDwellEstimateResultSchema = z
-  .object({
-    dwellEstimate: AdminCustomsDwellEstimateSchema,
-    closedDwellEstimateId: z.string().nullable(),
-  })
-  .strip();
+export const CreateCustomsDwellEstimateResultSchema = z.object({
+  dwellEstimate: AdminCustomsDwellEstimateSchema,
+  closedDwellEstimateId: z.string().nullable(),
+});
 export type CreateCustomsDwellEstimateResult = z.infer<
   typeof CreateCustomsDwellEstimateResultSchema
 >;
 
-export const CustomsDwellEstimateResultSchema = z
-  .object({ dwellEstimate: AdminCustomsDwellEstimateSchema })
-  .strip();
+export const CustomsDwellEstimateResultSchema = z.object({
+  dwellEstimate: AdminCustomsDwellEstimateSchema,
+});
 export type CustomsDwellEstimateResult = z.infer<typeof CustomsDwellEstimateResultSchema>;
 
 // --- List filters --------------------------------------------------------------

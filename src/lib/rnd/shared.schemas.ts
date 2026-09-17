@@ -8,18 +8,16 @@ import { z } from "zod";
 // docs/R_AND_D_STRUCTURE.md §13); `src/db/schema.ts` and the service view interfaces
 // are the contract. When a value below looks wrong, re-read the pgEnum.
 //
-// Every object schema ends `.strip()` so a backend minor release that adds a field
+// Every object schema is a plain `z.object`, which strips unknown keys, so a backend minor release that adds a field
 // is a no-op here rather than a parse failure (CLAUDE.md Pattern 2).
 
 /** `pagination`, a sibling of `data` on every offset-paginated list. */
-export const PaginationMetaSchema = z
-  .object({
-    page: z.number(),
-    limit: z.number(),
-    total: z.number(),
-    totalPages: z.number(),
-  })
-  .strip();
+export const PaginationMetaSchema = z.object({
+  page: z.number(),
+  limit: z.number(),
+  total: z.number(),
+  totalPages: z.number(),
+});
 
 // --- Enum tuples (backend `src/db/schema.ts`) --------------------------------
 
@@ -85,26 +83,22 @@ export const DiscoveryRegionKindSchema = z.enum(DISCOVERY_REGION_KINDS);
 // --- Nested reference projections -------------------------------------------
 
 /** A category as it appears nested on a cluster, insight or demand signal. */
-export const DiscoveryCategoryRefSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    displayLabel: z.string(),
-    pinIconKey: CategoryPinIconKeySchema,
-  })
-  .strip();
+export const DiscoveryCategoryRefSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  displayLabel: z.string(),
+  pinIconKey: CategoryPinIconKeySchema,
+});
 export type DiscoveryCategoryRef = z.infer<typeof DiscoveryCategoryRefSchema>;
 
-export const DiscoveryRegionRefSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    displayLabel: z.string(),
-    kind: DiscoveryRegionKindSchema,
-    countryCode: z.string().nullable(),
-    parentRegionId: z.string().nullable(),
-  })
-  .strip();
+export const DiscoveryRegionRefSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  displayLabel: z.string(),
+  kind: DiscoveryRegionKindSchema,
+  countryCode: z.string().nullable(),
+  parentRegionId: z.string().nullable(),
+});
 export type DiscoveryRegionRef = z.infer<typeof DiscoveryRegionRefSchema>;
 
 /**
@@ -119,18 +113,16 @@ export type DiscoveryRegionRef = z.infer<typeof DiscoveryRegionRefSchema>;
  * These are OFFERS, never grants. Equity is computed by the §9 slice ledger and by
  * nothing else — no endpoint sets a member's share from a body.
  */
-export const OpenRoleCompensationStrandSchema = z
-  .object({
-    id: z.string(),
-    kind: CompensationKindSchema,
-    salaryMinInCentsPerMonth: z.number().nullable(),
-    salaryMaxInCentsPerMonth: z.number().nullable(),
-    oneTimeMinInCents: z.number().nullable(),
-    oneTimeMaxInCents: z.number().nullable(),
-    equityBasisPointsMin: z.number().nullable(),
-    equityBasisPointsMax: z.number().nullable(),
-    earnedAsPolicy: CompensationEarnedAsPolicySchema,
-    earnedAsNote: z.string().nullable(),
-  })
-  .strip();
+export const OpenRoleCompensationStrandSchema = z.object({
+  id: z.string(),
+  kind: CompensationKindSchema,
+  salaryMinInCentsPerMonth: z.number().nullable(),
+  salaryMaxInCentsPerMonth: z.number().nullable(),
+  oneTimeMinInCents: z.number().nullable(),
+  oneTimeMaxInCents: z.number().nullable(),
+  equityBasisPointsMin: z.number().nullable(),
+  equityBasisPointsMax: z.number().nullable(),
+  earnedAsPolicy: CompensationEarnedAsPolicySchema,
+  earnedAsNote: z.string().nullable(),
+});
 export type OpenRoleCompensationStrand = z.infer<typeof OpenRoleCompensationStrandSchema>;

@@ -14,7 +14,7 @@
 // server. This is the most privacy-preserving version of this form that could exist, and it is a
 // side effect of not having a table rather than a design achievement.
 //
-// ⚠️ `.strict()`, NOT `.strip()`, for the reason `authoring.schemas.ts` gives at length: a stripped
+// ⚠️ `z.strictObject`, NOT a stripping `z.object`, for the reason `authoring.schemas.ts` gives at length: a stripped
 // field on a write path once destroyed sellers' declared lead times silently
 // (`src/lib/products/schemas.ts:98-107`). A dropped field in a legal notice is the same failure with
 // worse consequences.
@@ -79,12 +79,10 @@ export const RIGHTS_CLAIM_KIND_NOTES: Record<RightsClaimKind, string> = {
  * claimant to pick one file would misrepresent what they are saying.
  */
 export const RightsClaimTargetSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("whole_teardown") }).strict(),
-  z.object({ kind: z.literal("document"), documentId: z.string().min(1) }).strict(),
-  z
-    .object({ kind: z.literal("manufacturing_file"), manufacturingFileId: z.string().min(1) })
-    .strict(),
-  z.object({ kind: z.literal("part"), partId: z.string().min(1) }).strict(),
+  z.strictObject({ kind: z.literal("whole_teardown") }),
+  z.strictObject({ kind: z.literal("document"), documentId: z.string().min(1) }),
+  z.strictObject({ kind: z.literal("manufacturing_file"), manufacturingFileId: z.string().min(1) }),
+  z.strictObject({ kind: z.literal("part"), partId: z.string().min(1) }),
 ]);
 export type RightsClaimTarget = z.infer<typeof RightsClaimTargetSchema>;
 
@@ -152,12 +150,12 @@ const SwornClauseRefinementInputsSchema = z.object({
  * silence is not.
  */
 export const RightsClaimDraftSchema = z
-  .object({
+  .strictObject({
     claimKind: RightsClaimKindSchema,
     target: RightsClaimTargetSchema,
     claimantFullName: z.string().min(2, "A notice has to say who is making it."),
     claimantOrganizationName: z.string().nullable(),
-    claimantEmail: z.string().email("An address Qatoto can reply to."),
+    claimantEmail: z.email("An address Qatoto can reply to."),
     relationshipToRightsHolder: z
       .string()
       .min(3, "Say whether you own this right or are acting for whoever does."),
@@ -173,7 +171,6 @@ export const RightsClaimDraftSchema = z
       ),
     acceptedSwornClauseIds: z.array(z.enum(RIGHTS_CLAIM_SWORN_CLAUSE_IDS)),
   })
-  .strict()
   // ⚠️ GATED BY `when` ON THE ONE FIELD IT READS. Without it an unpicked claim kind or target (nothing
   // is pre-selected, on purpose) aborted the object and hid this message until a second press. See
   // `refinement-inputs.ts`.

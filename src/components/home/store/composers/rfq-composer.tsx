@@ -260,76 +260,6 @@ export default function RfqComposer({
 
   const buildInput = () => buildCreateDraftRfqInput(draft);
   const input = buildInput();
-
-  return (
-    <div className="space-y-4">
-      <header>
-        <h1 className="font-serif text-xl font-semibold text-foreground md:text-2xl">
-          New request for quotation
-        </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          This saves a draft. Nothing is sent to any provider until you open it.
-        </p>
-      </header>
-
-      <ComposerStepRail
-        steps={COMPOSER_STEPS}
-        currentStepIndex={currentStepIndex}
-        onStepSelect={setCurrentStepIndex}
-      />
-
-      <section aria-label={COMPOSER_STEPS[currentStepIndex]?.label ?? "Step"}>
-        {renderStep()}
-      </section>
-
-      <footer className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-        {currentStepIndex > 0 && (
-          <button
-            type="button"
-            onClick={() => setCurrentStepIndex(currentStepIndex - 1)}
-            className="cursor-pointer rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground outline -outline-offset-1 outline-border"
-          >
-            Back
-          </button>
-        )}
-        {currentStepIndex < COMPOSER_STEPS.length - 1 && (
-          <button
-            type="button"
-            onClick={() => setCurrentStepIndex(currentStepIndex + 1)}
-            className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
-            Next
-          </button>
-        )}
-        {currentStepIndex === COMPOSER_STEPS.length - 1 && (
-          <button
-            type="button"
-            disabled={input === null || createDraftRfq.isPending}
-            onClick={() => {
-              if (input === null) return;
-              createDraftRfq.mutate({ input, idempotencyKey: getIdempotencyKey() });
-            }}
-            className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40"
-          >
-            {createDraftRfq.isPending ? "Saving…" : "Save as draft"}
-          </button>
-        )}
-      </footer>
-
-      {createResult !== undefined && !createResult.success && (
-        // THE SERVER'S OWN MESSAGE. A 422 from a `.strict()` body names the field, and replacing that with
-        // "something went wrong" throws away the only useful part of the refusal.
-        <p className="text-xs leading-4 text-destructive">{createResult.error.message}</p>
-      )}
-      {createDraftRfq.isError && (
-        <p className="text-xs leading-4 text-destructive">
-          Couldn&apos;t reach the server. Pressing save again is safe — the request carries an
-          idempotency key, so a retry cannot create a second draft.
-        </p>
-      )}
-    </div>
-  );
-
   function renderStep() {
     const step = COMPOSER_STEPS[currentStepIndex];
     if (step === undefined) return null;
@@ -707,6 +637,75 @@ export default function RfqComposer({
       serviceLines: draft.serviceLines.filter((serviceLine) => serviceLine.localId !== localId),
     });
   }
+
+  return (
+    <div className="space-y-4">
+      <header>
+        <h1 className="font-serif text-xl font-semibold text-foreground md:text-2xl">
+          New request for quotation
+        </h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          This saves a draft. Nothing is sent to any provider until you open it.
+        </p>
+      </header>
+
+      <ComposerStepRail
+        steps={COMPOSER_STEPS}
+        currentStepIndex={currentStepIndex}
+        onStepSelect={setCurrentStepIndex}
+      />
+
+      <section aria-label={COMPOSER_STEPS[currentStepIndex]?.label ?? "Step"}>
+        {renderStep()}
+      </section>
+
+      <footer className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+        {currentStepIndex > 0 && (
+          <button
+            type="button"
+            onClick={() => setCurrentStepIndex(currentStepIndex - 1)}
+            className="cursor-pointer rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground outline -outline-offset-1 outline-border"
+          >
+            Back
+          </button>
+        )}
+        {currentStepIndex < COMPOSER_STEPS.length - 1 && (
+          <button
+            type="button"
+            onClick={() => setCurrentStepIndex(currentStepIndex + 1)}
+            className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Next
+          </button>
+        )}
+        {currentStepIndex === COMPOSER_STEPS.length - 1 && (
+          <button
+            type="button"
+            disabled={input === null || createDraftRfq.isPending}
+            onClick={() => {
+              if (input === null) return;
+              createDraftRfq.mutate({ input, idempotencyKey: getIdempotencyKey() });
+            }}
+            className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-40"
+          >
+            {createDraftRfq.isPending ? "Saving…" : "Save as draft"}
+          </button>
+        )}
+      </footer>
+
+      {createResult !== undefined && !createResult.success && (
+        // THE SERVER'S OWN MESSAGE. A 422 from a `.strict()` body names the field, and replacing that with
+        // "something went wrong" throws away the only useful part of the refusal.
+        <p className="text-xs leading-4 text-destructive">{createResult.error.message}</p>
+      )}
+      {createDraftRfq.isError && (
+        <p className="text-xs leading-4 text-destructive">
+          Couldn&apos;t reach the server. Pressing save again is safe — the request carries an
+          idempotency key, so a retry cannot create a second draft.
+        </p>
+      )}
+    </div>
+  );
 }
 
 /** A goods line was deleted; move the link with it, or drop it if it pointed at the deleted line. */

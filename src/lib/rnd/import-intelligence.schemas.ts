@@ -13,7 +13,7 @@ import { z } from "zod";
 //   commodityKind        SIXTEEN, one per HS section grouping. Derived from the chapter,
 //                        never free text and never client-supplied.
 //
-// Every object schema ends `.strip()`, so a field a backend minor release adds is ignored
+// Every object schema is a plain `z.object`, which strips unknown keys, so a field a backend minor release adds is ignored
 // rather than fatal.
 
 /**
@@ -116,17 +116,15 @@ export const LocalizationPathwayStatusSchema = z.enum(LOCALIZATION_PATHWAY_STATU
 export type LocalizationPathwayStatus = z.infer<typeof LocalizationPathwayStatusSchema>;
 
 /** One HS6 commodity. `hsCode` is six digits and is the URL identity — never a slug. */
-export const ImportCommoditySchema = z
-  .object({
-    hsCode: z.string(),
-    displayLabel: z.string(),
-    descriptionText: z.string().nullable(),
-    commodityKind: ImportCommodityKindSchema,
-    researchCategoryId: z.string(),
-    researchCategorySlug: z.string(),
-    defaultQuantityUnit: ImportQuantityUnitSchema,
-  })
-  .strip();
+export const ImportCommoditySchema = z.object({
+  hsCode: z.string(),
+  displayLabel: z.string(),
+  descriptionText: z.string().nullable(),
+  commodityKind: ImportCommodityKindSchema,
+  researchCategoryId: z.string(),
+  researchCategorySlug: z.string(),
+  defaultQuantityUnit: ImportQuantityUnitSchema,
+});
 export type ImportCommodity = z.infer<typeof ImportCommoditySchema>;
 
 /**
@@ -140,31 +138,29 @@ export type ImportCommodity = z.infer<typeof ImportCommoditySchema>;
  * of the 60,550 ingested rows carry no weight at all: nobody filed one. A zero would say
  * the shipment weighed nothing.
  */
-export const CommodityTradeFlowSchema = z
-  .object({
-    id: z.string(),
-    flowKind: TradeFlowKindSchema,
-    periodKind: TradePeriodKindSchema,
-    periodStartsDate: z.string(),
-    periodEndsDate: z.string(),
-    tradeValueInCents: z.string(),
-    currency: z.string(),
-    netWeightMilliKilograms: z.string().nullable(),
-    quantityMilli: z.string().nullable(),
-    quantityUnit: ImportQuantityUnitSchema,
-    reporterCountryCode: z.string().nullable(),
-    reporterRegionSlug: z.string(),
-    // Estimation provenance. A mirrored estimate and a reported figure are both legitimate
-    // data and are not the same claim, so the surface must be able to say which it shows.
-    isReported: z.boolean(),
-    isAggregate: z.boolean(),
-    isNetWeightEstimated: z.boolean(),
-    isQuantityEstimated: z.boolean(),
-    sourceName: z.string(),
-    sourceUrl: z.string().nullable(),
-    sourceRetrievedAt: z.string(),
-  })
-  .strip();
+export const CommodityTradeFlowSchema = z.object({
+  id: z.string(),
+  flowKind: TradeFlowKindSchema,
+  periodKind: TradePeriodKindSchema,
+  periodStartsDate: z.string(),
+  periodEndsDate: z.string(),
+  tradeValueInCents: z.string(),
+  currency: z.string(),
+  netWeightMilliKilograms: z.string().nullable(),
+  quantityMilli: z.string().nullable(),
+  quantityUnit: ImportQuantityUnitSchema,
+  reporterCountryCode: z.string().nullable(),
+  reporterRegionSlug: z.string(),
+  // Estimation provenance. A mirrored estimate and a reported figure are both legitimate
+  // data and are not the same claim, so the surface must be able to say which it shows.
+  isReported: z.boolean(),
+  isAggregate: z.boolean(),
+  isNetWeightEstimated: z.boolean(),
+  isQuantityEstimated: z.boolean(),
+  sourceName: z.string(),
+  sourceUrl: z.string().nullable(),
+  sourceRetrievedAt: z.string(),
+});
 export type CommodityTradeFlow = z.infer<typeof CommodityTradeFlowSchema>;
 
 /**
@@ -173,21 +169,19 @@ export type CommodityTradeFlow = z.infer<typeof CommodityTradeFlowSchema>;
  * `supplierCapabilitySlug` NULL is a real finding, not a gap — no capability in the curated
  * §11i vocabulary covers this substitute yet, and the surface says so.
  */
-export const DomesticSubstituteSchema = z
-  .object({
-    id: z.string(),
-    hsCode: z.string(),
-    regionSlug: z.string(),
-    substituteKind: DomesticSubstituteKindSchema,
-    substituteLabel: z.string(),
-    substituteNotes: z.string().nullable(),
-    supplierCapabilitySlug: z.string().nullable(),
-    maturityLevel: DomesticSubstituteMaturitySchema,
-    evidenceSourceName: z.string().nullable(),
-    evidenceSourceUrl: z.string().nullable(),
-    publishedAt: z.string().nullable(),
-  })
-  .strip();
+export const DomesticSubstituteSchema = z.object({
+  id: z.string(),
+  hsCode: z.string(),
+  regionSlug: z.string(),
+  substituteKind: DomesticSubstituteKindSchema,
+  substituteLabel: z.string(),
+  substituteNotes: z.string().nullable(),
+  supplierCapabilitySlug: z.string().nullable(),
+  maturityLevel: DomesticSubstituteMaturitySchema,
+  evidenceSourceName: z.string().nullable(),
+  evidenceSourceUrl: z.string().nullable(),
+  publishedAt: z.string().nullable(),
+});
 export type DomesticSubstitute = z.infer<typeof DomesticSubstituteSchema>;
 
 /**
@@ -198,37 +192,35 @@ export type DomesticSubstitute = z.infer<typeof DomesticSubstituteSchema>;
  * (`modelName`, `promptVersion`) is NOT NULL and is always shown — a machine opinion whose
  * origin is hidden reads as a platform ruling.
  */
-export const LocalizationPathwaySuggestionSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    bodyText: z.string(),
-    status: LocalizationPathwayStatusSchema,
-    modelName: z.string(),
-    modelVersion: z.string().nullable(),
-    promptVersion: z.string(),
-    confidenceBps: z.number().nullable(),
-    /**
-     * The model's guess at what it costs to stand up a first commercial line, in cents, as a
-     * DECIMAL STRING — or NULL throughout.
-     *
-     * ⚠️ AN ESTIMATE, NOT A QUOTE, and the only model-supplied NUMBER anywhere on this
-     * surface. Everything else §20 renders is computed from Comtrade filings. A renderer must
-     * show `modelName`, `promptVersion` and `asOf` beside it and must never format it as a
-     * price this platform will honour — nothing here is a commitment to anybody.
-     *
-     * NULL means the model DECLINED to estimate, which the prompt explicitly permits. It does
-     * not mean zero, and it does not mean cheap. `formatCapitalBand` renders the absence.
-     */
-    estimatedCapitalMinInCents: z.string().nullable(),
-    estimatedCapitalMaxInCents: z.string().nullable(),
-    /** What scale was costed and what was excluded. Present exactly when the band is. */
-    capitalBasisText: z.string().nullable(),
-    asOf: z.string(),
-    decidedAt: z.string().nullable(),
-    decisionNote: z.string().nullable(),
-  })
-  .strip();
+export const LocalizationPathwaySuggestionSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  bodyText: z.string(),
+  status: LocalizationPathwayStatusSchema,
+  modelName: z.string(),
+  modelVersion: z.string().nullable(),
+  promptVersion: z.string(),
+  confidenceBps: z.number().nullable(),
+  /**
+   * The model's guess at what it costs to stand up a first commercial line, in cents, as a
+   * DECIMAL STRING — or NULL throughout.
+   *
+   * ⚠️ AN ESTIMATE, NOT A QUOTE, and the only model-supplied NUMBER anywhere on this
+   * surface. Everything else §20 renders is computed from Comtrade filings. A renderer must
+   * show `modelName`, `promptVersion` and `asOf` beside it and must never format it as a
+   * price this platform will honour — nothing here is a commitment to anybody.
+   *
+   * NULL means the model DECLINED to estimate, which the prompt explicitly permits. It does
+   * not mean zero, and it does not mean cheap. `formatCapitalBand` renders the absence.
+   */
+  estimatedCapitalMinInCents: z.string().nullable(),
+  estimatedCapitalMaxInCents: z.string().nullable(),
+  /** What scale was costed and what was excluded. Present exactly when the band is. */
+  capitalBasisText: z.string().nullable(),
+  asOf: z.string(),
+  decidedAt: z.string().nullable(),
+  decisionNote: z.string().nullable(),
+});
 export type LocalizationPathwaySuggestion = z.infer<typeof LocalizationPathwaySuggestionSchema>;
 
 /**
@@ -239,35 +231,33 @@ export type LocalizationPathwaySuggestion = z.infer<typeof LocalizationPathwaySu
  *
  * ⚠️ `medianSupplierLeadTimeDays` NULL is "no supplier published one", never zero days.
  */
-export const LocalizationAssessmentSchema = z
-  .object({
-    id: z.string(),
-    hsCode: z.string(),
-    commodityLabel: z.string(),
-    commodityKind: ImportCommodityKindSchema,
-    regionSlug: z.string(),
-    regionCountryCode: z.string().nullable(),
-    feasibilityScorePoints: z.number(),
-    rank: z.number(),
-    trendDirection: z.enum(["up", "down", "flat"]),
-    previousFeasibilityScorePoints: z.number().nullable(),
-    importDependencyPoints: z.number(),
-    exportCapabilityPoints: z.number(),
-    substituteAvailabilityPoints: z.number(),
-    supplierCapacityPoints: z.number(),
-    leadTimeAdvantagePoints: z.number(),
-    observedImportValueInCents: z.string(),
-    observedExportValueInCents: z.string(),
-    currency: z.string(),
-    substituteCount: z.number(),
-    matchedSupplierCount: z.number(),
-    verifiedSupplierCount: z.number(),
-    medianSupplierLeadTimeDays: z.number().nullable(),
-    narrativeStatus: LocalizationNarrativeStatusSchema,
-    scoreAlgorithmVersion: z.number(),
-    asOf: z.string(),
-  })
-  .strip();
+export const LocalizationAssessmentSchema = z.object({
+  id: z.string(),
+  hsCode: z.string(),
+  commodityLabel: z.string(),
+  commodityKind: ImportCommodityKindSchema,
+  regionSlug: z.string(),
+  regionCountryCode: z.string().nullable(),
+  feasibilityScorePoints: z.number(),
+  rank: z.number(),
+  trendDirection: z.enum(["up", "down", "flat"]),
+  previousFeasibilityScorePoints: z.number().nullable(),
+  importDependencyPoints: z.number(),
+  exportCapabilityPoints: z.number(),
+  substituteAvailabilityPoints: z.number(),
+  supplierCapacityPoints: z.number(),
+  leadTimeAdvantagePoints: z.number(),
+  observedImportValueInCents: z.string(),
+  observedExportValueInCents: z.string(),
+  currency: z.string(),
+  substituteCount: z.number(),
+  matchedSupplierCount: z.number(),
+  verifiedSupplierCount: z.number(),
+  medianSupplierLeadTimeDays: z.number().nullable(),
+  narrativeStatus: LocalizationNarrativeStatusSchema,
+  scoreAlgorithmVersion: z.number(),
+  asOf: z.string(),
+});
 export type LocalizationAssessment = z.infer<typeof LocalizationAssessmentSchema>;
 
 /**
@@ -282,14 +272,12 @@ export type LocalizationAssessment = z.infer<typeof LocalizationAssessmentSchema
  * Both axes are nine-rung ladders, so this is the COMPLETE distribution in at most 81 rows —
  * no sampling, no paging, and no `limit` to get wrong.
  */
-export const LocalizationAssessmentGridCellSchema = z
-  .object({
-    importDependencyPoints: z.number(),
-    exportCapabilityPoints: z.number(),
-    commodityCount: z.number(),
-    asOf: z.string(),
-  })
-  .strip();
+export const LocalizationAssessmentGridCellSchema = z.object({
+  importDependencyPoints: z.number(),
+  exportCapabilityPoints: z.number(),
+  commodityCount: z.number(),
+  asOf: z.string(),
+});
 export type LocalizationAssessmentGridCell = z.infer<typeof LocalizationAssessmentGridCellSchema>;
 
 /**
@@ -299,9 +287,9 @@ export type LocalizationAssessmentGridCell = z.infer<typeof LocalizationAssessme
  * pathway and its capital band do not exist yet. The only field is the status, so a caller
  * cannot mistake acceptance for output — it polls the commodity read for the real thing.
  */
-export const PathwayRequestAcceptedSchema = z
-  .object({ narrativeStatus: LocalizationNarrativeStatusSchema })
-  .strip();
+export const PathwayRequestAcceptedSchema = z.object({
+  narrativeStatus: LocalizationNarrativeStatusSchema,
+});
 export type PathwayRequestAccepted = z.infer<typeof PathwayRequestAcceptedSchema>;
 
 /** The grid's filters. No `page`/`limit` — the result is bounded by the ladders. */
@@ -318,13 +306,11 @@ export interface ListLocalizationAssessmentGridFilter {
  * page exists; a null assessment means nothing has scored this commodity yet. "Not scored"
  * and "no such commodity" are different facts and the page tells them apart.
  */
-export const ImportCommodityDetailSchema = z
-  .object({
-    commodity: ImportCommoditySchema,
-    assessment: LocalizationAssessmentSchema.nullable(),
-    pathwaySuggestions: LocalizationPathwaySuggestionSchema.array(),
-  })
-  .strip();
+export const ImportCommodityDetailSchema = z.object({
+  commodity: ImportCommoditySchema,
+  assessment: LocalizationAssessmentSchema.nullable(),
+  pathwaySuggestions: LocalizationPathwaySuggestionSchema.array(),
+});
 export type ImportCommodityDetail = z.infer<typeof ImportCommodityDetailSchema>;
 
 /**
@@ -334,23 +320,19 @@ export type ImportCommodityDetail = z.infer<typeof ImportCommodityDetailSchema>;
  * ones ingested appear here — a picker built off the taxonomy would offer seventeen dead ends.
  * The counts ride along so a chip can say how much is behind it before it is clicked.
  */
-export const ImportReporterSchema = z
-  .object({
-    countryCode: z.string(),
-    regionSlug: z.string(),
-    displayLabel: z.string(),
-    commodityCount: z.number(),
-    flowCount: z.number(),
-    earliestPeriodYear: z.number(),
-    latestPeriodYear: z.number(),
-  })
-  .strip();
+export const ImportReporterSchema = z.object({
+  countryCode: z.string(),
+  regionSlug: z.string(),
+  displayLabel: z.string(),
+  commodityCount: z.number(),
+  flowCount: z.number(),
+  earliestPeriodYear: z.number(),
+  latestPeriodYear: z.number(),
+});
 export type ImportReporter = z.infer<typeof ImportReporterSchema>;
 
 /** The chip vocabulary. A bare `{ kind }` per value, so the list is server-owned. */
-export const ImportCommodityKindOptionSchema = z
-  .object({ kind: ImportCommodityKindSchema })
-  .strip();
+export const ImportCommodityKindOptionSchema = z.object({ kind: ImportCommodityKindSchema });
 export type ImportCommodityKindOption = z.infer<typeof ImportCommodityKindOptionSchema>;
 
 // --- Filters. Plain readonly interfaces rather than Zod: they are built by this client

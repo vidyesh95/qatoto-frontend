@@ -157,6 +157,57 @@ export default async function MarketResearchPage({
 
   const catalogueTotal = commoditiesResult.success ? commoditiesResult.data.pagination.total : 0;
   const rankedTotal = assessmentsResult.success ? assessmentsResult.data.pagination.total : 0;
+  function renderLeaderboard() {
+    const state = toListViewState(assessmentsResult);
+    switch (state.status) {
+      case "error":
+        return (
+          <div className="px-4 lg:px-6">
+            <RndErrorPanel message="Couldn't load the feasibility ranking." />
+          </div>
+        );
+      case "empty":
+      case "ready":
+        return (
+          <LocalizationLeaderboard
+            assessments={state.status === "ready" ? state.rows : []}
+            pagination={assessmentsResult.success ? assessmentsResult.data.pagination : null}
+            commodityKinds={commodityKinds}
+            searchParams={resolvedSearchParams}
+          />
+        );
+      default: {
+        const exhaustiveCheck: never = state;
+        return exhaustiveCheck;
+      }
+    }
+  }
+
+  function renderCatalogue() {
+    const state = toListViewState(commoditiesResult);
+    switch (state.status) {
+      case "error":
+        return (
+          <div className="px-4 lg:px-6">
+            <RndErrorPanel message="Couldn't load the commodity catalogue." />
+          </div>
+        );
+      case "empty":
+      case "ready":
+        return (
+          <CommodityDirectory
+            commodities={state.status === "ready" ? state.rows : []}
+            pagination={commoditiesResult.success ? commoditiesResult.data.pagination : null}
+            commodityKinds={commodityKinds}
+            searchParams={resolvedSearchParams}
+          />
+        );
+      default: {
+        const exhaustiveCheck: never = state;
+        return exhaustiveCheck;
+      }
+    }
+  }
 
   return (
     <div className="space-y-6 pt-4 pb-4 lg:pt-6 lg:pb-6">
@@ -241,58 +292,6 @@ export default async function MarketResearchPage({
       ) : null}
     </div>
   );
-
-  function renderLeaderboard() {
-    const state = toListViewState(assessmentsResult);
-    switch (state.status) {
-      case "error":
-        return (
-          <div className="px-4 lg:px-6">
-            <RndErrorPanel message="Couldn't load the feasibility ranking." />
-          </div>
-        );
-      case "empty":
-      case "ready":
-        return (
-          <LocalizationLeaderboard
-            assessments={state.status === "ready" ? state.rows : []}
-            pagination={assessmentsResult.success ? assessmentsResult.data.pagination : null}
-            commodityKinds={commodityKinds}
-            searchParams={resolvedSearchParams}
-          />
-        );
-      default: {
-        const exhaustiveCheck: never = state;
-        return exhaustiveCheck;
-      }
-    }
-  }
-
-  function renderCatalogue() {
-    const state = toListViewState(commoditiesResult);
-    switch (state.status) {
-      case "error":
-        return (
-          <div className="px-4 lg:px-6">
-            <RndErrorPanel message="Couldn't load the commodity catalogue." />
-          </div>
-        );
-      case "empty":
-      case "ready":
-        return (
-          <CommodityDirectory
-            commodities={state.status === "ready" ? state.rows : []}
-            pagination={commoditiesResult.success ? commoditiesResult.data.pagination : null}
-            commodityKinds={commodityKinds}
-            searchParams={resolvedSearchParams}
-          />
-        );
-      default: {
-        const exhaustiveCheck: never = state;
-        return exhaustiveCheck;
-      }
-    }
-  }
 }
 
 // Exhaustive switches with a `never` default (CLAUDE.md Pattern 1): adding a variant to

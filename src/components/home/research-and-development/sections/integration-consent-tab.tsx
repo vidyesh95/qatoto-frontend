@@ -82,32 +82,6 @@ export default function IntegrationConsentTab({
   const grantsByProvider = new Map<IntegrationProvider, IntegrationGrant>(
     grantsState.status === "ready" ? grantsState.rows.map((grant) => [grant.provider, grant]) : [],
   );
-
-  return (
-    <div className="space-y-6 px-4 lg:px-6">
-      <section className="space-y-2">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">
-          What Qatoto may read on your behalf
-        </h3>
-        <p className="text-xs text-muted-foreground">
-          Connecting a provider is how your work gets independently timestamped. Without one, the
-          pipeline flags your claims for human review instead of verifying them — it does not assume
-          you did nothing, but it cannot confirm that you did.
-        </p>
-      </section>
-
-      {renderGrants()}
-
-      {firstError !== undefined && <MutationErrorNotice error={firstError.apiError} />}
-
-      <p className="text-xs text-muted-foreground">
-        Revoking deletes the stored token and the copies of anything it fetched. It does not remove
-        slices you already earned: the hashes of that evidence stay in the audit chain, so past
-        decisions remain checkable without keeping your data.
-      </p>
-    </div>
-  );
-
   function renderGrants() {
     switch (grantsState.status) {
       case "error":
@@ -200,4 +174,29 @@ export default function IntegrationConsentTab({
       }
     }
   }
+
+  return (
+    <div className="space-y-6 px-4 lg:px-6">
+      <section className="space-y-2">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">
+          What Qatoto may read on your behalf
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          Connecting a provider is how your work gets independently timestamped. Without one, the
+          pipeline flags your claims for human review instead of verifying them — it does not assume
+          you did nothing, but it cannot confirm that you did.
+        </p>
+      </section>
+
+      {renderGrants()}
+
+      {firstError !== undefined && <MutationErrorNotice error={firstError.apiError} />}
+
+      <p className="text-xs text-muted-foreground">
+        Revoking deletes the stored token and the copies of anything it fetched. It does not remove
+        slices you already earned: the hashes of that evidence stay in the audit chain, so past
+        decisions remain checkable without keeping your data.
+      </p>
+    </div>
+  );
 }

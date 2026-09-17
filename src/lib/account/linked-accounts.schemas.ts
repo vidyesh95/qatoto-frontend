@@ -17,14 +17,12 @@
 
 import { z } from "zod";
 
-/** One linked provider. `.strip()` so a backend that adds a field does not break this client. */
-export const LinkedAccountSchema = z
-  .object({
-    /** `"credential"` | `"google"` | `"github"` — kept a string, since the backend owns the set. */
-    providerId: z.string(),
-    email: z.string().nullable(),
-  })
-  .strip();
+/** One linked provider. A stripping `z.object` so a backend that adds a field does not break this client. */
+export const LinkedAccountSchema = z.object({
+  /** `"credential"` | `"google"` | `"github"` — kept a string, since the backend owns the set. */
+  providerId: z.string(),
+  email: z.string().nullable(),
+});
 
 export const LinkedAccountListSchema = z.array(LinkedAccountSchema);
 

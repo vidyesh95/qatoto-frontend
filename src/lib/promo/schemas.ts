@@ -3,7 +3,7 @@ import { z } from "zod";
 /**
  * Wire shapes for the home-page promotional carousel.
  *
- * Every object is `.strip()`, so a backend that adds a field in a minor release does not
+ * Every object is a plain `z.object`, which strips unknown keys in Zod 4, so a backend that adds a field in a minor release does not
  * break the front page (CLAUDE.md Pattern 2).
  */
 

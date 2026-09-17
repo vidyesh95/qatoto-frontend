@@ -46,44 +46,6 @@ export default function EquitySnapshotHistoryIsland({ projectSlug }: { projectSl
       </button>
     );
   }
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <h4 className="text-xs font-medium tracking-wide">Recalculation history</h4>
-        <button
-          type="button"
-          onClick={() => setIsHistoryOpen(false)}
-          className="cursor-pointer text-xs text-muted-foreground underline"
-        >
-          Hide
-        </button>
-      </div>
-
-      {snapshotsQuery.isPending && (
-        <p className="text-xs text-muted-foreground">Loading the history…</p>
-      )}
-
-      {snapshotsError !== null && <MutationErrorNotice error={snapshotsError} />}
-
-      {snapshotsQuery.data?.length === 0 && (
-        <p className="text-xs text-muted-foreground">
-          The cap table has never been computed for this project.
-        </p>
-      )}
-
-      {snapshotsQuery.data !== undefined && snapshotsQuery.data.length > 0 && (
-        <ul className="space-y-2">
-          {snapshotsQuery.data.map((snapshot) => (
-            <li key={snapshot.id} className="rounded-2xl border border-[#CAC4D0]/60 p-3">
-              {renderSnapshotRow(snapshot)}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-
   function renderSnapshotRow(snapshot: EquitySnapshot) {
     const isExpanded = expandedSnapshotId === snapshot.id;
 
@@ -142,4 +104,41 @@ export default function EquitySnapshotHistoryIsland({ projectSlug }: { projectSl
       </>
     );
   }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-xs font-medium tracking-wide">Recalculation history</h4>
+        <button
+          type="button"
+          onClick={() => setIsHistoryOpen(false)}
+          className="cursor-pointer text-xs text-muted-foreground underline"
+        >
+          Hide
+        </button>
+      </div>
+
+      {snapshotsQuery.isPending && (
+        <p className="text-xs text-muted-foreground">Loading the history…</p>
+      )}
+
+      {snapshotsError !== null && <MutationErrorNotice error={snapshotsError} />}
+
+      {snapshotsQuery.data?.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          The cap table has never been computed for this project.
+        </p>
+      )}
+
+      {snapshotsQuery.data !== undefined && snapshotsQuery.data.length > 0 && (
+        <ul className="space-y-2">
+          {snapshotsQuery.data.map((snapshot) => (
+            <li key={snapshot.id} className="rounded-2xl border border-[#CAC4D0]/60 p-3">
+              {renderSnapshotRow(snapshot)}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }

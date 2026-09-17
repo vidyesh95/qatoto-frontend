@@ -80,59 +80,51 @@ export type ServicePricingModel = (typeof SERVICE_PRICING_MODELS)[number];
 
 // --- Provider directory -----------------------------------------------------
 
-export const PublicProviderCardSchema = z
-  .object({
-    organizationId: z.string(),
-    slug: z.string(),
-    displayName: z.string(),
-    countryCode: z.string(),
-    logoUrl: z.string().nullable(),
-    publicSummary: z.string().nullable(),
-    verificationState: z.enum(PROVIDER_VERIFICATION_STATES),
-    acceptingRequests: z.boolean(),
-    serviceRegionSummary: z.string().nullable(),
-    /**
-     * AN INTEGER THE PROVIDER TYPES ABOUT ITSELF. Renamed from `averageResponseTimeHours` in
-     * Phase 12 precisely so the provenance rides in the name: under the old name it sat as a flat
-     * sibling of the platform-derived `fulfillmentMetrics.onTimeShipmentRate`, presenting an
-     * assertion and a measurement as the same kind of fact.
-     *
-     * The MEASURED figure is `measuredMetrics.measuredResponseTimeHours` on the detail read. Never
-     * render the two in one row, and never fall back from one to the other.
-     */
-    declaredResponseTimeHours: z.number().int().nullable(),
-    reviewMetrics: z
-      .object({ averageRating: z.number().nullable(), reviewCount: z.number().int() })
-      .strip(),
-    fulfillmentMetrics: z
-      .object({
-        onTimeShipmentRate: z.number().nullable(),
-        onTimeSampleSize: z.number().int(),
-        completedOrderCount: z.number().int(),
-      })
-      .strip(),
-    /**
-     * WHAT THIS ORGANIZATION ACTUALLY IS. A directory row used to carry no kind at all — the
-     * backend filtered on `commerce_provider_kind_link` and never projected it — so a buyer could
-     * narrow to customs brokers and read a page of cards that did not say "customs broker".
-     *
-     * ⚠️ `verificationState` HERE IS PER-KIND AND IS NOT THE ONE ABOVE. The card's own
-     * `verificationState` is PROFILE-level: "we checked this company exists". This one is
-     * "we approved them to operate as this kind". Rendering either as the other turns a company
-     * check into a licence. `PROVIDER_VERIFICATION_LABELS` says "Profile" in every string for the
-     * outer field; the per-kind field gets `PROVIDER_KIND_VERIFICATION_LABELS` below, which never
-     * says "profile".
-     */
-    providerKinds: z.array(
-      z
-        .object({
-          kind: z.enum(PROVIDER_KINDS),
-          verificationState: z.enum(PROVIDER_VERIFICATION_STATES),
-        })
-        .strip(),
-    ),
-  })
-  .strip();
+export const PublicProviderCardSchema = z.object({
+  organizationId: z.string(),
+  slug: z.string(),
+  displayName: z.string(),
+  countryCode: z.string(),
+  logoUrl: z.string().nullable(),
+  publicSummary: z.string().nullable(),
+  verificationState: z.enum(PROVIDER_VERIFICATION_STATES),
+  acceptingRequests: z.boolean(),
+  serviceRegionSummary: z.string().nullable(),
+  /**
+   * AN INTEGER THE PROVIDER TYPES ABOUT ITSELF. Renamed from `averageResponseTimeHours` in
+   * Phase 12 precisely so the provenance rides in the name: under the old name it sat as a flat
+   * sibling of the platform-derived `fulfillmentMetrics.onTimeShipmentRate`, presenting an
+   * assertion and a measurement as the same kind of fact.
+   *
+   * The MEASURED figure is `measuredMetrics.measuredResponseTimeHours` on the detail read. Never
+   * render the two in one row, and never fall back from one to the other.
+   */
+  declaredResponseTimeHours: z.number().int().nullable(),
+  reviewMetrics: z.object({ averageRating: z.number().nullable(), reviewCount: z.number().int() }),
+  fulfillmentMetrics: z.object({
+    onTimeShipmentRate: z.number().nullable(),
+    onTimeSampleSize: z.number().int(),
+    completedOrderCount: z.number().int(),
+  }),
+  /**
+   * WHAT THIS ORGANIZATION ACTUALLY IS. A directory row used to carry no kind at all — the
+   * backend filtered on `commerce_provider_kind_link` and never projected it — so a buyer could
+   * narrow to customs brokers and read a page of cards that did not say "customs broker".
+   *
+   * ⚠️ `verificationState` HERE IS PER-KIND AND IS NOT THE ONE ABOVE. The card's own
+   * `verificationState` is PROFILE-level: "we checked this company exists". This one is
+   * "we approved them to operate as this kind". Rendering either as the other turns a company
+   * check into a licence. `PROVIDER_VERIFICATION_LABELS` says "Profile" in every string for the
+   * outer field; the per-kind field gets `PROVIDER_KIND_VERIFICATION_LABELS` below, which never
+   * says "profile".
+   */
+  providerKinds: z.array(
+    z.object({
+      kind: z.enum(PROVIDER_KINDS),
+      verificationState: z.enum(PROVIDER_VERIFICATION_STATES),
+    }),
+  ),
+});
 
 /**
  * What the directory can be narrowed to, and how many providers each choice would leave.
@@ -150,14 +142,12 @@ export const PublicProviderCardSchema = z
  * arrays a provider types, so a chip row over them would be one provider's spellings rather than a
  * vocabulary; `acceptingRequests` is a boolean and needs no count to be legible.
  */
-export const ProviderDirectoryFacetsSchema = z
-  .object({
-    providerKinds: z.array(StoreFacetBucketSchema),
-    transportModes: z.array(StoreFacetBucketSchema),
-    originCountryCodes: z.array(StoreFacetBucketSchema),
-    destinationCountryCodes: z.array(StoreFacetBucketSchema),
-  })
-  .strip();
+export const ProviderDirectoryFacetsSchema = z.object({
+  providerKinds: z.array(StoreFacetBucketSchema),
+  transportModes: z.array(StoreFacetBucketSchema),
+  originCountryCodes: z.array(StoreFacetBucketSchema),
+  destinationCountryCodes: z.array(StoreFacetBucketSchema),
+});
 
 // `.extend`, not a bare `cursorPageOf` — that helper is `.strip()`, so a `facets` key added to the
 // response would be silently discarded rather than surfacing as a parse failure.
@@ -167,23 +157,21 @@ export const ProviderDirectoryPageSchema = cursorPageOf(PublicProviderCardSchema
 
 // --- Offerings --------------------------------------------------------------
 
-export const PublicOfferingCardSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    title: z.string(),
-    summary: z.string().nullable(),
-    providerKind: z.enum(PROVIDER_KINDS),
-    pricingModel: z.enum(SERVICE_PRICING_MODELS),
-    // A RANGE, and both ends nullable together with `quote_only`. An indicative price is not a
-    // quote — never render one end of it as "the price".
-    indicativePriceMinInCents: z.number().int().nullable(),
-    indicativePriceMaxInCents: z.number().int().nullable(),
-    currency: z.string(),
-    minimumLeadTimeDays: z.number().int().nullable(),
-    maximumLeadTimeDays: z.number().int().nullable(),
-  })
-  .strip();
+export const PublicOfferingCardSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  title: z.string(),
+  summary: z.string().nullable(),
+  providerKind: z.enum(PROVIDER_KINDS),
+  pricingModel: z.enum(SERVICE_PRICING_MODELS),
+  // A RANGE, and both ends nullable together with `quote_only`. An indicative price is not a
+  // quote — never render one end of it as "the price".
+  indicativePriceMinInCents: z.number().int().nullable(),
+  indicativePriceMaxInCents: z.number().int().nullable(),
+  currency: z.string(),
+  minimumLeadTimeDays: z.number().int().nullable(),
+  maximumLeadTimeDays: z.number().int().nullable(),
+});
 
 /**
  * Where a provider will actually work.
@@ -196,17 +184,15 @@ export const PublicOfferingCardSchema = z
  * handles dangerous goods; it is not proof it may legally carry them on that lane. Render it as a
  * capability claim, never as a compliance clearance.
  */
-export const PublicCoverageSchema = z
-  .object({
-    originCountryCode: z.string().nullable(),
-    destinationCountryCode: z.string().nullable(),
-    originRegionLabel: z.string().nullable(),
-    destinationRegionLabel: z.string().nullable(),
-    locationIdentifier: z.string().nullable(),
-    supportsHazardousGoods: z.boolean(),
-    supportsConsolidation: z.boolean(),
-  })
-  .strip();
+export const PublicCoverageSchema = z.object({
+  originCountryCode: z.string().nullable(),
+  destinationCountryCode: z.string().nullable(),
+  originRegionLabel: z.string().nullable(),
+  destinationRegionLabel: z.string().nullable(),
+  locationIdentifier: z.string().nullable(),
+  supportsHazardousGoods: z.boolean(),
+  supportsConsolidation: z.boolean(),
+});
 
 // --- The nine-arm typed extension -------------------------------------------
 //
@@ -227,72 +213,58 @@ const FreightDetailShape = {
 
 export const ServiceOfferingDetailSchema = z.discriminatedUnion("kind", [
   // Declared twice on purpose — see the header. The backend gives these two kinds one body.
-  z.object({ kind: z.literal("freight_forwarder"), ...FreightDetailShape }).strip(),
-  z.object({ kind: z.literal("logistics_operator"), ...FreightDetailShape }).strip(),
-  z
-    .object({
-      kind: z.literal("customs_broker"),
-      jurisdictions: z.array(z.string()),
-      importSupported: z.boolean(),
-      exportSupported: z.boolean(),
-      commodityCoverageSummary: z.string().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("insurance_provider"),
-      cargoCoverageClasses: z.array(z.string()),
-      coverageLimitMinInCents: z.number().int().optional(),
-      coverageLimitMaxInCents: z.number().int().optional(),
-      currency: z.string().optional(),
-      exclusionsDocumentReference: z.string().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("inspection_agency"),
-      preProduction: z.boolean(),
-      duringProduction: z.boolean(),
-      preShipment: z.boolean(),
-      loadingSupervision: z.boolean(),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("testing_certification_lab"),
-      standards: z.array(z.string()),
-      accreditationBodies: z.array(z.string()),
-      laboratoryLocations: z.array(z.string()),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("marketing_agency"),
-      channels: z.array(z.string()),
-      targetRegions: z.array(z.string()),
-      languageCapabilities: z.array(z.string()),
-      engagementModel: z.string().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("warehouse_provider"),
-      storageTypes: z.array(z.string()),
-      temperatureControlled: z.boolean(),
-      bondedStatus: z.boolean(),
-      capacityUnits: z.string().optional(),
-    })
-    .strip(),
-  z
-    .object({
-      kind: z.literal("foreign_exchange_facilitator"),
-      currencyPairs: z.array(z.string()),
-      settlementRails: z.array(z.string()),
-      minimumNotionalInCents: z.number().int().optional(),
-      maximumNotionalInCents: z.number().int().optional(),
-      notionalCurrency: z.string().optional(),
-    })
-    .strip(),
+  z.object({ kind: z.literal("freight_forwarder"), ...FreightDetailShape }),
+  z.object({ kind: z.literal("logistics_operator"), ...FreightDetailShape }),
+  z.object({
+    kind: z.literal("customs_broker"),
+    jurisdictions: z.array(z.string()),
+    importSupported: z.boolean(),
+    exportSupported: z.boolean(),
+    commodityCoverageSummary: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("insurance_provider"),
+    cargoCoverageClasses: z.array(z.string()),
+    coverageLimitMinInCents: z.number().int().optional(),
+    coverageLimitMaxInCents: z.number().int().optional(),
+    currency: z.string().optional(),
+    exclusionsDocumentReference: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("inspection_agency"),
+    preProduction: z.boolean(),
+    duringProduction: z.boolean(),
+    preShipment: z.boolean(),
+    loadingSupervision: z.boolean(),
+  }),
+  z.object({
+    kind: z.literal("testing_certification_lab"),
+    standards: z.array(z.string()),
+    accreditationBodies: z.array(z.string()),
+    laboratoryLocations: z.array(z.string()),
+  }),
+  z.object({
+    kind: z.literal("marketing_agency"),
+    channels: z.array(z.string()),
+    targetRegions: z.array(z.string()),
+    languageCapabilities: z.array(z.string()),
+    engagementModel: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("warehouse_provider"),
+    storageTypes: z.array(z.string()),
+    temperatureControlled: z.boolean(),
+    bondedStatus: z.boolean(),
+    capacityUnits: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("foreign_exchange_facilitator"),
+    currencyPairs: z.array(z.string()),
+    settlementRails: z.array(z.string()),
+    minimumNotionalInCents: z.number().int().optional(),
+    maximumNotionalInCents: z.number().int().optional(),
+    notionalCurrency: z.string().optional(),
+  }),
 ]);
 
 // --- Detail reads -----------------------------------------------------------
@@ -305,14 +277,12 @@ export const ServiceOfferingDetailSchema = z.discriminatedUnion("kind", [
  * declared/measured split is the same invariant the storefront enforces — two objects, never one
  * flat stat list.
  */
-export const PublicProviderDetailSchema = z
-  .object({
-    provider: PublicProviderCardSchema,
-    declaredProfile: SellerDeclaredProfileSchema.nullable(),
-    measuredMetrics: OrganizationMeasuredMetricsSchema,
-    offerings: z.array(PublicOfferingCardSchema),
-  })
-  .strip();
+export const PublicProviderDetailSchema = z.object({
+  provider: PublicProviderCardSchema,
+  declaredProfile: SellerDeclaredProfileSchema.nullable(),
+  measuredMetrics: OrganizationMeasuredMetricsSchema,
+  offerings: z.array(PublicOfferingCardSchema),
+});
 
 /**
  * `GET /store/services/:offeringSlug`.
@@ -321,14 +291,12 @@ export const PublicProviderDetailSchema = z
  * retired offering is a 404, identical to one that never existed. Do not render a "withdrawn"
  * state from a 404.
  */
-export const PublicServiceOfferingSchema = z
-  .object({
-    offering: PublicOfferingCardSchema.extend({ state: z.literal("active") }),
-    provider: PublicProviderCardSchema,
-    detail: ServiceOfferingDetailSchema,
-    coverage: z.array(PublicCoverageSchema),
-  })
-  .strip();
+export const PublicServiceOfferingSchema = z.object({
+  offering: PublicOfferingCardSchema.extend({ state: z.literal("active") }),
+  provider: PublicProviderCardSchema,
+  detail: ServiceOfferingDetailSchema,
+  coverage: z.array(PublicCoverageSchema),
+});
 
 // --- Filter inputs ----------------------------------------------------------
 
@@ -639,25 +607,23 @@ export const SERVICE_OFFERING_STATE_LABELS: Record<ServiceOfferingState, string>
  * `state` COMES BACK `draft`, ALWAYS. Creating is not publishing: `POST /service-offerings/:id/submit` sends
  * it for moderation and an admin decides. `.strip()` so a column added by a backend release is ignored.
  */
-export const CreatedServiceOfferingSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    providerOrganizationId: z.string(),
-    providerKind: z.enum(PROVIDER_KINDS),
-    title: z.string(),
-    summary: z.string().nullable(),
-    state: z.enum(SERVICE_OFFERING_STATES),
-    pricingModel: z.enum(SERVICE_PRICING_MODELS),
-    indicativePriceMinInCents: z.number().int().nullable(),
-    indicativePriceMaxInCents: z.number().int().nullable(),
-    // NOT NULLABLE on the wire — the column defaults to `USD`. So a listing always has a currency even
-    // when it has no price, which is why an absent range must render as "no price given" and not as free.
-    currency: z.string(),
-    minimumLeadTimeDays: z.number().int().nullable(),
-    maximumLeadTimeDays: z.number().int().nullable(),
-  })
-  .strip();
+export const CreatedServiceOfferingSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  providerOrganizationId: z.string(),
+  providerKind: z.enum(PROVIDER_KINDS),
+  title: z.string(),
+  summary: z.string().nullable(),
+  state: z.enum(SERVICE_OFFERING_STATES),
+  pricingModel: z.enum(SERVICE_PRICING_MODELS),
+  indicativePriceMinInCents: z.number().int().nullable(),
+  indicativePriceMaxInCents: z.number().int().nullable(),
+  // NOT NULLABLE on the wire — the column defaults to `USD`. So a listing always has a currency even
+  // when it has no price, which is why an absent range must render as "no price given" and not as free.
+  currency: z.string(),
+  minimumLeadTimeDays: z.number().int().nullable(),
+  maximumLeadTimeDays: z.number().int().nullable(),
+});
 
 export type CreatedServiceOffering = z.infer<typeof CreatedServiceOfferingSchema>;
 

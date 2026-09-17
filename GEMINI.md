@@ -69,17 +69,16 @@ export default function Dashboard({ state }: { state: DashboardState }) {
 
 ### Pattern 2: Defensive boundary parsing (Zod, no `as`, no `any`)
 
-The Express backend owns data truth, but the network is untrusted. **Never** use type assertions (`as MyType`) or `any` on response payloads. Treat every network payload as `unknown` and parse with Zod. Use `.strip()` so the frontend silently ignores unknown fields added by a backend minor release instead of crashing.
+The Express backend owns data truth, but the network is untrusted. **Never** use type assertions (`as MyType`) or `any` on response payloads. Treat every network payload as `unknown` and parse with Zod. Use a plain `z.object()` — in Zod 4 it already strips unknown keys, so the frontend silently ignores fields added by a backend minor release instead of crashing. Do **not** add `.strip()` (deprecated in Zod 4, and a no-op) and do not use `.passthrough()`. Write schemas use `z.strictObject()`, never the deprecated `.strict()`; prefer top-level formats like `z.email()` / `z.uuid()` over `z.string().email()`.
 
 ```typescript
 import { z } from "zod";
 
-const UserProfileSchema = z
-    .object({
-        id: z.string(),
-        email: z.string().email(),
-    })
-    .strip(); // ignore unknown fields — forward-compatible with backend additions
+// z.object strips unknown keys by default — forward-compatible with backend additions
+const UserProfileSchema = z.object({
+    id: z.string(),
+    email: z.email(),
+});
 
 async function fetchUserProfile(userId: string) {
     const response = await fetch(`/api/users/${userId}`);
@@ -230,7 +229,7 @@ video gate, four hot queries and a partial index that must byte-match. Do not re
 surface. The store/studio `/products` flow is wired too. The full discipline applies
 everywhere here:
 
-- `unknown` → Zod `.strip()` → tagged result, lifted into a discriminated-union view state
+- `unknown` → Zod `z.object` (strips unknown keys) → tagged result, lifted into a discriminated-union view state
   with an exhaustive `switch` (Patterns 1–3 above).
 - Server-side filtering and pagination, never client-side over a fetched page.
 - Never fabricate a value the server returned as `null`. Zero is a finding; null is the

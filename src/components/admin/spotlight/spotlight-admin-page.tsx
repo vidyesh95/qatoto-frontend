@@ -172,39 +172,6 @@ export default function SpotlightAdminPage() {
 
   const replaceError =
     replaceSlots.error instanceof ApiRequestError ? replaceSlots.error : undefined;
-
-  return (
-    <div className="space-y-8">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Spotlight</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          The three-video rail below &quot;What&apos;s on your mind?&quot; on the home page. Pick
-          catalogue videos for Left, Center and Right — visitors see them in that order.
-        </p>
-      </header>
-
-      {staffContextQuery.isError && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
-          Couldn&apos;t check your permissions, so this page is read-only.
-        </output>
-      )}
-      {staffContextQuery.isSuccess && !canManageSpotlight && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
-          Managing Spotlight needs the admin role. Your role is{" "}
-          {staffContextQuery.data.platformRole ?? "none"}, so this page is read-only.
-        </output>
-      )}
-
-      {replaceError && <MutationErrorNotice error={replaceError.apiError} />}
-      {didSaveSucceed && <MutationSuccessNotice message="Spotlight updated." />}
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-medium">Slots</h2>
-        {renderSlotEditor()}
-      </section>
-    </div>
-  );
-
   function renderSlotEditor() {
     switch (listState.status) {
       case "restricted":
@@ -366,4 +333,36 @@ export default function SpotlightAdminPage() {
       }
     }
   }
+
+  return (
+    <div className="space-y-8">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Spotlight</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          The three-video rail below &quot;What&apos;s on your mind?&quot; on the home page. Pick
+          catalogue videos for Left, Center and Right — visitors see them in that order.
+        </p>
+      </header>
+
+      {staffContextQuery.isError && (
+        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+          Couldn&apos;t check your permissions, so this page is read-only.
+        </output>
+      )}
+      {staffContextQuery.isSuccess && !canManageSpotlight && (
+        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+          Managing Spotlight needs the admin role. Your role is{" "}
+          {staffContextQuery.data.platformRole ?? "none"}, so this page is read-only.
+        </output>
+      )}
+
+      {replaceError && <MutationErrorNotice error={replaceError.apiError} />}
+      {didSaveSucceed && <MutationSuccessNotice message="Spotlight updated." />}
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium">Slots</h2>
+        {renderSlotEditor()}
+      </section>
+    </div>
+  );
 }

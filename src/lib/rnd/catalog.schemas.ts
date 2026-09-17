@@ -26,26 +26,24 @@ export const OPEN_ROLE_STATUSES = ["open", "closed", "filled"] as const;
  * The backend field is `projectCoverImageUrl`. The frontend mocks called it
  * `coverImageSrc`, which exists nowhere in the backend.
  */
-export const OpenRoleSchema = z
-  .object({
-    id: z.string(),
-    projectSlug: z.string(),
-    projectName: z.string(),
-    projectStage: ProjectStageSchema,
-    projectCoverImageUrl: z.string().nullable(),
-    roleTitle: z.string(),
-    skills: z.string().array(),
-    commitment: RoleCommitmentSchema,
-    status: z.enum(OPEN_ROLE_STATUSES),
-    slotsTotal: z.number(),
-    slotsFilledCount: z.number(),
-    description: z.string().nullable(),
-    // Resolved from the project — a role never carries a client-chosen currency.
-    currency: z.string(),
-    compensation: OpenRoleCompensationStrandSchema.array(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const OpenRoleSchema = z.object({
+  id: z.string(),
+  projectSlug: z.string(),
+  projectName: z.string(),
+  projectStage: ProjectStageSchema,
+  projectCoverImageUrl: z.string().nullable(),
+  roleTitle: z.string(),
+  skills: z.string().array(),
+  commitment: RoleCommitmentSchema,
+  status: z.enum(OPEN_ROLE_STATUSES),
+  slotsTotal: z.number(),
+  slotsFilledCount: z.number(),
+  description: z.string().nullable(),
+  // Resolved from the project — a role never carries a client-chosen currency.
+  currency: z.string(),
+  compensation: OpenRoleCompensationStrandSchema.array(),
+  createdAt: z.string(),
+});
 export type OpenRole = z.infer<typeof OpenRoleSchema>;
 
 export const RESEARCH_CATEGORY_STATUSES = ["pending", "approved", "rejected", "merged"] as const;
@@ -55,15 +53,13 @@ export const RESEARCH_CATEGORY_STATUSES = ["pending", "approved", "rejected", "m
  * aliased at the projection boundary because three clients render it and "label"
  * reads like a form label rather than the name of a taxonomy node.
  */
-export const ResearchCategorySchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    displayLabel: z.string(),
-    pinIconKey: CategoryPinIconKeySchema,
-    status: z.enum(RESEARCH_CATEGORY_STATUSES),
-  })
-  .strip();
+export const ResearchCategorySchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  displayLabel: z.string(),
+  pinIconKey: CategoryPinIconKeySchema,
+  status: z.enum(RESEARCH_CATEGORY_STATUSES),
+});
 export type ResearchCategory = z.infer<typeof ResearchCategorySchema>;
 
 /**

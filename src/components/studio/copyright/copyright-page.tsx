@@ -46,30 +46,6 @@ import { formatIsoInstantLabel } from "@/lib/store/format";
 export default function StudioCopyrightPage() {
   const noticesQuery = useMyVideoModerationNoticesQuery();
   const reportsQuery = useMyVideoReportsQuery();
-
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold text-foreground">Copyright and claims</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        What has been decided about your videos, and the reports you have filed about other
-        people&apos;s. Qatoto never shows you who reported a video.
-      </p>
-
-      <section className="mt-8">
-        <h2 className="text-sm font-medium text-foreground">Decisions about your videos</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Only decisions appear here. A report that is still being reviewed is not shown.
-        </p>
-        {renderNotices()}
-      </section>
-
-      <section className="mt-8">
-        <h2 className="text-sm font-medium text-foreground">Reports you filed</h2>
-        {renderMyReports()}
-      </section>
-    </div>
-  );
-
   function renderNotices() {
     if (noticesQuery.isPending) {
       return <p className="mt-3 text-sm text-muted-foreground">Loading…</p>;
@@ -129,6 +105,29 @@ export default function StudioCopyrightPage() {
       </ul>
     );
   }
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-semibold text-foreground">Copyright and claims</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        What has been decided about your videos, and the reports you have filed about other
+        people&apos;s. Qatoto never shows you who reported a video.
+      </p>
+
+      <section className="mt-8">
+        <h2 className="text-sm font-medium text-foreground">Decisions about your videos</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Only decisions appear here. A report that is still being reviewed is not shown.
+        </p>
+        {renderNotices()}
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-sm font-medium text-foreground">Reports you filed</h2>
+        {renderMyReports()}
+      </section>
+    </div>
+  );
 }
 
 function NoticeRow({ notice }: { readonly notice: VideoModerationNotice }) {

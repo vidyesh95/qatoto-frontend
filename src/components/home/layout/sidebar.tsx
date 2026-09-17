@@ -541,7 +541,7 @@ export default function Sidebar({ isViewerSignedIn }: { isViewerSignedIn: boolea
   // Collapsed view
   if (isCollapsed) {
     return (
-      <aside className="sticky top-14 hidden h-[calc(100dvh-56px)] w-20 shrink-0 self-start overflow-y-auto border-r border-border bg-background transition-all duration-300 md:block">
+      <aside className="sticky top-14 hidden h-[calc(100dvh-56px)] w-20 shrink-0 self-start overflow-y-auto border-r border-border bg-background transition-[width] duration-300 md:block">
         <nav className="space-y-5 px-3 pt-11 pb-14">
           {/* Create button */}
           {COLLAPSED_NAV_CONFIG.filter((item) => item.isEmphasized).map((item) => {
@@ -580,7 +580,7 @@ export default function Sidebar({ isViewerSignedIn }: { isViewerSignedIn: boolea
   }
 
   return (
-    <aside className="sticky top-14 hidden h-[calc(100dvh-56px)] w-80 shrink-0 self-start overflow-y-auto border-r border-border bg-background transition-all duration-300 md:block">
+    <aside className="sticky top-14 hidden h-[calc(100dvh-56px)] w-80 shrink-0 self-start overflow-y-auto border-r border-border bg-background transition-[width] duration-300 md:block">
       <div className="px-4 py-6">
         {renderedSections}
 

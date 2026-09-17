@@ -139,80 +139,74 @@ export type FulfillmentOverallState = (typeof FULFILLMENT_OVERALL_STATES)[number
  * `version` is an optimistic-concurrency token. It exists because leg commands are executed through an
  * outbox and a stale version is refused — so it must be echoed back on a command, never invented.
  */
-export const ShipmentLegSchema = z
-  .object({
-    id: z.string(),
-    shipmentId: z.string(),
-    sequence: z.number().int(),
-    /**
-     * FOUR MEMBERS, NOT FIVE.
-     *
-     * The column is `commerce_shipment_leg_mode` — `air | sea | land | rail`. This parsed with
-     * `FREIGHT_TRANSPORT_MODES`, which is `freight_transport_mode`'s FIVE and includes
-     * `multimodal`; a leg can never carry that, so the schema admitted a value the database
-     * forbids.
-     *
-     * Harmless in practice — `multimodal` simply never arrives — and fixed anyway, because a second
-     * vocabulary that disagrees with the database is the exact class of bug the wire-casing rule
-     * exists to prevent. `FREIGHT_MODES` is already the correct tuple and `admin-freight` will want
-     * the same one.
-     */
-    mode: FreightModeSchema,
-    state: z.enum(SHIPMENT_LEG_STATES),
-    version: z.number().int(),
-    originCountryCode: z.string().nullable(),
-    originLocality: z.string().nullable(),
-    originLocationIdentifier: z.string().nullable(),
-    destinationCountryCode: z.string().nullable(),
-    destinationLocality: z.string().nullable(),
-    destinationLocationIdentifier: z.string().nullable(),
-    // Present when a freight or logistics engagement is carrying this leg. Null means the seller is
-    // moving it themselves, NOT that it is unassigned.
-    logisticsEngagementId: z.string().nullable(),
-    carrierReference: z.string().nullable(),
-    trackingReference: z.string().nullable(),
-    estimatedDepartureAt: IsoDateTimeSchema.nullable(),
-    estimatedArrivalAt: IsoDateTimeSchema.nullable(),
-    actualDepartureAt: IsoDateTimeSchema.nullable(),
-    actualArrivalAt: IsoDateTimeSchema.nullable(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const ShipmentLegSchema = z.object({
+  id: z.string(),
+  shipmentId: z.string(),
+  sequence: z.number().int(),
+  /**
+   * FOUR MEMBERS, NOT FIVE.
+   *
+   * The column is `commerce_shipment_leg_mode` — `air | sea | land | rail`. This parsed with
+   * `FREIGHT_TRANSPORT_MODES`, which is `freight_transport_mode`'s FIVE and includes
+   * `multimodal`; a leg can never carry that, so the schema admitted a value the database
+   * forbids.
+   *
+   * Harmless in practice — `multimodal` simply never arrives — and fixed anyway, because a second
+   * vocabulary that disagrees with the database is the exact class of bug the wire-casing rule
+   * exists to prevent. `FREIGHT_MODES` is already the correct tuple and `admin-freight` will want
+   * the same one.
+   */
+  mode: FreightModeSchema,
+  state: z.enum(SHIPMENT_LEG_STATES),
+  version: z.number().int(),
+  originCountryCode: z.string().nullable(),
+  originLocality: z.string().nullable(),
+  originLocationIdentifier: z.string().nullable(),
+  destinationCountryCode: z.string().nullable(),
+  destinationLocality: z.string().nullable(),
+  destinationLocationIdentifier: z.string().nullable(),
+  // Present when a freight or logistics engagement is carrying this leg. Null means the seller is
+  // moving it themselves, NOT that it is unassigned.
+  logisticsEngagementId: z.string().nullable(),
+  carrierReference: z.string().nullable(),
+  trackingReference: z.string().nullable(),
+  estimatedDepartureAt: IsoDateTimeSchema.nullable(),
+  estimatedArrivalAt: IsoDateTimeSchema.nullable(),
+  actualDepartureAt: IsoDateTimeSchema.nullable(),
+  actualArrivalAt: IsoDateTimeSchema.nullable(),
+  createdAt: IsoDateTimeSchema,
+});
 
-export const FulfillmentShipmentSchema = z
-  .object({
-    id: z.string(),
-    state: z.enum(SHIPMENT_STATES),
-    version: z.number().int(),
-    legs: z.array(ShipmentLegSchema),
-  })
-  .strip();
+export const FulfillmentShipmentSchema = z.object({
+  id: z.string(),
+  state: z.enum(SHIPMENT_STATES),
+  version: z.number().int(),
+  legs: z.array(ShipmentLegSchema),
+});
 
 // --- Engagements ------------------------------------------------------------
 
-export const ServiceEngagementSchema = z
-  .object({
-    id: z.string(),
-    buyerOrganizationId: z.string(),
-    providerOrganizationId: z.string(),
-    orderId: z.string(),
-    orderServiceLineId: z.string(),
-    providerKind: z.enum(PROVIDER_KINDS),
-    state: z.enum(SERVICE_ENGAGEMENT_STATES),
-    titleSnapshot: z.string(),
-    scopeSnapshot: z.string(),
-    /**
-     * FOUR LIFECYCLE INSTANTS, each null until it happens. They are not a progress bar: an engagement
-     * may be `cancelled` with a `startedAt` set, and reading "started" as "in progress" would misreport
-     * that. Read `state` for what is true now and these for when it changed.
-     */
-    scheduledAt: IsoDateTimeSchema.nullable(),
-    startedAt: IsoDateTimeSchema.nullable(),
-    completedAt: IsoDateTimeSchema.nullable(),
-    cancelledAt: IsoDateTimeSchema.nullable(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const ServiceEngagementSchema = z.object({
+  id: z.string(),
+  buyerOrganizationId: z.string(),
+  providerOrganizationId: z.string(),
+  orderId: z.string(),
+  orderServiceLineId: z.string(),
+  providerKind: z.enum(PROVIDER_KINDS),
+  state: z.enum(SERVICE_ENGAGEMENT_STATES),
+  titleSnapshot: z.string(),
+  scopeSnapshot: z.string(),
+  /**
+   * FOUR LIFECYCLE INSTANTS, each null until it happens. They are not a progress bar: an engagement
+   * may be `cancelled` with a `startedAt` set, and reading "started" as "in progress" would misreport
+   * that. Read `state` for what is true now and these for when it changed.
+   */
+  scheduledAt: IsoDateTimeSchema.nullable(),
+  startedAt: IsoDateTimeSchema.nullable(),
+  completedAt: IsoDateTimeSchema.nullable(),
+  cancelledAt: IsoDateTimeSchema.nullable(),
+  createdAt: IsoDateTimeSchema,
+});
 
 export const ServiceEngagementListPageSchema = cursorPageOf(ServiceEngagementSchema);
 
@@ -228,7 +222,7 @@ export const FulfillmentEngagementSchema = ServiceEngagementSchema.extend({
   executionContractProvenance: z.string().nullable(),
   requiresDeliverableNormalization: z.boolean(),
   version: z.number().int(),
-}).strip();
+});
 
 // --- The fulfillment read ---------------------------------------------------
 
@@ -240,37 +234,31 @@ export const FulfillmentEngagementSchema = ServiceEngagementSchema.extend({
  * attention item nobody rendered is the failure this exists to prevent, and a hard enum would trade
  * that for a blank screen.
  */
-export const FulfillmentAttentionItemSchema = z
-  .object({
-    kind: z.string(),
-    engagementId: z.string(),
-  })
-  .strip();
+export const FulfillmentAttentionItemSchema = z.object({
+  kind: z.string(),
+  engagementId: z.string(),
+});
 
-export const OrderFulfillmentSchema = z
-  .object({
-    orderId: z.string(),
-    orderState: z.enum(ORDER_STATES),
-    overallState: z.enum(FULFILLMENT_OVERALL_STATES),
-    /**
-     * DERIVED progress in units, plus basis points.
-     *
-     * `basisPoints` is out of 10,000 — not a percentage, and not a fraction. Dividing it by 100 gives
-     * a percent; treating it as one directly would show 4,200% complete.
-     */
-    progress: z
-      .object({
-        completedUnits: z.number().int(),
-        totalUnits: z.number().int(),
-        basisPoints: z.number().int(),
-      })
-      .strip(),
-    shipments: z.array(FulfillmentShipmentSchema),
-    engagements: z.array(FulfillmentEngagementSchema),
-    attentionItems: z.array(FulfillmentAttentionItemSchema),
-    computedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const OrderFulfillmentSchema = z.object({
+  orderId: z.string(),
+  orderState: z.enum(ORDER_STATES),
+  overallState: z.enum(FULFILLMENT_OVERALL_STATES),
+  /**
+   * DERIVED progress in units, plus basis points.
+   *
+   * `basisPoints` is out of 10,000 — not a percentage, and not a fraction. Dividing it by 100 gives
+   * a percent; treating it as one directly would show 4,200% complete.
+   */
+  progress: z.object({
+    completedUnits: z.number().int(),
+    totalUnits: z.number().int(),
+    basisPoints: z.number().int(),
+  }),
+  shipments: z.array(FulfillmentShipmentSchema),
+  engagements: z.array(FulfillmentEngagementSchema),
+  attentionItems: z.array(FulfillmentAttentionItemSchema),
+  computedAt: IsoDateTimeSchema,
+});
 
 // --- Filter and command inputs ----------------------------------------------
 

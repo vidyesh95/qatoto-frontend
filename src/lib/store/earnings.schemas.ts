@@ -21,13 +21,11 @@ import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * a page must render as a sentence rather than as `$0.00`. The two are different answers and a
  * seller reads them differently.
  */
-export const CurrencyAmountSchema = z
-  .object({
-    currency: z.string(),
-    amountInCents: z.number().int(),
-    orderCount: z.number().int(),
-  })
-  .strip();
+export const CurrencyAmountSchema = z.object({
+  currency: z.string(),
+  amountInCents: z.number().int(),
+  orderCount: z.number().int(),
+});
 
 /**
  * THREE KINDS OF FACT, AND THERE IS NO GRAND TOTAL ANYWHERE IN THIS SHAPE.
@@ -50,47 +48,45 @@ export const CurrencyAmountSchema = z
  * `uncounted` is the blind spot made legible. An offline order nobody has attested may well have
  * been paid; reporting it as zero revenue would be a claim the platform cannot support.
  */
-export const SellerEarningsSchema = z
-  .object({
-    window: z.object({
-      from: IsoDateTimeSchema.nullable(),
-      to: IsoDateTimeSchema.nullable(),
-    }),
-    observed: z.object({
-      processorSettled: z.array(CurrencyAmountSchema),
-      processorRefunded: z.array(CurrencyAmountSchema),
-      escrowReleased: z.array(CurrencyAmountSchema),
-      escrowRefunded: z.array(CurrencyAmountSchema),
-    }),
-    selfReported: z.object({
-      attestedReceived: z.array(CurrencyAmountSchema),
-    }),
-    commissionOwed: z.array(CurrencyAmountSchema),
+export const SellerEarningsSchema = z.object({
+  window: z.object({
+    from: IsoDateTimeSchema.nullable(),
+    to: IsoDateTimeSchema.nullable(),
+  }),
+  observed: z.object({
+    processorSettled: z.array(CurrencyAmountSchema),
+    processorRefunded: z.array(CurrencyAmountSchema),
+    escrowReleased: z.array(CurrencyAmountSchema),
+    escrowRefunded: z.array(CurrencyAmountSchema),
+  }),
+  selfReported: z.object({
+    attestedReceived: z.array(CurrencyAmountSchema),
+  }),
+  commissionOwed: z.array(CurrencyAmountSchema),
+  /**
+   * What the goods this seller sold cost them — A44.
+   *
+   * ⚠️ **NEVER SUBTRACTED FROM ANYTHING ELSE IN THIS OBJECT.** Exactly `commissionOwed`'s
+   * treatment, for its reason: the backend's header says a client is free to render these together
+   * and is not free to add them. It is also measured on a DIFFERENT clock — `order.confirmedAt`,
+   * where revenue uses `paymentIntent.settledAt` — so the two describe different sets of orders.
+   *
+   * The currency is the QUOTE's, not the order's. A seller may buy in CNY and sell in USD.
+   */
+  sourcingCost: z.array(CurrencyAmountSchema),
+  uncounted: z.object({
+    offlineOrdersWithNoAttestation: z.number().int(),
+    ordersAwaitingPayment: z.number().int(),
     /**
-     * What the goods this seller sold cost them — A44.
+     * Sold order lines with NO cost basis recorded — the denominator behind `sourcingCost`.
      *
-     * ⚠️ **NEVER SUBTRACTED FROM ANYTHING ELSE IN THIS OBJECT.** Exactly `commissionOwed`'s
-     * treatment, for its reason: the backend's header says a client is free to render these together
-     * and is not free to add them. It is also measured on a DIFFERENT clock — `order.confirmedAt`,
-     * where revenue uses `paymentIntent.settledAt` — so the two describe different sets of orders.
-     *
-     * The currency is the QUOTE's, not the order's. A seller may buy in CNY and sell in USD.
+     * ⚠️ **`sourcingCost` MAY NOT BE RENDERED WITHOUT THIS BESIDE IT.** A partial cost shown alone
+     * reads as a complete one; the coverage count is what stops it being misleading, and the
+     * backend's own header says so.
      */
-    sourcingCost: z.array(CurrencyAmountSchema),
-    uncounted: z.object({
-      offlineOrdersWithNoAttestation: z.number().int(),
-      ordersAwaitingPayment: z.number().int(),
-      /**
-       * Sold order lines with NO cost basis recorded — the denominator behind `sourcingCost`.
-       *
-       * ⚠️ **`sourcingCost` MAY NOT BE RENDERED WITHOUT THIS BESIDE IT.** A partial cost shown alone
-       * reads as a complete one; the coverage count is what stops it being misleading, and the
-       * backend's own header says so.
-       */
-      orderLinesWithNoSourcingRecord: z.number().int(),
-    }),
-  })
-  .strip();
+    orderLinesWithNoSourcingRecord: z.number().int(),
+  }),
+});
 
 export type CurrencyAmount = z.infer<typeof CurrencyAmountSchema>;
 export type SellerEarnings = z.infer<typeof SellerEarningsSchema>;

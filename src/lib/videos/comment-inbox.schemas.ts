@@ -16,31 +16,26 @@ import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * `video` rides along so a row is actionable without a second lookup — an inbox spanning every
  * video is useless if you cannot tell which video each comment is on.
  */
-export const CreatorInboxCommentSchema = z
-  .object({
-    commentId: z.string(),
-    /** Non-null for a reply. Replies are the majority in practice and are deliberately included. */
-    parentCommentId: z.string().nullable(),
-    body: z.string(),
-    likeCount: z.number().int(),
-    replyCount: z.number().int(),
-    createdAt: IsoDateTimeSchema,
-    author: z
-      .object({
-        id: z.string(),
-        handle: z.string().nullable(),
-        name: z.string(),
-        imageUrl: z.string().nullable(),
-      })
-      .strip()
-      .nullable(),
-    video: z
-      .object({
-        videoId: z.string(),
-        title: z.string(),
-        thumbnailUrl: z.string().nullable(),
-      })
-      .strip(),
-  })
-  .strip();
+export const CreatorInboxCommentSchema = z.object({
+  commentId: z.string(),
+  /** Non-null for a reply. Replies are the majority in practice and are deliberately included. */
+  parentCommentId: z.string().nullable(),
+  body: z.string(),
+  likeCount: z.number().int(),
+  replyCount: z.number().int(),
+  createdAt: IsoDateTimeSchema,
+  author: z
+    .object({
+      id: z.string(),
+      handle: z.string().nullable(),
+      name: z.string(),
+      imageUrl: z.string().nullable(),
+    })
+    .nullable(),
+  video: z.object({
+    videoId: z.string(),
+    title: z.string(),
+    thumbnailUrl: z.string().nullable(),
+  }),
+});
 export type CreatorInboxComment = z.infer<typeof CreatorInboxCommentSchema>;

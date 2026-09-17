@@ -17,8 +17,8 @@ import {
  * Every list route nests its array under a named key rather than returning a bare array,
  * matching promotions. The schema is the wrapper; the caller unwraps.
  */
-const PublicVideoListSchema = z.object({ videos: PublicSpotlightVideoSchema.array() }).strip();
-const AdminSlotListSchema = z.object({ slots: AdminSpotlightSlotSchema.array() }).strip();
+const PublicVideoListSchema = z.object({ videos: PublicSpotlightVideoSchema.array() });
+const AdminSlotListSchema = z.object({ slots: AdminSpotlightSlotSchema.array() });
 
 /**
  * `GET /spotlight/videos` — PUBLIC, no session.

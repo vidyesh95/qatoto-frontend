@@ -196,6 +196,39 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
 
 ---
 
+### 8. React Doctor backlog
+
+Left after the 2026-09-17 cleanup pass (all errors fixed or confirmed false positives, Zod 4
+`.strip()` removed). Re-list with `pnpm exec react-doctor --verbose`. Deferred because each needs a
+per-site read or a decision, not a mechanical fix.
+
+1. **Refactor-scale**: `no-high-complexity-react-function` ×48, `no-giant-component` ×35,
+   `duplicate-jsx-subtree` ×17, `only-export-components` ×39 (e.g. `create-listing-page.tsx`).
+2. **Accessibility — needs a per-form pass**: `no-placeholder-only-field` ×56,
+   `control-has-associated-label` ×27, `html-label-has-single-control` ×6.
+3. **`query-mutation-missing-invalidation` ×33**: read each hook. Some R&D writes answer 202 and
+   poll on purpose, so "add an invalidation" is not always right.
+4. **Per-site state/perf reads**: `no-derived-useState` ×22, `rerender-state-only-in-handlers` ×25,
+   `js-set-map-lookups` ×24, `async-await-in-loop` ×9 (`src/hooks/products.ts`, some sequential on
+   purpose), `server-sequential-independent-await` ×7, `no-async-event-handler-without-reentry-guard` ×4,
+   `no-locale-format-in-render` ×5, plus single hits.
+5. **`dangerous-html-sink` ×2** (`blog-detail.tsx`, `press-detail.tsx`): CMS HTML rendered without
+   sanitizing. Needs a decision on adding a sanitizer before the real CMS goes live.
+6. **`require-pnpm-hardening`**: `minimumReleaseAge` in `pnpm-workspace.yaml`, a supply-chain
+   policy call for the owner.
+7. **Deprecated `.strict()` left in two chains** (no longer flagged): `.extend(...).strict()` in
+   `src/lib/blueprints/authoring.schemas.ts`. One sits on `safeExtend`, whose base refinements a
+   `z.strictObject({...shape})` rewrite would drop, so it needs a careful look rather than a swap.
+8. **Known false positives, no change**: `no-impure-state-updater` in `teardown-review-card.tsx`
+   (`applyDecisionInput` is a callback, not an updater), the `document.body` portal in
+   `creatable-combobox.tsx` (open-only branch), object URLs in `profile-photo-panel.tsx` /
+   `use-heading-image-pick.ts` / `thumbnail-picker.tsx` (already revoked), index keys in
+   `watch-open-roles.tsx` (documented) and `new-program-wizard-page.tsx` (append-only rows),
+   `iframe-missing-sandbox` in `video-preview-card.tsx`, `nextjs-no-client-side-redirect` in
+   `sign-in-with-password.tsx`, and the date-input `max` in `program-contributor-tools.tsx`.
+
+---
+
 ## Decisions Needed
 
 - **Legal Entity Incorporation**: Settle legal name and jurisdiction to update `src/lib/site.ts`.

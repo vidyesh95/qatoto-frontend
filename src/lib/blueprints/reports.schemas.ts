@@ -38,20 +38,18 @@ export const BLUEPRINT_REPORT_REASON_LABELS: Readonly<Record<BlueprintReportReas
   other: "Something else",
 };
 
-export const CreatedBlueprintReportSchema = z.object({ reportId: z.string() }).strip();
+export const CreatedBlueprintReportSchema = z.object({ reportId: z.string() });
 export type CreatedBlueprintReport = z.infer<typeof CreatedBlueprintReportSchema>;
 
 /** One row of the reporter's own list. Deliberately narrow — see the transport's docblock. */
-export const MyBlueprintReportSchema = z
-  .object({
-    reportId: z.string(),
-    targetKind: z.enum(["teardown", "case_study", "showcase"]),
-    targetTitle: z.string(),
-    reason: z.enum(BLUEPRINT_REPORT_REASONS),
-    status: z.enum(["open", "actioned", "dismissed"]),
-    createdAt: z.string(),
-  })
-  .strip();
+export const MyBlueprintReportSchema = z.object({
+  reportId: z.string(),
+  targetKind: z.enum(["teardown", "case_study", "showcase"]),
+  targetTitle: z.string(),
+  reason: z.enum(BLUEPRINT_REPORT_REASONS),
+  status: z.enum(["open", "actioned", "dismissed"]),
+  createdAt: z.string(),
+});
 export type MyBlueprintReport = z.infer<typeof MyBlueprintReportSchema>;
 
 export type BlueprintReportArm = "teardown" | "case_study" | "showcase";

@@ -31,47 +31,41 @@ const HANDLE_CHARSET_MESSAGE =
   "Handle may use only lowercase letters, numbers, dots, underscores and hyphens.";
 
 // --- Boundary parsing (CLAUDE.md Pattern 2): every payload is `unknown` until a
-// Zod schema vouches for it. `.strip()` keeps us forward-compatible with backend
+// Zod schema vouches for it. `z.object`'s default key stripping keeps us forward-compatible with backend
 // additions. Date fields arrive as ISO strings (the ApiResponse envelope
 // serializes Date → string); we parse them to Date only when formatting.
 
-const HandleMetadataEnvelopeSchema = z
-  .object({
-    data: z.object({
-      handle: z.string().nullable(),
-      maxChanges: z.number(),
-      windowDays: z.number(),
-      changesRemaining: z.number(),
-      isChangeLocked: z.boolean(),
-      cooldownResetAt: z.string().nullable(),
-      revertableHandle: z.string().nullable(),
-      revertableExpiresAt: z.string().nullable(),
+const HandleMetadataEnvelopeSchema = z.object({
+  data: z.object({
+    handle: z.string().nullable(),
+    maxChanges: z.number(),
+    windowDays: z.number(),
+    changesRemaining: z.number(),
+    isChangeLocked: z.boolean(),
+    cooldownResetAt: z.string().nullable(),
+    revertableHandle: z.string().nullable(),
+    revertableExpiresAt: z.string().nullable(),
+  }),
+});
+
+const HandleAvailabilityEnvelopeSchema = z.object({
+  data: z.discriminatedUnion("status", [
+    z.object({ status: z.literal("available"), handle: z.string() }),
+    z.object({
+      status: z.literal("taken"),
+      handle: z.string(),
+      suggestions: z.array(z.string()),
     }),
-  })
-  .strip();
+    z.object({ status: z.literal("revertable"), handle: z.string(), expiresAt: z.string() }),
+    z.object({ status: z.literal("current"), handle: z.string() }),
+    z.object({ status: z.literal("invalid"), handle: z.string(), reason: z.string() }),
+  ]),
+});
 
-const HandleAvailabilityEnvelopeSchema = z
-  .object({
-    data: z.discriminatedUnion("status", [
-      z.object({ status: z.literal("available"), handle: z.string() }),
-      z.object({
-        status: z.literal("taken"),
-        handle: z.string(),
-        suggestions: z.array(z.string()),
-      }),
-      z.object({ status: z.literal("revertable"), handle: z.string(), expiresAt: z.string() }),
-      z.object({ status: z.literal("current"), handle: z.string() }),
-      z.object({ status: z.literal("invalid"), handle: z.string(), reason: z.string() }),
-    ]),
-  })
-  .strip();
-
-const ErrorEnvelopeSchema = z
-  .object({
-    message: z.string().optional(),
-    errors: z.record(z.string(), z.array(z.string())).optional(),
-  })
-  .strip();
+const ErrorEnvelopeSchema = z.object({
+  message: z.string().optional(),
+  errors: z.record(z.string(), z.array(z.string())).optional(),
+});
 
 /** Pull the handle-specific message out of the backend's error envelope. */
 function readHandleError(payload: unknown): string {
@@ -81,13 +75,15 @@ function readHandleError(payload: unknown): string {
   return parsed.data.errors?.handle?.[0] ?? parsed.data.message ?? fallback;
 }
 
+const HANDLE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
 /** Human date like "Jul 9, 2026" for reservation / cooldown copy. */
 function formatHandleDate(isoString: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(isoString));
+  return HANDLE_DATE_FORMATTER.format(new Date(isoString));
 }
 
 function deriveImmediateAvailability(
@@ -266,8 +262,16 @@ export function HandlePanel({ onBack }: HandlePanelProps) {
             });
             return;
           default: {
+            // A `throw` here sat inside the `try`, which React Compiler cannot lower; the catch
+            // below turned it into an error state anyway, so set that state directly.
             const exhaustiveCheck: never = availability;
-            throw new Error(`Unhandled availability status: ${String(exhaustiveCheck)}`);
+            setProbedAvailability({
+              handle: normalizedHandle,
+              state: {
+                status: "error",
+                message: `Couldn't check availability (${String(exhaustiveCheck)}).`,
+              },
+            });
           }
         }
       } catch {

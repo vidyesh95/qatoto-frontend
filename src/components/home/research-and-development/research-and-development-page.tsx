@@ -172,13 +172,6 @@ function RailFallback({
   emptyAction?: React.ReactNode;
   errorMessage: string;
 }) {
-  return (
-    <section id={anchorId} className="scroll-mt-20 space-y-1">
-      <SectionHeader title={title} />
-      <div className="px-4 lg:px-6">{renderFallbackBody()}</div>
-    </section>
-  );
-
   function renderFallbackBody() {
     switch (state.status) {
       case "error":
@@ -191,6 +184,13 @@ function RailFallback({
       }
     }
   }
+
+  return (
+    <section id={anchorId} className="scroll-mt-20 space-y-1">
+      <SectionHeader title={title} />
+      <div className="px-4 lg:px-6">{renderFallbackBody()}</div>
+    </section>
+  );
 }
 
 // The pill an empty rail offers as its next step — an empty section is an

@@ -57,24 +57,6 @@ export default function ReportHistoryPage() {
 
   const profileReports = myProfileReportsQuery.data?.success ? myProfileReportsQuery.data.data : [];
   const blueprintReports = myBlueprintReportsQuery.data ?? [];
-
-  return (
-    <div className="pb-10">
-      <header className="px-4 pt-4 lg:px-6">
-        <h1 className="font-serif text-2xl font-semibold text-foreground md:text-3xl">
-          Report history
-        </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          What you reported, and what came of it.
-        </p>
-      </header>
-
-      <section aria-label="Your reports" className="mt-3 px-4 lg:px-6">
-        {renderReports()}
-      </section>
-    </div>
-  );
-
   function renderReports() {
     // THE VIDEO QUERY GATES THE PAGE. Both reads are session-scoped and fail together when signed
     // out, so branching on one keeps the signed-out answer a single honest message rather than two
@@ -146,6 +128,23 @@ export default function ReportHistoryPage() {
       </div>
     );
   }
+
+  return (
+    <div className="pb-10">
+      <header className="px-4 pt-4 lg:px-6">
+        <h1 className="font-serif text-2xl font-semibold text-foreground md:text-3xl">
+          Report history
+        </h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          What you reported, and what came of it.
+        </p>
+      </header>
+
+      <section aria-label="Your reports" className="mt-3 px-4 lg:px-6">
+        {renderReports()}
+      </section>
+    </div>
+  );
 }
 
 function renderVideoReportRow(report: MyVideoReport) {

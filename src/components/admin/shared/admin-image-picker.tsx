@@ -245,36 +245,6 @@ export function AdminImagePicker({
     if (dragLeaveTarget instanceof Node && event.currentTarget.contains(dragLeaveTarget)) return;
     setIsDraggingOver(false);
   }
-
-  return (
-    <div className="space-y-2">
-      {/* The input is hidden but real: it carries `accept`, it is what the button clicks, and
-          it is what a screen reader lands on via the label. */}
-      <input
-        ref={fileInputRef}
-        id={inputId}
-        type="file"
-        accept={ACCEPTED_IMAGE_INPUT_ACCEPT}
-        disabled={isDisabled}
-        className="hidden"
-        onChange={(event) => {
-          handleIncomingFile(event.target.files);
-          // Re-picking the SAME file fires no `change` event unless the value is cleared —
-          // which is exactly what an admin does after fixing the file on disk.
-          event.target.value = "";
-        }}
-      />
-
-      {renderPickState()}
-
-      <p className="text-xs text-muted-foreground">
-        JPEG, PNG, WebP or AVIF, up to 5 MB and at least 64 pixels on each side. Re-encoded
-        server-side. iPhone photos saved as HEIC aren&apos;t supported — set Settings → Camera →
-        Formats → Most Compatible, or export as JPEG.
-      </p>
-    </div>
-  );
-
   function renderPickState() {
     switch (pickState.status) {
       case "empty":
@@ -378,4 +348,33 @@ export function AdminImagePicker({
       </div>
     );
   }
+
+  return (
+    <div className="space-y-2">
+      {/* The input is hidden but real: it carries `accept`, it is what the button clicks, and
+          it is what a screen reader lands on via the label. */}
+      <input
+        ref={fileInputRef}
+        id={inputId}
+        type="file"
+        accept={ACCEPTED_IMAGE_INPUT_ACCEPT}
+        disabled={isDisabled}
+        className="hidden"
+        onChange={(event) => {
+          handleIncomingFile(event.target.files);
+          // Re-picking the SAME file fires no `change` event unless the value is cleared —
+          // which is exactly what an admin does after fixing the file on disk.
+          event.target.value = "";
+        }}
+      />
+
+      {renderPickState()}
+
+      <p className="text-xs text-muted-foreground">
+        JPEG, PNG, WebP or AVIF, up to 5 MB and at least 64 pixels on each side. Re-encoded
+        server-side. iPhone photos saved as HEIC aren&apos;t supported — set Settings → Camera →
+        Formats → Most Compatible, or export as JPEG.
+      </p>
+    </div>
+  );
 }

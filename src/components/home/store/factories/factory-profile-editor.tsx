@@ -554,20 +554,20 @@ function TermsForm({
       ? ""
       : String(samplePolicy.sampleFeeInCents),
   );
-  const [sampleLeadTimeDays, setSampleLeadTimeDays] = useState(
+  const [sampleLeadTimeDays, setSampleLeadTimeDays] = useState(() =>
     toInputText(samplePolicy.sampleLeadTimeDays),
   );
   const [currency, setCurrency] = useState(samplePolicy.currency);
-  const [minimumOrderQuantity, setMinimumOrderQuantity] = useState(
+  const [minimumOrderQuantity, setMinimumOrderQuantity] = useState(() =>
     toInputText(orderBounds.minimumOrderQuantity),
   );
   const [minimumOrderQuantityUnitLabel, setMinimumOrderQuantityUnitLabel] = useState(
     orderBounds.minimumOrderQuantityUnitLabel ?? "",
   );
-  const [minimumLeadTimeDays, setMinimumLeadTimeDays] = useState(
+  const [minimumLeadTimeDays, setMinimumLeadTimeDays] = useState(() =>
     toInputText(orderBounds.minimumLeadTimeDays),
   );
-  const [maximumLeadTimeDays, setMaximumLeadTimeDays] = useState(
+  const [maximumLeadTimeDays, setMaximumLeadTimeDays] = useState(() =>
     toInputText(orderBounds.maximumLeadTimeDays),
   );
   const [acceptingInquiries, setAcceptingInquiries] = useState(source.acceptingInquiries);
@@ -840,9 +840,11 @@ function CompanyFactsForm({
   organizationId: string;
   profile: SellerDeclaredProfile;
 }) {
-  const [yearFounded, setYearFounded] = useState(toInputText(profile.yearFounded));
-  const [factoryCount, setFactoryCount] = useState(toInputText(profile.factoryCount));
-  const [totalStaffCount, setTotalStaffCount] = useState(toInputText(profile.totalStaffCount));
+  const [yearFounded, setYearFounded] = useState(() => toInputText(profile.yearFounded));
+  const [factoryCount, setFactoryCount] = useState(() => toInputText(profile.factoryCount));
+  const [totalStaffCount, setTotalStaffCount] = useState(() =>
+    toInputText(profile.totalStaffCount),
+  );
   const [publicSummary, setPublicSummary] = useState(profile.publicSummary ?? "");
   const [businessType, setBusinessType] = useState(profile.businessType ?? "");
   const [visitPolicy, setVisitPolicy] = useState(profile.visitPolicy ?? "");

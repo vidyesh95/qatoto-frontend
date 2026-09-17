@@ -18,14 +18,12 @@ import { z } from "zod";
  * its own arithmetic as if it were a commitment — and the two disagree the moment the
  * request is a few seconds old, a retry happened, or the constant changes.
  */
-export const AccountDeletionRequestSchema = z
-  .object({
-    requestId: z.string(),
-    requestedAt: z.string(),
-    scheduledAnonymizationAt: z.string(),
-    /** Echoed by the server so the copy and the schedule cannot drift apart. */
-    gracePeriodDays: z.number().int().positive(),
-  })
-  .strip();
+export const AccountDeletionRequestSchema = z.object({
+  requestId: z.string(),
+  requestedAt: z.string(),
+  scheduledAnonymizationAt: z.string(),
+  /** Echoed by the server so the copy and the schedule cannot drift apart. */
+  gracePeriodDays: z.number().int().positive(),
+});
 
 export type AccountDeletionRequest = z.infer<typeof AccountDeletionRequestSchema>;

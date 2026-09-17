@@ -97,57 +97,6 @@ export default function SaveToPlaylistSheet({ videoId, onClose }: SaveToPlaylist
     togglePlaylistVideoMutation.error === null
       ? null
       : describeEngagementError(togglePlaylistVideoMutation.error);
-
-  return (
-    <>
-      {/* Backdrop — bottom-sheet viewport only. */}
-      <button
-        type="button"
-        aria-label="Close save to playlist"
-        onClick={onClose}
-        className="fixed inset-0 z-40 bg-black/40 sm:hidden"
-      />
-
-      <div
-        ref={panelRef}
-        // No `role="dialog"`: `share-sheet.tsx` labels its panel the same way and the lint
-        // rule wants a real <dialog> element, which would bring its own focus-trap and
-        // top-layer behaviour that this popover does not want.
-        aria-label="Save to playlist"
-        className="fixed inset-x-0 bottom-0 z-50 flex max-h-[80dvh] flex-col rounded-t-2xl bg-background pb-8 shadow-lg sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:bottom-auto sm:mt-1 sm:w-72 sm:max-w-[calc(100vw-1rem)] sm:rounded-xl sm:border sm:border-border sm:pb-0 sm:shadow-lg"
-      >
-        <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <span className="h-1.5 w-10 rounded-full bg-black/15" />
-        </div>
-
-        <header className="flex shrink-0 flex-row items-center justify-between border-b border-border px-4 py-3">
-          <h2 className="text-sm font-medium text-foreground">Save to playlist</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
-          >
-            <Image
-              src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-              alt=""
-              width={20}
-              height={20}
-            />
-          </button>
-        </header>
-
-        <div className="min-h-0 flex-1 overflow-y-auto">{renderPlaylistRows()}</div>
-
-        {refusal !== null && (
-          <p role="alert" className="shrink-0 px-4 py-2 text-xs text-red-700">
-            {refusal.message}
-          </p>
-        )}
-      </div>
-    </>
-  );
-
   function renderPlaylistRows() {
     if (myPlaylistsQuery.isPending) {
       return <p className="px-4 py-6 text-sm text-muted-foreground">Loading your playlists…</p>;
@@ -218,4 +167,54 @@ export default function SaveToPlaylistSheet({ videoId, onClose }: SaveToPlaylist
       </ul>
     );
   }
+
+  return (
+    <>
+      {/* Backdrop — bottom-sheet viewport only. */}
+      <button
+        type="button"
+        aria-label="Close save to playlist"
+        onClick={onClose}
+        className="fixed inset-0 z-40 bg-black/40 sm:hidden"
+      />
+
+      <div
+        ref={panelRef}
+        // No `role="dialog"`: `share-sheet.tsx` labels its panel the same way and the lint
+        // rule wants a real <dialog> element, which would bring its own focus-trap and
+        // top-layer behaviour that this popover does not want.
+        aria-label="Save to playlist"
+        className="fixed inset-x-0 bottom-0 z-50 flex max-h-[80dvh] flex-col rounded-t-2xl bg-background pb-8 shadow-lg sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:bottom-auto sm:mt-1 sm:w-72 sm:max-w-[calc(100vw-1rem)] sm:rounded-xl sm:border sm:border-border sm:pb-0 sm:shadow-lg"
+      >
+        <div className="flex justify-center pt-3 pb-1 sm:hidden">
+          <span className="h-1.5 w-10 rounded-full bg-black/15" />
+        </div>
+
+        <header className="flex shrink-0 flex-row items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="text-sm font-medium text-foreground">Save to playlist</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="cursor-pointer rounded-full p-1 transition-colors hover:bg-muted"
+          >
+            <Image
+              src="/icons/close_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+              alt=""
+              width={20}
+              height={20}
+            />
+          </button>
+        </header>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">{renderPlaylistRows()}</div>
+
+        {refusal !== null && (
+          <p role="alert" className="shrink-0 px-4 py-2 text-xs text-red-700">
+            {refusal.message}
+          </p>
+        )}
+      </div>
+    </>
+  );
 }

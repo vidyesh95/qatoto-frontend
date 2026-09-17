@@ -81,13 +81,16 @@ export function useBlueprintDraftAutosave({
   const isHaltedRef = useRef(false);
 
   // SEEDING A RESUMED DRAFT, guarded on its id so a later refetch of the same row cannot reset the
-  // revision this composer has since moved past.
-  const [seededDraftId, setSeededDraftId] = useState<string | null>(null);
-  if (resumedDraft !== undefined && seededDraftId !== resumedDraft.draftId) {
-    setSeededDraftId(resumedDraft.draftId);
+  // revision this composer has since moved past. An effect, not a render-phase write, because React
+  // may replay or discard a render; declared ABOVE the save effect so it runs first in a commit that
+  // delivers both the resumed row and its restored document.
+  const seededDraftIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (resumedDraft === undefined || seededDraftIdRef.current === resumedDraft.draftId) return;
+    seededDraftIdRef.current = resumedDraft.draftId;
     draftRowRef.current = { draftId: resumedDraft.draftId, revision: resumedDraft.revision };
     lastSavedDocumentRef.current = resumedDraft.document;
-  }
+  }, [resumedDraft]);
 
   useEffect(() => {
     // ONE GUARD, ONE RETURN. Early `return;` beside a `return () => …` is an effect with two

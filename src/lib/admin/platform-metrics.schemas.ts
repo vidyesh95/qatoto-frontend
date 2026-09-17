@@ -16,66 +16,56 @@ import { z } from "zod";
 /** A bare UTC calendar date, `YYYY-MM-DD`. Not an instant — every column these filter is a date. */
 const IsoDateSchema = z.string();
 
-export const ActiveUsersPointSchema = z
-  .object({
-    date: IsoDateSchema,
-    activeUserCount: z.number().int().nonnegative(),
-    /**
-     * Distinct users in the N days ENDING on this date, where N is the chosen window — not the sum
-     * of the daily counts beside it. One person watching every day is seven daily counts and one
-     * weekly one.
-     */
-    rollingActiveUserCount: z.number().int().nonnegative(),
-  })
-  .strip();
+export const ActiveUsersPointSchema = z.object({
+  date: IsoDateSchema,
+  activeUserCount: z.number().int().nonnegative(),
+  /**
+   * Distinct users in the N days ENDING on this date, where N is the chosen window — not the sum
+   * of the daily counts beside it. One person watching every day is seven daily counts and one
+   * weekly one.
+   */
+  rollingActiveUserCount: z.number().int().nonnegative(),
+});
 
-export const WatchTimePointSchema = z
-  .object({
-    date: IsoDateSchema,
-    totalWatchedSeconds: z.number().int().nonnegative(),
-    watchingUserCount: z.number().int().nonnegative(),
-    medianWatchedSecondsPerUser: z.number().int().nonnegative().nullable(),
-    p90WatchedSecondsPerUser: z.number().int().nonnegative().nullable(),
-  })
-  .strip();
+export const WatchTimePointSchema = z.object({
+  date: IsoDateSchema,
+  totalWatchedSeconds: z.number().int().nonnegative(),
+  watchingUserCount: z.number().int().nonnegative(),
+  medianWatchedSecondsPerUser: z.number().int().nonnegative().nullable(),
+  p90WatchedSecondsPerUser: z.number().int().nonnegative().nullable(),
+});
 
-export const ActivityHourBucketSchema = z
-  .object({
-    /** 0..23, UTC. There is no per-user zone on this platform, so this axis cannot be localised. */
-    hour: z.number().int().min(0).max(23),
-    /**
-     * A SUM OF PER-DAY DISTINCTS, and the label on the chart says so. One person watching at 21:00
-     * every night for a month contributes thirty, which is the number that answers "how busy is
-     * 21:00" — a distinct-across-the-window count would answer a different question.
-     */
-    activeUserDayCount: z.number().int().nonnegative(),
-    watchedSeconds: z.number().int().nonnegative(),
-  })
-  .strip();
+export const ActivityHourBucketSchema = z.object({
+  /** 0..23, UTC. There is no per-user zone on this platform, so this axis cannot be localised. */
+  hour: z.number().int().min(0).max(23),
+  /**
+   * A SUM OF PER-DAY DISTINCTS, and the label on the chart says so. One person watching at 21:00
+   * every night for a month contributes thirty, which is the number that answers "how busy is
+   * 21:00" — a distinct-across-the-window count would answer a different question.
+   */
+  activeUserDayCount: z.number().int().nonnegative(),
+  watchedSeconds: z.number().int().nonnegative(),
+});
 
-export const RetentionCohortRowSchema = z
-  .object({
-    /** `YYYY-MM` — the month these accounts signed up in. */
-    cohortMonth: z.string(),
-    cohortUserCount: z.number().int().nonnegative(),
-    /**
-     * RETAINED COUNTS, NOT PERCENTAGES, and the array is RAGGED: its length is the largest offset
-     * that had any activity, so trailing offsets are absent rather than zero. Index 0 is the signup
-     * month itself, which is why it is rarely the whole cohort.
-     */
-    retainedByMonthOffset: z.array(z.number().int().nonnegative()),
-  })
-  .strip();
+export const RetentionCohortRowSchema = z.object({
+  /** `YYYY-MM` — the month these accounts signed up in. */
+  cohortMonth: z.string(),
+  cohortUserCount: z.number().int().nonnegative(),
+  /**
+   * RETAINED COUNTS, NOT PERCENTAGES, and the array is RAGGED: its length is the largest offset
+   * that had any activity, so trailing offsets are absent rather than zero. Index 0 is the signup
+   * month itself, which is why it is rarely the whole cohort.
+   */
+  retainedByMonthOffset: z.array(z.number().int().nonnegative()),
+});
 
-export const SegmentUserRowSchema = z
-  .object({
-    userId: z.string(),
-    handle: z.string().nullable(),
-    displayName: z.string(),
-    watchedSecondsInWindow: z.number().int().nonnegative(),
-    lastActiveDate: IsoDateSchema.nullable(),
-  })
-  .strip();
+export const SegmentUserRowSchema = z.object({
+  userId: z.string(),
+  handle: z.string().nullable(),
+  displayName: z.string(),
+  watchedSecondsInWindow: z.number().int().nonnegative(),
+  lastActiveDate: IsoDateSchema.nullable(),
+});
 
 export const ActiveUsersSeriesSchema = z.array(ActiveUsersPointSchema);
 export const WatchTimeSeriesSchema = z.array(WatchTimePointSchema);

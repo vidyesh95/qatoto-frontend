@@ -110,7 +110,7 @@ AttributeFacetSchema; // discriminated on valueKind:
 //               numericScale, minScaled, maxScaled, count }
 ```
 
-`.strip()` on all of them, per Pattern 2. `AttributeFacetSchema` is a `z.discriminatedUnion` on
+Plain (stripping) `z.object` on all of them, per Pattern 2. `AttributeFacetSchema` is a `z.discriminatedUnion` on
 `valueKind` and **not** a bag of optional fields — a facet that carried both `buckets` and
 `minScaled` would be an impossible state the renderer would have to guess about (Pattern 1).
 

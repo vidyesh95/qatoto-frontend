@@ -18,12 +18,10 @@ import { z } from "zod";
  * construct, parse, compare or increment one. The backend encodes a sort key and a
  * tie-break id into it and answers `422` for anything it did not mint.
  */
-export const CursorPageSchema = z
-  .object({
-    nextCursor: z.string().nullable(),
-    hasMore: z.boolean(),
-  })
-  .strip();
+export const CursorPageSchema = z.object({
+  nextCursor: z.string().nullable(),
+  hasMore: z.boolean(),
+});
 
 export type CursorPage = z.infer<typeof CursorPageSchema>;
 
@@ -129,12 +127,10 @@ export const AccentTokenSchema = z.string();
  * and no single number. Never add two amounts whose currencies differ — that invents an
  * FX rate, and the backend refuses to do it for exactly that reason.
  */
-export const MoneySchema = z
-  .object({
-    amountInCents: z.number().int(),
-    currency: z.string(),
-  })
-  .strip();
+export const MoneySchema = z.object({
+  amountInCents: z.number().int(),
+  currency: z.string(),
+});
 
 export type Money = z.infer<typeof MoneySchema>;
 
@@ -146,10 +142,8 @@ export type Money = z.infer<typeof MoneySchema>;
  * `CursorPageControl` un-shareable.
  */
 export function cursorPageOf<TRow extends z.ZodTypeAny>(rowSchema: TRow) {
-  return z
-    .object({
-      items: z.array(rowSchema),
-      page: CursorPageSchema,
-    })
-    .strip();
+  return z.object({
+    items: z.array(rowSchema),
+    page: CursorPageSchema,
+  });
 }

@@ -105,57 +105,6 @@ export default function TeamManagementIsland({
   ].find((error): error is ApiRequestError => error instanceof ApiRequestError);
 
   if (!isMember) return null;
-
-  return (
-    <div className="space-y-6 border-t border-[#CAC4D0]/40 pt-6">
-      {canManage && (
-        <>
-          <section className="space-y-3">
-            <h3 className="text-sm font-medium tracking-wide xl:text-lg">
-              People who want to join
-            </h3>
-            {renderApplications()}
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-medium tracking-wide xl:text-lg">Invites you have sent</h3>
-            {renderInvites()}
-            {renderInviteForm()}
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-medium tracking-wide xl:text-lg">Roles you advertise</h3>
-            {renderRoleControls()}
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-medium tracking-wide xl:text-lg">The roster</h3>
-            {renderRosterControls()}
-          </section>
-        </>
-      )}
-
-      {viewerProjectRole !== "founder" && (
-        <section className="space-y-2">
-          <button
-            type="button"
-            disabled={memberMutation.isPending}
-            onClick={() => memberMutation.mutate({ action: "leave" })}
-            className="cursor-pointer rounded-full border border-[#CAC4D0] px-4 py-2 text-sm font-medium disabled:opacity-50"
-          >
-            Leave this project
-          </button>
-          <p className="text-xs text-muted-foreground">
-            Your slices stay in the ledger. Leaving stops new effort accruing; it does not undo what
-            you already earned.
-          </p>
-        </section>
-      )}
-
-      {firstError !== undefined && <MutationErrorNotice error={firstError.apiError} />}
-    </div>
-  );
-
   function renderApplications() {
     if (applicationsQuery.isPending) {
       return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -515,4 +464,54 @@ export default function TeamManagementIsland({
       </ul>
     );
   }
+
+  return (
+    <div className="space-y-6 border-t border-[#CAC4D0]/40 pt-6">
+      {canManage && (
+        <>
+          <section className="space-y-3">
+            <h3 className="text-sm font-medium tracking-wide xl:text-lg">
+              People who want to join
+            </h3>
+            {renderApplications()}
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-medium tracking-wide xl:text-lg">Invites you have sent</h3>
+            {renderInvites()}
+            {renderInviteForm()}
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-medium tracking-wide xl:text-lg">Roles you advertise</h3>
+            {renderRoleControls()}
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-medium tracking-wide xl:text-lg">The roster</h3>
+            {renderRosterControls()}
+          </section>
+        </>
+      )}
+
+      {viewerProjectRole !== "founder" && (
+        <section className="space-y-2">
+          <button
+            type="button"
+            disabled={memberMutation.isPending}
+            onClick={() => memberMutation.mutate({ action: "leave" })}
+            className="cursor-pointer rounded-full border border-[#CAC4D0] px-4 py-2 text-sm font-medium disabled:opacity-50"
+          >
+            Leave this project
+          </button>
+          <p className="text-xs text-muted-foreground">
+            Your slices stay in the ledger. Leaving stops new effort accruing; it does not undo what
+            you already earned.
+          </p>
+        </section>
+      )}
+
+      {firstError !== undefined && <MutationErrorNotice error={firstError.apiError} />}
+    </div>
+  );
 }

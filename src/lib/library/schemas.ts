@@ -20,19 +20,17 @@ import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * samples and is NEVER substituted with a client-reported number; `creatorHandle` is null for an
  * account that has not set one, so a caller must branch rather than build `/channel/${handle}`.
  */
-export const LibraryVideoRowSchema = z
-  .object({
-    videoId: z.string(),
-    title: z.string(),
-    thumbnailUrl: z.string().nullable(),
-    durationSeconds: z.number().int().nullable(),
-    viewCount: z.number().int(),
-    creatorId: z.string(),
-    creatorName: z.string(),
-    creatorHandle: z.string().nullable(),
-    addedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const LibraryVideoRowSchema = z.object({
+  videoId: z.string(),
+  title: z.string(),
+  thumbnailUrl: z.string().nullable(),
+  durationSeconds: z.number().int().nullable(),
+  viewCount: z.number().int(),
+  creatorId: z.string(),
+  creatorName: z.string(),
+  creatorHandle: z.string().nullable(),
+  addedAt: IsoDateTimeSchema,
+});
 
 export type LibraryVideoRow = z.infer<typeof LibraryVideoRowSchema>;
 
@@ -47,15 +45,13 @@ export type LibraryVideoRow = z.infer<typeof LibraryVideoRowSchema>;
  * normal thing to do, and the server does not filter those out — hiding them would make the
  * subscription unliftable from the only surface that lists it.
  */
-export const SubscribedCreatorRowSchema = z
-  .object({
-    creatorId: z.string(),
-    handle: z.string().nullable(),
-    name: z.string(),
-    imageUrl: z.string().nullable(),
-    subscriberCount: z.number().int(),
-    subscribedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const SubscribedCreatorRowSchema = z.object({
+  creatorId: z.string(),
+  handle: z.string().nullable(),
+  name: z.string(),
+  imageUrl: z.string().nullable(),
+  subscriberCount: z.number().int(),
+  subscribedAt: IsoDateTimeSchema,
+});
 
 export type SubscribedCreatorRow = z.infer<typeof SubscribedCreatorRowSchema>;

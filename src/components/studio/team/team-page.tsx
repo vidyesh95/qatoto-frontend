@@ -51,33 +51,6 @@ export default function StudioTeamPage() {
   const applicationsQuery = useReceivedApplicationsQuery("pending", page);
   const rolesQuery = useMaintainedOpenRolesQuery();
   const projectsQuery = useMyProjectsQuery(undefined);
-
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold text-foreground">Team</h1>
-      <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-        Who wants to build with you, across every venture you run. People join as hobbyists, for
-        equity, for a wage, or a blend — <strong>what a role advertises is an offer</strong>, and
-        equity itself is earned through verified work rather than granted on arrival.
-      </p>
-
-      <section className="mt-8">
-        <h2 className="text-sm font-medium text-foreground">Applications waiting on you</h2>
-        {renderApplications()}
-      </section>
-
-      <section className="mt-10">
-        <h2 className="text-sm font-medium text-foreground">Roles you advertise</h2>
-        {renderRoles()}
-      </section>
-
-      <section className="mt-10">
-        <h2 className="text-sm font-medium text-foreground">Your ventures</h2>
-        {renderVentures()}
-      </section>
-    </div>
-  );
-
   function renderApplications() {
     if (applicationsQuery.isPending) {
       return <p className="mt-3 text-sm text-muted-foreground">Loading…</p>;
@@ -214,6 +187,32 @@ export default function StudioTeamPage() {
       </ul>
     );
   }
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-semibold text-foreground">Team</h1>
+      <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+        Who wants to build with you, across every venture you run. People join as hobbyists, for
+        equity, for a wage, or a blend — <strong>what a role advertises is an offer</strong>, and
+        equity itself is earned through verified work rather than granted on arrival.
+      </p>
+
+      <section className="mt-8">
+        <h2 className="text-sm font-medium text-foreground">Applications waiting on you</h2>
+        {renderApplications()}
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-sm font-medium text-foreground">Roles you advertise</h2>
+        {renderRoles()}
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-sm font-medium text-foreground">Your ventures</h2>
+        {renderVentures()}
+      </section>
+    </div>
+  );
 }
 
 function ApplicationCard({ application }: { readonly application: ReceivedApplication }) {

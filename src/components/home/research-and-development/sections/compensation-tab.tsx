@@ -85,32 +85,6 @@ export default function CompensationTab({
   team: ProjectTeamMember[];
   viewerProjectRole: string | null;
 }) {
-  return (
-    <div className="space-y-6 px-4 lg:px-6">
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">What has been paid</h3>
-        {renderPaidOut()}
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Monthly statements</h3>
-        {renderPeriods()}
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Cash agreements</h3>
-        {renderAgreements()}
-      </section>
-
-      <CompensationAgreementIsland
-        projectSlug={projectSlug}
-        team={team}
-        agreements={agreementsState.status === "ready" ? agreementsState.rows : []}
-        viewerProjectRole={viewerProjectRole}
-      />
-    </div>
-  );
-
   function renderPaidOut() {
     switch (compensationState.status) {
       case "error":
@@ -304,4 +278,30 @@ export default function CompensationTab({
       }
     }
   }
+
+  return (
+    <div className="space-y-6 px-4 lg:px-6">
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">What has been paid</h3>
+        {renderPaidOut()}
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Monthly statements</h3>
+        {renderPeriods()}
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Cash agreements</h3>
+        {renderAgreements()}
+      </section>
+
+      <CompensationAgreementIsland
+        projectSlug={projectSlug}
+        team={team}
+        agreements={agreementsState.status === "ready" ? agreementsState.rows : []}
+        viewerProjectRole={viewerProjectRole}
+      />
+    </div>
+  );
 }

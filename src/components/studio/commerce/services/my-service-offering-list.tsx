@@ -257,12 +257,12 @@ function OfferingEditForm({
   const [title, setTitle] = useState(offering.title);
   const [summary, setSummary] = useState(offering.summary ?? "");
   const [pricingModel, setPricingModel] = useState<ServicePricingModel>(offering.pricingModel);
-  const [priceMin, setPriceMin] = useState(toInputText(offering.indicativePriceMinInCents));
-  const [priceMax, setPriceMax] = useState(toInputText(offering.indicativePriceMaxInCents));
-  const [minimumLeadTimeDays, setMinimumLeadTimeDays] = useState(
+  const [priceMin, setPriceMin] = useState(() => toInputText(offering.indicativePriceMinInCents));
+  const [priceMax, setPriceMax] = useState(() => toInputText(offering.indicativePriceMaxInCents));
+  const [minimumLeadTimeDays, setMinimumLeadTimeDays] = useState(() =>
     toInputText(offering.minimumLeadTimeDays),
   );
-  const [maximumLeadTimeDays, setMaximumLeadTimeDays] = useState(
+  const [maximumLeadTimeDays, setMaximumLeadTimeDays] = useState(() =>
     toInputText(offering.maximumLeadTimeDays),
   );
   const [localError, setLocalError] = useState<string | null>(null);

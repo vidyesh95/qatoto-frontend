@@ -183,7 +183,7 @@ Follows the R&D write discipline verbatim. Every file gets a line-1 `// TRANSPOR
 
 - `const` tuple + `z.enum` + inferred type for `PITCH_STATUSES`, all three exported (the tuple
   drives the `<option>` list).
-- Every response schema ends `.strip()`.
+- Every response schema is a plain `z.object` (strips unknown keys; no `.strip()`).
 - `amountInCents` is a **decimal string** parsed with `BigInt`, never `Number` — it is a `bigint`
   column, and `funding.schemas.ts:23-37` states the rule.
 - Reads via `getJson` / `getPaginated`, writes via `sendJson`, all returning `ActionResponse<T>`

@@ -25,12 +25,10 @@ const OTP_FIELD_IDS = ["otp-1", "otp-2", "otp-3", "otp-4", "otp-5", "otp-6"] as 
  * (argon2id), and is the sole authority that links the credential.
  */
 
-const ErrorEnvelopeSchema = z
-  .object({
-    message: z.string().optional(),
-    errors: z.record(z.string(), z.array(z.string())).optional(),
-  })
-  .strip();
+const ErrorEnvelopeSchema = z.object({
+  message: z.string().optional(),
+  errors: z.record(z.string(), z.array(z.string())).optional(),
+});
 
 /** Best-effort read of the backend's error envelope. */
 function readCompleteError(payload: unknown): string {

@@ -3,7 +3,7 @@
 // Client-side contract for the seller storefront, `GET /store/organizations/:slug`.
 // Data truth lives in the Express backend; these Zod schemas parse an untrusted
 // response payload (CLAUDE.md Pattern 2 — never `as`/`any` on the network) and
-// `.strip()` keeps the client forward-compatible with backend minor additions.
+// `z.object`'s default key stripping keeps the client forward-compatible with backend minor additions.
 //
 // THE ONE RULE THIS FILE ENCODES: what a seller ASSERTS about itself and what the
 // platform MEASURED are two separate objects, never one flat stat list. The backend
@@ -156,24 +156,22 @@ export type OrganizationMemberRole = (typeof ORGANIZATION_MEMBER_ROLES)[number];
  * it beside `provisioningOrigin` — together they say whether this is a shell the server minted
  * or a company somebody described that has not named its country yet.
  */
-export const MyCommerceOrganizationSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    legalName: z.string(),
-    displayName: z.string(),
-    summary: z.string().nullable(),
-    organizationType: z.enum(ORGANIZATION_TYPES),
-    tradeState: z.enum(ORGANIZATION_TRADE_STATES),
-    visibility: z.enum(ORGANIZATION_VISIBILITIES),
-    countryCode: z.string().nullable(),
-    provisioningOrigin: z.enum(ORGANIZATION_PROVISIONING_ORIGINS),
-    logoUrl: z.string().nullable(),
-    websiteUrl: z.string().nullable(),
-    createdAt: IsoDateTimeSchema,
-    updatedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const MyCommerceOrganizationSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  legalName: z.string(),
+  displayName: z.string(),
+  summary: z.string().nullable(),
+  organizationType: z.enum(ORGANIZATION_TYPES),
+  tradeState: z.enum(ORGANIZATION_TRADE_STATES),
+  visibility: z.enum(ORGANIZATION_VISIBILITIES),
+  countryCode: z.string().nullable(),
+  provisioningOrigin: z.enum(ORGANIZATION_PROVISIONING_ORIGINS),
+  logoUrl: z.string().nullable(),
+  websiteUrl: z.string().nullable(),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+});
 
 /**
  * The row `GET /commerce/organizations/mine` returns — the organization AND the caller's
@@ -184,18 +182,14 @@ export const MyCommerceOrganizationSchema = z
  * a component is one step from a UI that decides what the server is allowed to do. Use it to
  * decide what to OFFER, never what to allow.
  */
-export const MyCommerceOrganizationMembershipSchema = z
-  .object({
-    organization: MyCommerceOrganizationSchema,
-    membership: z
-      .object({
-        id: z.string(),
-        role: z.enum(ORGANIZATION_MEMBER_ROLES),
-        state: z.enum(ORGANIZATION_MEMBER_STATES),
-      })
-      .strip(),
-  })
-  .strip();
+export const MyCommerceOrganizationMembershipSchema = z.object({
+  organization: MyCommerceOrganizationSchema,
+  membership: z.object({
+    id: z.string(),
+    role: z.enum(ORGANIZATION_MEMBER_ROLES),
+    state: z.enum(ORGANIZATION_MEMBER_STATES),
+  }),
+});
 
 export const MyCommerceOrganizationListSchema = z.array(MyCommerceOrganizationMembershipSchema);
 
@@ -289,67 +283,57 @@ export function deriveBuyerWorkspaceReadiness(
 
 // --- Declared profile — what the seller says about itself --------------------
 
-export const OrganizationMediaSchema = z
-  .object({
-    id: z.string(),
-    mediaKind: z.enum(ORGANIZATION_MEDIA_KINDS),
-    imageUrl: z.string(),
-    altText: z.string().nullable(),
-    widthPx: z.number().int(),
-    heightPx: z.number().int(),
-    position: z.number().int(),
-  })
-  .strip();
+export const OrganizationMediaSchema = z.object({
+  id: z.string(),
+  mediaKind: z.enum(ORGANIZATION_MEDIA_KINDS),
+  imageUrl: z.string(),
+  altText: z.string().nullable(),
+  widthPx: z.number().int(),
+  heightPx: z.number().int(),
+  position: z.number().int(),
+});
 
-export const OrganizationSiteAccessSchema = z
-  .object({
-    id: z.string(),
-    accessMode: z.enum(SITE_ACCESS_MODES),
-    facilityName: z.string(),
-    distanceKm: z.number().int().nullable(),
-    notes: z.string().nullable(),
-    position: z.number().int(),
-  })
-  .strip();
+export const OrganizationSiteAccessSchema = z.object({
+  id: z.string(),
+  accessMode: z.enum(SITE_ACCESS_MODES),
+  facilityName: z.string(),
+  distanceKm: z.number().int().nullable(),
+  notes: z.string().nullable(),
+  position: z.number().int(),
+});
 
 // No email, no phone, and no column for one. A name and a role title are what a
 // company already prints on its own site; a direct line to a named individual is
 // personal data. The backend table cannot hold it — neither can this schema.
-export const OrganizationStakeholderSchema = z
-  .object({
-    id: z.string(),
-    fullName: z.string(),
-    roleTitle: z.string(),
-    photoUrl: z.string().nullable(),
-    position: z.number().int(),
-  })
-  .strip();
+export const OrganizationStakeholderSchema = z.object({
+  id: z.string(),
+  fullName: z.string(),
+  roleTitle: z.string(),
+  photoUrl: z.string().nullable(),
+  position: z.number().int(),
+});
 
-export const OrganizationCapabilitySchema = z
-  .object({
-    id: z.string(),
-    capabilityKind: z.enum(ORGANIZATION_CAPABILITY_KINDS),
-    detail: z.string().nullable(),
-    position: z.number().int(),
-  })
-  .strip();
+export const OrganizationCapabilitySchema = z.object({
+  id: z.string(),
+  capabilityKind: z.enum(ORGANIZATION_CAPABILITY_KINDS),
+  detail: z.string().nullable(),
+  position: z.number().int(),
+});
 
 // `approvedAt` is the ONE field on the declared profile carrying a platform decision —
 // the backend ships only approved certifications, and a null here means the row was
 // never adjudicated. Lapsing is NOT a state: it is `validUntil < today`, evaluated at
 // render time, because a stored `expired` flag would be wrong between nightly ticks.
-export const OrganizationCertificationSchema = z
-  .object({
-    id: z.string(),
-    standardName: z.string(),
-    issuerName: z.string(),
-    certificateNumber: z.string(),
-    scopeSummary: z.string().nullable(),
-    validFrom: z.string(),
-    validUntil: z.string(),
-    approvedAt: z.string().nullable(),
-  })
-  .strip();
+export const OrganizationCertificationSchema = z.object({
+  id: z.string(),
+  standardName: z.string(),
+  issuerName: z.string(),
+  certificateNumber: z.string(),
+  scopeSummary: z.string().nullable(),
+  validFrom: z.string(),
+  validUntil: z.string(),
+  approvedAt: z.string().nullable(),
+});
 
 // --- Seller profile writes (A13) --------------------------------------------
 //
@@ -481,20 +465,12 @@ export interface SubmitCertificationInput {
  * Parsing the wrong one is not a soft failure — the schema is `.strip()` over required keys, so a
  * mismatch is a `PARSE` result that looks like a refused write.
  */
-export const SiteAccessRowListSchema = z
-  .object({ rows: z.array(OrganizationSiteAccessSchema) })
-  .strip();
-export const StakeholderRowListSchema = z
-  .object({ rows: z.array(OrganizationStakeholderSchema) })
-  .strip();
-export const CapabilityRowListSchema = z
-  .object({ rows: z.array(OrganizationCapabilitySchema) })
-  .strip();
-export const OrganizationMediaListSchema = z
-  .object({ media: z.array(OrganizationMediaSchema) })
-  .strip();
+export const SiteAccessRowListSchema = z.object({ rows: z.array(OrganizationSiteAccessSchema) });
+export const StakeholderRowListSchema = z.object({ rows: z.array(OrganizationStakeholderSchema) });
+export const CapabilityRowListSchema = z.object({ rows: z.array(OrganizationCapabilitySchema) });
+export const OrganizationMediaListSchema = z.object({ media: z.array(OrganizationMediaSchema) });
 /** `DELETE …/media/:mediaId` answers a bare acknowledgement, not the surviving gallery. */
-export const DeletedOrganizationMediaSchema = z.object({ deleted: z.literal(true) }).strip();
+export const DeletedOrganizationMediaSchema = z.object({ deleted: z.literal(true) });
 
 /** The caps the backend enforces, mirrored so a form can refuse before the wire does. */
 export const SELLER_PROFILE_MAX_SITE_ACCESS_ROWS = 12;
@@ -516,45 +492,41 @@ export const SELLER_PROFILE_MAX_MEDIA = 12;
 export const OWNED_CERTIFICATION_STATES = ["pending", "approved", "rejected", "withdrawn"] as const;
 export type OwnedCertificationState = (typeof OWNED_CERTIFICATION_STATES)[number];
 
-export const OwnedCertificationSchema = z
-  .object({
-    id: z.string(),
-    standardName: z.string(),
-    standardCode: z.string().nullable(),
-    issuerName: z.string(),
-    certificateNumber: z.string(),
-    scopeSummary: z.string().nullable(),
-    validFrom: z.string(),
-    validUntil: z.string(),
-    state: z.enum(OWNED_CERTIFICATION_STATES),
-    decisionReason: z.string().nullable(),
-    submittedAt: IsoDateTimeSchema,
-    decidedAt: IsoDateTimeSchema.nullable(),
-  })
-  .strip();
+export const OwnedCertificationSchema = z.object({
+  id: z.string(),
+  standardName: z.string(),
+  standardCode: z.string().nullable(),
+  issuerName: z.string(),
+  certificateNumber: z.string(),
+  scopeSummary: z.string().nullable(),
+  validFrom: z.string(),
+  validUntil: z.string(),
+  state: z.enum(OWNED_CERTIFICATION_STATES),
+  decisionReason: z.string().nullable(),
+  submittedAt: IsoDateTimeSchema,
+  decidedAt: IsoDateTimeSchema.nullable(),
+});
 export type OwnedCertification = z.infer<typeof OwnedCertificationSchema>;
 
-export const SellerDeclaredProfileSchema = z
-  .object({
-    yearFounded: z.number().int().nullable(),
-    factoryCount: z.number().int().nullable(),
-    totalStaffCount: z.number().int().nullable(),
-    productionLineCount: z.number().int().nullable(),
-    factoryAreaSquareMetres: z.number().int().nullable(),
-    businessType: z.enum(SELLER_BUSINESS_TYPES).nullable(),
-    visitPolicy: z.enum(VISIT_POLICIES).nullable(),
-    acceptingCustomOrders: z.boolean(),
-    publicSummary: z.string().nullable(),
-    // The seller's own estimate. The MEASURED figure is
-    // `measuredMetrics.measuredResponseTimeHours` and lives in the other object.
-    declaredResponseTimeHours: z.number().int().nullable(),
-    media: z.array(OrganizationMediaSchema),
-    siteAccess: z.array(OrganizationSiteAccessSchema),
-    stakeholders: z.array(OrganizationStakeholderSchema),
-    capabilities: z.array(OrganizationCapabilitySchema),
-    certifications: z.array(OrganizationCertificationSchema),
-  })
-  .strip();
+export const SellerDeclaredProfileSchema = z.object({
+  yearFounded: z.number().int().nullable(),
+  factoryCount: z.number().int().nullable(),
+  totalStaffCount: z.number().int().nullable(),
+  productionLineCount: z.number().int().nullable(),
+  factoryAreaSquareMetres: z.number().int().nullable(),
+  businessType: z.enum(SELLER_BUSINESS_TYPES).nullable(),
+  visitPolicy: z.enum(VISIT_POLICIES).nullable(),
+  acceptingCustomOrders: z.boolean(),
+  publicSummary: z.string().nullable(),
+  // The seller's own estimate. The MEASURED figure is
+  // `measuredMetrics.measuredResponseTimeHours` and lives in the other object.
+  declaredResponseTimeHours: z.number().int().nullable(),
+  media: z.array(OrganizationMediaSchema),
+  siteAccess: z.array(OrganizationSiteAccessSchema),
+  stakeholders: z.array(OrganizationStakeholderSchema),
+  capabilities: z.array(OrganizationCapabilitySchema),
+  certifications: z.array(OrganizationCertificationSchema),
+});
 
 // --- Measured metrics — what the platform observed ---------------------------
 
@@ -562,107 +534,93 @@ export const SellerDeclaredProfileSchema = z
 // minimum sample. Null means ABSENCE OF EVIDENCE — render "not enough data yet", never
 // zero and never an invented number. The thresholds themselves are deliberately off the
 // wire, so do not render a countdown to one.
-export const OrganizationMeasuredMetricsSchema = z
-  .object({
-    onTimeShipmentRate: z.number().nullable(),
-    onTimeSampleSize: z.number().int(),
-    completedOrderCount: z.number().int(),
-    reorderRate: z.number().nullable(),
-    reorderSampleSize: z.number().int(),
-    measuredResponseTimeHours: z.number().nullable(),
-    responseSampleSize: z.number().int(),
-  })
-  .strip();
+export const OrganizationMeasuredMetricsSchema = z.object({
+  onTimeShipmentRate: z.number().nullable(),
+  onTimeSampleSize: z.number().int(),
+  completedOrderCount: z.number().int(),
+  reorderRate: z.number().nullable(),
+  reorderSampleSize: z.number().int(),
+  measuredResponseTimeHours: z.number().nullable(),
+  responseSampleSize: z.number().int(),
+});
 
 // --- Catalog ----------------------------------------------------------------
 
-export const StoreSellerSummarySchema = z
-  .object({
-    organizationId: z.string(),
-    slug: z.string(),
-    displayName: z.string(),
-    countryCode: z.string(),
-    logoUrl: z.string().nullable(),
-    summary: z.string().nullable(),
-  })
-  .strip();
+export const StoreSellerSummarySchema = z.object({
+  organizationId: z.string(),
+  slug: z.string(),
+  displayName: z.string(),
+  countryCode: z.string(),
+  logoUrl: z.string().nullable(),
+  summary: z.string().nullable(),
+});
 
-export const StoreProductCardSchema = z
-  .object({
-    id: z.string(),
-    publicSlug: z.string(),
-    title: z.string(),
-    brand: z.string().nullable(),
-    currency: z.string(),
-    priceInCents: z.number().int(),
-    compareAtPriceInCents: z.number().int().nullable(),
-    minimumOrderQuantity: z.number().int().nullable(),
-    stockState: z.enum(STORE_STOCK_STATES),
-    // True means `priceInCents` is a "from" price and the buyer must choose a variant
-    // before the line can be added to a cart — not inferable from the price alone.
-    hasVariants: z.boolean(),
-    variantCount: z.number().int(),
-    condition: z.enum(PRODUCT_CONDITIONS),
-    samplePolicy: z.enum(PRODUCT_SAMPLE_POLICIES),
-    /**
-     * §21.2. On the CARD, not just the detail, because a grid is where a buyer decides what to
-     * open. `selling` is the ordinary case and renders nothing.
-     */
-    sellingState: z.enum(PRODUCT_SELLING_STATES),
-    leadTimeMinDays: z.number().int().nullable(),
-    leadTimeMaxDays: z.number().int().nullable(),
-    mainImageUrl: z.string().nullable(),
-    seller: StoreSellerSummarySchema,
-    category: z.object({ id: z.string(), slug: z.string(), name: z.string() }).strip(),
-    reviewMetrics: z
-      .object({ averageRating: z.number().nullable(), reviewCount: z.number().int() })
-      .strip(),
-    /**
-     * A13. How reliably this seller delivers on time — computed by the server on EVERY product
-     * read and, until now, thrown away by this schema's `.strip()`.
-     *
-     * ⚠️ `onTimeShipmentRate` IS NULL RATHER THAN 0 for a seller below the sample threshold or one
-     * who never declared a lead time, and the distinction is the whole point: printing 0% would
-     * publish a failure they never earned, while printing nothing would hide that they have
-     * delivered at all. `completedOrderCount` is what carries the second case — the same rule
-     * `factory-directory-page.tsx` already renders for the identical shape.
-     */
-    fulfillmentMetrics: z
-      .object({
-        onTimeShipmentRate: z.number().nullable(),
-        onTimeSampleSize: z.number().int(),
-        completedOrderCount: z.number().int(),
-      })
-      .strip(),
-  })
-  .strip();
+export const StoreProductCardSchema = z.object({
+  id: z.string(),
+  publicSlug: z.string(),
+  title: z.string(),
+  brand: z.string().nullable(),
+  currency: z.string(),
+  priceInCents: z.number().int(),
+  compareAtPriceInCents: z.number().int().nullable(),
+  minimumOrderQuantity: z.number().int().nullable(),
+  stockState: z.enum(STORE_STOCK_STATES),
+  // True means `priceInCents` is a "from" price and the buyer must choose a variant
+  // before the line can be added to a cart — not inferable from the price alone.
+  hasVariants: z.boolean(),
+  variantCount: z.number().int(),
+  condition: z.enum(PRODUCT_CONDITIONS),
+  samplePolicy: z.enum(PRODUCT_SAMPLE_POLICIES),
+  /**
+   * §21.2. On the CARD, not just the detail, because a grid is where a buyer decides what to
+   * open. `selling` is the ordinary case and renders nothing.
+   */
+  sellingState: z.enum(PRODUCT_SELLING_STATES),
+  leadTimeMinDays: z.number().int().nullable(),
+  leadTimeMaxDays: z.number().int().nullable(),
+  mainImageUrl: z.string().nullable(),
+  seller: StoreSellerSummarySchema,
+  category: z.object({ id: z.string(), slug: z.string(), name: z.string() }),
+  reviewMetrics: z.object({ averageRating: z.number().nullable(), reviewCount: z.number().int() }),
+  /**
+   * A13. How reliably this seller delivers on time — computed by the server on EVERY product
+   * read and, until now, thrown away by this schema's `.strip()`.
+   *
+   * ⚠️ `onTimeShipmentRate` IS NULL RATHER THAN 0 for a seller below the sample threshold or one
+   * who never declared a lead time, and the distinction is the whole point: printing 0% would
+   * publish a failure they never earned, while printing nothing would hide that they have
+   * delivered at all. `completedOrderCount` is what carries the second case — the same rule
+   * `factory-directory-page.tsx` already renders for the identical shape.
+   */
+  fulfillmentMetrics: z.object({
+    onTimeShipmentRate: z.number().nullable(),
+    onTimeSampleSize: z.number().int(),
+    completedOrderCount: z.number().int(),
+  }),
+});
 
 // --- Storefront -------------------------------------------------------------
 
-export const StoreOrganizationStorefrontSchema = z
-  .object({
-    organizationId: z.string(),
-    slug: z.string(),
-    displayName: z.string(),
-    summary: z.string().nullable(),
-    countryCode: z.string(),
-    logoUrl: z.string().nullable(),
-    websiteUrl: z.string().nullable(),
-    // Null when this organization has never described itself — NOT an empty object.
-    // "We have no profile for this seller" and "this seller filled in the form and left
-    // it blank" are different facts, and only one is worth an empty state.
-    declaredProfile: SellerDeclaredProfileSchema.nullable(),
-    // Never null: an organization with no orders still has measured metrics, and they
-    // are zeros and nulls with honest sample sizes.
-    measuredMetrics: OrganizationMeasuredMetricsSchema,
-    products: z
-      .object({
-        items: z.array(StoreProductCardSchema),
-        page: z.object({ nextCursor: z.string().nullable(), hasMore: z.boolean() }).strip(),
-      })
-      .strip(),
-  })
-  .strip();
+export const StoreOrganizationStorefrontSchema = z.object({
+  organizationId: z.string(),
+  slug: z.string(),
+  displayName: z.string(),
+  summary: z.string().nullable(),
+  countryCode: z.string(),
+  logoUrl: z.string().nullable(),
+  websiteUrl: z.string().nullable(),
+  // Null when this organization has never described itself — NOT an empty object.
+  // "We have no profile for this seller" and "this seller filled in the form and left
+  // it blank" are different facts, and only one is worth an empty state.
+  declaredProfile: SellerDeclaredProfileSchema.nullable(),
+  // Never null: an organization with no orders still has measured metrics, and they
+  // are zeros and nulls with honest sample sizes.
+  measuredMetrics: OrganizationMeasuredMetricsSchema,
+  products: z.object({
+    items: z.array(StoreProductCardSchema),
+    page: z.object({ nextCursor: z.string().nullable(), hasMore: z.boolean() }),
+  }),
+});
 
 // `StorefrontEnvelopeSchema` is GONE. It parsed the `{ data: … }` wrapper because the legacy
 // `src/lib/store.ts` fetched with a bare `fetch` and got the whole envelope back. Every read now
@@ -695,21 +653,19 @@ export const OwnSellerDeclaredProfileSchema = SellerDeclaredProfileSchema.extend
   productionLines: z.array(FactoryProductionLineSchema),
   sites: z.array(FactorySiteSchema),
   samplePolicy: FactorySamplePolicySchema,
-  orderBounds: z
-    .object({
-      /**
-       * BOTH-OR-NEITHER with its unit label, which is why they are one object rather than two
-       * loose fields: a bare `500` is unreadable, because 500 pieces and 500 cartons are
-       * different businesses.
-       */
-      minimumOrderQuantity: z.number().int().nullable(),
-      minimumOrderQuantityUnitLabel: z.string().nullable(),
-      minimumLeadTimeDays: z.number().int().nullable(),
-      maximumLeadTimeDays: z.number().int().nullable(),
-    })
-    .strip(),
+  orderBounds: z.object({
+    /**
+     * BOTH-OR-NEITHER with its unit label, which is why they are one object rather than two
+     * loose fields: a bare `500` is unreadable, because 500 pieces and 500 cartons are
+     * different businesses.
+     */
+    minimumOrderQuantity: z.number().int().nullable(),
+    minimumOrderQuantityUnitLabel: z.string().nullable(),
+    minimumLeadTimeDays: z.number().int().nullable(),
+    maximumLeadTimeDays: z.number().int().nullable(),
+  }),
   acceptingInquiries: z.boolean(),
-}).strip();
+});
 export type OwnSellerDeclaredProfile = z.infer<typeof OwnSellerDeclaredProfileSchema>;
 
 /**
@@ -720,9 +676,9 @@ export type OwnSellerDeclaredProfile = z.infer<typeof OwnSellerDeclaredProfileSc
  * off. Substituting an empty projection here would tell the editor a seller had described itself
  * and said nothing.
  */
-export const OwnSellerProfileSchema = z
-  .object({ declaredProfile: OwnSellerDeclaredProfileSchema.nullable() })
-  .strip();
+export const OwnSellerProfileSchema = z.object({
+  declaredProfile: OwnSellerDeclaredProfileSchema.nullable(),
+});
 
 export type OrganizationMeasuredMetrics = z.infer<typeof OrganizationMeasuredMetricsSchema>;
 export type StoreProductCard = z.infer<typeof StoreProductCardSchema>;

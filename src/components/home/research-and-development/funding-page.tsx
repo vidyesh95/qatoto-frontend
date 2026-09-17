@@ -48,32 +48,6 @@ export default async function FundingPage({
   };
 
   const dealsState = toArrayViewState(await listFundingDeals(dealsFilter, requestOptions));
-
-  return (
-    <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
-      <header className="space-y-1 px-4 lg:px-6">
-        <h1 className="font-serif text-2xl font-semibold md:text-3xl">Deal Flow</h1>
-        {/* Non-negotiable copy rule: Qatoto holds no funds and charges nobody in this
-            domain. A pledge is a commitment on the record, settled between the parties. */}
-        <p className="text-sm text-muted-foreground">
-          Projects raising right now — every pledge is a commitment on the record, settled between
-          the backer and the project. Qatoto holds no funds and charges nobody.
-        </p>
-      </header>
-      <MyPledgesPanel />
-      {renderDeals()}
-      {/* §12. AFTER the deal grid, not before: an on-platform round with a real pledge
-          control is the stronger thing to lead with, and a pitch is a listing pointing
-          somewhere else. The rail's own read is PUBLIC, so it still renders for a
-          signed-out visitor who only sees a sign-in prompt above it. */}
-      <PublicPitchesRail />
-      {/* Moderator-only, and it renders NOTHING for anyone else — the read 403s and that
-          answer is the whole check. It sits here rather than on its own admin route because
-          this is the page a moderator already opens to see what is being raised. */}
-      <PitchReviewQueue />
-    </div>
-  );
-
   function renderDeals() {
     switch (dealsState.status) {
       case "error":
@@ -106,6 +80,31 @@ export default async function FundingPage({
       }
     }
   }
+
+  return (
+    <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
+      <header className="space-y-1 px-4 lg:px-6">
+        <h1 className="font-serif text-2xl font-semibold md:text-3xl">Deal Flow</h1>
+        {/* Non-negotiable copy rule: Qatoto holds no funds and charges nobody in this
+            domain. A pledge is a commitment on the record, settled between the parties. */}
+        <p className="text-sm text-muted-foreground">
+          Projects raising right now — every pledge is a commitment on the record, settled between
+          the backer and the project. Qatoto holds no funds and charges nobody.
+        </p>
+      </header>
+      <MyPledgesPanel />
+      {renderDeals()}
+      {/* §12. AFTER the deal grid, not before: an on-platform round with a real pledge
+          control is the stronger thing to lead with, and a pitch is a listing pointing
+          somewhere else. The rail's own read is PUBLIC, so it still renders for a
+          signed-out visitor who only sees a sign-in prompt above it. */}
+      <PublicPitchesRail />
+      {/* Moderator-only, and it renders NOTHING for anyone else — the read 403s and that
+          answer is the whole check. It sits here rather than on its own admin route because
+          this is the page a moderator already opens to see what is being raised. */}
+      <PitchReviewQueue />
+    </div>
+  );
 }
 
 function hasAnyFilter(searchParams: RawSearchParams): boolean {

@@ -16,23 +16,21 @@ import { cursorPageOf, IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * error to correct — a seller may buy in CNY and sell in USD, and converting would be the client
  * inventing an exchange rate.
  */
-export const SourcingQuoteLineSchema = z
-  .object({
-    quoteProductLineId: z.string(),
-    quoteId: z.string(),
-    rfqId: z.string(),
-    rfqTitle: z.string(),
-    revisionNumber: z.number().int(),
-    providerOrganizationId: z.string(),
-    providerDisplayName: z.string(),
-    titleSnapshot: z.string(),
-    quantity: z.number().int(),
-    unitPriceInCents: z.number().int(),
-    lineTotalInCents: z.number().int(),
-    currency: z.string(),
-    acceptedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const SourcingQuoteLineSchema = z.object({
+  quoteProductLineId: z.string(),
+  quoteId: z.string(),
+  rfqId: z.string(),
+  rfqTitle: z.string(),
+  revisionNumber: z.number().int(),
+  providerOrganizationId: z.string(),
+  providerDisplayName: z.string(),
+  titleSnapshot: z.string(),
+  quantity: z.number().int(),
+  unitPriceInCents: z.number().int(),
+  lineTotalInCents: z.number().int(),
+  currency: z.string(),
+  acceptedAt: IsoDateTimeSchema,
+});
 
 export const SourcingQuoteLinePageSchema = cursorPageOf(SourcingQuoteLineSchema);
 

@@ -497,35 +497,31 @@ export function describeWriteUpImageUploadRefusal(apiError: ApiError): string {
  * required. Validating a draft against the submit contract would refuse exactly the drafts worth
  * keeping. `TeardownWizardDraftSchema` is the precedent.
  */
-export const ShowcaseLaunchFormDraftSchema: z.ZodType<ShowcaseLaunchFormDraft> = z
-  .object({
-    title: z.string(),
-    tagline: z.string(),
-    summary: z.string(),
-    writeUp: z.string(),
-    callToActionLabel: z.string(),
-    callToActionUrl: z.string(),
-    teamRows: z.array(
-      z
-        .object({
-          rowId: z.string(),
-          displayName: z.string(),
-          handle: z.string(),
-          role: z.string(),
-        })
-        .strip(),
-    ),
-    builtFromBlueprintSlug: z.string(),
-    launchedOnDate: z.string(),
-    difficulty: z.union([z.enum(BLUEPRINT_DIFFICULTIES), z.literal("")]),
-    costMinimumText: z.string(),
-    costMaximumText: z.string(),
-    tagsText: z.string(),
-    acceptedLaunchStatementIds: z.array(z.enum(SHOWCASE_LAUNCH_STATEMENT_IDS)),
-    uploadedWriteUpImages: z.array(BlueprintWriteUpImageSchema),
-    stagedHeadingImage: ShowcaseHeadingImageSchema.nullable(),
-  })
-  .strip();
+export const ShowcaseLaunchFormDraftSchema: z.ZodType<ShowcaseLaunchFormDraft> = z.object({
+  title: z.string(),
+  tagline: z.string(),
+  summary: z.string(),
+  writeUp: z.string(),
+  callToActionLabel: z.string(),
+  callToActionUrl: z.string(),
+  teamRows: z.array(
+    z.object({
+      rowId: z.string(),
+      displayName: z.string(),
+      handle: z.string(),
+      role: z.string(),
+    }),
+  ),
+  builtFromBlueprintSlug: z.string(),
+  launchedOnDate: z.string(),
+  difficulty: z.union([z.enum(BLUEPRINT_DIFFICULTIES), z.literal("")]),
+  costMinimumText: z.string(),
+  costMaximumText: z.string(),
+  tagsText: z.string(),
+  acceptedLaunchStatementIds: z.array(z.enum(SHOWCASE_LAUNCH_STATEMENT_IDS)),
+  uploadedWriteUpImages: z.array(BlueprintWriteUpImageSchema),
+  stagedHeadingImage: ShowcaseHeadingImageSchema.nullable(),
+});
 
 /**
  * Parses a stored draft document back into form state, or `null` if it cannot be reopened.

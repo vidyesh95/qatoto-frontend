@@ -52,31 +52,27 @@ export type WorkshopFileSource = z.infer<typeof WorkshopFileSourceSchema>;
  * the formatting from the server, which no localized client could undo. `rank` is
  * READ-ONLY on the wire: no request body accepts one.
  */
-export const WorkshopTaskSchema = z
-  .object({
-    id: z.string(),
-    columnId: z.string(),
-    title: z.string(),
-    description: z.string().nullable(),
-    assigneeMemberId: z.string().nullable(),
-    priority: WorkshopTaskPrioritySchema,
-    labels: z.string().array(),
-    dueDate: z.string().nullable(),
-    rank: z.string(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-  })
-  .strip();
+export const WorkshopTaskSchema = z.object({
+  id: z.string(),
+  columnId: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  assigneeMemberId: z.string().nullable(),
+  priority: WorkshopTaskPrioritySchema,
+  labels: z.string().array(),
+  dueDate: z.string().nullable(),
+  rank: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
 export type WorkshopTask = z.infer<typeof WorkshopTaskSchema>;
 
-export const WorkshopBoardColumnSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    position: z.number(),
-    tasks: WorkshopTaskSchema.array(),
-  })
-  .strip();
+export const WorkshopBoardColumnSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  position: z.number(),
+  tasks: WorkshopTaskSchema.array(),
+});
 export type WorkshopBoardColumn = z.infer<typeof WorkshopBoardColumnSchema>;
 
 /**
@@ -89,41 +85,35 @@ export type WorkshopBoardColumn = z.infer<typeof WorkshopBoardColumnSchema>;
  * `externalHost` is derived server-side so a client badges the host without re-parsing
  * the URL.
  */
-export const WorkshopFileSchema = z
-  .object({
-    id: z.string(),
-    fileName: z.string(),
-    fileKind: WorkshopFileKindSchema,
-    source: WorkshopFileSourceSchema,
-    externalUrl: z.string().nullable(),
-    externalHost: z.string().nullable(),
-    sizeBytes: z.number().nullable(),
-    uploadedByMemberId: z.string(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const WorkshopFileSchema = z.object({
+  id: z.string(),
+  fileName: z.string(),
+  fileKind: WorkshopFileKindSchema,
+  source: WorkshopFileSourceSchema,
+  externalUrl: z.string().nullable(),
+  externalHost: z.string().nullable(),
+  sizeBytes: z.number().nullable(),
+  uploadedByMemberId: z.string(),
+  createdAt: z.string(),
+});
 export type WorkshopFile = z.infer<typeof WorkshopFileSchema>;
 
-export const WorkshopChatMessageSchema = z
-  .object({
-    id: z.string(),
-    authorMemberId: z.string(),
-    messageText: z.string(),
-    sentAt: z.string(),
-    editedAt: z.string().nullable(),
-  })
-  .strip();
+export const WorkshopChatMessageSchema = z.object({
+  id: z.string(),
+  authorMemberId: z.string(),
+  messageText: z.string(),
+  sentAt: z.string(),
+  editedAt: z.string().nullable(),
+});
 export type WorkshopChatMessage = z.infer<typeof WorkshopChatMessageSchema>;
 
 /**
  * How far the caller has read the chat. Null when they have never opened it.
  */
-export const WorkshopChatReadStateSchema = z
-  .object({
-    throughMessageId: z.string().nullable(),
-    readAt: z.string(),
-  })
-  .strip();
+export const WorkshopChatReadStateSchema = z.object({
+  throughMessageId: z.string().nullable(),
+  readAt: z.string(),
+});
 export type WorkshopChatReadState = z.infer<typeof WorkshopChatReadStateSchema>;
 
 /**
@@ -134,12 +124,10 @@ export type WorkshopChatReadState = z.infer<typeof WorkshopChatReadStateSchema>;
  * `messages` and is a separate shape; that read is unwritten until a "load older"
  * control exists.
  */
-export const WorkshopSnapshotSchema = z
-  .object({
-    board: WorkshopBoardColumnSchema.array(),
-    files: WorkshopFileSchema.array(),
-    chatMessages: WorkshopChatMessageSchema.array(),
-    readState: WorkshopChatReadStateSchema.nullable(),
-  })
-  .strip();
+export const WorkshopSnapshotSchema = z.object({
+  board: WorkshopBoardColumnSchema.array(),
+  files: WorkshopFileSchema.array(),
+  chatMessages: WorkshopChatMessageSchema.array(),
+  readState: WorkshopChatReadStateSchema.nullable(),
+});
 export type WorkshopSnapshot = z.infer<typeof WorkshopSnapshotSchema>;

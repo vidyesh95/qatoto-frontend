@@ -62,56 +62,54 @@ export type VideoPublishStatus = z.infer<typeof VideoPublishStatusSchema>;
 /* Nested read views                                                            */
 /* -------------------------------------------------------------------------- */
 
-export const VideoChapterSchema = z
-  .object({ id: z.string(), startSeconds: z.number(), title: z.string() })
-  .strip();
+export const VideoChapterSchema = z.object({
+  id: z.string(),
+  startSeconds: z.number(),
+  title: z.string(),
+});
 export type VideoChapter = z.infer<typeof VideoChapterSchema>;
 
-export const ContentCategoryRefSchema = z
-  .object({ id: z.string(), slug: z.string(), label: z.string() })
-  .strip();
+export const ContentCategoryRefSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  label: z.string(),
+});
 export type ContentCategoryRef = z.infer<typeof ContentCategoryRefSchema>;
 
-export const VideoAttachedProductSchema = z
-  .object({
-    id: z.string(),
-    productId: z.string(),
-    position: z.number(),
-    pinnedAtSeconds: z.number().nullable(),
-  })
-  .strip();
+export const VideoAttachedProductSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  position: z.number(),
+  pinnedAtSeconds: z.number().nullable(),
+});
 
-export const VideoLabelSchema = z
-  .object({ id: z.string(), label: z.string(), position: z.number() })
-  .strip();
+export const VideoLabelSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  position: z.number(),
+});
 
-export const VideoOpenRoleSchema = z
-  .object({
-    id: z.string(),
-    roleTitle: z.string(),
-    roleDescription: z.string().nullable(),
-    /** The real `projectOpenRole` behind this blurb, or null for plain text. */
-    openRoleId: z.string().nullable(),
-    position: z.number(),
-  })
-  .strip();
+export const VideoOpenRoleSchema = z.object({
+  id: z.string(),
+  roleTitle: z.string(),
+  roleDescription: z.string().nullable(),
+  /** The real `projectOpenRole` behind this blurb, or null for plain text. */
+  openRoleId: z.string().nullable(),
+  position: z.number(),
+});
 
-export const VideoTeamMemberSchema = z
-  .object({
-    id: z.string(),
-    memberName: z.string(),
-    roleLabel: z.string().nullable(),
-    position: z.number(),
-  })
-  .strip();
+export const VideoTeamMemberSchema = z.object({
+  id: z.string(),
+  memberName: z.string(),
+  roleLabel: z.string().nullable(),
+  position: z.number(),
+});
 
-export const VideoCollaboratorSchema = z
-  .object({
-    id: z.string(),
-    invitedEmail: z.string(),
-    status: z.enum(VIDEO_COLLABORATOR_STATUSES),
-  })
-  .strip();
+export const VideoCollaboratorSchema = z.object({
+  id: z.string(),
+  invitedEmail: z.string(),
+  status: z.enum(VIDEO_COLLABORATOR_STATUSES),
+});
 
 /**
  * One attached deck or whitepaper.
@@ -121,15 +119,13 @@ export const VideoCollaboratorSchema = z
  * unpublished. `downloadPath` is a path on the API — fetching it re-runs the video's public gate
  * and 302s to a URL that lives five minutes.
  */
-export const VideoDocumentSchema = z
-  .object({
-    id: z.string(),
-    fileName: z.string(),
-    byteSize: z.number().int(),
-    position: z.number(),
-    downloadPath: z.string(),
-  })
-  .strip();
+export const VideoDocumentSchema = z.object({
+  id: z.string(),
+  fileName: z.string(),
+  byteSize: z.number().int(),
+  position: z.number(),
+  downloadPath: z.string(),
+});
 
 /* -------------------------------------------------------------------------- */
 /* PublicVideo — the owner-scoped detail read                                   */
@@ -147,100 +143,99 @@ export const VideoDocumentSchema = z
  * `recordingDate` is a DATE column, so it is `"YYYY-MM-DD"`, not an instant. Parsing it as a
  * timestamp shifts it a day in half the world's time zones.
  */
-export const PublicVideoSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    description: z.string().nullable(),
-    videoType: VideoTypeSchema,
-    stageBadge: z.enum(VIDEO_STAGE_BADGES).nullable(),
+export const PublicVideoSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  videoType: VideoTypeSchema,
+  stageBadge: z.enum(VIDEO_STAGE_BADGES).nullable(),
 
-    videoSource: z.enum(["youtube", "hosted"]),
-    youtubeVideoId: z.string().nullable(),
-    youtubeEmbedUrl: z.string().nullable(),
-    // The flag the "verifying…" badge reads. False while a YouTube oEmbed outage is being
-    // retried, and PUBLISH IS REFUSED with a 409 for as long as it stays false.
-    isSourceVerified: z.boolean(),
+  videoSource: z.enum(["youtube", "hosted"]),
+  youtubeVideoId: z.string().nullable(),
+  youtubeEmbedUrl: z.string().nullable(),
+  // The flag the "verifying…" badge reads. False while a YouTube oEmbed outage is being
+  // retried, and PUBLISH IS REFUSED with a 409 for as long as it stays false.
+  isSourceVerified: z.boolean(),
 
-    storageProvider: z.enum(STORAGE_PROVIDERS).nullable(),
-    playbackId: z.string().nullable(),
-    playbackUrl: z.string().nullable(),
+  storageProvider: z.enum(STORAGE_PROVIDERS).nullable(),
+  playbackId: z.string().nullable(),
+  playbackUrl: z.string().nullable(),
 
-    uploadStatus: z.enum(VIDEO_UPLOAD_STATUSES),
-    durationSeconds: z.number().nullable(),
-    thumbnailUrl: z.string().nullable(),
-    hasCustomThumbnail: z.boolean(),
+  uploadStatus: z.enum(VIDEO_UPLOAD_STATUSES),
+  durationSeconds: z.number().nullable(),
+  thumbnailUrl: z.string().nullable(),
+  hasCustomThumbnail: z.boolean(),
 
-    sectorTags: z.array(z.string()),
-    tags: z.array(z.string()),
-    websiteUrl: z.string().nullable(),
-    ctaLabel: z.string().nullable(),
-    ctaUrl: z.string().nullable(),
-    linkedinUrl: z.string().nullable(),
-    xProfileUrl: z.string().nullable(),
-    contactEmail: z.string().nullable(),
-    isMadeForKids: z.boolean().nullable(),
-    hasAgeRestriction: z.boolean(),
-    relatedVideoUrl: z.string().nullable(),
-    hasFundingCallToAction: z.boolean(),
-    /**
-     * The venture this video belongs to, as a SLUG — the server resolves the slug and stores
-     * the id, and the id never reaches a client. Null is unaffiliated content:
-     * general creator uploads carry it forever.
-     */
-    researchProjectSlug: z.string().nullable(),
+  sectorTags: z.array(z.string()),
+  tags: z.array(z.string()),
+  websiteUrl: z.string().nullable(),
+  ctaLabel: z.string().nullable(),
+  ctaUrl: z.string().nullable(),
+  linkedinUrl: z.string().nullable(),
+  xProfileUrl: z.string().nullable(),
+  contactEmail: z.string().nullable(),
+  isMadeForKids: z.boolean().nullable(),
+  hasAgeRestriction: z.boolean(),
+  relatedVideoUrl: z.string().nullable(),
+  hasFundingCallToAction: z.boolean(),
+  /**
+   * The venture this video belongs to, as a SLUG — the server resolves the slug and stores
+   * the id, and the id never reaches a client. Null is unaffiliated content:
+   * general creator uploads carry it forever.
+   */
+  researchProjectSlug: z.string().nullable(),
 
-    visibility: VideoVisibilitySchema,
-    isNdaRequired: z.boolean(),
-    scheduledPublishAt: z.iso.datetime().nullable(),
-    publishStatus: VideoPublishStatusSchema,
-    publishedAt: z.iso.datetime().nullable(),
-    reviewStatus: ContentReviewStatusSchema,
-    rejectionReason: z.string().nullable(),
+  visibility: VideoVisibilitySchema,
+  isNdaRequired: z.boolean(),
+  scheduledPublishAt: z.iso.datetime().nullable(),
+  publishStatus: VideoPublishStatusSchema,
+  publishedAt: z.iso.datetime().nullable(),
+  reviewStatus: ContentReviewStatusSchema,
+  rejectionReason: z.string().nullable(),
 
-    license: z.enum(VIDEO_LICENSES),
-    videoLanguage: z.string().nullable(),
-    isEmbeddingAllowed: z.boolean(),
-    areCommentsEnabled: z.boolean(),
-    shouldShowLikesCount: z.boolean(),
-    hasPaidPromotion: z.boolean(),
-    usesAlteredContent: z.boolean().nullable(),
-    captionCertification: z.string().nullable(),
-    commentModeration: z.string().nullable(),
-    commentSortOrder: z.string().nullable(),
-    shortsRemixing: z.enum(SHORTS_REMIX_MODES),
-    // DELIBERATELY NOT `z.iso.datetime()` — a DATE column, so `"YYYY-MM-DD"`. See the note
-    // at the top of this block; `datetime()` would reject every value it ever holds.
-    recordingDate: z.string().nullable(),
-    recordingLocation: z.string().nullable(),
-    // LEGACY free-text column, read-only and scheduled for removal. `categories` replaced it;
-    // nothing writes this and nothing should render it.
-    category: z.string().nullable(),
+  license: z.enum(VIDEO_LICENSES),
+  videoLanguage: z.string().nullable(),
+  isEmbeddingAllowed: z.boolean(),
+  areCommentsEnabled: z.boolean(),
+  shouldShowLikesCount: z.boolean(),
+  hasPaidPromotion: z.boolean(),
+  usesAlteredContent: z.boolean().nullable(),
+  captionCertification: z.string().nullable(),
+  commentModeration: z.string().nullable(),
+  commentSortOrder: z.string().nullable(),
+  shortsRemixing: z.enum(SHORTS_REMIX_MODES),
+  // DELIBERATELY NOT `z.iso.datetime()` — a DATE column, so `"YYYY-MM-DD"`. See the note
+  // at the top of this block; `datetime()` would reject every value it ever holds.
+  recordingDate: z.string().nullable(),
+  recordingLocation: z.string().nullable(),
+  // LEGACY free-text column, read-only and scheduled for removal. `categories` replaced it;
+  // nothing writes this and nothing should render it.
+  category: z.string().nullable(),
 
-    chapters: z.array(VideoChapterSchema),
-    categories: z.array(ContentCategoryRefSchema),
-    attachedProducts: z.array(VideoAttachedProductSchema),
-    milestones: z.array(VideoLabelSchema),
-    openRoles: z.array(VideoOpenRoleSchema),
-    teamMembers: z.array(VideoTeamMemberSchema),
-    collaborators: z.array(VideoCollaboratorSchema),
-    documents: z.array(VideoDocumentSchema),
-    playlistIds: z.array(z.string()),
+  chapters: z.array(VideoChapterSchema),
+  categories: z.array(ContentCategoryRefSchema),
+  attachedProducts: z.array(VideoAttachedProductSchema),
+  milestones: z.array(VideoLabelSchema),
+  openRoles: z.array(VideoOpenRoleSchema),
+  teamMembers: z.array(VideoTeamMemberSchema),
+  collaborators: z.array(VideoCollaboratorSchema),
+  documents: z.array(VideoDocumentSchema),
+  playlistIds: z.array(z.string()),
 
-    derivedStatus: StudioVideoStatusSchema,
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
-  })
-  .strip();
+  derivedStatus: StudioVideoStatusSchema,
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
 export type PublicVideo = z.infer<typeof PublicVideoSchema>;
 
 /**
  * `POST /videos` nests its result. Every OTHER video mutation returns a bare `PublicVideo`, so
  * this is the one place a caller has to reach through a wrapper.
  */
-export const CreatedVideoSchema = z
-  .object({ video: PublicVideoSchema, suggestedTitle: z.string().nullable() })
-  .strip();
+export const CreatedVideoSchema = z.object({
+  video: PublicVideoSchema,
+  suggestedTitle: z.string().nullable(),
+});
 export type CreatedVideo = z.infer<typeof CreatedVideoSchema>;
 
 /* -------------------------------------------------------------------------- */
@@ -255,39 +250,35 @@ export type CreatedVideo = z.infer<typeof CreatedVideoSchema>;
  * badge therefore keys on `uploadStatus`/`derivedStatus`, not on the verification flag, which
  * only the detail read carries.
  */
-export const VideoListRowSchema = z
-  .object({
-    id: z.string(),
-    title: z.string(),
-    thumbnailUrl: z.string().nullable(),
-    videoType: VideoTypeSchema,
-    videoSource: z.enum(["youtube", "hosted"]),
-    visibility: VideoVisibilitySchema,
-    uploadStatus: z.enum(VIDEO_UPLOAD_STATUSES),
-    publishStatus: VideoPublishStatusSchema,
-    reviewStatus: ContentReviewStatusSchema,
-    rejectionReason: z.string().nullable(),
-    scheduledPublishAt: z.iso.datetime().nullable(),
-    derivedStatus: StudioVideoStatusSchema,
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
-  })
-  .strip();
+export const VideoListRowSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  thumbnailUrl: z.string().nullable(),
+  videoType: VideoTypeSchema,
+  videoSource: z.enum(["youtube", "hosted"]),
+  visibility: VideoVisibilitySchema,
+  uploadStatus: z.enum(VIDEO_UPLOAD_STATUSES),
+  publishStatus: VideoPublishStatusSchema,
+  reviewStatus: ContentReviewStatusSchema,
+  rejectionReason: z.string().nullable(),
+  scheduledPublishAt: z.iso.datetime().nullable(),
+  derivedStatus: StudioVideoStatusSchema,
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
 export type VideoListRow = z.infer<typeof VideoListRowSchema>;
 
-export const PaginationMetaSchema = z
-  .object({
-    page: z.number(),
-    limit: z.number(),
-    total: z.number(),
-    totalPages: z.number(),
-  })
-  .strip();
+export const PaginationMetaSchema = z.object({
+  page: z.number(),
+  limit: z.number(),
+  total: z.number(),
+  totalPages: z.number(),
+});
 
-export const DeletedSchema = z.object({ deleted: z.boolean() }).strip();
+export const DeletedSchema = z.object({ deleted: z.boolean() });
 
 /** `POST /videos/:videoId/documents` — the newly attached (or converged-upon) document. */
-export const AttachedVideoDocumentSchema = z.object({ document: VideoDocumentSchema }).strip();
+export const AttachedVideoDocumentSchema = z.object({ document: VideoDocumentSchema });
 
 export type VideoDocument = z.infer<typeof VideoDocumentSchema>;
 

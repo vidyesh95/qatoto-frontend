@@ -79,15 +79,13 @@ export const FREIGHT_UNAVAILABLE_REASONS = [
 export type FreightUnavailableReason = (typeof FREIGHT_UNAVAILABLE_REASONS)[number];
 
 /** What this consignment measures, before any forwarder's convention is applied to it. */
-export const ConsignmentMeasurementSchema = z
-  .object({
-    billableWeightGrams: z.number().int().nullable(),
-    volumeCubicCm: z.number().int().nullable(),
-    packageCount: z.number().int().nullable(),
-    /** A seller who never declared package geometry. The buyer should be able to tell. */
-    hasIncompletePackageData: z.boolean(),
-  })
-  .strip();
+export const ConsignmentMeasurementSchema = z.object({
+  billableWeightGrams: z.number().int().nullable(),
+  volumeCubicCm: z.number().int().nullable(),
+  packageCount: z.number().int().nullable(),
+  /** A seller who never declared package geometry. The buyer should be able to tell. */
+  hasIncompletePackageData: z.boolean(),
+});
 
 /**
  * A NAMED FORWARDER'S PRICE, and the only place a freight price exists.
@@ -98,31 +96,27 @@ export const ConsignmentMeasurementSchema = z
  * charge. `z.literal(true)` rather than `z.boolean()` — a `false` here would be a contract break, not
  * a value to render differently.
  */
-export const ProviderFreightQuoteSchema = z
-  .object({
-    providerOrganizationId: z.string(),
-    sourceForwarderName: z.string(),
-    priceInCents: z.number().int(),
-    currency: z.string(),
-    /** An expired card is not a price (§19.6). Null means no announced end, not "forever verified". */
-    validUntil: IsoDateTimeSchema.nullable(),
-    subjectToRemeasurement: z.literal(true),
-  })
-  .strip();
+export const ProviderFreightQuoteSchema = z.object({
+  providerOrganizationId: z.string(),
+  sourceForwarderName: z.string(),
+  priceInCents: z.number().int(),
+  currency: z.string(),
+  /** An expired card is not a price (§19.6). Null means no announced end, not "forever verified". */
+  validUntil: IsoDateTimeSchema.nullable(),
+  subjectToRemeasurement: z.literal(true),
+});
 
 /** One mode a buyer could pick for one leg. THE PRICE IS INSIDE `providerQuote`, never beside it. */
-export const FreightOptionSchema = z
-  .object({
-    mode: FreightModeSchema,
-    providerQuote: ProviderFreightQuoteSchema,
-    transitDaysMin: z.number().int(),
-    transitDaysMax: z.number().int(),
-    rateCardId: z.string(),
-    rateBreakId: z.string(),
-    chargeableWeightGrams: z.number().int(),
-    chargeableWeightBasis: z.enum(CHARGEABLE_WEIGHT_BASES),
-  })
-  .strip();
+export const FreightOptionSchema = z.object({
+  mode: FreightModeSchema,
+  providerQuote: ProviderFreightQuoteSchema,
+  transitDaysMin: z.number().int(),
+  transitDaysMax: z.number().int(),
+  rateCardId: z.string(),
+  rateBreakId: z.string(),
+  chargeableWeightGrams: z.number().int(),
+  chargeableWeightBasis: z.enum(CHARGEABLE_WEIGHT_BASES),
+});
 
 /**
  * A forwarder who sells this lane and could be asked for a real quote.
@@ -131,13 +125,11 @@ export const FreightOptionSchema = z
  * end in a named absence and nothing else, and telling a buyer no price exists while offering no way
  * forward is a dead end. This is the route into an RFQ.
  */
-export const QuotableFreightProviderSchema = z
-  .object({
-    providerOrganizationId: z.string(),
-    sourceForwarderName: z.string(),
-    mode: FreightModeSchema,
-  })
-  .strip();
+export const QuotableFreightProviderSchema = z.object({
+  providerOrganizationId: z.string(),
+  sourceForwarderName: z.string(),
+  mode: FreightModeSchema,
+});
 
 /**
  * One leg of a journey.
@@ -148,21 +140,19 @@ export const QuotableFreightProviderSchema = z
  * by the "an uncovered leg makes the whole journey unpriceable" rule, would poison every journey
  * forever.
  */
-export const FreightLegPlanSchema = z
-  .object({
-    sequence: z.number().int(),
-    kind: z.enum(["international", "inland_destination", "domestic"]),
-    originCountryCode: z.string(),
-    /** LABEL ONLY — selects no card. */
-    originLocality: z.string().nullable(),
-    destinationCountryCode: z.string(),
-    /** LABEL ONLY — selects no card. */
-    destinationLocality: z.string().nullable(),
-    options: z.array(FreightOptionSchema),
-    unavailableReasons: z.array(z.enum(FREIGHT_UNAVAILABLE_REASONS)),
-    quotableProviders: z.array(QuotableFreightProviderSchema),
-  })
-  .strip();
+export const FreightLegPlanSchema = z.object({
+  sequence: z.number().int(),
+  kind: z.enum(["international", "inland_destination", "domestic"]),
+  originCountryCode: z.string(),
+  /** LABEL ONLY — selects no card. */
+  originLocality: z.string().nullable(),
+  destinationCountryCode: z.string(),
+  /** LABEL ONLY — selects no card. */
+  destinationLocality: z.string().nullable(),
+  options: z.array(FreightOptionSchema),
+  unavailableReasons: z.array(z.enum(FREIGHT_UNAVAILABLE_REASONS)),
+  quotableProviders: z.array(QuotableFreightProviderSchema),
+});
 
 /**
  * One leg's contribution to a composed journey.
@@ -171,19 +161,17 @@ export const FreightLegPlanSchema = z
  * legitimately bill different weights because their forwarders use different volumetric divisors;
  * a single journey-level figure would make one of the two leg prices look like an arithmetic error.
  */
-export const FreightJourneyLegSelectionSchema = z
-  .object({
-    legSequence: z.number().int(),
-    rateCardId: z.string(),
-    mode: FreightModeSchema,
-    priceInCents: z.number().int(),
-    transitDaysMin: z.number().int(),
-    transitDaysMax: z.number().int(),
-    sourceForwarderName: z.string(),
-    chargeableWeightGrams: z.number().int(),
-    chargeableWeightBasis: z.enum(CHARGEABLE_WEIGHT_BASES),
-  })
-  .strip();
+export const FreightJourneyLegSelectionSchema = z.object({
+  legSequence: z.number().int(),
+  rateCardId: z.string(),
+  mode: FreightModeSchema,
+  priceInCents: z.number().int(),
+  transitDaysMin: z.number().int(),
+  transitDaysMax: z.number().int(),
+  sourceForwarderName: z.string(),
+  chargeableWeightGrams: z.number().int(),
+  chargeableWeightBasis: z.enum(CHARGEABLE_WEIGHT_BASES),
+});
 
 /**
  * A whole journey, priced and timed BY THE SERVER.
@@ -193,18 +181,16 @@ export const FreightJourneyLegSelectionSchema = z
  * single leg's on a domestic one — and is deliberately not called `internationalMode`, because a
  * domestic journey still offers land against rail and that name would force it null.
  */
-export const FreightJourneyProjectionSchema = z
-  .object({
-    currency: z.string(),
-    primaryMode: FreightModeSchema,
-    totalInCents: z.number().int(),
-    transitDaysMin: z.number().int(),
-    transitDaysMax: z.number().int(),
-    /** The earliest expiry across the selections — a journey expires with its first card. */
-    validUntil: IsoDateTimeSchema.nullable(),
-    legSelections: z.array(FreightJourneyLegSelectionSchema),
-  })
-  .strip();
+export const FreightJourneyProjectionSchema = z.object({
+  currency: z.string(),
+  primaryMode: FreightModeSchema,
+  totalInCents: z.number().int(),
+  transitDaysMin: z.number().int(),
+  transitDaysMax: z.number().int(),
+  /** The earliest expiry across the selections — a journey expires with its first card. */
+  validUntil: IsoDateTimeSchema.nullable(),
+  legSelections: z.array(FreightJourneyLegSelectionSchema),
+});
 
 /**
  * Why no whole journey could be priced, discriminated on `kind`.
@@ -223,16 +209,14 @@ export const FreightJourneyProjectionSchema = z
  * Faking a port-to-port render would be the client deciding an Incoterm.
  */
 export const JourneyUnpriceableReasonSchema = z.discriminatedUnion("kind", [
-  z
-    .object({
-      kind: z.literal("leg_uncovered"),
-      legSequence: z.number().int(),
-      reasons: z.array(z.enum(FREIGHT_UNAVAILABLE_REASONS)),
-    })
-    .strip(),
+  z.object({
+    kind: z.literal("leg_uncovered"),
+    legSequence: z.number().int(),
+    reasons: z.array(z.enum(FREIGHT_UNAVAILABLE_REASONS)),
+  }),
   /** A USD ocean card plus a EUR inland card. Both are real prices; neither may be converted. */
-  z.object({ kind: z.literal("no_common_currency_across_legs") }).strip(),
-  z.object({ kind: z.literal("origin_country_unresolved") }).strip(),
+  z.object({ kind: z.literal("no_common_currency_across_legs") }),
+  z.object({ kind: z.literal("origin_country_unresolved") }),
 ]);
 
 /**
@@ -242,29 +226,27 @@ export const JourneyUnpriceableReasonSchema = z.discriminatedUnion("kind", [
  * is a property of the engagement, not of each row, and a constant repeated on every option is how a
  * field becomes one renderers learn to ignore.
  */
-export const FreightLanePlanSchema = z
-  .object({
-    contracting: z.object({ party: z.literal("provider") }).strip(),
-    origin: z.object({ countryCode: z.string(), locality: z.string().nullable() }).strip(),
-    destination: z.object({ countryCode: z.string(), locality: z.string().nullable() }).strip(),
-    consignment: ConsignmentMeasurementSchema,
-    legs: z.array(FreightLegPlanSchema),
-    /** END TO END: every leg covered, a real delivered total. */
-    journeys: z.array(FreightJourneyProjectionSchema),
-    /**
-     * PRICED AS FAR AS RATES EXIST — the covered legs only, with `unpriceableReasons` naming the leg
-     * that is missing. Same shape as a whole journey, and `legSelections[].legSequence` says which
-     * legs it actually covers.
-     *
-     * ⚠️ A SEPARATE ARRAY BECAUSE IT IS NOT A TOTAL. Merging it into `journeys` is exactly the
-     * "cheaper-looking total" §19.6 refuses, and the word "total" must not appear in any copy that
-     * renders one. It stops at the destination COUNTRY, with a leg the buyer arranges themselves.
-     */
-    partialJourneys: z.array(FreightJourneyProjectionSchema),
-    unpriceableReasons: z.array(JourneyUnpriceableReasonSchema),
-    quotableProviders: z.array(QuotableFreightProviderSchema),
-  })
-  .strip();
+export const FreightLanePlanSchema = z.object({
+  contracting: z.object({ party: z.literal("provider") }),
+  origin: z.object({ countryCode: z.string(), locality: z.string().nullable() }),
+  destination: z.object({ countryCode: z.string(), locality: z.string().nullable() }),
+  consignment: ConsignmentMeasurementSchema,
+  legs: z.array(FreightLegPlanSchema),
+  /** END TO END: every leg covered, a real delivered total. */
+  journeys: z.array(FreightJourneyProjectionSchema),
+  /**
+   * PRICED AS FAR AS RATES EXIST — the covered legs only, with `unpriceableReasons` naming the leg
+   * that is missing. Same shape as a whole journey, and `legSelections[].legSequence` says which
+   * legs it actually covers.
+   *
+   * ⚠️ A SEPARATE ARRAY BECAUSE IT IS NOT A TOTAL. Merging it into `journeys` is exactly the
+   * "cheaper-looking total" §19.6 refuses, and the word "total" must not appear in any copy that
+   * renders one. It stops at the destination COUNTRY, with a leg the buyer arranges themselves.
+   */
+  partialJourneys: z.array(FreightJourneyProjectionSchema),
+  unpriceableReasons: z.array(JourneyUnpriceableReasonSchema),
+  quotableProviders: z.array(QuotableFreightProviderSchema),
+});
 
 export type ConsignmentMeasurement = z.infer<typeof ConsignmentMeasurementSchema>;
 export type ProviderFreightQuote = z.infer<typeof ProviderFreightQuoteSchema>;

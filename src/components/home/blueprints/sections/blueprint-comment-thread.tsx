@@ -171,14 +171,12 @@ function BlueprintCommentRow({
                   <span className="font-medium text-destructive">Delete?</span>
                   <button
                     type="button"
-                    onClick={async () => {
-                      try {
-                        setIsActionPending(true);
-                        await onDeleteComment(comment.commentId);
-                      } finally {
+                    onClick={() => {
+                      setIsActionPending(true);
+                      return onDeleteComment(comment.commentId).finally(() => {
                         setIsActionPending(false);
                         setIsConfirmingDelete(false);
-                      }
+                      });
                     }}
                     disabled={isActionPending}
                     className="cursor-pointer font-medium text-destructive hover:underline disabled:opacity-50"
@@ -216,17 +214,17 @@ function BlueprintCommentRow({
               initialBody={comment.body}
               submitLabel="Save changes"
               onCancel={() => setIsEditing(false)}
-              onSubmit={async (newBody) => {
-                try {
-                  setIsActionPending(true);
-                  await onUpdateComment(comment.commentId, newBody);
-                  setIsEditing(false);
-                  return null;
-                } catch (error: unknown) {
-                  return { error };
-                } finally {
-                  setIsActionPending(false);
-                }
+              onSubmit={(newBody) => {
+                setIsActionPending(true);
+                return onUpdateComment(comment.commentId, newBody)
+                  .then(
+                    () => {
+                      setIsEditing(false);
+                      return null;
+                    },
+                    (error: unknown) => ({ error }),
+                  )
+                  .finally(() => setIsActionPending(false));
               }}
             />
           </div>
@@ -244,17 +242,17 @@ function BlueprintCommentRow({
               placeholder={`Reply to @${comment.author.handle ?? comment.author.displayName}…`}
               submitLabel="Post reply"
               onCancel={() => setIsReplying(false)}
-              onSubmit={async (replyBody) => {
-                try {
-                  setIsActionPending(true);
-                  await onReply(comment.commentId, replyBody);
-                  setIsReplying(false);
-                  return null;
-                } catch (error: unknown) {
-                  return { error };
-                } finally {
-                  setIsActionPending(false);
-                }
+              onSubmit={(replyBody) => {
+                setIsActionPending(true);
+                return onReply(comment.commentId, replyBody)
+                  .then(
+                    () => {
+                      setIsReplying(false);
+                      return null;
+                    },
+                    (error: unknown) => ({ error }),
+                  )
+                  .finally(() => setIsActionPending(false));
               }}
             />
           </div>

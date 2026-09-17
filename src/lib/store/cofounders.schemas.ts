@@ -138,44 +138,40 @@ export type CofounderIdentityState = (typeof COFOUNDER_IDENTITY_STATES)[number];
  *
  * `null` MEANS THEY DID NOT SAY. It is not zero, and a renderer must show an absence.
  */
-export const CofounderCapitalRangeSchema = z
-  .object({
-    minimumInCents: z.number().int(),
-    maximumInCents: z.number().int(),
-    currency: z.string(),
-  })
-  .strip();
+export const CofounderCapitalRangeSchema = z.object({
+  minimumInCents: z.number().int(),
+  maximumInCents: z.number().int(),
+  currency: z.string(),
+});
 
 // --- Directory --------------------------------------------------------------
 
-export const CofounderProfileCardSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    displayName: z.string(),
-    /** One line in their own words. Never generated from the enums. */
-    headline: z.string(),
-    countryCode: z.string(),
-    avatarUrl: z.string().nullable(),
-    contributionKinds: z.array(z.enum(COFOUNDER_CONTRIBUTION_KINDS)),
-    commitmentLevel: z.enum(COFOUNDER_COMMITMENT_LEVELS),
-    engagementState: z.enum(COFOUNDER_ENGAGEMENT_STATES),
-    identityState: z.enum(COFOUNDER_IDENTITY_STATES),
-    /** Self-reported and unverified. See rule 1. `null` when they did not say. */
-    capitalRange: CofounderCapitalRangeSchema.nullable(),
-    /**
-     * The stake they hope to negotiate towards, in basis points (100 bp = 1%).
-     *
-     * BASIS POINTS AND NOT A FLOAT PERCENTAGE, for the same reason money is integer cents: `0.075`
-     * and `7.5` are one careless division apart, and an equity figure off by two orders of magnitude
-     * is the worst rendering bug this surface could ship. `null` means they did not say — which is
-     * common and entirely reasonable at this stage.
-     */
-    equityExpectationBasisPoints: z.number().int().nullable(),
-    /** Free-text sector labels. Not an enum: the long tail here is the whole point. */
-    sectors: z.array(z.string()),
-  })
-  .strip();
+export const CofounderProfileCardSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  displayName: z.string(),
+  /** One line in their own words. Never generated from the enums. */
+  headline: z.string(),
+  countryCode: z.string(),
+  avatarUrl: z.string().nullable(),
+  contributionKinds: z.array(z.enum(COFOUNDER_CONTRIBUTION_KINDS)),
+  commitmentLevel: z.enum(COFOUNDER_COMMITMENT_LEVELS),
+  engagementState: z.enum(COFOUNDER_ENGAGEMENT_STATES),
+  identityState: z.enum(COFOUNDER_IDENTITY_STATES),
+  /** Self-reported and unverified. See rule 1. `null` when they did not say. */
+  capitalRange: CofounderCapitalRangeSchema.nullable(),
+  /**
+   * The stake they hope to negotiate towards, in basis points (100 bp = 1%).
+   *
+   * BASIS POINTS AND NOT A FLOAT PERCENTAGE, for the same reason money is integer cents: `0.075`
+   * and `7.5` are one careless division apart, and an equity figure off by two orders of magnitude
+   * is the worst rendering bug this surface could ship. `null` means they did not say — which is
+   * common and entirely reasonable at this stage.
+   */
+  equityExpectationBasisPoints: z.number().int().nullable(),
+  /** Free-text sector labels. Not an enum: the long tail here is the whole point. */
+  sectors: z.array(z.string()),
+});
 
 export const CofounderDirectoryPageSchema = cursorPageOf(CofounderProfileCardSchema);
 
@@ -187,28 +183,24 @@ export const CofounderDirectoryPageSchema = cursorPageOf(CofounderProfileCardSch
  * `outcomeSummary` IS NULLABLE AND STAYS NULLABLE. Plenty of ventures have no tidy outcome, and a
  * renderer that requires one invites people to invent one. An absent outcome renders as absent.
  */
-export const CofounderPriorVentureSchema = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    roleLabel: z.string(),
-    yearsActiveLabel: z.string(),
-    outcomeSummary: z.string().nullable(),
-  })
-  .strip();
+export const CofounderPriorVentureSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  roleLabel: z.string(),
+  yearsActiveLabel: z.string(),
+  outcomeSummary: z.string().nullable(),
+});
 
 /** `GET /store/cofounder-profiles/:profileSlug`. */
-export const CofounderProfileDetailSchema = z
-  .object({
-    profile: CofounderProfileCardSchema,
-    bio: z.string(),
-    /** What they want from the other side. Their words, not a form's summary. */
-    lookingFor: z.string(),
-    priorVentures: z.array(CofounderPriorVentureSchema),
-    languages: z.array(z.string()),
-    publishedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const CofounderProfileDetailSchema = z.object({
+  profile: CofounderProfileCardSchema,
+  bio: z.string(),
+  /** What they want from the other side. Their words, not a form's summary. */
+  lookingFor: z.string(),
+  priorVentures: z.array(CofounderPriorVentureSchema),
+  languages: z.array(z.string()),
+  publishedAt: IsoDateTimeSchema,
+});
 
 // --- Filter input -----------------------------------------------------------
 
@@ -301,28 +293,26 @@ export interface CreateCofounderProfileInput {
  * `capitalRange` AND `equityExpectationBasisPoints` ARE ON `profile` AND SERVE `null`. The owner
  * cannot set them either — see the file header. Render the absence; do not offer a field.
  */
-export const OwnCofounderProfileSchema = z
-  .object({
-    profile: CofounderProfileCardSchema,
-    state: z.enum(COFOUNDER_PROFILE_STATES),
-    bio: z.string(),
-    lookingFor: z.string(),
-    priorVentures: z.array(CofounderPriorVentureSchema),
-    languages: z.array(z.string()),
-    /**
-     * Why a moderator rejected it, or `null`.
-     *
-     * A REJECTED PROFILE RETURNS TO `draft` so its owner can fix it and submit again — unlike a
-     * forum thread, which stays `pending_review` because nobody edits a posted question. The note
-     * is what makes the difference actionable.
-     */
-    decisionReason: z.string().nullable(),
-    publishedAt: IsoDateTimeSchema.nullable(),
-    // NO `updatedAt`. `OwnedCofounderProfileProjection` does not carry one, and requiring it failed
-    // every read and every one of the four lifecycle writes.
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const OwnCofounderProfileSchema = z.object({
+  profile: CofounderProfileCardSchema,
+  state: z.enum(COFOUNDER_PROFILE_STATES),
+  bio: z.string(),
+  lookingFor: z.string(),
+  priorVentures: z.array(CofounderPriorVentureSchema),
+  languages: z.array(z.string()),
+  /**
+   * Why a moderator rejected it, or `null`.
+   *
+   * A REJECTED PROFILE RETURNS TO `draft` so its owner can fix it and submit again — unlike a
+   * forum thread, which stays `pending_review` because nobody edits a posted question. The note
+   * is what makes the difference actionable.
+   */
+  decisionReason: z.string().nullable(),
+  publishedAt: IsoDateTimeSchema.nullable(),
+  // NO `updatedAt`. `OwnedCofounderProfileProjection` does not carry one, and requiring it failed
+  // every read and every one of the four lifecycle writes.
+  createdAt: IsoDateTimeSchema,
+});
 
 /**
  * `PATCH /community/cofounder-profiles/mine` — edit while `draft` or `withdrawn`.
@@ -379,24 +369,22 @@ export const CreatedCofounderProfileSchema = OwnCofounderProfileSchema;
 // `GET /community/admin/cofounder-profiles`,
 // `POST /community/admin/cofounder-profiles/:profileId/moderate` (§6.7).
 
-export const AdminCofounderProfileSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    displayName: z.string(),
-    headline: z.string(),
-    bio: z.string(),
-    lookingFor: z.string(),
-    countryCode: z.string(),
-    state: z.enum(COFOUNDER_PROFILE_STATES),
-    identityState: z.enum(COFOUNDER_IDENTITY_STATES),
-    contributionKinds: z.array(z.enum(COFOUNDER_CONTRIBUTION_KINDS)),
-    commitmentLevel: z.enum(COFOUNDER_COMMITMENT_LEVELS),
-    sectors: z.array(z.string()),
-    priorVentures: z.array(CofounderPriorVentureSchema),
-    submittedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const AdminCofounderProfileSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  displayName: z.string(),
+  headline: z.string(),
+  bio: z.string(),
+  lookingFor: z.string(),
+  countryCode: z.string(),
+  state: z.enum(COFOUNDER_PROFILE_STATES),
+  identityState: z.enum(COFOUNDER_IDENTITY_STATES),
+  contributionKinds: z.array(z.enum(COFOUNDER_CONTRIBUTION_KINDS)),
+  commitmentLevel: z.enum(COFOUNDER_COMMITMENT_LEVELS),
+  sectors: z.array(z.string()),
+  priorVentures: z.array(CofounderPriorVentureSchema),
+  submittedAt: IsoDateTimeSchema,
+});
 
 export const AdminCofounderProfileQueuePageSchema = cursorPageOf(AdminCofounderProfileSchema);
 

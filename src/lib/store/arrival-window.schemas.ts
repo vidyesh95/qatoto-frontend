@@ -46,27 +46,21 @@ export type ArrivalWindowComponentName = (typeof ARRIVAL_WINDOW_COMPONENT_NAMES)
  * so a renderer never has to guess whether a missing minimum means "immediate" or "unstated".
  */
 export const ManufacturingComponentSchema = z.discriminatedUnion("status", [
-  z
-    .object({
-      status: z.literal("known"),
-      daysMin: z.number().int().nullable(),
-      daysMax: z.number().int(),
-      endsAt: IsoDateTimeSchema,
-      basis: z.enum(["declared_maximum_only", "declared_range"]),
-    })
-    .strip(),
-  z
-    .object({
-      status: z.literal("not_applicable"),
-      reason: z.literal("no_physical_goods_on_order"),
-    })
-    .strip(),
-  z
-    .object({
-      status: z.literal("unknown"),
-      reason: z.literal("no_seller_declared_lead_time"),
-    })
-    .strip(),
+  z.object({
+    status: z.literal("known"),
+    daysMin: z.number().int().nullable(),
+    daysMax: z.number().int(),
+    endsAt: IsoDateTimeSchema,
+    basis: z.enum(["declared_maximum_only", "declared_range"]),
+  }),
+  z.object({
+    status: z.literal("not_applicable"),
+    reason: z.literal("no_physical_goods_on_order"),
+  }),
+  z.object({
+    status: z.literal("unknown"),
+    reason: z.literal("no_seller_declared_lead_time"),
+  }),
 ]);
 
 /**
@@ -91,31 +85,25 @@ export const FREIGHT_UNKNOWN_REASONS = [
 export type FreightUnknownReason = (typeof FREIGHT_UNKNOWN_REASONS)[number];
 
 export const FreightComponentSchema = z.discriminatedUnion("status", [
-  z
-    .object({
-      status: z.literal("known"),
-      daysMin: z.number().int(),
-      daysMax: z.number().int(),
-      mode: FreightModeSchema,
-      priceInCents: z.number().int(),
-      currency: z.string(),
-      validUntil: IsoDateTimeSchema.nullable(),
-      legSelections: z.array(FreightJourneyLegSelectionSchema),
-    })
-    .strip(),
-  z
-    .object({
-      status: z.literal("not_applicable"),
-      reason: z.literal("no_physical_goods_on_order"),
-    })
-    .strip(),
-  z
-    .object({
-      status: z.literal("unknown"),
-      reason: z.enum(FREIGHT_UNKNOWN_REASONS),
-      availableModes: z.array(FreightModeSchema),
-    })
-    .strip(),
+  z.object({
+    status: z.literal("known"),
+    daysMin: z.number().int(),
+    daysMax: z.number().int(),
+    mode: FreightModeSchema,
+    priceInCents: z.number().int(),
+    currency: z.string(),
+    validUntil: IsoDateTimeSchema.nullable(),
+    legSelections: z.array(FreightJourneyLegSelectionSchema),
+  }),
+  z.object({
+    status: z.literal("not_applicable"),
+    reason: z.literal("no_physical_goods_on_order"),
+  }),
+  z.object({
+    status: z.literal("unknown"),
+    reason: z.enum(FREIGHT_UNKNOWN_REASONS),
+    availableModes: z.array(FreightModeSchema),
+  }),
 ]);
 
 /**
@@ -129,71 +117,58 @@ export const FreightComponentSchema = z.discriminatedUnion("status", [
  * customs leg, and an order of no physical goods has no shipment at all.
  */
 export const CustomsComponentSchema = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("not_applicable"), reason: z.literal("domestic_lane") }).strip(),
-  z
-    .object({
-      status: z.literal("not_applicable"),
-      reason: z.literal("no_physical_goods_on_order"),
-    })
-    .strip(),
-  z
-    .object({
-      status: z.literal("known"),
-      estimateId: z.string(),
-      clearanceDaysMin: z.number().int(),
-      clearanceDaysMax: z.number().int(),
-      source: z.string(),
-      validUntil: IsoDateTimeSchema.nullable(),
-      scope: z.enum(["origin_and_commodity", "origin_only", "commodity_only", "any"]),
-    })
-    .strip(),
-  z
-    .object({
-      status: z.literal("unknown"),
-      reason: z.literal("no_dwell_estimate_for_lane"),
-    })
-    .strip(),
+  z.object({ status: z.literal("not_applicable"), reason: z.literal("domestic_lane") }),
+  z.object({
+    status: z.literal("not_applicable"),
+    reason: z.literal("no_physical_goods_on_order"),
+  }),
+  z.object({
+    status: z.literal("known"),
+    estimateId: z.string(),
+    clearanceDaysMin: z.number().int(),
+    clearanceDaysMax: z.number().int(),
+    source: z.string(),
+    validUntil: IsoDateTimeSchema.nullable(),
+    scope: z.enum(["origin_and_commodity", "origin_only", "commodity_only", "any"]),
+  }),
+  z.object({
+    status: z.literal("unknown"),
+    reason: z.literal("no_dwell_estimate_for_lane"),
+  }),
 ]);
 
-export const ArrivalWindowProjectionSchema = z
-  .object({
-    /** `order.confirmedAt`. Null until the order is confirmed, and then the window cannot close. */
-    clockStartAt: IsoDateTimeSchema.nullable(),
-    clockStartBasis: z.enum(["order_confirmed_at", "not_confirmed"]),
-    /** `order.createdAt`. A DIFFERENT INSTANT from `clockStartAt` — the gap is meant to be legible. */
-    orderPlacedAt: IsoDateTimeSchema,
-    lane: z
-      .object({
-        originCountryCode: z.string().nullable(),
-        destinationCountryCode: z.string().nullable(),
-        destinationSource: z.enum(["order_delivery_address", "rfq_destination", "unresolved"]),
-      })
-      .strip(),
-    consignment: ConsignmentMeasurementSchema.nullable(),
-    components: z
-      .object({
-        manufacturing: ManufacturingComponentSchema,
-        freight: FreightComponentSchema,
-        customs: CustomsComponentSchema,
-      })
-      .strip(),
-    /**
-     * THE DATE PAIR, AND THE ONLY DATE THIS PRODUCT PRINTS. Null whenever any component is `unknown`,
-     * the clock has not started, or manufacturing is not `known` — in which case `missingComponents`
-     * says which, and the client renders those rather than an approximation.
-     */
-    arrivalWindow: z
-      .object({
-        fromDate: IsoDateTimeSchema,
-        toDate: IsoDateTimeSchema,
-        basis: z.literal("manufacturing_deadline_anchored"),
-      })
-      .strip()
-      .nullable(),
-    /** Only `unknown` components appear here, in the fixed order manufacturing → freight → customs. */
-    missingComponents: z.array(z.enum(ARRIVAL_WINDOW_COMPONENT_NAMES)),
-  })
-  .strip();
+export const ArrivalWindowProjectionSchema = z.object({
+  /** `order.confirmedAt`. Null until the order is confirmed, and then the window cannot close. */
+  clockStartAt: IsoDateTimeSchema.nullable(),
+  clockStartBasis: z.enum(["order_confirmed_at", "not_confirmed"]),
+  /** `order.createdAt`. A DIFFERENT INSTANT from `clockStartAt` — the gap is meant to be legible. */
+  orderPlacedAt: IsoDateTimeSchema,
+  lane: z.object({
+    originCountryCode: z.string().nullable(),
+    destinationCountryCode: z.string().nullable(),
+    destinationSource: z.enum(["order_delivery_address", "rfq_destination", "unresolved"]),
+  }),
+  consignment: ConsignmentMeasurementSchema.nullable(),
+  components: z.object({
+    manufacturing: ManufacturingComponentSchema,
+    freight: FreightComponentSchema,
+    customs: CustomsComponentSchema,
+  }),
+  /**
+   * THE DATE PAIR, AND THE ONLY DATE THIS PRODUCT PRINTS. Null whenever any component is `unknown`,
+   * the clock has not started, or manufacturing is not `known` — in which case `missingComponents`
+   * says which, and the client renders those rather than an approximation.
+   */
+  arrivalWindow: z
+    .object({
+      fromDate: IsoDateTimeSchema,
+      toDate: IsoDateTimeSchema,
+      basis: z.literal("manufacturing_deadline_anchored"),
+    })
+    .nullable(),
+  /** Only `unknown` components appear here, in the fixed order manufacturing → freight → customs. */
+  missingComponents: z.array(z.enum(ARRIVAL_WINDOW_COMPONENT_NAMES)),
+});
 
 /**
  * THE PAYLOAD DOUBLE-NESTS, and this is not a typo.
@@ -202,9 +177,9 @@ export const ArrivalWindowProjectionSchema = z
  * has a field called `arrivalWindow` holding the date pair. `getJson` hands the schema `envelope.data`,
  * so this wrapper peels the first layer and `.arrivalWindow` on the result is the second.
  */
-export const OrderArrivalWindowResponseSchema = z
-  .object({ arrivalWindow: ArrivalWindowProjectionSchema })
-  .strip();
+export const OrderArrivalWindowResponseSchema = z.object({
+  arrivalWindow: ArrivalWindowProjectionSchema,
+});
 
 /** `.strict()` on the backend — a `mode` is the only key this query accepts. */
 export interface ArrivalWindowFilter {

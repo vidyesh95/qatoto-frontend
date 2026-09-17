@@ -52,22 +52,6 @@ export default function OptimizationTab({
 
   const decideError =
     decideMutation.error instanceof ApiRequestError ? decideMutation.error.apiError : null;
-
-  return (
-    <div className="space-y-4 px-4 lg:px-6">
-      <div className="space-y-1">
-        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Optimization suggestions</h3>
-        <p className="text-xs text-muted-foreground">
-          Advice only. Accepting or dismissing one records what the team decided; it never moves a
-          slice, a rate or an allocation.
-        </p>
-      </div>
-
-      {renderSuggestions()}
-      {decideError !== null && <MutationErrorNotice error={decideError} />}
-    </div>
-  );
-
   function renderSuggestions() {
     switch (suggestionsState.status) {
       case "error":
@@ -179,4 +163,19 @@ export default function OptimizationTab({
       }
     }
   }
+
+  return (
+    <div className="space-y-4 px-4 lg:px-6">
+      <div className="space-y-1">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Optimization suggestions</h3>
+        <p className="text-xs text-muted-foreground">
+          Advice only. Accepting or dismissing one records what the team decided; it never moves a
+          slice, a rate or an allocation.
+        </p>
+      </div>
+
+      {renderSuggestions()}
+      {decideError !== null && <MutationErrorNotice error={decideError} />}
+    </div>
+  );
 }

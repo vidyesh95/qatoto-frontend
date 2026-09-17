@@ -40,35 +40,6 @@ export default function StudioCollaborationsPage() {
   const invitesQuery = useMyCollaborationsQuery();
   const rosterQuery = useMyCollaboratorsQuery();
   const respondMutation = useRespondToCollaborationMutation();
-
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold text-foreground">Collaborations</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Collaborator credits on videos. <strong>A credit grants no access</strong> — it does not let
-        anyone sign in, edit a video, or act on your account. It records who worked on what.
-      </p>
-
-      <section className="mt-8">
-        <h2 className="text-sm font-medium text-foreground">Credits you have been given</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Only you can answer these. Declining is an answer the creator can see, not a way to hide
-          the invitation.
-        </p>
-        {renderInvites()}
-      </section>
-
-      <section className="mt-8">
-        <h2 className="text-sm font-medium text-foreground">People you have credited</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Added on a video&apos;s <em>Video elements</em> step. Only the person named can confirm a
-          credit — you cannot confirm it for them.
-        </p>
-        {renderRoster()}
-      </section>
-    </div>
-  );
-
   function renderInvites() {
     if (invitesQuery.isPending) {
       return <p className="mt-3 text-sm text-muted-foreground">Loading…</p>;
@@ -143,6 +114,34 @@ export default function StudioCollaborationsPage() {
       </ul>
     );
   }
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-semibold text-foreground">Collaborations</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Collaborator credits on videos. <strong>A credit grants no access</strong> — it does not let
+        anyone sign in, edit a video, or act on your account. It records who worked on what.
+      </p>
+
+      <section className="mt-8">
+        <h2 className="text-sm font-medium text-foreground">Credits you have been given</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Only you can answer these. Declining is an answer the creator can see, not a way to hide
+          the invitation.
+        </p>
+        {renderInvites()}
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-sm font-medium text-foreground">People you have credited</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Added on a video&apos;s <em>Video elements</em> step. Only the person named can confirm a
+          credit — you cannot confirm it for them.
+        </p>
+        {renderRoster()}
+      </section>
+    </div>
+  );
 }
 
 function StatusChip({ status }: { readonly status: VideoCollaborator["status"] }) {

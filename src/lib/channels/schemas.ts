@@ -38,35 +38,29 @@ import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * not re-validate the scheme — but the renderer still must not trust it blindly: it is user-supplied
  * text on a public page, so the anchor carries `rel="noopener noreferrer nofollow ugc"`.
  */
-export const ProfileLinkSchema = z
-  .object({
-    label: z.string(),
-    url: z.string(),
-  })
-  .strip();
+export const ProfileLinkSchema = z.object({
+  label: z.string(),
+  url: z.string(),
+});
 
 export type ProfileLink = z.infer<typeof ProfileLinkSchema>;
 
-export const ChannelProfileSchema = z
-  .object({
-    creatorId: z.string(),
-    handle: z.string(),
-    name: z.string(),
-    imageUrl: z.string().nullable(),
-    subscriberCount: z.number().int(),
-    bio: z.string().nullable(),
-    links: z.array(ProfileLinkSchema),
-    publicVideoCount: z.number().int(),
-    publicViewCount: z.number().int(),
-    joinedAt: IsoDateTimeSchema,
-    viewerState: z
-      .object({
-        /** `false`, never null, for a signed-out viewer — definitionally true of them. */
-        isSubscribedToCreator: z.boolean(),
-      })
-      .strip(),
-  })
-  .strip();
+export const ChannelProfileSchema = z.object({
+  creatorId: z.string(),
+  handle: z.string(),
+  name: z.string(),
+  imageUrl: z.string().nullable(),
+  subscriberCount: z.number().int(),
+  bio: z.string().nullable(),
+  links: z.array(ProfileLinkSchema),
+  publicVideoCount: z.number().int(),
+  publicViewCount: z.number().int(),
+  joinedAt: IsoDateTimeSchema,
+  viewerState: z.object({
+    /** `false`, never null, for a signed-out viewer — definitionally true of them. */
+    isSubscribedToCreator: z.boolean(),
+  }),
+});
 
 export type ChannelProfile = z.infer<typeof ChannelProfileSchema>;
 
@@ -77,11 +71,9 @@ export type ChannelProfile = z.infer<typeof ChannelProfileSchema>;
  * name rides along so a future directory PAGE would not need a second route. Adding avatars, counts
  * or bios here would put a per-creator join behind a read whose job is to be walked in full.
  */
-export const ListedChannelSchema = z
-  .object({
-    handle: z.string(),
-    name: z.string(),
-  })
-  .strip();
+export const ListedChannelSchema = z.object({
+  handle: z.string(),
+  name: z.string(),
+});
 
 export type ListedChannel = z.infer<typeof ListedChannelSchema>;

@@ -277,7 +277,7 @@ There is no Next.js API route or Server Action for commerce business logic.
 
 ### 5.2 Parse every response
 
-Every network payload starts as `unknown` and is parsed by a Zod `.strip()` schema. Types are
+Every network payload starts as `unknown` and is parsed by a Zod `z.object` schema, which strips unknown keys. Types are
 inferred from schemas; `src/types/store.ts` is removed after all imports migrate.
 
 **Do not copy the illustration that used to sit here — it named fields the backend does not send.**
@@ -293,13 +293,12 @@ server considers valid.
 **Extend that file; do not write a second card schema.** The general rule it demonstrates:
 
 ```ts
-const ExampleSchema = z
-    .object({
-        id: z.string(),
-        countInteger: z.number().int().nonnegative(),
-        nullableValue: z.string().nullable(),
-    })
-    .strip(); // ignore unknown fields — forward-compatible with backend additions
+// z.object strips unknown keys by default — forward-compatible with backend additions
+const ExampleSchema = z.object({
+    id: z.string(),
+    countInteger: z.number().int().nonnegative(),
+    nullableValue: z.string().nullable(),
+});
 ```
 
 The API layer returns tagged values, and the tag is the one this codebase already uses everywhere
@@ -433,7 +432,7 @@ their real names (`/store/business` index, `/store/rfqs`, `/store/providers`); t
 | Business forum      | `/store/forum`, `/[threadSlug]`, `/new`                        | `forum.schemas.ts` / `.api.ts`      | `mocks/store/forum-mocks.ts`      |
 | Find a cofounder    | `/store/find-cofounder`, `/[profileSlug]`, `/new`              | `cofounders.schemas.ts` / `.api.ts` | `mocks/store/cofounders-mocks.ts` |
 
-Each follows §6's shape exactly — `unknown` → Zod `.strip()` → `ActionResponse` → a discriminated
+Each follows §6's shape exactly — `unknown` → Zod `z.object` (strips unknown keys) → `ActionResponse` → a discriminated
 view state with an exhaustive `switch`; server-side filtering through the URL; `resolveMockRead` /
 `resolveMockDetail` standing in for one line that becomes `getJson`.
 
@@ -798,7 +797,7 @@ on a listing with none. Delete both rather than leave them implying a phase.
 
 For each phase:
 
-- every response is parsed from `unknown` with Zod `.strip()`;
+- every response is parsed from `unknown` with a Zod `z.object` (which strips unknown keys);
 - every transport failure is a tagged value and every view state is exhaustive;
 - no client-only auth, price, inventory, verification, tax, shipping, or payment decision exists;
 - filters and pagination execute on the backend;

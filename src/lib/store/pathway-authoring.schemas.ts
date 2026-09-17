@@ -63,22 +63,20 @@ export type PathwayImageSlot = (typeof PATHWAY_IMAGE_SLOTS)[number];
  * the case that matters because a curated set is supposed to mix other people's products with your
  * own. Without them an editor could only render uuids.
  */
-export const PathwayCandidateAuthoringSchema = z
-  .object({
-    id: z.string(),
-    productId: z.string(),
-    variantId: z.string().nullable(),
-    rank: z.number().int(),
-    productTitle: z.string().nullable(),
-    productPublicSlug: z.string().nullable(),
-    variantName: z.string().nullable(),
-    /**
-     * ⚠️ The floor a slot's `quantity` must reach. The variant's own minimum when the candidate
-     * names one, the product's otherwise. `null` is UNSTATED, which imposes no floor — not one.
-     */
-    minimumOrderQuantity: z.number().int().nullable(),
-  })
-  .strip();
+export const PathwayCandidateAuthoringSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  variantId: z.string().nullable(),
+  rank: z.number().int(),
+  productTitle: z.string().nullable(),
+  productPublicSlug: z.string().nullable(),
+  variantName: z.string().nullable(),
+  /**
+   * ⚠️ The floor a slot's `quantity` must reach. The variant's own minimum when the candidate
+   * names one, the product's otherwise. `null` is UNSTATED, which imposes no floor — not one.
+   */
+  minimumOrderQuantity: z.number().int().nullable(),
+});
 
 export type PathwayCandidateAuthoring = z.infer<typeof PathwayCandidateAuthoringSchema>;
 
@@ -89,44 +87,40 @@ export type PathwayCandidateAuthoring = z.infer<typeof PathwayCandidateAuthoring
  * id read here is dead the moment the next save lands. Nothing may cache one, and the editor keys
  * its local rows POSITIONALLY. See the api file.
  */
-export const PathwaySlotAuthoringSchema = z
-  .object({
-    id: z.string(),
-    roleLabel: z.string(),
-    isRequired: z.boolean(),
-    quantity: z.number().int(),
-    siblingOrder: z.number().int(),
-    derivedRelationKind: z.enum(PRODUCT_RELATION_KINDS).nullable(),
-    startsAt: IsoDateTimeSchema.nullable(),
-    endsAt: IsoDateTimeSchema.nullable(),
-    candidates: z.array(PathwayCandidateAuthoringSchema),
-  })
-  .strip();
+export const PathwaySlotAuthoringSchema = z.object({
+  id: z.string(),
+  roleLabel: z.string(),
+  isRequired: z.boolean(),
+  quantity: z.number().int(),
+  siblingOrder: z.number().int(),
+  derivedRelationKind: z.enum(PRODUCT_RELATION_KINDS).nullable(),
+  startsAt: IsoDateTimeSchema.nullable(),
+  endsAt: IsoDateTimeSchema.nullable(),
+  candidates: z.array(PathwayCandidateAuthoringSchema),
+});
 
 export type PathwaySlotAuthoring = z.infer<typeof PathwaySlotAuthoringSchema>;
 
-export const PathwayAuthoringSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    title: z.string(),
-    summary: z.string().nullable(),
-    // The READ stays permissive — a set saved before a swatch existed must still parse.
-    accent: z.string(),
-    state: z.enum(PATHWAY_STATES),
-    anchorProductId: z.string().nullable(),
-    anchorProductTitle: z.string().nullable(),
-    heroImageUrl: z.string().nullable(),
-    cardImageUrl: z.string().nullable(),
-    ownerOrganizationId: z.string().nullable(),
-    submittedAt: IsoDateTimeSchema.nullable(),
-    reviewedAt: IsoDateTimeSchema.nullable(),
-    reviewNote: z.string().nullable(),
-    startsAt: IsoDateTimeSchema.nullable(),
-    endsAt: IsoDateTimeSchema.nullable(),
-    slots: z.array(PathwaySlotAuthoringSchema),
-  })
-  .strip();
+export const PathwayAuthoringSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  title: z.string(),
+  summary: z.string().nullable(),
+  // The READ stays permissive — a set saved before a swatch existed must still parse.
+  accent: z.string(),
+  state: z.enum(PATHWAY_STATES),
+  anchorProductId: z.string().nullable(),
+  anchorProductTitle: z.string().nullable(),
+  heroImageUrl: z.string().nullable(),
+  cardImageUrl: z.string().nullable(),
+  ownerOrganizationId: z.string().nullable(),
+  submittedAt: IsoDateTimeSchema.nullable(),
+  reviewedAt: IsoDateTimeSchema.nullable(),
+  reviewNote: z.string().nullable(),
+  startsAt: IsoDateTimeSchema.nullable(),
+  endsAt: IsoDateTimeSchema.nullable(),
+  slots: z.array(PathwaySlotAuthoringSchema),
+});
 
 export type PathwayAuthoring = z.infer<typeof PathwayAuthoringSchema>;
 
@@ -146,7 +140,7 @@ export type PathwayAuthoring = z.infer<typeof PathwayAuthoringSchema>;
 export const PathwayModerationSchema = PathwayAuthoringSchema.extend({
   ownCandidateShare: z.number().nullable(),
   candidateCount: z.number().int(),
-}).strip();
+});
 
 export type PathwayModeration = z.infer<typeof PathwayModerationSchema>;
 

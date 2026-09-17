@@ -140,52 +140,6 @@ export default function BlueprintHeroSlideAdminPage() {
     reordered.splice(targetIndex, 0, slideId);
     reorderSlides.mutate(reordered);
   }
-
-  return (
-    <div className="space-y-8">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Blueprints hero</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          The rotating card at the top of the Blueprints page. Each slide is an image, the title
-          shown over it, and the page it links to — usually a series at{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-xs">/blueprints/…</code>. The order
-          here is the order visitors see.
-        </p>
-      </header>
-
-      {/* Three distinct cases, said apart — a failed permission check is not the same as
-          failing it. */}
-      {staffContextQuery.isError && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
-          Couldn&apos;t check your permissions, so this page is read-only.
-        </output>
-      )}
-      {staffContextQuery.isSuccess && !canManageBlueprintHero && (
-        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
-          Managing the Blueprints hero needs the admin role. Your role is{" "}
-          {staffContextQuery.data.platformRole ?? "none"}, so this page is read-only.
-        </output>
-      )}
-
-      {firstError && <MutationErrorNotice error={firstError.apiError} />}
-
-      {canManageBlueprintHero && (
-        <CreateSlideForm
-          isSubmitting={createSlide.isPending}
-          slideCount={slidesQuery.data?.length ?? 0}
-          onCreate={(input) => {
-            createSlide.mutate(input);
-          }}
-        />
-      )}
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-medium">Slides</h2>
-        {renderSlideList()}
-      </section>
-    </div>
-  );
-
   function renderSlideList() {
     switch (listState.status) {
       case "restricted":
@@ -236,6 +190,51 @@ export default function BlueprintHeroSlideAdminPage() {
       }
     }
   }
+
+  return (
+    <div className="space-y-8">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">Blueprints hero</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          The rotating card at the top of the Blueprints page. Each slide is an image, the title
+          shown over it, and the page it links to — usually a series at{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">/blueprints/…</code>. The order
+          here is the order visitors see.
+        </p>
+      </header>
+
+      {/* Three distinct cases, said apart — a failed permission check is not the same as
+          failing it. */}
+      {staffContextQuery.isError && (
+        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+          Couldn&apos;t check your permissions, so this page is read-only.
+        </output>
+      )}
+      {staffContextQuery.isSuccess && !canManageBlueprintHero && (
+        <output className="block rounded-2xl border border-[#CAC4D0]/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+          Managing the Blueprints hero needs the admin role. Your role is{" "}
+          {staffContextQuery.data.platformRole ?? "none"}, so this page is read-only.
+        </output>
+      )}
+
+      {firstError && <MutationErrorNotice error={firstError.apiError} />}
+
+      {canManageBlueprintHero && (
+        <CreateSlideForm
+          isSubmitting={createSlide.isPending}
+          slideCount={slidesQuery.data?.length ?? 0}
+          onCreate={(input) => {
+            createSlide.mutate(input);
+          }}
+        />
+      )}
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium">Slides</h2>
+        {renderSlideList()}
+      </section>
+    </div>
+  );
 }
 
 /**

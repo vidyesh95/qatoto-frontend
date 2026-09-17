@@ -7,9 +7,9 @@
 // `noindex`. The shapes below were written as if the payload arrived over the wire back when it
 // did not, which is why the swap touched one file.
 //
-// Every object ends `.strip()` so a backend minor release that adds a field is a no-op here
+// Every object is a plain `z.object`, which strips unknown keys, so a backend minor release that adds a field is a no-op here
 // rather than a parse failure (CLAUDE.md Pattern 2). Note the house-documented failure mode of
-// `.strip()` before relying on it for a WRITE path: `src/lib/products/schemas.ts:98-107` records
+// stripping before relying on it for a WRITE path: `src/lib/products/schemas.ts:98-107` records
 // how a stripped field silently destroyed sellers' declared lead times on every edit. These are
 // read shapes only, so that trap does not apply.
 
@@ -377,14 +377,12 @@ export const TEARDOWN_MEDIA_FILTER_LABELS: Record<TeardownMediaFilter, string> =
  * converted or localised, and it fixes the currency at author time. Formatting is the view
  * layer's job and belongs to `formatCentsRangeLabel`, not the contract.
  */
-export const BlueprintCostRangeSchema = z
-  .object({
-    minimumInCents: z.number().int().nonnegative(),
-    maximumInCents: z.number().int().nonnegative(),
-    /** ISO 4217, e.g. "USD". Spelled `currency` to match every other money shape in `src/lib`. */
-    currency: z.string(),
-  })
-  .strip();
+export const BlueprintCostRangeSchema = z.object({
+  minimumInCents: z.number().int().nonnegative(),
+  maximumInCents: z.number().int().nonnegative(),
+  /** ISO 4217, e.g. "USD". Spelled `currency` to match every other money shape in `src/lib`. */
+  currency: z.string(),
+});
 export type BlueprintCostRange = z.infer<typeof BlueprintCostRangeSchema>;
 
 /**
@@ -400,14 +398,12 @@ export type BlueprintCostRange = z.infer<typeof BlueprintCostRangeSchema>;
  * `BlueprintAvatar` renders initials when there is no photo; the byline renders no "@" line at all
  * rather than a bare "@".
  */
-export const BlueprintAuthorSchema = z
-  .object({
-    displayName: z.string(),
-    /** The channel handle, without a leading "@" — the "@" is added at render time. */
-    handle: z.string().nullable(),
-    avatarUrl: z.string().nullable(),
-  })
-  .strip();
+export const BlueprintAuthorSchema = z.object({
+  displayName: z.string(),
+  /** The channel handle, without a leading "@" — the "@" is added at render time. */
+  handle: z.string().nullable(),
+  avatarUrl: z.string().nullable(),
+});
 export type BlueprintAuthor = z.infer<typeof BlueprintAuthorSchema>;
 
 // --- Media and link value objects --------------------------------------------
@@ -474,19 +470,17 @@ const BlueprintVideoSharedShape = {
  * `/studio/subtitles` — "IT IS IMPOSSIBLE ON THIS ARCHITECTURE … Qatoto cannot inject captions into
  * a YouTube embed" — and it is why an assembly step carries no timestamp either.
  */
-export const YoutubeBlueprintVideoSchema = z
-  .object({
-    ...BlueprintVideoSharedShape,
-    source: z.literal("youtube"),
-    youtubeVideoId: z.string().refine(
-      // ONE OWNER FOR THE PATTERN. `extractYoutubeVideoId` accepts a bare id and echoes it, so
-      // this reuses its validation instead of keeping a second copy of the regex that could
-      // drift from it. It also rejects a full watch URL, which is correct: the field is an id.
-      (candidate) => extractYoutubeVideoId(candidate) === candidate,
-      "A YouTube video id is eleven URL-safe characters — pass the id, not a watch link.",
-    ),
-  })
-  .strip();
+export const YoutubeBlueprintVideoSchema = z.object({
+  ...BlueprintVideoSharedShape,
+  source: z.literal("youtube"),
+  youtubeVideoId: z.string().refine(
+    // ONE OWNER FOR THE PATTERN. `extractYoutubeVideoId` accepts a bare id and echoes it, so
+    // this reuses its validation instead of keeping a second copy of the regex that could
+    // drift from it. It also rejects a full watch URL, which is correct: the field is an id.
+    (candidate) => extractYoutubeVideoId(candidate) === candidate,
+    "A YouTube video id is eleven URL-safe characters — pass the id, not a watch link.",
+  ),
+});
 export type YoutubeBlueprintVideo = z.infer<typeof YoutubeBlueprintVideoSchema>;
 
 export const BlueprintVideoSchema = z.discriminatedUnion("source", [YoutubeBlueprintVideoSchema]);
@@ -503,26 +497,22 @@ export type BlueprintVideo = z.infer<typeof BlueprintVideoSchema>;
  * inside the publish transaction, or ask a moderator to type a number about a file they never
  * opened. `null` says unmeasured. A seeded teardown still carries a figure, measured off disk.
  */
-export const BlueprintDocumentSchema = z
-  .object({
-    id: z.string(),
-    kind: BlueprintDocumentKindSchema,
-    title: z.string(),
-    url: createHttpsOrSiteRelativeUrlSchema(2048),
-    byteSize: z.number().int().nonnegative().nullable(),
-    /** `null` when the backend never counted the pages. Not zero — a zero-page PDF is not a file. */
-    pageCount: z.number().int().positive().nullable(),
-  })
-  .strip();
+export const BlueprintDocumentSchema = z.object({
+  id: z.string(),
+  kind: BlueprintDocumentKindSchema,
+  title: z.string(),
+  url: createHttpsOrSiteRelativeUrlSchema(2048),
+  byteSize: z.number().int().nonnegative().nullable(),
+  /** `null` when the backend never counted the pages. Not zero — a zero-page PDF is not a file. */
+  pageCount: z.number().int().positive().nullable(),
+});
 export type BlueprintDocument = z.infer<typeof BlueprintDocumentSchema>;
 
 /** A labelled link that may leave the site. */
-export const BlueprintLinkSchema = z
-  .object({
-    label: z.string(),
-    url: createExternalHttpsUrlSchema(2048),
-  })
-  .strip();
+export const BlueprintLinkSchema = z.object({
+  label: z.string(),
+  url: createExternalHttpsUrlSchema(2048),
+});
 export type BlueprintLink = z.infer<typeof BlueprintLinkSchema>;
 
 /**
@@ -534,14 +524,12 @@ export type BlueprintLink = z.infer<typeof BlueprintLinkSchema>;
  * fill it by joining the handle to an account, which is the verified-identity badge this surface
  * deliberately does not have yet. The composer already renders these people as initials.
  */
-export const BlueprintTeamMemberSchema = z
-  .object({
-    displayName: z.string(),
-    handle: z.string(),
-    /** Free text, e.g. "Firmware". Not an enum — a two-person build invents its own titles. */
-    role: z.string(),
-  })
-  .strip();
+export const BlueprintTeamMemberSchema = z.object({
+  displayName: z.string(),
+  handle: z.string(),
+  /** Free text, e.g. "Firmware". Not an enum — a two-person build invents its own titles. */
+  role: z.string(),
+});
 export type BlueprintTeamMember = z.infer<typeof BlueprintTeamMemberSchema>;
 
 /**
@@ -561,7 +549,7 @@ const BlueprintMoneyShape = {
   currency: z.string(),
 };
 
-export const BlueprintMoneySchema = z.object({ ...BlueprintMoneyShape }).strip();
+export const BlueprintMoneySchema = z.object({ ...BlueprintMoneyShape });
 export type BlueprintMoney = z.infer<typeof BlueprintMoneySchema>;
 
 /**
@@ -575,18 +563,16 @@ export type BlueprintMoney = z.infer<typeof BlueprintMoneySchema>;
  * Percentages are BASIS POINTS so a fraction survives the integer: 1825 is 18.25%.
  */
 export const BlueprintMetricValueSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("count"), amount: z.number().int() }).strip(),
-  z.object({ kind: z.literal("money"), ...BlueprintMoneyShape }).strip(),
-  z.object({ kind: z.literal("percentage"), basisPoints: z.number().int() }).strip(),
+  z.object({ kind: z.literal("count"), amount: z.number().int() }),
+  z.object({ kind: z.literal("money"), ...BlueprintMoneyShape }),
+  z.object({ kind: z.literal("percentage"), basisPoints: z.number().int() }),
 ]);
 export type BlueprintMetricValue = z.infer<typeof BlueprintMetricValueSchema>;
 
-export const BlueprintOutcomeMetricSchema = z
-  .object({
-    label: z.string(),
-    value: BlueprintMetricValueSchema,
-  })
-  .strip();
+export const BlueprintOutcomeMetricSchema = z.object({
+  label: z.string(),
+  value: BlueprintMetricValueSchema,
+});
 export type BlueprintOutcomeMetric = z.infer<typeof BlueprintOutcomeMetricSchema>;
 
 /**
@@ -613,13 +599,11 @@ export type BlueprintOutcomeMetric = z.infer<typeof BlueprintOutcomeMetricSchema
  * detail page, a related-lesson link or a cache a reader can hit, and this is the untrusted layer, so
  * the backend's public serializer is what enforces it rather than a component that hides a string.
  */
-export const CaseStudyEvidenceCompanySchema = z
-  .object({
-    name: z.string().nullable(),
-    locationLabel: z.string(),
-    yearLabel: z.string(),
-  })
-  .strip();
+export const CaseStudyEvidenceCompanySchema = z.object({
+  name: z.string().nullable(),
+  locationLabel: z.string(),
+  yearLabel: z.string(),
+});
 export type CaseStudyEvidenceCompany = z.infer<typeof CaseStudyEvidenceCompanySchema>;
 
 /** What the detail page prints in place of a withheld company's name. */
@@ -656,13 +640,11 @@ export const CASE_STUDY_AUTHOR_RELATIONSHIP_READER_NOTES: Record<
  * product, because on comparable products it usually is." A bare labelled URL names a destination,
  * not a publisher, and "read more" over a link is exactly the unattributed shape that rule bans.
  */
-export const BlueprintSourceSchema = z
-  .object({
-    label: z.string(),
-    publisherLabel: z.string(),
-    url: createExternalHttpsUrlSchema(2048),
-  })
-  .strip();
+export const BlueprintSourceSchema = z.object({
+  label: z.string(),
+  publisherLabel: z.string(),
+  url: createExternalHttpsUrlSchema(2048),
+});
 export type BlueprintSource = z.infer<typeof BlueprintSourceSchema>;
 
 // --- Teardown assembly value objects -----------------------------------------
@@ -687,12 +669,10 @@ export type NumberTriple = z.infer<typeof NumberTripleSchema>;
  * viewport over, and there is no case where nobody measured it. A pasted link is the opposite on
  * both counts.
  */
-export const TeardownModelFileSchema = z
-  .object({
-    url: createHttpsOrSiteRelativeUrlSchema(2048),
-    byteSize: z.number().int().positive(),
-  })
-  .strip();
+export const TeardownModelFileSchema = z.object({
+  url: createHttpsOrSiteRelativeUrlSchema(2048),
+  byteSize: z.number().int().positive(),
+});
 export type TeardownModelFile = z.infer<typeof TeardownModelFileSchema>;
 
 /**
@@ -739,12 +719,10 @@ const TeardownPartBaseShape = {
  * person reads. Two fields because an exporter writes `enclosure_lid` and a caption says
  * "Enclosure lid", and deriving one from the other in either direction is a guess.
  */
-export const CompositeTeardownPartSchema = z
-  .object({
-    ...TeardownPartBaseShape,
-    nodeName: z.string().min(1),
-  })
-  .strip();
+export const CompositeTeardownPartSchema = z.object({
+  ...TeardownPartBaseShape,
+  nodeName: z.string().min(1),
+});
 export type CompositeTeardownPart = z.infer<typeof CompositeTeardownPartSchema>;
 
 /**
@@ -755,13 +733,11 @@ export type CompositeTeardownPart = z.infer<typeof CompositeTeardownPartSchema>;
  * hobbyist export where every part sits at its own origin. A NULLABLE OBJECT, not two nullable
  * fields: a position without a rotation is half an answer.
  */
-export const TeardownPartPlacementSchema = z
-  .object({
-    positionMm: NumberTripleSchema,
-    /** Euler XYZ, degrees — the unit a CAD tool shows, converted once by the engine. */
-    rotationDegrees: NumberTripleSchema,
-  })
-  .strip();
+export const TeardownPartPlacementSchema = z.object({
+  positionMm: NumberTripleSchema,
+  /** Euler XYZ, degrees — the unit a CAD tool shows, converted once by the engine. */
+  rotationDegrees: NumberTripleSchema,
+});
 export type TeardownPartPlacement = z.infer<typeof TeardownPartPlacementSchema>;
 
 /**
@@ -769,13 +745,11 @@ export type TeardownPartPlacement = z.infer<typeof TeardownPartPlacementSchema>;
  * the arm a future `blueprint_part` row with a file column maps onto one to one, on the
  * `commerce_product_model` precedent (Cloudinary raw, magic-byte validated, public CORS-open URL).
  */
-export const IndividualTeardownPartSchema = z
-  .object({
-    ...TeardownPartBaseShape,
-    model: TeardownModelFileSchema,
-    placement: TeardownPartPlacementSchema.nullable(),
-  })
-  .strip();
+export const IndividualTeardownPartSchema = z.object({
+  ...TeardownPartBaseShape,
+  model: TeardownModelFileSchema,
+  placement: TeardownPartPlacementSchema.nullable(),
+});
 export type IndividualTeardownPart = z.infer<typeof IndividualTeardownPartSchema>;
 
 /** Either part shape — what the engine and the HUD read; they never need to know which. */
@@ -902,7 +876,6 @@ export const CompositeTeardownAssemblySchema = z
     model: TeardownModelFileSchema,
     parts: z.array(CompositeTeardownPartSchema).min(1),
   })
-  .strip()
   .superRefine((assembly, context) => {
     addPartTreeIssues(assembly.parts, context);
     addExplosionLayeringIssues(assembly.explosionAxis, assembly.parts, context);
@@ -926,7 +899,6 @@ export const IndividualPartsTeardownAssemblySchema = z
     ...TeardownExplosionAxisShape,
     parts: z.array(IndividualTeardownPartSchema).min(1),
   })
-  .strip()
   .superRefine((assembly, context) => {
     addPartTreeIssues(assembly.parts, context);
     addExplosionLayeringIssues(assembly.explosionAxis, assembly.parts, context);
@@ -952,15 +924,13 @@ export type TeardownAssembly = z.infer<typeof TeardownAssemblySchema>;
  * `supplier` REUSES `BlueprintLinkSchema`: a labelled link that may leave the site is exactly what
  * a supplier row is. `null` when the author named no source.
  */
-export const TeardownFastenerSchema = z
-  .object({
-    standardCode: z.string().nullable(),
-    sizeLabel: z.string(),
-    drive: TeardownFastenerDriveSchema,
-    quantity: z.number().int().positive(),
-    supplier: BlueprintLinkSchema.nullable(),
-  })
-  .strip();
+export const TeardownFastenerSchema = z.object({
+  standardCode: z.string().nullable(),
+  sizeLabel: z.string(),
+  drive: TeardownFastenerDriveSchema,
+  quantity: z.number().int().positive(),
+  supplier: BlueprintLinkSchema.nullable(),
+});
 export type TeardownFastener = z.infer<typeof TeardownFastenerSchema>;
 
 /**
@@ -977,15 +947,13 @@ export type TeardownFastener = z.infer<typeof TeardownFastenerSchema>;
  * measured — while a MODEL's stays positive and non-null, because a model is an upload and a
  * zero-byte one is a failure rather than an unknown.
  */
-export const TeardownManufacturingFileSchema = z
-  .object({
-    id: z.string(),
-    kind: TeardownManufacturingFileKindSchema,
-    title: z.string(),
-    url: createHttpsOrSiteRelativeUrlSchema(2048),
-    byteSize: z.number().int().positive().nullable(),
-  })
-  .strip();
+export const TeardownManufacturingFileSchema = z.object({
+  id: z.string(),
+  kind: TeardownManufacturingFileKindSchema,
+  title: z.string(),
+  url: createHttpsOrSiteRelativeUrlSchema(2048),
+  byteSize: z.number().int().positive().nullable(),
+});
 export type TeardownManufacturingFile = z.infer<typeof TeardownManufacturingFileSchema>;
 
 /**
@@ -999,12 +967,10 @@ export type TeardownManufacturingFile = z.infer<typeof TeardownManufacturingFile
  * It is not the bill of materials (`fasteners`) and not the composition (`materials`): it is what
  * came out when somebody opened the unit, in the order they took it apart.
  */
-export const TeardownListedPartSchema = z
-  .object({
-    label: z.string(),
-    material: z.string(),
-  })
-  .strip();
+export const TeardownListedPartSchema = z.object({
+  label: z.string(),
+  material: z.string(),
+});
 export type TeardownListedPart = z.infer<typeof TeardownListedPartSchema>;
 
 /**
@@ -1022,24 +988,20 @@ export type TeardownListedPart = z.infer<typeof TeardownListedPartSchema>;
  * would duplicate a control the reader has while not knowing the chapter titles — the same boundary
  * `/studio/subtitles` records. Do not re-add the field; add chapters to the YouTube video instead.
  */
-export const TeardownAssemblyStepSchema = z
-  .object({
-    stepNumber: z.number().int().positive(),
-    title: z.string(),
-    description: z.string(),
-    /** The part the viewport isolates for this step. `null` when the step is about the whole. */
-    focusedPartId: z.string().nullable(),
-  })
-  .strip();
+export const TeardownAssemblyStepSchema = z.object({
+  stepNumber: z.number().int().positive(),
+  title: z.string(),
+  description: z.string(),
+  /** The part the viewport isolates for this step. `null` when the step is about the whole. */
+  focusedPartId: z.string().nullable(),
+});
 export type TeardownAssemblyStep = z.infer<typeof TeardownAssemblyStepSchema>;
 
 /** One criterion of the repairability index: a score and the sentence that justifies it. */
-export const TeardownRepairabilityCriterionSchema = z
-  .object({
-    scoreOutOfTen: z.number().int().min(0).max(10),
-    note: z.string(),
-  })
-  .strip();
+export const TeardownRepairabilityCriterionSchema = z.object({
+  scoreOutOfTen: z.number().int().min(0).max(10),
+  note: z.string(),
+});
 export type TeardownRepairabilityCriterion = z.infer<typeof TeardownRepairabilityCriterionSchema>;
 
 /**
@@ -1051,15 +1013,13 @@ export type TeardownRepairabilityCriterion = z.infer<typeof TeardownRepairabilit
  * print a number the author never stated, and a weighting change would need a frontend release.
  * The whole object is nullable rather than its criteria: half an index is not an index.
  */
-export const TeardownRepairabilityIndexSchema = z
-  .object({
-    fastenerUniformity: TeardownRepairabilityCriterionSchema,
-    toolAccessibility: TeardownRepairabilityCriterionSchema,
-    disassemblyStepCount: TeardownRepairabilityCriterionSchema,
-    modularIndependence: TeardownRepairabilityCriterionSchema,
-    overallScoreOutOfTen: z.number().int().min(0).max(10),
-  })
-  .strip();
+export const TeardownRepairabilityIndexSchema = z.object({
+  fastenerUniformity: TeardownRepairabilityCriterionSchema,
+  toolAccessibility: TeardownRepairabilityCriterionSchema,
+  disassemblyStepCount: TeardownRepairabilityCriterionSchema,
+  modularIndependence: TeardownRepairabilityCriterionSchema,
+  overallScoreOutOfTen: z.number().int().min(0).max(10),
+});
 export type TeardownRepairabilityIndex = z.infer<typeof TeardownRepairabilityIndexSchema>;
 
 /**
@@ -1081,16 +1041,14 @@ export type TeardownRepairabilityIndex = z.infer<typeof TeardownRepairabilityInd
  * nobody reads a rise as an absolute. `maxDisplacementMicrometres` is an integer for the reason
  * cents are: sub-micron is noise on a printed figure.
  */
-export const TeardownSimulationTelemetrySchema = z
-  .object({
-    factorOfSafety: z.number().positive(),
-    peakVonMisesStressMegapascals: z.number().nonnegative(),
-    maxDisplacementMicrometres: z.number().int().nonnegative(),
-    thermalDeltaKelvin: z.number(),
-    ratedLoadNewtons: z.number().positive(),
-    source: z.literal("author_reported"),
-  })
-  .strip();
+export const TeardownSimulationTelemetrySchema = z.object({
+  factorOfSafety: z.number().positive(),
+  peakVonMisesStressMegapascals: z.number().nonnegative(),
+  maxDisplacementMicrometres: z.number().int().nonnegative(),
+  thermalDeltaKelvin: z.number(),
+  ratedLoadNewtons: z.number().positive(),
+  source: z.literal("author_reported"),
+});
 export type TeardownSimulationTelemetry = z.infer<typeof TeardownSimulationTelemetrySchema>;
 
 // --- Provenance, moderation and composition ----------------------------------
@@ -1265,13 +1223,11 @@ export const TEARDOWN_SURVEY_METHOD_NOTES: Record<TeardownSurveyMethod, string> 
 };
 
 /** An open-hardware or authorizing licence, named and linked. */
-export const BlueprintLicenceSchema = z
-  .object({
-    /** The licence as it is properly written, e.g. "CERN-OHL-S v2". Never an abbreviation. */
-    name: z.string(),
-    url: createExternalHttpsUrlSchema(2048),
-  })
-  .strip();
+export const BlueprintLicenceSchema = z.object({
+  /** The licence as it is properly written, e.g. "CERN-OHL-S v2". Never an abbreviation. */
+  name: z.string(),
+  url: createExternalHttpsUrlSchema(2048),
+});
 export type BlueprintLicence = z.infer<typeof BlueprintLicenceSchema>;
 
 /**
@@ -1327,7 +1283,6 @@ export const TeardownProvenanceSchema = z
     /** Anything the publisher wants to qualify. `null` renders nothing. */
     notes: z.string().nullable(),
   })
-  .strip()
   .superRefine((provenance, context) => {
     /**
      * WHICH OF THE TWO PERMISSION FIELDS EACH KIND MUST CARRY, and which it must leave null. A
@@ -1660,7 +1615,6 @@ export const TeardownCompositionElementSchema = z
         minimumPercent: z.number().min(0).max(100),
         maximumPercent: z.number().min(0).max(100),
       })
-      .strip()
       .refine(
         (range) => range.maximumPercent >= range.minimumPercent,
         "A weight-percent range cannot end below where it starts.",
@@ -1672,7 +1626,6 @@ export const TeardownCompositionElementSchema = z
     /** Whatever the operator wants a reader to know about this row. `null` renders nothing. */
     operatorNote: z.string().nullable(),
   })
-  .strip()
   .superRefine((element, context) => {
     if (
       !TEARDOWN_COMPOSITION_ANALYSIS_METHOD_IS_MEASURED[element.analysisMethod] &&
@@ -1704,24 +1657,22 @@ export type TeardownCompositionElement = z.infer<typeof TeardownCompositionEleme
  * ELEMENT PERCENTAGES ARE NEVER REQUIRED. `elements: []` is the common case and it renders as a
  * designation row with no disclosure control, not as an empty table.
  */
-export const TeardownMaterialSchema = z
-  .object({
-    id: z.string(),
-    /** What this material is the material OF, in the publisher's words, e.g. "Heatsink extrusion". */
-    appliesToLabel: z.string(),
-    /** A part of this teardown's assembly, when one is modelled. Checked against the parts below. */
-    partId: z.string().nullable(),
-    /** The standards designation, e.g. "6063-T5", "ABS UL94 V-0", "FR-4". */
-    designation: z.string(),
-    designationSource: TeardownDesignationSourceSchema,
-    materialClass: TeardownMaterialClassSchema,
-    /** How the part was made, reusing the method enum the exploded view already prints. `null` = unknown. */
-    process: TeardownManufacturingMethodSchema.nullable(),
-    /** Surface treatment as the publisher recorded it, e.g. "Clear anodised, 10 µm". `null` = unknown. */
-    finish: z.string().nullable(),
-    elements: z.array(TeardownCompositionElementSchema),
-  })
-  .strip();
+export const TeardownMaterialSchema = z.object({
+  id: z.string(),
+  /** What this material is the material OF, in the publisher's words, e.g. "Heatsink extrusion". */
+  appliesToLabel: z.string(),
+  /** A part of this teardown's assembly, when one is modelled. Checked against the parts below. */
+  partId: z.string().nullable(),
+  /** The standards designation, e.g. "6063-T5", "ABS UL94 V-0", "FR-4". */
+  designation: z.string(),
+  designationSource: TeardownDesignationSourceSchema,
+  materialClass: TeardownMaterialClassSchema,
+  /** How the part was made, reusing the method enum the exploded view already prints. `null` = unknown. */
+  process: TeardownManufacturingMethodSchema.nullable(),
+  /** Surface treatment as the publisher recorded it, e.g. "Clear anodised, 10 µm". `null` = unknown. */
+  finish: z.string().nullable(),
+  elements: z.array(TeardownCompositionElementSchema),
+});
 export type TeardownMaterial = z.infer<typeof TeardownMaterialSchema>;
 
 /** True when any row in a material's element table was invented rather than measured or declared. */
@@ -1739,12 +1690,10 @@ export function hasSyntheticCompositionRow(material: TeardownMaterial): boolean 
  * of this file already refuse. `null` when the publisher did not place the subject in a class, and
  * `null` means the store half of the market signal is simply absent.
  */
-export const TeardownStoreProductClassSchema = z
-  .object({
-    categorySlug: z.string(),
-    label: z.string(),
-  })
-  .strip();
+export const TeardownStoreProductClassSchema = z.object({
+  categorySlug: z.string(),
+  label: z.string(),
+});
 export type TeardownStoreProductClass = z.infer<typeof TeardownStoreProductClassSchema>;
 
 /**
@@ -1764,7 +1713,6 @@ export const TeardownStoreListingSignalSchema = z
     priceInCents: z.number().int().nullable(),
     currency: z.string().nullable(),
   })
-  .strip()
   .refine(
     (listing) => (listing.priceInCents === null) === (listing.currency === null),
     "A price and its currency travel together; neither is renderable without the other.",
@@ -1780,13 +1728,11 @@ export type TeardownStoreListingSignal = z.infer<typeof TeardownStoreListingSign
  * code the field sweeps exist to catch. The link is built from the slug plus a literal category at
  * the call site.
  */
-export const TeardownShowcaseSignalSchema = z
-  .object({
-    slug: z.string(),
-    title: z.string(),
-    authorDisplayName: z.string(),
-  })
-  .strip();
+export const TeardownShowcaseSignalSchema = z.object({
+  slug: z.string(),
+  title: z.string(),
+  authorDisplayName: z.string(),
+});
 export type TeardownShowcaseSignal = z.infer<typeof TeardownShowcaseSignalSchema>;
 
 /**
@@ -1802,12 +1748,10 @@ export type TeardownShowcaseSignal = z.infer<typeof TeardownShowcaseSignalSchema
  * thousand people reading a teardown. What counts is somebody having listed the product for sale,
  * or somebody having shipped a build from these files.
  */
-export const TeardownMarketSignalSchema = z
-  .object({
-    storeListings: TeardownStoreListingSignalSchema.array(),
-    showcases: TeardownShowcaseSignalSchema.array(),
-  })
-  .strip();
+export const TeardownMarketSignalSchema = z.object({
+  storeListings: TeardownStoreListingSignalSchema.array(),
+  showcases: TeardownShowcaseSignalSchema.array(),
+});
 export type TeardownMarketSignal = z.infer<typeof TeardownMarketSignalSchema>;
 
 // --- The blueprint union -----------------------------------------------------
@@ -1934,7 +1878,6 @@ export const TeardownBlueprintSchema = z
     repairabilityIndex: TeardownRepairabilityIndexSchema.nullable(),
     simulationTelemetry: TeardownSimulationTelemetrySchema.nullable(),
   })
-  .strip()
   // Cross-field rules that span siblings, so they cannot live on the value objects. zod 4 keeps
   // this a `ZodObject`, which `z.discriminatedUnion` below requires.
   .superRefine((teardown, context) => {
@@ -1988,102 +1931,96 @@ export const TeardownBlueprintSchema = z
  * claim the row it named. A draft storing only the URL would leave the server unable to tell which
  * row to claim, and a client-supplied URL is not something a submit may trust anyway.
  */
-export const ShowcaseHeadingImageSchema = z
-  .object({
-    headingImageId: z.string(),
-    url: z.string(),
-    widthPx: z.number().int().positive(),
-    heightPx: z.number().int().positive(),
-    blurDataUrl: z.string(),
-  })
-  .strip();
+export const ShowcaseHeadingImageSchema = z.object({
+  headingImageId: z.string(),
+  url: z.string(),
+  widthPx: z.number().int().positive(),
+  heightPx: z.number().int().positive(),
+  blurDataUrl: z.string(),
+});
 export type ShowcaseHeadingImage = z.infer<typeof ShowcaseHeadingImageSchema>;
 
-export const BlueprintWriteUpImageSchema = z
-  .object({
-    url: createHttpsOrSiteRelativeUrlSchema(2048),
-    widthPx: z.number().int().positive(),
-    heightPx: z.number().int().positive(),
-    /**
-     * A tiny blurred copy (16px WebP, base64, about 120 bytes), made by the server from the same
-     * re-encoded file, shown inside the image's reserved box until the real file arrives. `null` for
-     * an image uploaded without one, which still renders at its size, just without the blur.
-     *
-     * ⚠️ THE PATTERN IS A SECURITY BOUNDARY, NOT FORMAT PEDANTRY. `next/image` writes this value into
-     * an inline CSS `url()`, so only an image MIME type and base64 characters may pass: no quote, no
-     * bracket, nothing that could close the `url()` and start a second declaration.
-     */
-    blurDataUrl: z
-      .string()
-      .max(2048)
-      .regex(/^data:image\/(webp|png|jpeg|avif);base64,[A-Za-z0-9+/]+={0,2}$/)
-      .nullable(),
-  })
-  .strip();
+export const BlueprintWriteUpImageSchema = z.object({
+  url: createHttpsOrSiteRelativeUrlSchema(2048),
+  widthPx: z.number().int().positive(),
+  heightPx: z.number().int().positive(),
+  /**
+   * A tiny blurred copy (16px WebP, base64, about 120 bytes), made by the server from the same
+   * re-encoded file, shown inside the image's reserved box until the real file arrives. `null` for
+   * an image uploaded without one, which still renders at its size, just without the blur.
+   *
+   * ⚠️ THE PATTERN IS A SECURITY BOUNDARY, NOT FORMAT PEDANTRY. `next/image` writes this value into
+   * an inline CSS `url()`, so only an image MIME type and base64 characters may pass: no quote, no
+   * bracket, nothing that could close the `url()` and start a second declaration.
+   */
+  blurDataUrl: z
+    .string()
+    .max(2048)
+    .regex(/^data:image\/(webp|png|jpeg|avif);base64,[A-Za-z0-9+/]+={0,2}$/)
+    .nullable(),
+});
 export type BlueprintWriteUpImage = z.infer<typeof BlueprintWriteUpImageSchema>;
 
-export const ShowcaseBlueprintSchema = z
-  .object({
-    ...BlueprintSharedShape,
-    ...BlueprintMediaShape,
-    category: z.literal("showcase"),
-    /** One line beside the title in the feed. Not the summary — this is the pitch. */
-    tagline: z.string(),
-    /**
-     * The maker's write-up. `null` when nobody wrote one, which is the ordinary state of a launch
-     * posted the day it shipped — and `null` renders NOTHING, not an empty section and not a
-     * prompt to write one.
-     *
-     * ⚠️ GITHUB-STYLE MARKDOWN, AND `ShowcaseWriteUp` IS THE SECURITY BOUNDARY. User-written markup
-     * rendered by a thin untrusted layer is the highest-risk thing this surface carries, so that
-     * renderer skips raw HTML, allows a fixed set of elements, keeps only http(s), site-relative and
-     * anchor addresses, and shows images only from where Qatoto stores uploads. There is no
-     * `dangerouslySetInnerHTML` and no `rehype-raw` on this path, and none may be added. A YouTube
-     * link on a line of its own becomes the video, which is why this arm has no separate demo
-     * field: a maker places videos where the text needs them.
-     *
-     * THE THIRD DESCRIPTION-ISH FIELD ON THIS ARM, and the three do different jobs. `tagline` is
-     * the pitch on the feed row, `summary` is the one-paragraph "what is this" and doubles as the
-     * hub lane's copy, and this is the depth. They are sized apart on the detail page precisely so
-     * a reader can tell three things from one paragraph that got long.
-     */
-    writeUp: z.string().nullable(),
-    /**
-     * The recorded size of every uploaded image in `writeUp`. `[]` when the write-up has no images,
-     * which is most of them. An image in the Markdown with no entry here is NOT shown (the renderer
-     * prints a one-line note instead), because without a size it cannot reserve its space; the
-     * backend refuses to store one anyway (`todo.md`, Part 2b).
-     */
-    writeUpImages: z.array(BlueprintWriteUpImageSchema),
-    /**
-     * ISO 8601. THE FEED SORTS BY THIS, NOT `createdAt`. A launch is announced on a date its
-     * author chose; the row's creation timestamp is an implementation detail of when it was typed.
-     */
-    launchedAt: z.string(),
-    /**
-     * DISPLAY ONLY. There is no vote endpoint and no vote button — a counter a client can
-     * increment is a business rule enforced on an untrusted layer, which CLAUDE.md §1.1 forbids
-     * outright. This renders — as `ShowcaseVoteBox`, a bare `<span>` in a fixed gutter, never a
-     * `<button>` — and nothing in this repo changes it.
-     */
-    upvoteCount: z.number().int().nonnegative(),
-    /**
-     * DISPLAY ONLY, for the reason `upvoteCount` gives directly above, and it is the count of the
-     * thread `BlueprintCommentThread` renders — not an independent number. A count that disagreed
-     * with the rows beside it would be the one lie this surface cannot tell while claiming the
-     * discussion is real.
-     *
-     * ON THE SHOWCASE ARM, NOT `BlueprintSharedShape`. A case study is a numbered lesson with no
-     * discussion surface, and a shared field exists only for what a rail card renders for every
-     * category. The teardown arm carries its own for the same reason.
-     */
-    commentCount: z.number().int().nonnegative(),
-    team: z.array(BlueprintTeamMemberSchema),
-    /** The teardown this was built from, `null` when it was built from nothing published here. */
-    builtFromBlueprintSlug: z.string().nullable(),
-    callToAction: BlueprintLinkSchema.nullable(),
-  })
-  .strip();
+export const ShowcaseBlueprintSchema = z.object({
+  ...BlueprintSharedShape,
+  ...BlueprintMediaShape,
+  category: z.literal("showcase"),
+  /** One line beside the title in the feed. Not the summary — this is the pitch. */
+  tagline: z.string(),
+  /**
+   * The maker's write-up. `null` when nobody wrote one, which is the ordinary state of a launch
+   * posted the day it shipped — and `null` renders NOTHING, not an empty section and not a
+   * prompt to write one.
+   *
+   * ⚠️ GITHUB-STYLE MARKDOWN, AND `ShowcaseWriteUp` IS THE SECURITY BOUNDARY. User-written markup
+   * rendered by a thin untrusted layer is the highest-risk thing this surface carries, so that
+   * renderer skips raw HTML, allows a fixed set of elements, keeps only http(s), site-relative and
+   * anchor addresses, and shows images only from where Qatoto stores uploads. There is no
+   * `dangerouslySetInnerHTML` and no `rehype-raw` on this path, and none may be added. A YouTube
+   * link on a line of its own becomes the video, which is why this arm has no separate demo
+   * field: a maker places videos where the text needs them.
+   *
+   * THE THIRD DESCRIPTION-ISH FIELD ON THIS ARM, and the three do different jobs. `tagline` is
+   * the pitch on the feed row, `summary` is the one-paragraph "what is this" and doubles as the
+   * hub lane's copy, and this is the depth. They are sized apart on the detail page precisely so
+   * a reader can tell three things from one paragraph that got long.
+   */
+  writeUp: z.string().nullable(),
+  /**
+   * The recorded size of every uploaded image in `writeUp`. `[]` when the write-up has no images,
+   * which is most of them. An image in the Markdown with no entry here is NOT shown (the renderer
+   * prints a one-line note instead), because without a size it cannot reserve its space; the
+   * backend refuses to store one anyway (`todo.md`, Part 2b).
+   */
+  writeUpImages: z.array(BlueprintWriteUpImageSchema),
+  /**
+   * ISO 8601. THE FEED SORTS BY THIS, NOT `createdAt`. A launch is announced on a date its
+   * author chose; the row's creation timestamp is an implementation detail of when it was typed.
+   */
+  launchedAt: z.string(),
+  /**
+   * DISPLAY ONLY. There is no vote endpoint and no vote button — a counter a client can
+   * increment is a business rule enforced on an untrusted layer, which CLAUDE.md §1.1 forbids
+   * outright. This renders — as `ShowcaseVoteBox`, a bare `<span>` in a fixed gutter, never a
+   * `<button>` — and nothing in this repo changes it.
+   */
+  upvoteCount: z.number().int().nonnegative(),
+  /**
+   * DISPLAY ONLY, for the reason `upvoteCount` gives directly above, and it is the count of the
+   * thread `BlueprintCommentThread` renders — not an independent number. A count that disagreed
+   * with the rows beside it would be the one lie this surface cannot tell while claiming the
+   * discussion is real.
+   *
+   * ON THE SHOWCASE ARM, NOT `BlueprintSharedShape`. A case study is a numbered lesson with no
+   * discussion surface, and a shared field exists only for what a rail card renders for every
+   * category. The teardown arm carries its own for the same reason.
+   */
+  commentCount: z.number().int().nonnegative(),
+  team: z.array(BlueprintTeamMemberSchema),
+  /** The teardown this was built from, `null` when it was built from nothing published here. */
+  builtFromBlueprintSlug: z.string().nullable(),
+  callToAction: BlueprintLinkSchema.nullable(),
+});
 
 /**
  * A case study — what somebody learned the expensive way, written as a record rather than an essay.
@@ -2114,62 +2051,60 @@ export const ShowcaseBlueprintSchema = z
  * fixtures is not the same kind of invention as fabricating a teardown. `outcomeSummary` is a free
  * clause, and `null` renders NOTHING rather than "Unknown".
  */
-export const CaseStudyBlueprintSchema = z
-  .object({
-    ...BlueprintSharedShape,
-    category: z.literal("case_study"),
-    /**
-     * WHERE THIS ROW SITS BETWEEN TYPED AND PUBLIC, the same field the teardown arm carries and for
-     * the same reason. It arrived when this arm got real tables: `isBlueprintVisible` used to bypass
-     * the check for case studies entirely — "showcases and case studies are unmoderated fixtures" —
-     * and that bypass is now deleted.
-     *
-     * ⚠️ ONLY TWO OF THE SEVEN STATES CAN REACH A READER HERE, and the backend narrows it: a case
-     * study has no files, so there is no `quarantined` on this arm and nothing is withheld by
-     * state. What IS withheld is a company's name, per row, and the SERVER does that — see
-     * `CaseStudyEvidenceCompanySchema`.
-     */
-    moderationState: BlueprintModerationStateSchema,
-    /** The typed axis the index filters on, and a chip on the row. */
-    discipline: BlueprintDisciplineSchema,
-    /** The imperative the reader can act on, one line, under the title. */
-    oneLineAction: z.string(),
-    /** What happened after. `null` = nobody can say tidily; it is not "Unknown" and not a failure. */
-    outcomeSummary: z.string().nullable(),
-    /** Free text, e.g. "Hardware". Not an enum — see the note above. */
-    sector: z.string(),
-    /** How the writer knows this. Rendered under the byline, see `CaseStudyAuthorRelationshipSchema`. */
-    authorRelationship: CaseStudyAuthorRelationshipSchema,
-    evidenceCompanies: z.array(CaseStudyEvidenceCompanySchema),
-    problem: z.string(),
-    context: z.string(),
-    /** What they did, in order. */
-    actionSteps: z.array(z.string()),
-    /** What to avoid. Not the inverse of `actionSteps` — these are the things that went wrong. */
-    pitfalls: z.array(z.string()),
-    /** Free text, e.g. "14 months, two production runs". `null` when nobody recorded it. */
-    timelineLabel: z.string().nullable(),
-    /**
-     * What they raised, in integer minor units.
-     *
-     * THE OBJECT IS NULLABLE, NOT ITS FIELDS, for the reason `billOfMaterialsCostRange` is: an
-     * amount without a currency is an unanswerable question. `null` MEANS NOT DISCLOSED and it is
-     * NOT ZERO — the row must say nothing about money rather than say a number.
-     *
-     * ⚠️ NO COPY BESIDE THIS FIGURE MAY SAY paid, collected, held, escrowed or processed.
-     * Qatoto operates no money rail (`src/lib/rnd/pitches.schemas.ts`).
-     */
-    capitalRaised: BlueprintMoneySchema.nullable(),
-    outcomeMetrics: z.array(BlueprintOutcomeMetricSchema),
-    /**
-     * Where the figures came from. EMPTY IS THE ONE ABSENCE ON THIS SURFACE THAT RENDERS SOMETHING
-     * — see `case-study-detail-page.tsx`, which explains the departure from Principle 2.
-     */
-    sources: z.array(BlueprintSourceSchema),
-    /** Slugs of other case studies. Resolved by `listRelatedCaseStudies`, never by a component. */
-    relatedLessonSlugs: z.array(z.string()),
-  })
-  .strip();
+export const CaseStudyBlueprintSchema = z.object({
+  ...BlueprintSharedShape,
+  category: z.literal("case_study"),
+  /**
+   * WHERE THIS ROW SITS BETWEEN TYPED AND PUBLIC, the same field the teardown arm carries and for
+   * the same reason. It arrived when this arm got real tables: `isBlueprintVisible` used to bypass
+   * the check for case studies entirely — "showcases and case studies are unmoderated fixtures" —
+   * and that bypass is now deleted.
+   *
+   * ⚠️ ONLY TWO OF THE SEVEN STATES CAN REACH A READER HERE, and the backend narrows it: a case
+   * study has no files, so there is no `quarantined` on this arm and nothing is withheld by
+   * state. What IS withheld is a company's name, per row, and the SERVER does that — see
+   * `CaseStudyEvidenceCompanySchema`.
+   */
+  moderationState: BlueprintModerationStateSchema,
+  /** The typed axis the index filters on, and a chip on the row. */
+  discipline: BlueprintDisciplineSchema,
+  /** The imperative the reader can act on, one line, under the title. */
+  oneLineAction: z.string(),
+  /** What happened after. `null` = nobody can say tidily; it is not "Unknown" and not a failure. */
+  outcomeSummary: z.string().nullable(),
+  /** Free text, e.g. "Hardware". Not an enum — see the note above. */
+  sector: z.string(),
+  /** How the writer knows this. Rendered under the byline, see `CaseStudyAuthorRelationshipSchema`. */
+  authorRelationship: CaseStudyAuthorRelationshipSchema,
+  evidenceCompanies: z.array(CaseStudyEvidenceCompanySchema),
+  problem: z.string(),
+  context: z.string(),
+  /** What they did, in order. */
+  actionSteps: z.array(z.string()),
+  /** What to avoid. Not the inverse of `actionSteps` — these are the things that went wrong. */
+  pitfalls: z.array(z.string()),
+  /** Free text, e.g. "14 months, two production runs". `null` when nobody recorded it. */
+  timelineLabel: z.string().nullable(),
+  /**
+   * What they raised, in integer minor units.
+   *
+   * THE OBJECT IS NULLABLE, NOT ITS FIELDS, for the reason `billOfMaterialsCostRange` is: an
+   * amount without a currency is an unanswerable question. `null` MEANS NOT DISCLOSED and it is
+   * NOT ZERO — the row must say nothing about money rather than say a number.
+   *
+   * ⚠️ NO COPY BESIDE THIS FIGURE MAY SAY paid, collected, held, escrowed or processed.
+   * Qatoto operates no money rail (`src/lib/rnd/pitches.schemas.ts`).
+   */
+  capitalRaised: BlueprintMoneySchema.nullable(),
+  outcomeMetrics: z.array(BlueprintOutcomeMetricSchema),
+  /**
+   * Where the figures came from. EMPTY IS THE ONE ABSENCE ON THIS SURFACE THAT RENDERS SOMETHING
+   * — see `case-study-detail-page.tsx`, which explains the departure from Principle 2.
+   */
+  sources: z.array(BlueprintSourceSchema),
+  /** Slugs of other case studies. Resolved by `listRelatedCaseStudies`, never by a component. */
+  relatedLessonSlugs: z.array(z.string()),
+});
 
 export const BlueprintSchema = z.discriminatedUnion("category", [
   TeardownBlueprintSchema,
@@ -2224,42 +2159,38 @@ export type BlueprintOfCategory<TCategory extends BlueprintCategory> = Extract<
  * THE AUTHOR SHAPE IS REUSED. `BlueprintAuthorSchema` already spells a person on this surface; a
  * second one would be a third spelling of the same concept.
  */
-export const BlueprintCommentSchema = z
-  .object({
-    commentId: z.string(),
-    /** `null` is a top-level comment. A reply's own replies are not a state that exists. */
-    parentCommentId: z.string().nullable(),
-    /** `null` is a tombstone, and `author` is `null` with it. Never an empty string. */
-    body: z.string().nullable(),
-    /** `null` on a tombstone only. See the note above. */
-    author: BlueprintAuthorSchema.nullable(),
-    /**
-     * ⚠️ NO LONGER DISPLAY-ONLY. This used to render as a `<span>` because no comment-like route
-     * existed; `PUT|DELETE /blueprints/comments/:commentId/like` does now, and the count moves.
-     */
-    likeCount: z.number().int().nonnegative(),
-    /** How many replies hang off this row. Always 0 on a reply — the depth cap is one level. */
-    replyCount: z.number().int().nonnegative(),
-    /** ISO 8601. */
-    createdAt: z.string(),
-    /**
-     * ⚠️ ARRIVES WITH THE THREAD, unlike the blueprint-level viewer state, which is its own batched
-     * call. The difference is that the thread read is ALREADY per-viewer — it is the one blueprints
-     * read that resolves an optional session — so folding this in costs nothing, where folding
-     * viewer state into the bare public reads would have cost them their cacheability.
-     */
-    viewerState: z.object({ hasLiked: z.boolean() }),
-  })
-  .strip();
+export const BlueprintCommentSchema = z.object({
+  commentId: z.string(),
+  /** `null` is a top-level comment. A reply's own replies are not a state that exists. */
+  parentCommentId: z.string().nullable(),
+  /** `null` is a tombstone, and `author` is `null` with it. Never an empty string. */
+  body: z.string().nullable(),
+  /** `null` on a tombstone only. See the note above. */
+  author: BlueprintAuthorSchema.nullable(),
+  /**
+   * ⚠️ NO LONGER DISPLAY-ONLY. This used to render as a `<span>` because no comment-like route
+   * existed; `PUT|DELETE /blueprints/comments/:commentId/like` does now, and the count moves.
+   */
+  likeCount: z.number().int().nonnegative(),
+  /** How many replies hang off this row. Always 0 on a reply — the depth cap is one level. */
+  replyCount: z.number().int().nonnegative(),
+  /** ISO 8601. */
+  createdAt: z.string(),
+  /**
+   * ⚠️ ARRIVES WITH THE THREAD, unlike the blueprint-level viewer state, which is its own batched
+   * call. The difference is that the thread read is ALREADY per-viewer — it is the one blueprints
+   * read that resolves an optional session — so folding this in costs nothing, where folding
+   * viewer state into the bare public reads would have cost them their cacheability.
+   */
+  viewerState: z.object({ hasLiked: z.boolean() }),
+});
 export type BlueprintComment = z.infer<typeof BlueprintCommentSchema>;
 
 /** One keyset page of a thread, oldest first — a discussion reads in the order it happened. */
-export const BlueprintCommentPageSchema = z
-  .object({
-    rows: BlueprintCommentSchema.array(),
-    nextCursor: z.string().nullable(),
-  })
-  .strip();
+export const BlueprintCommentPageSchema = z.object({
+  rows: BlueprintCommentSchema.array(),
+  nextCursor: z.string().nullable(),
+});
 export type BlueprintCommentPage = z.infer<typeof BlueprintCommentPageSchema>;
 
 /**
@@ -2292,13 +2223,11 @@ export interface BlueprintPage<TBlueprint> {
  * `.strip()` because this is a READ shape — an unknown key from a newer server is dropped, not a
  * parse failure that blanks the page.
  */
-export const ShowcaseFeedPageSchema = z
-  .object({
-    items: z.array(ShowcaseBlueprintSchema),
-    page: CursorPageSchema,
-    tagFacets: z.array(z.object({ value: z.string(), count: z.number().int().min(0) }).strip()),
-  })
-  .strip();
+export const ShowcaseFeedPageSchema = z.object({
+  items: z.array(ShowcaseBlueprintSchema),
+  page: CursorPageSchema,
+  tagFacets: z.array(z.object({ value: z.string(), count: z.number().int().min(0) })),
+});
 export type ShowcaseFeedPage = z.infer<typeof ShowcaseFeedPageSchema>;
 
 /** Every published slug, for `generateStaticParams`. */
@@ -2314,13 +2243,11 @@ export const ShowcaseSlugListSchema = z.array(z.string());
  * `.strip()` because this is a READ shape: an unknown key from a newer server is dropped, not a
  * parse failure that blanks the page.
  */
-export const TeardownIndexPageSchema = z
-  .object({
-    items: z.array(TeardownBlueprintSchema),
-    page: CursorPageSchema,
-    tagFacets: z.array(z.object({ value: z.string(), count: z.number().int().min(0) }).strip()),
-  })
-  .strip();
+export const TeardownIndexPageSchema = z.object({
+  items: z.array(TeardownBlueprintSchema),
+  page: CursorPageSchema,
+  tagFacets: z.array(z.object({ value: z.string(), count: z.number().int().min(0) })),
+});
 export type TeardownIndexPage = z.infer<typeof TeardownIndexPageSchema>;
 
 /**
@@ -2333,9 +2260,7 @@ export type TeardownIndexPage = z.infer<typeof TeardownIndexPageSchema>;
 export const TeardownSlugListSchema = z.array(z.string());
 
 /** One choice in the launch composer's "Built from a teardown" select. */
-export const TeardownOptionListSchema = z.array(
-  z.object({ slug: z.string(), title: z.string() }).strip(),
-);
+export const TeardownOptionListSchema = z.array(z.object({ slug: z.string(), title: z.string() }));
 export type TeardownOption = z.infer<typeof TeardownOptionListSchema>[number];
 
 /**
@@ -2350,13 +2275,11 @@ export type TeardownOption = z.infer<typeof TeardownOptionListSchema>[number];
  * The server's select lists carry no column that could hold a link, so asking this route is not a
  * way around the withholding.
  */
-export const TeardownClaimTargetsSchema = z
-  .object({
-    documents: z.array(z.object({ id: z.string(), title: z.string() }).strip()),
-    manufacturingFiles: z.array(z.object({ id: z.string(), title: z.string() }).strip()),
-    parts: z.array(z.object({ id: z.string(), label: z.string() }).strip()),
-  })
-  .strip();
+export const TeardownClaimTargetsSchema = z.object({
+  documents: z.array(z.object({ id: z.string(), title: z.string() })),
+  manufacturingFiles: z.array(z.object({ id: z.string(), title: z.string() })),
+  parts: z.array(z.object({ id: z.string(), label: z.string() })),
+});
 export type TeardownClaimTargets = z.infer<typeof TeardownClaimTargetsSchema>;
 
 /**
@@ -2368,21 +2291,17 @@ export type TeardownClaimTargets = z.infer<typeof TeardownClaimTargetsSchema>;
  * `.strip()` because this is a READ shape: an unknown key from a newer server is dropped, not a
  * parse failure that blanks the page.
  */
-export const CaseStudyIndexPageSchema = z
-  .object({
-    items: z.array(CaseStudyBlueprintSchema),
-    page: CursorPageSchema,
-  })
-  .strip();
+export const CaseStudyIndexPageSchema = z.object({
+  items: z.array(CaseStudyBlueprintSchema),
+  page: CursorPageSchema,
+});
 export type CaseStudyIndexPage = z.infer<typeof CaseStudyIndexPageSchema>;
 
 /** Every visible slug, for `generateStaticParams`. */
 export const CaseStudySlugListSchema = z.array(z.string());
 
 /** One choice in the composer's "Related lessons" select. */
-export const CaseStudyOptionListSchema = z.array(
-  z.object({ slug: z.string(), title: z.string() }).strip(),
-);
+export const CaseStudyOptionListSchema = z.array(z.object({ slug: z.string(), title: z.string() }));
 export type CaseStudyOption = z.infer<typeof CaseStudyOptionListSchema>[number];
 
 /**
@@ -2397,10 +2316,8 @@ export type CaseStudyOption = z.infer<typeof CaseStudyOptionListSchema>[number];
  * This is what retires `listRelatedCaseStudies`: the resolution is a visibility decision, so it
  * belongs to the server, and a second call could 200 while the detail 404s.
  */
-export const CaseStudyDetailSchema = z
-  .object({
-    caseStudy: CaseStudyBlueprintSchema,
-    relatedLessons: CaseStudyOptionListSchema,
-  })
-  .strip();
+export const CaseStudyDetailSchema = z.object({
+  caseStudy: CaseStudyBlueprintSchema,
+  relatedLessons: CaseStudyOptionListSchema,
+});
 export type CaseStudyDetail = z.infer<typeof CaseStudyDetailSchema>;

@@ -16,6 +16,7 @@
 import type { ImportQuantityUnit } from "@/lib/rnd/import-intelligence.schemas";
 
 const TRADE_FORMATTING_LOCALE = "en-US";
+const TRADE_NUMBER_FORMATTER = new Intl.NumberFormat(TRADE_FORMATTING_LOCALE);
 
 // `BigInt(…)` calls rather than `100n` literals: tsconfig targets ES2017, where the literal
 // syntax is a compile error. `format.ts` records the same constraint for the same reason.
@@ -81,13 +82,13 @@ export function formatTradeValueCompact(tradeValueInCents: string, currency: str
       return `${prefix}${scaledToOneDecimal(units, scale.divisor)}${scale.suffix}`;
     }
   }
-  return `${prefix}${new Intl.NumberFormat(TRADE_FORMATTING_LOCALE).format(units)}`;
+  return `${prefix}${TRADE_NUMBER_FORMATTER.format(units)}`;
 }
 
 /** The full figure, grouped. For a detail panel where the exact number is the point. */
 export function formatTradeValueExact(tradeValueInCents: string, currency: string): string {
   const units = BigInt(tradeValueInCents) / CENTS_PER_UNIT;
-  return `${currencyPrefixFor(currency)}${new Intl.NumberFormat(TRADE_FORMATTING_LOCALE).format(units)}`;
+  return `${currencyPrefixFor(currency)}${TRADE_NUMBER_FORMATTER.format(units)}`;
 }
 
 /**
@@ -203,7 +204,7 @@ export function formatTradeQuantity(
     return "Not recorded";
   }
   const wholeUnits = BigInt(quantityMilli) / MILLI_PER_UNIT;
-  return `${new Intl.NumberFormat(TRADE_FORMATTING_LOCALE).format(wholeUnits)}${QUANTITY_UNIT_SUFFIXES[quantityUnit]}`;
+  return `${TRADE_NUMBER_FORMATTER.format(wholeUnits)}${QUANTITY_UNIT_SUFFIXES[quantityUnit]}`;
 }
 
 /**
@@ -220,9 +221,9 @@ export function formatNetWeight(netWeightMilliKilograms: string | null): string 
   const kilograms = BigInt(netWeightMilliKilograms) / MILLI_PER_UNIT;
   const tonnes = kilograms / KILOGRAMS_PER_TONNE;
   if (tonnes === ZERO) {
-    return `${new Intl.NumberFormat(TRADE_FORMATTING_LOCALE).format(kilograms)} kg`;
+    return `${TRADE_NUMBER_FORMATTER.format(kilograms)} kg`;
   }
-  return `${new Intl.NumberFormat(TRADE_FORMATTING_LOCALE).format(tonnes)} t`;
+  return `${TRADE_NUMBER_FORMATTER.format(tonnes)} t`;
 }
 
 /**

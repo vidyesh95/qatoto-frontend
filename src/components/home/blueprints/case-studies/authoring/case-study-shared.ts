@@ -395,63 +395,56 @@ export function describeCaseStudyFieldPath(fieldPath: string): string {
  * never parses, so the client is the only thing standing between a corrupt document and a form
  * rendering `undefined` into its inputs.
  */
-const TextItemDraftRowSchema: z.ZodType<TextItemDraftRow> = z
-  .object({ rowId: z.string(), text: z.string() })
-  .strip();
+const TextItemDraftRowSchema: z.ZodType<TextItemDraftRow> = z.object({
+  rowId: z.string(),
+  text: z.string(),
+});
 
-const EvidenceCompanyDraftRowSchema: z.ZodType<EvidenceCompanyDraftRow> = z
-  .object({
-    rowId: z.string(),
-    name: z.string(),
-    isNameWithheld: z.boolean(),
-    locationLabel: z.string(),
-    yearLabel: z.string(),
-  })
-  .strip();
+const EvidenceCompanyDraftRowSchema: z.ZodType<EvidenceCompanyDraftRow> = z.object({
+  rowId: z.string(),
+  name: z.string(),
+  isNameWithheld: z.boolean(),
+  locationLabel: z.string(),
+  yearLabel: z.string(),
+});
 
-const OutcomeMetricDraftRowSchema: z.ZodType<OutcomeMetricDraftRow> = z
-  .object({
-    rowId: z.string(),
-    label: z.string(),
-    kind: z.union([z.enum(OUTCOME_METRIC_KINDS), z.literal("")]),
-    valueText: z.string(),
-    currency: z.enum(CASE_STUDY_CURRENCIES),
-  })
-  .strip();
+const OutcomeMetricDraftRowSchema: z.ZodType<OutcomeMetricDraftRow> = z.object({
+  rowId: z.string(),
+  label: z.string(),
+  kind: z.union([z.enum(OUTCOME_METRIC_KINDS), z.literal("")]),
+  valueText: z.string(),
+  currency: z.enum(CASE_STUDY_CURRENCIES),
+});
 
-const SourceDraftRowSchema: z.ZodType<SourceDraftRow> = z
-  .object({
-    rowId: z.string(),
-    label: z.string(),
-    publisherLabel: z.string(),
-    url: z.string(),
-  })
-  .strip();
+const SourceDraftRowSchema: z.ZodType<SourceDraftRow> = z.object({
+  rowId: z.string(),
+  label: z.string(),
+  publisherLabel: z.string(),
+  url: z.string(),
+});
 
-export const CaseStudyFormDraftSchema: z.ZodType<CaseStudyFormDraft> = z
-  .object({
-    title: z.string(),
-    oneLineAction: z.string(),
-    discipline: z.union([z.enum(BLUEPRINT_DISCIPLINES), z.literal("")]),
-    sector: z.string(),
-    outcomeSummary: z.string(),
-    authorRelationship: z.union([z.enum(CASE_STUDY_AUTHOR_RELATIONSHIPS), z.literal("")]),
-    summary: z.string(),
-    problem: z.string(),
-    context: z.string(),
-    actionStepRows: z.array(TextItemDraftRowSchema),
-    pitfallRows: z.array(TextItemDraftRowSchema),
-    companyRows: z.array(EvidenceCompanyDraftRowSchema),
-    timelineLabel: z.string(),
-    capitalRaisedText: z.string(),
-    capitalRaisedCurrency: z.enum(CASE_STUDY_CURRENCIES),
-    metricRows: z.array(OutcomeMetricDraftRowSchema),
-    sourceRows: z.array(SourceDraftRowSchema),
-    relatedLessonSlotSlugs: z.array(z.string()),
-    tagsText: z.string(),
-    acceptedStatementIds: z.array(z.enum(CASE_STUDY_STATEMENT_IDS)),
-  })
-  .strip();
+export const CaseStudyFormDraftSchema: z.ZodType<CaseStudyFormDraft> = z.object({
+  title: z.string(),
+  oneLineAction: z.string(),
+  discipline: z.union([z.enum(BLUEPRINT_DISCIPLINES), z.literal("")]),
+  sector: z.string(),
+  outcomeSummary: z.string(),
+  authorRelationship: z.union([z.enum(CASE_STUDY_AUTHOR_RELATIONSHIPS), z.literal("")]),
+  summary: z.string(),
+  problem: z.string(),
+  context: z.string(),
+  actionStepRows: z.array(TextItemDraftRowSchema),
+  pitfallRows: z.array(TextItemDraftRowSchema),
+  companyRows: z.array(EvidenceCompanyDraftRowSchema),
+  timelineLabel: z.string(),
+  capitalRaisedText: z.string(),
+  capitalRaisedCurrency: z.enum(CASE_STUDY_CURRENCIES),
+  metricRows: z.array(OutcomeMetricDraftRowSchema),
+  sourceRows: z.array(SourceDraftRowSchema),
+  relatedLessonSlotSlugs: z.array(z.string()),
+  tagsText: z.string(),
+  acceptedStatementIds: z.array(z.enum(CASE_STUDY_STATEMENT_IDS)),
+});
 
 /**
  * Parses a stored draft document back into form state, or `null` if it cannot be reopened.

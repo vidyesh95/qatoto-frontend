@@ -3,7 +3,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import type { ModelViewerElement } from "@google/model-viewer";
 
@@ -28,9 +28,26 @@ import type { ModelViewerElement } from "@google/model-viewer";
  * EVENTS BY REF, NOT PROPS. React 19 would subscribe an `onLoad` prop to an event literally named
  * `"Load"`. See `src/types/model-viewer.d.ts`, which deliberately declares no `on*` props.
  *
- * NO SERVER HTML EXISTS FOR THIS COMPONENT, which is why `document` may be read in a state
- * initializer below: there is nothing to hydrate against.
+ * NO SERVER HTML EXISTS FOR THIS COMPONENT, but `document` is still read through
+ * `useSyncExternalStore` with a server snapshot, so a future server render cannot throw on it.
  */
+/** The side-effect import, at module scope because React Compiler cannot lower `import()` in a component. */
+function loadModelViewerLibrary(): Promise<unknown> {
+  return import("@google/model-viewer");
+}
+
+function subscribeToNothing(): () => void {
+  return () => {};
+}
+
+function readCanFullscreen(): boolean {
+  return document.fullscreenEnabled;
+}
+
+function readCanFullscreenOnServer(): boolean {
+  return false;
+}
+
 type ThreeDimensionalModelViewerState =
   | { readonly status: "loading-library" }
   | { readonly status: "loading-model" }
@@ -57,7 +74,11 @@ export default function ThreeDimensionalModelViewer({
   });
   const [isFullscreen, setIsFullscreen] = useState(false);
   // False on iOS Safari, where `requestFullscreen` does not exist on arbitrary elements.
-  const [canFullscreen] = useState(() => document.fullscreenEnabled);
+  const canFullscreen = useSyncExternalStore(
+    subscribeToNothing,
+    readCanFullscreen,
+    readCanFullscreenOnServer,
+  );
 
   // Fetch the library once the sheet exists. The `isMounted` guard is the `video-player.tsx`
   // shape: a sheet closed before the chunk lands must not set state on an unmounted component.
@@ -65,7 +86,7 @@ export default function ThreeDimensionalModelViewer({
     let isMounted = true;
     async function loadViewerLibrary() {
       try {
-        await import("@google/model-viewer");
+        await loadModelViewerLibrary();
         if (isMounted) setViewerState({ status: "loading-model" });
       } catch {
         if (isMounted) {

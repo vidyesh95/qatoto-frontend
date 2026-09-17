@@ -40,11 +40,11 @@ export const USER_REPORT_REASON_LABELS: Record<UserReportReason, string> = {
   other: "Something else",
 };
 
-export const CreatedUserReportSchema = z.object({ reportId: z.string() }).strip();
+export const CreatedUserReportSchema = z.object({ reportId: z.string() });
 
 export type CreatedUserReport = z.infer<typeof CreatedUserReportSchema>;
 
-export const RestoredProfileTextSchema = z.object({ reportedUserId: z.string() }).strip();
+export const RestoredProfileTextSchema = z.object({ reportedUserId: z.string() });
 
 export interface CreateUserReportInput {
   readonly reason: UserReportReason;
@@ -56,30 +56,26 @@ export const USER_REPORT_STATUSES = ["open", "actioned", "dismissed"] as const;
 export type UserReportStatus = (typeof USER_REPORT_STATUSES)[number];
 
 /** One row of the moderator queue. */
-export const UserReportQueueItemSchema = z
-  .object({
-    reportId: z.string(),
-    reason: z.enum(USER_REPORT_REASONS),
-    detailText: z.string().nullable(),
-    status: z.enum(USER_REPORT_STATUSES),
-    createdAt: IsoDateTimeSchema,
-    subject: z
-      .object({
-        userId: z.string(),
-        handle: z.string().nullable(),
-        name: z.string(),
-        bio: z.string().nullable(),
-        profileModerationState: z.enum(["visible", "hidden_by_moderator"]),
-      })
-      .strip(),
-    /**
-     * CONTEXT, NEVER A THRESHOLD. Nothing hides a profile because this number crossed a line —
-     * every hide names a human. Rendering it as a score would make brigading measurable and then
-     * effective.
-     */
-    openReportCount: z.number().int(),
-  })
-  .strip();
+export const UserReportQueueItemSchema = z.object({
+  reportId: z.string(),
+  reason: z.enum(USER_REPORT_REASONS),
+  detailText: z.string().nullable(),
+  status: z.enum(USER_REPORT_STATUSES),
+  createdAt: IsoDateTimeSchema,
+  subject: z.object({
+    userId: z.string(),
+    handle: z.string().nullable(),
+    name: z.string(),
+    bio: z.string().nullable(),
+    profileModerationState: z.enum(["visible", "hidden_by_moderator"]),
+  }),
+  /**
+   * CONTEXT, NEVER A THRESHOLD. Nothing hides a profile because this number crossed a line —
+   * every hide names a human. Rendering it as a score would make brigading measurable and then
+   * effective.
+   */
+  openReportCount: z.number().int(),
+});
 
 export type UserReportQueueItem = z.infer<typeof UserReportQueueItemSchema>;
 
@@ -107,18 +103,16 @@ export interface RestoreProfileTextInput {
  * the moderator makes a takedown personal, the count makes brigading measurable, and re-serving the
  * text to the person who complained about it would be the machinery that hid it handing it back.
  */
-export const MyProfileReportSchema = z
-  .object({
-    id: z.string(),
-    reportedUserId: z.string(),
-    reportedName: z.string(),
-    reportedHandle: z.string().nullable(),
-    reason: z.enum(USER_REPORT_REASONS),
-    detailText: z.string().nullable(),
-    status: z.enum(USER_REPORT_STATUSES),
-    createdAt: IsoDateTimeSchema,
-    resolvedAt: IsoDateTimeSchema.nullable(),
-  })
-  .strip();
+export const MyProfileReportSchema = z.object({
+  id: z.string(),
+  reportedUserId: z.string(),
+  reportedName: z.string(),
+  reportedHandle: z.string().nullable(),
+  reason: z.enum(USER_REPORT_REASONS),
+  detailText: z.string().nullable(),
+  status: z.enum(USER_REPORT_STATUSES),
+  createdAt: IsoDateTimeSchema,
+  resolvedAt: IsoDateTimeSchema.nullable(),
+});
 
 export type MyProfileReport = z.infer<typeof MyProfileReportSchema>;

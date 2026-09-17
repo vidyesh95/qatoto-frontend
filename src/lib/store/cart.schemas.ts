@@ -48,29 +48,27 @@ import { IsoDateTimeSchema } from "@/lib/store/shared.schemas";
  * `stockState` and `pricingError` are OPTIONAL on the wire (`field?:`), so they are absent rather
  * than null. `.optional()` matches that; `.nullable()` would accept a shape the server never sends.
  */
-export const CommerceCartItemSchema = z
-  .object({
-    productId: z.string(),
-    // Null only for products with no active variants. A product WITH variants and no `variantId`
-    // is refused at add time with `VARIANT_REQUIRED`, so this cannot be null for those.
-    variantId: z.string().nullable(),
-    variantName: z.string().nullable(),
-    quantity: z.number().int(),
-    isSample: z.boolean(),
-    title: z.string(),
-    currency: z.string().nullable(),
-    unitPriceInCents: z.number().int().nullable(),
-    lineTotalInCents: z.number().int().nullable(),
-    isMadeToOrder: z.boolean().nullable(),
-    minimumOrderQuantity: z.number().int().nullable(),
-    // A17. The ceiling on a sample line. Null on every bulk line — a bulk line has a floor, not a
-    // ceiling — and null on a sample line that failed to price, which is why the stepper must
-    // treat null as "cannot raise" rather than "no limit".
-    maximumSampleQuantity: z.number().int().nullable(),
-    stockState: z.enum(STORE_STOCK_STATES).optional(),
-    pricingError: CommercePricingErrorSchema.optional(),
-  })
-  .strip();
+export const CommerceCartItemSchema = z.object({
+  productId: z.string(),
+  // Null only for products with no active variants. A product WITH variants and no `variantId`
+  // is refused at add time with `VARIANT_REQUIRED`, so this cannot be null for those.
+  variantId: z.string().nullable(),
+  variantName: z.string().nullable(),
+  quantity: z.number().int(),
+  isSample: z.boolean(),
+  title: z.string(),
+  currency: z.string().nullable(),
+  unitPriceInCents: z.number().int().nullable(),
+  lineTotalInCents: z.number().int().nullable(),
+  isMadeToOrder: z.boolean().nullable(),
+  minimumOrderQuantity: z.number().int().nullable(),
+  // A17. The ceiling on a sample line. Null on every bulk line — a bulk line has a floor, not a
+  // ceiling — and null on a sample line that failed to price, which is why the stepper must
+  // treat null as "cannot raise" rather than "no limit".
+  maximumSampleQuantity: z.number().int().nullable(),
+  stockState: z.enum(STORE_STOCK_STATES).optional(),
+  pricingError: CommercePricingErrorSchema.optional(),
+});
 
 /**
  * A subtotal and total for ONE currency.
@@ -79,53 +77,47 @@ export const CommerceCartItemSchema = z
  * tax, service fee and freight are all written literal `0` server-side, so they match — do NOT rely
  * on that, and never compute one from the other.
  */
-export const CommerceCartCurrencyTotalSchema = z
-  .object({
-    currency: z.string(),
-    subtotalInCents: z.number().int(),
-    totalInCents: z.number().int(),
-  })
-  .strip();
+export const CommerceCartCurrencyTotalSchema = z.object({
+  currency: z.string(),
+  subtotalInCents: z.number().int(),
+  totalInCents: z.number().int(),
+});
 
-export const CommerceCartSchema = z
-  .object({
-    id: z.string(),
-    // The cart belongs to an ORGANIZATION, not a user. Two colleagues share one cart, which is
-    // correct for procurement and surprising if you expect a consumer basket.
-    buyerOrganizationId: z.string(),
-    items: z.array(CommerceCartItemSchema),
-    currencyTotals: z.array(CommerceCartCurrencyTotalSchema),
-    updatedAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const CommerceCartSchema = z.object({
+  id: z.string(),
+  // The cart belongs to an ORGANIZATION, not a user. Two colleagues share one cart, which is
+  // correct for procurement and surprising if you expect a consumer basket.
+  buyerOrganizationId: z.string(),
+  items: z.array(CommerceCartItemSchema),
+  currencyTotals: z.array(CommerceCartCurrencyTotalSchema),
+  updatedAt: IsoDateTimeSchema,
+});
 
 // --- Checkout preparation ---------------------------------------------------
 
-export const CheckoutPrepareLineSchema = z
-  .object({
-    productId: z.string(),
-    // Present because a checkout produces ONE ORDER PER SELLER. The client groups by it; it does not
-    // decide it.
-    sellerOrganizationId: z.string(),
-    title: z.string(),
-    /**
-     * A1. Which variation this line is for — the prepare row's own snapshot, which confirm copies
-     * onto the order line.
-     *
-     * ⚠️ IT WAS WRITTEN SERVER-SIDE AND PROJECTED NOWHERE. The cart names the variant and the order
-     * names it; the last screen before payment did not, so two visually identical lines were
-     * indistinguishable at the one moment that mattered. `null` on a listing sold as one thing.
-     */
-    variantNameSnapshot: z.string().nullable(),
-    quantity: z.number().int(),
-    // Not nullable here, unlike the cart line: preparation refuses outright if a line cannot be
-    // priced, so anything that reaches this shape has a price.
-    unitPriceInCents: z.number().int(),
-    lineTotalInCents: z.number().int(),
-    currency: z.string(),
-    isMadeToOrder: z.boolean(),
-  })
-  .strip();
+export const CheckoutPrepareLineSchema = z.object({
+  productId: z.string(),
+  // Present because a checkout produces ONE ORDER PER SELLER. The client groups by it; it does not
+  // decide it.
+  sellerOrganizationId: z.string(),
+  title: z.string(),
+  /**
+   * A1. Which variation this line is for — the prepare row's own snapshot, which confirm copies
+   * onto the order line.
+   *
+   * ⚠️ IT WAS WRITTEN SERVER-SIDE AND PROJECTED NOWHERE. The cart names the variant and the order
+   * names it; the last screen before payment did not, so two visually identical lines were
+   * indistinguishable at the one moment that mattered. `null` on a listing sold as one thing.
+   */
+  variantNameSnapshot: z.string().nullable(),
+  quantity: z.number().int(),
+  // Not nullable here, unlike the cart line: preparation refuses outright if a line cannot be
+  // priced, so anything that reaches this shape has a price.
+  unitPriceInCents: z.number().int(),
+  lineTotalInCents: z.number().int(),
+  currency: z.string(),
+  isMadeToOrder: z.boolean(),
+});
 
 /**
  * The seven money fields of a checkout total, per currency.
@@ -138,40 +130,34 @@ export const CheckoutPrepareLineSchema = z
  * charged for freight, so nothing appears in a total. Billing from an advertised estimate with no
  * booking behind it would put an invented number into an immutable order.
  */
-export const CheckoutCurrencyTotalSchema = z
-  .object({
-    currency: z.string(),
-    subtotalInCents: z.number().int(),
-    taxInCents: z.number().int(),
-    serviceFeeInCents: z.number().int(),
-    shippingInCents: z.number().int(),
-    discountInCents: z.number().int(),
-    totalInCents: z.number().int(),
-  })
-  .strip();
+export const CheckoutCurrencyTotalSchema = z.object({
+  currency: z.string(),
+  subtotalInCents: z.number().int(),
+  taxInCents: z.number().int(),
+  serviceFeeInCents: z.number().int(),
+  shippingInCents: z.number().int(),
+  discountInCents: z.number().int(),
+  totalInCents: z.number().int(),
+});
 
 /** What an indicative delivery estimate was computed FROM. Provenance, not a booking. */
-export const DeliveryEstimateBasisSchema = z
-  .object({
-    originCountryCode: z.string().nullable(),
-    destinationCountryCode: z.string(),
-    billableWeightGrams: z.number().int().nullable(),
-    packageCount: z.number().int().nullable(),
-    // True when the seller never declared package geometry. The estimate is then weaker, and saying
-    // so beats guessing a weight.
-    hasIncompletePackageData: z.boolean(),
-  })
-  .strip();
+export const DeliveryEstimateBasisSchema = z.object({
+  originCountryCode: z.string().nullable(),
+  destinationCountryCode: z.string(),
+  billableWeightGrams: z.number().int().nullable(),
+  packageCount: z.number().int().nullable(),
+  // True when the seller never declared package geometry. The estimate is then weaker, and saying
+  // so beats guessing a weight.
+  hasIncompletePackageData: z.boolean(),
+});
 
-export const DeliveryEstimateSourceOfferingSchema = z
-  .object({
-    offeringId: z.string(),
-    offeringSlug: z.string(),
-    providerOrganizationSlug: z.string(),
-    providerDisplayName: z.string(),
-    providerKind: z.string(),
-  })
-  .strip();
+export const DeliveryEstimateSourceOfferingSchema = z.object({
+  offeringId: z.string(),
+  offeringSlug: z.string(),
+  providerOrganizationSlug: z.string(),
+  providerDisplayName: z.string(),
+  providerKind: z.string(),
+});
 
 /**
  * One estimate per currency, NEVER converted.
@@ -181,28 +167,24 @@ export const DeliveryEstimateSourceOfferingSchema = z
  * all: an estimate is not a booking, and a date the platform cannot keep is a promise it has no
  * business making.
  */
-export const DeliveryEstimateSchema = z
-  .object({
-    currency: z.string(),
-    estimatedMinInCents: z.number().int(),
-    estimatedMaxInCents: z.number().int(),
-    leadTimeMinDays: z.number().int().nullable(),
-    leadTimeMaxDays: z.number().int().nullable(),
-    basis: DeliveryEstimateBasisSchema,
-    derivedFrom: z.array(DeliveryEstimateSourceOfferingSchema),
-  })
-  .strip();
+export const DeliveryEstimateSchema = z.object({
+  currency: z.string(),
+  estimatedMinInCents: z.number().int(),
+  estimatedMaxInCents: z.number().int(),
+  leadTimeMinDays: z.number().int().nullable(),
+  leadTimeMaxDays: z.number().int().nullable(),
+  basis: DeliveryEstimateBasisSchema,
+  derivedFrom: z.array(DeliveryEstimateSourceOfferingSchema),
+});
 
 /**
  * Estimates for one seller. An EMPTY `estimates` array is a real answer meaning "no covering
  * provider was found" — which is NOT "free". The mock this replaces rendered the second one.
  */
-export const SellerDeliveryEstimateSchema = z
-  .object({
-    sellerOrganizationId: z.string(),
-    estimates: z.array(DeliveryEstimateSchema),
-  })
-  .strip();
+export const SellerDeliveryEstimateSchema = z.object({
+  sellerOrganizationId: z.string(),
+  estimates: z.array(DeliveryEstimateSchema),
+});
 
 /**
  * `POST /commerce/checkout/prepare`.
@@ -212,39 +194,35 @@ export const SellerDeliveryEstimateSchema = z
  * reservation held against other buyers — show the expiry, and do not silently re-prepare on a
  * timer.
  */
-export const CheckoutPrepareSchema = z
-  .object({
-    prepareId: z.string(),
-    expiresAt: IsoDateTimeSchema,
-    items: z.array(CheckoutPrepareLineSchema),
-    currencyTotals: z.array(CheckoutCurrencyTotalSchema),
-    // Redacted plaintext — country, region, locality, postcode. The street lines, recipient and
-    // phone are encrypted and reach a seller only through the audited decrypt route, after confirm.
-    deliveryAddressSnapshot: z.string().nullable(),
-    deliveryEstimates: z.array(SellerDeliveryEstimateSchema),
-    /**
-     * PER-SELLER, like `deliveryEstimates` and for the same reason — each seller is its own order
-     * and its own journey.
-     *
-     * `arrivalWindow` INSIDE each entry is ALWAYS null here, by construction rather than by
-     * accident: there is no order at prepare time, so there is no clock to count from. What IS
-     * meaningful is `components` and `missingComponents`, which is what the checkout panel renders
-     * — "ships in 15–25 days · 24–34 days at sea · 3–10 days clearance", and the named absence
-     * where a component is unknown. NOTHING ON THIS SURFACE PRINTS A DATE.
-     *
-     * The row schema is R&D's own `ArrivalWindowProjectionSchema`, imported rather than restated:
-     * the order route parses the identical shape, and two copies would be two things to drift.
-     */
-    arrivalWindows: z.array(
-      z
-        .object({
-          sellerOrganizationId: z.string(),
-          arrivalWindow: ArrivalWindowProjectionSchema,
-        })
-        .strip(),
-    ),
-  })
-  .strip();
+export const CheckoutPrepareSchema = z.object({
+  prepareId: z.string(),
+  expiresAt: IsoDateTimeSchema,
+  items: z.array(CheckoutPrepareLineSchema),
+  currencyTotals: z.array(CheckoutCurrencyTotalSchema),
+  // Redacted plaintext — country, region, locality, postcode. The street lines, recipient and
+  // phone are encrypted and reach a seller only through the audited decrypt route, after confirm.
+  deliveryAddressSnapshot: z.string().nullable(),
+  deliveryEstimates: z.array(SellerDeliveryEstimateSchema),
+  /**
+   * PER-SELLER, like `deliveryEstimates` and for the same reason — each seller is its own order
+   * and its own journey.
+   *
+   * `arrivalWindow` INSIDE each entry is ALWAYS null here, by construction rather than by
+   * accident: there is no order at prepare time, so there is no clock to count from. What IS
+   * meaningful is `components` and `missingComponents`, which is what the checkout panel renders
+   * — "ships in 15–25 days · 24–34 days at sea · 3–10 days clearance", and the named absence
+   * where a component is unknown. NOTHING ON THIS SURFACE PRINTS A DATE.
+   *
+   * The row schema is R&D's own `ArrivalWindowProjectionSchema`, imported rather than restated:
+   * the order route parses the identical shape, and two copies would be two things to drift.
+   */
+  arrivalWindows: z.array(
+    z.object({
+      sellerOrganizationId: z.string(),
+      arrivalWindow: ArrivalWindowProjectionSchema,
+    }),
+  ),
+});
 
 // --- Orders created by confirm ----------------------------------------------
 
@@ -291,43 +269,41 @@ export const SETTLEMENT_RAILS = [
 
 export type SettlementRail = (typeof SETTLEMENT_RAILS)[number];
 
-export const CommerceOrderSchema = z
-  .object({
-    id: z.string(),
-    buyerOrganizationId: z.string(),
-    counterpartyOrganizationId: z.string(),
-    checkoutGroupId: z.string().nullable(),
-    source: z.enum(ORDER_SOURCES),
-    state: z.enum(ORDER_STATES),
-    currency: z.string(),
-    subtotalInCents: z.number().int(),
-    taxInCents: z.number().int(),
-    serviceFeeInCents: z.number().int(),
-    shippingInCents: z.number().int(),
-    discountInCents: z.number().int(),
-    totalInCents: z.number().int(),
-    paymentTermsSnapshot: z.string().nullable(),
-    incotermSnapshot: z.string().nullable(),
-    /**
-     * A45. What the buyer asked for at checkout — never what was booked.
-     *
-     * NULL MEANS "NOT ASKED OR NOT CHOSEN", not "no preference", and nothing may default it. The
-     * mode the goods actually move by lives on the shipment's legs.
-     */
-    requestedFreightModeSnapshot: z.string().nullable(),
+export const CommerceOrderSchema = z.object({
+  id: z.string(),
+  buyerOrganizationId: z.string(),
+  counterpartyOrganizationId: z.string(),
+  checkoutGroupId: z.string().nullable(),
+  source: z.enum(ORDER_SOURCES),
+  state: z.enum(ORDER_STATES),
+  currency: z.string(),
+  subtotalInCents: z.number().int(),
+  taxInCents: z.number().int(),
+  serviceFeeInCents: z.number().int(),
+  shippingInCents: z.number().int(),
+  discountInCents: z.number().int(),
+  totalInCents: z.number().int(),
+  paymentTermsSnapshot: z.string().nullable(),
+  incotermSnapshot: z.string().nullable(),
+  /**
+   * A45. What the buyer asked for at checkout — never what was booked.
+   *
+   * NULL MEANS "NOT ASKED OR NOT CHOSEN", not "no preference", and nothing may default it. The
+   * mode the goods actually move by lives on the shipment's legs.
+   */
+  requestedFreightModeSnapshot: z.string().nullable(),
 
-    buyerLegalNameSnapshot: z.string(),
-    counterpartyLegalNameSnapshot: z.string(),
-    settlementRail: z.enum(SETTLEMENT_RAILS),
-    /**
-     * DERIVED FROM THE RAIL, and on the wire because ABSENCE MUST BE LEGIBLE. A client has to be
-     * able to state plainly that nobody is holding the funds; leaving it to be inferred from a rail
-     * name is how an interface ends up implying a protection nobody agreed to.
-     */
-    hasEscrowProtection: z.boolean(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+  buyerLegalNameSnapshot: z.string(),
+  counterpartyLegalNameSnapshot: z.string(),
+  settlementRail: z.enum(SETTLEMENT_RAILS),
+  /**
+   * DERIVED FROM THE RAIL, and on the wire because ABSENCE MUST BE LEGIBLE. A client has to be
+   * able to state plainly that nobody is holding the funds; leaving it to be inferred from a rail
+   * name is how an interface ends up implying a protection nobody agreed to.
+   */
+  hasEscrowProtection: z.boolean(),
+  createdAt: IsoDateTimeSchema,
+});
 
 /**
  * `POST /commerce/checkout/confirm`.
@@ -336,12 +312,10 @@ export const CommerceOrderSchema = z
  * stops one late warehouse provider blocking a manufacturer's shipment, and keeps authorization,
  * invoicing, refunds and disputes attributable to exactly one counterparty.
  */
-export const ConfirmCheckoutSchema = z
-  .object({
-    checkoutGroupId: z.string(),
-    orders: z.array(CommerceOrderSchema),
-  })
-  .strip();
+export const ConfirmCheckoutSchema = z.object({
+  checkoutGroupId: z.string(),
+  orders: z.array(CommerceOrderSchema),
+});
 
 // --- Request bodies ---------------------------------------------------------
 

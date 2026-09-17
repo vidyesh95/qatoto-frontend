@@ -19,34 +19,6 @@ export default function ProductsPage() {
       onSettled: () => setConfirmingDeleteId(null),
     });
   }
-
-  return (
-    <div className="p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">My Products</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage your store listings and inventory.
-          </p>
-        </div>
-        <Link
-          href="/studio/products/create"
-          className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium transition-opacity hover:opacity-90"
-        >
-          <Image
-            src="/icons/box_add_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
-            alt=""
-            width={20}
-            height={20}
-          />
-          Add product
-        </Link>
-      </div>
-
-      <div className="mt-6">{renderProductsList()}</div>
-    </div>
-  );
-
   function renderProductsList() {
     if (myProductsQuery.isPending) {
       return <StatusPanel message="Loading your products…" />;
@@ -183,6 +155,33 @@ export default function ProductsPage() {
       </ul>
     );
   }
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">My Products</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage your store listings and inventory.
+          </p>
+        </div>
+        <Link
+          href="/studio/products/create"
+          className="flex cursor-pointer items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium transition-opacity hover:opacity-90"
+        >
+          <Image
+            src="/icons/box_add_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg"
+            alt=""
+            width={20}
+            height={20}
+          />
+          Add product
+        </Link>
+      </div>
+
+      <div className="mt-6">{renderProductsList()}</div>
+    </div>
+  );
 }
 
 // Centered placeholder for loading / error / empty states.

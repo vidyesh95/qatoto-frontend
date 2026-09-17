@@ -129,72 +129,67 @@ export type CommunityReportState = (typeof COMMUNITY_REPORT_STATES)[number];
  * customs clearance wants to know whether it came from a broker or from a stranger. Rendering a
  * placeholder org would erase exactly the signal the field exists to carry.
  */
-export const ForumThreadCardSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    board: z.enum(FORUM_BOARDS),
-    title: z.string(),
-    /** First lines of the body, server-truncated. Never the whole post. */
-    excerpt: z.string(),
-    authorDisplayName: z.string(),
-    authorOrganizationName: z.string().nullable(),
-    state: z.enum(FORUM_THREAD_STATES),
-    replyCount: z.number().int(),
-    /**
-     * The id of the reply the author marked as the answer, or `null`.
-     *
-     * `null` IS NOT "unanswered" in the sense of "nobody helped" — plenty of useful threads never get
-     * an accepted answer. It means only that nobody pressed the button.
-     */
-    acceptedReplyId: z.string().nullable(),
-    lastActivityAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const ForumThreadCardSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  board: z.enum(FORUM_BOARDS),
+  title: z.string(),
+  /** First lines of the body, server-truncated. Never the whole post. */
+  excerpt: z.string(),
+  authorDisplayName: z.string(),
+  authorOrganizationName: z.string().nullable(),
+  state: z.enum(FORUM_THREAD_STATES),
+  replyCount: z.number().int(),
+  /**
+   * The id of the reply the author marked as the answer, or `null`.
+   *
+   * `null` IS NOT "unanswered" in the sense of "nobody helped" — plenty of useful threads never get
+   * an accepted answer. It means only that nobody pressed the button.
+   */
+  acceptedReplyId: z.string().nullable(),
+  lastActivityAt: IsoDateTimeSchema,
+});
 
 export const ForumThreadListPageSchema = cursorPageOf(ForumThreadCardSchema);
 
 // --- Thread detail ----------------------------------------------------------
 
-export const ForumReplySchema = z
-  .object({
-    id: z.string(),
-    authorDisplayName: z.string(),
-    authorOrganizationName: z.string().nullable(),
-    body: z.string(),
-    createdAt: IsoDateTimeSchema,
-    /**
-     * How many readers found this useful.
-     *
-     * A COUNT, NOT A SCORE. There is no downvote on the wire and there must not be one in the UI: a
-     * negative signal on a commerce platform where the author is a named organization is a
-     * reputational act, and this surface has no appeal process to put behind it.
-     */
-    helpfulCount: z.number().int(),
-    // NO `visibilityState`, AND THAT IS THE BACKEND'S DECISION RATHER THAN AN OMISSION HERE.
-    // This schema used to require one so the thread could render a "removed by a moderator"
-    // tombstone in place. The read filters `state = 'visible'` and its own comment says why —
-    // "a hidden reply leaves the public read entirely; it is not shown as a tombstone" — so the
-    // field would have been the constant `"visible"` on every row that ever arrived, which is
-    // exactly the fabricated-signal shape A13 exists to refuse.
-    /**
-     * This reader's own vote, or `null` when there is no reader to have one.
-     *
-     * `null` IS NOT `false` AND MUST NEVER BE DEFAULTED TO IT. `null` means nobody is signed in,
-     * so the control renders as a prompt to sign in; `false` means a signed-in reader has not
-     * endorsed this, so the control renders as an empty toggle they can press. The A11/A24 rule,
-     * and the same shape `commerce_product_answer_vote` already projects.
-     */
-    viewer: z
-      .object({
-        // `hasVotedHelpful` IS THE WIRE'S SPELLING. This said `hasMarkedHelpful`, which nothing
-        // ever sent — one spelling per concept, and the backend owns which one.
-        hasVotedHelpful: z.boolean(),
-      })
-      .strip()
-      .nullable(),
-  })
-  .strip();
+export const ForumReplySchema = z.object({
+  id: z.string(),
+  authorDisplayName: z.string(),
+  authorOrganizationName: z.string().nullable(),
+  body: z.string(),
+  createdAt: IsoDateTimeSchema,
+  /**
+   * How many readers found this useful.
+   *
+   * A COUNT, NOT A SCORE. There is no downvote on the wire and there must not be one in the UI: a
+   * negative signal on a commerce platform where the author is a named organization is a
+   * reputational act, and this surface has no appeal process to put behind it.
+   */
+  helpfulCount: z.number().int(),
+  // NO `visibilityState`, AND THAT IS THE BACKEND'S DECISION RATHER THAN AN OMISSION HERE.
+  // This schema used to require one so the thread could render a "removed by a moderator"
+  // tombstone in place. The read filters `state = 'visible'` and its own comment says why —
+  // "a hidden reply leaves the public read entirely; it is not shown as a tombstone" — so the
+  // field would have been the constant `"visible"` on every row that ever arrived, which is
+  // exactly the fabricated-signal shape A13 exists to refuse.
+  /**
+   * This reader's own vote, or `null` when there is no reader to have one.
+   *
+   * `null` IS NOT `false` AND MUST NEVER BE DEFAULTED TO IT. `null` means nobody is signed in,
+   * so the control renders as a prompt to sign in; `false` means a signed-in reader has not
+   * endorsed this, so the control renders as an empty toggle they can press. The A11/A24 rule,
+   * and the same shape `commerce_product_answer_vote` already projects.
+   */
+  viewer: z
+    .object({
+      // `hasVotedHelpful` IS THE WIRE'S SPELLING. This said `hasMarkedHelpful`, which nothing
+      // ever sent — one spelling per concept, and the backend owns which one.
+      hasVotedHelpful: z.boolean(),
+    })
+    .nullable(),
+});
 
 /**
  * `GET /store/forum/threads/:threadSlug`.
@@ -203,38 +198,35 @@ export const ForumReplySchema = z
  * paged and `CursorPageControl` needs the same `{ nextCursor, hasMore }` footer every other store
  * list carries.
  */
-export const ForumThreadDetailSchema = z
-  .object({
-    thread: ForumThreadCardSchema,
-    /** The whole opening post, unlike the card's `excerpt`. */
-    body: z.string(),
-    createdAt: IsoDateTimeSchema,
-    replies: cursorPageOf(ForumReplySchema),
-    /**
-     * This reader's standing on this thread, or `null` when there is no reader.
-     *
-     * ONE FIELD THIS FRONTEND NEEDS AND §17 DOES NOT LIST — the same kind of finding Appendix A
-     * exists to record, written here rather than discovered on wiring day.
-     *
-     * `isThreadAuthor` decides whether the accept-answer control renders at all. Only the author
-     * may accept, the backend enforces it, and without the flag the page has two bad options:
-     * show the control to everybody and let most people press a button that 403s, or hide it from
-     * everybody and make the feature unreachable. Neither is acceptable, and neither is guessing
-     * from a display name.
-     *
-     * It is REQUIRED and nullable rather than optional, deliberately. If the backend does not yet
-     * send it the parse fails loudly and the page renders its error branch, which is the honest
-     * outcome — an `.optional()` here would silently disable accept-answer for the one person
-     * entitled to use it, and nobody would notice for weeks.
-     */
-    viewer: z
-      .object({
-        isThreadAuthor: z.boolean(),
-      })
-      .strip()
-      .nullable(),
-  })
-  .strip();
+export const ForumThreadDetailSchema = z.object({
+  thread: ForumThreadCardSchema,
+  /** The whole opening post, unlike the card's `excerpt`. */
+  body: z.string(),
+  createdAt: IsoDateTimeSchema,
+  replies: cursorPageOf(ForumReplySchema),
+  /**
+   * This reader's standing on this thread, or `null` when there is no reader.
+   *
+   * ONE FIELD THIS FRONTEND NEEDS AND §17 DOES NOT LIST — the same kind of finding Appendix A
+   * exists to record, written here rather than discovered on wiring day.
+   *
+   * `isThreadAuthor` decides whether the accept-answer control renders at all. Only the author
+   * may accept, the backend enforces it, and without the flag the page has two bad options:
+   * show the control to everybody and let most people press a button that 403s, or hide it from
+   * everybody and make the feature unreachable. Neither is acceptable, and neither is guessing
+   * from a display name.
+   *
+   * It is REQUIRED and nullable rather than optional, deliberately. If the backend does not yet
+   * send it the parse fails loudly and the page renders its error branch, which is the honest
+   * outcome — an `.optional()` here would silently disable accept-answer for the one person
+   * entitled to use it, and nobody would notice for weeks.
+   */
+  viewer: z
+    .object({
+      isThreadAuthor: z.boolean(),
+    })
+    .nullable(),
+});
 
 // --- Filter input -----------------------------------------------------------
 
@@ -330,20 +322,18 @@ export const ForumThreadAnswerStateSchema = ForumThreadCardSchema;
  * There is no `DELETE`-shaped downvote hiding here. `hasMarkedHelpful: false` is the absence of an
  * endorsement, not the presence of a negative one.
  */
-export const ForumReplyHelpfulStateSchema = z
-  .object({
-    replyId: z.string(),
-    /**
-     * FLAT, NOT NESTED UNDER `viewer`.
-     *
-     * The read's per-reply `viewer` object is nullable because an anonymous reader has no vote to
-     * report. This is the answer to a WRITE, which only a signed-in caller can make, so there is no
-     * null case and no object to wrap it in — the caller is by construction the viewer.
-     */
-    isHelpful: z.boolean(),
-    helpfulCount: z.number().int(),
-  })
-  .strip();
+export const ForumReplyHelpfulStateSchema = z.object({
+  replyId: z.string(),
+  /**
+   * FLAT, NOT NESTED UNDER `viewer`.
+   *
+   * The read's per-reply `viewer` object is nullable because an anonymous reader has no vote to
+   * report. This is the answer to a WRITE, which only a signed-in caller can make, so there is no
+   * null case and no object to wrap it in — the caller is by construction the viewer.
+   */
+  isHelpful: z.boolean(),
+  helpfulCount: z.number().int(),
+});
 
 // --- The author's own threads -----------------------------------------------
 //
@@ -353,37 +343,35 @@ export const ForumReplyHelpfulStateSchema = z
 // read by design, so without `/mine` the create response is the last thing an author ever sees of
 // their own thread — including a rejection, which stays `pending_review` and carries its reason.
 
-export const OwnForumThreadSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    board: z.enum(FORUM_BOARDS),
-    title: z.string(),
-    excerpt: z.string(),
-    state: z.enum(FORUM_THREAD_STATES),
-    replyCount: z.number().int(),
-    acceptedReplyId: z.string().nullable(),
-    /**
-     * When a moderator last decided on this thread, or `null` while it is still queued.
-     *
-     * `state === "pending_review"` WITH A NON-NULL `moderatedAt` IS A REJECTION, and it is the only
-     * way to tell one from a thread still waiting its turn. The pair is what the backend's own
-     * queue predicate reads, so the UI reads it the same way rather than inventing a `rejected`
-     * state the wire does not carry.
-     */
-    moderatedAt: IsoDateTimeSchema.nullable(),
-    /**
-     * The moderator's reason. Required on a rejection, so non-null whenever one happened.
-     *
-     * `decisionReason` IS THE WIRE'S SPELLING — this said `moderationNote`, which nothing sends.
-     * The column, the projection and the moderation body all say `decisionReason`; one spelling per
-     * concept, and the backend owns which one.
-     */
-    decisionReason: z.string().nullable(),
-    lastActivityAt: IsoDateTimeSchema,
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const OwnForumThreadSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  board: z.enum(FORUM_BOARDS),
+  title: z.string(),
+  excerpt: z.string(),
+  state: z.enum(FORUM_THREAD_STATES),
+  replyCount: z.number().int(),
+  acceptedReplyId: z.string().nullable(),
+  /**
+   * When a moderator last decided on this thread, or `null` while it is still queued.
+   *
+   * `state === "pending_review"` WITH A NON-NULL `moderatedAt` IS A REJECTION, and it is the only
+   * way to tell one from a thread still waiting its turn. The pair is what the backend's own
+   * queue predicate reads, so the UI reads it the same way rather than inventing a `rejected`
+   * state the wire does not carry.
+   */
+  moderatedAt: IsoDateTimeSchema.nullable(),
+  /**
+   * The moderator's reason. Required on a rejection, so non-null whenever one happened.
+   *
+   * `decisionReason` IS THE WIRE'S SPELLING — this said `moderationNote`, which nothing sends.
+   * The column, the projection and the moderation body all say `decisionReason`; one spelling per
+   * concept, and the backend owns which one.
+   */
+  decisionReason: z.string().nullable(),
+  lastActivityAt: IsoDateTimeSchema,
+  createdAt: IsoDateTimeSchema,
+});
 
 export const OwnForumThreadListPageSchema = cursorPageOf(OwnForumThreadSchema);
 
@@ -416,7 +404,7 @@ export interface CreateCommunityReportInput {
 // a reporter is told their claim was filed, and the queue it lands in is a moderator's read, not
 // theirs. Do not restore `state` here: it would invite copy that tells a reporter their report is
 // "open", which is a promise about somebody else's workload.
-export const CreatedCommunityReportSchema = z.object({ reportId: z.string() }).strip();
+export const CreatedCommunityReportSchema = z.object({ reportId: z.string() });
 
 // --- Moderation, gated by `moderate_content` --------------------------------
 //
@@ -427,27 +415,25 @@ export const CreatedCommunityReportSchema = z.object({ reportId: z.string() }).s
 // The gate is checked IN-SERVICE rather than by middleware, so a refusal is a tagged result the
 // UI can render rather than an opaque 403 — the same call Phase 16 made for `moderate_commerce`.
 
-export const AdminForumThreadSchema = z
-  .object({
-    id: z.string(),
-    slug: z.string(),
-    board: z.enum(FORUM_BOARDS),
-    title: z.string(),
-    body: z.string(),
-    state: z.enum(FORUM_THREAD_STATES),
-    authorDisplayName: z.string(),
-    /** Null is a real distinction: an individual poster, not a missing join. */
-    authorOrganizationName: z.string().nullable(),
-    replyCount: z.number().int(),
-    // NO `openReportCount`. Nothing sends one, and a count join for a field whose own comment said
-    // "zero is common and is not a verdict" is a query per row for a number nobody acts on. The
-    // report queue is its own surface with its own capability.
-    createdAt: IsoDateTimeSchema,
-    excerpt: z.string(),
-    acceptedReplyId: z.string().nullable(),
-    lastActivityAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const AdminForumThreadSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  board: z.enum(FORUM_BOARDS),
+  title: z.string(),
+  body: z.string(),
+  state: z.enum(FORUM_THREAD_STATES),
+  authorDisplayName: z.string(),
+  /** Null is a real distinction: an individual poster, not a missing join. */
+  authorOrganizationName: z.string().nullable(),
+  replyCount: z.number().int(),
+  // NO `openReportCount`. Nothing sends one, and a count join for a field whose own comment said
+  // "zero is common and is not a verdict" is a query per row for a number nobody acts on. The
+  // report queue is its own surface with its own capability.
+  createdAt: IsoDateTimeSchema,
+  excerpt: z.string(),
+  acceptedReplyId: z.string().nullable(),
+  lastActivityAt: IsoDateTimeSchema,
+});
 
 export const AdminForumThreadQueuePageSchema = cursorPageOf(AdminForumThreadSchema);
 
@@ -512,31 +498,27 @@ export type ModerateForumReplyInput =
  * decision with its own risk — a moderator who can see who reported whom is a moderator who can be
  * lobbied — and it should be made deliberately rather than by adding a field to a schema.
  */
-export const CommunityContentReportSchema = z
-  .object({
-    id: z.string(),
-    targetKind: z.enum(COMMUNITY_REPORT_TARGET_KINDS),
-    targetId: z.string(),
-    reason: z.enum(COMMUNITY_REPORT_REASONS),
-    detailText: z.string().nullable(),
-    status: z.enum(COMMUNITY_REPORT_STATES),
-    createdAt: IsoDateTimeSchema,
-    resolvedAt: IsoDateTimeSchema.nullable(),
-  })
-  .strip();
+export const CommunityContentReportSchema = z.object({
+  id: z.string(),
+  targetKind: z.enum(COMMUNITY_REPORT_TARGET_KINDS),
+  targetId: z.string(),
+  reason: z.enum(COMMUNITY_REPORT_REASONS),
+  detailText: z.string().nullable(),
+  status: z.enum(COMMUNITY_REPORT_STATES),
+  createdAt: IsoDateTimeSchema,
+  resolvedAt: IsoDateTimeSchema.nullable(),
+});
 
 export const CommunityContentReportQueuePageSchema = cursorPageOf(CommunityContentReportSchema);
 
 /** What moderating a REPLY answers with: the id and its new visibility, not the thread. */
-export const ModerateForumReplyResultSchema = z
-  .object({
-    replyId: z.string(),
-    state: z.enum(FORUM_REPLY_VISIBILITY_STATES),
-  })
-  .strip();
+export const ModerateForumReplyResultSchema = z.object({
+  replyId: z.string(),
+  state: z.enum(FORUM_REPLY_VISIBILITY_STATES),
+});
 
 /** What dismissing a report answers with: the id it acted on, and nothing else. */
-export const DismissedCommunityReportSchema = z.object({ reportId: z.string() }).strip();
+export const DismissedCommunityReportSchema = z.object({ reportId: z.string() });
 
 export interface ListCommunityContentReportsFilter {
   /** `status` IS THE WIRE'S SPELLING — `state` was a 422 that killed the whole read. */

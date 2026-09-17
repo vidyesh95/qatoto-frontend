@@ -45,6 +45,14 @@ import { formatCountLabel } from "@/lib/store/format";
 type TeardownEngineModule =
   typeof import("@/components/home/blueprints/teardowns/engine/blueprint-canvas");
 
+/**
+ * The engine chunk loader, kept at module scope because React Compiler cannot lower an `import()`
+ * expression inside a component. Still called only from the viewer effect.
+ */
+function loadTeardownEngineModule(): Promise<TeardownEngineModule> {
+  return import("@/components/home/blueprints/teardowns/engine/blueprint-canvas");
+}
+
 type TeardownViewerState =
   | { readonly status: "idle" }
   | { readonly status: "loading-engine" }
@@ -209,7 +217,7 @@ export default function TeardownExplorer({
 
       let engine: TeardownEngineModule;
       try {
-        engine = await import("@/components/home/blueprints/teardowns/engine/blueprint-canvas");
+        engine = await loadTeardownEngineModule();
       } catch {
         if (isMounted) {
           setViewerState({ status: "error", message: "The 3D engine could not be loaded." });

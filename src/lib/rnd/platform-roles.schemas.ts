@@ -16,14 +16,12 @@ export type PlatformRole = z.infer<typeof PlatformRoleSchema>;
  * feature release into a lockout. A caller that cares about one capability compares to a
  * literal, which is forward-compatible by construction.
  */
-export const StaffContextSchema = z
-  .object({
-    userId: z.string(),
-    email: z.string(),
-    platformRole: PlatformRoleSchema.nullable(),
-    capabilities: z.array(z.string()),
-  })
-  .strip();
+export const StaffContextSchema = z.object({
+  userId: z.string(),
+  email: z.string(),
+  platformRole: PlatformRoleSchema.nullable(),
+  capabilities: z.array(z.string()),
+});
 export type StaffContext = z.infer<typeof StaffContextSchema>;
 
 /**
@@ -34,30 +32,26 @@ export type StaffContext = z.infer<typeof StaffContextSchema>;
  * was made against; if the live role has drifted since, countersigning is a 409 rather than
  * a silent overwrite of somebody else's decision.
  */
-export const PlatformRoleProposalSchema = z
-  .object({
-    proposalId: z.string(),
-    subjectUserId: z.string(),
-    subjectEmail: z.string(),
-    subjectName: z.string(),
-    previousPlatformRole: PlatformRoleSchema.nullable(),
-    nextPlatformRole: PlatformRoleSchema.nullable(),
-    proposedByUserId: z.string(),
-    /** Null when the proposer's account is gone. Render the id, never "Unknown admin". */
-    proposedByName: z.string().nullable(),
-    proposedAt: z.string(),
-    proposeNote: z.string(),
-  })
-  .strip();
+export const PlatformRoleProposalSchema = z.object({
+  proposalId: z.string(),
+  subjectUserId: z.string(),
+  subjectEmail: z.string(),
+  subjectName: z.string(),
+  previousPlatformRole: PlatformRoleSchema.nullable(),
+  nextPlatformRole: PlatformRoleSchema.nullable(),
+  proposedByUserId: z.string(),
+  /** Null when the proposer's account is gone. Render the id, never "Unknown admin". */
+  proposedByName: z.string().nullable(),
+  proposedAt: z.string(),
+  proposeNote: z.string(),
+});
 export type PlatformRoleProposal = z.infer<typeof PlatformRoleProposalSchema>;
 
 /** One account as the grant screen sees it. Reachable only with `manage_platform_roles`. */
-export const PlatformRoleSubjectSchema = z
-  .object({
-    userId: z.string(),
-    email: z.string(),
-    name: z.string(),
-    platformRole: PlatformRoleSchema.nullable(),
-  })
-  .strip();
+export const PlatformRoleSubjectSchema = z.object({
+  userId: z.string(),
+  email: z.string(),
+  name: z.string(),
+  platformRole: PlatformRoleSchema.nullable(),
+});
 export type PlatformRoleSubject = z.infer<typeof PlatformRoleSubjectSchema>;

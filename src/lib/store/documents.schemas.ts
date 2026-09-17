@@ -16,15 +16,13 @@ import { z } from "zod";
  *
  * NO BYTES, NO STORAGE KEY, NO CIPHERTEXT. Metadata only, deliberately.
  */
-export const TradeDocumentSchema = z
-  .object({
-    documentId: z.string(),
-    mediaType: z.string(),
-    fileByteSize: z.number().int(),
-    fileName: z.string().nullable(),
-    createdAt: z.string(),
-  })
-  .strip();
+export const TradeDocumentSchema = z.object({
+  documentId: z.string(),
+  mediaType: z.string(),
+  fileByteSize: z.number().int(),
+  fileName: z.string().nullable(),
+  createdAt: z.string(),
+});
 
 export type TradeDocument = z.infer<typeof TradeDocumentSchema>;
 
@@ -39,7 +37,7 @@ export type TradeDocument = z.infer<typeof TradeDocumentSchema>;
  * The picker list is the readiness signal: `GET /commerce/documents` returns only `available`
  * documents, so a freshly uploaded file appears there once it has been scanned and not before.
  */
-export const UploadedTradeDocumentSchema = z.object({ documentId: z.string() }).strip();
+export const UploadedTradeDocumentSchema = z.object({ documentId: z.string() });
 
 export type UploadedTradeDocument = z.infer<typeof UploadedTradeDocumentSchema>;
 

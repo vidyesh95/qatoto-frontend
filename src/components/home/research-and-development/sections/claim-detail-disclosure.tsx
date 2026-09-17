@@ -116,6 +116,106 @@ export default function ClaimDetailDisclosure({
       </button>
     );
   }
+  function renderStep(step: VerificationStep) {
+    // The override REPLACES the status for the verdict when present, so it is what the
+    // badge must show — otherwise a reviewed step keeps advertising the machine's opinion.
+    const effectiveStatus = step.overriddenStatus ?? step.status;
+    const isOverriding = overridingStepId === step.id;
+
+    return (
+      <li key={step.id} className="space-y-1 rounded-lg bg-white/60 p-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm">{VERIFICATION_STEP_KIND_LABELS[step.stepKind]}</span>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${STEP_STATUS_BADGE_CLASS[effectiveStatus]}`}
+          >
+            {STEP_STATUS_LABELS[effectiveStatus]}
+            {step.overriddenStatus !== null && " (reviewed)"}
+          </span>
+        </div>
+
+        {step.findingSummary !== null && (
+          <p className="text-xs text-muted-foreground">{step.findingSummary}</p>
+        )}
+
+        {/* Provenance, always. A judgement whose model and confidence are hidden reads as
+            a platform ruling rather than as a machine opinion a human may overrule. */}
+        <p className="text-xs text-muted-foreground">
+          {step.modelName !== null && `${step.modelName} `}
+          {step.promptVersion !== null && `· prompt ${step.promptVersion} `}
+          {step.confidenceBps !== null && `· ${(step.confidenceBps / 100).toFixed(0)}% confidence`}
+        </p>
+
+        {step.overrideReason !== null && (
+          <p className="text-xs text-amber-800">Reviewer&apos;s reason: {step.overrideReason}</p>
+        )}
+
+        {canOverride(viewerProjectRole) && step.overriddenStatus === null && (
+          <>
+            <button
+              type="button"
+              onClick={() => setOverridingStepId(isOverriding ? null : step.id)}
+              className="cursor-pointer text-xs font-medium text-[#00696E]"
+            >
+              {isOverriding ? "Cancel" : "Override this judgement"}
+            </button>
+
+            {isOverriding && (
+              <form
+                className="space-y-2"
+                onSubmit={(submitEvent) => {
+                  submitEvent.preventDefault();
+                  overrideMutation.mutate({
+                    claimId,
+                    stepId: step.id,
+                    overriddenStatus,
+                    overrideReason,
+                  });
+                }}
+              >
+                <select
+                  value={overriddenStatus}
+                  onChange={(changeEvent) => {
+                    // Parsed, not cast: an unrecognized value reaching a `.strict()` body
+                    // schema is a 422 rather than an ignored field.
+                    const parsed = VerificationStepStatusSchema.safeParse(changeEvent.target.value);
+                    if (parsed.success) setOverriddenStatus(parsed.data);
+                  }}
+                  className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+                >
+                  {VERIFICATION_STEP_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {STEP_STATUS_LABELS[status]}
+                    </option>
+                  ))}
+                </select>
+                <textarea
+                  required
+                  rows={2}
+                  value={overrideReason}
+                  onChange={(changeEvent) => setOverrideReason(changeEvent.target.value)}
+                  placeholder="Why is the machine wrong here?"
+                  className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  You are correcting a judgement, not a number. The formula recomputes the minutes
+                  from the corrected step.
+                </p>
+                <button
+                  type="submit"
+                  disabled={overrideMutation.isPending}
+                  className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                >
+                  {overrideMutation.isPending ? "Recording…" : "Record the override"}
+                </button>
+                {overrideError !== null && <MutationErrorNotice error={overrideError} />}
+              </form>
+            )}
+          </>
+        )}
+      </li>
+    );
+  }
 
   return (
     <div className="mt-3 space-y-3 border-t border-[#CAC4D0]/40 pt-3">
@@ -270,105 +370,4 @@ export default function ClaimDetailDisclosure({
       )}
     </div>
   );
-
-  function renderStep(step: VerificationStep) {
-    // The override REPLACES the status for the verdict when present, so it is what the
-    // badge must show — otherwise a reviewed step keeps advertising the machine's opinion.
-    const effectiveStatus = step.overriddenStatus ?? step.status;
-    const isOverriding = overridingStepId === step.id;
-
-    return (
-      <li key={step.id} className="space-y-1 rounded-lg bg-white/60 p-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-sm">{VERIFICATION_STEP_KIND_LABELS[step.stepKind]}</span>
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${STEP_STATUS_BADGE_CLASS[effectiveStatus]}`}
-          >
-            {STEP_STATUS_LABELS[effectiveStatus]}
-            {step.overriddenStatus !== null && " (reviewed)"}
-          </span>
-        </div>
-
-        {step.findingSummary !== null && (
-          <p className="text-xs text-muted-foreground">{step.findingSummary}</p>
-        )}
-
-        {/* Provenance, always. A judgement whose model and confidence are hidden reads as
-            a platform ruling rather than as a machine opinion a human may overrule. */}
-        <p className="text-xs text-muted-foreground">
-          {step.modelName !== null && `${step.modelName} `}
-          {step.promptVersion !== null && `· prompt ${step.promptVersion} `}
-          {step.confidenceBps !== null && `· ${(step.confidenceBps / 100).toFixed(0)}% confidence`}
-        </p>
-
-        {step.overrideReason !== null && (
-          <p className="text-xs text-amber-800">Reviewer&apos;s reason: {step.overrideReason}</p>
-        )}
-
-        {canOverride(viewerProjectRole) && step.overriddenStatus === null && (
-          <>
-            <button
-              type="button"
-              onClick={() => setOverridingStepId(isOverriding ? null : step.id)}
-              className="cursor-pointer text-xs font-medium text-[#00696E]"
-            >
-              {isOverriding ? "Cancel" : "Override this judgement"}
-            </button>
-
-            {isOverriding && (
-              <form
-                className="space-y-2"
-                onSubmit={(submitEvent) => {
-                  submitEvent.preventDefault();
-                  overrideMutation.mutate({
-                    claimId,
-                    stepId: step.id,
-                    overriddenStatus,
-                    overrideReason,
-                  });
-                }}
-              >
-                <select
-                  value={overriddenStatus}
-                  onChange={(changeEvent) => {
-                    // Parsed, not cast: an unrecognized value reaching a `.strict()` body
-                    // schema is a 422 rather than an ignored field.
-                    const parsed = VerificationStepStatusSchema.safeParse(changeEvent.target.value);
-                    if (parsed.success) setOverriddenStatus(parsed.data);
-                  }}
-                  className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
-                >
-                  {VERIFICATION_STEP_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {STEP_STATUS_LABELS[status]}
-                    </option>
-                  ))}
-                </select>
-                <textarea
-                  required
-                  rows={2}
-                  value={overrideReason}
-                  onChange={(changeEvent) => setOverrideReason(changeEvent.target.value)}
-                  placeholder="Why is the machine wrong here?"
-                  className="w-full rounded-lg border border-[#CAC4D0] p-2 text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  You are correcting a judgement, not a number. The formula recomputes the minutes
-                  from the corrected step.
-                </p>
-                <button
-                  type="submit"
-                  disabled={overrideMutation.isPending}
-                  className="cursor-pointer rounded-full bg-[#00696E] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
-                >
-                  {overrideMutation.isPending ? "Recording…" : "Record the override"}
-                </button>
-                {overrideError !== null && <MutationErrorNotice error={overrideError} />}
-              </form>
-            )}
-          </>
-        )}
-      </li>
-    );
-  }
 }

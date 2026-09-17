@@ -43,6 +43,25 @@ type OwnThreadsViewState =
 
 export default function OwnForumThreadsPage() {
   const ownThreadsQuery = useOwnForumThreadsQuery();
+  function toOwnThreadsViewState(): OwnThreadsViewState {
+    if (ownThreadsQuery.isPending) return { status: "loading" };
+    // A thrown error is a transport that never resolved — distinct from a `success: false` payload.
+    if (ownThreadsQuery.isError) {
+      return { status: "error", message: "Your threads could not be loaded." };
+    }
+    const result = ownThreadsQuery.data;
+    if (result === undefined) return { status: "loading" };
+    if (!result.success) {
+      // A 401 is the only code that earns a sign-in prompt. A 404 must never render one — the
+      // backend answers 404 for "no such thing" and "not visible to you" with one code.
+      if (result.error.code === "401") {
+        return { status: "signInRequired", message: result.error.message };
+      }
+      return { status: "error", message: result.error.message };
+    }
+    if (result.data.items.length === 0) return { status: "empty" };
+    return { status: "ready", threads: result.data.items };
+  }
 
   return (
     <div className="mx-auto w-full max-w-3xl pb-10">
@@ -63,26 +82,6 @@ export default function OwnForumThreadsPage() {
       <div className="px-4 pt-6 lg:px-6">{renderOwnThreads(toOwnThreadsViewState())}</div>
     </div>
   );
-
-  function toOwnThreadsViewState(): OwnThreadsViewState {
-    if (ownThreadsQuery.isPending) return { status: "loading" };
-    // A thrown error is a transport that never resolved — distinct from a `success: false` payload.
-    if (ownThreadsQuery.isError) {
-      return { status: "error", message: "Your threads could not be loaded." };
-    }
-    const result = ownThreadsQuery.data;
-    if (result === undefined) return { status: "loading" };
-    if (!result.success) {
-      // A 401 is the only code that earns a sign-in prompt. A 404 must never render one — the
-      // backend answers 404 for "no such thing" and "not visible to you" with one code.
-      if (result.error.code === "401") {
-        return { status: "signInRequired", message: result.error.message };
-      }
-      return { status: "error", message: result.error.message };
-    }
-    if (result.data.items.length === 0) return { status: "empty" };
-    return { status: "ready", threads: result.data.items };
-  }
 }
 
 function renderOwnThreads(viewState: OwnThreadsViewState) {

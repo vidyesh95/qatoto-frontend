@@ -114,7 +114,7 @@ export function cancelPlatformRoleProposal(
     `/admin/platform-roles/proposals/${encodeURIComponent(proposalId)}`,
     "DELETE",
     undefined,
-    z.object({ proposalId: z.string() }).strip(),
+    z.object({ proposalId: z.string() }),
     options,
   );
 }

@@ -1,6 +1,6 @@
 // TRANSPORT: props-only — pure contract. Zod schemas for the /blueprints hero carousel.
 //
-// Every object is `.strip()`, so a backend that adds a field in a minor release does not
+// Every object is a plain `z.object`, which strips unknown keys in Zod 4, so a backend that adds a field in a minor release does not
 // blank the surface (CLAUDE.md Pattern 2).
 
 import { z } from "zod";
@@ -33,14 +33,12 @@ const HeroDestinationPathSchema = createSitePathSchema(512);
  * No `position` — the array order IS the order. `title` is both the overlay caption and the
  * image's alt text, which is what the mock this replaces already did.
  */
-export const PublicBlueprintHeroSlideSchema = z
-  .object({
-    id: z.string().min(1),
-    imageUrl: HeroImageSourceSchema,
-    title: z.string(),
-    destinationPath: HeroDestinationPathSchema.nullable(),
-  })
-  .strip();
+export const PublicBlueprintHeroSlideSchema = z.object({
+  id: z.string().min(1),
+  imageUrl: HeroImageSourceSchema,
+  title: z.string(),
+  destinationPath: HeroDestinationPathSchema.nullable(),
+});
 export type PublicBlueprintHeroSlide = z.infer<typeof PublicBlueprintHeroSlideSchema>;
 
 /** What `GET /blueprints/admin/hero-slides` returns — retired and scheduled rows included. */
@@ -53,7 +51,7 @@ export const AdminBlueprintHeroSlideSchema = PublicBlueprintHeroSlideSchema.exte
   updatedByUserId: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
-}).strip();
+});
 export type AdminBlueprintHeroSlide = z.infer<typeof AdminBlueprintHeroSlideSchema>;
 
 /**

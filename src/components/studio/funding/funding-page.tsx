@@ -31,19 +31,6 @@ import type { MyFoundedFundingRound } from "@/lib/rnd/funding.schemas";
 export default function StudioFundingPage() {
   const [page, setPage] = useState(1);
   const roundsQuery = useMyFoundedFundingRoundsQuery(page);
-
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold text-foreground">Funding</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Every round across every venture you founded. Amounts are <strong>committed pledges</strong>
-        , not money received — Qatoto holds no funds and charges nothing here.
-      </p>
-
-      {renderRounds()}
-    </div>
-  );
-
   function renderRounds() {
     if (roundsQuery.isPending) {
       return <p className="mt-6 text-sm text-muted-foreground">Loading…</p>;
@@ -121,6 +108,18 @@ export default function StudioFundingPage() {
       </>
     );
   }
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-semibold text-foreground">Funding</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Every round across every venture you founded. Amounts are <strong>committed pledges</strong>
+        , not money received — Qatoto holds no funds and charges nothing here.
+      </p>
+
+      {renderRounds()}
+    </div>
+  );
 }
 
 /** The backend's own default page size. A smaller number here would hide a page of rounds. */

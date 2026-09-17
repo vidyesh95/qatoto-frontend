@@ -115,18 +115,16 @@ export type CommerceModerationActionSource = (typeof COMMERCE_MODERATION_ACTION_
  * as a plain string here and narrowed by `resolveModerationTarget` below, because a `.min(1)` here
  * would fail the parse of the whole page over one unresolvable row.
  */
-export const CommerceContentReportSchema = z
-  .object({
-    id: z.string(),
-    targetKind: z.enum(COMMERCE_CONTENT_TARGET_KINDS),
-    targetId: z.string(),
-    reason: z.enum(COMMERCE_REPORT_REASONS),
-    detailText: z.string().nullable(),
-    status: z.enum(COMMERCE_REPORT_STATUSES),
-    createdAt: IsoDateTimeSchema,
-    resolvedAt: IsoDateTimeSchema.nullable(),
-  })
-  .strip();
+export const CommerceContentReportSchema = z.object({
+  id: z.string(),
+  targetKind: z.enum(COMMERCE_CONTENT_TARGET_KINDS),
+  targetId: z.string(),
+  reason: z.enum(COMMERCE_REPORT_REASONS),
+  detailText: z.string().nullable(),
+  status: z.enum(COMMERCE_REPORT_STATUSES),
+  createdAt: IsoDateTimeSchema,
+  resolvedAt: IsoDateTimeSchema.nullable(),
+});
 
 export type CommerceContentReport = z.infer<typeof CommerceContentReportSchema>;
 
@@ -137,17 +135,15 @@ export type CommerceContentReport = z.infer<typeof CommerceContentReportSchema>;
  *
  * `targetId` is genuinely `null`-able here, unlike the report's `""`.
  */
-export const CommerceModerationActionSchema = z
-  .object({
-    id: z.string(),
-    actionKind: z.enum(COMMERCE_MODERATION_ACTION_KINDS),
-    targetKind: z.enum(COMMERCE_CONTENT_TARGET_KINDS),
-    targetId: z.string().nullable(),
-    actionSource: z.enum(COMMERCE_MODERATION_ACTION_SOURCES),
-    reasonNote: z.string().nullable(),
-    createdAt: IsoDateTimeSchema,
-  })
-  .strip();
+export const CommerceModerationActionSchema = z.object({
+  id: z.string(),
+  actionKind: z.enum(COMMERCE_MODERATION_ACTION_KINDS),
+  targetKind: z.enum(COMMERCE_CONTENT_TARGET_KINDS),
+  targetId: z.string().nullable(),
+  actionSource: z.enum(COMMERCE_MODERATION_ACTION_SOURCES),
+  reasonNote: z.string().nullable(),
+  createdAt: IsoDateTimeSchema,
+});
 
 export type CommerceModerationAction = z.infer<typeof CommerceModerationActionSchema>;
 

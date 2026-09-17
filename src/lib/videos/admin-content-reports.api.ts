@@ -30,32 +30,30 @@ import {
   type VideoReportStatus,
 } from "@/lib/videos/content-reports.api";
 
-export const VideoReportQueueRowSchema = z
-  .object({
-    id: z.string(),
-    videoId: z.string(),
-    videoTitle: z.string().nullable(),
-    creatorId: z.string().nullable(),
-    creatorName: z.string().nullable(),
-    reason: VideoReportReasonSchema,
-    detailText: z.string().nullable(),
-    reporterUserId: z.string().nullable(),
-    status: VideoReportStatusSchema,
-    resolvedAt: z.iso.datetime().nullable(),
-    resolutionNote: z.string().nullable(),
-    createdAt: z.iso.datetime(),
-    /**
-     * How many OPEN reports this video carries.
-     *
-     * CONTEXT, NOT A THRESHOLD. Nothing on this platform acts on this number — there is no
-     * automatic hide, by design. It is here because "this is the fourth person to flag it"
-     * changes how a reviewer reads a borderline case, and a moderator with no sense of
-     * volume decides each report as though it were the only one.
-     */
-    openReportCount: z.number(),
-    moderationVisibilityState: z.enum(["visible", "hidden_by_moderator"]),
-  })
-  .strip();
+export const VideoReportQueueRowSchema = z.object({
+  id: z.string(),
+  videoId: z.string(),
+  videoTitle: z.string().nullable(),
+  creatorId: z.string().nullable(),
+  creatorName: z.string().nullable(),
+  reason: VideoReportReasonSchema,
+  detailText: z.string().nullable(),
+  reporterUserId: z.string().nullable(),
+  status: VideoReportStatusSchema,
+  resolvedAt: z.iso.datetime().nullable(),
+  resolutionNote: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+  /**
+   * How many OPEN reports this video carries.
+   *
+   * CONTEXT, NOT A THRESHOLD. Nothing on this platform acts on this number — there is no
+   * automatic hide, by design. It is here because "this is the fourth person to flag it"
+   * changes how a reviewer reads a borderline case, and a moderator with no sense of
+   * volume decides each report as though it were the only one.
+   */
+  openReportCount: z.number(),
+  moderationVisibilityState: z.enum(["visible", "hidden_by_moderator"]),
+});
 export type VideoReportQueueRow = z.infer<typeof VideoReportQueueRowSchema>;
 
 /**
@@ -64,12 +62,10 @@ export type VideoReportQueueRow = z.infer<typeof VideoReportQueueRowSchema>;
  * `getPaginated` would read `data` and `pagination` and discard everything else — and there
  * is no `pagination` here at all, because a keyset read has no honest `total`.
  */
-const VideoReportQueuePageSchema = z
-  .object({
-    data: z.array(VideoReportQueueRowSchema),
-    nextCursor: z.string().nullable(),
-  })
-  .strip();
+const VideoReportQueuePageSchema = z.object({
+  data: z.array(VideoReportQueueRowSchema),
+  nextCursor: z.string().nullable(),
+});
 
 export interface ListVideoReportsFilter {
   readonly status?: VideoReportStatus;
@@ -88,8 +84,8 @@ export function listVideoReportQueue(
   );
 }
 
-const DecisionAcceptedSchema = z.object({ reportId: z.string() }).strip();
-const RestoreAcceptedSchema = z.object({ videoId: z.string() }).strip();
+const DecisionAcceptedSchema = z.object({ reportId: z.string() });
+const RestoreAcceptedSchema = z.object({ videoId: z.string() });
 
 /**
  * `POST /videos/admin/content-reports/:reportId/decisions`.

@@ -675,13 +675,11 @@ export function moderateProgramPost(
  * backend nests all three — which is why this uses `getJson` with an object schema rather than
  * `getCursorSiblingList`.
  */
-export const ModerationQueuePageSchema = z
-  .object({
-    reports: z.array(ContentReportSchema),
-    nextCursor: z.string().nullable(),
-    queuedPaperCount: z.number(),
-  })
-  .strip();
+export const ModerationQueuePageSchema = z.object({
+  reports: z.array(ContentReportSchema),
+  nextCursor: z.string().nullable(),
+  queuedPaperCount: z.number(),
+});
 export type ModerationQueuePage = z.infer<typeof ModerationQueuePageSchema>;
 
 export function listProgramModerationQueue(

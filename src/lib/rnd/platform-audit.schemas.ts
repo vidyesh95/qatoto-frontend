@@ -22,24 +22,22 @@ import { z } from "zod";
  * `entryHash` is the full digest. Any short form a UI shows is a rendering — never key a
  * list or an equality test on it.
  */
-export const PlatformAuditEntrySchema = z
-  .object({
-    id: z.string(),
-    sequenceNumber: z.number(),
-    eventKind: z.string(),
-    actorUserId: z.string(),
-    /** Null when the actor's account is gone. Render the id, never "Unknown moderator". */
-    actorName: z.string().nullable(),
-    /** The role AT THE TIME. A later revocation must not rewrite what the log says. */
-    actorRoleSnapshot: z.string(),
-    actionLabel: z.string(),
-    targetLabel: z.string(),
-    detailNote: z.string(),
-    occurredAt: z.string(),
-    entryHash: z.string(),
-    previousEntryHash: z.string().nullable(),
-  })
-  .strip();
+export const PlatformAuditEntrySchema = z.object({
+  id: z.string(),
+  sequenceNumber: z.number(),
+  eventKind: z.string(),
+  actorUserId: z.string(),
+  /** Null when the actor's account is gone. Render the id, never "Unknown moderator". */
+  actorName: z.string().nullable(),
+  /** The role AT THE TIME. A later revocation must not rewrite what the log says. */
+  actorRoleSnapshot: z.string(),
+  actionLabel: z.string(),
+  targetLabel: z.string(),
+  detailNote: z.string(),
+  occurredAt: z.string(),
+  entryHash: z.string(),
+  previousEntryHash: z.string().nullable(),
+});
 export type PlatformAuditEntry = z.infer<typeof PlatformAuditEntrySchema>;
 
 /**
@@ -50,13 +48,11 @@ export type PlatformAuditEntry = z.infer<typeof PlatformAuditEntrySchema>;
  * which is gapless and monotonic, so a page boundary cannot skip a decision the way an
  * offset can when a row lands mid-read.
  */
-export const PlatformAuditPageSchema = z
-  .object({
-    rows: z.array(PlatformAuditEntrySchema),
-    total: z.number(),
-    nextSequence: z.number().nullable(),
-  })
-  .strip();
+export const PlatformAuditPageSchema = z.object({
+  rows: z.array(PlatformAuditEntrySchema),
+  total: z.number(),
+  nextSequence: z.number().nullable(),
+});
 export type PlatformAuditPage = z.infer<typeof PlatformAuditPageSchema>;
 
 /** The two kinds both taxonomies write. Shared deliberately — a paper-specific pair would

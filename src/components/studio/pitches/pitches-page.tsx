@@ -45,23 +45,6 @@ import type { Pitch } from "@/lib/rnd/pitches.schemas";
 export default function StudioPitchesPage() {
   const [page, setPage] = useState(1);
   const pitchesQuery = useMyPitchesQuery(page, undefined);
-
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold text-foreground">Pitches</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Publish an idea to people who might fund it. Qatoto lists your pitch and links out —{" "}
-        <strong>funding happens off Qatoto</strong>, wherever your link points.
-      </p>
-
-      <div className="mt-4 max-w-2xl">
-        <PitchDisclaimer />
-      </div>
-
-      {renderPitches()}
-    </div>
-  );
-
   function renderPitches() {
     if (pitchesQuery.isPending) {
       return <p className="mt-6 text-sm text-muted-foreground">Loading…</p>;
@@ -134,6 +117,22 @@ export default function StudioPitchesPage() {
       </>
     );
   }
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-semibold text-foreground">Pitches</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Publish an idea to people who might fund it. Qatoto lists your pitch and links out —{" "}
+        <strong>funding happens off Qatoto</strong>, wherever your link points.
+      </p>
+
+      <div className="mt-4 max-w-2xl">
+        <PitchDisclaimer />
+      </div>
+
+      {renderPitches()}
+    </div>
+  );
 }
 
 function PitchCard({ pitch }: { readonly pitch: Pitch }) {
