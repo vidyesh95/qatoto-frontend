@@ -1,5 +1,5 @@
-// TRANSPORT: client-query — "Add to cart" writes through React Query; "Request a quote" is a real
-// link to the RFQ composer; only "Buy now" is still inert, and the comment on it says why.
+// TRANSPORT: client-query — "Add to cart" and "Buy now" both write through React Query; "Request a
+// quote" is a real link to the RFQ composer. All three controls are live.
 "use client";
 
 // The three buy CTAs — rendered twice on the PDP: in the mobile/tablet fixed bottom bar and inline at
@@ -24,6 +24,7 @@
 // refuses or prices differently than expected.
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import MutationNotice from "@/components/home/store/shared/mutation-notice";
 import { useProductSelection } from "@/components/home/store/sections/product-selection-context";
@@ -102,6 +103,7 @@ export default function BuyActionButtons({
 
   // `useCartQuery`, not the navbar's badge hook: this one refetches on mount, and a stale quantity is
   // what the addition would be computed from.
+  const router = useRouter();
   const cartQuery = useCartQuery({ isEnabled: isSignedIn });
   const setCartItem = useSetCartItem();
 
@@ -132,6 +134,43 @@ export default function BuyActionButtons({
         isSample: false,
       },
     });
+  };
+
+  /**
+   * "BUY NOW" IS ADD-THEN-GO, AND THE ADD IS AWAITED.
+   *
+   * The line has to EXIST before checkout can name it: prepare selects cart lines by tuple, so
+   * navigating before the write lands would arrive at a checkout scoped to a line that is not
+   * there yet and be refused with `CHECKOUT_ITEMS_NOT_IN_CART`.
+   *
+   * IT REUSES `useSetCartItem` rather than adding a second write path, which means it inherits the
+   * read-modify-write above: buying 50 of something a colleague already has 120 of in the shared
+   * organization cart checks out 170, not 50. That is the same arithmetic "Add to cart" does, and
+   * the alternative — a private quantity this button alone knows about — is a second cart.
+   */
+  const handleBuyNowClick = () => {
+    if (cart === null) return;
+    const existingQuantity = findBulkCartLine(cart, productId, variantId)?.quantity ?? 0;
+    setCartItem.mutate(
+      {
+        productId,
+        input: {
+          quantity: existingQuantity + quantity,
+          ...(variantId === null ? {} : { variantId }),
+          isSample: false,
+        },
+      },
+      {
+        onSuccess: (result) => {
+          // A refusal is a resolved mutation, not an error. Staying put leaves the reason on
+          // screen; navigating would replace it with a checkout that cannot name the line.
+          if (!result.success) return;
+          const parameters = new URLSearchParams({ buyNow: productId });
+          if (variantId !== null) parameters.set("variantId", variantId);
+          router.push(`/checkout?${parameters.toString()}`);
+        },
+      },
+    );
   };
 
   const addResult = setCartItem.data;
@@ -195,17 +234,22 @@ export default function BuyActionButtons({
         >
           {setCartItem.isPending ? "Adding…" : "Add to cart"}
         </button>
-        {/* INERT, DELIBERATELY, AND THIS ONE IS ABOUT MONEY. "Buy now" would have to add the line and
-            send the buyer to `/checkout` — and checkout prepares the ENTIRE cart: it reserves stock
-            against every other seller's lines and confirms into one order per counterparty. A button
-            labelled as buying this chair that reserves stock across three sellers is a false
-            statement about what the buyer just committed to. It stays inert until there is a
-            single-line checkout to send it to. */}
+        {/* LIVE SINCE THE CHECKOUT COULD BE SCOPED. This used to be inert, and the reason was that
+            checkout prepared the ENTIRE cart — it reserved stock against every other seller's lines
+            and confirmed into one order per counterparty, so a button labelled as buying this chair
+            was a false statement about what the buyer had just committed to. `checkout/prepare` now
+            takes an `items` selection, so this names its own line and nothing else moves.
+
+            IT CARRIES THE SAME GATE AS "ADD TO CART", and that matters independently: while it was
+            inert it was also the ONLY ungated control of the three, so it rendered as the most
+            prominent button on the page and did nothing when a signed-out visitor pressed it. */}
         <button
           type="button"
-          className="flex-1 rounded-full bg-[#00696E] px-4 py-1.5 text-xs font-medium text-white"
+          onClick={handleBuyNowClick}
+          disabled={!canAddToCart}
+          className="flex-1 rounded-full bg-[#00696E] px-4 py-1.5 text-xs font-medium text-white disabled:opacity-40"
         >
-          Buy now
+          {setCartItem.isPending ? "Starting…" : "Buy now"}
         </button>
       </div>
 

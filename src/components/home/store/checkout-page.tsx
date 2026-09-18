@@ -71,12 +71,37 @@ type CheckoutStep =
   | { status: "reserved"; prepare: CheckoutPrepare; idempotencyKey: string }
   | { status: "confirmed"; confirmation: ConfirmCheckout };
 
-export default function CheckoutPage() {
+export default function CheckoutPage({
+  buyNowProductId = null,
+  buyNowVariantId = null,
+}: {
+  /** `?buyNow=` — scopes this checkout to one cart line. Null means the whole cart. */
+  readonly buyNowProductId?: string | null;
+  readonly buyNowVariantId?: string | null;
+} = {}) {
   const cartQuery = useCartQuery();
   const prepareCheckout = usePrepareCheckout();
   const confirmCheckout = useConfirmCheckout();
 
   const [step, setStep] = useState<CheckoutStep>({ status: "review" });
+
+  /**
+   * WHAT THIS CHECKOUT COVERS. `undefined` means the whole cart, which is what the cart page's
+   * "Continue to checkout" produces and what every prepare did before "Buy now" existed.
+   *
+   * Built here rather than in each handler because BOTH prepare calls need it — the initial one and
+   * the re-prepare that follows a freight-mode choice. A re-prepare that dropped the scope would
+   * quietly widen the checkout to the whole cart at the moment the buyer picked a shipping option.
+   */
+  const buyNowItems =
+    buyNowProductId === null
+      ? undefined
+      : [
+          {
+            productId: buyNowProductId,
+            ...(buyNowVariantId === null ? {} : { variantId: buyNowVariantId }),
+          },
+        ];
 
   /**
    * PREPARE HAS ITS OWN KEY, and it is a different key from the confirm's.
@@ -117,7 +142,13 @@ export default function CheckoutPage() {
     const rePrepareKey = newIdempotencyKey();
     setPrepareIdempotencyKey(rePrepareKey);
     prepareCheckout.mutate(
-      { idempotencyKey: rePrepareKey, requestedFreightMode: mode },
+      {
+        idempotencyKey: rePrepareKey,
+        requestedFreightMode: mode,
+        // The scope survives a re-prepare, or picking a shipping mode would silently widen this
+        // checkout from one line to the whole cart.
+        ...(buyNowItems === undefined ? {} : { items: buyNowItems }),
+      },
       {
         onSuccess: (result) => {
           if (!result.success) return;
@@ -137,6 +168,7 @@ export default function CheckoutPage() {
       {
         idempotencyKey: prepareIdempotencyKey,
         ...(requestedFreightMode === null ? {} : { requestedFreightMode }),
+        ...(buyNowItems === undefined ? {} : { items: buyNowItems }),
       },
       {
         onSuccess: (result) => {
@@ -173,6 +205,22 @@ export default function CheckoutPage() {
     <div className="mx-auto w-full max-w-3xl pb-10">
       <header className="px-4 pt-4 lg:px-6">
         <h1 className="font-serif text-2xl font-semibold text-[#191C1C] md:text-3xl">Checkout</h1>
+        {/*
+         * ⚠️ A SCOPED CHECKOUT MUST SAY SO. Arriving here from "Buy now" and seeing one line when
+         * the cart holds five, with no explanation, is the same category of false statement the
+         * inert Buy-now button existed to avoid — it just points the other way. The link out is
+         * part of it: a buyer who meant to buy everything needs somewhere to go that is not the
+         * back button.
+         */}
+        {buyNowItems !== undefined && (
+          <p className="mt-1 text-sm text-[#3F4949]">
+            Buying one item. The rest of your cart is untouched and stays there.{" "}
+            <Link href="/cart" className="underline">
+              Check out your whole cart instead
+            </Link>
+            .
+          </p>
+        )}
       </header>
 
       {renderStep({

@@ -361,8 +361,35 @@ export interface RemoveCartItemInput {
   readonly isSample?: boolean;
 }
 
+/**
+ * One cart line, named the way this API names lines everywhere else.
+ *
+ * A TUPLE RATHER THAN AN ID, because the cart projection has no line id to send —
+ * `CommerceCartItemSchema` carries `productId`, `variantId` and `isSample` and nothing else that
+ * identifies a row. It is exact rather than a guess: the cart is UNIQUE on
+ * `(cartId, productId, coalesce(variantId,''), isSample)`, so this names at most one line. It is
+ * also the same tuple `PUT`/`DELETE /commerce/cart/items/:productId` already address a line with.
+ */
+export interface CheckoutItemSelector {
+  readonly productId: string;
+  readonly variantId?: string;
+  readonly isSample?: boolean;
+}
+
 export interface PrepareCheckoutInput {
   readonly deliveryAddressId?: string;
+  /**
+   * WHICH LINES THIS CHECKOUT COVERS. Omitting it means the WHOLE CART, which is what the cart
+   * page does and what every caller did before "Buy now" existed.
+   *
+   * ⚠️ OMITTED AND EMPTY ARE NOT THE SAME THING. `[]` is a 422, deliberately: a client that
+   * computed a selection and got nothing must not fall through to buying everything.
+   *
+   * ⚠️ EVERY ENTRY MUST MATCH A LINE OR THE WHOLE PREPARE IS REFUSED with
+   * `CHECKOUT_ITEMS_NOT_IN_CART` (422, naming the products). It does not quietly buy the subset
+   * that matched — that would charge for a different set than the one named.
+   */
+  readonly items?: readonly CheckoutItemSelector[];
   /**
    * A45. How the buyer is asking for the goods to travel.
    *

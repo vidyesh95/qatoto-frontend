@@ -36,6 +36,7 @@ import {
   setCartItem,
 } from "@/lib/store/cart.api";
 import type {
+  CheckoutItemSelector,
   CheckoutPrepare,
   CommerceCart,
   ConfirmCheckout,
@@ -192,17 +193,22 @@ export function usePrepareCheckout(): UseMutationResult<
     readonly idempotencyKey: string;
     readonly deliveryAddressId?: string;
     readonly requestedFreightMode?: FreightMode;
+    /** Absent means the WHOLE CART. See `PrepareCheckoutInput`. */
+    readonly items?: readonly CheckoutItemSelector[];
   }
 > {
   return useMutation({
     // A45. RE-PREPARING WITH A DIFFERENT MODE IS A DIFFERENT REQUEST, and the caller mints a fresh
     // idempotency key for it — replaying the first key would return the first prepare's body and
     // the buyer's new choice would silently vanish.
-    mutationFn: ({ idempotencyKey, deliveryAddressId, requestedFreightMode }) =>
+    mutationFn: ({ idempotencyKey, deliveryAddressId, requestedFreightMode, items }) =>
       prepareCheckout(
         {
           ...(deliveryAddressId === undefined ? {} : { deliveryAddressId }),
           ...(requestedFreightMode === undefined ? {} : { requestedFreightMode }),
+          // Spread rather than passed through: `items: undefined` would serialise as a present key
+          // and the backend body is `.strict()`.
+          ...(items === undefined ? {} : { items }),
         },
         { headers: { "Idempotency-Key": idempotencyKey } },
       ),
