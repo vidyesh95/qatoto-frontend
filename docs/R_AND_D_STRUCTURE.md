@@ -650,6 +650,11 @@ Two things this surface currently renders that the contract contradicts, both on
 >
 > ⏳ **Still owed:** the submit itself. `POST /discovery/problem-reports` needs
 > `requireIdentifiedUser` and lat/lng from a place picker, neither of which exists on this surface.
+>
+> 📖 **Production Architecture Specification**: See [docs/CIVIC_PULSE_PROBLEM_MAPPING.md](./CIVIC_PULSE_PROBLEM_MAPPING.md)
+> and companion documents: [docs/PROBLEM_TAXONOMY.md](./PROBLEM_TAXONOMY.md), [docs/FEASIBILITY_MODEL.md](./FEASIBILITY_MODEL.md),
+> [docs/GEOLOCATION_PRIVACY.md](./GEOLOCATION_PRIVACY.md), [docs/DATA_RETENTION.md](./DATA_RETENTION.md), and
+> [docs/MAP_TILE_FALLBACK.md](./MAP_TILE_FALLBACK.md).
 
 ---
 
