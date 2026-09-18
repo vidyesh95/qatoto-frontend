@@ -25,7 +25,7 @@ and `git log` are the record of what was built and why.
 - **Payment Gateway Integration** — **Razorpay is SHIPPED** (adapter, both signature checks, webhook inbox, Standard Checkout modal). Stripe is an enum label with no implementation, and **neither provider may run in production until a marketplace split exists** — without one a captured payment lands in Qatoto's own account, which is the custody §14 refused. See §1.
 - **"Buy Now" Checkout** — Direct single-product checkout bypassing the multi-seller cart.
 - **Four Minor Store Items** — Service-offering coverage read, `standardCode` filter, `viewer.canDelete` on Q&A, and `DELETE /products/:id` 500 on customized listings.
-- **§18 (Provider freight rate cards)** — The freight tables are empty because only `moderate_commerce` may write them. Give approved forwarders provider-scoped write routes and a Studio composer so they publish the lanes they already sell.
+- **§18 (Provider freight rate cards)** — **Backend SHIPPED.** The five provider-scoped write routes exist; what is left is the Studio composer and its paste box. A forwarder still cannot publish a lane from the UI.
 
 **Content & Launch Blockers:**
 
@@ -397,10 +397,13 @@ answers `no_active_rate_card`.
 not a booking and confers no capacity (§19.6). Freight is arranged between the buyer and the
 forwarder; the checkout line reads "Not charged — arranged separately" and keeps reading it.
 
-#### Backend — one new 5-file module
+#### Backend — **SHIPPED.** One new 5-file module, plus one the design did not foresee
 
 `src/modules/store/fulfillment/commerce-provider-freight-rates.{routes,controller,service,schemas}.ts`
-plus `-error-response.ts`, mirroring `commerce-freight-rates.*` exactly.
+plus `-error-response.ts`, mirroring `commerce-freight-rates.*` exactly — and
+`commerce-freight-rate-card-projection.ts`, which the staff service's private projection,
+band-write gate and supersession transaction moved into so both surfaces share one copy rather
+than two that can drift.
 
 | Route                                                                  | Notes                                                         |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------- |
@@ -413,16 +416,33 @@ plus `-error-response.ts`, mirroring `commerce-freight-rates.*` exactly.
 by country and commodity and is platform-wide. A forwarder is not a broker. Dwell stays
 `moderate_commerce`.
 
-Guards: `requireAuth` + `requireActiveCommerceOrganization` on the route, then **two in-service
-assertions** (the same placement `moderate_commerce` already uses in `commerce-freight-rates.routes.ts`):
+Guards, as shipped: `requireAuth` + **`requireActiveProviderCommerceOrganization`** on the route
+(the design said the plain variant; the provider one is what `/commerce/provider/rfqs` already
+carries and it narrows further), then **two in-service assertions** (the same placement
+`moderate_commerce` already uses in `commerce-freight-rates.routes.ts`):
 
 1. the caller's active organization owns the card's `providerOrganizationId`;
-2. that organization holds an **approved** provider profile of kind `freight_forwarder` or
-   `logistics_operator`.
+2. that organization holds a **`verified`** provider kind link of `freight_forwarder` or
+   `logistics_operator` — strictly `verified`, not the directory's laxer
+   "not rejected, not suspended".
+
+⚠️ **ANOTHER PROVIDER'S CARD ANSWERS `404`, NOT `403`.** A 403 would confirm the card exists,
+which makes the surface an id oracle for a rival's lane portfolio. The composer must not read a
+404 as "deleted" — it also means "not yours".
+
+⚠️ **UNTIL SOME FORWARDER IS `verified` FOR ONE OF THOSE KINDS, EVERY CALL IS A CORRECT 403.**
+That is the remaining blocker and it is an onboarding one, not a code one.
 
 ⚠️ **`providerOrganizationId` IS DERIVED FROM THE SESSION AND NEVER READ FROM THE BODY.** A
-submitted one lets a provider author a competitor's tariff, and `.strict()` must refuse the field
-rather than ignore it.
+submitted one lets a provider author a competitor's tariff, and `.strict()` refuses the field
+rather than ignoring it.
+
+⚠️ **`sourceForwarderName` IS DERIVED TOO, AND IS ALSO REFUSED IN A BODY.** The server writes the
+caller's own organization display name. The composer must NOT render a "forwarder name" input —
+it would 422 the whole submission.
+
+Both refusals arrive as `errors.form` naming the key, not as a field-keyed error, because a
+`.strict()` rejection is an object-level parse issue.
 
 Writes carry `compactBody` + `idempotency({ scope: "active_organization" })` and a new
 read/write limiter pair through `createLimiter` (`src/middleware/rate-limit.ts`). Postgres-backed,
@@ -444,7 +464,9 @@ publish every unreviewed card instantly.
 
 #### Three traps the composer must close, all invisible until they have cost a lane
 
-1. **`validFrom` is REQUIRED and must be in the future.** The admin controller defaults it to
+1. **`validFrom` is REQUIRED and must be in the future** — enforced at the schema AND re-checked
+   in the service against the write's own clock, so a composer that posts a `validFrom` seconds
+   away can still be refused. The admin controller defaults it to
    `new Date()`, and a defaulted card is in force the instant it exists —
    `assertCardAcceptsBreakWrites` then refuses both `/breaks` routes forever with
    `409 COMMERCE_FREIGHT_RATE_CARD_IN_FORCE`. `validFrom` is absent from every PATCH schema and
@@ -455,6 +477,9 @@ publish every unreviewed card instantly.
    buyer as an empty delivery sheet, indistinguishable from having loaded nothing at all. Block
    submission on it; the predicate already exists as `hasZeroWeightFloorBand`
    (`src/lib/store/admin-freight.schemas.ts`).
+   ⚠️ **THE SERVER ENFORCES THIS ON `PATCH .../breaks` TOO**, which the design did not spell out —
+   replace-the-set is the only write that can DELETE the floor off a card that already had one, so
+   the band editor must block that edit as well, not just the create form.
 3. **`volumetricDivisorCm3PerKg` is per card, bounded 100–20000, and must not be defaulted.** A road
    divisor typed onto an air card is inside the bound and silently underbills every bulky
    consignment. Show mode-shaped guidance (ocean W/M 1000, road ~3000, air 5000–6000) and let the
@@ -522,5 +547,5 @@ Build the backend half alone first — the frontend has nothing to show until th
 
 - **Legal Entity Incorporation**: Settle legal name and jurisdiction to update `src/lib/site.ts`.
 - **Payment Gateway Priority**: Confirm whether Stripe (international) or Razorpay (India) should be wired first.
-- ~~**Freight Strategy**~~: **Settled 2026-09-18 — §18.** Neither. Rate cards are not purchased and sellers do not set flat rates (a seller flat rate makes the seller the freight principal and can express neither a customs leg nor a two-leg journey). Approved forwarders author their own lanes through provider-scoped write routes.
+- ~~**Freight Strategy**~~: **Settled 2026-09-18 — §18; backend shipped the same day.** Neither. Rate cards are not purchased and sellers do not set flat rates (a seller flat rate makes the seller the freight principal and can express neither a customs leg nor a two-leg journey). Approved forwarders author their own lanes through provider-scoped write routes.
 - **Uncovered Inland Leg Freight Rule**: Settled in §16 — covered legs compose into `partialJourneys[]` with the missing leg named.
