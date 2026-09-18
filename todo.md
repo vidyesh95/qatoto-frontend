@@ -18,7 +18,6 @@ and `git log` are the record of what was built and why.
 **Blocked on a purchase / external vendor:**
 
 - **§11 (SMS provider)** — Phone number verification in Account Settings requires contracting an SMS gateway (e.g. Twilio/Msg91).
-- **§18 (Freight rate cards)** — Forwarder rate cards for international shipping lanes need to be purchased/populated.
 - **Brand SVG Assets** — WhatsApp, X, and LinkedIn brand marks in `public/icons` for the share sheet.
 
 **Commercial & Payment Rail (Top priority open build):**
@@ -26,6 +25,7 @@ and `git log` are the record of what was built and why.
 - **Payment Gateway Integration** — Stripe (international card/bank rail) and Razorpay (India UPI/cards rail). The `fake` adapter is refuse-closed in production; real provider adapters, webhooks, and frontend checkout modals are unbuilt.
 - **"Buy Now" Checkout** — Direct single-product checkout bypassing the multi-seller cart.
 - **Four Minor Store Items** — Service-offering coverage read, `standardCode` filter, `viewer.canDelete` on Q&A, and `DELETE /products/:id` 500 on customized listings.
+- **§18 (Provider freight rate cards)** — The freight tables are empty because only `moderate_commerce` may write them. Give approved forwarders provider-scoped write routes and a Studio composer so they publish the lanes they already sell.
 
 **Content & Launch Blockers:**
 
@@ -35,7 +35,7 @@ and `git log` are the record of what was built and why.
 **Platform & Media Capabilities:**
 
 - **Video Transcripts & Paywalls** — Transcripts are mock placeholders (no Speech-to-Text ASR pipeline or table); `isPremium` has no entitlement or paywall model in the backend.
-- **Third-Party Carrier & Escrow Adapters** — Logistics and escrow adapters are currently deterministic fakes.
+- **Third-Party Escrow & FX Adapters** — Escrow and FX adapters are deterministic fakes. The **logistics** adapter is a fake on purpose and stays one — see §4.
 
 **Legal & Compliance:**
 
@@ -57,12 +57,6 @@ The settings panel renders read-only and explains that phone verification is not
 `sendOTP` implementation and there is no SMS provider in `src/config/index.ts` or `.env.example` —
 the only OTP delivery configured is Brevo, which is email. Configure an SMS provider (Twilio,
 AWS SNS, Msg91, etc.), configure the Better Auth plugin, and add the migration.
-
-### 18. Freight rate data
-
-`delivery-sheet.tsx` and shipment leg calculation work. The routes, tables, and rating service all
-exist, and the rate tables ship **empty by design** (A36). Every lane answers `no_active_rate_card` and
-`shippingInCents` is permanently `0` until a forwarder lane list is purchased or imported.
 
 ### Share targets have no brand marks
 
@@ -144,9 +138,36 @@ that prepares stock reservation for that single item and jumps directly to confi
 
 ---
 
-### 4. Third-Party Carrier & Escrow Adapters
+### 4. Third-Party Escrow & FX Adapters — and the carrier refusal
 
-- **Carrier Integration**: `logistics-provider.adapter.ts` is currently a seam with a deterministic fake. To provide automated tracking numbers and shipping status updates, connect an aggregator or carrier API (e.g. Shiprocket, EasyPost, or FedEx).
+⛔ **CARRIER INTEGRATION — DECIDED: NOT BUILDING IT.** This bullet used to say "connect an
+aggregator or carrier API (e.g. Shiprocket, EasyPost, or FedEx)". Three reasons it is refused, and
+the first two are structural rather than commercial:
+
+1. **A carrier-account rate has nowhere to live on the wire.** `FreightOptionSchema` carries no
+   price — money lives inside `providerQuote`, beside `providerOrganizationId` and
+   `sourceForwarderName` (§19.9b, and `src/lib/store/freight.schemas.ts`). FedEx is not a provider
+   organization on Qatoto. Quoting a carrier on **Qatoto's own account** makes Qatoto the principal
+   in the price, which §0 forbids and which the nesting was built to make unrenderable.
+2. **An estimate nobody books buys no accuracy.** Qatoto generates no labels, takes no booking and
+   charges no freight — `shippingInCents` is literal `0` by design. A live rate would be reconciled
+   against nothing, so its only effect is to look more authoritative than the card-derived number
+   beside it.
+3. **A parcel API answers one of four modes.** FedEx and the express aggregators price parcel air
+   and ground. There is no sea, no rail and no LCL, so a four-mode surface would be three-quarters
+   empty behind a tab bar that promises otherwise.
+
+⚠️ **AND NO SIMULATOR.** A "benchmark estimate" for the modes a carrier API cannot reach is exactly
+what A36 rules out — _a missing component is named, never defaulted, averaged, or extrapolated._ A
+`[Simulated Estimate]` badge does not cure an invented figure; it makes it worse, because a badged
+number still moves a buyer's decision while reading as reconciled. The honest render already exists:
+an uncovered lane returns empty `options[]` plus `quotableProviders`, which is a route into an RFQ.
+
+`src/modules/store/fulfillment/logistics-provider.adapter.ts` **stays** as the documented seam its
+own header describes ("A seam only. No carrier is contracted"). Do not delete it and do not wire it.
+Revisit only if Qatoto ever books a shipment — which is a stated non-goal. The lane numbers come
+from §18 instead.
+
 - **Escrow Provider**: `external-escrow-provider.adapter.ts` has registered enum values for `"escrow_com"` and `"shieldpay"`, but only `FakeExternalEscrowProviderAdapter` is implemented. Complete the integration when high-value milestone escrow is launched.
 - **Foreign Exchange (FX)**: `foreign-exchange-provider.adapter.ts` returns a synthetic 1:1 rate and is refuse-closed in production. Connect a live FX rate feed (e.g. Open Exchange Rates or Wise) for multi-currency settlement.
 
@@ -227,9 +248,117 @@ per-site read or a decision, not a mechanical fix.
 
 ---
 
+### 18. Freight rate data — the blocker was never a purchase
+
+**This section used to say the tables stay empty "until a forwarder lane list is purchased or
+imported." That was wrong, and it is why nothing moved for a phase.** The number is a forwarder's,
+so the forwarder is who should type it. Qatoto is bootstrapped and buying a lane list also needs a
+licence to redistribute the tariff — two costs to solve a problem the supply side solves for free.
+
+**What already works.** Store Phase 20 (`0106`–`0109`) shipped `commerce_freight_rate_card`,
+`commerce_freight_rate_break`, `commerce_customs_dwell_estimate`, the rating service
+(chargeable weight `max(actual, volumetric)` with the winning basis named), journey composition
+with `partialJourneys[]`, the arrival window, eight `moderate_commerce` admin routes and the public
+`GET /store/products/:slug/delivery-estimate`. `delivery-sheet.tsx` already renders **every** field
+those return — `providerQuote`, `quotableProviders`, `unavailableReasons`, `chargeableWeightBasis`,
+`validUntil`. Nothing on the buyer surface is missing.
+
+**What is actually missing.** The six write routes are `moderate_commerce` only, so a forwarder
+already selling on `/store/providers` cannot publish the lanes it sells. Every lane therefore
+answers `no_active_rate_card`.
+
+⚠️ **`shippingInCents` STAYS LITERAL `0` AND THIS WORK DOES NOT CHANGE THAT.** Rating from a card is
+not a booking and confers no capacity (§19.6). Freight is arranged between the buyer and the
+forwarder; the checkout line reads "Not charged — arranged separately" and keeps reading it.
+
+#### Backend — one new 5-file module
+
+`src/modules/store/fulfillment/commerce-provider-freight-rates.{routes,controller,service,schemas}.ts`
+plus `-error-response.ts`, mirroring `commerce-freight-rates.*` exactly.
+
+| Route                                                                  | Notes                                                         |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `GET /commerce/provider/freight-rate-cards`                            | Own cards only, keyset-paged; reuse the admin list projection |
+| `POST /commerce/provider/freight-rate-cards`                           | Bands required in the same call (1..20), one transaction      |
+| `PATCH /commerce/provider/freight-rate-cards/:rateCardId`              | Withdraw / retire only                                        |
+| `POST\|PATCH /commerce/provider/freight-rate-cards/:rateCardId/breaks` | Staged cards only                                             |
+
+**No customs-dwell routes.** `commerce_customs_dwell_estimate` has no provider column — it is scoped
+by country and commodity and is platform-wide. A forwarder is not a broker. Dwell stays
+`moderate_commerce`.
+
+Guards: `requireAuth` + `requireActiveCommerceOrganization` on the route, then **two in-service
+assertions** (the same placement `moderate_commerce` already uses in `commerce-freight-rates.routes.ts`):
+
+1. the caller's active organization owns the card's `providerOrganizationId`;
+2. that organization holds an **approved** provider profile of kind `freight_forwarder` or
+   `logistics_operator`.
+
+⚠️ **`providerOrganizationId` IS DERIVED FROM THE SESSION AND NEVER READ FROM THE BODY.** A
+submitted one lets a provider author a competitor's tariff, and `.strict()` must refuse the field
+rather than ignore it.
+
+Writes carry `compactBody` + `idempotency({ scope: "active_organization" })` and a new
+read/write limiter pair through `createLimiter` (`src/middleware/rate-limit.ts`). Postgres-backed,
+no Redis. Six registration points: the router export, the `src/app.ts` import, the `app.use`, the
+`MOUNTED_ROUTERS` array in `src/middleware/rate-limit-coverage.test.ts`, the limiter declarations,
+and the route-order test if a collection route is declared before an `:id` route.
+
+#### The card carries no moderation state, deliberately
+
+`commerce_freight_rate_card_state` is `active | superseded | withdrawn`; `proposed` is deliberately
+absent and stays absent. **The provider is the moderated entity, not the price.** A profile is
+approved before it can sell anything, and the price is the forwarder's own (§19.9b) — Qatoto vetting
+a lane price on merit would read as endorsement, which is the liability this platform is built to
+avoid. Spam is answered by provider approval plus withdrawal, not by per-card review.
+
+⚠️ **If that ever has to change, the enum is the small half.** The rating read selects on the
+validity **window**, never on `state`, so adding `proposed` without also filtering the read would
+publish every unreviewed card instantly.
+
+#### Three traps the composer must close, all invisible until they have cost a lane
+
+1. **`validFrom` is REQUIRED and must be in the future.** The admin controller defaults it to
+   `new Date()`, and a defaulted card is in force the instant it exists —
+   `assertCardAcceptsBreakWrites` then refuses both `/breaks` routes forever with
+   `409 COMMERCE_FREIGHT_RATE_CARD_IN_FORCE`. `validFrom` is absent from every PATCH schema and
+   `.strict()` refuses it, so a card staged wrong is withdrawn and rewritten, never corrected. The
+   provider schema makes it required and refuses a past value.
+2. **At least one band with `minBillableWeightGrams: 0`.** Without a floor band every lighter
+   consignment rates `below_smallest_break` and the lane publishes **no option** — which reaches the
+   buyer as an empty delivery sheet, indistinguishable from having loaded nothing at all. Block
+   submission on it; the predicate already exists as `hasZeroWeightFloorBand`
+   (`src/lib/store/admin-freight.schemas.ts`).
+3. **`volumetricDivisorCm3PerKg` is per card, bounded 100–20000, and must not be defaulted.** A road
+   divisor typed onto an air card is inside the bound and silently underbills every bulky
+   consignment. Show mode-shaped guidance (ocean W/M 1000, road ~3000, air 5000–6000) and let the
+   forwarder type it — defaulting is the platform choosing a tariff convention on their behalf.
+
+Composer copy must also restate that `unitPriceInCents` is **cents per kilogram of chargeable
+weight**, not per consignment; a flat lane price is entered as `minimumChargeInCents`.
+
+#### Frontend
+
+| File                                                              | Action                                                                                                                            |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/store/provider-freight.schemas.ts`                       | NEW. Row shapes match `admin-freight.schemas.ts`; the **input** shapes differ — no `providerOrganizationId`, `validFrom` required |
+| `src/lib/store/provider-freight.api.ts`                           | NEW. `getJson` / `sendJson` from `src/lib/http.ts`, tagged `ActionResponse<T>`                                                    |
+| `src/hooks/store/provider-freight.ts`                             | NEW. `providerFreightKeys` on the `freightAdminKeys` precedent (`src/hooks/store/admin-freight.ts`)                               |
+| `src/components/commerce/freight/weight-band-editor.tsx`          | MOVE from `src/components/admin/freight/`. Both composers share it or the two ladders diverge                                     |
+| `src/components/studio/commerce/logistics/rate-card-composer.tsx` | NEW, on the `service-offering-composer.tsx` precedent                                                                             |
+| `src/components/studio/commerce/logistics/my-rate-card-list.tsx`  | NEW, on `my-service-offering-list.tsx`                                                                                            |
+| `src/app/(studio)/studio/logistics/page.tsx`                      | MODIFY. The rate-card surface sits beside the shipment queue, or splits to a sibling route                                        |
+
+**Unchanged, deliberately:** `delivery-sheet.tsx`, `freight.schemas.ts`, `checkout-page.tsx`,
+`arrival-window.schemas.ts`. This work changes **who may write**, not what is read.
+
+Build the backend half alone first — the frontend has nothing to show until the routes answer.
+
+---
+
 ## Decisions Needed
 
 - **Legal Entity Incorporation**: Settle legal name and jurisdiction to update `src/lib/site.ts`.
 - **Payment Gateway Priority**: Confirm whether Stripe (international) or Razorpay (India) should be wired first.
-- **Freight Strategy**: Determine whether to purchase third-party rate cards or allow sellers to define flat-rate shipping directly on listings.
+- ~~**Freight Strategy**~~: **Settled 2026-09-18 — §18.** Neither. Rate cards are not purchased and sellers do not set flat rates (a seller flat rate makes the seller the freight principal and can express neither a customs leg nor a two-leg journey). Approved forwarders author their own lanes through provider-scoped write routes.
 - **Uncovered Inland Leg Freight Rule**: Settled in §16 — covered legs compose into `partialJourneys[]` with the missing leg named.
