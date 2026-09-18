@@ -90,37 +90,41 @@ export interface ListProviderFreightRateCardsFilter {
  * ⚠️ HERE THE PASTE BOX PRODUCES BODIES NO HUMAN TYPED, so the last chance to catch a mis-parsed
  * column before it becomes a published tariff is right here.
  */
-export const CreateProviderFreightRateCardInputSchema = z
-  .object({
-    originCountryCode: z.string().regex(/^[A-Z]{2}$/),
-    destinationCountryCode: z.string().regex(/^[A-Z]{2}$/),
-    mode: z.enum(["air", "sea", "land", "rail"]),
-    currency: z.string().regex(/^[A-Z]{3}$/),
-    validFrom: z.string().min(1),
-    validUntil: z.string().min(1).optional(),
-    /**
-     * §19.9. The forwarder's OWN divisor, cm³ per kilogram — required, never defaulted. Ocean LCL
-     * is 1000 (the W/M revenue ton), road around 3000, air 5000 or 6000 depending on who quotes.
-     *
-     * ⚠️ THE BOUND CATCHES A DECIMAL SLIP AND NOTHING SUBTLER. A road divisor typed onto an air
-     * card sits inside 100–20000 and underbills every bulky consignment on that lane, quietly.
-     */
-    volumetricDivisorCm3PerKg: z.number().int().min(100).max(20_000),
-    breaks: z
-      .array(
-        z.object({
-          minBillableWeightGrams: z.number().int().min(0),
-          minVolumeCubicCm: z.number().int().min(0),
-          unitPriceInCents: z.number().int().min(1),
-          minimumChargeInCents: z.number().int().min(0),
-          transitDaysMin: z.number().int().min(0).max(365),
-          transitDaysMax: z.number().int().min(0).max(365),
-        }),
-      )
-      .min(1)
-      .max(20),
-  })
-  .strict();
+/*
+ * `z.strictObject` rather than `z.object().strict()`: same refusal, and the non-deprecated Zod 4
+ * spelling. The strictness is the point, not decoration — it is the client-side mirror of the
+ * server's `.strict()` body, and it is what stops `providerOrganizationId` or
+ * `sourceForwarderName` reaching the wire and 422-ing the whole submission.
+ */
+export const CreateProviderFreightRateCardInputSchema = z.strictObject({
+  originCountryCode: z.string().regex(/^[A-Z]{2}$/),
+  destinationCountryCode: z.string().regex(/^[A-Z]{2}$/),
+  mode: z.enum(["air", "sea", "land", "rail"]),
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  validFrom: z.string().min(1),
+  validUntil: z.string().min(1).optional(),
+  /**
+   * §19.9. The forwarder's OWN divisor, cm³ per kilogram — required, never defaulted. Ocean LCL
+   * is 1000 (the W/M revenue ton), road around 3000, air 5000 or 6000 depending on who quotes.
+   *
+   * ⚠️ THE BOUND CATCHES A DECIMAL SLIP AND NOTHING SUBTLER. A road divisor typed onto an air
+   * card sits inside 100–20000 and underbills every bulky consignment on that lane, quietly.
+   */
+  volumetricDivisorCm3PerKg: z.number().int().min(100).max(20_000),
+  breaks: z
+    .array(
+      z.object({
+        minBillableWeightGrams: z.number().int().min(0),
+        minVolumeCubicCm: z.number().int().min(0),
+        unitPriceInCents: z.number().int().min(1),
+        minimumChargeInCents: z.number().int().min(0),
+        transitDaysMin: z.number().int().min(0).max(365),
+        transitDaysMax: z.number().int().min(0).max(365),
+      }),
+    )
+    .min(1)
+    .max(20),
+});
 export type CreateProviderFreightRateCardInput = z.infer<
   typeof CreateProviderFreightRateCardInputSchema
 >;

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { CreateProviderFreightRateCardInputSchema } from "@/lib/store/provider-freight.schemas";
+
 import { buildCreateRateCardInput, type RateCardComposerDraft } from "./rate-card-draft";
 
 /**
@@ -113,6 +115,33 @@ describe("buildCreateRateCardInput", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(Object.keys(result.input)).not.toContain("validUntil");
+  });
+
+  it("REFUSES a body carrying a server-owned key, rather than dropping it", () => {
+    // The strictness is the mechanism behind the assertion above: if the schema ever stopped
+    // refusing unknown keys, a future edit could add `providerOrganizationId` back and every
+    // publish would 422 with nothing here to catch it.
+    const withForbiddenKey = CreateProviderFreightRateCardInputSchema.safeParse({
+      originCountryCode: "IN",
+      destinationCountryCode: "DE",
+      mode: "sea",
+      currency: "USD",
+      validFrom: "2026-09-25T09:00:00.000Z",
+      volumetricDivisorCm3PerKg: 1000,
+      breaks: [
+        {
+          minBillableWeightGrams: 0,
+          minVolumeCubicCm: 0,
+          unitPriceInCents: 450,
+          minimumChargeInCents: 15_000,
+          transitDaysMin: 24,
+          transitDaysMax: 34,
+        },
+      ],
+      providerOrganizationId: "commerce_org_rival",
+    });
+
+    expect(withForbiddenKey.success).toBe(false);
   });
 
   it("passes a half-typed band through collectBands' own refusal", () => {
