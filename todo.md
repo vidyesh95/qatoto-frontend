@@ -25,7 +25,7 @@ and `git log` are the record of what was built and why.
 - **Payment Gateway Integration** — **Razorpay is SHIPPED** (adapter, both signature checks, webhook inbox, Standard Checkout modal). Stripe is an enum label with no implementation, and **neither provider may run in production until a marketplace split exists** — without one a captured payment lands in Qatoto's own account, which is the custody §14 refused. See §1.
 - **"Buy Now" Checkout** — Direct single-product checkout bypassing the multi-seller cart.
 - **Four Minor Store Items** — Service-offering coverage read, `standardCode` filter, `viewer.canDelete` on Q&A, and `DELETE /products/:id` 500 on customized listings.
-- **§18 (Provider freight rate cards)** — **Backend SHIPPED.** The five provider-scoped write routes exist; what is left is the Studio composer and its paste box. A forwarder still cannot publish a lane from the UI.
+- ~~**§18 (Provider freight rate cards)**~~ — **DONE.** Backend routes plus the Studio composer at `/studio/logistics/rate-cards`, with the TSV paste box. A verified forwarder can publish a lane end to end. What remains is onboarding: until an organization holds a `verified` `freight_forwarder` or `logistics_operator` kind link, every call is a correct 403.
 
 **Content & Launch Blockers:**
 
@@ -498,6 +498,18 @@ never gets loaded.
 pastes into one textarea; it is parsed **client-side** into the same band array the manual editor
 already produces and submitted through the **unchanged** existing route.
 
+**As shipped:** `src/lib/store/freight-band-paste.ts`, six fixed columns with their units in the
+header (`min kg · min cm³ · price per kg · min charge · days min · days max`), applied as a
+whole-ladder replace rather than a merge.
+
+⚠️ **THE UNIT CONVERSION IS THE DANGEROUS PART AND IS WHY IT IS A TESTED PURE FUNCTION.** The wire
+is integer grams and integer cents; a tariff sheet is kilograms and currency units. A kg column read
+as grams underprices a lane by 1000×, and the result sits INSIDE every bound the server checks — the
+divisor range, the price floor, the band count — so nothing downstream would refuse it. Money is
+therefore parsed from the string rather than through a float (`4.55 * 100` is `454.99999999999994`),
+a third decimal is refused rather than rounded to a price nobody quoted, and a thousands separator
+is refused rather than stripped (`1,234` is `1.234` in half the world).
+
 ⚠️ **THIS IS A CONVENIENCE OVER AN UNCHANGED CONTRACT, AND THAT IS THE WHOLE DESIGN.** No new
 route, no multipart, no parser on the backend, no file stored and no retention question — an Excel
 copy is TSV on the clipboard already. The three server-side refusals above (future `validFrom`, a
@@ -524,7 +536,7 @@ them the trust boundary**, because that argument is CORRECT: rows written under 
    window; an API returns a point-in-time quote. Ingesting one stores a rate that keeps pricing
    after the quote it came from expired.
 
-#### Frontend
+#### Frontend — **SHIPPED**
 
 | File                                                              | Action                                                                                                                            |
 | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
