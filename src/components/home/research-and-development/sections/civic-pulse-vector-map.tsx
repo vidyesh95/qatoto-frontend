@@ -294,7 +294,7 @@ export default function CivicPulseVectorMap({
           ref={mapContainerRef}
           // A fixed aspect keeps the reserved box identical to the static canvas's, so flipping
           // the flag does not move everything below it on the page.
-          className="aspect-[2000/857] w-full"
+          className="aspect-2000/857 w-full"
           role="application"
           aria-label="Map of reported problem clusters"
         />
