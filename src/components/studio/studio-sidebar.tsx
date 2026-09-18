@@ -160,6 +160,9 @@ const STUDIO_ROUTES = {
   // page every row opens; only the list collapsed.
   sales: "/studio/sales",
   logistics: "/studio/logistics",
+  // §19.12. A sibling of the leg queue rather than a panel inside it: unrelated lifecycles, and
+  // `LogisticsOverview` already owns that page's `h1`.
+  freightRateCards: "/studio/logistics/rate-cards",
   // `/studio/rfqs` and `/studio/quotes` shipped without sidebar entries, so a provider had no way to reach
   // their own quote queue by clicking. `/studio/services` is new and is where a draft listing is visible.
   //
@@ -419,6 +422,7 @@ const STUDIO_NAVIGATION_CONFIG: StudioNavSection[] = [
       },
       { path: STUDIO_ROUTES.companyProfile, label: "Company profile", iconKey: "workspacePremium" },
       { path: STUDIO_ROUTES.logistics, label: "Logistics", iconKey: "localShipping" },
+      { path: STUDIO_ROUTES.freightRateCards, label: "Freight lanes", iconKey: "localShipping" },
       { path: STUDIO_ROUTES.support, label: "Support", iconKey: "supportAgent" },
       { path: STUDIO_ROUTES.earn, label: "Earn", iconKey: "paid" },
     ],

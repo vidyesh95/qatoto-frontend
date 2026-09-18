@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import Link from "next/link";
+
 import LogisticsOverview from "@/components/studio/commerce/logistics/logistics-overview";
 
 // Permanently dynamic: session-scoped and behind a provider organization membership.
@@ -33,8 +35,20 @@ export const metadata: Metadata = {
  */
 export default function StudioLogisticsRoute() {
   return (
-    <div className="mx-auto w-full max-w-3xl p-6">
+    <div className="mx-auto w-full max-w-3xl space-y-4 p-6">
       <LogisticsOverview />
+      {/*
+       * §19.12's surface is a SIBLING route, not a panel here: a leg is a per-order state machine
+       * and a rate card is reference data with a validity window, so folding them together would
+       * give two unrelated reads one loading state. This is the crossing between them.
+       */}
+      <p className="text-sm text-muted-foreground">
+        Pricing lanes rather than moving a shipment?{" "}
+        <Link href="/studio/logistics/rate-cards" className="underline">
+          Publish your freight lanes
+        </Link>
+        .
+      </p>
     </div>
   );
 }
