@@ -617,44 +617,163 @@ Two things this surface currently renders that the contract contradicts, both on
 
 ## 6. Problem map — `/research-and-development/problem-map` (Civic Pulse)
 
-`problem-map-page.tsx` is a thin server shell; all interaction lives in 🏝️ `problem-map-canvas`:
+`problem-map-page.tsx` is a thin server shell reading `GET /discovery/problem-clusters`,
+`/research-categories` and `/discovery/regions`; all interaction lives in 🏝️ `problem-map-canvas`:
 
-- **Map canvas**: a `relative` container with `public/dummy/world_map.svg` via `next/image` and
-  reports mapped to `<button>` pins positioned from `mapPosition: { leftPercent, topPercent }` —
-  **no map library**. Pin markers carry a category icon inside an opportunity-score ring
-  (red ≥80 / amber ≥60 / teal below); size scales `size-3`/`size-4`/`size-5` by score. Mapping lives
-  in `PIN_ICON_SRC_BY_CATEGORY`.
-- **Report list** (`problem-report-list`, a server component taking props) beside/below the canvas —
-  also the mobile-first view.
-- Category filter chips + `selectedReportId` cross-highlighting, both client-side.
-- **Report a problem** sheet (§8.2) appends to the canvas's local `reports` state — lost on refresh.
+- **Two canvases, one selection state.** `problem-map-canvas` owns `selectedClusterId` and picks a
+  renderer; both draw the SAME clusters with the SAME pin art, so the flag below changes the
+  ground under the pins and nothing else.
+    - 🗺️ `civic-pulse-vector-map` — MapLibre GL over OpenFreeMap vector tiles.
+    - 🖼️ `StaticWorldMapCanvas` — the original `public/dummy/world_map.svg` with pins projected by
+      `src/lib/rnd/map-projection.ts`.
+- **Report list** (`problem-report-list`, a server component taking props) beside/below the canvas
+  — also the mobile-first view, and the only thing that renders in `listOnly`.
+- Category and region filter chips are **server-rendered `Link`s** that rewrite the query string;
+  only `selectedClusterId` cross-highlighting is client state.
+- **Report a problem** sheet (§8.2) writes `POST /discovery/problem-reports` and answers `202`. It
+  does not add a pin and does not say it did.
 
-> **✅ `mapPosition` is gone, and the projection moved to the client.** It was a CSS offset into one
+### ✅ The vector basemap — what shipped, and the flag
+
+`NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE=true` swaps the static SVG for a real basemap. It is a
+**build-time** constant (`src/lib/rnd/civic-pulse-map.ts`, on the `RAZORPAY_KEY_ID` precedent), so
+it is a rollback switch and not a user preference — it is deliberately NOT a browser preference,
+because `browser-preferences.ts` owns the one storage key this app is allowed.
+
+⚠️ **THE SWAP EXISTS BECAUSE THE SVG'S PROJECTION CANNOT BE MADE EXACT.** `map-projection.ts` says
+of its own two latitude constants that they are "calibrated estimates from the aspect ratio, not
+exact"; the SVG carries no `viewBox` and declares no projection, so there is no ground truth to
+calibrate against. That is a permanent error bar on every pin, not a bug with a fix.
+
+| Mode       | When                                    | Renders                                                                      |
+| ---------- | --------------------------------------- | ---------------------------------------------------------------------------- |
+| `static`   | flag off, **or** flag on with no WebGL2 | the SVG canvas — a reader on old hardware keeps a map rather than losing one |
+| `vector`   | flag on + WebGL2                        | MapLibre over OpenFreeMap                                                    |
+| `listOnly` | `prefers-reduced-data: reduce`          | the report list alone                                                        |
+
+⚠️ **`static` IS THE NO-WebGL2 FALLBACK, NOT `listOnly`.** The SVG needs no GPU context.
+`listOnly` is reserved for reduced-data, where the 2000×857 SVG is itself the thing being avoided.
+
+⚠️ **THE FIRST RENDER IS ALWAYS `static`, ON BOTH SIDES.** WebGL2 support and
+`prefers-reduced-data` are browser facts the server cannot know, so the mode is read through
+`useSyncExternalStore` whose server snapshot is `static` — the same mechanism, for the same
+reason, as `browser-preferences-context.tsx`. Two consequences worth keeping: the pins are never
+absent during the upgrade, and a reader with JavaScript off still gets a map with every cluster on
+it. An earlier draft used `useState` + an effect, which works and trips
+`react(set-state-in-effect)` because it starts a cascading render.
+
+⚠️ **EVERY PIN IS A REAL `<button aria-pressed>`, PORTALLED INTO A MARKER CONTAINER.**
+`tests/specs/rnd-backend.spec.ts` asserts on that selector for pin rendering, single-select and
+cross-highlighting. The obvious alternative — a GeoJSON source with a `symbol` layer — draws pins
+**into the WebGL canvas**, where they have no DOM node, take no keyboard focus, carry no
+accessible name and match no selector. MapLibre documents that a marker with a custom `element`
+keeps its "focusability and keyboard behavior application-owned", which is the seam this uses.
+
+⚠️ **MAPLIBRE LOADS THROUGH `await import()` INSIDE AN EFFECT AND MUST STAY THAT WAY**, exactly as
+the teardown 3D engine does. Measured on the build that shipped this: the MapLibre chunk is **1.0
+MB and absent from the route's first load**. `/problem-map` first-loads 1,372 KB against 1,343 KB
+for `/market-research` — a 29 KB delta, which is the island and the shared pin records. A static
+import would put a megabyte of GPU map renderer into the `(home)` shell for every reader of every
+route in it.
+
+⚠️ **`layOutMapPins` IS NOT CALLED ON THE VECTOR CANVAS, AND THAT IS NOT AN OVERSIGHT.** The
+overlap it solves is an artefact of ONE FIXED SCALE. On a map that zooms, two pins a kilometre
+apart separate by zooming in, and displacing them from their real coordinates would make the pin
+lie about where the cluster is — the exact defect the vector canvas was built to remove. It stays
+for the static path.
+
+**Pin art lives in `sections/problem-map-pins.ts`**, imported by both renderers rather than copied,
+for the reason `BlueprintCardBody` was deleted: two copies of a record is how the same row ends up
+amber on one canvas and teal on the other.
+
+**Tiles cost nothing and there is no key.** OpenFreeMap serves OpenStreetMap vector tiles with no
+API key, no account and no rate limit, so there is no secret to keep out of the client bundle and
+no quota for a hostile client to burn — which is why `docs/MAP_TILE_FALLBACK.md` §3.1 rejects
+Google Maps by name over its $7/1,000 dynamic map loads and mandatory billing credentials. What is
+not bought is reliability: OpenFreeMap is donation-funded and publishes no SLA, so three
+consecutive tile errors render an in-place panel over a working report list, never a blank grey
+rectangle. **Tier 2 (MapTiler) and Tier 3 (PMTiles on R2) are NOT built** — both cost money or a
+key, and the graceful degrade is this pass's answer.
+
+⚠️ **THE ODbL ATTRIBUTION IS NOT OURS TO COMPOSE OR TO STRIP.** It arrives on the planet TileJSON
+and MapLibre renders it from there, so it cannot drift out of sync with the tiles it describes.
+Neither style declares its own.
+
+**The dark style is the one forked file** (`public/map-styles/qatoto-dark.json`, 17 layers,
+validated against the official style spec). Light references OpenFreeMap's hosted `liberty` URL and
+is not copied into the repo. ⚠️ **The fork is written against the OpenMapTiles schema, NOT derived
+from CARTO's Positron**, whose design is CC-BY and would import an attribution obligation this repo
+does not otherwise carry. It lives in `public/` so it is fetched as a URL and CDN-cached rather
+than inlined into the lazy chunk.
+
+⚠️ **THE STYLE RESOLVER READS THE `.dark` CLASS AND MUST NOT READ `prefers-color-scheme`.**
+`browser-preferences.ts` records that the appearance preference was removed and "took the whole
+theme system with it — it was the only thing that ever wrote `.dark` onto `<html>`". `globals.css`
+still defines all 32 dark tokens and nothing applies them, so a media-query read would hand a dark
+basemap to every visitor whose OS is dark while the app around it stayed light. Reading the class
+resolves to `false` today, which is correct, and starts resolving to `true` for free on the day
+appearance returns.
+
+### The decisions that came with the Civic Pulse specs
+
+`docs/CIVIC_PULSE_PROBLEM_MAPPING.md` and its five companions landed as a production architecture
+spec. **Four of their positions were settled against what shipped**, and the specs carry the
+correction in their own headers.
+
+1. ⚠️ **COORDINATES — THE CLIENT STILL SENDS NO EXACT COORDINATES.** The spec's
+   `ExactLocationInputSchema` (microdegrees + `accuracyMeters` + device GPS) is **superseded**.
+   When a pin is added it will round to 3 decimals (~110 m) **in the client, before sending**, so
+   the server never receives a precise coordinate. That is what makes the whole privacy apparatus
+   the spec describes unnecessary rather than unbuilt: no dual-storage split, no
+   `fuzzCoordinateForPublicMap`, no 90-day purge job, no DSR coordinate-erasure path. **Not built
+   this pass** — `CreateProblemReportSchema` is `.strict()` with no coordinate field, so it needs a
+   backend field first. See `todo.md` §19.
+2. ⚠️ **FEASIBILITY — FOUR COMPONENTS, NEVER SUMMED.** The spec's single 0–100 composite and its
+   `feasibilityRating` enum are **rejected**. §7 below already rules that the two evidence bases
+   "are never merged into one number", and a `high_feasibility` / `ngo_grant_target` verdict
+   stamped on a real country is the unattributed JUDGMENT the case-study outcome badge was rejected
+   for. `S_density` / `S_tam` / `S_mfg` / `S_reg` render as four bounded readouts, each carrying
+   its own source and `asOf`.
+3. ⚠️ **TAXONOMY — THE FLAT TABLE STAYS AND `domain` BECOMES A CLOSED ENUM.** The spec's fixed
+   5×12 hierarchy with hardcoded UUIDs is **rejected**: hardcoded UUIDs are unmergeable and
+   unmigratable, and retiring `POST /research-categories` would strip the proposal workflow that
+   the report sheet, projects, market insights and discovery skills all depend on. `domain` is a
+   closed enum (not a FK, not user-creatable) because it is the **comparability layer** — it is
+   what lets one country's `cold_storage_loss` roll up beside another's. Domain assignment is
+   moderated separately from category creation: an unassigned category still pins and clusters
+   immediately, it just does not enter the country matrix until a moderator assigns it. Local
+   specificity is immediate; cross-country comparability is curated. Subcategories are optional via
+   a nullable self-FK `parentCategoryId`, not a fixed two-or-three per domain. **Stable slugs are
+   the durable identity; the database generates the UUIDs.**
+4. ⚠️ **CLUSTERING IS NOT HDBSCAN AND POSTGIS IS REFUSED ON PURPOSE.** The backend matches within a
+   25 km radius (`geocode-and-cluster-submission.ts`), and `src/db/schema/rnd.ts` states that the
+   `(categoryId, latitude, longitude)` btree index "replaces PostGIS". The geocode cache is a
+   Postgres table, not Redis, and it is cached **permanently** because a geocoder is not a pure
+   function — replaying the clustering job against a re-tiled provider would silently move a report
+   into a different cluster and change a published score.
+
+> ✅ **`mapPosition` is gone, and the projection moved to the client.** It was a CSS offset into one
 > specific SVG at one aspect ratio, so MapKit / MapLibre / Google Maps could not render it and both
-> native clients were dead on arrival. The backend sends **lat/lng microdegrees** and
-> [src/lib/rnd/map-projection.ts](src/lib/rnd/map-projection.ts) projects them.
+> native clients were dead on arrival. The backend sends **lat/lng microdegrees** and each client
+> projects them.
 >
-> **A correction this doc had wrong.** The plan for this work assumed `world_map.svg` was plain
-> equirectangular. It is **2000 × 857 — 2.33:1, not 2:1** — an equirectangular map with the poles
-> cropped (Simplemaps cuts Antarctica). So the projection is linear in longitude across the full
-> 360° but linear in latitude only across a **154.26° window**, whose two bounds are named constants
-> in that file. They are **calibrated estimates from the aspect ratio, not exact**: the SVG carries no
-> `viewBox` and declares no projection, so if a pin sits visibly off its country the fix is one visual
-> pass against known coordinates, adjusting those two constants and nothing else.
+> ✅ **The sheet no longer adds a pin.** It used to fabricate `countryCode: ""`,
+> `mapPosition: {50, 50}`, `reportCount: 1` and `opportunityScore: 40` client-side and drop the
+> result on the map as though it were a clustered finding. All four are server-derived, a
+> submission is not a report (`distinctReporterCount: 342` means 342 distinct **people**), and
+> `POST` returns **`202`** because clustering is a job.
 >
-> **✅ The sheet no longer adds a pin.** It used to fabricate `countryCode: ""`,
-> `mapPosition: {50, 50}`, `reportCount: 1` and `opportunityScore: 40` client-side and drop the result
-> on the map as though it were a clustered finding. All four are server-derived, a submission is not a
-> report (`distinctReporterCount: 342` means 342 distinct **people**), and `POST` returns **`202`**
-> because clustering is a job. The sheet confirms receipt and says the report is queued.
+> ✅ **The submit itself shipped.** `POST /discovery/problem-reports` carries `requireIdentifiedUser`
+> and `problemReportLimiter` (10 per 15 minutes), and `my-problem-reports-panel` polls
+> `/discovery/problem-reports/mine` for the other half of that `202`. An earlier version of this
+> note said the submit was "still owed" and wanted "lat/lng from a place picker"; the first half
+> was stale and the second is now settled against — see decision 1 above.
 >
-> ⏳ **Still owed:** the submit itself. `POST /discovery/problem-reports` needs
-> `requireIdentifiedUser` and lat/lng from a place picker, neither of which exists on this surface.
->
-> 📖 **Production Architecture Specification**: See [docs/CIVIC_PULSE_PROBLEM_MAPPING.md](./CIVIC_PULSE_PROBLEM_MAPPING.md)
-> and companion documents: [docs/PROBLEM_TAXONOMY.md](./PROBLEM_TAXONOMY.md), [docs/FEASIBILITY_MODEL.md](./FEASIBILITY_MODEL.md),
-> [docs/GEOLOCATION_PRIVACY.md](./GEOLOCATION_PRIVACY.md), [docs/DATA_RETENTION.md](./DATA_RETENTION.md), and
-> [docs/MAP_TILE_FALLBACK.md](./MAP_TILE_FALLBACK.md).
+> 📖 **Production architecture specification**, each carrying its own correction header:
+> [CIVIC_PULSE_PROBLEM_MAPPING.md](./CIVIC_PULSE_PROBLEM_MAPPING.md) ·
+> [PROBLEM_TAXONOMY.md](./PROBLEM_TAXONOMY.md) · [FEASIBILITY_MODEL.md](./FEASIBILITY_MODEL.md) ·
+> [GEOLOCATION_PRIVACY.md](./GEOLOCATION_PRIVACY.md) · [DATA_RETENTION.md](./DATA_RETENTION.md) ·
+> [MAP_TILE_FALLBACK.md](./MAP_TILE_FALLBACK.md). Remaining work is `todo.md` §19.
 
 ---
 

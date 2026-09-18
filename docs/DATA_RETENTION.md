@@ -6,6 +6,25 @@
 
 ---
 
+> ## ⚠️ Correction header — read this before the document below
+>
+> **Status: THE COORDINATE AND IP ROWS ARE MOOT. THE MEDIA ROW IS UNBUILT. NOTHING HERE RUNS.**
+>
+> - ⚠️ **"Exact GPS Coordinates (1e-6 deg) — 90 Days" DESCRIBES DATA THAT IS NEVER COLLECTED.**
+>   The client sends free text and, once a pin exists, a 3-decimal (~110 m) coordinate it rounded
+>   itself. §3.1's `UPDATE problem_submission SET exact_latitude_microdegrees = ROUND(…)` targets
+>   columns that do not exist. Data you do not hold needs no purge schedule — that is the point of
+>   the decision, not a gap in it.
+> - ⚠️ **"Raw Ingest IP Hashes — 30 Days" — there is no `reporterIpHash` column.** Abuse control on
+>   `POST /discovery/problem-reports` is `requireIdentifiedUser` plus `problemReportLimiter`
+>   (10 per 15 minutes), not a stored hash.
+> - ⚠️ **"Processed Problem Photos — 2 Years" — problem reports carry no media.** No attachment
+>   route, table or column exists. The row becomes real only if `todo.md` §19 item 5 is built.
+> - ⚠️ **§4's `pnpm run check:data-retention-compliance` IS NOT A SCRIPT IN EITHER REPO.**
+> - ✅ **WHAT IS TRUE TODAY:** cluster centroids and aggregate counts are anonymous and retained
+>   indefinitely, which is §3.3 and needs no job. `geocode_cache` is also permanent, and
+>   deliberately so — see `CIVIC_PULSE_PROBLEM_MAPPING.md`'s correction header.
+
 ## 1. Principles of Data Minimization
 
 In alignment with global privacy principles (GDPR Article 5(1)(e) and India's DPDP Act Section 8(7)), personal data must not be kept in a form which permits identification of data subjects for longer than is necessary for the purposes for which the personal data are processed.

@@ -7,6 +7,29 @@
 
 ---
 
+> ## ⚠️ Correction header — read this before the document below
+>
+> **Status: TIER 1 SHIPPED. TIERS 2 AND 3 ARE NOT BUILT, AND BOTH COST SOMETHING.**
+>
+> - ✅ **Tier 1 is live** behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`: MapLibre GL JS over
+>   OpenFreeMap, no API key, no account, no rate limit, no billing. §1 and §3.1's reasoning is why.
+> - ⚠️ **§3's `useResilientMapStyle` HOT-SWAP IS NOT BUILT, AND `FALLBACK_KEY` IS THE REASON.**
+>   MapTiler needs an account and a public key in the client bundle plus a metered quota, which is
+>   a vendor this pass deliberately does not add. What shipped instead: three consecutive tile
+>   errors render an **in-place panel over a working report list**, which answers §1's actual
+>   complaint — "an unhardened frontend renders a completely blank gray canvas" — without a vendor.
+>   Any successful tile resets the streak, so one 404 at the edge of coverage does not trip it.
+> - ⚠️ **§4's PMTiles-on-R2 path is unbuilt and `pmtiles` is not a dependency.** Note the cost is
+>   understated: a ~110 GB planet file exceeds R2's 10 GB free tier, so it is ~$1.50/month in
+>   storage rather than free, and §4.1's "256-byte vector byte-chunks" describes the range-request
+>   mechanism, not real tile sizes. Worth revisiting past roughly 500k MAU, per §5.
+> - ⚠️ **THE ODbL ATTRIBUTION IS NOT OPTIONAL AND IS NOT OURS TO COMPOSE.** It arrives on the
+>   planet TileJSON and MapLibre renders it from there. Neither shipped style declares its own.
+> - **Dark mode is the one forked style** (`public/map-styles/qatoto-dark.json`). Light references
+>   OpenFreeMap's hosted `liberty` URL. OpenFreeMap publishes no dark style, and the fork is
+>   written against the OpenMapTiles schema rather than derived from CARTO's Positron, whose design
+>   is CC-BY and would import an attribution obligation this repo does not otherwise carry.
+
 ## 1. Overview & SLA Reality
 
 Civic Pulse uses **MapLibre GL JS** combined with **OpenFreeMap** vector tiles to eliminate the excessive licensing fees and billing risks of Google Maps.

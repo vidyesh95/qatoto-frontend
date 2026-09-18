@@ -7,6 +7,41 @@
 
 ---
 
+> ## ⚠️ Correction header — read this before the document below
+>
+> **Status: PARTLY SUPERSEDED. Written as a target architecture; four of its positions were
+> settled against what shipped.** The authority is the code and `docs/R_AND_D_STRUCTURE.md` §6,
+> never this file. Corrections, in the order the sections appear:
+>
+> - **§5 (reverse geocoding)** — the geocode cache is a **Postgres table** (`geocode_cache`), not
+>   Redis, and entries are cached **permanently** rather than for 30 days. A geocoder is not a pure
+>   function: providers re-tile and re-rank, so replaying the clustering job against a changed
+>   provider would silently move a report into a different cluster and change a PUBLISHED
+>   opportunity score. Geocoding once and replaying the cached row is what makes the job replayable
+>   at all. The provider is free public Nominatim (`GEOCODING_PROVIDER`), and **forward** geocoding
+>   from free text is what actually runs — the client does not reverse-geocode a pin.
+> - **§6 (media pipeline)** — accurate as a design, but **nothing on problem reports is built**.
+>   The backend has `sharp`, `multer`, `cloudinary` and `src/lib/image.ts` serving 21 other upload
+>   routes; there is no problem-report attachment route, table or column. `todo.md` §19.
+> - **§7 and §11 (exact coordinates)** — **`ExactLocationInputSchema` IS SUPERSEDED.** The client
+>   sends no exact coordinate and will not: when a pin is added it rounds to 3 decimals (~110 m)
+>   **before sending**. The server therefore never holds a precise coordinate, which makes the
+>   dual-storage split, `fuzzCoordinateForPublicMap`, the 90-day purge and the DSR coordinate path
+>   unnecessary rather than unbuilt. `CreateProblemReportSchema` is `.strict()` and takes
+>   `{ title, categoryId, description, locationText }` — the sheet's location is FREE TEXT.
+> - **§8 (clustering)** — **not HDBSCAN, and PostGIS is refused on purpose.** The backend matches
+>   within a **25 km radius** in `geocode-and-cluster-submission.ts`, and `src/db/schema/rnd.ts`
+>   states that the `(categoryId, latitude, longitude)` btree index "replaces PostGIS". There is no
+>   PostGIS extension, no `ST_Contains` border check and no temporal-decay kernel; scoring is
+>   `recompute-opportunity-scores`, a nightly pg-boss job writing five named component columns.
+> - **§9 (feasibility)** — **the composite score and `feasibilityRating` are REJECTED.** See
+>   `FEASIBILITY_MODEL.md`'s own correction header.
+> - **§10 (taxonomy)** — **the fixed 5×12 hierarchy with hardcoded UUIDs is REJECTED.** See
+>   `PROBLEM_TAXONOMY.md`'s correction header.
+>
+> **What shipped from this document:** §3's map engine choice. MapLibre GL JS over OpenFreeMap is
+> live behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, keyless and free, for the reasons §3.1 gives.
+
 ## 1. Overview & Vision
 
 Civic Pulse is Qatoto's bottom-up civic problem mapping engine. It transforms ground-level infrastructure breakdowns—water scarcity, unpassable roads, power grid failures, post-harvest agricultural losses, broken public transit—into **rigorous, geocoded market intelligence**.

@@ -37,6 +37,10 @@ and `git log` are the record of what was built and why.
 - **Video Transcripts & Paywalls** — Transcripts are mock placeholders (no Speech-to-Text ASR pipeline or table); `isPremium` has no entitlement or paywall model in the backend.
 - **Third-Party Escrow & FX Adapters** — Escrow and FX adapters are deterministic fakes. The **logistics** adapter is a fake on purpose and stays one — see §4.
 
+**R&D / Civic Pulse:**
+
+- **Problem map basemap** — **Part 1 SHIPPED.** MapLibre over free keyless OpenFreeMap tiles behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, static SVG as the fallback. The coarse map pin, the `domain` enum, the four-component feasibility readout and viewport-driven reads are open. One E2E assertion is flaky with the flag on and is left unchanged. See §19.
+
 **Legal & Compliance:**
 
 - **Legal Entity & Terms of Service** — Legal entity details in `src/lib/site.ts` are marked `[TO BE CONFIRMED]`; Terms of Service rewrite needed to cover marketplace commerce, orders, R&D ventures, and teardowns.
@@ -570,6 +574,79 @@ them the trust boundary**, because that argument is CORRECT: rows written under 
 `arrival-window.schemas.ts`. This work changes **who may write**, not what is read.
 
 Build the backend half alone first — the frontend has nothing to show until the routes answer.
+
+---
+
+### 19. Civic Pulse — the rest of the problem-mapping specs
+
+**Part 1 shipped: the vector basemap.** `/research-and-development/problem-map` renders MapLibre GL
+over OpenFreeMap behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, with the static SVG as the flag-off and
+no-WebGL2 fallback. Free, keyless, no vendor. Details and the four decisions that came with the
+specs are in `docs/R_AND_D_STRUCTURE.md` §6; each spec doc carries its own correction header.
+
+⚠️ **ONE E2E ASSERTION IS FLAKY WITH THE FLAG ON, AND IT SHOULD BE FIXED BEFORE THE FLAG DEFAULTS
+ON.** `tests/specs/rnd-backend.spec.ts:126` asserts the STATIC canvas's alt text:
+
+```ts
+await expect(
+    surface.main.getByRole("img", { name: "World map of reported problems" }),
+).toBeVisible();
+```
+
+The surface deliberately renders `static` on the server and upgrades to `vector` after hydration
+(so the server HTML and the hydration render agree — see §6), so that assertion races the upgrade:
+measured 1 failure in 5 runs against a flag-on dev server, 21/21 green with the flag off. The
+assertion the test actually cares about — `button[aria-pressed]` per cluster, two lines below — is
+stable in both modes. The fix is to assert the pins and drop the canvas-specific `img` check, or to
+accept either canvas. **Left unchanged because tests are not modified without being asked.**
+
+**1. The coarse map pin — the one thing blocking a better cluster.**
+Backend first: add `approxLatitudeMicrodegrees` / `approxLongitudeMicrodegrees` to
+`CreateProblemReportSchema` (currently `.strict()` with no coordinate field), server-re-quantized
+to 3 decimals so a lying client cannot smuggle precision, with `locationText` kept as the label.
+Then the picker in `report-problem-sheet.tsx`. ⚠️ **The client rounds BEFORE sending** — that is
+what keeps `GEOLOCATION_PRIVACY.md`'s whole apparatus unnecessary rather than unbuilt. Today the
+sheet's own comment says a place picker "must not" exist; that comment becomes wrong the day this
+ships and must be updated with it, not left to contradict the code.
+
+**2. `research_category.domain` as a closed enum.**
+Not a FK, not user-creatable — it is the comparability layer that lets one country's
+`cold_storage_loss` roll up beside another's. Categories stay user-creatable; domain assignment is
+moderated separately, so an unassigned category still pins and clusters and simply does not enter
+the country matrix yet. Plus a nullable self-FK `parentCategoryId` for optional nesting, and stable
+slugs as the durable identity with database-generated UUIDs. See `docs/PROBLEM_TAXONOMY.md`.
+
+**3. The four-component feasibility readout.** Four bounded sub-scores, each with its own source
+and `asOf`, never summed and with no verdict enum. See `docs/FEASIBILITY_MODEL.md`.
+
+**4. Viewport-driven cluster reads.** `ListProblemClustersFilter` already declares four bbox
+microdegree fields (`src/lib/rnd/discovery.api.ts:55-60`) that **no caller passes** — an unused
+wrapper is the unverified code the R&D hook audit exists to catch. Wiring them to `moveend` turns
+`problem-map-canvas` from `props-only` into `client-query` and needs a `useProblemClustersQuery`
+hook that does not exist. All four or none: the backend rejects a partial box with a 422.
+
+**5. Media on problem reports.** The backend pipeline exists — `sharp`, `multer`, `cloudinary`,
+`src/lib/image.ts`, 21 other upload routes — but problem reports have no attachment route, table or
+column. Until then `DATA_RETENTION.md`'s "Processed Problem Photos" row describes nothing.
+
+**6. Tile tiers 2 and 3, and the abuse controls.** MapTiler hot-failover needs an account and a
+public key with a metered quota; PMTiles-on-R2 is ~$1.50/month for a ~110 GB planet file. Neither is
+worth it before the traffic exists — today three consecutive tile errors hand the surface back to
+the static canvas. Altcha PoW and the honeypot from `CIVIC_PULSE_PROBLEM_MAPPING.md` §4 are also
+unbuilt; the shipped abuse control is `requireIdentifiedUser` plus a 10-per-15-minutes limiter.
+
+**7. Delete `src/types/research-and-development/discovery.ts`.** Dead legacy `ProblemReport` with
+`mapPosition`, `reportCount` and `opportunityScore` — every one of which is gone from the wire. It
+is imported by nothing.
+
+⚠️ **THE MAPLIBRE WORKER IS COPIED INTO `public/` ON EVERY `dev` AND `build`, AND THAT IS LOAD-BEARING.**
+`scripts/sync-maplibre-worker.mjs` exists because Turbopack breaks MapLibre's tile worker twice
+over: `import.meta.url` is a `file://` URL so MapLibre derives an empty worker URL, and Turbopack's
+own emitted copy of the worker keeps a relative `import "./maplibre-gl-shared.mjs"` that resolves to
+a 404 against its content-hashed sibling. Both failures are SILENT — the map renders a shaded-relief
+backdrop and simply never fetches a vector tile. If the basemap ever goes blank after a dependency
+bump, check that script first; it throws on an unmet sibling import rather than letting the failure
+reach a reader.
 
 ---
 

@@ -7,6 +7,37 @@
 
 ---
 
+> ## ⚠️ Correction header — read this before the document below
+>
+> **Status: THE FOUR PILLARS ARE KEPT. THE COMPOSITE SCORE AND THE VERDICT ENUM ARE REJECTED.**
+> Nothing here is built.
+>
+> - ⚠️ **§2's single 0–100 `S_feasibility` IS NOT SHIPPING.** `R_AND_D_STRUCTURE.md` §7 already
+>   rules that the two evidence bases "are never merged into one number… There is no join on the
+>   wire", and says why the identical five-field shape of demand signals and localization
+>   assessments "is exactly what makes averaging them tempting and wrong". Pillar 1 is Qatoto's own
+>   cluster data and pillars 2–4 are World Bank and UN Comtrade; summing them is that join, done
+>   with weights.
+> - ⚠️ **§4's `feasibilityRating` ENUM IS REJECTED OUTRIGHT.** `cofounders.schemas.ts` records the
+>   reasoning for the identical field — "a renderer that requires one invites people to invent one"
+>   — and the case-study `scaled | failed | pivoted` badge was rejected as "an unattributed
+>   JUDGMENT, which PRODUCT.md bans harder than an unattributed number". Stamping
+>   `ngo_grant_target` on a real country is that failure at national scale.
+> - ✅ **WHAT IS KEPT:** the four pillars, their concrete sources, the per-pillar formulas, and
+>   §5's confidence bands. They render as **four bounded readouts, side by side, never summed**,
+>   each carrying its own source name and its own `asOf` — because the four data sources have four
+>   different vintages and one number would hide all four.
+>
+> ```
+> Kenya · agriculture_rural/cold_storage_loss
+>   Need density      24 / 30   Qatoto clusters   2026-09
+>   Purchasing power  11 / 25   World Bank PPP    2025
+>   Manufacturing     17 / 25   UN Comtrade HS6   2025
+>   Regulatory        13 / 20   B-READY           2024
+> ```
+>
+> §5.2's `modelVersion` / `computedAt` / `dataSnapshotDates` survive and apply per component.
+
 ## 1. Executive Summary
 
 A core requirement of Civic Pulse is answering: **"Which country is facing which problem, and what kind of startup can be built around it, or is it feasible?"**

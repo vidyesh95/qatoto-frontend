@@ -7,6 +7,31 @@
 
 ---
 
+> ## ⚠️ Correction header — read this before the document below
+>
+> **Status: THE HAZARD IS REAL. THE MITIGATION IS NOT THE ONE BELOW — THE PROBLEM IS REMOVED
+> INSTEAD OF MANAGED.**
+>
+> §1's analysis stands: a 6-decimal coordinate is ~0.11 m and is PII under GDPR and the DPDP Act.
+> The answer here is not to collect it, rather than to collect it and defend it.
+>
+> - ⚠️ **§2's DUAL-STORAGE ARCHITECTURE IS NOT BUILT AND IS NOT PLANNED.** `problem_submission`
+>   holds no client-supplied coordinate at all: `CreateProblemReportSchema` is `.strict()` and
+>   takes free-text `locationText`, which the **server** forward-geocodes. There is no
+>   `exactLatitudeMicrodegrees`, no `accuracyMeters` and no `reporterIpHash` column. When a map pin
+>   is added, the client will round to 3 decimals (~110 m) **before sending**.
+> - ⚠️ **§3's `fuzzCoordinateForPublicMap` IS SUPERSEDED**, and note it is also wrong as written:
+>   it computes `latJitter` and applies it to latitude only, returning `fuzzedLng` unjittered —
+>   the longitude line is missing. It is not a function to port.
+> - ⚠️ **§6's `POST /api/privacy/data-request` IS NOT A ROUTE AND MUST NOT BECOME ONE AT THAT
+>   PATH.** CLAUDE.md forbids Next.js API routes for business logic; privacy requests belong to the
+>   Express backend, which already has a privacy module. A coordinate-erasure path is moot anyway:
+>   there is no exact coordinate to erase.
+> - ✅ **WHAT SURVIVES AND SHOULD BE BUILT:** §4's consent copy and media advisory (reworded — no
+>   90-day promise to make), and §5's PII screen, as **UX feedback only**. CLAUDE.md is explicit
+>   that a client-side check "exists only for fast UX feedback" and that the server must
+>   re-validate; a regex in the browser is trivially bypassed by anyone who opens devtools.
+
 ## 1. Regulatory Context: Why Coordinates Are PII
 
 Under both the European Union GDPR (Recital 26, Article 4(1)) and India's Digital Personal Data Protection (DPDP) Act, geolocation data that can be linked to an identifiable living individual constitutes **Personally Identifiable Information (PII)**.

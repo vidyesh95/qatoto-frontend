@@ -7,6 +7,32 @@
 
 ---
 
+> ## ⚠️ Correction header — read this before the document below
+>
+> **Status: PROPOSED, NOT IMPLEMENTED, and amended in three ways.** The shipped taxonomy is the
+> flat, user-creatable, moderated `research_category` table with an 11-value `pinIconKey`. The
+> corpus below is a **seed shape**, not a schema.
+>
+> - ⚠️ **THE HARDCODED UUIDs (`11000000-0000-…`) ARE REJECTED.** They are unmergeable and
+>   unmigratable, and they make taxonomy identity depend on a wire-format detail. **Stable slugs
+>   are the durable identifier** (`water.flooding`, `infrastructure.roads.potholes`); the database
+>   generates the UUIDs and the API may expose both. Treat every ID in §3 as illustrative.
+> - ⚠️ **`domain` IS A CLOSED ENUM ON THE EXISTING FLAT TABLE, NOT A NEW HIERARCHY.** It is not a
+>   FK and it is not user-creatable, because it is the **comparability layer** — the thing that
+>   lets one country's `cold_storage_loss` roll up beside another country's. Categories stay
+>   user-creatable via `POST /research-categories`; that shipped capability is correct, because no
+>   fixed list predicts every problem type. **Domain assignment is moderated separately from
+>   category creation**: an unassigned category still pins and clusters immediately and simply does
+>   not enter the country matrix until a moderator assigns it. Local specificity is immediate;
+>   cross-country comparability is curated.
+> - ⚠️ **SUBCATEGORIES ARE OPTIONAL, NOT TWO-OR-THREE PER DOMAIN.** Nesting, when it is needed, is
+>   a nullable self-FK `parentCategoryId` — not a second fixed level.
+> - **§4's "No 'Other' junk drawer" does not match the code**: `category_pin_icon_key` carries an
+>   `other` label and it is the DEFAULT. That is pin ART, not a category, and the two should not be
+>   conflated.
+>
+> Nothing here is built. `todo.md` §19 carries the migration.
+
 ## 1. Purpose & Principles
 
 A stable, deterministic problem taxonomy is required to prevent spatial clustering from splintering and to ensure startup feasibility models evaluate comparable domain challenges.
