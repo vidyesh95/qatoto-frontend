@@ -223,9 +223,14 @@ export function usePrepareCheckout(): UseMutationResult<
  * this hook generated it, every retry would carry a new key and a network timeout followed by a retry
  * would produce two sets of orders.
  *
- * On success the cart is emptied SERVER-SIDE in the same transaction, so the cached cart is
- * invalidated rather than patched — the client does not know what an emptied cart's `updatedAt` is,
- * and guessing would be a fabricated value.
+ * On success the confirmed lines are removed SERVER-SIDE in the same transaction, so the cached
+ * cart is invalidated rather than patched — the client does not know what the resulting cart's
+ * `updatedAt` is, and guessing would be a fabricated value.
+ *
+ * ⚠️ IT IS NO LONGER "the cart is emptied", and the difference is why the invalidation matters more
+ * than it used to. A SCOPED checkout (`PrepareCheckoutInput.items`, the PDP's "Buy now") leaves
+ * every line it did not buy in place, so a stale cache here would show a buyer a cart still holding
+ * the thing they just ordered.
  */
 export function useConfirmCheckout(): UseMutationResult<
   ActionResponse<ConfirmCheckout>,
