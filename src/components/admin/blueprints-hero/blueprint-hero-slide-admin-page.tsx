@@ -121,7 +121,7 @@ export default function BlueprintHeroSlideAdminPage() {
     data: slidesQuery.data,
   });
 
-  const orderedSlideIds = slidesQuery.data?.map((slide) => slide.id) ?? [];
+  const orderedSlideIds = slidesQuery.data?.map((slide: AdminBlueprintHeroSlide) => slide.id) ?? [];
 
   /**
    * Moves one slide to a new index and sends the WHOLE resulting order.

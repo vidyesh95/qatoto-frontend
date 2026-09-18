@@ -14,10 +14,11 @@ import {
   updateBlueprintHeroSlide,
 } from "@/lib/blueprints/hero.api";
 import type {
+  AdminBlueprintHeroSlide,
   CreateBlueprintHeroSlideInput,
   UpdateBlueprintHeroSlideInput,
 } from "@/lib/blueprints/hero.schemas";
-import { unwrap } from "@/lib/http";
+import { ApiRequestError, unwrap } from "@/lib/http";
 
 /**
  * Its own key factory rather than an entry in `rndKeys`, which scopes itself to the R&D
@@ -38,7 +39,7 @@ export const blueprintHeroSlideKeys = {
  * `retry: false` because a 403 is an answer, not a flake.
  */
 export function useAdminBlueprintHeroSlidesQuery(isEnabled: boolean) {
-  return useQuery({
+  return useQuery<AdminBlueprintHeroSlide[], ApiRequestError>({
     queryKey: blueprintHeroSlideKeys.adminList(),
     queryFn: async () => unwrap(await listBlueprintHeroSlidesForAdmin()),
     enabled: isEnabled,
