@@ -298,7 +298,8 @@ The Blueprints backend (Hero, Showcases, Case Studies, and Teardowns) is wired e
 
 Left after the 2026-09-17 cleanup pass (all errors fixed or confirmed false positives, Zod 4
 `.strip()` removed). Re-list with `pnpm exec react-doctor --verbose`. Deferred because each needs a
-per-site read or a decision, not a mechanical fix.
+per-site read or a decision, not a mechanical fix. **Item 5 shipped 2026-09-18 and is kept as the
+record of what was decided, not as open work.**
 
 1. **Refactor-scale**: `no-high-complexity-react-function` ×48, `no-giant-component` ×35,
    `duplicate-jsx-subtree` ×17, `only-export-components` ×39 (e.g. `create-listing-page.tsx`).
@@ -310,37 +311,55 @@ per-site read or a decision, not a mechanical fix.
    `js-set-map-lookups` ×24, `async-await-in-loop` ×9 (`src/hooks/products.ts`, some sequential on
    purpose), `server-sequential-independent-await` ×7, `no-async-event-handler-without-reentry-guard` ×4,
    `no-locale-format-in-render` ×5, plus single hits.
-5. **`dangerous-html-sink` ×2** (`blog-detail.tsx:75`, `press-detail.tsx:68`): CMS HTML rendered
-   without sanitizing. **Latent, not live** — `QATOTO_CMS_URL` is unset, so both sinks are fed by
-   the eight in-repo `MOCK_BLOGS` / `MOCK_PRESS` bodies. It becomes real the day the env var is set.
+5. ~~**`dangerous-html-sink` ×2**~~ — **SHIPPED 2026-09-18. THE SINK IS GONE, NOT SANITIZED.**
 
-    ⚠️ **DECIDED 2026-09-18: THE CMS BODY BECOMES MARKDOWN. The sink is DELETED, not filtered.**
-    Render it through the hardened `react-markdown` configuration already shipped in
-    `src/components/home/blueprints/showcase/sections/showcase-write-up.tsx` — `skipHtml`, an
-    `allowedElements` allowlist and a `urlTransform` that keeps only http(s), site-relative and
-    anchor addresses. `react-markdown` and `remark-gfm` are already dependencies, so this costs
-    nothing to install, and the `prose [&_h2] [&_p] [&_ul]` Tailwind styling on both components
-    survives untouched because Markdown emits the same elements.
+    `blog-detail.tsx` and `press-detail.tsx` no longer contain a `dangerouslySetInnerHTML`. The CMS
+    body is **GFM Markdown** and renders through `src/components/information/article-markdown.tsx`,
+    which sets `skipHtml` (raw HTML is dropped, never escaped into view), an `allowedElements`
+    allowlist with `unwrapDisallowed`, and a `urlTransform`. Measured against the live renderer:
+    `<script>`/`<iframe>`/`<img onerror>` vanish, and `javascript:`, `data:` and protocol-relative
+    `//host` addresses are stripped to `""`, which the `a` override renders as a plain `<span>`
+    rather than an `<a href="">` that still looks clickable.
 
-    **A sanitizer was considered and lost.** DOMPurify needs `isomorphic-dompurify` to run during
-    SSR, which adds a dependency plus jsdom weight on the server, and leaves a sink that has to stay
-    correctly configured forever. The swap removes the sink instead.
+    **A sanitizer lost and stays lost.** DOMPurify needs `isomorphic-dompurify` for SSR and leaves a
+    sink that has to remain correctly configured forever. No sanitizer dependency was added, and
+    `react-markdown` + `remark-gfm` were already dependencies, so this cost nothing to install.
 
-    **Do it BEFORE the CMS is chosen, not after.** The contract change is free today — eight mock
-    strings and two components — and is a content migration the moment anything real is authored.
+    **⚠️ NO IMAGES IN AN ARTICLE BODY, BY DESIGN.** `img` is absent from the allowlist. An article's
+    image is `coverImage`, already a sized `next/image`; a body image carries no dimensions — the
+    case `showcase-write-up.tsx` refuses outright because it shifts the page — and `next.config.ts`
+    admits only `res.cloudinary.com` plus two OAuth avatar hosts anyway. Add them the day the CMS
+    supplies a size contract, the way `writeUpImages` does. **Do not add a sizeless fallback.**
 
-    ⚠️ **THE SANITIZER IS NOT THE ONLY HOLE ON THAT PATH.** `cms.ts:41` is
-    `const data: T = await res.json();` — a bare cast with **no Zod**, so an upstream CMS response
-    reaches the component unvalidated as well as unsanitized. That is a Pattern 2 violation sitting
-    beside the sink and it is fixed in the same pass, not separately.
+    **The second hole closed in the same pass.** `cmsFetch` took `schema: z.ZodType<T>` and
+    `safeParse`s; the bare `const data: T = await res.json()` is gone, and `BlogPost` / `PressItem`
+    are now `z.infer` of schemas rather than hand-written types. ⚠️ **Those schemas are permissive
+    about FORMATS and strict about SHAPE on purpose** — `slug`, `publishedAt` and `body` are plain
+    `z.string()`. A slug regex or `z.iso.datetime()` would turn a CMS that formats a date differently
+    into a silent fall back to the invented mock articles, which is worse than rendering what it sent.
+    All 21 tests in `src/lib/cms.test.ts` pass unmodified.
 
-    ⚠️ **DO NOT "FIX" THE THIRD `dangerouslySetInnerHTML`.** `src/lib/structured-data.tsx:66` is
-    JSON-LD and is already correct — it escapes `<` to `<`, with the `</script>` breakout it
-    defends against documented at `:58-64`. React Doctor does not flag it and neither should anyone
-    else.
+    ⚠️ **THE URL FILTER NOW LIVES IN `src/lib/markdown-safe-url.ts` AND IS SHARED.** It was local to
+    `showcase-write-up.tsx`; two copies of the filter that stops `javascript:` reaching an `href` is
+    the shape where one gets a fix and the other does not. Deliberate twins are fine for labels, not
+    for this.
 
-    `src/lib/cms.test.ts` asserts against the current fetch/fallback shape. Read it when the swap
-    happens; it is not being changed now.
+    ⚠️ **DO NOT "FIX" THE THIRD `dangerouslySetInnerHTML`.** `src/lib/structured-data.tsx:69` is
+    JSON-LD and was already correct — it escapes `<` to `<` against a `</script>` breakout,
+    documented at `:58-64`. It was not touched. React Doctor does not flag it and neither should
+    anyone else.
+
+    **Deliberately not carried over from the launch renderer:** the nesting-depth guard
+    (`deepestWriteUpNestingDepth`, max 32). It stops a `RangeError` on deeply nested **maker UGC**;
+    an article body is first-party editorial from a CMS the company chooses, and importing
+    `@/lib/blueprints/` into `(information)` would couple two unrelated domains for a failure mode
+    that is a 500 rather than an injection. **Add it the day the CMS accepts third-party submissions.**
+
+    **Still open, and it is not this item:** once a real CMS is live, a malformed or failing upstream
+    makes `cmsFetch` return `null` and the getters serve the four invented articles under the
+    company's name. That is pre-existing behaviour on a non-2xx and on a network error too — the Zod
+    parse only adds a third way to reach it — and it deserves its own decision rather than a quiet
+    change.
 
 6. **`require-pnpm-hardening`**: `minimumReleaseAge` in `pnpm-workspace.yaml`, a supply-chain
    policy call for the owner.

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import ArticleMarkdown from "@/components/information/article-markdown";
 import { type BlogPost, formatDate } from "@/lib/cms";
 
 const CATEGORY_LABEL: Record<BlogPost["category"], string> = {
@@ -70,10 +71,9 @@ export default function BlogDetail({ post, related }: { post: BlogPost; related:
           </div>
         )}
 
-        <div
-          className="prose prose-neutral mt-12 max-w-none font-serif text-lg leading-relaxed text-foreground [&_h2]:mt-12 [&_h2]:font-sans [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h3]:mt-10 [&_h3]:font-sans [&_h3]:text-xl [&_h3]:font-semibold [&_li]:mt-2 [&_p]:mt-6 [&_ul]:mt-6 [&_ul]:list-disc [&_ul]:pl-6"
-          dangerouslySetInnerHTML={{ __html: post.body }}
-        />
+        <div className="prose prose-neutral mt-12 max-w-none font-serif text-lg leading-relaxed text-foreground [&_h2]:mt-12 [&_h2]:font-sans [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h3]:mt-10 [&_h3]:font-sans [&_h3]:text-xl [&_h3]:font-semibold [&_li]:mt-2 [&_p]:mt-6 [&_ul]:mt-6 [&_ul]:list-disc [&_ul]:pl-6">
+          <ArticleMarkdown markdown={post.body} />
+        </div>
 
         {post.tags.length > 0 && (
           <div className="mt-14 flex flex-wrap gap-2 border-t border-border pt-8">

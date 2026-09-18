@@ -48,7 +48,7 @@
 // records. The video block is its own client island.
 
 import Image from "next/image";
-import Markdown, { defaultUrlTransform, type Components, type ExtraProps } from "react-markdown";
+import Markdown, { type Components, type ExtraProps } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { buildYoutubeBlueprintVideo } from "@/components/home/blueprints/authoring/youtube-link-field";
@@ -59,6 +59,7 @@ import {
   deepestWriteUpNestingDepth,
   MAX_SHOWCASE_WRITE_UP_NESTING_DEPTH,
 } from "@/lib/blueprints/showcase-write-up-nesting";
+import { keepOnlyWebAddresses } from "@/lib/markdown-safe-url";
 
 /** The elements a write-up may produce. Everything else is unwrapped to its text. */
 const ALLOWED_WRITE_UP_ELEMENTS = [
@@ -89,14 +90,6 @@ const ALLOWED_WRITE_UP_ELEMENTS = [
   "th",
   "td",
 ];
-
-const SAFE_URL_PATTERN = /^(https?:\/\/|\/(?!\/)|#)/i;
-
-/** Keeps http(s), site-relative and in-page addresses; anything else becomes an empty string. */
-function keepOnlyWebAddresses(url: string): string {
-  const transformedUrl = defaultUrlTransform(url);
-  return SAFE_URL_PATTERN.test(transformedUrl) ? transformedUrl : "";
-}
 
 /**
  * Whether an image address points at storage Qatoto controls: a site-relative file, or an upload in
