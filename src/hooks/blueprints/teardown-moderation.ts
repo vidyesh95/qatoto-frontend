@@ -66,7 +66,15 @@ export function useModerateTeardownMutation(): UseMutationResult<
   }
 > {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<
+    ActionResponse<TeardownModerationResult>,
+    Error,
+    {
+      readonly submissionId: string;
+      readonly decision: TeardownModerationDecision;
+      readonly idempotencyKey: string;
+    }
+  >({
     mutationFn: (variables) => moderateTeardownSubmission(variables),
     onSuccess: (result) => {
       if (!result.success) return;

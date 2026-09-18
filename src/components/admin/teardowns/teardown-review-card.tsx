@@ -40,7 +40,7 @@ import {
   type BlueprintProvenanceKind,
 } from "@/lib/blueprints/schemas";
 import { createHttpsOrSiteRelativeUrlSchema } from "@/lib/blueprints/url-source.schemas";
-import type { ApiError } from "@/lib/http";
+import type { ActionResponse, ApiError } from "@/lib/http";
 import { formatIsoInstantAsDateLabel } from "@/lib/store/format";
 
 const CARD_CLASS = "rounded-2xl border border-[#CAC4D0]/60 p-4";
@@ -157,7 +157,7 @@ export default function TeardownReviewCard({
         idempotencyKey: getIdempotencyKey(),
       },
       {
-        onSuccess: (result) => {
+        onSuccess: (result: ActionResponse<TeardownModerationResult>) => {
           if (!result.success) {
             setCardState({ status: "refused", error: result.error });
             return;
