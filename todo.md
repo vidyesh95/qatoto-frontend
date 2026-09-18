@@ -22,7 +22,7 @@ and `git log` are the record of what was built and why.
 
 **Commercial & Payment Rail (Top priority open build):**
 
-- **Payment Gateway Integration** — Stripe (international card/bank rail) and Razorpay (India UPI/cards rail). The `fake` adapter is refuse-closed in production; real provider adapters, webhooks, and frontend checkout modals are unbuilt.
+- **Payment Gateway Integration** — **Razorpay is SHIPPED** (adapter, both signature checks, webhook inbox, Standard Checkout modal). Stripe is an enum label with no implementation, and **neither provider may run in production until a marketplace split exists** — without one a captured payment lands in Qatoto's own account, which is the custody §14 refused. See §1.
 - **"Buy Now" Checkout** — Direct single-product checkout bypassing the multi-seller cart.
 - **Four Minor Store Items** — Service-offering coverage read, `standardCode` filter, `viewer.canDelete` on Q&A, and `DELETE /products/:id` 500 on customized listings.
 - **§18 (Provider freight rate cards)** — The freight tables are empty because only `moderate_commerce` may write them. Give approved forwarders provider-scoped write routes and a Studio composer so they publish the lanes they already sell.
@@ -57,6 +57,32 @@ The settings panel renders read-only and explains that phone verification is not
 `sendOTP` implementation and there is no SMS provider in `src/config/index.ts` or `.env.example` —
 the only OTP delivery configured is Brevo, which is email. Configure an SMS provider (Twilio,
 AWS SNS, Msg91, etc.), configure the Better Auth plugin, and add the migration.
+
+**One live snag, independent of the vendor decision.** `src/lib/auth-client.ts:28` still registers
+`phoneNumberClient()`, so `authClient.phoneNumber.sendOtp()` is callable against a route that does
+not exist. No UI reaches it today — `phone-number-panel.tsx` documents the removal — but the
+registration is a dead client surface that will 404 the first caller. Drop it, or keep it and say
+why in the file.
+
+**⚠️ WhatsApp Cloud API is a DIFFERENT vendor, not the absence of one.** It was raised as the cheap
+answer; it needs a verified Meta Business account, a WhatsApp Business number and per-template
+approval, and on authentication templates the per-message price is comparable to SMS rather than a
+third of it. It may still be the right rail for the manufacturing hubs — it is not a way to skip
+§11's blocker.
+
+**⚠️ PASSKEYS ARE ALREADY SHIPPED AND ARE NOT A SUBSTITUTE FOR THIS.** `@better-auth/passkey` is a
+dependency in both repos, the plugin is registered (`qatoto-backend/src/lib/auth.ts:501`), the
+`passkey` table exists (`_core.ts:469-486`), and the UI is wired end to end —
+`passkeys-panel.tsx`, `sign-in.tsx:41-46`, `auth-client.ts:23`, `use-is-web-authn-supported.ts`.
+Anyone proposing to "add passkeys" here is proposing work that is done. And they answer a different
+question: a passkey proves **who is signing in**; it cannot prove **that a phone number belongs to
+them**.
+
+**⚠️ OPEN QUESTION — IS §11 NEEDED AT ALL?** Authentication is already covered by email OTP plus
+passkeys. A verified phone would be a trust signal, and Qatoto runs no KYC and holds no funds
+(the platform is a directory, not an intermediary), so nothing downstream currently requires
+one. Decide whether this is a "not building it" before contracting any vendor — the cheapest SMS
+provider is the one never signed up for.
 
 ### Share targets have no brand marks
 
@@ -93,31 +119,82 @@ inapplicable unless native video file hosting is built.
 
 ## Open Work: Yet to Be Written in Code
 
-### 1. Payment Gateway Integration (Stripe & Razorpay)
+### 1. Payment Gateway Integration — Razorpay SHIPPED, Stripe unbuilt, both blocked on a split
 
-The platform currently operates on `direct_processor` and `FakeCommercePaymentProviderAdapter` (`commerce-payment-provider.adapter.ts`).
-In production (`NODE_ENV=production`), the fake adapter throws `PROVIDER_UNAVAILABLE`. Stripe is an unhandled
-placeholder branch, and Razorpay is not yet in the schema.
+⚠️ **THIS SECTION WAS STALE IN FOUR PLACES AND THE CORRECTIONS ARE THE POINT.** It said Razorpay
+"is not yet in the schema", listed "widen `CommercePaymentProviderName` to include `razorpay`" and
+"webhook signature verification" as work to do, and the at-a-glance line said the checkout modals
+were unbuilt. All four shipped. Read a stale blocker as a claim to CHECK.
 
-**Backend (`qatoto-backend`):**
+**What is actually shipped.** `commercePaymentProviderEnum` is `["fake", "stripe", "razorpay"]`
+(`store.ts:1308-1312`) and the TS union matches (`commerce-payment-provider.adapter.ts:17`).
+`RazorpayCommercePaymentProviderAdapter` is 536 lines of `fetch` — **no npm SDK on purpose**, its
+header says the SDK's loose typing is refused by CLAUDE.md §4. It carries **two** signature checks:
+the webhook HMAC over the raw body (`:515-525`) and the Checkout-handler HMAC over
+`order_id|payment_id` (`:485-498`), both through a constant-time compare (`:459-475`). The raw-body
+mount is `src/app.ts:182`, the route `POST /webhooks/payments/razorpay`. Frontend:
+`src/lib/razorpay-checkout.ts` and `order-payment-panel.tsx` (commit `79b8faa`).
 
-- Install `stripe` SDK.
-- Implement `StripeCommercePaymentProviderAdapter` implementing:
-    - `createPaymentIntent`
-    - `retrievePaymentIntent`
-    - `createRefund`
-    - `retrieveRefund`
-- Add webhook endpoint `POST /commerce/webhooks/stripe` to handle:
-    - `payment_intent.succeeded` -> transitions order to `confirmed`, updates ledger settlement.
-    - `payment_intent.payment_failed` -> marks payment as failed.
-    - `charge.refunded` -> updates order refund state.
-- For India: Widen `CommercePaymentProviderName` to include `"razorpay"`, add `razorpay` SDK, order creation, and webhook signature verification.
+**And the webhook inbox already exists** — the one a review would propose adding.
+`commerce_payment_webhook_event` (`store.ts:8443-8479`) carries the unique index
+`(provider, provider_event_id)` and its header states the rule: _"Persist BEFORE applying state
+transitions; unique (provider, provider_event_id) makes replay harmless."_ Siblings:
+`commerce_connector_webhook_event`, and `provider_webhook_event` in R&D.
 
-**Frontend (`qatoto-frontend`):**
+#### What is actually left
 
-- In `src/components/commerce/sections/order-payment-panel.tsx`:
-    - When payment intent is created, embed Stripe Elements (Card / Apple Pay / Google Pay) or open the Razorpay Checkout modal.
-    - Confirm payment and poll intent status until settled.
+1. **Stripe has no implementation.** The enum label exists and the resolver falls through to
+   `PROVIDER_UNAVAILABLE` (`commerce-payment-provider.adapter.ts:199-206`). `stripe` is in neither
+   repo's `package.json`. There is no `POST /webhooks/payments/stripe`, no raw-body mount and no
+   signature verification for it.
+2. **⛔ NEITHER PROVIDER MAY RUN IN PRODUCTION UNTIL A MARKETPLACE SPLIT EXISTS, AND THAT IS THE
+   REAL BLOCKER.** `resolveCommercePaymentProvider` is refuse-closed in production and refuses any
+   `rzp_live_` key everywhere (`adapter.ts:220-230`): _"without Razorpay Route … a captured payment
+   settles into Qatoto's own merchant account, which is the custody §14 decided against."_ A
+   multi-seller cart becomes one order per seller and currency
+   (`commerce-checkout.service.ts:1415-1419`), and on the `direct_processor` rail the money settles
+   to **the seller's** account — `settlement_account_ref` is _"the SELLER's account at the
+   processor… Qatoto is not the merchant of record and does not take custody"_ (`store.ts:8085-8092`).
+   ⚠️ **`settlement_account_ref` AND `application_fee_in_cents` ARE COLUMNS WITH NO WRITER** on the
+   Razorpay path. Filling them is what Route or Connect is for.
+
+#### ⚠️ Stripe, if ever wired, is DIRECT CHARGES — never Destination Charges
+
+A **Destination Charge** creates the charge on the **platform's** account and transfers onward,
+which makes Qatoto the merchant of record and puts the funds through Qatoto — the exact custody
+§14 refused and `store.ts:1470-1479` states as a standing position (_"Qatoto provides no escrow and
+never holds funds… the venue and the record-keeper, never the holder"_). Separate Charges and
+Transfers has the same defect for the same reason.
+
+**Direct Charges** create the charge on the connected account with an `application_fee_amount`, so
+the seller is the merchant of record and Qatoto never touches the money. That is precisely what
+`direct_processor` and `settlement_account_ref` already describe, which is why it is the only shape
+that fits. The India twin is Razorpay Route linked accounts. `PLATFORM_FEE_BASIS_POINTS` defaults
+to `0` (`config/index.ts:455`), so the fee MECHANISM is what gets wired, not a fee.
+
+#### Open question — the Razorpay inbox key is synthesised, not Razorpay's
+
+`commerce_payment_webhook_event`'s header promises `(provider, provider_event_id)`. The Razorpay
+path supplies a **backend-minted** id instead:
+
+```ts
+// commerce-payments.service.ts:1906
+providerEventId: `evt_payment_${observedState}_${transfer.id}`,
+eventType: `payment_intent.${observedState}`,
+```
+
+`RazorpayWebhookBodySchema` (`commerce-webhooks.schemas.ts:29-37`) parses only `event` and the order
+id, and `x-razorpay-event-id` is read nowhere. So the inbox deduplicates on **settlement outcome**,
+not on **provider event**.
+
+**This is not obviously a defect** — the controller states a different and sound replay defence
+(`commerce-webhooks.controller.ts:152-163`): the body is a hint, the order is re-fetched from
+Razorpay, and _"replaying `order.paid` cannot settle an order Razorpay does not call paid."_
+
+So the question is which of the two is stale: either the table header should stop promising a
+provider event id on this path, or the path should read `x-razorpay-event-id` and become a true
+provider-event inbox. **Decide with the backend open, and do not "fix" one without reading the
+other.**
 
 ---
 
@@ -233,8 +310,38 @@ per-site read or a decision, not a mechanical fix.
    `js-set-map-lookups` ×24, `async-await-in-loop` ×9 (`src/hooks/products.ts`, some sequential on
    purpose), `server-sequential-independent-await` ×7, `no-async-event-handler-without-reentry-guard` ×4,
    `no-locale-format-in-render` ×5, plus single hits.
-5. **`dangerous-html-sink` ×2** (`blog-detail.tsx`, `press-detail.tsx`): CMS HTML rendered without
-   sanitizing. Needs a decision on adding a sanitizer before the real CMS goes live.
+5. **`dangerous-html-sink` ×2** (`blog-detail.tsx:75`, `press-detail.tsx:68`): CMS HTML rendered
+   without sanitizing. **Latent, not live** — `QATOTO_CMS_URL` is unset, so both sinks are fed by
+   the eight in-repo `MOCK_BLOGS` / `MOCK_PRESS` bodies. It becomes real the day the env var is set.
+
+    ⚠️ **DECIDED 2026-09-18: THE CMS BODY BECOMES MARKDOWN. The sink is DELETED, not filtered.**
+    Render it through the hardened `react-markdown` configuration already shipped in
+    `src/components/home/blueprints/showcase/sections/showcase-write-up.tsx` — `skipHtml`, an
+    `allowedElements` allowlist and a `urlTransform` that keeps only http(s), site-relative and
+    anchor addresses. `react-markdown` and `remark-gfm` are already dependencies, so this costs
+    nothing to install, and the `prose [&_h2] [&_p] [&_ul]` Tailwind styling on both components
+    survives untouched because Markdown emits the same elements.
+
+    **A sanitizer was considered and lost.** DOMPurify needs `isomorphic-dompurify` to run during
+    SSR, which adds a dependency plus jsdom weight on the server, and leaves a sink that has to stay
+    correctly configured forever. The swap removes the sink instead.
+
+    **Do it BEFORE the CMS is chosen, not after.** The contract change is free today — eight mock
+    strings and two components — and is a content migration the moment anything real is authored.
+
+    ⚠️ **THE SANITIZER IS NOT THE ONLY HOLE ON THAT PATH.** `cms.ts:41` is
+    `const data: T = await res.json();` — a bare cast with **no Zod**, so an upstream CMS response
+    reaches the component unvalidated as well as unsanitized. That is a Pattern 2 violation sitting
+    beside the sink and it is fixed in the same pass, not separately.
+
+    ⚠️ **DO NOT "FIX" THE THIRD `dangerouslySetInnerHTML`.** `src/lib/structured-data.tsx:66` is
+    JSON-LD and is already correct — it escapes `<` to `<`, with the `</script>` breakout it
+    defends against documented at `:58-64`. React Doctor does not flag it and neither should anyone
+    else.
+
+    `src/lib/cms.test.ts` asserts against the current fetch/fallback shape. Read it when the swap
+    happens; it is not being changed now.
+
 6. **`require-pnpm-hardening`**: `minimumReleaseAge` in `pnpm-workspace.yaml`, a supply-chain
    policy call for the owner.
 7. **Deprecated `.strict()` left in two chains** (no longer flagged): `.extend(...).strict()` in
@@ -336,6 +443,42 @@ publish every unreviewed card instantly.
 
 Composer copy must also restate that `unitPriceInCents` is **cents per kilogram of chargeable
 weight**, not per consignment; a flat lane price is entered as `minimumChargeInCents`.
+
+#### Nobody types twenty weight bands by hand
+
+A forwarder's tariff **is a spreadsheet**. A composer that only accepts one band at a time is the
+same blocker this section just removed, moved one layer up: the routes exist, and the lane still
+never gets loaded.
+
+**So the composer takes a pasted grid.** The forwarder selects the band rows in Excel, copies, and
+pastes into one textarea; it is parsed **client-side** into the same band array the manual editor
+already produces and submitted through the **unchanged** existing route.
+
+⚠️ **THIS IS A CONVENIENCE OVER AN UNCHANGED CONTRACT, AND THAT IS THE WHOLE DESIGN.** No new
+route, no multipart, no parser on the backend, no file stored and no retention question — an Excel
+copy is TSV on the clipboard already. The three server-side refusals above (future `validFrom`, a
+zero-floor band, a typed divisor) are untouched and remain the authority, so a paste missing a floor
+band is refused exactly as a hand-typed one is. **The importer must never default a missing
+column** — that is the one way an ingest path reintroduces invented data.
+
+A file upload can come later if a forwarder asks for it; `src/middleware/upload.ts`'s per-route
+multer factory is the precedent. It is not needed to unblock the lane.
+
+⛔ **AND NOT FORWARDER-CONNECTED CARRIER FEEDS.** Letting a forwarder attach their own carrier API
+credentials so Qatoto pulls their rates was proposed and is refused for three reasons — **none of
+them the trust boundary**, because that argument is CORRECT: rows written under the forwarder's own
+`providerOrganizationId` would preserve Qatoto's non-principal status exactly as §19.9b requires.
+
+1. **The feeds mostly do not exist.** A freight forwarder is a broker; their tariff is a negotiated
+   sheet, not an endpoint. The parties that do expose rate APIs are aggregator platforms, not the
+   SMB forwarders this surface onboards — which is precisely why a paste box beats an integration.
+2. **It makes Qatoto a credential custodian.** Storing and rotating somebody else's carrier secrets
+   and calling out on their behalf needs an encrypted secret store, an outbound HTTP client, a
+   per-carrier adapter and a redaction discipline — every piece of infrastructure §19.12 avoided,
+   carried for a handful of providers.
+3. **A pulled quote is not a tariff.** `commerce_freight_rate_card` is a price list with a validity
+   window; an API returns a point-in-time quote. Ingesting one stores a rate that keeps pricing
+   after the quote it came from expired.
 
 #### Frontend
 
