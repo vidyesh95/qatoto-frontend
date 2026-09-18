@@ -23,7 +23,7 @@ and `git log` are the record of what was built and why.
 **Commercial & Payment Rail (Top priority open build):**
 
 - **Payment Gateway Integration** — **Razorpay is SHIPPED** (adapter, both signature checks, webhook inbox, Standard Checkout modal). Stripe is an enum label with no implementation, and **neither provider may run in production until a marketplace split exists** — without one a captured payment lands in Qatoto's own account, which is the custody §14 refused. See §1.
-- **"Buy Now" Checkout** — Direct single-product checkout bypassing the multi-seller cart.
+- ~~**"Buy Now" Checkout**~~ — **DONE.** `checkout/prepare` takes an `items` selection, and the PDP button adds its line then sends the buyer to `/checkout?buyNow=…`. The rest of the cart is untouched.
 - **Four Minor Store Items** — Service-offering coverage read, `standardCode` filter, `viewer.canDelete` on Q&A, and `DELETE /products/:id` 500 on customized listings.
 - ~~**§18 (Provider freight rate cards)**~~ — **DONE.** Backend routes plus the Studio composer at `/studio/logistics/rate-cards`, with the TSV paste box. A verified forwarder can publish a lane end to end. What remains is onboarding: until an organization holds a `verified` `freight_forwarder` or `logistics_operator` kind link, every call is a correct 403.
 
@@ -198,11 +198,29 @@ other.**
 
 ---
 
-### 2. "Buy Now" Single-Line Checkout
+### 2. "Buy Now" Single-Line Checkout — **SHIPPED**
 
-Currently, checkout requires adding an item to the cart and going through `/checkout`.
-A single-click "Buy now" button directly on the product detail page (`src/components/home/store/product-detail.tsx`)
-that prepares stock reservation for that single item and jumps directly to confirmation/payment is still open.
+The button was never `disabled` — it was rendered as the most prominent of the three CTAs with no
+handler at all, so it looked more clickable than the controls that worked. It lives in
+`src/components/home/store/cards/buy-action-buttons.tsx` (rendered twice by `product-detail.tsx`),
+not in the detail page itself.
+
+**Backend:** `PrepareCheckoutSchema` gained an optional `items`. Absent means the whole cart, so the
+cart page is unchanged. A line is named by the tuple `(productId, variantId?, isSample?)` rather
+than an id — the cart projection exposes no line id, and the cart is UNIQUE on that tuple, so it is
+exact. A selector matching nothing is refused with `CHECKOUT_ITEMS_NOT_IN_CART` (422) rather than
+narrowed.
+
+⚠️ **AND CONFIRM NO LONGER EMPTIES THE WHOLE CART.** It deleted every line `WHERE cartId =
+prepare.cartId`, which was harmless only while every prepare covered every line. Scoped, that same
+statement would have made "buy one chair" silently discard the rest of the buyer's cart.
+`pnpm db:smoke-scoped-checkout` is the guard: it buys one of two sellers' lines and asserts the
+other survives.
+
+**Frontend:** the button adds the line, awaits the write, then navigates — prepare names lines by
+tuple, so arriving first would be refused for naming a line that does not exist yet. The scope
+survives a re-prepare, or picking a freight mode would silently widen the checkout to everything.
+The checkout page says when it is scoped and links to the full cart.
 
 ---
 
