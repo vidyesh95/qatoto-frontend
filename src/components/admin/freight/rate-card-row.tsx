@@ -4,11 +4,11 @@
 
 import { useState } from "react";
 
-import { renderFieldErrors } from "@/components/admin/freight/rate-card-composer";
+import { renderFieldErrors } from "@/components/commerce/freight/field-errors";
 import WeightBandEditor, {
   collectBands,
   type WeightBandDraft,
-} from "@/components/admin/freight/weight-band-editor";
+} from "@/components/commerce/freight/weight-band-editor";
 import {
   useFreightRateBreaksMutation,
   useUpdateFreightRateCardMutation,

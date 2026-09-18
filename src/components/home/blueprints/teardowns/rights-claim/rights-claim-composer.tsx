@@ -43,7 +43,7 @@ import {
 import { SITE_URL } from "@/lib/site";
 
 /**
- * Held as text, parsed once when the notice is prepared — the `weight-band-editor.tsx` rule that
+ * Held as text, parsed once when the notice is prepared — the `commerce/freight/weight-band-editor.tsx` rule that
  * `collectTeardownSubmission` also follows. `target` is the exception: a union cannot be half-typed,
  * so it is either chosen or `null`.
  */

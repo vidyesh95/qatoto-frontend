@@ -32,7 +32,7 @@ export interface TeamMemberDraftRow {
 }
 
 /**
- * THE WHOLE FORM, FLAT, EVERY SCALAR HELD AS TEXT, for the `weight-band-editor.tsx` reason: a
+ * THE WHOLE FORM, FLAT, EVERY SCALAR HELD AS TEXT, for the `commerce/freight/weight-band-editor.tsx` reason: a
  * half-typed cost is not a number and a half-picked date is not a date.
  *
  * ⚠️ THIS USED TO SAY "the heading image is not here; it is a `File` held by `useHeadingImagePick`,

@@ -4,11 +4,12 @@
 
 import { useState } from "react";
 
+import { renderFieldErrors } from "@/components/commerce/freight/field-errors";
 import WeightBandEditor, {
   collectBands,
   newZeroFloorBandDraft,
   type WeightBandDraft,
-} from "@/components/admin/freight/weight-band-editor";
+} from "@/components/commerce/freight/weight-band-editor";
 import {
   useCreateFreightRateCardMutation,
   useSupersedeCandidateQuery,
@@ -419,29 +420,5 @@ export default function RateCardComposer({ onClose }: { onClose: () => void }) {
         </>
       )}
     </section>
-  );
-}
-
-/**
- * Field errors, including the reserved `form` key.
- *
- * A `.strict()` rejection — an unknown or misspelled key — lands under `errors.form` rather than
- * under any field name, so a renderer that only walks named fields would show an operator a bare
- * "422" with the actual reason invisible.
- */
-export function renderFieldErrors(fieldErrors: Record<string, string[]> | undefined) {
-  if (fieldErrors === undefined) return null;
-  const entries = Object.entries(fieldErrors);
-  if (entries.length === 0) return null;
-
-  return (
-    <ul className="space-y-0.5 text-xs">
-      {entries.map(([fieldName, messages]) => (
-        <li key={fieldName}>
-          <span className="font-medium">{fieldName === "form" ? "Request" : fieldName}:</span>{" "}
-          {messages.join(" ")}
-        </li>
-      ))}
-    </ul>
   );
 }

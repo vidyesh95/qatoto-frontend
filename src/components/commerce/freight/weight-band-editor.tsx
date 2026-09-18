@@ -1,5 +1,11 @@
 // TRANSPORT: props-only — client island. Holds the draft ladder in local state and hands a
 // collected result to its parent; it fetches nothing and writes nothing itself.
+//
+// UNDER `components/commerce/**` RATHER THAN `components/admin/**` because TWO composers author
+// the same ladder now: the staff console at `/admin/freight` and the forwarder's own composer at
+// `/studio/logistics/rate-cards` (§19.12). A copy per surface is how the two ladders start
+// disagreeing about the 20-band cap or the duplicate-floor rule, which are properties of the
+// TABLE rather than of whoever is typing.
 "use client";
 
 import { formatCentsLabel, formatGramsLabel } from "@/lib/store/format";

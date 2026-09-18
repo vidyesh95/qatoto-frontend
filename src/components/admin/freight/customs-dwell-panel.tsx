@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 
-import { renderFieldErrors } from "@/components/admin/freight/rate-card-composer";
+import { renderFieldErrors } from "@/components/commerce/freight/field-errors";
 import {
   useCreateCustomsDwellEstimateMutation,
   useCustomsDwellEstimatesList,
