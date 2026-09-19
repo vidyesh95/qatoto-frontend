@@ -40,6 +40,7 @@ and `git log` are the record of what was built and why.
 **R&D / Civic Pulse:**
 
 - **Problem map basemap** — **Part 1 SHIPPED.** MapLibre over free keyless OpenFreeMap tiles behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, static SVG as the fallback. The coarse map pin, the `domain` enum, the four-component feasibility readout and viewport-driven reads are open. One E2E assertion is flaky with the flag on and is left unchanged. See §19.
+- **Problem map UI/UX** — designed, not built. `docs/PROBLEM_MAP_UX.md` is the brief for the map-first shell at three breakpoints, the coarse pin's privacy mechanism, and what a cluster pin is allowed to claim. Work items are §19.1, §19.4 and §19.8 to §19.11.
 
 **Legal & Compliance:**
 
@@ -600,6 +601,12 @@ assertion the test actually cares about — `button[aria-pressed]` per cluster, 
 stable in both modes. The fix is to assert the pins and drop the canvas-specific `img` check, or to
 accept either canvas. **Left unchanged because tests are not modified without being asked.**
 
+⚠️ **THE UI/UX FOR ITEMS 1, 4, 8 AND 9 IS DESIGNED AND WRITTEN DOWN.**
+`docs/PROBLEM_MAP_UX.md` is the brief: the map-first shell at three breakpoints, the state
+table, the copy table, the pin's privacy mechanism and what a cluster pin is allowed to claim.
+Read it before touching this surface. It is a design brief, not a decision log — where it and
+the code disagree, the code wins and the brief gets corrected.
+
 **1. The coarse map pin — the one thing blocking a better cluster.**
 Backend first: add `approxLatitudeMicrodegrees` / `approxLongitudeMicrodegrees` to
 `CreateProblemReportSchema` (currently `.strict()` with no coordinate field), server-re-quantized
@@ -608,6 +615,14 @@ Then the picker in `report-problem-sheet.tsx`. ⚠️ **The client rounds BEFORE
 what keeps `GEOLOCATION_PRIVACY.md`'s whole apparatus unnecessary rather than unbuilt. Today the
 sheet's own comment says a place picker "must not" exist; that comment becomes wrong the day this
 ships and must be updated with it, not left to contradict the code.
+⚠️ **THE PIN IS OPTIONAL AND THERE IS NO CONSENT CHECKBOX.** `locationText` stays required and stays
+the label, so a reporter who cannot read a map files the report they file today.
+`GEOLOCATION_PRIVACY.md` §4's checkbox promises a 90-day purge we cannot keep and a "stored
+privately" claim that is false once there is nothing precise to store; a tick-box asserting two
+untrue things is worse than one sentence asserting a true one, so the disclosure is one line under
+the map. `navigator.geolocation` rounds inside its success callback — the raw reading never reaches
+a variable that outlives it. Both coordinate fields or neither, mirroring the bbox rule in item 4.
+`docs/PROBLEM_MAP_UX.md` §8.
 
 **2. `research_category.domain` as a closed enum.**
 Not a FK, not user-creatable — it is the comparability layer that lets one country's
@@ -624,6 +639,14 @@ microdegree fields (`src/lib/rnd/discovery.api.ts:55-60`) that **no caller passe
 wrapper is the unverified code the R&D hook audit exists to catch. Wiring them to `moveend` turns
 `problem-map-canvas` from `props-only` into `client-query` and needs a `useProblemClustersQuery`
 hook that does not exist. All four or none: the backend rejects a partial box with a 422.
+⚠️ **THE `TRANSPORT:` BANNER ON `problem-map-canvas.tsx` LINE 1 MOVES WITH IT.** That banner is the
+check `docs/R_AND_D_STRUCTURE.md` §19 rests on, and a file that fetches while claiming `props-only`
+makes the transport map a lie. ⚠️ **It is also what makes the panel's count readout true**: "12
+clusters in view" is an answer once the fetch is the viewport and a coincidence until then. Three
+empty states fall out of it and they are NOT interchangeable — nothing clustered yet, nothing
+matching the filters, and nothing in this viewport. The third reader's filters are fine and their
+data is fine; telling them to clear a filter is telling them to fix something that is not broken.
+`docs/PROBLEM_MAP_UX.md` §6.
 
 **5. Media on problem reports.** The backend pipeline exists — `sharp`, `multer`, `cloudinary`,
 `src/lib/image.ts`, 21 other upload routes — but problem reports have no attachment route, table or
@@ -638,6 +661,75 @@ unbuilt; the shipped abuse control is `requireIdentifiedUser` plus a 10-per-15-m
 **7. Delete `src/types/research-and-development/discovery.ts`.** Dead legacy `ProblemReport` with
 `mapPosition`, `reportCount` and `opportunityScore` — every one of which is gone from the wire. It
 is imported by nothing.
+
+**8. The map-first shell — `/problem-map` becomes an instrument, not a document.**
+Designed in full in `docs/PROBLEM_MAP_UX.md` §5. Today the surface is a scrolling page with a
+3fr/2fr map-beside-list block in the middle of it, which on a phone puts a 2000×857 canvas above a
+stack of cards and asks the reader to scroll past the thing they came for. The map fills
+`h-[calc(100dvh-56px)]` — byte-identical to the sidebar's own expression, deliberately the same
+number rather than a better one — with a 360px floating panel docked left from `lg`, a 320px panel
+collapsing to a 44px tab from `md`, and a three-detent bottom sheet under it.
+⚠️ **THE BOTTOM SHEET IS NOT A MODAL AND MUST NOT BE BUILT AS ONE.** No scrim, no focus trap, no
+`inert` on the canvas: a modal here makes the map unreachable while the list is open, which is the
+opposite of the point. The map stays interactive at all three detents and never drops to zero
+height.
+⚠️ **THE PANEL LIST IS THE KEYBOARD AND SCREEN-READER PATH FOR THE MAP**, which is why it is not
+optional at any breakpoint — every pin has a row and every row reaches the same record. Pins stay
+real `<button aria-pressed>` portalled into marker containers; `tests/specs/rnd-backend.spec.ts`
+asserts that selector and a GeoJSON symbol layer has no DOM node to assert on.
+⚠️ **THE PANEL FLOATS, SO IT MAY TAKE `shadow-lg`, AND IT IS OPAQUE.** `docs/Design.md` §4 permits a
+shadow only for an element that leaves the flow, and this one does. Blur or translucency over the
+tiles is the decorative glassmorphism §6 bans.
+**`MyProblemReportsPanel` leaves this route.** It is a personal, signed-in, polling list with no
+relationship to what is on the map, and it cannot live under a page that does not scroll. It belongs
+beside the report flow.
+⚠️ **THE URL CARRIES THE VIEW**: `?category`, `?region`, `?sort`, `?cluster` and `?lat&lng&z`, with
+defaults written OUT (the blueprints `?view=business` precedent). A founder sending "look at this"
+should send a link that opens on the same map at the same zoom with the same pin selected, and today
+it cannot. Use `router.replace` for pan, not `push` — one history entry per drag makes the back
+button replay a pan instead of leaving the surface.
+⚠️ **DO NOT COPY THETRAFFIC'S DISTANCE-FROM-CENTRE LIST ORDER.** `PROBLEM_CLUSTER_SORTS` is
+`opportunity | recent | reporters` and carries no `distance`, so that ordering would be a client
+sort over a fetched page — the exact defect `problem-map-page.tsx` already records against its own
+history. The panel gets a sort control bound to `?sort=`; distance ordering is item 10.
+
+**9. `AlphaBanner` is unaccounted for in every viewport-height expression on the surface.**
+It sits in normal flow above the flex row in `(home)/layout.tsx` at roughly 37px (`py-2`,
+`text-sm`), while `sidebar.tsx` computes `h-[calc(100dvh-56px)]` from the navbar alone. The sidebar
+is therefore already that much too tall, and item 8's map region will inherit the same error by
+copying the same expression on purpose. ⚠️ **Fix it in ONE place for both** — a CSS custom property
+set where the banner is rendered, read by everything that needs the chrome height. A surface
+computing its own height differently from the sidebar beside it is worse than both being
+consistently off, which is why item 8 does not fix it locally.
+
+**10. Two backend asks this surface would use the day they exist.**
+Neither blocks item 8 and neither may be faked client-side.
+
+- **A `distance` sort on `GET /discovery/problem-clusters`**, ordered from a caller-supplied centre.
+  It is what makes thetraffic's "near the map centre" list possible without sorting a fetched page
+  in the browser.
+- **The cluster match radius on the wire.** `geocode-and-cluster-submission.ts` matches within
+  **25 km**, so a pin marks the middle of a catchment that may be 50 km across. A radius ring is the
+  most honest possible rendering of that and it is the right eventual answer, but a hardcoded 25 km
+  circle silently becomes a lie the day the backend tunes the constant. ⚠️ **Until the radius ships
+  as data, draw no ring and print no accuracy figure.** thetraffic prints `±3911 m` because it holds
+  a device accuracy reading; we hold none, and inventing one is the unattributed number PRODUCT.md
+  bans.
+
+**11. Four shipped defects on this surface, each small, each currently live.**
+
+- ⚠️ **Serif Boundary violation in two files**: `problem-map-page.tsx:126` and
+  `cluster-detail-page.tsx:79` both put `font-serif` on an `h1` inside `(home)`. `docs/Design.md`
+  §3 states plainly that this is a bug, not a variation.
+- **The cluster detail's four-panel `dl`** is an identical card grid of bordered label-over-figure
+  boxes, and the third of them is the hero-metric shape. Both are named bans in §6. A hairline
+  definition row with the figures in `code` type says the same thing without the boxes.
+- **`ProblemClusterList` renders its own empty state** ("No clusters match these filters") while
+  `problem-map-page.tsx` renders a different one for the same condition. Two components answering
+  one question in two voices; the list's copy is the one to drop.
+- **Hardcoded hex throughout** — `#00696E`, `#CAC4D0`, `bg-[#00696E]/5`. New work uses the tokens.
+  ⚠️ **Do not bundle the conversion of the existing lines into this work**: `docs/Design.md` §6 says
+  converting a file is its own change with its own dark-mode check.
 
 ⚠️ **THE MAPLIBRE WORKER IS COPIED INTO `public/` ON EVERY `dev` AND `build`, AND THAT IS LOAD-BEARING.**
 `scripts/sync-maplibre-worker.mjs` exists because Turbopack breaks MapLibre's tile worker twice
