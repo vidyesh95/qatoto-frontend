@@ -648,8 +648,32 @@ run"). Writing a client claim into them would make that sentence false and would
 their own pin as the resolved position. The pin got **its own pair** and **migration 0201**, on the
 same declared-versus-measured separation `designationSource` enforces on a teardown's alloy.
 
-⚠️ **0201 IS AUTHORED AND NOT APPLIED.** The shared Aiven database does not have the columns, so the
-write path is unproven end to end — see the verification note at the end of this item.
+**0201 IS APPLIED** (2026-09-20). `approx_latitude_microdegrees` / `approx_longitude_microdegrees`
+and `problem_submission_approx_coordinate_ck` are live on the shared database; the two existing
+`problem_submission` rows were untouched, the migration being additive and nullable.
+
+⚠️ **APPLYING IT TOOK FOUR MIGRATIONS, NOT ONE, AND UNCOVERED A BACKEND BUG THAT HAD NOTHING TO DO
+WITH THE PIN.** The database was at ledger row 197 while the journal was at 0201, and `drizzle-kit
+migrate` selects everything newer than the ledger's MAX `created_at` — so 0198, 0199, 0200 and 0201
+all ran as one batch. Applying 0201 alone was not an option: writing its ledger row by hand would
+have pushed the max past the other three and made them **permanently inert**, which is the "gaps are
+inert" failure this repo has hit before.
+
+⚠️ **0198 COULD NEVER HAVE APPLIED ANYWHERE, AND STILL CANNOT WITHOUT THE FIX BELOW.**
+`src/db/schema/home.ts` declared TWO `.unique()` constraints that drizzle auto-names identically:
+`showcase_launch.headingImagePublicId` and `showcase_launch_heading_image.publicId` both derive
+`showcase_launch_heading_image_public_id_unique`. A UNIQUE constraint creates an INDEX, and index
+names are unique per SCHEMA rather than per table, so `CREATE TABLE showcase_launch_heading_image`
+died with `42P07 relation "showcase_launch_heading_image_public_id_unique" already exists` against
+any database holding the older column. Fixed by naming the new table's constraint explicitly —
+`showcase_launch_heading_image_asset_public_id_unique` — in `home.ts`, in `0198_perfect_nightshade.sql`
+and in the 0198–0201 snapshots. `db:generate` then reports no drift.
+⚠️ **THE SNAPSHOT EDIT MUST PRESERVE KEY ORDER.** Reordering the `uniqueConstraints` map made drizzle
+pair constraints positionally and propose moving the name onto `showcase_launch_write_up_image`,
+which shares the identical doc comment and is easy to edit by mistake instead.
+
+⚠️ **THE WRITE PATH IS STILL UNEXERCISED.** The columns exist, but no report carrying a pin has been
+submitted against the database — see the verification note at the end of this item.
 
 **The disagreement rule.** `chooseSubmissionPoint` (`submission-point.ts`, a pure module split out
 so the radius comparison is testable without a database) takes the pin only when it is within the
@@ -676,7 +700,8 @@ One sentence under the map says the true thing instead.
 **Measured, not assumed:** a tap produced `{approxLatitudeMicrodegrees: 33176000,
 approxLongitudeMicrodegrees: 41217000}` against a readout of `33.176, 41.217`, and that exact
 captured body was parsed by the real `CreateProblemReportSchema`. Clear removes both keys rather
-than sending `undefined`.
+than sending `undefined`. Every submit test ran with `fetch` stubbed, so nothing reached the
+database — which is why the round trip below is still owed.
 
 ⚠️ **STILL OPEN: `GEOLOCATION_PRIVACY.md` §5's PII SCREEN.** Its correction header keeps it as
 client-side UX feedback only. It is about the DESCRIPTION text rather than the pin, so it was not
