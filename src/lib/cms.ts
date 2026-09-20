@@ -254,7 +254,7 @@ Build Console v2 is available to all teams from today.`,
     title: "Project Immortal opens its first cohort of research grants",
     summary:
       "Qatoto's long-horizon research wing announces funding for early-stage work in cellular senescence, fusion containment, and entanglement transport.",
-    body: `Project Immortal — Qatoto's long-horizon research wing — is opening its first cohort of research grants this quarter. The program will fund early-stage work across three pillars: longevity, energy, and teleportation.
+    body: `Project Immortal — Qatoto's long-horizon research wing — is opening its first cohort of research grants this quarter. The programme will fund early-stage work across three pillars: longevity, energy, and teleportation.
 
 ## Application timeline
 

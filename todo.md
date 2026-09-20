@@ -1194,20 +1194,115 @@ different words; a mechanical pass yields `reprogrammeming` and `programmemer`.
 `cms.ts:257`, `vulnerability-disclosure-policy.tsx:28` (bug-bounty sense) — different domains, an
 editorial call rather than a consistency bug.
 
-#### 20e. Three items left OPEN by this pass
+#### 20e. The three items 20b/c/d left open — TWO CLOSED 2026-09-20, ONE AWAITING A DB WRITE
 
-1. ⚠️ **The Project Immortal mission statement is a DB string and still reads "an open research
-   program".** `research_program.mission_statement` for slug `project-immortal`, authored at
-   `qatoto-backend/scripts/seed-research-programs.ts:60`, rendered verbatim at
-   `research-program-hero.tsx:46`. **After 20d it is the lone US spelling on an otherwise British
-   page — more conspicuous, not less.** Needs BOTH:
-   `UPDATE research_program SET mission_statement = '<new text>' WHERE slug = 'project-immortal';`
-   **and** the matching `PROGRAM_MISSION` edit in the seed file — **the seed alone changes nothing
-   for the existing row.** ⚠️ Shared Aiven DB, no local equivalent: needs explicit permission and a
-   revert statement. Not done here.
-2. **`pipeline-hero`'s image-scrim contrast** (20c). `text-white/90` over an arbitrary photo under a
-   scrim that thins to `black/30` on the right. Fix is a scrim change, not an opacity change.
-3. **Whether the four non-R&D `program` copy strings follow the register rule** (20d) — editorial.
+##### 20e.1 ⚠️ The Project Immortal mission row — **CODE DONE, THE WRITE IS STILL OUTSTANDING**
+
+`research_program.mission_statement` for slug `project-immortal` still reads "an open research
+**program**" under an eyebrow that now says PROGRAMME. **The frontend cannot reach it.**
+
+⚠️ **THE SEED IS A PLAIN `INSERT` GUARDED BY A SELECT ON THE SLUG, NOT AN UPSERT**
+(`seed-research-programs.ts:184-187`), so the two halves do not substitute for each other:
+editing the seed changes **nothing** on the running site, and updating the row alone leaves every
+FRESH database seeding `program` back. **Done:** the seed literal, in the backend repo. **Not done:**
+the row.
+
+```sql
+-- 1. CONFIRM, read-only. (`DATABASE_POOL_MAX=2` — max_connections is 20 SERVER-WIDE.)
+SELECT slug, char_length(mission_statement) AS len, mission_statement
+  FROM research_program WHERE slug = 'project-immortal';
+
+-- 2. APPLY. Guarded, so a second run reports 0 rows and means "already applied".
+UPDATE research_program
+   SET mission_statement =
+       replace(mission_statement, 'an open research program:', 'an open research programme:')
+ WHERE slug = 'project-immortal'
+   AND mission_statement LIKE '%an open research program:%';
+
+-- 3. REVERT — same shape, literals swapped.
+UPDATE research_program
+   SET mission_statement =
+       replace(mission_statement, 'an open research programme:', 'an open research program:')
+ WHERE slug = 'project-immortal'
+   AND mission_statement LIKE '%an open research programme:%';
+```
+
+⚠️ **NEVER a table-wide `replace('program','programme')`** — it would corrupt `"Cellular
+Reprogramming"` and `"reprogrammed"` in `research_program_branch`. The colon disambiguates.
+`replace()` beats a full-literal `SET` because the string is 440 chars with an em dash and an
+apostrophe, and retyping it is the only way to get it wrong.
+
+**Checked clear:** 440→442 chars against `BETWEEN 20 AND 4000`; no trigger on the table; single read
+path `findResearchProgramDetail`; no index, view, cache, sitemap or PII-register entry; neither smoke
+nor constraint script string-matches the wording.
+⚠️ **`updated_at` will NOT move** — Drizzle's `$onUpdate` is app-side with no DB trigger. Cosmetic
+today because nothing reads it for invalidation; recorded so nobody loses an hour to a row that
+looks as stale as the day it was seeded.
+⚠️ **ONE DATABASE, VERIFIED.** `.env` is Aiven; `.env.example`'s localhost is a template;
+`railway.json` provisions no DB; `docker-compose.yml:5` points at that same Aiven instance. Several
+deployments, one database. **A staging instance added later needs its own UPDATE** — the seed skips
+on slug and will not reach it. This is also why a `0202_*` data migration was NOT written: its only
+advantage is convergence across environments, there is one, and a hand-written migration would
+trigger the re-baseline ritual at `docs/AUTH_SETUP.md:379-384` for a one-word fix.
+⚠️ **`reviewer_note` also says "program"** (`seed-research-programs.ts:236`) — staff-only
+(`research-programs.service.ts:325`) and an internal note about seeding, not user-facing prose.
+Deliberately left.
+
+##### 20e.2 ~~`pipeline-hero`'s image-scrim contrast~~ — **FIXED 2026-09-20**
+
+⚠️ **THIS WAS FILED AS UNFIXABLE AND THAT WAS WRONG.** §20c said "an unpredictable photo under a
+scrim that thins to 30% on the right, **which no opacity value fixes**". The first half is true; the
+conclusion was not. It treated the scrim as fixed and the photo as the variable. **The scrim is the
+half we control**, and inverting that dissolves the problem.
+
+Measured by sampling rendered pixels with the text hidden, then again with the scrim hidden:
+`rnd_hero_bg_01.avif` has **blown highlights, rgb(251-255), directly under the text at every width**,
+and the paragraph's ink reaches **91-95%** of the section where the old scrim was only **32-34%**.
+Contrast ran **2.13-3.18:1** against 4.5, and **even pure white failed** (2.29:1) — which is why no
+`text-white/NN` change could ever have worked.
+
+`from-black/70 to-black/30` → **`from-black/80 to-black/60`**. Re-measured: 5.28-11.28:1 at
+390/640/820/1024/1440, zero failures.
+
+⚠️ **THE RULE IS THE CONTRAST TARGET, NOT THE NUMBERS: the scrim must deliver 4.5:1 against the
+brightest pixel beneath each element's ink extent.** `black/54` is what that works out to for THIS
+photograph and THIS text; the pair above is the gradient that delivers it. **Re-derive all three if
+the image, the text colour or the type scale changes** — and note how fast that goes stale: §20b
+moved this `h1` from 30/48px to **exactly 24px**, WCAG's large-text threshold with zero margin, so
+both elements are deliberately held to the 4.5:1 line rather than leaning on the 3:1 carve-out.
+
+**`text-white/90` STAYS** — 5.28:1 at the new floor. Dropping it to full white is a separate
+decision, not one to bundle. ⚠️ **A text-shadow is NOT a substitute**
+(`blueprints-hero-carousel.tsx:164` uses one): WCAG measures text against its immediate background
+and does not credit shadows, so it would have left the numbers failing. Complement, never
+replacement.
+
+⚠️ **OPEN — two more scrim surfaces, unmeasured, suspected failing.**
+`store/rails/hero-carousel.tsx:74` (`from-black/70 via-black/10 to-transparent`) and
+`blueprints-hero-carousel.tsx:160` (`from-black/50 to-transparent`). Both carry a **weaker floor than
+the one that just failed** — `to-transparent` is a floor of zero — so the prior is that they fail.
+**The item is to measure them with the method above and apply the same target, not to assume it.**
+
+##### 20e.3 ~~The four non-R&D `program` strings~~ — **CLOSED 2026-09-20; one changed**
+
+⚠️ **THE DURABLE RULE IS PROSE vs NAME / TITLE / TERM-OF-ART**, not "same entity". Both pick the
+same string here and they diverge on the next one:
+
+| string                                                  | category                      | spelling                  |
+| ------------------------------------------------------- | ----------------------------- | ------------------------- |
+| `cms.ts:257` "The programme will fund…"                 | **prose about an initiative** | **`programme`** — CHANGED |
+| `careers.tsx:53` "Hardware Program Lead"                | job title                     | `program` — kept          |
+| `cms.ts:150` `role: "Founder Programs"`                 | department label              | `program` — kept          |
+| `vulnerability-disclosure-policy.tsx:28` "this program" | security term of art          | `program` — kept          |
+
+`cms.ts:257` changed because it is **prose**; that it is prose about the R&D surface's own entity is
+what made it conspicuous, not what made it different in kind. The other three are named here as
+**examples of the excluded categories** so the classification is citable rather than re-derived.
+
+**Verified complete:** grepping every `Project Immortal` mention against prose forms of `program`
+returns only this one. The rest are the VDP term of art and three code comments
+(`notifications/schemas.ts:53`, `branch-tree-layout.ts:99`, `research-branch-map.tsx:29`), none
+rendered.
 
 ---
 

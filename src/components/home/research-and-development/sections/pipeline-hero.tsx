@@ -17,7 +17,26 @@ export default function PipelineHero() {
         loading="eager"
         className="object-cover"
       />
-      <div className="absolute inset-0 bg-linear-to-r from-black/70 to-black/30" />
+      {/* ⚠️ **THE SCRIM FLOOR IS AN ACCESSIBILITY FLOOR, NOT A TASTE SETTING.** It was
+          `from-black/70 to-black/30`, and `todo.md` filed the result as unfixable — "an
+          unpredictable photo under a scrim that thins to 30% on the right, which no opacity value
+          fixes". The first half is true and the conclusion was wrong: it treated the scrim as fixed
+          and the photo as the variable. The scrim is the half we control.
+
+          Measured by sampling the rendered pixels with the text hidden: `rnd_hero_bg_01.avif` has
+          BLOWN HIGHLIGHTS, rgb(251-255), directly under the text at every width, and the paragraph's
+          ink reaches 91-95% of this section — where the old scrim was 32-34%. Contrast ran
+          2.13-3.18:1 against a 4.5:1 requirement, and **even pure white failed**, which is why no
+          `text-white/NN` change could have fixed it.
+
+          THE RULE IS THE CONTRAST TARGET, NOT THE NUMBERS: the scrim must deliver 4.5:1 against the
+          brightest pixel beneath each element's ink extent. `black/54` is what that works out to for
+          THIS photograph and THIS text; the pair below is the gradient that delivers it, bottoming
+          out at 60% with the paragraph at ~61%. **Re-derive all three if the image, the text colour
+          or the type scale changes** — and note the h1 is now exactly 24px, WCAG's large-text
+          threshold with zero margin, so it is deliberately held to the 4.5:1 line too (5.74:1) and
+          does not depend on that carve-out surviving. */}
+      <div className="absolute inset-0 bg-linear-to-r from-black/80 to-black/60" />
       <div className="relative max-w-2xl p-6 text-white md:p-10">
         <h1 className="text-2xl font-medium tracking-tight lg:text-3xl">
           From concept to consumer.
