@@ -93,11 +93,17 @@ export function toOpportunityBand(opportunityScorePoints: number | null): Opport
   return "low";
 }
 
-/** Badge colours. `unscored` is deliberately neutral — grey states an absence. */
+/**
+ * Badge colours. `unscored` is deliberately neutral — grey states an absence.
+ *
+ * ⚠️ **`high` AND `medium` STAY LITERAL, LIKE THE MATCHING ROWS OF `PIN_RING_CLASS`.** Tailwind's
+ * red and amber have no token: `--destructive` means destruction, not high opportunity. `low` is the
+ * surface's teal and `unscored` was already `bg-muted`, so the two that CAN be tokens are.
+ */
 export const OPPORTUNITY_BAND_BADGE_CLASS: Record<OpportunityBand, string> = {
   high: "bg-red-100 text-red-800",
   medium: "bg-amber-100 text-amber-800",
-  low: "bg-[#00696E]/10 text-[#00696E]",
+  low: "bg-primary-imprint/10 text-primary-imprint",
   unscored: "bg-muted text-muted-foreground",
 };
 

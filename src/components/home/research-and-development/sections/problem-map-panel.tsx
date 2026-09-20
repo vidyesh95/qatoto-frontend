@@ -223,7 +223,7 @@ export default function ProblemMapPanel({
               <Link
                 href={buildFilterHrefFromLiveView({ category: undefined, region: undefined })}
                 scroll={false}
-                className="text-xs font-medium text-[#00696E]"
+                className="text-xs font-medium text-primary-imprint"
               >
                 Clear filters
               </Link>
@@ -266,7 +266,7 @@ export default function ProblemMapPanel({
           <FilterChipRow options={regionChips} ariaLabel="Filter by region" />
         )}
 
-        <div className="space-y-1 border-t border-[#CAC4D0]/60 pt-2">
+        <div className="space-y-1 border-t border-outline-variant/60 pt-2">
           {/* Zero renders nothing: the empty state below is already saying it, and "0 clusters in
               view" above "No clusters in this view" is the same sentence twice. */}
           {listState.status === "ready" && (
@@ -298,7 +298,7 @@ export default function ProblemMapPanel({
 
       {/* Pinned outside the scroll: on a phone this is the one thing a reporter standing at the
           broken thing came for, and it must not be below a list they have to scroll. */}
-      <div className="shrink-0 border-t border-[#CAC4D0]/60 px-4 py-3">
+      <div className="shrink-0 border-t border-outline-variant/60 px-4 py-3">
         <ReportProblemSheet canCreateCategory={canCreateCategory} isTriggerFullWidth={isSheet} />
       </div>
     </div>

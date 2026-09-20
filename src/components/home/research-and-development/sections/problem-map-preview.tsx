@@ -21,7 +21,7 @@ import {
 export default function ProblemMapPreview({ clusters }: { clusters: ProblemCluster[] }) {
   return (
     <section className="grid grid-cols-1 items-center gap-6 px-4 md:grid-cols-2 lg:px-6">
-      <div className="relative rounded-2xl bg-[#00696E]/5 p-4">
+      <div className="relative rounded-2xl bg-primary-imprint/5 p-4">
         <Image
           src="/dummy/world_map.svg"
           width={2000}
@@ -40,7 +40,7 @@ export default function ProblemMapPreview({ clusters }: { clusters: ProblemClust
             <span
               key={cluster.id}
               aria-hidden
-              className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#00696E] ${
+              className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-imprint ${
                 OPPORTUNITY_BAND_PIN_SIZE_CLASS[toOpportunityBand(cluster.opportunityScorePoints)]
               }`}
               style={{ left: `${pinPosition.leftPercent}%`, top: `${pinPosition.topPercent}%` }}
@@ -85,7 +85,7 @@ export default function ProblemMapPreview({ clusters }: { clusters: ProblemClust
         </ul>
         <Link
           href="/research-and-development/problem-map"
-          className="inline-block cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-[#00696E]"
+          className="inline-block cursor-pointer rounded-full border border-[#6F7979] px-4 py-2 text-sm font-medium text-primary-imprint"
         >
           Open problem map
         </Link>

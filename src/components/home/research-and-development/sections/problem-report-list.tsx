@@ -40,7 +40,7 @@ export default function ProblemClusterList({
           {cluster.id === selectedClusterId && (
             <Link
               href={`/research-and-development/problem-map/cluster/${cluster.id}`}
-              className="inline-block px-4 text-xs font-medium text-[#00696E]"
+              className="inline-block px-4 text-xs font-medium text-primary-imprint"
             >
               Open this cluster →
             </Link>

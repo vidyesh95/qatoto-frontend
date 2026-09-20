@@ -29,7 +29,7 @@ export default function ProblemClusterCard({
   const opportunityBand = toOpportunityBand(cluster.opportunityScorePoints);
 
   const containerClassName = `w-full rounded-2xl border p-4 text-left transition-colors ${
-    isSelected ? "border-[#00696E] bg-[#00696E]/5" : "border-[#CAC4D0]/60"
+    isSelected ? "border-primary-imprint bg-primary-imprint/5" : "border-outline-variant/60"
   }`;
 
   const clusterContent = (

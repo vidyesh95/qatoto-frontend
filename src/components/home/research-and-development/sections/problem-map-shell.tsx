@@ -390,7 +390,7 @@ function MapViewModeControl({
        * ⚠️ **A ROW, NOT A STACK.** Stacked it was 58px and overlapped the sheet's tallest detent by
        * 3px; a row is ~30px and clears everything with room.
        */
-      className="absolute top-20 right-3 z-10 flex flex-row overflow-hidden rounded-lg border border-[#CAC4D0]/60 bg-card shadow-lg"
+      className="absolute top-20 right-3 z-10 flex flex-row overflow-hidden rounded-lg border border-outline-variant/60 bg-card shadow-lg"
       aria-label="Map view"
     >
       {/* A `fieldset`, not a `div role="group"`: the lint rule prefers the semantic element, and a
@@ -405,7 +405,7 @@ function MapViewModeControl({
             aria-current={isSelected ? "true" : undefined}
             onClick={() => onViewModeChange(mode)}
             className={`cursor-pointer px-2.5 py-1.5 text-xs font-medium transition-colors ${
-              isSelected ? "bg-[#00696E] text-white" : "text-foreground hover:bg-muted"
+              isSelected ? "bg-primary-imprint text-white" : "text-foreground hover:bg-muted"
             }`}
           >
             {MAP_VIEW_MODE_LABELS[mode]}
@@ -446,7 +446,7 @@ function DockedPanel({
         onClick={onToggleCollapsed}
         aria-expanded={false}
         aria-controls="problem-map-docked-panel"
-        className="absolute top-4 left-4 z-10 flex w-11 cursor-pointer flex-col items-center gap-2 rounded-2xl border border-[#CAC4D0]/60 bg-card py-3 text-xs font-medium shadow-lg"
+        className="absolute top-4 left-4 z-10 flex w-11 cursor-pointer flex-col items-center gap-2 rounded-2xl border border-outline-variant/60 bg-card py-3 text-xs font-medium shadow-lg"
       >
         <span aria-hidden="true">›</span>
         <span className="[writing-mode:vertical-rl]">Clusters</span>
@@ -457,7 +457,7 @@ function DockedPanel({
   return (
     <div
       id="problem-map-docked-panel"
-      className="absolute top-4 bottom-4 left-4 z-10 flex w-80 flex-col overflow-hidden rounded-2xl border border-[#CAC4D0]/60 bg-card shadow-lg lg:w-90"
+      className="absolute top-4 bottom-4 left-4 z-10 flex w-80 flex-col overflow-hidden rounded-2xl border border-outline-variant/60 bg-card shadow-lg lg:w-90"
     >
       {canCollapse && (
         <button

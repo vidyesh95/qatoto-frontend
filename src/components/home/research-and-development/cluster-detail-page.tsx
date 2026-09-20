@@ -5,8 +5,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { RndErrorPanel } from "@/components/home/research-and-development/sections/rnd-status-panel";
+import HairlineDefinitionRow, {
+  type HairlineDefinitionFact,
+} from "@/components/home/shared/hairline-definition-row";
 import { getProblemCluster } from "@/lib/rnd/discovery.api";
-import { formatIsoInstant, formatScorePoints } from "@/lib/rnd/format";
+import { formatIsoInstant } from "@/lib/rnd/format";
 import { callerRequestOptions } from "@/lib/server-http";
 
 const MICRODEGREES_PER_DEGREE = 1_000_000;
@@ -16,6 +19,54 @@ function formatCentroid(latitudeMicrodegrees: number, longitudeMicrodegrees: num
   const latitude = (latitudeMicrodegrees / MICRODEGREES_PER_DEGREE).toFixed(3);
   const longitude = (longitudeMicrodegrees / MICRODEGREES_PER_DEGREE).toFixed(3);
   return `${latitude}, ${longitude}`;
+}
+
+/**
+ * The facts the row renders, in reading order.
+ *
+ * ⚠️ **`Score computed` RETURNS `null` BEFORE THE FIRST SCORING RUN, AND THAT CELL THEN
+ * DISAPPEARS.** It used to be a second `<dd>` under the score reading "No scoring run yet", which
+ * is a placeholder where §5 asks for nothing at all. Dropping it is also what lets the score cell
+ * stop carrying two `<dd>`s for one `<dt>`.
+ *
+ * ⚠️ **THE UNSCORED SCORE STILL SHOWS A WORD, AND THAT IS A DELIBERATE DEPARTURE FROM THAT SAME
+ * RULE.** A detail page is where a reader came FOR that number; silence there reads as a rendering
+ * fault rather than as an absence. The glance surfaces can afford to say nothing, and this cannot.
+ *
+ * ⚠️ **THE COPY IS "Not scored yet", MATCHING THE CARD AND THE PREVIEW.** This page used to say
+ * "Not computed yet" via `formatScorePoints`, so one null had two spellings on one surface. The
+ * shared helper is left alone because its other callers are other domains; the wording is settled
+ * here, where the divergence was.
+ */
+function buildClusterFacts(cluster: {
+  readonly distinctReporterCount: number;
+  readonly submissionCount: number;
+  readonly opportunityScorePoints: number | null;
+  readonly scoreComputedAt: string | null;
+  readonly firstReportedAt: string;
+  readonly lastReportedAt: string;
+}): readonly HairlineDefinitionFact[] {
+  return [
+    // People, not submissions — "342 reports" and "342 people" are different claims and only the
+    // second is evidence of demand.
+    { label: "People who reported it", value: String(cluster.distinctReporterCount) },
+    { label: "Submissions in total", value: String(cluster.submissionCount) },
+    {
+      label: "Opportunity score",
+      value:
+        cluster.opportunityScorePoints === null
+          ? "Not scored yet"
+          : String(cluster.opportunityScorePoints),
+    },
+    {
+      label: "Score computed",
+      value: cluster.scoreComputedAt === null ? null : formatIsoInstant(cluster.scoreComputedAt),
+    },
+    {
+      label: "Reported between",
+      value: `${formatIsoInstant(cluster.firstReportedAt)} — ${formatIsoInstant(cluster.lastReportedAt)}`,
+    },
+  ];
 }
 
 /**
@@ -72,7 +123,7 @@ export default async function ClusterDetailPage({ clusterId }: { clusterId: stri
       <header className="space-y-2">
         <Link
           href="/research-and-development/problem-map"
-          className="text-xs font-medium text-[#00696E]"
+          className="text-xs font-medium text-primary-imprint"
         >
           ← Problem Map
         </Link>
@@ -87,11 +138,11 @@ export default async function ClusterDetailPage({ clusterId }: { clusterId: stri
       {/* A merged cluster still resolves, and saying where it went is the only honest
           way to render it — the reports did not disappear, they were deduplicated. */}
       {cluster.status === "merged" && cluster.mergedIntoClusterId !== null && (
-        <div className="rounded-2xl border border-dashed border-[#CAC4D0] p-4 text-sm">
+        <div className="rounded-2xl border border-dashed border-outline-variant p-4 text-sm">
           This cluster was merged into another one.{" "}
           <Link
             href={`/research-and-development/problem-map/cluster/${cluster.mergedIntoClusterId}`}
-            className="font-medium text-[#00696E]"
+            className="font-medium text-primary-imprint"
           >
             Open the cluster it merged into →
           </Link>
@@ -102,43 +153,30 @@ export default async function ClusterDetailPage({ clusterId }: { clusterId: stri
         <p className="max-w-prose text-sm leading-6">{cluster.description}</p>
       )}
 
-      <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {/* People, not submissions — "342 reports" and "342 people" are different
-            claims and only the second is evidence of demand. */}
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">People who reported it</dt>
-          <dd className="text-xl font-semibold">{cluster.distinctReporterCount}</dd>
-        </div>
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">Submissions in total</dt>
-          <dd className="text-xl font-semibold">{cluster.submissionCount}</dd>
-        </div>
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">Opportunity score</dt>
-          <dd className="text-xl font-semibold">
-            {formatScorePoints(cluster.opportunityScorePoints)}
-          </dd>
-          <dd className="text-xs text-muted-foreground">
-            {cluster.scoreComputedAt === null
-              ? "No scoring run yet"
-              : `As of ${formatIsoInstant(cluster.scoreComputedAt)}`}
-          </dd>
-        </div>
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">Reported between</dt>
-          <dd className="text-sm font-medium">
-            {formatIsoInstant(cluster.firstReportedAt)} — {formatIsoInstant(cluster.lastReportedAt)}
-          </dd>
-        </div>
-      </dl>
+      {/* ⚠️ **ONE HAIRLINE ROW, NOT FOUR BOXES** (`todo.md` §19.11). This was a
+          `sm:grid-cols-2 xl:grid-cols-4` of bordered `rounded-2xl` cards with the figures at
+          `text-xl font-semibold`, which broke three rules at once: §6's ban on repeating an
+          identical card grid, §6's ban on the hero metric (a big number over a small label), and
+          §3's Two-Size Rule, since `text-xl` is a third type size in a product written at 14 and
+          12px.
+
+          ⚠️ **AND THEY WERE NEVER FOUR PEERS.** Three of the cells are counts; the fourth is two
+          formatted timestamps joined by an em dash, about fifty characters. Giving them identical
+          boxes claimed a symmetry the content does not have. */}
+      <HairlineDefinitionRow facts={buildClusterFacts(cluster)} />
 
       <section className="space-y-1 text-xs text-muted-foreground">
         <p>
+          {/* Mono here and NOT on the counts above. `docs/Design.md` §3 reserves Code type for
+              "anything that must be copied exactly" — a coordinate is; a reporter count is a figure
+              to compare. `place-picker.tsx` already renders a coordinate this way. */}
           Centroid{" "}
-          {formatCentroid(
-            cluster.centroidLatitudeMicrodegrees,
-            cluster.centroidLongitudeMicrodegrees,
-          )}
+          <code className="font-mono">
+            {formatCentroid(
+              cluster.centroidLatitudeMicrodegrees,
+              cluster.centroidLongitudeMicrodegrees,
+            )}
+          </code>
           {cluster.countryCode !== null && ` · ${cluster.countryCode}`}
         </p>
         <p>

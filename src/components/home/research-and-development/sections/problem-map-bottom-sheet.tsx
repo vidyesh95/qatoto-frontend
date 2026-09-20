@@ -160,7 +160,7 @@ export default function ProblemMapBottomSheet({ children }: ProblemMapBottomShee
   return (
     <div
       ref={sheetRef}
-      className={`absolute inset-x-0 bottom-0 z-10 flex flex-col rounded-t-2xl border-t border-[#CAC4D0]/60 bg-card shadow-lg transition-[height] duration-200 ${SHEET_HEIGHT_CLASS[detent]}`}
+      className={`absolute inset-x-0 bottom-0 z-10 flex flex-col rounded-t-2xl border-t border-outline-variant/60 bg-card shadow-lg transition-[height] duration-200 ${SHEET_HEIGHT_CLASS[detent]}`}
     >
       <button
         type="button"

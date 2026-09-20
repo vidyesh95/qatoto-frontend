@@ -48,10 +48,25 @@ export const PIN_SIZE_CLASS: Record<OpportunityBand, string> = {
  * ⚠️ These three hues predate the One Hue Rule (`docs/Design.md` §2) and are NOT a licence to add
  * a fourth. Size carries the same band — see `PIN_SIZE_CLASS` — so the ring is never the only
  * signal, which is what §8 requires.
+ *
+ * ⚠️ **ONLY `low` IS TOKENIZED, AND THE OTHER THREE EACH HAVE THEIR OWN REASON.**
+ *
+ * - `high` and `medium` are Tailwind's red and amber and there is no token for either:
+ *   `--destructive` means DESTRUCTION, and borrowing it for "high opportunity" would turn a palette
+ *   decision into a semantic lie. They stay literal until a role exists for them.
+ * - `low` takes `--primary-imprint`, which BRIGHTENS in dark mode — correct here, because that is
+ *   when the basemap turns dark underneath it.
+ * - ⚠️ **`unscored` STAYS `#CAC4D0` AND THAT IS A MEASURED DECISION, NOT AN OVERSIGHT.** It was
+ *   briefly `ring-outline-variant`, and the dark-mode check `docs/Design.md` §6 requires caught it:
+ *   that token DARKENS in dark mode, and this ring is drawn on the DARK BASEMAP, so the pin and the
+ *   legend swatch both disappeared into the ground. A pin is not chrome — it sits on somebody
+ *   else's imagery whose own dark variant is dark — so its colours must stay light in BOTH themes,
+ *   which is the same reason the pin body is a literal `bg-white`. A token that follows the page
+ *   theme is the wrong tool for a mark on a map.
  */
 export const PIN_RING_CLASS: Record<OpportunityBand, string> = {
   high: "ring-red-500",
   medium: "ring-amber-500",
-  low: "ring-[#00696E]",
+  low: "ring-primary-imprint",
   unscored: "ring-[#CAC4D0]",
 };

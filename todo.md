@@ -931,36 +931,65 @@ Neither blocks item 8 and neither may be faked client-side.
   a device accuracy reading; we hold none, and inventing one is the unattributed number PRODUCT.md
   bans.
 
-**11. Four shipped defects on this surface. Two are fixed; two are open.**
-(The `font-serif` note below is unchanged, but see §19.8: the page `h1` is now `sr-only` anyway.)
+**11. Four shipped defects on this surface — ALL FOUR CLOSED 2026-09-20.**
 
-- ~~**Serif Boundary violation in two files**~~ — **FIXED 2026-09-20.** `problem-map-page.tsx` and
-  `cluster-detail-page.tsx` no longer put `font-serif` on an `h1` inside `(home)`. ⚠️ **AND THE
-  SURFACE IS NOT CLEAN — THE REST OF R&D BREAKS THE SAME RULE.** `rg font-serif
-src/components/home/research-and-development/` still prints ~45 hits across the domain
-  (`talent-page.tsx`, `market-research-page.tsx`, `funding-page.tsx`, the heroes, the section
-  headers). `docs/Design.md` §3 says a serif heading in `(home)` is a bug, so that is a real
-  backlog and not a variation — but it is a domain-wide sweep with its own review, not something
-  to bundle into a Civic Pulse change. Do not use the bare `rg` above as a green/red check for
-  this surface; it will never be empty until that sweep happens.
-- **The cluster detail's four-panel `dl`** is an identical card grid of bordered label-over-figure
-  boxes, and the third of them is the hero-metric shape. Both are named bans in §6. A hairline
-  definition row with the figures in `code` type says the same thing without the boxes. **Open.**
-- ~~**`ProblemClusterList` renders its own empty state**~~ — **FIXED 2026-09-20**, and item 4 is
-  why it had to be: once the viewport drove the fetch there were THREE ways to reach zero rows, so
-  a list hardcoding "No clusters match these filters." was not merely a second voice, it was
-  frequently the wrong sentence. `problem-map-canvas` picks between the three and renders the
-  chosen one in the list's place.
-- **Hardcoded hex throughout** — `#00696E`, `#CAC4D0`, `bg-[#00696E]/5`. **Open**, but the excuse
-  is gone: ⚠️ **`--primary-imprint` AND `--outline-variant` NOW EXIST** in `globals.css` (`:root`,
-  `.dark`, and `@theme inline` as `--color-*`), added 2026-09-20. Before that, "new work uses the
-  tokens" was an instruction with nothing to point at — `globals.css` had tokenized only the M3
-  _container_ tones, which is the fracture `docs/Design.md` §2 names. The ~1,190 existing literals
-  were deliberately NOT converted.
-  ⚠️ **The dark values have never been looked at on a screen.** Nothing reads the tokens yet, so
-  they are the values the first dark check will be run against, not ones that have passed it.
-  ⚠️ **Do not bundle the conversion of the existing lines into this work**: `docs/Design.md` §6 says
-  converting a file is its own change with its own dark-mode check.
+- ~~**Serif Boundary violation in two files**~~ — FIXED. ⚠️ **THE WIDER DOMAIN STILL BREAKS IT.**
+  `rg font-serif src/components/home/research-and-development/` prints ~45 hits (`talent-page.tsx`,
+  `market-research-page.tsx`, the heroes, the section headers). Real backlog, domain-wide sweep, not
+  a Civic Pulse change. Do not use that bare `rg` as a green/red check for this surface.
+- ~~**The cluster detail's four-panel `dl`**~~ — **FIXED.** One hairline `<dl>`, five facts, figures
+  at body size.
+  ⚠️ **IT BROKE §3 AS WELL AS §6, WHICH THIS ITEM NEVER SAID.** The figures were `text-xl
+font-semibold` — a THIRD type size in a product the Two-Size Rule says is written at 14 and 12px.
+  ⚠️ **AND THE FOUR WERE NEVER PEERS.** Three cells were counts; the fourth was two formatted
+  timestamps, ~50 characters. Identical boxes claimed a symmetry the content did not have.
+  **The row is `shared/hairline-definition-row.tsx`**, hoisted out of
+  `blueprints/teardowns/sections/teardown-decision-row.tsx` — which was already this component, cited
+  both bans in its own docblock, and now wraps the shared one. `filter-chip-row.tsx` is the hoist
+  precedent. A second copy beside it is the shape where one gets a fix and the other does not.
+  **A fifth fact appeared because the drop rule made room for it**: `Score computed` renders
+  `formatIsoInstant(scoreComputedAt)` and **disappears** when that is null, which is what let the
+  score cell stop carrying two `<dd>`s for one `<dt>`.
+  ⚠️ **ONE DELIBERATE DEPARTURE FROM §5**: an unscored cluster still shows "Not scored yet" rather
+  than dropping. A detail page is where a reader came FOR that number; silence there reads as a
+  rendering fault. The rule is honoured on `scoreComputedAt`, which is absent rather than pending.
+  **It also closed a third, unlisted defect**: that null said "Not computed yet" here and "Not scored
+  yet" on the card and the preview. One state, one spelling now. `formatScorePoints` is untouched —
+  its other callers are other domains.
+  Figures are `tabular-nums`, NOT mono: §3 reserves Code type for "anything that must be copied
+  exactly". **The centroid keeps mono** because it is, matching `place-picker.tsx`.
+- ~~**`ProblemClusterList` renders its own empty state**~~ — FIXED.
+- ~~**Hardcoded hex throughout**~~ — **FIXED.** 21 utilities across 10 components, plus the two band
+  records. `#00696E` → `primary-imprint`, `#CAC4D0` → `outline-variant`. This surface is the FIRST
+  consumer of tokens that had none. Verified identical in light mode: `bg-primary-imprint` computes
+  to `lab(39.7064% -25.0424 -10.598)`, which is `#00696E`.
+
+    **Four things stayed literal, each for a stated reason:**
+    1. `ring-red-500` / `ring-amber-500` / `bg-red-100` / `bg-amber-100` — the `high` and `medium`
+       bands. No token exists: `--destructive` means DESTRUCTION, and borrowing it for "high
+       opportunity" makes a palette decision into a semantic lie.
+    2. ⚠️ **`PIN_RING_CLASS.unscored` — AND THE DARK-MODE CHECK IS WHAT CAUGHT IT.** It was briefly
+       `ring-outline-variant`; that token DARKENS in dark mode, and the ring is drawn on the DARK
+       BASEMAP, so the pin and its legend swatch vanished into the ground. **A pin is not chrome** — it
+       sits on somebody else's imagery whose dark variant is dark — so its colours must stay light in
+       BOTH themes. Same reason the pin body is a literal `bg-white`. Measured before and after: the
+       legend's fourth swatch was invisible, then legible at `#cac4d0`.
+    3. `place-picker.tsx`'s `new Marker({ color: "#00696E" })` — MapLibre takes a colour VALUE and
+       writes it into an SVG it builds itself. It never sees a class name.
+    4. `bg-white` pin bodies and the sheet handle's `bg-black/15` — not hex, but equally un-themeable.
+       Correct as-is; changing them is a design decision, not a conversion.
+
+    ⚠️ **THE DARK CHECK §6 DEMANDS IS DEVTOOLS-ONLY, AND THAT IS NOT A SHORTCUT.** Nothing writes
+    `.dark`: appearance was removed and "took the whole theme system with it". `classList` appears once
+    in `src/` and it is a READ. So the check is `document.documentElement.classList.add("dark")` by
+    hand — which also flips the basemap, since `isDarkThemeActive()` re-reads the class. It found a
+    real bug (2 above), so it was worth running rather than waived.
+
+⚠️ **FOLLOW-UP NOW THAT A SHARED ROW EXISTS.** Four R&D pages still carry the bordered-box recipe
+verbatim — `talent-detail-page.tsx`, `supplier-detail-page.tsx`, `sections/market-research-overview.tsx`,
+`sections/research-program-hero.tsx`. Each has its own null-copy vocabulary ("Not computed yet", "No
+run yet", "Not published", "No minimum"), so migrating them is a per-page reading, not a sweep. They
+can adopt `HairlineDefinitionRow` whenever somebody is in those files anyway.
 
 ⚠️ **THE MAPLIBRE WORKER IS COPIED INTO `public/` ON EVERY `dev` AND `build`, AND THAT IS LOAD-BEARING.**
 `scripts/sync-maplibre-worker.mjs` exists because Turbopack breaks MapLibre's tile worker twice

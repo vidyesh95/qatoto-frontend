@@ -485,7 +485,7 @@ export default function CivicPulseVectorMap({
   }, [clusters, readyMapToken]);
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[#00696E]/5">
+    <div className="absolute inset-0 overflow-hidden bg-primary-imprint/5">
       {/* Fills the region the shell gives it. It used to carry `aspect-2000/857` so that flipping
           the flag did not move the content below it — there is no content below it any more, the
           map IS the page, and a fixed aspect inside a full-height box would letterbox the one

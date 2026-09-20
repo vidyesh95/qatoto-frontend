@@ -108,7 +108,7 @@ export default function PlacePicker({ pin, onPinChange }: PlacePickerProps) {
           type="button"
           onClick={handleLocateClick}
           disabled={geolocationState.kind === "locating"}
-          className="cursor-pointer rounded-full border border-[#CAC4D0]/60 px-3 py-1.5 text-xs font-medium disabled:opacity-40"
+          className="cursor-pointer rounded-full border border-outline-variant/60 px-3 py-1.5 text-xs font-medium disabled:opacity-40"
         >
           {geolocationState.kind === "locating" ? "Locating…" : "Use my location"}
         </button>
@@ -254,6 +254,12 @@ function PickerMap({ pin, onPinChange }: PlacePickerProps) {
 
       const degrees = toPinDegrees(pin);
       if (markerRef.current === null) {
+        // ⚠️ **THE ONE HEX LEFT ON THIS SURFACE, AND IT CANNOT BE A TOKEN.** MapLibre's `Marker`
+        // takes a COLOUR VALUE and writes it into an SVG it builds itself; it never sees a class
+        // name, so `primary-imprint` would reach it as the literal string. It is the same
+        // `#00696E` the tokens carry, and it will need editing by hand on the day that value
+        // changes — which is exactly what `docs/Design.md` §6 means by "a place the theme cannot
+        // reach".
         markerRef.current = new maplibreModule.Marker({ color: "#00696E" })
           .setLngLat([degrees.longitude, degrees.latitude])
           .addTo(readyMap);
@@ -272,7 +278,7 @@ function PickerMap({ pin, onPinChange }: PlacePickerProps) {
   return (
     <div
       ref={mapContainerRef}
-      className="h-48 w-full overflow-hidden rounded-lg border border-[#CAC4D0]/60"
+      className="h-48 w-full overflow-hidden rounded-lg border border-outline-variant/60"
       role="application"
       aria-label="Map — tap to mark where the problem is"
     />

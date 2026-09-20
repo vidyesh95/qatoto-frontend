@@ -63,7 +63,7 @@ export default function MyProblemReportsPanel() {
         {reportsQuery.data.rows.map((report) => (
           <li
             key={report.submissionId}
-            className="rounded-2xl border border-[#CAC4D0]/60 p-3 text-sm"
+            className="rounded-2xl border border-outline-variant/60 p-3 text-sm"
           >
             <p className="font-medium">{report.title}</p>
             <p className="text-xs text-muted-foreground">
@@ -77,7 +77,7 @@ export default function MyProblemReportsPanel() {
             {report.clusterId !== null && (
               <Link
                 href={`/research-and-development/problem-map/cluster/${report.clusterId}`}
-                className="text-xs font-medium text-[#00696E]"
+                className="text-xs font-medium text-primary-imprint"
               >
                 Open the cluster it joined →
               </Link>

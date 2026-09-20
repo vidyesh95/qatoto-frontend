@@ -148,7 +148,7 @@ function StaticWorldMapCanvas({
   );
 
   return (
-    <div className="absolute inset-0 bg-[#00696E]/5">
+    <div className="absolute inset-0 bg-primary-imprint/5">
       {/* The pins are positioned in percentages of THIS element, so it has to be exactly the
           rendered image's box rather than the region's — hence the aspect-ratio wrapper centred in
           the region rather than a bare `object-contain` image filling it. */}
