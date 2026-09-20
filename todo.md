@@ -934,9 +934,13 @@ Neither blocks item 8 and neither may be faked client-side.
 **11. Four shipped defects on this surface — ALL FOUR CLOSED 2026-09-20.**
 
 - ~~**Serif Boundary violation in two files**~~ — FIXED. ⚠️ **THE WIDER DOMAIN STILL BREAKS IT.**
-  `rg font-serif src/components/home/research-and-development/` prints ~45 hits (`talent-page.tsx`,
+  `rg font-serif src/components/home/research-and-development/` prints 46 hits (`talent-page.tsx`,
   `market-research-page.tsx`, the heroes, the section headers). Real backlog, domain-wide sweep, not
   a Civic Pulse change. Do not use that bare `rg` as a green/red check for this surface.
+  ⚠️ **AND R&D IS NOT THE ONLY OFFENDER — §20 carries the counted table.** 35 more live elsewhere in
+  `(home)` and 4 in `(studio)`/`(admin)`. An earlier version of this line implied R&D was the whole
+  problem, which was an artefact of a broken `rg` exclude glob that double-counted R&D into the
+  `(home)` total.
 - ~~**The cluster detail's four-panel `dl`**~~ — **FIXED.** One hairline `<dl>`, five facts, figures
   at body size.
   ⚠️ **IT BROKE §3 AS WELL AS §6, WHICH THIS ITEM NEVER SAID.** The figures were `text-xl
@@ -1048,23 +1052,101 @@ reach a reader.
 
 ---
 
-### 20. `research-program-hero.tsx` — two live design-rule violations
+### 20. `research-program-hero.tsx` — hero-metric FIXED 2026-09-20; the serif half is a domain decision
 
-Found while migrating its siblings to `HairlineDefinitionRow` (§19.11) and deliberately NOT fixed
-there, because that was a layout migration and this is a redesign of a landing surface.
+Filed while migrating this file's siblings to `HairlineDefinitionRow` (§19.11). The original item
+asserted the two violations "CANNOT BE FIXED ALONE". Checking that assertion split the item: it was
+right about the serif and **wrong about the stat tiles**, which depend on nothing outside this file.
 
-1. ⚠️ **A `font-serif` `h1` inside `(home)`.** `sections/research-program-hero.tsx:43` —
-   `<h1 className="mt-1 font-serif text-3xl uppercase md:text-5xl">`. `docs/Design.md` §3 states the
-   Serif Boundary plainly: "A serif heading inside `(home)`, `(studio)` or `(admin)` is a bug."
-2. ⚠️ **Figures at `font-serif text-2xl md:text-3xl`** in its local `StatTile` — a third and fourth
-   type size against §3's Two-Size Rule, rendered value-above-label, which is the hero-metric shape
-   §6 names as the anti-reference.
+#### 20a. ~~Figures at `font-serif text-2xl md:text-3xl`, value above label~~ — **FIXED**
 
-⚠️ **IT CANNOT BE FIXED ALONE.** `sections/research-program-banner.tsx:28` repeats the same gradient
-and eyebrow verbatim so the two "read as one" (its own docblock), and `docs/R_AND_D_STRUCTURE.md:276`
-documents the hero's current shape. Any change is: both components, plus the doc, plus a decision
-about whether this surface is allowed to be a marketing hero at all — the R&D landing surfaces are
-the one place in `(home)` where serif currently survives in bulk (~45 hits, §19.11).
+`docs/Design.md` §6's named anti-reference, "the hero metric with a big number and a small label".
+The local `StatTile` is now label-first at two sizes:
+
+```
+dt  text-xs text-white/80
+dd  mt-1 text-sm font-medium tabular-nums
+```
+
+Four rules answered at once: `font-serif` gone (§3 Serif Boundary), `text-2xl md:text-3xl` gone
+(§3 Two-Size Rule, a third and fourth size), `flex flex-col-reverse` gone — **that is the half that
+actually kills the §6 shape, de-serifing alone would have left it** — and `tabular-nums` added on
+the `assembly-step-list.tsx:26-29` precedent, _"`tabular-nums` is what the serif was really buying."_
+The `dd` is now byte-identical to `shared/hairline-definition-row.tsx:65`, so a fact reads the same
+on this dark ground as on the light-ground sibling rows.
+
+⚠️ **THE LABEL MOVED `white/70` → `white/80`, AND THAT IS MEASURED, NOT COSMETIC.** The `dl` is
+`grid-cols-2 md:grid-cols-4` spanning the full gradient, so the rightmost tile sits on `#00696E`,
+the lightest stop. `white/70` is **4.03:1** there and fails AA for normal text; `white/80` is
+**4.76:1**. It is also why the value is safe at `text-sm`: full white is 6.47:1, so shrinking it out
+of WCAG's large-text bracket (3:1) into normal (4.5:1) crossed no threshold.
+
+#### 20b. ⚠️ The `font-serif` `h1` — NOT fixed, and NOT this file's to fix
+
+`research-program-hero.tsx:43`. `docs/Design.md` §3: _"A serif heading inside `(home)`, `(studio)`
+or `(admin)` is a bug."_ There is no carve-out for R&D in Design.md, PRODUCT.md or DESIGN.json.
+
+**Counted properly** — the earlier `~45, the one place in `(home)` where serif survives in bulk`
+was wrong, an artefact of a broken `rg` exclude glob that double-counted R&D into the `(home)` total:
+
+| surface                        | hits                           | shape                                       |
+| ------------------------------ | ------------------------------ | ------------------------------------------- |
+| `research-and-development/`    | **46** (45 usages + 1 comment) | h1 ×22, h2 ×18, figures ×3, card titles ×2  |
+| rest of `src/components/home/` | **35**                         | page `h1` only (×32) + navbar wordmark (×3) |
+| `studio/` + `admin/`           | **4**                          | navbar wordmark only                        |
+| **`(home)` total**             | **81**                         |                                             |
+| `information/` (sanctioned)    | 67                             | Display + Prose, per §3                     |
+
+⚠️ **THE DIFFERENCE IS IN KIND, NOT JUST COUNT.** Outside R&D, `(home)` serif is _only_ a page `h1`
+in one fixed recipe, plus the wordmark. **R&D is the sole place it descends into section headers,
+stat figures, card titles and stage numerals.** That is what makes it a domain identity rather than
+a heading convention — and what makes a sweep a redesign.
+
+**Blast radius, why 20a could ship and 20b cannot:**
+
+- **Six heroes** carry a byte-identical gradient string _and_ `font-serif text-3xl md:text-5xl` on
+  an `h1`: `research-program-hero`, `team-building-hero`, `governance-hero`, `go-to-market-hero`,
+  `build-log-hero`, plus `pipeline-hero` (serif, no gradient). De-serifing one makes it the odd one
+  out among five identical siblings.
+- **`sections/section-header.tsx:19`** is serif at **23 call sites**, and its comment anchors the
+  choice to the hero: _"Set in the same serif as the landing hero so every band on the R&D surface
+  speaks with the page's opening voice."_ `sections/pipeline-stages-strip.tsx:79-80` says the same
+  of its numerals. Both comments go false the moment a hero loses its serif.
+- `research-and-development-page.tsx:135` puts a serif CTA `h2` directly below the banner, so a
+  banner-only fix is visibly inconsistent on one screen.
+
+**Precedent — the identical argument was already settled once, by deletion.**
+`src/components/home/blueprints/` was three §3 violations standing together and now greps clean
+(verified: `rg font-serif src/components/home/blueprints` returns zero). See
+`case-study-detail-page.tsx:20-21` and `case-study-lesson-row.tsx:19`.
+
+**The decision this needs** is whether `(home)`'s ~81 serif headings are 81 bugs or evidence that
+§3's Serif Boundary no longer describes the product. Not a side effect of a stat-tile fix.
+
+#### 20c. ⚠️ Three unfixed AA failures on the teal gradient — domain-wide, not hero-local
+
+Same `#00696E` lightest stop as 20a, all still live in `research-program-hero.tsx` and outside the
+rewritten tile:
+
+| line  | element                                               | ratio       |
+| ----- | ----------------------------------------------------- | ----------- |
+| `:67` | `text-white/50` — "Counted … · recomputed nightly"    | **2.81 ❌** |
+| `:73` | `text-white/60` — the stats-null sentence             | **3.38 ❌** |
+| `:45` | `text-white/70` — the mission statement, at `text-sm` | **4.03 ❌** |
+
+All six heroes share that gradient string, so this is a domain sweep. ⚠️ **Measure before fixing** —
+the same tokens pass comfortably on the two darker stops (`white/50` is 5.14:1 on `#0B1F21`), so the
+failure is positional and a blanket bump would be guesswork.
+
+#### 20d. Two further corrections to the original item
+
+- **"repeats the same gradient and eyebrow verbatim"** — the gradient is byte-identical; the eyebrow
+  is **not**. `research-program-hero.tsx:42` reads `OPEN RESEARCH PROGRAM`, `banner.tsx:36` reads
+  `OPEN RESEARCH PROGRAMME`. Both spellings run loose across the domain (61 vs 74 occurrences).
+  Noted, not fixed — copy consistency is its own item.
+- **"plus the doc"** — `docs/R_AND_D_STRUCTURE.md:276` documents the tiles' **data source and null
+  behaviour** (_"404 = not counted yet, never four zeroes"_), not their typography. 20a invalidated
+  no documentation, which is part of why it was shippable alone.
 
 ---
 

@@ -50,8 +50,10 @@ export default function ResearchProgramHero({ program, stats }: ResearchProgramH
         <>
           <dl className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-4">
             {/*
-              dt precedes dd per the HTML content model; flex-col-reverse puts the value above
-              the label visually without inverting the markup.
+              LABEL FIRST, IN BOTH THE MARKUP AND THE VIEW. This used to be `flex-col-reverse`,
+              which existed only to lift the value above its label — `docs/Design.md` §6's named
+              anti-reference, "the hero metric with a big number and a small label". Dropping the
+              inversion is the half that actually removes that shape; de-serifing alone would not.
 
               Counts arrive as integers and are formatted here — `toLocaleString` is where the
               thousands separator belongs, not the wire.
@@ -79,11 +81,26 @@ export default function ResearchProgramHero({ program, stats }: ResearchProgramH
   );
 }
 
+/**
+ * One counted fact on the gradient ground.
+ *
+ * The value is `text-sm font-medium tabular-nums` — byte-identical to the value in
+ * `shared/hairline-definition-row.tsx`, so a fact reads the same here and on the light-ground
+ * sibling rows. It deliberately does NOT copy that row's `text-[11px]` label: 11px would be a
+ * third size in a file whose eyebrow and label are both `text-xs`, which is the Two-Size Rule
+ * problem this tile was rewritten to remove.
+ *
+ * ⚠️ **THE LABEL IS `white/80`, NOT `white/70`, AND THAT IS MEASURED.** The `dl` spans the full
+ * gradient, so the rightmost tile sits on `#00696E`, the lightest stop. Against it `white/70` is
+ * 4.03:1 and fails AA for normal text; `white/80` is 4.76:1 and passes. It is also why the value
+ * is safe at `text-sm`: full white is 6.47:1 there, so shrinking it out of WCAG's "large text"
+ * bracket (3:1) into "normal" (4.5:1) crosses no threshold.
+ */
 function StatTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col-reverse">
-      <dt className="mt-1 text-xs text-white/70">{label}</dt>
-      <dd className="font-serif text-2xl md:text-3xl">{value}</dd>
+    <div>
+      <dt className="text-xs text-white/80">{label}</dt>
+      <dd className="mt-1 text-sm font-medium tabular-nums">{value}</dd>
     </div>
   );
 }
