@@ -71,9 +71,7 @@ export default function OwnForumThreadsPage() {
             Business forum
           </Link>
         </nav>
-        <h1 className="font-serif text-xl font-semibold text-[#191C1C] md:text-2xl">
-          Your threads
-        </h1>
+        <h1 className="text-xl font-medium text-foreground lg:text-2xl">Your threads</h1>
         <p className="mt-1 text-sm leading-5 text-[#6F7979]">
           Everything you have asked, including what is still waiting for review.
         </p>

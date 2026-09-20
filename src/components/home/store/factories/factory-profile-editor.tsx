@@ -157,9 +157,7 @@ export default function FactoryProfileEditor({
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pt-4 pb-10 lg:px-6">
       <header>
-        <h1 className="font-serif text-xl font-semibold text-[#191C1C] md:text-2xl">
-          Your company profile
-        </h1>
+        <h1 className="text-xl font-medium text-foreground lg:text-2xl">Your company profile</h1>
         {/* NOT "factory profile" any more. `businessType` spans manufacturer, trading company,
             agent and distributor — a trading company has stakeholders and certifications and no
             production lines at all, so the page's own title should not assume a factory. */}

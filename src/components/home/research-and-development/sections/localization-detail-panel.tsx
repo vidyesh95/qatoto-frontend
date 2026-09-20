@@ -172,7 +172,9 @@ export default function LocalizationDetailPanel({
     <section className="space-y-4 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
       <div className="space-y-1">
         <p className="text-xs text-muted-foreground">HS {assessment.hsCode}</p>
-        <h3 className="font-serif text-lg leading-snug">{assessment.commodityLabel}</h3>
+        <h3 className="text-sm leading-snug font-medium text-foreground">
+          {assessment.commodityLabel}
+        </h3>
       </div>
 
       <div className="space-y-2">
@@ -261,7 +263,7 @@ export default function LocalizationDetailPanel({
                     </p>
                   ) : (
                     <div className="space-y-1">
-                      <p className="font-serif text-2xl">{capitalBand}</p>
+                      <p className="text-2xl font-medium tabular-nums">{capitalBand}</p>
                       {suggestion?.capitalBasisText === null ? null : (
                         <p className="text-sm text-muted-foreground">
                           {suggestion?.capitalBasisText}

@@ -45,7 +45,9 @@ export default async function ResearchProgramsIndexPage({
     <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
       <section className="mx-4 rounded-2xl bg-linear-to-r from-[#0B1F21] via-[#00393C] to-[#00696E] p-6 text-white md:p-10 lg:mx-6">
         <p className="text-xs tracking-widest">OPEN RESEARCH</p>
-        <h1 className="mt-1 font-serif text-3xl md:text-5xl">Research programmes</h1>
+        <h1 className="mt-1 text-2xl font-medium tracking-tight lg:text-3xl">
+          Research programmes
+        </h1>
         <p className="mt-3 max-w-2xl text-sm text-white/80">
           Long-horizon, open research anybody can contribute to: propose a branch, publish into the
           paper library, argue in the open, and log the effort you put in. Programmes map where the
@@ -99,7 +101,7 @@ export default async function ResearchProgramsIndexPage({
                   href={`/research-and-development/programs/${program.slug}`}
                   className="flex h-full flex-col gap-2 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4 transition-colors hover:border-[#00696E]"
                 >
-                  <p className="font-serif text-lg">{program.title}</p>
+                  <p className="text-sm font-medium text-foreground">{program.title}</p>
                   <p className="flex-1 text-sm text-muted-foreground">{program.tagline}</p>
                   <p className="text-xs text-muted-foreground">
                     {program.branchCount} branches · {program.participantCount} contributors

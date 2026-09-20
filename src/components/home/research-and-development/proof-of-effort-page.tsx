@@ -135,7 +135,9 @@ export default async function ProofOfEffortPage({
         >
           ← {project.name}
         </Link>
-        <h1 className="font-serif text-2xl font-semibold md:text-3xl">Proof of Effort</h1>
+        <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+          Proof of Effort
+        </h1>
         <p className="text-sm text-muted-foreground">
           Every slice on this page came from work the pipeline could independently check. Nobody —
           including the founder — types in a number.

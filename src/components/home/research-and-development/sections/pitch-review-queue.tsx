@@ -42,7 +42,7 @@ export default function PitchReviewQueue() {
   if (queueQuery.data.rows.length === 0) {
     return (
       <section className="px-4 lg:px-6">
-        <h2 className="font-serif text-xl font-semibold">Pitch review</h2>
+        <h2 className="text-sm font-medium text-foreground">Pitch review</h2>
         <p className="mt-1 text-sm text-muted-foreground">No pitches are waiting for review.</p>
       </section>
     );
@@ -51,7 +51,7 @@ export default function PitchReviewQueue() {
   return (
     <section className="space-y-3 px-4 lg:px-6">
       <header className="space-y-1">
-        <h2 className="font-serif text-xl font-semibold">Pitch review</h2>
+        <h2 className="text-sm font-medium text-foreground">Pitch review</h2>
         <p className="text-sm text-muted-foreground">
           Oldest first. Check for spam, scams, illegal content and links that do not go where the
           pitch says — <strong>not</strong> whether the venture is a good one.

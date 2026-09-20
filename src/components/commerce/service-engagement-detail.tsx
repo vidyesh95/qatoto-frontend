@@ -176,7 +176,7 @@ export default function ServiceEngagementDetail({ engagementId }: { engagementId
     <div className="pb-10">
       <header className="px-4 pt-4 lg:px-6">
         <ProviderKindBadge providerKind={engagement.providerKind} />
-        <h1 className="mt-2 font-serif text-xl font-semibold text-foreground md:text-2xl">
+        <h1 className="mt-2 text-xl font-medium text-foreground lg:text-2xl">
           {engagement.titleSnapshot}
         </h1>
         <p className="mt-0.5 text-sm text-muted-foreground">

@@ -204,7 +204,9 @@ export default function CheckoutPage({
   return (
     <div className="mx-auto w-full max-w-3xl pb-10">
       <header className="px-4 pt-4 lg:px-6">
-        <h1 className="font-serif text-2xl font-semibold text-[#191C1C] md:text-3xl">Checkout</h1>
+        <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+          Checkout
+        </h1>
         {/*
          * ⚠️ A SCOPED CHECKOUT MUST SAY SO. Arriving here from "Buy now" and seeing one line when
          * the cart holds five, with no explanation, is the same category of false statement the

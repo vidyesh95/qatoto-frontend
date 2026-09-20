@@ -111,7 +111,7 @@ function DisputeBody({ dispute }: { dispute: DisputeDetailValue }) {
         <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
           Dispute · {DISPUTE_STATE_LABELS[dispute.state]}
         </p>
-        <h1 className="font-serif text-2xl font-semibold text-foreground md:text-3xl">
+        <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
           {dispute.reasonCode.replaceAll("_", " ")}
         </h1>
         <p className="mt-1 text-sm leading-5 text-foreground">{dispute.summary}</p>

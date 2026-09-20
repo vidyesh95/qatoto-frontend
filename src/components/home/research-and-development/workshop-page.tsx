@@ -64,7 +64,9 @@ export default async function WorkshopPage({ projectSlug }: { projectSlug: strin
         >
           ← {project.name}
         </Link>
-        <h1 className="font-serif text-2xl font-semibold md:text-3xl">Virtual Workshop</h1>
+        <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+          Virtual Workshop
+        </h1>
         <p className="text-sm text-muted-foreground">
           Where the {project.name} team plans, shares, and talks — boards, files, and chat.
         </p>

@@ -76,8 +76,10 @@ const STAGE_BACKGROUND_TINT_CLASSES = [
 
 // Wrap grid of the six pipeline stages — 1 column on mobile, 2 from `sm`, 3 from
 // `xl` — so every stage is visible at once (the old horizontal scroller hid the
-// later cards off-screen with no affordance). Stage numerals are set in the same
-// serif as the hero headline, tying the strip to the page's opening voice. Every
+// later cards off-screen with no affordance). Stage numerals are SANS AND TABULAR: they were set
+// in the same serif as the hero headline, and `blueprints/teardowns/sections/assembly-step-list.tsx:26-29`
+// states what that was really buying — "`tabular-nums` is what the serif was really buying — a
+// column of step numbers that aligns." The hero is sans now, so the tie-in argument is gone. Every
 // card lands on a page that teaches its stage — never an in-page anchor, which
 // used to scroll the landing page instead of going anywhere, and left team
 // building, daily logs and governance reachable only from inside a project
@@ -95,7 +97,9 @@ export default function PipelineStagesStrip() {
             <div className="grid size-10 place-items-center rounded-full bg-[#00696E]/10">
               <Image src={stage.iconSrc} width={24} height={24} alt="" />
             </div>
-            <p className="font-serif text-3xl leading-none text-[#00696E]/30">{stage.stepNumber}</p>
+            <p className="text-3xl leading-none font-medium text-[#00696E]/30 tabular-nums">
+              {stage.stepNumber}
+            </p>
           </div>
           <p className="mt-5 font-medium">{stage.title}</p>
           <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{stage.blurb}</p>

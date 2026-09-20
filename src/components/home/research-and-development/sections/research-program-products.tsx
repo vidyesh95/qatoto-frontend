@@ -27,7 +27,7 @@ export default function ResearchProgramProducts({ opportunities }: ResearchProgr
     return (
       <div className="px-4 lg:px-6">
         <p className="max-w-2xl text-sm text-muted-foreground">
-          No products have been derived from this research yet. The program&apos;s organisers add
+          No products have been derived from this research yet. The programme&apos;s organisers add
           these as branches mature.
         </p>
       </div>

@@ -108,7 +108,7 @@ export default function SignalAgreementBand({
   return (
     <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-4">
       <div className="space-y-1">
-        <h2 className="font-serif text-xl">Both signals agree</h2>
+        <h2 className="text-sm font-medium text-foreground">Both signals agree</h2>
         <p className="text-sm text-muted-foreground">
           Categories where people are reporting problems <em>and</em> the country imports heavily. A
           coincidence worth looking at — not a combined score. The two numbers count different

@@ -132,7 +132,9 @@ export default async function ResearchAndDevelopmentPage() {
 
       <ResearchProgramBanner />
       <section className="mx-4 rounded-2xl bg-[#00696E]/5 p-6 text-center md:p-8 lg:mx-6">
-        <h2 className="font-serif text-2xl md:text-3xl">Have an idea the world needs?</h2>
+        <h2 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+          Have an idea the world needs?
+        </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Post it and Qatoto lines up the demand data, teammates, and backers to build it.
         </p>

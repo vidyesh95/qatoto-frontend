@@ -77,7 +77,9 @@ export default async function CommodityDetailPage({
 
       <header className="space-y-2">
         <p className="font-mono text-xs text-muted-foreground">HS {commodity.hsCode}</p>
-        <h1 className="font-serif text-2xl">{commodity.displayLabel}</h1>
+        <h1 className="text-xl font-medium text-foreground lg:text-2xl">
+          {commodity.displayLabel}
+        </h1>
         <div className="flex flex-wrap gap-2">
           <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
             {IMPORT_COMMODITY_KIND_LABELS[commodity.commodityKind]}
@@ -109,7 +111,7 @@ export default async function CommodityDetailPage({
         <aside className="space-y-4">
           {assessment === null ? (
             <section className="rounded-2xl border border-[#CAC4D0]/60 px-5 py-6">
-              <h2 className="font-serif text-lg">Feasibility to make here</h2>
+              <h2 className="text-sm font-medium text-foreground">Feasibility to make here</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 {/* Absence, not zero. A score of 0 would be a claim; this is its lack. */}
                 Not scored yet. The feasibility run happens nightly and covers commodities the

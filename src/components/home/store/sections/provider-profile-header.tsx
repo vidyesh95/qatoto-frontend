@@ -43,7 +43,7 @@ export default function ProviderProfileHeader({
         )}
 
         <div className="min-w-0 flex-1">
-          <h1 className="font-serif text-xl font-semibold text-[#191C1C] md:text-2xl">
+          <h1 className="text-xl font-medium text-foreground lg:text-2xl">
             {provider.displayName}
           </h1>
           <p className="mt-0.5 text-xs leading-4 text-[#6F7979]">

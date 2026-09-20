@@ -87,7 +87,7 @@ export default async function ServiceOfferingPage({ offeringSlug }: { offeringSl
           <header className="px-4 pt-4 lg:px-6">
             <ProviderKindBadge providerKind={offering.providerKind} />
 
-            <h1 className="mt-2 font-serif text-xl font-semibold text-[#191C1C] md:text-2xl">
+            <h1 className="mt-2 text-xl font-medium text-foreground lg:text-2xl">
               {offering.title}
             </h1>
 

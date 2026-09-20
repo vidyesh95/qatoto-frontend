@@ -224,7 +224,9 @@ export default function NewIdeaWizardPage() {
       return (
         <div className="mx-auto max-w-xl space-y-6 px-4 pt-4 pb-4 lg:px-6 lg:pt-6 lg:pb-6">
           <header className="space-y-1">
-            <h1 className="font-serif text-2xl font-semibold md:text-3xl">Post your idea</h1>
+            <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+              Post your idea
+            </h1>
             <p className="text-sm text-muted-foreground">
               Four quick steps — Qatoto lines up the demand data, teammates, and backers.
             </p>

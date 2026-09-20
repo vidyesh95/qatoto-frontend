@@ -143,7 +143,7 @@ export default function OpportunityScatter({
   return (
     <section className="space-y-3">
       <div className="space-y-1">
-        <h2 className="font-serif text-xl">What to make here</h2>
+        <h2 className="text-sm font-medium text-foreground">What to make here</h2>
         <p className="text-sm text-muted-foreground">
           One dot is one manufactured product this country imports. Hover to see which; click for
           the pathway and what it might cost to start. Both axes are annual trade, on a log scale —

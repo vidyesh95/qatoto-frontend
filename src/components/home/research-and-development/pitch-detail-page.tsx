@@ -71,7 +71,7 @@ export default async function PitchDetailPage({ pitchSlug }: { readonly pitchSlu
         </Link>
       </nav>
 
-      <h1 className="mt-3 font-serif text-2xl font-semibold text-foreground md:text-3xl">
+      <h1 className="mt-3 text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
         {pitch.title}
       </h1>
 

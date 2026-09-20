@@ -27,7 +27,7 @@ export default function RuledOutPanel({
   return (
     <section className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
       <div className="space-y-1">
-        <h2 className="font-serif text-xl">Ruled out, and why</h2>
+        <h2 className="text-sm font-medium text-foreground">Ruled out, and why</h2>
         <p className="text-sm text-muted-foreground">
           A ranking is only as honest as its exclusions.
         </p>

@@ -102,9 +102,7 @@ function ComparisonBody({
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="font-serif text-xl font-semibold text-foreground md:text-2xl">
-          Quotes side by side
-        </h1>
+        <h1 className="text-xl font-medium text-foreground lg:text-2xl">Quotes side by side</h1>
         {/* "YOU CAN SEE", not "all". A provider reading this route gets only its own quote, and this page
             cannot tell that it did. */}
         <p className="mt-0.5 text-sm text-muted-foreground">

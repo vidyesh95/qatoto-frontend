@@ -184,7 +184,7 @@ function QuoteBody({
         <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
           {isProvider ? "Quote you submitted" : "Quote you received"}
         </p>
-        <h1 className="font-serif text-xl font-semibold text-foreground md:text-2xl">
+        <h1 className="text-xl font-medium text-foreground lg:text-2xl">
           {revision === null
             ? "No revision submitted yet"
             : formatCentsLabel(revision.totalInCents, revision.currency)}

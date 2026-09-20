@@ -49,7 +49,7 @@ export default function CommodityDirectory({
   return (
     <section id="commodity-directory" className="scroll-mt-20 space-y-4 px-4 lg:px-6">
       <div className="space-y-1">
-        <h2 className="font-serif text-xl">Every traded commodity</h2>
+        <h2 className="text-sm font-medium text-foreground">Every traded commodity</h2>
         <p className="text-sm text-muted-foreground">
           The Harmonized System catalogue, as the country actually files it. Codes and descriptions
           are the World Customs Organization&rsquo;s own.

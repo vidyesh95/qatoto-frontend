@@ -1052,7 +1052,7 @@ reach a reader.
 
 ---
 
-### 20. `research-program-hero.tsx` — hero-metric FIXED 2026-09-20; the serif half is a domain decision
+### 20. `research-program-hero.tsx` — ALL FOUR PARTS CLOSED 2026-09-20 (three items refiled as 20e)
 
 Filed while migrating this file's siblings to `HairlineDefinitionRow` (§19.11). The original item
 asserted the two violations "CANNOT BE FIXED ALONE". Checking that assertion split the item: it was
@@ -1081,72 +1081,133 @@ the lightest stop. `white/70` is **4.03:1** there and fails AA for normal text; 
 **4.76:1**. It is also why the value is safe at `text-sm`: full white is 6.47:1, so shrinking it out
 of WCAG's large-text bracket (3:1) into normal (4.5:1) crossed no threshold.
 
-#### 20b. ⚠️ The `font-serif` `h1` — NOT fixed, and NOT this file's to fix
+#### 20b. ~~The `font-serif` `h1` inside `(home)`~~ — **SWEPT 2026-09-20, all product chrome**
 
-`research-program-hero.tsx:43`. `docs/Design.md` §3: _"A serif heading inside `(home)`, `(studio)`
-or `(admin)` is a bug."_ There is no carve-out for R&D in Design.md, PRODUCT.md or DESIGN.json.
+`docs/Design.md` §3: _"A serif heading inside `(home)`, `(studio)` or `(admin)` is a bug."_ 84 class
+strings across 80 files. Product chrome now greps clean except the **7 wordmark hits**
+(`navbar.tsx` ×3, `studio-navbar` ×2, `admin-navbar` ×2) — §3 bans a serif _heading_, §2 sanctions
+the wordmark, and a logotype is neither. `src/components/information/` keeps its 67, unchanged.
 
-**Counted properly** — the earlier `~45, the one place in `(home)` where serif survives in bulk`
-was wrong, an artefact of a broken `rg` exclude glob that double-counted R&D into the `(home)` total:
+⚠️ **THE RECIPE IS BLUEPRINTS', ADOPTED WHOLE, AND IT IS A CITATION NOT A DERIVATION.** Blueprints
+is the only fully-§3-compliant domain and runs a deliberate **two-tier `h1`** system:
 
-| surface                        | hits                           | shape                                       |
-| ------------------------------ | ------------------------------ | ------------------------------------------- |
-| `research-and-development/`    | **46** (45 usages + 1 comment) | h1 ×22, h2 ×18, figures ×3, card titles ×2  |
-| rest of `src/components/home/` | **35**                         | page `h1` only (×32) + navbar wordmark (×3) |
-| `studio/` + `admin/`           | **4**                          | navbar wordmark only                        |
-| **`(home)` total**             | **81**                         |                                             |
-| `information/` (sanctioned)    | 67                             | Display + Prose, per §3                     |
+```
+hero tier      text-2xl font-medium tracking-tight text-foreground lg:text-3xl
+ordinary tier  text-xl  font-medium                text-foreground lg:text-2xl
+section h2     text-sm  font-medium                text-foreground
+```
 
-⚠️ **THE DIFFERENCE IS IN KIND, NOT JUST COUNT.** Outside R&D, `(home)` serif is _only_ a page `h1`
-in one fixed recipe, plus the wordmark. **R&D is the sole place it descends into section headers,
-stat figures, card titles and stage numerals.** That is what makes it a domain identity rather than
-a heading convention — and what makes a sweep a redesign.
+It differs from "store minus `font-serif`" on four axes — weight `600→500`, ink
+`#191C1C→text-foreground`, breakpoint `md:→lg:`, plus `tracking-tight`. The store's two serif size
+families were already these two tiers' pixel sizes, so **the sweep resized almost nothing; the 7
+oversized R&D heroes are the exception and the headline change** (`text-3xl md:text-5xl` 30→48px →
+24→30px, a 37.5% reduction). Verified in-browser: the heroes still open their pages.
 
-**Blast radius, why 20a could ship and 20b cannot:**
+⚠️ **THE BREAKPOINT MOVED `md:`→`lg:` AND THAT IS A REAL RESPONSIVE CHANGE**, not a like-for-like
+swap: between 768 and 1024px every swept heading renders one step smaller than before. Adopted
+because a recipe that kept `md:` would be "blueprints, mostly" — uncitable. Checked at 820px.
 
-- **Six heroes** carry a byte-identical gradient string _and_ `font-serif text-3xl md:text-5xl` on
-  an `h1`: `research-program-hero`, `team-building-hero`, `governance-hero`, `go-to-market-hero`,
-  `build-log-hero`, plus `pipeline-hero` (serif, no gradient). De-serifing one makes it the odd one
-  out among five identical siblings.
-- **`sections/section-header.tsx:19`** is serif at **23 call sites**, and its comment anchors the
-  choice to the hero: _"Set in the same serif as the landing hero so every band on the R&D surface
-  speaks with the page's opening voice."_ `sections/pipeline-stages-strip.tsx:79-80` says the same
-  of its numerals. Both comments go false the moment a hero loses its serif.
-- `research-and-development-page.tsx:135` puts a serif CTA `h2` directly below the banner, so a
-  banner-only fix is visibly inconsistent on one screen.
+⚠️ **`text-foreground` IS WRONG ON A DARK GROUND, AND THE SWEEP SHIPPED THAT BUG BEFORE CATCHING
+IT.** Eight headings (the 6 gradient heroes, `pipeline-hero`, `research-program-banner`,
+`research-programs-index-page`) carried **no colour class at all** and inherited `text-white` from
+their section. Adding `text-foreground` rendered them near-black on near-black — invisible. They now
+carry the tier **minus the ink token** so inheritance still works. **Any future heading recipe
+applied to a `text-white` ground must drop the colour token.** Caught by a browser screenshot, not
+by `tsc`, `oxlint` or 103 E2E tests — none of which can see a colour.
 
-**Precedent — the identical argument was already settled once, by deletion.**
-`src/components/home/blueprints/` was three §3 violations standing together and now greps clean
-(verified: `rg font-serif src/components/home/blueprints` returns zero). See
-`case-study-detail-page.tsx:20-21` and `case-study-lesson-row.tsx:19`.
+⚠️ **BANNER HEADINGS ARE A THIRD CATEGORY AND ARE NOT SECTION HEADERS.**
+`research-and-development-page:135` and `research-program-banner:37` are `h2`s heading a full-width
+promotional band; the `text-sm` section recipe would have deleted their voice. They take the hero
+tier's **type** while staying `h2` — the tag is document structure, the recipe is size.
+PROJECT IMMORTAL loses 6px at desktop (`md:text-4xl` 36px → `lg:text-3xl` 30px), which is accepted
+because it now matches the hero it links to, the stated intent at `research-program-banner.tsx:19-21`.
 
-**The decision this needs** is whether `(home)`'s ~81 serif headings are 81 bugs or evidence that
-§3's Serif Boundary no longer describes the product. Not a side effect of a stat-tile fix.
+The remaining families each took their own precedent: R&D's `SectionHeader` (23 call sites) adopted
+**its literal twin** `store/sections/section-header.tsx:15`; figures took
+`blueprints/teardowns/sections/assembly-step-list.tsx:30` (_"`tabular-nums` is what the serif was
+really buying"_). The two comments claiming serif matched "the page's opening voice" were rewritten
+in the same pass — they went false the moment the heroes de-serifed.
 
-#### 20c. ⚠️ Three unfixed AA failures on the teal gradient — domain-wide, not hero-local
+#### 20c. ~~AA failures on the teal gradient~~ — **FIXED 2026-09-20**
 
-Same `#00696E` lightest stop as 20a, all still live in `research-program-hero.tsx` and outside the
-rewritten tile:
+⚠️ **THE FIRST FIX LIST WAS WRONG, AND HOW IT WAS WRONG IS THE REUSABLE PART.** It was computed
+against `#00696E`, the gradient's **100% stop**. Text never reaches it: `max-w-3xl`/`max-w-2xl` and
+short strings stop well short, and **how short depends on viewport**. Measured at each element's
+real rendered ink position, the three failing lines fail at 390/640/820/1024 and **pass only at
+1440** — the one width the §20a screenshot used.
 
-| line  | element                                               | ratio       |
-| ----- | ----------------------------------------------------- | ----------- |
-| `:67` | `text-white/50` — "Counted … · recomputed nightly"    | **2.81 ❌** |
-| `:73` | `text-white/60` — the stats-null sentence             | **3.38 ❌** |
-| `:45` | `text-white/70` — the mission statement, at `text-sm` | **4.03 ❌** |
+**Fixed:** `research-program-hero` `:45 /70`, `:69 /50`, `:75 /60`; `build-log-hero:18 /70`; and
+`store/sheets/manufacturer-chat-sheet/index.tsx:257 /70`, which is **solid `#00696E`** rather than
+the gradient and so is a constant 4.03:1 at every width.
+⚠️ **`:75` WAS INFERRED, NOT MEASURED** — it is the stats-null branch and `project-immortal` has
+stats, so it cannot be rendered. It is `text-sm` with no `max-w`, so it runs wider than `:45`, which
+fails at `/70`; `/60` is strictly worse.
 
-All six heroes share that gradient string, so this is a domain sweep. ⚠️ **Measure before fixing** —
-the same tokens pass comfortably on the two darker stops (`white/50` is 5.14:1 on `#0B1F21`), so the
-failure is positional and a blanket bump would be guesswork.
+⚠️ **THE RULE FOR THIS GRADIENT IS TWO VALUES: `text-white` primary, `text-white/80` secondary.**
+It carried /50, /60, /70, /80, /85 across seven files. The `/85 → /80` tidy **lowers contrast**
+(5.79:1 → 5.32:1 at the worst measured position) and was taken anyway: both clear AA by a wide
+margin, and one sanctioned value beats a slightly-better variant nobody can cite.
+**This is a documented recipe in Tailwind utilities, deliberately not a token** — the gradient is
+fixed and unthemed, so custom properties would be a token layer over two static values with no
+consumer. Do not reintroduce a third value.
 
-#### 20d. Two further corrections to the original item
+**The measurement method**, so it can be re-run: composite `white/α` over the gradient colour at
+`(inkRight − sectionLeft) / sectionWidth`; AA normal 4.5:1, large (≥24px) 3:1.
+⚠️ **Tailwind v4 resolves the colour as `oklab(L a b / α)`** — parse α from `/ α)`, never by
+regexing the channels, or every ratio comes out ≈1.4 and the check silently lies.
+Verified: 90 alpha-text elements × 5 widths × 7 routes → 0 failures.
 
-- **"repeats the same gradient and eyebrow verbatim"** — the gradient is byte-identical; the eyebrow
-  is **not**. `research-program-hero.tsx:42` reads `OPEN RESEARCH PROGRAM`, `banner.tsx:36` reads
-  `OPEN RESEARCH PROGRAMME`. Both spellings run loose across the domain (61 vs 74 occurrences).
-  Noted, not fixed — copy consistency is its own item.
-- **"plus the doc"** — `docs/R_AND_D_STRUCTURE.md:276` documents the tiles' **data source and null
-  behaviour** (_"404 = not counted yet, never four zeroes"_), not their typography. 20a invalidated
-  no documentation, which is part of why it was shippable alone.
+⚠️ **`pipeline-hero.tsx:23` `/90` IS EXCLUDED AND STAYS.** Its ground is an image under a
+`from-black/70 to-black/30` scrim, **not the teal gradient** — a different and worse problem that no
+opacity value fixes, since the photo is unpredictable and the scrim thins to 30% on the right.
+Pulling it into this recipe would import a foreign rule. Still open, below.
+
+⚠️ **Do not darken the gradient to rescue an opacity value.** Reaching AA for `/70` needs ~`#00484A`,
+which flattens the gradient toward black across 7 heroes. The gradient is the designed element; the
+opacity values were the bug.
+
+#### 20d. ~~Mixed `program` / `programme`~~ — **FIXED 2026-09-20; the split is a REGISTER RULE**
+
+⚠️ **THE TWO SPELLINGS ARE NOT A BUG — WRITE THE RULE DOWN OR THE NEXT SWEEP REVERSES IT:**
+
+- **Identity = `program`.** Routes, slugs, filenames, TS identifiers, React Query key literals, Zod
+  fields, 11 DB tables, 9 pgEnum types, 2 live enum labels, `programSlug` (268 uses). 100% of
+  identity in both repos. **Never touched.**
+- **Copy = `programme`.** Indian-English convention for an initiative, and already 64 of 73
+  user-facing strings.
+
+Checked **both** directions: the one apparent counterexample, `site-capabilities.ts:221`, is
+`{ label: "Research programmes", href: "/research-and-development/programs" }` — copy and identity
+correctly split on one line, as at `navbar.tsx:37-38`. The rule is stated in the docblock of
+`src/lib/rnd/labels.ts`, where the `program_published` **key** and its `"…programme"` **value**
+differ on the same line and the key is a live pgEnum label.
+
+Aligned 5 strays: `research-program-hero:42` (`OPEN RESEARCH PROGRAM` → `PROGRAMME`) and `:77`,
+`research-program-products:30`, `labels.ts:228`/`:229` (**values only**). Three were
+self-contradictions inside one component — the hero/banner eyebrow pair, one sentence at
+`hero:76-77` carrying both spellings 12 words apart, and two branches of `products`.
+
+⚠️ **NEVER FIND-AND-REPLACE THIS.** `reprogramming` (7, backend) and `programmer` (~45, backend) are
+different words; a mechanical pass yields `reprogrammeming` and `programmemer`.
+
+⚠️ **Out of scope deliberately:** `careers.tsx:53` ("Hardware Program Lead"), `cms.ts:150`,
+`cms.ts:257`, `vulnerability-disclosure-policy.tsx:28` (bug-bounty sense) — different domains, an
+editorial call rather than a consistency bug.
+
+#### 20e. Three items left OPEN by this pass
+
+1. ⚠️ **The Project Immortal mission statement is a DB string and still reads "an open research
+   program".** `research_program.mission_statement` for slug `project-immortal`, authored at
+   `qatoto-backend/scripts/seed-research-programs.ts:60`, rendered verbatim at
+   `research-program-hero.tsx:46`. **After 20d it is the lone US spelling on an otherwise British
+   page — more conspicuous, not less.** Needs BOTH:
+   `UPDATE research_program SET mission_statement = '<new text>' WHERE slug = 'project-immortal';`
+   **and** the matching `PROGRAM_MISSION` edit in the seed file — **the seed alone changes nothing
+   for the existing row.** ⚠️ Shared Aiven DB, no local equivalent: needs explicit permission and a
+   revert statement. Not done here.
+2. **`pipeline-hero`'s image-scrim contrast** (20c). `text-white/90` over an arbitrary photo under a
+   scrim that thins to `black/30` on the right. Fix is a scrim change, not an opacity change.
+3. **Whether the four non-R&D `program` copy strings follow the register rule** (20d) — editorial.
 
 ---
 

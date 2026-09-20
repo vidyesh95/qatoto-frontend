@@ -212,7 +212,9 @@ export default async function MarketResearchPage({
   return (
     <div className="space-y-6 pt-4 pb-4 lg:pt-6 lg:pb-6">
       <header className="space-y-1 px-4 lg:px-6">
-        <h1 className="font-serif text-2xl font-semibold md:text-3xl">Market Research</h1>
+        <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+          Market Research
+        </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Two ways to find something worth building: what people are reporting as problems, and what
           this country is paying foreigners for. Both are ranked; neither is combined into the
@@ -269,7 +271,7 @@ export default async function MarketResearchPage({
       {activeTab === "demand" ? (
         <div className="space-y-8 px-4 lg:px-6">
           <section className="space-y-4">
-            <h2 className="font-serif text-xl">Market insights</h2>
+            <h2 className="text-sm font-medium text-foreground">Market insights</h2>
             {renderInsights(toListViewState(insightsResult))}
           </section>
           {renderDemandSignals(toListViewState(demandSignalsResult))}

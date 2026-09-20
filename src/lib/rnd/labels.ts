@@ -223,10 +223,19 @@ export const RESEARCH_CONTRIBUTION_KIND_LABELS: Record<ResearchContributionKind,
   expertise: "Expertise",
 };
 
-/** A moderator's decision, for the audit log. Past tense: these already happened. */
+/**
+ * A moderator's decision, for the audit log. Past tense: these already happened.
+ *
+ * ⚠️ **THE KEY AND THE VALUE SPELL IT DIFFERENTLY ON PURPOSE — THAT IS THE REGISTER RULE.**
+ * Identity is US `program` (routes, slugs, 11 DB tables, 9 pgEnum types, `programSlug`); rendered
+ * copy is `programme`, which is Indian-English convention for an initiative and already the
+ * spelling of 64 of the 73 user-facing strings. `program_published` and `program_rejected` are
+ * **live `research_program_moderation_kind` pgEnum labels stored in rows** — renaming one needs an
+ * `ALTER TYPE ... RENAME VALUE` and a coordinated deploy. Change the values freely; never the keys.
+ */
 export const RESEARCH_MODERATION_ACTION_LABELS: Record<ResearchModerationActionKind, string> = {
-  program_published: "Published this program",
-  program_rejected: "Rejected this program",
+  program_published: "Published this programme",
+  program_rejected: "Rejected this programme",
   paper_approved: "Approved a paper",
   paper_rejected: "Rejected a paper",
   paper_needs_changes: "Requested changes to a paper",

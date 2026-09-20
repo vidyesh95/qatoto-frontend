@@ -126,7 +126,7 @@ function InquiryBody({ inquiry, side }: { inquiry: FactoryInquiry; side: Factory
         <p className="text-xs leading-4 text-[#6F7979]">
           {inquiry.reference} · {FACTORY_INQUIRY_STATE_LABELS[inquiry.state]}
         </p>
-        <h1 className="mt-1 font-serif text-xl font-semibold text-[#191C1C] md:text-2xl">
+        <h1 className="mt-1 text-xl font-medium text-foreground lg:text-2xl">
           {side === "buyer" ? inquiry.factoryDisplayName : inquiry.buyerDisplayName}
         </h1>
         <p className="mt-1 text-sm leading-5 text-[#6F7979]">

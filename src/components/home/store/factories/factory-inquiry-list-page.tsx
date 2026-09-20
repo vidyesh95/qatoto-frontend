@@ -94,9 +94,7 @@ export default function FactoryInquiryListPage({
   return (
     <div className="mx-auto w-full max-w-3xl pb-10">
       <header className="px-4 pt-4 lg:px-6">
-        <h1 className="font-serif text-xl font-semibold text-[#191C1C] md:text-2xl">
-          {copy.title}
-        </h1>
+        <h1 className="text-xl font-medium text-foreground lg:text-2xl">{copy.title}</h1>
         <p className="mt-1 text-sm leading-5 text-[#6F7979]">{copy.subtitle}</p>
       </header>
 

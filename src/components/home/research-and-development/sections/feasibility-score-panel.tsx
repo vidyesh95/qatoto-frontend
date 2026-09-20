@@ -26,7 +26,7 @@ export default function FeasibilityScorePanel({
     <section className="space-y-4 rounded-2xl border border-[#CAC4D0]/60 p-5">
       <div className="flex items-baseline justify-between gap-4">
         <div>
-          <h2 className="font-serif text-lg">Feasibility to make here</h2>
+          <h2 className="text-sm font-medium text-foreground">Feasibility to make here</h2>
           <p className="text-xs text-muted-foreground">
             Rank #{assessment.rank} · computed {formatIsoInstant(assessment.asOf)} · algorithm v
             {assessment.scoreAlgorithmVersion}

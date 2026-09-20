@@ -11,12 +11,16 @@ type SectionHeaderProps = {
 // Left-aligned section title with an optional trailing "see all" chevron, used
 // above every R&D rail (Featured projects, Open roles, Market insights, …).
 // Sections without a deeper destination pass no href and render title-only.
-// Set in the same serif as the landing hero so every band on the R&D surface
-// speaks with the page's opening voice.
+// ⚠️ SANS, AND IDENTICAL TO ITS TWIN. This was `font-serif text-xl xl:text-2xl`, justified as
+// matching "the landing hero's opening voice" — an argument that died with the serif, since
+// `docs/Design.md` §3 is unambiguous: "A serif heading inside `(home)` is a bug."
+// It now carries the exact recipe of `store/sections/section-header.tsx`, which is the same
+// component doing the same job for the store's rails. Two files with one docblock and two
+// different type scales was the real defect; changing one without the other reinstates it.
 export default function SectionHeader({ title, href }: SectionHeaderProps) {
   return (
     <div className="flex items-center justify-between px-4 lg:px-6">
-      <h2 className="font-serif text-xl xl:text-2xl">{title}</h2>
+      <h2 className="text-sm font-medium tracking-wide xl:text-lg">{title}</h2>
       {href && (
         <Link
           href={href}

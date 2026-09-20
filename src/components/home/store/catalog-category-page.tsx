@@ -79,7 +79,7 @@ function renderCategory(viewState: CategoryViewState, searchParams: RawSearchPar
           <CatalogBreadcrumb resolvedCategoryName={category.name} />
 
           <header className="px-4 pt-2 lg:px-6">
-            <h1 className="font-serif text-2xl font-semibold text-[#191C1C] md:text-3xl">
+            <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
               {category.name}
             </h1>
           </header>

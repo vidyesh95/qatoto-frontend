@@ -84,7 +84,7 @@ export default async function PublicPitchesRail() {
   return (
     <section className="space-y-3 px-4 lg:px-6">
       <header className="space-y-1">
-        <h2 className="font-serif text-xl font-semibold">Pitches</h2>
+        <h2 className="text-sm font-medium text-foreground">Pitches</h2>
         <p className="text-sm text-muted-foreground">
           Founders raising <strong>off Qatoto</strong>. Each pitch links out to wherever that
           founder actually takes funding — Qatoto lists them, holds no funds, and does not vet or

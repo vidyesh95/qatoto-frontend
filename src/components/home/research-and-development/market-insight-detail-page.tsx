@@ -79,7 +79,9 @@ export default async function MarketInsightDetailPage({ insightId }: { insightId
           <span className={`text-xl ${trendIndicator.className}`}>{trendIndicator.glyph}</span>
           <span className="text-xs font-normal text-muted-foreground">{trendIndicator.label}</span>
         </p>
-        <h1 className="font-serif text-2xl font-semibold md:text-3xl">{insight.headline}</h1>
+        <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+          {insight.headline}
+        </h1>
         <p className="text-sm text-muted-foreground">
           {insight.category.displayLabel} · {insight.region.displayLabel}
         </p>

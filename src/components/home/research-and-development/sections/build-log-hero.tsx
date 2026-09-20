@@ -9,13 +9,15 @@ export default function BuildLogHero() {
   return (
     <section className="mx-4 rounded-2xl bg-linear-to-r from-[#0B1F21] via-[#00393C] to-[#00696E] p-6 text-white md:p-10 lg:mx-6">
       <p className="text-xs tracking-widest text-white/80">STAGE 04 · BUILD &amp; DAILY LOGS</p>
-      <h1 className="mt-2 font-serif text-3xl md:text-5xl">Effort becomes proof.</h1>
-      <p className="mt-4 max-w-2xl text-sm text-white/85 md:text-base">
+      <h1 className="mt-2 text-2xl font-medium tracking-tight lg:text-3xl">
+        Effort becomes proof.
+      </h1>
+      <p className="mt-4 max-w-2xl text-sm text-white/80 md:text-base">
         Every working day, each contributor files one log: what they did, what it produced, and what
         got in the way. An AI pass reads the log and tags it — progress, velocity, blockers,
         suggestions — and verification checks the claim against what the work left behind.
       </p>
-      <p className="mt-3 max-w-2xl text-sm text-white/70">
+      <p className="mt-3 max-w-2xl text-sm text-white/80">
         Verification decides how much <span className="font-medium text-white">equity</span> an hour
         mints. It never decides whether you get paid: a flagged claim annotates a line and changes
         no cash figure.

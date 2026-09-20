@@ -56,7 +56,7 @@ export default function LocalizationLeaderboard({
   return (
     <section id="localization-leaderboard" className="scroll-mt-20 space-y-4 px-4 lg:px-6">
       <div className="space-y-1">
-        <h2 className="font-serif text-xl">Most feasible to make here</h2>
+        <h2 className="text-sm font-medium text-foreground">Most feasible to make here</h2>
         <p className="text-sm text-muted-foreground">
           Ranked by a 0–100 score over import volume, existing exports, published substitutes,
           supplier capacity and lead time.{" "}

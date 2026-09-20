@@ -248,7 +248,7 @@ export default function CofounderProfileComposer() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="font-serif text-xl font-semibold text-foreground md:text-2xl">
+        <h1 className="text-xl font-medium text-foreground lg:text-2xl">
           List yourself as a cofounder
         </h1>
         <p className="mt-0.5 text-sm text-muted-foreground">

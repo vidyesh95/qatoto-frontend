@@ -65,7 +65,7 @@ export default async function ChannelPage({ handle }: { readonly handle: string 
           className="size-20 shrink-0 rounded-full object-cover sm:size-24"
         />
         <div className="min-w-0 flex-1">
-          <h1 className="font-serif text-2xl font-semibold text-foreground md:text-3xl">
+          <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
             {profile.name}
           </h1>
           {/*

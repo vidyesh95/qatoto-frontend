@@ -106,9 +106,7 @@ export default function OwnCofounderProfilePage() {
             Find a cofounder
           </Link>
         </nav>
-        <h1 className="font-serif text-xl font-semibold text-[#191C1C] md:text-2xl">
-          Your cofounder profile
-        </h1>
+        <h1 className="text-xl font-medium text-foreground lg:text-2xl">Your cofounder profile</h1>
       </header>
 
       <div className="px-4 pt-6 lg:px-6">{renderOwnProfile(viewState)}</div>

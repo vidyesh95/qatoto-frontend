@@ -31,7 +31,7 @@ export default function CustomerServicePage() {
   return (
     <div className="mx-auto w-full max-w-3xl pb-10">
       <header className="px-4 pt-4 lg:px-6">
-        <h1 className="font-serif text-2xl font-semibold text-foreground md:text-3xl">
+        <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
           Customer service
         </h1>
         <p className="mt-0.5 text-sm text-muted-foreground">

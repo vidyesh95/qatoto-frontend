@@ -72,7 +72,9 @@ export default async function TalentPage({
     <div className="space-y-8 pt-4 pb-4 lg:pt-6 lg:pb-6">
       <header className="flex flex-wrap items-start justify-between gap-3 px-4 lg:px-6">
         <div className="space-y-1">
-          <h1 className="font-serif text-2xl font-semibold md:text-3xl">Talent</h1>
+          <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+            Talent
+          </h1>
           <p className="text-sm text-muted-foreground">
             Trade skills for pay &amp; equity — find the people who can build your idea.
           </p>

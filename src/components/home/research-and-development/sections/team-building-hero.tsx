@@ -9,8 +9,10 @@ export default function TeamBuildingHero() {
   return (
     <section className="mx-4 rounded-2xl bg-linear-to-r from-[#0B1F21] via-[#00393C] to-[#00696E] p-6 text-white md:p-10 lg:mx-6">
       <p className="text-xs tracking-widest text-white/80">STAGE 03 · TEAM BUILDING</p>
-      <h1 className="mt-2 font-serif text-3xl md:text-5xl">Trade your skills for a stake.</h1>
-      <p className="mt-4 max-w-2xl text-sm text-white/85 md:text-base">
+      <h1 className="mt-2 text-2xl font-medium tracking-tight lg:text-3xl">
+        Trade your skills for a stake.
+      </h1>
+      <p className="mt-4 max-w-2xl text-sm text-white/80 md:text-base">
         Every open role across every Qatoto project, in one place. Projects post what they need; you
         bring the skill and earn a share of what you help build — measured in verified work, not
         promises.

@@ -73,9 +73,7 @@ export default function ForumThreadComposer() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="font-serif text-xl font-semibold text-foreground md:text-2xl">
-          Ask the business forum
-        </h1>
+        <h1 className="text-xl font-medium text-foreground lg:text-2xl">Ask the business forum</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
           Every thread is read by a moderator before it appears. That usually takes a day.
         </p>

@@ -102,7 +102,9 @@ export default async function SupplierDetailPage({ supplierSlug }: { supplierSlu
           ← Manufacturing &amp; ODM partners
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-serif text-2xl font-semibold md:text-3xl">{supplier.name}</h1>
+          <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+            {supplier.name}
+          </h1>
           <span
             className={`rounded-full px-2 py-0.5 text-xs font-medium ${VERIFICATION_STATE_BADGE_CLASS[supplier.verificationState]}`}
           >

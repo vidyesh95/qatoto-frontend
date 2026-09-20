@@ -107,7 +107,9 @@ export default async function TalentDetailPage({ handleOrUserId }: { handleOrUse
         >
           ← Talent
         </Link>
-        <h1 className="font-serif text-2xl font-semibold md:text-3xl">{profile.name}</h1>
+        <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
+          {profile.name}
+        </h1>
         <p className="text-sm text-muted-foreground">
           {profile.headlineRole}
           {profile.handle !== null && ` · @${profile.handle}`}

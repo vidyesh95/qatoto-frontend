@@ -27,7 +27,7 @@ export default function TradeFlowTable({ flows }: { flows: readonly CommodityTra
   if (flows.length === 0) {
     return (
       <section className="space-y-2">
-        <h2 className="font-serif text-lg">Trade history</h2>
+        <h2 className="text-sm font-medium text-foreground">Trade history</h2>
         <p className="text-sm text-muted-foreground">
           {/* Not "0" — nobody filed a figure, which is different from trading none. */}
           No import data recorded for this commodity.
@@ -38,7 +38,7 @@ export default function TradeFlowTable({ flows }: { flows: readonly CommodityTra
 
   return (
     <section className="space-y-3">
-      <h2 className="font-serif text-lg">Trade history</h2>
+      <h2 className="text-sm font-medium text-foreground">Trade history</h2>
 
       <div className="overflow-x-auto rounded-2xl border border-[#CAC4D0]/60">
         <table className="w-full min-w-[46rem] text-sm">

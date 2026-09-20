@@ -34,7 +34,7 @@ export default function SubstituteList({
 }) {
   return (
     <section className="space-y-3">
-      <h2 className="font-serif text-lg">Domestic substitutes</h2>
+      <h2 className="text-sm font-medium text-foreground">Domestic substitutes</h2>
 
       {substitutes.length === 0 ? (
         <p className="text-sm text-muted-foreground">

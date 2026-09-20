@@ -90,9 +90,7 @@ function ForumThreadBody({ detail }: { detail: ForumThreadDetail }) {
           </Link>
         </nav>
 
-        <h1 className="font-serif text-xl font-semibold text-[#191C1C] md:text-2xl">
-          {thread.title}
-        </h1>
+        <h1 className="text-xl font-medium text-foreground lg:text-2xl">{thread.title}</h1>
 
         <p className="mt-1 text-xs leading-4 text-[#6F7979]">
           {thread.authorDisplayName}

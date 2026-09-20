@@ -19,7 +19,9 @@ export default function PipelineHero() {
       />
       <div className="absolute inset-0 bg-linear-to-r from-black/70 to-black/30" />
       <div className="relative max-w-2xl p-6 text-white md:p-10">
-        <h1 className="font-serif text-3xl md:text-5xl">From concept to consumer.</h1>
+        <h1 className="text-2xl font-medium tracking-tight lg:text-3xl">
+          From concept to consumer.
+        </h1>
         <p className="mt-4 text-sm text-white/90 md:text-base">
           Research where demand is real, map the problems people report on the ground, build a team
           that trades skills for equity, keep every commitment and every month-end statement on the

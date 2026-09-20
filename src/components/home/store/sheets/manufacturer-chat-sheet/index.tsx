@@ -254,7 +254,7 @@ function renderConversation({
           >
             <p className="text-sm leading-5 whitespace-pre-line">{message.bodyText}</p>
             <p
-              className={`mt-0.5 text-[11px] ${isOwnMessage ? "text-white/70" : "text-muted-foreground"}`}
+              className={`mt-0.5 text-[11px] ${isOwnMessage ? "text-white/80" : "text-muted-foreground"}`}
             >
               {formatIsoInstantLabel(message.createdAt)}
             </p>

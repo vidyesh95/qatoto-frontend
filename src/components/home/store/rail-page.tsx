@@ -75,7 +75,7 @@ export default async function RailPage({
       return (
         <div className="pb-8">
           <header className="px-4 pt-4 lg:px-6">
-            <h1 className="font-serif text-2xl font-semibold text-[#191C1C] md:text-3xl">
+            <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
               {rail.title}
             </h1>
             {strategyCaption !== null && (

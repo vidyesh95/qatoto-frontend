@@ -64,7 +64,7 @@ export default function NewProgramWizardPage() {
     return (
       <div className="space-y-6 px-4 pt-6 pb-6 lg:px-6">
         <div className="max-w-2xl space-y-3 rounded-2xl border border-[#CAC4D0]/60 bg-card p-6">
-          <h1 className="font-serif text-2xl">Submitted for review</h1>
+          <h1 className="text-xl font-medium text-foreground lg:text-2xl">Submitted for review</h1>
           {/*
             Says the whole truth. The programme exists, it is not public, and nobody — including
             the person reading this — can contribute to it yet.
@@ -98,7 +98,9 @@ export default function NewProgramWizardPage() {
   return (
     <div className="space-y-6 px-4 pt-6 pb-6 lg:px-6">
       <div className="max-w-2xl space-y-2">
-        <h1 className="font-serif text-2xl">Propose a research programme</h1>
+        <h1 className="text-xl font-medium text-foreground lg:text-2xl">
+          Propose a research programme
+        </h1>
         <p className="text-sm text-muted-foreground">
           A programme is open, long-horizon research anybody can contribute to — a branch map, a
           paper library and public discussion. It is reviewed before it goes public.

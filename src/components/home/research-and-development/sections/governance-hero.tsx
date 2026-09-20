@@ -10,10 +10,10 @@ export default function GovernanceHero() {
   return (
     <section className="mx-4 rounded-2xl bg-linear-to-r from-[#0B1F21] via-[#00393C] to-[#00696E] p-6 text-white md:p-10 lg:mx-6">
       <p className="text-xs tracking-widest text-white/80">STAGE 05 · FUNDING &amp; GOVERNANCE</p>
-      <h1 className="mt-2 font-serif text-3xl md:text-5xl">
+      <h1 className="mt-2 text-2xl font-medium tracking-tight lg:text-3xl">
         Every rupee and every share, accounted for.
       </h1>
-      <p className="mt-4 max-w-2xl text-sm text-white/85 md:text-base">
+      <p className="mt-4 max-w-2xl text-sm text-white/80 md:text-base">
         At the end of each month, Qatoto computes what every member is owed — cash and equity — and
         both sides sign off on the result. The numbers below are the public shape of that process:
         how many statements exist, how many a second admin countersigned, and how much has been

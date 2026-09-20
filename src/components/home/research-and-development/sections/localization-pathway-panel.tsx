@@ -36,7 +36,7 @@ export default function LocalizationPathwayPanel({
   return (
     <section className="space-y-3">
       <div className="space-y-1">
-        <h2 className="font-serif text-lg">Suggested pathway</h2>
+        <h2 className="text-sm font-medium text-foreground">Suggested pathway</h2>
         <p className="text-xs text-muted-foreground">
           Written by a language model over the score above. Advisory — it decides nothing and moves
           no figure.

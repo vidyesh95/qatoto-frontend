@@ -124,9 +124,7 @@ export default function RfqDetail({ rfqId }: { rfqId: string }) {
         <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
           {isBuyer ? "Your request" : "Request you can quote"}
         </p>
-        <h1 className="font-serif text-xl font-semibold text-foreground md:text-2xl">
-          {rfq.title}
-        </h1>
+        <h1 className="text-xl font-medium text-foreground lg:text-2xl">{rfq.title}</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">{RFQ_STATE_LABELS[rfq.state]}</p>
 
         {rfq.description !== null && (

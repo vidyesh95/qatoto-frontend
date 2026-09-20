@@ -10,10 +10,10 @@ export default function GoToMarketHero() {
   return (
     <section className="mx-4 rounded-2xl bg-linear-to-r from-[#0B1F21] via-[#00393C] to-[#00696E] p-6 text-white md:p-10 lg:mx-6">
       <p className="text-xs tracking-widest text-white/80">STAGE 06 · GO-TO-MARKET</p>
-      <h1 className="mt-2 font-serif text-3xl md:text-5xl">
+      <h1 className="mt-2 text-2xl font-medium tracking-tight lg:text-3xl">
         From verified build to a live listing.
       </h1>
-      <p className="mt-4 max-w-2xl text-sm text-white/85 md:text-base">
+      <p className="mt-4 max-w-2xl text-sm text-white/80 md:text-base">
         The prototype works, the cap table is settled, and the product needs to exist at scale. Find
         a manufacturing or ODM partner, run the batch, move it, and put it on the storefront — the
         last stretch of the pipeline, and the one that ends in a sale.

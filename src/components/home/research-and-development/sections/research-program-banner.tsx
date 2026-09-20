@@ -34,7 +34,7 @@ export default function ResearchProgramBanner() {
         alt=""
       />
       <p className="mt-4 text-xs tracking-widest">OPEN RESEARCH PROGRAMME</p>
-      <h2 className="mt-1 font-serif text-2xl md:text-4xl">PROJECT IMMORTAL</h2>
+      <h2 className="mt-1 text-2xl font-medium tracking-tight lg:text-3xl">PROJECT IMMORTAL</h2>
       <p className="mt-3 max-w-xl text-sm text-white/80">
         Qatoto&apos;s open, long-horizon research programme into extending healthy human life.
         Anybody can claim a branch, publish a paper, or argue an idea.

@@ -115,7 +115,7 @@ function FactoryDetailBody({ detail }: { detail: FactoryDetail }) {
             />
           )}
           <div className="min-w-0">
-            <h1 className="font-serif text-2xl font-semibold text-[#191C1C] md:text-3xl">
+            <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
               {factory.displayName}
             </h1>
             <p className="mt-0.5 text-sm leading-5 text-[#6F7979]">

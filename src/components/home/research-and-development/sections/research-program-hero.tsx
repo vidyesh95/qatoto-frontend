@@ -39,10 +39,12 @@ export default function ResearchProgramHero({ program, stats }: ResearchProgramH
         height={24}
         alt=""
       />
-      <p className="mt-4 text-xs tracking-widest">OPEN RESEARCH PROGRAM</p>
-      <h1 className="mt-1 font-serif text-3xl uppercase md:text-5xl">{program.title}</h1>
+      <p className="mt-4 text-xs tracking-widest">OPEN RESEARCH PROGRAMME</p>
+      <h1 className="mt-1 text-2xl font-medium tracking-tight uppercase lg:text-3xl">
+        {program.title}
+      </h1>
       <p className="mt-3 max-w-2xl text-sm text-white/80">{program.tagline}</p>
-      <p className="mt-4 max-w-3xl text-sm leading-relaxed text-white/70">
+      <p className="mt-4 max-w-3xl text-sm leading-relaxed text-white/80">
         {program.missionStatement}
       </p>
 
@@ -66,15 +68,15 @@ export default function ResearchProgramHero({ program, stats }: ResearchProgramH
               value={formatEffortFromMinutes(stats.totalEffortMinutes)}
             />
           </dl>
-          <p className="mt-4 text-xs text-white/50">
+          <p className="mt-4 text-xs text-white/80">
             {/* Every snapshot carries its own `asOf`, so nothing here implies a live number. */}
             Counted {formatIsoInstant(stats.asOf)} · recomputed nightly
           </p>
         </>
       ) : (
-        <p className="mt-8 text-sm text-white/60">
+        <p className="mt-8 text-sm text-white/80">
           Programme statistics have not been counted yet. They are computed nightly, and this
-          program has not been through a run.
+          programme has not been through a run.
         </p>
       )}
     </section>
@@ -90,11 +92,19 @@ export default function ResearchProgramHero({ program, stats }: ResearchProgramH
  * third size in a file whose eyebrow and label are both `text-xs`, which is the Two-Size Rule
  * problem this tile was rewritten to remove.
  *
- * ⚠️ **THE LABEL IS `white/80`, NOT `white/70`, AND THAT IS MEASURED.** The `dl` spans the full
- * gradient, so the rightmost tile sits on `#00696E`, the lightest stop. Against it `white/70` is
- * 4.03:1 and fails AA for normal text; `white/80` is 4.76:1 and passes. It is also why the value
- * is safe at `text-sm`: full white is 6.47:1 there, so shrinking it out of WCAG's "large text"
- * bracket (3:1) into "normal" (4.5:1) crosses no threshold.
+ * ⚠️ **THE LABEL IS `white/80`, NOT `white/70`, AND THAT IS MEASURED — BUT NOT WHERE AN EARLIER
+ * VERSION OF THIS COMMENT SAID.** It claimed the rightmost tile "sits on `#00696E`, the lightest
+ * stop", and quoted 4.03 / 4.76 from that. Text never reaches the 100% stop: measured at the
+ * rightmost `dt`'s real ink position the tile ends at 81% (1440px) / 90% (820px), giving
+ * **5.96:1 / 5.39:1**. The `/80` choice was right and is better supported than stated; the
+ * worst-case arithmetic behind it was not.
+ *
+ * ⚠️ **THE RULE FOR THIS GRADIENT IS TWO VALUES: `text-white` primary, `text-white/80` secondary.**
+ * It carried /50, /60, /70, /80, /85 across seven files. Everything below /80 failed AA for normal
+ * text at every width except 1440 — position-dependent, because `max-w-*` decides how far across
+ * the gradient a line of text actually reaches. Do not reintroduce a third value here. This is a
+ * documented recipe in Tailwind utilities, deliberately not a token: the gradient is fixed and
+ * unthemed, so custom properties would be a token layer over two static values with no consumer.
  */
 function StatTile({ label, value }: { label: string; value: string }) {
   return (

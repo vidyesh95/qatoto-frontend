@@ -116,7 +116,7 @@ function SupportCaseBody({ supportCase }: { supportCase: SupportCaseDetailValue 
         <p className="text-[11px] leading-4 font-medium tracking-[0.5px] text-muted-foreground uppercase">
           Support case · {SUPPORT_CASE_STATE_LABELS[supportCase.state]}
         </p>
-        <h1 className="font-serif text-2xl font-semibold text-foreground md:text-3xl">
+        <h1 className="text-2xl font-medium tracking-tight text-foreground lg:text-3xl">
           {supportCase.subject}
         </h1>
         <p className="mt-2 text-xs leading-4 text-muted-foreground">
