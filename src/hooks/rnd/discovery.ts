@@ -12,6 +12,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { rndKeys } from "@/hooks/rnd/keys";
 import { unwrap } from "@/lib/http";
 import type { PaginationMeta } from "@/lib/http";
+import type { CreateProblemReportInput } from "@/lib/rnd/discovery.api";
 import {
   createProblemReport,
   getMyTalentProfile,
@@ -239,12 +240,10 @@ export function useMyProblemReportsQuery(isEnabled: boolean = true) {
 export function useCreateProblemReportMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: {
-      title: string;
-      categoryId: string;
-      description: string;
-      locationText: string;
-    }) => unwrap(await createProblemReport(input)),
+    // The shape is imported rather than restated: this used to carry its own inline copy of the
+    // four fields, and a body the server refuses extra keys from is the worst possible place for
+    // two hand-maintained literals to drift apart.
+    mutationFn: async (input: CreateProblemReportInput) => unwrap(await createProblemReport(input)),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: rndKeys.myProblemReports(undefined) });
     },

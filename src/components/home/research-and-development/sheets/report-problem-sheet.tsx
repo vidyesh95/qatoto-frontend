@@ -11,6 +11,7 @@ import RndSheet, {
   RndSheetConfirmation,
 } from "@/components/home/research-and-development/sheets/rnd-sheet";
 import CreatableCombobox, { type ComboboxOption } from "@/components/ui/creatable-combobox";
+import PlacePicker from "@/components/home/research-and-development/sheets/place-picker";
 import { INPUT_CLASS, LABEL_CLASS } from "@/components/ui/field-classes";
 import { useCreateProblemReportMutation } from "@/hooks/rnd/discovery";
 import {
@@ -20,6 +21,7 @@ import {
 import { ApiRequestError } from "@/lib/http";
 import type { ResearchCategory } from "@/lib/rnd/catalog.schemas";
 import { RESEARCH_CATEGORY_STATUS_LABELS } from "@/lib/rnd/labels";
+import type { ApproximatePin } from "@/lib/rnd/report-pin";
 
 /**
  * Report a problem to Civic Pulse.
@@ -34,10 +36,18 @@ import { RESEARCH_CATEGORY_STATUS_LABELS } from "@/lib/rnd/labels";
  * PEOPLE, so one person's submission can never become a pin on its own; it joins a cluster
  * with other people's or it does not.
  *
- * **THE LOCATION IS FREE TEXT AND THE CLIENT SENDS NO COORDINATES.** `locationText` is
- * geocoded server-side and the centroid is quantized before publication, so no single
- * report can be located from the pin it contributes to. There is no place picker here
- * because there must not be one.
+ * **`locationText` IS REQUIRED AND IS STILL WHAT DECIDES THE GEOGRAPHY.** It is geocoded
+ * server-side for the country and the region — which feed the opportunity score — and the
+ * resulting centroid is quantized before publication, so no single report can be located
+ * from the pin it contributes to.
+ *
+ * ⚠️ **THIS BLOCK USED TO END "THERE IS NO PLACE PICKER HERE BECAUSE THERE MUST NOT BE ONE."
+ * THERE IS ONE NOW, AND THE RULE IT WAS PROTECTING DID NOT CHANGE.** What changed is that the
+ * pin is rounded to ~110 m IN THE BROWSER before it is sent, so the precise point the old
+ * comment was refusing to collect is still never collected — see `report-pin.ts`. The pin is
+ * OPTIONAL, it refines position only, and it cannot supply a country: there is no reverse
+ * geocoder, so a report whose free text does not resolve still fails geocoding however
+ * precisely it was pinned.
  *
  * THE CATEGORY IS AN ID, so this reads the approved taxonomy rather than offering free
  * text — `categoryId` on this body is `z.uuid()`, and there is no "other" bucket.
@@ -80,6 +90,14 @@ export default function ReportProblemSheet({
   const [categoryId, setCategoryId] = useState("");
   const [locationText, setLocationText] = useState("");
   const [description, setDescription] = useState("");
+  /**
+   * The optional coarse pin.
+   *
+   * ⚠️ **ONE PIECE OF STATE HOLDING BOTH COORDINATES, NEVER TWO.** Both or neither is refined by
+   * the request schema and CHECKed by the database; holding them together is what makes a half pin
+   * unconstructible here rather than merely refused later.
+   */
+  const [pin, setPin] = useState<ApproximatePin | null>(null);
   /**
    * Categories proposed during this session.
    *
@@ -166,6 +184,7 @@ export default function ReportProblemSheet({
     setCategoryId("");
     setLocationText("");
     setDescription("");
+    setPin(null);
     setProposedCategories([]);
   }
 
@@ -214,6 +233,15 @@ export default function ReportProblemSheet({
                 categoryId,
                 description: description.trim(),
                 locationText: locationText.trim(),
+                // Spread so an absent pin sends NO key at all rather than two `undefined`s. The
+                // body is `.strict()` and the pair is refined as both-or-neither, so spreading the
+                // whole object is also what makes half a pin unsendable.
+                ...(pin === null
+                  ? {}
+                  : {
+                      approxLatitudeMicrodegrees: pin.latitudeMicrodegrees,
+                      approxLongitudeMicrodegrees: pin.longitudeMicrodegrees,
+                    }),
               });
             }}
           >
@@ -252,6 +280,11 @@ export default function ReportProblemSheet({
                 published, so no pin can be traced back to one report.
               </span>
             </label>
+
+            {/* Optional, and deliberately AFTER the required field rather than instead of it: the
+                text is what the country and region are derived from, and the pin only says where
+                inside that place the problem is. */}
+            <PlacePicker pin={pin} onPinChange={setPin} />
 
             <label className="flex flex-col gap-1">
               <span className={LABEL_CLASS}>Description</span>

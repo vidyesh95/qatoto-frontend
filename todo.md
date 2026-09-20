@@ -626,33 +626,61 @@ table, the copy table, the pin's privacy mechanism and what a cluster pin is all
 Read it before touching this surface. It is a design brief, not a decision log — where it and
 the code disagree, the code wins and the brief gets corrected.
 
-**1. The coarse map pin — the one thing blocking a better cluster.**
-⚠️ **IT NEEDS NO MIGRATION, AND THAT IS CHEAPER THAN THIS ITEM HAS BEEN READING.** `problem_submission`
-ALREADY carries nullable `latitude_microdegrees` / `longitude_microdegrees` plus the
-`problem_submission_coordinate_range_ck` CHECK that enforces `(lat IS NULL) = (lng IS NULL)` — the
-columns exist because the clustering job writes them after geocoding. And the quantizer is written:
-`quantizePublishedMicrodegrees` (`problem-clusters.service.ts:298-304`) already rounds onto the
-1,000-microdegree (~111 m) grid this item wants, so the server-side re-quantize is a call, not a
-function to author. What is left is the wire and the job branch, not the schema.
-⚠️ **ONE THING THE BRIEF DOES NOT SETTLE AND THE IMPLEMENTER MUST:** when a pin IS supplied,
-`locationText` still has to be geocoded for `country_code` and `region_id`, which feed the
-opportunity score — so decide whether a `LOCATION_NOT_FOUND` geocode still kills a submission that
-came with usable coordinates. Today `geocode_failed` is terminal.
-Backend: add `approxLatitudeMicrodegrees` / `approxLongitudeMicrodegrees` to
-`CreateProblemReportSchema` (currently `.strict()` with no coordinate field), server-re-quantized
-to 3 decimals so a lying client cannot smuggle precision, with `locationText` kept as the label.
-Then the picker in `report-problem-sheet.tsx`. ⚠️ **The client rounds BEFORE sending** — that is
-what keeps `GEOLOCATION_PRIVACY.md`'s whole apparatus unnecessary rather than unbuilt. Today the
-sheet's own comment says a place picker "must not" exist; that comment becomes wrong the day this
-ships and must be updated with it, not left to contradict the code.
-⚠️ **THE PIN IS OPTIONAL AND THERE IS NO CONSENT CHECKBOX.** `locationText` stays required and stays
-the label, so a reporter who cannot read a map files the report they file today.
-`GEOLOCATION_PRIVACY.md` §4's checkbox promises a 90-day purge we cannot keep and a "stored
-privately" claim that is false once there is nothing precise to store; a tick-box asserting two
-untrue things is worse than one sentence asserting a true one, so the disclosure is one line under
-the map. `navigator.geolocation` rounds inside its success callback — the raw reading never reaches
-a variable that outlives it. Both coordinate fields or neither, mirroring the bbox rule in item 4.
-`docs/PROBLEM_MAP_UX.md` §8.
+**1. The coarse map pin — SHIPPED 2026-09-20.** `report-problem-sheet.tsx` carries a Place block:
+"Use my location", a tappable MapLibre map, a readout and Clear. `approxLatitudeMicrodegrees` /
+`approxLongitudeMicrodegrees` are optional on `POST /discovery/problem-reports`, both or neither.
+
+⚠️ **THE OPEN QUESTION THIS ITEM LEFT IS ANSWERED, AND THE ANSWER IS "NO".** It asked whether a
+`LOCATION_NOT_FOUND` geocode should still kill a submission that came with usable coordinates. It
+must, because **there is no reverse geocoder anywhere in the backend** and `regionId` is a pure
+function of `countryCode`, which only forward-geocoding `locationText` produces. A region-less row
+is not slightly worse — `recompute-opportunity-scores.ts` counts `distinct regionId` and NULLs are
+skipped, so it scores **0 of 20** on the geographic-spread ladder, and `recompute-demand-signals.ts`
+filters `regionId is not null`, so it is **absent from the region×category heatmap entirely**. A pin
+that rescued a failed geocode would mint second-class records that look fine and rank like nothing.
+So `locationText` stays required, the geocode still owns country/region/label, and the pin refines
+**position only**.
+
+⚠️ **"IT NEEDS NO MIGRATION" WAS WRONG AND THAT NOTE WAS MINE.** The existing
+`latitude_microdegrees` / `longitude_microdegrees` do exist, but they are the clustering job's
+OUTPUT — `MyProblemReportSchema` tells the reporter so ("server-geocoded and NULL until the job has
+run"). Writing a client claim into them would make that sentence false and would show a reporter
+their own pin as the resolved position. The pin got **its own pair** and **migration 0201**, on the
+same declared-versus-measured separation `designationSource` enforces on a teardown's alloy.
+
+⚠️ **0201 IS AUTHORED AND NOT APPLIED.** The shared Aiven database does not have the columns, so the
+write path is unproven end to end — see the verification note at the end of this item.
+
+**The disagreement rule.** `chooseSubmissionPoint` (`submission-point.ts`, a pure module split out
+so the radius comparison is testable without a database) takes the pin only when it is within the
+matcher's own 25 km of the geocoded point. Beyond that the two describe different places and the
+geocode wins, because it is what country and region were derived from — honouring a distant pin
+would centre a row in one country while labelling it another. Nothing is refused over it: a
+mis-tapped map is not worth failing a report for.
+
+**Why this does not break §6.** §6 forbids client-claimed geography because `countryCode` feeds the
+opportunity score. That stays server-derived and `countryCode` is still a 422. The pin only refines
+where inside the geocoded place the report sits, and a reporter could already move their own report
+anywhere on earth by typing different free text — this adds resolution, not a forgery surface. The
+zero-trust sweep in `problem-clusters.controller.test.ts` keeps rejecting `countryCode`, `regionId`
+and the resolved coordinates; its framing was rewritten to state the line.
+
+**The privacy mechanism, which is the whole point.** `src/lib/rnd/report-pin.ts` rounds to 3 decimals
+(~110 m) and is called IN the map click handler and INSIDE the `navigator.geolocation` success
+callback, so a device-grade reading never reaches React state. The server re-quantizes on receipt
+through the existing `quantizePublishedMicrodegrees`, because a client-side check is UX feedback and
+never a control. No consent checkbox — `GEOLOCATION_PRIVACY.md` §4's tick-box promises a 90-day
+purge nobody can keep and a "stored privately" claim that is false once nothing precise is stored.
+One sentence under the map says the true thing instead.
+
+**Measured, not assumed:** a tap produced `{approxLatitudeMicrodegrees: 33176000,
+approxLongitudeMicrodegrees: 41217000}` against a readout of `33.176, 41.217`, and that exact
+captured body was parsed by the real `CreateProblemReportSchema`. Clear removes both keys rather
+than sending `undefined`.
+
+⚠️ **STILL OPEN: `GEOLOCATION_PRIVACY.md` §5's PII SCREEN.** Its correction header keeps it as
+client-side UX feedback only. It is about the DESCRIPTION text rather than the pin, so it was not
+bundled here, and it is unbuilt.
 
 **2. `research_category.domain` as a closed enum.**
 Not a FK, not user-creatable — it is the comparability layer that lets one country's
@@ -800,7 +828,7 @@ Neither blocks item 8 and neither may be faked client-side.
 - **A `distance` sort on `GET /discovery/problem-clusters`**, ordered from a caller-supplied centre.
   It is what makes thetraffic's "near the map centre" list possible without sorting a fetched page
   in the browser.
-- **The cluster match radius on the wire.** `geocode-and-cluster-submission.ts` matches within
+- **The cluster match radius on the wire.** `submission-point.ts` matches within
   **25 km**, so a pin marks the middle of a catchment that may be 50 km across. A radius ring is the
   most honest possible rendering of that and it is the right eventual answer, but a hardcoded 25 km
   circle silently becomes a lie the day the backend tunes the constant. ⚠️ **Until the radius ships

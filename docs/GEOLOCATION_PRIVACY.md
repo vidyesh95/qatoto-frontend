@@ -15,11 +15,22 @@
 > §1's analysis stands: a 6-decimal coordinate is ~0.11 m and is PII under GDPR and the DPDP Act.
 > The answer here is not to collect it, rather than to collect it and defend it.
 >
-> - ⚠️ **§2's DUAL-STORAGE ARCHITECTURE IS NOT BUILT AND IS NOT PLANNED.** `problem_submission`
->   holds no client-supplied coordinate at all: `CreateProblemReportSchema` is `.strict()` and
->   takes free-text `locationText`, which the **server** forward-geocodes. There is no
->   `exactLatitudeMicrodegrees`, no `accuracyMeters` and no `reporterIpHash` column. When a map pin
->   is added, the client will round to 3 decimals (~110 m) **before sending**.
+> - ⚠️ **§2's DUAL-STORAGE ARCHITECTURE IS NOT BUILT AND IS NOT PLANNED.** There is no
+>   `exactLatitudeMicrodegrees`, no `accuracyMeters` and no `reporterIpHash` column, and there is
+>   nothing precise to put in one.
+>
+>     **The map pin SHIPPED on 2026-09-20 and it did not change that.** `problem_submission` now
+>     carries `approx_latitude_microdegrees` / `approx_longitude_microdegrees` (migration 0201,
+>     nullable, both-or-neither), and the client rounds to 3 decimals (~110 m) **before sending** —
+>     in the map's click handler and inside the `navigator.geolocation` success callback, so a
+>     device-grade reading never reaches React state. `src/lib/rnd/report-pin.ts` is where that
+>     happens. The server re-quantizes onto the same grid on receipt, because a client-side check is
+>     UX feedback and never a control.
+>
+>     `locationText` is still required and is still what the **server** forward-geocodes for country
+>     and region. The pin refines POSITION only; there is no reverse geocoder, so it can supply
+>     neither.
+>
 > - ⚠️ **§3's `fuzzCoordinateForPublicMap` IS SUPERSEDED**, and note it is also wrong as written:
 >   it computes `latJitter` and applies it to latitude only, returning `fuzzedLng` unjittered —
 >   the longitude line is missing. It is not a function to port.
@@ -27,10 +38,16 @@
 >   PATH.** CLAUDE.md forbids Next.js API routes for business logic; privacy requests belong to the
 >   Express backend, which already has a privacy module. A coordinate-erasure path is moot anyway:
 >   there is no exact coordinate to erase.
-> - ✅ **WHAT SURVIVES AND SHOULD BE BUILT:** §4's consent copy and media advisory (reworded — no
->   90-day promise to make), and §5's PII screen, as **UX feedback only**. CLAUDE.md is explicit
->   that a client-side check "exists only for fast UX feedback" and that the server must
->   re-validate; a regex in the browser is trivially bypassed by anyone who opens devtools.
+> - ⚠️ **§4's MANDATORY CHECKBOX WAS REJECTED AND THE PIN SHIPPED WITHOUT ONE.** Its text promises a
+>   90-day purge nobody can keep and claims the exact point is "stored privately", which is false
+>   once there is nothing precise to store. A tick-box asserting two untrue things is worse than one
+>   sentence asserting a true one, so the disclosure is a single line under the map:
+>   _"Rounded to about 110 m before it leaves your browser. We never receive a more precise point
+>   than this."_ §4's media advisory still applies the day photos are accepted.
+> - ⚠️ **§5's PII SCREEN IS STILL UNBUILT.** It is about the DESCRIPTION text rather than the pin, so
+>   it was not part of the pin work. It survives as **UX feedback only**: CLAUDE.md is explicit that
+>   a client-side check "exists only for fast UX feedback" and that the server must re-validate; a
+>   regex in the browser is trivially bypassed by anyone who opens devtools.
 
 ## 1. Regulatory Context: Why Coordinates Are PII
 

@@ -213,28 +213,52 @@ export function getTalentProfile(
 }
 
 /**
+ * What the report sheet sends.
+ *
+ * Exported because the React Query hook wrapping this needs the identical shape, and it used to
+ * declare its own copy inline — two hand-written literals that had to be kept in step by hand, on
+ * the one body in this domain that `.strict()` refuses extra keys from.
+ */
+export interface CreateProblemReportInput {
+  readonly title: string;
+  readonly categoryId: string;
+  readonly description: string;
+  /** Free text — "Nakuru County market road". Server-geocoded, and still REQUIRED. */
+  readonly locationText: string;
+  /**
+   * The reporter's optional coarse pin, already rounded to ~110 m by `report-pin.ts`.
+   *
+   * ⚠️ **BOTH OR NEITHER.** Callers build it with `toApproximatePin`, which returns the pair as one
+   * object, so a half pin cannot be constructed here — the server refines the same rule and the
+   * database CHECKs it.
+   */
+  readonly approxLatitudeMicrodegrees?: number;
+  readonly approxLongitudeMicrodegrees?: number;
+}
+
+/**
  * Submit a problem report to Civic Pulse. **`202`**, not a verdict.
  *
  * THE REPORT IS NOT A CLUSTER. It is one person's submission; clustering, geocoding and
  * scoring all happen afterwards on a schedule, and the pin a reporter eventually sees may
  * merge theirs with other people's. Nothing here may say "your report is on the map".
  *
- * **THE LOCATION IS FREE TEXT, AND THE CLIENT SENDS NO COORDINATES.** `locationText` is
- * geocoded server-side and the resulting centroid is quantized before publication, so no
- * single report can be located from the pin it contributes to. An earlier version of this
- * wrapper sent `latitudeMicrodegrees` / `longitudeMicrodegrees` / `locationLabel` — every
- * one of which `CreateProblemReportSchema.strict()` rejects with a `422`, and it omitted
- * the required `locationText` entirely. It had no caller, which is exactly why nobody
- * noticed; see R_AND_D_BACKEND_STRUCTURE.md Appendix D.
+ * **`locationText` IS STILL REQUIRED AND IS STILL WHAT DECIDES THE GEOGRAPHY.** The server
+ * forward-geocodes it for the country and the region, which feed the opportunity score; there is no
+ * reverse geocoder, so the optional pin cannot supply either and a report whose text does not
+ * resolve still fails geocoding however precisely it was pinned.
+ *
+ * ⚠️ **THIS COMMENT USED TO SAY THE CLIENT SENDS NO COORDINATES, AND THE DISTINCTION THAT REPLACED
+ * IT IS WORTH KEEPING STRAIGHT.** `latitudeMicrodegrees` / `longitudeMicrodegrees` are where the
+ * clustering job PLACED a report and are still rejected with a `422` — an earlier version of this
+ * wrapper sent exactly those, plus `locationLabel`, while omitting the required `locationText`, and
+ * it had no caller, which is why nobody noticed (R_AND_D_BACKEND_STRUCTURE.md Appendix D). The
+ * `approx*` pair is a different claim: what the reporter said, coarse on arrival, refining POSITION
+ * only, and discarded by the job when it disagrees with the geocode by more than the clustering
+ * radius.
  */
 export function createProblemReport(
-  input: {
-    readonly title: string;
-    readonly categoryId: string;
-    readonly description: string;
-    /** Free text — "Nakuru County market road", not a coordinate pair. Server-geocoded. */
-    readonly locationText: string;
-  },
+  input: CreateProblemReportInput,
   options?: RequestOptions,
 ): Promise<ActionResponse<ProblemSubmissionReceipt>> {
   return sendJson(

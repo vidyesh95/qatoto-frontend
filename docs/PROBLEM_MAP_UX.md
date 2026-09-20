@@ -3,8 +3,8 @@
 > **Surface**: `/research-and-development/problem-map`, its cluster detail route, and the
 > `ReportProblemSheet` that files into it.
 > **Register**: `product` (`docs/PRODUCT.md`). `(home)` chrome rules apply in full.
-> **Status**: Design brief, MOSTLY BUILT — §19.4, §19.8 and §19.9 shipped 2026-09-20. What is left
-> of it is §19.1, the coarse reporter pin. The work items are `todo.md` §19.
+> **Status**: Design brief, BUILT — §19.4, §19.8, §19.9 and §19.1 all shipped 2026-09-20. The work
+> items are `todo.md` §19.
 > **Benchmark**: [thetraffic.in](https://www.thetraffic.in) — `/signals` for the map shell,
 > `/grievances` for the board and the Place picker.
 
@@ -353,6 +353,14 @@ This is the part of the brief that is not layout, and it is the part most likely
 wrong.
 
 ### The reporter's pin: 3 decimals, rounded in the browser
+
+> ⚠️ **SHIPPED, WITH ONE THING THIS SECTION DOES NOT SAY: THE PIN REFINES POSITION ONLY.** There is
+> no reverse geocoder in the backend and `regionId` is a pure function of `countryCode`, which only
+> forward-geocoding `locationText` produces — so a pin can supply neither, and a report whose free
+> text does not resolve still fails geocoding however precisely it was pinned. The clustering job
+> also DISCARDS a pin that disagrees with the geocoded point by more than the 25 km matcher radius,
+> because the geocode is what country and region were derived from. `todo.md` §19.1 has the full
+> reasoning.
 
 ⚠️ **The client rounds to 3 decimals (~110 m) BEFORE sending, and that is the whole
 mechanism.** It is not a courtesy. `GEOLOCATION_PRIVACY.md`'s correction header says the
