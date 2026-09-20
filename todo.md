@@ -672,8 +672,25 @@ and in the 0198–0201 snapshots. `db:generate` then reports no drift.
 pair constraints positionally and propose moving the name onto `showcase_launch_write_up_image`,
 which shares the identical doc comment and is easy to edit by mistake instead.
 
-⚠️ **THE WRITE PATH IS STILL UNEXERCISED.** The columns exist, but no report carrying a pin has been
-submitted against the database — see the verification note at the end of this item.
+**THE WRITE PATH IS VERIFIED AGAINST THE REAL DATABASE** (2026-09-20) by
+**`pnpm db:smoke-problem-pin`** (`scripts/smoke-problem-pin.ts` in the backend), on the
+`smoke-scoped-checkout` precedent: the real `CreateProblemReportSchema`, then the real
+`createProblemSubmission`, then a read-back, then a delete.
+
+⚠️ **IT IS A SCRIPT RATHER THAN A UNIT TEST BECAUSE THE THING IT GUARDS ONLY EXISTS AGAINST A REAL
+INSERT.** A unit test can check `quantizePublishedMicrodegrees` in isolation; it cannot check that
+the service still CALLS it on the way to the column, which is the line an ordinary refactor would
+drop. Unlike `smoke-scoped-checkout` it cleans up after itself — `problem_submission` carries no
+append-only trigger, and a stray submission would be clustered and become a pin on the public map.
+
+⚠️ **THE PIN WAS SENT DELIBERATELY OFF-GRID TO PROVE THE SERVER RE-QUANTIZES**, which is the half of
+the mechanism a browser cannot be trusted with. `19076543 / 72877654` went in — what a hostile client
+posts when it skips the rounding — and `19077000 / 72878000` came back out. On the same row
+`latitude_microdegrees` and `country_code` stayed NULL, so a client claim reaches neither the job's
+output nor the geography the opportunity score reads. `chooseSubmissionPoint` then preferred the pin
+over a geocode 4 km away and ignored it against one in Delhi.
+
+The row was deleted and the database is back to its prior 2 submissions and 2 clusters.
 
 **The disagreement rule.** `chooseSubmissionPoint` (`submission-point.ts`, a pure module split out
 so the radius comparison is testable without a database) takes the pin only when it is within the
