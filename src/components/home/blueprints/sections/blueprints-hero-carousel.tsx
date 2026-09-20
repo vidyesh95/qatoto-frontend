@@ -150,6 +150,23 @@ export default function BlueprintsHeroCarousel({ slides }: { slides: PublicBluep
           />
 
           {/*
+            ⚠️ **THE BOX IS TALLER THAN ITS TEXT ON PURPOSE — IT CARRIES A CONTRAST FLOOR.**
+            It was 43px of `from-black/50 to-transparent`, with the caption sitting 16-53% DOWN it,
+            i.e. in the upper part of its own fade where alpha is 0.5 x 0.16 = 8%. Measured 1.21:1
+            against a 4.5:1 requirement — effectively unprotected, with the text-shadow doing all the
+            work. Raising `from-black/50` alone could not fix that: the text would still sit near the
+            top of a fade.
+
+            So the stop is in PIXELS and the box grew to clear it: solid black/60 to 64px — the
+            caption's 51px worst case (two-line wrap at 320px, measured WITH the `pb-5` dot
+            reservation below) plus headroom — then fading above, where no text lives. Slides are
+            admin-uploaded, so the floor is derived against a blown-white ground rather than any
+            current image: black/54 for non-large white text, shipped at 60.
+
+            THE TEXT-SHADOW STAYS AND IS NOT WHAT MAKES THIS PASS. WCAG measures text against its
+            immediate background and does not credit shadows; it is a complement to the floor, never
+            a substitute for one.
+
             EXTRA BOTTOM PADDING WHEN THERE ARE DOTS. The indicator row is centred on the same
             edge this caption sits on, and with the two-line clamp a long title runs its
             second line straight under the dots — measured at a 4px overlap on the seeded
@@ -157,7 +174,7 @@ export default function BlueprintsHeroCarousel({ slides }: { slides: PublicBluep
             reserve, so the padding is conditional rather than always-on.
           */}
           <div
-            className={`absolute inset-x-0 bottom-0 bg-linear-to-t from-black/50 to-transparent p-2 ${
+            className={`absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 via-black/60 via-[64px] to-transparent p-2 pt-12 ${
               slides.length > 1 ? "pb-5" : ""
             }`}
           >

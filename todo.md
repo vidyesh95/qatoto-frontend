@@ -1277,11 +1277,64 @@ decision, not one to bundle. ⚠️ **A text-shadow is NOT a substitute**
 and does not credit shadows, so it would have left the numbers failing. Complement, never
 replacement.
 
-⚠️ **OPEN — two more scrim surfaces, unmeasured, suspected failing.**
-`store/rails/hero-carousel.tsx:74` (`from-black/70 via-black/10 to-transparent`) and
-`blueprints-hero-carousel.tsx:160` (`from-black/50 to-transparent`). Both carry a **weaker floor than
-the one that just failed** — `to-transparent` is a floor of zero — so the prior is that they fail.
-**The item is to measure them with the method above and apply the same target, not to assume it.**
+~~**Two more scrim surfaces, unmeasured, suspected failing.**~~ — **MEASURED AND FIXED 2026-09-20.**
+The prior was right: `store/rails/hero-carousel.tsx:74` measured **1.63:1** and
+`blueprints-hero-carousel.tsx:160` **1.21:1**, both against 4.5. Both now pass — 48 caption elements
+across 8 widths and two grounds, zero failures.
+
+⚠️ **THE REUSABLE FINDING: THE CAPTION NEVER MOVED, THE GRADIENT DID.** Both captions are
+`absolute bottom-N`, so they occupy a FIXED px band — store 27-83px above the bottom edge,
+blueprints 20-51px — identical at every width from 320 to 1920. The gradients were **percentage
+stops over a host whose height changes** (store: 219→400px). The same 83px is 21% of the way up a
+tall hero and 38% up a short one, which is the whole of why contrast varied by viewport and why
+black/25 appeared at 390px. **So the floor is stated in PIXELS from the bottom edge**, and the
+viewport dependency disappears:
+
+```
+store       bg-linear-to-t from-black/60 via-black/60 via-[96px] to-transparent
+blueprints  bg-linear-to-t from-black/60 via-black/60 via-[64px] to-transparent  (+ pt-12 on the box)
+```
+
+⚠️ **THE TARGET IS IMAGE-INDEPENDENT, AND THAT IS WHAT SEPARATES THESE FROM `pipeline-hero`.** That
+hero has one fixed `/dummy/` image, so its scrim could be derived from that photograph. These render
+**arbitrary admin-uploaded slides**, so the floor is derived against a **blown-white ground** — the
+worst any future upload can be. `black/54` for non-large (under 24px) white text; shipped at
+`black/60`.
+⚠️ **THE BAND IS `0 → caption worst-case top + ~13px`, SO THE PX NUMBERS ARE OUTPUTS, NOT CONSTANTS.**
+Re-derive both if a caption moves, wraps differently, or its type scale changes.
+
+⚠️ **THE BOX, NOT ONLY THE GRADIENT, WAS THE BUG ON BLUEPRINTS.** It was 43px tall with the caption
+sitting 16-53% DOWN it — inside the upper part of its own fade, where alpha is 0.5 × 0.16 = **8%**.
+Raising `from-black/50` alone could never have fixed that. The box grew (`pt-12`) so the floor clears
+the caption's 51px worst case — the two-line wrap at 320px, measured **with** the `pb-5` dot
+reservation, since the carousel is already multi-slide. **The `[text-shadow]` stays and is not what
+makes it pass**: WCAG does not credit shadows, so it is a complement to the floor, never a substitute.
+
+⚠️ **THE STORE'S NO-IMAGE PATH WAS A GUARANTEED FAILURE, NOT A RISK.** `slide.imageUrl === null`
+falls back to `accentSurfaceClass` — `bg-amber-50` / `bg-slate-100` / `bg-emerald-50` / `bg-sky-50` /
+`bg-rose-50` (`lib/store/labels.ts:113-121`) — and white text on a 50-shade tint is white-on-white.
+A real slide in the seeded data hits it. The scrim renders above both the tint and the image, so one
+floor covers both.
+
+**`text-white/80` → `text-white` on the store subtitle**, which drops that band's requirement from
+`black/61` to `black/54`. ⚠️ **THE TWO ARE COUPLED: `black/60` holds only while the subtitle is full
+white** — revert the ink and the floor must become `black/61`. Judged habitual rather than
+deliberate: the file documents its link CHECK and its dots in detail and says nothing about the
+dimming, `text-white/80` appears twice in all of `store/`, and the 30px/14px size gap carries the
+hierarchy on its own (verified in-browser).
+⚠️ **This does NOT follow §20c and an earlier draft claimed it did.** 20c established **two**
+sanctioned values on the teal gradient (`white` + `white/80`), so `white/80` _matched_ it and
+collapsing to one ink diverges. The change stands on less darkening, not on that precedent — and the
+two-value rule on the teal gradient is unaffected.
+
+**Method, so it is reproducible:** take the caption's **ink** rect via
+`range.selectNodeContents(el).getBoundingClientRect()` (not the element box — padding inflates it),
+`visibility:hidden` every text node, `page.screenshot({clip})`, then decode by assigning the PNG as a
+**base64 data URL** to an `Image` and reading `getImageData` off a canvas (`file://` is blocked from
+an http page). Composite the ink over **every** pixel and keep the **worst** ratio, never the mean.
+Run it twice: once on the real slides, once with the `<img>` hidden and the host painted `#fff`.
+⚠️ Parse alpha from `oklab(L a b / α)` — Tailwind v4 resolves colours that way, and regexing the
+channels returns ≈1.2 for everything.
 
 ##### 20e.3 ~~The four non-R&D `program` strings~~ — **CLOSED 2026-09-20; one changed**
 

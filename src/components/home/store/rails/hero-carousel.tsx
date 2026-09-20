@@ -71,9 +71,28 @@ export default function HeroCarousel({ slides }: { slides: readonly StoreHeroSli
           alt={slide.title}
         />
       )}
-      <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent" />
+      {/* ⚠️ **A FLOOR UNDER THE CAPTION, THEN A FADE — NOT A FADE THE CAPTION SITS IN.**
+          This was `from-black/70 via-black/10 to-transparent`, and measured 1.63:1 against a 4.5:1
+          requirement. The diagnosis is worth keeping: **the caption never moved, the gradient did.**
+          The caption is `absolute bottom-7`, so it occupies 27-83px above this edge at EVERY width;
+          the old gradient was percentage-based over a host that ranges 219-400px tall, so the same
+          83px was 21% of the way up at desktop and 38% at 390px — deep into the fade, leaving an
+          effective black/25.
+
+          So the stop is in PIXELS. Solid to 96px (the caption's 83px top plus headroom), fading
+          above that, where no text lives. Variation above the band is decorative, not structural.
+
+          THE TARGET IS IMAGE-INDEPENDENT. Slides are backend-supplied, so the floor is derived
+          against a blown-white ground, not against whatever is on the rail today — black/54 for
+          non-large white text, shipped at black/60. ⚠️ That 60 assumes the subtitle below is FULL
+          WHITE; `text-white/80` would need black/61, so the two move together.
+
+          It also covers the no-image path, which is the one guaranteed failure here:
+          `accentSurfaceClass` falls back to `bg-amber-50`/`bg-slate-100`/etc, and white text on a
+          50-shade tint is white-on-white. This element renders above both the tint and the image. */}
+      <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/60 via-[96px] to-transparent" />
       <div className="absolute bottom-7 left-4 lg:left-6">
-        {slide.subtitle !== null && <p className="text-sm text-white/80">{slide.subtitle}</p>}
+        {slide.subtitle !== null && <p className="text-sm text-white">{slide.subtitle}</p>}
         <p className="text-3xl font-semibold text-white">{slide.title}</p>
       </div>
       <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
