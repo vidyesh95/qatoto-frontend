@@ -178,8 +178,11 @@ function renderProductDetail(viewState: ProductDetailViewState, isViewerSignedIn
             {/* lg+: two-column PDP — sticky media gallery left, buy box right. Below lg these
                 wrappers are style-less blocks, so the mobile flow and DOM order stay as before. */}
             <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
-              {/* Gallery column — sticks just under the 56px navbar while the buy column scrolls */}
-              <div className="lg:sticky lg:top-16">
+              {/* Gallery column — sticks to the top of the scrollport while the buy column scrolls.
+                  `top-0`, not `top-16`: the navbar is no longer in flow above this, it sits outside
+                  `(home)`'s scroll container, so an offset here would leave a 64px gap rather than
+                  clearing anything. */}
+              <div className="lg:sticky lg:top-0">
                 <ProductImageGallery images={product.images} alt={product.title} />
 
                 {/* A47. Shown only when the seller attached a `.glb` — the row is the affordance.

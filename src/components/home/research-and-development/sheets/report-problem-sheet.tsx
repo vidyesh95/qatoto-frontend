@@ -3,6 +3,7 @@
 // (home)/layout.tsx mounts.
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { MutationErrorNotice } from "@/components/home/research-and-development/sections/mutation-feedback";
@@ -60,8 +61,20 @@ type ReportProblemSheetProps = {
   /** Signed in with a real account — the precondition for `POST /research-categories`.
    *  False renders no create row rather than a control that 401s. */
   canCreateCategory: boolean;
+  /**
+   * Stretch the trigger to its container.
+   *
+   * The mobile sheet wants a full-width button because at the peek detent this is the one control a
+   * reporter standing at the broken thing came for, and a centred pill in a wide row reads as
+   * secondary. A prop rather than a class override from outside: the trigger's other styling is
+   * this component's business, and a caller reaching in to widen it would be free to restyle it.
+   */
+  isTriggerFullWidth?: boolean;
 };
-export default function ReportProblemSheet({ canCreateCategory }: ReportProblemSheetProps) {
+export default function ReportProblemSheet({
+  canCreateCategory,
+  isTriggerFullWidth = false,
+}: ReportProblemSheetProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -161,18 +174,35 @@ export default function ReportProblemSheet({ canCreateCategory }: ReportProblemS
       <button
         type="button"
         onClick={() => setIsSheetOpen(true)}
-        className="cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        className={`cursor-pointer rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground ${
+          isTriggerFullWidth ? "w-full" : ""
+        }`}
       >
         Report a problem
       </button>
 
       <RndSheet title="Report a problem" isOpen={isSheetOpen} onClose={closeSheet}>
         {reportMutation.isSuccess ? (
-          <RndSheetConfirmation
-            headline="Received — we are matching it to a cluster"
-            detail="Your report is queued. It is not on the map yet: reports from separate people are grouped first, and where yours lands is decided by that job, not by this form."
-            onDismiss={closeSheet}
-          />
+          <>
+            <RndSheetConfirmation
+              headline="Received — we are matching it to a cluster"
+              detail="Your report is queued. It is not on the map yet: reports from separate people are grouped first, and where yours lands is decided by that job, not by this form."
+              onDismiss={closeSheet}
+            />
+            {/* Where the answer actually appears. The receipt carries `clusterId: null` by
+                construction, so without somewhere to look a reporter files something and never
+                hears about it again. The list used to sit under the map; the map is now a
+                non-scrolling instrument and it moved to its own route. */}
+            <p className="px-4 pb-6 text-center text-xs text-muted-foreground">
+              <Link
+                href="/research-and-development/my-reports"
+                className="font-medium text-[#00696E] underline underline-offset-2"
+              >
+                See your reports
+              </Link>{" "}
+              to find out where it landed.
+            </p>
+          </>
         ) : (
           <form
             className="flex flex-col gap-4 px-4 pb-6"

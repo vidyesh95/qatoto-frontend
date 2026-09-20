@@ -6,7 +6,7 @@
 
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from "maplibre-gl";
 import Image from "next/image";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import {
@@ -71,13 +71,6 @@ type CivicPulseVectorMapProps = {
   readonly selectedClusterId: string | null;
   readonly onSelectCluster: (clusterId: string) => void;
   /**
-   * The cluster list, already rendered by the parent — either the rows or the one empty state that
-   * fits. It arrives as a node because the parent is the only thing that knows WHICH emptiness
-   * this is, and a canvas that decided for itself would be the second voice `todo.md` §19.11
-   * records against `ProblemClusterList`.
-   */
-  readonly listSlot: ReactNode;
-  /**
    * Where to open. `null` means nobody named a camera, so the map fits to the clusters instead.
    *
    * ⚠️ **READ ONCE, AT MOUNT.** It is held in a `useRef` initialiser precisely so a later change
@@ -133,7 +126,6 @@ export default function CivicPulseVectorMap({
   clusters,
   selectedClusterId,
   onSelectCluster,
-  listSlot,
   initialCamera,
   onViewportChange,
   onUnavailable,
@@ -366,6 +358,25 @@ export default function CivicPulseVectorMap({
     return () => themeObserver.disconnect();
   }, []);
 
+  // --- Follow the container -------------------------------------------------------------
+  // ⚠️ **THE MAP'S BOX NOW CHANGES WITHOUT THE WINDOW CHANGING.** Collapsing the tablet panel or
+  // dragging the mobile sheet to another detent resizes this element while the viewport stays
+  // exactly the same size, and a MapLibre canvas that is not told about that keeps its old
+  // transform: the picture stretches and every marker lands off its coordinate. A window `resize`
+  // listener cannot see any of it, which is why this observes the container instead.
+  useEffect(() => {
+    const mapContainer = mapContainerRef.current;
+    // Returns a no-op teardown rather than bailing with a bare `return`, so every path out of this
+    // effect hands React the same kind of value.
+    if (mapContainer === null || typeof ResizeObserver === "undefined") return () => {};
+
+    const containerObserver = new ResizeObserver(() => {
+      mapInstanceRef.current?.resize();
+    });
+    containerObserver.observe(mapContainer);
+    return () => containerObserver.disconnect();
+  }, []);
+
   // --- One marker per cluster ------------------------------------------------------------
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -435,18 +446,18 @@ export default function CivicPulseVectorMap({
   }, [clusters, readyMapToken]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
-      <div className="relative w-full self-start overflow-hidden rounded-2xl bg-[#00696E]/5">
-        <div
-          ref={mapContainerRef}
-          // A fixed aspect keeps the reserved box identical to the static canvas's, so flipping
-          // the flag does not move everything below it on the page.
-          className="aspect-2000/857 w-full"
-          role="application"
-          aria-label="Map of reported problem clusters"
-        />
-        <VectorMapStatusOverlay status={status} />
-      </div>
+    <div className="absolute inset-0 overflow-hidden bg-[#00696E]/5">
+      {/* Fills the region the shell gives it. It used to carry `aspect-2000/857` so that flipping
+          the flag did not move the content below it — there is no content below it any more, the
+          map IS the page, and a fixed aspect inside a full-height box would letterbox the one
+          renderer that does not need to. */}
+      <div
+        ref={mapContainerRef}
+        className="h-full w-full"
+        role="application"
+        aria-label="Map of reported problem clusters"
+      />
+      <VectorMapStatusOverlay status={status} />
 
       {[...markerContainersByClusterId].map(([clusterId, markerContainer]) => {
         const cluster = clusters.find((candidate) => candidate.id === clusterId);
@@ -477,8 +488,6 @@ export default function CivicPulseVectorMap({
           clusterId,
         );
       })}
-
-      {listSlot}
     </div>
   );
 }

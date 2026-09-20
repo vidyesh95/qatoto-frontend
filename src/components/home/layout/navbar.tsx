@@ -120,7 +120,11 @@ export default function Navbar({
   const sub = getSubHeader(pathname);
 
   return (
-    <nav className="sticky top-0 z-50 bg-background">
+    // `shrink-0`, not `sticky top-0`. It is the first item of the shell's flex column now, so it
+    // is already pinned above the scroll container by structure; `sticky` on a flex item that
+    // never scrolls is a no-op that reads as though something depends on it. `z-50` stays — the
+    // account and language menus open as `fixed` children and still stack against it.
+    <nav className="z-50 shrink-0 bg-background">
       <div className="relative mx-auto flex items-center justify-between px-4 py-2 md:justify-between lg:px-6">
         {/* Brand */}
         <div

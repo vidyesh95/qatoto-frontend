@@ -3,8 +3,8 @@
 > **Surface**: `/research-and-development/problem-map`, its cluster detail route, and the
 > `ReportProblemSheet` that files into it.
 > **Register**: `product` (`docs/PRODUCT.md`). `(home)` chrome rules apply in full.
-> **Status**: Design brief, PARTLY BUILT — §19.4 shipped 2026-09-20. The work items are
-> `todo.md` §19.
+> **Status**: Design brief, MOSTLY BUILT — §19.4, §19.8 and §19.9 shipped 2026-09-20. What is left
+> of it is §19.1, the coarse reporter pin. The work items are `todo.md` §19.
 > **Benchmark**: [thetraffic.in](https://www.thetraffic.in) — `/signals` for the map shell,
 > `/grievances` for the board and the Place picker.
 
@@ -38,10 +38,28 @@ depth exceeded` ×129, `load` never firing, every marker destroyed — which too
 > - ⚠️ **§9's COUNT READOUT IS `pagination.total`, NOT THE ROW COUNT.** The endpoint is
 >   offset-paginated with a capped `limit`, so at a wide zoom the page is a prefix of the answer and
 >   "N clusters in view" from `rows.length` is a number the reader disproves by zooming in.
-> - ⚠️ **§7's CLAIM THAT A SHARED LINK SURVIVES A CHIP CLICK IS NOT TRUE TODAY.** The chips are
->   server-rendered `Link`s built from the server's `searchParams`, and the camera is written
->   client-side, so the server never sees it. A chip click refits to the filtered clusters. Fixing
->   it makes the chips client controls, which is §5's panel work.
+> - ✅ ~~**§7's CLAIM THAT A SHARED LINK SURVIVES A CHIP CLICK IS NOT TRUE TODAY.**~~ **FIXED with
+>   §19.8.** The chips moved into the panel, which is a client island, so their hrefs are built from
+>   the LIVE camera instead of the server's `searchParams`. They are still `Link`s, deliberately:
+>   `history.replaceState` does not re-run the server component, so a client-written filter would
+>   never re-query and `hasAnyClusterMatchingFilters` would go stale.
+>
+> **Corrections from building §5 and §19.9, both measured:**
+>
+> - ⚠️ **§5's `h-[calc(100dvh-56px)]` IS SUPERSEDED BY `h-full`, and its "do not fix the banner here
+>   with a second measurement system" note is RESOLVED rather than deferred.** No surface computes
+>   the chrome height any more: `(home)/layout.tsx` is a `flex h-dvh flex-col` whose `<main>` is the
+>   scroll container. The prescribed CSS custom property was never expressible — `AlphaBanner` is
+>   36px at 1440px and 56px at 500px, because its copy wraps and §5's own source requires it to.
+> - ⚠️ **§5 PUTS THE STANDING NOTE IN THE PANEL HEADER AND ALSO REQUIRES THE PEEK DETENT TO SHOW
+>   CHIPS, COUNT AND A ROW. BOTH CANNOT HOLD.** The note is two lines; pinned, it pushed `Report a
+problem` off the bottom of the peek sheet. The note is context rather than a control, so it
+>   moved into the scrolling body.
+> - ⚠️ **§5 DRAWS THE LEGEND BOTTOM-LEFT, WHICH IS WHERE THE DOCKED PANEL IS.** Measured, the four
+>   labels rendered behind it. It is offset past the panel at each of its two widths.
+> - **Not built:** §6's "Cluster selected" row also asks the map to `easeTo` the centroid. Left out
+>   — every camera mutation interacts with the `fitBounds` latch and the `moveend` refetch, and the
+>   row already highlights.
 >
 > - ✅ **WHAT SURVIVES UNCHANGED:** the layout strategy (§5), the light-theme argument (§3), the
 >   pin's privacy mechanism and the no-ring / no-accuracy-figure rules (§8), the copy table (§9),

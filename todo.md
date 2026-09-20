@@ -40,10 +40,11 @@ and `git log` are the record of what was built and why.
 **R&D / Civic Pulse:**
 
 - **Problem map basemap** — **Part 1 SHIPPED.** MapLibre over free keyless OpenFreeMap tiles behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, static SVG as the fallback. The coarse map pin, the `domain` enum, the four-component feasibility readout and viewport-driven reads are open. One E2E assertion is flaky with the flag on and is left unchanged. See §19.
-- **Problem map UI/UX** — **§19.4 SHIPPED 2026-09-20** (viewport-driven reads, the three empty
-  states, the camera in the URL). The rest is designed, not built: `docs/PROBLEM_MAP_UX.md` is the
-  brief for the map-first shell at three breakpoints, the coarse pin's privacy mechanism, and what
-  a cluster pin is allowed to claim. Remaining work items are §19.1, §19.8 to §19.11.
+- **Problem map UI/UX** — **§19.4, §19.8 and §19.9 SHIPPED 2026-09-20.** The surface is now a
+  map-first instrument at all three breakpoints, the page does not scroll, and `(home)` gained a
+  fixed-height flex shell whose `<main>` is the scroll container. What remains of
+  `docs/PROBLEM_MAP_UX.md` is §19.1, the coarse reporter pin. Also open: §19.10 and §19.11's two
+  remaining defects.
 - **Two E2E tests fail on `main`, and they are NOT a Civic Pulse problem.** `smoke.spec.ts:8` and
   `home-shell.spec.ts:19` both resolve the sidebar through `tests/pages/sidebar.po.ts:73`, which is
   `page.locator("aside")`. `AlphaBanner` is ALSO an `<aside>` (`alpha-banner.tsx:38`), so the
@@ -589,6 +590,9 @@ Build the backend half alone first — the frontend has nothing to show until th
 
 ### 19. Civic Pulse — the rest of the problem-mapping specs
 
+**Part 3 shipped: the map-first shell (§19.8) and the chrome height (§19.9).** See those two items
+for what was built and for the measurement that changed how §19.9 had to be done.
+
 **Part 2 shipped: viewport-driven reads (§19.4).** `moveend` now drives the fetch, the panel count
 is the server's `total` for what is on screen, the camera rides in `?lat&lng&z`, and the three
 emptinesses are three different sentences. Four corrections came out of building it and are written
@@ -600,8 +604,10 @@ over OpenFreeMap behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, with the static SVG 
 no-WebGL2 fallback. Free, keyless, no vendor. Details and the four decisions that came with the
 specs are in `docs/R_AND_D_STRUCTURE.md` §6; each spec doc carries its own correction header.
 
-⚠️ **ONE E2E ASSERTION IS FLAKY WITH THE FLAG ON, AND IT SHOULD BE FIXED BEFORE THE FLAG DEFAULTS
-ON.** `tests/specs/rnd-backend.spec.ts:126` asserts the STATIC canvas's alt text:
+⚠️ ~~**ONE E2E ASSERTION IS FLAKY WITH THE FLAG ON**~~ — **FIXED 2026-09-20**, with the §19.8 work
+that would otherwise have broken it anyway. The assertion below was dropped; the test now asserts
+only `button[aria-pressed]`, which is what it is actually about and is stable in BOTH renderers.
+Measured 5/5 green with the flag on afterwards. Kept here as the record of what it was:
 
 ```ts
 await expect(
@@ -610,11 +616,9 @@ await expect(
 ```
 
 The surface deliberately renders `static` on the server and upgrades to `vector` after hydration
-(so the server HTML and the hydration render agree — see §6), so that assertion races the upgrade:
-measured 1 failure in 5 runs against a flag-on dev server, 21/21 green with the flag off. The
-assertion the test actually cares about — `button[aria-pressed]` per cluster, two lines below — is
-stable in both modes. The fix is to assert the pins and drop the canvas-specific `img` check, or to
-accept either canvas. **Left unchanged because tests are not modified without being asked.**
+(so the server HTML and the hydration render agree — see §6), so that assertion raced the upgrade:
+measured 1 failure in 5 runs against a flag-on dev server, 21/21 green with the flag off. It was
+asserting WHICH RENDERER WON, which is not what the test is for and is not stable by construction.
 
 ⚠️ **THE UI/UX FOR ITEMS 1, 4, 8 AND 9 IS DESIGNED AND WRITTEN DOWN.**
 `docs/PROBLEM_MAP_UX.md` is the brief: the map-first shell at three breakpoints, the state
@@ -719,55 +723,76 @@ unbuilt; the shipped abuse control is `requireIdentifiedUser` plus a 10-per-15-m
 `mapPosition`, `reportCount` and `opportunityScore` — every one of which is gone from the wire. It
 is imported by nothing.
 
-**8. The map-first shell — `/problem-map` becomes an instrument, not a document.**
-Designed in full in `docs/PROBLEM_MAP_UX.md` §5. Today the surface is a scrolling page with a
-3fr/2fr map-beside-list block in the middle of it, which on a phone puts a 2000×857 canvas above a
-stack of cards and asks the reader to scroll past the thing they came for. The map fills
-`h-[calc(100dvh-56px)]` — byte-identical to the sidebar's own expression, deliberately the same
-number rather than a better one — with a 360px floating panel docked left from `lg`, a 320px panel
-collapsing to a 44px tab from `md`, and a three-detent bottom sheet under it.
-⚠️ **THE BOTTOM SHEET IS NOT A MODAL AND MUST NOT BE BUILT AS ONE.** No scrim, no focus trap, no
-`inert` on the canvas: a modal here makes the map unreachable while the list is open, which is the
-opposite of the point. The map stays interactive at all three detents and never drops to zero
-height.
-⚠️ **THE PANEL LIST IS THE KEYBOARD AND SCREEN-READER PATH FOR THE MAP**, which is why it is not
-optional at any breakpoint — every pin has a row and every row reaches the same record. Pins stay
-real `<button aria-pressed>` portalled into marker containers; `tests/specs/rnd-backend.spec.ts`
-asserts that selector and a GeoJSON symbol layer has no DOM node to assert on.
-⚠️ **THE PANEL FLOATS, SO IT MAY TAKE `shadow-lg`, AND IT IS OPAQUE.** `docs/Design.md` §4 permits a
-shadow only for an element that leaves the flow, and this one does. Blur or translucency over the
-tiles is the decorative glassmorphism §6 bans.
-**`MyProblemReportsPanel` leaves this route.** It is a personal, signed-in, polling list with no
-relationship to what is on the map, and it cannot live under a page that does not scroll. It belongs
-beside the report flow.
-⚠️ **THE URL CARRIES THE VIEW**: `?category`, `?region`, `?sort`, `?cluster` and `?lat&lng&z`, with
-defaults written OUT (the blueprints `?view=business` precedent). A founder sending "look at this"
-should send a link that opens on the same map at the same zoom with the same pin selected, and today
-it cannot. Use `router.replace` for pan, not `push` — one history entry per drag makes the back
-button replay a pan instead of leaving the surface.
+**8. The map-first shell — SHIPPED 2026-09-20.** `/problem-map` fills the viewport and does not
+scroll. A 360px panel floats over the canvas from `lg`, 320px collapsing to a 44px tab from `md`,
+and a three-detent non-modal sheet under it. `MyProblemReportsPanel` moved to
+`/research-and-development/my-reports` (on the `/applications` precedent: `instant = false`, and
+`noindex` because a crawler gets nothing). The `h1` is `sr-only`; the standing note moved into the
+panel. `?sort=` landed as a `FilterChipRow` over `PROBLEM_CLUSTER_SORTS`, `?cluster=` carries the
+selection, and the default sort is written OUT of the URL.
+
+⚠️ **THE CHIPS MOVED INTO THE PANEL AND THAT CLOSED §19.4's KNOWN GAP.** They are still `Link`s —
+making them client controls would break two things, since `history.replaceState` does not re-run the
+server component (so a client-written `?sort=` would never re-query) and `hasAnyClusterMatchingFilters`
+would go stale the moment a filter changed. What changed is WHERE the href is built: the panel is a
+client island, so it builds from the LIVE camera instead of the server's `searchParams`. Measured
+after: a category chip click applies the filter and keeps `?lat&lng&z`.
+
+⚠️ **TWO DEPARTURES FROM `docs/PROBLEM_MAP_UX.md` §5, BOTH MEASURED.**
+
+1. **The standing note is in the scrolling body, not the fixed header.** §5 lists it among the
+   header items AND requires the mobile peek detent to show the chips, the count and a row. Both
+   cannot hold: the note is two lines, and pinned it pushed `Report a problem` off the bottom of the
+   peek sheet — the one control a reporter standing at the broken thing came for. It is context
+   rather than a control, so it moved to the content.
+2. **The legend is offset past the panel, not at `left-0`.** §5 draws it bottom-left, which is also
+   where the docked panel is; measured, the four labels rendered behind it.
+
+⚠️ **THE SHEET IS NOT A MODAL AND MUST NOT BECOME ONE.** No scrim, no focus trap, no `inert`, no
+body scroll lock — verified in the browser, not just intended. `RndSheet` and `ModalSheet` are all
+four of those and could not be reused. The handle is a real `<button aria-expanded>` with Enter and
+arrow-key detents; both existing sheets render a decorative `<span>` instead. At `full` the map
+keeps 25% of the region (measured 135px of 539px) and there is no detent that covers it.
+
 ⚠️ **DO NOT COPY THETRAFFIC'S DISTANCE-FROM-CENTRE LIST ORDER.** `PROBLEM_CLUSTER_SORTS` is
 `opportunity | recent | reporters` and carries no `distance`, so that ordering would be a client
-sort over a fetched page — the exact defect `problem-map-page.tsx` already records against its own
-history. The panel gets a sort control bound to `?sort=`; distance ordering is item 10.
+sort over a fetched page. Distance ordering is item 10.
 
-**9. `AlphaBanner` is unaccounted for in every viewport-height expression on the surface.**
-It sits in normal flow above the flex row in `(home)/layout.tsx` at roughly 37px (`py-2`,
-`text-sm`), while `sidebar.tsx` computes `h-[calc(100dvh-56px)]` from the navbar alone.
+**Still not built here:** `easeTo` the centroid on selection (`docs/PROBLEM_MAP_UX.md` §6's
+"Cluster selected" row). Every camera mutation interacts with the `fitBounds` latch and the
+`moveend` refetch in item 4, and the row already highlights, so it was left rather than bolted on
+at the end of a large change.
 
-⚠️ **THIS ITEM USED TO SAY THE SIDEBAR IS "ALREADY THAT MUCH TOO TALL", FULL STOP. THAT IS WRONG,
-AND THE CORRECTION IS WHY THE ITEM CANNOT BE DONE THE WAY IT DESCRIBES.** The banner is in normal
-flow and **scrolls away**; the sidebar is `sticky top-14`. At `scrollTop: 0` the sidebar overflows
-by the banner's height, and at `scrollTop >= 37` the banner is gone and `100dvh-56px` is EXACTLY
-RIGHT. The sidebar's error is transient and self-correcting.
+**9. The chrome height — SHIPPED 2026-09-20, AND NOT THE WAY THIS ITEM SAID.**
 
-A non-scrolling map page is pinned at `scrollTop: 0` forever, so item 8 would inherit the error
-**permanently** rather than identically. **One shared constant therefore does not make both
-correct** — it only does if the banner also becomes `sticky top-14` so the chrome height stops
-varying, and that is a visible change to every `(home)` route which needs a yes before it is made.
+This item prescribed "a CSS custom property set where the banner is rendered, read by everything
+that needs the chrome height". ⚠️ **THAT IS NOT EXPRESSIBLE AND THE MEASUREMENT IS WHY.**
+`AlphaBanner` is **36px at 1440px and 56px at 500px** — its copy wraps, and `alpha-banner.tsx`
+requires it to wrap rather than truncate because its only control is the last four words. There is
+no literal to put in a token, and a hardcoded 92px would have left the map 20px too tall on a phone:
+the page would scroll, on the one breakpoint the brief calls most broken. (This item also said
+"roughly 37px"; it is 36 at desktop and not a constant at all.)
 
-So this is **not** the free prerequisite it reads as. It was dropped from the §19.4 work for that
-reason and belongs with item 8, where the sticky-banner question can be answered against a real
-non-scrolling layout instead of in the abstract.
+**What shipped instead is structural.** `(home)/layout.tsx` is now `flex h-dvh flex-col`: the navbar
+and the banner take their natural heights, a `flex min-h-0 flex-1` row takes the remainder, and
+`<main>` is the scroll container. No token, no `calc`, no runtime measurement, and the banner stays
+a server component. A route that wants the viewport asks for `h-full`.
+
+⚠️ **THE EARLIER DIAGNOSIS IN THIS ITEM WAS RIGHT BUT INCOMPLETE.** The sidebar's overshoot was
+real — measured `scrollHeight` 767 against a 731 viewport, exactly the banner's height — and it was
+transient only because the banner scrolled away. It is now zero at every scroll position.
+
+⚠️ **`<main>` IS THE SCROLL CONTAINER NOW, WHICH HAS THREE CONSEQUENCES.** Audited before the
+change: nothing under `src/components/home` or `src/components/commerce` reads `window.scrollY`,
+`window.scrollTo` or listens for a window `scroll` — every listener is on an inner container.
+
+1. Next's scroll-to-top on navigation targets the document and stopped working.
+   `main-scroll-reset.tsx` restores it, keyed on `usePathname()` ONLY — never on search params,
+   which is what preserves `FilterChipRow`'s deliberate `scroll={false}`.
+2. `product-detail.tsx`'s gallery was `lg:sticky lg:top-16` to clear the navbar. The navbar is no
+   longer in flow above it, so it is `lg:top-0`; an offset would have left a 64px gap.
+3. `alpha-banner.tsx`'s comment listed eight sticky offsets a sticky banner would break. **None of
+   them moved**, because the banner is not sticky — it is simply above the scrollport.
 
 **10. Two backend asks this surface would use the day they exist.**
 Neither blocks item 8 and neither may be faked client-side.
@@ -784,6 +809,7 @@ Neither blocks item 8 and neither may be faked client-side.
   bans.
 
 **11. Four shipped defects on this surface. Two are fixed; two are open.**
+(The `font-serif` note below is unchanged, but see §19.8: the page `h1` is now `sr-only` anyway.)
 
 - ~~**Serif Boundary violation in two files**~~ — **FIXED 2026-09-20.** `problem-map-page.tsx` and
   `cluster-detail-page.tsx` no longer put `font-serif` on an `h1` inside `(home)`. ⚠️ **AND THE

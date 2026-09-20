@@ -18,13 +18,22 @@ const ALPHA_FEEDBACK_MAILTO_HREF = `mailto:${SUPPORT_CONTACT_EMAIL}?subject=${en
 /**
  * The standing "this is an alpha" notice, directly under the `(home)` navbar.
  *
- * IT SCROLLS AWAY RATHER THAN STICKING, and that is the whole reason this is a three-file change.
- * The navbar's 56px height has no height class — it is emergent from `py-2` plus a 40px content
- * row — and that number is written literally in six places (`layout/sidebar.tsx`,
- * `studio/studio-sidebar.tsx` and `admin/admin-sidebar.tsx`, twice each), plus
- * `store/product-detail.tsx`'s `lg:top-16` and `account/menus/account-menu.tsx`'s mobile
- * `fixed top-15`. A sticky banner of height H is wrong in all eight until every one is edited.
- * In normal document flow it is wrong in none of them.
+ * IT NO LONGER SCROLLS AWAY, AND IT IS STILL NOT `sticky`. Both halves matter.
+ *
+ * This used to say it scrolls away deliberately, because a sticky banner of height H pushes every
+ * offset below it down by H — and that number was written literally in eight places
+ * (`layout/sidebar.tsx`, `studio/studio-sidebar.tsx` and `admin/admin-sidebar.tsx` twice each,
+ * plus `store/product-detail.tsx`'s `lg:top-16` and `account/menus/account-menu.tsx`'s mobile
+ * `fixed top-15`). That reasoning was right and the conclusion is now reached a different way:
+ * `(home)/layout.tsx` is a fixed-height flex column whose SCROLL CONTAINER is `<main>`, and this
+ * sits above it. So the banner stays on screen without `sticky`, and because nothing below it is
+ * positioned against the viewport any more, not one of those eight offsets moved.
+ *
+ * ⚠️ **ITS HEIGHT IS NOT A CONSTANT AND MUST NEVER BE WRITTEN DOWN AS ONE.** Measured: 36px at
+ * 1440px and 56px at 500px, because the copy wraps — see below, where wrapping is required. An
+ * earlier attempt at the shell put `calc(100dvh - 56px - 36px)` on the full-height surfaces and was
+ * 20px wrong on a phone. The column sizes this element by its content instead; nothing computes
+ * around it.
  *
  * IT IS AN `<aside>`, NOT `role="alert"`. This is context that is true for the whole alpha, not an
  * event that just happened — the repo's other `role="alert"` nodes are all refused-write notices,
@@ -37,7 +46,7 @@ export default function AlphaBanner() {
   return (
     <aside
       aria-label="Alpha notice"
-      className="bg-[#00696E] px-4 py-2 text-center text-sm text-white lg:px-6"
+      className="shrink-0 bg-[#00696E] px-4 py-2 text-center text-sm text-white lg:px-6"
     >
       {/* Decorative. Announced it would read "rocket" before the sentence it decorates. */}
       <span aria-hidden="true">🚀</span> Qatoto is currently in Alpha: the site is incomplete and

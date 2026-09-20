@@ -123,10 +123,15 @@ test.describe("R&D — problem map", () => {
   test("renders the map with one pressable pin per cluster", async ({ page, surface }) => {
     await page.goto("/research-and-development/problem-map");
 
-    await expect(surface.main.getByRole("img", { name: "World map of reported problems" })).toBeVisible();
-
-    // Each pin is a real `<button aria-pressed>` positioned over the map, not an SVG node — so
-    // the map is reachable by role rather than only by pixel.
+    // ⚠️ **NO ASSERTION ON A PARTICULAR CANVAS, AND THAT IS THE FIX FOR A KNOWN FLAKE.** This used
+    // to assert the STATIC canvas's alt text ("World map of reported problems"), which races the
+    // surface's own design: the server renders `static` so that the server HTML and the hydration
+    // render agree, then upgrades to the vector canvas once WebGL2 has been probed. Measured at 1
+    // failure in 5 runs with the flag on, 21/21 green with it off — the test was asserting which
+    // renderer won, which is not what it is about and is not stable by construction.
+    //
+    // Each pin is a real `<button aria-pressed>` positioned over the map, not an SVG node — so the
+    // map is reachable by role rather than only by pixel, and that holds in BOTH renderers.
     const pins = surface.main.locator("button[aria-pressed]");
     await expect.poll(async () => pins.count()).toBeGreaterThan(0);
   });
