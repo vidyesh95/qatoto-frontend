@@ -14,7 +14,12 @@ import {
   PIN_RING_CLASS,
   PIN_SIZE_CLASS,
 } from "@/components/home/research-and-development/sections/problem-map-pins";
-import { isDarkThemeActive, resolveMapStyleUrl } from "@/lib/rnd/civic-pulse-map";
+import {
+  isDarkThemeActive,
+  MAP_VIEW_PITCH_DEGREES,
+  type MapViewMode,
+  resolveMapStyleUrl,
+} from "@/lib/rnd/civic-pulse-map";
 import type { ProblemCluster } from "@/lib/rnd/discovery.schemas";
 import { toOpportunityBand } from "@/lib/rnd/map-projection";
 import {
@@ -80,6 +85,12 @@ type CivicPulseVectorMapProps = {
   /** Debounced on `moveend`, plus one `isInitial` report as soon as the map exists. */
   readonly onViewportChange: (viewport: MapViewportReport) => void;
   /**
+   * Flat or tilted. NOT a basemap — same style, same tiles, same licence; only the camera moves.
+   * The `building-3d` layer `liberty` already ships is what appears once there is pitch to see it
+   * from, and only from z14, where the vector data actually carries building geometry.
+   */
+  readonly viewMode: MapViewMode;
+  /**
    * Called when the basemap cannot be shown, so the parent can fall back to the static canvas.
    *
    * ⚠️ **THE FALLBACK IS A WORKING MAP, NOT A MESSAGE.** An earlier draft painted an
@@ -128,6 +139,7 @@ export default function CivicPulseVectorMap({
   onSelectCluster,
   initialCamera,
   onViewportChange,
+  viewMode,
   onUnavailable,
 }: CivicPulseVectorMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -139,6 +151,12 @@ export default function CivicPulseVectorMap({
    * prop change must not be able to recentre a map somebody is dragging.
    */
   const initialCameraRef = useRef(initialCamera);
+  /**
+   * The pitch the map is BORN with, frozen at mount for the same reason `initialCamera` is: the
+   * map-creation effect must never re-run, and a prop it reads directly would be a dependency.
+   * Later changes are applied by the `easeTo` effect below instead.
+   */
+  const initialViewModeRef = useRef(viewMode);
   /**
    * ⚠️ **THE `fitBounds` LATCH. WITHOUT IT THIS SURFACE REFETCHES FOREVER.**
    *
@@ -242,6 +260,9 @@ export default function CivicPulseVectorMap({
             ? INITIAL_MAP_CENTER
             : [requestedCamera.longitudeDegrees, requestedCamera.latitudeDegrees],
         zoom: requestedCamera === null ? INITIAL_MAP_ZOOM : requestedCamera.zoom,
+        // Set at construction rather than eased afterwards, so a reader who arrives in 3D does not
+        // watch the map tilt itself on first paint.
+        pitch: MAP_VIEW_PITCH_DEGREES[initialViewModeRef.current],
         // Keyboard pan/zoom on the canvas itself, so the map is operable without a pointer.
         keyboard: true,
         // Without this, a two-finger scroll over a full-width map eats the page scroll on
@@ -357,6 +378,24 @@ export default function CivicPulseVectorMap({
     });
     return () => themeObserver.disconnect();
   }, []);
+
+  // --- Follow the view mode --------------------------------------------------------------
+  //
+  // ⚠️ **THIS FIRES `moveend`, AND `moveend` DRIVES THE CLUSTER FETCH.** That is correct rather
+  // than incidental: a tilted camera genuinely sees further toward the horizon, so `getBounds()`
+  // widens and the viewport-scoped read should widen with it. What it must NOT do is feed itself —
+  // the `fitBounds` latch exists because a camera move that re-triggers a camera move never
+  // settles. This one is safe because it eases only when `viewMode` actually changed, and nothing
+  // downstream of the fetch can change `viewMode`.
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (map === null) return;
+    const targetPitch = MAP_VIEW_PITCH_DEGREES[viewMode];
+    // Already there on the first run, because the map was constructed with this pitch. Skipping
+    // spares one pointless `moveend` and therefore one pointless read on every mount.
+    if (map.getPitch() === targetPitch) return;
+    map.easeTo({ pitch: targetPitch, duration: 400 });
+  }, [viewMode, readyMapToken]);
 
   // --- Follow the container -------------------------------------------------------------
   // ⚠️ **THE MAP'S BOX NOW CHANGES WITHOUT THE WINDOW CHANGING.** Collapsing the tablet panel or

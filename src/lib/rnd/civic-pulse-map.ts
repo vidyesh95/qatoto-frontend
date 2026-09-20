@@ -105,6 +105,46 @@ export function prefersReducedData(): boolean {
   }
 }
 
+// --- How the camera looks at it ---------------------------------------------------------
+
+/**
+ * Flat, or tilted so buildings stand up.
+ *
+ * ⚠️ **THIS IS A CAMERA CONTROL, NOT A BASEMAP.** Both modes render the SAME `liberty` style from
+ * the SAME keyless OpenFreeMap source under the same ODbL licence — the only difference is pitch.
+ * There is no second tileset, no key, no account and nothing new to attribute.
+ *
+ * ⚠️ **THE BUILDINGS WERE ALWAYS THERE.** `liberty` already ships a `building-3d` fill-extrusion
+ * layer wired to `render_height` / `render_min_height`; it renders nothing at pitch 0 because an
+ * extrusion viewed from directly above is its own footprint. So "3D" adds no layer and fetches no
+ * data — it stops looking at the city from vertically overhead.
+ *
+ * ⚠️ **AND IT ONLY LOOKS LIKE ANYTHING FROM z14.** That layer is `minzoom: 14` and OpenFreeMap's
+ * vector data tops out there, so at country zoom `tilted` is a tilted flat map and nothing more.
+ * That is honest rather than broken: there is no building geometry at that scale to stand up.
+ */
+export type MapViewMode = "flat" | "tilted";
+
+/**
+ * Degrees of camera pitch per mode.
+ *
+ * 50 rather than MapLibre's 60 maximum: past roughly 55 the horizon enters the viewport, which
+ * both wastes a third of the canvas on sky and stretches `getBounds()` toward infinity — and that
+ * bounding box is what the viewport-scoped cluster read is built from.
+ */
+export const MAP_VIEW_PITCH_DEGREES: Record<MapViewMode, number> = {
+  flat: 0,
+  tilted: 50,
+};
+
+/** What the control says. `2D` is the default and must read as the ordinary state. */
+export const MAP_VIEW_MODE_LABELS: Record<MapViewMode, string> = {
+  flat: "2D",
+  tilted: "3D",
+};
+
+export const DEFAULT_MAP_VIEW_MODE: MapViewMode = "flat";
+
 // --- Which canvas the problem map should draw on ----------------------------------------
 
 /**

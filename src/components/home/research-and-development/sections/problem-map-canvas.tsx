@@ -20,7 +20,7 @@ import {
   PIN_RING_CLASS,
   PIN_SIZE_CLASS,
 } from "@/components/home/research-and-development/sections/problem-map-pins";
-import type { MapCanvasModeKind } from "@/lib/rnd/civic-pulse-map";
+import type { MapCanvasModeKind, MapViewMode } from "@/lib/rnd/civic-pulse-map";
 import type { ProblemCluster } from "@/lib/rnd/discovery.schemas";
 import { layOutMapPins } from "@/lib/rnd/map-pin-layout";
 import { projectMicrodegreesToMapPercent, toOpportunityBand } from "@/lib/rnd/map-projection";
@@ -34,6 +34,11 @@ type ProblemMapCanvasProps = {
   readonly onSelectCluster: (clusterId: string) => void;
   readonly initialCamera: MapCamera | null;
   readonly onViewportChange: (viewport: MapViewportReport) => void;
+  /**
+   * Flat or tilted. Reaches the vector renderer only — the static SVG has one fixed overhead
+   * projection and no camera to pitch, which is also why the shell hides the control in that mode.
+   */
+  readonly viewMode: MapViewMode;
 };
 
 /**
@@ -54,6 +59,7 @@ export default function ProblemMapCanvas({
   onSelectCluster,
   initialCamera,
   onViewportChange,
+  viewMode,
 }: ProblemMapCanvasProps) {
   /**
    * Set when the basemap cannot be shown — a dead tile host, or a browser that refuses the GL
@@ -70,6 +76,7 @@ export default function ProblemMapCanvas({
         onSelectCluster={onSelectCluster}
         initialCamera={initialCamera}
         onViewportChange={onViewportChange}
+        viewMode={viewMode}
         onUnavailable={() => setHasVectorMapFailed(true)}
       />
     );

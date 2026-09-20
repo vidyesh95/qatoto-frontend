@@ -724,6 +724,59 @@ database — which is why the round trip below is still owed.
 client-side UX feedback only. It is about the DESCRIPTION text rather than the pin, so it was not
 bundled here, and it is unbuilt.
 
+**1b. The 2D/3D view toggle — SHIPPED 2026-09-20, and why there is no satellite beside it.**
+
+`/problem-map` carries a two-button control under MapLibre's zoom buttons: **2D** (default, pitch 0)
+and **3D** (pitch 50). State is `useState`, like the tablet panel collapse — a way of looking at the
+map rather than a property of what is being looked at, so it is in neither the URL nor the one
+storage key.
+
+⚠️ **3D COST NOTHING AND ADDED NOTHING.** `liberty` already ships a `building-3d` fill-extrusion
+layer at `minzoom: 14`, wired to `render_height` / `render_min_height`. It renders nothing at pitch 0
+because an extrusion seen from vertically overhead is its own footprint. So the toggle adds no layer,
+no source, no key and no vendor — it stops looking straight down. Measured at z15.5 over Mumbai: 33
+extruded buildings in view. **It only reads as 3D from z14**, which is where OpenFreeMap's vector
+data ends; at country zoom it is a tilted flat map, and that is honest rather than broken.
+
+⚠️ **SATELLITE WAS INVESTIGATED AND REFUSED ON LICENCE GROUNDS. DO NOT RE-RUN THIS.**
+There is no raster source that is free, commercially licensed AND useful here:
+
+| source                          | free                | commercial                                                                             | resolution      |
+| ------------------------------- | ------------------- | -------------------------------------------------------------------------------------- | --------------- |
+| EOX Sentinel-2 cloudless, 2017+ | yes                 | **NO — their WMTS capabilities mark `-2020`, `-2022`, `-2023`, `-2024` NonCommercial** | 10 m            |
+| EOX Sentinel-2 cloudless, 2016  | yes                 | yes, CC-BY                                                                             | 10 m, and stale |
+| Esri World Imagery              | keyless in practice | **ambiguous** — attribution plus, read strictly, an ArcGIS account                     | street level    |
+| MapTiler / Mapbox / Bing        | free tier           | keyed, metered, billed                                                                 | street level    |
+| Google                          | no                  | no                                                                                     | —               |
+
+⚠️ **AND 10 m IS THE WRONG TOOL EVEN WHEN THE LICENCE IS CLEAN.** A pothole, a flooded underpass and
+a dark streetlight are all invisible at 10 m per pixel, and those are the subject of this map.
+Satellite here would be decoration carrying a licence liability. Google specifically is also barred
+twice over: its ToS restricts showing Google tiles outside Google's own SDKs, and
+`CIVIC_PULSE_PROBLEM_MAPPING.md` §3.1 already rejected the Maps API on cost and mandatory billing.
+⚠️ **Gaode/AMap is a CORRECTNESS bug, not a preference** — Chinese basemaps use the mandated GCJ-02
+datum, which shifts coordinates 50–500 m from the WGS-84 the centroids and pins are computed in.
+
+**No disabled "Satellite" button was added**, and that was deliberate: `docs/Design.md` §6 bans
+shipping a control with nothing behind it, and a greyed one teaches every reader about a licensing
+problem that is not theirs. This entry is where the answer lives instead.
+
+**Two things the toggle interacts with, both measured rather than assumed:**
+
+- ⚠️ **A pitched camera returns a WIDER bounding box** — 1.82× the latitude span at pitch 50 — so the
+  viewport-scoped read legitimately widens. Confirmed to settle at **exactly one extra fetch** per
+  toggle; `easeTo` fires `moveend`, and §19.4's latch is what stops that feeding itself.
+- ⚠️ **`aria-pressed` COULD NOT BE USED ON THE CONTROL.** On this surface `button[aria-pressed]` IS a
+  cluster pin, and `tests/specs/rnd-backend.spec.ts` counts that selector to prove single-select — a
+  pressed chrome button silently became a third pin and broke the test. It uses `aria-current`, which
+  is also the correct semantic (a selection among a set, not an independent toggle) and matches
+  `FilterChipRow`.
+
+**Placement is top-right at every breakpoint**, under the zoom buttons, because the other three
+corners are taken: the panel owns top-left, the legend bottom-left (measured 48px tall at `md`, where
+it wraps rightward), the ODbL attribution the bottom edge, and under `md` the sheet covers everything
+below its peek detent and moves between three of them.
+
 **2. `research_category.domain` as a closed enum.**
 Not a FK, not user-creatable — it is the comparability layer that lets one country's
 `cold_storage_loss` roll up beside another's. Categories stay user-creatable; domain assignment is

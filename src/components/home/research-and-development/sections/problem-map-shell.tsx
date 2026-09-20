@@ -19,8 +19,11 @@ import ProblemMapPanel, {
 } from "@/components/home/research-and-development/sections/problem-map-panel";
 import { useProblemClustersQuery } from "@/hooks/rnd/discovery";
 import {
+  DEFAULT_MAP_VIEW_MODE,
   getMapCanvasModeSnapshot,
   getServerMapCanvasModeSnapshot,
+  MAP_VIEW_MODE_LABELS,
+  type MapViewMode,
   subscribeToMapCanvasMode,
 } from "@/lib/rnd/civic-pulse-map";
 import { buildFilterHref, type RawSearchParams } from "@/lib/filter-href";
@@ -91,6 +94,9 @@ function useResolvedMapCanvasMode() {
  * schedules the next render while doing it.
  */
 const NO_CLUSTERS: ProblemCluster[] = [];
+
+/** Both camera modes, in the order the control stacks them. */
+const MAP_VIEW_MODES: readonly MapViewMode[] = ["flat", "tilted"];
 
 /** The legend's four bands, in the order a reader ranks them. */
 const LEGEND_BANDS: readonly { readonly band: OpportunityBand; readonly label: string }[] = [
@@ -187,6 +193,16 @@ export default function ProblemMapShell({
   const [liveCamera, setLiveCamera] = useState<MapCamera | null>(initialCamera);
   /** Tablet only. A glance preference, so `useState` — not the URL, and not the one storage key. */
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+  /**
+   * Flat or tilted, and `useState` for exactly the reason the panel collapse above is.
+   *
+   * It is a way of looking at the map rather than a property of what is being looked at, so it is
+   * not in the URL — a shared "look at this cluster" link should carry the cluster and the camera,
+   * not the sender's taste in perspective — and it is not in storage, because
+   * `browser-preferences.ts` owns the one key this app is allowed and this does not earn a field
+   * in it. If it should survive a reload it folds into that blob and nowhere else.
+   */
+  const [viewMode, setViewMode] = useState<MapViewMode>(DEFAULT_MAP_VIEW_MODE);
   const mapCanvasMode = useResolvedMapCanvasMode();
   const isAtLeastMedium = useIsAtLeastViewport(MEDIUM_VIEWPORT_QUERY);
   const isAtLeastLarge = useIsAtLeastViewport(LARGE_VIEWPORT_QUERY);
@@ -291,7 +307,15 @@ export default function ProblemMapShell({
         onSelectCluster={toggleSelectedCluster}
         initialCamera={initialCamera}
         onViewportChange={handleViewportChange}
+        viewMode={viewMode}
       />
+
+      {/* ⚠️ **VECTOR ONLY.** The static SVG is one fixed overhead projection with no camera, so a
+          tilt control there would be a button that does nothing. Hidden rather than disabled: a
+          dead control is worse than an absent one (`docs/Design.md` §6). */}
+      {mapCanvasMode === "vector" && (
+        <MapViewModeControl viewMode={viewMode} onViewModeChange={setViewMode} />
+      )}
 
       {/* The legend: one line, not a box. Each glyph is at its real pin diameter, so the size
           channel is legible rather than asserted, and the WORD carries the meaning — the band is
@@ -325,6 +349,70 @@ export default function ProblemMapShell({
         <ProblemMapBottomSheet>{panel}</ProblemMapBottomSheet>
       )}
     </div>
+  );
+}
+
+/**
+ * Flat or tilted, in the one corner the surface has left.
+ *
+ * ⚠️ **IT IS NOT A BASEMAP SWITCHER AND MUST NOT GROW INTO ONE.** Both modes are the same
+ * `liberty` style over the same keyless OpenFreeMap tiles; only the camera pitch differs. Satellite
+ * is absent deliberately and on licence grounds, not for want of a button — see `todo.md` §19.
+ *
+ * ⚠️ **`aria-current`, NOT `aria-pressed`, AND THAT IS NOT A STYLE CHOICE.** Two things pushed it
+ * here. Semantically, `aria-pressed` marks an INDEPENDENT toggle; picking one of two mutually
+ * exclusive views is a selection among a set, which is exactly what `FilterChipRow` already marks
+ * with `aria-current` on this same surface. Practically, `button[aria-pressed]` is what a CLUSTER
+ * PIN is on this map — `tests/specs/rnd-backend.spec.ts` counts that selector to prove single
+ * select — so a pressed button in the chrome silently became a third pin as far as the assertion
+ * was concerned. Measured: it broke "selecting a pin marks it pressed and reveals the cluster
+ * link" the moment it shipped.
+ */
+function MapViewModeControl({
+  viewMode,
+  onViewModeChange,
+}: {
+  readonly viewMode: MapViewMode;
+  readonly onViewModeChange: (viewMode: MapViewMode) => void;
+}) {
+  return (
+    <fieldset
+      /**
+       * ⚠️ **TOP-RIGHT AT EVERY BREAKPOINT, AND THE OTHER THREE CORNERS WERE ALL TRIED FIRST.**
+       * The panel owns top-left; the legend owns bottom-left and MEASURED 48px tall at `md`, where
+       * it wraps and runs rightward under anything sharing that edge; the ODbL attribution owns the
+       * bottom-right inline. Under `md` the sheet covers everything below its peek detent and MOVES
+       * between three of them, so no fixed bottom offset clears it.
+       *
+       * Directly under MapLibre's own zoom buttons (68px tall) is the one place free at all three
+       * breakpoints, and it is where a map's view controls conventionally live anyway.
+       *
+       * ⚠️ **A ROW, NOT A STACK.** Stacked it was 58px and overlapped the sheet's tallest detent by
+       * 3px; a row is ~30px and clears everything with room.
+       */
+      className="absolute top-20 right-3 z-10 flex flex-row overflow-hidden rounded-lg border border-[#CAC4D0]/60 bg-card shadow-lg"
+      aria-label="Map view"
+    >
+      {/* A `fieldset`, not a `div role="group"`: the lint rule prefers the semantic element, and a
+          fieldset is what a set of mutually exclusive controls already is. `legend` is omitted in
+          favour of the label above, because a visible legend inside a 60px control is noise. */}
+      {MAP_VIEW_MODES.map((mode) => {
+        const isSelected = mode === viewMode;
+        return (
+          <button
+            key={mode}
+            type="button"
+            aria-current={isSelected ? "true" : undefined}
+            onClick={() => onViewModeChange(mode)}
+            className={`cursor-pointer px-2.5 py-1.5 text-xs font-medium transition-colors ${
+              isSelected ? "bg-[#00696E] text-white" : "text-foreground hover:bg-muted"
+            }`}
+          >
+            {MAP_VIEW_MODE_LABELS[mode]}
+          </button>
+        );
+      })}
+    </fieldset>
   );
 }
 
