@@ -11,9 +11,51 @@ import RndStatusPanel, {
 } from "@/components/home/research-and-development/sections/rnd-status-panel";
 import { getTalentProfile } from "@/lib/rnd/discovery.api";
 import ReportProfileOpener from "@/components/home/channel/report-profile-opener";
+import HairlineDefinitionRow, {
+  type HairlineDefinitionFact,
+} from "@/components/home/shared/hairline-definition-row";
 import { formatEffortFromMinutes, formatIsoInstant } from "@/lib/rnd/format";
 import { isUnauthorized } from "@/lib/http";
 import { callerRequestOptions } from "@/lib/server-http";
+
+/**
+ * The facts the row renders, in reading order.
+ *
+ * ⚠️ **EVERY STRING IS THE ONE THIS PAGE ALREADY PRINTED.** "Not computed yet" and "No run yet" are
+ * carried through unchanged, so this migration is layout and nothing else. They are NOT dropped to
+ * `null`, even though the row supports it and `cards/talent-profile-card.tsx` already drops these
+ * same figures — reconciling that divergence is a copy decision needing a per-field reading, not a
+ * side effect of moving a container.
+ *
+ * Local rather than shared, on the `buildClusterFacts` precedent: the null semantics are this
+ * page's. ⚠️ This is the fourth such helper; if a fifth appears, extract the pattern.
+ */
+function buildTalentFacts(profile: {
+  readonly verifiedEffortMinutes: number | null;
+  readonly projectsCompletedCount: number | null;
+  readonly projectionComputedAt: string | null;
+}): readonly HairlineDefinitionFact[] {
+  return [
+    {
+      label: "Verified effort",
+      value:
+        profile.verifiedEffortMinutes === null
+          ? "Not computed yet"
+          : formatEffortFromMinutes(profile.verifiedEffortMinutes),
+    },
+    {
+      label: "Projects completed",
+      value: String(profile.projectsCompletedCount ?? "Not computed yet"),
+    },
+    {
+      label: "Figures as of",
+      value:
+        profile.projectionComputedAt === null
+          ? "No run yet"
+          : formatIsoInstant(profile.projectionComputedAt),
+    },
+  ];
+}
 
 /**
  * One person's published profile.
@@ -92,30 +134,11 @@ export default async function TalentDetailPage({ handleOrUserId }: { handleOrUse
       */}
       <ReportProfileOpener reportedUserId={profile.userId} displayName={profile.name} />
 
-      <dl className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">Verified effort</dt>
-          <dd className="text-xl font-semibold">
-            {profile.verifiedEffortMinutes === null
-              ? "Not computed yet"
-              : formatEffortFromMinutes(profile.verifiedEffortMinutes)}
-          </dd>
-        </div>
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">Projects completed</dt>
-          <dd className="text-xl font-semibold">
-            {profile.projectsCompletedCount ?? "Not computed yet"}
-          </dd>
-        </div>
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">Figures as of</dt>
-          <dd className="text-sm font-medium">
-            {profile.projectionComputedAt === null
-              ? "No run yet"
-              : formatIsoInstant(profile.projectionComputedAt)}
-          </dd>
-        </div>
-      </dl>
+      {/* ⚠️ **ONE HAIRLINE ROW, NOT THREE BOXES.** `docs/Design.md` §6 bans repeating an identical
+          card grid, and the figures were `text-xl font-semibold` — a third type size against §3's
+          Two-Size Rule in a product written at 14 and 12px. Same conversion as the Civic Pulse
+          cluster detail, through the same shared component. */}
+      <HairlineDefinitionRow facts={buildTalentFacts(profile)} />
 
       {profile.skills.length > 0 && (
         <section className="space-y-2">

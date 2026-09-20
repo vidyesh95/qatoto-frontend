@@ -5,6 +5,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { RndErrorPanel } from "@/components/home/research-and-development/sections/rnd-status-panel";
+import HairlineDefinitionRow, {
+  type HairlineDefinitionFact,
+} from "@/components/home/shared/hairline-definition-row";
 import { formatIsoInstant } from "@/lib/rnd/format";
 import {
   SUPPLIER_CONTACT_POLICY_LABELS,
@@ -22,6 +25,41 @@ const VERIFICATION_STATE_BADGE_CLASS: Record<SupplierVerificationState, string> 
   unverified: "bg-muted text-muted-foreground",
   suspended: "bg-red-100 text-red-800",
 };
+
+/**
+ * The facts the row renders, in reading order.
+ *
+ * ⚠️ **"No minimum" IS A FACT, NOT AN ABSENCE, AND MUST NEVER BE DROPPED TO `null`.** A supplier
+ * with no minimum order quantity has told a buyer something useful; a supplier who did not say has
+ * not. The row drops `null` cells, so collapsing the two would delete real information — which is
+ * why every string here is carried through exactly as this page already printed it.
+ *
+ * "Not published" is the other half of that pair: null reads as unpublished, never as 0, which
+ * would advertise same-day turnaround the partner never offered.
+ *
+ * Local rather than shared, on the `buildClusterFacts` precedent: the null semantics are this
+ * page's. ⚠️ This is the fourth such helper; if a fifth appears, extract the pattern.
+ */
+function buildSupplierFacts(supplier: {
+  readonly leadTimeDays: number | null;
+  readonly minimumOrderQuantity: number | null;
+  readonly createdAt: string;
+}): readonly HairlineDefinitionFact[] {
+  return [
+    {
+      label: "Lead time",
+      value: supplier.leadTimeDays === null ? "Not published" : `${supplier.leadTimeDays} days`,
+    },
+    {
+      label: "Minimum order",
+      value:
+        supplier.minimumOrderQuantity === null
+          ? "No minimum"
+          : supplier.minimumOrderQuantity.toLocaleString("en-US"),
+    },
+    { label: "Listed since", value: formatIsoInstant(supplier.createdAt) },
+  ];
+}
 
 /**
  * One manufacturing / ODM listing.
@@ -81,28 +119,10 @@ export default async function SupplierDetailPage({ supplierSlug }: { supplierSlu
         <p className="max-w-prose text-sm leading-6">{supplier.summary}</p>
       )}
 
-      <dl className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">Lead time</dt>
-          {/* Null reads as unpublished, never as 0 — which would advertise same-day
-              turnaround the partner never offered. */}
-          <dd className="text-lg font-semibold">
-            {supplier.leadTimeDays === null ? "Not published" : `${supplier.leadTimeDays} days`}
-          </dd>
-        </div>
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">Minimum order</dt>
-          <dd className="text-lg font-semibold">
-            {supplier.minimumOrderQuantity === null
-              ? "No minimum"
-              : supplier.minimumOrderQuantity.toLocaleString("en-US")}
-          </dd>
-        </div>
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">Listed since</dt>
-          <dd className="text-sm font-medium">{formatIsoInstant(supplier.createdAt)}</dd>
-        </div>
-      </dl>
+      {/* ⚠️ **ONE HAIRLINE ROW, NOT THREE BOXES** — §6's identical-card-grid ban, and the figures
+          were `text-lg font-semibold`, a third type size against §3. Note the old recipe already
+          disagreed with itself across files: the talent page used `text-xl` for the same shape. */}
+      <HairlineDefinitionRow facts={buildSupplierFacts(supplier)} />
 
       {supplier.capabilities.length > 0 && (
         <section className="space-y-2">

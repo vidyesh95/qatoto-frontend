@@ -985,11 +985,57 @@ font-semibold` — a THIRD type size in a product the Two-Size Rule says is writ
     hand — which also flips the basemap, since `isDarkThemeActive()` re-reads the class. It found a
     real bug (2 above), so it was worth running rather than waived.
 
-⚠️ **FOLLOW-UP NOW THAT A SHARED ROW EXISTS.** Four R&D pages still carry the bordered-box recipe
-verbatim — `talent-detail-page.tsx`, `supplier-detail-page.tsx`, `sections/market-research-overview.tsx`,
-`sections/research-program-hero.tsx`. Each has its own null-copy vocabulary ("Not computed yet", "No
-run yet", "Not published", "No minimum"), so migrating them is a per-page reading, not a sweep. They
-can adopt `HairlineDefinitionRow` whenever somebody is in those files anyway.
+~~**FOLLOW-UP NOW THAT A SHARED ROW EXISTS**~~ — **DONE for three of the four, 2026-09-20.**
+`talent-detail-page.tsx`, `supplier-detail-page.tsx` and `sections/market-research-overview.tsx`
+render `HairlineDefinitionRow`. Between them that removed `text-xl` ×6 and `text-lg` ×2 — the same
+Two-Size Rule violation the cluster detail had, and the old recipe already disagreed with itself
+(`text-xl` on talent against `text-lg` on supplier for the identical shape).
+
+⚠️ **THE FOURTH WAS EXCLUDED, AND "VERBATIM" ABOVE WAS WRONG ABOUT IT.**
+`sections/research-program-hero.tsx` is not this recipe: its tiles are `flex flex-col-reverse` with
+**no border and no background**, on a teal gradient with `text-white`. Four independent reasons it
+stays:
+
+1. The shared row hardcodes `text-muted-foreground` / `text-foreground`, unreadable on that ground —
+   it would need a dark variant, i.e. a component redesign.
+2. Its figures are `font-serif text-2xl md:text-3xl` with the value ABOVE the label, which is the
+   hero-metric archetype the shared row's docblock forbids drifting into.
+3. Its nulls are WHOLE-BLOCK: `stats` is one nullable object whose four counts are non-nullable, so
+   there is no cell to drop and no per-fact null to map.
+4. `sections/research-program-banner.tsx:28` repeats its gradient and eyebrow verbatim, with a
+   docblock saying the two "read as one". Converting one breaks the pair.
+   `docs/R_AND_D_STRUCTURE.md:276` also documents its current shape.
+
+⚠️ **ONE OF THE THREE WAS NOT LAYOUT-ONLY, AND THAT IS WORTH KNOWING BEFORE READING THE DIFF.**
+`market-research-overview.tsx` rendered two `As of …` lines as `<p>` **inside** its `<dl>` — invalid
+markup, since a `dl` takes only `dt`/`dd`/`div`. Promoting them to peer cells (the `Score computed`
+precedent) required NAMING them, because in a flat row only a label can tie a timestamp to the
+figure it qualifies. So **`Demand as of` and `Feasibility as of` are new labels** and the literal
+`As of ` left the value. Behaviour is unchanged — both already rendered nothing when their snapshot
+was absent, and `null` drops the cell. Every other string on all three pages is untouched.
+Verified by stripping comments and listing rendered literals per file; exactly two are new.
+⚠️ **A NAIVE `git diff | grep` ON THOSE STRINGS LIES** — the new docblocks quote them, so the counts
+double. Strip comments first.
+
+**Not migrated, deliberately:** the null copy itself. It is already divergent across surfaces
+(`No minimum` here vs `No minimum order` on `cards/supplier-card.tsx`; talent-detail prints
+"Not computed yet" where `cards/talent-profile-card.tsx` drops the figure entirely; and
+`lib/rnd/format.ts`'s `formatScorePoints` still returns "Not computed yet"). Reconciling it needs a
+per-field reading — **`No minimum` is a FACT, not an absence**, so a blanket drop would delete real
+information.
+
+⚠️ **TWO OF THE THREE COULD NOT BE VISUALLY VERIFIED, AND THAT IS A DATA GAP, NOT AN OVERSIGHT.**
+`talent_profile` has **0 rows** and the supplier directory is empty on this database
+(`rnd-backend.spec.ts:210` already records the latter), and `/talent` is gated for a signed-out
+visitor. Both routes were confirmed to render server-side without a 500 — `/talent/<handle>` shows
+its sign-in panel, `/go-to-market/supplier/<slug>` its not-found path — but **the row branch itself
+is unexercised on both**. `market-research-overview` was checked in full, on both tabs it renders
+into, and the shared component is proven on three other surfaces.
+
+⚠️ **E2E COVERS NONE OF THIS.** `rnd-backend.spec.ts` loads `/market-research` but asserts only its
+heading and tabs; it checks supplier links EXIST without navigating; `/talent/<handle>` and
+`/go-to-market/supplier/<slug>` are visited by no test at all. "101 passing" says nothing about
+these three pages.
 
 ⚠️ **THE MAPLIBRE WORKER IS COPIED INTO `public/` ON EVERY `dev` AND `build`, AND THAT IS LOAD-BEARING.**
 `scripts/sync-maplibre-worker.mjs` exists because Turbopack breaks MapLibre's tile worker twice
@@ -999,6 +1045,26 @@ a 404 against its content-hashed sibling. Both failures are SILENT — the map r
 backdrop and simply never fetches a vector tile. If the basemap ever goes blank after a dependency
 bump, check that script first; it throws on an unmet sibling import rather than letting the failure
 reach a reader.
+
+---
+
+### 20. `research-program-hero.tsx` — two live design-rule violations
+
+Found while migrating its siblings to `HairlineDefinitionRow` (§19.11) and deliberately NOT fixed
+there, because that was a layout migration and this is a redesign of a landing surface.
+
+1. ⚠️ **A `font-serif` `h1` inside `(home)`.** `sections/research-program-hero.tsx:43` —
+   `<h1 className="mt-1 font-serif text-3xl uppercase md:text-5xl">`. `docs/Design.md` §3 states the
+   Serif Boundary plainly: "A serif heading inside `(home)`, `(studio)` or `(admin)` is a bug."
+2. ⚠️ **Figures at `font-serif text-2xl md:text-3xl`** in its local `StatTile` — a third and fourth
+   type size against §3's Two-Size Rule, rendered value-above-label, which is the hero-metric shape
+   §6 names as the anti-reference.
+
+⚠️ **IT CANNOT BE FIXED ALONE.** `sections/research-program-banner.tsx:28` repeats the same gradient
+and eyebrow verbatim so the two "read as one" (its own docblock), and `docs/R_AND_D_STRUCTURE.md:276`
+documents the hero's current shape. Any change is: both components, plus the doc, plus a decision
+about whether this surface is allowed to be a marketing hero at all — the R&D landing surfaces are
+the one place in `(home)` where serif currently survives in bulk (~45 hits, §19.11).
 
 ---
 

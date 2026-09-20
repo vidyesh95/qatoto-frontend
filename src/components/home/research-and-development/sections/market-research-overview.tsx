@@ -1,11 +1,74 @@
 // TRANSPORT: props-only — presentational. Fetches nothing.
 
 import FilterChipRow, { type FilterChipOption } from "@/components/home/shared/filter-chip-row";
+import HairlineDefinitionRow, {
+  type HairlineDefinitionFact,
+} from "@/components/home/shared/hairline-definition-row";
 import { buildFilterHref, type RawSearchParams } from "@/lib/filter-href";
 import { formatIsoInstant } from "@/lib/rnd/format";
 import { formatTradeValueCompact } from "@/lib/rnd/import-format";
 import type { ImportReporter, LocalizationAssessment } from "@/lib/rnd/import-intelligence.schemas";
 import type { DemandSignal } from "@/lib/rnd/discovery.schemas";
+
+/**
+ * The facts the row renders, in reading order.
+ *
+ * ⚠️ **THE TWO `… as of` CELLS ARE NEW LABELS, AND THAT IS THE POINT OF PROMOTING THEM.** They were
+ * `<p>As of …</p>` nested inside the `<dl>`, which is invalid markup — a `dl` takes only
+ * `dt`/`dd`/`div`. Flattened into a row, a bare "As of" cell would float free of the figure it
+ * describes, so the label carries the association the box carried visually. Behaviour is unchanged:
+ * both already rendered nothing when their snapshot was missing, and `null` drops the cell.
+ *
+ * ⚠️ **EVERY OTHER STRING IS THE ONE THIS COMPONENT ALREADY PRINTED** — "Not scored yet" twice and
+ * "No run yet" — so the rest is layout only.
+ *
+ * ⚠️ **THE CALLER CONVERTS `undefined` TO `null`, NOT THIS SIGNATURE.** `assessments[0]?.asOf` is
+ * `string | undefined`; a fact's value is `string | null`. The contract is right and the call site
+ * was loose, so `?? null` belongs there rather than widening this to accept both.
+ *
+ * ⚠️ This is the fourth local `build…Facts`; if a fifth appears, extract the pattern.
+ */
+function buildOverviewFacts(input: {
+  readonly totalCommodityCount: number;
+  readonly assessmentCount: number;
+  /** `null` when nothing is scored — the page's existing "Not scored yet" is applied below. */
+  readonly pagedImportLabel: string | null;
+  readonly demandCategoryCount: number | null;
+  readonly topFeasibilityPoints: number | null;
+  readonly demandAsOf: string | null;
+  readonly assessmentAsOf: string | null;
+}): readonly HairlineDefinitionFact[] {
+  return [
+    {
+      label: "Commodities tracked",
+      value: input.totalCommodityCount.toLocaleString("en-US"),
+    },
+    {
+      label: `Imports across the top ${String(input.assessmentCount)}`,
+      value: input.pagedImportLabel ?? "Not scored yet",
+    },
+    {
+      label: "Categories with demand signal",
+      value: input.demandCategoryCount === null ? "No run yet" : String(input.demandCategoryCount),
+    },
+    // A stored counter renders its freshness, or a reader assumes it is live.
+    {
+      label: "Demand as of",
+      value: input.demandAsOf === null ? null : formatIsoInstant(input.demandAsOf),
+    },
+    {
+      label: "Top feasibility score",
+      value:
+        input.topFeasibilityPoints === null
+          ? "Not scored yet"
+          : `${String(input.topFeasibilityPoints)}/100`,
+    },
+    {
+      label: "Feasibility as of",
+      value: input.assessmentAsOf === null ? null : formatIsoInstant(input.assessmentAsOf),
+    },
+  ];
+}
 
 /**
  * The country picker and the KPI row.
@@ -82,50 +145,27 @@ export default function MarketResearchOverview({
         </div>
       )}
 
-      <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">Commodities tracked</dt>
-          <dd className="text-xl font-semibold">{totalCommodityCount.toLocaleString("en-US")}</dd>
-        </div>
-
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">
-            Imports across the top {assessments.length}
-          </dt>
-          <dd className="text-xl font-semibold">
-            {assessments.length === 0
-              ? "Not scored yet"
-              : formatTradeValueCompact(pagedImportCents.toString(), currency)}
-          </dd>
-        </div>
-
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">Categories with demand signal</dt>
-          <dd className="text-xl font-semibold">
-            {demandSignals.length === 0 ? "No run yet" : distinctDemandCategories.size}
-          </dd>
-          {/* A stored counter renders its freshness, or a reader assumes it is live. */}
-          {demandAsOf === undefined ? null : (
-            <p className="mt-1 text-xs text-muted-foreground">
-              As of {formatIsoInstant(demandAsOf)}
-            </p>
-          )}
-        </div>
-
-        <div className="rounded-2xl border border-[#CAC4D0]/60 p-4">
-          <dt className="text-xs text-muted-foreground">Top feasibility score</dt>
-          <dd className="text-xl font-semibold">
-            {assessments[0] === undefined
-              ? "Not scored yet"
-              : `${assessments[0].feasibilityScorePoints}/100`}
-          </dd>
-          {assessmentAsOf === undefined ? null : (
-            <p className="mt-1 text-xs text-muted-foreground">
-              As of {formatIsoInstant(assessmentAsOf)}
-            </p>
-          )}
-        </div>
-      </dl>
+      {/* ⚠️ **ONE HAIRLINE ROW, AND THIS ONE IS NOT PURELY A CONTAINER SWAP.** Two `As of …` lines
+          used to render as `<p>` INSIDE the `<dl>` — invalid, since a `dl` may only contain
+          `dt`/`dd`/`div`. They are now peer cells, which is the `Score computed` precedent from the
+          cluster detail. That required NAMING them: in a flat row only a label can tie a timestamp
+          to the figure it qualifies, which the box used to do visually. So "Demand as of" and
+          "Feasibility as of" are new labels, and the literal "As of " left the value. Every other
+          string is unchanged. */}
+      <HairlineDefinitionRow
+        facts={buildOverviewFacts({
+          totalCommodityCount,
+          assessmentCount: assessments.length,
+          pagedImportLabel:
+            assessments.length === 0
+              ? null
+              : formatTradeValueCompact(pagedImportCents.toString(), currency),
+          demandCategoryCount: demandSignals.length === 0 ? null : distinctDemandCategories.size,
+          topFeasibilityPoints: assessments[0]?.feasibilityScorePoints ?? null,
+          demandAsOf: demandAsOf ?? null,
+          assessmentAsOf: assessmentAsOf ?? null,
+        })}
+      />
     </section>
   );
 }
