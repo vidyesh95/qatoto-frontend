@@ -19,10 +19,12 @@ export default function ProblemClusterList({
   selectedClusterId,
   onSelectCluster,
 }: ProblemClusterListProps) {
-  if (clusters.length === 0) {
-    return <p className="text-sm text-muted-foreground">No clusters match these filters.</p>;
-  }
-
+  // ⚠️ **NO EMPTY STATE HERE, DELIBERATELY** (`todo.md` §19.11). This used to render "No clusters
+  // match these filters." while the page above rendered its own, differently worded, message for
+  // the same condition — two components answering one question in two voices, and only one of them
+  // could be right once the map gained a viewport and "no matches" stopped being the only way to
+  // reach zero. `problem-map-canvas` now picks between three distinct emptinesses and renders the
+  // chosen one in this component's place, so an empty list never reaches here.
   return (
     <div className="space-y-3">
       {clusters.map((cluster) => (

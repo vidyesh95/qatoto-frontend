@@ -1,25 +1,25 @@
-// TRANSPORT: server-fetch — server component. Reads GET /discovery/problem-clusters,
-// GET /research-categories and GET /discovery/regions via @/lib/rnd/*.api, with the
-// session cookie forwarded by callerRequestOptions(). All three are public. The canvas
-// below is a client island holding pin/card selection only.
+// TRANSPORT: server-fetch — server component. Reads GET /discovery/problem-clusters (twice, see
+// below), GET /research-categories and GET /discovery/regions via @/lib/rnd/*.api, with the
+// session cookie forwarded by callerRequestOptions(). All are public. The canvas below is now a
+// `client-query` island: it re-reads the cluster list for its own viewport and this page's read is
+// the seed that paints before that lands.
 import FilterChipRow, {
   type FilterChipOption,
 } from "@/components/home/research-and-development/sections/filter-chip-row";
 import MyProblemReportsPanel from "@/components/home/research-and-development/sections/my-problem-reports-panel";
 import ProblemMapCanvas from "@/components/home/research-and-development/sections/problem-map-canvas";
-import RndStatusPanel, {
-  RndErrorPanel,
-} from "@/components/home/research-and-development/sections/rnd-status-panel";
 import ReportProblemSheet from "@/components/home/research-and-development/sheets/report-problem-sheet";
 import { listResearchCategories } from "@/lib/rnd/catalog.api";
 import { listDiscoveryRegions, listProblemClusters } from "@/lib/rnd/discovery.api";
 import { buildFilterHref, readSingleParam, type RawSearchParams } from "@/lib/filter-href";
-import { rowsOrEmpty, toListViewState } from "@/lib/view-state";
+import { readMapCameraFromSearchParams } from "@/lib/rnd/map-viewport";
+import { rowsOrEmpty } from "@/lib/view-state";
 import { callerRequestOptions, hasCallerSession } from "@/lib/server-http";
 
 // The map shows pins, not a feed. A page is bounded because a deep offset on a public
-// unauthenticated read is a scan amplifier; a real viewport-scoped fetch (the backend
-// takes a lat/lng bounding box) is what replaces this when the map gains pan and zoom.
+// unauthenticated read is a scan amplifier. The island re-reads with this same limit plus the
+// map's bounding box, so both halves ask for the same page size and the count readout cannot
+// disagree with itself between the server paint and the first client read.
 const CLUSTERS_PAGE_LIMIT = 50;
 
 /**
@@ -33,6 +33,12 @@ const CLUSTERS_PAGE_LIMIT = 50;
  * The chips come from `GET /research-categories?status=approved` — the approved taxonomy —
  * rather than from the categories present on the fetched page, which would only ever
  * offer the ones already visible.
+ *
+ * ⚠️ **THE CHIPS STAY SERVER-RENDERED `Link`s EVEN THOUGH THE LIST IS NOW CLIENT-FETCHED**, and
+ * that combination works for one specific reason: `buildFilterHref` carries every key it does not
+ * recognise straight through, so `?lat`, `?lng` and `?z` survive a chip navigation and the
+ * remounted map reopens on the camera the reader left it at. Rebuilding the chips as client
+ * controls would buy nothing and would move a filter the server already applies onto the client.
  */
 export default async function ProblemMapPage({
   searchParams,
@@ -48,22 +54,68 @@ export default async function ProblemMapPage({
   ]);
   const selectedCategorySlug = readSingleParam(resolvedSearchParams, "category");
   const selectedRegionSlug = readSingleParam(resolvedSearchParams, "region");
+  const initialCamera = readMapCameraFromSearchParams(resolvedSearchParams);
 
-  const [clustersResult, categoriesResult, regionsResult] = await Promise.all([
-    listProblemClusters(
-      {
-        sort: "opportunity",
-        limit: CLUSTERS_PAGE_LIMIT,
-        category: selectedCategorySlug,
-        region: selectedRegionSlug,
-      },
-      requestOptions,
-    ),
-    listResearchCategories({ status: "approved" }, requestOptions),
-    listDiscoveryRegions({}, requestOptions),
-  ]);
+  const [clustersResult, anyClusterProbeResult, categoriesResult, regionsResult] =
+    await Promise.all([
+      listProblemClusters(
+        {
+          sort: "opportunity",
+          limit: CLUSTERS_PAGE_LIMIT,
+          category: selectedCategorySlug,
+          region: selectedRegionSlug,
+        },
+        requestOptions,
+      ),
+      /**
+       * ⚠️ **THE SECOND READ EXISTS TO TELL COLD START FROM "NOTHING HERE", AND IT CANNOT BE
+       * DERIVED FROM THE FIRST.** Every other read on this surface is filtered, viewport-scoped or
+       * both, so zero rows is an ambiguous answer: a platform with no clusters at all and a reader
+       * looking at an empty stretch of ocean return the identical response. The three empty states
+       * the surface owes a reader (`todo.md` §19.4) need one unfiltered fact, and one row is
+       * enough to establish it.
+       */
+      listProblemClusters({ limit: 1 }, requestOptions),
+      listResearchCategories({ status: "approved" }, requestOptions),
+      listDiscoveryRegions({}, requestOptions),
+    ]);
 
-  const clustersState = toListViewState(clustersResult);
+  /**
+   * ⚠️ **A FAILED PROBE READS AS "THERE IS DATA", NOT AS COLD START.** The two are not symmetric:
+   * claiming nothing has ever been reported when the read merely failed tells a founder the
+   * platform is empty and tells a reporter they are first, both wrongly. Assuming data exists
+   * costs at worst the filter or viewport message, which is recoverable by looking.
+   */
+  const hasAnyCluster = anyClusterProbeResult.success
+    ? anyClusterProbeResult.data.pagination.total > 0
+    : true;
+
+  /**
+   * The seed the island paints before its own first read lands.
+   *
+   * A failed read hands over `null` pagination rather than a fabricated empty page, which is what
+   * tells the island not to seed its cache with an answer the server never got. The island then
+   * reads for itself and renders its own error state — better than this page rendering one, since
+   * a transient server-side failure need not cost the reader the whole map.
+   */
+  // Read off the result directly rather than through `rowsOrEmpty`: that helper takes a bare-array
+  // read, and this is a paginated one whose `data` is `{ rows, pagination }`. The two are read
+  // together here anyway, so splitting them through a helper would not shorten anything.
+  const initialClusters = clustersResult.success ? clustersResult.data.rows : [];
+  const initialPagination = clustersResult.success ? clustersResult.data.pagination : null;
+  /**
+   * Whether the current filters match anything at all, ignoring the map.
+   *
+   * ⚠️ **THIS READ IS UNBOUNDED AND THAT IS THE WHOLE POINT.** It is what lets the island say "no
+   * clusters match these filters" instead of "zoom out to see more" — advice that would be true
+   * only if the matches existed somewhere else. A failed read reads as "there are matches", the
+   * same direction the cold-start probe errs in and for the same reason: overstating emptiness is
+   * the more misleading of the two mistakes.
+   */
+  const hasAnyClusterMatchingFilters = clustersResult.success
+    ? clustersResult.data.pagination.total > 0
+    : true;
+
   // Secondary reads: losing either costs a chip row, not the map.
   const categoryOptions = rowsOrEmpty(categoriesResult);
   const regionOptions = rowsOrEmpty(regionsResult);
@@ -97,33 +149,21 @@ export default async function ProblemMapPage({
       isSelected: selectedRegionSlug === region.slug,
     })),
   ];
-  function renderCanvas() {
-    switch (clustersState.status) {
-      case "error":
-        return <RndErrorPanel message="Couldn't load the problem map." />;
-      case "empty":
-        return (
-          <RndStatusPanel
-            message={
-              selectedCategorySlug === undefined && selectedRegionSlug === undefined
-                ? "No problems have been clustered yet."
-                : "No clusters match these filters yet."
-            }
-          />
-        );
-      case "ready":
-        return <ProblemMapCanvas clusters={clustersState.rows} />;
-      default: {
-        const exhaustiveCheck: never = clustersState;
-        return exhaustiveCheck;
-      }
-    }
-  }
+
+  // Built here rather than in the island because this is where the rest of the query string is
+  // already in hand: it drops both filters and keeps the camera, so clearing a filter does not
+  // also throw away where the reader was looking.
+  const clearFiltersHref = buildFilterHref(resolvedSearchParams, {
+    category: undefined,
+    region: undefined,
+  });
 
   return (
     <div className="space-y-6 px-4 pt-4 pb-4 lg:px-6 lg:pt-6 lg:pb-6">
       <div>
-        <h1 className="font-serif text-2xl font-semibold md:text-3xl">Problem Map</h1>
+        {/* `docs/Design.md` §3, the Serif Boundary: a serif heading inside `(home)` is a bug, not a
+            variation. This one and the cluster detail's were the two `todo.md` §19.11 names. */}
+        <h1 className="text-2xl font-semibold md:text-3xl">Problem Map</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Civic Pulse — reported infrastructure gaps, mapped into opportunity.
         </p>
@@ -150,7 +190,22 @@ export default async function ProblemMapPage({
         )}
       </div>
 
-      {renderCanvas()}
+      {/* ⚠️ **NO EMPTY OR ERROR BRANCH HERE ANY MORE.** This page used to switch on its own read and
+          render one of two messages in the canvas's place, which had two defects the viewport made
+          unignorable: it removed the map — the only control that can get a reader out of an empty
+          view — and it could not distinguish the three ways a viewport-scoped read reaches zero.
+          The island owns all of it now and keeps the map on screen underneath. */}
+      <ProblemMapCanvas
+        initialClusters={initialClusters}
+        initialPagination={initialPagination}
+        hasAnyCluster={hasAnyCluster}
+        hasAnyClusterMatchingFilters={hasAnyClusterMatchingFilters}
+        selectedCategorySlug={selectedCategorySlug}
+        selectedRegionSlug={selectedRegionSlug}
+        clearFiltersHref={clearFiltersHref}
+        clustersPageLimit={CLUSTERS_PAGE_LIMIT}
+        initialCamera={initialCamera}
+      />
       <MyProblemReportsPanel />
     </div>
   );

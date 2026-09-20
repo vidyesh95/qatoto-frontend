@@ -60,6 +60,20 @@
   --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+
+  /* Two M3 BASE tones that components have been writing as raw hex all along.
+
+     docs/Design.md §2 names this as "the fracture": globals.css tokenized only the M3 *container*
+     tones, so `Surface Wash` has `--primary` while `Primary Imprint` — the pressable, committed
+     strength of the same role — had nothing to reference. §6 says "Don't write a new hardcoded
+     hex", which until now was an instruction with no way to follow it.
+
+     ⚠️ ADDING THEM CONVERTS NOTHING. The existing ~1,190 `#00696E` and `#CAC4D0` literals stay
+     exactly as they are: §6 is explicit that converting a file is its own change with its own
+     dark-mode check, and doing it as a side effect of a feature is how a dark regression ships
+     unnoticed. These exist so NEW work has a token, and the conversion is its own job. */
+  --primary-imprint: oklch(0.4736 0.0805 200.55);
+  --outline-variant: oklch(0.8287 0.0178 308.22);
 }
 
 .dark {
@@ -95,6 +109,14 @@
   --sidebar-accent-foreground: oklch(0.9761 0 0);
   --sidebar-border: oklch(0.36 0 0);
   --sidebar-ring: oklch(0.3351 0.033 198.7355);
+
+  /* Dark counterparts. `Primary Imprint` brightens because the light value is a mid tone that
+     falls below the AA contrast floor against the dark ground; `Outline Variant` darkens for the
+     same reason in the other direction. Nothing reads these yet — no shipped rule uses the
+     tokens — so these are the values the first dark check will be run against, not ones it has
+     already passed. */
+  --primary-imprint: oklch(0.7278 0.1195 200.43);
+  --outline-variant: oklch(0.4382 0.0154 308.22);
 }
 
 @theme inline {
@@ -115,6 +137,8 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-primary-imprint: var(--primary-imprint);
+  --color-outline-variant: var(--outline-variant);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);

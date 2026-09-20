@@ -3,11 +3,49 @@
 > **Surface**: `/research-and-development/problem-map`, its cluster detail route, and the
 > `ReportProblemSheet` that files into it.
 > **Register**: `product` (`docs/PRODUCT.md`). `(home)` chrome rules apply in full.
-> **Status**: Design brief. Nothing here is built. The work items are `todo.md` §19.
+> **Status**: Design brief, PARTLY BUILT — §19.4 shipped 2026-09-20. The work items are
+> `todo.md` §19.
 > **Benchmark**: [thetraffic.in](https://www.thetraffic.in) — `/signals` for the map shell,
 > `/grievances` for the board and the Place picker.
 
 ---
+
+> ## ⚠️ Correction header — read this before the document below
+>
+> **Status: THE DESIGN HOLDS. SIX THINGS IN IT WERE NOT BUILDABLE AS WRITTEN**, found by building
+> §19.4 against the code. This brief says of itself that where it and the code disagree the code
+> wins and the brief gets corrected; this is that. The full account is `todo.md` §19.4.
+>
+> - ⚠️ **§7's `router.replace` IS WRONG, and so is §13 Q1's recommendation of it.** Both avoid a
+>   history entry per drag, which is the property this document wanted — but `router.replace` to
+>   the same route also runs an RSC round-trip, so the server component re-reads the whole cluster
+>   list on every gesture while the island fetches the same thing. **`window.history.replaceState`**
+>   is what shipped: same URL, same history behaviour, no server round-trip.
+> - ⚠️ **NEITHER §7 NOR §5 MENTIONS `fitBounds`, AND IT IS THE FIRST THING PAN-DRIVEN FETCHING
+>   BREAKS.** The marker effect re-runs on every `clusters` change and ended in a `fitBounds`, so
+>   wiring `moveend` to a refetch closes a loop with no exit. It is latched to once per map
+>   instance and skipped when the URL carries a camera.
+> - ⚠️ **A CALLBACK PROP IN THE MAP-CREATION EFFECT'S DEPENDENCIES DESTROYS THE MAP ONCE THE PARENT
+>   FETCHES.** Not predicted anywhere here, and the one that actually shipped: `Maximum update
+depth exceeded` ×129, `load` never firing, every marker destroyed — which took
+>   `button[aria-pressed]` off the page, and with it both §10's keyboard path and the selector
+>   §11.5 relies on. Callbacks go through refs; that effect's dependency array is empty.
+> - ⚠️ **§6's THREE EMPTY STATES NEED TWO READS THIS DOCUMENT DOES NOT ASK FOR.** Once every read
+>   carries a viewport, zero rows is ambiguous by construction. Cold start needs an unfiltered
+>   `limit: 1` probe, and "no matches" versus "not here" needs the server's UNBOUNDED filtered
+>   read. Deciding it from how wide the box is does not work: measured, the default camera renders
+>   a 629×269 canvas showing 180° of longitude and 68° of latitude.
+> - ⚠️ **§9's COUNT READOUT IS `pagination.total`, NOT THE ROW COUNT.** The endpoint is
+>   offset-paginated with a capped `limit`, so at a wide zoom the page is a prefix of the answer and
+>   "N clusters in view" from `rows.length` is a number the reader disproves by zooming in.
+> - ⚠️ **§7's CLAIM THAT A SHARED LINK SURVIVES A CHIP CLICK IS NOT TRUE TODAY.** The chips are
+>   server-rendered `Link`s built from the server's `searchParams`, and the camera is written
+>   client-side, so the server never sees it. A chip click refits to the filtered clusters. Fixing
+>   it makes the chips client controls, which is §5's panel work.
+>
+> - ✅ **WHAT SURVIVES UNCHANGED:** the layout strategy (§5), the light-theme argument (§3), the
+>   pin's privacy mechanism and the no-ring / no-accuracy-figure rules (§8), the copy table (§9),
+>   the accessibility contract (§10). §11's items 1 and 3 are fixed; 2 and 4 are open.
 
 ## 1. Feature summary
 

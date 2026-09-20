@@ -1,11 +1,12 @@
-// TRANSPORT: props-only — clusters and selection arrive as props from `problem-map-canvas`.
-// Fetches no Qatoto endpoint; the only network reads are OpenFreeMap's style, fonts and vector
-// tiles, none of which carry a key.
+// TRANSPORT: props-only — clusters, selection and the rendered list arrive as props from
+// `problem-map-canvas`. Fetches no Qatoto endpoint; the only network reads are OpenFreeMap's
+// style, fonts and vector tiles, none of which carry a key. It REPORTS its viewport upward and
+// the parent does the fetching, so the canvas still owns no transport of its own.
 "use client";
 
 import type { Map as MapLibreMap, Marker as MapLibreMarker } from "maplibre-gl";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import {
@@ -13,10 +14,14 @@ import {
   PIN_RING_CLASS,
   PIN_SIZE_CLASS,
 } from "@/components/home/research-and-development/sections/problem-map-pins";
-import ProblemClusterList from "@/components/home/research-and-development/sections/problem-report-list";
 import { isDarkThemeActive, resolveMapStyleUrl } from "@/lib/rnd/civic-pulse-map";
 import type { ProblemCluster } from "@/lib/rnd/discovery.schemas";
 import { toOpportunityBand } from "@/lib/rnd/map-projection";
+import {
+  type MapCamera,
+  toViewportBoundsMicrodegrees,
+  type ViewportBoundsMicrodegrees,
+} from "@/lib/rnd/map-viewport";
 
 /**
  * The Civic Pulse vector basemap — the same cluster pins the static canvas draws, over real
@@ -49,10 +54,38 @@ import { toOpportunityBand } from "@/lib/rnd/map-projection";
  * same cluster two different ways.
  */
 
+/** What the map is showing, handed upward so the parent can fetch for it. */
+export interface MapViewportReport {
+  readonly bounds: ViewportBoundsMicrodegrees;
+  readonly camera: MapCamera;
+  /**
+   * True for the one report the map makes on its own as soon as it exists, rather than after a
+   * reader moved it. The parent uses it to fetch without writing a camera nobody chose into the
+   * address bar.
+   */
+  readonly isInitial: boolean;
+}
+
 type CivicPulseVectorMapProps = {
   readonly clusters: ProblemCluster[];
   readonly selectedClusterId: string | null;
   readonly onSelectCluster: (clusterId: string) => void;
+  /**
+   * The cluster list, already rendered by the parent — either the rows or the one empty state that
+   * fits. It arrives as a node because the parent is the only thing that knows WHICH emptiness
+   * this is, and a canvas that decided for itself would be the second voice `todo.md` §19.11
+   * records against `ProblemClusterList`.
+   */
+  readonly listSlot: ReactNode;
+  /**
+   * Where to open. `null` means nobody named a camera, so the map fits to the clusters instead.
+   *
+   * ⚠️ **READ ONCE, AT MOUNT.** It is held in a `useRef` initialiser precisely so a later change
+   * cannot move a map the reader is currently panning.
+   */
+  readonly initialCamera: MapCamera | null;
+  /** Debounced on `moveend`, plus one `isInitial` report as soon as the map exists. */
+  readonly onViewportChange: (viewport: MapViewportReport) => void;
   /**
    * Called when the basemap cannot be shown, so the parent can fall back to the static canvas.
    *
@@ -87,13 +120,66 @@ const CONSECUTIVE_TILE_ERRORS_BEFORE_GIVING_UP = 3;
 const INITIAL_MAP_CENTER: [number, number] = [10, 20];
 const INITIAL_MAP_ZOOM = 1.3;
 
+/**
+ * How long after the last camera movement the viewport is reported.
+ *
+ * `moveend` already fires once per gesture rather than per frame, but a flick fires it again when
+ * the inertia settles and a pinch fires it per discrete zoom. This collapses a burst into the one
+ * request that describes where the reader actually stopped.
+ */
+const VIEWPORT_REPORT_DEBOUNCE_MS = 300;
+
 export default function CivicPulseVectorMap({
   clusters,
   selectedClusterId,
   onSelectCluster,
+  listSlot,
+  initialCamera,
+  onViewportChange,
   onUnavailable,
 }: CivicPulseVectorMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * The camera the URL asked for, frozen at mount.
+   *
+   * `useRef(value)` keeps its FIRST argument forever, which is exactly the semantics wanted here
+   * and is why this is not a prop read inside the effect: the map is created once, and a later
+   * prop change must not be able to recentre a map somebody is dragging.
+   */
+  const initialCameraRef = useRef(initialCamera);
+  /**
+   * ⚠️ **THE `fitBounds` LATCH. WITHOUT IT THIS SURFACE REFETCHES FOREVER.**
+   *
+   * The marker effect below re-runs on every `clusters` change, and it used to end in a
+   * `fitBounds`. Once `moveend` drives the fetch, that closes a loop with no exit: pan → refetch →
+   * a new `clusters` array → the effect re-runs → `fitBounds` moves the camera → `moveend` →
+   * refetch, and it never settles because `fitBounds` is itself a camera move.
+   *
+   * So the fit is a once-per-map-instance action rather than a per-render one, and it is skipped
+   * outright when the URL already carries a camera — a reader who followed a shared link chose
+   * that view, and fitting to the pins would throw it away.
+   */
+  const hasFittedToClustersRef = useRef(false);
+  /**
+   * The latest `onViewportChange` and `onUnavailable`, so the map-creation effect can call them
+   * without taking either as a dependency.
+   *
+   * ⚠️ **THE MAP IS CREATED ONCE. A CALLBACK PROP MUST NOT BE ABLE TO CHANGE THAT, AND THIS IS
+   * MEASURED RATHER THAN DEFENSIVE.** The effect used to list `onUnavailable`, which the parent
+   * passes as an inline arrow. That held for as long as the parent barely re-rendered — but once
+   * it owned a React Query subscription it re-rendered on every fetch, handing down a fresh
+   * closure each time, and the effect tore the map down and built a new one. `createMap` ends in
+   * `setReadyMapToken`, so each rebuild scheduled the render that caused the next: measured as
+   * "Maximum update depth exceeded" ×129, a map whose `load` never fired, and every marker
+   * destroyed microseconds after it was attached — which took `button[aria-pressed]` off the
+   * page, and with it both the accessible path to the pins and the selector the E2E spec asserts.
+   *
+   * Refs rather than `useCallback` in the parent: a stable identity there would be a promise this
+   * component depends on and cannot check, and the next person to add a prop would have no way to
+   * know they had broken it.
+   */
+  const onViewportChangeRef = useRef(onViewportChange);
+  const onUnavailableRef = useRef(onUnavailable);
   // `import type` is ERASED AT COMPILE TIME, so naming MapLibre's own types here costs nothing at
   // runtime — the package still arrives only through the `await import()` below. An earlier draft
   // hand-rolled structural types (`{ remove: () => void }`) to avoid an import that was never a
@@ -107,11 +193,17 @@ export default function CivicPulseVectorMap({
     ReadonlyMap<string, HTMLDivElement>
   >(() => new Map());
 
+  useEffect(() => {
+    onViewportChangeRef.current = onViewportChange;
+    onUnavailableRef.current = onUnavailable;
+  }, [onViewportChange, onUnavailable]);
+
   // --- Create the map exactly once -------------------------------------------------------
   useEffect(() => {
     const mapContainer = mapContainerRef.current;
     let isEffectStillMounted = true;
     let consecutiveTileErrorCount = 0;
+    let viewportReportTimer: ReturnType<typeof setTimeout> | undefined;
 
     async function createMap(container: HTMLDivElement) {
       // Both the module and its stylesheet are fetched here, so neither reaches a reader who
@@ -145,11 +237,19 @@ export default function CivicPulseVectorMap({
       // guarantees by re-copying them on every `dev` and every `build`.
       maplibreModule.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
+      const requestedCamera = initialCameraRef.current;
+
       const map = new maplibreModule.Map({
         container,
         style: resolveMapStyleUrl(isDarkThemeActive()),
-        center: INITIAL_MAP_CENTER,
-        zoom: INITIAL_MAP_ZOOM,
+        // A shared link opens where it was shared from. Set at construction rather than by a
+        // `jumpTo` afterwards, so the first painted frame is already the right one and there is no
+        // visible slide from the world view to the requested one.
+        center:
+          requestedCamera === null
+            ? INITIAL_MAP_CENTER
+            : [requestedCamera.longitudeDegrees, requestedCamera.latitudeDegrees],
+        zoom: requestedCamera === null ? INITIAL_MAP_ZOOM : requestedCamera.zoom,
         // Keyboard pan/zoom on the canvas itself, so the map is operable without a pointer.
         keyboard: true,
         // Without this, a two-finger scroll over a full-width map eats the page scroll on
@@ -171,6 +271,39 @@ export default function CivicPulseVectorMap({
       // than the SVG it replaced. The pins are our data and must not wait on anyone else's.
       setReadyMapToken((previousToken) => previousToken + 1);
 
+      function reportViewport(isInitial: boolean) {
+        if (!isEffectStillMounted) return;
+        const bounds = map.getBounds();
+        const center = map.getCenter();
+        onViewportChangeRef.current({
+          bounds: toViewportBoundsMicrodegrees({
+            westDegrees: bounds.getWest(),
+            southDegrees: bounds.getSouth(),
+            eastDegrees: bounds.getEast(),
+            northDegrees: bounds.getNorth(),
+          }),
+          camera: {
+            latitudeDegrees: center.lat,
+            longitudeDegrees: center.lng,
+            zoom: map.getZoom(),
+          },
+          isInitial,
+        });
+      }
+
+      // ⚠️ **REPORT ONCE IMMEDIATELY, FOR THE SAME REASON THE MARKERS ATTACH IMMEDIATELY.** A map
+      // that is never touched fires no `moveend`, so without this the first viewport-scoped read
+      // would wait for a reader to drag something and the panel would keep showing the unbounded
+      // server page in the meantime. A `Marker` needs only the map's transform to place itself and
+      // so does `getBounds()`, so neither has any business waiting on a third-party tile host.
+      reportViewport(true);
+
+      map.on("moveend", () => {
+        if (!isEffectStillMounted) return;
+        clearTimeout(viewportReportTimer);
+        viewportReportTimer = setTimeout(() => reportViewport(false), VIEWPORT_REPORT_DEBOUNCE_MS);
+      });
+
       // `load` now only clears the "Loading map…" caption. Nothing depends on it.
       map.on("load", () => {
         if (!isEffectStillMounted) return;
@@ -181,7 +314,7 @@ export default function CivicPulseVectorMap({
         if (!isEffectStillMounted) return;
         consecutiveTileErrorCount += 1;
         if (consecutiveTileErrorCount >= CONSECUTIVE_TILE_ERRORS_BEFORE_GIVING_UP) {
-          onUnavailable();
+          onUnavailableRef.current();
         }
       });
 
@@ -201,16 +334,21 @@ export default function CivicPulseVectorMap({
     if (mapContainer) {
       void createMap(mapContainer).catch(() => {
         if (!isEffectStillMounted) return;
-        onUnavailable();
+        onUnavailableRef.current();
       });
     }
 
     return () => {
       isEffectStillMounted = false;
+      clearTimeout(viewportReportTimer);
       mapInstanceRef.current?.remove();
       mapInstanceRef.current = null;
     };
-  }, [onUnavailable]);
+    // Empty on purpose — see the ref block above. Every value this effect needs is either read
+    // once at mount or reached through a ref, so there is nothing here that could legitimately
+    // ask for a second map.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- Follow the theme ------------------------------------------------------------------
   // The map is created with whatever theme was active at mount; this keeps it in step if `.dark`
@@ -267,7 +405,16 @@ export default function CivicPulseVectorMap({
 
       // Open on the clusters that exist rather than on the whole globe. Skipped for a single
       // cluster, where a bounding box has zero area and `fitBounds` would slam to max zoom.
-      if (clusters.length > 1) {
+      //
+      // ⚠️ **AND SKIPPED ON EVERY RUN AFTER THE FIRST, AND WHENEVER THE URL NAMED A CAMERA.** This
+      // effect re-runs on every `clusters` change, and `clusters` now changes because the reader
+      // panned. See `hasFittedToClustersRef` — an unlatched fit here is an endless refetch loop,
+      // not a cosmetic issue.
+      const shouldFitToClusters =
+        clusters.length > 1 && !hasFittedToClustersRef.current && initialCameraRef.current === null;
+
+      if (shouldFitToClusters) {
+        hasFittedToClustersRef.current = true;
         readyMap.fitBounds(
           [
             [westernmostLongitude, southernmostLatitude],
@@ -331,11 +478,7 @@ export default function CivicPulseVectorMap({
         );
       })}
 
-      <ProblemClusterList
-        clusters={clusters}
-        selectedClusterId={selectedClusterId}
-        onSelectCluster={onSelectCluster}
-      />
+      {listSlot}
     </div>
   );
 }

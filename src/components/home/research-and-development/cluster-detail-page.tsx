@@ -76,7 +76,7 @@ export default async function ClusterDetailPage({ clusterId }: { clusterId: stri
         >
           ← Problem Map
         </Link>
-        <h1 className="font-serif text-2xl font-semibold md:text-3xl">{cluster.title}</h1>
+        <h1 className="text-2xl font-semibold md:text-3xl">{cluster.title}</h1>
         <p className="text-sm text-muted-foreground">
           {cluster.category.displayLabel}
           {cluster.region !== null && ` · ${cluster.region.displayLabel}`}

@@ -40,7 +40,16 @@ and `git log` are the record of what was built and why.
 **R&D / Civic Pulse:**
 
 - **Problem map basemap** — **Part 1 SHIPPED.** MapLibre over free keyless OpenFreeMap tiles behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, static SVG as the fallback. The coarse map pin, the `domain` enum, the four-component feasibility readout and viewport-driven reads are open. One E2E assertion is flaky with the flag on and is left unchanged. See §19.
-- **Problem map UI/UX** — designed, not built. `docs/PROBLEM_MAP_UX.md` is the brief for the map-first shell at three breakpoints, the coarse pin's privacy mechanism, and what a cluster pin is allowed to claim. Work items are §19.1, §19.4 and §19.8 to §19.11.
+- **Problem map UI/UX** — **§19.4 SHIPPED 2026-09-20** (viewport-driven reads, the three empty
+  states, the camera in the URL). The rest is designed, not built: `docs/PROBLEM_MAP_UX.md` is the
+  brief for the map-first shell at three breakpoints, the coarse pin's privacy mechanism, and what
+  a cluster pin is allowed to claim. Remaining work items are §19.1, §19.8 to §19.11.
+- **Two E2E tests fail on `main`, and they are NOT a Civic Pulse problem.** `smoke.spec.ts:8` and
+  `home-shell.spec.ts:19` both resolve the sidebar through `tests/pages/sidebar.po.ts:73`, which is
+  `page.locator("aside")`. `AlphaBanner` is ALSO an `<aside>` (`alpha-banner.tsx:38`), so the
+  locator matches two elements and Playwright's strict mode fails it. Measured at HEAD with every
+  other change stashed: same two failures, so it predates the §19.4 work. The fix is one selector
+  in the page object — which is a test edit, so it waits to be asked for.
 
 **Legal & Compliance:**
 
@@ -580,6 +589,12 @@ Build the backend half alone first — the frontend has nothing to show until th
 
 ### 19. Civic Pulse — the rest of the problem-mapping specs
 
+**Part 2 shipped: viewport-driven reads (§19.4).** `moveend` now drives the fetch, the panel count
+is the server's `total` for what is on screen, the camera rides in `?lat&lng&z`, and the three
+emptinesses are three different sentences. Four corrections came out of building it and are written
+into items 1, 4 and 9 below — read them before the next part, because two of them were shipped bugs
+that the design brief did not predict.
+
 **Part 1 shipped: the vector basemap.** `/research-and-development/problem-map` renders MapLibre GL
 over OpenFreeMap behind `NEXT_PUBLIC_CIVIC_PULSE_MAPLIBRE`, with the static SVG as the flag-off and
 no-WebGL2 fallback. Free, keyless, no vendor. Details and the four decisions that came with the
@@ -608,7 +623,18 @@ Read it before touching this surface. It is a design brief, not a decision log �
 the code disagree, the code wins and the brief gets corrected.
 
 **1. The coarse map pin — the one thing blocking a better cluster.**
-Backend first: add `approxLatitudeMicrodegrees` / `approxLongitudeMicrodegrees` to
+⚠️ **IT NEEDS NO MIGRATION, AND THAT IS CHEAPER THAN THIS ITEM HAS BEEN READING.** `problem_submission`
+ALREADY carries nullable `latitude_microdegrees` / `longitude_microdegrees` plus the
+`problem_submission_coordinate_range_ck` CHECK that enforces `(lat IS NULL) = (lng IS NULL)` — the
+columns exist because the clustering job writes them after geocoding. And the quantizer is written:
+`quantizePublishedMicrodegrees` (`problem-clusters.service.ts:298-304`) already rounds onto the
+1,000-microdegree (~111 m) grid this item wants, so the server-side re-quantize is a call, not a
+function to author. What is left is the wire and the job branch, not the schema.
+⚠️ **ONE THING THE BRIEF DOES NOT SETTLE AND THE IMPLEMENTER MUST:** when a pin IS supplied,
+`locationText` still has to be geocoded for `country_code` and `region_id`, which feed the
+opportunity score — so decide whether a `LOCATION_NOT_FOUND` geocode still kills a submission that
+came with usable coordinates. Today `geocode_failed` is terminal.
+Backend: add `approxLatitudeMicrodegrees` / `approxLongitudeMicrodegrees` to
 `CreateProblemReportSchema` (currently `.strict()` with no coordinate field), server-re-quantized
 to 3 decimals so a lying client cannot smuggle precision, with `locationText` kept as the label.
 Then the picker in `report-problem-sheet.tsx`. ⚠️ **The client rounds BEFORE sending** — that is
@@ -634,19 +660,50 @@ slugs as the durable identity with database-generated UUIDs. See `docs/PROBLEM_T
 **3. The four-component feasibility readout.** Four bounded sub-scores, each with its own source
 and `asOf`, never summed and with no verdict enum. See `docs/FEASIBILITY_MODEL.md`.
 
-**4. Viewport-driven cluster reads.** `ListProblemClustersFilter` already declares four bbox
-microdegree fields (`src/lib/rnd/discovery.api.ts:55-60`) that **no caller passes** — an unused
-wrapper is the unverified code the R&D hook audit exists to catch. Wiring them to `moveend` turns
-`problem-map-canvas` from `props-only` into `client-query` and needs a `useProblemClustersQuery`
-hook that does not exist. All four or none: the backend rejects a partial box with a 422.
-⚠️ **THE `TRANSPORT:` BANNER ON `problem-map-canvas.tsx` LINE 1 MOVES WITH IT.** That banner is the
-check `docs/R_AND_D_STRUCTURE.md` §19 rests on, and a file that fetches while claiming `props-only`
-makes the transport map a lie. ⚠️ **It is also what makes the panel's count readout true**: "12
-clusters in view" is an answer once the fetch is the viewport and a coincidence until then. Three
-empty states fall out of it and they are NOT interchangeable — nothing clustered yet, nothing
-matching the filters, and nothing in this viewport. The third reader's filters are fine and their
-data is fine; telling them to clear a filter is telling them to fix something that is not broken.
-`docs/PROBLEM_MAP_UX.md` §6.
+**4. Viewport-driven cluster reads — SHIPPED 2026-09-20.** `moveend` drives
+`useProblemClustersQuery`, `problem-map-canvas` is `TRANSPORT: client-query`, and the count readout
+is `pagination.total` for what is on screen. Four things were learned building it that the brief
+did not predict. **Two were shipped bugs and the next part will meet both again.**
+
+⚠️ **TRAP 1 — `fitBounds` IN THE MARKER EFFECT IS AN ENDLESS REFETCH LOOP.** That effect re-runs on
+every `clusters` change, and `clusters` now changes because the reader panned: pan → refetch → new
+array → effect → `fitBounds` → `moveend` → refetch, with no exit, because `fitBounds` is itself a
+camera move. It is now latched to once per map instance and skipped outright when the URL carries a
+camera. Do not remove `hasFittedToClustersRef`.
+
+⚠️ **TRAP 2 — A CALLBACK PROP IN THE MAP-CREATION EFFECT'S DEPS DESTROYS AND REBUILDS THE MAP.**
+Worse than trap 1 and it is the one that actually shipped. The effect listed `onUnavailable`, which
+the parent passes as an inline arrow. That was harmless only while the parent barely re-rendered;
+once it held a React Query subscription it re-rendered per fetch with a fresh closure, so the map
+was torn down and recreated, and `createMap` ends in `setReadyMapToken` — so each rebuild scheduled
+the render that caused the next. Measured: `Maximum update depth exceeded` ×129, `load` never
+firing, and **every marker destroyed**, which removed `button[aria-pressed]` from the page and with
+it both the keyboard path to the pins and the selector the E2E spec asserts on. Callbacks now go
+through refs and **the creation effect's dependency array is empty and must stay empty.**
+A fresh `[]` for the no-clusters case had the same shape of effect and is hoisted to `NO_CLUSTERS`.
+
+⚠️ **TRAP 3 — `window.history.replaceState`, NOT `router.replace`.** `docs/PROBLEM_MAP_UX.md` §7
+and §13 Q1 both say `router.replace`. Both avoid a history entry per drag, which is the property
+the brief wanted, but `router.replace` to the same route also runs an RSC round-trip, so the server
+component re-reads the whole cluster list on every gesture while the island fetches the same thing.
+Measured after the fix: one request per gesture, `history.length` unchanged.
+
+⚠️ **TRAP 4 — "IS THIS THE WHOLE WORLD" IS NOT HOW TO PICK THE EMPTY STATE.** The first cut decided
+between "no clusters match these filters" and "no clusters in this view" by asking how WIDE the box
+was, on the theory that a reader looking at the planet has nothing left to zoom out to. Measured,
+the default camera renders a 629×269 canvas showing 180° of longitude and 68° of latitude, so no
+sane threshold ever fired and a filter matching nothing anywhere told the reader to zoom out. The
+discriminator is a FACT, not geometry: the server page already reads the same filters UNBOUNDED, so
+`hasAnyClusterMatchingFilters` says whether matches exist at all and zoom is only ever the answer
+when they exist somewhere else. Cold start needs its own unfiltered `limit: 1` probe for the same
+reason — every other read on the surface is filtered, viewport-scoped or both, so zero is ambiguous.
+
+⚠️ **KNOWN GAP, DELIBERATELY LEFT: A CATEGORY CHIP DROPS THE CAMERA.** The chips are server-rendered
+`Link`s built from the server's `searchParams`, and the camera is written client-side by
+`replaceState`, so the server never sees it and the hrefs carry no `lat/lng/z`. A chip click
+therefore refits to the filtered clusters. That is defensible — you want to see where the matches
+are — but it is NOT what `docs/PROBLEM_MAP_UX.md` §7 claims. Fixing it means the chips become
+client controls, which is §19.8's panel work, not a patch here.
 
 **5. Media on problem reports.** The backend pipeline exists — `sharp`, `multer`, `cloudinary`,
 `src/lib/image.ts`, 21 other upload routes — but problem reports have no attachment route, table or
@@ -695,12 +752,22 @@ history. The panel gets a sort control bound to `?sort=`; distance ordering is i
 
 **9. `AlphaBanner` is unaccounted for in every viewport-height expression on the surface.**
 It sits in normal flow above the flex row in `(home)/layout.tsx` at roughly 37px (`py-2`,
-`text-sm`), while `sidebar.tsx` computes `h-[calc(100dvh-56px)]` from the navbar alone. The sidebar
-is therefore already that much too tall, and item 8's map region will inherit the same error by
-copying the same expression on purpose. ⚠️ **Fix it in ONE place for both** — a CSS custom property
-set where the banner is rendered, read by everything that needs the chrome height. A surface
-computing its own height differently from the sidebar beside it is worse than both being
-consistently off, which is why item 8 does not fix it locally.
+`text-sm`), while `sidebar.tsx` computes `h-[calc(100dvh-56px)]` from the navbar alone.
+
+⚠️ **THIS ITEM USED TO SAY THE SIDEBAR IS "ALREADY THAT MUCH TOO TALL", FULL STOP. THAT IS WRONG,
+AND THE CORRECTION IS WHY THE ITEM CANNOT BE DONE THE WAY IT DESCRIBES.** The banner is in normal
+flow and **scrolls away**; the sidebar is `sticky top-14`. At `scrollTop: 0` the sidebar overflows
+by the banner's height, and at `scrollTop >= 37` the banner is gone and `100dvh-56px` is EXACTLY
+RIGHT. The sidebar's error is transient and self-correcting.
+
+A non-scrolling map page is pinned at `scrollTop: 0` forever, so item 8 would inherit the error
+**permanently** rather than identically. **One shared constant therefore does not make both
+correct** — it only does if the banner also becomes `sticky top-14` so the chrome height stops
+varying, and that is a visible change to every `(home)` route which needs a yes before it is made.
+
+So this is **not** the free prerequisite it reads as. It was dropped from the §19.4 work for that
+reason and belongs with item 8, where the sticky-banner question can be answered against a real
+non-scrolling layout instead of in the abstract.
 
 **10. Two backend asks this surface would use the day they exist.**
 Neither blocks item 8 and neither may be faked client-side.
@@ -716,18 +783,33 @@ Neither blocks item 8 and neither may be faked client-side.
   a device accuracy reading; we hold none, and inventing one is the unattributed number PRODUCT.md
   bans.
 
-**11. Four shipped defects on this surface, each small, each currently live.**
+**11. Four shipped defects on this surface. Two are fixed; two are open.**
 
-- ⚠️ **Serif Boundary violation in two files**: `problem-map-page.tsx:126` and
-  `cluster-detail-page.tsx:79` both put `font-serif` on an `h1` inside `(home)`. `docs/Design.md`
-  §3 states plainly that this is a bug, not a variation.
+- ~~**Serif Boundary violation in two files**~~ — **FIXED 2026-09-20.** `problem-map-page.tsx` and
+  `cluster-detail-page.tsx` no longer put `font-serif` on an `h1` inside `(home)`. ⚠️ **AND THE
+  SURFACE IS NOT CLEAN — THE REST OF R&D BREAKS THE SAME RULE.** `rg font-serif
+src/components/home/research-and-development/` still prints ~45 hits across the domain
+  (`talent-page.tsx`, `market-research-page.tsx`, `funding-page.tsx`, the heroes, the section
+  headers). `docs/Design.md` §3 says a serif heading in `(home)` is a bug, so that is a real
+  backlog and not a variation — but it is a domain-wide sweep with its own review, not something
+  to bundle into a Civic Pulse change. Do not use the bare `rg` above as a green/red check for
+  this surface; it will never be empty until that sweep happens.
 - **The cluster detail's four-panel `dl`** is an identical card grid of bordered label-over-figure
   boxes, and the third of them is the hero-metric shape. Both are named bans in §6. A hairline
-  definition row with the figures in `code` type says the same thing without the boxes.
-- **`ProblemClusterList` renders its own empty state** ("No clusters match these filters") while
-  `problem-map-page.tsx` renders a different one for the same condition. Two components answering
-  one question in two voices; the list's copy is the one to drop.
-- **Hardcoded hex throughout** — `#00696E`, `#CAC4D0`, `bg-[#00696E]/5`. New work uses the tokens.
+  definition row with the figures in `code` type says the same thing without the boxes. **Open.**
+- ~~**`ProblemClusterList` renders its own empty state**~~ — **FIXED 2026-09-20**, and item 4 is
+  why it had to be: once the viewport drove the fetch there were THREE ways to reach zero rows, so
+  a list hardcoding "No clusters match these filters." was not merely a second voice, it was
+  frequently the wrong sentence. `problem-map-canvas` picks between the three and renders the
+  chosen one in the list's place.
+- **Hardcoded hex throughout** — `#00696E`, `#CAC4D0`, `bg-[#00696E]/5`. **Open**, but the excuse
+  is gone: ⚠️ **`--primary-imprint` AND `--outline-variant` NOW EXIST** in `globals.css` (`:root`,
+  `.dark`, and `@theme inline` as `--color-*`), added 2026-09-20. Before that, "new work uses the
+  tokens" was an instruction with nothing to point at — `globals.css` had tokenized only the M3
+  _container_ tones, which is the fracture `docs/Design.md` §2 names. The ~1,190 existing literals
+  were deliberately NOT converted.
+  ⚠️ **The dark values have never been looked at on a screen.** Nothing reads the tokens yet, so
+  they are the values the first dark check will be run against, not ones that have passed it.
   ⚠️ **Do not bundle the conversion of the existing lines into this work**: `docs/Design.md` §6 says
   converting a file is its own change with its own dark-mode check.
 

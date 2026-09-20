@@ -11,6 +11,8 @@
 // Every key starts with the literal `"rnd"` so `invalidateQueries({ queryKey: rndKeys.all })`
 // clears the domain and nothing else.
 
+import type { ViewportBoundsMicrodegrees } from "@/lib/rnd/map-viewport";
+
 /** Filters that change a list's identity and therefore its cache entry. */
 /**
  * NO PAGE OR CURSOR HERE. These lists are keyset and accumulate their pages under ONE key
@@ -21,6 +23,17 @@
 export interface ClaimListFilter {
   readonly status?: string | undefined;
   readonly memberUserId?: string | undefined;
+}
+
+/**
+ * The problem map's server filters. `roundedViewportBounds` is the map viewport already put
+ * through `roundViewportBoundsForCacheKey`, or `null` on a canvas that cannot pan.
+ */
+export interface ProblemClusterListFilter {
+  readonly category?: string | undefined;
+  readonly region?: string | undefined;
+  readonly sort?: string | undefined;
+  readonly roundedViewportBounds: ViewportBoundsMicrodegrees | null;
 }
 
 export const rndKeys = {
@@ -140,6 +153,27 @@ export const rndKeys = {
   talentProfile: (handleOrUserId: string) => ["rnd", "talent", handleOrUserId] as const,
   myProblemReports: (clusteringStatus: string | undefined) =>
     ["rnd", "problem-reports", "mine", clusteringStatus] as const,
+  /**
+   * The public cluster list behind the problem map.
+   *
+   * ⚠️ **THE VIEWPORT IS PART OF THE KEY, AND IT ARRIVES ALREADY ROUNDED.** A bounding box is a
+   * server filter like any other — a different box is a different list — so by this file's own
+   * rule it belongs in the key. What does not belong is the raw box: a drag fires a `moveend` per
+   * gesture and an unrounded one would mint a cache entry per frame. `roundViewportBoundsForCacheKey`
+   * coarsens it first, and callers must not pass an unrounded box here.
+   *
+   * `null` is the no-viewport read, which is what the static canvas and the reduced-data list
+   * send — neither of them pans, so neither has a viewport to scope by.
+   */
+  problemClusters: (filter: ProblemClusterListFilter) =>
+    [
+      "rnd",
+      "problem-clusters",
+      filter.category,
+      filter.region,
+      filter.sort,
+      filter.roundedViewportBounds,
+    ] as const,
   dailyLog: (projectSlug: string, logId: string) =>
     ["rnd", "workshop", projectSlug, "daily-log", logId] as const,
 

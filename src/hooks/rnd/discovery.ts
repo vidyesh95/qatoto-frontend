@@ -7,20 +7,31 @@
 // BOTH ARE `/me`-SHAPED AND NEITHER TAKES A USER ID. The filter is the session on the
 // server; a `?userId=` on either would be a client-supplied authorization input.
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { rndKeys } from "@/hooks/rnd/keys";
 import { unwrap } from "@/lib/http";
+import type { PaginationMeta } from "@/lib/http";
 import {
   createProblemReport,
   getMyTalentProfile,
   listDiscoverySkills,
   listMyProblemReports,
+  listProblemClusters,
   publishMyTalentProfile,
   putMyTalentProfile,
   unpublishMyTalentProfile,
 } from "@/lib/rnd/discovery.api";
-import type { ProblemSubmissionStatus, TalentProfileInput } from "@/lib/rnd/discovery.schemas";
+import type {
+  ProblemCluster,
+  ProblemClusterSort,
+  ProblemSubmissionStatus,
+  TalentProfileInput,
+} from "@/lib/rnd/discovery.schemas";
+import {
+  roundViewportBoundsForCacheKey,
+  type ViewportBoundsMicrodegrees,
+} from "@/lib/rnd/map-viewport";
 
 /**
  * How often the reporter's own list re-reads after a `202`.
@@ -112,6 +123,88 @@ export function useUnpublishTalentProfileMutation() {
 }
 
 // --- Civic Pulse submissions ---------------------------------------------------
+
+/**
+ * How long a fetched page of clusters counts as fresh.
+ *
+ * ⚠️ **IT EXISTS TO STOP A DOUBLE FETCH ON FIRST PAINT.** The server component has already read
+ * page one and hands it over as `initialData`; with the default `staleTime` of zero React Query
+ * would refetch the identical list the moment the island mounts. Clusters are recomputed by a
+ * nightly job, so thirty seconds is nowhere near the rate at which this data can actually change.
+ */
+const CLUSTER_LIST_STALE_TIME_MS = 30_000;
+
+/**
+ * The public problem-cluster list, scoped to what the map is showing.
+ *
+ * ⚠️ **THIS IS WHAT MAKES THE PANEL COUNT TRUE** (`todo.md` §19.4). Before it, the list was the
+ * top of a global ranking while the map showed a viewport, so "12 clusters" was a coincidence
+ * rather than an answer. The four bounding-box fields have been declared on
+ * `ListProblemClustersFilter` since the endpoint shipped and no caller passed them.
+ *
+ * ⚠️ **`bounds` IS ROUNDED HERE, ONCE, AND USED FOR BOTH THE KEY AND THE REQUEST.** Rounding for
+ * the key while requesting the raw box would make the cache entry disagree with its own contents:
+ * two different boxes would collide onto one key and the second reader would be served the first
+ * one's pins.
+ *
+ * ⚠️ **`initialData` SEEDS THE NO-VIEWPORT KEY ONLY.** It is the server's unbounded page one, and
+ * handing it to a viewport-scoped key would paint a planet-wide ranking as though it were what is
+ * on screen — the exact defect this hook exists to remove.
+ *
+ * `keepPreviousData` is why a pan does not blank the map: the previous page's pins stay on the
+ * canvas while the next one is in flight, rather than every marker unmounting and remounting.
+ */
+export function useProblemClustersQuery(parameters: {
+  readonly category: string | undefined;
+  readonly region: string | undefined;
+  readonly sort: ProblemClusterSort;
+  readonly limit: number;
+  readonly viewportBounds: ViewportBoundsMicrodegrees | null;
+  readonly initialRows: ProblemCluster[];
+  readonly initialPagination: PaginationMeta | null;
+}) {
+  const roundedViewportBounds =
+    parameters.viewportBounds === null
+      ? null
+      : roundViewportBoundsForCacheKey(parameters.viewportBounds);
+
+  // Built as one value rather than as a `canSeed` boolean plus a non-null assertion on the
+  // pagination: CLAUDE.md Pattern 2 rules out assertions, and this way the narrowing is the
+  // compiler's rather than a claim.
+  const serverSeededPage =
+    roundedViewportBounds === null && parameters.initialPagination !== null
+      ? { rows: parameters.initialRows, pagination: parameters.initialPagination }
+      : undefined;
+
+  return useQuery({
+    queryKey: rndKeys.problemClusters({
+      category: parameters.category,
+      region: parameters.region,
+      sort: parameters.sort,
+      roundedViewportBounds,
+    }),
+    queryFn: async () =>
+      unwrap(
+        await listProblemClusters({
+          sort: parameters.sort,
+          limit: parameters.limit,
+          category: parameters.category,
+          region: parameters.region,
+          // Spreading `null` adds nothing, which is exactly the no-viewport read. The four
+          // fields therefore arrive together or not at all, and the partial box the controller
+          // answers `422 VIEWPORT_INCOMPLETE` for is unconstructible here.
+          ...roundedViewportBounds,
+        }),
+      ),
+    staleTime: CLUSTER_LIST_STALE_TIME_MS,
+    placeholderData: keepPreviousData,
+    initialData: serverSeededPage,
+    // The server fetched it moments ago, so it is as fresh as `staleTime` thinks it is. Without
+    // this the seed is treated as infinitely old and refetched on mount, which is the duplicate
+    // request `staleTime` was added to avoid.
+    initialDataUpdatedAt: serverSeededPage === undefined ? undefined : () => Date.now(),
+  });
+}
 
 /**
  * The caller's own reports, polled while any of them is still queued.
