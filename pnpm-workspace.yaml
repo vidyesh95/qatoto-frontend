@@ -112,4 +112,8 @@ overrides:
   hono: "^4.12.34"
 peerDependencyRules:
   allowedVersions:
-    tsconfck@*>typescript: ^5.0.0 || ^6.0.0
+    tsconfck@*>typescript: ^5.0.0 || ^6.0.0 || ^7.0.0
+    eslint: "10.x"
+    react: "19.3.0"
+    react-dom: "19.3.0"
+    typescript: ">=4.8.4 <=7.0.2"
