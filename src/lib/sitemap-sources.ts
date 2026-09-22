@@ -57,7 +57,19 @@ export type SitemapEntry = {
  * and stopping is better than a build that never finishes. If a real surface ever approaches it,
  * split the sitemap with `generateSitemaps` rather than raising this.
  */
-const MAX_PAGES_PER_SURFACE = 400;
+const MAX_PAGES_PER_SURFACE = 20;
+
+/**
+ * How many commodity pages to enumerate for the sitemap.
+ *
+ * §20 commodities is the largest directory on the platform (5,668+ rows in India alone).
+ * Walking all 114+ pages sequentially exceeds Next.js's 50-second "use cache" prerender
+ * timeout during `next build`. We bound the crawl to the top pages (the ones actually linked
+ * from the market research directory), matching the philosophy in `[hsCode]/page.tsx`.
+ * If full indexing of all 5,000+ commodities is required in the future, split into dedicated
+ * sub-sitemaps using Next.js `generateSitemaps`.
+ */
+const MAX_COMMODITY_SITEMAP_PAGES = 4;
 
 /** The largest page each backend list route accepts. Asking for more is a 422, not a bigger page. */
 const CURSOR_PAGE_LIMIT = 48;
@@ -165,15 +177,15 @@ export async function getSupplierSitemapEntries(): Promise<SitemapEntry[]> {
 }
 
 /**
- * §20 commodities. Bounded by `MAX_PAGES_PER_SURFACE` like every other offset walk here —
- * India alone has 5,668 commodities and the catalogue grows with each country ingested, so
- * an unbounded walk would be a very long build for pages nobody has linked to.
+ * §20 commodities. Bounded by `MAX_COMMODITY_SITEMAP_PAGES` — India alone has 5,668 commodities
+ * and the catalogue grows with each country ingested, so an unbounded walk would exceed Next.js's
+ * 50-second "use cache" prerender timeout during static generation.
  */
 export async function getImportCommoditySitemapEntries(): Promise<SitemapEntry[]> {
   "use cache";
   const entries: SitemapEntry[] = [];
 
-  for (let pageNumber = 1; pageNumber <= MAX_PAGES_PER_SURFACE; pageNumber += 1) {
+  for (let pageNumber = 1; pageNumber <= MAX_COMMODITY_SITEMAP_PAGES; pageNumber += 1) {
     const result = await listImportCommodities({ page: pageNumber, limit: OFFSET_PAGE_LIMIT });
     if (!result.success) break;
 

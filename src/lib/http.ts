@@ -122,6 +122,10 @@ export interface RequestOptions {
    * ample for a three-field beacon and a reason not to reach for this elsewhere.
    */
   readonly keepalive?: boolean;
+  /**
+   * Request timeout in milliseconds. When omitted, defaults to 15,000ms in `fetchEnvelope`.
+   */
+  readonly timeoutMs?: number;
 }
 
 /**
@@ -173,16 +177,22 @@ async function fetchEnvelope(
   options: RequestOptions = {},
 ): Promise<ActionResponse<ApiEnvelope>> {
   let response: Response;
+  const timeoutMs = options.timeoutMs ?? 15_000;
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       credentials: "include",
       headers: { ...init.headers, ...options.headers },
+      signal: abortController.signal,
       ...(options.cache === undefined ? {} : { cache: options.cache }),
       ...(options.keepalive === undefined ? {} : { keepalive: options.keepalive }),
     });
   } catch {
     return { success: false, error: NETWORK_ERROR };
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   return readEnvelope(response);
@@ -227,15 +237,21 @@ export async function getBinary(
   options?: RequestOptions,
 ): Promise<ActionResponse<{ blob: Blob; mediaType: string; fileName: string | null }>> {
   let response: Response;
+  const timeoutMs = options?.timeoutMs ?? 15_000;
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       method: "GET",
       credentials: "include",
       headers: { Accept: "*/*", ...options?.headers },
+      signal: abortController.signal,
       ...(options?.cache === undefined ? {} : { cache: options.cache }),
     });
   } catch {
     return { success: false, error: NETWORK_ERROR };
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   if (!response.ok) {

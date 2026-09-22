@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   cacheComponents: true,
+  staticPageGenerationTimeout: 120,
   // Turbopack's filesystem cache for BOTH `next dev` and `next build` is ON BY DEFAULT as of
   // 16.3 (`experimental.turbopackFileSystemCacheForDev` / `...ForBuild`, see
   // node_modules/next/dist/server/config-shared.js). Setting them here would be a no-op —
