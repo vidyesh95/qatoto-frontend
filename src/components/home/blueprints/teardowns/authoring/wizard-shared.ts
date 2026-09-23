@@ -484,6 +484,13 @@ function resolveTeardownFieldStepId(fieldPath: string): TeardownWizardStepId | n
   return ROW_LIST_LOCATIONS.get(listKey)?.stepId ?? null;
 }
 
+function resolveTeardownFieldStepPosition(fieldPath: string): number {
+  const stepId = resolveTeardownFieldStepId(fieldPath);
+  return stepId === null
+    ? TEARDOWN_WIZARD_STEPS.length
+    : TEARDOWN_WIZARD_STEPS.findIndex((step) => step.id === stepId);
+}
+
 /**
  * Orders two contract paths by the step they are on, for sorting the error list.
  *
@@ -496,14 +503,10 @@ export function compareTeardownFieldPathsByStep(
   firstFieldPath: string,
   secondFieldPath: string,
 ): number {
-  const findStepPosition = (fieldPath: string): number => {
-    const stepId = resolveTeardownFieldStepId(fieldPath);
-    return stepId === null
-      ? TEARDOWN_WIZARD_STEPS.length
-      : TEARDOWN_WIZARD_STEPS.findIndex((step) => step.id === stepId);
-  };
-
-  return findStepPosition(firstFieldPath) - findStepPosition(secondFieldPath);
+  return (
+    resolveTeardownFieldStepPosition(firstFieldPath) -
+    resolveTeardownFieldStepPosition(secondFieldPath)
+  );
 }
 
 /**

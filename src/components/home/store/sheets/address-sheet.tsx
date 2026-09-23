@@ -174,6 +174,13 @@ export default function AddressSheet({
   const setField = (field: keyof AddressFormValues) => (value: string) =>
     setFormValues((previous) => ({ ...previous, [field]: value }));
 
+  const handleAddressMutationSuccess = (result: { success: boolean }) => {
+    if (!result.success) return;
+    resetIdempotencyKey();
+    setMode({ view: "list" });
+    setFormValues(EMPTY_FORM);
+  };
+
   const handleSubmit = (submitEvent: React.FormEvent) => {
     submitEvent.preventDefault();
     if (organizationId === null) return;
@@ -181,12 +188,6 @@ export default function AddressSheet({
     const idempotencyKey = getIdempotencyKey();
 
     const editing = mode.view === "form" ? mode.editing : null;
-    const onSettled = (result: { success: boolean }) => {
-      if (!result.success) return;
-      resetIdempotencyKey();
-      setMode({ view: "list" });
-      setFormValues(EMPTY_FORM);
-    };
 
     if (editing === null) {
       /**
@@ -204,12 +205,12 @@ export default function AddressSheet({
        */
       createAddress.mutate(
         { input: { ...input, isDefault: false }, idempotencyKey },
-        { onSuccess: onSettled },
+        { onSuccess: handleAddressMutationSuccess },
       );
     } else {
       updateAddress.mutate(
         { addressId: editing.id, input, idempotencyKey },
-        { onSuccess: onSettled },
+        { onSuccess: handleAddressMutationSuccess },
       );
     }
   };

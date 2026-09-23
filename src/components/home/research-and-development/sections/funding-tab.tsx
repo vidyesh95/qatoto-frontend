@@ -84,105 +84,6 @@ export default function FundingTab({
     }
   }
 
-  function renderRoundSections(fundingRounds: FundingRound[]) {
-    const openRound = fundingRounds.find((fundingRound) => fundingRound.status === "open");
-    const closedRounds = fundingRounds.filter((fundingRound) => fundingRound.status === "closed");
-
-    return (
-      <div className="space-y-6">
-        <section className="space-y-3">
-          <h3 className="text-sm font-medium tracking-wide xl:text-lg">Current round</h3>
-          {openRound ? (
-            renderOpenRound(openRound)
-          ) : (
-            <p className="rounded-2xl border border-[#CAC4D0]/60 p-4 text-sm text-muted-foreground">
-              No open round right now.
-            </p>
-          )}
-        </section>
-        {closedRounds.length > 0 && (
-          <section className="space-y-3">
-            <h3 className="text-sm font-medium tracking-wide xl:text-lg">Past rounds</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-md text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border text-xs text-muted-foreground">
-                    <th className="py-2 pr-4 font-medium">Type</th>
-                    <th className="py-2 pr-4 font-medium">Goal</th>
-                    <th className="py-2 pr-4 font-medium">Committed</th>
-                    <th className="py-2 font-medium">Closed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {closedRounds.map((closedRound) => (
-                    <tr key={closedRound.id} className="border-b border-border/50">
-                      <td className="py-2 pr-4">{FUNDING_ROUND_TYPE_LABELS[closedRound.type]}</td>
-                      <td className="py-2 pr-4">
-                        {formatMoneyFromCents(
-                          BigInt(closedRound.goalAmountInCents),
-                          closedRound.currency,
-                        )}
-                      </td>
-                      <td className="py-2 pr-4">
-                        {formatMoneyFromCents(
-                          BigInt(closedRound.raisedAmountInCents),
-                          closedRound.currency,
-                        )}
-                      </td>
-                      <td className="py-2">
-                        {closedRound.closedAt ? formatIsoInstant(closedRound.closedAt) : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-      </div>
-    );
-  }
-
-  function renderOpenRound(openRound: FundingRound) {
-    // May exceed 10000 — an over-funded round is a real state, so the LABEL keeps the
-    // true figure even though the bar itself is capped at full width.
-    const fundedPercent = openRound.percentageFundedBasisPoints / BASIS_POINTS_PER_PERCENT;
-    const barWidthPercent =
-      Math.min(openRound.percentageFundedBasisPoints, FULLY_FUNDED_BASIS_POINTS) /
-      BASIS_POINTS_PER_PERCENT;
-
-    return (
-      <div className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
-        <span className="inline-block rounded-full bg-[#D6E3FF] px-2 py-0.5 text-xs font-medium text-[#191C1C]">
-          {FUNDING_ROUND_TYPE_LABELS[openRound.type]}
-        </span>
-        <p className="text-lg font-semibold">
-          {formatMoneyFromCents(BigInt(openRound.raisedAmountInCents), openRound.currency)}{" "}
-          <span className="text-sm font-normal text-muted-foreground">
-            committed of{" "}
-            {formatMoneyFromCents(BigInt(openRound.goalAmountInCents), openRound.currency)} goal
-          </span>
-        </p>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-[#00696E]"
-            style={{ width: `${barWidthPercent}%` }}
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {fundedPercent}% · {openRound.backersCount} backer
-          {openRound.backersCount === 1 ? "" : "s"}
-          {openRound.closesAt && ` · Closes ${formatIsoInstant(openRound.closesAt)}`}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          A pledge is a commitment to the founder, not a charge. Qatoto holds no funds.
-        </p>
-        <RoundBackersIsland roundId={openRound.id} backersCount={openRound.backersCount} />
-        <PledgeIsland roundId={openRound.id} roundTitle={openRound.title} />
-      </div>
-    );
-  }
-
   function renderInvestorConfidence() {
     if (investorConfidenceState.status !== "ready") {
       // Restricted and never-computed are indistinguishable on the wire, and both are
@@ -236,6 +137,105 @@ export default function FundingTab({
         projectCurrency={projectCurrency}
         viewerProjectRole={viewerProjectRole}
       />
+    </div>
+  );
+}
+
+function renderOpenRound(openRound: FundingRound) {
+  // May exceed 10000 — an over-funded round is a real state, so the LABEL keeps the
+  // true figure even though the bar itself is capped at full width.
+  const fundedPercent = openRound.percentageFundedBasisPoints / BASIS_POINTS_PER_PERCENT;
+  const barWidthPercent =
+    Math.min(openRound.percentageFundedBasisPoints, FULLY_FUNDED_BASIS_POINTS) /
+    BASIS_POINTS_PER_PERCENT;
+
+  return (
+    <div className="space-y-3 rounded-2xl border border-[#CAC4D0]/60 p-4">
+      <span className="inline-block rounded-full bg-[#D6E3FF] px-2 py-0.5 text-xs font-medium text-[#191C1C]">
+        {FUNDING_ROUND_TYPE_LABELS[openRound.type]}
+      </span>
+      <p className="text-lg font-semibold">
+        {formatMoneyFromCents(BigInt(openRound.raisedAmountInCents), openRound.currency)}{" "}
+        <span className="text-sm font-normal text-muted-foreground">
+          committed of{" "}
+          {formatMoneyFromCents(BigInt(openRound.goalAmountInCents), openRound.currency)} goal
+        </span>
+      </p>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-[#00696E]"
+          style={{ width: `${barWidthPercent}%` }}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {fundedPercent}% · {openRound.backersCount} backer
+        {openRound.backersCount === 1 ? "" : "s"}
+        {openRound.closesAt && ` · Closes ${formatIsoInstant(openRound.closesAt)}`}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        A pledge is a commitment to the founder, not a charge. Qatoto holds no funds.
+      </p>
+      <RoundBackersIsland roundId={openRound.id} backersCount={openRound.backersCount} />
+      <PledgeIsland roundId={openRound.id} roundTitle={openRound.title} />
+    </div>
+  );
+}
+
+function renderRoundSections(fundingRounds: FundingRound[]) {
+  const openRound = fundingRounds.find((fundingRound) => fundingRound.status === "open");
+  const closedRounds = fundingRounds.filter((fundingRound) => fundingRound.status === "closed");
+
+  return (
+    <div className="space-y-6">
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium tracking-wide xl:text-lg">Current round</h3>
+        {openRound ? (
+          renderOpenRound(openRound)
+        ) : (
+          <p className="rounded-2xl border border-[#CAC4D0]/60 p-4 text-sm text-muted-foreground">
+            No open round right now.
+          </p>
+        )}
+      </section>
+      {closedRounds.length > 0 && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-medium tracking-wide xl:text-lg">Past rounds</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-md text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-xs text-muted-foreground">
+                  <th className="py-2 pr-4 font-medium">Type</th>
+                  <th className="py-2 pr-4 font-medium">Goal</th>
+                  <th className="py-2 pr-4 font-medium">Committed</th>
+                  <th className="py-2 font-medium">Closed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {closedRounds.map((closedRound) => (
+                  <tr key={closedRound.id} className="border-b border-border/50">
+                    <td className="py-2 pr-4">{FUNDING_ROUND_TYPE_LABELS[closedRound.type]}</td>
+                    <td className="py-2 pr-4">
+                      {formatMoneyFromCents(
+                        BigInt(closedRound.goalAmountInCents),
+                        closedRound.currency,
+                      )}
+                    </td>
+                    <td className="py-2 pr-4">
+                      {formatMoneyFromCents(
+                        BigInt(closedRound.raisedAmountInCents),
+                        closedRound.currency,
+                      )}
+                    </td>
+                    <td className="py-2">
+                      {closedRound.closedAt ? formatIsoInstant(closedRound.closedAt) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
